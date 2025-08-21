@@ -1,15 +1,15 @@
 use async_trait::async_trait;
-use chain_traits::ChainPreload;
+use chain_traits::ChainTransactionLoad;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{FeeRate, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
-use super::preload_mapper;
+use super::{preload_mapper, state_mapper};
 use crate::rpc::client::NearClient;
 
 #[async_trait]
-impl<C: Client + Clone> ChainPreload for NearClient<C> {
+impl<C: Client + Clone> ChainTransactionLoad for NearClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         let public_key = preload_mapper::address_to_public_key(&input.sender_address)?;
         let access_key = self.get_account_access_key(&input.sender_address, &public_key).await?;
@@ -26,8 +26,13 @@ impl<C: Client + Clone> ChainPreload for NearClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
-            fee: TransactionFee::default(),
+            fee: input.default_fee(),
             metadata: input.metadata,
         })
+    }
+
+    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        let gas_price = self.get_gas_price().await?;
+        state_mapper::map_gas_price_to_priorities(&gas_price)
     }
 }

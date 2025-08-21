@@ -3,14 +3,17 @@ use std::error::Error;
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainAccount, ChainPerpetual, ChainPreload, ChainTraits, ChainTransactions};
+use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits, ChainTransactionLoad, ChainTransactions};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 use gem_jsonrpc::JsonRpcClient;
-use primitives::{chain::Chain, Asset, TransactionStateRequest, TransactionUpdate};
+use primitives::{
+    chain::Chain, Asset, FeePriority, FeeRate, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
+    TransactionStateRequest, TransactionUpdate,
+};
 
 use super::model::Balance;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
@@ -138,7 +141,24 @@ impl<C: Client + Clone> ChainAccount for SuiClient<C> {}
 impl<C: Client + Clone> ChainPerpetual for SuiClient<C> {}
 
 #[cfg(feature = "rpc")]
-impl<C: Client + Clone> ChainPreload for SuiClient<C> {}
+#[async_trait]
+impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
+    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadMetadata::None)
+    }
+
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadData {
+            fee: TransactionFee::default(),
+            metadata: input.metadata,
+        })
+    }
+
+    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        let gas_price = self.get_gas_price().await?;
+        Ok(vec![FeeRate::regular(FeePriority::Normal, gas_price)])
+    }
+}
 
 #[cfg(feature = "rpc")]
 #[async_trait]

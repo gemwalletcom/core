@@ -1,10 +1,8 @@
 use std::error::Error;
 
-use async_trait::async_trait;
-use chain_traits::{ChainPerpetual, ChainPreload, ChainStaking, ChainTraits};
+use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::chain::Chain;
-use primitives::{TransactionLoadData, TransactionLoadInput};
 
 use super::model::{Block, Blocks, Data};
 use crate::models::{CardanoBalanceResponse, CardanoBlockData, CardanoGenesisData, CardanoTransactionBroadcast, CardanoUTXO, CardanoUTXOS};
@@ -124,14 +122,5 @@ impl<C: Client> ChainStaking for CardanoClient<C> {}
 
 impl<C: Client> ChainPerpetual for CardanoClient<C> {}
 
-#[async_trait]
-impl<C: Client> ChainPreload for CardanoClient<C> {
-    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: primitives::TransactionFee::default(),
-            metadata: input.metadata,
-        })
-    }
-}
 
 impl<C: Client> ChainTraits for CardanoClient<C> {}

@@ -1,10 +1,11 @@
 use async_trait::async_trait;
-use chain_traits::ChainPreload;
+use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
 use primitives::{
-    AssetSubtype, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
+    AssetSubtype, FeePriority, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput,
 };
 use std::collections::HashMap;
 use std::error::Error;
@@ -63,7 +64,7 @@ fn check_jetton_account_exists(jetton_wallets: &JettonWalletsResponse, token_id:
 }
 
 #[async_trait]
-impl<C: Client> ChainPreload for TonClient<C> {
+impl<C: Client> ChainTransactionLoad for TonClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         let wallet_info = self.get_wallet_information(input.sender_address.clone()).await?;
         let sequence = wallet_info.seqno.unwrap_or(0) as u64;
@@ -92,6 +93,12 @@ impl<C: Client> ChainPreload for TonClient<C> {
         };
 
         Ok(TransactionLoadData { fee, metadata })
+    }
+
+    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![
+            FeeRate::regular(FeePriority::Normal, BigInt::from(10000000)), // 0.01 TON
+        ])
     }
 }
 

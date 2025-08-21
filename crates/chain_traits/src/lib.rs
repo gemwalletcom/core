@@ -8,7 +8,10 @@ use primitives::{
     TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
-pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainPreload {}
+pub trait ChainTraits:
+    ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainTransactionLoad
+{
+}
 
 #[async_trait]
 pub trait ChainBalances: Send + Sync {
@@ -42,7 +45,6 @@ pub trait ChainTransactions: Send + Sync {
 pub trait ChainState: Send + Sync {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>>;
     async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
-    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>>;
 }
 
 #[async_trait]
@@ -79,7 +81,7 @@ pub trait ChainToken: Send + Sync {
 }
 
 #[async_trait]
-pub trait ChainPreload: Send + Sync {
+pub trait ChainTransactionLoad: Send + Sync {
     async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadMetadata::None)
     }
@@ -88,7 +90,11 @@ pub trait ChainPreload: Send + Sync {
         Err("Chain does not support transaction loading".into())
     }
 
-    async fn get_transaction_fee(&self, _data: String) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_from_data(&self, _data: String) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support transaction fee".into())
+    }
+
+    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support fee rates".into())
     }
 }

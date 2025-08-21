@@ -1,5 +1,5 @@
 use num_bigint::BigInt;
-use primitives::{chain_cosmos::CosmosChain, StakeType, TransactionFee, TransactionInputType};
+use primitives::{chain_cosmos::CosmosChain, GasPriceType, StakeType, TransactionFee, TransactionInputType};
 
 fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
     match chain {
@@ -45,16 +45,13 @@ fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 
     }
 }
 
-pub fn calculate_transaction_fee(input_type: &TransactionInputType, chain: CosmosChain, gas_price_type: &primitives::GasPriceType) -> TransactionFee {
+pub fn calculate_transaction_fee(input_type: &TransactionInputType, chain: CosmosChain, gas_price_type: &GasPriceType) -> TransactionFee {
     let gas_limit = get_gas_limit(input_type, chain);
     let fee = get_fee(chain, input_type);
 
     TransactionFee {
         fee,
-        gas_price: match gas_price_type {
-            primitives::GasPriceType::Regular { gas_price } => gas_price.clone(),
-            primitives::GasPriceType::Eip1559 { gas_price, .. } => gas_price.clone(),
-        },
+        gas_price: gas_price_type.gas_price(),
         gas_limit: BigInt::from(gas_limit),
         options: std::collections::HashMap::new(),
     }

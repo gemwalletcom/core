@@ -4,8 +4,7 @@ use lazy_static::lazy_static;
 use num_bigint::BigUint;
 use num_traits::Num;
 
-use super::staking_mapper::StakingMapper;
-use super::swap_mapper::SwapMapper;
+use super::{staking_mapper::StakingMapper, swap_mapper::SwapMapper};
 use crate::{
     address::{ethereum_address_checksum, ethereum_address_from_topic},
     registry::ContractRegistry,

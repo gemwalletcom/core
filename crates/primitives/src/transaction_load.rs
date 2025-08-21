@@ -37,6 +37,12 @@ pub struct TransactionLoadInput {
 }
 
 impl TransactionLoadInput {
+    pub fn default_fee(&self) -> TransactionFee {
+        TransactionFee::new_from_fee(self.gas_price.gas_price())
+    }
+}
+
+impl TransactionLoadInput {
     pub fn to_preload_input(&self) -> TransactionPreloadInput {
         TransactionPreloadInput {
             sender_address: self.sender_address.clone(),
@@ -74,16 +80,16 @@ impl TransactionFee {
     pub fn new_from_fee(fee: BigInt) -> Self {
         Self {
             fee,
-            gas_price: BigInt::from(1),
-            gas_limit: BigInt::from(1),
+            gas_price: BigInt::from(0),
+            gas_limit: BigInt::from(0),
             options: HashMap::new(),
         }
     }
     pub fn new_from_fee_with_option(fee: BigInt, option: FeeOption, option_value: BigInt) -> Self {
         Self {
             fee,
-            gas_price: BigInt::from(1),
-            gas_limit: BigInt::from(1),
+            gas_price: BigInt::from(0),
+            gas_limit: BigInt::from(0),
             options: HashMap::from([(option, option_value.to_string())]),
         }
     }

@@ -3,9 +3,7 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::FeeRate;
 
-use super::state_mapper;
 use crate::rpc::client::NearClient;
 
 #[async_trait]
@@ -16,10 +14,5 @@ impl<C: Client + Clone> ChainState for NearClient<C> {
 
     async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_latest_block().await?.header.height)
-    }
-
-    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        let gas_price = self.get_gas_price().await?;
-        state_mapper::map_gas_price_to_priorities(&gas_price)
     }
 }

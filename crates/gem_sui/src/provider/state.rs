@@ -5,8 +5,6 @@ use chain_traits::ChainState;
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
-use primitives::{FeePriority, FeeRate};
-#[cfg(feature = "rpc")]
 use std::error::Error;
 
 #[cfg(feature = "rpc")]
@@ -21,10 +19,5 @@ impl<C: Client + Clone> ChainState for SuiClient<C> {
 
     async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         self.get_latest_block().await
-    }
-
-    async fn get_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        let gas_price = self.get_gas_price().await?;
-        Ok(vec![FeeRate::regular(FeePriority::Normal, gas_price)])
     }
 }

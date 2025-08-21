@@ -65,7 +65,6 @@ pub enum GemTransactionInputType {
     Stake { asset: GemAsset, operation: GemStakeOperation },
 }
 
-
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionLoadInput {
     pub input_type: GemTransactionInputType,

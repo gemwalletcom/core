@@ -1,4 +1,5 @@
 pub mod account;
+pub mod account_mapper;
 pub mod balances;
 pub mod balances_mapper;
 pub mod preload;

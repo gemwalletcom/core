@@ -174,7 +174,7 @@ impl GemGateway {
         let fees = self
             .provider(chain)
             .await?
-            .get_fee_rates()
+            .get_transaction_fee_rates()
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(fees.into_iter().map(|f| f.into()).collect())
@@ -208,13 +208,13 @@ impl GemGateway {
     ) -> Result<Option<GemTransactionLoadFee>, GatewayError> {
         let fee = provider.get_fee(chain, input.clone()).await?;
         if let Some(fee) = fee {
-            return Ok(Some(fee.into()));
+            return Ok(Some(fee));
         }
         if let Some(fee_data) = provider.get_fee_data(chain, input.clone()).await? {
             let data = self
                 .provider(chain)
                 .await?
-                .get_transaction_fee(fee_data)
+                .get_transaction_fee_from_data(fee_data)
                 .await
                 .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
             return Ok(Some(data.into()));

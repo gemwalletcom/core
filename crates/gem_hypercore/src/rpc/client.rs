@@ -4,9 +4,10 @@ use crate::models::metadata::HypercoreMetadataResponse;
 use crate::models::order::HypercorePerpetualFill;
 use crate::models::position::HypercoreAssetPositions;
 use crate::models::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
-use chain_traits::{ChainPreload, ChainTraits};
+use async_trait::async_trait;
+use chain_traits::{ChainTraits, ChainTransactionLoad};
 use gem_client::Client;
-use primitives::Chain;
+use primitives::{Chain, FeePriority, FeeRate, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 use serde_json::json;
 use std::error::Error;
 
@@ -141,6 +142,22 @@ impl<C: Client> HyperCoreClient<C> {
     }
 }
 
-impl<C: Client> ChainPreload for HyperCoreClient<C> {}
+#[async_trait]
+impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
+    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadMetadata::None)
+    }
+
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadData {
+            fee: TransactionFee::default(),
+            metadata: input.metadata,
+        })
+    }
+
+    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![FeeRate::regular(FeePriority::Normal, 1)])
+    }
+}
 
 impl<C: Client> ChainTraits for HyperCoreClient<C> {}

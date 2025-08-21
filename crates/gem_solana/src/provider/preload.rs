@@ -1,10 +1,10 @@
 use async_trait::async_trait;
-use chain_traits::ChainPreload;
+use chain_traits::ChainTransactionLoad;
 use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    AssetSubtype, SignerInputToken, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    AssetSubtype, FeeRate, SignerInputToken, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
     TransactionPreloadInput,
 };
 
@@ -12,7 +12,7 @@ use crate::{get_token_program_id_by_address, provider::preload_mapper, rpc::clie
 
 #[cfg(feature = "rpc")]
 #[async_trait]
-impl<C: Client + Clone> ChainPreload for SolanaClient<C> {
+impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
     async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         // For Solana, we need to get the sequence number (account nonce)
         // For now, use a default sequence - this would normally come from RPC
@@ -58,6 +58,21 @@ impl<C: Client + Clone> ChainPreload for SolanaClient<C> {
         };
 
         Ok(TransactionLoadData { fee, metadata })
+    }
+
+    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        let prioritization_fees = self.get_recent_prioritization_fees().await?;
+        let input_type = primitives::TransactionInputType::Transfer(primitives::Asset {
+            id: primitives::AssetId::from_chain(self.get_chain()),
+            chain: self.get_chain(),
+            token_id: None,
+            name: "Solana".to_string(),
+            symbol: "SOL".to_string(),
+            decimals: 9,
+            asset_type: primitives::AssetType::NATIVE,
+        });
+
+        Ok(crate::provider::preload_mapper::calculate_fee_rates(&input_type, &prioritization_fees))
     }
 }
 

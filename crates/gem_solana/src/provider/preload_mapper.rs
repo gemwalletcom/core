@@ -10,7 +10,11 @@ use crate::{get_token_program_id_by_address, model::TokenAccountInfo, model::Val
 
 const STATIC_BASE_FEE: u64 = 5000;
 
-pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType, prioritization_fees: &[SolanaPrioritizationFee]) -> TransactionFee {
+pub fn calculate_transaction_fee(
+    input_type: &TransactionInputType,
+    gas_price_type: &GasPriceType,
+    prioritization_fees: &[SolanaPrioritizationFee],
+) -> TransactionFee {
     let gas_limit = get_gas_limit(input_type);
     let priority_fee = calculate_priority_fee(input_type, prioritization_fees);
 
@@ -18,7 +22,7 @@ pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_ty
         GasPriceType::Regular { gas_price } => gas_price,
         GasPriceType::Eip1559 { gas_price, .. } => gas_price,
     };
-    
+
     let total_fee = BigInt::from(STATIC_BASE_FEE) + gas_price + priority_fee;
 
     TransactionFee {
@@ -258,5 +262,4 @@ mod tests {
         }
         assert!(result.fee.fee > BigInt::from(0));
     }
-
 }

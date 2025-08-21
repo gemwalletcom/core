@@ -1,14 +1,15 @@
 use async_trait::async_trait;
-use chain_traits::ChainPreload;
+use chain_traits::ChainTransactionLoad;
+use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{FeePriority, FeeRate, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use crate::rpc::client::TronClient;
 
 #[async_trait]
-impl<C: Client> ChainPreload for TronClient<C> {
+impl<C: Client> ChainTransactionLoad for TronClient<C> {
     async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Send + Sync>> {
         let block = self.get_tron_block().await?;
         let block_data = &block.block_header.raw_data;
@@ -28,5 +29,9 @@ impl<C: Client> ChainPreload for TronClient<C> {
             fee: TransactionFee::default(), // This will be calculated later based on transaction type
             metadata: input.metadata,
         })
+    }
+
+    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(1))])
     }
 }

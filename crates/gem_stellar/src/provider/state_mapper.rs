@@ -6,11 +6,11 @@ use {num_bigint::BigInt, primitives::GasPriceType};
 
 pub fn map_fee_stats_to_priorities(fees: &StellarFees) -> Vec<FeeRate> {
     let min_fee = std::cmp::max(
-        fees.fee_charged.min.parse::<u64>().unwrap_or(100),
-        fees.last_ledger_base_fee.parse::<u64>().unwrap_or(100),
+        fees.fee_charged.min,
+        fees.last_ledger_base_fee,
     );
 
-    let fast_fee = fees.fee_charged.p95.parse::<u64>().unwrap_or(min_fee) * 2;
+    let fast_fee = fees.fee_charged.p95.max(min_fee) * 2;
 
     vec![
         FeeRate::regular(FeePriority::Slow, min_fee),
@@ -27,11 +27,12 @@ mod tests {
     #[test]
     fn test_map_fee_stats_to_priorities() {
         let fees = StellarFees {
+            min: 100,
             fee_charged: StellarFeeCharged {
-                min: "100".to_string(),
-                p95: "500".to_string(),
+                min: 100,
+                p95: 500,
             },
-            last_ledger_base_fee: "150".to_string(),
+            last_ledger_base_fee: 150,
         };
 
         let result = map_fee_stats_to_priorities(&fees);
