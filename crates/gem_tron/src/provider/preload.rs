@@ -31,7 +31,7 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
         })
     }
 
-    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Send + Sync>> {
+    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Send + Sync>> {
         Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(1))])
     }
 }

@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString};
 use typeshare::typeshare;
 
+pub use crate::gas_price_type::GasPriceType;
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, AsRefStr, EnumString, EnumIter, PartialEq, Eq)]
 #[typeshare(swift = "Equatable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
@@ -21,32 +23,6 @@ pub enum FeeUnitType {
     SatVb,
     Gwei,
     Native,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum GasPriceType {
-    Regular { gas_price: BigInt },
-    Eip1559 { gas_price: BigInt, priority_fee: BigInt },
-}
-
-impl GasPriceType {
-    pub fn regular<T: Into<BigInt>>(gas_price: T) -> Self {
-        Self::Regular { gas_price: gas_price.into() }
-    }
-
-    pub fn eip1559<T: Into<BigInt>, U: Into<BigInt>>(gas_price: T, priority_fee: U) -> Self {
-        Self::Eip1559 {
-            gas_price: gas_price.into(),
-            priority_fee: priority_fee.into(),
-        }
-    }
-
-    pub fn gas_price(&self) -> BigInt {
-        match self {
-            GasPriceType::Regular { gas_price } => gas_price.clone(),
-            GasPriceType::Eip1559 { gas_price, .. } => gas_price.clone(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

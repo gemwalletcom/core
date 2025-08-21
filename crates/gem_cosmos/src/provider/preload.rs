@@ -35,7 +35,7 @@ impl<C: Client> ChainTransactionLoad for CosmosClient<C> {
         })
     }
 
-    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let base_fee = self.get_base_fee();
         let cosmos_chain = self.get_chain();
 

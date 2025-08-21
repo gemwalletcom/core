@@ -1,4 +1,4 @@
-use crate::gateway::models::GemUTXO;
+use crate::gateway::GemUTXO;
 use primitives::transaction_load::TransactionLoadMetadata;
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -29,18 +29,18 @@ impl From<GemSolanaTokenProgramId> for primitives::SolanaTokenProgramId {
 pub enum GemTransactionLoadMetadata {
     None,
     Solana {
-        sender_token_address: String,
+        sender_token_address: Option<String>,
         recipient_token_address: Option<String>,
-        token_program: GemSolanaTokenProgramId,
-        sequence: i64,
+        token_program: Option<GemSolanaTokenProgramId>,
+        block_hash: String,
     },
     Ton {
-        jetton_wallet_address: String,
-        sequence: i64,
+        jetton_wallet_address: Option<String>,
+        sequence: u64,
     },
     Cosmos {
-        account_number: i64,
-        sequence: i64,
+        account_number: u64,
+        sequence: u64,
         chain_id: String,
     },
     Bitcoin {
@@ -50,40 +50,40 @@ pub enum GemTransactionLoadMetadata {
         utxos: Vec<GemUTXO>,
     },
     Evm {
-        nonce: i64,
-        chain_id: i64,
+        nonce: u64,
+        chain_id: u64,
     },
     Near {
-        sequence: i64,
+        sequence: u64,
         block_hash: String,
         is_destination_address_exist: bool,
     },
     Stellar {
-        sequence: i64,
+        sequence: u64,
         is_destination_address_exist: bool,
     },
     Xrp {
-        sequence: i64,
+        sequence: u64,
     },
     Algorand {
-        sequence: i64,
+        sequence: u64,
     },
     Aptos {
-        sequence: i64,
+        sequence: u64,
     },
     Polkadot {
-        sequence: i64,
+        sequence: u64,
         genesis_hash: String,
         block_hash: String,
-        block_number: i64,
+        block_number: u64,
         spec_version: u64,
         transaction_version: u64,
-        period: i64,
+        period: u64,
     },
     Tron {
-        block_number: i64,
-        block_version: i64,
-        block_timestamp: i64,
+        block_number: u64,
+        block_version: u64,
+        block_timestamp: u64,
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
@@ -98,27 +98,27 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 sender_token_address,
                 recipient_token_address,
                 token_program,
-                sequence,
+                block_hash,
             } => GemTransactionLoadMetadata::Solana {
                 sender_token_address,
                 recipient_token_address,
-                token_program: token_program.into(),
-                sequence: sequence as i64,
+                token_program: token_program.map(|tp| tp.into()),
+                block_hash,
             },
             TransactionLoadMetadata::Ton {
                 jetton_wallet_address,
                 sequence,
             } => GemTransactionLoadMetadata::Ton {
                 jetton_wallet_address,
-                sequence: sequence as i64,
+                sequence,
             },
             TransactionLoadMetadata::Cosmos {
                 account_number,
                 sequence,
                 chain_id,
             } => GemTransactionLoadMetadata::Cosmos {
-                account_number: account_number as i64,
-                sequence: sequence as i64,
+                account_number,
+                sequence,
                 chain_id,
             },
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin {
@@ -127,16 +127,13 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano {
                 utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
             },
-            TransactionLoadMetadata::Evm { nonce, chain_id } => GemTransactionLoadMetadata::Evm {
-                nonce: nonce as i64,
-                chain_id: chain_id as i64,
-            },
+            TransactionLoadMetadata::Evm { nonce, chain_id } => GemTransactionLoadMetadata::Evm { nonce, chain_id },
             TransactionLoadMetadata::Near {
                 sequence,
                 block_hash,
                 is_destination_address_exist,
             } => GemTransactionLoadMetadata::Near {
-                sequence: sequence as i64,
+                sequence,
                 block_hash,
                 is_destination_address_exist,
             },
@@ -144,12 +141,12 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 sequence,
                 is_destination_address_exist,
             } => GemTransactionLoadMetadata::Stellar {
-                sequence: sequence as i64,
+                sequence,
                 is_destination_address_exist,
             },
-            TransactionLoadMetadata::Xrp { sequence } => GemTransactionLoadMetadata::Xrp { sequence: sequence as i64 },
-            TransactionLoadMetadata::Algorand { sequence } => GemTransactionLoadMetadata::Algorand { sequence: sequence as i64 },
-            TransactionLoadMetadata::Aptos { sequence } => GemTransactionLoadMetadata::Aptos { sequence: sequence as i64 },
+            TransactionLoadMetadata::Xrp { sequence } => GemTransactionLoadMetadata::Xrp { sequence },
+            TransactionLoadMetadata::Algorand { sequence } => GemTransactionLoadMetadata::Algorand { sequence },
+            TransactionLoadMetadata::Aptos { sequence } => GemTransactionLoadMetadata::Aptos { sequence },
             TransactionLoadMetadata::Polkadot {
                 sequence,
                 genesis_hash,
@@ -159,13 +156,13 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_version,
                 period,
             } => GemTransactionLoadMetadata::Polkadot {
-                sequence: sequence as i64,
+                sequence,
                 genesis_hash,
                 block_hash,
-                block_number: block_number as i64,
+                block_number,
                 spec_version,
                 transaction_version,
-                period: period as i64,
+                period,
             },
             TransactionLoadMetadata::Tron {
                 block_number,
@@ -175,9 +172,9 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 parent_hash,
                 witness_address,
             } => GemTransactionLoadMetadata::Tron {
-                block_number: block_number as i64,
-                block_version: block_version as i64,
-                block_timestamp: block_timestamp as i64,
+                block_number,
+                block_version,
+                block_timestamp,
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
@@ -194,27 +191,27 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 sender_token_address,
                 recipient_token_address,
                 token_program,
-                sequence,
+                block_hash,
             } => TransactionLoadMetadata::Solana {
                 sender_token_address,
                 recipient_token_address,
-                token_program: token_program.into(),
-                sequence: sequence as u64,
+                token_program: token_program.map(|tp| tp.into()),
+                block_hash,
             },
             GemTransactionLoadMetadata::Ton {
                 jetton_wallet_address,
                 sequence,
             } => TransactionLoadMetadata::Ton {
                 jetton_wallet_address,
-                sequence: sequence as u64,
+                sequence,
             },
             GemTransactionLoadMetadata::Cosmos {
                 account_number,
                 sequence,
                 chain_id,
             } => TransactionLoadMetadata::Cosmos {
-                account_number: account_number as u64,
-                sequence: sequence as u64,
+                account_number,
+                sequence,
                 chain_id,
             },
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin {
@@ -223,16 +220,13 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano {
                 utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
             },
-            GemTransactionLoadMetadata::Evm { nonce, chain_id } => TransactionLoadMetadata::Evm {
-                nonce: nonce as u64,
-                chain_id: chain_id as u64,
-            },
+            GemTransactionLoadMetadata::Evm { nonce, chain_id } => TransactionLoadMetadata::Evm { nonce, chain_id },
             GemTransactionLoadMetadata::Near {
                 sequence,
                 block_hash,
                 is_destination_address_exist,
             } => TransactionLoadMetadata::Near {
-                sequence: sequence as u64,
+                sequence,
                 block_hash,
                 is_destination_address_exist,
             },
@@ -240,12 +234,12 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 sequence,
                 is_destination_address_exist,
             } => TransactionLoadMetadata::Stellar {
-                sequence: sequence as u64,
+                sequence,
                 is_destination_address_exist,
             },
-            GemTransactionLoadMetadata::Xrp { sequence } => TransactionLoadMetadata::Xrp { sequence: sequence as u64 },
-            GemTransactionLoadMetadata::Algorand { sequence } => TransactionLoadMetadata::Algorand { sequence: sequence as u64 },
-            GemTransactionLoadMetadata::Aptos { sequence } => TransactionLoadMetadata::Aptos { sequence: sequence as u64 },
+            GemTransactionLoadMetadata::Xrp { sequence } => TransactionLoadMetadata::Xrp { sequence },
+            GemTransactionLoadMetadata::Algorand { sequence } => TransactionLoadMetadata::Algorand { sequence },
+            GemTransactionLoadMetadata::Aptos { sequence } => TransactionLoadMetadata::Aptos { sequence },
             GemTransactionLoadMetadata::Polkadot {
                 sequence,
                 genesis_hash,
@@ -255,13 +249,13 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_version,
                 period,
             } => TransactionLoadMetadata::Polkadot {
-                sequence: sequence as u64,
+                sequence,
                 genesis_hash,
                 block_hash,
-                block_number: block_number as u64,
+                block_number,
                 spec_version,
                 transaction_version,
-                period: period as u64,
+                period,
             },
             GemTransactionLoadMetadata::Tron {
                 block_number,
@@ -271,9 +265,9 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 parent_hash,
                 witness_address,
             } => TransactionLoadMetadata::Tron {
-                block_number: block_number as u64,
-                block_version: block_version as u64,
-                block_timestamp: block_timestamp as u64,
+                block_number,
+                block_version,
+                block_timestamp,
                 transaction_tree_root,
                 parent_hash,
                 witness_address,

@@ -24,6 +24,16 @@ pub enum TransactionInputType {
     Stake(Asset, StakeType),
 }
 
+impl TransactionInputType {
+    pub fn get_asset(&self) -> &Asset {
+        match self {
+            TransactionInputType::Transfer(asset) => asset,
+            TransactionInputType::Swap(_, asset) => asset,
+            TransactionInputType::Stake(asset, _) => asset,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionLoadInput {
     pub input_type: TransactionInputType,
@@ -45,6 +55,7 @@ impl TransactionLoadInput {
 impl TransactionLoadInput {
     pub fn to_preload_input(&self) -> TransactionPreloadInput {
         TransactionPreloadInput {
+            asset: self.input_type.get_asset().clone(),
             sender_address: self.sender_address.clone(),
             destination_address: self.destination_address.clone(),
         }
@@ -62,7 +73,7 @@ pub struct TransactionFee {
     pub fee: BigInt,
     pub gas_price: BigInt,
     pub gas_limit: BigInt,
-    pub options: HashMap<FeeOption, String>,
+    pub options: HashMap<FeeOption, BigInt>,
 }
 
 impl Default for TransactionFee {
@@ -90,14 +101,13 @@ impl TransactionFee {
             fee,
             gas_price: BigInt::from(0),
             gas_limit: BigInt::from(0),
-            options: HashMap::from([(option, option_value.to_string())]),
+            options: HashMap::from([(option, option_value)]),
         }
     }
 }
 impl TransactionLoadMetadata {
     pub fn get_sequence(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         match self {
-            TransactionLoadMetadata::Solana { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Ton { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Cosmos { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Near { sequence, .. } => Ok(*sequence),
@@ -121,6 +131,7 @@ impl TransactionLoadMetadata {
 
     pub fn get_block_hash(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         match self {
+            TransactionLoadMetadata::Solana { block_hash, .. } => Ok(block_hash.clone()),
             TransactionLoadMetadata::Near { block_hash, .. } => Ok(block_hash.clone()),
             TransactionLoadMetadata::Polkadot { block_hash, .. } => Ok(block_hash.clone()),
             _ => Err("Block hash not available for this metadata type".into()),
@@ -171,44 +182,18 @@ impl TransactionFee {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SignerInputToken {
-    pub sender_token_address: String,
-    pub recipient_token_address: Option<String>,
-    pub token_program: SolanaTokenProgramId,
-}
-
-impl Default for SignerInputToken {
-    fn default() -> Self {
-        Self {
-            sender_token_address: String::new(),
-            recipient_token_address: None,
-            token_program: SolanaTokenProgramId::Token,
-        }
-    }
-}
-
-impl SignerInputToken {
-    pub fn new_sender_token_address(address: String) -> Self {
-        Self {
-            sender_token_address: address,
-            recipient_token_address: None,
-            token_program: SolanaTokenProgramId::Token,
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionLoadMetadata {
     None,
     Solana {
-        sender_token_address: String,
+        sender_token_address: Option<String>,
         recipient_token_address: Option<String>,
-        token_program: SolanaTokenProgramId,
-        sequence: u64,
+        token_program: Option<SolanaTokenProgramId>,
+        block_hash: String,
     },
     Ton {
-        jetton_wallet_address: String,
+        jetton_wallet_address: Option<String>,
         sequence: u64,
     },
     Cosmos {

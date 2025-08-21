@@ -25,7 +25,7 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
         })
     }
 
-    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let priority = self.chain.get_blocks_fee_priority();
         let (slow, normal, fast) = futures::try_join!(self.get_fee(priority.slow), self.get_fee(priority.normal), self.get_fee(priority.fast))?;
         Ok(vec![

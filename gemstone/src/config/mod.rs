@@ -126,6 +126,6 @@ impl Config {
     }
 
     fn get_solana_token_program_id(&self, address: &str) -> Option<String> {
-        gem_solana::get_token_program_id_by_address(address).map(|x| x.as_ref().to_string())
+        gem_solana::get_token_program_id_by_address(address).ok().map(|x| x.as_ref().to_string())
     }
 }

@@ -5,13 +5,13 @@ pub mod staking;
 pub mod transaction;
 pub mod transaction_metadata;
 
+pub use asset::*;
 pub use balances::*;
 pub use perpetual::*;
 pub use staking::*;
 pub use transaction::*;
 pub use transaction_metadata::*;
 
-// Re-export simpler models inline
 use primitives::{FeeRate, TransactionPreloadInput, UTXO};
 
 // ChainAccount models
@@ -39,6 +39,7 @@ pub struct GemFeeRate {
 // ChainPreload models
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionPreloadInput {
+    pub asset: GemAsset,
     pub sender_address: String,
     pub destination_address: String,
 }
@@ -89,6 +90,7 @@ impl From<FeeRate> for GemFeeRate {
 impl From<TransactionPreloadInput> for GemTransactionPreloadInput {
     fn from(input: TransactionPreloadInput) -> Self {
         Self {
+            asset: input.asset.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
         }
@@ -98,6 +100,7 @@ impl From<TransactionPreloadInput> for GemTransactionPreloadInput {
 impl From<GemTransactionPreloadInput> for TransactionPreloadInput {
     fn from(input: GemTransactionPreloadInput) -> Self {
         Self {
+            asset: input.asset.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
         }

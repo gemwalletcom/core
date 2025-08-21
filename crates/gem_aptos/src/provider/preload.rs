@@ -23,7 +23,7 @@ impl<C: Client> ChainTransactionLoad for AptosClient<C> {
         Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 
-    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let gas_fee = self.get_gas_price().await?;
 
         Ok(vec![

@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, TransactionFee, TransactionLoadData, TransactionLoadInput,
+    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
     TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
@@ -90,7 +90,7 @@ pub trait ChainTransactionLoad: Send + Sync {
         Err("Chain does not support transaction fee".into())
     }
 
-    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support fee rates".into())
     }
 

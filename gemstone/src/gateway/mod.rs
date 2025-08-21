@@ -1,4 +1,3 @@
-use crate::gateway::models::asset::GemAsset;
 use crate::network::{jsonrpc_client_with_chain, AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::client::AlgorandClient;
@@ -20,7 +19,7 @@ use std::sync::Arc;
 pub mod models;
 
 pub use models::*;
-use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod};
+use primitives::{chain_cosmos::CosmosChain, Asset, AssetId, AssetType, BitcoinChain, Chain, ChartPeriod, TransactionInputType};
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -171,10 +170,22 @@ impl GemGateway {
     }
 
     pub async fn get_fee_rates(&self, chain: Chain) -> Result<Vec<GemFeeRate>, GatewayError> {
+        // Create a dummy native asset for fee rate calculation since most chains only consider chain-specific factors
+        let dummy_asset = Asset {
+            id: AssetId { chain, token_id: None },
+            chain,
+            token_id: None,
+            name: "Native".to_string(),
+            symbol: "Native".to_string(),
+            decimals: 18,
+            asset_type: AssetType::NATIVE,
+        };
+        let input_type = TransactionInputType::Transfer(dummy_asset);
+        
         let fees = self
             .provider(chain)
             .await?
-            .get_transaction_fee_rates()
+            .get_transaction_fee_rates(input_type)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(fees.into_iter().map(|f| f.into()).collect())
@@ -239,7 +250,10 @@ impl GemGateway {
 
         let data = if let Some(fee) = fee { load_data.new_from(fee.into()) } else { load_data };
 
-        Ok(models::transaction::map_transaction_load_data(data, &input))
+        Ok(GemTransactionData {
+            fee: data.fee.into(),
+            metadata: data.metadata.into(),
+        })
     }
 
     pub async fn get_positions(&self, chain: Chain, address: String) -> Result<GemPerpetualPositionsSummary, GatewayError> {

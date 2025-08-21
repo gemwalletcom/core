@@ -105,6 +105,7 @@ pub use self::solana_token_program::SolanaTokenProgramId;
 pub mod solana_types;
 pub use self::solana_types::{SolanaAccountMeta, SolanaInstruction};
 pub mod fee;
+pub mod gas_price_type;
 pub use self::fee::{FeePriority, FeeRate, FeeUnitType, GasPriceType};
 pub mod response;
 pub use self::response::{ResponseError, ResponseResult};
@@ -147,5 +148,5 @@ pub mod transaction_preload;
 pub use self::transaction_preload::TransactionPreloadInput;
 pub mod transaction_load;
 pub use self::transaction_load::{
-    SignerInputToken, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
 };

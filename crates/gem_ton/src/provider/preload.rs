@@ -11,7 +11,6 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use crate::rpc::client::TonClient;
-use crate::rpc::model::JettonWalletsResponse;
 
 const TON_BASE_FEE: u64 = 10_000_000;
 const JETTON_ACCOUNT_FEE_EXISTING: u64 = 100_000_000;
@@ -35,14 +34,13 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, account_exists: b
                 } else {
                     BigInt::from(JETTON_ACCOUNT_CREATION)
                 };
-                options.insert(FeeOption::TokenAccountCreation, jetton_fee.to_string());
+                options.insert(FeeOption::TokenAccountCreation, jetton_fee.clone());
                 &base_fee + jetton_fee
             }
         },
         TransactionInputType::Swap(_, _) => {
-            let jetton_fee = BigInt::from(JETTON_ACCOUNT_CREATION);
-            options.insert(FeeOption::TokenAccountCreation, jetton_fee.to_string());
-            &base_fee + jetton_fee
+            options.insert(FeeOption::TokenAccountCreation, BigInt::from(JETTON_ACCOUNT_CREATION));
+            &base_fee + BigInt::from(JETTON_ACCOUNT_CREATION)
         }
         _ => base_fee.clone(),
     };
@@ -55,13 +53,6 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, account_exists: b
     }
 }
 
-fn check_jetton_account_exists(jetton_wallets: &JettonWalletsResponse, token_id: &str) -> bool {
-    jetton_wallets.jetton_wallets.iter().any(|wallet| {
-        crate::address::hex_to_base64_address(wallet.jetton.clone())
-            .map(|address| address == *token_id)
-            .unwrap_or(false)
-    })
-}
 
 #[async_trait]
 impl<C: Client> ChainTransactionLoad for TonClient<C> {
@@ -69,89 +60,50 @@ impl<C: Client> ChainTransactionLoad for TonClient<C> {
         let wallet_info = self.get_wallet_information(input.sender_address.clone()).await?;
         let sequence = wallet_info.seqno.unwrap_or(0) as u64;
 
-        // For preload, we need to gather jetton wallet information if needed
-        // Since we don't have transaction details in TransactionPreloadInput, we'll use empty string
-        // The actual jetton wallet address will be determined based on transaction type during load
-        let jetton_wallet_address = String::new();
+        return match &input.asset.id.token_subtype() {
+            AssetSubtype::TOKEN => {
+                let token_id = input.asset.id.token_id.as_ref().ok_or("Missing token ID for jetton transaction")?;
+                let jetton_token_id = crate::address::base64_to_hex_address(token_id.clone())?.to_uppercase();
 
-        Ok(TransactionLoadMetadata::Ton {
-            jetton_wallet_address,
-            sequence,
-        })
+                let jetton_wallets = self.get_jetton_wallets(input.sender_address.clone()).await?;
+
+                let jetton_wallet_address = jetton_wallets
+                    .jetton_wallets
+                    .iter()
+                    .find(|wallet| wallet.jetton == jetton_token_id)
+                    .map(|wallet| wallet.address.clone())
+                    .ok_or_else(|| format!("Jetton wallet not found for token {}", jetton_token_id))?;
+
+                Ok(TransactionLoadMetadata::Ton {
+                    jetton_wallet_address: Some(jetton_wallet_address),
+                    sequence,
+                })
+            }
+            AssetSubtype::NATIVE => Ok(TransactionLoadMetadata::Ton {
+                jetton_wallet_address: None,
+                sequence,
+            }),
+        };
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        // Extract metadata and determine if we need to fetch additional jetton data
-        let (jetton_wallet_address, account_exists) = self.get_jetton_info_for_transaction(&input).await?;
-        let fee = calculate_transaction_fee(&input, account_exists);
+        let fee = calculate_transaction_fee(&input, input.metadata.get_is_destination_address_exist()?);
 
-        // Use the sequence from the metadata passed in
-        let sequence = input.metadata.get_sequence()?;
-        let metadata = TransactionLoadMetadata::Ton {
-            jetton_wallet_address,
-            sequence,
-        };
-
-        Ok(TransactionLoadData { fee, metadata })
+        Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 
-    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Ok(vec![
             FeeRate::regular(FeePriority::Normal, BigInt::from(10000000)), // 0.01 TON
         ])
     }
 }
 
-impl<C: Client> TonClient<C> {
-    async fn get_jetton_info_for_transaction(&self, input: &TransactionLoadInput) -> Result<(String, bool), Box<dyn Error + Sync + Send>> {
-        match &input.input_type {
-            TransactionInputType::Transfer(asset) => match asset.id.token_subtype() {
-                AssetSubtype::TOKEN => {
-                    let token_id = asset.id.token_id.as_ref().ok_or("Missing token ID")?;
-                    let jetton_token_id = crate::address::base64_to_hex_address(token_id.clone())?.to_uppercase();
-
-                    let jetton_wallets = self.get_jetton_wallets(input.sender_address.clone()).await?;
-
-                    let jetton_wallet_address = jetton_wallets
-                        .jetton_wallets
-                        .iter()
-                        .find(|wallet| wallet.jetton == jetton_token_id)
-                        .map(|wallet| wallet.address.clone())
-                        .ok_or_else(|| format!("Jetton wallet not found for token {}", jetton_token_id))?;
-
-                    let account_exists = check_jetton_account_exists(&jetton_wallets, token_id);
-                    Ok((jetton_wallet_address, account_exists))
-                }
-                AssetSubtype::NATIVE => Ok(("".to_string(), true)),
-            },
-            TransactionInputType::Swap(_, to_asset) => {
-                if let Some(token_id) = &to_asset.id.token_id {
-                    let jetton_wallets = self.get_jetton_wallets(input.sender_address.clone()).await?;
-                    let jetton_token_id = crate::address::base64_to_hex_address(token_id.clone())?.to_uppercase();
-
-                    let jetton_wallet_address = jetton_wallets
-                        .jetton_wallets
-                        .iter()
-                        .find(|wallet| wallet.jetton == jetton_token_id)
-                        .map(|wallet| wallet.address.clone())
-                        .ok_or_else(|| format!("Jetton wallet not found for token {}", token_id))?;
-
-                    let account_exists = check_jetton_account_exists(&jetton_wallets, token_id);
-                    Ok((jetton_wallet_address, account_exists))
-                } else {
-                    Ok(("".to_string(), true))
-                }
-            }
-            TransactionInputType::Stake(_, _) => Ok(("".to_string(), true)),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{Asset, AssetId, AssetType, Chain, GasPriceType};
     use num_bigint::BigInt;
+    use primitives::{Asset, AssetId, AssetType, Chain, GasPriceType};
 
     fn create_input(asset_type: AssetType, memo: Option<String>) -> TransactionLoadInput {
         let (token_id, name, symbol, decimals) = match asset_type {
@@ -180,7 +132,7 @@ mod tests {
             memo,
             is_max_value: false,
             metadata: TransactionLoadMetadata::Ton {
-                jetton_wallet_address: "".to_string(),
+                jetton_wallet_address: None,
                 sequence: 0,
             },
         }
@@ -206,7 +158,7 @@ mod tests {
         assert_eq!(fee.fee, BigInt::from(TON_BASE_FEE + JETTON_ACCOUNT_FEE_EXISTING));
         assert_eq!(
             fee.options.get(&FeeOption::TokenAccountCreation),
-            Some(&BigInt::from(JETTON_ACCOUNT_FEE_EXISTING).to_string())
+            Some(&BigInt::from(JETTON_ACCOUNT_FEE_EXISTING))
         );
     }
 
@@ -216,7 +168,7 @@ mod tests {
         assert_eq!(fee.fee, BigInt::from(TON_BASE_FEE + JETTON_ACCOUNT_FEE_EXISTING_WITH_MEMO));
         assert_eq!(
             fee.options.get(&FeeOption::TokenAccountCreation),
-            Some(&BigInt::from(JETTON_ACCOUNT_FEE_EXISTING_WITH_MEMO).to_string())
+            Some(&BigInt::from(JETTON_ACCOUNT_FEE_EXISTING_WITH_MEMO))
         );
     }
 
@@ -224,19 +176,13 @@ mod tests {
     fn test_jetton_new_account() {
         let fee = calculate_transaction_fee(&create_input(AssetType::JETTON, None), false);
         assert_eq!(fee.fee, BigInt::from(TON_BASE_FEE + JETTON_ACCOUNT_CREATION));
-        assert_eq!(
-            fee.options.get(&FeeOption::TokenAccountCreation),
-            Some(&BigInt::from(JETTON_ACCOUNT_CREATION).to_string())
-        );
+        assert_eq!(fee.options.get(&FeeOption::TokenAccountCreation), Some(&BigInt::from(JETTON_ACCOUNT_CREATION)));
     }
 
     #[test]
     fn test_jetton_new_account_ignores_memo() {
         let fee = calculate_transaction_fee(&create_input(AssetType::JETTON, Some("memo".to_string())), false);
         assert_eq!(fee.fee, BigInt::from(TON_BASE_FEE + JETTON_ACCOUNT_CREATION));
-        assert_eq!(
-            fee.options.get(&FeeOption::TokenAccountCreation),
-            Some(&BigInt::from(JETTON_ACCOUNT_CREATION).to_string())
-        );
+        assert_eq!(fee.options.get(&FeeOption::TokenAccountCreation), Some(&BigInt::from(JETTON_ACCOUNT_CREATION)));
     }
 }

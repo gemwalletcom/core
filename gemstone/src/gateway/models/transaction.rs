@@ -1,9 +1,8 @@
-use crate::gateway::models::asset::GemAsset;
-use crate::gateway::models::transaction_metadata::GemTransactionLoadMetadata;
+use crate::gateway::{GemAsset, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
 use primitives::{
-    GasPriceType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionMetadata,
+    GasPriceType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata,
     TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate,
 };
 use std::collections::HashMap;
@@ -95,12 +94,6 @@ pub struct GemTransactionLoadFee {
     pub options: GemFeeOptions,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSignerInputToken {
-    pub sender_token_address: String,
-    pub recipient_token_address: Option<String>,
-    pub token_program: String,
-}
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionData {
@@ -217,6 +210,14 @@ impl From<FeeOption> for GemFeeOption {
     }
 }
 
+impl From<GemFeeOption> for FeeOption {
+    fn from(value: GemFeeOption) -> Self {
+        match value {
+            GemFeeOption::TokenAccountCreation => FeeOption::TokenAccountCreation,
+        }
+    }
+}
+
 impl GemFeeOptions {
     pub fn new() -> Self {
         GemFeeOptions { options: HashMap::new() }
@@ -234,14 +235,20 @@ impl GemFeeOptions {
     pub fn is_empty(&self) -> bool {
         self.options.is_empty()
     }
+
+    pub fn from_primitives(options: HashMap<FeeOption, BigInt>) -> Self {
+        GemFeeOptions {
+            options: options.into_iter().map(|(key, value)| (key.into(), value.to_string())).collect(),
+        }
+    }
 }
 
 impl From<GemTransactionLoadFee> for TransactionFee {
     fn from(value: GemTransactionLoadFee) -> Self {
         TransactionFee {
-            fee: BigInt::parse_bytes(value.fee.as_bytes(), 10).unwrap_or_default(),
-            gas_price: BigInt::parse_bytes(value.gas_price.as_bytes(), 10).unwrap_or_default(),
-            gas_limit: BigInt::parse_bytes(value.gas_limit.as_bytes(), 10).unwrap_or_default(),
+            fee: value.fee.parse().unwrap_or_default(),
+            gas_price: value.gas_price.parse().unwrap_or_default(),
+            gas_limit: value.gas_limit.parse().unwrap_or_default(),
             options: value
                 .options
                 .options
@@ -250,7 +257,7 @@ impl From<GemTransactionLoadFee> for TransactionFee {
                     let fee_option = match key {
                         GemFeeOption::TokenAccountCreation => FeeOption::TokenAccountCreation,
                     };
-                    (fee_option, value)
+                    (fee_option, value.parse().unwrap_or_default())
                 })
                 .collect(),
         }
@@ -263,23 +270,8 @@ impl From<TransactionFee> for GemTransactionLoadFee {
             fee: value.fee.to_string(),
             gas_price: value.gas_price.to_string(),
             gas_limit: value.gas_limit.to_string(),
-            options: GemFeeOptions {
-                options: value.options.into_iter().map(|(key, value)| (key.into(), value)).collect(),
-            },
+            options: GemFeeOptions::from_primitives(value.options),
         }
     }
 }
 
-pub fn map_transaction_load_data(load_data: TransactionLoadData, _input: &GemTransactionLoadInput) -> GemTransactionData {
-    GemTransactionData {
-        fee: GemTransactionLoadFee {
-            fee: load_data.fee.fee.to_string(),
-            gas_price: load_data.fee.gas_price.to_string(),
-            gas_limit: load_data.fee.gas_limit.to_string(),
-            options: GemFeeOptions {
-                options: load_data.fee.options.into_iter().map(|(key, value)| (key.into(), value)).collect(),
-            },
-        },
-        metadata: load_data.metadata.into(),
-    }
-}

@@ -25,7 +25,7 @@ impl<C: Client> ChainTransactionLoad for AlgorandClient<C> {
         })
     }
 
-    async fn get_transaction_fee_rates(&self) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Ok(vec![FeeRate::regular(
             FeePriority::Normal,
             BigInt::from(self.get_transactions_params().await?.min_fee),
