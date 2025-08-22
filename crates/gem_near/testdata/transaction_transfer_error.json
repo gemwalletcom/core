@@ -1,0 +1,18 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1755821717,
+    "error": {
+      "code": -32000,
+      "message": "Server error",
+      "data": {
+        "TxExecutionError": {
+          "InvalidTxError": {
+            "InvalidNonce": {
+              "ak_nonce": 116479371000028,
+              "tx_nonce": 116479371000028
+            }
+          }
+        }
+      }
+    }
+  }

@@ -18,6 +18,7 @@ async-trait = { workspace = true, optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 bs58 = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
@@ -29,5 +30,5 @@ test = false
 
 [features]
 default = []
-rpc = ["dep:serde_json", "dep:gem_jsonrpc", "dep:gem_client", "dep:chain_traits", "dep:async-trait", "dep:chrono", "dep:bs58", "dep:hex"]
+rpc = ["dep:serde_json", "dep:gem_jsonrpc", "dep:gem_client", "dep:chain_traits", "dep:async-trait", "dep:chrono", "dep:bs58", "dep:hex", "dep:futures"]
 reqwest = ["gem_client/reqwest", "gem_jsonrpc/reqwest"]

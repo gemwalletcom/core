@@ -48,7 +48,7 @@ pub struct TransactionLoadInput {
 
 impl TransactionLoadInput {
     pub fn default_fee(&self) -> TransactionFee {
-        TransactionFee::new_from_fee(self.gas_price.gas_price())
+        TransactionFee::new_from_gas_price(self.gas_price.gas_price())
     }
 }
 
@@ -88,6 +88,14 @@ impl Default for TransactionFee {
 }
 
 impl TransactionFee {
+    pub fn new_from_fee(fee: BigInt) -> Self {
+        Self {
+            fee: fee.clone(),
+            gas_price: BigInt::from(0),
+            gas_limit: BigInt::from(0),
+            options: HashMap::new(),
+        }
+    }
     pub fn new_from_gas_price(gas_price: BigInt) -> Self {
         Self {
             fee: gas_price.clone(),
@@ -96,11 +104,11 @@ impl TransactionFee {
             options: HashMap::new(),
         }
     }
-    pub fn new_from_fee(fee: BigInt) -> Self {
+    pub fn new_from_gas_price_limit(gas_price: BigInt, gas_limit: BigInt) -> Self {
         Self {
-            fee: fee.clone(),
-            gas_price: fee.clone(),
-            gas_limit: BigInt::from(0),
+            fee: gas_price.clone() * &gas_limit,
+            gas_price,
+            gas_limit,
             options: HashMap::new(),
         }
     }
@@ -166,9 +174,6 @@ impl TransactionLoadMetadata {
 
     pub fn get_is_destination_address_exist(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
         match self {
-            TransactionLoadMetadata::Near {
-                is_destination_address_exist, ..
-            } => Ok(*is_destination_address_exist),
             TransactionLoadMetadata::Stellar {
                 is_destination_address_exist, ..
             } => Ok(*is_destination_address_exist),
@@ -223,7 +228,6 @@ pub enum TransactionLoadMetadata {
     Near {
         sequence: u64,
         block_hash: String,
-        is_destination_address_exist: bool,
     },
     Stellar {
         sequence: u64,

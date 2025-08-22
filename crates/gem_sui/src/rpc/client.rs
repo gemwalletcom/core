@@ -149,7 +149,7 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
-            fee: TransactionFee::new_from_fee(input.gas_price.total_fee()),
+            fee: TransactionFee::default(),
             metadata: input.metadata,
         })
     }

@@ -56,7 +56,6 @@ pub enum GemTransactionLoadMetadata {
     Near {
         sequence: u64,
         block_hash: String,
-        is_destination_address_exist: bool,
     },
     Stellar {
         sequence: u64,
@@ -130,15 +129,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
             },
             TransactionLoadMetadata::Evm { nonce, chain_id } => GemTransactionLoadMetadata::Evm { nonce, chain_id },
-            TransactionLoadMetadata::Near {
-                sequence,
-                block_hash,
-                is_destination_address_exist,
-            } => GemTransactionLoadMetadata::Near {
-                sequence,
-                block_hash,
-                is_destination_address_exist,
-            },
+            TransactionLoadMetadata::Near { sequence, block_hash } => GemTransactionLoadMetadata::Near { sequence, block_hash },
             TransactionLoadMetadata::Stellar {
                 sequence,
                 is_destination_address_exist,
@@ -147,7 +138,15 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 is_destination_address_exist,
             },
             TransactionLoadMetadata::Xrp { sequence } => GemTransactionLoadMetadata::Xrp { sequence },
-            TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
+            TransactionLoadMetadata::Algorand {
+                sequence,
+                block_hash,
+                chain_id,
+            } => GemTransactionLoadMetadata::Algorand {
+                sequence,
+                block_hash,
+                chain_id,
+            },
             TransactionLoadMetadata::Aptos { sequence } => GemTransactionLoadMetadata::Aptos { sequence },
             TransactionLoadMetadata::Polkadot {
                 sequence,
@@ -223,15 +222,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
             },
             GemTransactionLoadMetadata::Evm { nonce, chain_id } => TransactionLoadMetadata::Evm { nonce, chain_id },
-            GemTransactionLoadMetadata::Near {
-                sequence,
-                block_hash,
-                is_destination_address_exist,
-            } => TransactionLoadMetadata::Near {
-                sequence,
-                block_hash,
-                is_destination_address_exist,
-            },
+            GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {
                 sequence,
                 is_destination_address_exist,
@@ -240,7 +231,15 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 is_destination_address_exist,
             },
             GemTransactionLoadMetadata::Xrp { sequence } => TransactionLoadMetadata::Xrp { sequence },
-            GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
+            GemTransactionLoadMetadata::Algorand {
+                sequence,
+                block_hash,
+                chain_id,
+            } => TransactionLoadMetadata::Algorand {
+                sequence,
+                block_hash,
+                chain_id,
+            },
             GemTransactionLoadMetadata::Aptos { sequence } => TransactionLoadMetadata::Aptos { sequence },
             GemTransactionLoadMetadata::Polkadot {
                 sequence,
