@@ -177,7 +177,7 @@ impl Swapper for Cetus {
 
         let pool_quotes = top_pools
             .into_iter()
-            .zip(pool_datas.into_iter())
+            .zip(pool_datas)
             .map(|(pool, pool_data)| {
                 let shared_object = SharedObject {
                     id: pool_data.data.object_id,
