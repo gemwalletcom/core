@@ -1,4 +1,5 @@
 use crate::{models::TransactionResponse, Transaction};
+use num_bigint::BigInt;
 use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 use std::error::Error;
 
@@ -21,7 +22,7 @@ pub fn map_transaction_status(transaction: &Transaction) -> TransactionUpdate {
 
     if let (Some(gas_used), Some(gas_unit_price)) = (transaction.gas_used, transaction.gas_unit_price) {
         let fee = gas_used * gas_unit_price;
-        update.changes.push(TransactionChange::NetworkFee(fee.to_string()));
+        update.changes.push(TransactionChange::NetworkFee(BigInt::from(fee)));
     }
 
     update
@@ -93,7 +94,7 @@ mod tests {
 
         let result = map_transaction_status(&transaction);
         assert_eq!(result.state, TransactionState::Confirmed);
-        assert_eq!(result.changes, vec![TransactionChange::NetworkFee("100".to_string())]);
+        assert_eq!(result.changes, vec![TransactionChange::NetworkFee(BigInt::from(100u64))]);
         // 100 * 1 = 100
     }
 
@@ -115,7 +116,7 @@ mod tests {
 
         let result = map_transaction_status(&transaction);
         assert_eq!(result.state, TransactionState::Failed);
-        assert_eq!(result.changes, vec![TransactionChange::NetworkFee("50".to_string())]);
+        assert_eq!(result.changes, vec![TransactionChange::NetworkFee(BigInt::from(50u64))]);
         // 50 * 1 = 50
     }
 }

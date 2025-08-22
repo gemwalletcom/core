@@ -63,6 +63,7 @@ pub enum GemTransactionLoadMetadata {
     },
     Xrp {
         sequence: u64,
+        block_number: u64,
     },
     Algorand {
         sequence: u64,
@@ -137,7 +138,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 sequence,
                 is_destination_address_exist,
             },
-            TransactionLoadMetadata::Xrp { sequence } => GemTransactionLoadMetadata::Xrp { sequence },
+            TransactionLoadMetadata::Xrp { sequence, block_number } => GemTransactionLoadMetadata::Xrp { sequence, block_number },
             TransactionLoadMetadata::Algorand {
                 sequence,
                 block_hash,
@@ -230,7 +231,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 sequence,
                 is_destination_address_exist,
             },
-            GemTransactionLoadMetadata::Xrp { sequence } => TransactionLoadMetadata::Xrp { sequence },
+            GemTransactionLoadMetadata::Xrp { sequence, block_number } => TransactionLoadMetadata::Xrp { sequence, block_number },
             GemTransactionLoadMetadata::Algorand {
                 sequence,
                 block_hash,

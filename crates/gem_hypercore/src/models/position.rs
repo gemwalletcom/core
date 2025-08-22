@@ -1,4 +1,4 @@
-use primitives::{PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualPosition, PerpetualPositionsSummary, PerpetualProvider};
+use primitives::{AssetId, Chain, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualPosition, PerpetualPositionsSummary, PerpetualProvider};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -109,16 +109,14 @@ impl From<HypercorePosition> for PerpetualPosition {
             }
         };
         let perpetual_id = format!("{}_{}", PerpetualProvider::Hypercore.as_ref(), position.coin.clone());
+        let asset_id = AssetId::from(Chain::HyperCore, Some(AssetId::sub_token_id(&["perpetual".to_string(), position.coin.clone()])));
 
         PerpetualPosition {
             id: position.coin.clone(),
             perpetual_id,
-            asset_id: primitives::AssetId::from(
-                primitives::Chain::HyperCore,
-                Some(primitives::AssetId::sub_token_id(&["perpetual".to_string(), position.coin.clone()])),
-            ),
-            size,
-            size_value: position.position_value.parse().unwrap_or(0.0),
+            asset_id,
+            size: size.abs(),
+            size_value: position.position_value.parse::<f64>().unwrap_or(0.0).abs(),
             leverage: position.leverage.value as u8,
             entry_price: Some(position.entry_px.parse().unwrap_or(0.0)),
             liquidation_price: position.liquidation_px.and_then(|p| p.parse().ok()),

@@ -9,7 +9,10 @@ use primitives::{
 };
 
 use super::perpetual_mapper;
-use crate::rpc::client::HyperCoreClient;
+use crate::{
+    provider::perpetual_mapper::{map_candlesticks, map_perpetuals_data},
+    rpc::client::HyperCoreClient,
+};
 
 #[async_trait]
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
@@ -20,7 +23,7 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
 
     async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {
         let metadata = self.get_metadata().await?;
-        Ok(perpetual_mapper::map_perpetuals_data(metadata))
+        Ok(map_perpetuals_data(metadata))
     }
 
     async fn get_candlesticks(&self, symbol: String, period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
@@ -44,6 +47,6 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
         };
 
         let candlesticks = self.get_candlesticks(&symbol, interval, start_time, end_time).await?;
-        Ok(candlesticks.into_iter().map(|c| c.into()).collect())
+        Ok(map_candlesticks(candlesticks))
     }
 }

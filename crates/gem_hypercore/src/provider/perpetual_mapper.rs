@@ -1,5 +1,8 @@
-use crate::models::{metadata::HypercoreMetadataResponse, position::HypercoreAssetPositions};
-use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
+use crate::models::{candlestick::HypercoreCandlestick, metadata::HypercoreMetadataResponse, position::HypercoreAssetPositions};
+use primitives::{
+    chart::ChartCandleStick,
+    perpetual::{PerpetualData, PerpetualPositionsSummary},
+};
 
 pub fn map_positions(positions: HypercoreAssetPositions) -> PerpetualPositionsSummary {
     positions.into()
@@ -7,6 +10,10 @@ pub fn map_positions(positions: HypercoreAssetPositions) -> PerpetualPositionsSu
 
 pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<PerpetualData> {
     metadata.into()
+}
+
+pub fn map_candlesticks(candlesticks: Vec<HypercoreCandlestick>) -> Vec<ChartCandleStick> {
+    candlesticks.into_iter().map(|c| c.into()).collect()
 }
 
 #[cfg(test)]
@@ -120,5 +127,47 @@ mod tests {
         assert_eq!(eth_data.asset.symbol, "ETH");
         assert_eq!(eth_data.asset.decimals, 4);
         assert_eq!(eth_data.asset.id.to_string(), "hypercore_perpetual::ETH");
+    }
+
+    #[test]
+    fn test_map_candlesticks() {
+        use crate::models::candlestick::HypercoreCandlestick;
+
+        let candlesticks = vec![
+            HypercoreCandlestick {
+                t: 1640995200000u64, // 2022-01-01 00:00:00 UTC
+                o: "50000.0".to_string(),
+                h: "51000.0".to_string(),
+                l: "49000.0".to_string(),
+                c: "50500.0".to_string(),
+                v: "100.5".to_string(),
+            },
+            HypercoreCandlestick {
+                t: 1640998800000u64, // 2022-01-01 01:00:00 UTC
+                o: "50500.0".to_string(),
+                h: "52000.0".to_string(),
+                l: "50000.0".to_string(),
+                c: "51000.0".to_string(),
+                v: "75.2".to_string(),
+            },
+        ];
+
+        let result = map_candlesticks(candlesticks);
+
+        assert_eq!(result.len(), 2);
+
+        let first_candle = &result[0];
+        assert_eq!(first_candle.open, 50000.0);
+        assert_eq!(first_candle.high, 51000.0);
+        assert_eq!(first_candle.low, 49000.0);
+        assert_eq!(first_candle.close, 50500.0);
+        assert_eq!(first_candle.volume, 100.5);
+
+        let second_candle = &result[1];
+        assert_eq!(second_candle.open, 50500.0);
+        assert_eq!(second_candle.high, 52000.0);
+        assert_eq!(second_candle.low, 50000.0);
+        assert_eq!(second_candle.close, 51000.0);
+        assert_eq!(second_candle.volume, 75.2);
     }
 }

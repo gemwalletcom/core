@@ -3084,6 +3084,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "serde_serializers",
  "tokio",
 ]
 

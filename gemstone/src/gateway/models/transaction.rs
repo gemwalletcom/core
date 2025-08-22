@@ -2,8 +2,8 @@ use crate::gateway::{GemAsset, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
 use primitives::{
-    GasPriceType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata,
-    TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate,
+    GasPriceType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
+    TransactionStateRequest, TransactionUpdate,
 };
 use std::collections::HashMap;
 
@@ -94,7 +94,6 @@ pub struct GemTransactionLoadFee {
     pub options: GemFeeOptions,
 }
 
-
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionData {
     pub fee: GemTransactionLoadFee,
@@ -107,7 +106,7 @@ impl From<TransactionChange> for GemTransactionChange {
             TransactionChange::HashChange { old, new } => GemTransactionChange::HashChange { old, new },
             TransactionChange::Metadata(metadata) => GemTransactionChange::Metadata(metadata.into()),
             TransactionChange::BlockNumber(block_number) => GemTransactionChange::BlockNumber(block_number),
-            TransactionChange::NetworkFee(fee) => GemTransactionChange::NetworkFee(fee),
+            TransactionChange::NetworkFee(fee) => GemTransactionChange::NetworkFee(fee.to_string()),
         }
     }
 }
@@ -274,4 +273,3 @@ impl From<TransactionFee> for GemTransactionLoadFee {
         }
     }
 }
-

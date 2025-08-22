@@ -1,5 +1,6 @@
 use crate::constants::FAILED_OPERATION_OPCODES;
 use crate::rpc::model::{TonBroadcastTransaction, TonMessageTransactions, TonTransactionMessage};
+use num_bigint::BigInt;
 use primitives::{TransactionChange, TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
 
@@ -11,9 +12,12 @@ pub fn map_transaction_status(
 
     let state = map_transaction_state(transaction);
 
+    let fee = transaction.total_fees.parse::<BigInt>()
+        .map_err(|e| format!("Failed to parse total_fees: {}", e))?;
+    
     Ok(TransactionUpdate::new(
         state,
-        vec![TransactionChange::NetworkFee(transaction.total_fees.clone())],
+        vec![TransactionChange::NetworkFee(fee)],
     ))
 }
 

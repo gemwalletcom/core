@@ -3,9 +3,9 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionChange, TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{TransactionStateRequest, TransactionUpdate};
 
-use super::transactions_mapper::map_transaction_broadcast;
+use super::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
 use crate::rpc::client::TronClient;
 
 #[async_trait]
@@ -17,27 +17,6 @@ impl<C: Client> ChainTransactions for TronClient<C> {
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let receipt = self.get_transaction_reciept(request.id).await?;
-
-        if let Some(receipt_result) = &receipt.receipt.result {
-            if receipt_result == "OUT_OF_ENERGY" {
-                return Ok(TransactionUpdate::new_state(TransactionState::Reverted));
-            }
-        }
-
-        if let Some(result) = &receipt.receipt.result {
-            if result == "FAILED" {
-                return Ok(TransactionUpdate::new_state(TransactionState::Reverted));
-            }
-        }
-
-        if receipt.block_number > 0 {
-            let mut changes = vec![];
-            if let Some(fee) = receipt.fee {
-                changes.push(TransactionChange::NetworkFee(fee.to_string()));
-            }
-            return Ok(TransactionUpdate::new(TransactionState::Confirmed, changes));
-        }
-
-        Ok(TransactionUpdate::new_state(TransactionState::Pending))
+        Ok(map_transaction_status(&receipt))
     }
 }

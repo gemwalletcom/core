@@ -6,14 +6,13 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{FeePriority, FeeRate, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
-use crate::rpc::client::XRPClient;
+use crate::{provider::preload_mapper::map_transaction_preload, rpc::client::XRPClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactionLoad for XRPClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Send + Sync>> {
-        let account = self.get_account_info(&input.sender_address).await?;
-
-        Ok(TransactionLoadMetadata::Xrp { sequence: account.sequence })
+        let account_result = self.get_account_info_full(&input.sender_address).await?;
+        map_transaction_preload(account_result)
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {

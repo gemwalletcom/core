@@ -1,4 +1,5 @@
 use crate::models::transaction::NearBroadcastResult;
+use num_bigint::{BigInt, BigUint};
 use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 use std::error::Error;
 
@@ -11,14 +12,13 @@ pub fn map_transaction_broadcast(response: &NearBroadcastResult) -> Result<Strin
 
 pub fn map_transaction_status(response: &NearBroadcastResult) -> TransactionUpdate {
     let state = match response.final_execution_status.as_str() {
-        "FINAL" => TransactionState::Confirmed,
+        "FINAL" | "EXECUTED" | "EXECUTED_OPTIMISTIC" => TransactionState::Confirmed,
         _ => TransactionState::Failed,
     };
 
-    let mut changes = vec![];
-    if !response.transaction_outcome.outcome.tokens_burnt.is_empty() {
-        changes.push(TransactionChange::NetworkFee(response.transaction_outcome.outcome.tokens_burnt.clone()));
-    }
+    let changes = vec![TransactionChange::NetworkFee(
+        BigInt::from(&response.transaction_outcome.outcome.tokens_burnt * BigUint::from(2u64)),
+    )];
 
     TransactionUpdate { state, changes }
 }
@@ -41,7 +41,7 @@ mod tests {
     fn create_test_outcome(tokens_burnt: &str) -> NearTransactionOutcome {
         NearTransactionOutcome {
             outcome: NearOutcome {
-                tokens_burnt: tokens_burnt.to_string(),
+                tokens_burnt: tokens_burnt.parse().unwrap(),
             },
         }
     }
@@ -83,7 +83,7 @@ mod tests {
         assert_eq!(result.state, TransactionState::Confirmed);
         assert_eq!(result.changes.len(), 1);
         if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
-            assert_eq!(fee, "417494768750000000000");
+            assert_eq!(fee, &"834989537500000000000".parse::<BigInt>().unwrap()); // 417494768750000000000 * 2
         }
     }
 

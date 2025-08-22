@@ -128,7 +128,7 @@ impl TransactionLoadMetadata {
             TransactionLoadMetadata::Cosmos { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Near { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Stellar { sequence, .. } => Ok(*sequence),
-            TransactionLoadMetadata::Xrp { sequence } => Ok(*sequence),
+            TransactionLoadMetadata::Xrp { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Algorand { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Aptos { sequence } => Ok(*sequence),
             TransactionLoadMetadata::Polkadot { sequence, .. } => Ok(*sequence),
@@ -141,6 +141,7 @@ impl TransactionLoadMetadata {
         match self {
             TransactionLoadMetadata::Polkadot { block_number, .. } => Ok(*block_number),
             TransactionLoadMetadata::Tron { block_number, .. } => Ok(*block_number),
+            TransactionLoadMetadata::Xrp { block_number, .. } => Ok(*block_number),
             _ => Err("Block number not available for this metadata type".into()),
         }
     }
@@ -235,6 +236,7 @@ pub enum TransactionLoadMetadata {
     },
     Xrp {
         sequence: u64,
+        block_number: u64,
     },
     Algorand {
         sequence: u64,

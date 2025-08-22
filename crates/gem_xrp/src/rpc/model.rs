@@ -1,6 +1,7 @@
+use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use serde::{Deserialize, Serialize};
-use serde_serializers::deserialize_u64_from_str;
+use serde_serializers::{deserialize_biguint_from_str, deserialize_u64_from_str};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LedgerResult<T> {
@@ -185,6 +186,7 @@ pub struct AccountInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountInfoResult {
     pub account_data: Option<AccountInfo>,
+    pub ledger_current_index: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -216,6 +218,9 @@ pub struct TransactionJson {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionStatus {
     pub status: String,
+    #[serde(rename = "Fee")]
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub fee: BigUint,
 }
 
 #[cfg(test)]

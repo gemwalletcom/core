@@ -23,6 +23,15 @@ impl<C: Client> XRPClient<C> {
     }
 
     pub async fn get_account_info(&self, address: &str) -> Result<AccountInfo, Box<dyn Error + Send + Sync>> {
+        let result = self.get_account_info_full(address).await?;
+        if let Some(account_data) = result.account_data {
+            Ok(account_data)
+        } else {
+            Err("Account not found".into())
+        }
+    }
+
+    pub async fn get_account_info_full(&self, address: &str) -> Result<AccountInfoResult, Box<dyn Error + Send + Sync>> {
         let params = json!({
             "method": "account_info",
             "params": [
@@ -34,12 +43,7 @@ impl<C: Client> XRPClient<C> {
         });
 
         let result: LedgerResult<AccountInfoResult> = self.client.post("", &params, None).await?;
-
-        if let Some(account_data) = result.result.account_data {
-            Ok(account_data)
-        } else {
-            Err("Account not found".into())
-        }
+        Ok(result.result)
     }
 
     pub async fn get_ledger_current(&self) -> Result<LedgerCurrent, Box<dyn Error + Send + Sync>> {

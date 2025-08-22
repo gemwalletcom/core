@@ -5,7 +5,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{TransactionStateRequest, TransactionUpdate};
 
-use crate::provider::transactions_mapper::map_transaction_broadcast;
+use crate::provider::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
 use crate::rpc::client::XRPClient;
 
 #[async_trait]
@@ -17,13 +17,6 @@ impl<C: Client> ChainTransactions for XRPClient<C> {
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let status = self.get_transaction_status(&request.id).await?;
-
-        let transaction_state = if status.status == "success" {
-            primitives::TransactionState::Confirmed
-        } else {
-            primitives::TransactionState::Pending
-        };
-
-        Ok(TransactionUpdate::new_state(transaction_state))
+        Ok(map_transaction_status(&status))
     }
 }

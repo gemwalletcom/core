@@ -1,4 +1,6 @@
-use crate::rpc::model::TransactionBroadcast;
+use crate::rpc::model::{TransactionBroadcast, TransactionStatus};
+use num_bigint::BigInt;
+use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(broadcast_result: &TransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -20,10 +22,23 @@ pub fn map_transaction_broadcast(broadcast_result: &TransactionBroadcast) -> Res
     }
 }
 
+pub fn map_transaction_status(status: &TransactionStatus) -> TransactionUpdate {
+    let state = match status.status.as_str() {
+        "success" => TransactionState::Confirmed,
+        "failed" => TransactionState::Failed,
+        _ => TransactionState::Pending,
+    };
+
+    let changes = vec![TransactionChange::NetworkFee(BigInt::from(status.fee.clone()))];
+
+    TransactionUpdate { state, changes }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::{LedgerResult, TransactionBroadcast};
+    use crate::rpc::model::{LedgerResult, TransactionBroadcast, TransactionStatus};
+    use num_bigint::BigUint;
 
     #[test]
     fn test_map_transaction_broadcast_success() {
@@ -43,5 +58,50 @@ mod tests {
         let result = map_transaction_broadcast(&response.result);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "Transaction rejected: Ledger sequence too high.");
+    }
+
+    #[test]
+    fn test_map_transaction_status_success() {
+        let status = TransactionStatus {
+            status: "success".to_string(),
+            fee: BigUint::from(100u64),
+        };
+
+        let result = map_transaction_status(&status);
+        assert_eq!(result.state, TransactionState::Confirmed);
+        assert_eq!(result.changes.len(), 1);
+        if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
+            assert_eq!(fee, &BigInt::from(100u64));
+        }
+    }
+
+    #[test]
+    fn test_map_transaction_status_failed() {
+        let status = TransactionStatus {
+            status: "failed".to_string(),
+            fee: BigUint::from(50u64),
+        };
+
+        let result = map_transaction_status(&status);
+        assert_eq!(result.state, TransactionState::Failed);
+        assert_eq!(result.changes.len(), 1);
+        if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
+            assert_eq!(fee, &BigInt::from(50u64));
+        }
+    }
+
+    #[test]
+    fn test_map_transaction_status_pending() {
+        let status = TransactionStatus {
+            status: "pending".to_string(),
+            fee: BigUint::from(75u64),
+        };
+
+        let result = map_transaction_status(&status);
+        assert_eq!(result.state, TransactionState::Pending);
+        assert_eq!(result.changes.len(), 1);
+        if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
+            assert_eq!(fee, &BigInt::from(75u64));
+        }
     }
 }
