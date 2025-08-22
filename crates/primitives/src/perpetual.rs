@@ -66,3 +66,23 @@ pub struct PerpetualBalance {
 pub struct PerpetualMetadata {
     pub is_pinned: bool,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PerpetualConfirmData {
+    pub direction: PerpetualDirection,
+    pub asset: Asset,
+    pub asset_index: i32,
+    pub price: String,
+    pub fiat_value: f64,
+    pub size: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(tag = "type", content = "content")]
+pub enum PerpetualType {
+    Open(PerpetualConfirmData),
+    Close(PerpetualConfirmData),
+}

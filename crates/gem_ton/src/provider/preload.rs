@@ -44,6 +44,7 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, account_exists: b
         }
         TransactionInputType::TokenApprove(_, _) => base_fee.clone(),
         TransactionInputType::Generic(_, _, _) => base_fee.clone(),
+        TransactionInputType::Perpetual(_, _) => base_fee.clone(),
         _ => base_fee.clone(),
     };
 

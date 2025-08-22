@@ -2,7 +2,7 @@ use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPric
 use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
 use primitives::{
-    GasPriceType, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
+    GasPriceType, PerpetualConfirmData, PerpetualDirection, PerpetualType, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
     TransactionStateRequest, TransactionUpdate, WalletConnectionSessionAppMetadata, TransferDataExtra, TransferDataOutputType,
 };
 use primitives::swap::ApprovalData;
@@ -93,6 +93,28 @@ pub struct GemApprovalData {
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemPerpetualDirection {
+    Short,
+    Long,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemPerpetualConfirmData {
+    pub direction: GemPerpetualDirection,
+    pub asset: GemAsset,
+    pub asset_index: i32,
+    pub price: String,
+    pub fiat_value: f64,
+    pub size: String,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemPerpetualType {
+    Open { data: GemPerpetualConfirmData },
+    Close { data: GemPerpetualConfirmData },
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
 #[allow(clippy::large_enum_variant)]
 pub enum GemTransactionInputType {
     Transfer { asset: GemAsset },
@@ -101,6 +123,7 @@ pub enum GemTransactionInputType {
     Stake { asset: GemAsset, stake_type: GemStakeType },
     TokenApprove { asset: GemAsset, approval_data: GemApprovalData },
     Generic { asset: GemAsset, metadata: GemWalletConnectionSessionAppMetadata, extra: GemTransferDataExtra },
+    Perpetual { asset: GemAsset, perpetual_type: GemPerpetualType },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -257,6 +280,37 @@ impl From<GemApprovalData> for ApprovalData {
     }
 }
 
+impl From<GemPerpetualDirection> for PerpetualDirection {
+    fn from(value: GemPerpetualDirection) -> Self {
+        match value {
+            GemPerpetualDirection::Short => PerpetualDirection::Short,
+            GemPerpetualDirection::Long => PerpetualDirection::Long,
+        }
+    }
+}
+
+impl From<GemPerpetualConfirmData> for PerpetualConfirmData {
+    fn from(value: GemPerpetualConfirmData) -> Self {
+        PerpetualConfirmData {
+            direction: value.direction.into(),
+            asset: value.asset.into(),
+            asset_index: value.asset_index,
+            price: value.price,
+            fiat_value: value.fiat_value,
+            size: value.size,
+        }
+    }
+}
+
+impl From<GemPerpetualType> for PerpetualType {
+    fn from(value: GemPerpetualType) -> Self {
+        match value {
+            GemPerpetualType::Open { data } => PerpetualType::Open(data.into()),
+            GemPerpetualType::Close { data } => PerpetualType::Close(data.into()),
+        }
+    }
+}
+
 impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
         match value {
@@ -266,6 +320,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::Stake { asset, stake_type: operation } => TransactionInputType::Stake(asset.into(), operation.into()),
             GemTransactionInputType::TokenApprove { asset, approval_data } => TransactionInputType::TokenApprove(asset.into(), approval_data.into()),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
+            GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset.into(), perpetual_type.into()),
         }
     }
 }

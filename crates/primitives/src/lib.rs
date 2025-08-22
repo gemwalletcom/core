@@ -144,7 +144,7 @@ pub mod asset_address;
 pub use self::asset_address::AssetAddress;
 pub mod graphql;
 pub mod perpetual;
-pub use self::perpetual::{Perpetual, PerpetualBalance, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary};
+pub use self::perpetual::{Perpetual, PerpetualBalance, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary, PerpetualType};
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;

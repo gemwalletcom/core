@@ -1,5 +1,5 @@
 use crate::solana_token_program::SolanaTokenProgramId;
-use crate::{Asset, Delegation, DelegationValidator, GasPriceType, TransactionPreloadInput, UTXO, WalletConnectionSessionAppMetadata, TransferDataExtra};
+use crate::{Asset, Delegation, DelegationValidator, GasPriceType, PerpetualType, TransactionPreloadInput, UTXO, WalletConnectionSessionAppMetadata, TransferDataExtra};
 use crate::swap::ApprovalData;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
@@ -29,6 +29,7 @@ pub enum TransactionInputType {
     Stake(Asset, StakeType),
     TokenApprove(Asset, ApprovalData),
     Generic(Asset, WalletConnectionSessionAppMetadata, TransferDataExtra),
+    Perpetual(Asset, PerpetualType),
 }
 
 impl TransactionInputType {
@@ -40,6 +41,7 @@ impl TransactionInputType {
             TransactionInputType::Stake(asset, _) => asset,
             TransactionInputType::TokenApprove(asset, _) => asset,
             TransactionInputType::Generic(asset, _, _) => asset,
+            TransactionInputType::Perpetual(asset, _) => asset,
         }
     }
 }

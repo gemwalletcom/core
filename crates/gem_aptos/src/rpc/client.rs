@@ -123,6 +123,7 @@ impl<C: Client> AptosClient<C> {
             TransactionInputType::Stake(_, _) => Err("Aptos does not support staking".into()),
             TransactionInputType::TokenApprove(_, _) => Ok(1500),
             TransactionInputType::Generic(_, _, _) => Ok(1500),
+            TransactionInputType::Perpetual(_, _) => unimplemented!(),
         }
     }
 

@@ -5,27 +5,27 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
     match chain {
         CosmosChain::Thorchain => BigInt::from(2_000_000u64),
         CosmosChain::Cosmos => match input_type {
-            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => BigInt::from(3_000u64),
+            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) | TransactionInputType::Perpetual(_, _) => BigInt::from(3_000u64),
             TransactionInputType::Swap(_, _) => BigInt::from(3_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(25_000u64),
         },
         CosmosChain::Osmosis => match input_type {
-            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => BigInt::from(10_000u64),
+            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) | TransactionInputType::Perpetual(_, _) => BigInt::from(10_000u64),
             TransactionInputType::Swap(_, _) => BigInt::from(10_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(100_000u64),
         },
         CosmosChain::Celestia => match input_type {
-            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => BigInt::from(3_000u64),
+            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) | TransactionInputType::Perpetual(_, _) => BigInt::from(3_000u64),
             TransactionInputType::Swap(_, _) => BigInt::from(3_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(10_000u64),
         },
         CosmosChain::Sei => match input_type {
-            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => BigInt::from(100_000u64),
+            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) | TransactionInputType::Perpetual(_, _) => BigInt::from(100_000u64),
             TransactionInputType::Swap(_, _) => BigInt::from(100_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(200_000u64),
         },
         CosmosChain::Injective => match input_type {
-            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => BigInt::from(100_000_000_000_000u64),
+            TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) | TransactionInputType::Perpetual(_, _) => BigInt::from(100_000_000_000_000u64),
             TransactionInputType::Swap(_, _) => BigInt::from(100_000_000_000_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(1_000_000_000_000_000u64),
         },
@@ -35,7 +35,7 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
 
 fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 {
     match input_type {
-        TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => 200_000,
+        TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) | TransactionInputType::Perpetual(_, _) => 200_000,
         TransactionInputType::Swap(_, _) => 200_000,
         TransactionInputType::Stake(_, operation) => match operation {
             StakeType::Delegate(_) | StakeType::Undelegate(_) => 1_000_000,
