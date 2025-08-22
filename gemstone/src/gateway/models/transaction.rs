@@ -46,7 +46,7 @@ pub enum GemStakeType {
         validator: GemDelegationValidator,
     },
     Undelegate {
-        validator: GemDelegationValidator,
+        delegation: GemDelegation,
     },
     Redelegate {
         delegation: GemDelegation,
@@ -171,7 +171,7 @@ impl From<GemStakeType> for StakeType {
     fn from(value: GemStakeType) -> Self {
         match value {
             GemStakeType::Delegate { validator } => StakeType::Delegate(validator.into()),
-            GemStakeType::Undelegate { validator } => StakeType::Undelegate(validator.into()),
+            GemStakeType::Undelegate { delegation } => StakeType::Undelegate(delegation.into()),
             GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(delegation.into(), to_validator.into()),
             GemStakeType::WithdrawRewards { validators } => StakeType::WithdrawRewards(validators.into_iter().map(|v| v.into()).collect()),
             GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation.into()),

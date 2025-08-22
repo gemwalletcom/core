@@ -1,5 +1,5 @@
 use chrono::DateTime;
-use primitives::{chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType};
+use primitives::{chain::Chain, transaction_utxo::TransactionUtxoInput, TransactionDirection, TransactionType};
 
 use super::model::{Block, Transaction};
 
@@ -7,19 +7,19 @@ pub struct CardanoMapper;
 
 impl CardanoMapper {
     pub fn map_transaction(chain: Chain, block: &Block, transaction: &Transaction) -> Option<primitives::Transaction> {
-        let inputs: Vec<TransactionInput> = transaction
+        let inputs: Vec<TransactionUtxoInput> = transaction
             .inputs
             .iter()
-            .map(|x| TransactionInput {
+            .map(|x| TransactionUtxoInput {
                 address: x.address.clone(),
                 value: x.value.clone(),
             })
             .collect();
 
-        let outputs: Vec<TransactionInput> = transaction
+        let outputs: Vec<TransactionUtxoInput> = transaction
             .outputs
             .iter()
-            .map(|x| TransactionInput {
+            .map(|x| TransactionUtxoInput {
                 address: x.address.clone(),
                 value: x.value.clone(),
             })

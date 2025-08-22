@@ -1,6 +1,6 @@
 use crate::{
     asset_id::AssetId, transaction_direction::TransactionDirection, transaction_state::TransactionState, transaction_type::TransactionType,
-    transaction_utxo::TransactionInput, AddressName, AssetAddress, Chain, TransactionSwapMetadata,
+    transaction_utxo::TransactionUtxoInput, AddressName, AssetAddress, Chain, TransactionSwapMetadata,
 };
 
 use chrono::{DateTime, Utc};
@@ -53,9 +53,9 @@ pub struct Transaction {
     pub memo: Option<String>,
     pub direction: TransactionDirection,
     #[serde(rename = "utxoInputs")]
-    pub utxo_inputs: Vec<TransactionInput>,
+    pub utxo_inputs: Vec<TransactionUtxoInput>,
     #[serde(rename = "utxoOutputs")]
-    pub utxo_outputs: Vec<TransactionInput>,
+    pub utxo_outputs: Vec<TransactionUtxoInput>,
     pub metadata: Option<serde_json::Value>,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
@@ -113,8 +113,8 @@ impl Transaction {
         value: String,
         memo: Option<String>,
         direction: TransactionDirection,
-        utxo_inputs: Option<Vec<TransactionInput>>,
-        utxo_outputs: Option<Vec<TransactionInput>>,
+        utxo_inputs: Option<Vec<TransactionUtxoInput>>,
+        utxo_outputs: Option<Vec<TransactionUtxoInput>>,
         metadata: Option<serde_json::Value>,
         created_at: DateTime<Utc>,
     ) -> Self {
@@ -219,7 +219,7 @@ impl Transaction {
             TransactionDirection::Outgoing => {
                 let filtered: Vec<String> = outputs_addresses.clone().into_iter().filter(|x| !user_set.contains(x)).collect();
                 to = filtered.first().unwrap().clone();
-                let vals: Vec<TransactionInput> = self.utxo_outputs.clone().into_iter().filter(|x| x.address == to).collect();
+                let vals: Vec<TransactionUtxoInput> = self.utxo_outputs.clone().into_iter().filter(|x| x.address == to).collect();
                 value = vals.first().unwrap().value.clone();
             }
             TransactionDirection::SelfTransfer => {
@@ -250,13 +250,13 @@ impl Transaction {
         }
     }
 
-    fn utxo_calculate_value(values: &[TransactionInput], addresses: Vec<String>) -> i64 {
+    fn utxo_calculate_value(values: &[TransactionUtxoInput], addresses: Vec<String>) -> i64 {
         let values = values
             .to_owned()
             .clone()
             .into_iter()
             .filter(|x| addresses.contains(&x.address))
-            .collect::<Vec<TransactionInput>>();
+            .collect::<Vec<TransactionUtxoInput>>();
 
         values.clone().into_iter().map(|x| x.value.parse::<i64>().unwrap()).sum::<i64>()
     }

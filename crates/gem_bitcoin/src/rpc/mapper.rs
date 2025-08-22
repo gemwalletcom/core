@@ -1,5 +1,5 @@
 use chrono::{TimeZone, Utc};
-use primitives::{chain::Chain, transaction_utxo::TransactionInput, TransactionDirection, TransactionType};
+use primitives::{chain::Chain, transaction_utxo::TransactionUtxoInput, TransactionDirection, TransactionType};
 
 use super::model::Transaction;
 
@@ -11,21 +11,21 @@ impl BitcoinMapper {
     }
 
     pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primitives::Transaction> {
-        let inputs: Vec<TransactionInput> = transaction
+        let inputs: Vec<TransactionUtxoInput> = transaction
             .vin
             .iter()
             .filter(|i| i.is_address)
-            .map(|input| TransactionInput {
+            .map(|input| TransactionUtxoInput {
                 address: input.addresses.clone().unwrap().first().unwrap().to_string(),
                 value: input.value.clone(),
             })
             .collect();
 
-        let outputs: Vec<TransactionInput> = transaction
+        let outputs: Vec<TransactionUtxoInput> = transaction
             .vout
             .iter()
             .filter(|o| o.is_address)
-            .map(|output| TransactionInput {
+            .map(|output| TransactionUtxoInput {
                 address: output.addresses.clone().unwrap_or_default().first().unwrap().to_string(),
                 value: output.value.clone(),
             })

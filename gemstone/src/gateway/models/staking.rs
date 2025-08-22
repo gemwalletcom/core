@@ -1,4 +1,4 @@
-use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationValidator};
+use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemDelegationValidator {
@@ -90,7 +90,6 @@ impl From<GemDelegation> for Delegation {
 
 impl From<GemDelegationBase> for DelegationBase {
     fn from(delegation: GemDelegationBase) -> Self {
-        use primitives::DelegationState;
         Self {
             asset_id: delegation.asset_id,
             state: delegation.delegation_state.parse().unwrap_or(DelegationState::Active),
@@ -105,3 +104,4 @@ impl From<GemDelegationBase> for DelegationBase {
         }
     }
 }
+

@@ -13,7 +13,7 @@ pub enum FeeOption {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StakeType {
     Delegate(DelegationValidator),
-    Undelegate(DelegationValidator),
+    Undelegate(Delegation),
     Redelegate(Delegation, DelegationValidator),
     WithdrawRewards(Vec<DelegationValidator>),
     Withdraw(Delegation),
