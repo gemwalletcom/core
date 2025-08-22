@@ -6,7 +6,6 @@ edition = { workspace = true }
 [features]
 default = []
 rpc = [
-    "dep:reqwest-middleware", 
     "dep:serde_serializers",
     "dep:async-trait",
     "dep:gem_client",
@@ -27,7 +26,6 @@ primitives = { path = "../primitives" }
 num-bigint = { workspace = true }
 
 # Optional RPC dependencies
-reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 serde_serializers = { path = "../serde_serializers", optional = true }
 async-trait = { workspace = true, optional = true }
 gem_client = { path = "../gem_client", optional = true }

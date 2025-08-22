@@ -365,7 +365,6 @@ dependencies = [
  "primitives",
  "reqwest",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -1520,7 +1519,6 @@ version = "1.0.0"
 dependencies = [
  "alloy-primitives",
  "num-bigint",
- "num-traits",
  "primitives",
 ]
 
@@ -1529,7 +1527,6 @@ name = "chain_traits"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "num-bigint",
  "primitives",
 ]
 
@@ -1983,7 +1980,6 @@ dependencies = [
  "reqwest",
  "search_index",
  "serde",
- "serde_json",
  "settings",
  "settings_chain",
  "storage",
@@ -2852,7 +2848,6 @@ dependencies = [
 name = "gem_algorand"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "base64 0.22.1",
  "chain_traits",
@@ -2860,18 +2855,14 @@ dependencies = [
  "gem_client",
  "num-bigint",
  "primitives",
- "reqwest-middleware",
  "serde",
  "serde_json",
- "thiserror 2.0.12",
- "url",
 ]
 
 [[package]]
 name = "gem_aptos"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "chain_traits",
  "chrono",
@@ -2881,7 +2872,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
- "url",
 ]
 
 [[package]]
@@ -2907,7 +2897,6 @@ dependencies = [
  "alloy-sol-types",
  "anyhow",
  "hex",
- "itoa",
 ]
 
 [[package]]
@@ -2918,7 +2907,6 @@ dependencies = [
  "chain_traits",
  "chrono",
  "gem_client",
- "num-bigint",
  "primitives",
  "serde",
  "serde_json",
@@ -3059,7 +3047,6 @@ name = "gem_jsonrpc"
 version = "1.0.0"
 dependencies = [
  "anyhow",
- "async-trait",
  "gem_client",
  "reqwest",
  "serde",
@@ -3162,7 +3149,6 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "bcs",
- "blake2",
  "chain_primitives",
  "chain_traits",
  "chrono",
@@ -3170,14 +3156,12 @@ dependencies = [
  "gem_jsonrpc",
  "hex",
  "num-bigint",
- "number_formatter",
  "primitives",
  "serde",
  "serde_json",
  "serde_serializers",
  "sui-sdk-types",
  "sui-transaction-builder",
- "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -3194,7 +3178,6 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "primitives",
- "reqwest-middleware",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -3205,8 +3188,6 @@ dependencies = [
 name = "gem_tron"
 version = "1.0.0"
 dependencies = [
- "alloy-primitives",
- "alloy-sol-types",
  "async-trait",
  "bs58",
  "chain_traits",
@@ -3220,7 +3201,6 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "sha2",
  "tokio",
 ]
 
@@ -3228,11 +3208,9 @@ dependencies = [
 name = "gem_xrp"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "chain_traits",
  "chrono",
- "futures",
  "gem_client",
  "hex",
  "num-bigint",
@@ -3241,7 +3219,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
- "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -3255,7 +3232,6 @@ dependencies = [
  "base64 0.22.1",
  "bcs",
  "bigdecimal",
- "borsh 1.5.7",
  "bs58",
  "chain_traits",
  "chrono",
@@ -3286,7 +3262,6 @@ dependencies = [
  "primitives",
  "rand 0.9.1",
  "reqwest",
- "rmp",
  "rmp-serde",
  "serde",
  "serde_json",
@@ -4531,7 +4506,6 @@ dependencies = [
  "base64 0.22.1",
  "borsh 1.5.7",
  "gem_evm",
- "gem_hash",
  "gem_jsonrpc",
  "gem_solana",
  "gem_ton",
@@ -4569,7 +4543,6 @@ dependencies = [
 name = "nft_client"
 version = "1.0.0"
 dependencies = [
- "async-trait",
  "nft_provider",
  "primitives",
  "reqwest",
@@ -4582,9 +4555,7 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "futures",
- "gem_chain_rpc",
  "gem_evm",
- "gem_solana",
  "primitives",
  "reqwest",
  "serde",
@@ -4697,7 +4668,6 @@ version = "1.0.0"
 dependencies = [
  "bigdecimal",
  "num-bigint",
- "num-traits",
  "rusty-money",
 ]
 
@@ -5211,14 +5181,11 @@ dependencies = [
 name = "pricer"
 version = "1.0.0"
 dependencies = [
- "api_connector",
  "cacher",
  "chrono",
  "localizer",
  "number_formatter",
  "primitives",
- "redis",
- "serde",
  "serde_json",
  "storage",
 ]
@@ -6338,8 +6305,6 @@ dependencies = [
  "meilisearch-sdk",
  "primitives",
  "serde",
- "serde_json",
- "settings",
 ]
 
 [[package]]
@@ -6414,7 +6379,6 @@ dependencies = [
  "reqwest",
  "security_provider",
  "serde",
- "serde_json",
  "tokio",
 ]
 
@@ -6581,7 +6545,6 @@ version = "1.0.0"
 dependencies = [
  "config",
  "serde",
- "typeshare",
 ]
 
 [[package]]
@@ -6841,7 +6804,6 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "storage"
 version = "1.0.0"
 dependencies = [
- "async-trait",
  "chrono",
  "diesel",
  "diesel_migrations",
@@ -6862,7 +6824,6 @@ dependencies = [
  "serde",
  "serde_json",
  "strum",
- "strum_macros",
  "tokio",
 ]
 

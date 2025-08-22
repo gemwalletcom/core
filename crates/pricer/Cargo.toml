@@ -4,14 +4,11 @@ edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]
-serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
-redis = { workspace = true }
 
 primitives = { path = "../primitives" }
 number_formatter = { path = "../number_formatter" }
 storage = { path = "../storage" }
-api_connector = { path = "../api_connector" }
 localizer = { path = "../../crates/localizer" }
 cacher = { path = "../../crates/cacher" }

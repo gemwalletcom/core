@@ -13,8 +13,8 @@ use crate::{provider::preload_mapper::map_transaction_preload, rpc::client::XRPC
 #[async_trait]
 impl<C: Client> ChainTransactionLoad for XRPClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Send + Sync>> {
-        let account_result = self.get_account_info_full(&input.sender_address).await?;
-        map_transaction_preload(account_result)
+        let result = self.get_account_info_full(&input.sender_address).await?;
+        map_transaction_preload(result)
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {

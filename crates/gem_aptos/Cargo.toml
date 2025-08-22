@@ -8,7 +8,6 @@ default = []
 rpc = [
     "dep:async-trait",
     "dep:chrono",
-    "dep:url",
     "dep:num-bigint",
     "dep:chain_traits",
     "dep:gem_client"
@@ -18,13 +17,11 @@ rpc = [
 primitives = { path = "../primitives" }
 serde = { workspace = true }
 serde_json = { workspace = true }
-anyhow = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
 
 # Dependencies for RPC client & mapper
 async-trait = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
-url = { workspace = true, optional = true }
 num-bigint = { workspace = true, optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 gem_client = { path = "../gem_client", optional = true }

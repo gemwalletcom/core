@@ -86,7 +86,14 @@ impl AlchemyClient {
             ],
             "includeNativeTokens": false,
         });
-        Ok(self.client.post(url).json(&payload).send().await?.json().await?)
+        Ok(self.client
+            .post(url)
+            .header("Content-Type", "application/json")
+            .body(serde_json::to_string(&payload)?)
+            .send()
+            .await?
+            .json()
+            .await?)
     }
     // https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-transaction-history-by-address
     //TODO:
@@ -107,6 +114,13 @@ impl AlchemyClient {
             ],
             "limit": 25,
         });
-        Ok(self.client.post(url).json(&payload).send().await?.json().await?)
+        Ok(self.client
+            .post(url)
+            .header("Content-Type", "application/json")
+            .body(serde_json::to_string(&payload)?)
+            .send()
+            .await?
+            .json()
+            .await?)
     }
 }

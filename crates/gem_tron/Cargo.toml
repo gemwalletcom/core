@@ -4,11 +4,8 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-alloy-primitives = { workspace = true }
-alloy-sol-types = { workspace = true }
 bs58 = { workspace = true }
 hex = { workspace = true }
-sha2 = { workspace = true }
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
