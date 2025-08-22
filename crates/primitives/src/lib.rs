@@ -82,6 +82,16 @@ pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata};
 pub mod wallet_connect;
 pub use self::wallet_connect::WalletConnectCAIP2;
+pub mod account;
+pub use self::account::Account;
+pub mod wallet;
+pub use self::wallet::{Wallet, WalletId, WalletType};
+pub mod wallet_connector;
+pub use self::wallet_connector::{
+    WalletConnectionSessionAppMetadata, WalletConnection, WalletConnectionSession,
+    WalletConnectionSessionProposal, WalletConnectionState,
+    WalletConnectionMethods, WalletConnectionEvents,
+};
 pub mod nft;
 pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, MIME_TYPE_PNG};
 pub mod price_alert;
@@ -149,3 +159,5 @@ pub mod transaction_preload;
 pub use self::transaction_preload::TransactionPreloadInput;
 pub mod transaction_load;
 pub use self::transaction_load::{StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata};
+pub mod transfer_data_extra;
+pub use self::transfer_data_extra::{TransferDataExtra, TransferDataOutputType};

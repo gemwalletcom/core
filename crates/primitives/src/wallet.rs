@@ -1,20 +1,27 @@
+use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
+use crate::Account;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
-struct Wallet {
-    id: String,
-    name: String,
-    index: i32,
+pub struct Wallet {
+    pub id: String,
+    pub name: String,
+    pub index: i32,
     #[serde(rename = "type")]
-    wallet_type: WalletType,
-    accounts: Vec<Account>,
-    order: i32,
+    pub wallet_type: WalletType,
+    pub accounts: Vec<Account>,
+    pub order: i32,
     #[serde(rename = "isPinned")]
-    is_pinned: bool,
+    pub is_pinned: bool,
     #[serde(rename = "imageUrl")]
-    image_url: Option<String>,
+    pub image_url: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
+#[allow(non_camel_case_types)]
 pub enum WalletType {
     multicoin,
     single,
@@ -22,7 +29,8 @@ pub enum WalletType {
     view,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
-struct WalletId {
-    id: String,
+pub struct WalletId {
+    pub id: String,
 }

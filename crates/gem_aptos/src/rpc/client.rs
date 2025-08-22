@@ -94,7 +94,7 @@ impl<C: Client> AptosClient<C> {
         };
 
         match &input.input_type {
-            TransactionInputType::Transfer(asset) => {
+            TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => {
                 let asset_type = if asset.id.token_id.is_none() {
                     AssetSubtype::NATIVE
                 } else {
@@ -121,6 +121,8 @@ impl<C: Client> AptosClient<C> {
             }
             TransactionInputType::Swap(_, _) => Ok(1500),
             TransactionInputType::Stake(_, _) => Err("Aptos does not support staking".into()),
+            TransactionInputType::TokenApprove(_, _) => Ok(1500),
+            TransactionInputType::Generic(_, _, _) => Ok(1500),
         }
     }
 

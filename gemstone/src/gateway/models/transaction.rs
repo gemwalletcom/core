@@ -3,8 +3,9 @@ use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
 use primitives::{
     GasPriceType, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionStateRequest, TransactionUpdate,
+    TransactionStateRequest, TransactionUpdate, WalletConnectionSessionAppMetadata, TransferDataExtra, TransferDataOutputType,
 };
+use primitives::swap::ApprovalData;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -60,12 +61,46 @@ pub enum GemStakeType {
     },
 }
 
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemWalletConnectionSessionAppMetadata {
+    pub name: String,
+    pub description: String,
+    pub url: String,
+    pub icon: String,
+    pub redirect_native: Option<String>,
+    pub redirect_universal: Option<String>,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemTransferDataOutputType {
+    EncodedTransaction,
+    Signature,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemTransferDataExtra {
+    pub gas_limit: Option<String>,
+    pub gas_price: Option<GemGasPriceType>,
+    pub data: Option<Vec<u8>>,
+    pub output_type: GemTransferDataOutputType,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemApprovalData {
+    pub token: String,
+    pub spender: String,
+    pub value: String,
+}
+
 #[derive(Debug, Clone, uniffi::Enum)]
 #[allow(clippy::large_enum_variant)]
 pub enum GemTransactionInputType {
     Transfer { asset: GemAsset },
+    Deposit { asset: GemAsset },
     Swap { from_asset: GemAsset, to_asset: GemAsset },
     Stake { asset: GemAsset, stake_type: GemStakeType },
+    TokenApprove { asset: GemAsset, approval_data: GemApprovalData },
+    Generic { asset: GemAsset, metadata: GemWalletConnectionSessionAppMetadata, extra: GemTransferDataExtra },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -179,12 +214,58 @@ impl From<GemStakeType> for StakeType {
     }
 }
 
+impl From<GemWalletConnectionSessionAppMetadata> for WalletConnectionSessionAppMetadata {
+    fn from(value: GemWalletConnectionSessionAppMetadata) -> Self {
+        WalletConnectionSessionAppMetadata {
+            name: value.name,
+            description: value.description,
+            url: value.url,
+            icon: value.icon,
+            redirect_native: value.redirect_native,
+            redirect_universal: value.redirect_universal,
+        }
+    }
+}
+
+impl From<GemTransferDataOutputType> for TransferDataOutputType {
+    fn from(value: GemTransferDataOutputType) -> Self {
+        match value {
+            GemTransferDataOutputType::EncodedTransaction => TransferDataOutputType::EncodedTransaction,
+            GemTransferDataOutputType::Signature => TransferDataOutputType::Signature,
+        }
+    }
+}
+
+impl From<GemTransferDataExtra> for TransferDataExtra {
+    fn from(value: GemTransferDataExtra) -> Self {
+        TransferDataExtra {
+            gas_limit: value.gas_limit.map(|s| s.parse().unwrap_or_default()),
+            gas_price: value.gas_price.map(|gp| gp.into()),
+            data: value.data,
+            output_type: value.output_type.into(),
+        }
+    }
+}
+
+impl From<GemApprovalData> for ApprovalData {
+    fn from(value: GemApprovalData) -> Self {
+        ApprovalData {
+            token: value.token,
+            spender: value.spender,
+            value: value.value,
+        }
+    }
+}
+
 impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
+            GemTransactionInputType::Deposit { asset } => TransactionInputType::Deposit(asset.into()),
             GemTransactionInputType::Swap { from_asset, to_asset } => TransactionInputType::Swap(from_asset.into(), to_asset.into()),
             GemTransactionInputType::Stake { asset, stake_type: operation } => TransactionInputType::Stake(asset.into(), operation.into()),
+            GemTransactionInputType::TokenApprove { asset, approval_data } => TransactionInputType::TokenApprove(asset.into(), approval_data.into()),
+            GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
         }
     }
 }

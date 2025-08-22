@@ -42,6 +42,8 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, account_exists: b
             options.insert(FeeOption::TokenAccountCreation, BigInt::from(JETTON_ACCOUNT_CREATION));
             &base_fee + BigInt::from(JETTON_ACCOUNT_CREATION)
         }
+        TransactionInputType::TokenApprove(_, _) => base_fee.clone(),
+        TransactionInputType::Generic(_, _, _) => base_fee.clone(),
         _ => base_fee.clone(),
     };
 

@@ -34,7 +34,7 @@ pub fn calculate_priority_fee(input_type: &TransactionInputType, prioritization_
 
 fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
     match input_type {
-        TransactionInputType::Transfer(_) => BigInt::from(100_000),
+        TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => BigInt::from(100_000),
         TransactionInputType::Swap(_, _) => BigInt::from(420_000),
         TransactionInputType::Stake(_, _) => BigInt::from(100_000),
     }
@@ -42,7 +42,7 @@ fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
 
 fn get_multiple_of(input_type: &TransactionInputType) -> i64 {
     match input_type {
-        TransactionInputType::Transfer(asset) => match &asset.id.token_subtype() {
+        TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) | TransactionInputType::TokenApprove(asset, _) | TransactionInputType::Generic(asset, _, _) => match &asset.id.token_subtype() {
             AssetSubtype::NATIVE => 25_000,
             AssetSubtype::TOKEN => 50_000,
         },

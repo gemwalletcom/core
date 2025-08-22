@@ -1,5 +1,6 @@
 use crate::solana_token_program::SolanaTokenProgramId;
-use crate::{Asset, Delegation, DelegationValidator, GasPriceType, TransactionPreloadInput, UTXO};
+use crate::{Asset, Delegation, DelegationValidator, GasPriceType, TransactionPreloadInput, UTXO, WalletConnectionSessionAppMetadata, TransferDataExtra};
+use crate::swap::ApprovalData;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -23,16 +24,22 @@ pub enum StakeType {
 #[allow(clippy::large_enum_variant)]
 pub enum TransactionInputType {
     Transfer(Asset),
+    Deposit(Asset),
     Swap(Asset, Asset),
     Stake(Asset, StakeType),
+    TokenApprove(Asset, ApprovalData),
+    Generic(Asset, WalletConnectionSessionAppMetadata, TransferDataExtra),
 }
 
 impl TransactionInputType {
     pub fn get_asset(&self) -> &Asset {
         match self {
             TransactionInputType::Transfer(asset) => asset,
+            TransactionInputType::Deposit(asset) => asset,
             TransactionInputType::Swap(_, asset) => asset,
             TransactionInputType::Stake(asset, _) => asset,
+            TransactionInputType::TokenApprove(asset, _) => asset,
+            TransactionInputType::Generic(asset, _, _) => asset,
         }
     }
 }
