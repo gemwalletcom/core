@@ -67,6 +67,8 @@ pub enum GemTransactionLoadMetadata {
     },
     Algorand {
         sequence: u64,
+        block_hash: String,
+        chain_id: String,
     },
     Aptos {
         sequence: u64,
@@ -145,7 +147,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 is_destination_address_exist,
             },
             TransactionLoadMetadata::Xrp { sequence } => GemTransactionLoadMetadata::Xrp { sequence },
-            TransactionLoadMetadata::Algorand { sequence } => GemTransactionLoadMetadata::Algorand { sequence },
+            TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
             TransactionLoadMetadata::Aptos { sequence } => GemTransactionLoadMetadata::Aptos { sequence },
             TransactionLoadMetadata::Polkadot {
                 sequence,
@@ -238,7 +240,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 is_destination_address_exist,
             },
             GemTransactionLoadMetadata::Xrp { sequence } => TransactionLoadMetadata::Xrp { sequence },
-            GemTransactionLoadMetadata::Algorand { sequence } => TransactionLoadMetadata::Algorand { sequence },
+            GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
             GemTransactionLoadMetadata::Aptos { sequence } => TransactionLoadMetadata::Aptos { sequence },
             GemTransactionLoadMetadata::Polkadot {
                 sequence,

@@ -4,7 +4,7 @@ use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeeRate, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{FeePriority, FeeRate, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use crate::rpc::client::XRPClient;
 
@@ -23,7 +23,7 @@ impl<C: Client> ChainTransactionLoad for XRPClient<C> {
         })
     }
 
-    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let fees = self.get_fees().await?;
         let minimum_fee = fees.drops.minimum_fee;
         let median_fee = fees.drops.median_fee;

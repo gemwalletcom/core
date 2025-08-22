@@ -3,7 +3,7 @@ use chain_traits::ChainTransactionLoad;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeeRate, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{FeeRate, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use crate::{
     provider::{preload_mapper::calculate_transaction_fee, state_mapper::calculate_fee_rates},
@@ -35,7 +35,7 @@ impl<C: Client> ChainTransactionLoad for CosmosClient<C> {
         })
     }
 
-    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let base_fee = self.get_base_fee();
         let cosmos_chain = self.get_chain();
 

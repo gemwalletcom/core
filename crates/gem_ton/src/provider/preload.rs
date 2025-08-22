@@ -53,7 +53,6 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, account_exists: b
     }
 }
 
-
 #[async_trait]
 impl<C: Client> ChainTransactionLoad for TonClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
@@ -92,7 +91,7 @@ impl<C: Client> ChainTransactionLoad for TonClient<C> {
         Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 
-    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Ok(vec![
             FeeRate::regular(FeePriority::Normal, BigInt::from(10000000)), // 0.01 TON
         ])

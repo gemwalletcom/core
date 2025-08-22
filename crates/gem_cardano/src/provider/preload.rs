@@ -4,7 +4,7 @@ use std::error::Error;
 
 use gem_client::Client;
 use num_bigint::BigInt;
-use primitives::{FeePriority, FeeRate, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO};
+use primitives::{FeePriority, FeeRate, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO};
 
 use super::preload_mapper;
 use crate::rpc::client::CardanoClient;
@@ -23,7 +23,7 @@ impl<C: Client> ChainTransactionLoad for CardanoClient<C> {
         })
     }
 
-    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(1000000))])
     }
 

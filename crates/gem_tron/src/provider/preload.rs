@@ -4,34 +4,35 @@ use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeeRate, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{
+    FeePriority, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
+};
 
 use crate::rpc::client::TronClient;
 
 #[async_trait]
 impl<C: Client> ChainTransactionLoad for TronClient<C> {
     async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Send + Sync>> {
-        let block = self.get_tron_block().await?;
-        let block_data = &block.block_header.raw_data;
+        let block = self.get_tron_block().await?.block_header.raw_data;
 
         Ok(TransactionLoadMetadata::Tron {
-            block_number: block_data.number,
-            block_version: block_data.version as u64,
-            block_timestamp: block_data.timestamp,
-            transaction_tree_root: block_data.tx_trie_root.clone(),
-            parent_hash: block_data.parent_hash.clone(),
-            witness_address: block_data.witness_address.clone(),
+            block_number: block.number,
+            block_version: block.version as u64,
+            block_timestamp: block.timestamp,
+            transaction_tree_root: block.tx_trie_root.clone(),
+            parent_hash: block.parent_hash.clone(),
+            witness_address: block.witness_address.clone(),
         })
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
-            fee: TransactionFee::default(), // This will be calculated later based on transaction type
+            fee: TransactionFee::new_from_fee(input.gas_price.total_fee()),
             metadata: input.metadata,
         })
     }
 
-    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Send + Sync>> {
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Send + Sync>> {
         Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(1))])
     }
 }

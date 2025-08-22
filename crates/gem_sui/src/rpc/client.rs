@@ -11,8 +11,8 @@ use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 use gem_jsonrpc::JsonRpcClient;
 use primitives::{
-    chain::Chain, Asset, FeePriority, FeeRate, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
-    TransactionStateRequest, TransactionUpdate,
+    chain::Chain, Asset, FeePriority, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput, TransactionStateRequest, TransactionUpdate,
 };
 
 use super::model::Balance;
@@ -149,12 +149,12 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
-            fee: TransactionFee::default(),
+            fee: TransactionFee::new_from_fee(input.gas_price.total_fee()),
             metadata: input.metadata,
         })
     }
 
-    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let gas_price = self.get_gas_price().await?;
         Ok(vec![FeeRate::regular(FeePriority::Normal, gas_price)])
     }

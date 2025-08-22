@@ -4,7 +4,7 @@ use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeeRate, TransactionFee, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{FeePriority, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use super::preload_mapper::map_transaction_preload;
 use crate::rpc::client::AptosClient;
@@ -23,7 +23,7 @@ impl<C: Client> ChainTransactionLoad for AptosClient<C> {
         Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 
-    async fn get_transaction_fee_rates(&self, _input_type: primitives::TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let gas_fee = self.get_gas_price().await?;
 
         Ok(vec![

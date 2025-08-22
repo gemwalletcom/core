@@ -117,5 +117,5 @@ pub struct TransactionBroadcast {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionStatus {
     #[serde(rename = "confirmed-round")]
-    pub confirmed_round: i64,
+    pub confirmed_round: Option<i64>,
 }

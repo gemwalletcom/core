@@ -3,9 +3,9 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionChange, TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{TransactionStateRequest, TransactionUpdate};
 
-use super::transactions_mapper::map_transaction_broadcast;
+use super::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
 use crate::rpc::client::AlgorandClient;
 
 #[async_trait]
@@ -17,18 +17,6 @@ impl<C: Client> ChainTransactions for AlgorandClient<C> {
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let transaction = self.get_transaction_status(&request.id).await?;
-
-        let state: TransactionState = if transaction.confirmed_round > 0 {
-            TransactionState::Confirmed
-        } else {
-            TransactionState::Failed
-        };
-
-        let mut changes = Vec::new();
-        if transaction.confirmed_round > 0 {
-            changes.push(TransactionChange::BlockNumber(transaction.confirmed_round.to_string()));
-        }
-
-        Ok(TransactionUpdate { state, changes })
+        Ok(map_transaction_status(&transaction))
     }
 }

@@ -88,18 +88,26 @@ impl Default for TransactionFee {
 }
 
 impl TransactionFee {
+    pub fn new_from_gas_price(gas_price: BigInt) -> Self {
+        Self {
+            fee: gas_price.clone(),
+            gas_price,
+            gas_limit: BigInt::from(0),
+            options: HashMap::new(),
+        }
+    }
     pub fn new_from_fee(fee: BigInt) -> Self {
         Self {
-            fee,
-            gas_price: BigInt::from(0),
+            fee: fee.clone(),
+            gas_price: fee.clone(),
             gas_limit: BigInt::from(0),
             options: HashMap::new(),
         }
     }
     pub fn new_from_fee_with_option(fee: BigInt, option: FeeOption, option_value: BigInt) -> Self {
         Self {
-            fee,
-            gas_price: BigInt::from(0),
+            fee: fee.clone(),
+            gas_price: fee.clone(),
             gas_limit: BigInt::from(0),
             options: HashMap::from([(option, option_value)]),
         }
@@ -113,7 +121,7 @@ impl TransactionLoadMetadata {
             TransactionLoadMetadata::Near { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Stellar { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Xrp { sequence } => Ok(*sequence),
-            TransactionLoadMetadata::Algorand { sequence } => Ok(*sequence),
+            TransactionLoadMetadata::Algorand { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Aptos { sequence } => Ok(*sequence),
             TransactionLoadMetadata::Polkadot { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Evm { nonce, .. } => Ok(*nonce),
@@ -133,6 +141,7 @@ impl TransactionLoadMetadata {
         match self {
             TransactionLoadMetadata::Solana { block_hash, .. } => Ok(block_hash.clone()),
             TransactionLoadMetadata::Near { block_hash, .. } => Ok(block_hash.clone()),
+            TransactionLoadMetadata::Algorand { block_hash, .. } => Ok(block_hash.clone()),
             TransactionLoadMetadata::Polkadot { block_hash, .. } => Ok(block_hash.clone()),
             _ => Err("Block hash not available for this metadata type".into()),
         }
@@ -141,6 +150,7 @@ impl TransactionLoadMetadata {
     pub fn get_chain_id(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Cosmos { chain_id, .. } => Ok(chain_id.clone()),
+            TransactionLoadMetadata::Algorand { chain_id, .. } => Ok(chain_id.clone()),
             TransactionLoadMetadata::Evm { chain_id, .. } => Ok(chain_id.to_string()),
             _ => Err("Chain ID not available for this metadata type".into()),
         }
@@ -181,7 +191,6 @@ impl TransactionFee {
         }
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionLoadMetadata {
@@ -225,6 +234,8 @@ pub enum TransactionLoadMetadata {
     },
     Algorand {
         sequence: u64,
+        block_hash: String,
+        chain_id: String,
     },
     Aptos {
         sequence: u64,
