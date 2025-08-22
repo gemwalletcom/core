@@ -61,6 +61,7 @@ pub enum GemStakeType {
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
+#[allow(clippy::large_enum_variant)]
 pub enum GemTransactionInputType {
     Transfer { asset: GemAsset },
     Swap { from_asset: GemAsset, to_asset: GemAsset },

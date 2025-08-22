@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn test_is_valid_token_address() {
-        assert_eq!(is_valid_token_address("rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"), true);
-        assert_eq!(is_valid_token_address("invalid"), false);
+        assert!(is_valid_token_address("rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"));
+        assert!(!is_valid_token_address("invalid"));
     }
 }

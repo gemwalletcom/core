@@ -19,7 +19,7 @@ use std::sync::Arc;
 pub mod models;
 
 pub use models::*;
-use primitives::{chain_cosmos::CosmosChain, Asset, AssetId, AssetType, BitcoinChain, Chain, ChartPeriod, TransactionInputType};
+use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod};
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
