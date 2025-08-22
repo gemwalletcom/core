@@ -64,7 +64,7 @@ pub enum GemStakeType {
 pub enum GemTransactionInputType {
     Transfer { asset: GemAsset },
     Swap { from_asset: GemAsset, to_asset: GemAsset },
-    Stake { asset: GemAsset, operation: GemStakeType },
+    Stake { asset: GemAsset, stake_type: GemStakeType },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -166,9 +166,9 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
     }
 }
 
-impl GemStakeType {
-    pub fn into_primitives(self) -> StakeType {
-        match self {
+impl From<GemStakeType> for StakeType {
+    fn from(value: GemStakeType) -> Self {
+        match value {
             GemStakeType::Delegate { validator } => StakeType::Delegate(validator.into()),
             GemStakeType::Undelegate { validator } => StakeType::Undelegate(validator.into()),
             GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(delegation.into(), to_validator.into()),
@@ -183,7 +183,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
             GemTransactionInputType::Swap { from_asset, to_asset } => TransactionInputType::Swap(from_asset.into(), to_asset.into()),
-            GemTransactionInputType::Stake { asset, operation } => TransactionInputType::Stake(asset.into(), operation.into_primitives()),
+            GemTransactionInputType::Stake { asset, stake_type: operation } => TransactionInputType::Stake(asset.into(), operation.into()),
         }
     }
 }
@@ -198,7 +198,11 @@ impl From<GemGasPriceType> for GasPriceType {
                 gas_price: gas_price.parse().unwrap_or_default(),
                 priority_fee: priority_fee.parse().unwrap_or_default(),
             },
-            GemGasPriceType::Solana { gas_price, priority_fee, unit_price } => GasPriceType::Solana {
+            GemGasPriceType::Solana {
+                gas_price,
+                priority_fee,
+                unit_price,
+            } => GasPriceType::Solana {
                 gas_price: gas_price.parse().unwrap_or_default(),
                 priority_fee: priority_fee.parse().unwrap_or_default(),
                 unit_price: unit_price.parse().unwrap_or_default(),

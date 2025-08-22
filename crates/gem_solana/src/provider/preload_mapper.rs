@@ -75,6 +75,8 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
         BigInt::from(std::cmp::max(rounded, multiple_of))
     };
 
+    let gas_limit = get_gas_limit(input_type);
+
     [FeePriority::Slow, FeePriority::Normal, FeePriority::Fast]
         .iter()
         .map(|priority| {
@@ -83,11 +85,12 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
                 FeePriority::Normal => priority_fee_base.clone(),
                 FeePriority::Fast => &priority_fee_base * 3,
             };
+
             FeeRate::new(
                 *priority,
                 GasPriceType::solana(
                     static_base_fee.clone(),
-                    (priority_fee.clone() * get_gas_limit(input_type)) / BigInt::from(1_000_000),
+                    (priority_fee.clone() * gas_limit.clone()) / BigInt::from(1_000_000),
                     priority_fee.clone(),
                 ),
             )
@@ -119,10 +122,8 @@ mod tests {
         // Expected calculation:
         // gas_price = 5000
         // priority_fee = 15000
-        // gas_limit = 100_000
-        // fee = gas_price + (priority_fee * gas_limit) / 1_000_000
-        // fee = 5000 + (15000 * 100_000) / 1_000_000 = 5000 + 1500 = 6500
-        assert_eq!(fee.fee, BigInt::from(6500u64));
+        // fee = gas_price + priority_fee = 5000 + 15000 = 20000
+        assert_eq!(fee.fee, BigInt::from(20_000u64));
         assert_eq!(fee.gas_price_type.gas_price(), BigInt::from(5000u64));
         assert_eq!(fee.gas_price_type.priority_fee(), BigInt::from(15000u64));
         assert_eq!(fee.gas_limit, BigInt::from(100_000u64));
@@ -159,10 +160,8 @@ mod tests {
         // Expected calculation:
         // gas_price = 5000
         // priority_fee = 30000
-        // gas_limit = 420_000 (swap)
-        // fee = gas_price + (priority_fee * gas_limit) / 1_000_000
-        // fee = 5000 + (30000 * 420_000) / 1_000_000 = 5000 + 12600 = 17600
-        assert_eq!(fee.fee, BigInt::from(17600u64));
+        // fee = gas_price + priority_fee = 5000 + 30000 = 35000
+        assert_eq!(fee.fee, BigInt::from(35_000u64));
         assert_eq!(fee.gas_limit, BigInt::from(420_000u64));
     }
 
@@ -185,9 +184,7 @@ mod tests {
         // Expected calculation:
         // gas_price = 5000
         // priority_fee = 0
-        // gas_limit = 100_000
-        // fee = gas_price + (priority_fee * gas_limit) / 1_000_000
-        // fee = 5000 + (0 * 100_000) / 1_000_000 = 5000 + 0 = 5000
+        // fee = gas_price + priority_fee = 5000 + 0 = 5000
         assert_eq!(fee.fee, BigInt::from(5000u64));
         assert_eq!(fee.gas_price_type.priority_fee(), BigInt::from(0u64));
     }
@@ -211,7 +208,7 @@ mod tests {
 
     #[test]
     fn test_calculate_fee_rates() {
-        let fees = vec![SolanaPrioritizationFee { prioritization_fee: 100_000 }];
+        let fees = vec![SolanaPrioritizationFee { prioritization_fee: 25_000 }];
         let input_type = TransactionInputType::Transfer(Asset {
             id: AssetId::from_chain(Chain::Solana),
             chain: Chain::Solana,
@@ -224,26 +221,22 @@ mod tests {
 
         let rates = calculate_fee_rates(&input_type, &fees);
 
-        // Should return 3 fee rates: Slow, Normal, Fast
         assert_eq!(rates.len(), 3);
 
-        // All should use EIP-1559 gas pricing with base fee of 5000
         for rate in &rates {
             assert_eq!(rate.gas_price_type.gas_price(), BigInt::from(5000u64));
         }
-
-        // priority_fee_base = 100_000 (rounded up to 100_000)
-        // Slow: priority_fee_base / 2 = 50_000
-        // Normal: priority_fee_base = 100_000
-        // Fast: priority_fee_base * 3 = 300_000
         assert_eq!(rates[0].priority, FeePriority::Slow);
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(50_000u64));
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(1_250));
+        assert_eq!(rates[0].gas_price_type.unit_price(), BigInt::from(12_500));
 
         assert_eq!(rates[1].priority, FeePriority::Normal);
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(100_000u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(2_500));
+        assert_eq!(rates[1].gas_price_type.unit_price(), BigInt::from(25_000));
 
         assert_eq!(rates[2].priority, FeePriority::Fast);
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(300_000u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(7_500));
+        assert_eq!(rates[2].gas_price_type.unit_price(), BigInt::from(75_000));
     }
 
     #[test]
@@ -265,12 +258,12 @@ mod tests {
         assert_eq!(rates.len(), 3);
 
         // When fees are empty, priority_fee_base = multiple_of = 25_000 for native transfers
-        // Slow: 25_000 / 2 = 12_500
-        // Normal: 25_000
-        // Fast: 25_000 * 3 = 75_000
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(12_500u64));
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(25_000u64));
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(75_000u64));
+        // Slow: 25_000 / 2 = 12_500, scaled: (12_500 * 100_000) / 1_000_000 = 1_250
+        // Normal: 25_000, scaled: (25_000 * 100_000) / 1_000_000 = 2_500
+        // Fast: 25_000 * 3 = 75_000, scaled: (75_000 * 100_000) / 1_000_000 = 7_500
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(1_250u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(2_500u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(7_500u64));
     }
 
     #[test]
@@ -292,10 +285,12 @@ mod tests {
         // For SPL tokens, multiple_of = 50_000
         // 80_000 rounded up to nearest 50_000 = 100_000
         // priority_fee_base = max(100_000, 50_000) = 100_000
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(50_000u64)); // 100_000 / 2
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(100_000u64)); // 100_000
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(300_000u64));
-        // 100_000 * 3
+        // Slow: 100_000 / 2 = 50_000, scaled: (50_000 * 100_000) / 1_000_000 = 5_000
+        // Normal: 100_000, scaled: (100_000 * 100_000) / 1_000_000 = 10_000
+        // Fast: 100_000 * 3 = 300_000, scaled: (300_000 * 100_000) / 1_000_000 = 30_000
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(5_000u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(10_000u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(30_000u64));
     }
 
     #[test]
@@ -325,13 +320,15 @@ mod tests {
         let rates = calculate_fee_rates(&input_type, &fees);
         assert_eq!(rates.len(), 3);
 
-        // For swaps, multiple_of = 100_000
+        // For swaps, multiple_of = 100_000, gas_limit = 420_000
         // 150_000 rounded up to nearest 100_000 = 200_000
         // priority_fee_base = max(200_000, 100_000) = 200_000
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(100_000u64)); // 200_000 / 2
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(200_000u64)); // 200_000
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(600_000u64));
-        // 200_000 * 3
+        // Slow: 200_000 / 2 = 100_000, scaled: (100_000 * 420_000) / 1_000_000 = 42_000
+        // Normal: 200_000, scaled: (200_000 * 420_000) / 1_000_000 = 84_000
+        // Fast: 200_000 * 3 = 600_000, scaled: (600_000 * 420_000) / 1_000_000 = 252_000
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(42_000u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(84_000u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(252_000u64));
     }
 
     #[test]
@@ -362,10 +359,12 @@ mod tests {
         // Average = (225_000 + 200_000 + 175_000 + 150_000 + 125_000) / 5 = 175_000
         // Rounded up to nearest 25_000 = 175_000
         // priority_fee_base = max(175_000, 25_000) = 175_000
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(87_500u64)); // 175_000 / 2
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(175_000u64)); // 175_000
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(525_000u64));
-        // 175_000 * 3
+        // Slow: 175_000 / 2 = 87_500, scaled: (87_500 * 100_000) / 1_000_000 = 8_750
+        // Normal: 175_000, scaled: (175_000 * 100_000) / 1_000_000 = 17_500
+        // Fast: 175_000 * 3 = 525_000, scaled: (525_000 * 100_000) / 1_000_000 = 52_500
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(8_750u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(17_500u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(52_500u64));
     }
 
     #[test]
@@ -384,12 +383,12 @@ mod tests {
         let rates = calculate_fee_rates(&input_type, &fees);
 
         // priority_fee_base = 150_000 (already rounded to multiple of 25_000)
-        // Slow: 150_000 / 2 = 75_000
-        // Normal: 150_000 = 150_000
-        // Fast: 150_000 * 3 = 450_000
+        // Slow: 150_000 / 2 = 75_000, scaled: (75_000 * 100_000) / 1_000_000 = 7_500
+        // Normal: 150_000, scaled: (150_000 * 100_000) / 1_000_000 = 15_000
+        // Fast: 150_000 * 3 = 450_000, scaled: (450_000 * 100_000) / 1_000_000 = 45_000
 
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(75_000));
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(150_000));
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(450_000));
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(7_500));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(15_000));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(45_000));
     }
 }

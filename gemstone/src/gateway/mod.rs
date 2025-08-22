@@ -169,23 +169,11 @@ impl GemGateway {
         Ok(block_number)
     }
 
-    pub async fn get_fee_rates(&self, chain: Chain) -> Result<Vec<GemFeeRate>, GatewayError> {
-        // Create a dummy native asset for fee rate calculation since most chains only consider chain-specific factors
-        let dummy_asset = Asset {
-            id: AssetId { chain, token_id: None },
-            chain,
-            token_id: None,
-            name: "Native".to_string(),
-            symbol: "Native".to_string(),
-            decimals: 18,
-            asset_type: AssetType::NATIVE,
-        };
-        let input_type = TransactionInputType::Transfer(dummy_asset);
-
+    pub async fn get_fee_rates(&self, chain: Chain, input: GemTransactionInputType) -> Result<Vec<GemFeeRate>, GatewayError> {
         let fees = self
             .provider(chain)
             .await?
-            .get_transaction_fee_rates(input_type)
+            .get_transaction_fee_rates(input.into())
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(fees.into_iter().map(|f| f.into()).collect())
