@@ -6,7 +6,9 @@ use number_formatter::BigNumberFormatter;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeeRate, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO};
+use primitives::{
+    FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO,
+};
 
 use crate::provider::preload_mapper::map_transaction_preload;
 use crate::rpc::client::BitcoinClient;
@@ -29,9 +31,9 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
         let priority = self.chain.get_blocks_fee_priority();
         let (slow, normal, fast) = futures::try_join!(self.get_fee(priority.slow), self.get_fee(priority.normal), self.get_fee(priority.fast))?;
         Ok(vec![
-            FeeRate::regular(FeePriority::Slow, slow),
-            FeeRate::regular(FeePriority::Normal, normal),
-            FeeRate::regular(FeePriority::Fast, fast),
+            FeeRate::new(FeePriority::Slow, GasPriceType::regular(slow)),
+            FeeRate::new(FeePriority::Normal, GasPriceType::regular(normal)),
+            FeeRate::new(FeePriority::Fast, GasPriceType::regular(fast)),
         ])
     }
 

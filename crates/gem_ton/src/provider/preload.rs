@@ -4,7 +4,7 @@ use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
 use primitives::{
-    AssetSubtype, FeePriority, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    AssetSubtype, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
     TransactionPreloadInput,
 };
 use std::collections::HashMap;
@@ -45,12 +45,7 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, account_exists: b
         _ => base_fee.clone(),
     };
 
-    TransactionFee {
-        fee,
-        gas_price: base_fee,
-        gas_limit: BigInt::from(1u64),
-        options,
-    }
+    TransactionFee::new_from_fee(fee)
 }
 
 #[async_trait]
@@ -93,7 +88,7 @@ impl<C: Client> ChainTransactionLoad for TonClient<C> {
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Ok(vec![
-            FeeRate::regular(FeePriority::Normal, BigInt::from(10000000)), // 0.01 TON
+            FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(10000000))), // 0.01 TON
         ])
     }
 }

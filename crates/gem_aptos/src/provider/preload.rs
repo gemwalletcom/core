@@ -1,10 +1,12 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
-use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{
+    FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput,
+};
 
 use super::preload_mapper::map_transaction_preload;
 use crate::rpc::client::AptosClient;
@@ -27,9 +29,9 @@ impl<C: Client> ChainTransactionLoad for AptosClient<C> {
         let gas_fee = self.get_gas_price().await?;
 
         Ok(vec![
-            FeeRate::regular(FeePriority::Slow, BigInt::from(gas_fee.deprioritized_gas_estimate)),
-            FeeRate::regular(FeePriority::Normal, BigInt::from(gas_fee.gas_estimate)),
-            FeeRate::regular(FeePriority::Fast, BigInt::from(gas_fee.prioritized_gas_estimate)),
+            FeeRate::new(FeePriority::Slow, GasPriceType::regular(gas_fee.deprioritized_gas_estimate)),
+            FeeRate::new(FeePriority::Normal, GasPriceType::regular(gas_fee.gas_estimate)),
+            FeeRate::new(FeePriority::Fast, GasPriceType::regular(gas_fee.prioritized_gas_estimate)),
         ])
     }
 }

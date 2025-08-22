@@ -181,7 +181,7 @@ impl GemGateway {
             asset_type: AssetType::NATIVE,
         };
         let input_type = TransactionInputType::Transfer(dummy_asset);
-        
+
         let fees = self
             .provider(chain)
             .await?

@@ -1,4 +1,4 @@
-use primitives::{AssetId, Chain, DelegationBase, DelegationValidator};
+use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationValidator};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemDelegationValidator {
@@ -20,6 +20,12 @@ pub struct GemDelegationBase {
     pub completion_date: Option<u64>,
     pub delegation_state: String,
     pub rewards: String,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemDelegation {
+    pub base: GemDelegationBase,
+    pub validator: GemDelegationValidator,
 }
 
 impl From<DelegationValidator> for GemDelegationValidator {
@@ -46,6 +52,56 @@ impl From<DelegationBase> for GemDelegationBase {
             completion_date: delegation.completion_date.map(|dt| dt.timestamp() as u64),
             delegation_state: delegation.state.as_ref().to_string(),
             rewards: delegation.rewards,
+        }
+    }
+}
+
+impl From<Delegation> for GemDelegation {
+    fn from(delegation: Delegation) -> Self {
+        Self {
+            base: delegation.base.into(),
+            validator: delegation.validator.into(),
+        }
+    }
+}
+
+impl From<GemDelegationValidator> for DelegationValidator {
+    fn from(validator: GemDelegationValidator) -> Self {
+        Self {
+            chain: validator.chain,
+            id: validator.id,
+            name: validator.name,
+            is_active: validator.is_active,
+            commision: validator.commission,
+            apr: validator.apr,
+        }
+    }
+}
+
+impl From<GemDelegation> for Delegation {
+    fn from(delegation: GemDelegation) -> Self {
+        Self {
+            base: delegation.base.into(),
+            validator: delegation.validator.into(),
+            price: None, // Gateway models don't include price information
+        }
+    }
+}
+
+impl From<GemDelegationBase> for DelegationBase {
+    fn from(delegation: GemDelegationBase) -> Self {
+        use primitives::DelegationState;
+        Self {
+            asset_id: delegation.asset_id,
+            state: delegation.delegation_state.parse().unwrap_or(DelegationState::Active),
+            balance: delegation.balance,
+            shares: delegation.shares,
+            rewards: delegation.rewards,
+            completion_date: delegation
+                .completion_date
+                .map(|ts| chrono::DateTime::from_timestamp(ts as i64, 0).unwrap_or_default()),
+            delegation_id: delegation.delegation_id,
+            validator_id: delegation.validator_id,
         }
     }
 }

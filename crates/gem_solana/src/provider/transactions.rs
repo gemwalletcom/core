@@ -41,6 +41,7 @@ impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
 mod tests {
     use super::*;
     use crate::models::transaction::SolanaTransaction;
+    use gem_jsonrpc::types::JsonRpcErrorResponse;
     use primitives::JsonRpcResult;
 
     #[test]
@@ -60,5 +61,17 @@ mod tests {
 
         assert_eq!(state, TransactionState::Confirmed);
         assert_eq!(transaction.slot, 361169359);
+    }
+
+    #[test]
+    fn test_transaction_broadcast_error() {
+        let error_response: JsonRpcErrorResponse = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_swap_error.json")).unwrap();
+
+        assert_eq!(error_response.error.code, -32002);
+        assert_eq!(
+            error_response.error.message,
+            "Transaction simulation failed: Error processing Instruction 3: custom program error: 0x1771"
+        );
+        assert_eq!(error_response.id, 1755839259);
     }
 }

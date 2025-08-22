@@ -3,8 +3,9 @@ use chain_traits::ChainTransactionLoad;
 use std::error::Error;
 
 use gem_client::Client;
-use num_bigint::BigInt;
-use primitives::{FeePriority, FeeRate, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO};
+use primitives::{
+    FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO,
+};
 
 use super::preload_mapper;
 use crate::rpc::client::CardanoClient;
@@ -24,7 +25,7 @@ impl<C: Client> ChainTransactionLoad for CardanoClient<C> {
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(1000000))])
+        Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(1000000))])
     }
 
     async fn get_utxos(&self, address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {

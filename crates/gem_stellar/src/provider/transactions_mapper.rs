@@ -67,7 +67,7 @@ mod tests {
             hash: Some(response.hash.clone()),
             error_message: None,
         });
-        
+
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "dbc69dff72e4ca7ddf47311e12da09ac5952c777d19855f95f13b0ec624f8baf");
     }
@@ -80,7 +80,7 @@ mod tests {
         let result = map_transaction_status(&response);
         assert_eq!(result.state, TransactionState::Confirmed);
         assert_eq!(result.changes.len(), 1);
-        
+
         if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
             assert_eq!(fee, &BigInt::from(100u64));
         } else {

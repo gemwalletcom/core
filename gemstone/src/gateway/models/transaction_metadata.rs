@@ -1,4 +1,5 @@
 use crate::gateway::GemUTXO;
+use primitives::solana_token_program::SolanaTokenProgramId;
 use primitives::transaction_load::TransactionLoadMetadata;
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -7,20 +8,20 @@ pub enum GemSolanaTokenProgramId {
     Token2022,
 }
 
-impl From<primitives::SolanaTokenProgramId> for GemSolanaTokenProgramId {
-    fn from(value: primitives::SolanaTokenProgramId) -> Self {
+impl From<SolanaTokenProgramId> for GemSolanaTokenProgramId {
+    fn from(value: SolanaTokenProgramId) -> Self {
         match value {
-            primitives::SolanaTokenProgramId::Token => GemSolanaTokenProgramId::Token,
-            primitives::SolanaTokenProgramId::Token2022 => GemSolanaTokenProgramId::Token2022,
+            SolanaTokenProgramId::Token => GemSolanaTokenProgramId::Token,
+            SolanaTokenProgramId::Token2022 => GemSolanaTokenProgramId::Token2022,
         }
     }
 }
 
-impl From<GemSolanaTokenProgramId> for primitives::SolanaTokenProgramId {
+impl From<GemSolanaTokenProgramId> for SolanaTokenProgramId {
     fn from(value: GemSolanaTokenProgramId) -> Self {
         match value {
-            GemSolanaTokenProgramId::Token => primitives::SolanaTokenProgramId::Token,
-            GemSolanaTokenProgramId::Token2022 => primitives::SolanaTokenProgramId::Token2022,
+            GemSolanaTokenProgramId::Token => SolanaTokenProgramId::Token,
+            GemSolanaTokenProgramId::Token2022 => SolanaTokenProgramId::Token2022,
         }
     }
 }
@@ -89,6 +90,9 @@ pub enum GemTransactionLoadMetadata {
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
+    },
+    Sui {
+        message_bytes: String,
     },
 }
 
@@ -181,6 +185,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 parent_hash,
                 witness_address,
             },
+            TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
         }
     }
 }
@@ -274,6 +279,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 parent_hash,
                 witness_address,
             },
+            GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
         }
     }
 }

@@ -16,9 +16,9 @@ pub fn map_transaction_status(response: &NearBroadcastResult) -> TransactionUpda
         _ => TransactionState::Failed,
     };
 
-    let changes = vec![TransactionChange::NetworkFee(
-        BigInt::from(&response.transaction_outcome.outcome.tokens_burnt * BigUint::from(2u64)),
-    )];
+    let changes = vec![TransactionChange::NetworkFee(BigInt::from(
+        &response.transaction_outcome.outcome.tokens_burnt * BigUint::from(2u64),
+    ))];
 
     TransactionUpdate { state, changes }
 }
@@ -83,7 +83,8 @@ mod tests {
         assert_eq!(result.state, TransactionState::Confirmed);
         assert_eq!(result.changes.len(), 1);
         if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
-            assert_eq!(fee, &"834989537500000000000".parse::<BigInt>().unwrap()); // 417494768750000000000 * 2
+            assert_eq!(fee, &"834989537500000000000".parse::<BigInt>().unwrap());
+            // 417494768750000000000 * 2
         }
     }
 

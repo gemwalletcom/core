@@ -1,4 +1,5 @@
-use crate::{Asset, GasPriceType, SolanaTokenProgramId, TransactionPreloadInput, UTXO};
+use crate::solana_token_program::SolanaTokenProgramId;
+use crate::{Asset, Delegation, DelegationValidator, GasPriceType, TransactionPreloadInput, UTXO};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,10 +12,11 @@ pub enum FeeOption {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum StakeType {
-    Delegate(String),
-    Undelegate(String),
-    Redelegate(String, String),
-    WithdrawRewards(Vec<String>),
+    Delegate(DelegationValidator),
+    Undelegate(DelegationValidator),
+    Redelegate(Delegation, DelegationValidator),
+    WithdrawRewards(Vec<DelegationValidator>),
+    Withdraw(Delegation),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,7 +50,7 @@ pub struct TransactionLoadInput {
 
 impl TransactionLoadInput {
     pub fn default_fee(&self) -> TransactionFee {
-        TransactionFee::new_from_gas_price(self.gas_price.gas_price())
+        TransactionFee::new_from_fee(self.gas_price.total_fee())
     }
 }
 
@@ -71,7 +73,7 @@ pub struct SignerInputBlock {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionFee {
     pub fee: BigInt,
-    pub gas_price: BigInt,
+    pub gas_price_type: GasPriceType,
     pub gas_limit: BigInt,
     pub options: HashMap<FeeOption, BigInt>,
 }
@@ -80,7 +82,7 @@ impl Default for TransactionFee {
     fn default() -> Self {
         Self {
             fee: BigInt::from(0),
-            gas_price: BigInt::from(0),
+            gas_price_type: GasPriceType::regular(BigInt::from(0)),
             gas_limit: BigInt::from(0),
             options: HashMap::new(),
         }
@@ -91,23 +93,15 @@ impl TransactionFee {
     pub fn new_from_fee(fee: BigInt) -> Self {
         Self {
             fee: fee.clone(),
-            gas_price: BigInt::from(0),
+            gas_price_type: GasPriceType::regular(fee),
             gas_limit: BigInt::from(0),
             options: HashMap::new(),
         }
     }
-    pub fn new_from_gas_price(gas_price: BigInt) -> Self {
-        Self {
-            fee: gas_price.clone(),
-            gas_price,
-            gas_limit: BigInt::from(0),
-            options: HashMap::new(),
-        }
-    }
-    pub fn new_from_gas_price_limit(gas_price: BigInt, gas_limit: BigInt) -> Self {
+    pub fn new_from_gas_price_and_limit(gas_price: BigInt, gas_limit: BigInt) -> Self {
         Self {
             fee: gas_price.clone() * &gas_limit,
-            gas_price,
+            gas_price_type: GasPriceType::regular(gas_price),
             gas_limit,
             options: HashMap::new(),
         }
@@ -115,7 +109,7 @@ impl TransactionFee {
     pub fn new_from_fee_with_option(fee: BigInt, option: FeeOption, option_value: BigInt) -> Self {
         Self {
             fee: fee.clone(),
-            gas_price: fee.clone(),
+            gas_price_type: GasPriceType::regular(fee.clone()),
             gas_limit: BigInt::from(0),
             options: HashMap::from([(option, option_value)]),
         }
@@ -191,7 +185,7 @@ impl TransactionFee {
 
         Self {
             fee: total_fee,
-            gas_price,
+            gas_price_type: gas_price_type.clone(),
             gas_limit,
             options: HashMap::new(),
         }
@@ -263,6 +257,9 @@ pub enum TransactionLoadMetadata {
         parent_hash: String,
         witness_address: String,
     },
+    Sui {
+        message_bytes: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -292,7 +289,7 @@ mod tests {
         let fee = TransactionFee::calculate(gas_limit, &gas_price_type);
 
         assert_eq!(fee.fee, BigInt::from(100000u64)); // 100 * 1000
-        assert_eq!(fee.gas_price, BigInt::from(100u64));
+        assert_eq!(fee.gas_price_type.gas_price(), BigInt::from(100u64));
         assert_eq!(fee.gas_limit, BigInt::from(1000u64));
     }
 }

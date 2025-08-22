@@ -5,7 +5,8 @@ use std::error::Error;
 
 const STELLAR_DECIMALS: u32 = 7;
 
-pub fn map_native_balance(account: &StellarAccount, asset_id: AssetId, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+pub fn map_native_balance(account: &StellarAccount) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+    let chain = Chain::Stellar;
     let reserved_amount = chain.account_activation_fee().unwrap_or(0) as u64;
     let native_balance = account
         .balances
@@ -21,7 +22,7 @@ pub fn map_native_balance(account: &StellarAccount, asset_id: AssetId, chain: Ch
     let available = available_decimal.to_string();
     let reserved_str = reserved_amount.to_string();
 
-    Ok(AssetBalance::new_balance(asset_id, Balance::with_reserved(available, reserved_str)))
+    Ok(AssetBalance::new_balance(chain.as_asset_id(), Balance::with_reserved(available, reserved_str)))
 }
 
 pub fn map_token_balances(account: &StellarAccount, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
@@ -59,10 +60,23 @@ mod tests {
         let chain = Chain::Stellar;
         let asset_id = AssetId::from_chain(chain);
 
-        let result = map_native_balance(&account, asset_id.clone(), chain).unwrap();
+        let result = map_native_balance(&account).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
         assert_eq!(result.balance.available, "299999077");
+        assert_eq!(result.balance.reserved, "10000000");
+    }
+
+    #[test]
+    fn test_map_native_balance_with_minimal_balance() {
+        let account: StellarAccount = serde_json::from_str(include_str!("../../testdata/balance_coin.json")).unwrap();
+        let chain = Chain::Stellar;
+        let asset_id = AssetId::from_chain(chain);
+
+        let result = map_native_balance(&account).unwrap();
+
+        assert_eq!(result.asset_id, asset_id);
+        assert_eq!(result.balance.available, "0");
         assert_eq!(result.balance.reserved, "10000000");
     }
 }

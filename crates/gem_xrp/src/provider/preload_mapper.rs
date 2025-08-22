@@ -4,9 +4,9 @@ use std::error::Error;
 
 pub fn map_transaction_preload(account_result: AccountInfoResult) -> Result<TransactionLoadMetadata, Box<dyn Error + Send + Sync>> {
     if let Some(account_data) = account_result.account_data {
-        Ok(TransactionLoadMetadata::Xrp { 
+        Ok(TransactionLoadMetadata::Xrp {
             sequence: account_data.sequence,
-            block_number: account_result.ledger_current_index 
+            block_number: account_result.ledger_current_index,
         })
     } else {
         Err("Account not found".into())
@@ -33,7 +33,7 @@ mod tests {
         };
 
         let result = map_transaction_preload(account_result).unwrap();
-        
+
         if let TransactionLoadMetadata::Xrp { sequence, block_number } = result {
             assert_eq!(sequence, 12345);
             assert_eq!(block_number, 67890);

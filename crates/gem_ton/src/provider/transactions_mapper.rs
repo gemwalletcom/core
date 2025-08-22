@@ -12,13 +12,12 @@ pub fn map_transaction_status(
 
     let state = map_transaction_state(transaction);
 
-    let fee = transaction.total_fees.parse::<BigInt>()
+    let fee = transaction
+        .total_fees
+        .parse::<BigInt>()
         .map_err(|e| format!("Failed to parse total_fees: {}", e))?;
-    
-    Ok(TransactionUpdate::new(
-        state,
-        vec![TransactionChange::NetworkFee(fee)],
-    ))
+
+    Ok(TransactionUpdate::new(state, vec![TransactionChange::NetworkFee(fee)]))
 }
 
 pub fn map_transaction_broadcast(broadcast_result: TonBroadcastTransaction) -> Result<String, Box<dyn Error + Sync + Send>> {

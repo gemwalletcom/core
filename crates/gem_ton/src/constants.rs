@@ -1,7 +1,7 @@
 // Transaction opcodes
 pub const JETTON_TRANSFER_OPCODE: &str = "0x0f8a7ea5";
 
-// Failed operation opcodes - operations that may show blockchain success but represent failed application operations  
+// Failed operation opcodes - operations that may show blockchain success but represent failed application operations
 pub const JETTON_FAILED_OPERATION_OPCODE: &str = "0x93be2305";
 
 // Additional potential failure opcodes found in test data

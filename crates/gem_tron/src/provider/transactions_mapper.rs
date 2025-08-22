@@ -1,4 +1,4 @@
-use crate::rpc::model::{TronTransactionBroadcast, TransactionReceiptData};
+use crate::rpc::model::{TransactionReceiptData, TronTransactionBroadcast};
 use num_bigint::BigInt;
 use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 use std::error::Error;
@@ -34,7 +34,7 @@ pub fn map_transaction_status(receipt: &TransactionReceiptData) -> TransactionUp
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::{TronTransactionBroadcast, TransactionReceiptData, TransactionReceipt};
+    use crate::rpc::model::{TransactionReceipt, TransactionReceiptData, TronTransactionBroadcast};
 
     #[test]
     fn test_map_transaction_broadcast_success() {
@@ -137,9 +137,7 @@ mod tests {
             fee: Some(0),
             block_number: 0,
             block_time_stamp: 0,
-            receipt: TransactionReceipt {
-                result: None,
-            },
+            receipt: TransactionReceipt { result: None },
             log: None,
         };
 

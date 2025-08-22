@@ -25,7 +25,7 @@ impl<C: Client + Clone> ChainTransactionLoad for NearClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         Ok(TransactionLoadData {
-            fee: TransactionFee::new_from_gas_price_limit(input.gas_price.gas_price(), BigInt::from_str("9000000000000")?), // "4174947687500" * 2
+            fee: TransactionFee::new_from_gas_price_and_limit(input.gas_price.gas_price(), BigInt::from_str("9000000000000")?), // "4174947687500" * 2
             metadata: input.metadata,
         })
     }

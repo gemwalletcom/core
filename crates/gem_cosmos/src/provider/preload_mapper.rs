@@ -41,6 +41,7 @@ fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 
             StakeType::Delegate(_) | StakeType::Undelegate(_) => 1_000_000,
             StakeType::Redelegate(_, _) => 1_250_000,
             StakeType::WithdrawRewards(_) => 750_000,
+            StakeType::Withdraw(_) => 750_000,
         },
     }
 }
@@ -51,7 +52,7 @@ pub fn calculate_transaction_fee(input_type: &TransactionInputType, chain: Cosmo
 
     TransactionFee {
         fee,
-        gas_price: gas_price_type.gas_price(),
+        gas_price_type: gas_price_type.clone(),
         gas_limit: BigInt::from(gas_limit),
         options: std::collections::HashMap::new(),
     }

@@ -7,7 +7,11 @@ use crate::models::response::{HyperCoreBroadcastResult, TransactionBroadcastResp
 use async_trait::async_trait;
 use chain_traits::{ChainTraits, ChainTransactionLoad};
 use gem_client::Client;
-use primitives::{Chain, FeePriority, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use num_bigint::BigInt;
+use primitives::{
+    Chain, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput,
+};
 use serde_json::json;
 use std::error::Error;
 
@@ -156,7 +160,7 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![FeeRate::regular(FeePriority::Normal, 1)])
+        Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(1)))])
     }
 }
 

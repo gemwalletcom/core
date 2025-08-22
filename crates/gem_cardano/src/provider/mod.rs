@@ -8,10 +8,10 @@ pub mod transactions;
 pub mod transactions_mapper;
 
 // Empty ChainAccount implementation
+use crate::rpc::client::CardanoClient;
 use async_trait::async_trait;
 use chain_traits::ChainAccount;
 use gem_client::Client;
-use crate::rpc::client::CardanoClient;
 
 #[async_trait]
 impl<C: Client> ChainAccount for CardanoClient<C> {}

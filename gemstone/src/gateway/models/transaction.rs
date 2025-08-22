@@ -1,8 +1,8 @@
-use crate::gateway::{GemAsset, GemTransactionLoadMetadata};
+use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
 use primitives::transaction_load::FeeOption;
 use primitives::{
-    GasPriceType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
+    GasPriceType, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
     TransactionStateRequest, TransactionUpdate,
 };
 use std::collections::HashMap;
@@ -41,19 +41,22 @@ pub struct GemTransactionStateRequest {
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemStakeOperation {
+pub enum GemStakeType {
     Delegate {
-        validator_address: String,
+        validator: GemDelegationValidator,
     },
     Undelegate {
-        validator_address: String,
+        validator: GemDelegationValidator,
     },
     Redelegate {
-        src_validator_address: String,
-        dst_validator_address: String,
+        delegation: GemDelegation,
+        to_validator: GemDelegationValidator,
     },
     WithdrawRewards {
-        validator_addresses: Vec<String>,
+        validators: Vec<GemDelegationValidator>,
+    },
+    Withdraw {
+        delegation: GemDelegation,
     },
 }
 
@@ -61,7 +64,7 @@ pub enum GemStakeOperation {
 pub enum GemTransactionInputType {
     Transfer { asset: GemAsset },
     Swap { from_asset: GemAsset, to_asset: GemAsset },
-    Stake { asset: GemAsset, operation: GemStakeOperation },
+    Stake { asset: GemAsset, operation: GemStakeType },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -70,7 +73,7 @@ pub struct GemTransactionLoadInput {
     pub sender_address: String,
     pub destination_address: String,
     pub value: String,
-    pub gas_price: crate::gateway::models::GemGasPriceType,
+    pub gas_price: GemGasPriceType,
     pub memo: Option<String>,
     pub is_max_value: bool,
     pub metadata: GemTransactionLoadMetadata,
@@ -81,7 +84,7 @@ pub enum GemFeeOption {
     TokenAccountCreation,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[derive(Debug, Default, Clone, uniffi::Record)]
 pub struct GemFeeOptions {
     pub options: HashMap<GemFeeOption, String>,
 }
@@ -89,7 +92,7 @@ pub struct GemFeeOptions {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionLoadFee {
     pub fee: String,
-    pub gas_price: String,
+    pub gas_price_type: GemGasPriceType,
     pub gas_limit: String,
     pub options: GemFeeOptions,
 }
@@ -163,16 +166,14 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
     }
 }
 
-impl GemStakeOperation {
-    pub fn into_primitives(self) -> primitives::StakeType {
+impl GemStakeType {
+    pub fn into_primitives(self) -> StakeType {
         match self {
-            GemStakeOperation::Delegate { validator_address } => primitives::StakeType::Delegate(validator_address),
-            GemStakeOperation::Undelegate { validator_address } => primitives::StakeType::Undelegate(validator_address),
-            GemStakeOperation::Redelegate {
-                src_validator_address,
-                dst_validator_address,
-            } => primitives::StakeType::Redelegate(src_validator_address, dst_validator_address),
-            GemStakeOperation::WithdrawRewards { validator_addresses } => primitives::StakeType::WithdrawRewards(validator_addresses),
+            GemStakeType::Delegate { validator } => StakeType::Delegate(validator.into()),
+            GemStakeType::Undelegate { validator } => StakeType::Undelegate(validator.into()),
+            GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(delegation.into(), to_validator.into()),
+            GemStakeType::WithdrawRewards { validators } => StakeType::WithdrawRewards(validators.into_iter().map(|v| v.into()).collect()),
+            GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation.into()),
         }
     }
 }
@@ -187,15 +188,20 @@ impl From<GemTransactionInputType> for TransactionInputType {
     }
 }
 
-impl From<crate::gateway::models::GemGasPriceType> for GasPriceType {
-    fn from(value: crate::gateway::models::GemGasPriceType) -> Self {
-        match value.priority_fee {
-            Some(priority_fee) => GasPriceType::Eip1559 {
-                gas_price: value.gas_price.parse().unwrap_or_default(),
+impl From<GemGasPriceType> for GasPriceType {
+    fn from(value: GemGasPriceType) -> Self {
+        match value {
+            GemGasPriceType::Regular { gas_price } => GasPriceType::Regular {
+                gas_price: gas_price.parse().unwrap_or_default(),
+            },
+            GemGasPriceType::Eip1559 { gas_price, priority_fee } => GasPriceType::Eip1559 {
+                gas_price: gas_price.parse().unwrap_or_default(),
                 priority_fee: priority_fee.parse().unwrap_or_default(),
             },
-            None => GasPriceType::Regular {
-                gas_price: value.gas_price.parse().unwrap_or_default(),
+            GemGasPriceType::Solana { gas_price, priority_fee, unit_price } => GasPriceType::Solana {
+                gas_price: gas_price.parse().unwrap_or_default(),
+                priority_fee: priority_fee.parse().unwrap_or_default(),
+                unit_price: unit_price.parse().unwrap_or_default(),
             },
         }
     }
@@ -218,10 +224,6 @@ impl From<GemFeeOption> for FeeOption {
 }
 
 impl GemFeeOptions {
-    pub fn new() -> Self {
-        GemFeeOptions { options: HashMap::new() }
-    }
-
     pub fn with_option(mut self, option: GemFeeOption, value: String) -> Self {
         self.options.insert(option, value);
         self
@@ -246,7 +248,7 @@ impl From<GemTransactionLoadFee> for TransactionFee {
     fn from(value: GemTransactionLoadFee) -> Self {
         TransactionFee {
             fee: value.fee.parse().unwrap_or_default(),
-            gas_price: value.gas_price.parse().unwrap_or_default(),
+            gas_price_type: value.gas_price_type.into(),
             gas_limit: value.gas_limit.parse().unwrap_or_default(),
             options: value
                 .options
@@ -267,7 +269,7 @@ impl From<TransactionFee> for GemTransactionLoadFee {
     fn from(value: TransactionFee) -> Self {
         GemTransactionLoadFee {
             fee: value.fee.to_string(),
-            gas_price: value.gas_price.to_string(),
+            gas_price_type: value.gas_price_type.into(),
             gas_limit: value.gas_limit.to_string(),
             options: GemFeeOptions::from_primitives(value.options),
         }

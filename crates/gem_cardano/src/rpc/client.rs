@@ -122,5 +122,4 @@ impl<C: Client> ChainStaking for CardanoClient<C> {}
 
 impl<C: Client> ChainPerpetual for CardanoClient<C> {}
 
-
 impl<C: Client> ChainTraits for CardanoClient<C> {}

@@ -147,6 +147,4 @@ pub use self::transaction_update::{TransactionChange, TransactionMetadata, Trans
 pub mod transaction_preload;
 pub use self::transaction_preload::TransactionPreloadInput;
 pub mod transaction_load;
-pub use self::transaction_load::{
-    StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-};
+pub use self::transaction_load::{StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata};

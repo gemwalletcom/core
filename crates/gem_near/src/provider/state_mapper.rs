@@ -1,13 +1,13 @@
 use crate::models::fee::NearGasPrice;
-use primitives::{FeePriority, FeeRate};
+use primitives::{FeePriority, FeeRate, GasPriceType};
 
 pub fn map_gas_price_to_priorities(gas_price: &NearGasPrice) -> Result<Vec<FeeRate>, Box<dyn std::error::Error + Sync + Send>> {
     let base_price = gas_price.gas_price.parse::<u64>()?;
 
     Ok(vec![
-        FeeRate::regular(FeePriority::Slow, base_price),
-        FeeRate::regular(FeePriority::Normal, base_price),
-        FeeRate::regular(FeePriority::Fast, base_price * 2),
+        FeeRate::new(FeePriority::Slow, GasPriceType::regular(base_price)),
+        FeeRate::new(FeePriority::Normal, GasPriceType::regular(base_price)),
+        FeeRate::new(FeePriority::Fast, GasPriceType::regular(base_price * 2)),
     ])
 }
 

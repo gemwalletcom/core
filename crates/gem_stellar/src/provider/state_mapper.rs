@@ -1,5 +1,5 @@
 use crate::models::fee::StellarFees;
-use primitives::{FeePriority, FeeRate};
+use primitives::{FeePriority, FeeRate, GasPriceType};
 
 #[cfg(test)]
 use {num_bigint::BigInt, primitives::GasPriceType};
@@ -10,9 +10,9 @@ pub fn map_fee_stats_to_priorities(fees: &StellarFees) -> Vec<FeeRate> {
     let fast_fee = fees.fee_charged.p95.max(min_fee) * 2;
 
     vec![
-        FeeRate::regular(FeePriority::Slow, min_fee),
-        FeeRate::regular(FeePriority::Normal, min_fee),
-        FeeRate::regular(FeePriority::Fast, fast_fee),
+        FeeRate::new(FeePriority::Slow, GasPriceType::regular(min_fee)),
+        FeeRate::new(FeePriority::Normal, GasPriceType::regular(min_fee)),
+        FeeRate::new(FeePriority::Fast, GasPriceType::regular(fast_fee)),
     ]
 }
 

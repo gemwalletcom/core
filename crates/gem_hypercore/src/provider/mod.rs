@@ -10,10 +10,10 @@ pub mod transactions;
 pub mod transactions_mapper;
 
 // Empty ChainAccount implementation
+use crate::rpc::client::HyperCoreClient;
 use async_trait::async_trait;
 use chain_traits::ChainAccount;
 use gem_client::Client;
-use crate::rpc::client::HyperCoreClient;
 
 #[async_trait]
 impl<C: Client> ChainAccount for HyperCoreClient<C> {}

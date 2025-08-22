@@ -12,7 +12,7 @@ pub use staking::*;
 pub use transaction::*;
 pub use transaction_metadata::*;
 
-use primitives::{FeeRate, TransactionPreloadInput, UTXO};
+use primitives::{FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
 
 // ChainAccount models
 #[derive(Debug, Clone, uniffi::Record)]
@@ -24,10 +24,11 @@ pub struct GemUTXO {
 }
 
 // ChainState models
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemGasPriceType {
-    pub gas_price: String,
-    pub priority_fee: Option<String>,
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemGasPriceType {
+    Regular { gas_price: String },
+    Eip1559 { gas_price: String, priority_fee: String },
+    Solana { gas_price: String, priority_fee: String, unit_price: String },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -67,22 +68,30 @@ impl From<GemUTXO> for UTXO {
     }
 }
 
+impl From<GasPriceType> for GemGasPriceType {
+    fn from(value: GasPriceType) -> Self {
+        match value {
+            GasPriceType::Regular { gas_price } => GemGasPriceType::Regular {
+                gas_price: gas_price.to_string(),
+            },
+            GasPriceType::Eip1559 { gas_price, priority_fee } => GemGasPriceType::Eip1559 {
+                gas_price: gas_price.to_string(),
+                priority_fee: priority_fee.to_string(),
+            },
+            GasPriceType::Solana { gas_price, priority_fee, unit_price } => GemGasPriceType::Solana {
+                gas_price: gas_price.to_string(),
+                priority_fee: priority_fee.to_string(),
+                unit_price: unit_price.to_string(),
+            },
+        }
+    }
+}
+
 impl From<FeeRate> for GemFeeRate {
     fn from(fee: FeeRate) -> Self {
-        let gas_price_type = match fee.gas_price_type {
-            primitives::GasPriceType::Regular { gas_price } => GemGasPriceType {
-                gas_price: gas_price.to_string(),
-                priority_fee: None,
-            },
-            primitives::GasPriceType::Eip1559 { gas_price, priority_fee } => GemGasPriceType {
-                gas_price: gas_price.to_string(),
-                priority_fee: Some(priority_fee.to_string()),
-            },
-        };
-
         Self {
             priority: fee.priority.as_ref().to_string(),
-            gas_price_type,
+            gas_price_type: fee.gas_price_type.into(),
         }
     }
 }

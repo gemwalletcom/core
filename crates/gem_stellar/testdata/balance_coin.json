@@ -1,0 +1,71 @@
+{
+    "_links": {
+      "self": {
+        "href": "http://rpc.ankr.com/accounts/GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R"
+      },
+      "transactions": {
+        "href": "http://rpc.ankr.com/accounts/GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R/transactions{?cursor,limit,order}",
+        "templated": true
+      },
+      "operations": {
+        "href": "http://rpc.ankr.com/accounts/GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R/operations{?cursor,limit,order}",
+        "templated": true
+      },
+      "payments": {
+        "href": "http://rpc.ankr.com/accounts/GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R/payments{?cursor,limit,order}",
+        "templated": true
+      },
+      "effects": {
+        "href": "http://rpc.ankr.com/accounts/GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R/effects{?cursor,limit,order}",
+        "templated": true
+      },
+      "offers": {
+        "href": "http://rpc.ankr.com/accounts/GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R/offers{?cursor,limit,order}",
+        "templated": true
+      },
+      "trades": {
+        "href": "http://rpc.ankr.com/accounts/GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R/trades{?cursor,limit,order}",
+        "templated": true
+      },
+      "data": {
+        "href": "http://rpc.ankr.com/accounts/GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R/data/{key}",
+        "templated": true
+      }
+    },
+    "id": "GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R",
+    "account_id": "GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R",
+    "sequence": "251581592013635584",
+    "subentry_count": 0,
+    "last_modified_ledger": 58575904,
+    "last_modified_time": "2025-08-22T01:39:51Z",
+    "thresholds": {
+      "low_threshold": 0,
+      "med_threshold": 0,
+      "high_threshold": 0
+    },
+    "flags": {
+      "auth_required": false,
+      "auth_revocable": false,
+      "auth_immutable": false,
+      "auth_clawback_enabled": false
+    },
+    "balances": [
+      {
+        "balance": "1.0000000",
+        "buying_liabilities": "0.0000000",
+        "selling_liabilities": "0.0000000",
+        "asset_type": "native"
+      }
+    ],
+    "signers": [
+      {
+        "weight": 1,
+        "key": "GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R",
+        "type": "ed25519_public_key"
+      }
+    ],
+    "data": {},
+    "num_sponsoring": 0,
+    "num_sponsored": 0,
+    "paging_token": "GCUOJRS24KEHSUOU6PSKSU372YMTZMYPCQ74X6R2BKDL5NWIZTJIYV4R"
+  }

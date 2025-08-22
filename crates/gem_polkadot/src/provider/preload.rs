@@ -5,7 +5,8 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    FeePriority, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
+    FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput,
 };
 
 use crate::rpc::client::PolkadotClient;
@@ -40,6 +41,6 @@ impl<C: Client> ChainTransactionLoad for PolkadotClient<C> {
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![FeeRate::regular(FeePriority::Normal, BigInt::from(1))])
+        Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(1)))])
     }
 }

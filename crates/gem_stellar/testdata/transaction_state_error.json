@@ -1,0 +1,50 @@
+{
+    "_links": {
+      "self": {
+        "href": "http://rpc.ankr.com/transactions/95811f45cbc7bb08ddb60cf096c30d272c9a2d533ff95cd588de3028d8b407f6"
+      },
+      "account": {
+        "href": "http://rpc.ankr.com/accounts/GAN2JTIWVKGZIDN5R2AFYLUV4IUXLBG3MQA3R5ECIIM5RUYT74Y3LDOP"
+      },
+      "ledger": {
+        "href": "http://rpc.ankr.com/ledgers/58575809"
+      },
+      "operations": {
+        "href": "http://rpc.ankr.com/transactions/95811f45cbc7bb08ddb60cf096c30d272c9a2d533ff95cd588de3028d8b407f6/operations{?cursor,limit,order}",
+        "templated": true
+      },
+      "effects": {
+        "href": "http://rpc.ankr.com/transactions/95811f45cbc7bb08ddb60cf096c30d272c9a2d533ff95cd588de3028d8b407f6/effects{?cursor,limit,order}",
+        "templated": true
+      },
+      "precedes": {
+        "href": "http://rpc.ankr.com/transactions?order=asc\u0026cursor=251581183991885824"
+      },
+      "succeeds": {
+        "href": "http://rpc.ankr.com/transactions?order=desc\u0026cursor=251581183991885824"
+      },
+      "transaction": {
+        "href": "http://rpc.ankr.com/transactions/95811f45cbc7bb08ddb60cf096c30d272c9a2d533ff95cd588de3028d8b407f6"
+      }
+    },
+    "id": "95811f45cbc7bb08ddb60cf096c30d272c9a2d533ff95cd588de3028d8b407f6",
+    "paging_token": "251581183991885824",
+    "successful": false,
+    "hash": "95811f45cbc7bb08ddb60cf096c30d272c9a2d533ff95cd588de3028d8b407f6",
+    "ledger": 58575809,
+    "created_at": "2025-08-22T01:30:41Z",
+    "source_account": "GAN2JTIWVKGZIDN5R2AFYLUV4IUXLBG3MQA3R5ECIIM5RUYT74Y3LDOP",
+    "source_account_sequence": "235679166362550290",
+    "fee_account": "GAN2JTIWVKGZIDN5R2AFYLUV4IUXLBG3MQA3R5ECIIM5RUYT74Y3LDOP",
+    "fee_charged": "100",
+    "max_fee": "100",
+    "operation_count": 1,
+    "envelope_xdr": "AAAAAgAAAAAbpM0Wqo2UDb2OgFwuleIpdYTbZAG49IJCGdjTE/8xtQAAAGQDRUz0AAAAEgAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAKjkxlriiHlR1PPkqVN/1hk8sw8UP8v6OgqGvrbIzNKMAAAAAAABhqAAAAAAAAAAARP/MbUAAABAalIP4+do7KxrHgYUYyBFy0Dr4StLCbhbgHO8eyz8YC6KSwNI+pr7gxKO4HM/f1SfKhbuImxwvxHRg1GOpmm4AQ==",
+    "result_xdr": "AAAAAAAAAGT/////AAAAAQAAAAAAAAAA/////QAAAAA=",
+    "result_meta_xdr": "AAAAAwAAAAAAAAACAAAAAwN9y8EAAAAAAAAAABukzRaqjZQNvY6AXC6V4il1hNtkAbj0gkIZ2NMT/zG1AAAAABHdCZEDRUz0AAAAEQAAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAMAAAAAA33LvgAAAABop8gwAAAAAAAAAAEDfcvBAAAAAAAAAAAbpM0Wqo2UDb2OgFwuleIpdYTbZAG49IJCGdjTE/8xtQAAAAAR3QmRA0VM9AAAABIAAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAADAAAAAAN9y8EAAAAAaKfIQQAAAAAAAAAAAAAAAAAAAAA=",
+    "fee_meta_xdr": "AAAAAgAAAAMDfcu+AAAAAAAAAAAbpM0Wqo2UDb2OgFwuleIpdYTbZAG49IJCGdjTE/8xtQAAAAAR3Qn1A0VM9AAAABEAAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAADAAAAAAN9y74AAAAAaKfIMAAAAAAAAAABA33LwQAAAAAAAAAAG6TNFqqNlA29joBcLpXiKXWE22QBuPSCQhnY0xP/MbUAAAAAEd0JkQNFTPQAAAARAAAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAwAAAAADfcu+AAAAAGinyDAAAAAA",
+    "memo_type": "none",
+    "signatures": [
+      "alIP4+do7KxrHgYUYyBFy0Dr4StLCbhbgHO8eyz8YC6KSwNI+pr7gxKO4HM/f1SfKhbuImxwvxHRg1GOpmm4AQ=="
+    ]
+  }
