@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-clap = { version = "4.5.4", features = ["derive", "env"] }
+clap = { version = "4.5.45", features = ["derive", "env"] }
 
 alloy-primitives = { workspace = true }
 anyhow = { workspace = true }
