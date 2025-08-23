@@ -2,7 +2,7 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::chain::Chain;
-use primitives::transaction_load::TransactionLoadMetadata;
+use primitives::TransactionLoadMetadata;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{

@@ -26,9 +26,18 @@ pub struct GemUTXO {
 // ChainState models
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemGasPriceType {
-    Regular { gas_price: String },
-    Eip1559 { gas_price: String, priority_fee: String },
-    Solana { gas_price: String, priority_fee: String, unit_price: String },
+    Regular {
+        gas_price: String,
+    },
+    Eip1559 {
+        gas_price: String,
+        priority_fee: String,
+    },
+    Solana {
+        gas_price: String,
+        priority_fee: String,
+        unit_price: String,
+    },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -78,7 +87,11 @@ impl From<GasPriceType> for GemGasPriceType {
                 gas_price: gas_price.to_string(),
                 priority_fee: priority_fee.to_string(),
             },
-            GasPriceType::Solana { gas_price, priority_fee, unit_price } => GemGasPriceType::Solana {
+            GasPriceType::Solana {
+                gas_price,
+                priority_fee,
+                unit_price,
+            } => GemGasPriceType::Solana {
                 gas_price: gas_price.to_string(),
                 priority_fee: priority_fee.to_string(),
                 unit_price: unit_price.to_string(),

@@ -86,7 +86,8 @@ impl AlchemyClient {
             ],
             "includeNativeTokens": false,
         });
-        Ok(self.client
+        Ok(self
+            .client
             .post(url)
             .header("Content-Type", "application/json")
             .body(serde_json::to_string(&payload)?)
@@ -114,7 +115,8 @@ impl AlchemyClient {
             ],
             "limit": 25,
         });
-        Ok(self.client
+        Ok(self
+            .client
             .post(url)
             .header("Content-Type", "application/json")
             .body(serde_json::to_string(&payload)?)

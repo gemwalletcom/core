@@ -1,11 +1,12 @@
 use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
-use primitives::transaction_load::FeeOption;
-use primitives::{
-    GasPriceType, PerpetualConfirmData, PerpetualDirection, PerpetualType, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionStateRequest, TransactionUpdate, WalletConnectionSessionAppMetadata, TransferDataExtra, TransferDataOutputType,
-};
 use primitives::swap::ApprovalData;
+use primitives::FeeOption;
+use primitives::{
+    GasPriceType, PerpetualConfirmData, PerpetualDirection, PerpetualType, StakeType, TransactionChange, TransactionFee, TransactionInputType,
+    TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra,
+    TransferDataOutputType, WalletConnectionSessionAppMetadata,
+};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -117,13 +118,33 @@ pub enum GemPerpetualType {
 #[derive(Debug, Clone, uniffi::Enum)]
 #[allow(clippy::large_enum_variant)]
 pub enum GemTransactionInputType {
-    Transfer { asset: GemAsset },
-    Deposit { asset: GemAsset },
-    Swap { from_asset: GemAsset, to_asset: GemAsset },
-    Stake { asset: GemAsset, stake_type: GemStakeType },
-    TokenApprove { asset: GemAsset, approval_data: GemApprovalData },
-    Generic { asset: GemAsset, metadata: GemWalletConnectionSessionAppMetadata, extra: GemTransferDataExtra },
-    Perpetual { asset: GemAsset, perpetual_type: GemPerpetualType },
+    Transfer {
+        asset: GemAsset,
+    },
+    Deposit {
+        asset: GemAsset,
+    },
+    Swap {
+        from_asset: GemAsset,
+        to_asset: GemAsset,
+    },
+    Stake {
+        asset: GemAsset,
+        stake_type: GemStakeType,
+    },
+    TokenApprove {
+        asset: GemAsset,
+        approval_data: GemApprovalData,
+    },
+    Generic {
+        asset: GemAsset,
+        metadata: GemWalletConnectionSessionAppMetadata,
+        extra: GemTransferDataExtra,
+    },
+    Perpetual {
+        asset: GemAsset,
+        perpetual_type: GemPerpetualType,
+    },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]

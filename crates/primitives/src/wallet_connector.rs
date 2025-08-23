@@ -1,7 +1,7 @@
+use crate::{Chain, Wallet};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use chrono::{DateTime, Utc};
-use crate::{Chain, Wallet};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]

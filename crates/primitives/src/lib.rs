@@ -64,8 +64,8 @@ pub mod transaction_direction;
 pub use self::transaction_direction::TransactionDirection;
 pub mod subscription;
 pub mod transaction_utxo;
-pub use self::transaction_utxo::TransactionUtxoInput;
 pub use self::subscription::{DeviceSubscription, Subscription};
+pub use self::transaction_utxo::TransactionUtxoInput;
 pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
 pub mod address_name;
@@ -88,9 +88,8 @@ pub mod wallet;
 pub use self::wallet::{Wallet, WalletId, WalletType};
 pub mod wallet_connector;
 pub use self::wallet_connector::{
-    WalletConnectionSessionAppMetadata, WalletConnection, WalletConnectionSession,
+    WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,
     WalletConnectionSessionProposal, WalletConnectionState,
-    WalletConnectionMethods, WalletConnectionEvents,
 };
 pub mod nft;
 pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, MIME_TYPE_PNG};
@@ -144,7 +143,9 @@ pub mod asset_address;
 pub use self::asset_address::AssetAddress;
 pub mod graphql;
 pub mod perpetual;
-pub use self::perpetual::{AccountDataType, Perpetual, PerpetualBalance, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary, PerpetualType};
+pub use self::perpetual::{
+    AccountDataType, Perpetual, PerpetualBalance, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary, PerpetualType,
+};
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;
@@ -157,7 +158,13 @@ pub mod transaction_update;
 pub use self::transaction_update::{TransactionChange, TransactionMetadata, TransactionStateRequest, TransactionUpdate};
 pub mod transaction_preload;
 pub use self::transaction_preload::TransactionPreloadInput;
+pub mod transaction_fee;
+pub use self::transaction_fee::{FeeOption, TransactionFee};
+pub mod stake_type;
+pub use self::stake_type::{RedelegateData, StakeType};
+pub mod transaction_load_metadata;
+pub use self::transaction_load_metadata::TransactionLoadMetadata;
 pub mod transaction_load;
-pub use self::transaction_load::{RedelegateData, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata};
+pub use self::transaction_load::{TransactionInputType, TransactionLoadData, TransactionLoadInput};
 pub mod transfer_data_extra;
 pub use self::transfer_data_extra::{TransferDataExtra, TransferDataOutputType};

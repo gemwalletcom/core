@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 use num_bigint::BigInt;
-use primitives::transaction_load::FeeOption;
+use primitives::FeeOption;
 use primitives::{
     AssetSubtype, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
     TransactionPreloadInput,

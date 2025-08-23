@@ -104,4 +104,3 @@ impl From<GemDelegationBase> for DelegationBase {
         }
     }
 }
-

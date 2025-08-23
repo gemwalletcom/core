@@ -1,6 +1,6 @@
+use crate::Account;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-use crate::Account;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]

@@ -67,14 +67,16 @@ impl<C: Client> HyperCoreClient<C> {
         self.info(json!({
             "type": "spotClearinghouseState",
             "user": user
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_stake_balance(&self, user: &str) -> Result<HypercoreStakeBalance, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "delegatorSummary",
             "user": user
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_user_fills_by_time(&self, user: &str, start_time: i64) -> Result<Vec<HypercorePerpetualFill>, Box<dyn Error + Send + Sync>> {
@@ -82,14 +84,16 @@ impl<C: Client> HyperCoreClient<C> {
             "type": "userFillsByTime",
             "user": user,
             "startTime": start_time
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_clearinghouse_state(&self, user: &str) -> Result<HypercoreAssetPositions, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "clearinghouseState",
             "user": user
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_metadata(&self) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
@@ -111,28 +115,32 @@ impl<C: Client> HyperCoreClient<C> {
                 "startTime": start_time,
                 "endTime": end_time
             }
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_user_role(&self, user: &str) -> Result<HypercoreUserRole, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "userRole",
             "user": user
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_referral(&self, user: &str) -> Result<HypercoreReferral, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "referral",
             "user": user
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_extra_agents(&self, user: &str) -> Result<Vec<HypercoreAgentSession>, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "extraAgents",
             "user": user
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_builder_fee(&self, user: &str, builder: &str) -> Result<i32, Box<dyn Error + Send + Sync>> {
@@ -140,14 +148,16 @@ impl<C: Client> HyperCoreClient<C> {
             "type": "maxBuilderFee",
             "user": user,
             "builder": builder
-        })).await
+        }))
+        .await
     }
 
     pub async fn get_user_fees(&self, user: &str) -> Result<HypercoreUserFee, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "userFees",
             "user": user
-        })).await
+        }))
+        .await
     }
 }
 

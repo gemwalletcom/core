@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{TransactionUtxoInput, AssetId, TransactionId};
+use primitives::{AssetId, TransactionId, TransactionUtxoInput};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, Clone)]

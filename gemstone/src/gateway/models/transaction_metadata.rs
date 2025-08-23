@@ -1,6 +1,6 @@
 use crate::gateway::GemUTXO;
 use primitives::solana_token_program::SolanaTokenProgramId;
-use primitives::transaction_load::TransactionLoadMetadata;
+use primitives::TransactionLoadMetadata;
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemSolanaTokenProgramId {
