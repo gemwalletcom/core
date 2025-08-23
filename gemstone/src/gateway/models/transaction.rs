@@ -228,10 +228,13 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
 impl From<GemStakeType> for StakeType {
     fn from(value: GemStakeType) -> Self {
         match value {
-            GemStakeType::Delegate { validator } => StakeType::Delegate(validator.into()),
-            GemStakeType::Undelegate { delegation } => StakeType::Undelegate(delegation.into()),
-            GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(delegation.into(), to_validator.into()),
-            GemStakeType::WithdrawRewards { validators } => StakeType::WithdrawRewards(validators.into_iter().map(|v| v.into()).collect()),
+            GemStakeType::Delegate { validator } => StakeType::Stake(validator.into()),
+            GemStakeType::Undelegate { delegation } => StakeType::Unstake(delegation.into()),
+            GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(primitives::RedelegateData {
+                delegation: delegation.into(),
+                to_validator: to_validator.into(),
+            }),
+            GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().map(|v| v.into()).collect()),
             GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation.into()),
         }
     }

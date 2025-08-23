@@ -144,7 +144,7 @@ pub mod asset_address;
 pub use self::asset_address::AssetAddress;
 pub mod graphql;
 pub mod perpetual;
-pub use self::perpetual::{Perpetual, PerpetualBalance, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary, PerpetualType};
+pub use self::perpetual::{AccountDataType, Perpetual, PerpetualBalance, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary, PerpetualType};
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;
@@ -158,6 +158,6 @@ pub use self::transaction_update::{TransactionChange, TransactionMetadata, Trans
 pub mod transaction_preload;
 pub use self::transaction_preload::TransactionPreloadInput;
 pub mod transaction_load;
-pub use self::transaction_load::{StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata};
+pub use self::transaction_load::{RedelegateData, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata};
 pub mod transfer_data_extra;
 pub use self::transfer_data_extra::{TransferDataExtra, TransferDataOutputType};

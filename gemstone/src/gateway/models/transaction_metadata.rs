@@ -94,6 +94,12 @@ pub enum GemTransactionLoadMetadata {
     Sui {
         message_bytes: String,
     },
+    Hyperliquid {
+        approve_agent_required: bool,
+        approve_referral_required: bool,
+        approve_builder_required: bool,
+        builder_fee_bps: i32,
+    },
 }
 
 impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
@@ -186,6 +192,17 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 witness_address,
             },
             TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
+            TransactionLoadMetadata::Hyperliquid {
+                approve_agent_required,
+                approve_referral_required,
+                approve_builder_required,
+                builder_fee_bps,
+            } => GemTransactionLoadMetadata::Hyperliquid {
+                approve_agent_required,
+                approve_referral_required,
+                approve_builder_required,
+                builder_fee_bps,
+            },
         }
     }
 }
@@ -280,6 +297,17 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 witness_address,
             },
             GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
+            GemTransactionLoadMetadata::Hyperliquid {
+                approve_agent_required,
+                approve_referral_required,
+                approve_builder_required,
+                builder_fee_bps,
+            } => TransactionLoadMetadata::Hyperliquid {
+                approve_agent_required,
+                approve_referral_required,
+                approve_builder_required,
+                builder_fee_bps,
+            },
         }
     }
 }

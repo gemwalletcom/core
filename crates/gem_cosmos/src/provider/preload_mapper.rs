@@ -38,9 +38,9 @@ fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 
         TransactionInputType::Transfer(_) | TransactionInputType::Deposit(_) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) | TransactionInputType::Perpetual(_, _) => 200_000,
         TransactionInputType::Swap(_, _) => 200_000,
         TransactionInputType::Stake(_, operation) => match operation {
-            StakeType::Delegate(_) | StakeType::Undelegate(_) => 1_000_000,
-            StakeType::Redelegate(_, _) => 1_250_000,
-            StakeType::WithdrawRewards(_) => 750_000,
+            StakeType::Stake(_) | StakeType::Unstake(_) => 1_000_000,
+            StakeType::Redelegate(_) => 1_250_000,
+            StakeType::Rewards(_) => 750_000,
             StakeType::Withdraw(_) => 750_000,
         },
     }

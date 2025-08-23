@@ -5,6 +5,7 @@ use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum_macros::{AsRefStr, Display, EnumString};
+use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, Display, EnumString, PartialEq, Eq, Hash)]
 pub enum FeeOption {
@@ -12,11 +13,20 @@ pub enum FeeOption {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+pub struct RedelegateData {
+    pub delegation: Delegation,
+    #[serde(rename = "toValidator")]
+    pub to_validator: DelegationValidator,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub enum StakeType {
-    Delegate(DelegationValidator),
-    Undelegate(Delegation),
-    Redelegate(Delegation, DelegationValidator),
-    WithdrawRewards(Vec<DelegationValidator>),
+    Stake(DelegationValidator),
+    Unstake(Delegation),
+    Redelegate(RedelegateData),
+    Rewards(Vec<DelegationValidator>),
     Withdraw(Delegation),
 }
 
@@ -269,6 +279,12 @@ pub enum TransactionLoadMetadata {
     },
     Sui {
         message_bytes: String,
+    },
+    Hyperliquid {
+        approve_agent_required: bool,
+        approve_referral_required: bool,
+        approve_builder_required: bool,
+        builder_fee_bps: i32,
     },
 }
 
