@@ -1,3 +1,5 @@
+use num_bigint::BigUint;
+use num_traits::Num;
 use primitives::{AssetBalance, AssetId, Chain};
 use std::error::Error;
 
@@ -5,7 +7,6 @@ use crate::models::TronAccount;
 
 pub fn map_coin_balance(account: &TronAccount) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let available_balance = account.balance.unwrap_or(0).to_string();
-
     Ok(AssetBalance::new(AssetId::from_chain(Chain::Tron), available_balance))
 }
 
@@ -14,12 +15,25 @@ pub fn map_token_balance(balance_hex: &str, asset_id: AssetId) -> Result<AssetBa
         "0".to_string()
     } else {
         let hex_str = balance_hex.strip_prefix("0x").unwrap_or(balance_hex);
-        u128::from_str_radix(hex_str, 16)
+        BigUint::from_str_radix(hex_str, 16)
             .map_err(|e| format!("Failed to parse hex balance: {}", e))?
             .to_string()
     };
 
     Ok(AssetBalance::new(asset_id, balance))
+}
+
+pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
+    let owner_bytes = bs58::decode(address)
+        .into_vec()
+        .map_err(|e| format!("Invalid owner address {}: {}", address, e))?;
+
+    if owner_bytes.len() != 25 || owner_bytes[0] != 0x41 {
+        return Err(format!("Invalid TRON address format: {}", address).into());
+    }
+
+    let address_bytes = &owner_bytes[1..21];
+    Ok(format!("{:0>64}", hex::encode(address_bytes)))
 }
 
 #[cfg(test)]
@@ -78,5 +92,12 @@ mod tests {
 
         let balance = map_coin_balance(&account).unwrap();
         assert_eq!(balance.balance.available, "0");
+    }
+
+    #[test]
+    fn test_format_address_parameter() {
+        let address = "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb";
+        let parameter = format_address_parameter(address).unwrap();
+        assert_eq!(parameter, "0000000000000000000000003a82bed955482b11cf7c32173a90e151a182ae9c");
     }
 }

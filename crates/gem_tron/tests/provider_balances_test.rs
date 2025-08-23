@@ -12,7 +12,8 @@ async fn test_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send 
 
     assert_eq!(balance.asset_id.chain, Chain::Tron);
     assert_eq!(balance.asset_id.token_id, None);
-    assert!(balance.balance.available.parse::<u64>().is_ok());
+    let balance = balance.balance.available.parse::<u64>().unwrap();
+    assert!(balance > 0);
 
     Ok(())
 }
@@ -23,7 +24,6 @@ async fn test_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Sen
     let address = "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string();
     let token_ids = vec![
         "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string(), // USDT
-        "TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8".to_string(), // USDC
     ];
 
     let balances = client.get_balance_tokens(address, token_ids.clone()).await?;
@@ -34,6 +34,9 @@ async fn test_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Sen
         assert_eq!(balance.asset_id.token_id, Some(token_ids[i].clone()));
         assert!(balance.balance.available.parse::<u64>().is_ok());
     }
+
+    let balance_value = balances.first().unwrap().balance.available.parse::<u64>().unwrap();
+    assert!(balance_value > 0, "USDT balance should be greater than 0");
 
     Ok(())
 }

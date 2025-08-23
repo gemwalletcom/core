@@ -18,6 +18,7 @@ gem_evm = { path = "../gem_evm", optional = true }
 gem_client = { path = "../gem_client", optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 async-trait = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
 
 [features]
 default = ["rpc"]
@@ -29,6 +30,7 @@ rpc = [
     "dep:gem_client",
     "dep:chain_traits",
     "dep:async-trait",
+    "dep:futures",
 ]
 
 [dev-dependencies]
