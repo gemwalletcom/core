@@ -1,18 +1,18 @@
 use num_bigint::BigInt;
-use primitives::{AssetSubtype, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType};
+use primitives::{AssetSubtype, FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType};
 use std::collections::HashMap;
 
-use crate::models::prioritization_fee::SolanaPrioritizationFee;
+use crate::{constants::STATIC_BASE_FEE, models::prioritization_fee::SolanaPrioritizationFee};
 
-const STATIC_BASE_FEE: u64 = 5000;
-
-pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType) -> TransactionFee {
-    TransactionFee {
-        fee: gas_price_type.total_fee(),
-        gas_price_type: gas_price_type.clone(),
-        gas_limit: get_gas_limit(input_type),
-        options: HashMap::new(),
+pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType, recipient_token_address: Option<String>) -> TransactionFee {
+    let mut options = HashMap::new();
+    if input_type.get_asset().id.token_subtype() == AssetSubtype::TOKEN && recipient_token_address.is_none() {
+        options.insert(
+            FeeOption::TokenAccountCreation,
+            BigInt::from(input_type.get_asset().id.chain.token_activation_fee().unwrap_or(0)),
+        );
     }
+    TransactionFee::new_gas_price_type(gas_price_type.clone(), get_gas_limit(input_type), options)
 }
 
 pub fn calculate_priority_fee(input_type: &TransactionInputType, prioritization_fees: &[SolanaPrioritizationFee]) -> BigInt {
@@ -125,7 +125,7 @@ mod tests {
             asset_type: AssetType::NATIVE,
         });
 
-        let fee = calculate_transaction_fee(&input_type, &gas_price_type);
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, None);
 
         // Expected calculation:
         // gas_price = 5000
@@ -163,7 +163,7 @@ mod tests {
             },
         );
 
-        let fee = calculate_transaction_fee(&input_type, &gas_price_type);
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, None);
 
         // Expected calculation:
         // gas_price = 5000
@@ -187,7 +187,7 @@ mod tests {
             asset_type: AssetType::NATIVE,
         });
 
-        let fee = calculate_transaction_fee(&input_type, &gas_price_type);
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, None);
 
         // Expected calculation:
         // gas_price = 5000
@@ -398,5 +398,47 @@ mod tests {
         assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(7_500));
         assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(15_000));
         assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(45_000));
+    }
+
+    #[test]
+    fn test_calculate_transaction_fee_token_recipient_exists() {
+        let gas_price_type = GasPriceType::eip1559(BigInt::from(5000u64), BigInt::from(15000u64));
+        let asset = Asset {
+            id: AssetId::new("solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap(),
+            chain: Chain::Solana,
+            token_id: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
+            name: "USDC".to_string(),
+            symbol: "USDC".to_string(),
+            decimals: 6,
+            asset_type: AssetType::SPL,
+        };
+        let input_type = TransactionInputType::Transfer(asset);
+
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("existing_account".to_string()));
+
+        assert_eq!(fee.fee, BigInt::from(20_000u64));
+        assert!(fee.options.is_empty());
+    }
+
+    #[test]
+    fn test_calculate_transaction_fee_token_recipient_new() {
+        let gas_price_type = GasPriceType::eip1559(BigInt::from(5000u64), BigInt::from(15000u64));
+        let asset = Asset {
+            id: AssetId::new("solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap(),
+            chain: Chain::Solana,
+            token_id: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
+            name: "USDC".to_string(),
+            symbol: "USDC".to_string(),
+            decimals: 6,
+            asset_type: AssetType::SPL,
+        };
+        let input_type = TransactionInputType::Transfer(asset);
+
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, None);
+
+        assert_eq!(fee.fee, BigInt::from(2_059_280u64)); // 20_000 gas + 2_039_280 token account creation
+        assert_eq!(fee.options.len(), 1);
+        assert!(fee.options.contains_key(&FeeOption::TokenAccountCreation));
+        assert_eq!(fee.options[&FeeOption::TokenAccountCreation], BigInt::from(2_039_280u64));
     }
 }

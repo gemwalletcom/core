@@ -346,8 +346,6 @@ dependencies = [
  "rocket",
  "rocket_ws",
  "search_index",
- "security_goplus",
- "security_hashdit",
  "security_provider",
  "serde",
  "serde_json",
@@ -6408,41 +6406,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "security_goplus"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "reqwest",
- "security_provider",
- "serde",
- "tokio",
-]
-
-[[package]]
-name = "security_hashdit"
+name = "security_provider"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "hex",
  "hmac",
+ "primitives",
  "reqwest",
  "reqwest-enum",
- "security_provider",
  "serde",
  "serde_json",
  "sha2",
- "uuid",
-]
-
-[[package]]
-name = "security_provider"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "primitives",
- "serde",
- "serde_json",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

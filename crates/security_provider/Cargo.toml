@@ -7,6 +7,13 @@ edition = "2021"
 async-trait = { workspace = true }
 serde = { workspace = true }
 primitives = { path = "../primitives" }
+reqwest = { workspace = true }
+uuid = { workspace = true }
+serde_json = { workspace = true }
+hex = { workspace = true }
+hmac = { workspace = true }
+sha2 = { workspace = true }
+reqwest-enum = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

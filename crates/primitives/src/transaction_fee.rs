@@ -56,6 +56,15 @@ impl TransactionFee {
         }
     }
 
+    pub fn new_gas_price_type(gas_price_type: GasPriceType, gas_limit: BigInt, options: HashMap<FeeOption, BigInt>) -> Self {
+        Self {
+            fee: gas_price_type.total_fee() + options.values().sum::<BigInt>(),
+            gas_price_type,
+            gas_limit,
+            options,
+        }
+    }
+
     pub fn calculate(gas_limit: u64, gas_price_type: &GasPriceType) -> Self {
         let gas_limit = BigInt::from(gas_limit);
         let gas_price = gas_price_type.gas_price();

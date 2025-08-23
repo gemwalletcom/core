@@ -137,4 +137,11 @@ impl TransactionLoadMetadata {
             _ => Err("Destination existence flag not available for this metadata type".into()),
         }
     }
+
+    pub fn get_recipient_token_address(&self) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Solana { recipient_token_address, .. } => Ok(recipient_token_address.clone()),
+            _ => Err("Recipient token address not available for this metadata type".into()),
+        }
+    }
 }
