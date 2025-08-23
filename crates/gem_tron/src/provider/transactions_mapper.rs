@@ -1,13 +1,21 @@
+use crate::rpc::constants::{RECEIPT_FAILED, RECEIPT_OUT_OF_ENERGY};
 use crate::rpc::model::{TransactionReceiptData, TronTransactionBroadcast};
 use num_bigint::BigInt;
 use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 use std::error::Error;
 
+fn decode_hex_message(hex_str: &str) -> String {
+    match hex::decode(hex_str) {
+        Ok(bytes) => String::from_utf8(bytes).unwrap_or_else(|_| hex_str.to_string()),
+        Err(_) => hex_str.to_string(),
+    }
+}
+
 pub fn map_transaction_broadcast(response: &TronTransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
-    if let Some(txid) = &response.txid {
+    if let Some(message) = &response.message {
+        Err(decode_hex_message(message).into())
+    } else if let Some(txid) = &response.txid {
         Ok(txid.clone())
-    } else if let (Some(code), Some(message)) = (&response.code, &response.message) {
-        Err(format!("Broadcast failed [{}]: {}", code, message).into())
     } else {
         Err("Transaction broadcast failed with unknown error".into())
     }
@@ -15,7 +23,7 @@ pub fn map_transaction_broadcast(response: &TronTransactionBroadcast) -> Result<
 
 pub fn map_transaction_status(receipt: &TransactionReceiptData) -> TransactionUpdate {
     if let Some(receipt_result) = &receipt.receipt.result {
-        if receipt_result == "OUT_OF_ENERGY" || receipt_result == "FAILED" {
+        if receipt_result == RECEIPT_OUT_OF_ENERGY || receipt_result == RECEIPT_FAILED {
             return TransactionUpdate::new_state(TransactionState::Reverted);
         }
     }
@@ -37,27 +45,21 @@ mod tests {
     use crate::rpc::model::{TransactionReceipt, TransactionReceiptData, TronTransactionBroadcast};
 
     #[test]
-    fn test_map_transaction_broadcast_success() {
-        let response = TronTransactionBroadcast {
-            txid: Some("ABC123".to_string()),
-            code: None,
-            message: None,
-        };
-
-        assert_eq!(map_transaction_broadcast(&response).unwrap(), "ABC123");
-    }
-
-    #[test]
     fn test_map_transaction_broadcast_error() {
-        let response = TronTransactionBroadcast {
-            txid: None,
-            code: Some("INVALID_TX".to_string()),
-            message: Some("Transaction validation failed".to_string()),
-        };
+        let response: TronTransactionBroadcast = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_error.json")).unwrap();
 
         let result = map_transaction_broadcast(&response);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "Broadcast failed [INVALID_TX]: Transaction validation failed");
+        assert_eq!(result.unwrap_err().to_string(), "Contract validate error : Cannot transfer TRX to yourself.");
+    }
+
+    #[test]
+    fn test_map_transaction_broadcast_success() {
+        let response: TronTransactionBroadcast = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_success.json")).unwrap();
+
+        let result = map_transaction_broadcast(&response);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "7f60ccd0594b5c3e0264cca9a6e6e64cb96ee66ce3a796b4356cb8ccc548f62b");
     }
 
     #[test]
@@ -102,7 +104,7 @@ mod tests {
             block_number: 12345,
             block_time_stamp: 1234567890,
             receipt: TransactionReceipt {
-                result: Some("OUT_OF_ENERGY".to_string()),
+                result: Some(RECEIPT_OUT_OF_ENERGY.to_string()),
             },
             log: None,
         };
@@ -120,7 +122,7 @@ mod tests {
             block_number: 12345,
             block_time_stamp: 1234567890,
             receipt: TransactionReceipt {
-                result: Some("FAILED".to_string()),
+                result: Some(RECEIPT_FAILED.to_string()),
             },
             log: None,
         };

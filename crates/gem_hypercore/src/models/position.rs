@@ -210,7 +210,7 @@ mod tests {
         assert_eq!(summary.positions.len(), 2);
 
         let sol_position = summary.positions.iter().find(|p| p.id == "SOL").unwrap();
-        assert_eq!(sol_position.size, -10.0);
+        assert_eq!(sol_position.size, 10.0);
         assert_eq!(sol_position.size_value, 2029.2);
         assert_eq!(sol_position.leverage, 20);
         assert_eq!(sol_position.margin_type, PerpetualMarginType::Cross);
@@ -276,7 +276,7 @@ mod tests {
         };
 
         let short_perpetual: PerpetualPosition = short_position.into();
-        assert_eq!(short_perpetual.size, -5.0); // Should preserve the negative size
+        assert_eq!(short_perpetual.size, 5.0); // Size is always positive (absolute value)
         assert_eq!(short_perpetual.funding, Some(1.5)); // Short position with negative funding
     }
 

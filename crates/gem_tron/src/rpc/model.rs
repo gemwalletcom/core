@@ -100,6 +100,7 @@ pub struct TriggerConstantContractResponse {
     #[serde(default)]
     pub constant_result: Vec<String>,
     pub result: Option<TriggerContractResult>,
+    pub energy_used: u64,
 }
 
 #[derive(Deserialize, Debug)]

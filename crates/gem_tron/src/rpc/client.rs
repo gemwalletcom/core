@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use chain_traits::{ChainAccount, ChainPerpetual, ChainStaking, ChainTraits};
+use num_bigint::BigUint;
 use primitives::{asset_type::AssetType, chain::Chain, Asset, AssetId};
-use std::error::Error;
+use std::{error::Error, str::FromStr};
 
 use super::model::{
     Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData,
@@ -50,8 +51,19 @@ impl<C: Client> TronClient<C> {
         function_selector: &str,
         parameter: &str,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
+        self.trigger_constant_contract_with_owner(DEFAULT_OWNER_ADDRESS, contract_address, function_selector, parameter)
+            .await
+    }
+
+    pub async fn trigger_constant_contract_with_owner(
+        &self,
+        owner_address: &str,
+        contract_address: &str,
+        function_selector: &str,
+        parameter: &str,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
         let request_payload = TriggerConstantContractRequest {
-            owner_address: DEFAULT_OWNER_ADDRESS.to_owned(),
+            owner_address: owner_address.to_owned(),
             contract_address: contract_address.to_string(),
             function_selector: function_selector.to_string(),
             parameter: parameter.to_string(),
@@ -140,11 +152,36 @@ impl<C: Client> TronClient<C> {
     }
 
     pub async fn broadcast_transaction(&self, data: String) -> Result<TronTransactionBroadcast, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.post("/wallet/broadcasttransaction", &data, None).await?)
+        let json_value: serde_json::Value = serde_json::from_str(&data)?;
+        Ok(self.client.post("/wallet/broadcasttransaction", &json_value, None).await?)
     }
 
     pub async fn get_tron_block(&self) -> Result<TronBlock, Box<dyn Error + Send + Sync>> {
         Ok(self.client.post("/wallet/getnowblock", &serde_json::json!({}), None).await?)
+    }
+
+    pub async fn estimate_trc20_transfer_gas(
+        &self,
+        sender_address: String,
+        contract_address: String,
+        recipient_address: String,
+        value: String,
+    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let value_bigint = BigUint::from_str(&value).map_err(|e| format!("Failed to parse value as decimal: {}", e))?;
+        let value_hex = format!("{:0>64}", hex::encode(value_bigint.to_bytes_be()));
+        let parameter = format!("{}{}", recipient_address, value_hex);
+
+        let request_payload = TriggerConstantContractRequest {
+            owner_address: sender_address,
+            contract_address,
+            function_selector: "transfer(address,uint256)".to_string(),
+            parameter,
+            visible: true,
+        };
+
+        let response: TriggerConstantContractResponse = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
+
+        Ok(response.energy_used.to_string())
     }
 }
 
@@ -160,3 +197,36 @@ impl<C: Client> ChainPerpetual for TronClient<C> {}
 
 #[async_trait]
 impl<C: Client> ChainStaking for TronClient<C> {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_value_encoding_for_trc20_transfer() {
+        let value = "1000000".to_string(); // 1 USDT (6 decimals)
+        let recipient_address = "0000000000000000000000003e1451cdb84d440345de6195b0384d1b77aa4eaa".to_string();
+
+        let value_bigint = BigUint::from_str(&value).unwrap();
+        let value_hex = format!("{:0>64}", hex::encode(value_bigint.to_bytes_be()));
+        let parameter = format!("{}{}", recipient_address, value_hex);
+
+        // For 1000000 (decimal), the hex should be f4240 padded to 64 chars
+        assert_eq!(value_hex, "00000000000000000000000000000000000000000000000000000000000f4240");
+        assert_eq!(
+            parameter,
+            "0000000000000000000000003e1451cdb84d440345de6195b0384d1b77aa4eaa00000000000000000000000000000000000000000000000000000000000f4240"
+        );
+    }
+
+    #[test]
+    fn test_large_value_encoding() {
+        let value = "16777216".to_string(); // Large value that was causing issues
+
+        let value_bigint = BigUint::from_str(&value).unwrap();
+        let value_hex = format!("{:0>64}", hex::encode(value_bigint.to_bytes_be()));
+
+        // 16777216 decimal = 0x1000000 hex
+        assert_eq!(value_hex, "0000000000000000000000000000000000000000000000000000000001000000");
+    }
+}

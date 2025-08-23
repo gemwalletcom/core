@@ -48,7 +48,11 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, account_exists: b
         _ => base_fee.clone(),
     };
 
-    TransactionFee::new_from_fee(fee)
+    if let Some((option_type, option_value)) = options.into_iter().next() {
+        TransactionFee::new_from_fee_with_option(fee, option_type, option_value)
+    } else {
+        TransactionFee::new_from_fee(fee)
+    }
 }
 
 #[async_trait]

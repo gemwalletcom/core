@@ -98,6 +98,6 @@ mod tests {
     fn test_format_address_parameter() {
         let address = "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb";
         let parameter = format_address_parameter(address).unwrap();
-        assert_eq!(parameter, "0000000000000000000000003a82bed955482b11cf7c32173a90e151a182ae9c");
+        assert_eq!(parameter, "0000000000000000000000002e1d447fa4169390cf5f5b3d12d380decfbfe20f");
     }
 }

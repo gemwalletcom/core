@@ -1,6 +1,8 @@
 use crate::solana_token_program::SolanaTokenProgramId;
-use crate::{Asset, Delegation, DelegationValidator, GasPriceType, PerpetualType, TransactionPreloadInput, UTXO, WalletConnectionSessionAppMetadata, TransferDataExtra};
 use crate::swap::ApprovalData;
+use crate::{
+    Asset, Delegation, DelegationValidator, GasPriceType, PerpetualType, TransactionPreloadInput, TransferDataExtra, WalletConnectionSessionAppMetadata, UTXO,
+};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -82,12 +84,6 @@ impl TransactionLoadInput {
             destination_address: self.destination_address.clone(),
         }
     }
-}
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct SignerInputBlock {
-    pub number: i64,
-    pub hash: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
