@@ -36,7 +36,8 @@ pub enum GemTransactionLoadMetadata {
         block_hash: String,
     },
     Ton {
-        jetton_wallet_address: Option<String>,
+        sender_token_address: Option<String>,
+        recipient_token_address: Option<String>,
         sequence: u64,
     },
     Cosmos {
@@ -118,10 +119,12 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 block_hash,
             },
             TransactionLoadMetadata::Ton {
-                jetton_wallet_address,
+                sender_token_address,
+                recipient_token_address,
                 sequence,
             } => GemTransactionLoadMetadata::Ton {
-                jetton_wallet_address,
+                sender_token_address,
+                recipient_token_address,
                 sequence,
             },
             TransactionLoadMetadata::Cosmos {
@@ -223,10 +226,12 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 block_hash,
             },
             GemTransactionLoadMetadata::Ton {
-                jetton_wallet_address,
+                sender_token_address,
+                recipient_token_address,
                 sequence,
             } => TransactionLoadMetadata::Ton {
-                jetton_wallet_address,
+                sender_token_address,
+                recipient_token_address,
                 sequence,
             },
             GemTransactionLoadMetadata::Cosmos {

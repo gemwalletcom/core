@@ -11,7 +11,8 @@ pub enum TransactionLoadMetadata {
         block_hash: String,
     },
     Ton {
-        jetton_wallet_address: Option<String>,
+        sender_token_address: Option<String>,
+        recipient_token_address: Option<String>,
         sequence: u64,
     },
     Cosmos {
@@ -141,7 +142,16 @@ impl TransactionLoadMetadata {
     pub fn get_recipient_token_address(&self) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Solana { recipient_token_address, .. } => Ok(recipient_token_address.clone()),
+            TransactionLoadMetadata::Ton { recipient_token_address, .. } => Ok(recipient_token_address.clone()),
             _ => Err("Recipient token address not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_sender_token_address(&self) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Solana { sender_token_address, .. } => Ok(sender_token_address.clone()),
+            TransactionLoadMetadata::Ton { sender_token_address, .. } => Ok(sender_token_address.clone()),
+            _ => Err("Sender token address not available for this metadata type".into()),
         }
     }
 }

@@ -158,7 +158,7 @@ pub struct TonWalletInfo {
     pub wallet: bool,
     pub balance: String,
     pub account_state: String,
-    pub wallet_type: String,
+    pub wallet_type: Option<String>,
     pub seqno: Option<i64>,
     pub last_transaction_id: Option<serde_json::Value>,
     pub wallet_id: Option<i64>,
