@@ -4,25 +4,36 @@ use futures::try_join;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator};
+use primitives::{chain_cosmos::CosmosChain, DelegationBase, DelegationValidator};
 
-use crate::{provider::staking_mapper, rpc::client::CosmosClient};
+use crate::{
+    provider::staking_mapper::{calculate_network_apy_cosmos, calculate_network_apy_osmosis, map_staking_delegations, map_staking_validators},
+    rpc::client::CosmosClient,
+};
 
 #[async_trait]
 impl<C: Client> ChainStaking for CosmosClient<C> {
     async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        let cosmos_chain = self.get_chain();
-        if !cosmos_chain.as_chain().is_stake_supported() {
-            return Ok(None);
+        let chain = self.get_chain();
+        match chain {
+            CosmosChain::Noble | CosmosChain::Thorchain => Ok(None),
+            CosmosChain::Cosmos | CosmosChain::Injective => {
+                let (inflation, staking_pool) = try_join!(self.get_inflation(), self.get_staking_pool())?;
+                Ok(calculate_network_apy_cosmos(inflation, staking_pool))
+            }
+            CosmosChain::Osmosis => {
+                let (mint_params, epoch_provisions, staking_pool, supply) = try_join!(
+                    self.get_osmosis_mint_params(),
+                    self.get_osmosis_epoch_provisions(),
+                    self.get_staking_pool(),
+                    self.get_supply_by_denom("uosmo")
+                )?;
+
+                Ok(calculate_network_apy_osmosis(mint_params, epoch_provisions, staking_pool, supply))
+            }
+            CosmosChain::Celestia => Ok(Some(10.55)),
+            CosmosChain::Sei => Ok(Some(5.62)),
         }
-
-        let (inflation, staking_pool) = try_join!(self.get_inflation(), self.get_staking_pool())?;
-
-        let inflation_rate = inflation.inflation.parse::<f64>().unwrap_or(0.0);
-        let bonded_tokens = staking_pool.pool.bonded_tokens.parse::<f64>().unwrap_or(1.0);
-        let total_supply = bonded_tokens + staking_pool.pool.not_bonded_tokens.parse::<f64>().unwrap_or(0.0);
-
-        Ok(staking_mapper::calculate_network_apy(cosmos_chain, inflation_rate, bonded_tokens, total_supply))
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
@@ -33,7 +44,7 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
 
         let validators = self.get_validators().await?;
 
-        Ok(staking_mapper::map_staking_validators(validators.validators, chain, apy))
+        Ok(map_staking_validators(validators.validators, chain, apy))
     }
 
     async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
@@ -52,7 +63,7 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
 
         let validators = self.get_validators().await?;
 
-        Ok(staking_mapper::map_staking_delegations(
+        Ok(map_staking_delegations(
             active_delegations,
             unbonding,
             rewards,

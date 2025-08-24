@@ -38,3 +38,13 @@ rpc = [
     "dep:num-bigint",
     "dep:number_formatter",
 ]
+reqwest = ["gem_client/reqwest"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+reqwest = { workspace = true }
+
+[[test]]
+name = "provider_staking_test"
+test = false
+required-features = ["rpc", "reqwest"]

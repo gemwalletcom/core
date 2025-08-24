@@ -3001,10 +3001,12 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
  "sha2",
+ "tokio",
 ]
 
 [[package]]

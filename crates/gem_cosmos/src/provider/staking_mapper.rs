@@ -1,20 +1,42 @@
 use crate::models::staking::{CosmosDelegations, CosmosRewards, CosmosUnboundingDelegations};
-use crate::rpc::model::Validator;
+use crate::rpc::model::{InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse, StakingPoolResponse, SupplyResponse, Validator};
 use num_bigint::BigInt;
 use number_formatter::BigNumberFormatter;
-use primitives::{chain_cosmos::CosmosChain, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::collections::HashMap;
 use std::str::FromStr;
 
 const BOND_STATUS_BONDED: &str = "BOND_STATUS_BONDED";
 
-pub fn calculate_network_apy(chain: CosmosChain, inflation_rate: f64, bonded_tokens: f64, total_supply: f64) -> Option<f64> {
-    if !chain.as_chain().is_stake_supported() {
-        return None;
-    }
+pub fn calculate_network_apy_cosmos(inflation: InflationResponse, staking_pool: StakingPoolResponse) -> Option<f64> {
+    let inflation_rate = inflation.inflation.parse::<f64>().unwrap_or(0.0);
+    let bonded_tokens = staking_pool.pool.bonded_tokens.parse::<f64>().unwrap_or(1.0);
+    let total_supply = bonded_tokens + staking_pool.pool.not_bonded_tokens.parse::<f64>().unwrap_or(0.0);
 
     let network_apy = inflation_rate * (total_supply / bonded_tokens);
     Some(network_apy * 100.0)
+}
+
+pub fn calculate_network_apy_osmosis(
+    mint_params: OsmosisMintParamsResponse,
+    epoch_provisions: OsmosisEpochProvisionsResponse,
+    staking_pool: StakingPoolResponse,
+    supply: SupplyResponse,
+) -> Option<f64> {
+    let epoch_provisions = epoch_provisions.epoch_provisions.parse::<f64>().ok()?;
+    let staking_distribution = mint_params.params.distribution_proportions.staking.parse::<f64>().ok()?;
+    let bonded_tokens = staking_pool.pool.bonded_tokens.parse::<f64>().ok()?;
+    let _not_bonded_tokens = staking_pool.pool.not_bonded_tokens.parse::<f64>().ok()?;
+    let _total_supply = supply.amount.amount.parse::<f64>().ok()?;
+
+    let epochs_per_year = if mint_params.params.epoch_identifier == "day" { 365.0 } else { 52.0 };
+
+    let annual_issuance = epoch_provisions * epochs_per_year;
+    let effective_staking_distribution = if staking_distribution < 0.1 { 0.093 } else { staking_distribution };
+    let annual_staking_rewards = annual_issuance * effective_staking_distribution;
+    let staking_apy = (annual_staking_rewards / bonded_tokens) * 100.0;
+
+    Some(staking_apy)
 }
 
 pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Option<f64>) -> Vec<DelegationValidator> {
@@ -217,5 +239,44 @@ mod tests {
         let validator2 = &result[1];
         assert_eq!(validator2.id, "cosmosvaloper1q6d3d089hg59x6gcx92uumx70s5y5wadklue8s");
         assert_eq!(validator2.name, "Ubik Capital");
+    }
+
+    #[test]
+    fn test_calculate_network_apy_osmosis() {
+        use crate::rpc::model::{OsmosisDistributionProportions, OsmosisMintParams};
+
+        let mint_params = OsmosisMintParamsResponse {
+            params: OsmosisMintParams {
+                epoch_identifier: "day".to_string(),
+                distribution_proportions: OsmosisDistributionProportions {
+                    staking: "0.4".to_string(), // 40% of minted tokens go to staking
+                },
+            },
+        };
+
+        let epoch_provisions = OsmosisEpochProvisionsResponse {
+            epoch_provisions: "100000000000".to_string(), // 100k OSMO per day
+        };
+
+        let staking_pool = StakingPoolResponse {
+            pool: crate::rpc::model::StakingPool {
+                bonded_tokens: "400000000000000".to_string(),     // 400M OSMO bonded
+                not_bonded_tokens: "100000000000000".to_string(), // 100M OSMO not bonded
+            },
+        };
+
+        let supply = SupplyResponse {
+            amount: crate::rpc::model::SupplyAmount {
+                denom: "uosmo".to_string(),
+                amount: "1000000000000000".to_string(), // 1B OSMO total supply
+            },
+        };
+
+        let result = calculate_network_apy_osmosis(mint_params, epoch_provisions, staking_pool, supply);
+
+        assert!(result.is_some());
+        let apy = result.unwrap();
+
+        assert!((apy - 3.65).abs() < 0.001);
     }
 }

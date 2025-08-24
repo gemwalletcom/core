@@ -14,7 +14,6 @@ rpc = [
     "dep:futures",
 ]
 
-
 [dependencies]
 base64 = { workspace = true }
 hex = { workspace = true }

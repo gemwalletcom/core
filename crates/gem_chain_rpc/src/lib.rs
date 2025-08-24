@@ -17,7 +17,6 @@ pub mod ton;
 pub mod tron;
 pub mod xrp;
 
-// Re-export all client implementations
 pub use self::algorand::AlgorandProvider;
 pub use self::aptos::AptosProvider;
 pub use self::bitcoin::BitcoinProvider;
