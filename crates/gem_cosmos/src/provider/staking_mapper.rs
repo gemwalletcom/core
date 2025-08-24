@@ -1,8 +1,21 @@
-use crate::models::staking::{CosmosDelegations, CosmosRewards, CosmosUnboundingDelegations};
-use crate::rpc::model::{InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse, StakingPoolResponse, SupplyResponse, Validator};
+use crate::models::staking::{Delegations, Rewards, UnbondingDelegations, StakingPoolResponse, Validator};
+use crate::models::{InflationResponse, SupplyResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse};
+
+#[cfg(test)]
+use crate::models::staking::{
+    StakingPool, ValidatorCommission, ValidatorCommissionRates,
+    ValidatorDescription, ValidatorsResponse,
+};
+
+#[cfg(test)]
+use crate::models::{OsmosisDistributionProportions, OsmosisMintParams};
+
+#[cfg(test)]
+use crate::models::SupplyAmount;
 use num_bigint::BigInt;
 use number_formatter::BigNumberFormatter;
-use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::chain_cosmos::CosmosChain;
+use primitives::{DelegationBase, DelegationState, DelegationValidator};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -39,7 +52,7 @@ pub fn calculate_network_apy_osmosis(
     Some(staking_apy)
 }
 
-pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Option<f64>) -> Vec<DelegationValidator> {
+pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, apy: Option<f64>) -> Vec<DelegationValidator> {
     validators
         .into_iter()
         .map(|validator| {
@@ -52,7 +65,7 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Opt
             };
 
             DelegationValidator {
-                chain,
+                chain: chain.as_chain(),
                 id: validator.operator_address,
                 name: validator.description.moniker,
                 is_active,
@@ -64,14 +77,14 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Opt
 }
 
 pub fn map_staking_delegations(
-    active_delegations: CosmosDelegations,
-    unbonding_delegations: CosmosUnboundingDelegations,
-    rewards: CosmosRewards,
+    active_delegations: Delegations,
+    unbonding_delegations: UnbondingDelegations,
+    rewards: Rewards,
     validators: Vec<Validator>,
-    chain: Chain,
+    chain: CosmosChain,
     denom: &str,
 ) -> Vec<DelegationBase> {
-    let asset_id = chain.as_asset_id();
+    let asset_id = chain.as_chain().as_asset_id();
     let mut delegations = Vec::new();
 
     let validators_map: HashMap<String, &Validator> = validators.iter().map(|validator| (validator.operator_address.clone(), validator)).collect();
@@ -151,29 +164,29 @@ pub fn map_staking_delegations(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::staking::{CosmosDelegations, CosmosRewards};
+    use crate::models::staking::{Delegations, Rewards};
     use primitives::Chain;
 
     #[test]
     fn test_map_delegations() {
-        let delegations: CosmosDelegations = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
+        let delegations: Delegations = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
 
         let mock_validator = Validator {
             operator_address: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3".to_string(),
             jailed: false,
             status: BOND_STATUS_BONDED.to_string(),
-            description: crate::rpc::model::ValidatorDescription {
+            description: ValidatorDescription {
                 moniker: "Test Validator".to_string(),
             },
-            commission: crate::rpc::model::ValidatorCommission {
-                commission_rates: crate::rpc::model::ValidatorCommissionRates { rate: "0.05".to_string() },
+            commission: ValidatorCommission {
+                commission_rates: ValidatorCommissionRates { rate: "0.05".to_string() },
             },
         };
 
-        let unbonding = CosmosUnboundingDelegations { unbonding_responses: vec![] };
-        let rewards = CosmosRewards { rewards: vec![] };
+        let unbonding = UnbondingDelegations { unbonding_responses: vec![] };
+        let rewards = Rewards { rewards: vec![] };
 
-        let result = map_staking_delegations(delegations, unbonding, rewards, vec![mock_validator], Chain::Cosmos, "uatom");
+        let result = map_staking_delegations(delegations, unbonding, rewards, vec![mock_validator], CosmosChain::Cosmos, "uatom");
 
         assert_eq!(result.len(), 1);
         let delegation = &result[0];
@@ -189,24 +202,24 @@ mod tests {
 
     #[test]
     fn test_map_delegations_with_rewards() {
-        let delegations: CosmosDelegations = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
-        let rewards: CosmosRewards = serde_json::from_str(include_str!("../../testdata/staking_rewards.json")).unwrap();
+        let delegations: Delegations = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
+        let rewards: Rewards = serde_json::from_str(include_str!("../../testdata/staking_rewards.json")).unwrap();
 
         let mock_validator = Validator {
             operator_address: "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3".to_string(),
             jailed: false,
             status: BOND_STATUS_BONDED.to_string(),
-            description: crate::rpc::model::ValidatorDescription {
+            description: ValidatorDescription {
                 moniker: "Test Validator".to_string(),
             },
-            commission: crate::rpc::model::ValidatorCommission {
-                commission_rates: crate::rpc::model::ValidatorCommissionRates { rate: "0.05".to_string() },
+            commission: ValidatorCommission {
+                commission_rates: ValidatorCommissionRates { rate: "0.05".to_string() },
             },
         };
 
-        let unbonding = CosmosUnboundingDelegations { unbonding_responses: vec![] };
+        let unbonding = UnbondingDelegations { unbonding_responses: vec![] };
 
-        let result = map_staking_delegations(delegations, unbonding, rewards, vec![mock_validator], Chain::Cosmos, "uatom");
+        let result = map_staking_delegations(delegations, unbonding, rewards, vec![mock_validator], CosmosChain::Cosmos, "uatom");
 
         assert_eq!(result.len(), 1);
         let delegation = &result[0];
@@ -222,9 +235,9 @@ mod tests {
 
     #[test]
     fn test_map_validators() {
-        let validators_response: crate::rpc::model::ValidatorsResponse = serde_json::from_str(include_str!("../../testdata/staking_validators.json")).unwrap();
+        let validators_response: ValidatorsResponse = serde_json::from_str(include_str!("../../testdata/staking_validators.json")).unwrap();
 
-        let result = map_staking_validators(validators_response.validators, Chain::Cosmos, Some(18.5));
+        let result = map_staking_validators(validators_response.validators, CosmosChain::Cosmos, Some(18.5));
 
         assert_eq!(result.len(), 2);
 
@@ -243,7 +256,6 @@ mod tests {
 
     #[test]
     fn test_calculate_network_apy_osmosis() {
-        use crate::rpc::model::{OsmosisDistributionProportions, OsmosisMintParams};
 
         let mint_params = OsmosisMintParamsResponse {
             params: OsmosisMintParams {
@@ -259,14 +271,14 @@ mod tests {
         };
 
         let staking_pool = StakingPoolResponse {
-            pool: crate::rpc::model::StakingPool {
+            pool: StakingPool {
                 bonded_tokens: "400000000000000".to_string(),     // 400M OSMO bonded
                 not_bonded_tokens: "100000000000000".to_string(), // 100M OSMO not bonded
             },
         };
 
         let supply = SupplyResponse {
-            amount: crate::rpc::model::SupplyAmount {
+            amount: SupplyAmount {
                 denom: "uosmo".to_string(),
                 amount: "1000000000000000".to_string(), // 1B OSMO total supply
             },

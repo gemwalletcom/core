@@ -12,7 +12,7 @@ impl<C: Client + Clone> ChainState for SolanaClient<C> {
         self.get_genesis_hash().await
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         self.get_slot().await
     }
 }

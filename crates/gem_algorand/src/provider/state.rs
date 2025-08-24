@@ -12,7 +12,7 @@ impl<C: Client> ChainState for AlgorandClient<C> {
         Ok(self.get_transactions_params().await?.genesis_id)
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_transactions_params().await?.last_round as u64)
     }
 }

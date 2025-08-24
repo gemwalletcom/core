@@ -17,7 +17,7 @@ impl<C: Client + Clone> ChainState for SuiClient<C> {
         self.get_chain_id().await
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         self.get_latest_block().await
     }
 }

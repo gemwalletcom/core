@@ -12,7 +12,7 @@ impl<C: Client> ChainState for TronClient<C> {
         Ok("".to_string())
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Send + Sync>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Send + Sync>> {
         Ok(self.get_latest_block().await? as u64)
     }
 }

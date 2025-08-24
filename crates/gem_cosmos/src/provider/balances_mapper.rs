@@ -1,13 +1,13 @@
-use crate::models::staking::{CosmosDelegations, CosmosRewards, CosmosUnboundingDelegations};
+use crate::models::staking::{Delegations, Rewards, UnbondingDelegations};
 use num_bigint::BigInt;
 use number_formatter::BigNumberFormatter;
 use primitives::AssetBalance;
 use std::str::FromStr;
 
 pub fn map_balance_staking(
-    delegations: CosmosDelegations,
-    unbonding: CosmosUnboundingDelegations,
-    rewards: CosmosRewards,
+    delegations: Delegations,
+    unbonding: UnbondingDelegations,
+    rewards: Rewards,
     chain: primitives::Chain,
     denom: &str,
 ) -> AssetBalance {
@@ -44,14 +44,14 @@ pub fn map_balance_staking(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::staking::{CosmosDelegations, CosmosRewards, CosmosUnboundingDelegations};
+    use crate::models::staking::{Delegations, Rewards, UnbondingDelegations};
     use primitives::Chain;
 
     #[test]
     fn test_map_balance_staking() {
-        let delegations: CosmosDelegations = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
-        let unbonding: CosmosUnboundingDelegations = serde_json::from_str(r#"{"unbonding_responses": []}"#).unwrap();
-        let rewards: CosmosRewards = serde_json::from_str(include_str!("../../testdata/staking_rewards.json")).unwrap();
+        let delegations: Delegations = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
+        let unbonding: UnbondingDelegations = serde_json::from_str(r#"{"unbonding_responses": []}"#).unwrap();
+        let rewards: Rewards = serde_json::from_str(include_str!("../../testdata/staking_rewards.json")).unwrap();
 
         let result = map_balance_staking(delegations, unbonding, rewards, Chain::Cosmos, "uatom");
 

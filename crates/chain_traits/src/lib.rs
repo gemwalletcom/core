@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData,
+    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, Transaction, TransactionFee, TransactionInputType, TransactionLoadData,
     TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
@@ -18,6 +18,9 @@ pub trait ChainBalances: Send + Sync {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>>;
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>>;
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>>;
+    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
 }
 
 #[async_trait]
@@ -39,12 +42,18 @@ pub trait ChainStaking: Send + Sync {
 pub trait ChainTransactions: Send + Sync {
     async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Sync + Send>>;
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>>;
+    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
 }
 
 #[async_trait]
 pub trait ChainState: Send + Sync {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>>;
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
 }
 
 #[async_trait]

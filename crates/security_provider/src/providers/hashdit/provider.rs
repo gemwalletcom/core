@@ -1,10 +1,10 @@
 use crate::providers::hashdit::api::HashDitApi;
 use crate::providers::hashdit::models::DetectResponse;
 
+use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use async_trait::async_trait;
 use hmac::{Hmac, Mac};
 use reqwest_enum::{target::Target, Error};
-use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use sha2::Sha256;
 use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;

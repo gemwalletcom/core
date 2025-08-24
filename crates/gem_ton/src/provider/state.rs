@@ -13,7 +13,7 @@ impl<C: Client> ChainState for TonClient<C> {
         Ok(master_head.initial.root_hash)
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_latest_block().await? as u64)
     }
 }

@@ -12,7 +12,7 @@ impl<C: Client + Clone> ChainState for NearClient<C> {
         Ok(self.get_genesis_config().await?.chain_id)
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_latest_block().await?.header.height)
     }
 }

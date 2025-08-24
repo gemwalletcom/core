@@ -2,14 +2,12 @@ use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider};
 use async_trait::async_trait;
-use chain_traits::ChainStaking;
-use futures::future;
+use chain_traits::{ChainBalances, ChainStaking, ChainState, ChainToken, ChainTransactions};
 use primitives::Transaction;
 use primitives::{Asset, AssetBalance, Chain, StakeValidator};
 
 use gem_client::Client;
 use gem_cosmos::rpc::CosmosClient;
-use gem_cosmos::rpc::CosmosMapper;
 
 pub struct CosmosProvider<C: Client> {
     client: CosmosClient<C>,
@@ -28,44 +26,32 @@ impl<C: Client + Send + Sync> ChainBlockProvider for CosmosProvider<C> {
     }
 
     async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get_block("latest").await?.block.header.height.parse()?)
+        Ok(self.client.get_block_latest_number().await? as i64)
     }
 
     async fn get_transactions(&self, block: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let response = self.client.get_block(block.to_string().as_str()).await?;
-        let transaction_ids = response
-            .block
-            .data
-            .txs
-            .clone()
-            .into_iter()
-            .flat_map(CosmosMapper::map_transaction_decode)
-            .collect::<Vec<_>>();
-        let receipts = future::try_join_all(transaction_ids.into_iter().map(|x| self.client.get_transaction(x))).await?;
-
-        Ok(CosmosMapper::map_transactions(self.get_chain(), receipts))
+        self.client.get_transactions_by_block(block as u64).await
     }
 }
 
 #[async_trait]
 impl<C: Client + Send + Sync> ChainTokenDataProvider for CosmosProvider<C> {
-    async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
+    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        self.client.get_token_data(token_id).await
     }
 }
 
 #[async_trait]
 impl<C: Client + Send + Sync> ChainAssetsProvider for CosmosProvider<C> {
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        self.client.get_assets_balances(address).await
     }
 }
 
 #[async_trait]
 impl<C: Client + Send + Sync> ChainTransactionsProvider for CosmosProvider<C> {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.client.get_transactions_by_address(&address, 20).await?;
-        Ok(CosmosMapper::map_transactions(self.get_chain(), transactions))
+        self.client.get_transactions_by_address(address).await
     }
 }
 
@@ -77,7 +63,7 @@ impl<C: Client + Send + Sync> ChainStakeProvider for CosmosProvider<C> {
             .get_staking_validators(None)
             .await?
             .into_iter()
-            .map(|validator| StakeValidator::new(validator.id, validator.name))
+            .map(|x| StakeValidator::new(x.id, x.name))
             .collect())
     }
 

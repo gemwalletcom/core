@@ -12,7 +12,7 @@ impl<C: Client> ChainState for HyperCoreClient<C> {
         Ok("1".to_string())
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(1)
     }
 }

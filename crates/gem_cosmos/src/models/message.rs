@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "@type")]
-pub enum CosmosMessage {
+pub enum Message {
     #[serde(rename = "/cosmos.bank.v1beta1.MsgSend")]
     MsgSend(MsgSend),
     #[serde(rename = "/cosmos.staking.v1beta1.MsgUndelegate")]
@@ -67,4 +67,18 @@ pub struct MsgBeginRedelegate {
 pub struct MsgWithdrawDelegatorReward {
     pub delegator_address: String,
     pub validator_address: String,
+}
+
+impl MsgSend {
+    pub fn get_amount(&self, denom: &str) -> Option<num_bigint::BigInt> {
+        use std::str::FromStr;
+        let value = self
+            .amount
+            .clone()
+            .into_iter()
+            .filter(|x| x.denom == denom)
+            .flat_map(|x| num_bigint::BigInt::from_str(&x.amount).ok())
+            .sum();
+        Some(value)
+    }
 }

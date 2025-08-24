@@ -1,6 +1,6 @@
 use crate::providers::goplus::models::{Response, SecurityAddress, SecurityToken};
-use async_trait::async_trait;
 use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
+use async_trait::async_trait;
 use std::result::Result;
 
 static PROVIDER_NAME: &str = "GoPlus";

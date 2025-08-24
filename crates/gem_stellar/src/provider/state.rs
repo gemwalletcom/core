@@ -8,7 +8,7 @@ use crate::rpc::client::StellarClient;
 
 #[async_trait]
 impl<C: Client> ChainState for StellarClient<C> {
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_node_status().await?.ingest_latest_ledger as u64)
     }
 

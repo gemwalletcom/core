@@ -12,7 +12,7 @@ impl<C: Client> ChainState for PolkadotClient<C> {
         Ok(self.get_node_version().await?.chain)
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_block_header("head").await?.number)
     }
 }

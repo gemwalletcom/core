@@ -1,77 +1,118 @@
 use serde::{Deserialize, Serialize};
 
-use super::account::CosmosBalance;
+use super::account::Balance;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosDelegations {
-    pub delegation_responses: Vec<CosmosDelegation>,
+pub struct Delegations {
+    pub delegation_responses: Vec<Delegation>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosDelegation {
-    pub delegation: CosmosDelegationData,
-    pub balance: CosmosBalance,
+pub struct Delegation {
+    pub delegation: DelegationData,
+    pub balance: Balance,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosDelegationData {
+pub struct DelegationData {
     pub validator_address: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosUnboundingDelegations {
-    pub unbonding_responses: Vec<CosmosUnboundingDelegation>,
+pub struct UnbondingDelegations {
+    pub unbonding_responses: Vec<UnbondingDelegation>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosUnboundingDelegation {
+pub struct UnbondingDelegation {
     pub validator_address: String,
-    pub entries: Vec<CosmosUnboudingDelegationEntry>,
+    pub entries: Vec<UnbondingDelegationEntry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosUnboudingDelegationEntry {
+pub struct UnbondingDelegationEntry {
     pub completion_time: String,
     pub creation_height: String,
     pub balance: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosRewards {
-    pub rewards: Vec<CosmosReward>,
+pub struct Rewards {
+    pub rewards: Vec<Reward>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosReward {
+pub struct Reward {
     pub validator_address: String,
-    pub reward: Vec<CosmosBalance>,
+    pub reward: Vec<Balance>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosValidators {
-    pub validators: Vec<CosmosValidator>,
+pub struct Validators {
+    pub validators: Vec<ValidatorLegacy>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosValidator {
+pub struct ValidatorLegacy {
     pub operator_address: String,
     pub jailed: bool,
     pub status: String,
-    pub description: CosmosValidatorMoniker,
-    pub commission: CosmosValidatorCommission,
+    pub description: ValidatorMoniker,
+    pub commission: ValidatorCommissionLegacy,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosValidatorMoniker {
+pub struct ValidatorMoniker {
     pub moniker: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosValidatorCommission {
-    pub commission_rates: CosmosValidatorCommissionRates,
+pub struct ValidatorCommissionLegacy {
+    pub commission_rates: ValidatorCommissionRatesLegacy,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosValidatorCommissionRates {
+pub struct ValidatorCommissionRatesLegacy {
     pub rate: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorsResponse {
+    pub validators: Vec<Validator>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Validator {
+    pub operator_address: String,
+    pub jailed: bool,
+    pub status: String,
+    pub description: ValidatorDescription,
+    pub commission: ValidatorCommission,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorDescription {
+    pub moniker: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorCommission {
+    pub commission_rates: ValidatorCommissionRates,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorCommissionRates {
+    pub rate: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StakingPoolResponse {
+    pub pool: StakingPool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StakingPool {
+    pub bonded_tokens: String,
+    pub not_bonded_tokens: String,
+}
+

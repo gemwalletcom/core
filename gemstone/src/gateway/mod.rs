@@ -163,7 +163,7 @@ impl GemGateway {
         let block_number = self
             .provider(chain)
             .await?
-            .get_block_number()
+            .get_block_latest_number()
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(block_number)

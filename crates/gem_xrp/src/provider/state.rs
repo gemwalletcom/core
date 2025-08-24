@@ -11,7 +11,7 @@ impl<C: Client> ChainState for XRPClient<C> {
         Ok("".to_string())
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_ledger_current().await?.ledger_current_index as u64)
     }
 }

@@ -9,14 +9,10 @@ use crate::rpc::client::CosmosClient;
 #[async_trait]
 impl<C: Client> ChainState for CosmosClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
-        use crate::models::block::CosmosNodeInfoResponse;
-
-        let node_info: CosmosNodeInfoResponse = self.client.get("/cosmos/base/tendermint/v1beta1/node_info").await?;
-        Ok(node_info.default_node_info.network)
+        Ok(self.get_node_info().await?.default_node_info.network)
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        let block = self.get_block("latest").await?;
-        Ok(block.block.header.height.parse()?)
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+        Ok(self.get_block("latest").await?.block.header.height.parse()?)
     }
 }

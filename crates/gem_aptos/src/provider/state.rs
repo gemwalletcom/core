@@ -12,7 +12,7 @@ impl<C: Client> ChainState for AptosClient<C> {
         Ok(self.get_ledger().await?.chain_id.to_string())
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_ledger().await?.ledger_version)
     }
 }
