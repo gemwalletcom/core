@@ -4,7 +4,7 @@ use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::chain::Chain;
 
-use super::model::{Block, Blocks, Data};
+use crate::models::{Block, Blocks, Data};
 use crate::models::{CardanoBalanceResponse, CardanoBlockData, CardanoGenesisData, CardanoTransactionBroadcast, CardanoUTXO, CardanoUTXOS};
 use primitives::graphql::GraphqlData;
 
@@ -123,3 +123,9 @@ impl<C: Client> ChainStaking for CardanoClient<C> {}
 impl<C: Client> ChainPerpetual for CardanoClient<C> {}
 
 impl<C: Client> ChainTraits for CardanoClient<C> {}
+
+impl<C: Client> ChainProvider for CardanoClient<C> {
+    fn get_chain(&self) -> Chain {
+        self.chain
+    }
+}

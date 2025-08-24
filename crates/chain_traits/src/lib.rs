@@ -4,13 +4,17 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, Transaction, TransactionFee, TransactionInputType, TransactionLoadData,
-    TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
+    Asset, AssetBalance, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, Transaction, TransactionFee, TransactionInputType,
+    TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
 pub trait ChainTraits:
     ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainTransactionLoad
 {
+}
+
+pub trait ChainProvider: Send + Sync {
+    fn get_chain(&self) -> Chain;
 }
 
 #[async_trait]

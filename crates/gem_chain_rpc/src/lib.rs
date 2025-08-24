@@ -3,9 +3,8 @@
 pub mod algorand;
 pub mod aptos;
 pub mod bitcoin;
-pub mod cardano;
-pub mod cosmos;
 pub mod ethereum;
+pub mod generic;
 pub mod hypercore;
 pub mod near;
 pub mod polkadot;
@@ -20,8 +19,6 @@ pub mod xrp;
 pub use self::algorand::AlgorandProvider;
 pub use self::aptos::AptosProvider;
 pub use self::bitcoin::BitcoinProvider;
-pub use self::cardano::CardanoProvider;
-pub use self::cosmos::CosmosProvider;
 pub use self::ethereum::EthereumProvider;
 pub use self::hypercore::HyperCoreProvider;
 pub use self::near::NearProvider;
@@ -138,3 +135,6 @@ impl ChainTransactionsProvider for MockChainBlockClient {}
 
 #[async_trait]
 impl ChainStakeProvider for MockChainBlockClient {}
+
+// Generic provider exports
+pub use generic::GenericProvider;

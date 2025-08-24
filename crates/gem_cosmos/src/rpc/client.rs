@@ -167,3 +167,9 @@ impl<C: Client> ChainAccount for CosmosClient<C> {}
 impl<C: Client> ChainPerpetual for CosmosClient<C> {}
 
 impl<C: Client> ChainTraits for CosmosClient<C> {}
+
+impl<C: Client> chain_traits::ChainProvider for CosmosClient<C> {
+    fn get_chain(&self) -> primitives::Chain {
+        self.chain.as_chain()
+    }
+}

@@ -7,9 +7,9 @@ pub use provider_config::ProviderConfig;
 use reqwest_middleware::ClientBuilder;
 
 use gem_chain_rpc::{
-    algorand::AlgorandProvider, aptos::AptosProvider, bitcoin::BitcoinProvider, cardano::CardanoProvider, ethereum::EthereumProvider, near::NearProvider,
-    solana::SolanaProvider, sui::SuiProvider, ton::TonProvider, tron::TronProvider, xrp::XRPProvider, ChainProvider, CosmosProvider, HyperCoreProvider,
-    PolkadotProvider, StellarProvider,
+    algorand::AlgorandProvider, aptos::AptosProvider, bitcoin::BitcoinProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider,
+    sui::SuiProvider, ton::TonProvider, tron::TronProvider, xrp::XRPProvider, ChainProvider, GenericProvider, HyperCoreProvider, PolkadotProvider,
+    StellarProvider,
 };
 
 use gem_algorand::rpc::AlgorandClient;
@@ -110,9 +110,10 @@ impl ProviderFactory {
                     Box::new(transactions_provider.clone()),
                 ))
             }
+            Chain::Cardano => Box::new(GenericProvider::new(CardanoClient::new(gem_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 let chain = CosmosChain::from_chain(chain).unwrap();
-                Box::new(CosmosProvider::new(CosmosClient::new(chain, gem_client, url)))
+                Box::new(GenericProvider::new(CosmosClient::new(chain, gem_client, url)))
             }
             Chain::Solana => Box::new(SolanaProvider::<ReqwestClient>::new(SolanaClient::new(JsonRpcClient::new(gem_client)))),
             Chain::Ton => Box::new(TonProvider::new(TonClient::new(gem_client))),
@@ -120,7 +121,6 @@ impl ProviderFactory {
             Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(gem_client))),
             Chain::Sui => Box::new(SuiProvider::<ReqwestClient>::new(SuiClient::new(JsonRpcClient::new(gem_client)))),
             Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
-            Chain::Cardano => Box::new(CardanoProvider::new(CardanoClient::new(gem_client))),
             Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),
             Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(gem_client))),
             Chain::Near => Box::new(NearProvider::new(NearClient::new(JsonRpcClient::new(gem_client)))),

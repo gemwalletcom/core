@@ -7,6 +7,8 @@ pub mod token;
 pub mod transactions;
 pub mod transactions_mapper;
 
+pub use transactions_mapper::map_transaction;
+
 // Empty ChainAccount implementation
 use crate::rpc::client::CardanoClient;
 use async_trait::async_trait;
