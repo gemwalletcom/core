@@ -4,13 +4,7 @@ use number_formatter::BigNumberFormatter;
 use primitives::AssetBalance;
 use std::str::FromStr;
 
-pub fn map_balance_staking(
-    delegations: Delegations,
-    unbonding: UnbondingDelegations,
-    rewards: Rewards,
-    chain: primitives::Chain,
-    denom: &str,
-) -> AssetBalance {
+pub fn map_balance_staking(delegations: Delegations, unbonding: UnbondingDelegations, rewards: Rewards, chain: primitives::Chain, denom: &str) -> AssetBalance {
     let staked = delegations
         .delegation_responses
         .iter()

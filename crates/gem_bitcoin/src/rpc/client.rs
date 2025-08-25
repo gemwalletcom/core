@@ -9,8 +9,7 @@ use crate::rpc::model::{AddressDetails, Transaction};
 use super::model::{Block, Status};
 use chain_traits::{ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
 use gem_client::{Client, ContentType};
-use primitives::chain::Chain;
-use primitives::BitcoinChain;
+use primitives::{chain::Chain, BitcoinChain};
 use std::collections::HashMap;
 
 #[derive(Debug)]

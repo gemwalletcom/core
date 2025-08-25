@@ -4,12 +4,10 @@ use std::{collections::HashMap, error::Error, sync::Arc};
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, Transaction};
 use storage::{models, DatabaseClient};
-use streamer::{consumer::MessageConsumer, StreamProducer, TransactionsPayload};
-use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducerQueue};
+use streamer::{consumer::MessageConsumer, AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload};
 use tokio::sync::Mutex;
 
-use crate::consumers::StoreTransactionsConsumerConfig;
-use crate::pusher::Pusher;
+use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
 
 pub struct StoreTransactionsConsumer {
     pub database: Arc<Mutex<DatabaseClient>>,

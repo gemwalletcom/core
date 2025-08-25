@@ -1,28 +1,22 @@
 use serde::{Deserialize, Serialize};
 
-use super::block::CardanoBlock;
+use super::block::Block;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoTransactionBroadcast {
-    pub submit_transaction: Option<CardanoSubmitTransactionHash>,
+pub struct TransactionBroadcast {
+    pub submit_transaction: Option<SubmitTransactionHash>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoSubmitTransactionHash {
+pub struct SubmitTransactionHash {
     pub hash: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoTransactions {
-    pub transactions: Vec<CardanoTransaction>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CardanoTransaction {
+pub struct Transaction {
     pub fee: String,
-    pub block: CardanoBlock,
+    pub block: Block,
 }

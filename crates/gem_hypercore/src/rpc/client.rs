@@ -1,11 +1,13 @@
-use crate::models::balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator};
-use crate::models::candlestick::HypercoreCandlestick;
-use crate::models::metadata::HypercoreMetadataResponse;
-use crate::models::order::HypercorePerpetualFill;
-use crate::models::position::HypercoreAssetPositions;
-use crate::models::referral::HypercoreReferral;
-use crate::models::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
-use crate::models::user::{HypercoreAgentSession, HypercoreUserFee, HypercoreUserRole};
+use crate::models::{
+    balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator},
+    candlestick::HypercoreCandlestick,
+    metadata::HypercoreMetadataResponse,
+    order::HypercorePerpetualFill,
+    position::HypercoreAssetPositions,
+    referral::HypercoreReferral,
+    response::{HyperCoreBroadcastResult, TransactionBroadcastResponse},
+    user::{HypercoreAgentSession, HypercoreUserFee, HypercoreUserRole},
+};
 use async_trait::async_trait;
 use chain_traits::{ChainTraits, ChainTransactionLoad};
 use gem_client::Client;

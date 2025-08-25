@@ -115,4 +115,3 @@ pub struct StakingPool {
     pub bonded_tokens: String,
     pub not_bonded_tokens: String,
 }
-

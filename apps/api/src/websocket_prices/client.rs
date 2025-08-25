@@ -4,9 +4,7 @@ use std::sync::Arc;
 
 use futures_util::SinkExt;
 use pricer::PriceClient;
-use primitives::asset::AssetHashSetExt;
-use primitives::{AssetId, AssetPrice, AssetPriceInfo};
-use primitives::{WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
+use primitives::{asset::AssetHashSetExt, AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
 use redis::aio::MultiplexedConnection;
 use redis::PushInfo;
 use redis::PushKind;

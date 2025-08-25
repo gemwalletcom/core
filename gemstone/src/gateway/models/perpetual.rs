@@ -1,6 +1,8 @@
-use primitives::chart::ChartCandleStick;
-use primitives::perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary};
-use primitives::PerpetualPosition;
+use primitives::{
+    chart::ChartCandleStick,
+    perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
+    PerpetualPosition,
+};
 
 use super::asset::GemAsset;
 

@@ -386,7 +386,7 @@ mod tests {
         assert!(wallet_info.wallet);
         assert_eq!(wallet_info.balance, "62709394797");
         assert_eq!(wallet_info.account_state, "active");
-        assert_eq!(wallet_info.wallet_type, "wallet v4 r2");
+        assert_eq!(wallet_info.wallet_type, Some("wallet v4 r2".to_string()));
         assert_eq!(wallet_info.seqno, Some(140));
         assert_eq!(wallet_info.wallet_id, Some(698983191));
         assert!(wallet_info.last_transaction_id.is_some());

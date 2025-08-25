@@ -1,5 +1,4 @@
-use crate::providers::hashdit::api::HashDitApi;
-use crate::providers::hashdit::models::DetectResponse;
+use crate::providers::hashdit::{api::HashDitApi, models::DetectResponse};
 
 use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use async_trait::async_trait;

@@ -1,5 +1,5 @@
 use chrono::{TimeZone, Utc};
-use primitives::{chain::Chain, transaction_utxo::TransactionUtxoInput, TransactionDirection, TransactionType};
+use primitives::{chain::Chain, transaction_utxo::TransactionUtxoInput, TransactionState, TransactionType};
 
 use super::model::Transaction;
 
@@ -39,16 +39,12 @@ impl BitcoinMapper {
         let transaction = primitives::Transaction::new_with_utxo(
             transaction.txid.clone(),
             chain.as_asset_id(),
-            None,
-            None,
-            None,
             TransactionType::Transfer,
-            primitives::TransactionState::Confirmed,
+            TransactionState::Confirmed,
             transaction.fees.clone(),
             chain.as_asset_id(),
             "0".to_string(),
             None,
-            TransactionDirection::SelfTransfer,
             inputs.into(),
             outputs.into(),
             None,

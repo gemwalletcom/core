@@ -1,7 +1,7 @@
-use std::error::Error;
+use crate::models::rpc::{Block, Transaction};
 use chrono::DateTime;
-use primitives::{chain::Chain, transaction_utxo::TransactionUtxoInput, TransactionDirection, TransactionType};
-use crate::models::{Block, Transaction};
+use primitives::{chain::Chain, transaction_utxo::TransactionUtxoInput, TransactionState, TransactionType};
+use std::error::Error;
 
 pub fn map_transaction_broadcast(hash: String) -> Result<String, Box<dyn Error + Sync + Send>> {
     if hash.is_empty() {
@@ -38,16 +38,12 @@ pub fn map_transaction(chain: Chain, block: &Block, transaction: &Transaction) -
     let transaction = primitives::Transaction::new_with_utxo(
         transaction.hash.clone(),
         chain.as_asset_id(),
-        None,
-        None,
-        None,
         TransactionType::Transfer,
-        primitives::TransactionState::Confirmed,
+        TransactionState::Confirmed,
         transaction.fee.clone(),
         chain.as_asset_id(),
         "0".to_string(),
         None,
-        TransactionDirection::SelfTransfer,
         inputs.into(),
         outputs.into(),
         None,
@@ -60,7 +56,7 @@ pub fn map_transaction(chain: Chain, block: &Block, transaction: &Transaction) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{Input, Output};
+    use crate::models::rpc::{Input, Output};
 
     #[test]
     fn test_map_transaction_broadcast() {
@@ -93,7 +89,7 @@ mod tests {
 
         let result = map_transaction(Chain::Cardano, &block, &transaction);
         assert!(result.is_some());
-        
+
         let mapped_tx = result.unwrap();
         assert_eq!(mapped_tx.hash, "tx_hash");
         assert_eq!(mapped_tx.fee, "100");

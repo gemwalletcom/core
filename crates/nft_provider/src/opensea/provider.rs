@@ -1,12 +1,8 @@
 use std::error::Error;
 
-use primitives::NFTAsset;
-use primitives::NFTAssetId;
-use primitives::NFTCollectionId;
-use primitives::{Chain, NFTCollection};
+use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId};
 
-use crate::NFTProvider;
-use crate::OpenSeaClient;
+use crate::{NFTProvider, OpenSeaClient};
 
 #[async_trait::async_trait]
 impl NFTProvider for OpenSeaClient {

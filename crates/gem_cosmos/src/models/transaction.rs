@@ -31,7 +31,6 @@ pub struct TransactionResponseLegacy {
     pub tx_response: TransactionResult,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct TransactionDecode {
     pub hash: String,

@@ -1,11 +1,8 @@
-use crate::models::staking::{Delegations, Rewards, UnbondingDelegations, StakingPoolResponse, Validator};
-use crate::models::{InflationResponse, SupplyResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse};
+use crate::models::staking::{Delegations, Rewards, StakingPoolResponse, UnbondingDelegations, Validator};
+use crate::models::{InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse, SupplyResponse};
 
 #[cfg(test)]
-use crate::models::staking::{
-    StakingPool, ValidatorCommission, ValidatorCommissionRates,
-    ValidatorDescription, ValidatorsResponse,
-};
+use crate::models::staking::{StakingPool, ValidatorCommission, ValidatorCommissionRates, ValidatorDescription, ValidatorsResponse};
 
 #[cfg(test)]
 use crate::models::{OsmosisDistributionProportions, OsmosisMintParams};
@@ -256,7 +253,6 @@ mod tests {
 
     #[test]
     fn test_calculate_network_apy_osmosis() {
-
         let mint_params = OsmosisMintParamsResponse {
             params: OsmosisMintParams {
                 epoch_identifier: "day".to_string(),

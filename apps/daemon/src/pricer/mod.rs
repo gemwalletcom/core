@@ -3,8 +3,7 @@ mod markets_updater;
 mod price_asset_updater;
 mod price_updater;
 
-use crate::pricer::charts_updater::ChartsUpdater;
-use crate::pricer::price_updater::PriceUpdater;
+use crate::pricer::{charts_updater::ChartsUpdater, price_updater::PriceUpdater};
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
