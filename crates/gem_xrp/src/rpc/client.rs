@@ -1,9 +1,9 @@
 use serde_json::json;
 use std::error::Error;
 
-use crate::rpc::model::*;
+use crate::models::rpc::*;
 
-use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
+use chain_traits::{ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::Chain;
 
@@ -158,3 +158,9 @@ impl<C: Client> ChainPerpetual for XRPClient<C> {}
 impl<C: Client> chain_traits::ChainAccount for XRPClient<C> {}
 
 impl<C: Client> ChainTraits for XRPClient<C> {}
+
+impl<C: Client> ChainProvider for XRPClient<C> {
+    fn get_chain(&self) -> Chain {
+        self.chain
+    }
+}

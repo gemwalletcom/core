@@ -2875,8 +2875,10 @@ dependencies = [
  "gem_client",
  "num-bigint",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -2889,9 +2891,11 @@ dependencies = [
  "gem_client",
  "num-bigint",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
+ "tokio",
 ]
 
 [[package]]
@@ -2906,7 +2910,9 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "primitives",
+ "reqwest",
  "serde",
+ "tokio",
 ]
 
 [[package]]
@@ -3111,6 +3117,7 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -3179,11 +3186,13 @@ dependencies = [
  "hex",
  "num-bigint",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
  "sui-sdk-types",
  "sui-transaction-builder",
+ "tokio",
 ]
 
 [[package]]
@@ -3200,9 +3209,11 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
+ "tokio",
  "tonlib-core",
 ]
 
@@ -3239,9 +3250,11 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
+ "tokio",
 ]
 
 [[package]]

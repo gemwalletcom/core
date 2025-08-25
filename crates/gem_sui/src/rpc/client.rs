@@ -1,23 +1,15 @@
 use std::error::Error;
 
 #[cfg(feature = "rpc")]
-use async_trait::async_trait;
-#[cfg(feature = "rpc")]
-use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits, ChainTransactionLoad, ChainTransactions};
-#[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 use gem_jsonrpc::JsonRpcClient;
-use primitives::{
-    chain::Chain, Asset, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
-    TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate,
-};
+use primitives::{chain::Chain, Asset};
 
-use super::model::Balance;
+use crate::models::rpc::{Balance, Checkpoint, Digest, TransactionBlocks};
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
-use crate::models::transaction::SuiTransaction;
 use crate::models::SuiCoinMetadata;
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
@@ -116,7 +108,7 @@ impl<C: Client + Clone> SuiClient<C> {
         Ok(result.parse().unwrap_or(num_bigint::BigInt::from(1000)))
     }
 
-    pub async fn get_transaction(&self, transaction_id: String) -> Result<SuiTransaction, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transaction(&self, transaction_id: String) -> Result<Digest, Box<dyn Error + Send + Sync>> {
         let params = serde_json::json!([
             transaction_id,
             {
@@ -129,51 +121,27 @@ impl<C: Client + Clone> SuiClient<C> {
         ]);
         self.rpc_call("sui_getTransactionBlock", params).await
     }
-}
 
-#[cfg(feature = "rpc")]
-impl<C: Client + Clone> ChainTraits for SuiClient<C> {}
-
-#[cfg(feature = "rpc")]
-impl<C: Client + Clone> ChainAccount for SuiClient<C> {}
-
-#[cfg(feature = "rpc")]
-impl<C: Client + Clone> ChainPerpetual for SuiClient<C> {}
-
-#[cfg(feature = "rpc")]
-#[async_trait]
-impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
-    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadMetadata::None)
+    pub async fn get_transactions_by_address(&self, address: String) -> Result<TransactionBlocks, Box<dyn Error + Send + Sync>> {
+        let params = serde_json::json!([
+            {
+                "filter": {
+                    "FromAddress": address
+                },
+                "options": {
+                    "showInput": true,
+                    "showEffects": true,
+                    "showEvents": true,
+                    "showObjectChanges": true,
+                    "showBalanceChanges": true
+                }
+            }
+        ]);
+        self.rpc_call("suix_queryTransactionBlocks", params).await
     }
 
-    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: TransactionFee::default(),
-            metadata: input.metadata,
-        })
-    }
-
-    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        let gas_price = self.get_gas_price().await?;
-        Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(gas_price))])
-    }
-}
-
-#[cfg(feature = "rpc")]
-#[async_trait]
-impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
-    async fn transaction_broadcast(&self, _data: String) -> Result<String, Box<dyn std::error::Error + Sync + Send>> {
-        unimplemented!()
-    }
-
-    async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn std::error::Error + Sync + Send>> {
-        let transaction = self.get_transaction(request.id).await?;
-        let state = match transaction.effects.status.status.as_str() {
-            "success" => primitives::TransactionState::Confirmed,
-            "failure" => primitives::TransactionState::Reverted,
-            _ => primitives::TransactionState::Pending,
-        };
-        Ok(TransactionUpdate::new_state(state))
+    pub async fn get_transactions_by_block(&self, checkpoint: u64) -> Result<Checkpoint, Box<dyn Error + Send + Sync>> {
+        let params = serde_json::json!([checkpoint.to_string()]);
+        self.rpc_call("sui_getCheckpoint", params).await
     }
 }

@@ -1,6 +1,8 @@
-use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
+use crate::constants::{TRANSACTION_TYPE_CREATE_ACCOUNT, TRANSACTION_TYPE_PAYMENT};
+use crate::models::transaction::{Payment, StellarTransactionBroadcast, StellarTransactionStatus};
+use chrono::DateTime;
 use num_bigint::BigInt;
-use primitives::{TransactionChange, TransactionState, TransactionUpdate};
+use primitives::{chain::Chain, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(response: &StellarTransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -25,6 +27,43 @@ pub fn map_transaction_status(tx: &StellarTransactionStatus) -> TransactionUpdat
         state,
         changes: vec![TransactionChange::NetworkFee(network_fee)],
     }
+}
+
+pub fn map_transactions(chain: Chain, transactions: Vec<Payment>) -> Vec<Transaction> {
+    transactions.into_iter().flat_map(|x| map_transaction(chain, x)).collect()
+}
+
+pub fn map_transaction(chain: Chain, transaction: Payment) -> Option<Transaction> {
+    match transaction.payment_type.as_str() {
+        TRANSACTION_TYPE_PAYMENT | TRANSACTION_TYPE_CREATE_ACCOUNT => {
+            if transaction.clone().asset_type.unwrap_or_default() == "native" || transaction.clone().payment_type.as_str() == TRANSACTION_TYPE_CREATE_ACCOUNT {
+                let created_at = DateTime::parse_from_rfc3339(&transaction.created_at).ok()?.into();
+
+                return Some(Transaction::new(
+                    transaction.clone().transaction_hash,
+                    chain.as_asset_id(),
+                    transaction.from_address()?,
+                    transaction.to_address()?,
+                    None,
+                    TransactionType::Transfer,
+                    transaction.get_state(),
+                    "1000".to_string(), // TODO: Calculate from block/transaction
+                    chain.as_asset_id(),
+                    transaction.get_value()?,
+                    transaction.clone().get_memo(),
+                    None,
+                    created_at,
+                ));
+            }
+
+            None
+        }
+        _ => None,
+    }
+}
+
+pub fn is_token_address(token_id: &str) -> bool {
+    token_id.len() > 32 && token_id.contains('-')
 }
 
 #[cfg(test)]

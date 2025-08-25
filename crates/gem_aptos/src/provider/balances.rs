@@ -6,7 +6,8 @@ use gem_client::Client;
 use primitives::AssetBalance;
 
 use super::balances_mapper::{map_native_balance, map_token_balances};
-use crate::{rpc::client::AptosClient, APTOS_NATIVE_COIN};
+use crate::rpc::client::AptosClient;
+use crate::APTOS_NATIVE_COIN;
 
 #[async_trait]
 impl<C: Client> ChainBalances for AptosClient<C> {

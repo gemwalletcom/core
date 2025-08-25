@@ -5,7 +5,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::AssetBalance;
 
-use super::balances_mapper::{map_native_balance, map_token_balances};
+use super::balances_mapper::{map_all_balances, map_native_balance, map_token_balances};
 use crate::rpc::client::StellarClient;
 
 #[async_trait]
@@ -23,5 +23,10 @@ impl<C: Client> ChainBalances for StellarClient<C> {
 
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
+    }
+
+    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let account = self.get_stellar_account(&address).await?;
+        Ok(map_all_balances(self.get_chain(), account))
     }
 }

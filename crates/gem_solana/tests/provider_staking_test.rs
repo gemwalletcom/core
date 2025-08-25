@@ -21,8 +21,7 @@ async fn test_get_staking_validators() -> Result<(), Box<dyn std::error::Error +
 #[tokio::test]
 async fn test_get_staking_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let client = testkit::create_test_client();
-    let address = "6sbzC1eH4FTujJXWj51eQe25cYvr4xfXbJ1vAj7j2k5J".to_string();
-    let delegations = client.get_staking_delegations(address).await?;
+    let delegations = client.get_staking_delegations(testkit::TEST_ADDRESS.to_string()).await?;
     assert!(delegations.len() <= 100);
     Ok(())
 }

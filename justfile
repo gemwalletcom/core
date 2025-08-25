@@ -41,6 +41,17 @@ test-all:
 test CRATE:
     cargo test --all-features --package {{CRATE}}
 
+test-integration:
+    @echo "Running integration tests..."
+    cargo test --test provider_transactions_test --package gem_algorand --features rpc,reqwest || true
+    cargo test --test provider_transactions_test --package gem_stellar --features rpc,reqwest || true
+    cargo test --test provider_transactions_test --package gem_bitcoin --features rpc,reqwest
+    cargo test --test provider_transactions_test --package gem_polkadot --features rpc,reqwest
+    cargo test --test provider_transactions_test --package gem_xrp --features rpc,reqwest || true
+    cargo test --test provider_transactions_test --package gem_tron --features rpc
+    cargo test --test provider_transactions_test --package gem_solana --features rpc,reqwest
+    cargo test --test provider_transactions_test --package gem_aptos --features rpc,reqwest
+
 format:
     cargo fmt -q --all
 

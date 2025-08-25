@@ -3,38 +3,38 @@ use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_biguint_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NearBroadcastResult {
+pub struct BroadcastResult {
     pub final_execution_status: String,
-    pub transaction: NearBroadcastTransaction,
-    pub transaction_outcome: NearTransactionOutcome,
+    pub transaction: BroadcastTransaction,
+    pub transaction_outcome: TransactionOutcome,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NearBroadcastTransaction {
+pub struct BroadcastTransaction {
     pub hash: String,
     pub signer_id: String,
     pub receiver_id: String,
-    pub actions: Vec<NearTransactionAction>,
+    pub actions: Vec<TransactionAction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NearTransactionAction {
+pub struct TransactionAction {
     #[serde(rename = "Transfer")]
-    pub transfer: Option<NearTransferAction>,
+    pub transfer: Option<TransferAction>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NearTransferAction {
+pub struct TransferAction {
     pub deposit: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NearTransactionOutcome {
-    pub outcome: NearOutcome,
+pub struct TransactionOutcome {
+    pub outcome: Outcome,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NearOutcome {
+pub struct Outcome {
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub tokens_burnt: BigUint,
 }

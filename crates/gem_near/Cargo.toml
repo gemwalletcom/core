@@ -26,7 +26,7 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 reqwest = { workspace = true }
 
 [[test]]
-name = "integration_test"
+name = "provider_state_test"
 test = false
 
 [features]

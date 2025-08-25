@@ -1,5 +1,6 @@
 pub mod account;
 pub mod asset;
+pub mod rpc;
 pub mod transaction;
 pub mod versions;
 

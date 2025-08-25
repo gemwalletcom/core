@@ -19,4 +19,13 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
         let transaction = self.get_transaction_by_hash(&request.id).await?;
         Ok(map_transaction_status(&transaction))
     }
+
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
+        let _transactions = self.get_block_transactions(block).await?.transactions;
+        Ok(vec![])
+    }
+
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
 }

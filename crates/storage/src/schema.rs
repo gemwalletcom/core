@@ -334,8 +334,8 @@ diesel::table! {
 diesel::table! {
     parser_state (chain) {
         chain -> Varchar,
-        current_block -> Int4,
-        latest_block -> Int4,
+        current_block -> Int8,
+        latest_block -> Int8,
         await_blocks -> Int4,
         timeout_between_blocks -> Int4,
         timeout_latest_block -> Int4,

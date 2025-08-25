@@ -1,9 +1,8 @@
+use crate::constants::STELLAR_DECIMALS;
 use crate::models::account::StellarAccount;
 use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 use std::error::Error;
-
-const STELLAR_DECIMALS: u32 = 7;
 
 pub fn map_native_balance(account: &StellarAccount) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let chain = Chain::Stellar;
@@ -46,6 +45,63 @@ pub fn map_token_balances(account: &StellarAccount, token_ids: Vec<String>, chai
             }
         })
         .collect()
+}
+
+pub fn map_all_balances(chain: Chain, account: StellarAccount) -> Vec<AssetBalance> {
+    let mut balances = Vec::new();
+
+    for balance in account.balances {
+        match balance.asset_type.as_str() {
+            "native" => {
+                // Native XLM balance
+                if let Ok(value) = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS) {
+                    let balance_obj = Balance::coin_balance(value);
+                    balances.push(AssetBalance::new_with_active(chain.as_asset_id(), balance_obj, true));
+                }
+            }
+            "credit_alphanum4" | "credit_alphanum12" => {
+                // Token balances
+                if let (Some(asset_issuer), Some(asset_code)) = (&balance.asset_issuer, &balance.asset_code) {
+                    let token_id = format!("{}-{}", asset_code, asset_issuer);
+                    let asset_id = AssetId::from_token(chain, &token_id);
+                    if let Ok(value) = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS) {
+                        let balance_obj = Balance::coin_balance(value);
+                        balances.push(AssetBalance::new_with_active(asset_id, balance_obj, true));
+                    }
+                }
+            }
+            _ => {
+                // Ignore other asset types
+            }
+        }
+    }
+
+    balances
+}
+
+pub fn map_token_balances_by_ids(chain: Chain, account: &StellarAccount, token_ids: &[String]) -> Vec<AssetBalance> {
+    let mut result = Vec::new();
+    for token_id in token_ids {
+        if let Some(balance) = account.balances.iter().find(|b| {
+            if let (Some(asset_issuer), Some(asset_code)) = (&b.asset_issuer, &b.asset_code) {
+                let balance_token_id = format!("{}-{}", asset_code, asset_issuer);
+                balance_token_id == *token_id && b.asset_type != "native"
+            } else {
+                false
+            }
+        }) {
+            if let Ok(amount) = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS) {
+                let asset_id = AssetId::from_token(chain, token_id);
+                let balance_obj = Balance::coin_balance(amount);
+                result.push(AssetBalance::new_with_active(asset_id, balance_obj, true));
+            }
+        } else {
+            let asset_id = AssetId::from_token(chain, token_id);
+            let balance_obj = Balance::coin_balance("0".to_string());
+            result.push(AssetBalance::new_with_active(asset_id, balance_obj, false));
+        }
+    }
+    result
 }
 
 #[cfg(test)]

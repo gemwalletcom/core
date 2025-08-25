@@ -2,12 +2,10 @@ use async_trait::async_trait;
 use chain_traits::ChainToken;
 use std::error::Error;
 
+use crate::constants::STELLAR_TOKEN_DECIMALS;
+use crate::rpc::client::StellarClient;
 use gem_client::Client;
 use primitives::{Asset, AssetId, AssetType};
-
-use crate::rpc::client::StellarClient;
-
-const STELLAR_TOKEN_DECIMALS: i32 = 7;
 
 #[async_trait]
 impl<C: Client> ChainToken for StellarClient<C> {

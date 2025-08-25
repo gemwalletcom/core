@@ -3,7 +3,7 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionStateRequest, TransactionUpdate};
+use primitives::{Transaction, TransactionStateRequest, TransactionUpdate};
 
 use super::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
 use crate::rpc::client::TronClient;
@@ -18,5 +18,13 @@ impl<C: Client> ChainTransactions for TronClient<C> {
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let receipt = self.get_transaction_reciept(request.id).await?;
         Ok(map_transaction_status(&receipt))
+    }
+
+    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
+
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
     }
 }

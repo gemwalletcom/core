@@ -1,7 +1,7 @@
-use crate::models::fee::NearGasPrice;
+use crate::models::fee::GasPrice;
 use primitives::{FeePriority, FeeRate, GasPriceType};
 
-pub fn map_gas_price_to_priorities(gas_price: &NearGasPrice) -> Result<Vec<FeeRate>, Box<dyn std::error::Error + Sync + Send>> {
+pub fn map_gas_price_to_priorities(gas_price: &GasPrice) -> Result<Vec<FeeRate>, Box<dyn std::error::Error + Sync + Send>> {
     let base_price = gas_price.gas_price.parse::<u64>()?;
 
     Ok(vec![
@@ -14,13 +14,13 @@ pub fn map_gas_price_to_priorities(gas_price: &NearGasPrice) -> Result<Vec<FeeRa
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::fee::NearGasPrice;
+    use crate::models::fee::GasPrice;
     use num_bigint::BigInt;
     use primitives::GasPriceType;
 
     #[test]
     fn test_map_gas_price_to_priorities() {
-        let gas_price = NearGasPrice {
+        let gas_price = GasPrice {
             gas_price: "1000000000".to_string(),
         };
 

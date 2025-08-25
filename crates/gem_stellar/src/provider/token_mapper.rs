@@ -1,7 +1,6 @@
+use crate::constants::STELLAR_TOKEN_DECIMALS;
 use crate::models::common::StellarAsset;
 use primitives::{Asset, AssetId, AssetType, Chain};
-
-const STELLAR_TOKEN_DECIMALS: i32 = 7;
 
 pub fn map_token_data(asset: &StellarAsset, token_id: String, chain: Chain) -> Asset {
     Asset {

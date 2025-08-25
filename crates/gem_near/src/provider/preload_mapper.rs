@@ -1,4 +1,4 @@
-use crate::models::{NearAccountAccessKey, NearBlock};
+use crate::models::{AccountAccessKey, Block};
 use primitives::TransactionLoadMetadata;
 use std::error::Error;
 
@@ -8,7 +8,7 @@ pub fn address_to_public_key(address: &str) -> Result<String, Box<dyn Error + Sy
     Ok(format!("ed25519:{}", encoded))
 }
 
-pub fn map_transaction_preload(access_key: &NearAccountAccessKey, block: &NearBlock) -> TransactionLoadMetadata {
+pub fn map_transaction_preload(access_key: &AccountAccessKey, block: &Block) -> TransactionLoadMetadata {
     TransactionLoadMetadata::Near {
         sequence: (access_key.nonce + 1) as u64,
         block_hash: block.header.hash.clone(),
@@ -18,7 +18,7 @@ pub fn map_transaction_preload(access_key: &NearAccountAccessKey, block: &NearBl
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{NearAccountAccessKey, NearBlock, NearBlockHeader};
+    use crate::models::{AccountAccessKey, Block, BlockHeader};
 
     #[test]
     fn test_address_to_public_key() {
@@ -29,10 +29,10 @@ mod tests {
 
     #[test]
     fn test_map_transaction_preload() {
-        let access_key = NearAccountAccessKey { nonce: 116479371000026 };
+        let access_key = AccountAccessKey { nonce: 116479371000026 };
 
-        let block = NearBlock {
-            header: NearBlockHeader {
+        let block = Block {
+            header: BlockHeader {
                 hash: "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz".to_string(),
                 height: 12345,
             },

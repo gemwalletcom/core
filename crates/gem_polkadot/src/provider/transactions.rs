@@ -1,9 +1,9 @@
 use async_trait::async_trait;
-use chain_traits::ChainTransactions;
+use chain_traits::{ChainProvider, ChainTransactions};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionStateRequest, TransactionUpdate};
+use primitives::{Transaction, TransactionStateRequest, TransactionUpdate};
 
 use super::transactions_mapper;
 use crate::rpc::client::PolkadotClient;
@@ -35,6 +35,15 @@ impl<C: Client> ChainTransactions for PolkadotClient<C> {
 
         let blocks = self.get_blocks(&from_block.to_string(), &to_block.to_string()).await?;
         Ok(transactions_mapper::map_transaction_status(blocks, &request.id, block_number))
+    }
+
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let block_data = self.get_block(block as i64).await?;
+        Ok(transactions_mapper::map_transactions(self.get_chain(), block_data))
+    }
+
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
     }
 }
 

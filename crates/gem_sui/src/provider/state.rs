@@ -1,13 +1,12 @@
+use std::error::Error;
+
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::ChainState;
 #[cfg(feature = "rpc")]
 use gem_client::Client;
-#[cfg(feature = "rpc")]
-use std::error::Error;
 
-#[cfg(feature = "rpc")]
 use crate::rpc::client::SuiClient;
 
 #[cfg(feature = "rpc")]

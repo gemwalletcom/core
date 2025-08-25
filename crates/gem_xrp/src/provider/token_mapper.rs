@@ -1,8 +1,7 @@
-use crate::rpc::model::AccountObject;
+use crate::XRP_TOKEN_DECIMALS;
+use crate::models::rpc::AccountObject;
 use primitives::{Asset, AssetId, AssetType, Chain};
 use std::error::Error;
-
-const XRP_TOKEN_DECIMALS: i32 = 15;
 
 pub fn map_currency_hex_to_symbol(currency: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
     let currency_bytes = hex::decode(currency.trim_end_matches('0')).map_err(|_| "Invalid currency hex")?;

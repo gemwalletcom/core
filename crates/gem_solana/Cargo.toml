@@ -49,3 +49,8 @@ name = "provider_staking_test"
 test = false
 required-features = ["rpc", "reqwest"]
 
+[[test]]
+name = "provider_transactions_test"
+test = false
+required-features = ["rpc", "reqwest"]
+

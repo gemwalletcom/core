@@ -2,14 +2,12 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::chain::Chain;
-use primitives::TransactionLoadMetadata;
+use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{
-    models::{Account, Block, GasFee, Ledger, Resource, ResourceData, TransactionPayload, TransactionResponse, TransactionSignature, TransactionSimulation},
-    Transaction,
+use crate::models::{
+    Account, Block, GasFee, Ledger, Resource, ResourceData, Transaction, TransactionPayload, TransactionResponse, TransactionSignature, TransactionSimulation,
 };
-use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput};
 pub type AccountResource<T> = Resource<T>;
 
 #[derive(Debug)]
@@ -31,7 +29,7 @@ impl<C: Client> AptosClient<C> {
         Ok(self.client.get("/v1/").await?)
     }
 
-    pub async fn get_block_transactions(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_transactions(&self, block_number: u64) -> Result<Block, Box<dyn Error + Send + Sync>> {
         let url = format!("/v1/blocks/by_height/{}?with_transactions=true", block_number);
         Ok(self.client.get(&url).await?)
     }

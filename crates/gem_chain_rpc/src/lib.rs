@@ -1,35 +1,18 @@
 // lib.rs
 
-pub mod algorand;
-pub mod aptos;
-pub mod bitcoin;
 pub mod ethereum;
 pub mod generic;
 pub mod hypercore;
-pub mod near;
-pub mod polkadot;
 pub mod smartchain;
 pub mod solana;
-pub mod stellar;
-pub mod sui;
 pub mod ton;
 pub mod tron;
-pub mod xrp;
-
-pub use self::algorand::AlgorandProvider;
-pub use self::aptos::AptosProvider;
-pub use self::bitcoin::BitcoinProvider;
 pub use self::ethereum::EthereumProvider;
 pub use self::hypercore::HyperCoreProvider;
-pub use self::near::NearProvider;
-pub use self::polkadot::PolkadotProvider;
 pub use self::smartchain::SmartChainProvider;
 pub use self::solana::SolanaProvider;
-pub use self::stellar::StellarProvider;
-pub use self::sui::SuiProvider;
 pub use self::ton::TonProvider;
 pub use self::tron::TronProvider;
-pub use self::xrp::XRPProvider;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, StakeValidator, Transaction};

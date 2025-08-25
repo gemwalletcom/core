@@ -1,11 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use gem_chain_rpc::{ChainStakeProvider, ChainTokenDataProvider, CosmosProvider, SmartChainProvider, SolanaProvider, SuiProvider};
+    use gem_chain_rpc::{ChainStakeProvider, ChainTokenDataProvider, CosmosProvider, SmartChainProvider, SolanaProvider};
     use gem_cosmos::rpc::CosmosClient;
     use gem_evm::rpc::EthereumClient;
     use gem_jsonrpc::JsonRpcClient;
     use gem_solana::rpc::client::SolanaClient;
-    use gem_sui::rpc::client::SuiClient;
     use primitives::{chain_cosmos::CosmosChain, EVMChain};
     use reqwest_middleware::ClientBuilder;
 
@@ -17,24 +16,6 @@ mod tests {
 
         assert_eq!(token_data.symbol, "USDC");
         assert_eq!(token_data.decimals, 6);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_sui_get_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = JsonRpcClient::new("https://fullnode.mainnet.sui.io".to_string())?;
-        let sui_client = SuiClient::new(client);
-        let provider = SuiProvider::new(sui_client);
-
-        let validators = provider.get_validators().await?;
-        assert!(!validators.is_empty());
-
-        // Check that validators have valid data
-        for validator in validators.iter().take(5) {
-            assert!(!validator.id.is_empty());
-            assert!(!validator.name.is_empty());
-        }
 
         Ok(())
     }

@@ -23,3 +23,17 @@ gem_client = { path = "../gem_client", optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 serde_serializers = { path = "../serde_serializers", optional = true }
 
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+reqwest = { workspace = true }
+
+[[test]]
+name = "provider_state_test"
+test = false
+required-features = ["rpc", "reqwest"]
+
+[[test]]
+name = "provider_transactions_test"
+test = false
+required-features = ["rpc", "reqwest"]
+

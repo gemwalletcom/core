@@ -20,3 +20,27 @@ chrono = { workspace = true, optional = true }
 primitives = { path = "../primitives" }
 chain_traits = { path = "../chain_traits", optional = true }
 gem_client = { path = "../gem_client", optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+reqwest = { workspace = true }
+
+[[test]]
+name = "provider_state_test"
+test = false
+required-features = ["rpc", "reqwest"]
+
+[[test]]
+name = "provider_balances_test"
+test = false
+required-features = ["rpc", "reqwest"]
+
+[[test]]
+name = "provider_token_test"
+test = false
+required-features = ["rpc", "reqwest"]
+
+[[test]]
+name = "provider_transactions_test"
+test = false
+required-features = ["rpc", "reqwest"]

@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NearAccount {
+pub struct Account {
     pub amount: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct NearAccountAccessKey {
+pub struct AccountAccessKey {
     pub nonce: i64,
 }

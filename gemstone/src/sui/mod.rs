@@ -3,7 +3,7 @@ mod model;
 pub mod rpc;
 
 use crate::GemstoneError;
-use gem_sui::model::{StakeInput, TokenTransferInput, TransferInput, UnstakeInput};
+use gem_sui::models::{StakeInput, TokenTransferInput, TransferInput, UnstakeInput};
 use model::{SuiStakeInput, SuiTokenTransferInput, SuiTransferInput, SuiTxOutput, SuiUnstakeInput};
 
 /// Sui

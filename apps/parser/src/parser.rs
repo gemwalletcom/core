@@ -43,22 +43,22 @@ impl Parser {
                 tokio::time::sleep(Duration::from_millis(timeout)).await;
                 continue;
             }
-            let next_current_block = state.current_block + state.await_blocks;
+            let next_current_block = state.current_block + state.await_blocks as i64;
 
             match self.provider.get_latest_block().await {
                 Ok(latest_block) => {
                     let _ = self
                         .database
                         .parser_state()
-                        .set_parser_state_latest_block(self.chain.as_ref(), latest_block as i32);
+                        .set_parser_state_latest_block(self.chain.as_ref(), latest_block);
                     // initial start
                     if state.current_block == 0 {
                         let _ = self
                             .database
                             .parser_state()
-                            .set_parser_state_current_block(self.chain.as_ref(), latest_block as i32);
+                            .set_parser_state_current_block(self.chain.as_ref(), latest_block);
                     }
-                    if next_current_block >= latest_block as i32 {
+                    if next_current_block >= latest_block {
                         println!(
                             "parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}",
                             self.chain.as_ref(),
@@ -83,9 +83,9 @@ impl Parser {
                 let start = Instant::now();
                 let state = self.database.parser_state().get_parser_state(self.chain.as_ref())?;
                 let start_block = state.current_block + 1;
-                let end_block = cmp::min(start_block + state.parallel_blocks - 1, state.latest_block - state.await_blocks);
-                let next_blocks = (start_block..=end_block).map(|x| x as i64).collect::<Vec<_>>();
-                let to_go_blocks = state.latest_block - end_block - state.await_blocks;
+                let end_block = cmp::min(start_block + state.parallel_blocks as i64 - 1, state.latest_block - state.await_blocks as i64);
+                let next_blocks = (start_block..=end_block).collect::<Vec<_>>();
+                let to_go_blocks = state.latest_block - end_block - state.await_blocks as i64;
 
                 if next_blocks.is_empty() {
                     break;
@@ -93,7 +93,7 @@ impl Parser {
 
                 // queue blocks, continue parsing
                 if let Some(queue_behind_blocks) = state.queue_behind_blocks {
-                    if to_go_blocks > queue_behind_blocks {
+                    if to_go_blocks > queue_behind_blocks as i64 {
                         let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
                         self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
                         let _ = self.database.parser_state().set_parser_state_current_block(self.chain.as_ref(), end_block);

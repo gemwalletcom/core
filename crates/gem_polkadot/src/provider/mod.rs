@@ -6,3 +6,7 @@ pub mod state;
 pub mod token;
 pub mod transactions;
 pub mod transactions_mapper;
+
+// Re-export mappers for convenience
+pub use balances_mapper::*;
+pub use transactions_mapper::*;

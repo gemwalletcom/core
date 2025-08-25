@@ -93,3 +93,8 @@ pub struct SubmitTransactionRequest {
     pub payload: TransactionPayload,
     pub signature: TransactionSignature,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionBroadcast {
+    pub hash: String,
+}

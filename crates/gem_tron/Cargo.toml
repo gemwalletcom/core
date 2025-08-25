@@ -42,3 +42,8 @@ gem_client = { path = "../gem_client", features = ["reqwest"] }
 name = "provider_balances_test"
 test = false
 required-features = ["rpc"]
+
+[[test]]
+name = "provider_transactions_test"
+test = false
+required-features = ["rpc"]

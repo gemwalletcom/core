@@ -1,13 +1,13 @@
 use std::error::Error;
 
-use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
+use chain_traits::{ChainAccount, ChainPerpetual, ChainProvider, ChainTraits};
 use gem_client::Client;
 use primitives::{Asset, Chain};
 
-use super::model::{Block, BlockHeader};
 use crate::models::account::PolkadotAccountBalance;
 use crate::models::block::PolkadotNodeVersion;
 use crate::models::fee::PolkadotEstimateFee;
+use crate::models::rpc::{Block, BlockHeader};
 use crate::models::transaction::{PolkadotTransactionBroadcastResponse, PolkadotTransactionMaterial};
 
 pub struct PolkadotClient<C: Client> {
@@ -57,12 +57,14 @@ impl<C: Client> PolkadotClient<C> {
         Ok(self.client.get(&format!("/blocks/{}", block_number)).await?)
     }
 
-    pub fn get_chain(&self) -> Chain {
-        Chain::Polkadot
-    }
-
     pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         unimplemented!()
+    }
+}
+
+impl<C: Client> ChainProvider for PolkadotClient<C> {
+    fn get_chain(&self) -> Chain {
+        Chain::Polkadot
     }
 }
 

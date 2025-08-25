@@ -7,9 +7,7 @@ pub use provider_config::ProviderConfig;
 use reqwest_middleware::ClientBuilder;
 
 use gem_chain_rpc::{
-    algorand::AlgorandProvider, aptos::AptosProvider, bitcoin::BitcoinProvider, ethereum::EthereumProvider, near::NearProvider, solana::SolanaProvider,
-    sui::SuiProvider, ton::TonProvider, tron::TronProvider, xrp::XRPProvider, ChainProvider, GenericProvider, HyperCoreProvider, PolkadotProvider,
-    StellarProvider,
+    ethereum::EthereumProvider, solana::SolanaProvider, ton::TonProvider, tron::TronProvider, ChainProvider, GenericProvider, HyperCoreProvider,
 };
 
 use gem_algorand::rpc::AlgorandClient;
@@ -71,7 +69,7 @@ impl ProviderFactory {
         let gem_client = ReqwestClient::new(url.clone(), reqwest_client.clone());
 
         match chain {
-            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinProvider::new(BitcoinClient::new(
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(GenericProvider::new(BitcoinClient::new(
                 gem_client,
                 primitives::BitcoinChain::from_chain(chain).unwrap(),
             ))),
@@ -113,18 +111,18 @@ impl ProviderFactory {
             Chain::Cardano => Box::new(GenericProvider::new(CardanoClient::new(gem_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 let chain = CosmosChain::from_chain(chain).unwrap();
-                Box::new(GenericProvider::new(CosmosClient::new(chain, gem_client, url)))
+                Box::new(GenericProvider::new(CosmosClient::new(chain, gem_client.clone(), url)))
             }
-            Chain::Solana => Box::new(SolanaProvider::<ReqwestClient>::new(SolanaClient::new(JsonRpcClient::new(gem_client)))),
-            Chain::Ton => Box::new(TonProvider::new(TonClient::new(gem_client))),
-            Chain::Tron => Box::new(TronProvider::new(TronClient::new(gem_client))),
-            Chain::Aptos => Box::new(AptosProvider::new(AptosClient::new(gem_client))),
-            Chain::Sui => Box::new(SuiProvider::<ReqwestClient>::new(SuiClient::new(JsonRpcClient::new(gem_client)))),
-            Chain::Xrp => Box::new(XRPProvider::new(XRPClient::new(gem_client))),
-            Chain::Algorand => Box::new(AlgorandProvider::new(AlgorandClient::new(gem_client))),
-            Chain::Stellar => Box::new(StellarProvider::new(StellarClient::new(gem_client))),
-            Chain::Near => Box::new(NearProvider::new(NearClient::new(JsonRpcClient::new(gem_client)))),
-            Chain::Polkadot => Box::new(PolkadotProvider::new(PolkadotClient::new(gem_client))),
+            Chain::Aptos => Box::new(GenericProvider::new(AptosClient::new(gem_client.clone()))),
+            Chain::Sui => Box::new(GenericProvider::new(SuiClient::new(JsonRpcClient::new(gem_client.clone())))),
+            Chain::Xrp => Box::new(GenericProvider::new(XRPClient::new(gem_client.clone()))),
+            Chain::Algorand => Box::new(GenericProvider::new(AlgorandClient::new(gem_client.clone()))),
+            Chain::Stellar => Box::new(GenericProvider::new(StellarClient::new(gem_client.clone()))),
+            Chain::Near => Box::new(GenericProvider::new(NearClient::new(JsonRpcClient::new(gem_client.clone())))),
+            Chain::Polkadot => Box::new(GenericProvider::new(PolkadotClient::new(gem_client.clone()))),
+            Chain::Solana => Box::new(SolanaProvider::<ReqwestClient>::new(SolanaClient::new(JsonRpcClient::new(gem_client.clone())))),
+            Chain::Ton => Box::new(TonProvider::new(TonClient::new(gem_client.clone()))),
+            Chain::Tron => Box::new(TronProvider::new(TronClient::new(gem_client.clone()))),
             Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(gem_client))),
         }
     }

@@ -1,7 +1,10 @@
+#[cfg(feature = "rpc")]
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "rpc")]
 use serde_serializers::deserialize_bigint_from_str;
 
+#[cfg(feature = "rpc")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuiStakeDelegation {
@@ -18,6 +21,7 @@ pub struct SuiSystemState {
     pub epoch_duration_ms: String,
 }
 
+#[cfg(feature = "rpc")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuiStake {
@@ -31,6 +35,7 @@ pub struct SuiStake {
     pub estimated_reward: Option<BigInt>,
 }
 
+#[cfg(feature = "rpc")]
 fn deserialize_optional_bigint_from_str<'de, D>(deserializer: D) -> Result<Option<BigInt>, D::Error>
 where
     D: serde::Deserializer<'de>,

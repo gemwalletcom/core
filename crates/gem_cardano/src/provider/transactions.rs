@@ -5,6 +5,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{Transaction, TransactionStateRequest, TransactionUpdate};
 
+use crate::provider::transactions_mapper::map_transaction;
 use crate::rpc::client::CardanoClient;
 
 #[async_trait]
@@ -26,7 +27,7 @@ impl<C: Client> ChainTransactions for CardanoClient<C> {
             .transactions
             .clone()
             .into_iter()
-            .flat_map(|x| crate::provider::transactions_mapper::map_transaction(self.get_chain(), &block, &x))
+            .flat_map(|x| map_transaction(self.get_chain(), &block, &x))
             .collect::<Vec<Transaction>>();
         Ok(transactions)
     }

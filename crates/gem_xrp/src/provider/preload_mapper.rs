@@ -1,4 +1,4 @@
-use crate::rpc::model::AccountInfoResult;
+use crate::models::rpc::AccountInfoResult;
 use primitives::TransactionLoadMetadata;
 use std::error::Error;
 
@@ -16,7 +16,7 @@ pub fn map_transaction_preload(account_result: AccountInfoResult) -> Result<Tran
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::{AccountInfo, AccountInfoResult};
+    use crate::models::rpc::{AccountInfo, AccountInfoResult};
 
     #[test]
     fn test_map_transaction_preload_with_account_data() {

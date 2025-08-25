@@ -1,5 +1,6 @@
-use crate::models::staking::SuiStakeDelegation;
-use crate::rpc::model::Balance as SuiBalance;
+use crate::models::rpc::Balance as SuiBalance;
+use crate::models::staking::{SuiStakeDelegation, SuiSystemState};
+use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL};
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 
 pub fn map_coin_balance(balance: SuiBalance) -> AssetBalance {
@@ -22,6 +23,23 @@ pub fn map_token_balances(balances: Vec<SuiBalance>, token_ids: Vec<String>) -> 
         .collect()
 }
 
+pub fn map_staking_balance_with_system_state(delegations: Vec<SuiStakeDelegation>, _system_state: SuiSystemState) -> Option<AssetBalance> {
+    let staked_total = delegations
+        .iter()
+        .flat_map(|delegation| &delegation.stakes)
+        .map(|stake| &stake.principal + stake.estimated_reward.as_ref().unwrap_or(&num_bigint::BigInt::from(0)))
+        .sum::<num_bigint::BigInt>();
+
+    if staked_total == num_bigint::BigInt::from(0) {
+        return None;
+    }
+
+    Some(AssetBalance::new_balance(
+        Chain::Sui.as_asset_id(),
+        Balance::stake_balance(staked_total.to_string(), "0".to_string(), None),
+    ))
+}
+
 pub fn map_staking_balance(delegations: Vec<SuiStakeDelegation>) -> AssetBalance {
     let staked_total = delegations
         .iter()
@@ -33,6 +51,21 @@ pub fn map_staking_balance(delegations: Vec<SuiStakeDelegation>) -> AssetBalance
         Chain::Sui.as_asset_id(),
         Balance::stake_balance(staked_total.to_string(), "0".to_string(), None),
     )
+}
+
+pub fn map_assets_balances(balances: Vec<SuiBalance>) -> Vec<AssetBalance> {
+    balances
+        .into_iter()
+        .filter_map(|balance| {
+            let asset_id = if balance.coin_type == SUI_COIN_TYPE || balance.coin_type == SUI_COIN_TYPE_FULL {
+                None // Skip native coin as it's handled separately
+            } else {
+                Some(AssetId::from_token(Chain::Sui, &balance.coin_type))
+            };
+
+            asset_id.map(|asset_id| AssetBalance::new_balance(asset_id, Balance::coin_balance(balance.total_balance.to_string())))
+        })
+        .collect()
 }
 
 fn coin_type_matches(coin_type: &str, token_id: &str) -> bool {

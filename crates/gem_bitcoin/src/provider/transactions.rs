@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use primitives::{TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{Transaction, TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
 
 use gem_client::Client;
@@ -27,5 +27,13 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
             TransactionState::Pending
         };
         Ok(TransactionUpdate::new_state(status))
+    }
+
+    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
+
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
     }
 }

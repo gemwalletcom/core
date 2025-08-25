@@ -33,7 +33,7 @@ use crate::{
 };
 use gem_sui::{
     jsonrpc::{ObjectDataOptions, SuiData, SuiRpc},
-    model::TxOutput,
+    models::TxOutput,
     EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
 };
 use primitives::{AssetId, Chain};

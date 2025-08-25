@@ -1,4 +1,4 @@
-use crate::rpc::model::Account;
+use crate::models::rpc::{Account, Asset};
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 
 pub fn map_balance_coin(account: &Account, chain: Chain) -> AssetBalance {
@@ -39,10 +39,17 @@ pub fn map_balance_tokens(account: &Account, token_ids: Vec<String>, chain: Chai
         .collect()
 }
 
+pub fn map_assets_balance(assets: Vec<Asset>) -> Vec<AssetBalance> {
+    assets
+        .into_iter()
+        .map(|asset| AssetBalance::new(AssetId::from_token(Chain::Algorand, &asset.asset_id.to_string()), asset.amount.to_string()))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::Account;
+    use crate::models::rpc::Account;
     use primitives::Chain;
 
     #[test]

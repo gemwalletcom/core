@@ -1,6 +1,7 @@
+use crate::models::rpc::SuiSystemState as RpcSuiSystemState;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
 use chrono::{DateTime, Utc};
-use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, StakeValidator};
 
 pub fn map_validators(validators: SuiValidators, default_apy: f64) -> Vec<DelegationValidator> {
     validators
@@ -44,6 +45,19 @@ pub fn map_delegations(delegations: Vec<SuiStakeDelegation>, system_state: SuiSy
             })
         })
         .collect()
+}
+
+pub fn map_system_validators(system_state: RpcSuiSystemState) -> Vec<StakeValidator> {
+    system_state
+        .active_validators
+        .into_iter()
+        .map(|v| StakeValidator::new(v.sui_address, v.name))
+        .collect()
+}
+
+pub fn map_staking_apy(validators: SuiValidators) -> Result<f64, Box<dyn std::error::Error + Send + Sync>> {
+    let max_apy = validators.apys.into_iter().map(|v| v.apy).fold(0.0, f64::max);
+    Ok(max_apy * 100.0)
 }
 
 fn map_stake_state(status: &str) -> DelegationState {

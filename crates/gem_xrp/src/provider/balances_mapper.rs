@@ -1,4 +1,4 @@
-use crate::rpc::model::{AccountInfo, AccountObjects};
+use crate::models::rpc::{AccountInfo, AccountObjects};
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 use std::error::Error;
 
@@ -41,7 +41,7 @@ pub fn map_token_balances(objects: &AccountObjects, token_ids: Vec<String>, chai
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::AccountInfo;
+    use crate::models::rpc::AccountInfo;
     use primitives::{AssetId, Chain};
 
     #[test]

@@ -15,3 +15,18 @@ pub struct StellarBalance {
     pub asset_code: Option<String>,
     pub asset_issuer: Option<String>,
 }
+
+// RPC models
+#[cfg(feature = "rpc")]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Account {
+    pub balances: Vec<Balance>,
+}
+
+#[cfg(feature = "rpc")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Balance {
+    pub balance: String,
+    pub asset_type: String,
+    pub asset_issuer: Option<String>,
+}

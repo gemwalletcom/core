@@ -1,12 +1,9 @@
 use std::error::Error;
 
 use crate::models::account::BitcoinAccount;
-use crate::models::block::{BitcoinBlock, BitcoinNodeInfo};
+use crate::models::block::{BitcoinBlock, BitcoinNodeInfo, Block, Status};
 use crate::models::fee::BitcoinFeeResult;
-use crate::models::transaction::{BitcoinTransactionBroacastResult, BitcoinUTXO};
-use crate::rpc::model::{AddressDetails, Transaction};
-
-use super::model::{Block, Status};
+use crate::models::transaction::{AddressDetails, BitcoinTransactionBroacastResult, BitcoinUTXO, Transaction};
 use chain_traits::{ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
 use gem_client::{Client, ContentType};
 use primitives::{chain::Chain, BitcoinChain};
@@ -77,3 +74,9 @@ impl<C: Client> ChainPerpetual for BitcoinClient<C> {}
 impl<C: Client> ChainToken for BitcoinClient<C> {}
 
 impl<C: Client> ChainTraits for BitcoinClient<C> {}
+
+impl<C: Client> chain_traits::ChainProvider for BitcoinClient<C> {
+    fn get_chain(&self) -> primitives::Chain {
+        self.chain.get_chain()
+    }
+}

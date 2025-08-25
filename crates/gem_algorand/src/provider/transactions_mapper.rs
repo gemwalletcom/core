@@ -1,5 +1,7 @@
-use crate::rpc::model::{TransactionBroadcast, TransactionStatus};
-use primitives::{TransactionChange, TransactionState, TransactionUpdate};
+use crate::constants::TRANSACTION_TYPE_PAY;
+use crate::models::rpc::{Transaction as AlgoTransaction, TransactionBroadcast, TransactionStatus};
+use chrono::DateTime;
+use primitives::{chain::Chain, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
 
 pub fn map_transaction_broadcast(result: &TransactionBroadcast) -> Result<String, String> {
     if let Some(message) = &result.message {
@@ -27,10 +29,38 @@ pub fn map_transaction_status(transaction: &TransactionStatus) -> TransactionUpd
     TransactionUpdate { state, changes }
 }
 
+pub fn map_transactions(chain: Chain, transactions: Vec<AlgoTransaction>) -> Vec<Transaction> {
+    transactions
+        .into_iter()
+        .flat_map(|transaction| map_transaction(chain, transaction))
+        .collect::<Vec<Transaction>>()
+}
+
+pub fn map_transaction(chain: Chain, transaction: AlgoTransaction) -> Option<Transaction> {
+    match transaction.transaction_type.as_str() {
+        TRANSACTION_TYPE_PAY => Some(Transaction::new(
+            transaction.id.clone(),
+            chain.as_asset_id(),
+            transaction.sender.clone().unwrap_or_default(),
+            transaction.payment_transaction.clone()?.receiver.clone().unwrap_or_default(),
+            None,
+            TransactionType::Transfer,
+            TransactionState::Confirmed,
+            transaction.fee.unwrap_or_default().to_string(),
+            chain.as_asset_id(),
+            transaction.payment_transaction.clone()?.amount.unwrap_or_default().to_string(),
+            transaction.clone().get_memo(),
+            None,
+            DateTime::from_timestamp(transaction.round_time, 0)?,
+        )),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::{TransactionBroadcast, TransactionStatus};
+    use crate::models::rpc::{TransactionBroadcast, TransactionStatus};
     use primitives::{TransactionChange, TransactionState};
 
     #[test]

@@ -1,7 +1,7 @@
+use crate::models::rpc::AssetDetails;
 use primitives::{Asset, AssetId, AssetType, Chain};
-use crate::rpc::model::AssetInfo;
 
-pub fn map_token_data(asset_info: &AssetInfo, token_id: String, chain: Chain) -> Asset {
+pub fn map_token_data(asset_info: &AssetDetails, token_id: String, chain: Chain) -> Asset {
     Asset {
         id: AssetId {
             chain,
@@ -22,6 +22,16 @@ pub fn is_valid_token_id(token_id: &str) -> bool {
     } else {
         false
     }
+}
+
+pub fn map_asset(asset: AssetDetails) -> Asset {
+    Asset::new(
+        AssetId::from_token(Chain::Algorand, &asset.index.to_string()),
+        asset.params.name,
+        asset.params.unit_name,
+        asset.params.decimals as i32,
+        AssetType::TOKEN,
+    )
 }
 
 #[cfg(test)]
