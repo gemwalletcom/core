@@ -21,7 +21,7 @@ impl<C: Client> TonClient<C> {
         Self { client }
     }
 
-    pub async fn get_master_head(&self) -> Result<Chainhead, Box<dyn Error + Send + Sync>> {
+    pub async fn get_master_head(&self) -> Result<TonResult<Chainhead>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get("/api/v2/getMasterchainInfo").await?)
     }
 
@@ -46,7 +46,7 @@ impl<C: Client> TonClient<C> {
     }
 
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        Ok(self.get_master_head().await?.last.seqno)
+        Ok(self.get_master_head().await?.result.last.seqno)
     }
 
     pub async fn get_balance(&self, address: String) -> Result<String, Box<dyn Error + Send + Sync>> {

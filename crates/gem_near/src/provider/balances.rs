@@ -23,3 +23,20 @@ impl<C: Client + Clone> ChainBalances for NearClient<C> {
         Ok(None)
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use crate::provider::testkit::{create_near_test_client, TEST_ADDRESS};
+    use chain_traits::ChainBalances;
+
+    #[tokio::test]
+    async fn test_near_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_near_test_client()?;
+        let address = TEST_ADDRESS.to_string();
+        let balance = client.get_balance_coin(address).await?;
+        let available = balance.balance.available.parse::<u128>();
+        assert!(available.is_ok());
+        println!("Balance: {} {}", balance.balance.available, balance.asset_id);
+        Ok(())
+    }
+}

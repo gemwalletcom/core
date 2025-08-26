@@ -39,3 +39,21 @@ impl<C: Client + Clone> ChainBalances for SuiClient<C> {
         Ok(asset_balances)
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use super::*;
+    use crate::provider::testkit::*;
+    use primitives::Chain;
+
+    #[tokio::test]
+    async fn test_sui_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_sui_test_client();
+        let balance = client
+            .get_balance_coin("0x1c6ffe96e9beec00749dfc2fc3a65b69b46c5bd0987b47e0c9d4b98a1bbcd1f0".to_string())
+            .await?;
+        assert_eq!(balance.asset_id.chain, Chain::Sui);
+        println!("Balance: {:?}", balance);
+        Ok(())
+    }
+}

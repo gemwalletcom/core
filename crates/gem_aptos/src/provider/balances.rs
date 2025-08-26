@@ -25,3 +25,19 @@ impl<C: Client> ChainBalances for AptosClient<C> {
         Ok(None)
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use crate::provider::testkit::{create_aptos_test_client, TEST_ADDRESS};
+    use chain_traits::ChainBalances;
+    use primitives::Chain;
+
+    #[tokio::test]
+    async fn test_aptos_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
+        assert_eq!(balance.asset_id.chain, Chain::Aptos);
+        println!("Balance: {:?}", balance);
+        Ok(())
+    }
+}

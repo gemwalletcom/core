@@ -1,6 +1,7 @@
 pub mod balances;
 pub mod balances_mapper;
 pub mod preload;
+pub mod testkit;
 
 #[cfg(feature = "rpc")]
 pub mod preload_mapper;

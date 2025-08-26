@@ -13,6 +13,7 @@ rpc = [
     "dep:gem_client"
 ]
 reqwest = ["gem_client/reqwest"]
+integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -30,23 +31,3 @@ gem_client = { path = "../gem_client", optional = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
-
-[[test]]
-name = "provider_state_test"
-test = false
-required-features = ["rpc", "reqwest"]
-
-[[test]]
-name = "provider_balances_test"
-test = false
-required-features = ["rpc", "reqwest"]
-
-[[test]]
-name = "provider_token_test"
-test = false
-required-features = ["rpc", "reqwest"]
-
-[[test]]
-name = "provider_transactions_test"
-test = false
-required-features = ["rpc", "reqwest"]

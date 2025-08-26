@@ -1,8 +1,8 @@
-use crate::rpc::model::{AccountInfo, JettonWalletsResponse};
+use crate::rpc::model::JettonWalletsResponse;
 use primitives::{AssetBalance, AssetId, Chain};
 
-pub fn map_coin_balance(account: AccountInfo) -> AssetBalance {
-    AssetBalance::new(Chain::Ton.as_asset_id(), account.balance.to_string())
+pub fn map_coin_balance(balance: String) -> AssetBalance {
+    AssetBalance::new(Chain::Ton.as_asset_id(), balance)
 }
 
 pub fn map_balance_tokens(wallets: JettonWalletsResponse, token_ids: Vec<String>) -> Vec<AssetBalance> {
@@ -24,16 +24,10 @@ pub fn map_balance_tokens(wallets: JettonWalletsResponse, token_ids: Vec<String>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::AccountInfo;
-
     #[test]
     fn test_map_balance_coin() {
-        let account_info = AccountInfo {
-            balance: 62709394797,
-            status: "active".to_string(),
-        };
-
-        let result = map_coin_balance(account_info);
+        let balance = "62709394797".to_string();
+        let result = map_coin_balance(balance);
 
         assert_eq!(result.asset_id, Chain::Ton.as_asset_id());
         assert_eq!(result.balance.available, "62709394797");

@@ -32,3 +32,28 @@ impl<C: Client> ChainTransactions for StellarClient<C> {
         Ok(map_transactions(self.get_chain(), payments))
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use super::*;
+    use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
+    use chain_traits::ChainState;
+
+    #[tokio::test]
+    async fn test_get_transactions_by_block() {
+        let stellar_client = create_test_client();
+        let latest_block = stellar_client.get_block_latest_number().await.unwrap();
+        let transactions = stellar_client.get_transactions_by_block(latest_block).await.unwrap();
+
+        println!("Latest block: {}, transactions count: {}", latest_block, transactions.len());
+        assert!(latest_block > 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_transactions_by_address() {
+        let stellar_client = create_test_client();
+        let transactions = stellar_client.get_transactions_by_address(TEST_ADDRESS.to_string()).await.unwrap();
+
+        println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
+    }
+}

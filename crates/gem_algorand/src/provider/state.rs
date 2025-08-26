@@ -4,22 +4,33 @@ use std::error::Error;
 
 use gem_client::Client;
 
-use crate::rpc::client::AlgorandClient;
+use crate::{rpc::client::AlgorandClient, AlgorandClientIndexer};
 
 #[async_trait]
 impl<C: Client> ChainState for AlgorandClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
-        // Algorand mainnet genesis ID is always this value
-        Ok("mainnet-v1.0".to_string())
+        Ok(self.get_transactions_params().await?.genesis_id)
     }
 
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        let block_headers = self.get_block_headers().await?;
-        Ok(block_headers.current_round as u64)
+        Ok(self.get_transactions_params().await?.last_round)
     }
 }
 
-#[cfg(all(test, feature = "rpc", feature = "reqwest"))]
+#[async_trait]
+impl<C: Client> ChainState for AlgorandClientIndexer<C> {
+    async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
+        let headers = self.get_block_headers(1).await?;
+        let block = headers.blocks.first().ok_or("Failed to get block headers")?;
+        Ok(block.genesis_id.clone())
+    }
+
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+        Ok(self.get_block_headers(0).await?.current_round)
+    }
+}
+
+#[cfg(all(test, feature = "integration_tests"))]
 mod integration_tests {
     use crate::provider::testkit::*;
     use chain_traits::ChainState;
@@ -28,8 +39,8 @@ mod integration_tests {
     async fn test_algorand_get_chain_id() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_algorand_test_client();
         let chain_id = client.get_chain_id().await?;
-        assert!(!chain_id.is_empty());
         println!("Algorand chain ID: {}", chain_id);
+        assert!(chain_id == "mainnet-v1.0");
         Ok(())
     }
 
@@ -37,8 +48,8 @@ mod integration_tests {
     async fn test_algorand_get_block_latest_number() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_algorand_test_client();
         let latest_block = client.get_block_latest_number().await?;
-        assert!(latest_block > 0);
         println!("Latest block: {}", latest_block);
+        assert!(latest_block > 0);
         Ok(())
     }
 }

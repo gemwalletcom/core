@@ -8,11 +8,6 @@ pub struct Asset {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AssetResponse {
-    pub asset: AssetDetails,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AssetDetails {
     pub index: i64,
     pub params: AssetParams,

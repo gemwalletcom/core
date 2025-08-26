@@ -10,7 +10,7 @@ use gem_chain_rpc::{
     ethereum::EthereumProvider, solana::SolanaProvider, ton::TonProvider, tron::TronProvider, ChainProvider, GenericProvider, HyperCoreProvider,
 };
 
-use gem_algorand::rpc::AlgorandClient;
+use gem_algorand::AlgorandClientIndexer;
 use gem_aptos::rpc::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::CardanoClient;
@@ -111,12 +111,12 @@ impl ProviderFactory {
             Chain::Cardano => Box::new(GenericProvider::new(CardanoClient::new(gem_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {
                 let chain = CosmosChain::from_chain(chain).unwrap();
-                Box::new(GenericProvider::new(CosmosClient::new(chain, gem_client.clone(), url)))
+                Box::new(GenericProvider::new(CosmosClient::new(chain, gem_client.clone())))
             }
             Chain::Aptos => Box::new(GenericProvider::new(AptosClient::new(gem_client.clone()))),
             Chain::Sui => Box::new(GenericProvider::new(SuiClient::new(JsonRpcClient::new(gem_client.clone())))),
             Chain::Xrp => Box::new(GenericProvider::new(XRPClient::new(gem_client.clone()))),
-            Chain::Algorand => Box::new(GenericProvider::new(AlgorandClient::new(gem_client.clone()))),
+            Chain::Algorand => Box::new(GenericProvider::new(AlgorandClientIndexer::new(gem_client.clone()))),
             Chain::Stellar => Box::new(GenericProvider::new(StellarClient::new(gem_client.clone()))),
             Chain::Near => Box::new(GenericProvider::new(NearClient::new(JsonRpcClient::new(gem_client.clone())))),
             Chain::Polkadot => Box::new(GenericProvider::new(PolkadotClient::new(gem_client.clone()))),

@@ -26,3 +26,20 @@ impl<C: Client> ChainBalances for XRPClient<C> {
         Ok(None)
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use super::*;
+    use crate::provider::testkit::{TEST_ADDRESS, create_xrp_test_client};
+
+    #[tokio::test]
+    async fn test_xrp_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_xrp_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let balance = client.get_balance_coin(address).await?;
+        let available = balance.balance.available.parse::<u64>().unwrap();
+        assert!(available > 0);
+        println!("Balance: {:?} {}", available, balance.asset_id);
+        Ok(())
+    }
+}

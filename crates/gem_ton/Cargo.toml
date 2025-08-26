@@ -13,6 +13,8 @@ rpc = [
     "dep:number_formatter",
     "dep:futures",
 ]
+reqwest = ["gem_client/reqwest"]
+integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 base64 = { workspace = true }
@@ -35,8 +37,3 @@ futures = { workspace = true, optional = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
-
-[[test]]
-name = "provider_transactions_test"
-test = false
-required-features = ["rpc"]

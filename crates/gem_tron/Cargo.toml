@@ -32,18 +32,10 @@ rpc = [
     "dep:async-trait",
     "dep:futures",
 ]
+reqwest = ["gem_client/reqwest"]
+integration_tests = ["rpc", "reqwest"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
-
-[[test]]
-name = "provider_balances_test"
-test = false
-required-features = ["rpc"]
-
-[[test]]
-name = "provider_transactions_test"
-test = false
-required-features = ["rpc"]

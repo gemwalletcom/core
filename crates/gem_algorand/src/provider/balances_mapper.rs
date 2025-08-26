@@ -49,13 +49,13 @@ pub fn map_assets_balance(assets: Vec<Asset>) -> Vec<AssetBalance> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::AccountResponse;
+    use crate::models::account::Account;
     use primitives::Chain;
 
     #[test]
     fn test_map_balance_coin() {
-        let account: AccountResponse = serde_json::from_str(include_str!("../../testdata/account.json")).unwrap();
-        let balance = map_balance_coin(&account.account, Chain::Algorand);
+        let account: Account = serde_json::from_str(include_str!("../../testdata/account.json")).unwrap();
+        let balance = map_balance_coin(&account, Chain::Algorand);
 
         assert_eq!(balance.balance.available, "71414422");
         assert_eq!(balance.balance.reserved, "200000");

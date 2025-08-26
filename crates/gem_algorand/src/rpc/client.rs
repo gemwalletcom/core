@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 
-use crate::models::{
-    AccountResponse, AssetResponse, Block, BlockHeaders, TransactionBroadcast, TransactionStatus, Transactions, TransactionsParams,
-};
+use crate::models::{Account, AssetDetails, TransactionBroadcast, TransactionStatus, TransactionsParams};
 use gem_client::ContentType;
 
 #[cfg(feature = "rpc")]
@@ -31,24 +29,12 @@ impl<C: Client> AlgorandClient<C> {
         self.chain
     }
 
-    pub async fn get_block_headers(&self) -> Result<BlockHeaders, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get("/v2/block-headers").await?)
-    }
-
-    pub async fn get_account(&self, address: &str) -> Result<AccountResponse, Box<dyn Error + Send + Sync>> {
+    pub async fn get_account(&self, address: &str) -> Result<Account, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v2/accounts/{}", address)).await?)
     }
 
-    pub async fn get_asset(&self, asset_id: &str) -> Result<AssetResponse, Box<dyn Error + Send + Sync>> {
+    pub async fn get_asset(&self, asset_id: &str) -> Result<AssetDetails, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v2/assets/{}", asset_id)).await?)
-    }
-
-    pub async fn get_account_transactions(&self, address: &str) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/accounts/{}/transactions", address)).await?)
-    }
-
-    pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/blocks/{}", block_number)).await?)
     }
 
     pub async fn get_transactions_params(&self) -> Result<TransactionsParams, Box<dyn Error + Send + Sync>> {

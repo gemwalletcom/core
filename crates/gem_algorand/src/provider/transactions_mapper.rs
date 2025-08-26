@@ -29,14 +29,12 @@ pub fn map_transaction_status(transaction: &TransactionStatus) -> TransactionUpd
     TransactionUpdate { state, changes }
 }
 
-pub fn map_transactions(chain: Chain, transactions: Vec<AlgoTransaction>) -> Vec<Transaction> {
-    transactions
-        .into_iter()
-        .flat_map(|transaction| map_transaction(chain, transaction))
-        .collect::<Vec<Transaction>>()
+pub fn map_transactions(transactions: Vec<AlgoTransaction>) -> Vec<Transaction> {
+    transactions.into_iter().flat_map(map_transaction).collect::<Vec<Transaction>>()
 }
 
-pub fn map_transaction(chain: Chain, transaction: AlgoTransaction) -> Option<Transaction> {
+pub fn map_transaction(transaction: AlgoTransaction) -> Option<Transaction> {
+    let chain = Chain::Algorand;
     match transaction.transaction_type.as_str() {
         TRANSACTION_TYPE_PAY => Some(Transaction::new(
             transaction.id.clone(),

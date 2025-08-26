@@ -17,7 +17,7 @@ pub struct CosmosClient<C: Client> {
 }
 
 impl<C: Client> CosmosClient<C> {
-    pub fn new(chain: CosmosChain, client: C, _url: String) -> Self {
+    pub fn new(chain: CosmosChain, client: C) -> Self {
         Self { chain, client }
     }
 

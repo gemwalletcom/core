@@ -50,7 +50,7 @@ impl GemGateway {
             Chain::Near => Ok(Arc::new(NearClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             Chain::Aptos => Ok(Arc::new(AptosClient::new(alien_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Sei | Chain::Noble => {
-                Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client, url)))
+                Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
             }
             Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
             Chain::Tron => Ok(Arc::new(TronClient::new(alien_client))),

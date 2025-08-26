@@ -27,3 +27,26 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
         Ok(map_transactions(self.get_transactions_by_address(_address).await?))
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use crate::provider::testkit::{create_aptos_test_client, TEST_ADDRESS};
+    use chain_traits::{ChainState, ChainTransactions};
+
+    #[tokio::test]
+    async fn test_aptos_get_transactions_by_block() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let _latest_block = client.get_block_latest_number().await?;
+        let transactions = client.get_transactions_by_block(100000).await?;
+        println!("Transactions in block 100000: {}", transactions.len());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_aptos_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string()).await?;
+        println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
+        Ok(())
+    }
+}

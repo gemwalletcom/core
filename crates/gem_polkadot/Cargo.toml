@@ -17,6 +17,7 @@ rpc = [
     "dep:bs58",
 ]
 reqwest = ["gem_client/reqwest"]
+integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -40,18 +41,3 @@ bs58 = { workspace = true, optional = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "macros"] }
 reqwest = { workspace = true }
-
-[[test]]
-name = "provider_state_test"
-test = false
-required-features = ["rpc", "reqwest"]
-
-[[test]]
-name = "provider_balances_test"
-test = false
-required-features = ["rpc", "reqwest"]
-
-[[test]]
-name = "provider_transactions_test"
-test = false
-required-features = ["rpc", "reqwest"]

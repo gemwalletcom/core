@@ -11,7 +11,13 @@ use crate::rpc::client::BitcoinClient;
 impl<C: Client> BitcoinClient<C> {
     fn full_address(&self, address: &str) -> String {
         match self.chain {
-            BitcoinChain::BitcoinCash => format!("bitcoincash:{}", address),
+            BitcoinChain::BitcoinCash => {
+                if address.starts_with("bitcoincash:") {
+                    address.to_string()
+                } else {
+                    format!("bitcoincash:{}", address)
+                }
+            }
             _ => address.to_string(),
         }
     }
@@ -31,5 +37,22 @@ impl<C: Client> ChainBalances for BitcoinClient<C> {
 
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
+    }
+}
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use crate::provider::testkit::*;
+    use chain_traits::ChainBalances;
+
+    #[tokio::test]
+    async fn test_bitcoin_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_bitcoin_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let balance = client.get_balance_coin(address).await?;
+        let available = balance.balance.available.parse::<u64>().unwrap();
+        assert!(available > 0);
+        println!("Balance: {:?} {}", available, balance.asset_id);
+        Ok(())
     }
 }

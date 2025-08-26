@@ -23,3 +23,19 @@ impl<C: Client> ChainBalances for PolkadotClient<C> {
         Ok(None)
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use super::*;
+    use crate::provider::testkit::{create_polkadot_test_client, TEST_ADDRESS};
+
+    #[tokio::test]
+    async fn test_polkadot_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_polkadot_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let balance = client.get_balance_coin(address).await?;
+        assert_eq!(balance.asset_id.chain.to_string(), "polkadot");
+        println!("Balance: {:?} {}", balance.balance, balance.asset_id);
+        Ok(())
+    }
+}

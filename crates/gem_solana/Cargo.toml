@@ -7,6 +7,7 @@ edition = { workspace = true }
 default = ["rpc", "reqwest"]
 rpc = ["gem_jsonrpc/client", "dep:async-trait", "dep:gem_client", "dep:chain_traits", "dep:futures"]
 reqwest = ["gem_jsonrpc/reqwest"]
+integration_tests = ["rpc", "reqwest"]
 integration = []
 
 [dependencies]
@@ -33,24 +34,4 @@ futures = { workspace = true, optional = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
-
-[[test]]
-name = "provider_token_test"
-test = false
-required-features = ["rpc", "reqwest"]
-
-[[test]]
-name = "provider_balances_test"
-test = false
-required-features = ["rpc", "reqwest"]
-
-[[test]]
-name = "provider_staking_test"
-test = false
-required-features = ["rpc", "reqwest"]
-
-[[test]]
-name = "provider_transactions_test"
-test = false
-required-features = ["rpc", "reqwest"]
 

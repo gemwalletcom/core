@@ -8,5 +8,5 @@ pub mod token_mapper;
 pub mod transactions;
 pub mod transactions_mapper;
 
-#[cfg(all(test, feature = "rpc", feature = "reqwest"))]
+#[cfg(all(test, feature = "integration_tests"))]
 mod testkit;

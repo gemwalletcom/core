@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionsParams {
     #[serde(rename = "last-round")]
-    pub last_round: i64,
+    pub last_round: u64,
     #[serde(rename = "genesis-hash")]
     pub genesis_hash: String,
     #[serde(rename = "genesis-id")]
