@@ -34,7 +34,7 @@ pub struct TransactionMessage {
 pub struct OutMessage {
     pub source: String,
     pub destination: Option<String>,
-    pub value: String,
+    pub value: Option<String>,
     pub op_code: Option<String>,
     pub decoded_op_name: Option<String>,
     pub body: Option<String>,
@@ -94,13 +94,13 @@ pub struct TransactionDescription {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComputePhase {
-    pub success: bool,
-    pub exit_code: i32,
+    pub success: Option<bool>,
+    pub exit_code: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActionPhase {
-    pub success: bool,
+    pub success: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
