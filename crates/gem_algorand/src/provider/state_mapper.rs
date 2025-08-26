@@ -1,4 +1,4 @@
-use crate::models::rpc::TransactionsParams;
+use crate::models::TransactionsParams;
 use num_bigint::BigInt;
 use primitives::{FeePriority, FeeRate, GasPriceType};
 

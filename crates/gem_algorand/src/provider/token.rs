@@ -33,3 +33,19 @@ impl<C: Client> ChainToken for AlgorandClient<C> {
         false
     }
 }
+
+#[cfg(all(test, feature = "rpc", feature = "reqwest"))]
+mod integration_tests {
+    use crate::provider::testkit::*;
+    use chain_traits::ChainToken;
+
+    #[tokio::test]
+    async fn test_algorand_get_token_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_algorand_test_client();
+        let token_data = client.get_token_data("31566704".to_string()).await?;
+        assert!(!token_data.name.is_empty());
+        assert!(token_data.decimals > 0);
+        println!("Token data: {:?}", token_data);
+        Ok(())
+    }
+}

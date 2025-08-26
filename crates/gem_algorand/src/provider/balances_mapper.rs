@@ -1,8 +1,8 @@
-use crate::models::rpc::{Account, Asset};
+use crate::models::{Account, Asset};
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 
 pub fn map_balance_coin(account: &Account, chain: Chain) -> AssetBalance {
-    let (available, reserved): (i64, i64) = {
+    let (available, reserved): (u64, u64) = {
         let amount = account.amount;
         if amount > 0 {
             let reserved = account.min_balance;
@@ -19,7 +19,7 @@ pub fn map_balance_tokens(account: &Account, token_ids: Vec<String>, chain: Chai
     token_ids
         .into_iter()
         .map(|token_id| {
-            let (balance, is_active): (i64, bool) = {
+            let (balance, is_active): (u64, bool) = {
                 if let Some(asset) = account.assets.iter().find(|asset| asset.asset_id.to_string() == token_id) {
                     (asset.amount, true)
                 } else {
@@ -49,15 +49,15 @@ pub fn map_assets_balance(assets: Vec<Asset>) -> Vec<AssetBalance> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::rpc::Account;
+    use crate::models::AccountResponse;
     use primitives::Chain;
 
     #[test]
     fn test_map_balance_coin() {
-        let account: Account = serde_json::from_str(include_str!("../../testdata/account.json")).unwrap();
-        let balance = map_balance_coin(&account, Chain::Algorand);
+        let account: AccountResponse = serde_json::from_str(include_str!("../../testdata/account.json")).unwrap();
+        let balance = map_balance_coin(&account.account, Chain::Algorand);
 
-        assert_eq!(balance.balance.available, "72516422");
+        assert_eq!(balance.balance.available, "71414422");
         assert_eq!(balance.balance.reserved, "200000");
         assert_eq!(balance.is_active, Some(true));
     }

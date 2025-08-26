@@ -30,14 +30,15 @@ pub fn map_transaction_status(transaction: &Transaction) -> TransactionUpdate {
     update
 }
 
-pub fn map_transactions(chain: Chain, transactions: Vec<Transaction>) -> Vec<PrimitivesTransaction> {
-    let mut transactions = transactions.into_iter().flat_map(|x| map_transaction(chain, x)).collect::<Vec<_>>();
+pub fn map_transactions(transactions: Vec<Transaction>) -> Vec<PrimitivesTransaction> {
+    let mut transactions = transactions.into_iter().flat_map(map_transaction).collect::<Vec<_>>();
 
     transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     transactions
 }
 
-pub fn map_transaction(chain: Chain, transaction: Transaction) -> Option<PrimitivesTransaction> {
+pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction> {
+    let chain = Chain::Aptos;
     let events = transaction.clone().events.unwrap_or_default();
 
     if transaction.transaction_type.as_deref() == Some("user_transaction") && events.len() <= 4 {

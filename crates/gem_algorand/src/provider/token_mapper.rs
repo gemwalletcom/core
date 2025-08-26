@@ -1,4 +1,4 @@
-use crate::models::rpc::AssetDetails;
+use crate::models::AssetDetails;
 use primitives::{Asset, AssetId, AssetType, Chain};
 
 pub fn map_token_data(asset_info: &AssetDetails, token_id: String, chain: Chain) -> Asset {

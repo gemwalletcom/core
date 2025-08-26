@@ -35,8 +35,8 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let _url = format!("/v1/accounts/{}/transactions", address);
-        Ok(vec![])
+        let url = format!("/v1/accounts/{}/transactions", address);
+        Ok(self.client.get(&url).await?)
     }
 
     pub async fn get_account_resource<T: Serialize + DeserializeOwned>(

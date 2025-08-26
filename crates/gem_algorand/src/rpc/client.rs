@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::error::Error;
 
-use crate::models::rpc::{Account, AssetResponse, Block, BlockHeaders, TransactionBroadcast, TransactionStatus, Transactions, TransactionsParams};
+use crate::models::{
+    AccountResponse, AssetResponse, Block, BlockHeaders, TransactionBroadcast, TransactionStatus, Transactions, TransactionsParams,
+};
 use gem_client::ContentType;
 
 #[cfg(feature = "rpc")]
@@ -33,7 +35,7 @@ impl<C: Client> AlgorandClient<C> {
         Ok(self.client.get("/v2/block-headers").await?)
     }
 
-    pub async fn get_account(&self, address: &str) -> Result<Account, Box<dyn Error + Send + Sync>> {
+    pub async fn get_account(&self, address: &str) -> Result<AccountResponse, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v2/accounts/{}", address)).await?)
     }
 

@@ -1,5 +1,5 @@
 use crate::constants::TRANSACTION_TYPE_PAY;
-use crate::models::rpc::{Transaction as AlgoTransaction, TransactionBroadcast, TransactionStatus};
+use crate::models::{Transaction as AlgoTransaction, TransactionBroadcast, TransactionStatus};
 use chrono::DateTime;
 use primitives::{chain::Chain, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
 
@@ -60,7 +60,7 @@ pub fn map_transaction(chain: Chain, transaction: AlgoTransaction) -> Option<Tra
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::rpc::{TransactionBroadcast, TransactionStatus};
+    use crate::models::{TransactionBroadcast, TransactionStatus};
     use primitives::{TransactionChange, TransactionState};
 
     #[test]

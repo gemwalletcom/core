@@ -39,3 +39,14 @@ pub struct TransactionStateRequest {
     pub created_at: i64,
     pub block_number: i64,
 }
+
+impl TransactionStateRequest {
+    pub fn new_id(id: String) -> Self {
+        Self {
+            id,
+            sender_address: String::new(),
+            created_at: 0,
+            block_number: 0,
+        }
+    }
+}

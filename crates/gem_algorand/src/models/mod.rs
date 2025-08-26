@@ -1,12 +1,9 @@
 pub mod account;
 pub mod asset;
-pub mod rpc;
+pub mod block;
 pub mod transaction;
-pub mod versions;
 
 pub use account::*;
 pub use asset::*;
+pub use block::*;
 pub use transaction::*;
-pub use versions::*;
-
-type UInt64 = u64;
