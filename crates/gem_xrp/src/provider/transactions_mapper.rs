@@ -4,8 +4,7 @@ use crate::models::rpc::{
 use crate::{RESULT_SUCCESS, TRANSACTION_TYPE_PAYMENT, XRP_DEFAULT_ASSET_DECIMALS, XRP_EPOCH_OFFSET_SECONDS};
 use chrono::DateTime;
 use num_bigint::BigInt;
-use number_formatter::BigNumberFormatter;
-use primitives::{Asset, AssetBalance, AssetId, AssetType, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate, chain::Chain};
+use primitives::{Asset, AssetId, AssetType, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate, chain::Chain};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(broadcast_result: &TransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -146,21 +145,9 @@ pub fn map_token_data(chain: Chain, account_objects: Vec<AccountObject>) -> Resu
         AssetId::from_token(chain, token_id),
         symbol.clone(),
         symbol.clone(),
-        XRP_DEFAULT_ASSET_DECIMALS,
+        XRP_DEFAULT_ASSET_DECIMALS as i32,
         AssetType::TOKEN,
     ))
-}
-
-pub fn map_token_balances(chain: Chain, assets: Vec<AccountObject>) -> Vec<AssetBalance> {
-    assets
-        .into_iter()
-        .filter(|x| x.high_limit.currency.len() > 3)
-        .flat_map(|x| {
-            let asset_id = AssetId::from_token(chain, &x.high_limit.issuer);
-            let value = BigNumberFormatter::value_from_amount(&x.balance.value, XRP_DEFAULT_ASSET_DECIMALS as u32).ok()?;
-            Some(AssetBalance::new(asset_id, value))
-        })
-        .collect()
 }
 
 #[cfg(test)]

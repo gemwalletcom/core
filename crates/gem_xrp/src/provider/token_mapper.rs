@@ -1,4 +1,4 @@
-use crate::XRP_TOKEN_DECIMALS;
+use crate::XRP_DEFAULT_ASSET_DECIMALS;
 use crate::models::rpc::AccountObject;
 use primitives::{Asset, AssetId, AssetType, Chain};
 use std::error::Error;
@@ -18,7 +18,7 @@ pub fn map_token_data(object: &AccountObject, token_id: String, chain: Chain) ->
         token_id: Some(token_id.clone()),
         name: symbol.clone(),
         symbol,
-        decimals: XRP_TOKEN_DECIMALS,
+        decimals: XRP_DEFAULT_ASSET_DECIMALS as i32,
         asset_type: AssetType::TOKEN,
     })
 }

@@ -1,8 +1,12 @@
-use crate::models::rpc::{AccountInfo, AccountObjects};
+use crate::{
+    XRP_DEFAULT_ASSET_DECIMALS,
+    models::rpc::{AccountInfo, AccountObjects},
+};
+use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 use std::error::Error;
 
-pub fn map_native_balance(account: &AccountInfo, asset_id: AssetId, reserved_amount: u64) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+pub fn map_balance_coin(account: &AccountInfo, asset_id: AssetId, reserved_amount: u64) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let balance_str = &account.balance;
     let balance: u64 = balance_str.parse().map_err(|_| "Invalid balance format")?;
 
@@ -18,19 +22,19 @@ pub fn map_native_balance(account: &AccountInfo, asset_id: AssetId, reserved_amo
     ))
 }
 
-pub fn map_token_balances(objects: &AccountObjects, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
+pub fn map_balance_tokens(objects: &AccountObjects, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
     let mut balances = Vec::new();
     for token_id in token_ids {
+        let asset_id = AssetId::from_token(chain, &token_id);
         if let Some(object) = objects
             .account_objects
             .iter()
             .find(|obj| obj.high_limit.issuer == token_id && obj.high_limit.currency.len() > 3)
         {
-            let asset_id = AssetId::from_token(chain, &token_id);
-            let balance = Balance::coin_balance(object.balance.value.clone());
+            let value = BigNumberFormatter::value_from_amount(&object.balance.value, XRP_DEFAULT_ASSET_DECIMALS).unwrap_or("0".to_owned());
+            let balance = Balance::coin_balance(value);
             balances.push(AssetBalance::new_with_active(asset_id, balance, true));
         } else {
-            let asset_id = AssetId::from_token(chain, &token_id);
             let balance = Balance::coin_balance("0".to_string());
             balances.push(AssetBalance::new_with_active(asset_id, balance, false));
         }
@@ -41,6 +45,7 @@ pub fn map_token_balances(objects: &AccountObjects, token_ids: Vec<String>, chai
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::result::XRPResult;
     use crate::models::rpc::AccountInfo;
     use primitives::{AssetId, Chain};
 
@@ -58,7 +63,7 @@ mod tests {
         let asset_id = AssetId::from_chain(Chain::Xrp);
         let reserved_amount = 1000000; // 1 XRP reserve
 
-        let result = map_native_balance(&account, asset_id.clone(), reserved_amount).unwrap();
+        let result = map_balance_coin(&account, asset_id.clone(), reserved_amount).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
         assert_eq!(result.balance.available, "9000000"); // 10 - 1 = 9 XRP
@@ -79,10 +84,27 @@ mod tests {
         let asset_id = AssetId::from_chain(Chain::Xrp);
         let reserved_amount = 1000000; // 1 XRP reserve
 
-        let result = map_native_balance(&account, asset_id.clone(), reserved_amount).unwrap();
+        let result = map_balance_coin(&account, asset_id.clone(), reserved_amount).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
         assert_eq!(result.balance.available, "0"); // Insufficient balance
         assert_eq!(result.balance.reserved, "1000000");
+    }
+
+    #[test]
+    fn test_map_balance_tokens() {
+        let response: XRPResult<AccountObjects> = serde_json::from_str(include_str!("../testdata/accounts_objects_tokens.json")).unwrap();
+        let account_objects = response.result;
+
+        let token_ids = vec!["rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De".to_string()];
+
+        let result = map_balance_tokens(&account_objects, token_ids, Chain::Xrp);
+
+        assert_eq!(result.len(), 1);
+
+        let balance = &result[0];
+        assert_eq!(balance.asset_id, AssetId::from_token(Chain::Xrp, "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"));
+        assert_eq!(balance.balance.available, "171000000000000");
+        assert_eq!(balance.is_active, Some(true));
     }
 }

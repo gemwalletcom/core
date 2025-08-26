@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use chain_traits::ChainToken;
 use std::error::Error;
 
-use crate::XRP_TOKEN_DECIMALS;
+use crate::XRP_DEFAULT_ASSET_DECIMALS;
 use crate::rpc::client::XRPClient;
 use gem_client::Client;
 use primitives::{Asset, AssetId, AssetType};
@@ -23,7 +23,7 @@ impl<C: Client> ChainToken for XRPClient<C> {
                 token_id: Some(token_id.clone()),
                 name: symbol.clone(),
                 symbol,
-                decimals: XRP_TOKEN_DECIMALS,
+                decimals: XRP_DEFAULT_ASSET_DECIMALS as i32,
                 asset_type: AssetType::TOKEN,
             })
         } else {
