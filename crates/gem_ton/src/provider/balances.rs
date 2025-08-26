@@ -24,3 +24,38 @@ impl<C: Client> ChainBalances for TonClient<C> {
         Ok(None)
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use crate::provider::testkit::*;
+    use chain_traits::ChainBalances;
+    use primitives::Chain;
+
+    #[tokio::test]
+    async fn test_ton_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ton_test_client();
+        let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
+        assert_eq!(balance.asset_id.chain, Chain::Ton);
+        println!("Balance: {:?}", balance);
+        assert!(balance.balance.available.parse::<u64>().unwrap() > 0);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ton_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ton_test_client();
+        let token_ids = vec![
+            "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs".to_string(), // USDT
+        ];
+        let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids).await?;
+
+        assert_eq!(balances.len(), 1);
+        for balance in &balances {
+            assert_eq!(balance.asset_id.chain, Chain::Ton);
+
+            println!("Token balance: {:?}", balance);
+            assert!(balance.balance.available.parse::<u64>().unwrap() > 0);
+        }
+        Ok(())
+    }
+}

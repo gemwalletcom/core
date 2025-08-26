@@ -95,7 +95,12 @@ pub struct Address {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JettonInfo {
-    pub metadata: JettonInfoMetadata,
+    pub jetton_content: JettonContent,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JettonContent {
+    pub data: JettonInfoMetadata,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

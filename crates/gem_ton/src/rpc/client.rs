@@ -41,7 +41,7 @@ impl<C: Client> TonClient<C> {
         Ok(self.client.get(&format!("/api/v3/transactionsByMessage?msg_hash={}", address)).await?)
     }
 
-    pub async fn get_token_info(&self, token_id: String) -> Result<JettonInfo, Box<dyn Error + Send + Sync>> {
+    pub async fn get_token_info(&self, token_id: String) -> Result<TonResult<JettonInfo>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/api/v2/getTokenData?address={}", token_id)).await?)
     }
 
@@ -103,12 +103,12 @@ impl<C: Client> TonClient<C> {
     }
 
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        let token_info = self.get_token_info(token_id.clone()).await?;
-        let decimals = token_info.metadata.decimals as i32;
+        let token_info = self.get_token_info(token_id.clone()).await?.result;
+        let decimals = token_info.jetton_content.data.decimals as i32;
         Ok(Asset::new(
             AssetId::from_token(Chain::Ton, &token_id),
-            token_info.metadata.name,
-            token_info.metadata.symbol,
+            token_info.jetton_content.data.name,
+            token_info.jetton_content.data.symbol,
             decimals,
             AssetType::JETTON,
         ))

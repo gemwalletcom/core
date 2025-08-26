@@ -17,3 +17,21 @@ impl<C: Client> ChainToken for TonClient<C> {
         token_id.starts_with("EQ") && token_id.len() >= 40 && token_id.len() <= 60
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use crate::provider::testkit::*;
+
+    #[tokio::test]
+    async fn test_ton_get_token_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ton_test_client();
+        let token_data = client.get_token_data("EQACLXDwit01stiqK9FvYiJo15luVzfD5zU8uwDSq6JXxbP8".to_string()).await?;
+        println!("Token data: {:?}", token_data);
+
+        assert!(token_data.name == "Spintria");
+        assert!(token_data.symbol == "SP");
+        assert!(token_data.decimals == 8);
+
+        Ok(())
+    }
+}

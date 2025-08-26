@@ -1,0 +1,84 @@
+{
+    "last": {
+        "workchain": -1,
+        "shard": "8000000000000000",
+        "seqno": 51317643,
+        "root_hash": "lagS/xKs/SVA9kWndpgrJ7yigXt7up67iHy0gVtxiLQ=",
+        "file_hash": "Xrj8YIpwNPxAFFo3dAvCA6ZOl++DBrPwkYrPhj0LaBg=",
+        "global_id": -239,
+        "version": 0,
+        "after_merge": false,
+        "before_split": false,
+        "after_split": false,
+        "want_merge": true,
+        "want_split": false,
+        "key_block": false,
+        "vert_seqno_incr": false,
+        "flags": 1,
+        "gen_utime": "1756242080",
+        "start_lt": "60881689000000",
+        "end_lt": "60881689000004",
+        "validator_list_hash_short": -2119799769,
+        "gen_catchain_seqno": 727374,
+        "min_ref_mc_seqno": 51317640,
+        "prev_key_block_seqno": 51296396,
+        "vert_seqno": 1,
+        "master_ref_seqno": 0,
+        "rand_seed": "z0ec4U0f0Y49L7vxhP+c1als71Q4BqfxVgwFFDvsflI=",
+        "created_by": "DeXB2WFzZO21gznNcBCHm1GS4/iXNT+iulN04SoWOSo=",
+        "tx_count": 3,
+        "masterchain_block_ref": {
+            "workchain": -1,
+            "shard": "8000000000000000",
+            "seqno": 51317643
+        },
+        "prev_blocks": [
+            {
+                "workchain": -1,
+                "shard": "8000000000000000",
+                "seqno": 51317642
+            }
+        ]
+    },
+    "first": {
+        "workchain": -1,
+        "shard": "8000000000000000",
+        "seqno": 1,
+        "root_hash": "8GYhhrigd8CwZGrRT59iulLDcgiTYuvOAzFJxugc0Ts=",
+        "file_hash": "V+XzykEwun4yePZhAEPZk77RbMfMOgS/S4GiJkSKY6s=",
+        "global_id": -239,
+        "version": 0,
+        "after_merge": false,
+        "before_split": false,
+        "after_split": false,
+        "want_merge": false,
+        "want_split": false,
+        "key_block": false,
+        "vert_seqno_incr": false,
+        "flags": 0,
+        "gen_utime": "1573822385",
+        "start_lt": "1000000",
+        "end_lt": "1000012",
+        "validator_list_hash_short": -1447544682,
+        "gen_catchain_seqno": 0,
+        "min_ref_mc_seqno": 1,
+        "prev_key_block_seqno": 0,
+        "vert_seqno": 0,
+        "master_ref_seqno": 0,
+        "rand_seed": "e1ZHQiC/ZPGzzR9IHm3u7FZ2ZwzzdUXMYRJf7DCQdQg=",
+        "created_by": "6MC3PyuC80JUx8L+cNE4TnXEZ1i3TeCKxYFV5ZP9eKw=",
+        "tx_count": 9,
+        "masterchain_block_ref": {
+            "workchain": -1,
+            "shard": "8000000000000000",
+            "seqno": 1
+        },
+        "prev_blocks": [
+            {
+                "workchain": -1,
+                "shard": "8000000000000000",
+                "seqno": 0
+            }
+        ]
+    }
+}
