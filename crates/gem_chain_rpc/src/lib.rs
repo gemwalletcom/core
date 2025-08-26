@@ -4,14 +4,10 @@ pub mod ethereum;
 pub mod generic;
 pub mod hypercore;
 pub mod smartchain;
-pub mod solana;
-pub mod ton;
 pub mod tron;
 pub use self::ethereum::EthereumProvider;
 pub use self::hypercore::HyperCoreProvider;
 pub use self::smartchain::SmartChainProvider;
-pub use self::solana::SolanaProvider;
-pub use self::ton::TonProvider;
 pub use self::tron::TronProvider;
 
 use async_trait::async_trait;

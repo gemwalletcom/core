@@ -1,80 +1,109 @@
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_biguint_from_str;
 
-type UInt64 = u64;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonBroadcastTransaction {
-    pub hash: String,
+pub trait HasMemo {
+    fn comment(&self) -> &Option<String>;
+    fn decoded_body(&self) -> &Option<DecodedBody>;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonTransaction {
-    pub transaction_id: TonTransactionId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonTransactionId {
-    pub hash: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonMessageTransactions {
-    pub transactions: Vec<TonTransactionMessage>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonTransactionMessage {
-    pub hash: String,
-    pub out_msgs: Vec<TonTransactionOutMessage>,
-    pub description: Option<TonTransactionDescription>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonTransactionOutMessage {
-    pub hash: String,
-    pub bounce: bool,
-    pub bounced: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonJettonToken {
-    pub jetton_content: TonJettonTokenContent,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonJettonBalance {
-    pub balance: UInt64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonJettonTokenContent {
+pub struct DecodedBody {
     #[serde(rename = "type")]
-    pub content_type: String,
-    pub data: TonJettonTokenContentData,
+    pub body_type: Option<String>,
+    pub comment: Option<String>,
+    pub text: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonJettonTokenContentData {
-    pub name: String,
-    pub symbol: String,
-    pub decimals: String,
+pub struct MessageTransactions {
+    pub transactions: Vec<TransactionMessage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonTransactionDescription {
-    pub action: Option<TonTransactionAction>,
-    pub compute_ph: Option<TonTransactionComputePhase>,
-    pub aborted: Option<bool>,
+pub struct TransactionMessage {
+    pub hash: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub total_fees: BigUint,
+    pub description: Option<TransactionDescription>,
+    pub out_msgs: Vec<OutMessage>,
+    pub in_msg: Option<TransactionInMessage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonTransactionAction {
-    pub valid: Option<bool>,
-    pub success: Option<bool>,
+pub struct OutMessage {
+    pub source: String,
+    pub destination: Option<String>,
+    pub value: String,
+    pub op_code: Option<String>,
+    pub decoded_op_name: Option<String>,
+    pub body: Option<String>,
+    pub comment: Option<String>,
+    pub decoded_body: Option<DecodedBody>,
+}
+
+impl HasMemo for OutMessage {
+    fn comment(&self) -> &Option<String> {
+        &self.comment
+    }
+
+    fn decoded_body(&self) -> &Option<DecodedBody> {
+        &self.decoded_body
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TonTransactionComputePhase {
-    pub success: Option<bool>,
-    pub exit_code: Option<i32>,
+pub struct InMessage {
+    pub hash: String,
+    pub msg_type: Option<String>,
+    pub value: Option<String>,
+    pub source: Option<String>,
+    pub destination: Option<String>,
+    pub body: Option<String>,
+    pub comment: Option<String>,
+    pub decoded_body: Option<DecodedBody>,
+}
+
+impl HasMemo for InMessage {
+    fn comment(&self) -> &Option<String> {
+        &self.comment
+    }
+
+    fn decoded_body(&self) -> &Option<DecodedBody> {
+        &self.decoded_body
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionInMessage {
+    pub hash: String,
+    pub source: Option<String>,
+    pub destination: String,
+    pub value: Option<String>,
+    pub opcode: Option<String>,
+    pub bounce: Option<bool>,
+    pub bounced: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionDescription {
+    pub aborted: bool,
+    pub compute_ph: Option<ComputePhase>,
+    pub action: Option<ActionPhase>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComputePhase {
+    pub success: bool,
+    pub exit_code: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActionPhase {
+    pub success: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BroadcastTransaction {
+    pub hash: String,
 }

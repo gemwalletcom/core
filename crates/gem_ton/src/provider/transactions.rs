@@ -5,7 +5,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{Transaction, TransactionStateRequest, TransactionUpdate};
 
-use crate::provider::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
+use crate::provider::transactions_mapper::{map_transaction_broadcast, map_transaction_status, map_transactions};
 use crate::rpc::client::TonClient;
 
 #[async_trait]
@@ -20,12 +20,14 @@ impl<C: Client> ChainTransactions for TonClient<C> {
         map_transaction_status(request, transactions)
     }
 
-    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let transactions = self.get_transactions_by_masterchain_block(block.to_string()).await?;
+        Ok(map_transactions(transactions.transactions))
     }
 
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let transactions = self.get_transactions_by_address(address, 100).await?;
+        Ok(map_transactions(transactions.transactions))
     }
 }
 

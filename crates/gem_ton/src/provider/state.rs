@@ -9,11 +9,11 @@ use crate::rpc::client::TonClient;
 #[async_trait]
 impl<C: Client> ChainState for TonClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_master_head().await?.result.initial.root_hash)
+        Ok(self.get_master_head().await?.first.root_hash)
     }
 
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_latest_block().await? as u64)
+        Ok(self.get_master_head().await?.last.seqno)
     }
 }
 

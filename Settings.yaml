@@ -49,7 +49,7 @@ name:
   sns:
     url: "https://sns-sdk-proxy.bonfida.workers.dev"
   ton:
-    url: "https://tonapi.io"
+    url: "https://toncenter.com"
   eths:
     url: "https://api.eths.center"
   spaceid:
@@ -100,7 +100,7 @@ chains:
   gnosis:
     url: "https://gnosis.publicnode.com"
   ton:
-    url: "https://tonapi.io"
+    url: "https://toncenter.com"
   cosmos:
     url: "https://cosmos-rest.publicnode.com"
   osmosis:

@@ -2,6 +2,7 @@ use crate::{
     model::{EpochInfo, TokenAccountInfo, ValueResult},
     models::balances::SolanaBalance,
 };
+use chain_traits::ChainProvider;
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
 #[cfg(feature = "rpc")]
@@ -430,6 +431,11 @@ impl<C: Client + Clone> ChainPerpetual for SolanaClient<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> ChainTraits for SolanaClient<C> {}
+impl<C: Client + Clone> ChainProvider for SolanaClient<C> {
+    fn get_chain(&self) -> primitives::Chain {
+        Chain::Solana
+    }
+}
 
 #[cfg(test)]
 mod tests {

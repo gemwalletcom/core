@@ -6,9 +6,7 @@ pub use provider_config::ProviderConfig;
 
 use reqwest_middleware::ClientBuilder;
 
-use gem_chain_rpc::{
-    ethereum::EthereumProvider, solana::SolanaProvider, ton::TonProvider, tron::TronProvider, ChainProvider, GenericProvider, HyperCoreProvider,
-};
+use gem_chain_rpc::{ethereum::EthereumProvider, tron::TronProvider, ChainProvider, GenericProvider, HyperCoreProvider};
 
 use gem_algorand::AlgorandClientIndexer;
 use gem_aptos::rpc::AptosClient;
@@ -120,8 +118,8 @@ impl ProviderFactory {
             Chain::Stellar => Box::new(GenericProvider::new(StellarClient::new(gem_client.clone()))),
             Chain::Near => Box::new(GenericProvider::new(NearClient::new(JsonRpcClient::new(gem_client.clone())))),
             Chain::Polkadot => Box::new(GenericProvider::new(PolkadotClient::new(gem_client.clone()))),
-            Chain::Solana => Box::new(SolanaProvider::<ReqwestClient>::new(SolanaClient::new(JsonRpcClient::new(gem_client.clone())))),
-            Chain::Ton => Box::new(TonProvider::new(TonClient::new(gem_client.clone()))),
+            Chain::Solana => Box::new(GenericProvider::new(SolanaClient::new(JsonRpcClient::new(gem_client.clone())))),
+            Chain::Ton => Box::new(GenericProvider::new(TonClient::new(gem_client.clone()))),
             Chain::Tron => Box::new(TronProvider::new(TronClient::new(gem_client.clone()))),
             Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(gem_client))),
         }

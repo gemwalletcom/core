@@ -1,4 +1,4 @@
-use crate::rpc::model::JettonWalletsResponse;
+use crate::models::JettonWalletsResponse;
 use primitives::{AssetBalance, AssetId, Chain};
 
 pub fn map_coin_balance(balance: String) -> AssetBalance {
