@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use crate::models::{Account, AssetDetails, TransactionBroadcast, TransactionStatus, TransactionsParams};
-use gem_client::ContentType;
+use gem_client::{ContentType, CONTENT_TYPE};
 
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainAccount, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
@@ -43,7 +43,7 @@ impl<C: Client> AlgorandClient<C> {
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<TransactionBroadcast, Box<dyn Error + Send + Sync>> {
         let headers = Some(HashMap::from([(
-            "Content-Type".to_string(),
+            CONTENT_TYPE.to_string(),
             ContentType::ApplicationXBinary.as_str().to_string(),
         )]));
 

@@ -1,5 +1,7 @@
-use crate::model::{Coin, CoinIds, CoinInfo, CoinMarket, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers};
-use gem_client::{retry::retry_policy, Client, ReqwestClient};
+use crate::model::{
+    Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
+};
+use gem_client::{build_path_with_query, retry::retry_policy, Client, ReqwestClient};
 use primitives::{FiatRate, DEFAULT_FIAT_CURRENCY};
 use reqwest::header::{HeaderMap, HeaderValue};
 use std::error::Error;
@@ -62,8 +64,9 @@ impl<C: Client> CoinGeckoClient<C> {
     }
 
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
-        let path = "/api/v3/coins/list?include_platform=true";
-        Ok(self.client.get(path).await?)
+        let query = CointListQuery { include_platform: true };
+        let path = build_path_with_query("/api/v3/coins/list", &query)?;
+        Ok(self.client.get(&path).await?)
     }
 
     pub async fn get_coin_list_new(&self) -> Result<CoinIds, Box<dyn Error + Send + Sync>> {
@@ -94,10 +97,15 @@ impl<C: Client> CoinGeckoClient<C> {
     }
 
     pub async fn get_coin(&self, id: &str) -> Result<CoinInfo, Box<dyn Error + Send + Sync>> {
-        let path = format!(
-            "/api/v3/coins/{}?market_data=false&community_data=true&tickers=false&localization=true&developer_data=true",
-            id
-        );
+        let query = CoinQuery {
+            market_data: false,
+            community_data: true,
+            tickers: false,
+            localization: true,
+            developer_data: true,
+        };
+        let base_path = format!("/api/v3/coins/{}", id);
+        let path = build_path_with_query(&base_path, &query)?;
         Ok(self.client.get(&path).await?)
     }
 

@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+pub const CONTENT_TYPE: &str = "Content-Type";
 const APPLICATION_JSON: &str = "application/json";
 const TEXT_PLAIN: &str = "text/plain";
 const APPLICATION_FORM_URL_ENCODED: &str = "application/x-www-form-urlencoded";

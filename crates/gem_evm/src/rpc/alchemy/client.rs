@@ -11,7 +11,7 @@ use crate::{
     },
 };
 #[cfg(feature = "reqwest")]
-use gem_client::Client;
+use gem_client::{Client, ContentType, CONTENT_TYPE};
 use primitives::EVMChain;
 use serde_json::json;
 
@@ -33,7 +33,7 @@ impl<C: Client> AlchemyClient<C> {
 
     fn common_headers() -> std::collections::HashMap<String, String> {
         let mut headers = std::collections::HashMap::new();
-        headers.insert("Content-Type".to_string(), "application/json".to_string());
+        headers.insert(CONTENT_TYPE.to_string(), ContentType::ApplicationJson.as_str().to_string());
         headers
     }
 
