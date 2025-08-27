@@ -1,13 +1,13 @@
 use crate::models::rpc::Balance as SuiBalance;
-use crate::models::staking::{SuiStakeDelegation, SuiSystemState};
+use crate::models::staking::SuiStakeDelegation;
 use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL};
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 
-pub fn map_coin_balance(balance: SuiBalance) -> AssetBalance {
+pub fn map_balance_coin(balance: SuiBalance) -> AssetBalance {
     AssetBalance::new_balance(Chain::Sui.as_asset_id(), Balance::coin_balance(balance.total_balance.to_string()))
 }
 
-pub fn map_token_balances(balances: Vec<SuiBalance>, token_ids: Vec<String>) -> Vec<AssetBalance> {
+pub fn map_balance_tokens(balances: Vec<SuiBalance>, token_ids: Vec<String>) -> Vec<AssetBalance> {
     token_ids
         .into_iter()
         .map(|token_id| {
@@ -23,20 +23,20 @@ pub fn map_token_balances(balances: Vec<SuiBalance>, token_ids: Vec<String>) -> 
         .collect()
 }
 
-pub fn map_staking_balance_with_system_state(delegations: Vec<SuiStakeDelegation>, _system_state: SuiSystemState) -> Option<AssetBalance> {
-    let staked_total = delegations
+pub fn map_balance_staking(delegations: Vec<SuiStakeDelegation>) -> Option<AssetBalance> {
+    if delegations.is_empty() {
+        return None;
+    }
+
+    let staked = delegations
         .iter()
         .flat_map(|delegation| &delegation.stakes)
         .map(|stake| &stake.principal + stake.estimated_reward.as_ref().unwrap_or(&num_bigint::BigInt::from(0)))
         .sum::<num_bigint::BigInt>();
 
-    if staked_total == num_bigint::BigInt::from(0) {
-        return None;
-    }
-
     Some(AssetBalance::new_balance(
         Chain::Sui.as_asset_id(),
-        Balance::stake_balance(staked_total.to_string(), "0".to_string(), None),
+        Balance::stake_balance(staked.to_string(), "0".to_string(), None),
     ))
 }
 
@@ -86,7 +86,7 @@ mod tests {
         let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/balance_coin.json")).unwrap();
         let balance: SuiBalance = serde_json::from_value(response["result"].clone()).unwrap();
 
-        let result = map_coin_balance(balance);
+        let result = map_balance_coin(balance);
         assert_eq!(result.balance.available, "52855428706");
         assert_eq!(result.asset_id.chain, Chain::Sui);
     }
@@ -101,7 +101,7 @@ mod tests {
             "0xda1644f58a955833a15abae24f8cc65b5bd8152ce013fde8be0a6a3dcf51fe36::token::TOKEN".to_string(),
         ];
 
-        let result = map_token_balances(balances, token_ids);
+        let result = map_balance_tokens(balances, token_ids);
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].balance.available, "3685298"); // USDC balance
         assert_eq!(result[1].balance.available, "1000"); // TOKEN balance
@@ -113,5 +113,31 @@ mod tests {
         assert!(coin_type_matches("0x2::sui::SUI", "2::sui::SUI"));
         assert!(coin_type_matches("2::sui::SUI", "0x2::sui::SUI"));
         assert!(!coin_type_matches("0x2::sui::SUI", "0x3::token::TOKEN"));
+    }
+
+    #[test]
+    fn test_map_balance_staking() {
+        use primitives::JsonRpcResult;
+        
+        let response: JsonRpcResult<Vec<SuiStakeDelegation>> = serde_json::from_str(include_str!("../../testdata/stakes.json")).unwrap();
+        let delegations = response.result;
+
+        let result = map_balance_staking(delegations);
+        
+        assert!(result.is_some());
+        let balance = result.unwrap();
+        assert_eq!(balance.asset_id.chain, Chain::Sui);
+        
+        // Total staked: sum of all principal + estimated_reward values
+        assert_eq!(balance.balance.staked, "9113484503");
+        assert_eq!(balance.balance.available, "0");
+    }
+
+    #[test]
+    fn test_map_balance_staking_empty() {
+        let delegations: Vec<SuiStakeDelegation> = vec![];
+        let result = map_balance_staking(delegations);
+        
+        assert!(result.is_none());
     }
 }

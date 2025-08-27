@@ -16,3 +16,31 @@ impl<C: Client + Clone> ChainState for SolanaClient<C> {
         self.get_slot().await
     }
 }
+
+#[cfg(all(test, feature = "integration_tests"))]
+mod integration_tests {
+    use super::*;
+    use crate::provider::testkit::create_test_client;
+
+    #[tokio::test]
+    async fn test_get_chain_id() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+        let chain_id = client.get_chain_id().await?;
+
+        println!("Solana chain ID: {}", chain_id);
+
+        assert!(chain_id == "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_block_latest_number() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+        let latest_block = client.get_block_latest_number().await?;
+
+        assert!(latest_block > 0);
+        println!("Latest block number: {}", latest_block);
+
+        Ok(())
+    }
+}

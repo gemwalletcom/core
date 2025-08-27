@@ -1,4 +1,4 @@
-use crate::model::{EpochInfo, TokenAccountInfo, VoteAccount};
+use crate::models::{EpochInfo, TokenAccountInfo, VoteAccount};
 use chrono::Utc;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
@@ -82,7 +82,7 @@ pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: Epo
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{EpochInfo, TokenAccountData, TokenAccountInfo, VoteAccount};
+    use crate::models::{EpochInfo, TokenAccountData, TokenAccountInfo, VoteAccount};
     use primitives::{AssetId, Chain, DelegationState};
 
     #[test]
@@ -106,13 +106,13 @@ mod tests {
         let stake_accounts = vec![TokenAccountInfo {
             pubkey: "stake1".to_string(),
             account: TokenAccountData {
-                data: crate::model::Parsed {
-                    parsed: crate::model::Info {
-                        info: crate::model::TokenAccountInfoData {
+                data: crate::models::Parsed {
+                    parsed: crate::models::Info {
+                        info: crate::models::TokenAccountInfoData {
                             mint: None,
                             token_amount: None,
-                            stake: Some(crate::model::StakeInfo {
-                                delegation: crate::model::StakeDelegation {
+                            stake: Some(crate::models::StakeInfo {
+                                delegation: crate::models::StakeDelegation {
                                     activation_epoch: "100".to_string(),
                                     deactivation_epoch: "18446744073709551615".to_string(),
                                     stake: "1000000".to_string(),

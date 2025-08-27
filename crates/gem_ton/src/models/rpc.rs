@@ -5,4 +5,3 @@ pub struct ApiResult<T> {
     pub ok: bool,
     pub result: T,
 }
-

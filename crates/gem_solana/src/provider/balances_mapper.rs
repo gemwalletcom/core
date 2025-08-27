@@ -1,7 +1,7 @@
 use primitives::{AssetBalance, AssetId, Chain};
 
-use crate::model::{TokenAccountInfo, ValueResult};
 use crate::models::balances::SolanaBalance;
+use crate::models::{TokenAccountInfo, ValueResult};
 
 pub fn map_coin_balance(balance: &SolanaBalance) -> AssetBalance {
     let asset_id = AssetId::from_chain(Chain::Solana);
@@ -49,7 +49,7 @@ pub fn map_token_accounts(accounts: &ValueResult<Vec<TokenAccountInfo>>, token_i
     }
 }
 
-pub fn map_staking_balance(stake_accounts: Vec<TokenAccountInfo>) -> Option<AssetBalance> {
+pub fn map_balance_staking(stake_accounts: Vec<TokenAccountInfo>) -> Option<AssetBalance> {
     let total_staked: u64 = stake_accounts.iter().map(|x| x.account.lamports).sum();
 
     Some(AssetBalance::new_staking(
@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn test_map_staking_balance() {
         let result: JsonRpcResult<Vec<TokenAccountInfo>> = serde_json::from_str(include_str!("../../testdata/balance_staking.json")).unwrap();
-        let staking_balance = map_staking_balance(result.result).unwrap();
+        let staking_balance = map_balance_staking(result.result).unwrap();
 
         assert_eq!(staking_balance.asset_id.chain, Chain::Solana);
         assert_eq!(staking_balance.balance.available.to_string(), "0");

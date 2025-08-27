@@ -2934,8 +2934,10 @@ dependencies = [
  "chrono",
  "gem_client",
  "primitives",
+ "reqwest",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

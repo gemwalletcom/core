@@ -2,7 +2,6 @@ pub mod constants;
 pub mod hash;
 pub mod jsonrpc;
 pub mod metaplex;
-pub mod model;
 pub mod pubkey;
 
 #[cfg(any(feature = "rpc", feature = "reqwest"))]

@@ -3,7 +3,7 @@ use crate::network::{jsonrpc_client_with_chain, AlienProvider};
 use alloy_primitives::hex;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
-use gem_solana::{jsonrpc::SolanaRpc, model::LatestBlockhash};
+use gem_solana::{jsonrpc::SolanaRpc, models::LatestBlockhash};
 use primitives::Chain;
 use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder};
 use std::{str::FromStr, sync::Arc};

@@ -5,7 +5,10 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{Transaction, TransactionState, TransactionStateRequest, TransactionUpdate};
 
-use crate::rpc::client::SolanaClient;
+use crate::{
+    provider::transaction_mapper::{map_block_transactions, map_signatures_transactions},
+    rpc::client::SolanaClient,
+};
 
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
@@ -36,12 +39,19 @@ impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
         }
     }
 
-    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let block_transactions = self.get_block_transactions(block).await?;
+        Ok(map_block_transactions(&block_transactions))
     }
 
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let signatures = self.get_signatures_for_address(&address, 10).await?;
+        if signatures.is_empty() {
+            return Ok(vec![]);
+        }
+        let signatures_ids = signatures.clone().iter().map(|x| x.signature.clone()).collect();
+        let transactions = self.get_transactions(signatures_ids).await?;
+        Ok(map_signatures_transactions(transactions, signatures))
     }
 }
 
@@ -53,60 +63,22 @@ mod integration_tests {
 
     #[tokio::test]
     async fn test_get_transactions_by_block() {
-        let solana_client = create_test_client();
+        let client = create_test_client();
 
-        let latest_block = solana_client.get_block_latest_number().await.unwrap();
-        let transactions = solana_client.get_transactions_by_block(latest_block).await.unwrap();
+        let latest_block = client.get_block_latest_number().await.unwrap();
+        let transactions = client.get_transactions_by_block(latest_block).await.unwrap();
 
         println!("Latest block: {}, transactions count: {}", latest_block, transactions.len());
         assert!(latest_block > 0);
+        assert!(!transactions.is_empty());
     }
 
     #[tokio::test]
     async fn test_get_transactions_by_address() {
-        let solana_client = create_test_client();
+        let client = create_test_client();
 
-        let transactions = solana_client.get_transactions_by_address(TEST_ADDRESS.to_string()).await.unwrap();
+        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string()).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::transaction::SolanaTransaction;
-    use gem_jsonrpc::types::JsonRpcErrorResponse;
-    use primitives::JsonRpcResult;
-
-    #[test]
-    fn test_get_transaction_status() {
-        let result: JsonRpcResult<SolanaTransaction> = serde_json::from_str(include_str!("../../testdata/transaction_state_transfer_sol.json")).unwrap();
-        let transaction = result.result;
-
-        let state = if transaction.slot > 0 {
-            if transaction.meta.err.is_some() {
-                TransactionState::Failed
-            } else {
-                TransactionState::Confirmed
-            }
-        } else {
-            TransactionState::Pending
-        };
-
-        assert_eq!(state, TransactionState::Confirmed);
-        assert_eq!(transaction.slot, 361169359);
-    }
-
-    #[test]
-    fn test_transaction_broadcast_error() {
-        let error_response: JsonRpcErrorResponse = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_swap_error.json")).unwrap();
-
-        assert_eq!(error_response.error.code, -32002);
-        assert_eq!(
-            error_response.error.message,
-            "Transaction simulation failed: Error processing Instruction 3: custom program error: 0x1771"
-        );
-        assert_eq!(error_response.id, 1755839259);
     }
 }

@@ -6,8 +6,9 @@ use gem_client::Client;
 use primitives::Asset;
 
 use crate::{
-    model::Extension,
-    rpc::{client::SolanaClient, mapper::SolanaMapper},
+    models::Extension,
+    provider::token_mapper::{map_token_data_metaplex, map_token_data_spl_token_2022},
+    rpc::client::SolanaClient,
 };
 
 #[async_trait]
@@ -19,13 +20,13 @@ impl<C: Client + Clone> ChainToken for SolanaClient<C> {
         if let Some(extensions) = &token_info.extensions {
             for ext in extensions {
                 if let Extension::TokenMetadata(_token_metadata) = ext {
-                    return SolanaMapper::map_token_data_spl_token_2022(self.get_chain(), token_id, &token_info);
+                    return map_token_data_spl_token_2022(self.get_chain(), token_id, &token_info);
                 }
             }
         }
 
         let metadata = self.get_metaplex_metadata(&token_id).await?;
-        SolanaMapper::map_token_data(self.get_chain(), token_id, &token_info, &metadata)
+        map_token_data_metaplex(self.get_chain(), token_id, &token_info, &metadata)
     }
 
     fn get_is_token_address(&self, token_id: &str) -> bool {

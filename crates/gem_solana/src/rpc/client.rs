@@ -1,6 +1,9 @@
-use crate::{
-    model::{EpochInfo, TokenAccountInfo, ValueResult},
-    models::balances::SolanaBalance,
+use crate::models::{
+    balances::SolanaBalance, 
+    blockhash::SolanaBlockhashResult, 
+    prioritization_fee::SolanaPrioritizationFee, 
+    transaction::{SolanaTransaction, BlockTransactions}, 
+    EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
 };
 use chain_traits::ChainProvider;
 #[cfg(feature = "rpc")]
@@ -293,7 +296,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
-    pub async fn get_transaction(&self, signature: &str) -> Result<crate::models::transaction::SolanaTransaction, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transaction(&self, signature: &str) -> Result<SolanaTransaction, Box<dyn Error + Send + Sync>> {
         let params = serde_json::json!([
             signature,
             {
@@ -311,7 +314,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getSlot", serde_json::json!([])).await
     }
 
-    pub async fn get_latest_blockhash(&self) -> Result<crate::models::blockhash::SolanaBlockhashResult, Box<dyn Error + Send + Sync>> {
+    pub async fn get_latest_blockhash(&self) -> Result<SolanaBlockhashResult, Box<dyn Error + Send + Sync>> {
         self.rpc_call("getLatestBlockhash", serde_json::json!([])).await
     }
 
@@ -336,7 +339,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         Ok(stake_accounts)
     }
 
-    pub async fn get_vote_accounts(&self) -> Result<crate::model::VoteAccounts, Box<dyn Error + Send + Sync>> {
+    pub async fn get_vote_accounts(&self) -> Result<VoteAccounts, Box<dyn Error + Send + Sync>> {
         let params = serde_json::json!([{
             "keepUnstakedDelinquents": true,
             "commitment": "finalized"
@@ -344,7 +347,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getVoteAccounts", params).await
     }
 
-    pub async fn get_inflation_rate(&self) -> Result<crate::model::InflationRate, Box<dyn Error + Send + Sync>> {
+    pub async fn get_inflation_rate(&self) -> Result<InflationRate, Box<dyn Error + Send + Sync>> {
         self.rpc_call("getInflationRate", serde_json::json!([])).await
     }
 
@@ -369,13 +372,11 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("sendTransaction", params).await
     }
 
-    pub async fn get_recent_prioritization_fees(
-        &self,
-    ) -> Result<Vec<crate::models::prioritization_fee::SolanaPrioritizationFee>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_recent_prioritization_fees(&self) -> Result<Vec<SolanaPrioritizationFee>, Box<dyn Error + Send + Sync>> {
         self.rpc_call("getRecentPrioritizationFees", serde_json::json!([])).await
     }
 
-    pub async fn get_token_mint_info(&self, token_mint: &str) -> Result<crate::model::ResultTokenInfo, Box<dyn Error + Send + Sync>> {
+    pub async fn get_token_mint_info(&self, token_mint: &str) -> Result<ResultTokenInfo, Box<dyn Error + Send + Sync>> {
         self.rpc_call(
             "getAccountInfo",
             serde_json::json!([
@@ -392,7 +393,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         use crate::{
             metaplex::decode_metadata,
             metaplex::metadata::Metadata,
-            model::{ValueData, ValueResult},
+            models::{ValueData, ValueResult},
             pubkey::Pubkey,
         };
         use std::str::FromStr;
@@ -419,6 +420,50 @@ impl<C: Client + Clone> SolanaClient<C> {
         let meta = decode_metadata(&value.data[0]).map_err(|_| "Failed to decode metadata")?;
         Ok(meta)
     }
+
+    pub async fn get_block_transactions(&self, slot: u64) -> Result<BlockTransactions, Box<dyn Error + Send + Sync>> {
+        let params = serde_json::json!([
+            slot,
+            {
+                "encoding": "json",
+                "transactionDetails": "full",
+                "rewards": false,
+                "maxSupportedTransactionVersion": 0
+            }
+        ]);
+        self.rpc_call("getBlock", params).await
+    }
+
+    pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+        let params = serde_json::json!([
+            address,
+            {
+                "limit": limit,
+                "commitment": "confirmed"
+            }
+        ]);
+        self.rpc_call("getSignaturesForAddress", params).await
+    }
+
+    pub async fn get_transactions(&self, signatures: Vec<String>) -> Result<Vec<crate::models::BlockTransaction>, Box<dyn Error + Send + Sync>> {
+        let mut transactions = Vec::new();
+
+        for signature in signatures {
+            let params = serde_json::json!([
+                signature,
+                {
+                    "encoding": "json",
+                    "maxSupportedTransactionVersion": 0
+                }
+            ]);
+
+            if let Ok(tx) = self.rpc_call::<crate::models::BlockTransaction>("getTransaction", params).await {
+                transactions.push(tx);
+            }
+        }
+
+        Ok(transactions)
+    }
 }
 
 #[cfg(feature = "rpc")]
@@ -439,7 +484,7 @@ impl<C: Client + Clone> ChainProvider for SolanaClient<C> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::ResultTokenInfo;
+    use crate::models::ResultTokenInfo;
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
