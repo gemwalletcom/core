@@ -1,5 +1,6 @@
 use crate::model::{
-    Coin, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
+    Coin, CoinGeckoResponse, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending,
+    TopGainersLosers,
 };
 use gem_client::{build_path_with_query, retry::retry_policy, Client, ReqwestClient};
 use primitives::{FiatRate, DEFAULT_FIAT_CURRENCY};
@@ -48,6 +49,17 @@ impl<C: Client> CoinGeckoClient<C> {
         Self { client }
     }
 
+    async fn _get<T>(&self, path: &str) -> Result<T, Box<dyn Error + Send + Sync>>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let response: CoinGeckoResponse<T> = self.client.get(path).await?;
+        match response {
+            CoinGeckoResponse::Success(data) => Ok(data),
+            CoinGeckoResponse::Error(error) => Err(error.error.into()),
+        }
+    }
+
     pub async fn get_global(&self) -> Result<Global, Box<dyn Error + Send + Sync>> {
         let path = "/api/v3/global";
         Ok(self.client.get::<Data<Global>>(path).await?.data)
@@ -55,7 +67,7 @@ impl<C: Client> CoinGeckoClient<C> {
 
     pub async fn get_search_trending(&self) -> Result<SearchTrending, Box<dyn Error + Send + Sync>> {
         let path = "/api/v3/search/trending";
-        Ok(self.client.get(path).await?)
+        self._get(path).await
     }
 
     pub async fn get_top_gainers_losers(&self) -> Result<TopGainersLosers, Box<dyn Error + Send + Sync>> {
@@ -66,7 +78,7 @@ impl<C: Client> CoinGeckoClient<C> {
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
         let query = CointListQuery { include_platform: true };
         let path = build_path_with_query("/api/v3/coins/list", &query)?;
-        Ok(self.client.get(&path).await?)
+        self._get(&path).await
     }
 
     pub async fn get_coin_list_new(&self) -> Result<CoinIds, Box<dyn Error + Send + Sync>> {
