@@ -4,7 +4,6 @@ pub use chain_providers::ChainProviders;
 use gem_client::{retry::standard_retry_policy, ReqwestClient};
 pub use provider_config::ProviderConfig;
 
-use reqwest_middleware::ClientBuilder;
 
 use gem_chain_rpc::{ethereum::EthereumProvider, tron::TronProvider, ChainProvider, GenericProvider, HyperCoreProvider};
 
@@ -61,7 +60,6 @@ impl ProviderFactory {
 
         let reqwest_client = reqwest::Client::builder().retry(retry_policy).build().expect("Failed to build reqwest client");
 
-        let client = ClientBuilder::new(reqwest_client.clone()).build();
         let chain = config.chain;
         let url = config.url;
         let gem_client = ReqwestClient::new(url.clone(), reqwest_client.clone());
@@ -97,7 +95,7 @@ impl ProviderFactory {
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
                 let ethereum_client = EthereumClient::new(chain, &url);
-                let assets_provider = AlchemyClient::new(ethereum_client.clone(), client.clone(), config.alchemy_key.clone());
+                let assets_provider = AlchemyClient::new(ethereum_client.clone(), gem_client.clone(), config.alchemy_key.clone());
                 let transactions_provider = AnkrClient::new(ethereum_client.clone(), config.ankr_key.clone());
                 Box::new(EthereumProvider::new(
                     ethereum_client,
