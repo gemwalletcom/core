@@ -6,10 +6,10 @@ use std::error::Error;
 
 use anyhow::{anyhow, Result};
 use gem_client::ReqwestClient;
-use gem_jsonrpc::{JsonRpcClient, types::JsonRpcError};
+use gem_jsonrpc::{types::JsonRpcError, JsonRpcClient};
 
 pub struct SuinsClient {
-    client: JsonRpcClient<ReqwestClient>,
+    client: JsonRpcClient,
 }
 
 impl SuinsClient {
@@ -27,7 +27,11 @@ impl NameClient for SuinsClient {
 
     async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let params = vec![serde_json::json!(name)];
-        let address: String = self.client.call("suix_resolveNameServiceAddress", params).await.map_err(|e: JsonRpcError| anyhow!(e))?;
+        let address: String = self
+            .client
+            .call("suix_resolveNameServiceAddress", params)
+            .await
+            .map_err(|e: JsonRpcError| anyhow!(e))?;
         Ok(address)
     }
 

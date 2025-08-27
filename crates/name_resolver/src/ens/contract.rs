@@ -21,7 +21,7 @@ sol! {
 
 pub struct Contract {
     pub registry_address: Address,
-    pub client: JsonRpcClient<ReqwestClient>,
+    pub client: JsonRpcClient,
 }
 
 impl Contract {

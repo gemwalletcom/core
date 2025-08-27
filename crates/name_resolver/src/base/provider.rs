@@ -16,7 +16,7 @@ use primitives::{chain::Chain, name::NameProvider};
 const L2_RESOLVER_ADDRESS: &str = "0xC6d566A56A1aFf6508b41f6c90ff131615583BCD";
 
 pub struct Basenames {
-    client: JsonRpcClient<ReqwestClient>,
+    client: JsonRpcClient,
     resolver_address: Address,
     chain: Chain,
 }
