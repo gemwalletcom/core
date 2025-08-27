@@ -1,4 +1,4 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
 use crate::chain_evm::EVMChain;
 
 use super::EtherScan;
@@ -6,21 +6,13 @@ use super::EtherScan;
 static BLOCKSEC_NAME: &str = "Blocksec Phalcon";
 
 pub struct Blocksec {
-    pub meta: Metadata,
     pub chain: EVMChain,
     pub tx_suffix: Option<&'static str>,
 }
 
 impl Blocksec {
     pub fn new(chain: EVMChain, tx_suffix: Option<&'static str>) -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: BLOCKSEC_NAME,
-                base_url: "https://app.blocksec.com/explorer/tx",
-            },
-            chain,
-            tx_suffix,
-        })
+        Box::new(Self { chain, tx_suffix })
     }
 
     pub fn new_ethereum() -> Box<Self> {
@@ -49,14 +41,18 @@ impl Blocksec {
 
 impl BlockExplorer for Blocksec {
     fn name(&self) -> String {
-        self.meta.name.into()
+        BLOCKSEC_NAME.into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/{}/{}", self.meta.base_url, self.tx_suffix.unwrap_or_else(|| self.chain.as_ref()), hash)
+        format!(
+            "https://app.blocksec.com/explorer/tx/{}/{}",
+            self.tx_suffix.unwrap_or_else(|| self.chain.as_ref()),
+            hash
+        )
     }
     fn get_address_url(&self, _address: &str) -> String {
         // delegate to etherscan
-        EtherScan::new(self.chain).get_address_url(_address)
+        EtherScan::boxed(self.chain).get_address_url(_address)
     }
 }
 

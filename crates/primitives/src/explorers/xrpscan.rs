@@ -1,31 +1,18 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use super::metadata::{Explorer, Metadata, ACCOUNT_PATH, TX_PATH};
+use crate::block_explorer::BlockExplorer;
 
-pub struct XrpScan {
-    pub meta: Metadata,
-}
+pub struct XrpScan;
 
 impl XrpScan {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "XrpScan",
-                base_url: "https://xrpscan.com",
-            },
-        })
-    }
-}
-
-impl BlockExplorer for XrpScan {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
-    }
-    fn get_token_url(&self, token: &str) -> Option<String> {
-        Some(self.get_address_url(token))
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        let config = Metadata {
+            name: "XrpScan",
+            base_url: "https://xrpscan.com",
+            tx_path: TX_PATH,
+            address_path: ACCOUNT_PATH,
+            token_path: Some(ACCOUNT_PATH),
+            validator_path: None,
+        };
+        Explorer::boxed(config)
     }
 }

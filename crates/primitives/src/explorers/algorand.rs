@@ -1,31 +1,17 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Explorer, Metadata, TX_PATH, ACCOUNT_PATH};
 
-pub struct AlgorandAllo {
-    pub meta: Metadata,
-}
+pub struct AlgorandAllo;
 
 impl AlgorandAllo {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "Allo",
-                base_url: "https://allo.info",
-            },
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata {
+            name: "Allo",
+            base_url: "https://allo.info",
+            tx_path: TX_PATH,
+            address_path: ACCOUNT_PATH,
+            token_path: None,
+            validator_path: Some(ACCOUNT_PATH),
         })
-    }
-}
-
-impl BlockExplorer for AlgorandAllo {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/account/{}", self.meta.base_url, address)
-    }
-    fn get_validator_url(&self, validator: &str) -> Option<String> {
-        self.get_address_url(validator).into()
     }
 }

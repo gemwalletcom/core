@@ -1,54 +1,33 @@
-use crate::block_explorer::{BlockExplorer, Metadata};
+use crate::block_explorer::BlockExplorer;
+use crate::explorers::metadata::{Explorer, Metadata};
 
-pub struct Viewblock {
-    pub meta: Metadata,
-}
+pub struct Viewblock;
 
 impl Viewblock {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "Viewblock",
-                base_url: "https://viewblock.io/thorchain",
-            },
-        })
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata::new("Viewblock", "https://viewblock.io/thorchain"))
     }
 }
 
-impl BlockExplorer for Viewblock {
-    fn name(&self) -> String {
-        self.meta.name.into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("{}/address/{}", self.meta.base_url, address)
-    }
-}
-
-pub struct RuneScan {
-    pub meta: Metadata,
-}
+pub struct RuneScan;
 
 impl RuneScan {
-    pub fn new() -> Box<Self> {
-        Box::new(Self {
-            meta: Metadata {
-                name: "RuneScan",
-                base_url: "https://runescan.io",
-            },
-        })
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Box::new(RuneScanExplorer)
     }
 }
-impl BlockExplorer for RuneScan {
+
+// Custom implementation needed for hash trimming
+struct RuneScanExplorer;
+
+impl BlockExplorer for RuneScanExplorer {
     fn name(&self) -> String {
-        self.meta.name.into()
+        "RuneScan".into()
     }
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("{}/tx/{}", self.meta.base_url, hash.trim_start_matches("0x"))
+        format!("https://runescan.io/tx/{}", hash.trim_start_matches("0x"))
     }
     fn get_address_url(&self, address: &str) -> String {
-        format!("{}/address/{}", self.meta.base_url, address)
+        format!("https://runescan.io/address/{}", address)
     }
 }
