@@ -7,7 +7,10 @@ mod reqwest_client;
 #[cfg(feature = "reqwest")]
 pub mod retry;
 
-pub use content_type::ContentType;
+pub mod query;
+
+pub use content_type::{ContentType, CONTENT_TYPE};
+pub use query::build_path_with_query;
 pub use types::ClientError;
 
 #[cfg(feature = "reqwest")]

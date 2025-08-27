@@ -5,7 +5,7 @@ use crate::models::block::{BitcoinBlock, BitcoinNodeInfo, Block, Status};
 use crate::models::fee::BitcoinFeeResult;
 use crate::models::transaction::{AddressDetails, BitcoinTransactionBroacastResult, BitcoinUTXO, Transaction};
 use chain_traits::{ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
-use gem_client::{Client, ContentType};
+use gem_client::{Client, ContentType, CONTENT_TYPE};
 use primitives::{chain::Chain, BitcoinChain};
 use std::collections::HashMap;
 
@@ -53,7 +53,7 @@ impl<C: Client> BitcoinClient<C> {
     }
 
     pub async fn broadcast_transaction(&self, data: String) -> Result<BitcoinTransactionBroacastResult, Box<dyn Error + Send + Sync>> {
-        let headers = Some(HashMap::from([("Content-Type".to_string(), ContentType::TextPlain.as_str().to_string())]));
+        let headers = Some(HashMap::from([(CONTENT_TYPE.to_string(), ContentType::TextPlain.as_str().to_string())]));
         Ok(self.client.post("/api/v2/sendtx/", &data, headers).await?)
     }
 
