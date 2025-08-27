@@ -39,6 +39,7 @@ pub enum SwapperProvider {
     Chainflip,
     CetusAggregator,
     Relay,
+    NearIntents,
 }
 
 #[uniffi::remote(Record)]

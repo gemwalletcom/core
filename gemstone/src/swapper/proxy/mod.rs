@@ -1,6 +1,7 @@
 mod client;
 
 pub mod mayan;
+pub mod near;
 pub mod provider;
 pub mod symbiosis;
 

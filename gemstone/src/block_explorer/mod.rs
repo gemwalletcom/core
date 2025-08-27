@@ -1,7 +1,7 @@
 use primitives::{
     block_explorer::{get_block_explorer, BlockExplorer},
     chain::Chain,
-    explorers::{ChainflipScan, MayanScan, RelayScan, RuneScan, SocketScan},
+    explorers::{ChainflipScan, MayanScan, NearIntentsExplorer, RelayScan, RuneScan, SocketScan},
 };
 use std::str::FromStr;
 
@@ -48,6 +48,7 @@ impl Explorer {
             SwapperProvider::Across => SocketScan::boxed(),
             SwapperProvider::Chainflip => ChainflipScan::boxed(),
             SwapperProvider::Relay => RelayScan::boxed(),
+            SwapperProvider::NearIntents => NearIntentsExplorer::boxed(),
             SwapperProvider::UniswapV3
             | SwapperProvider::UniswapV4
             | SwapperProvider::PancakeswapV3

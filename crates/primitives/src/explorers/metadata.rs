@@ -5,6 +5,7 @@ pub const TX_PATH: &str = "/tx";
 pub const TXN_PATH: &str = "/txn";
 pub const TXNS_PATH: &str = "/txns";
 pub const TRANSACTION_PATH: &str = "/transaction";
+pub const TRANSACTIONS_PATH: &str = "/transactions";
 pub const ADDRESS_PATH: &str = "/address";
 pub const ACCOUNT_PATH: &str = "/account";
 pub const TOKEN_PATH: &str = "/token";
