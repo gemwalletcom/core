@@ -10,9 +10,9 @@ use crate::{
         EthereumClient, EthereumMapper,
     },
 };
-use primitives::EVMChain;
 #[cfg(feature = "reqwest")]
 use gem_client::Client;
+use primitives::EVMChain;
 use serde_json::json;
 
 use crate::rpc::alchemy::TokenBalances;
@@ -30,6 +30,12 @@ pub struct AlchemyClient<C: Client> {
 impl<C: Client> AlchemyClient<C> {
     const DISABLED_RPC_CHAINS: [EVMChain; 5] = [EVMChain::Mantle, EVMChain::Hyperliquid, EVMChain::OpBNB, EVMChain::Monad, EVMChain::Fantom];
     const ENABLED_TRANSACTION_CHAINS: [EVMChain; 2] = [EVMChain::Ethereum, EVMChain::Base];
+
+    fn common_headers() -> std::collections::HashMap<String, String> {
+        let mut headers = std::collections::HashMap::new();
+        headers.insert("Content-Type".to_string(), "application/json".to_string());
+        headers
+    }
 
     pub fn new(ethereum_client: EthereumClient, client: C, api_key: String) -> Self {
         let chain = ethereum_client.chain;
@@ -86,9 +92,7 @@ impl<C: Client> AlchemyClient<C> {
             ],
             "includeNativeTokens": false,
         });
-        let mut headers = std::collections::HashMap::new();
-        headers.insert("Content-Type".to_string(), "application/json".to_string());
-        Ok(self.client.post(&url, &payload, Some(headers)).await?)
+        Ok(self.client.post(&url, &payload, Some(Self::common_headers())).await?)
     }
     // https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-transaction-history-by-address
     //TODO:
@@ -109,8 +113,6 @@ impl<C: Client> AlchemyClient<C> {
             ],
             "limit": 25,
         });
-        let mut headers = std::collections::HashMap::new();
-        headers.insert("Content-Type".to_string(), "application/json".to_string());
-        Ok(self.client.post(&url, &payload, Some(headers)).await?)
+        Ok(self.client.post(&url, &payload, Some(Self::common_headers())).await?)
     }
 }
