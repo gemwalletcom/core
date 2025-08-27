@@ -1,4 +1,4 @@
-use super::super::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
+use crate::core::actions::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
 
 #[derive(Clone, serde::Serialize)]
 pub struct TokenDelegate {

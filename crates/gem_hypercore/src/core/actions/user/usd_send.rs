@@ -1,10 +1,9 @@
-use super::super::{MAINNET, SIGNATURE_CHAIN_ID};
+use crate::core::actions::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
 
 #[derive(Clone, serde::Serialize)]
-pub struct SpotSend {
+pub struct UsdSend {
     pub destination: String,
     pub amount: String,
-    pub token: String,
     pub time: u64,
     pub r#type: String,
     #[serde(rename = "signatureChainId")]
@@ -13,15 +12,14 @@ pub struct SpotSend {
     pub hyperliquid_chain: String,
 }
 
-impl SpotSend {
-    pub fn new(amount: String, destination: String, time: u64, token: String) -> Self {
+impl UsdSend {
+    pub fn new(amount: String, destination: String, time: u64) -> Self {
         Self {
             destination: destination.to_lowercase(),
             amount,
-            token,
             time,
-            r#type: "spotSend".to_string(),
-            signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
+            r#type: "usdSend".to_string(),
+            signature_chain_id: HYPERCORE_SIGNATURE_CHAIN_ID.to_string(),
             hyperliquid_chain: MAINNET.to_string(),
         }
     }

@@ -1,7 +1,5 @@
-// Remote UniFFI models for Hyperliquid types from gem_hypercore
 use alloy_primitives::hex;
-use gem_hypercore::actions;
-use gem_hypercore::core::hypercore;
+use gem_hypercore::core::{actions, hypercore};
 
 // Order types
 pub type HyperPlaceOrder = actions::PlaceOrder;

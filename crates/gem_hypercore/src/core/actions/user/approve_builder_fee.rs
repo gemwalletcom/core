@@ -1,4 +1,4 @@
-use super::super::{MAINNET, SIGNATURE_CHAIN_ID};
+use crate::core::actions::{MAINNET, SIGNATURE_CHAIN_ID};
 
 #[derive(Clone, serde::Serialize)]
 pub struct ApproveBuilderFee {

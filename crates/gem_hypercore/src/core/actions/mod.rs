@@ -1,8 +1,8 @@
-pub mod agent_sign;
-pub mod user_sign;
+pub mod agent;
+pub mod user;
 
-pub use agent_sign::*;
-pub use user_sign::*;
+pub use agent::*;
+pub use user::*;
 
 pub const MAINNET: &str = "Mainnet";
 pub const SIGNATURE_CHAIN_ID: &str = "0xa4b1";

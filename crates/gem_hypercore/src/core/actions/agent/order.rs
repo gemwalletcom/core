@@ -1,4 +1,4 @@
-use super::super::SLIPPAGE_BUFFER_PERCENT;
+use crate::core::actions::SLIPPAGE_BUFFER_PERCENT;
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
