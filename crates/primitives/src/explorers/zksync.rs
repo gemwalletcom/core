@@ -1,27 +1,18 @@
 use crate::block_explorer::BlockExplorer;
+use super::metadata::{Explorer, Metadata, ADDRESS_PATH, TX_PATH};
 
 pub struct ZkSync;
 
 impl ZkSync {
     pub fn boxed() -> Box<dyn BlockExplorer> {
-        Box::new(ZkSyncExplorer)
-    }
-}
-
-// Custom implementation needed because token_url uses address_path
-struct ZkSyncExplorer;
-
-impl BlockExplorer for ZkSyncExplorer {
-    fn name(&self) -> String {
-        "zkSync.io".into()
-    }
-    fn get_tx_url(&self, hash: &str) -> String {
-        format!("https://explorer.zksync.io/tx/{}", hash)
-    }
-    fn get_address_url(&self, address: &str) -> String {
-        format!("https://explorer.zksync.io/address/{}", address)
-    }
-    fn get_token_url(&self, token: &str) -> Option<String> {
-        Some(self.get_address_url(token))
+        let config = Metadata {
+            name: "zkSync.io",
+            base_url: "https://explorer.zksync.io",
+            tx_path: TX_PATH,
+            address_path: ADDRESS_PATH,
+            token_path: Some(ADDRESS_PATH), // ZkSync uses address path for tokens
+            validator_path: None,
+        };
+        Explorer::boxed(config)
     }
 }
