@@ -82,7 +82,10 @@ mod chain_integration_tests {
         let staking_balance = balance.expect("Test address should have staking balance");
         assert_eq!(staking_balance.asset_id.chain, Chain::Sui);
 
-        assert!(staking_balance.balance.staked > num_bigint::BigUint::from(0u32), "Staked amount should be greater than 0");
+        assert!(
+            staking_balance.balance.staked > num_bigint::BigUint::from(0u32),
+            "Staked amount should be greater than 0"
+        );
 
         println!("Staking balance: {} SUI", staking_balance.balance.staked);
         Ok(())

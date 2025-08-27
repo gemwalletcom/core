@@ -13,8 +13,14 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 chrono = { workspace = true }
 num-bigint = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+thiserror = { workspace = true }
+tiny-keccak = { workspace = true }
+rmp-serde = { workspace = true }
 
 gem_client = { path = "../gem_client" }
+gem_hash = { path = "../gem_hash" }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
 primitives = { path = "../primitives" }

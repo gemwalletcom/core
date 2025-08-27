@@ -3062,17 +3062,23 @@ dependencies = [
 name = "gem_hypercore"
 version = "1.0.0"
 dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
  "async-trait",
  "chain_traits",
  "chrono",
  "gem_client",
  "gem_evm",
+ "gem_hash",
  "num-bigint",
  "number_formatter",
  "primitives",
+ "rmp-serde",
  "serde",
  "serde_json",
  "serde_serializers",
+ "thiserror 2.0.16",
+ "tiny-keccak",
 ]
 
 [[package]]

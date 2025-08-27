@@ -10,7 +10,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_solana_token_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = SolanaClient::new(JsonRpcClient::new(ReqwestClient::new("https://api.mainnet-beta.solana.com".to_string(), reqwest::Client::new())));
+        let client = SolanaClient::new(JsonRpcClient::new(ReqwestClient::new(
+            "https://api.mainnet-beta.solana.com".to_string(),
+            reqwest::Client::new(),
+        )));
         let provider = GenericProvider::new(client);
         let token_data = provider.get_token_data("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()).await?;
 
@@ -22,7 +25,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_solana_get_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = SolanaClient::new(JsonRpcClient::new(ReqwestClient::new("https://api.mainnet-beta.solana.com".to_string(), reqwest::Client::new())));
+        let client = SolanaClient::new(JsonRpcClient::new(ReqwestClient::new(
+            "https://api.mainnet-beta.solana.com".to_string(),
+            reqwest::Client::new(),
+        )));
         let provider = GenericProvider::new(client);
 
         let validators = provider.get_validators().await?;
@@ -38,7 +44,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_cosmos_get_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = CosmosClient::new(CosmosChain::Cosmos, ReqwestClient::new("https://cosmos-rest.publicnode.com".to_string(), reqwest::Client::new()));
+        let client = CosmosClient::new(
+            CosmosChain::Cosmos,
+            ReqwestClient::new("https://cosmos-rest.publicnode.com".to_string(), reqwest::Client::new()),
+        );
         let provider = GenericProvider::new(client);
 
         let validators = provider.get_validators().await?;

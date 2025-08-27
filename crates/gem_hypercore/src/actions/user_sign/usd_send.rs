@@ -1,7 +1,7 @@
-use super::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
+use super::super::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperUsdSend {
+#[derive(Clone, serde::Serialize)]
+pub struct UsdSend {
     pub destination: String,
     pub amount: String,
     pub time: u64,
@@ -12,7 +12,7 @@ pub struct HyperUsdSend {
     pub hyperliquid_chain: String,
 }
 
-impl HyperUsdSend {
+impl UsdSend {
     pub fn new(amount: String, destination: String, time: u64) -> Self {
         Self {
             destination: destination.to_lowercase(),

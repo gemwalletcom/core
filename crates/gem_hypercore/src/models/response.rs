@@ -103,14 +103,14 @@ mod tests {
 
     #[test]
     fn test_order_broadcast_error() {
-        let json = include_str!("../../testdata/order_broadcast_error.json");
+        let json = include_str!("../../tests/data/order_broadcast_error.json");
         let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         assert!(matches!(response.into_result("test".to_string()), HyperCoreBroadcastResult::Error(_)));
     }
 
     #[test]
     fn test_order_broadcast_filled() {
-        let json = include_str!("../../testdata/order_broadcast_filled.json");
+        let json = include_str!("../../tests/data/order_broadcast_filled.json");
         let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         match response.into_result("test".to_string()) {
             HyperCoreBroadcastResult::Success(oid) => assert_eq!(oid, "134896397196"),
@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn test_order_broadcast_resting() {
-        let json = include_str!("../../testdata/order_broadcast_resting.json");
+        let json = include_str!("../../tests/data/order_broadcast_resting.json");
         let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         match response.into_result("test".to_string()) {
             HyperCoreBroadcastResult::Success(oid) => assert_eq!(oid, "789012"),
@@ -130,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_order_broadcast_simple_error() {
-        let json = include_str!("../../testdata/order_broadcast_simple_error.json");
+        let json = include_str!("../../tests/data/order_broadcast_simple_error.json");
         let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         assert!(matches!(response.into_result("test".to_string()), HyperCoreBroadcastResult::Error(_)));
     }

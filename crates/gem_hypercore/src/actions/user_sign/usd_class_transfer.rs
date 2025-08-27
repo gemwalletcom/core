@@ -1,7 +1,7 @@
-use super::{MAINNET, SIGNATURE_CHAIN_ID};
+use super::super::{MAINNET, SIGNATURE_CHAIN_ID};
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperUsdClassTransfer {
+#[derive(Clone, serde::Serialize)]
+pub struct UsdClassTransfer {
     pub r#type: String,
     pub amount: String,
     #[serde(rename = "toPerp")]
@@ -13,7 +13,7 @@ pub struct HyperUsdClassTransfer {
     pub hyperliquid_chain: String,
 }
 
-impl HyperUsdClassTransfer {
+impl UsdClassTransfer {
     pub fn new(amount: String, to_perp: bool, nonce: u64) -> Self {
         Self {
             r#type: "usdClassTransfer".to_string(),

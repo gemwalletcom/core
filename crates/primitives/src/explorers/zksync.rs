@@ -1,5 +1,5 @@
-use crate::block_explorer::BlockExplorer;
 use super::metadata::{Explorer, Metadata, ADDRESS_PATH, TX_PATH};
+use crate::block_explorer::BlockExplorer;
 
 pub struct ZkSync;
 

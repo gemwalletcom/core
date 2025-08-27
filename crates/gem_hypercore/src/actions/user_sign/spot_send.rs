@@ -1,7 +1,7 @@
-use super::{MAINNET, SIGNATURE_CHAIN_ID};
+use super::super::{MAINNET, SIGNATURE_CHAIN_ID};
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperSpotSend {
+#[derive(Clone, serde::Serialize)]
+pub struct SpotSend {
     pub destination: String,
     pub amount: String,
     pub token: String,
@@ -13,7 +13,7 @@ pub struct HyperSpotSend {
     pub hyperliquid_chain: String,
 }
 
-impl HyperSpotSend {
+impl SpotSend {
     pub fn new(amount: String, destination: String, time: u64, token: String) -> Self {
         Self {
             destination: destination.to_lowercase(),
