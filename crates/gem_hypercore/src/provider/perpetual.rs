@@ -8,9 +8,8 @@ use primitives::{
     ChartCandleStick, ChartPeriod,
 };
 
-use super::perpetual_mapper;
 use crate::{
-    provider::perpetual_mapper::{map_candlesticks, map_perpetuals_data},
+    provider::perpetual_mapper::{map_candlesticks, map_perpetuals_data, map_positions},
     rpc::client::HyperCoreClient,
 };
 
@@ -18,7 +17,7 @@ use crate::{
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
         let positions = self.get_clearinghouse_state(&address).await?;
-        Ok(perpetual_mapper::map_positions(positions))
+        Ok(map_positions(positions))
     }
 
     async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {

@@ -35,27 +35,27 @@ impl<C: Client + Clone> ChainStaking for SolanaClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{create_solana_test_client, TEST_ADDRESS};
 
     #[tokio::test]
-    async fn test_get_staking_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_test_client();
+    async fn test_solana_get_staking_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_solana_test_client();
         let apy = client.get_staking_apy().await?;
         assert!(apy.is_some());
         Ok(())
     }
 
     #[tokio::test]
-    async fn test_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_test_client();
+    async fn test_solana_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_solana_test_client();
         let validators = client.get_staking_validators(None).await?;
         assert!(!validators.is_empty());
         Ok(())
     }
 
     #[tokio::test]
-    async fn test_get_staking_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_test_client();
+    async fn test_solana_get_staking_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_solana_test_client();
         let delegations = client.get_staking_delegations(TEST_ADDRESS.to_string()).await?;
         assert!(delegations.len() <= 100);
         Ok(())

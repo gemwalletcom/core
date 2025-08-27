@@ -168,3 +168,6 @@ pub mod transaction_load;
 pub use self::transaction_load::{TransactionInputType, TransactionLoadData, TransactionLoadInput};
 pub mod transfer_data_extra;
 pub use self::transfer_data_extra::{TransferDataExtra, TransferDataOutputType};
+
+#[cfg(any(test, feature = "testkit"))]
+pub mod testkit;

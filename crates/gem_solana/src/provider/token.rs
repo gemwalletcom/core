@@ -37,12 +37,12 @@ impl<C: Client + Clone> ChainToken for SolanaClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::create_test_client;
+    use crate::provider::testkit::create_solana_test_client;
     use primitives::{AssetType, Chain};
 
     #[tokio::test]
-    async fn test_get_token_data_usdc_spl_token() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_test_client();
+    async fn test_solana_get_token_data_usdc_spl_token() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_solana_test_client();
         let usdc_mint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string();
 
         let asset = client.get_token_data(usdc_mint.clone()).await?;
@@ -58,8 +58,8 @@ mod chain_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_token_data_spl_token_2022() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_test_client();
+    async fn test_solana_get_token_data_spl_token_2022() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_solana_test_client();
         let spl2022_mint = "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo".to_string();
 
         let asset = client.get_token_data(spl2022_mint.clone()).await?;

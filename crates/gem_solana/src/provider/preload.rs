@@ -52,3 +52,18 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
         Ok(calculate_fee_rates(&input_type, &prioritization_fees))
     }
 }
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use super::*;
+    use crate::provider::testkit::create_solana_test_client;
+    use primitives::Asset;
+
+    #[tokio::test]
+    async fn test_solana_get_transaction_fee_rates() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_solana_test_client();
+        let rates = client.get_transaction_fee_rates(TransactionInputType::Transfer(Asset::mock_sol())).await?;
+        assert!(rates.len() == 3);
+        Ok(())
+    }
+}

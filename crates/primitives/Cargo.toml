@@ -3,6 +3,10 @@ name = "primitives"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+default = []
+testkit = []
+
 [dependencies]
 typeshare = { workspace = true }
 serde = { workspace = true }

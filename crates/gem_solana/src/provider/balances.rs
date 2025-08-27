@@ -33,12 +33,12 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{create_solana_test_client, TEST_ADDRESS};
     use primitives::Chain;
 
     #[tokio::test]
     async fn test_solana_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_test_client();
+        let client = create_solana_test_client();
         let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
 
         assert_eq!(balance.asset_id.chain, Chain::Solana);
@@ -50,7 +50,7 @@ mod chain_integration_tests {
 
     #[tokio::test]
     async fn test_solana_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_test_client();
+        let client = create_solana_test_client();
         let token_ids = vec![
             "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // USDC
             "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB".to_string(), // USDT
@@ -70,7 +70,7 @@ mod chain_integration_tests {
 
     #[tokio::test]
     async fn test_solana_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_test_client();
+        let client = create_solana_test_client();
         let staking_balance = client.get_balance_staking(TEST_ADDRESS.to_string()).await?;
 
         if let Some(balance) = staking_balance {
