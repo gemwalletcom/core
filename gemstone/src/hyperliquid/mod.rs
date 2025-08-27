@@ -83,8 +83,8 @@ impl HyperCoreModelFactory {
     }
 
     // Withdrawal methods
-    pub fn make_withdraw(&self, amount: String, address: String, time: u64) -> HyperWithdrawalRequest {
-        hyper_make_withdraw(amount, address, time)
+    pub fn make_withdraw(&self, amount: String, address: String, nonce: u64) -> HyperWithdrawalRequest {
+        hyper_make_withdraw(amount, address, nonce)
     }
 
     // Spot transfer methods
