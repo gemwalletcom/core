@@ -9,7 +9,7 @@ serde = { workspace = true }
 reqwest = { workspace = true, features = ["stream"] }
 
 futures-util = { workspace = true }
-clap = { version = "4.5.40", features = ["derive"] }
+clap = { version = "4.5.45", features = ["derive"] }
 
 chain_primitives = { path = "../../crates/chain_primitives" }
 coingecko = { path = "../../crates/coingecko" }

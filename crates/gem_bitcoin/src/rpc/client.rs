@@ -1,16 +1,12 @@
 use std::error::Error;
 
 use crate::models::account::BitcoinAccount;
-use crate::models::block::{BitcoinBlock, BitcoinNodeInfo};
+use crate::models::block::{BitcoinBlock, BitcoinNodeInfo, Block, Status};
 use crate::models::fee::BitcoinFeeResult;
-use crate::models::transaction::{BitcoinTransactionBroacastResult, BitcoinUTXO};
-use crate::rpc::model::{AddressDetails, Transaction};
-
-use super::model::{Block, Status};
+use crate::models::transaction::{AddressDetails, BitcoinTransactionBroacastResult, BitcoinUTXO, Transaction};
 use chain_traits::{ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
-use gem_client::{Client, ContentType};
-use primitives::chain::Chain;
-use primitives::BitcoinChain;
+use gem_client::{Client, ContentType, CONTENT_TYPE};
+use primitives::{chain::Chain, BitcoinChain};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -57,7 +53,7 @@ impl<C: Client> BitcoinClient<C> {
     }
 
     pub async fn broadcast_transaction(&self, data: String) -> Result<BitcoinTransactionBroacastResult, Box<dyn Error + Send + Sync>> {
-        let headers = Some(HashMap::from([("Content-Type".to_string(), ContentType::TextPlain.as_str().to_string())]));
+        let headers = Some(HashMap::from([(CONTENT_TYPE.to_string(), ContentType::TextPlain.as_str().to_string())]));
         Ok(self.client.post("/api/v2/sendtx/", &data, headers).await?)
     }
 
@@ -78,3 +74,9 @@ impl<C: Client> ChainPerpetual for BitcoinClient<C> {}
 impl<C: Client> ChainToken for BitcoinClient<C> {}
 
 impl<C: Client> ChainTraits for BitcoinClient<C> {}
+
+impl<C: Client> chain_traits::ChainProvider for BitcoinClient<C> {
+    fn get_chain(&self) -> primitives::Chain {
+        self.chain.get_chain()
+    }
+}

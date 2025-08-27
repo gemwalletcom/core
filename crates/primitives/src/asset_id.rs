@@ -2,7 +2,7 @@ use std::{collections::HashSet, fmt};
 
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::chain::Chain;
+use crate::{chain::Chain, AssetSubtype};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AssetId {
@@ -95,6 +95,14 @@ impl AssetId {
     }
     pub fn is_token(&self) -> bool {
         self.token_id.is_some()
+    }
+
+    pub fn token_subtype(&self) -> AssetSubtype {
+        if self.is_native() {
+            AssetSubtype::NATIVE
+        } else {
+            AssetSubtype::TOKEN
+        }
     }
 }
 

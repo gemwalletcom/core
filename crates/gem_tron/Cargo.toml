@@ -4,30 +4,38 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-alloy-primitives = { workspace = true }
-alloy-sol-types = { workspace = true }
 bs58 = { workspace = true }
 hex = { workspace = true }
-sha2 = { workspace = true }
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 
 # RPC specific dependencies (optional)
-reqwest = { workspace = true, optional = true }
-reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 num-bigint = { workspace = true, optional = true }
 num-traits = { workspace = true, optional = true }
 gem_evm = { path = "../gem_evm", optional = true }
+gem_client = { path = "../gem_client", optional = true }
+chain_traits = { path = "../chain_traits", optional = true }
+async-trait = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
 
 [features]
-default = []
+default = ["rpc"]
 rpc = [
-    "dep:reqwest",
-    "dep:reqwest-middleware",
     "dep:chrono",
     "dep:num-bigint",
     "dep:num-traits",
     "dep:gem_evm",
+    "dep:gem_client",
+    "dep:chain_traits",
+    "dep:async-trait",
+    "dep:futures",
 ]
+reqwest = ["gem_client/reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+reqwest = { workspace = true }
+gem_client = { path = "../gem_client", features = ["reqwest"] }

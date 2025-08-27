@@ -5,12 +5,11 @@ edition = { workspace = true }
 
 [dependencies]
 reqwest = { workspace = true }
-reqwest-middleware = { workspace = true }
 url = { workspace = true }
 
 primitives = { path = "../primitives" }
 gem_chain_rpc = { path = "../gem_chain_rpc" }
-gem_solana = { path = "../gem_solana", features = ["rpc"] }
+gem_solana = { path = "../gem_solana", features = ["rpc", "reqwest"] }
 gem_algorand = { path = "../gem_algorand", features = ["rpc"] }
 gem_aptos = { path = "../gem_aptos", features = ["rpc"] }
 gem_xrp = { path = "../gem_xrp", features = ["rpc"] }

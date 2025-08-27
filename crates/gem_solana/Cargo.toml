@@ -4,9 +4,11 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [features]
-default = []
-rpc = ["gem_jsonrpc/client", "dep:async-trait"]
+default = ["rpc"]
+rpc = ["gem_jsonrpc/client", "dep:async-trait", "dep:gem_client", "dep:chain_traits", "dep:futures"]
 reqwest = ["gem_jsonrpc/reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
+integration = []
 
 [dependencies]
 curve25519-dalek = { workspace = true }
@@ -25,3 +27,11 @@ primitives = { path = "../primitives" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 async-trait = { workspace = true, optional = true }
+gem_client = { path = "../gem_client", optional = true }
+chain_traits = { path = "../chain_traits", optional = true }
+futures = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+reqwest = { workspace = true }
+

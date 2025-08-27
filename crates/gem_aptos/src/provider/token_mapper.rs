@@ -1,11 +1,8 @@
-use std::error::Error;
-use crate::models::{Resource, CoinInfo};
+use crate::models::{CoinInfo, Resource};
 use primitives::{Asset, AssetId, AssetType, Chain};
+use std::error::Error;
 
-pub fn map_token_data(
-    resource: &Resource<CoinInfo>,
-    token_id: &str,
-) -> Result<Asset, Box<dyn Error + Sync + Send>> {
+pub fn map_token_data(resource: &Resource<CoinInfo>, token_id: &str) -> Result<Asset, Box<dyn Error + Sync + Send>> {
     let coin_info = &resource.data;
 
     Ok(Asset {
@@ -22,7 +19,10 @@ pub fn map_token_data(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{models::{CoinInfo, Resource}, APTOS_NATIVE_COIN};
+    use crate::{
+        models::{CoinInfo, Resource},
+        APTOS_NATIVE_COIN,
+    };
 
     #[test]
     fn test_map_token_data() {
@@ -31,14 +31,14 @@ mod tests {
             symbol: "APT".to_string(),
             decimals: 8,
         };
-        
+
         let resource = Resource {
             type_field: "0x1::coin::CoinInfo<0x1::aptos_coin::AptosCoin>".to_string(),
             data: coin_info,
         };
-        
+
         let result = map_token_data(&resource, APTOS_NATIVE_COIN).unwrap();
-        
+
         assert_eq!(result.name, "Aptos Coin");
         assert_eq!(result.symbol, "APT");
         assert_eq!(result.decimals, 8);

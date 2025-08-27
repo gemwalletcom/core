@@ -4,7 +4,6 @@ use std::error::Error;
 
 use crate::rpc::client::XRPClient;
 use gem_client::Client;
-use primitives::{FeePriority, FeePriorityValue};
 
 #[async_trait]
 impl<C: Client> ChainState for XRPClient<C> {
@@ -12,20 +11,24 @@ impl<C: Client> ChainState for XRPClient<C> {
         Ok("".to_string())
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_ledger_current().await?.ledger_current_index as u64)
     }
+}
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
-        let fees = self.get_fees().await?;
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use super::*;
+    use crate::provider::testkit::create_xrp_test_client;
 
-        let minimum_fee = fees.drops.minimum_fee;
-        let median_fee = fees.drops.median_fee;
+    #[tokio::test]
+    async fn test_get_xrp_latest_block() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_xrp_test_client();
+        let block_number = client.get_block_latest_number().await?;
 
-        Ok(vec![
-            FeePriorityValue::new(FeePriority::Slow, std::cmp::max(minimum_fee, median_fee / 2).to_string()),
-            FeePriorityValue::new(FeePriority::Normal, median_fee.to_string()),
-            FeePriorityValue::new(FeePriority::Fast, (median_fee * 2).to_string()),
-        ])
+        assert!(block_number > 80_000_000, "XRP ledger index should be above 80M, got: {}", block_number);
+        println!("XRP latest ledger: {}", block_number);
+
+        Ok(())
     }
 }

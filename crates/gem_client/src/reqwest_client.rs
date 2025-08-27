@@ -1,4 +1,4 @@
-use crate::{Client, ClientError, ContentType};
+use crate::{Client, ClientError, ContentType, CONTENT_TYPE};
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{collections::HashMap, str::FromStr};
@@ -68,9 +68,9 @@ impl Client for ReqwestClient {
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let headers = headers.unwrap_or_else(|| HashMap::from([("Content-Type".to_string(), ContentType::ApplicationJson.as_str().to_string())]));
+        let headers = headers.unwrap_or_else(|| HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationJson.as_str().to_string())]));
 
-        let content_type = headers.get("Content-Type").and_then(|s| ContentType::from_str(s).ok());
+        let content_type = headers.get(CONTENT_TYPE).and_then(|s| ContentType::from_str(s).ok());
 
         let request_body = match content_type {
             Some(ContentType::TextPlain) | Some(ContentType::ApplicationFormUrlEncoded) | Some(ContentType::ApplicationXBinary) => {

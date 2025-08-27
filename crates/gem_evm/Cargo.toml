@@ -13,7 +13,7 @@ rpc = [
     "dep:lazy_static",
     "dep:itertools",
 ]
-reqwest = ["gem_jsonrpc/reqwest", "dep:reqwest-middleware"]
+reqwest = ["gem_jsonrpc/reqwest", "gem_client/reqwest"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -21,9 +21,9 @@ chain_primitives = { path = "../chain_primitives" }
 gem_hash = { path = "../gem_hash" }
 serde_serializers = { path = "../serde_serializers" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
+gem_client = { path = "../gem_client" }
 gem_bsc = { path = "../gem_bsc" }
 
-reqwest-middleware = { workspace = true, optional = true }
 itertools = { workspace = true, optional = true }
 hex = { workspace = true }
 itoa = { workspace = true }

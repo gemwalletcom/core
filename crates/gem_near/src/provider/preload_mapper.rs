@@ -1,5 +1,5 @@
-use crate::models::{NearAccountAccessKey, NearBlock};
-use primitives::{TransactionPreload, TransactionPreloadInput};
+use crate::models::{AccountAccessKey, Block};
+use primitives::TransactionLoadMetadata;
 use std::error::Error;
 
 pub fn address_to_public_key(address: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -8,24 +8,17 @@ pub fn address_to_public_key(address: &str) -> Result<String, Box<dyn Error + Sy
     Ok(format!("ed25519:{}", encoded))
 }
 
-pub fn map_transaction_preload(
-    _input: &TransactionPreloadInput,
-    access_key: &NearAccountAccessKey,
-    block: &NearBlock,
-    is_destination_address_exist: bool,
-) -> TransactionPreload {
-    TransactionPreload {
+pub fn map_transaction_preload(access_key: &AccountAccessKey, block: &Block) -> TransactionLoadMetadata {
+    TransactionLoadMetadata::Near {
         sequence: (access_key.nonce + 1) as u64,
         block_hash: block.header.hash.clone(),
-        is_destination_address_exist,
-        ..Default::default()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{NearAccountAccessKey, NearBlock, NearBlockHeader};
+    use crate::models::{AccountAccessKey, Block, BlockHeader};
 
     #[test]
     fn test_address_to_public_key() {
@@ -36,24 +29,23 @@ mod tests {
 
     #[test]
     fn test_map_transaction_preload() {
-        let input = TransactionPreloadInput {
-            sender_address: "sender.near".to_string(),
-            destination_address: "receiver.near".to_string(),
-        };
+        let access_key = AccountAccessKey { nonce: 116479371000026 };
 
-        let access_key = NearAccountAccessKey { nonce: 116479371000026 };
-
-        let block = NearBlock {
-            header: NearBlockHeader {
+        let block = Block {
+            header: BlockHeader {
                 hash: "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz".to_string(),
                 height: 12345,
             },
         };
 
-        let result = map_transaction_preload(&input, &access_key, &block, true);
+        let result = map_transaction_preload(&access_key, &block);
 
-        assert_eq!(result.sequence, 116479371000027);
-        assert_eq!(result.block_hash, "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz");
-        assert!(result.is_destination_address_exist);
+        match result {
+            TransactionLoadMetadata::Near { sequence, block_hash } => {
+                assert_eq!(sequence, 116479371000027);
+                assert_eq!(block_hash, "F45xbjXiyHn5noj1692RVqeuNC6X232qhKpvvPrv92iz");
+            }
+            _ => panic!("Expected Near metadata"),
+        }
     }
 }

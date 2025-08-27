@@ -18,7 +18,7 @@ impl PriceChainProvider for PythProvider {
 
         Ok(chains
             .into_iter()
-            .zip(prices.into_iter())
+            .zip(prices)
             .map(|(chain, price)| AssetPrice {
                 asset_id: chain.as_asset_id(),
                 price: price.price,

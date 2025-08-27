@@ -32,14 +32,14 @@ impl From<AssetBalance> for GemAssetBalance {
 impl From<Balance> for GemBalance {
     fn from(value: Balance) -> Self {
         Self {
-            available: value.available,
-            frozen: value.frozen,
-            locked: value.locked,
-            staked: value.staked,
-            pending: value.pending,
-            rewards: value.rewards,
-            reserved: value.reserved,
-            withdrawable: value.withdrawable,
+            available: value.available.to_string(),
+            frozen: value.frozen.to_string(),
+            locked: value.locked.to_string(),
+            staked: value.staked.to_string(),
+            pending: value.pending.to_string(),
+            rewards: value.rewards.to_string(),
+            reserved: value.reserved.to_string(),
+            withdrawable: value.withdrawable.to_string(),
         }
     }
 }

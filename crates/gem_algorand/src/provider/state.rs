@@ -3,9 +3,8 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriority, FeePriorityValue};
 
-use crate::rpc::client::AlgorandClient;
+use crate::{rpc::client::AlgorandClient, AlgorandClientIndexer};
 
 #[async_trait]
 impl<C: Client> ChainState for AlgorandClient<C> {
@@ -13,14 +12,44 @@ impl<C: Client> ChainState for AlgorandClient<C> {
         Ok(self.get_transactions_params().await?.genesis_id)
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_transactions_params().await?.last_round as u64)
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+        Ok(self.get_transactions_params().await?.last_round)
+    }
+}
+
+#[async_trait]
+impl<C: Client> ChainState for AlgorandClientIndexer<C> {
+    async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
+        let headers = self.get_block_headers(1).await?;
+        let block = headers.blocks.first().ok_or("Failed to get block headers")?;
+        Ok(block.genesis_id.clone())
     }
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![FeePriorityValue {
-            priority: FeePriority::Normal,
-            value: self.get_transactions_params().await?.min_fee.to_string(),
-        }])
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+        Ok(self.get_block_headers(0).await?.current_round)
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use crate::provider::testkit::*;
+    use chain_traits::ChainState;
+
+    #[tokio::test]
+    async fn test_algorand_get_chain_id() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_algorand_test_client();
+        let chain_id = client.get_chain_id().await?;
+        println!("Algorand chain ID: {}", chain_id);
+        assert!(chain_id == "mainnet-v1.0");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_algorand_get_block_latest_number() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_algorand_test_client();
+        let latest_block = client.get_block_latest_number().await?;
+        println!("Latest block: {}", latest_block);
+        assert!(latest_block > 0);
+        Ok(())
     }
 }

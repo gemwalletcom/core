@@ -11,18 +11,19 @@ sha2 = { workspace = true }
 base64 = { workspace = true }
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
+serde_serializers = { path = "../serde_serializers" }
 
 # Optional RPC dependencies
 serde_json = { workspace = true, optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
-cosmos-sdk-proto = { workspace = true, optional = true }
+cosmos-sdk-proto = { version = "0.27.0", optional = true }
 async-trait = { workspace = true, optional = true }
 gem_client = { path = "../gem_client", optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 futures = { workspace = true, optional = true }
 number_formatter = { path = "../number_formatter", optional = true }
 
-num-bigint = { workspace = true, optional = true }
+num-bigint = { workspace = true }
 
 [features]
 default = []
@@ -34,6 +35,11 @@ rpc = [
     "dep:gem_client",
     "dep:chain_traits",
     "dep:futures",
-    "dep:num-bigint",
     "dep:number_formatter",
 ]
+reqwest = ["gem_client/reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+reqwest = { workspace = true }

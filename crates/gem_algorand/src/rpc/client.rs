@@ -1,11 +1,11 @@
-use super::model::Block;
-use crate::rpc::model::{Account, AssetResponse, BlockHeaders, Transactions, TransactionsParams};
-use gem_client::ContentType;
 use std::collections::HashMap;
 use std::error::Error;
 
+use crate::models::{Account, AssetDetails, TransactionBroadcast, TransactionStatus, TransactionsParams};
+use gem_client::{ContentType, CONTENT_TYPE};
+
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
+use chain_traits::{ChainAccount, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
@@ -29,41 +29,36 @@ impl<C: Client> AlgorandClient<C> {
         self.chain
     }
 
-    pub async fn get_block_headers(&self) -> Result<BlockHeaders, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get("/v2/block-headers").await?)
-    }
-
     pub async fn get_account(&self, address: &str) -> Result<Account, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v2/accounts/{}", address)).await?)
     }
 
-    pub async fn get_asset(&self, asset_id: &str) -> Result<AssetResponse, Box<dyn Error + Send + Sync>> {
+    pub async fn get_asset(&self, asset_id: &str) -> Result<AssetDetails, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v2/assets/{}", asset_id)).await?)
-    }
-
-    pub async fn get_account_transactions(&self, address: &str) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/accounts/{}/transactions", address)).await?)
-    }
-
-    pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v2/blocks/{}", block_number)).await?)
     }
 
     pub async fn get_transactions_params(&self) -> Result<TransactionsParams, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get("/v2/transactions/params").await?)
     }
 
-    pub async fn broadcast_transaction(&self, data: &str) -> Result<super::model::TransactionBroadcast, Box<dyn Error + Send + Sync>> {
+    pub async fn broadcast_transaction(&self, data: &str) -> Result<TransactionBroadcast, Box<dyn Error + Send + Sync>> {
         let headers = Some(HashMap::from([(
-            "Content-Type".to_string(),
+            CONTENT_TYPE.to_string(),
             ContentType::ApplicationXBinary.as_str().to_string(),
         )]));
 
         Ok(self.client.post("/v2/transactions", &data, headers).await?)
     }
 
-    pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<super::model::TransactionStatus, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<TransactionStatus, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v2/transactions/pending/{}", transaction_id)).await?)
+    }
+}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainProvider for AlgorandClient<C> {
+    fn get_chain(&self) -> Chain {
+        self.chain
     }
 }
 
@@ -71,10 +66,10 @@ impl<C: Client> AlgorandClient<C> {
 impl<C: Client> ChainStaking for AlgorandClient<C> {}
 
 #[cfg(feature = "rpc")]
-impl<C: Client> ChainPerpetual for AlgorandClient<C> {}
+impl<C: Client> ChainAccount for AlgorandClient<C> {}
 
 #[cfg(feature = "rpc")]
-impl<C: Client> chain_traits::ChainAccount for AlgorandClient<C> {}
+impl<C: Client> ChainPerpetual for AlgorandClient<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client> ChainTraits for AlgorandClient<C> {}

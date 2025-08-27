@@ -1,18 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-use super::UInt64;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AlgorandAccount {
-    pub amount: UInt64,
-    pub assets: Vec<AlgorandAccountAsset>,
+pub struct Account {
+    pub amount: u64,
+    pub assets: Vec<AccountAsset>,
     #[serde(rename = "min-balance")]
-    pub min_balance: UInt64,
+    pub min_balance: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AlgorandAccountAsset {
-    pub amount: UInt64,
+pub struct AccountAsset {
+    pub amount: u64,
     #[serde(rename = "asset-id")]
     pub asset_id: i32,
 }

@@ -1,4 +1,5 @@
 use crate::AssetId;
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -10,7 +11,7 @@ pub struct AssetBalance {
 }
 
 impl AssetBalance {
-    pub fn new(asset_id: AssetId, balance: String) -> Self {
+    pub fn new(asset_id: AssetId, balance: BigUint) -> Self {
         Self {
             asset_id,
             balance: Balance::coin_balance(balance),
@@ -34,7 +35,7 @@ impl AssetBalance {
         }
     }
 
-    pub fn new_staking(asset_id: AssetId, staked: String, pending: String, rewards: String) -> Self {
+    pub fn new_staking(asset_id: AssetId, staked: BigUint, pending: BigUint, rewards: BigUint) -> Self {
         Self {
             asset_id,
             balance: Balance::stake_balance(staked, pending, Some(rewards)),
@@ -46,53 +47,53 @@ impl AssetBalance {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Balance {
-    pub available: String,
-    pub frozen: String,
-    pub locked: String,
-    pub staked: String,
-    pub pending: String,
-    pub rewards: String,
-    pub reserved: String,
-    pub withdrawable: String,
+    pub available: BigUint,
+    pub frozen: BigUint,
+    pub locked: BigUint,
+    pub staked: BigUint,
+    pub pending: BigUint,
+    pub rewards: BigUint,
+    pub reserved: BigUint,
+    pub withdrawable: BigUint,
 }
 
 impl Balance {
-    pub fn coin_balance(available: String) -> Self {
+    pub fn coin_balance(available: BigUint) -> Self {
         Self {
             available,
-            frozen: "0".to_string(),
-            locked: "0".to_string(),
-            staked: "0".to_string(),
-            pending: "0".to_string(),
-            rewards: "0".to_string(),
-            reserved: "0".to_string(),
-            withdrawable: "0".to_string(),
+            frozen: BigUint::from(0u32),
+            locked: BigUint::from(0u32),
+            staked: BigUint::from(0u32),
+            pending: BigUint::from(0u32),
+            rewards: BigUint::from(0u32),
+            reserved: BigUint::from(0u32),
+            withdrawable: BigUint::from(0u32),
         }
     }
 
-    pub fn with_reserved(available: String, reserved: String) -> Self {
+    pub fn with_reserved(available: BigUint, reserved: BigUint) -> Self {
         Self {
             available,
             reserved,
-            frozen: "0".to_string(),
-            locked: "0".to_string(),
-            staked: "0".to_string(),
-            pending: "0".to_string(),
-            rewards: "0".to_string(),
-            withdrawable: "0".to_string(),
+            frozen: BigUint::from(0u32),
+            locked: BigUint::from(0u32),
+            staked: BigUint::from(0u32),
+            pending: BigUint::from(0u32),
+            rewards: BigUint::from(0u32),
+            withdrawable: BigUint::from(0u32),
         }
     }
 
-    pub fn stake_balance(staked: String, pending: String, rewards: Option<String>) -> Self {
+    pub fn stake_balance(staked: BigUint, pending: BigUint, rewards: Option<BigUint>) -> Self {
         Self {
-            available: "0".to_string(),
-            frozen: "0".to_string(),
-            locked: "0".to_string(),
+            available: BigUint::from(0u32),
+            frozen: BigUint::from(0u32),
+            locked: BigUint::from(0u32),
             staked,
             pending,
-            rewards: rewards.unwrap_or("0".to_string()),
-            reserved: "0".to_string(),
-            withdrawable: "0".to_string(),
+            rewards: rewards.unwrap_or(BigUint::from(0u32)),
+            reserved: BigUint::from(0u32),
+            withdrawable: BigUint::from(0u32),
         }
     }
 }

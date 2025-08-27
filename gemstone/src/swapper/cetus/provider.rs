@@ -33,7 +33,7 @@ use crate::{
 };
 use gem_sui::{
     jsonrpc::{ObjectDataOptions, SuiData, SuiRpc},
-    model::TxOutput,
+    models::TxOutput,
     EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
 };
 use primitives::{AssetId, Chain};
@@ -177,7 +177,7 @@ impl Swapper for Cetus {
 
         let pool_quotes = top_pools
             .into_iter()
-            .zip(pool_datas.into_iter())
+            .zip(pool_datas)
             .map(|(pool, pool_data)| {
                 let shared_object = SharedObject {
                     id: pool_data.data.object_id,

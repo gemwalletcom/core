@@ -1,0 +1,17 @@
+{
+    "pool-error": "",
+    "txn": {
+      "sig": "KQpswiZRlAW7LKUpmHZ5FkqISDFlbNw4K2gIEkYDc2lClezsvRhjw1LyA0cAp/f8rbvtsxuvnIRzZuHg5zVUDg==",
+      "txn": {
+        "amt": 100000,
+        "fee": 1000,
+        "fv": 52961607,
+        "gen": "mainnet-v1.0",
+        "gh": "wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=",
+        "lv": 52962607,
+        "rcv": "NXSHXB3CLKPZ4JJ3LIXOKOEAB575EDDHCUTDYAKYRXZWVJ6CCQUP55ZEPE",
+        "snd": "RXIOUIR5IGFZMIZ7CR7FJXDYY4JI7NZG5UCWCZZNWXUPFJRLG6K6X5ITXM",
+        "type": "pay"
+      }
+    }
+  }

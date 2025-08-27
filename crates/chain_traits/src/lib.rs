@@ -3,15 +3,28 @@ use std::error::Error;
 use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
-use primitives::{Asset, AssetBalance, ChartPeriod, DelegationBase, DelegationValidator, FeePriorityValue, TransactionPreload, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, TransactionLoadInput, TransactionLoadData, TransactionFee, UTXO};
+use primitives::{
+    Asset, AssetBalance, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, Transaction, TransactionFee, TransactionInputType,
+    TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
+};
 
-pub trait ChainTraits: ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainPreload {}
+pub trait ChainTraits:
+    ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainTransactionLoad
+{
+}
+
+pub trait ChainProvider: Send + Sync {
+    fn get_chain(&self) -> Chain;
+}
 
 #[async_trait]
 pub trait ChainBalances: Send + Sync {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>>;
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>>;
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>>;
+    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
 }
 
 #[async_trait]
@@ -33,21 +46,22 @@ pub trait ChainStaking: Send + Sync {
 pub trait ChainTransactions: Send + Sync {
     async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Sync + Send>>;
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>>;
+    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
 }
 
 #[async_trait]
 pub trait ChainState: Send + Sync {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>>;
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>>;
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
 }
 
 #[async_trait]
-pub trait ChainAccount: Send + Sync {
-    async fn get_utxos(&self, _address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
-    }
-}
+pub trait ChainAccount: Send + Sync {}
 
 #[async_trait]
 pub trait ChainPerpetual: Send + Sync {
@@ -76,16 +90,24 @@ pub trait ChainToken: Send + Sync {
 }
 
 #[async_trait]
-pub trait ChainPreload: Send + Sync {
-    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionPreload::default())
+pub trait ChainTransactionLoad: Send + Sync {
+    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
+        Ok(TransactionLoadMetadata::None)
     }
-    
-    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            account_number: 0,
-            sequence: input.sequence,
-            fee: TransactionFee::default(),
-        })
+
+    async fn get_transaction_load(&self, _input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support transaction loading".into())
+    }
+
+    async fn get_transaction_fee_from_data(&self, _data: String) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support transaction fee".into())
+    }
+
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support fee rates".into())
+    }
+
+    async fn get_utxos(&self, _address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
     }
 }

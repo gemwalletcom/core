@@ -1,8 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainState;
 use gem_client::Client;
-use number_formatter::BigNumberFormatter;
-use primitives::fee::{FeePriority, FeePriorityValue};
 use std::error::Error;
 
 use crate::rpc::client::BitcoinClient;
@@ -14,25 +12,37 @@ impl<C: Client> ChainState for BitcoinClient<C> {
         block.previous_block_hash.ok_or_else(|| "Unable to get block hash".into())
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         let node_info = self.get_node_info().await?;
         Ok(node_info.blockbook.best_height)
     }
-
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
-        let priority = self.chain.get_blocks_fee_priority();
-        let (slow, normal, fast) = futures::try_join!(self.get_fee(priority.slow), self.get_fee(priority.normal), self.get_fee(priority.fast))?;
-        Ok(vec![
-            FeePriorityValue::new(FeePriority::Slow, slow),
-            FeePriorityValue::new(FeePriority::Normal, normal),
-            FeePriorityValue::new(FeePriority::Fast, fast),
-        ])
-    }
 }
 
-impl<C: Client> BitcoinClient<C> {
-    async fn get_fee(&self, blocks: i32) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let fee = self.get_fee_priority(blocks).await?;
-        Ok(BigNumberFormatter::value_from_amount(&fee, 8).unwrap())
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use crate::provider::testkit::*;
+    use chain_traits::ChainState;
+
+    #[tokio::test]
+    async fn test_get_bitcoin_latest_block() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_bitcoin_test_client();
+        let block_number = client.get_block_latest_number().await?;
+
+        assert!(block_number > 800_000, "Bitcoin block number should be above 800k, got: {}", block_number);
+        println!("Bitcoin latest block: {}", block_number);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_bitcoin_chain_id() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_bitcoin_test_client();
+        let chain_id = client.get_chain_id().await?;
+
+        assert!(!chain_id.is_empty());
+        assert!(chain_id.len() == 64); // Bitcoin block hashes are 64 characters
+        println!("Bitcoin chain ID: {}", chain_id);
+
+        Ok(())
     }
 }

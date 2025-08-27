@@ -1,28 +1,46 @@
 use async_trait::async_trait;
-use chain_traits::ChainPreload;
+use chain_traits::ChainTransactionLoad;
 use futures;
+use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionPreload, TransactionPreloadInput};
+use primitives::{
+    FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput,
+};
 
 use crate::rpc::client::StellarClient;
 
 #[async_trait]
-impl<C: Client> ChainPreload for StellarClient<C> {
-    async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionPreload, Box<dyn Error + Sync + Send>> {
+impl<C: Client> ChainTransactionLoad for StellarClient<C> {
+    async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         let (sender_account, destination_result) = futures::join!(
             self.get_stellar_account(&input.sender_address),
             self.get_stellar_account(&input.destination_address)
         );
 
-        let current_sequence: i64 = sender_account?.sequence.parse().unwrap_or(0);
-        let sequence = (current_sequence + 1) as u64;
-        let is_destination_address_exist = destination_result.is_ok();
+        Ok(TransactionLoadMetadata::Stellar {
+            sequence: sender_account?.sequence + 1,
+            is_destination_address_exist: destination_result.is_ok(),
+        })
+    }
 
-        Ok(TransactionPreload::builder()
-            .sequence(sequence)
-            .is_destination_address_exist(is_destination_address_exist)
-            .build())
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        let fee = if input.metadata.get_is_destination_address_exist()? {
+            input.default_fee()
+        } else {
+            TransactionFee::new_from_fee_with_option(input.gas_price.gas_price(), FeeOption::TokenAccountCreation, BigInt::from(0))
+        };
+        Ok(TransactionLoadData { fee, metadata: input.metadata })
+    }
+
+    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
+        let fees = self.get_fees().await?;
+        Ok(vec![
+            FeeRate::new(FeePriority::Slow, GasPriceType::regular(fees.fee_charged.min)),
+            FeeRate::new(FeePriority::Normal, GasPriceType::regular(fees.fee_charged.min)),
+            FeeRate::new(FeePriority::Fast, GasPriceType::regular(fees.fee_charged.p95 * 2)),
+        ])
     }
 }

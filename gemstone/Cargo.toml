@@ -19,11 +19,12 @@ reqwest_provider = ["dep:reqwest"]
 [dependencies]
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
-gem_solana = { path = "../crates/gem_solana" }
-gem_ton = { path = "../crates/gem_ton" }
+gem_solana = { path = "../crates/gem_solana", features = ["rpc"] }
+gem_ton = { path = "../crates/gem_ton", features = ["rpc"] }
+gem_tron = { path = "../crates/gem_tron", features = ["rpc"] }
 gem_bsc = { path = "../crates/gem_bsc" }
 gem_evm = { path = "../crates/gem_evm" }
-gem_sui = { path = "../crates/gem_sui" }
+gem_sui = { path = "../crates/gem_sui", features = ["rpc"] }
 gem_aptos = { path = "../crates/gem_aptos", features = ["rpc"] }
 gem_hash = { path = "../crates/gem_hash" }
 gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
@@ -35,14 +36,15 @@ gem_algorand = { path = "../crates/gem_algorand", features = ["rpc"] }
 gem_stellar = { path = "../crates/gem_stellar", features = ["rpc"] }
 gem_xrp = { path = "../crates/gem_xrp", features = ["rpc"] }
 gem_near = { path = "../crates/gem_near", features = ["rpc"] }
+gem_polkadot = { path = "../crates/gem_polkadot", features = ["rpc"] }
 serde_serializers = { path = "../crates/serde_serializers" }
 chain_traits = { path = "../crates/chain_traits" }
 
 reqwest = { workspace = true, optional = true }
 
 bcs.workspace = true
-sui-types.workspace = true
-sui-transaction-builder.workspace = true
+sui-types = { workspace = true }
+sui-transaction-builder = { workspace = true }
 # uniffi
 uniffi.workspace = true
 thiserror.workspace = true
@@ -65,13 +67,11 @@ num-bigint.workspace = true
 num-traits.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
-borsh.workspace = true
+solana-primitives = "0.1.2"
 lazy_static.workspace = true
 bigdecimal.workspace = true
 rand.workspace = true
-rmp.workspace = true
 rmp-serde.workspace = true
-solana-primitives.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

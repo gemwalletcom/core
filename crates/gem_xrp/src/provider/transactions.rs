@@ -3,9 +3,9 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{TransactionStateRequest, TransactionUpdate};
+use primitives::{Transaction, TransactionStateRequest, TransactionUpdate};
 
-use crate::provider::transactions_mapper::map_transaction_broadcast;
+use crate::provider::transactions_mapper::{map_transaction_broadcast, map_transaction_status, map_transactions_by_address, map_transactions_by_block};
 use crate::rpc::client::XRPClient;
 
 #[async_trait]
@@ -17,13 +17,16 @@ impl<C: Client> ChainTransactions for XRPClient<C> {
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let status = self.get_transaction_status(&request.id).await?;
+        Ok(map_transaction_status(&status))
+    }
 
-        let transaction_state = if status.status == "success" {
-            primitives::TransactionState::Confirmed
-        } else {
-            primitives::TransactionState::Pending
-        };
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let ledger = self.get_block_transactions(block as i64).await?;
+        Ok(map_transactions_by_block(ledger))
+    }
 
-        Ok(TransactionUpdate::new(transaction_state))
+    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let account_ledger = self.get_account_transactions(address, 100).await?;
+        Ok(map_transactions_by_address(account_ledger))
     }
 }

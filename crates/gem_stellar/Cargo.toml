@@ -7,10 +7,12 @@ edition = { workspace = true }
 default = []
 rpc = ["dep:number_formatter", "dep:chrono", "dep:async-trait", "dep:chain_traits", "dep:urlencoding", "dep:futures"]
 reqwest = ["gem_client/reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 primitives = { path = "../primitives" }
+num-bigint = { workspace = true }
 
 # Optional dependencies for the rpc feature
 number_formatter = { path = "../number_formatter", optional = true }
@@ -21,3 +23,8 @@ urlencoding = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
 serde_json = { workspace = true }
 gem_client = { path = "../gem_client" }
+serde_serializers = { path = "../serde_serializers" }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+reqwest = { workspace = true }

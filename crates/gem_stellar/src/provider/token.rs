@@ -2,12 +2,10 @@ use async_trait::async_trait;
 use chain_traits::ChainToken;
 use std::error::Error;
 
+use crate::constants::STELLAR_TOKEN_DECIMALS;
+use crate::rpc::client::StellarClient;
 use gem_client::Client;
 use primitives::{Asset, AssetId, AssetType};
-
-use crate::rpc::client::StellarClient;
-
-const STELLAR_TOKEN_DECIMALS: i32 = 7;
 
 #[async_trait]
 impl<C: Client> ChainToken for StellarClient<C> {
@@ -38,13 +36,15 @@ impl<C: Client> ChainToken for StellarClient<C> {
                 .first()
                 .ok_or_else(|| format!("No assets found for issuer: {}", issuer))?
         };
+        let symbol = asset.asset_code.clone();
+        let token_id = AssetId::sub_token_id(&[issuer.to_string(), symbol.clone()]);
 
         Ok(Asset {
             id: AssetId::from(self.chain, Some(token_id.clone())),
             chain: self.chain,
             token_id: Some(token_id),
-            name: asset.asset_code.clone(),
-            symbol: asset.asset_code.clone(),
+            name: symbol.clone(),
+            symbol,
             decimals: STELLAR_TOKEN_DECIMALS,
             asset_type: AssetType::TOKEN,
         })

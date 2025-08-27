@@ -1,0 +1,13 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1755821595,
+    "result": {
+      "amount": "3229630020925000000000000",
+      "block_hash": "FU5nK8BtjaiY4EtTzJ5S9cGouJ43xuRh7mdfmipbrurS",
+      "block_height": 160650185,
+      "code_hash": "11111111111111111111111111111111",
+      "locked": "0",
+      "storage_paid_at": 0,
+      "storage_usage": 182
+    }
+  }

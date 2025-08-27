@@ -6,7 +6,7 @@ use gem_client::Client;
 use primitives::AssetBalance;
 
 use super::balances_mapper::{map_balance_coin, map_balance_tokens};
-use crate::rpc::client::AlgorandClient;
+use crate::{rpc::client::AlgorandClient, AlgorandClientIndexer};
 
 #[async_trait]
 impl<C: Client> ChainBalances for AlgorandClient<C> {
@@ -22,5 +22,55 @@ impl<C: Client> ChainBalances for AlgorandClient<C> {
 
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
+    }
+}
+
+#[async_trait]
+impl<C: Client> ChainBalances for AlgorandClientIndexer<C> {
+    async fn get_balance_coin(&self, _address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+        unimplemented!()
+    }
+
+    async fn get_balance_tokens(&self, _address: String, _token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
+        unimplemented!()
+    }
+
+    async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
+        unimplemented!()
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use crate::provider::testkit::*;
+    use chain_traits::ChainBalances;
+    use primitives::Chain;
+
+    #[tokio::test]
+    async fn test_algorand_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_algorand_test_client();
+        let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
+        assert_eq!(balance.asset_id.chain, Chain::Algorand);
+        println!("Balance: {:?}", balance);
+        assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_algorand_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_algorand_test_client();
+        let token_ids = vec![
+            "31566704".to_string(), // USDC
+        ];
+        let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids).await?;
+
+        assert_eq!(balances.len(), 1);
+        for balance in &balances {
+            assert_eq!(balance.asset_id.chain, Chain::Algorand);
+
+            println!("Token balance: {:?}", balance);
+            assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
+        }
+        Ok(())
     }
 }

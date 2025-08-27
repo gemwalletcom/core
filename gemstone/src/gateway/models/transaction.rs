@@ -1,6 +1,13 @@
-use primitives::{TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransactionLoadInput, TransactionLoadData, TransactionInputType, GasPrice};
-use crate::gateway::models::asset::GemAsset;
-use crate::gateway::models::GemUTXO;
+use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
+use num_bigint::BigInt;
+use primitives::swap::ApprovalData;
+use primitives::FeeOption;
+use primitives::{
+    GasPriceType, PerpetualConfirmData, PerpetualDirection, PerpetualType, StakeType, TransactionChange, TransactionFee, TransactionInputType,
+    TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra,
+    TransferDataOutputType, WalletConnectionSessionAppMetadata,
+};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionUpdate {
@@ -32,26 +39,112 @@ pub struct GemTransactionStateRequest {
     pub id: String,
     pub sender_address: String,
     pub created_at: i64,
+    pub block_number: i64,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemStakeOperation {
-    Delegate { asset: GemAsset, validator_address: String },
-    Undelegate { asset: GemAsset, validator_address: String },
-    Redelegate { asset: GemAsset, src_validator_address: String, dst_validator_address: String },
-    WithdrawRewards { validator_addresses: Vec<String> },
-}
-
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemTransactionInputType {
-    Transfer { asset: GemAsset },
-    Swap { from_asset: GemAsset, to_asset: GemAsset },
-    Stake { operation: GemStakeOperation },
+pub enum GemStakeType {
+    Delegate {
+        validator: GemDelegationValidator,
+    },
+    Undelegate {
+        delegation: GemDelegation,
+    },
+    Redelegate {
+        delegation: GemDelegation,
+        to_validator: GemDelegationValidator,
+    },
+    WithdrawRewards {
+        validators: Vec<GemDelegationValidator>,
+    },
+    Withdraw {
+        delegation: GemDelegation,
+    },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemGasPrice {
-    pub gas_price: String,
+pub struct GemWalletConnectionSessionAppMetadata {
+    pub name: String,
+    pub description: String,
+    pub url: String,
+    pub icon: String,
+    pub redirect_native: Option<String>,
+    pub redirect_universal: Option<String>,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemTransferDataOutputType {
+    EncodedTransaction,
+    Signature,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemTransferDataExtra {
+    pub gas_limit: Option<String>,
+    pub gas_price: Option<GemGasPriceType>,
+    pub data: Option<Vec<u8>>,
+    pub output_type: GemTransferDataOutputType,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemApprovalData {
+    pub token: String,
+    pub spender: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemPerpetualDirection {
+    Short,
+    Long,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemPerpetualConfirmData {
+    pub direction: GemPerpetualDirection,
+    pub asset: GemAsset,
+    pub asset_index: i32,
+    pub price: String,
+    pub fiat_value: f64,
+    pub size: String,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemPerpetualType {
+    Open { data: GemPerpetualConfirmData },
+    Close { data: GemPerpetualConfirmData },
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+#[allow(clippy::large_enum_variant)]
+pub enum GemTransactionInputType {
+    Transfer {
+        asset: GemAsset,
+    },
+    Deposit {
+        asset: GemAsset,
+    },
+    Swap {
+        from_asset: GemAsset,
+        to_asset: GemAsset,
+    },
+    Stake {
+        asset: GemAsset,
+        stake_type: GemStakeType,
+    },
+    TokenApprove {
+        asset: GemAsset,
+        approval_data: GemApprovalData,
+    },
+    Generic {
+        asset: GemAsset,
+        metadata: GemWalletConnectionSessionAppMetadata,
+        extra: GemTransferDataExtra,
+    },
+    Perpetual {
+        asset: GemAsset,
+        perpetual_type: GemPerpetualType,
+    },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -60,31 +153,34 @@ pub struct GemTransactionLoadInput {
     pub sender_address: String,
     pub destination_address: String,
     pub value: String,
-    pub gas_price: GemGasPrice,
-    pub sequence: u64,
-    pub block_hash: String,
-    pub block_number: i64,
-    pub chain_id: String,
-    pub utxos: Vec<GemUTXO>,
+    pub gas_price: GemGasPriceType,
+    pub memo: Option<String>,
+    pub is_max_value: bool,
+    pub metadata: GemTransactionLoadMetadata,
+}
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq, uniffi::Enum)]
+pub enum GemFeeOption {
+    TokenAccountCreation,
+}
+
+#[derive(Debug, Default, Clone, uniffi::Record)]
+pub struct GemFeeOptions {
+    pub options: HashMap<GemFeeOption, String>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionLoadFee {
     pub fee: String,
-    pub gas_price: String,
+    pub gas_price_type: GemGasPriceType,
     pub gas_limit: String,
+    pub options: GemFeeOptions,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionData {
-    pub account_number: i32,
-    pub sequence: i32,
-    pub block_hash: String,
-    pub block_number: i64,
-    pub chain_id: String,
     pub fee: GemTransactionLoadFee,
-    pub utxos: Vec<GemUTXO>,
-    pub message_bytes: String,
+    pub metadata: GemTransactionLoadMetadata,
 }
 
 impl From<TransactionChange> for GemTransactionChange {
@@ -93,7 +189,7 @@ impl From<TransactionChange> for GemTransactionChange {
             TransactionChange::HashChange { old, new } => GemTransactionChange::HashChange { old, new },
             TransactionChange::Metadata(metadata) => GemTransactionChange::Metadata(metadata.into()),
             TransactionChange::BlockNumber(block_number) => GemTransactionChange::BlockNumber(block_number),
-            TransactionChange::NetworkFee(fee) => GemTransactionChange::NetworkFee(fee),
+            TransactionChange::NetworkFee(fee) => GemTransactionChange::NetworkFee(fee.to_string()),
         }
     }
 }
@@ -121,6 +217,7 @@ impl From<GemTransactionStateRequest> for TransactionStateRequest {
             id: value.id,
             sender_address: value.sender_address,
             created_at: value.created_at,
+            block_number: value.block_number,
         }
     }
 }
@@ -142,30 +239,98 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
             destination_address: value.destination_address,
             value: value.value,
             gas_price: value.gas_price.into(),
-            sequence: value.sequence,
-            block_hash: value.block_hash,
-            block_number: value.block_number,
-            chain_id: value.chain_id,
-            utxos: value.utxos.into_iter().map(|utxo| utxo.into()).collect(),
+            memo: value.memo,
+            is_max_value: value.is_max_value,
+            metadata: value.metadata.into(),
         }
     }
 }
 
-impl From<GemStakeOperation> for primitives::StakeOperation {
-    fn from(value: GemStakeOperation) -> Self {
+impl From<GemStakeType> for StakeType {
+    fn from(value: GemStakeType) -> Self {
         match value {
-            GemStakeOperation::Delegate { asset, validator_address } => {
-                primitives::StakeOperation::Delegate(asset.into(), validator_address)
-            }
-            GemStakeOperation::Undelegate { asset, validator_address } => {
-                primitives::StakeOperation::Undelegate(asset.into(), validator_address)
-            }
-            GemStakeOperation::Redelegate { asset, src_validator_address, dst_validator_address } => {
-                primitives::StakeOperation::Redelegate(asset.into(), src_validator_address, dst_validator_address)
-            }
-            GemStakeOperation::WithdrawRewards { validator_addresses } => {
-                primitives::StakeOperation::WithdrawRewards(validator_addresses)
-            }
+            GemStakeType::Delegate { validator } => StakeType::Stake(validator.into()),
+            GemStakeType::Undelegate { delegation } => StakeType::Unstake(delegation.into()),
+            GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(primitives::RedelegateData {
+                delegation: delegation.into(),
+                to_validator: to_validator.into(),
+            }),
+            GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().map(|v| v.into()).collect()),
+            GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation.into()),
+        }
+    }
+}
+
+impl From<GemWalletConnectionSessionAppMetadata> for WalletConnectionSessionAppMetadata {
+    fn from(value: GemWalletConnectionSessionAppMetadata) -> Self {
+        WalletConnectionSessionAppMetadata {
+            name: value.name,
+            description: value.description,
+            url: value.url,
+            icon: value.icon,
+            redirect_native: value.redirect_native,
+            redirect_universal: value.redirect_universal,
+        }
+    }
+}
+
+impl From<GemTransferDataOutputType> for TransferDataOutputType {
+    fn from(value: GemTransferDataOutputType) -> Self {
+        match value {
+            GemTransferDataOutputType::EncodedTransaction => TransferDataOutputType::EncodedTransaction,
+            GemTransferDataOutputType::Signature => TransferDataOutputType::Signature,
+        }
+    }
+}
+
+impl From<GemTransferDataExtra> for TransferDataExtra {
+    fn from(value: GemTransferDataExtra) -> Self {
+        TransferDataExtra {
+            gas_limit: value.gas_limit.map(|s| s.parse().unwrap_or_default()),
+            gas_price: value.gas_price.map(|gp| gp.into()),
+            data: value.data,
+            output_type: value.output_type.into(),
+        }
+    }
+}
+
+impl From<GemApprovalData> for ApprovalData {
+    fn from(value: GemApprovalData) -> Self {
+        ApprovalData {
+            token: value.token,
+            spender: value.spender,
+            value: value.value,
+        }
+    }
+}
+
+impl From<GemPerpetualDirection> for PerpetualDirection {
+    fn from(value: GemPerpetualDirection) -> Self {
+        match value {
+            GemPerpetualDirection::Short => PerpetualDirection::Short,
+            GemPerpetualDirection::Long => PerpetualDirection::Long,
+        }
+    }
+}
+
+impl From<GemPerpetualConfirmData> for PerpetualConfirmData {
+    fn from(value: GemPerpetualConfirmData) -> Self {
+        PerpetualConfirmData {
+            direction: value.direction.into(),
+            asset: value.asset.into(),
+            asset_index: value.asset_index,
+            price: value.price,
+            fiat_value: value.fiat_value,
+            size: value.size,
+        }
+    }
+}
+
+impl From<GemPerpetualType> for PerpetualType {
+    fn from(value: GemPerpetualType) -> Self {
+        match value {
+            GemPerpetualType::Open { data } => PerpetualType::Open(data.into()),
+            GemPerpetualType::Close { data } => PerpetualType::Close(data.into()),
         }
     }
 }
@@ -174,38 +339,104 @@ impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
-            GemTransactionInputType::Swap { from_asset, to_asset } => {
-                TransactionInputType::Swap(from_asset.into(), to_asset.into())
-            }
-            GemTransactionInputType::Stake { operation } => {
-                TransactionInputType::Stake(operation.into())
-            }
+            GemTransactionInputType::Deposit { asset } => TransactionInputType::Deposit(asset.into()),
+            GemTransactionInputType::Swap { from_asset, to_asset } => TransactionInputType::Swap(from_asset.into(), to_asset.into()),
+            GemTransactionInputType::Stake { asset, stake_type: operation } => TransactionInputType::Stake(asset.into(), operation.into()),
+            GemTransactionInputType::TokenApprove { asset, approval_data } => TransactionInputType::TokenApprove(asset.into(), approval_data.into()),
+            GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
+            GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset.into(), perpetual_type.into()),
         }
     }
 }
 
-impl From<GemGasPrice> for GasPrice {
-    fn from(value: GemGasPrice) -> Self {
-        GasPrice {
-            gas_price: value.gas_price.parse().unwrap_or_default(),
+impl From<GemGasPriceType> for GasPriceType {
+    fn from(value: GemGasPriceType) -> Self {
+        match value {
+            GemGasPriceType::Regular { gas_price } => GasPriceType::Regular {
+                gas_price: gas_price.parse().unwrap_or_default(),
+            },
+            GemGasPriceType::Eip1559 { gas_price, priority_fee } => GasPriceType::Eip1559 {
+                gas_price: gas_price.parse().unwrap_or_default(),
+                priority_fee: priority_fee.parse().unwrap_or_default(),
+            },
+            GemGasPriceType::Solana {
+                gas_price,
+                priority_fee,
+                unit_price,
+            } => GasPriceType::Solana {
+                gas_price: gas_price.parse().unwrap_or_default(),
+                priority_fee: priority_fee.parse().unwrap_or_default(),
+                unit_price: unit_price.parse().unwrap_or_default(),
+            },
         }
     }
 }
 
-pub fn map_transaction_load_data(load_data: TransactionLoadData, input: &GemTransactionLoadInput) -> GemTransactionData {
-    GemTransactionData {
-        account_number: load_data.account_number as i32,
-        sequence: load_data.sequence as i32,
-        block_hash: input.block_hash.clone(),
-        block_number: input.block_number,
-        chain_id: input.chain_id.clone(),
-        fee: GemTransactionLoadFee {
-            fee: load_data.fee.fee.to_string(),
-            gas_price: load_data.fee.gas_price.to_string(),
-            gas_limit: load_data.fee.gas_limit.to_string(),
-        },
-        utxos: input.utxos.clone(),
-        message_bytes: "".to_string(),
+impl From<FeeOption> for GemFeeOption {
+    fn from(value: FeeOption) -> Self {
+        match value {
+            FeeOption::TokenAccountCreation => GemFeeOption::TokenAccountCreation,
+        }
     }
 }
 
+impl From<GemFeeOption> for FeeOption {
+    fn from(value: GemFeeOption) -> Self {
+        match value {
+            GemFeeOption::TokenAccountCreation => FeeOption::TokenAccountCreation,
+        }
+    }
+}
+
+impl GemFeeOptions {
+    pub fn with_option(mut self, option: GemFeeOption, value: String) -> Self {
+        self.options.insert(option, value);
+        self
+    }
+
+    pub fn get(&self, option: &GemFeeOption) -> Option<&String> {
+        self.options.get(option)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.options.is_empty()
+    }
+
+    pub fn from_primitives(options: HashMap<FeeOption, BigInt>) -> Self {
+        GemFeeOptions {
+            options: options.into_iter().map(|(key, value)| (key.into(), value.to_string())).collect(),
+        }
+    }
+}
+
+impl From<GemTransactionLoadFee> for TransactionFee {
+    fn from(value: GemTransactionLoadFee) -> Self {
+        TransactionFee {
+            fee: value.fee.parse().unwrap_or_default(),
+            gas_price_type: value.gas_price_type.into(),
+            gas_limit: value.gas_limit.parse().unwrap_or_default(),
+            options: value
+                .options
+                .options
+                .into_iter()
+                .map(|(key, value)| {
+                    let fee_option = match key {
+                        GemFeeOption::TokenAccountCreation => FeeOption::TokenAccountCreation,
+                    };
+                    (fee_option, value.parse().unwrap_or_default())
+                })
+                .collect(),
+        }
+    }
+}
+
+impl From<TransactionFee> for GemTransactionLoadFee {
+    fn from(value: TransactionFee) -> Self {
+        GemTransactionLoadFee {
+            fee: value.fee.to_string(),
+            gas_price_type: value.gas_price_type.into(),
+            gas_limit: value.gas_limit.to_string(),
+            options: GemFeeOptions::from_primitives(value.options),
+        }
+    }
+}

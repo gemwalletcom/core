@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use primitives::{TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{Transaction, TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
 
 use gem_client::Client;
@@ -26,6 +26,52 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         } else {
             TransactionState::Pending
         };
-        Ok(TransactionUpdate::new(status))
+        Ok(TransactionUpdate::new_state(status))
+    }
+
+    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
+
+    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use crate::provider::testkit::*;
+    use chain_traits::{ChainState, ChainTransactions};
+    use primitives::{TransactionState, TransactionStateRequest};
+
+    #[tokio::test]
+    async fn test_bitcoin_get_transactions_status() {
+        let bitcoin_client = create_bitcoin_test_client();
+
+        let request = TransactionStateRequest::new_id(TEST_TRANSACTION_ID.to_string());
+        let update = bitcoin_client.get_transaction_status(request).await.unwrap();
+
+        println!("State: {}", update.state);
+        assert!(update.state == TransactionState::Confirmed);
+    }
+
+    #[tokio::test]
+    async fn test_bitcoin_get_transactions_by_block() {
+        let bitcoin_client = create_bitcoin_test_client();
+
+        let latest_block = bitcoin_client.get_block_latest_number().await.unwrap();
+        let transactions = bitcoin_client.get_transactions_by_block(latest_block).await.unwrap();
+
+        println!("Latest block: {}, transactions count: {}", latest_block, transactions.len());
+        assert!(latest_block > 0);
+    }
+
+    #[tokio::test]
+    async fn test_bitcoin_get_transactions_by_address() {
+        let bitcoin_client = create_bitcoin_test_client();
+
+        let transactions = bitcoin_client.get_transactions_by_address(TEST_ADDRESS.to_string()).await.unwrap();
+
+        println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
     }
 }

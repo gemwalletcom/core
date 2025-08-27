@@ -1,8 +1,7 @@
 use std::str::FromStr;
 
 use name_resolver::client::Client as NameClient;
-use primitives::chain::Chain;
-use primitives::name::NameRecord;
+use primitives::{chain::Chain, name::NameRecord};
 use rocket::{get, response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
 
 #[get("/name/resolve/<name>?<chain>")]

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::result::Result;
 
 pub mod mapper;
+pub mod providers;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddressTarget {

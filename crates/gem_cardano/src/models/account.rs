@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoBalance {
+pub struct Balance {
     pub address: String,
     pub tx_hash: String,
     pub index: i32,
@@ -10,24 +10,24 @@ pub struct CardanoBalance {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoBalanceResponse {
-    pub utxos: CardanoAggregateBalance,
+pub struct BalanceResponse {
+    pub utxos: BalanceAggregate,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoAggregateBalance {
-    pub aggregate: CardanoAggregateSum,
+pub struct BalanceAggregate {
+    pub aggregate: BalanceSum,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoAggregateSum {
-    pub sum: CardanoAggregateSumValue,
+pub struct BalanceSum {
+    pub sum: BalanceSumValue,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoAggregateSumValue {
+pub struct BalanceSumValue {
     pub value: Option<String>,
 }

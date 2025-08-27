@@ -28,6 +28,8 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "POLKADOT" => Some(Chain::Polkadot),
         "CARDANO" => Some(Chain::Cardano),
         "BITCOINCASH" => Some(Chain::BitcoinCash),
+        "SUI" => Some(Chain::Sui),
+        "SONIC" => Some(Chain::Sonic),
         _ => None,
     }
 }

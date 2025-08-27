@@ -9,16 +9,17 @@ pub fn map_balance_coin(account: &BitcoinAccount, chain: BitcoinChain) -> AssetB
 mod tests {
     use super::*;
     use crate::models::account::BitcoinAccount;
+    use num_bigint::BigUint;
     use primitives::BitcoinChain;
 
     #[test]
     fn test_map_balance_coin() {
         let account = BitcoinAccount {
-            balance: "100000000".to_string(),
+            balance: BigUint::from(100000000_u64),
         };
         let result = map_balance_coin(&account, BitcoinChain::Bitcoin);
 
-        assert_eq!(result.balance.available, "100000000");
+        assert_eq!(result.balance.available, BigUint::from(100000000_u64));
         assert_eq!(result.asset_id.chain, primitives::Chain::Bitcoin);
     }
 }

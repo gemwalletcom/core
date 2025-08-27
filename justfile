@@ -36,10 +36,22 @@ test-workspace:
     cargo test --all-features --lib --workspace --quiet
 
 test-all:
-    cargo test --all-features --lib --all
+    @echo "Running unit tests only (excluding integration tests)..."
+    cargo test --lib --all
 
 test CRATE:
     cargo test --all-features --package {{CRATE}}
+
+test-integration:
+    @echo "Running integration tests only..."
+    cargo test --lib --all --features chain_integration_tests -- --test-threads=1
+
+build-integration-tests:
+    @echo "Building all integration tests..."
+    cargo test --no-run --test integration_test --package gem_chain_rpc
+    cargo test --no-run --test integration_test --package gem_evm --features rpc,reqwest
+    cargo test --no-run --test integration_test --package security_provider
+    cargo test --no-run --test integration_test --package name_resolver
 
 format:
     cargo fmt -q --all

@@ -1,0 +1,293 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1755631916,
+    "result": [
+      {
+        "account": {
+          "data": {
+            "parsed": {
+              "info": {
+                "meta": {
+                  "authorized": {
+                    "staker": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+                    "withdrawer": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H"
+                  },
+                  "lockup": {
+                    "custodian": "11111111111111111111111111111111",
+                    "epoch": 0,
+                    "unixTimestamp": 0
+                  },
+                  "rentExemptReserve": "2282880"
+                },
+                "stake": {
+                  "creditsObserved": 1173366768,
+                  "delegation": {
+                    "activationEpoch": "831",
+                    "deactivationEpoch": "18446744073709551615",
+                    "stake": "97847072",
+                    "voter": "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF",
+                    "warmupCooldownRate": 0.25
+                  }
+                }
+              },
+              "type": "delegated"
+            },
+            "program": "stake",
+            "space": 200
+          },
+          "executable": false,
+          "lamports": 100129952,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 200
+        },
+        "pubkey": "DYPqEPfyCFJ7LxENB1SkKvEczmgybjoWyqTR5aZDo98W"
+      },
+      {
+        "account": {
+          "data": {
+            "parsed": {
+              "info": {
+                "meta": {
+                  "authorized": {
+                    "staker": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+                    "withdrawer": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H"
+                  },
+                  "lockup": {
+                    "custodian": "11111111111111111111111111111111",
+                    "epoch": 0,
+                    "unixTimestamp": 0
+                  },
+                  "rentExemptReserve": "2282880"
+                },
+                "stake": {
+                  "creditsObserved": 922400411,
+                  "delegation": {
+                    "activationEpoch": "700",
+                    "deactivationEpoch": "830",
+                    "stake": "8116159",
+                    "voter": "CatzoSMUkTRidT5DwBxAC2pEtnwMBTpkCepHkFgZDiqb",
+                    "warmupCooldownRate": 0.25
+                  }
+                }
+              },
+              "type": "delegated"
+            },
+            "program": "stake",
+            "space": 200
+          },
+          "executable": false,
+          "lamports": 10487253,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 200
+        },
+        "pubkey": "AMYzorwT5BH1kThunfzYDXuDcDcixUsaG93u8V5WNYy5"
+      },
+      {
+        "account": {
+          "data": {
+            "parsed": {
+              "info": {
+                "meta": {
+                  "authorized": {
+                    "staker": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+                    "withdrawer": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H"
+                  },
+                  "lockup": {
+                    "custodian": "11111111111111111111111111111111",
+                    "epoch": 0,
+                    "unixTimestamp": 0
+                  },
+                  "rentExemptReserve": "2282880"
+                },
+                "stake": {
+                  "creditsObserved": 1170563414,
+                  "delegation": {
+                    "activationEpoch": "783",
+                    "deactivationEpoch": "18446744073709551615",
+                    "stake": "99513224",
+                    "voter": "4PsiLMyoUQ7QRn1FFiFCvej4hsUTFzfvJnyN4bj1tmSN",
+                    "warmupCooldownRate": 0.25
+                  }
+                }
+              },
+              "type": "delegated"
+            },
+            "program": "stake",
+            "space": 200
+          },
+          "executable": false,
+          "lamports": 101997972,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 200
+        },
+        "pubkey": "8A5N6VrL8N6hbLY5ZSB7hUmFgS4ZMxBKLxonf7adskNc"
+      },
+      {
+        "account": {
+          "data": {
+            "parsed": {
+              "info": {
+                "meta": {
+                  "authorized": {
+                    "staker": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+                    "withdrawer": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H"
+                  },
+                  "lockup": {
+                    "custodian": "11111111111111111111111111111111",
+                    "epoch": 0,
+                    "unixTimestamp": 0
+                  },
+                  "rentExemptReserve": "2282880"
+                },
+                "stake": {
+                  "creditsObserved": 920428096,
+                  "delegation": {
+                    "activationEpoch": "700",
+                    "deactivationEpoch": "830",
+                    "stake": "8116378",
+                    "voter": "he1iusunGwqrNtafDtLdhsUQDFvo13z9sUa36PauBtk",
+                    "warmupCooldownRate": 0.25
+                  }
+                }
+              },
+              "type": "delegated"
+            },
+            "program": "stake",
+            "space": 200
+          },
+          "executable": false,
+          "lamports": 10483145,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 200
+        },
+        "pubkey": "ASQQcxX1n6J1wtWEM14SoWsFmCtY2bvpV8dcKFJPZgWd"
+      },
+      {
+        "account": {
+          "data": {
+            "parsed": {
+              "info": {
+                "meta": {
+                  "authorized": {
+                    "staker": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+                    "withdrawer": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H"
+                  },
+                  "lockup": {
+                    "custodian": "11111111111111111111111111111111",
+                    "epoch": 0,
+                    "unixTimestamp": 0
+                  },
+                  "rentExemptReserve": "2282880"
+                },
+                "stake": {
+                  "creditsObserved": 1174324462,
+                  "delegation": {
+                    "activationEpoch": "616",
+                    "deactivationEpoch": "18446744073709551615",
+                    "stake": "106677423",
+                    "voter": "GvZEwtCHZ7YtCkQCaLRVEXsyVvQkRDhJhQgB6akPme1e",
+                    "warmupCooldownRate": 0.25
+                  }
+                }
+              },
+              "type": "delegated"
+            },
+            "program": "stake",
+            "space": 200
+          },
+          "executable": false,
+          "lamports": 110209966,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 200
+        },
+        "pubkey": "FNFrX8bPfG1PFkmiq7v3hYaxUx4kwZpNZgEwt5j8aFiJ"
+      },
+      {
+        "account": {
+          "data": {
+            "parsed": {
+              "info": {
+                "meta": {
+                  "authorized": {
+                    "staker": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+                    "withdrawer": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H"
+                  },
+                  "lockup": {
+                    "custodian": "11111111111111111111111111111111",
+                    "epoch": 0,
+                    "unixTimestamp": 0
+                  },
+                  "rentExemptReserve": "2282880"
+                },
+                "stake": {
+                  "creditsObserved": 1173366768,
+                  "delegation": {
+                    "activationEpoch": "819",
+                    "deactivationEpoch": "18446744073709551615",
+                    "stake": "17812386",
+                    "voter": "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF",
+                    "warmupCooldownRate": 0.25
+                  }
+                }
+              },
+              "type": "delegated"
+            },
+            "program": "stake",
+            "space": 200
+          },
+          "executable": false,
+          "lamports": 20095266,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 200
+        },
+        "pubkey": "HfZ5HhXsW7DyBM6ZwZUAtrFGVPzWw5oZBgzHwcyxN4jE"
+      },
+      {
+        "account": {
+          "data": {
+            "parsed": {
+              "info": {
+                "meta": {
+                  "authorized": {
+                    "staker": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+                    "withdrawer": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H"
+                  },
+                  "lockup": {
+                    "custodian": "11111111111111111111111111111111",
+                    "epoch": 0,
+                    "unixTimestamp": 0
+                  },
+                  "rentExemptReserve": "2282880"
+                },
+                "stake": {
+                  "creditsObserved": 1173366768,
+                  "delegation": {
+                    "activationEpoch": "783",
+                    "deactivationEpoch": "18446744073709551615",
+                    "stake": "7856176",
+                    "voter": "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF",
+                    "warmupCooldownRate": 0.25
+                  }
+                }
+              },
+              "type": "delegated"
+            },
+            "program": "stake",
+            "space": 200
+          },
+          "executable": false,
+          "lamports": 10139056,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 200
+        },
+        "pubkey": "9Ss9EnZwPGSofkG24KoW9BsDraLwPf6JVdMJcEwFT5q1"
+      }
+    ]
+  }

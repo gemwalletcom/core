@@ -50,3 +50,11 @@ pub struct SuiGasUsed {
 pub struct SuiBroadcastTransaction {
     pub digest: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionQueryResult {
+    pub data: Vec<SuiTransaction>,
+    pub has_next_page: bool,
+    pub next_cursor: Option<String>,
+}

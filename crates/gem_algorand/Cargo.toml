@@ -6,20 +6,23 @@ edition = { workspace = true }
 [features]
 default = []
 rpc = ["dep:chrono", "dep:chain_traits", "dep:gem_client"]
-reqwest = ["gem_client/reqwest", "dep:reqwest-middleware"]
+reqwest = ["gem_client/reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
-anyhow = { workspace = true }
 async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-thiserror = { workspace = true }
-url = { workspace = true }
 base64 = { workspace = true }
+num-bigint = { workspace = true }
 
 chrono = { workspace = true, optional = true }
-reqwest-middleware = { workspace = true, features = ["json"], optional = true }
 
 primitives = { path = "../primitives" }
 chain_traits = { path = "../chain_traits", optional = true }
 gem_client = { path = "../gem_client", optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+reqwest = { workspace = true }
+

@@ -77,10 +77,10 @@ impl MetricsClient {
         for state in states {
             self.parser_current_block
                 .get_or_create(&ParserStateLabels { chain: state.clone().chain })
-                .set(state.current_block as i64);
+                .set(state.current_block);
             self.parser_latest_block
                 .get_or_create(&ParserStateLabels { chain: state.clone().chain })
-                .set(state.latest_block as i64);
+                .set(state.latest_block);
             self.parser_is_enabled
                 .get_or_create(&ParserStateLabels { chain: state.clone().chain })
                 .set(state.is_enabled as i64);

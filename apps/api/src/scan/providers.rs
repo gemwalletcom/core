@@ -1,5 +1,5 @@
-use security_goplus::GoPlusProvider;
-use security_hashdit::HashDitProvider;
+use security_provider::providers::goplus::GoPlusProvider;
+use security_provider::providers::hashdit::HashDitProvider;
 use security_provider::ScanProvider;
 use settings::Settings;
 

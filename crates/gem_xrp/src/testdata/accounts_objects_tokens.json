@@ -1,0 +1,59 @@
+{
+    "result": {
+        "account": "rnZmVGX6f4pUYyS4oXYJzoLdRojQV8y297",
+        "account_objects": [
+            {
+                "Balance": {
+                    "currency": "USD",
+                    "issuer": "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                    "value": "0"
+                },
+                "Flags": 65536,
+                "HighLimit": {
+                    "currency": "USD",
+                    "issuer": "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De",
+                    "value": "0"
+                },
+                "HighNode": "49d",
+                "LedgerEntryType": "RippleState",
+                "LowLimit": {
+                    "currency": "USD",
+                    "issuer": "rnZmVGX6f4pUYyS4oXYJzoLdRojQV8y297",
+                    "value": "690000"
+                },
+                "LowNode": "0",
+                "PreviousTxnID": "269CAF7F150BD8A3D2250FCBA1E3F6CA1B7CBF83EB3C892EE6C81FE8B45AE2BC",
+                "PreviousTxnLgrSeq": 92952306,
+                "index": "6C670A2AD7FF2F1B59B22FB25EF2ED0C4B121D4934D7C85BC90533E6E49B489F"
+            },
+            {
+                "Balance": {
+                    "currency": "524C555344000000000000000000000000000000",
+                    "issuer": "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                    "value": "0.171"
+                },
+                "Flags": 65536,
+                "HighLimit": {
+                    "currency": "524C555344000000000000000000000000000000",
+                    "issuer": "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De",
+                    "value": "0"
+                },
+                "HighNode": "69a",
+                "LedgerEntryType": "RippleState",
+                "LowLimit": {
+                    "currency": "524C555344000000000000000000000000000000",
+                    "issuer": "rnZmVGX6f4pUYyS4oXYJzoLdRojQV8y297",
+                    "value": "6900000000000000e-4"
+                },
+                "LowNode": "0",
+                "PreviousTxnID": "D872B32A3279FDACE52276DB9E82263F28E25C907CB663AF3286B3C9A578AA0B",
+                "PreviousTxnLgrSeq": 95344881,
+                "index": "F43A383173EA146048CFF1CA843BA66E01F2384358D5CC4FABFD5A4151B1672E"
+            }
+        ],
+        "ledger_hash": "5E188D92D6608B870401FD15950628407FC7040CA8A5980323E5F1FAB91C23BA",
+        "ledger_index": 98430992,
+        "status": "success",
+        "validated": true
+    }
+}

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_u64_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -7,14 +8,17 @@ pub struct PolkadotTransactionMaterial {
     pub genesis_hash: String,
     pub chain_name: String,
     pub spec_name: String,
-    pub spec_version: String,
-    pub tx_version: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub spec_version: u64,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub tx_version: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PolkadotTransactionMaterialBlock {
-    pub height: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub height: u64,
     pub hash: String,
 }
 
@@ -25,12 +29,8 @@ pub struct PolkadotTransactionPayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PolkadotTransactionBroadcast {
-    pub hash: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PolkadotTransactionBroadcastError {
-    pub error: String,
-    pub cause: String,
+pub struct PolkadotTransactionBroadcastResponse {
+    pub hash: Option<String>,
+    pub error: Option<String>,
+    pub cause: Option<String>,
 }

@@ -1,8 +1,7 @@
 // RPC related modules for Algorand
 
 pub mod client;
-pub mod mapper;
-pub mod model;
+pub mod client_indexer;
 
 pub use client::AlgorandClient;
-pub use mapper::AlgorandMapper;
+pub use client_indexer::AlgorandClientIndexer;

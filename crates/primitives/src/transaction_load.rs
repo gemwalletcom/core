@@ -1,25 +1,34 @@
+use crate::stake_type::StakeType;
+use crate::swap::ApprovalData;
+use crate::transaction_fee::TransactionFee;
+use crate::transaction_load_metadata::TransactionLoadMetadata;
+use crate::{Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransferDataExtra, WalletConnectionSessionAppMetadata};
 use serde::{Deserialize, Serialize};
-use num_bigint::BigInt;
-use crate::{Asset, UTXO, TransactionPreloadInput};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum StakeOperation {
-    Delegate(Asset, String),
-    Undelegate(Asset, String),
-    Redelegate(Asset, String, String),
-    WithdrawRewards(Vec<String>),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::large_enum_variant)]
 pub enum TransactionInputType {
     Transfer(Asset),
+    Deposit(Asset),
     Swap(Asset, Asset),
-    Stake(StakeOperation),
+    Stake(Asset, StakeType),
+    TokenApprove(Asset, ApprovalData),
+    Generic(Asset, WalletConnectionSessionAppMetadata, TransferDataExtra),
+    Perpetual(Asset, PerpetualType),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GasPrice {
-    pub gas_price: BigInt,
+impl TransactionInputType {
+    pub fn get_asset(&self) -> &Asset {
+        match self {
+            TransactionInputType::Transfer(asset) => asset,
+            TransactionInputType::Deposit(asset) => asset,
+            TransactionInputType::Swap(_, asset) => asset,
+            TransactionInputType::Stake(asset, _) => asset,
+            TransactionInputType::TokenApprove(asset, _) => asset,
+            TransactionInputType::Generic(asset, _, _) => asset,
+            TransactionInputType::Perpetual(asset, _) => asset,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,122 +37,39 @@ pub struct TransactionLoadInput {
     pub sender_address: String,
     pub destination_address: String,
     pub value: String,
-    pub gas_price: GasPrice,
-    pub sequence: u64,
-    pub block_hash: String,
-    pub block_number: i64,
-    pub chain_id: String,
-    pub utxos: Vec<UTXO>,
+    pub gas_price: GasPriceType,
+    pub memo: Option<String>,
+    pub is_max_value: bool,
+    pub metadata: TransactionLoadMetadata,
+}
+
+impl TransactionLoadInput {
+    pub fn default_fee(&self) -> TransactionFee {
+        TransactionFee::new_from_fee(self.gas_price.total_fee())
+    }
 }
 
 impl TransactionLoadInput {
     pub fn to_preload_input(&self) -> TransactionPreloadInput {
         TransactionPreloadInput {
+            asset: self.input_type.get_asset().clone(),
             sender_address: self.sender_address.clone(),
             destination_address: self.destination_address.clone(),
         }
     }
 }
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct SignerInputBlock {
-    pub number: i64,
-    pub hash: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionFee {
-    pub fee: BigInt,
-    pub gas_price: BigInt,
-    pub gas_limit: BigInt,
-}
-
-impl Default for TransactionFee {
-    fn default() -> Self {
-        Self {
-            fee: BigInt::from(0),
-            gas_price: BigInt::from(0),
-            gas_limit: BigInt::from(0),
-        }
-    }
-}
-
-impl TransactionFee {
-    pub fn calculate(gas_limit: u64, gas_price: &GasPrice) -> Self {
-        let gas_limit_bigint = BigInt::from(gas_limit);
-        let total_fee = &gas_price.gas_price * &gas_limit_bigint;
-        
-        Self {
-            fee: total_fee,
-            gas_price: gas_price.gas_price.clone(),
-            gas_limit: gas_limit_bigint,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionLoadData {
-    pub account_number: u64,
-    pub sequence: u64,
     pub fee: TransactionFee,
+    pub metadata: TransactionLoadMetadata,
 }
 
 impl TransactionLoadData {
-    pub fn builder() -> TransactionLoadDataBuilder {
-        TransactionLoadDataBuilder {
-            account_number: None,
-            sequence: None,
-            fee: None,
+    pub fn new_from(&self, fee: TransactionFee) -> Self {
+        Self {
+            fee,
+            metadata: self.metadata.clone(),
         }
-    }
-}
-
-pub struct TransactionLoadDataBuilder {
-    account_number: Option<u64>,
-    sequence: Option<u64>,
-    fee: Option<TransactionFee>,
-}
-
-impl TransactionLoadDataBuilder {
-    pub fn account_number(mut self, account_number: u64) -> Self {
-        self.account_number = Some(account_number);
-        self
-    }
-
-    pub fn sequence(mut self, sequence: u64) -> Self {
-        self.sequence = Some(sequence);
-        self
-    }
-
-    pub fn fee(mut self, fee: TransactionFee) -> Self {
-        self.fee = Some(fee);
-        self
-    }
-
-    pub fn build(self) -> TransactionLoadData {
-        TransactionLoadData {
-            account_number: self.account_number.expect("account_number is required"),
-            sequence: self.sequence.expect("sequence is required"),
-            fee: self.fee.expect("fee is required"),
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_transaction_fee_calculate() {
-        let gas_price = GasPrice {
-            gas_price: BigInt::from(100u64),
-        };
-        let gas_limit = 1000u64;
-        
-        let fee = TransactionFee::calculate(gas_limit, &gas_price);
-        
-        assert_eq!(fee.fee, BigInt::from(100000u64)); // 100 * 1000
-        assert_eq!(fee.gas_price, BigInt::from(100u64));
-        assert_eq!(fee.gas_limit, BigInt::from(1000u64));
     }
 }

@@ -1,9 +1,15 @@
+use crate::{Chain, Wallet};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
-struct WalletConnection {
-    session: WalletConnectionSession,
-    wallet: Wallet,
+pub struct WalletConnection {
+    pub session: WalletConnectionSession,
+    pub wallet: Wallet,
 }
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Hashable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum WalletConnectionState {
@@ -16,71 +22,78 @@ pub enum WalletConnectionState {
 #[typeshare(swift = "CaseIterable, Sendable")]
 pub enum WalletConnectionMethods {
     #[serde(rename = "eth_chainId")]
-    eth_chain_id,
-    eth_sign,
-    personal_sign,
+    EthChainId,
+    #[serde(rename = "eth_sign")]
+    EthSign,
+    #[serde(rename = "personal_sign")]
+    PersonalSign,
     #[serde(rename = "eth_signTypedData")]
-    eth_sign_typed_data,
+    EthSignTypedData,
     #[serde(rename = "eth_signTypedData_v4")]
-    eth_sign_typed_data_v4,
+    EthSignTypedDataV4,
     #[serde(rename = "eth_signTransaction")]
-    eth_sign_transaction,
+    EthSignTransaction,
     #[serde(rename = "eth_sendTransaction")]
-    eth_send_transaction,
+    EthSendTransaction,
     #[serde(rename = "eth_sendRawTransaction")]
-    eth_send_raw_transaction,
+    EthSendRawTransaction,
     #[serde(rename = "wallet_switchEthereumChain")]
-    wallet_switch_ethereum_chain,
+    WalletSwitchEthereumChain,
     #[serde(rename = "wallet_addEthereumChain")]
-    wallet_add_ethereum_chain,
+    WalletAddEthereumChain,
     #[serde(rename = "solana_signMessage")]
-    solana_sign_message,
+    SolanaSignMessage,
     #[serde(rename = "solana_signTransaction")]
-    solana_sign_transaction,
+    SolanaSignTransaction,
     #[serde(rename = "solana_signAndSendTransaction")]
-    solana_sign_and_send_transaction,
+    SolanaSignAndSendTransaction,
     #[serde(rename = "solana_signAllTransactions")]
-    solana_sign_all_transactions,
+    SolanaSignAllTransactions,
 }
 
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "CaseIterable, Sendable")]
 pub enum WalletConnectionEvents {
-    connect,
-    disconnect,
+    #[serde(rename = "connect")]
+    Connect,
+    #[serde(rename = "disconnect")]
+    Disconnect,
     #[serde(rename = "accountsChanged")]
-    accounts_changed,
+    AccountsChanged,
     #[serde(rename = "chainChanged")]
-    chain_changed,
+    ChainChanged,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-struct WalletConnectionSession {
-    id: String,
-    session_id: String,
-    state: WalletConnectionState,
-    chains: [Chain],
-    created_at: DateTime<Utc>,
-    expire_at: DateTime<Utc>,
-    metadata: WalletConnectionSessionAppMetadata,
+pub struct WalletConnectionSession {
+    pub id: String,
+    pub session_id: String,
+    pub state: WalletConnectionState,
+    pub chains: Vec<Chain>,
+    pub created_at: DateTime<Utc>,
+    pub expire_at: DateTime<Utc>,
+    pub metadata: WalletConnectionSessionAppMetadata,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-struct WalletConnectionSessionAppMetadata {
-    name: String,
-    description: String,
-    url: String,
-    icon: String,
-    redirect_native: Option<String>,
-    redirect_universal: Option<String>,
+pub struct WalletConnectionSessionAppMetadata {
+    pub name: String,
+    pub description: String,
+    pub url: String,
+    pub icon: String,
+    pub redirect_native: Option<String>,
+    pub redirect_universal: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-struct WalletConnectionSessionProposal {
-    default_wallet: Wallet,
-    wallets: [Wallet],
-    metadata: WalletConnectionSessionAppMetadata,
+pub struct WalletConnectionSessionProposal {
+    pub default_wallet: Wallet,
+    pub wallets: Vec<Wallet>,
+    pub metadata: WalletConnectionSessionAppMetadata,
 }

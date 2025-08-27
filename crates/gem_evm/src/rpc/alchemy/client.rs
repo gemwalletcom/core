@@ -10,28 +10,34 @@ use crate::{
         EthereumClient, EthereumMapper,
     },
 };
-use primitives::EVMChain;
 #[cfg(feature = "reqwest")]
-use reqwest_middleware::ClientWithMiddleware;
+use gem_client::{Client, ContentType, CONTENT_TYPE};
+use primitives::EVMChain;
 use serde_json::json;
 
 use crate::rpc::alchemy::TokenBalances;
 
 #[cfg(feature = "reqwest")]
 #[derive(Clone)]
-pub struct AlchemyClient {
+pub struct AlchemyClient<C: Client> {
     pub chain: EVMChain,
     url: String,
-    client: ClientWithMiddleware,
+    client: C,
     ethereum_client: EthereumClient,
 }
 
 #[cfg(feature = "reqwest")]
-impl AlchemyClient {
+impl<C: Client> AlchemyClient<C> {
     const DISABLED_RPC_CHAINS: [EVMChain; 5] = [EVMChain::Mantle, EVMChain::Hyperliquid, EVMChain::OpBNB, EVMChain::Monad, EVMChain::Fantom];
     const ENABLED_TRANSACTION_CHAINS: [EVMChain; 2] = [EVMChain::Ethereum, EVMChain::Base];
 
-    pub fn new(ethereum_client: EthereumClient, client: ClientWithMiddleware, api_key: String) -> Self {
+    fn common_headers() -> std::collections::HashMap<String, String> {
+        let mut headers = std::collections::HashMap::new();
+        headers.insert(CONTENT_TYPE.to_string(), ContentType::ApplicationJson.as_str().to_string());
+        headers
+    }
+
+    pub fn new(ethereum_client: EthereumClient, client: C, api_key: String) -> Self {
         let chain = ethereum_client.chain;
         let url = format!("https://api.g.alchemy.com/data/v1/{api_key}");
 
@@ -86,7 +92,7 @@ impl AlchemyClient {
             ],
             "includeNativeTokens": false,
         });
-        Ok(self.client.post(url).json(&payload).send().await?.json().await?)
+        Ok(self.client.post(&url, &payload, Some(Self::common_headers())).await?)
     }
     // https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-transaction-history-by-address
     //TODO:
@@ -107,6 +113,6 @@ impl AlchemyClient {
             ],
             "limit": 25,
         });
-        Ok(self.client.post(url).json(&payload).send().await?.json().await?)
+        Ok(self.client.post(&url, &payload, Some(Self::common_headers())).await?)
     }
 }

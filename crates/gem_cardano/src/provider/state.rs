@@ -3,7 +3,6 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::FeePriorityValue;
 
 use crate::rpc::client::CardanoClient;
 
@@ -13,14 +12,7 @@ impl<C: Client> ChainState for CardanoClient<C> {
         self.get_network_magic().await
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_latest_block().await? as u64)
-    }
-
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![FeePriorityValue {
-            priority: primitives::FeePriority::Normal,
-            value: "1".to_string(),
-        }])
     }
 }

@@ -1,27 +1,26 @@
-use crate::models::account::NearAccount;
-use primitives::{AssetBalance, AssetId, Chain};
+use crate::models::account::Account;
+use primitives::{AssetBalance, Chain};
 use std::error::Error;
 
-pub fn map_native_balance(account: &NearAccount, asset_id: AssetId, _chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-    Ok(AssetBalance::new(asset_id, account.amount.clone()))
+pub fn map_native_balance(account: &Account) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+    Ok(AssetBalance::new(Chain::Near.as_asset_id(), account.amount.clone()))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::account::NearAccount;
+    use crate::models::account::Account;
+    use num_bigint::BigUint;
 
     #[test]
     fn test_map_native_balance() {
-        let account = NearAccount {
-            amount: "1000000000000000000000000".to_string(),
+        let account = Account {
+            amount: BigUint::from(1000000000000000000000000_u128),
         };
-        let chain = Chain::Near;
-        let asset_id = AssetId::from_chain(chain);
 
-        let result = map_native_balance(&account, asset_id.clone(), chain).unwrap();
+        let result = map_native_balance(&account).unwrap();
 
-        assert_eq!(result.asset_id, asset_id);
-        assert_eq!(result.balance.available, "1000000000000000000000000");
+        assert_eq!(result.asset_id, Chain::Near.as_asset_id());
+        assert_eq!(result.balance.available, BigUint::from(1000000000000000000000000_u128));
     }
 }

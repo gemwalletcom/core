@@ -1,6 +1,8 @@
-use primitives::perpetual::{Perpetual, PerpetualData, PerpetualMetadata};
-use primitives::perpetual_provider::PerpetualProvider;
-use primitives::{Asset, AssetId, AssetType, Chain};
+use primitives::{
+    perpetual::{Perpetual, PerpetualData, PerpetualMetadata},
+    perpetual_provider::PerpetualProvider,
+    Asset, AssetId, AssetType, Chain,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -115,7 +117,6 @@ impl From<HypercoreMetadataResponse> for Vec<PerpetualData> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::perpetual_provider::PerpetualProvider;
 
     #[test]
     fn test_hypercore_metadata_to_perpetual_data() {

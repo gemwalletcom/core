@@ -15,6 +15,7 @@ anyhow = { workspace = true }
 primitives = { path = "../primitives" }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
+chain_traits = { path = "../chain_traits" }
 
 gem_ton = { path = "../gem_ton", features = ["rpc"] }
 gem_tron = { path = "../gem_tron", features = ["rpc"] }
@@ -33,14 +34,15 @@ gem_polkadot = { path = "../gem_polkadot", features = ["rpc"] }
 gem_stellar = { path = "../gem_stellar", features = ["rpc", "reqwest"] }
 gem_hypercore = { path = "../gem_hypercore", features = ["reqwest"] }
 gem_client = { path = "../gem_client" }
+gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
+num-bigint = { workspace = true }
 
 [dev-dependencies]
 tokio.workspace = true
 reqwest.workspace = true
-reqwest-middleware.workspace = true
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 [[test]]

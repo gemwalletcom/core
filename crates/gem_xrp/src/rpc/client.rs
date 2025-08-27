@@ -1,9 +1,9 @@
 use serde_json::json;
 use std::error::Error;
 
-use crate::rpc::model::*;
+use crate::models::rpc::*;
 
-use chain_traits::{ChainPerpetual, ChainStaking, ChainTraits};
+use chain_traits::{ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::Chain;
 
@@ -23,6 +23,15 @@ impl<C: Client> XRPClient<C> {
     }
 
     pub async fn get_account_info(&self, address: &str) -> Result<AccountInfo, Box<dyn Error + Send + Sync>> {
+        let result = self.get_account_info_full(address).await?;
+        if let Some(account_data) = result.account_data {
+            Ok(account_data)
+        } else {
+            Err("Account not found".into())
+        }
+    }
+
+    pub async fn get_account_info_full(&self, address: &str) -> Result<AccountInfoResult, Box<dyn Error + Send + Sync>> {
         let params = json!({
             "method": "account_info",
             "params": [
@@ -34,12 +43,7 @@ impl<C: Client> XRPClient<C> {
         });
 
         let result: LedgerResult<AccountInfoResult> = self.client.post("", &params, None).await?;
-
-        if let Some(account_data) = result.result.account_data {
-            Ok(account_data)
-        } else {
-            Err("Account not found".into())
-        }
+        Ok(result.result)
     }
 
     pub async fn get_ledger_current(&self) -> Result<LedgerCurrent, Box<dyn Error + Send + Sync>> {
@@ -154,3 +158,9 @@ impl<C: Client> ChainPerpetual for XRPClient<C> {}
 impl<C: Client> chain_traits::ChainAccount for XRPClient<C> {}
 
 impl<C: Client> ChainTraits for XRPClient<C> {}
+
+impl<C: Client> ChainProvider for XRPClient<C> {
+    fn get_chain(&self) -> Chain {
+        self.chain
+    }
+}

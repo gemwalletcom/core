@@ -16,3 +16,16 @@ pub struct StellarAsset {
     pub asset_issuer: String,
     pub contract_id: Option<String>,
 }
+
+// RPC models
+#[cfg(feature = "rpc")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Embedded<T> {
+    pub _embedded: Records<T>,
+}
+
+#[cfg(feature = "rpc")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Records<T> {
+    pub records: Vec<T>,
+}

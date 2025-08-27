@@ -1,7 +1,7 @@
 CREATE TABLE parser_state (
     chain VARCHAR NOT NULL PRIMARY KEY REFERENCES chains (id) ON DELETE CASCADE,
-    current_block INTEGER NOT NULL default 0,
-    latest_block INTEGER NOT NULL default 0,
+    current_block BIGINT NOT NULL default 0,
+    latest_block BIGINT NOT NULL default 0,
     await_blocks INTEGER NOT NULL default 0,
     timeout_between_blocks INTEGER NOT NULL default 0,
     timeout_latest_block INTEGER NOT NULL default 0,

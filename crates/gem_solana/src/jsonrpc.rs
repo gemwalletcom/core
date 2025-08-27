@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::model::{Configuration, Filter};
+use crate::models::{Configuration, Filter};
 use gem_jsonrpc::types::{JsonRpcRequest, JsonRpcRequestConvert};
 use serde_json::Value;
 

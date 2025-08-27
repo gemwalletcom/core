@@ -4,36 +4,36 @@ use super::UInt64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoBlock {
+pub struct Block {
     pub number: UInt64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoBlockData {
-    pub cardano: CardanoBlockTip,
+pub struct BlockData {
+    pub cardano: BlockTip,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoBlockTip {
-    pub tip: CardanoBlock,
+pub struct BlockTip {
+    pub tip: Block,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoGenesisData {
-    pub genesis: CardanoGenesis,
+pub struct GenesisData {
+    pub genesis: Genesis,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoGenesis {
-    pub shelley: CardanoGenesisShelley,
+pub struct Genesis {
+    pub shelley: GenesisShelley,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CardanoGenesisShelley {
+pub struct GenesisShelley {
     pub network_magic: i32,
 }

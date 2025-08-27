@@ -7,7 +7,7 @@ use super::transaction::Transaction;
 pub struct Ledger {
     pub chain_id: i32,
     #[serde(deserialize_with = "deserialize_u64_from_str")]
-    pub ledger_version: u64,
+    pub block_height: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

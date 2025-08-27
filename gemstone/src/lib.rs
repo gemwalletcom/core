@@ -3,17 +3,14 @@ pub mod block_explorer;
 pub mod bsc;
 pub mod chain;
 pub mod config;
-pub mod cosmos;
 pub mod ethereum;
 pub mod gateway;
 pub mod hyperliquid;
 pub mod message;
 pub mod network;
 pub mod payment;
-pub mod solana;
 pub mod sui;
 pub mod swapper;
-pub mod ton;
 pub mod tron;
 pub mod wallet_connect;
 

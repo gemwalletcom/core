@@ -5,23 +5,26 @@ edition = "2024"
 
 [features]
 default = []
-rpc = ["dep:chrono", "dep:serde_serializers", "dep:chain_traits", "dep:gem_client", "dep:futures"]
+rpc = ["dep:chrono", "dep:serde_serializers", "dep:chain_traits", "dep:gem_client"]
 reqwest = ["gem_client/reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-thiserror = { workspace = true }
-anyhow = { workspace = true }
 async-trait = { workspace = true }
 hex = { workspace = true }
 primitives = { path = "../primitives" }
 number_formatter = { path = "../number_formatter" }
+num-bigint = { workspace = true }
 
 chain_traits = { path = "../chain_traits", optional = true }
 gem_client = { path = "../gem_client", optional = true }
-futures = { workspace = true, optional = true }
 
 chrono = { workspace = true, features = ["serde"], optional = true }
 serde_serializers = { path = "../serde_serializers", optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+reqwest = { workspace = true }
 

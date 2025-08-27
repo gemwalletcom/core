@@ -1,6 +1,6 @@
 use super::super::constants::{STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
 use serde::{Deserialize, Serialize};
-use serde_serializers::{deserialize_u64_from_str, deserialize_option_u64_from_str};
+use serde_serializers::{deserialize_option_u64_from_str, deserialize_u64_from_str};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
@@ -92,4 +92,9 @@ pub struct SubmitTransactionRequest {
     pub expiration_timestamp_secs: String,
     pub payload: TransactionPayload,
     pub signature: TransactionSignature,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionBroadcast {
+    pub hash: String,
 }

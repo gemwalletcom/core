@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ParserState {
     pub chain: String,
-    pub current_block: i32,
-    pub latest_block: i32,
+    pub current_block: i64,
+    pub latest_block: i64,
     pub await_blocks: i32,
     pub timeout_between_blocks: i32,
     pub timeout_latest_block: i32,

@@ -189,6 +189,13 @@ Direct repository access methods available on DatabaseClient:
 - Batch operations use `JsonRpcClient::batch_call()` for multiple requests
 - Error handling with `JsonRpcError` type and proper propagation
 
+### Blockchain Provider Patterns
+- Each blockchain crate has a `provider/` directory with trait implementations
+- Provider methods should get raw data from RPC client, then use mapper functions for conversion
+- Mapper functions are located in separate `*_mapper.rs` files for clean separation
+- Example pattern: `get_balance_coin()` calls `self.get_balance()` then `balances_mapper::map_coin_balance()`
+- This pattern ensures consistent data transformation and testability across all blockchain implementations
+
 ### Integration Testing
 - Add integration tests for RPC functionality to verify real network compatibility
 - Use `#[tokio::test]` for async integration tests

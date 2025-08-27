@@ -5,8 +5,14 @@ edition = { workspace = true }
 
 [features]
 default = []
-rpc = ["gem_jsonrpc/client", "dep:num-bigint"]
+rpc = [
+    "gem_jsonrpc/client",
+    "dep:async-trait",
+    "dep:gem_client",
+    "dep:chain_traits",
+]
 reqwest = ["gem_jsonrpc/reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -14,9 +20,7 @@ chain_primitives = { path = "../chain_primitives" }
 sui-types = { workspace = true }
 sui-transaction-builder = { workspace = true }
 bcs = { workspace = true }
-blake2 = { workspace = true }
 hex = { workspace = true }
-thiserror = { workspace = true }
 base64 = { workspace = true }
 anyhow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -27,4 +31,11 @@ chrono = { workspace = true }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 # Optional dependencies for rpc feature
-num-bigint = { workspace = true, features = ["serde"], optional = true }
+num-bigint = { workspace = true, features = ["serde"] }
+async-trait = { workspace = true, optional = true }
+gem_client = { path = "../gem_client", optional = true }
+chain_traits = { path = "../chain_traits", optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
+reqwest = { workspace = true }

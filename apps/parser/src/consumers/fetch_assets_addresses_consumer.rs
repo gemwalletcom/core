@@ -1,3 +1,4 @@
+use num_bigint::BigUint;
 use primitives::{AssetId, AssetIdVecExt, AssetVecExt, Chain};
 use std::{error::Error, sync::Arc};
 use tokio::sync::Mutex;
@@ -35,11 +36,12 @@ impl FetchAssetsAddressesConsumer {
     async fn fetch_assets_addresses(&self, chain: Chain, address: String) -> Result<FetchAssetsAddressesResult, Box<dyn Error + Send + Sync>> {
         let assets = self.provider.get_assets_balances(chain, address.clone()).await?;
 
-        let assets = assets.clone().into_iter().filter(|x| x.balance.available != "0").collect::<Vec<_>>();
+        let assets = assets.clone().into_iter().filter(|x| x.balance.available != BigUint::ZERO).collect::<Vec<_>>();
+
         let zero_balance_assets = assets
             .clone()
             .into_iter()
-            .filter(|x| x.balance.available == "0")
+            .filter(|x| x.balance.available == BigUint::ZERO)
             .map(|x| AssetAddress::new(x.asset_id.chain.to_string(), x.asset_id.to_string(), address.clone()))
             .collect::<Vec<_>>();
 

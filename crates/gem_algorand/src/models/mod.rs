@@ -1,11 +1,11 @@
 pub mod account;
 pub mod asset;
+pub mod block;
+pub mod indexer;
 pub mod transaction;
-pub mod versions;
 
 pub use account::*;
 pub use asset::*;
+pub use block::*;
+pub use indexer::*;
 pub use transaction::*;
-pub use versions::*;
-
-type UInt64 = u64;

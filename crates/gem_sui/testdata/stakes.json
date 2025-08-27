@@ -1,0 +1,64 @@
+{
+    "jsonrpc": "2.0",
+    "id": 1756254022,
+    "result": [
+        {
+            "validatorAddress": "0x885c0345bbf4441f39b98caf2295640a4dc3696ee9e8bc68f2101ca5e6f9bbf1",
+            "stakingPool": "0x1e080de7950fe445674d33f40c7b9a601b696665e4e6a84bd3930b7c007bacbf",
+            "stakes": [
+                {
+                    "stakedSuiId": "0x2469ddb7ef77fed5fed57b95681b90e10dac9c3a86c0adc06041fcdf74dbccdf",
+                    "stakeRequestEpoch": "402",
+                    "stakeActiveEpoch": "403",
+                    "principal": "1000000000",
+                    "status": "Active",
+                    "estimatedReward": "33444860"
+                },
+                {
+                    "stakedSuiId": "0x70e8879504c7e7293e938772a08dbbf7065d06d70bbbcff612e71f00f7e8026a",
+                    "stakeRequestEpoch": "300",
+                    "stakeActiveEpoch": "301",
+                    "principal": "2100000000",
+                    "status": "Active",
+                    "estimatedReward": "90731114"
+                }
+            ]
+        },
+        {
+            "validatorAddress": "0x184fbf9d6c2d2d3f27e27fe3ca2d3b4080bd406221e345e2d36633e638e988e1",
+            "stakingPool": "0x2f52ce5bfcc5d517a3bdc0c154ab1cbd3757822c5db6a3fa514b9cc81697f999",
+            "stakes": [
+                {
+                    "stakedSuiId": "0x7db8bd3f7effd33b156d55eb2d5459eef07ba1eaddec7a68b7d4661d2fafa146",
+                    "stakeRequestEpoch": "299",
+                    "stakeActiveEpoch": "300",
+                    "principal": "2000000000",
+                    "status": "Active",
+                    "estimatedReward": "88206530"
+                }
+            ]
+        },
+        {
+            "validatorAddress": "0xbba318294a51ddeafa50c335c8e77202170e1f272599a2edc40592100863f638",
+            "stakingPool": "0xb4ca70974bd2877216c6d5838cad197a8dcfda0cf800ab4223d2cccf251dd670",
+            "stakes": [
+                {
+                    "stakedSuiId": "0x1a392a94d27e7ac05a9e0442f5983ad4c7349fbc34f2092daa17eded01947743",
+                    "stakeRequestEpoch": "859",
+                    "stakeActiveEpoch": "860",
+                    "principal": "1000000000",
+                    "status": "Active",
+                    "estimatedReward": "369417"
+                },
+                {
+                    "stakedSuiId": "0x32c6c9d1de51d1df1d69687ee29c9759c06ae48e6dbb024e2cd81499b4058d51",
+                    "stakeRequestEpoch": "301",
+                    "stakeActiveEpoch": "302",
+                    "principal": "2690000000",
+                    "status": "Active",
+                    "estimatedReward": "110732582"
+                }
+            ]
+        }
+    ]
+}

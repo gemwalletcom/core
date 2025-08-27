@@ -65,6 +65,7 @@ pub use self::transaction_direction::TransactionDirection;
 pub mod subscription;
 pub mod transaction_utxo;
 pub use self::subscription::{DeviceSubscription, Subscription};
+pub use self::transaction_utxo::TransactionUtxoInput;
 pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
 pub mod address_name;
@@ -81,6 +82,15 @@ pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata};
 pub mod wallet_connect;
 pub use self::wallet_connect::WalletConnectCAIP2;
+pub mod account;
+pub use self::account::Account;
+pub mod wallet;
+pub use self::wallet::{Wallet, WalletId, WalletType};
+pub mod wallet_connector;
+pub use self::wallet_connector::{
+    WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,
+    WalletConnectionSessionProposal, WalletConnectionState,
+};
 pub mod nft;
 pub use self::nft::{NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, MIME_TYPE_PNG};
 pub mod price_alert;
@@ -102,8 +112,11 @@ pub mod validator;
 pub use self::validator::StakeValidator;
 pub mod solana_token_program;
 pub use self::solana_token_program::SolanaTokenProgramId;
+pub mod solana_types;
+pub use self::solana_types::{SolanaAccountMeta, SolanaInstruction};
 pub mod fee;
-pub use self::fee::{FeePriority, FeePriorityValue, FeeUnitType};
+pub mod gas_price_type;
+pub use self::fee::{FeePriority, FeeRate, FeeUnitType, GasPriceType};
 pub mod response;
 pub use self::response::{ResponseError, ResponseResult};
 pub mod link_type;
@@ -130,7 +143,9 @@ pub mod asset_address;
 pub use self::asset_address::AssetAddress;
 pub mod graphql;
 pub mod perpetual;
-pub use self::perpetual::{Perpetual, PerpetualBalance, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary};
+pub use self::perpetual::{
+    AccountDataType, Perpetual, PerpetualBalance, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary, PerpetualType,
+};
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;
@@ -142,6 +157,14 @@ pub use self::delegation::{Delegation, DelegationBase, DelegationState, Delegati
 pub mod transaction_update;
 pub use self::transaction_update::{TransactionChange, TransactionMetadata, TransactionStateRequest, TransactionUpdate};
 pub mod transaction_preload;
-pub use self::transaction_preload::{TransactionPreload, TransactionPreloadInput, TransactionPreloadBuilder};
+pub use self::transaction_preload::TransactionPreloadInput;
+pub mod transaction_fee;
+pub use self::transaction_fee::{FeeOption, TransactionFee};
+pub mod stake_type;
+pub use self::stake_type::{RedelegateData, StakeType};
+pub mod transaction_load_metadata;
+pub use self::transaction_load_metadata::TransactionLoadMetadata;
 pub mod transaction_load;
-pub use self::transaction_load::{TransactionLoadInput, TransactionLoadData, TransactionInputType, StakeOperation, GasPrice, TransactionFee};
+pub use self::transaction_load::{TransactionInputType, TransactionLoadData, TransactionLoadInput};
+pub mod transfer_data_extra;
+pub use self::transfer_data_extra::{TransferDataExtra, TransferDataOutputType};

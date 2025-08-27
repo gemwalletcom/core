@@ -1,4 +1,4 @@
-use gem_sui::model::{Coin, Gas, Object, StakeInput, TokenTransferInput, TransferInput, TxOutput, UnstakeInput};
+use gem_sui::models::{Coin, Gas, Object, StakeInput, TokenTransferInput, TransferInput, TxOutput, UnstakeInput};
 
 #[derive(uniffi::Record, Clone)]
 pub struct SuiCoin {

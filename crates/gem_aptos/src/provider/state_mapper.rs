@@ -1,10 +1,9 @@
-use std::error::Error;
 use crate::models::Transaction;
-use primitives::{TransactionUpdate, TransactionState, TransactionChange};
+use num_bigint::BigInt;
+use primitives::{TransactionChange, TransactionState, TransactionUpdate};
+use std::error::Error;
 
-pub fn map_transaction_state(
-    transaction: &Transaction,
-) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+pub fn map_transaction_state(transaction: &Transaction) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
     let state = if transaction.success {
         TransactionState::Confirmed
     } else {
@@ -15,13 +14,10 @@ pub fn map_transaction_state(
 
     if let (Some(gas_used), Some(gas_unit_price)) = (transaction.gas_used, transaction.gas_unit_price) {
         let fee = gas_used * gas_unit_price;
-        changes.push(TransactionChange::NetworkFee(fee.to_string()));
+        changes.push(TransactionChange::NetworkFee(BigInt::from(fee)));
     }
 
-    Ok(TransactionUpdate {
-        state,
-        changes,
-    })
+    Ok(TransactionUpdate { state, changes })
 }
 
 #[cfg(test)]
@@ -44,11 +40,11 @@ mod tests {
         };
 
         let result = map_transaction_state(&transaction).unwrap();
-        
+
         assert_eq!(result.state, TransactionState::Confirmed);
         assert_eq!(result.changes.len(), 1);
         if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
-            assert_eq!(fee, "100000");
+            assert_eq!(fee, &BigInt::from(100000u64));
         } else {
             panic!("Expected NetworkFee change");
         }
@@ -69,7 +65,7 @@ mod tests {
         };
 
         let result = map_transaction_state(&transaction).unwrap();
-        
+
         assert_eq!(result.state, TransactionState::Reverted);
         assert_eq!(result.changes.len(), 1);
     }

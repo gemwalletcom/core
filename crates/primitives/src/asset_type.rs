@@ -27,7 +27,7 @@ impl AssetType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "UPPERCASE")]
 pub enum AssetSubtype {

@@ -20,9 +20,9 @@ pub struct BrokerClient {
 impl BrokerClient {
     pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
         let endpoint = format!("{CHAINFLIP_BROKER_URL}/rpc/{CHAINFLIP_BROKER_KEY}");
-        let alien_client = AlienClient::new(endpoint.clone(), provider);
+        let alien_client = AlienClient::new(endpoint, provider);
         Self {
-            client: JsonRpcClient::new(endpoint, alien_client),
+            client: JsonRpcClient::new(alien_client),
         }
     }
 

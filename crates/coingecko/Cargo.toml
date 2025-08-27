@@ -5,8 +5,8 @@ version = { workspace = true }
 
 [dependencies]
 serde = { workspace = true }
-reqwest = { workspace = true }
 primitives = { path = "../primitives" }
 chrono = { workspace = true }
 lazy_static = { workspace = true }
-reqwest-middleware = { workspace = true }
+gem_client = { path = "../gem_client", features = ["reqwest"] }
+reqwest = { workspace = true }

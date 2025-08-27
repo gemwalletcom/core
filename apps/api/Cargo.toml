@@ -34,6 +34,4 @@ streamer = { path = "../../crates/streamer" }
 gem_chain_rpc = { path = "../../crates/gem_chain_rpc" }
 
 security_provider = { path = "../../crates/security_provider" }
-security_hashdit = { path = "../../crates/security_hashdit" }
-security_goplus = { path = "../../crates/security_goplus" }
 rocket_ws = { workspace = true }

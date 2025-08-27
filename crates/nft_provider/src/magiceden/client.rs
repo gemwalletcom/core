@@ -1,14 +1,9 @@
 use super::model::{Collection, Nft};
-use gem_solana::{
-    model::{AccountData, ValueResult},
-    rpc::SolanaClient,
-};
 use reqwest::header::{HeaderMap, HeaderValue};
 use std::error::Error;
 
 pub struct MagicEdenClient {
     client: reqwest::Client,
-    rpc_client: SolanaClient,
 }
 
 impl MagicEdenClient {
@@ -19,13 +14,11 @@ impl MagicEdenClient {
         headers.insert("Authorization", HeaderValue::from_str(api_key).unwrap());
         MagicEdenClient {
             client: reqwest::Client::builder().default_headers(headers).build().unwrap(),
-            rpc_client: SolanaClient::new("https://api.mainnet-beta.solana.com"),
         }
     }
 
-    pub async fn get_token_owner(&self, address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let data: ValueResult<AccountData> = self.rpc_client.get_account_info(address, "base64").await?;
-        Ok(data.value.owner)
+    pub async fn get_token_owner(&self, _address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        Err("Token owner lookup not implemented - use dedicated Solana client".into())
     }
 
     pub async fn get_nfts_by_account(&self, account_address: &str) -> Result<Vec<Nft>, Box<dyn Error + Send + Sync>> {

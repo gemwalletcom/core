@@ -1,28 +1,30 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosAccount {
-    pub account_number: String,
-    pub sequence: String,
+pub struct Account {
+    #[serde(deserialize_with = "serde_serializers::deserialize_u64_from_str")]
+    pub account_number: u64,
+    #[serde(deserialize_with = "serde_serializers::deserialize_u64_from_str")]
+    pub sequence: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosAccountResponse<T> {
+pub struct AccountResponse<T> {
     pub account: T,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosInjectiveAccount {
-    pub base_account: CosmosAccount,
+pub struct InjectiveAccount {
+    pub base_account: Account,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosBalances {
-    pub balances: Vec<CosmosBalance>,
+pub struct Balances {
+    pub balances: Vec<Balance>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CosmosBalance {
+pub struct Balance {
     pub denom: String,
     pub amount: String,
 }

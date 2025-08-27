@@ -1,15 +1,21 @@
+pub mod constants;
 pub mod hash;
 pub mod jsonrpc;
 pub mod metaplex;
-pub mod model;
 pub mod pubkey;
 
-#[cfg(feature = "rpc")]
+#[cfg(any(feature = "rpc", feature = "reqwest"))]
 pub mod rpc;
+
+#[cfg(feature = "rpc")]
+pub mod provider;
 
 pub mod models;
 
 pub use jsonrpc::SolanaRpc;
+
+#[cfg(all(feature = "reqwest", not(feature = "rpc")))]
+pub use rpc::client::SolanaClient;
 
 // Constants
 pub const WSOL_TOKEN_ADDRESS: &str = "So11111111111111111111111111111111111111112";
@@ -38,13 +44,13 @@ pub fn get_token_program_by_id(id: SolanaTokenProgramId) -> &'static str {
     }
 }
 
-pub fn get_token_program_id_by_address(address: &str) -> Option<SolanaTokenProgramId> {
+pub fn get_token_program_id_by_address(address: &str) -> Result<SolanaTokenProgramId, Box<dyn std::error::Error + Send + Sync>> {
     if address == TOKEN_PROGRAM {
-        Some(SolanaTokenProgramId::Token)
+        Ok(SolanaTokenProgramId::Token)
     } else if address == TOKEN_PROGRAM_2022 {
-        Some(SolanaTokenProgramId::Token2022)
+        Ok(SolanaTokenProgramId::Token2022)
     } else {
-        None
+        Err(format!("Unknown token program address: {}", address).into())
     }
 }
 

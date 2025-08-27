@@ -3,14 +3,16 @@ pub mod balances;
 pub mod perpetual;
 pub mod staking;
 pub mod transaction;
+pub mod transaction_metadata;
 
+pub use asset::*;
 pub use balances::*;
 pub use perpetual::*;
 pub use staking::*;
 pub use transaction::*;
+pub use transaction_metadata::*;
 
-// Re-export simpler models inline
-use primitives::{FeePriorityValue, TransactionPreload, TransactionPreloadInput, UTXO};
+use primitives::{FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
 
 // ChainAccount models
 #[derive(Debug, Clone, uniffi::Record)]
@@ -22,27 +24,34 @@ pub struct GemUTXO {
 }
 
 // ChainState models
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemGasPriceType {
+    Regular {
+        gas_price: String,
+    },
+    Eip1559 {
+        gas_price: String,
+        priority_fee: String,
+    },
+    Solana {
+        gas_price: String,
+        priority_fee: String,
+        unit_price: String,
+    },
+}
+
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemFeePriorityValue {
+pub struct GemFeeRate {
     pub priority: String,
-    pub value: String,
+    pub gas_price_type: GemGasPriceType,
 }
 
 // ChainPreload models
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionPreloadInput {
+    pub asset: GemAsset,
     pub sender_address: String,
     pub destination_address: String,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemTransactionPreload {
-    pub block_hash: String,
-    pub block_number: i64,
-    pub utxos: Vec<GemUTXO>,
-    pub sequence: u64,
-    pub chain_id: String,
-    pub is_destination_address_exist: bool,
 }
 
 // Conversion implementations
@@ -68,11 +77,34 @@ impl From<GemUTXO> for UTXO {
     }
 }
 
-impl From<FeePriorityValue> for GemFeePriorityValue {
-    fn from(fee: FeePriorityValue) -> Self {
+impl From<GasPriceType> for GemGasPriceType {
+    fn from(value: GasPriceType) -> Self {
+        match value {
+            GasPriceType::Regular { gas_price } => GemGasPriceType::Regular {
+                gas_price: gas_price.to_string(),
+            },
+            GasPriceType::Eip1559 { gas_price, priority_fee } => GemGasPriceType::Eip1559 {
+                gas_price: gas_price.to_string(),
+                priority_fee: priority_fee.to_string(),
+            },
+            GasPriceType::Solana {
+                gas_price,
+                priority_fee,
+                unit_price,
+            } => GemGasPriceType::Solana {
+                gas_price: gas_price.to_string(),
+                priority_fee: priority_fee.to_string(),
+                unit_price: unit_price.to_string(),
+            },
+        }
+    }
+}
+
+impl From<FeeRate> for GemFeeRate {
+    fn from(fee: FeeRate) -> Self {
         Self {
             priority: fee.priority.as_ref().to_string(),
-            value: fee.value,
+            gas_price_type: fee.gas_price_type.into(),
         }
     }
 }
@@ -80,6 +112,7 @@ impl From<FeePriorityValue> for GemFeePriorityValue {
 impl From<TransactionPreloadInput> for GemTransactionPreloadInput {
     fn from(input: TransactionPreloadInput) -> Self {
         Self {
+            asset: input.asset.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
         }
@@ -89,21 +122,9 @@ impl From<TransactionPreloadInput> for GemTransactionPreloadInput {
 impl From<GemTransactionPreloadInput> for TransactionPreloadInput {
     fn from(input: GemTransactionPreloadInput) -> Self {
         Self {
+            asset: input.asset.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
-        }
-    }
-}
-
-impl From<TransactionPreload> for GemTransactionPreload {
-    fn from(preload: TransactionPreload) -> Self {
-        Self {
-            block_hash: preload.block_hash,
-            block_number: preload.block_number,
-            utxos: preload.utxos.into_iter().map(GemUTXO::from).collect(),
-            sequence: preload.sequence,
-            chain_id: preload.chain_id,
-            is_destination_address_exist: preload.is_destination_address_exist,
         }
     }
 }

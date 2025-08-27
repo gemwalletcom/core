@@ -178,3 +178,15 @@ impl CoinIds {
         self.0.iter().map(|x| x.id.clone()).collect()
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CoinGeckoErrorResponse {
+    pub error: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum CoinGeckoResponse<T> {
+    Success(T),
+    Error(CoinGeckoErrorResponse),
+}

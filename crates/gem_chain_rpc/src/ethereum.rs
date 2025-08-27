@@ -1,7 +1,8 @@
 use alloy_primitives::hex;
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
-use gem_solana::model::BigUint;
+use gem_client::Client;
+use num_bigint::BigUint;
 use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider, SmartChainProvider};
@@ -127,7 +128,7 @@ impl ChainStakeProvider for EthereumProvider {
 // AlchemyClient
 
 #[async_trait]
-impl ChainAssetsProvider for AlchemyClient {
+impl<C: Client> ChainAssetsProvider for AlchemyClient<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let response = self.get_token_balances(&address).await?;
         let balances = response
@@ -138,7 +139,7 @@ impl ChainAssetsProvider for AlchemyClient {
             .filter_map(|x| {
                 ethereum_address_checksum(&x.token_address)
                     .ok()
-                    .map(|from| AssetBalance::new(AssetId::from_token(self.chain.to_chain(), &from), x.token_balance.to_string()))
+                    .map(|from| AssetBalance::new(AssetId::from_token(self.chain.to_chain(), &from), x.token_balance))
             })
             .collect();
         Ok(balances)
@@ -146,7 +147,7 @@ impl ChainAssetsProvider for AlchemyClient {
 }
 
 #[async_trait]
-impl ChainTransactionsProvider for AlchemyClient {
+impl<C: Client> ChainTransactionsProvider for AlchemyClient<C> {
     async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(self.get_transactions_by_address(address.as_str()).await?)
     }
@@ -172,7 +173,7 @@ impl ChainAssetsProvider for AnkrClient {
             .filter_map(|x| {
                 ethereum_address_checksum(&x.contract_address?)
                     .ok()
-                    .map(|from| AssetBalance::new(AssetId::from_token(self.chain.to_chain(), &from), x.balance_raw_integer.to_string()))
+                    .map(|from| AssetBalance::new(AssetId::from_token(self.chain.to_chain(), &from), x.balance_raw_integer))
             })
             .collect();
         Ok(balances)

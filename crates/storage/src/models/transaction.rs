@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{transaction_utxo::TransactionInput, AssetId, TransactionId};
+use primitives::{AssetId, TransactionId, TransactionUtxoInput};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, Clone)]
@@ -80,8 +80,8 @@ impl Transaction {
         let hash = transaction_id.hash.clone();
         let from = self.from_address.clone().unwrap_or_default();
         let to_address = self.to_address.clone().unwrap_or_default();
-        let inputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_inputs.clone().into()).ok();
-        let outputs: Option<Vec<TransactionInput>> = serde_json::from_value(self.utxo_outputs.clone().into()).ok();
+        let inputs: Option<Vec<TransactionUtxoInput>> = serde_json::from_value(self.utxo_inputs.clone().into()).ok();
+        let outputs: Option<Vec<TransactionUtxoInput>> = serde_json::from_value(self.utxo_outputs.clone().into()).ok();
 
         let direction = if addresses.contains(&from) {
             primitives::TransactionDirection::Outgoing

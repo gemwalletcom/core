@@ -1,0 +1,18 @@
+use async_trait::async_trait;
+use chain_traits::ChainState;
+use std::error::Error;
+
+use gem_client::Client;
+
+use crate::rpc::client::TronClient;
+
+#[async_trait]
+impl<C: Client> ChainState for TronClient<C> {
+    async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
+        Ok("".to_string())
+    }
+
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        Ok(self.get_latest_block().await? as u64)
+    }
+}

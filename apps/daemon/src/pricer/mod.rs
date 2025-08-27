@@ -3,8 +3,7 @@ mod markets_updater;
 mod price_asset_updater;
 mod price_updater;
 
-use crate::pricer::charts_updater::ChartsUpdater;
-use crate::pricer::price_updater::PriceUpdater;
+use crate::pricer::{charts_updater::ChartsUpdater, price_updater::PriceUpdater};
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
@@ -199,17 +198,17 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
 fn price_updater_factory(cacher: &CacherClient, settings: &Settings) -> PriceUpdater {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(cacher.clone(), &settings.postgres.url.clone());
-    PriceUpdater::new(price_client, coingecko_client.clone())
+    PriceUpdater::new(price_client, coingecko_client)
 }
 
 fn price_asset_updater_factory(cacher: &CacherClient, settings: &Settings) -> PriceAssetUpdater {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(cacher.clone(), &settings.postgres.url.clone());
-    PriceAssetUpdater::new(price_client, coingecko_client.clone())
+    PriceAssetUpdater::new(price_client, coingecko_client)
 }
 
 fn markets_updater_factory(cacher: &CacherClient, settings: &Settings) -> MarketsUpdater {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let markets_client = MarketsClient::new(&settings.postgres.url.clone(), cacher.clone());
-    MarketsUpdater::new(markets_client, coingecko_client.clone())
+    MarketsUpdater::new(markets_client, coingecko_client)
 }

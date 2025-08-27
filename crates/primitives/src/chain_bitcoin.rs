@@ -29,16 +29,16 @@ impl BitcoinChain {
             BitcoinChain::Doge => Chain::Doge,
         }
     }
-}
 
-#[derive(Copy, Clone, Debug)]
-pub struct BlocksFeePriority {
-    pub normal: i32,
-    pub slow: i32,
-    pub fast: i32,
-}
+    pub fn minimum_byte_fee(&self) -> i32 {
+        match self {
+            BitcoinChain::Bitcoin => 1,
+            BitcoinChain::BitcoinCash => 5,
+            BitcoinChain::Litecoin => 5,
+            BitcoinChain::Doge => 1000,
+        }
+    }
 
-impl BitcoinChain {
     pub fn get_blocks_fee_priority(&self) -> BlocksFeePriority {
         match self {
             BitcoinChain::Bitcoin => BlocksFeePriority { slow: 6, normal: 3, fast: 1 },
@@ -47,4 +47,11 @@ impl BitcoinChain {
             BitcoinChain::Doge => BlocksFeePriority { slow: 8, normal: 4, fast: 2 },
         }
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct BlocksFeePriority {
+    pub normal: i32,
+    pub slow: i32,
+    pub fast: i32,
 }

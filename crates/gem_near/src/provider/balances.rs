@@ -9,11 +9,10 @@ use super::balances_mapper;
 use crate::rpc::client::NearClient;
 
 #[async_trait]
-impl<C: Client> ChainBalances for NearClient<C> {
+impl<C: Client + Clone> ChainBalances for NearClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-        let account = self.get_near_account(&address).await?;
-        let asset_id = self.get_chain().as_asset_id();
-        balances_mapper::map_native_balance(&account, asset_id, self.get_chain())
+        let account = self.get_account(&address).await?;
+        balances_mapper::map_native_balance(&account)
     }
 
     async fn get_balance_tokens(&self, _address: String, _token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
@@ -22,5 +21,21 @@ impl<C: Client> ChainBalances for NearClient<C> {
 
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use crate::provider::testkit::{create_near_test_client, TEST_ADDRESS};
+    use chain_traits::ChainBalances;
+
+    #[tokio::test]
+    async fn test_near_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_near_test_client()?;
+        let address = TEST_ADDRESS.to_string();
+        let balance = client.get_balance_coin(address).await?;
+        assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
+        println!("Balance: {} {}", balance.balance.available, balance.asset_id);
+        Ok(())
     }
 }

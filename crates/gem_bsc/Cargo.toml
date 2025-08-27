@@ -6,7 +6,6 @@ edition = { workspace = true }
 [dependencies]
 
 hex = { workspace = true }
-itoa = { workspace = true }
 anyhow = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }

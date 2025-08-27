@@ -3,7 +3,6 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{FeePriorityValue, FeePriority};
 
 use crate::rpc::client::AptosClient;
 
@@ -13,26 +12,31 @@ impl<C: Client> ChainState for AptosClient<C> {
         Ok(self.get_ledger().await?.chain_id.to_string())
     }
 
-    async fn get_block_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_ledger().await?.ledger_version)
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+        Ok(self.get_ledger().await?.block_height)
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use crate::provider::testkit::create_aptos_test_client;
+    use chain_traits::ChainState;
+
+    #[tokio::test]
+    async fn test_aptos_get_chain_id() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let chain_id = client.get_chain_id().await?;
+        assert!(!chain_id.is_empty());
+        println!("Aptos chain ID: {}", chain_id);
+        Ok(())
     }
 
-    async fn get_fee_rates(&self) -> Result<Vec<FeePriorityValue>, Box<dyn Error + Sync + Send>> {
-        let gas_fee = self.get_gas_price().await?;
-        
-        Ok(vec![
-            FeePriorityValue {
-                priority: FeePriority::Slow,
-                value: gas_fee.deprioritized_gas_estimate.to_string(),
-            },
-            FeePriorityValue {
-                priority: FeePriority::Normal, 
-                value: gas_fee.gas_estimate.to_string(),
-            },
-            FeePriorityValue {
-                priority: FeePriority::Fast,
-                value: gas_fee.prioritized_gas_estimate.to_string(),
-            },
-        ])
+    #[tokio::test]
+    async fn test_aptos_get_block_latest_number() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let latest_block = client.get_block_latest_number().await?;
+        assert!(latest_block > 0);
+        println!("Latest block: {}", latest_block);
+        Ok(())
     }
 }
