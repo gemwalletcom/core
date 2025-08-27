@@ -3063,7 +3063,6 @@ name = "gem_hypercore"
 version = "1.0.0"
 dependencies = [
  "alloy-primitives",
- "alloy-sol-types",
  "async-trait",
  "chain_traits",
  "chrono",
