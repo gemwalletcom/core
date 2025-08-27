@@ -199,7 +199,6 @@ pub struct HyperWithdrawalRequest {
     pub r#type: String,
 }
 
-// UniFFI functions that directly use gem_hypercore functionality
 #[uniffi::export]
 pub fn hyper_core_place_order_typed_data(order: HyperPlaceOrder, nonce: u64) -> String {
     hypercore::place_order_typed_data(order, nonce)
