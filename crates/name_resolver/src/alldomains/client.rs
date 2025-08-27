@@ -24,7 +24,7 @@ const NAME_HOUSE_PREFIX: &str = "name_house";
 const NFT_RECORD_PREFIX: &str = "nft_record";
 
 pub struct AllDomainsClient {
-    client: JsonRpcClient,
+    client: JsonRpcClient<ReqwestClient>,
 }
 
 impl AllDomainsClient {

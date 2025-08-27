@@ -19,7 +19,7 @@ const ROUTER_ADDRESS: &str = "0x25d1971d6dc9812ea1111662008f07735c74bff5";
 const HYPERLIQUID_NAMES_ADDRESS: &str = "0x1d9d87eBc14e71490bB87f1C39F65BDB979f3cb7";
 
 pub struct Hyperliquid {
-    client: JsonRpcClient,
+    client: JsonRpcClient<ReqwestClient>,
     router_address: Address,
     hyperliquid_names_address: Address,
 }

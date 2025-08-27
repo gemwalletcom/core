@@ -3035,6 +3035,7 @@ dependencies = [
  "chrono",
  "futures",
  "gem_bsc",
+ "gem_client",
  "gem_hash",
  "gem_jsonrpc",
  "hex",

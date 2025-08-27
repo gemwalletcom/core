@@ -1,5 +1,7 @@
 use alloy_primitives::{hex, Address, Bytes};
 use anyhow::anyhow;
+#[cfg(feature = "reqwest")]
+use gem_client::ReqwestClient;
 #[cfg(not(feature = "reqwest"))]
 use gem_jsonrpc::types::{JsonRpcError, JsonRpcResult};
 #[cfg(feature = "reqwest")]
@@ -7,6 +9,7 @@ use gem_jsonrpc::{
     types::{JsonRpcError, JsonRpcResult},
     JsonRpcClient,
 };
+
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::any::TypeId;
@@ -25,7 +28,7 @@ pub const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 #[derive(Clone)]
 pub struct EthereumClient {
     pub chain: EVMChain,
-    client: JsonRpcClient,
+    client: JsonRpcClient<ReqwestClient>,
 }
 
 #[cfg(feature = "reqwest")]

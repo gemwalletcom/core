@@ -9,7 +9,7 @@ use gem_client::ReqwestClient;
 use gem_jsonrpc::{types::JsonRpcError, JsonRpcClient};
 
 pub struct SuinsClient {
-    client: JsonRpcClient,
+    client: JsonRpcClient<ReqwestClient>,
 }
 
 impl SuinsClient {
