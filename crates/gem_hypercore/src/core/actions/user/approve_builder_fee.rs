@@ -1,7 +1,7 @@
-use super::{MAINNET, SIGNATURE_CHAIN_ID};
+use crate::core::actions::{MAINNET, SIGNATURE_CHAIN_ID};
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperApproveBuilderFee {
+#[derive(Clone, serde::Serialize)]
+pub struct ApproveBuilderFee {
     #[serde(rename = "hyperliquidChain")]
     pub hyperliquid_chain: String,
     #[serde(rename = "maxFeeRate")]
@@ -13,7 +13,7 @@ pub struct HyperApproveBuilderFee {
     pub r#type: String,
 }
 
-impl HyperApproveBuilderFee {
+impl ApproveBuilderFee {
     pub fn new(max_fee_rate: String, builder: String, nonce: u64) -> Self {
         Self {
             hyperliquid_chain: MAINNET.to_string(),

@@ -1,7 +1,7 @@
-use super::{MAINNET, SIGNATURE_CHAIN_ID};
+use crate::core::actions::{MAINNET, SIGNATURE_CHAIN_ID};
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperWithdrawalRequest {
+#[derive(Clone, serde::Serialize)]
+pub struct WithdrawalRequest {
     pub amount: String,
     pub destination: String,
     #[serde(rename = "hyperliquidChain")]
@@ -12,7 +12,7 @@ pub struct HyperWithdrawalRequest {
     pub r#type: String,
 }
 
-impl HyperWithdrawalRequest {
+impl WithdrawalRequest {
     pub fn new(amount: String, time: u64, destination: String) -> Self {
         Self {
             amount,

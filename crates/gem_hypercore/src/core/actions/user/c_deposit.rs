@@ -1,7 +1,7 @@
-use super::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
+use crate::core::actions::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperCDeposit {
+#[derive(Clone, serde::Serialize)]
+pub struct CDeposit {
     #[serde(rename = "hyperliquidChain")]
     pub hyperliquid_chain: String,
     pub nonce: u64,
@@ -11,7 +11,7 @@ pub struct HyperCDeposit {
     pub wei: u64,
 }
 
-impl HyperCDeposit {
+impl CDeposit {
     pub fn new(wei: u64, nonce: u64) -> Self {
         Self {
             hyperliquid_chain: MAINNET.to_string(),

@@ -1,18 +1,18 @@
-use super::SLIPPAGE_BUFFER_PERCENT;
+use crate::core::actions::SLIPPAGE_BUFFER_PERCENT;
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperPlaceOrder {
+#[derive(Clone, serde::Serialize)]
+pub struct PlaceOrder {
     pub r#type: String,
-    pub orders: Vec<HyperOrder>,
-    pub grouping: HyperGrouping,
+    pub orders: Vec<Order>,
+    pub grouping: Grouping,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub builder: Option<HyperBuilder>,
+    pub builder: Option<Builder>,
 }
 
-impl HyperPlaceOrder {
-    pub fn new(orders: Vec<HyperOrder>, grouping: HyperGrouping, builder: Option<HyperBuilder>) -> Self {
+impl PlaceOrder {
+    pub fn new(orders: Vec<Order>, grouping: Grouping, builder: Option<Builder>) -> Self {
         Self {
             r#type: "order".to_string(),
             orders,
@@ -24,8 +24,8 @@ impl HyperPlaceOrder {
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperOrder {
+#[derive(Clone, serde::Serialize)]
+pub struct Order {
     #[serde(rename = "a")]
     pub asset: u32,
     #[serde(rename = "b")]
@@ -37,40 +37,40 @@ pub struct HyperOrder {
     #[serde(rename = "r")]
     pub reduce_only: bool,
     #[serde(rename = "t")]
-    pub order_type: HyperOrderType,
+    pub order_type: OrderType,
     #[serde(rename = "c", skip_serializing_if = "Option::is_none")]
     pub client_order_id: Option<String>,
 }
 
-#[derive(uniffi::Enum, serde::Serialize)]
+#[derive(Clone, serde::Serialize)]
 #[serde(untagged)]
-pub enum HyperOrderType {
-    Limit { limit: HyperLimitOrder },
-    Trigger { trigger: HyperTrigger },
+pub enum OrderType {
+    Limit { limit: LimitOrder },
+    Trigger { trigger: Trigger },
 }
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperLimitOrder {
-    pub tif: HyperTimeInForce,
+#[derive(Clone, serde::Serialize)]
+pub struct LimitOrder {
+    pub tif: TimeInForce,
 }
 
-impl HyperLimitOrder {
-    pub fn new(tif: HyperTimeInForce) -> Self {
+impl LimitOrder {
+    pub fn new(tif: TimeInForce) -> Self {
         Self { tif }
     }
 }
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperTrigger {
+#[derive(Clone, serde::Serialize)]
+pub struct Trigger {
     #[serde(rename = "isMarket")]
     pub is_market: bool,
     #[serde(rename = "triggerPx")]
     pub trigger_px: String,
-    pub tpsl: HyperTpslType,
+    pub tpsl: TpslType,
 }
 
-#[derive(uniffi::Enum, serde::Serialize, Debug, PartialEq)]
-pub enum HyperTimeInForce {
+#[derive(Clone, serde::Serialize, Debug, PartialEq)]
+pub enum TimeInForce {
     #[serde(rename = "Alo")]
     AddLiquidityOnly,
     #[serde(rename = "Ioc")]
@@ -81,24 +81,24 @@ pub enum HyperTimeInForce {
     FrontendMarket,
 }
 
-#[derive(uniffi::Enum, serde::Serialize)]
-pub enum HyperTpslType {
+#[derive(Clone, serde::Serialize)]
+pub enum TpslType {
     #[serde(rename = "tp")]
     TakeProfit,
     #[serde(rename = "sl")]
     StopLoss,
 }
 
-#[derive(uniffi::Enum, serde::Serialize, Debug, PartialEq)]
+#[derive(Clone, serde::Serialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub enum HyperGrouping {
+pub enum Grouping {
     Na,
     NormalTpsl,
     PositionTpsl,
 }
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperBuilder {
+#[derive(Clone, serde::Serialize)]
+pub struct Builder {
     #[serde(rename = "b")]
     pub builder_address: String,
     #[serde(rename = "f")]
@@ -114,15 +114,15 @@ fn calculate_execution_price(trigger_px: &str, add_slippage: bool) -> String {
     };
     format!("{execution_price:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
 }
-pub fn make_market_order_type() -> HyperOrderType {
-    HyperOrderType::Limit {
-        limit: HyperLimitOrder::new(HyperTimeInForce::FrontendMarket),
+pub fn make_market_order_type() -> OrderType {
+    OrderType::Limit {
+        limit: LimitOrder::new(TimeInForce::FrontendMarket),
     }
 }
 
-pub fn make_market_trigger_order_type(trigger_px: String, tpsl: HyperTpslType) -> HyperOrderType {
-    HyperOrderType::Trigger {
-        trigger: HyperTrigger {
+pub fn make_market_trigger_order_type(trigger_px: String, tpsl: TpslType) -> OrderType {
+    OrderType::Trigger {
+        trigger: Trigger {
             is_market: true,
             trigger_px,
             tpsl,
@@ -130,8 +130,8 @@ pub fn make_market_trigger_order_type(trigger_px: String, tpsl: HyperTpslType) -
     }
 }
 
-pub fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, trigger_px: String, tpsl: HyperTpslType) -> HyperOrder {
-    HyperOrder {
+pub fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, trigger_px: String, tpsl: TpslType) -> Order {
+    Order {
         asset,
         is_buy,
         price: price.to_string(),
@@ -142,9 +142,9 @@ pub fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, red
     }
 }
 
-pub fn make_market_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, builder: Option<HyperBuilder>) -> HyperPlaceOrder {
-    HyperPlaceOrder::new(
-        vec![HyperOrder {
+pub fn make_market_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, builder: Option<Builder>) -> PlaceOrder {
+    PlaceOrder::new(
+        vec![Order {
             asset,
             is_buy,
             price: price.to_string(),
@@ -153,7 +153,7 @@ pub fn make_market_order(asset: u32, is_buy: bool, price: &str, size: &str, redu
             order_type: make_market_order_type(),
             client_order_id: None,
         }],
-        HyperGrouping::Na,
+        Grouping::Na,
         builder,
     )
 }
@@ -166,9 +166,9 @@ pub fn make_market_with_tp_sl(
     reduce_only: bool,
     tp_trigger: Option<String>,
     sl_trigger: Option<String>,
-    builder: Option<HyperBuilder>,
-) -> HyperPlaceOrder {
-    let mut orders = vec![HyperOrder {
+    builder: Option<Builder>,
+) -> PlaceOrder {
+    let mut orders = vec![Order {
         asset,
         is_buy,
         price: price.to_string(),
@@ -187,7 +187,7 @@ pub fn make_market_with_tp_sl(
             size,
             true, // TP/SL orders are always reduce_only=true
             sl_trigger_px,
-            HyperTpslType::StopLoss,
+            TpslType::StopLoss,
         ));
     }
 
@@ -200,11 +200,11 @@ pub fn make_market_with_tp_sl(
             size,
             true, // TP/SL orders are always reduce_only=true
             tp_trigger_px,
-            HyperTpslType::TakeProfit,
+            TpslType::TakeProfit,
         ));
     }
 
-    HyperPlaceOrder::new(orders, HyperGrouping::NormalTpsl, builder)
+    PlaceOrder::new(orders, Grouping::NormalTpsl, builder)
 }
 
 pub fn make_position_tp_sl(
@@ -213,8 +213,8 @@ pub fn make_position_tp_sl(
     size: &str,
     tp_trigger: Option<String>,
     sl_trigger: Option<String>,
-    builder: Option<HyperBuilder>,
-) -> HyperPlaceOrder {
+    builder: Option<Builder>,
+) -> PlaceOrder {
     let mut orders = Vec::new();
 
     if let Some(sl_trigger_px) = sl_trigger {
@@ -226,7 +226,7 @@ pub fn make_position_tp_sl(
             size,
             true,
             sl_trigger_px,
-            HyperTpslType::StopLoss,
+            TpslType::StopLoss,
         ));
     }
 
@@ -239,9 +239,9 @@ pub fn make_position_tp_sl(
             size,
             true,
             tp_trigger_px,
-            HyperTpslType::TakeProfit,
+            TpslType::TakeProfit,
         ));
     }
 
-    HyperPlaceOrder::new(orders, HyperGrouping::PositionTpsl, builder)
+    PlaceOrder::new(orders, Grouping::PositionTpsl, builder)
 }

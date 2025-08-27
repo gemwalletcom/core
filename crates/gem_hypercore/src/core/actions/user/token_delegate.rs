@@ -1,7 +1,7 @@
-use super::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
+use crate::core::actions::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperTokenDelegate {
+#[derive(Clone, serde::Serialize)]
+pub struct TokenDelegate {
     pub validator: String,
     pub wei: u64,
     #[serde(rename = "isUndelegate")]
@@ -14,7 +14,7 @@ pub struct HyperTokenDelegate {
     pub hyperliquid_chain: String,
 }
 
-impl HyperTokenDelegate {
+impl TokenDelegate {
     pub fn new(validator: String, wei: u64, is_undelegate: bool, nonce: u64) -> Self {
         Self {
             validator: validator.to_lowercase(),

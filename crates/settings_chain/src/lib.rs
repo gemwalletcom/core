@@ -4,7 +4,6 @@ pub use chain_providers::ChainProviders;
 use gem_client::{retry::standard_retry_policy, ReqwestClient};
 pub use provider_config::ProviderConfig;
 
-
 use gem_chain_rpc::{ethereum::EthereumProvider, tron::TronProvider, ChainProvider, GenericProvider, HyperCoreProvider};
 
 use gem_algorand::AlgorandClientIndexer;

@@ -1,7 +1,7 @@
-use super::{MAINNET, SIGNATURE_CHAIN_ID};
+use crate::core::actions::{MAINNET, SIGNATURE_CHAIN_ID};
 
-#[derive(uniffi::Record, serde::Serialize)]
-pub struct HyperApproveAgent {
+#[derive(Clone, serde::Serialize)]
+pub struct ApproveAgent {
     #[serde(rename = "agentAddress")]
     pub agent_address: String,
     #[serde(rename = "agentName")]
@@ -14,7 +14,7 @@ pub struct HyperApproveAgent {
     pub r#type: String,
 }
 
-impl HyperApproveAgent {
+impl ApproveAgent {
     pub fn new(agent_address: String, agent_name: String, nonce: u64) -> Self {
         Self {
             agent_address: agent_address.to_lowercase(),
