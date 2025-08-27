@@ -1,6 +1,8 @@
 use crate::block_explorer::BlockExplorer;
 use crate::Chain;
 
+static BASE_URL: &str = "https://scope.sh";
+
 pub struct ScopeExplorer;
 
 impl ScopeExplorer {
@@ -22,11 +24,11 @@ impl BlockExplorer for ScopeChainExplorer {
     }
 
     fn get_tx_url(&self, hash: &str) -> String {
-        format!("https://scope.sh/{}/tx/{}", self.chain_id, hash)
+        format!("{}/{}/tx/{}", BASE_URL, self.chain_id, hash)
     }
 
     fn get_address_url(&self, address: &str) -> String {
-        format!("https://scope.sh/{}/address/{}", self.chain_id, address)
+        format!("{}/{}/address/{}", BASE_URL, self.chain_id, address)
     }
 
     fn get_token_url(&self, token: &str) -> Option<String> {
