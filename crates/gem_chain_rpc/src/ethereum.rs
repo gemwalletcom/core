@@ -1,7 +1,7 @@
 use alloy_primitives::hex;
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
-use gem_solana::models::BigUint;
+use num_bigint::BigUint;
 use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider, SmartChainProvider};

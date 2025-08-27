@@ -38,6 +38,7 @@ gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
+num-bigint = { workspace = true }
 
 [dev-dependencies]
 tokio.workspace = true

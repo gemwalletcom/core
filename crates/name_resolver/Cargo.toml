@@ -16,6 +16,7 @@ lazy_static = { workspace = true }
 alloy-primitives.workspace = true
 alloy-sol-types.workspace = true
 alloy-ens.workspace = true
+gem_client = { path = "../gem_client", features = ["reqwest"] }
 gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"] }
 idna = { workspace = true }
 

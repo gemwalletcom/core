@@ -33,9 +33,10 @@ jobs:
       - name: Run tests
         run: just --unstable test-all
 
-      - name: Build integration tests
+      - name: Build all integration tests only
         run: |
           just --unstable gemstone build-integration-tests
+          just --unstable build-integration-tests
 
       - name: Check gemstone dependencies
         run: |

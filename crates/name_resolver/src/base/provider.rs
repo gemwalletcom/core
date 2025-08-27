@@ -3,6 +3,7 @@ use alloy_primitives::{hex, Address, Bytes};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
+use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 use serde_json::json;
 use std::error::Error;
@@ -15,14 +16,14 @@ use primitives::{chain::Chain, name::NameProvider};
 const L2_RESOLVER_ADDRESS: &str = "0xC6d566A56A1aFf6508b41f6c90ff131615583BCD";
 
 pub struct Basenames {
-    client: JsonRpcClient,
+    client: JsonRpcClient<ReqwestClient>,
     resolver_address: Address,
     chain: Chain,
 }
 
 impl Basenames {
     pub fn new(provider_url: String) -> Self {
-        let client = JsonRpcClient::new_reqwest(provider_url);
+        let client = JsonRpcClient::new(ReqwestClient::new(provider_url, reqwest::Client::new()));
         let resolver_address = Address::from_str(L2_RESOLVER_ADDRESS).expect("Invalid resolver address");
         Self {
             client,

@@ -46,6 +46,13 @@ test-integration:
     @echo "Running integration tests only..."
     cargo test --lib --all --features chain_integration_tests -- --test-threads=1
 
+build-integration-tests:
+    @echo "Building all integration tests..."
+    cargo test --no-run --test integration_test --package gem_chain_rpc
+    cargo test --no-run --test integration_test --package gem_evm --features rpc,reqwest
+    cargo test --no-run --test integration_test --package security_provider
+    cargo test --no-run --test integration_test --package name_resolver
+
 format:
     cargo fmt -q --all
 

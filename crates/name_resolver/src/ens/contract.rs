@@ -2,6 +2,7 @@ use alloy_ens::namehash;
 use alloy_primitives::{hex, Address, Bytes, U256};
 use alloy_sol_types::{sol, SolCall};
 use anyhow::{anyhow, Result};
+use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 use serde_json::json;
 use std::str::FromStr;
@@ -20,12 +21,12 @@ sol! {
 
 pub struct Contract {
     pub registry_address: Address,
-    pub client: JsonRpcClient,
+    pub client: JsonRpcClient<ReqwestClient>,
 }
 
 impl Contract {
     pub fn new(rpc_url: &str, registry_address_hex: &str) -> Result<Self> {
-        let client = JsonRpcClient::new_reqwest(rpc_url.to_string());
+        let client = JsonRpcClient::new(ReqwestClient::new(rpc_url.to_string(), reqwest::Client::new()));
         let registry_address = Address::from_str(registry_address_hex)?;
         Ok(Self { registry_address, client })
     }

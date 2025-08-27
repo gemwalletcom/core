@@ -5,15 +5,16 @@ use primitives::NameProvider;
 use std::error::Error;
 
 use anyhow::{anyhow, Result};
-use gem_jsonrpc::JsonRpcClient;
+use gem_client::ReqwestClient;
+use gem_jsonrpc::{JsonRpcClient, types::JsonRpcError};
 
 pub struct SuinsClient {
-    client: JsonRpcClient,
+    client: JsonRpcClient<ReqwestClient>,
 }
 
 impl SuinsClient {
     pub fn new(api_url: String) -> Self {
-        let client = JsonRpcClient::new_reqwest(api_url);
+        let client = JsonRpcClient::new(ReqwestClient::new(api_url, reqwest::Client::new()));
         Self { client }
     }
 }
@@ -26,7 +27,7 @@ impl NameClient for SuinsClient {
 
     async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let params = vec![serde_json::json!(name)];
-        let address: String = self.client.call("suix_resolveNameServiceAddress", params).await.map_err(|e| anyhow!(e))?;
+        let address: String = self.client.call("suix_resolveNameServiceAddress", params).await.map_err(|e: JsonRpcError| anyhow!(e))?;
         Ok(address)
     }
 

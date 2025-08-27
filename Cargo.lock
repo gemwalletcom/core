@@ -2346,9 +2346,9 @@ dependencies = [
 
 [[package]]
 name = "ed25519-dalek"
-version = "2.1.1"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a3daa8e81a3963a60642bcc1f90a670680bd4a77535faa384e9d1c79d620871"
+checksum = "70e796c081cee67dc755e1a36a0a172b897fab85fc3f6bc48307991f64e4eca9"
 dependencies = [
  "curve25519-dalek",
  "ed25519",
@@ -2972,6 +2972,7 @@ dependencies = [
  "gem_tron",
  "gem_xrp",
  "hex",
+ "num-bigint",
  "number_formatter",
  "primitives",
  "reqwest",
@@ -4545,6 +4546,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "borsh 1.5.7",
+ "gem_client",
  "gem_evm",
  "gem_jsonrpc",
  "gem_solana",
@@ -6938,9 +6940,9 @@ dependencies = [
 
 [[package]]
 name = "sui-sdk-types"
-version = "0.0.5"
+version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de7fb22164935584730c622f8da443dc8e88d8758cae26d720a5c86d037f8970"
+checksum = "1a30a15cf9fdc969f8a2164465eb71debf5753bab1b0790a5d7727ecef7cd912"
 dependencies = [
  "base64ct",
  "bcs",
@@ -6959,9 +6961,9 @@ dependencies = [
 
 [[package]]
 name = "sui-transaction-builder"
-version = "0.0.5"
+version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc82e24fa537425aa86d78c9938543b3ff885c5fc348ce1356cd46907f471bf2"
+checksum = "eaf69d010e68b63878135bbddd6a14d531674ac4ac1d443cdba0ad7ee2d4fad3"
 dependencies = [
  "base64ct",
  "bcs",
