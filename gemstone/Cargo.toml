@@ -43,8 +43,8 @@ chain_traits = { path = "../crates/chain_traits" }
 reqwest = { workspace = true, optional = true }
 
 bcs.workspace = true
-sui-types.workspace = true
-sui-transaction-builder.workspace = true
+sui-types = { workspace = true }
+sui-transaction-builder = { workspace = true }
 # uniffi
 uniffi.workspace = true
 thiserror.workspace = true
@@ -67,11 +67,11 @@ num-bigint.workspace = true
 num-traits.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
+solana-primitives = "0.1.2"
 lazy_static.workspace = true
 bigdecimal.workspace = true
 rand.workspace = true
 rmp-serde.workspace = true
-solana-primitives.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

@@ -21,6 +21,7 @@ chain_primitives = { path = "../chain_primitives" }
 gem_hash = { path = "../gem_hash" }
 serde_serializers = { path = "../serde_serializers" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
+gem_client = { path = "../gem_client" }
 gem_bsc = { path = "../gem_bsc" }
 
 reqwest-middleware = { workspace = true, optional = true }

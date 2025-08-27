@@ -3,6 +3,7 @@ use alloy_primitives::{hex, Address, Bytes, U256};
 use alloy_sol_types::SolCall;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
+use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 use serde_json::json;
 use std::{error::Error, str::FromStr};
@@ -18,14 +19,14 @@ const ROUTER_ADDRESS: &str = "0x25d1971d6dc9812ea1111662008f07735c74bff5";
 const HYPERLIQUID_NAMES_ADDRESS: &str = "0x1d9d87eBc14e71490bB87f1C39F65BDB979f3cb7";
 
 pub struct Hyperliquid {
-    client: JsonRpcClient,
+    client: JsonRpcClient<ReqwestClient>,
     router_address: Address,
     hyperliquid_names_address: Address,
 }
 
 impl Hyperliquid {
     pub fn new(provider_url: String) -> Self {
-        let client = JsonRpcClient::new_reqwest(provider_url);
+        let client = JsonRpcClient::new(ReqwestClient::new(provider_url, reqwest::Client::new()));
         let router_address = Address::from_str(ROUTER_ADDRESS).expect("Invalid Router address");
         let hyperliquid_names_address = Address::from_str(HYPERLIQUID_NAMES_ADDRESS).expect("Invalid Hyperliquid names address");
         Self {

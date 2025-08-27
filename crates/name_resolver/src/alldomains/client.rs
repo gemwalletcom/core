@@ -5,6 +5,7 @@ use base64::Engine;
 use serde_json::{self, json};
 use sha2::{Digest, Sha256};
 
+use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 use gem_solana::pubkey::Pubkey;
 use primitives::{chain::Chain, name::NameProvider};
@@ -23,13 +24,13 @@ const NAME_HOUSE_PREFIX: &str = "name_house";
 const NFT_RECORD_PREFIX: &str = "nft_record";
 
 pub struct AllDomainsClient {
-    client: JsonRpcClient,
+    client: JsonRpcClient<ReqwestClient>,
 }
 
 impl AllDomainsClient {
     pub fn new(url: String) -> Self {
         Self {
-            client: JsonRpcClient::new_reqwest(url),
+            client: JsonRpcClient::new(ReqwestClient::new(url, reqwest::Client::new())),
         }
     }
 

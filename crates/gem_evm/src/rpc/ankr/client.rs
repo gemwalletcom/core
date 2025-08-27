@@ -1,7 +1,10 @@
 use std::error::Error;
 
 #[cfg(feature = "reqwest")]
+use gem_client::ReqwestClient;
+#[cfg(feature = "reqwest")]
 use gem_jsonrpc::JsonRpcClient;
+
 use primitives::EVMChain;
 use serde_json::json;
 
@@ -18,7 +21,7 @@ use crate::{
 pub struct AnkrClient {
     pub chain: EVMChain,
     pub client: EthereumClient,
-    rpc_client: JsonRpcClient,
+    rpc_client: JsonRpcClient<ReqwestClient>,
 }
 
 #[cfg(feature = "reqwest")]

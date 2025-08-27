@@ -20,7 +20,7 @@ impl<C: Client> ChainTransactionLoad for AlgorandClient<C> {
     async fn get_transaction_load(&self, _input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         let params = self.get_transactions_params().await?;
         let metadata = TransactionLoadMetadata::Algorand {
-            sequence: params.last_round as u64,
+            sequence: params.last_round,
             block_hash: params.genesis_hash,
             chain_id: params.genesis_id,
         };

@@ -17,6 +17,3 @@ pub use block::*;
 pub use rpc::*;
 pub use token::*;
 pub use transaction::*;
-
-// Re-export BigUint for external use
-pub use num_bigint::BigUint;
