@@ -40,8 +40,8 @@ impl<C: Client> ChainBalances for BitcoinClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use crate::provider::testkit::*;
     use chain_traits::ChainBalances;
 
@@ -50,9 +50,8 @@ mod integration_tests {
         let client = create_bitcoin_test_client();
         let address = TEST_ADDRESS.to_string();
         let balance = client.get_balance_coin(address).await?;
-        let available = balance.balance.available.parse::<u64>().unwrap();
-        assert!(available > 0);
-        println!("Balance: {:?} {}", available, balance.asset_id);
+        assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
+        println!("Balance: {:?} {}", balance.balance.available, balance.asset_id);
         Ok(())
     }
 }

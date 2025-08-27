@@ -1,9 +1,9 @@
+use super::model::TronGridAccount;
 use crate::rpc::{
     model::{Transaction, TransactionReceiptData},
     TronMapper,
 };
-
-use super::model::TronGridAccount;
+use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Chain};
 
 pub struct TronGridMapper;
@@ -25,9 +25,12 @@ impl TronGridMapper {
             .trc20
             .into_iter()
             .flat_map(|trc20_map| {
-                trc20_map
-                    .into_iter()
-                    .map(|(contract_address, balance)| AssetBalance::new(AssetId::from(Self::get_chain(), Some(contract_address.clone())), balance.to_string()))
+                trc20_map.into_iter().map(|(contract_address, balance)| {
+                    AssetBalance::new(
+                        AssetId::from(Self::get_chain(), Some(contract_address.clone())),
+                        balance.parse::<BigUint>().unwrap_or_default(),
+                    )
+                })
             })
             .collect()
     }

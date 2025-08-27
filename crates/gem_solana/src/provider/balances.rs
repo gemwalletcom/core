@@ -30,8 +30,8 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
     use primitives::Chain;
@@ -43,7 +43,7 @@ mod integration_tests {
 
         assert_eq!(balance.asset_id.chain, Chain::Solana);
         assert_eq!(balance.asset_id.token_id, None);
-        assert!(balance.balance.available.parse::<u64>().is_ok());
+        assert!(balance.balance.available >= num_bigint::BigUint::from(0u32));
 
         Ok(())
     }
@@ -62,7 +62,7 @@ mod integration_tests {
         for (i, balance) in balances.iter().enumerate() {
             assert_eq!(balance.asset_id.chain, Chain::Solana);
             assert_eq!(balance.asset_id.token_id, Some(token_ids[i].clone()));
-            assert!(balance.balance.available.parse::<u64>().is_ok());
+            assert!(balance.balance.available >= num_bigint::BigUint::from(0u32));
         }
 
         Ok(())
@@ -76,8 +76,8 @@ mod integration_tests {
         if let Some(balance) = staking_balance {
             assert_eq!(balance.asset_id.chain, Chain::Solana);
             assert_eq!(balance.asset_id.token_id, None);
-            assert!(balance.balance.available.parse::<u64>().is_ok());
-            assert!(balance.balance.staked.parse::<u64>().is_ok());
+            assert!(balance.balance.available >= num_bigint::BigUint::from(0u32));
+            assert!(balance.balance.staked >= num_bigint::BigUint::from(0u32));
         }
 
         Ok(())

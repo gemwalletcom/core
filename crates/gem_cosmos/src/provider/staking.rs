@@ -75,8 +75,8 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use crate::provider::testkit::{create_cosmos_test_client, create_osmosis_test_client};
     use chain_traits::ChainStaking;
 

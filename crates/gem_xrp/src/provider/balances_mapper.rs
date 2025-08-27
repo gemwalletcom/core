@@ -2,6 +2,7 @@ use crate::{
     XRP_DEFAULT_ASSET_DECIMALS,
     models::rpc::{AccountInfo, AccountObjects},
 };
+use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 use std::error::Error;
@@ -18,7 +19,7 @@ pub fn map_balance_coin(account: &AccountInfo, asset_id: AssetId, reserved_amoun
 
     Ok(AssetBalance::new_balance(
         asset_id,
-        Balance::with_reserved(available, reserved_amount.to_string()),
+        Balance::with_reserved(available.parse::<BigUint>().unwrap_or_default(), BigUint::from(reserved_amount)),
     ))
 }
 
@@ -31,11 +32,11 @@ pub fn map_balance_tokens(objects: &AccountObjects, token_ids: Vec<String>, chai
             .iter()
             .find(|obj| obj.high_limit.issuer == token_id && obj.high_limit.currency.len() > 3)
         {
-            let value = BigNumberFormatter::value_from_amount(&object.balance.value, XRP_DEFAULT_ASSET_DECIMALS).unwrap_or("0".to_owned());
+            let value = BigNumberFormatter::value_from_amount_biguint(&object.balance.value, XRP_DEFAULT_ASSET_DECIMALS).unwrap_or_default();
             let balance = Balance::coin_balance(value);
             balances.push(AssetBalance::new_with_active(asset_id, balance, true));
         } else {
-            let balance = Balance::coin_balance("0".to_string());
+            let balance = Balance::coin_balance(BigUint::from(0u32));
             balances.push(AssetBalance::new_with_active(asset_id, balance, false));
         }
     }
@@ -66,8 +67,8 @@ mod tests {
         let result = map_balance_coin(&account, asset_id.clone(), reserved_amount).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
-        assert_eq!(result.balance.available, "9000000"); // 10 - 1 = 9 XRP
-        assert_eq!(result.balance.reserved, "1000000");
+        assert_eq!(result.balance.available, BigUint::from(9000000_u64)); // 10 - 1 = 9 XRP
+        assert_eq!(result.balance.reserved, BigUint::from(1000000_u64));
     }
 
     #[test]
@@ -87,8 +88,8 @@ mod tests {
         let result = map_balance_coin(&account, asset_id.clone(), reserved_amount).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
-        assert_eq!(result.balance.available, "0"); // Insufficient balance
-        assert_eq!(result.balance.reserved, "1000000");
+        assert_eq!(result.balance.available, BigUint::from(0u32)); // Insufficient balance
+        assert_eq!(result.balance.reserved, BigUint::from(1000000_u64));
     }
 
     #[test]
@@ -104,7 +105,7 @@ mod tests {
 
         let balance = &result[0];
         assert_eq!(balance.asset_id, AssetId::from_token(Chain::Xrp, "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"));
-        assert_eq!(balance.balance.available, "171000000000000");
+        assert_eq!(balance.balance.available, BigUint::from(171000000000000_u64));
         assert_eq!(balance.is_active, Some(true));
     }
 }

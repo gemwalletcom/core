@@ -7,7 +7,7 @@ edition = { workspace = true }
 default = []
 rpc = ["dep:chrono", "dep:chain_traits", "dep:gem_client"]
 reqwest = ["gem_client/reqwest"]
-integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 async-trait = { workspace = true }

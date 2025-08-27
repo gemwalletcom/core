@@ -44,7 +44,7 @@ test CRATE:
 
 test-integration:
     @echo "Running integration tests only..."
-    cargo test --lib --all --features integration_tests integration_tests -- --test-threads=1
+    cargo test --lib --all --features chain_integration_tests -- --test-threads=1
 
 format:
     cargo fmt -q --all

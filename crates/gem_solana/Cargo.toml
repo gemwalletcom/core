@@ -7,7 +7,7 @@ edition = { workspace = true }
 default = ["rpc", "reqwest"]
 rpc = ["gem_jsonrpc/client", "dep:async-trait", "dep:gem_client", "dep:chain_traits", "dep:futures"]
 reqwest = ["gem_jsonrpc/reqwest"]
-integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 integration = []
 
 [dependencies]

@@ -1,8 +1,8 @@
 use crate::models::{
-    balances::SolanaBalance, 
-    blockhash::SolanaBlockhashResult, 
-    prioritization_fee::SolanaPrioritizationFee, 
-    transaction::{SolanaTransaction, BlockTransactions}, 
+    balances::SolanaBalance,
+    blockhash::SolanaBlockhashResult,
+    prioritization_fee::SolanaPrioritizationFee,
+    transaction::{BlockTransactions, SolanaTransaction},
     EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
 };
 use chain_traits::ChainProvider;

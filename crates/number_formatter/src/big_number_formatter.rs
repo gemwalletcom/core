@@ -1,5 +1,5 @@
 use bigdecimal::{BigDecimal, ToPrimitive};
-use num_bigint::BigInt;
+use num_bigint::{BigInt, BigUint};
 use std::str::FromStr;
 
 pub struct BigNumberFormatter {}
@@ -31,6 +31,15 @@ impl BigNumberFormatter {
 
     pub fn f64_as_value(amount: f64, decimals: u32) -> Option<String> {
         Self::value_from_amount(&amount.to_string(), decimals).ok()
+    }
+
+    pub fn value_from_amount_biguint(amount: &str, decimals: u32) -> Result<BigUint, String> {
+        let big_decimal = BigDecimal::from_str(amount).map_err(|_| "Invalid decimal number".to_string())?;
+        let multiplier = BigInt::from(10).pow(decimals);
+        let multiplier_decimal = BigDecimal::from(multiplier);
+        let scaled_value = big_decimal * multiplier_decimal;
+        let scaled_string = scaled_value.with_scale(0).to_string();
+        scaled_string.parse::<BigUint>().map_err(|_| "Cannot convert to BigUint".to_string())
     }
 }
 
@@ -79,6 +88,29 @@ mod tests {
 
         // Test case 2: Invalid input
         let result = BigNumberFormatter::value_from_amount("invalid", 3);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid decimal number");
+    }
+
+    #[test]
+    fn test_value_from_amount_biguint() {
+        // Test case 1: Valid input
+        let result = BigNumberFormatter::value_from_amount_biguint("1.123", 3).unwrap();
+        assert_eq!(result, BigUint::from(1123u32));
+
+        let result = BigNumberFormatter::value_from_amount_biguint("332131212.2321312", 8).unwrap();
+        assert_eq!(result, BigUint::from(33213121223213120_u64));
+
+        let result = BigNumberFormatter::value_from_amount_biguint("0", 0).unwrap();
+        assert_eq!(result, BigUint::from(0u32));
+
+        // Test case 2: Large numbers
+        let result = BigNumberFormatter::value_from_amount_biguint("1000000000000", 18).unwrap();
+        let expected = "1000000000000000000000000000000".parse::<BigUint>().unwrap();
+        assert_eq!(result, expected);
+
+        // Test case 3: Invalid input
+        let result = BigNumberFormatter::value_from_amount_biguint("invalid", 3);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Invalid decimal number");
     }

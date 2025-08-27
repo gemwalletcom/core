@@ -1,4 +1,5 @@
 use crate::models::account::PolkadotAccountBalance;
+use num_bigint::BigUint;
 use primitives::{AssetBalance, Balance, Chain};
 
 pub fn map_coin_balance(balance: PolkadotAccountBalance) -> AssetBalance {
@@ -6,7 +7,10 @@ pub fn map_coin_balance(balance: PolkadotAccountBalance) -> AssetBalance {
 
     AssetBalance::new_balance(
         Chain::Polkadot.as_asset_id(),
-        Balance::with_reserved(available.to_string(), balance.reserved.to_string()),
+        Balance::with_reserved(
+            BigUint::try_from(available).unwrap_or_default(),
+            BigUint::try_from(balance.reserved).unwrap_or_default(),
+        ),
     )
 }
 
@@ -25,7 +29,7 @@ mod tests {
         let result = map_coin_balance(balance);
 
         assert_eq!(result.asset_id, Chain::Polkadot.as_asset_id());
-        assert_eq!(result.balance.available, "900000000000");
-        assert_eq!(result.balance.reserved, "100000000000");
+        assert_eq!(result.balance.available, BigUint::from(900000000000_u64));
+        assert_eq!(result.balance.reserved, BigUint::from(100000000000_u64));
     }
 }

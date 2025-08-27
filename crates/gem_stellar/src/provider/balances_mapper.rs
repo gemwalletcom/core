@@ -1,5 +1,6 @@
 use crate::constants::STELLAR_DECIMALS;
 use crate::models::account::StellarAccount;
+use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 use std::error::Error;
@@ -21,7 +22,13 @@ pub fn map_native_balance(account: &StellarAccount) -> Result<AssetBalance, Box<
     let available = available_decimal.to_string();
     let reserved_str = reserved_amount.to_string();
 
-    Ok(AssetBalance::new_balance(chain.as_asset_id(), Balance::with_reserved(available, reserved_str)))
+    let available_biguint = available.parse::<BigUint>().unwrap_or_default();
+    let reserved_biguint = reserved_str.parse::<BigUint>().unwrap_or_default();
+
+    Ok(AssetBalance::new_balance(
+        chain.as_asset_id(),
+        Balance::with_reserved(available_biguint, reserved_biguint),
+    ))
 }
 
 pub fn map_token_balances(account: &StellarAccount, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
@@ -34,14 +41,14 @@ pub fn map_token_balances(account: &StellarAccount, token_ids: Vec<String>, chai
                     .iter()
                     .find(|b| b.asset_issuer.as_deref() == Some(issuer) && b.asset_code.as_deref() == Some(symbol) && b.asset_type != "native")
                 {
-                    let amount = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS).unwrap_or("0".to_owned());
+                    let amount = BigNumberFormatter::value_from_amount_biguint(&balance.balance, STELLAR_DECIMALS).unwrap_or_default();
                     AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance(amount), true)
                 } else {
-                    AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance("0".to_owned()), false)
+                    AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance(BigUint::from(0u32)), false)
                 }
             } else {
                 // Invalid format - only support issuer::symbol
-                AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance("0".to_owned()), false)
+                AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance(BigUint::from(0u32)), false)
             }
         })
         .collect()
@@ -54,7 +61,7 @@ pub fn map_all_balances(chain: Chain, account: StellarAccount) -> Vec<AssetBalan
         match balance.asset_type.as_str() {
             "native" => {
                 // Native XLM balance
-                if let Ok(value) = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS) {
+                if let Ok(value) = BigNumberFormatter::value_from_amount_biguint(&balance.balance, STELLAR_DECIMALS) {
                     let balance_obj = Balance::coin_balance(value);
                     balances.push(AssetBalance::new_with_active(chain.as_asset_id(), balance_obj, true));
                 }
@@ -64,7 +71,7 @@ pub fn map_all_balances(chain: Chain, account: StellarAccount) -> Vec<AssetBalan
                 if let (Some(asset_issuer), Some(asset_code)) = (&balance.asset_issuer, &balance.asset_code) {
                     let token_id = format!("{}-{}", asset_code, asset_issuer);
                     let asset_id = AssetId::from_token(chain, &token_id);
-                    if let Ok(value) = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS) {
+                    if let Ok(value) = BigNumberFormatter::value_from_amount_biguint(&balance.balance, STELLAR_DECIMALS) {
                         let balance_obj = Balance::coin_balance(value);
                         balances.push(AssetBalance::new_with_active(asset_id, balance_obj, true));
                     }
@@ -90,14 +97,14 @@ pub fn map_token_balances_by_ids(chain: Chain, account: &StellarAccount, token_i
                 false
             }
         }) {
-            if let Ok(amount) = BigNumberFormatter::value_from_amount(&balance.balance, STELLAR_DECIMALS) {
+            if let Ok(amount) = BigNumberFormatter::value_from_amount_biguint(&balance.balance, STELLAR_DECIMALS) {
                 let asset_id = AssetId::from_token(chain, token_id);
                 let balance_obj = Balance::coin_balance(amount);
                 result.push(AssetBalance::new_with_active(asset_id, balance_obj, true));
             }
         } else {
             let asset_id = AssetId::from_token(chain, token_id);
-            let balance_obj = Balance::coin_balance("0".to_string());
+            let balance_obj = Balance::coin_balance(BigUint::from(0u32));
             result.push(AssetBalance::new_with_active(asset_id, balance_obj, false));
         }
     }
@@ -119,8 +126,8 @@ mod tests {
         let result = map_native_balance(&account).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
-        assert_eq!(result.balance.available, "299999077");
-        assert_eq!(result.balance.reserved, "10000000");
+        assert_eq!(result.balance.available, BigUint::from(299999077_u64));
+        assert_eq!(result.balance.reserved, BigUint::from(10000000_u64));
     }
 
     #[test]
@@ -132,7 +139,7 @@ mod tests {
         let result = map_native_balance(&account).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
-        assert_eq!(result.balance.available, "0");
-        assert_eq!(result.balance.reserved, "10000000");
+        assert_eq!(result.balance.available, BigUint::from(0u32));
+        assert_eq!(result.balance.reserved, BigUint::from(10000000_u64));
     }
 }

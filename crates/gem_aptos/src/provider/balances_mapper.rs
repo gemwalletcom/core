@@ -1,10 +1,10 @@
 use crate::models::{Resource, ResourceData};
-
+use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 
 pub fn map_native_balance(balance: &str, chain: Chain) -> AssetBalance {
     let asset_id = AssetId::from_chain(chain);
-    AssetBalance::new(asset_id, balance.to_string())
+    AssetBalance::new(asset_id, balance.parse::<BigUint>().unwrap_or_default())
 }
 
 pub fn map_token_balances(resources: &[Resource<ResourceData>], token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
@@ -19,7 +19,11 @@ pub fn map_token_balances(resources: &[Resource<ResourceData>], token_ids: Vec<S
                 .map(|coin_data| coin_data.value.clone())
                 .unwrap_or_else(|| "0".to_string());
 
-            AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance(balance), true)
+            AssetBalance::new_with_active(
+                AssetId::from_token(chain, &token_id),
+                Balance::coin_balance(balance.parse::<BigUint>().unwrap_or_default()),
+                true,
+            )
         })
         .collect()
 }
@@ -37,7 +41,7 @@ mod tests {
         let balance = "1000000";
         let result = map_native_balance(balance, Chain::Aptos);
 
-        assert_eq!(result.balance.available, "1000000");
+        assert_eq!(result.balance.available, BigUint::from(1000000_u64));
         assert_eq!(result.asset_id.chain, Chain::Aptos);
         assert_eq!(result.asset_id.token_id, None);
     }
@@ -57,7 +61,7 @@ mod tests {
         let result = map_token_balances(&resources, token_ids, Chain::Aptos);
 
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].balance.available, "1000000");
+        assert_eq!(result[0].balance.available, BigUint::from(1000000_u64));
         assert_eq!(result[0].is_active, Some(true));
     }
 }

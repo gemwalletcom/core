@@ -26,8 +26,8 @@ impl<C: Client> ChainBalances for AptosClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use crate::provider::testkit::{create_aptos_test_client, TEST_ADDRESS};
     use chain_traits::ChainBalances;
     use primitives::Chain;

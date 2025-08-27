@@ -1,8 +1,9 @@
 use crate::models::JettonWalletsResponse;
+use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Chain};
 
 pub fn map_coin_balance(balance: String) -> AssetBalance {
-    AssetBalance::new(Chain::Ton.as_asset_id(), balance)
+    AssetBalance::new(Chain::Ton.as_asset_id(), balance.parse::<BigUint>().unwrap_or_default())
 }
 
 pub fn map_balance_tokens(wallets: JettonWalletsResponse, token_ids: Vec<String>) -> Vec<AssetBalance> {
@@ -30,7 +31,7 @@ mod tests {
         let result = map_coin_balance(balance);
 
         assert_eq!(result.asset_id, Chain::Ton.as_asset_id());
-        assert_eq!(result.balance.available, "62709394797");
+        assert_eq!(result.balance.available, BigUint::from(62709394797_u64));
     }
 
     #[test]
@@ -42,6 +43,6 @@ mod tests {
         let result = map_balance_tokens(response, token_ids);
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].asset_id, AssetId::from_token(Chain::Ton, token_id));
-        assert_eq!(result[0].balance.available, "3201565");
+        assert_eq!(result[0].balance.available, BigUint::from(3201565_u64));
     }
 }

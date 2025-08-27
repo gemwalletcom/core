@@ -33,7 +33,7 @@ rpc = [
     "dep:futures",
 ]
 reqwest = ["gem_client/reqwest"]
-integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

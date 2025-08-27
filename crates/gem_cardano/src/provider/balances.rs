@@ -24,8 +24,8 @@ impl<C: Client> ChainBalances for CardanoClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
 
@@ -44,7 +44,7 @@ mod integration_tests {
         let client = create_test_client();
         let token_ids = vec![];
         let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids).await?;
-        
+
         assert_eq!(balances.len(), 0);
         Ok(())
     }
@@ -53,7 +53,7 @@ mod integration_tests {
     async fn test_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
         let balance = client.get_balance_staking(TEST_ADDRESS.to_string()).await?;
-        
+
         assert!(balance.is_none());
         Ok(())
     }

@@ -23,7 +23,7 @@ chain_traits = { path = "../chain_traits", optional = true }
 futures = { workspace = true, optional = true }
 number_formatter = { path = "../number_formatter", optional = true }
 
-num-bigint = { workspace = true, optional = true }
+num-bigint = { workspace = true }
 
 [features]
 default = []
@@ -35,11 +35,10 @@ rpc = [
     "dep:gem_client",
     "dep:chain_traits",
     "dep:futures",
-    "dep:num-bigint",
     "dep:number_formatter",
 ]
 reqwest = ["gem_client/reqwest"]
-integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

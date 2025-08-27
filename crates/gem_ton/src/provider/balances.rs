@@ -25,8 +25,8 @@ impl<C: Client> ChainBalances for TonClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use crate::provider::testkit::*;
     use chain_traits::ChainBalances;
     use primitives::Chain;
@@ -37,7 +37,7 @@ mod integration_tests {
         let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
         assert_eq!(balance.asset_id.chain, Chain::Ton);
         println!("Balance: {:?}", balance);
-        assert!(balance.balance.available.parse::<u64>().unwrap() > 0);
+        assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
         Ok(())
     }
 
@@ -54,7 +54,7 @@ mod integration_tests {
             assert_eq!(balance.asset_id.chain, Chain::Ton);
 
             println!("Token balance: {:?}", balance);
-            assert!(balance.balance.available.parse::<u64>().unwrap() > 0);
+            assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
         }
         Ok(())
     }

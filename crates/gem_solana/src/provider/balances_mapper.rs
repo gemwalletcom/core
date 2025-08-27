@@ -1,3 +1,4 @@
+use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Chain};
 
 use crate::models::balances::SolanaBalance;
@@ -5,7 +6,7 @@ use crate::models::{TokenAccountInfo, ValueResult};
 
 pub fn map_coin_balance(balance: &SolanaBalance) -> AssetBalance {
     let asset_id = AssetId::from_chain(Chain::Solana);
-    AssetBalance::new(asset_id, balance.value.to_string())
+    AssetBalance::new(asset_id, BigUint::from(balance.value))
 }
 
 pub fn map_token_balances(accounts: &ValueResult<Vec<TokenAccountInfo>>, token_ids: &[String]) -> Vec<AssetBalance> {
@@ -21,8 +22,8 @@ pub fn map_token_balances(accounts: &ValueResult<Vec<TokenAccountInfo>>, token_i
                 .info
                 .token_amount
                 .as_ref()
-                .map(|ta| ta.amount.to_string())
-                .unwrap_or_else(|| "0".to_string());
+                .map(|ta| ta.amount.clone())
+                .unwrap_or_else(|| BigUint::from(0u32));
             AssetBalance::new(AssetId::from_token(Chain::Solana, token_id), balance_amount)
         })
         .collect()
@@ -36,8 +37,8 @@ pub fn map_single_token_balance(account: &TokenAccountInfo, token_id: &str) -> A
         .info
         .token_amount
         .as_ref()
-        .map(|ta| ta.amount.to_string())
-        .unwrap_or_else(|| "0".to_string());
+        .map(|ta| ta.amount.clone())
+        .unwrap_or_else(|| BigUint::from(0u32));
     AssetBalance::new(AssetId::from_token(Chain::Solana, token_id), balance_amount)
 }
 
@@ -45,7 +46,7 @@ pub fn map_token_accounts(accounts: &ValueResult<Vec<TokenAccountInfo>>, token_i
     if let Some(account) = accounts.value.first() {
         vec![map_single_token_balance(account, token_id)]
     } else {
-        vec![AssetBalance::new(AssetId::from_token(Chain::Solana, token_id), "0".to_string())]
+        vec![AssetBalance::new(AssetId::from_token(Chain::Solana, token_id), BigUint::from(0u32))]
     }
 }
 
@@ -54,9 +55,9 @@ pub fn map_balance_staking(stake_accounts: Vec<TokenAccountInfo>) -> Option<Asse
 
     Some(AssetBalance::new_staking(
         AssetId::from_chain(Chain::Solana),
-        total_staked.to_string(),
-        "0".to_string(),
-        "0".to_string(),
+        BigUint::from(total_staked),
+        BigUint::from(0u32),
+        BigUint::from(0u32),
     ))
 }
 
@@ -72,7 +73,7 @@ mod tests {
         let balance_result = map_coin_balance(&result.result);
 
         assert_eq!(balance_result.asset_id.chain, Chain::Solana);
-        assert_eq!(balance_result.balance.available.to_string(), "1366309311");
+        assert_eq!(balance_result.balance.available, BigUint::from(1366309311_u64));
     }
 
     #[test]
@@ -84,7 +85,7 @@ mod tests {
         let balance_result = map_single_token_balance(token_account, token_id);
 
         assert_eq!(balance_result.asset_id.chain, Chain::Solana);
-        assert_eq!(balance_result.balance.available.to_string(), "75071408");
+        assert_eq!(balance_result.balance.available, BigUint::from(75071408_u64));
     }
 
     #[test]
@@ -96,7 +97,7 @@ mod tests {
 
         assert_eq!(balances.len(), 1);
         assert_eq!(balances[0].asset_id.chain, Chain::Solana);
-        assert_eq!(balances[0].balance.available.to_string(), "75071408");
+        assert_eq!(balances[0].balance.available, BigUint::from(75071408_u64));
     }
 
     #[test]
@@ -105,7 +106,7 @@ mod tests {
         let staking_balance = map_balance_staking(result.result).unwrap();
 
         assert_eq!(staking_balance.asset_id.chain, Chain::Solana);
-        assert_eq!(staking_balance.balance.available.to_string(), "0");
-        assert_eq!(staking_balance.balance.staked.to_string(), "363542610");
+        assert_eq!(staking_balance.balance.available, BigUint::from(0u32));
+        assert_eq!(staking_balance.balance.staked, BigUint::from(363542610_u64));
     }
 }

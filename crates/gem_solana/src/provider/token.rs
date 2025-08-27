@@ -34,8 +34,8 @@ impl<C: Client + Clone> ChainToken for SolanaClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::create_test_client;
     use primitives::{AssetType, Chain};

@@ -17,8 +17,8 @@ impl<C: Client + Clone> ChainState for NearClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use crate::rpc::client::NearClient;
     use chain_traits::ChainProvider;
     use gem_client::ReqwestClient;

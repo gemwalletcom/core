@@ -7,7 +7,7 @@ edition = "2024"
 default = []
 rpc = ["dep:chrono", "dep:serde_serializers", "dep:chain_traits", "dep:gem_client"]
 reqwest = ["gem_client/reqwest"]
-integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }

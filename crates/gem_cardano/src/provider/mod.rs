@@ -3,7 +3,7 @@ pub mod balances_mapper;
 pub mod preload;
 pub mod preload_mapper;
 pub mod state;
-#[cfg(all(test, feature = "integration_tests"))]
+#[cfg(all(test, feature = "chain_integration_tests"))]
 pub mod testkit;
 pub mod token;
 pub mod transactions;

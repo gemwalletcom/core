@@ -1,5 +1,5 @@
 use crate::models::staking::{Delegations, Rewards, UnbondingDelegations};
-use num_bigint::BigInt;
+use num_bigint::{BigInt, BigUint};
 use number_formatter::BigNumberFormatter;
 use primitives::AssetBalance;
 use std::str::FromStr;
@@ -32,7 +32,12 @@ pub fn map_balance_staking(delegations: Delegations, unbonding: UnbondingDelegat
         })
         .fold(BigInt::from(0), |acc, amount| acc + amount);
 
-    AssetBalance::new_staking(chain.as_asset_id(), staked.to_string(), pending.to_string(), rewards.to_string())
+    AssetBalance::new_staking(
+        chain.as_asset_id(),
+        BigUint::try_from(staked).unwrap_or_default(),
+        BigUint::try_from(pending).unwrap_or_default(),
+        BigUint::try_from(rewards).unwrap_or_default(),
+    )
 }
 
 #[cfg(test)]
@@ -50,8 +55,8 @@ mod tests {
         let result = map_balance_staking(delegations, unbonding, rewards, Chain::Cosmos, "uatom");
 
         assert_eq!(result.asset_id.to_string(), "cosmos");
-        assert_eq!(result.balance.staked, "10250000");
-        assert_eq!(result.balance.pending, "0");
-        assert_eq!(result.balance.rewards, "307413");
+        assert_eq!(result.balance.staked, BigUint::from(10250000_u64));
+        assert_eq!(result.balance.pending, BigUint::from(0u32));
+        assert_eq!(result.balance.rewards, BigUint::from(307413_u64));
     }
 }

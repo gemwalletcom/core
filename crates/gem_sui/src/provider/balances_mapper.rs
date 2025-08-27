@@ -1,10 +1,14 @@
 use crate::models::rpc::Balance as SuiBalance;
 use crate::models::staking::SuiStakeDelegation;
 use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL};
+use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 
 pub fn map_balance_coin(balance: SuiBalance) -> AssetBalance {
-    AssetBalance::new_balance(Chain::Sui.as_asset_id(), Balance::coin_balance(balance.total_balance.to_string()))
+    AssetBalance::new_balance(
+        Chain::Sui.as_asset_id(),
+        Balance::coin_balance(BigUint::try_from(balance.total_balance).unwrap_or_default()),
+    )
 }
 
 pub fn map_balance_tokens(balances: Vec<SuiBalance>, token_ids: Vec<String>) -> Vec<AssetBalance> {
@@ -18,7 +22,10 @@ pub fn map_balance_tokens(balances: Vec<SuiBalance>, token_ids: Vec<String>) -> 
                 .cloned()
                 .unwrap_or_default();
 
-            AssetBalance::new_balance(AssetId::from_token(Chain::Sui, &token_id), Balance::coin_balance(balance.to_string()))
+            AssetBalance::new_balance(
+                AssetId::from_token(Chain::Sui, &token_id),
+                Balance::coin_balance(BigUint::try_from(balance).unwrap_or_default()),
+            )
         })
         .collect()
 }
@@ -36,7 +43,7 @@ pub fn map_balance_staking(delegations: Vec<SuiStakeDelegation>) -> Option<Asset
 
     Some(AssetBalance::new_balance(
         Chain::Sui.as_asset_id(),
-        Balance::stake_balance(staked.to_string(), "0".to_string(), None),
+        Balance::stake_balance(BigUint::try_from(staked).unwrap_or_default(), BigUint::from(0u32), None),
     ))
 }
 
@@ -49,7 +56,7 @@ pub fn map_staking_balance(delegations: Vec<SuiStakeDelegation>) -> AssetBalance
 
     AssetBalance::new_balance(
         Chain::Sui.as_asset_id(),
-        Balance::stake_balance(staked_total.to_string(), "0".to_string(), None),
+        Balance::stake_balance(BigUint::try_from(staked_total).unwrap_or_default(), BigUint::from(0u32), None),
     )
 }
 
@@ -63,7 +70,7 @@ pub fn map_assets_balances(balances: Vec<SuiBalance>) -> Vec<AssetBalance> {
                 Some(AssetId::from_token(Chain::Sui, &balance.coin_type))
             };
 
-            asset_id.map(|asset_id| AssetBalance::new_balance(asset_id, Balance::coin_balance(balance.total_balance.to_string())))
+            asset_id.map(|asset_id| AssetBalance::new_balance(asset_id, Balance::coin_balance(BigUint::try_from(balance.total_balance).unwrap_or_default())))
         })
         .collect()
 }
@@ -87,7 +94,7 @@ mod tests {
         let balance: SuiBalance = serde_json::from_value(response["result"].clone()).unwrap();
 
         let result = map_balance_coin(balance);
-        assert_eq!(result.balance.available, "52855428706");
+        assert_eq!(result.balance.available, BigUint::from(52855428706_u64));
         assert_eq!(result.asset_id.chain, Chain::Sui);
     }
 
@@ -103,8 +110,8 @@ mod tests {
 
         let result = map_balance_tokens(balances, token_ids);
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0].balance.available, "3685298"); // USDC balance
-        assert_eq!(result[1].balance.available, "1000"); // TOKEN balance
+        assert_eq!(result[0].balance.available, BigUint::from(3685298_u64)); // USDC balance
+        assert_eq!(result[1].balance.available, BigUint::from(1000_u64)); // TOKEN balance
     }
 
     #[test]
@@ -118,26 +125,26 @@ mod tests {
     #[test]
     fn test_map_balance_staking() {
         use primitives::JsonRpcResult;
-        
+
         let response: JsonRpcResult<Vec<SuiStakeDelegation>> = serde_json::from_str(include_str!("../../testdata/stakes.json")).unwrap();
         let delegations = response.result;
 
         let result = map_balance_staking(delegations);
-        
+
         assert!(result.is_some());
         let balance = result.unwrap();
         assert_eq!(balance.asset_id.chain, Chain::Sui);
-        
+
         // Total staked: sum of all principal + estimated_reward values
-        assert_eq!(balance.balance.staked, "9113484503");
-        assert_eq!(balance.balance.available, "0");
+        assert_eq!(balance.balance.staked, BigUint::from(9113484503_u64));
+        assert_eq!(balance.balance.available, BigUint::from(0u32));
     }
 
     #[test]
     fn test_map_balance_staking_empty() {
         let delegations: Vec<SuiStakeDelegation> = vec![];
         let result = map_balance_staking(delegations);
-        
+
         assert!(result.is_none());
     }
 }

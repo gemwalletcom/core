@@ -39,8 +39,8 @@ impl<C: Client + Clone> ChainBalances for SuiClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::*;
     use primitives::Chain;
@@ -81,11 +81,10 @@ mod integration_tests {
 
         let staking_balance = balance.expect("Test address should have staking balance");
         assert_eq!(staking_balance.asset_id.chain, Chain::Sui);
-        
-        let staked_amount = staking_balance.balance.staked.parse::<u64>().unwrap();
-        assert!(staked_amount > 0, "Staked amount should be greater than 0");
-        
-        println!("Staking balance: {} SUI", staked_amount);
+
+        assert!(staking_balance.balance.staked > num_bigint::BigUint::from(0u32), "Staked amount should be greater than 0");
+
+        println!("Staking balance: {} SUI", staking_balance.balance.staked);
         Ok(())
     }
 }

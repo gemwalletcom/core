@@ -1,5 +1,6 @@
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
-use serde_serializers::deserialize_u64_from_str;
+use serde_serializers::{deserialize_biguint_from_str, deserialize_u64_from_str};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JettonInfo {
@@ -26,7 +27,8 @@ pub struct JettonBalances {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JettonBalance {
-    pub balance: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub balance: BigUint,
     pub jetton: Jetton,
 }
 
@@ -37,7 +39,8 @@ pub struct Jetton {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimpleJettonBalance {
-    pub balance: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub balance: BigUint,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,6 +51,7 @@ pub struct JettonWalletsResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JettonWallet {
     pub address: String,
-    pub balance: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub balance: BigUint,
     pub jetton: String,
 }

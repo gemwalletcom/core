@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainBalances;
 use futures::future::join_all;
+use num_bigint::BigUint;
 use std::error::Error;
 
 use gem_client::Client;
@@ -34,15 +35,15 @@ impl<C: Client> ChainBalances for TronClient<C> {
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(Some(AssetBalance::new_staking(
             self.get_chain().as_asset_id(),
-            "0".to_string(),
-            "0".to_string(),
-            "0".to_string(),
+            BigUint::from(0u32),
+            BigUint::from(0u32),
+            BigUint::from(0u32),
         )))
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
     use primitives::Chain;
@@ -54,8 +55,7 @@ mod integration_tests {
 
         assert_eq!(balance.asset_id.chain, Chain::Tron);
         assert_eq!(balance.asset_id.token_id, None);
-        let balance = balance.balance.available.parse::<u64>().unwrap();
-        assert!(balance > 0);
+        assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
 
         Ok(())
     }
@@ -73,11 +73,10 @@ mod integration_tests {
         for (i, balance) in balances.iter().enumerate() {
             assert_eq!(balance.asset_id.chain, Chain::Tron);
             assert_eq!(balance.asset_id.token_id, Some(token_ids[i].clone()));
-            assert!(balance.balance.available.parse::<u64>().is_ok());
+            assert!(balance.balance.available >= num_bigint::BigUint::from(0u32));
         }
 
-        let balance_value = balances.first().unwrap().balance.available.parse::<u64>().unwrap();
-        assert!(balance_value > 0, "USDT balance should be greater than 0");
+        assert!(balances.first().unwrap().balance.available > num_bigint::BigUint::from(0u32), "USDT balance should be greater than 0");
 
         Ok(())
     }
@@ -90,8 +89,8 @@ mod integration_tests {
         if let Some(balance) = staking_balance {
             assert_eq!(balance.asset_id.chain, Chain::Tron);
             assert_eq!(balance.asset_id.token_id, None);
-            assert!(balance.balance.available.parse::<u64>().is_ok());
-            assert!(balance.balance.staked.parse::<u64>().is_ok());
+            assert!(balance.balance.available >= num_bigint::BigUint::from(0u32));
+            assert!(balance.balance.staked >= num_bigint::BigUint::from(0u32));
         }
 
         Ok(())

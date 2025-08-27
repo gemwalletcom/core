@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainBalances;
 use futures::try_join;
+use num_bigint::BigUint;
 use std::error::Error;
 
 use gem_client::Client;
@@ -17,7 +18,7 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
 
         let balance = balances.balances.iter().find(|balance| balance.denom == denom).ok_or("Balance not found")?;
 
-        Ok(AssetBalance::new(chain.as_asset_id(), balance.amount.to_string()))
+        Ok(AssetBalance::new(chain.as_asset_id(), balance.amount.parse::<BigUint>().unwrap_or_default()))
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
@@ -31,7 +32,7 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
                         chain: self.get_chain().as_chain(),
                         token_id: Some(token_id.clone()),
                     };
-                    Some(AssetBalance::new(asset_id, amount.to_string()))
+                    Some(AssetBalance::new(asset_id, BigUint::from(amount)))
                 })
             })
             .collect();
@@ -57,8 +58,8 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use crate::provider::testkit::create_cosmos_test_client;
     use chain_traits::ChainBalances;
 
@@ -69,7 +70,7 @@ mod integration_tests {
         let client = create_cosmos_test_client();
         let address = TEST_ADDRESS.to_string();
         let balance = client.get_balance_coin(address).await?;
-        let available = balance.balance.available.parse::<u64>().unwrap();
+        let available = balance.balance.available.to_string().parse::<u64>().unwrap();
         assert!(available > 0);
         println!("Balance: {:?} {}", available, balance.asset_id);
         Ok(())

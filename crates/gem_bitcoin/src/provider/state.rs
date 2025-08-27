@@ -18,8 +18,8 @@ impl<C: Client> ChainState for BitcoinClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "integration_tests"))]
-mod integration_tests {
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
     use crate::provider::testkit::*;
     use chain_traits::ChainState;
 

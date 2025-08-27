@@ -138,7 +138,7 @@ impl ChainAssetsProvider for AlchemyClient {
             .filter_map(|x| {
                 ethereum_address_checksum(&x.token_address)
                     .ok()
-                    .map(|from| AssetBalance::new(AssetId::from_token(self.chain.to_chain(), &from), x.token_balance.to_string()))
+                    .map(|from| AssetBalance::new(AssetId::from_token(self.chain.to_chain(), &from), x.token_balance))
             })
             .collect();
         Ok(balances)
@@ -172,7 +172,7 @@ impl ChainAssetsProvider for AnkrClient {
             .filter_map(|x| {
                 ethereum_address_checksum(&x.contract_address?)
                     .ok()
-                    .map(|from| AssetBalance::new(AssetId::from_token(self.chain.to_chain(), &from), x.balance_raw_integer.to_string()))
+                    .map(|from| AssetBalance::new(AssetId::from_token(self.chain.to_chain(), &from), x.balance_raw_integer))
             })
             .collect();
         Ok(balances)

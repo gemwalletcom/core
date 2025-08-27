@@ -13,7 +13,7 @@ rpc = [
     "dep:futures",
 ]
 reqwest = ["gem_client/reqwest"]
-integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 base64 = { workspace = true }

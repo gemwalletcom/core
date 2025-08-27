@@ -17,7 +17,7 @@ rpc = [
     "dep:bs58",
 ]
 reqwest = ["gem_client/reqwest"]
-integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest"]
 
 [dependencies]
 primitives = { path = "../primitives" }

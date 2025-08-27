@@ -10,16 +10,17 @@ pub fn map_native_balance(account: &Account) -> Result<AssetBalance, Box<dyn Err
 mod tests {
     use super::*;
     use crate::models::account::Account;
+    use num_bigint::BigUint;
 
     #[test]
     fn test_map_native_balance() {
         let account = Account {
-            amount: "1000000000000000000000000".to_string(),
+            amount: BigUint::from(1000000000000000000000000_u128),
         };
 
         let result = map_native_balance(&account).unwrap();
 
         assert_eq!(result.asset_id, Chain::Near.as_asset_id());
-        assert_eq!(result.balance.available, "1000000000000000000000000");
+        assert_eq!(result.balance.available, BigUint::from(1000000000000000000000000_u128));
     }
 }

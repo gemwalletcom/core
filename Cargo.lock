@@ -2912,6 +2912,7 @@ dependencies = [
  "primitives",
  "reqwest",
  "serde",
+ "serde_serializers",
  "tokio",
 ]
 
@@ -2933,6 +2934,7 @@ dependencies = [
  "chain_traits",
  "chrono",
  "gem_client",
+ "num-bigint",
  "primitives",
  "reqwest",
  "serde",
@@ -4908,6 +4910,7 @@ dependencies = [
  "localizer",
  "nft_client",
  "nft_provider",
+ "num-bigint",
  "number_formatter",
  "primitives",
  "rand 0.9.2",
