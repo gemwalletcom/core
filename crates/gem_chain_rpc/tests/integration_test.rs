@@ -40,7 +40,7 @@ mod tests {
     #[tokio::test]
     async fn test_cosmos_get_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let reqwest_client = ClientBuilder::new(reqwest::Client::new()).build();
-        let client = CosmosClient::new(CosmosChain::Cosmos, reqwest_client, "https://cosmos-rest.publicnode.com".to_string());
+        let client = CosmosClient::new(CosmosChain::Cosmos, reqwest_client);
         let provider = CosmosProvider::new(client);
 
         let validators = provider.get_validators().await?;

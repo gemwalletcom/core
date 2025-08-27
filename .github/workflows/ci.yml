@@ -36,3 +36,7 @@ jobs:
       - name: Build integration tests
         run: |
           just --unstable gemstone build-integration-tests
+
+      - name: Check gemstone dependencies
+        run: |
+          cargo tree --package gemstone | grep -i reqwest && exit 1 || echo "✓ No reqwest dependencies found in gemstone"
