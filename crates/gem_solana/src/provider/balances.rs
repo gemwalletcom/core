@@ -49,7 +49,7 @@ mod chain_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_solana_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
         let token_ids = vec![
             "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // USDC
@@ -69,7 +69,7 @@ mod chain_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_solana_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
         let staking_balance = client.get_balance_staking(TEST_ADDRESS.to_string()).await?;
 

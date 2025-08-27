@@ -2888,6 +2888,7 @@ dependencies = [
  "async-trait",
  "chain_traits",
  "chrono",
+ "futures",
  "gem_client",
  "num-bigint",
  "primitives",

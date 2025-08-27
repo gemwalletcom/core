@@ -1,13 +1,17 @@
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_biguint_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoinData {
-    pub value: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub value: BigUint,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Coin {
-    pub value: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub value: BigUint,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

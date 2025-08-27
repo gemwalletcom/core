@@ -23,7 +23,7 @@ mod chain_integration_tests {
     use crate::provider::testkit::create_test_client;
 
     #[tokio::test]
-    async fn test_get_chain_id() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_solana_get_chain_id() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
         let chain_id = client.get_chain_id().await?;
 
@@ -34,7 +34,7 @@ mod chain_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_block_latest_number() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_solana_get_block_latest_number() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
         let latest_block = client.get_block_latest_number().await?;
 
