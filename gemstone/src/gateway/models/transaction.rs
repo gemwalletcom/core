@@ -3,7 +3,7 @@ use num_bigint::BigInt;
 use primitives::swap::ApprovalData;
 use primitives::FeeOption;
 use primitives::{
-    GasPriceType, PerpetualConfirmData, PerpetualDirection, PerpetualType, StakeType, TransactionChange, TransactionFee, TransactionInputType,
+    GasPriceType, PerpetualConfirmData, PerpetualDirection, StakeType, TransactionChange, TransactionFee, TransactionInputType,
     TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra,
     TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
@@ -261,9 +261,39 @@ impl From<GemStakeType> for StakeType {
     }
 }
 
+impl From<StakeType> for GemStakeType {
+    fn from(value: StakeType) -> Self {
+        match value {
+            StakeType::Stake(validator) => GemStakeType::Delegate { validator: validator.into() },
+            StakeType::Unstake(delegation) => GemStakeType::Undelegate { delegation: delegation.into() },
+            StakeType::Redelegate(data) => GemStakeType::Redelegate {
+                delegation: data.delegation.into(),
+                to_validator: data.to_validator.into(),
+            },
+            StakeType::Rewards(validators) => GemStakeType::WithdrawRewards {
+                validators: validators.into_iter().map(|v| v.into()).collect(),
+            },
+            StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation: delegation.into() },
+        }
+    }
+}
+
 impl From<GemWalletConnectionSessionAppMetadata> for WalletConnectionSessionAppMetadata {
     fn from(value: GemWalletConnectionSessionAppMetadata) -> Self {
         WalletConnectionSessionAppMetadata {
+            name: value.name,
+            description: value.description,
+            url: value.url,
+            icon: value.icon,
+            redirect_native: value.redirect_native,
+            redirect_universal: value.redirect_universal,
+        }
+    }
+}
+
+impl From<WalletConnectionSessionAppMetadata> for GemWalletConnectionSessionAppMetadata {
+    fn from(value: WalletConnectionSessionAppMetadata) -> Self {
+        GemWalletConnectionSessionAppMetadata {
             name: value.name,
             description: value.description,
             url: value.url,
@@ -283,10 +313,30 @@ impl From<GemTransferDataOutputType> for TransferDataOutputType {
     }
 }
 
+impl From<TransferDataOutputType> for GemTransferDataOutputType {
+    fn from(value: TransferDataOutputType) -> Self {
+        match value {
+            TransferDataOutputType::EncodedTransaction => GemTransferDataOutputType::EncodedTransaction,
+            TransferDataOutputType::Signature => GemTransferDataOutputType::Signature,
+        }
+    }
+}
+
 impl From<GemTransferDataExtra> for TransferDataExtra {
     fn from(value: GemTransferDataExtra) -> Self {
         TransferDataExtra {
             gas_limit: value.gas_limit.map(|s| s.parse().unwrap_or_default()),
+            gas_price: value.gas_price.map(|gp| gp.into()),
+            data: value.data,
+            output_type: value.output_type.into(),
+        }
+    }
+}
+
+impl From<TransferDataExtra> for GemTransferDataExtra {
+    fn from(value: TransferDataExtra) -> Self {
+        GemTransferDataExtra {
+            gas_limit: value.gas_limit.map(|gl| gl.to_string()),
             gas_price: value.gas_price.map(|gp| gp.into()),
             data: value.data,
             output_type: value.output_type.into(),
@@ -304,11 +354,30 @@ impl From<GemApprovalData> for ApprovalData {
     }
 }
 
+impl From<ApprovalData> for GemApprovalData {
+    fn from(value: ApprovalData) -> Self {
+        GemApprovalData {
+            token: value.token,
+            spender: value.spender,
+            value: value.value,
+        }
+    }
+}
+
 impl From<GemPerpetualDirection> for PerpetualDirection {
     fn from(value: GemPerpetualDirection) -> Self {
         match value {
             GemPerpetualDirection::Short => PerpetualDirection::Short,
             GemPerpetualDirection::Long => PerpetualDirection::Long,
+        }
+    }
+}
+
+impl From<PerpetualDirection> for GemPerpetualDirection {
+    fn from(value: PerpetualDirection) -> Self {
+        match value {
+            PerpetualDirection::Short => GemPerpetualDirection::Short,
+            PerpetualDirection::Long => GemPerpetualDirection::Long,
         }
     }
 }
@@ -326,11 +395,15 @@ impl From<GemPerpetualConfirmData> for PerpetualConfirmData {
     }
 }
 
-impl From<GemPerpetualType> for PerpetualType {
-    fn from(value: GemPerpetualType) -> Self {
-        match value {
-            GemPerpetualType::Open { data } => PerpetualType::Open(data.into()),
-            GemPerpetualType::Close { data } => PerpetualType::Close(data.into()),
+impl From<PerpetualConfirmData> for GemPerpetualConfirmData {
+    fn from(value: PerpetualConfirmData) -> Self {
+        GemPerpetualConfirmData {
+            direction: value.direction.into(),
+            asset: value.asset.into(),
+            asset_index: value.asset_index,
+            price: value.price,
+            fiat_value: value.fiat_value,
+            size: value.size,
         }
     }
 }
@@ -345,6 +418,36 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TokenApprove { asset, approval_data } => TransactionInputType::TokenApprove(asset.into(), approval_data.into()),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset.into(), perpetual_type.into()),
+        }
+    }
+}
+
+impl From<TransactionInputType> for GemTransactionInputType {
+    fn from(value: TransactionInputType) -> Self {
+        match value {
+            TransactionInputType::Transfer(asset) => GemTransactionInputType::Transfer { asset: asset.into() },
+            TransactionInputType::Deposit(asset) => GemTransactionInputType::Deposit { asset: asset.into() },
+            TransactionInputType::Swap(from_asset, to_asset) => GemTransactionInputType::Swap {
+                from_asset: from_asset.into(),
+                to_asset: to_asset.into(),
+            },
+            TransactionInputType::Stake(asset, stake_type) => GemTransactionInputType::Stake {
+                asset: asset.into(),
+                stake_type: stake_type.into(),
+            },
+            TransactionInputType::TokenApprove(asset, approval_data) => GemTransactionInputType::TokenApprove {
+                asset: asset.into(),
+                approval_data: approval_data.into(),
+            },
+            TransactionInputType::Generic(asset, metadata, extra) => GemTransactionInputType::Generic {
+                asset: asset.into(),
+                metadata: metadata.into(),
+                extra: extra.into(),
+            },
+            TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual {
+                asset: asset.into(),
+                perpetual_type: perpetual_type.into(),
+            },
         }
     }
 }

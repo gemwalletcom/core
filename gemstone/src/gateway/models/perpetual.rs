@@ -1,10 +1,11 @@
 use primitives::{
     chart::ChartCandleStick,
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
-    PerpetualPosition,
+    PerpetualPosition, PerpetualType,
 };
 
 use super::asset::GemAsset;
+use super::transaction::GemPerpetualType;
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemPerpetualPositionsSummary {
@@ -162,6 +163,24 @@ impl From<ChartCandleStick> for GemChartCandleStick {
             low: candlestick.low,
             close: candlestick.close,
             volume: candlestick.volume,
+        }
+    }
+}
+
+impl From<GemPerpetualType> for PerpetualType {
+    fn from(value: GemPerpetualType) -> Self {
+        match value {
+            GemPerpetualType::Open { data } => PerpetualType::Open(data.into()),
+            GemPerpetualType::Close { data } => PerpetualType::Close(data.into()),
+        }
+    }
+}
+
+impl From<PerpetualType> for GemPerpetualType {
+    fn from(value: PerpetualType) -> Self {
+        match value {
+            PerpetualType::Open(data) => GemPerpetualType::Open { data: data.into() },
+            PerpetualType::Close(data) => GemPerpetualType::Close { data: data.into() },
         }
     }
 }

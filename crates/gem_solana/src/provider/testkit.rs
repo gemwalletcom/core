@@ -6,7 +6,7 @@ use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 
 #[cfg(feature = "chain_integration_tests")]
-pub const TEST_ADDRESS: &str = "8kvn29Nd9St6icquZFZrx6Fwsc455evpMhW17dt1tkwk";
+pub const TEST_ADDRESS: &str = "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H";
 
 #[cfg(feature = "chain_integration_tests")]
 pub fn create_solana_test_client() -> SolanaClient<ReqwestClient> {

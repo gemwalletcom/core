@@ -17,7 +17,7 @@ use crate::{
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
         let positions = self.get_clearinghouse_state(&address).await?;
-        Ok(map_positions(positions))
+        Ok(map_positions(positions, address))
     }
 
     async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {

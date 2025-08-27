@@ -49,7 +49,7 @@ pub struct GemFeeRate {
 // ChainPreload models
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionPreloadInput {
-    pub asset: GemAsset,
+    pub input_type: GemTransactionInputType,
     pub sender_address: String,
     pub destination_address: String,
 }
@@ -112,7 +112,7 @@ impl From<FeeRate> for GemFeeRate {
 impl From<TransactionPreloadInput> for GemTransactionPreloadInput {
     fn from(input: TransactionPreloadInput) -> Self {
         Self {
-            asset: input.asset.into(),
+            input_type: input.input_type.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
         }
@@ -122,7 +122,7 @@ impl From<TransactionPreloadInput> for GemTransactionPreloadInput {
 impl From<GemTransactionPreloadInput> for TransactionPreloadInput {
     fn from(input: GemTransactionPreloadInput) -> Self {
         Self {
-            asset: input.asset.into(),
+            input_type: input.input_type.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
         }
