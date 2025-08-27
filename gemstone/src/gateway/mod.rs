@@ -129,11 +129,11 @@ impl GemGateway {
         Ok(delegations.into_iter().map(|d| d.into()).collect())
     }
 
-    pub async fn transaction_broadcast(&self, chain: Chain, data: String) -> Result<String, GatewayError> {
+    pub async fn transaction_broadcast(&self, chain: Chain, data: String, options: GemBroadcastOptions) -> Result<String, GatewayError> {
         let hash = self
             .provider(chain)
             .await?
-            .transaction_broadcast(data)
+            .transaction_broadcast(data, options.into())
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(hash)

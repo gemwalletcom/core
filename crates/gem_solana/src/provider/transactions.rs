@@ -3,7 +3,7 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{Transaction, TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{BroadcastOptions, Transaction, TransactionState, TransactionStateRequest, TransactionUpdate};
 
 use crate::{
     provider::transaction_mapper::{map_block_transactions, map_signatures_transactions},
@@ -12,8 +12,8 @@ use crate::{
 
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
-    async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Sync + Send>> {
-        self.send_transaction(data, None).await
+    async fn transaction_broadcast(&self, data: String, options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
+        self.send_transaction(data, Some(options.skip_preflight)).await
     }
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {

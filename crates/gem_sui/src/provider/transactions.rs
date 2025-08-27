@@ -7,7 +7,7 @@ use chain_traits::{ChainTransactionLoad, ChainTransactions};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 use primitives::{
-    FeePriority, FeeRate, GasPriceType, Transaction, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    BroadcastOptions, FeePriority, FeeRate, GasPriceType, Transaction, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
     TransactionPreloadInput, TransactionStateRequest, TransactionUpdate,
 };
 
@@ -37,7 +37,7 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
 #[cfg(feature = "rpc")]
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
-    async fn transaction_broadcast(&self, _data: String) -> Result<String, Box<dyn std::error::Error + Sync + Send>> {
+    async fn transaction_broadcast(&self, _data: String, _options: BroadcastOptions) -> Result<String, Box<dyn std::error::Error + Sync + Send>> {
         unimplemented!()
     }
 

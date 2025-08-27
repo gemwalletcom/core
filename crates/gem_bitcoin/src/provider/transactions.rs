@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use primitives::{Transaction, TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{BroadcastOptions, Transaction, TransactionState, TransactionStateRequest, TransactionUpdate};
 use std::error::Error;
 
 use gem_client::Client;
@@ -9,7 +9,7 @@ use crate::rpc::client::BitcoinClient;
 
 #[async_trait]
 impl<C: Client> ChainTransactions for BitcoinClient<C> {
-    async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Sync + Send>> {
+    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
         let result = self.broadcast_transaction(data).await?;
 
         if let Some(error) = result.error {

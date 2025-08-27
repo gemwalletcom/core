@@ -12,9 +12,8 @@ pub use staking::*;
 pub use transaction::*;
 pub use transaction_metadata::*;
 
-use primitives::{FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
+use primitives::{BroadcastOptions, FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
 
-// ChainAccount models
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemUTXO {
     pub transaction_id: String,
@@ -23,7 +22,11 @@ pub struct GemUTXO {
     pub address: String,
 }
 
-// ChainState models
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemBroadcastOptions {
+    pub skip_preflight: bool,
+}
+
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemGasPriceType {
     Regular {
@@ -125,6 +128,22 @@ impl From<GemTransactionPreloadInput> for TransactionPreloadInput {
             input_type: input.input_type.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
+        }
+    }
+}
+
+impl From<GemBroadcastOptions> for BroadcastOptions {
+    fn from(options: GemBroadcastOptions) -> Self {
+        BroadcastOptions {
+            skip_preflight: options.skip_preflight,
+        }
+    }
+}
+
+impl From<BroadcastOptions> for GemBroadcastOptions {
+    fn from(options: BroadcastOptions) -> Self {
+        GemBroadcastOptions {
+            skip_preflight: options.skip_preflight,
         }
     }
 }
