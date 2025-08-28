@@ -85,7 +85,7 @@ where
                 if should_retry_error && attempt < max_retries {
                     attempt += 1;
                     // Exponential backoff: 2^attempt seconds (2s, 4s, 8s, ...) with max cap
-                    let delay = Duration::from_secs(2_u64.saturating_pow(attempt).min(300)); // Cap at 5 minutes
+                    let delay = Duration::from_secs(2_u64.saturating_pow(attempt).min(1800)); // Cap at 30 minutes
                     tracing::warn!(
                         error = %err,
                         attempt = attempt,
