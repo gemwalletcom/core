@@ -268,7 +268,8 @@ impl Across {
             }
         } else {
             let relayer_calc = RelayerFeeCalculator::default();
-            let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
+            let from_amount_bigint = BigInt::from_bytes_le(Sign::Plus, &from_amount.to_le_bytes::<32>());
+            let relayer_fee_percent = relayer_calc.capital_fee_percent(&from_amount_bigint, cost_config);
             fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals)
         }
     }
