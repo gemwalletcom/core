@@ -36,12 +36,12 @@ where
 /// # Arguments
 /// * `operation` - A closure that returns a Future to be retried
 /// * `max_retries` - Maximum number of retry attempts
-/// * `status_codes` - Optional list of HTTP status codes to retry on (e.g., [429, 502, 503, 504])
+/// * `should_retry_fn` - Optional predicate function to determine if error should trigger retry
 ///   If None, defaults to clearly transient errors (429, 502, 503, 504, throttling)
 ///
 /// # Example
 /// ```rust
-/// use gem_client::retry::retry;
+/// use gem_client::retry::{retry, default_should_retry};
 ///
 /// // Retry on clearly transient errors (429, 502, 503, 504, throttling) - default behavior
 /// let result = retry(
@@ -50,25 +50,26 @@ where
 ///     None
 /// ).await;
 ///
-/// // Retry only on rate limiting (429)
+/// // Custom retry logic
 /// let result = retry(
 ///     || async { api_client.get("/endpoint").await },
 ///     3,
-///     Some(vec![429])
+///     Some(|error| error.to_string().contains("429"))
 /// ).await;
 ///
-/// // Retry on multiple specific status codes (including 500 if desired)
+/// // Use explicit predefined function
 /// let result = retry(
 ///     || async { api_client.get("/endpoint").await },
 ///     3,
-///     Some(vec![429, 500, 502, 503, 504])
+///     Some(default_should_retry)
 /// ).await;
 /// ```
-pub async fn retry<T, E, F, Fut>(operation: F, max_retries: u32, status_codes: Option<Vec<u16>>) -> Result<T, E>
+pub async fn retry<T, E, F, Fut, P>(operation: F, max_retries: u32, should_retry_fn: Option<P>) -> Result<T, E>
 where
     F: Fn() -> Fut,
     Fut: Future<Output = Result<T, E>>,
     E: std::fmt::Display,
+    P: Fn(&E) -> bool,
 {
     let mut attempt = 0;
 
@@ -76,16 +77,21 @@ where
         match operation().await {
             Ok(result) => return Ok(result),
             Err(err) => {
-                if should_retry(&err, &status_codes) && attempt < max_retries {
+                let should_retry_error = match &should_retry_fn {
+                    Some(predicate) => predicate(&err),
+                    None => default_should_retry(&err),
+                };
+                
+                if should_retry_error && attempt < max_retries {
                     attempt += 1;
-                    // Exponential backoff: 2^attempt seconds (2s, 4s, 8s, ...)
-                    let delay = Duration::from_secs(2_u64.pow(attempt));
-                    println!(
-                        "Retrying after error: {} (attempt {}/{}, waiting {}s)",
-                        err,
-                        attempt,
-                        max_retries,
-                        delay.as_secs()
+                    // Exponential backoff: 2^attempt seconds (2s, 4s, 8s, ...) with max cap
+                    let delay = Duration::from_secs(2_u64.saturating_pow(attempt).min(300)); // Cap at 5 minutes
+                    tracing::warn!(
+                        error = %err,
+                        attempt = attempt,
+                        max_retries = max_retries,
+                        delay_secs = delay.as_secs(),
+                        "Retrying after error"
                     );
 
                     #[cfg(feature = "reqwest")]
@@ -103,22 +109,22 @@ where
     }
 }
 
-/// Check if an error should trigger a retry based on status codes
-fn should_retry<E: std::fmt::Display>(error: &E, status_codes: &Option<Vec<u16>>) -> bool {
+/// Default retry predicate for clearly transient errors
+/// 
+/// Retries on:
+/// - 429 (Too Many Requests)
+/// - 502 (Bad Gateway) 
+/// - 503 (Service Unavailable)
+/// - 504 (Gateway Timeout)
+/// - "too many requests" and "throttled" messages
+pub fn default_should_retry<E: std::fmt::Display>(error: &E) -> bool {
     let error_str = error.to_string().to_lowercase();
-
-    match status_codes {
-        Some(codes) => {
-            // Check for specific status codes only
-            codes.iter().any(|code| error_str.contains(&code.to_string()))
-        }
-        None => {
-            error_str.contains("429") ||                    // Too Many Requests
-            error_str.contains("502") ||                    // Bad Gateway
-            error_str.contains("503") ||                    // Service Unavailable
-            error_str.contains("504") ||                    // Gateway Timeout
-            error_str.contains("too many requests") ||      // Rate limiting messages
-            error_str.contains("throttled") // Throttling messages
-        }
-    }
+    
+    error_str.contains("429") ||                    // Too Many Requests
+    error_str.contains("502") ||                    // Bad Gateway
+    error_str.contains("503") ||                    // Service Unavailable
+    error_str.contains("504") ||                    // Gateway Timeout
+    error_str.contains("too many requests") ||      // Rate limiting messages
+    error_str.contains("throttled")                 // Throttling messages
 }
+

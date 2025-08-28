@@ -56,7 +56,7 @@ impl<C: Client> CoinGeckoClient<C> {
                 }
             },
             3,
-            None, // Use default retry behavior (429, 502, 503, 504, throttling)
+            None::<fn(&Box<dyn Error + Send + Sync>) -> bool>, // Use default retry behavior
         )
         .await
     }

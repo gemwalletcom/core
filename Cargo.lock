@@ -2995,6 +2995,7 @@ dependencies = [
  "serde_urlencoded",
  "thiserror 2.0.16",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
