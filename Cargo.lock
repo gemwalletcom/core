@@ -3268,7 +3268,7 @@ dependencies = [
 
 [[package]]
 name = "gemstone"
-version = "0.31.1"
+version = "0.33.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",

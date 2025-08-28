@@ -2,7 +2,7 @@ use super::fees::CapitalCostConfig;
 use crate::ether_conv::EtherConv;
 use alloy_primitives::map::HashSet;
 use num_bigint::BigInt;
-use primitives::{asset_constants::*, AssetId, Chain};
+use primitives::{asset_constants::*, AssetId, Chain, ChainType};
 use std::collections::HashMap;
 
 pub const ACROSS_CONFIG_STORE: &str = "0x3B03509645713718B78951126E0A6de6f10043f5";
@@ -11,7 +11,8 @@ pub const MULTICALL_HANDLER: &str = "0x924a9f036260DdD5808007E1AA95f08eD08aA569"
 
 /// https://docs.across.to/developer-docs/developers/contract-addresses
 pub struct AcrossDeployment {
-    pub chain_id: u32,
+    pub chain_id: u64,
+    pub chain_type: ChainType,
     pub spoke_pool: &'static str,
 }
 
@@ -23,55 +24,72 @@ pub struct AssetMapping {
 
 impl AcrossDeployment {
     pub fn deployment_by_chain(chain: &Chain) -> Option<Self> {
-        let chain_id: u32 = chain.network_id().parse().unwrap();
+        let chain_id: u64 = chain.network_id().parse().unwrap();
         match chain {
             Chain::Ethereum => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5",
             }),
             Chain::Arbitrum => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0xe35e9842fceaca96570b734083f4a58e8f7c5f2a",
             }),
             Chain::Base => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
             }),
             Chain::Blast => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x2D509190Ed0172ba588407D4c2df918F955Cc6E1",
             }),
             Chain::Linea => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x7E63A5f1a8F0B4d0934B2f2327DAED3F6bb2ee75",
             }),
             Chain::Optimism => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x6f26Bf09B1C792e3228e5467807a900A503c0281",
             }),
             Chain::Polygon => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x9295ee1d8C5b022Be115A2AD3c30C72E34e7F096",
             }),
             Chain::World => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
             }),
             Chain::ZkSync => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0xE0B015E54d54fc84a6cB9B666099c46adE9335FF",
             }),
             Chain::Ink => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0xeF684C38F94F48775959ECf2012D7E864ffb9dd4",
             }),
             Chain::Unichain => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
             }),
             Chain::SmartChain => Some(Self {
                 chain_id,
+                chain_type: ChainType::Ethereum,
                 spoke_pool: "0x4e8E101924eDE233C13e2D8622DC8aED2872d505",
+            }),
+            Chain::Solana => Some(Self {
+                chain_id: 34268394551451_u64,
+                chain_type: ChainType::Solana,
+                spoke_pool: "DLv3NggMiSaef97YCkew5xKUHDh13tVGZ7tydt3ZeAru",
             }),
             _ => None,
         }
@@ -112,6 +130,7 @@ impl AcrossDeployment {
             (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
             (Chain::Unichain, vec![WETH_UNICHAIN_ASSET_ID.into(), USDC_UNICHAIN_ASSET_ID.into()]),
             (Chain::SmartChain, vec![ETH_SMARTCHAIN_ASSET_ID.into()]),
+            (Chain::Solana, vec![USDC_SOLANA_ASSET_ID.into()]),
         ])
     }
 
@@ -153,6 +172,7 @@ impl AcrossDeployment {
                     USDC_OP_ASSET_ID.into(),
                     USDC_POLYGON_ASSET_ID.into(),
                     USDC_UNICHAIN_ASSET_ID.into(),
+                    USDC_SOLANA_ASSET_ID.into(),
                 ]),
             },
             // USDC on BSC decimals are 18

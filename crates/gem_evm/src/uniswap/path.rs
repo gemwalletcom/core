@@ -125,7 +125,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
 
     let usdt: &str = match chain {
         EVMChain::Ethereum => "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-        EVMChain::Polygon => "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+        EVMChain::Polygon => "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", // USDT0
         EVMChain::Arbitrum => "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
         EVMChain::Optimism => "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58",
         EVMChain::Base => "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
