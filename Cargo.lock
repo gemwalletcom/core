@@ -5269,6 +5269,7 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "futures",
  "num-bigint",
  "serde",
  "serde_json",

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainBalances;
-use futures::future::try_join_all;
-use std::error::Error;
+use primitives::parallel_map;
+use std::{error::Error, sync::Arc};
 
 use gem_client::Client;
 use primitives::AssetBalance;
@@ -18,19 +18,16 @@ impl<C: Client> ChainBalances for AptosClient<C> {
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let futures: Vec<_> = token_ids
-            .into_iter()
-            .map(|token_id| {
-                let address = address.clone();
-                async move {
-                    let balance = self.get_account_balance(&address.clone(), &token_id).await?;
-                    Ok::<(String, u64), Box<dyn Error + Send + Sync>>((token_id, balance))
-                }
-            })
-            .collect();
-
-        let balance_results = try_join_all(futures).await?;
-        Ok(map_balance_tokens(balance_results, self.get_chain()))
+        let address_arc = Arc::new(address);
+        let results = parallel_map(token_ids, |token_id| {
+            let address = address_arc.clone();
+            async move {
+                let balance = self.get_account_balance(&address, &token_id).await?;
+                Ok::<(String, u64), Box<dyn Error + Send + Sync>>((token_id, balance))
+            }
+        }).await?;
+        
+        Ok(map_balance_tokens(results, self.get_chain()))
     }
 
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
