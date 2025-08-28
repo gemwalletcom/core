@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainBalances;
 use primitives::parallel_map;
-use std::error::Error;
+use std::{error::Error, sync::Arc};
 
 use crate::provider::balances_mapper::{map_balance_staking, map_coin_balance, map_token_accounts};
 use crate::rpc::client::SolanaClient;
@@ -17,8 +17,9 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
+        let address_arc = Arc::new(address);
         let results = parallel_map(token_ids, |token_id| {
-            let address = address.clone();
+            let address = address_arc.clone();
             async move {
                 let accounts = self.get_token_accounts_by_mint(&address, &token_id).await?;
                 Ok::<Vec<AssetBalance>, Box<dyn Error + Send + Sync>>(map_token_accounts(&accounts, &token_id))
