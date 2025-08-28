@@ -10,7 +10,7 @@ use crate::{
     swapper::SwapperError,
 };
 use gem_evm::{
-    chainlink::contract::{AggregatorInterface, CHAINLINK_ETH_USD_FEED},
+    chainlink::contract::{AggregatorInterface, CHAINLINK_ETH_USD_FEED, CHAINLINK_SOL_USD_FEED},
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::{create_call3, decode_call3_return, IMulticall3},
 };
@@ -24,6 +24,13 @@ impl ChainlinkPriceFeed {
     pub fn new_eth_usd_feed(provider: Arc<dyn AlienProvider>) -> ChainlinkPriceFeed {
         ChainlinkPriceFeed {
             contract: CHAINLINK_ETH_USD_FEED.into(),
+            client: jsonrpc_client_with_chain(provider, Chain::Ethereum),
+        }
+    }
+
+    pub fn new_sol_usd_feed(provider: Arc<dyn AlienProvider>) -> ChainlinkPriceFeed {
+        ChainlinkPriceFeed {
+            contract: CHAINLINK_SOL_USD_FEED.into(),
             client: jsonrpc_client_with_chain(provider, Chain::Ethereum),
         }
     }
