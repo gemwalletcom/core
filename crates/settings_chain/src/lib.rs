@@ -1,7 +1,7 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
-use gem_client::{retry::standard_retry_policy, ReqwestClient};
+use gem_client::{retry_policy, ReqwestClient};
 pub use provider_config::ProviderConfig;
 
 use gem_chain_rpc::{ethereum::EthereumProvider, tron::TronProvider, ChainProvider, GenericProvider, HyperCoreProvider};
@@ -55,9 +55,11 @@ impl ProviderFactory {
             .and_then(|u| u.host_str().map(String::from))
             .unwrap_or_default();
 
-        let retry_policy = standard_retry_policy(host);
-
-        let reqwest_client = reqwest::Client::builder().retry(retry_policy).build().expect("Failed to build reqwest client");
+        let retry_policy_config = retry_policy(host, 3);
+        let reqwest_client = reqwest::Client::builder()
+            .retry(retry_policy_config)
+            .build()
+            .expect("Failed to build reqwest client");
 
         let chain = config.chain;
         let url = config.url;

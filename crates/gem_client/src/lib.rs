@@ -17,7 +17,7 @@ pub use types::ClientError;
 pub use reqwest_client::ReqwestClient;
 
 #[cfg(feature = "reqwest")]
-pub use retry::{aggressive_retry_policy, retry_policy, standard_retry_policy};
+pub use retry::{retry, retry_policy, default_should_retry};
 
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};
