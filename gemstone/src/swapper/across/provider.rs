@@ -107,15 +107,24 @@ impl Across {
                 return false;
             }
             // Check if from_asset is a supported USDC token on EVM chains
-            let from_normalized = eth_address::normalize_weth_asset(from_asset).unwrap();
+            let from_normalized = match eth_address::normalize_weth_asset(from_asset) {
+                Some(asset) => asset,
+                None => return false,
+            };
             return AcrossDeployment::asset_mappings()
                 .into_iter()
                 .any(|mapping| mapping.set.contains(&from_normalized) && mapping.set.contains(&SOLANA_USDC.id));
         }
 
         // Handle EVM to EVM pairs (existing logic)
-        let from = eth_address::normalize_weth_asset(from_asset).unwrap();
-        let to = eth_address::normalize_weth_asset(to_asset).unwrap();
+        let from = match eth_address::normalize_weth_asset(from_asset) {
+            Some(asset) => asset,
+            None => return false,
+        };
+        let to = match eth_address::normalize_weth_asset(to_asset) {
+            Some(asset) => asset,
+            None => return false,
+        };
         AcrossDeployment::asset_mappings()
             .into_iter()
             .any(|x| x.set.contains(&from) && x.set.contains(&to))
@@ -123,7 +132,7 @@ impl Across {
 
     fn get_address_type_for_chain(chain: Chain, token_id: Option<&str>) -> AddressType {
         match chain {
-            Chain::Solana => AddressType::Solana(token_id.unwrap().to_string()),
+            Chain::Solana => AddressType::Solana(token_id.expect("token_id must be present for Solana assets").to_string()),
             _ => {
                 // For EVM chains, parse the token_id as Address
                 let address = if let Some(id) = token_id {
@@ -134,6 +143,48 @@ impl Across {
                 AddressType::Evm(address)
             }
         }
+    }
+
+    // Decode V3RelayData with proper cross-chain address handling
+    fn decode_v3_relay_data(encoded_data: &[u8], request: &SwapperQuoteRequest) -> Result<V3RelayData, SwapperError> {
+        let from_chain = request.from_asset.chain();
+        let to_chain = request.to_asset.chain();
+        
+        // If no Solana involved, use standard decoding
+        if from_chain != Chain::Solana && to_chain != Chain::Solana {
+            return V3RelayData::abi_decode(encoded_data).map_err(|_| SwapperError::InvalidRoute);
+        }
+        
+        // For cross-chain with Solana, we need to fix the addresses before decoding
+        let mut decode_data = encoded_data.to_vec();
+        
+        // V3RelayData struct fields in order:
+        // 0: depositor (32 bytes)
+        // 1: recipient (32 bytes) 
+        // 2: exclusiveRelayer (32 bytes)
+        // 3: inputToken (32 bytes) <- fix if from Solana
+        // 4: outputToken (32 bytes) <- fix if to Solana
+        let input_token_offset = 3 * 32;
+        let output_token_offset = 4 * 32;
+        
+        // Convert Solana addresses back to EVM-compatible format for decoding
+        // This creates placeholder EVM addresses that will be replaced in the actual transaction
+        
+        // Fix inputToken if from Solana  
+        if from_chain == Chain::Solana && decode_data.len() >= input_token_offset + 32 {
+            // Replace with zero address for decoding compatibility
+            let zero_addr_bytes = [0u8; 32];
+            decode_data[input_token_offset..input_token_offset + 32].copy_from_slice(&zero_addr_bytes);
+        }
+        
+        // Fix outputToken if to Solana
+        if to_chain == Chain::Solana && decode_data.len() >= output_token_offset + 32 {
+            // Replace with zero address for decoding compatibility  
+            let zero_addr_bytes = [0u8; 32];
+            decode_data[output_token_offset..output_token_offset + 32].copy_from_slice(&zero_addr_bytes);
+        }
+        
+        V3RelayData::abi_decode(&decode_data).map_err(|_| SwapperError::InvalidRoute)
     }
 
     fn encode_v3_relay_data(relay_data: &V3RelayData, request: &SwapperQuoteRequest) -> Result<Vec<u8>, SwapperError> {
@@ -196,7 +247,7 @@ impl Across {
 
     fn get_destination_chain_id(chain: &Chain) -> Result<u32, SwapperError> {
         let deployment = AcrossDeployment::deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        Ok(deployment.chain_id.try_into().unwrap())
+        deployment.chain_id.try_into().map_err(|_| SwapperError::NotSupportedChain)
     }
 
     fn calculate_relayer_fee_for_destination(
@@ -620,7 +671,7 @@ impl Swapper for Across {
         let dst_chain_id = Self::get_destination_chain_id(&quote.request.to_asset.chain())?;
         let route = &quote.data.routes[0];
         let route_data = HexDecode(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let v3_relay_data = V3RelayData::abi_decode(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let v3_relay_data = Self::decode_v3_relay_data(&route_data, &quote.request)?;
 
         let deposit_v3_call = V3SpokePoolInterface::depositV3Call {
             depositor: v3_relay_data.depositor,
