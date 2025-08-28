@@ -33,6 +33,8 @@ pub const WETH_UNICHAIN_ASSET_ID: &str = "unichain_0x420000000000000000000000000
 
 // Binance pegged ETH on SmartChain
 pub const ETH_SMARTCHAIN_ASSET_ID: &str = "smartchain_0x2170Ed0880ac9A755fd29B2688956BD959F933F8";
+// USDC on Solana
+pub const USDC_SOLANA_ASSET_ID: &str = "solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
 // USDC
 pub const USDC_ARB_ASSET_ID: &str = "arbitrum_0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
