@@ -67,7 +67,7 @@ impl AddressType {
     }
 
     fn solana_address_to_bytes32(solana_address: &str) -> Result<[u8; 32], SwapperError> {
-        let decoded = bs58::decode(solana_address).into_vec().map_err(|_| SwapperError::NotSupportedPair)?;
+        let decoded = bs58::decode(solana_address).into_vec().map_err(|_| SwapperError::InvalidAddress(solana_address.to_string()))?;
 
         if decoded.len() != 32 {
             return Err(SwapperError::InvalidAddress(solana_address.to_string()));
