@@ -170,6 +170,8 @@ pub mod transfer_data_extra;
 pub use self::transfer_data_extra::{TransferDataExtra, TransferDataOutputType};
 pub mod broadcast_options;
 pub use self::broadcast_options::BroadcastOptions;
+pub mod parallel;
+pub use self::parallel::parallel_map;
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;
