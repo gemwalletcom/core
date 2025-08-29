@@ -12,26 +12,19 @@ use crate::models::{
     TronAccount, TronAccountRequest, TronAccountUsage, TronBlock, TronEmptyAccount, TronReward, TronSmartContractCall, TronSmartContractResult,
 };
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
+use crate::rpc::trongrid::client::TronGridClient;
 use gem_client::Client;
 use gem_evm::erc20::{decode_abi_string, decode_abi_uint8};
 
 #[derive(Clone)]
 pub struct TronClient<C: Client> {
     pub client: C,
-    pub trongrid_client: crate::rpc::trongrid::client::TronGridClient<C>,
+    pub trongrid_client: TronGridClient<C>,
 }
 
 impl<C: Client> TronClient<C> {
-    pub fn new(client: C, trongrid_client: crate::rpc::trongrid::client::TronGridClient<C>) -> Self {
+    pub fn new(client: C, trongrid_client: TronGridClient<C>) -> Self {
         Self { client, trongrid_client }
-    }
-
-    pub fn new_with_defaults(client: C) -> Self
-    where
-        C: Clone,
-    {
-        let trongrid_client = crate::rpc::trongrid::client::TronGridClient::new(client.clone(), "https://api.trongrid.io".to_string(), "".to_string());
-        Self::new(client, trongrid_client)
     }
 
     pub async fn get_block(&self) -> Result<Block, Box<dyn Error + Send + Sync>> {
@@ -39,19 +32,19 @@ impl<C: Client> TronClient<C> {
     }
 
     pub async fn get_block_tranactions(&self, block: u64) -> Result<BlockTransactions, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/walletsolidity/getblockbynum?num={}", block)).await?)
+        Ok(self.client.get(&format!("/wallet/getblockbynum?num={}", block)).await?)
     }
 
     pub async fn get_block_tranactions_reciepts(&self, block: u64) -> Result<BlockTransactionsInfo, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/walletsolidity/gettransactioninfobyblocknum?num={}", block)).await?)
+        Ok(self.client.get(&format!("/wallet/gettransactioninfobyblocknum?num={}", block)).await?)
     }
 
     pub async fn get_transaction(&self, id: String) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/walletsolidity/gettransactionbyid?value={}", id)).await?)
+        Ok(self.client.get(&format!("/wallet/gettransactionbyid?value={}", id)).await?)
     }
 
     pub async fn get_transaction_reciept(&self, id: String) -> Result<TransactionReceiptData, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/walletsolidity/gettransactioninfobyid?value={}", id)).await?)
+        Ok(self.client.get(&format!("/wallet/gettransactioninfobyid?value={}", id)).await?)
     }
 
     pub async fn trigger_constant_contract(

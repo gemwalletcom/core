@@ -1,6 +1,7 @@
 use crate::gateway::GemUTXO;
 use primitives::solana_token_program::SolanaTokenProgramId;
 use primitives::TransactionLoadMetadata;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemSolanaTokenProgramId {
@@ -91,6 +92,7 @@ pub enum GemTransactionLoadMetadata {
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
+        votes: HashMap<String, u64>,
     },
     Sui {
         message_bytes: String,
@@ -188,6 +190,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
+                votes,
             } => GemTransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -195,6 +198,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
+                votes,
             },
             TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
             TransactionLoadMetadata::Hyperliquid {
@@ -299,6 +303,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
+                votes,
             } => TransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -306,6 +311,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
+                votes,
             },
             GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
             GemTransactionLoadMetadata::Hyperliquid {

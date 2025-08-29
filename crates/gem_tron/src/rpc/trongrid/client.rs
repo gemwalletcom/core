@@ -10,7 +10,7 @@ pub struct TronGridClient<C: Client> {
 }
 
 impl<C: Client> TronGridClient<C> {
-    pub fn new(client: C, _url: String, _key: String) -> Self {
+    pub fn new(client: C) -> Self {
         Self { client }
     }
 

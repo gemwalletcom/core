@@ -5,11 +5,11 @@ use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{Asset, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator};
 
 use super::staking_mapper::map_staking_validators;
 use crate::rpc::client::TronClient;
-use crate::rpc::constants::{GET_WITNESS_PAY_PER_BLOCK, GET_WITNESS_127_PAY_PER_BLOCK};
+use crate::rpc::constants::{GET_WITNESS_127_PAY_PER_BLOCK, GET_WITNESS_PAY_PER_BLOCK};
 
 const SYSTEM_VALIDATOR_ID: &str = "system";
 
@@ -54,14 +54,10 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
     }
 
     async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
-        let account_future = self.get_account(&address);
-        let reward_future = self.get_reward(&address);
-        let validators_future = self.get_staking_validators(Some(0.0));
-
-        let (account, reward, validators) = futures::try_join!(account_future, reward_future, validators_future)?;
+        let (account, reward, validators) = futures::try_join!(self.get_account(&address), self.get_reward(&address), self.get_staking_validators(Some(0.0)))?;
 
         let mut delegations = Vec::new();
-        let asset_id = AssetId::from(Chain::Tron, None);
+        let asset_id = Chain::Tron.as_asset_id();
 
         if let Some(unfrozen_v2) = account.unfrozen_v2 {
             for unfrozen in unfrozen_v2 {
@@ -91,7 +87,7 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
 
         if let Some(votes) = account.votes {
             let total_votes: u64 = votes.iter().map(|v| v.vote_count).sum();
-            let reward_amount = reward.reward.unwrap_or(0);
+            let reward_amount = reward.reward;
 
             for vote in votes {
                 if validators.iter().any(|v| v.id == vote.vote_address) {

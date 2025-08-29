@@ -60,7 +60,7 @@ pub struct TronUnfrozen {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TronReward {
-    pub reward: Option<u64>,
+    pub reward: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

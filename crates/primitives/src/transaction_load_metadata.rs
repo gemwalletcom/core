@@ -1,6 +1,8 @@
 use crate::{solana_token_program::SolanaTokenProgramId, UTXO};
 use serde::{Deserialize, Serialize};
 
+use std::collections::HashMap;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionLoadMetadata {
     None,
@@ -66,6 +68,7 @@ pub enum TransactionLoadMetadata {
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
+        votes: HashMap<String, u64>,
     },
     Sui {
         message_bytes: String,
