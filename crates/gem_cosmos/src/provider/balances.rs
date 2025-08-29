@@ -62,6 +62,7 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
 mod chain_integration_tests {
     use crate::provider::testkit::create_cosmos_test_client;
     use chain_traits::ChainBalances;
+    use num_bigint::BigUint;
 
     const TEST_ADDRESS: &str = "cosmos1cvh8mpz04az0x7vht6h6ekksg8wd650r39ltwj";
 
@@ -70,9 +71,10 @@ mod chain_integration_tests {
         let client = create_cosmos_test_client();
         let address = TEST_ADDRESS.to_string();
         let balance = client.get_balance_coin(address).await?;
-        let available = balance.balance.available.to_string().parse::<u64>().unwrap();
-        assert!(available > 0);
-        println!("Balance: {:?} {}", available, balance.asset_id);
+
+        println!("Balance: {:?} {}", balance.balance.available, balance.asset_id);
+
+        assert!(balance.balance.available > BigUint::from(0u64));
         Ok(())
     }
 }

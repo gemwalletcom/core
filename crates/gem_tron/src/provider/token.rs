@@ -42,7 +42,7 @@ mod chain_integration_tests {
         let tron_client = create_test_client();
 
         assert!(tron_client.get_is_token_address(TEST_USDT_TOKEN_ID));
-        assert!(!tron_client.get_is_token_address("TLyqzVGLV1srkB7dToTAEqgDSfPtXRJZYH")); // Regular address
+        assert!(!tron_client.get_is_token_address("TLyqzVGLV1srkB7dToTAEqgDSfPtXRJZYH"));
         assert!(!tron_client.get_is_token_address("invalid"));
     }
 }

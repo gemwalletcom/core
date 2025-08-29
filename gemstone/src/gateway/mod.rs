@@ -120,11 +120,7 @@ impl GemGatewayEstimateFee for GemGateway {
 #[uniffi::export]
 impl GemGateway {
     #[uniffi::constructor]
-    pub fn new(
-        provider: Arc<dyn AlienProvider>,
-        preferences: Arc<dyn GemPreferences>,
-        secure_preferences: Arc<dyn GemPreferences>,
-    ) -> Self {
+    pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>) -> Self {
         Self {
             provider,
             preferences,

@@ -1,4 +1,6 @@
+use num_bigint::BigInt;
 use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator};
+use std::str::FromStr;
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemDelegationValidator {
@@ -47,11 +49,11 @@ impl From<DelegationBase> for GemDelegationBase {
             asset_id: delegation.asset_id,
             delegation_id: delegation.delegation_id,
             validator_id: delegation.validator_id,
-            balance: delegation.balance,
-            shares: delegation.shares,
+            balance: delegation.balance.to_string(),
+            shares: delegation.shares.to_string(),
             completion_date: delegation.completion_date.map(|dt| dt.timestamp() as u64),
             delegation_state: delegation.state.as_ref().to_string(),
-            rewards: delegation.rewards,
+            rewards: delegation.rewards.to_string(),
         }
     }
 }
@@ -93,9 +95,9 @@ impl From<GemDelegationBase> for DelegationBase {
         Self {
             asset_id: delegation.asset_id,
             state: delegation.delegation_state.parse().unwrap_or(DelegationState::Active),
-            balance: delegation.balance,
-            shares: delegation.shares,
-            rewards: delegation.rewards,
+            balance: BigInt::from_str(&delegation.balance).unwrap_or_else(|_| BigInt::from(0)),
+            shares: BigInt::from_str(&delegation.shares).unwrap_or_else(|_| BigInt::from(0)),
+            rewards: BigInt::from_str(&delegation.rewards).unwrap_or_else(|_| BigInt::from(0)),
             completion_date: delegation
                 .completion_date
                 .map(|ts| chrono::DateTime::from_timestamp(ts as i64, 0).unwrap_or_default()),

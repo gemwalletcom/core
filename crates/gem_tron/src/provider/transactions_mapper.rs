@@ -6,7 +6,7 @@ use std::error::Error;
 
 use crate::address::TronAddress;
 use crate::models::{BlockTransactions, Transaction as TronTransaction, TransactionReceiptData, TronTransactionBroadcast};
-use crate::rpc::constants::{RECEIPT_FAILED, RECEIPT_OUT_OF_ENERGY};
+use crate::rpc::constants::{ERC20_TRANSFER_EVENT_SIGNATURE, RECEIPT_FAILED, RECEIPT_OUT_OF_ENERGY};
 
 const TRANSFER_CONTRACT: &str = "TransferContract";
 const TRIGGER_SMART_CONTRACT: &str = "TriggerSmartContract";
@@ -98,7 +98,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
         if value.contract_type == TRIGGER_SMART_CONTRACT
             && logs.len() == 1
             && logs.first()?.topics.clone().unwrap_or_default().len() == 3
-            && logs.first()?.topics.clone().unwrap_or_default().first()? == "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+            && logs.first()?.topics.clone().unwrap_or_default().first()? == ERC20_TRANSFER_EVENT_SIGNATURE
         {
             let log = logs.first()?;
             let from_string = format!("41{}", log.topics.clone().unwrap_or_default()[1].clone().chars().skip(24).collect::<String>());

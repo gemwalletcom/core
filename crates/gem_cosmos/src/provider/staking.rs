@@ -22,14 +22,10 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
                 Ok(calculate_network_apy_cosmos(inflation, staking_pool))
             }
             CosmosChain::Osmosis => {
-                let (mint_params, epoch_provisions, staking_pool, supply) = try_join!(
-                    self.get_osmosis_mint_params(),
-                    self.get_osmosis_epoch_provisions(),
-                    self.get_staking_pool(),
-                    self.get_supply_by_denom("uosmo")
-                )?;
+                let (mint_params, epoch_provisions, staking_pool) =
+                    try_join!(self.get_osmosis_mint_params(), self.get_osmosis_epoch_provisions(), self.get_staking_pool())?;
 
-                Ok(calculate_network_apy_osmosis(mint_params, epoch_provisions, staking_pool, supply))
+                Ok(calculate_network_apy_osmosis(mint_params, epoch_provisions, staking_pool))
             }
             CosmosChain::Celestia => Ok(Some(10.55)),
             CosmosChain::Sei => Ok(Some(5.62)),

@@ -1,7 +1,7 @@
 use num_bigint::BigUint;
 use primitives::AssetId;
 use serde::{Deserialize, Serialize};
-use serde_serializers::deserialize_biguint_from_str;
+use serde_serializers::{deserialize_biguint_from_str, deserialize_u64_from_str};
 
 use crate::models::rpc::{Info, Parsed, ValueData, ValueResult};
 pub use num_bigint::BigInt;
@@ -68,8 +68,10 @@ pub struct StakeInfo {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct StakeDelegation {
-    pub activation_epoch: String,
-    pub deactivation_epoch: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub activation_epoch: u64,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub deactivation_epoch: u64,
     pub stake: String,
     pub voter: String,
 }

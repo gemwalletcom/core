@@ -71,9 +71,9 @@ mod chain_integration_tests {
         assert!(latest_block > 0);
         assert!(!transactions.is_empty());
 
-        if let Some(first_tx) = transactions.first() {
-            println!("First transaction ID: {}", first_tx.id);
-            assert!(!first_tx.id.is_empty());
+        if let Some(transaction) = transactions.first() {
+            println!("First transaction ID: {}", transaction.id);
+            assert!(!transaction.id.is_empty());
         }
     }
 

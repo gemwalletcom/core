@@ -101,7 +101,7 @@ impl HyperCoreCache {
         let (agent_address, agent_private_key) = agent.get_or_create_credentials(sender_address)?;
         let cache_key = self.cache_key(&agent_address, Self::AGENT_VALID_UNTIL_KEY);
         let current_time = Self::current_time()?;
-        
+
         if let Some(cached_valid_until) = self.preferences.get_i64(&cache_key)? {
             if current_time < cached_valid_until {
                 return Ok((false, agent_address, agent_private_key));
@@ -109,11 +109,11 @@ impl HyperCoreCache {
         }
 
         let agents = get_agents.await?;
-        
+
         if let Some(api_agent) = agents.iter().find(|a| a.address.to_lowercase() == agent_address.to_lowercase()) {
             let valid_until = (api_agent.valid_until / 1000) as i64;
             self.preferences.set_i64(&cache_key, valid_until)?;
-            
+
             if current_time >= valid_until {
                 let (new_address, new_key) = agent.regenerate_credentials(sender_address)?;
                 Ok((true, new_address, new_key))

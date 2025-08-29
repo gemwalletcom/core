@@ -102,7 +102,7 @@ impl TransactionBroadcastResponse {
                 } else {
                     HyperCoreBroadcastResult::Error(format!("Request failed with status: {}", status_error.status))
                 }
-            },
+            }
             TransactionBroadcastResponse::SimpleResponse(simple) => match simple.status.as_str() {
                 "ok" => HyperCoreBroadcastResult::Success(data),
                 _ => HyperCoreBroadcastResult::Error("Request failed".to_string()),

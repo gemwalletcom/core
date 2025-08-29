@@ -7,4 +7,4 @@ pub mod referral;
 pub mod response;
 pub mod user;
 
-type UInt64 = u64;
+pub type UInt64 = u64;

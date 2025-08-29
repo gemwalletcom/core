@@ -3099,6 +3099,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "tokio",
 ]
 
 [[package]]

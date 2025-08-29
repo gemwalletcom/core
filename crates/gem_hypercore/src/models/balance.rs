@@ -1,4 +1,3 @@
-use crate::models::UInt64;
 use gem_evm::ethereum_address_checksum;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_f64_from_str;
@@ -34,17 +33,21 @@ pub struct HypercoreToken {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreStakeBalance {
-    pub delegated: String,
-    pub undelegated: String,
-    pub total_pending_withdrawal: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub delegated: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub undelegated: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub total_pending_withdrawal: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreDelegationBalance {
     pub validator: String,
-    pub amount: String,
-    pub locked_until_timestamp: UInt64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub amount: f64,
+    pub locked_until_timestamp: u64,
 }
 
 impl HypercoreDelegationBalance {
@@ -58,7 +61,8 @@ impl HypercoreDelegationBalance {
 pub struct HypercoreValidator {
     pub validator: String,
     pub name: String,
-    pub commission: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub commission: f64,
     pub is_active: bool,
     pub stats: Vec<(String, HypercoreValidatorStats)>,
 }

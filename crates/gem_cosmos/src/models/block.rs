@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_f64_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockResponseLegacy {
@@ -54,7 +55,8 @@ pub struct BlockData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InflationResponse {
-    pub inflation: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub inflation: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,5 +72,6 @@ pub struct SupplyResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SupplyAmount {
     pub denom: String,
-    pub amount: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub amount: f64,
 }
