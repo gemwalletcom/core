@@ -5,11 +5,11 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{BroadcastOptions, Transaction, TransactionStateRequest, TransactionUpdate};
 
-use super::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
+use super::transactions_mapper::{map_transaction_broadcast, map_transaction_status, map_transactions_by_address, map_transactions_by_block};
 use crate::rpc::client::TronClient;
 
 #[async_trait]
-impl<C: Client> ChainTransactions for TronClient<C> {
+impl<C: Client + Clone> ChainTransactions for TronClient<C> {
     async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
         let response = self.broadcast_transaction(data).await?;
         map_transaction_broadcast(&response)
@@ -20,12 +20,31 @@ impl<C: Client> ChainTransactions for TronClient<C> {
         Ok(map_transaction_status(&receipt))
     }
 
-    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let block_data = self.get_block_tranactions(block).await?;
+        if block_data.transactions.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let receipts = self.get_block_tranactions_reciepts(block).await?;
+        Ok(map_transactions_by_block(self.get_chain(), block_data, receipts))
     }
 
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let limit = limit.unwrap_or(20);
+        let transactions = self.trongrid_client.get_transactions_by_address(&address, limit).await?.data;
+
+        if transactions.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let mut receipts = Vec::new();
+        for tx in &transactions {
+            let receipt = self.get_transaction_reciept(tx.tx_id.clone()).await?;
+            receipts.push(receipt);
+        }
+
+        Ok(map_transactions_by_address(transactions, receipts))
     }
 }
 
@@ -40,18 +59,30 @@ mod chain_integration_tests {
         let tron_client = create_test_client();
 
         let latest_block = tron_client.get_block_latest_number().await.unwrap();
-        let transactions = tron_client.get_transactions_by_block(latest_block).await.unwrap();
+        let block_number = latest_block - 25;
+        let transactions = tron_client.get_transactions_by_block(block_number).await.unwrap();
 
-        println!("Latest block: {}, transactions count: {}", latest_block, transactions.len());
+        println!(
+            "Latest block: {}, test block: {}, transactions count: {}",
+            latest_block,
+            block_number,
+            transactions.len()
+        );
         assert!(latest_block > 0);
+        assert!(!transactions.is_empty());
+
+        if let Some(first_tx) = transactions.first() {
+            println!("First transaction ID: {}", first_tx.id);
+            assert!(!first_tx.id.is_empty());
+        }
     }
 
     #[tokio::test]
     async fn test_get_transactions_by_address() {
         let tron_client = create_test_client();
-
-        let transactions = tron_client.get_transactions_by_address(TEST_ADDRESS.to_string()).await.unwrap();
+        let transactions = tron_client.get_transactions_by_address(TEST_ADDRESS.to_string(), Some(1)).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
+        assert!(!transactions.is_empty());
     }
 }

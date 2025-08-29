@@ -46,7 +46,7 @@ impl ChainProviders {
             .iter()
             .find(|x| x.get_chain() == chain)
             .unwrap()
-            .get_transactions_by_address(address)
+            .get_transactions_by_address(address, None)
             .await
     }
 

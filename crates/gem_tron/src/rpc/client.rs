@@ -1,10 +1,10 @@
 use async_trait::async_trait;
-use chain_traits::{ChainAccount, ChainPerpetual, ChainStaking, ChainTraits};
+use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
 use num_bigint::BigUint;
 use primitives::{asset_type::AssetType, chain::Chain, Asset, AssetId};
 use std::{error::Error, str::FromStr};
 
-use super::model::{
+use crate::models::{
     Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData,
     TriggerConstantContractRequest, TriggerConstantContractResponse, TronTransactionBroadcast, WitnessesList,
 };
@@ -18,22 +18,31 @@ use gem_evm::erc20::{decode_abi_string, decode_abi_uint8};
 #[derive(Clone)]
 pub struct TronClient<C: Client> {
     pub client: C,
+    pub trongrid_client: crate::rpc::trongrid::client::TronGridClient<C>,
 }
 
 impl<C: Client> TronClient<C> {
-    pub fn new(client: C) -> Self {
-        Self { client }
+    pub fn new(client: C, trongrid_client: crate::rpc::trongrid::client::TronGridClient<C>) -> Self {
+        Self { client, trongrid_client }
+    }
+
+    pub fn new_with_defaults(client: C) -> Self
+    where
+        C: Clone,
+    {
+        let trongrid_client = crate::rpc::trongrid::client::TronGridClient::new(client.clone(), "https://api.trongrid.io".to_string(), "".to_string());
+        Self::new(client, trongrid_client)
     }
 
     pub async fn get_block(&self) -> Result<Block, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get("/wallet/getblock").await?)
     }
 
-    pub async fn get_block_tranactions(&self, block: i64) -> Result<BlockTransactions, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_tranactions(&self, block: u64) -> Result<BlockTransactions, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/walletsolidity/getblockbynum?num={}", block)).await?)
     }
 
-    pub async fn get_block_tranactions_reciepts(&self, block: i64) -> Result<BlockTransactionsInfo, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_tranactions_reciepts(&self, block: u64) -> Result<BlockTransactionsInfo, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/walletsolidity/gettransactioninfobyblocknum?num={}", block)).await?)
     }
 
@@ -187,16 +196,19 @@ impl<C: Client> TronClient<C> {
 
 // Trait implementations required for gateway integration
 #[async_trait]
-impl<C: Client> ChainTraits for TronClient<C> {}
+impl<C: Client + Clone> ChainTraits for TronClient<C> {}
 
 #[async_trait]
-impl<C: Client> ChainAccount for TronClient<C> {}
+impl<C: Client + Clone> ChainAccount for TronClient<C> {}
 
 #[async_trait]
-impl<C: Client> ChainPerpetual for TronClient<C> {}
+impl<C: Client + Clone> ChainPerpetual for TronClient<C> {}
 
-#[async_trait]
-impl<C: Client> ChainStaking for TronClient<C> {}
+impl<C: Client + Clone> chain_traits::ChainProvider for TronClient<C> {
+    fn get_chain(&self) -> primitives::Chain {
+        Chain::Tron
+    }
+}
 
 #[cfg(test)]
 mod tests {

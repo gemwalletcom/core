@@ -36,7 +36,7 @@ impl<C: Client> ChainTransactions for AlgorandClientIndexer<C> {
         Ok(map_transactions(transactions.transactions))
     }
 
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let transactions = self.get_account_transactions(&address).await?;
         Ok(map_transactions(transactions.transactions))
     }
@@ -59,7 +59,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_algorand_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_algorand_test_indexer_client();
-        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string()).await?;
+        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await?;
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
         Ok(())
     }

@@ -23,7 +23,7 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
         Ok(map_transactions(self.get_block_transactions(block).await?.transactions))
     }
 
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(map_transactions(self.get_transactions_by_address(_address).await?))
     }
 }
@@ -45,7 +45,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_aptos_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_aptos_test_client();
-        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string()).await?;
+        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await?;
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
         Ok(())
     }

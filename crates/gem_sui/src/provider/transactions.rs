@@ -66,7 +66,7 @@ impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
         Ok(transactions)
     }
 
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
         Ok(self
             .get_transactions_by_address(address)
             .await?

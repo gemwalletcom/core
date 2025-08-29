@@ -133,7 +133,7 @@ impl<C: Client> XRPClient<C> {
         Ok(result.result.ledger)
     }
 
-    pub async fn get_account_transactions(&self, address: String, limit: u32) -> Result<AccountLedger, Box<dyn Error + Send + Sync>> {
+    pub async fn get_account_transactions(&self, address: String, limit: usize) -> Result<AccountLedger, Box<dyn Error + Send + Sync>> {
         let params = json!({
             "method": "account_tx",
             "params": [

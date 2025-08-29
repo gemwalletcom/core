@@ -98,7 +98,7 @@ impl GemGateway {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
             }
             Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
-            Chain::Tron => Ok(Arc::new(TronClient::new(alien_client))),
+            Chain::Tron => Ok(Arc::new(TronClient::new_with_defaults(alien_client))),
             Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
             Chain::Solana => Ok(Arc::new(SolanaClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),

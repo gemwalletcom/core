@@ -2,10 +2,8 @@ use num_bigint::BigInt;
 use std::error::Error;
 
 use crate::models::TronAccountUsage;
-use crate::rpc::{
-    constants::{BASE_FEE, GET_CREATE_ACCOUNT_FEE, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT, GET_ENERGY_FEE},
-    model::ChainParameter,
-};
+use crate::models::ChainParameter;
+use crate::rpc::constants::{BASE_FEE, GET_CREATE_ACCOUNT_FEE, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT, GET_ENERGY_FEE};
 
 pub fn calculate_transfer_fee_rate(
     chain_parameters: &[ChainParameter],

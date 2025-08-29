@@ -138,9 +138,9 @@ impl ChainAssetsProvider for ParserProxy {
 
 #[async_trait]
 impl ChainTransactionsProvider for ParserProxy {
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let provider_index = *self.provider_current_index.lock().unwrap();
-        match self.providers[provider_index].get_transactions_by_address(address).await {
+        match self.providers[provider_index].get_transactions_by_address(address, limit).await {
             Ok(txs) => Ok(txs),
             Err(err) => Err(self.handle_error(err)),
         }
