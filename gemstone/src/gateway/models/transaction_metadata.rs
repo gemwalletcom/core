@@ -99,7 +99,9 @@ pub enum GemTransactionLoadMetadata {
         approve_agent_required: bool,
         approve_referral_required: bool,
         approve_builder_required: bool,
-        builder_fee_bps: i32,
+        builder_fee_bps: u32,
+        agent_address: String,
+        agent_private_key: String,
     },
 }
 
@@ -200,11 +202,15 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 approve_referral_required,
                 approve_builder_required,
                 builder_fee_bps,
+                agent_address,
+                agent_private_key,
             } => GemTransactionLoadMetadata::Hyperliquid {
                 approve_agent_required,
                 approve_referral_required,
                 approve_builder_required,
                 builder_fee_bps,
+                agent_address,
+                agent_private_key,
             },
         }
     }
@@ -307,11 +313,15 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 approve_referral_required,
                 approve_builder_required,
                 builder_fee_bps,
+                agent_address,
+                agent_private_key,
             } => TransactionLoadMetadata::Hyperliquid {
                 approve_agent_required,
                 approve_referral_required,
                 approve_builder_required,
                 builder_fee_bps,
+                agent_address,
+                agent_private_key,
             },
         }
     }

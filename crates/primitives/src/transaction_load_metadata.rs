@@ -74,7 +74,9 @@ pub enum TransactionLoadMetadata {
         approve_agent_required: bool,
         approve_referral_required: bool,
         approve_builder_required: bool,
-        builder_fee_bps: i32,
+        builder_fee_bps: u32,
+        agent_address: String,
+        agent_private_key: String,
     },
 }
 

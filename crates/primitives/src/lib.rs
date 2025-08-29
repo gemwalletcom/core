@@ -172,6 +172,8 @@ pub mod broadcast_options;
 pub use self::broadcast_options::BroadcastOptions;
 pub mod parallel;
 pub use self::parallel::parallel_map;
+pub mod secure_preferences;
+pub use self::secure_preferences::{Preferences, PreferencesExt, SecurePreferences};
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

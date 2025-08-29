@@ -24,7 +24,8 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
                 let accounts = self.get_token_accounts_by_mint(&address, &token_id).await?;
                 Ok::<Vec<AssetBalance>, Box<dyn Error + Send + Sync>>(map_token_accounts(&accounts, &token_id))
             }
-        }).await?;
+        })
+        .await?;
 
         Ok(results.into_iter().flatten().collect())
     }
@@ -81,8 +82,7 @@ mod chain_integration_tests {
         if let Some(balance) = staking_balance {
             assert_eq!(balance.asset_id.chain, Chain::Solana);
             assert_eq!(balance.asset_id.token_id, None);
-            assert!(balance.balance.available >= num_bigint::BigUint::from(0u32));
-            assert!(balance.balance.staked >= num_bigint::BigUint::from(0u32));
+            assert!(balance.balance.staked > num_bigint::BigUint::from(0u32));
         }
 
         Ok(())

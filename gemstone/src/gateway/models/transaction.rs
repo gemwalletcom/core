@@ -3,9 +3,9 @@ use num_bigint::BigInt;
 use primitives::swap::ApprovalData;
 use primitives::FeeOption;
 use primitives::{
-    GasPriceType, PerpetualConfirmData, PerpetualDirection, StakeType, TransactionChange, TransactionFee, TransactionInputType,
-    TransactionLoadInput, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra,
-    TransferDataOutputType, WalletConnectionSessionAppMetadata,
+    GasPriceType, PerpetualConfirmData, PerpetualDirection, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput,
+    TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputType,
+    WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
 

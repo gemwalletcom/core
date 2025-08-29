@@ -81,7 +81,7 @@ where
                     Some(predicate) => predicate(&err),
                     None => default_should_retry(&err),
                 };
-                
+
                 if should_retry_error && attempt < max_retries {
                     attempt += 1;
                     // Exponential backoff: 2^attempt seconds (2s, 4s, 8s, ...) with max cap
@@ -110,21 +110,20 @@ where
 }
 
 /// Default retry predicate for clearly transient errors
-/// 
+///
 /// Retries on:
 /// - 429 (Too Many Requests)
-/// - 502 (Bad Gateway) 
+/// - 502 (Bad Gateway)
 /// - 503 (Service Unavailable)
 /// - 504 (Gateway Timeout)
 /// - "too many requests" and "throttled" messages
 pub fn default_should_retry<E: std::fmt::Display>(error: &E) -> bool {
     let error_str = error.to_string().to_lowercase();
-    
+
     error_str.contains("429") ||                    // Too Many Requests
     error_str.contains("502") ||                    // Bad Gateway
     error_str.contains("503") ||                    // Service Unavailable
     error_str.contains("504") ||                    // Gateway Timeout
     error_str.contains("too many requests") ||      // Rate limiting messages
-    error_str.contains("throttled")                 // Throttling messages
+    error_str.contains("throttled") // Throttling messages
 }
-

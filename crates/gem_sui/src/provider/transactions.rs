@@ -7,8 +7,8 @@ use chain_traits::{ChainTransactionLoad, ChainTransactions};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 use primitives::{
-    BroadcastOptions, FeePriority, FeeRate, GasPriceType, Transaction, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput, TransactionStateRequest, TransactionUpdate,
+    BroadcastOptions, FeePriority, FeeRate, GasPriceType, Transaction, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
+    TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate,
 };
 
 use crate::provider::transactions_mapper;

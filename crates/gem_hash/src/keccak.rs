@@ -1,5 +1,6 @@
+use tiny_keccak::{Hasher, Keccak};
+
 pub fn keccak256(bytes: &[u8]) -> [u8; 32] {
-    use tiny_keccak::{Hasher, Keccak};
     let mut hasher = Keccak::v256();
     hasher.update(bytes);
 

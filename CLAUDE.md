@@ -105,6 +105,8 @@ Follow the existing code style patterns unless explicitly asked to change:
 3. Local crate imports  
 4. Module re-exports with `pub use`
 
+**IMPORTANT**: Always import models and types at the top of the file. Never use inline imports inside functions (e.g., `use crate::models::SomeType` inside a function). All imports must be declared in the file header section.
+
 ### Error Handling
 - Use `thiserror` for custom error types
 - Implement `From` traits for error conversion

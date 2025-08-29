@@ -28,9 +28,46 @@ pub trait GemGatewayEstimateFee: Send + Sync {
     async fn get_fee_data(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<Option<String>, GatewayError>;
 }
 
-#[derive(Debug, uniffi::Object)]
+#[uniffi::export(with_foreign)]
+pub trait GemPreferences: Send + Sync {
+    fn get(&self, key: String) -> Result<Option<String>, GatewayError>;
+    fn set(&self, key: String, value: String) -> Result<(), GatewayError>;
+    fn remove(&self, key: String) -> Result<(), GatewayError>;
+}
+
+struct PreferencesWrapper {
+    preferences: Arc<dyn GemPreferences>,
+}
+
+impl primitives::Preferences for PreferencesWrapper {
+    fn get(&self, key: String) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+        self.preferences.get(key).map_err(Into::into)
+    }
+
+    fn set(&self, key: String, value: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        self.preferences.set(key, value).map_err(Into::into)
+    }
+
+    fn remove(&self, key: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        self.preferences.remove(key).map_err(Into::into)
+    }
+}
+
+#[derive(uniffi::Object)]
 pub struct GemGateway {
     pub provider: Arc<dyn AlienProvider>,
+    pub preferences: Arc<dyn GemPreferences>,
+    pub secure_preferences: Arc<dyn GemPreferences>,
+}
+
+impl std::fmt::Debug for GemGateway {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GemGateway")
+            .field("provider", &"<AlienProvider>")
+            .field("preferences", &"<GemPreferences>")
+            .field("secure_preferences", &"<GemPreferences>")
+            .finish()
+    }
 }
 
 impl GemGateway {
@@ -38,7 +75,15 @@ impl GemGateway {
         let url = self.provider.get_endpoint(chain).unwrap();
         let alien_client = AlienClient::new(url.clone(), self.provider.clone());
         match chain {
-            Chain::HyperCore => Ok(Arc::new(HyperCoreClient::new(alien_client))),
+            Chain::HyperCore => {
+                let preferences = Arc::new(PreferencesWrapper {
+                    preferences: self.preferences.clone(),
+                });
+                let secure_preferences = Arc::new(PreferencesWrapper {
+                    preferences: self.secure_preferences.clone(),
+                });
+                Ok(Arc::new(HyperCoreClient::new_with_preferences(alien_client, preferences, secure_preferences)))
+            }
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {
                 Ok(Arc::new(BitcoinClient::new(alien_client, BitcoinChain::from_chain(chain).unwrap())))
             }
@@ -75,8 +120,16 @@ impl GemGatewayEstimateFee for GemGateway {
 #[uniffi::export]
 impl GemGateway {
     #[uniffi::constructor]
-    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
-        Self { provider }
+    pub fn new(
+        provider: Arc<dyn AlienProvider>,
+        preferences: Arc<dyn GemPreferences>,
+        secure_preferences: Arc<dyn GemPreferences>,
+    ) -> Self {
+        Self {
+            provider,
+            preferences,
+            secure_preferences,
+        }
     }
 
     pub async fn get_balance_coin(&self, chain: Chain, address: String) -> Result<GemAssetBalance, GatewayError> {

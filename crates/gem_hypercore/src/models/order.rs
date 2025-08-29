@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_f64_from_str;
 
 use crate::models::UInt64;
 
@@ -21,8 +22,10 @@ pub struct HypercorePerpetualFill {
     pub coin: String,
     pub hash: String,
     pub oid: UInt64,
-    pub closed_pnl: String,
-    pub fee: String,
-    pub builder_fee: Option<String>,
-    pub px: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub closed_pnl: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub fee: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub px: f64,
 }

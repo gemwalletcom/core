@@ -16,6 +16,13 @@ pub struct HypercoreErrorResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct HypercoreStatusErrorResponse {
+    pub status: String,
+    pub response: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HypercoreOrderResponse {
     pub status: String,
     pub response: Option<HypercoreOrderResponseData>,
@@ -57,6 +64,7 @@ pub struct HypercoreOrderResting {
 #[serde(untagged)]
 pub enum TransactionBroadcastResponse {
     OrderResponse(HypercoreOrderResponse),
+    StatusErrorResponse(HypercoreStatusErrorResponse),
     SimpleResponse(HypercoreResponse),
     ErrorResponse(HypercoreErrorResponse),
 }
@@ -88,6 +96,13 @@ impl TransactionBroadcastResponse {
                     HyperCoreBroadcastResult::Error("Order failed".to_string())
                 }
             }
+            TransactionBroadcastResponse::StatusErrorResponse(status_error) => {
+                if status_error.status == "err" {
+                    HyperCoreBroadcastResult::Error(status_error.response)
+                } else {
+                    HyperCoreBroadcastResult::Error(format!("Request failed with status: {}", status_error.status))
+                }
+            },
             TransactionBroadcastResponse::SimpleResponse(simple) => match simple.status.as_str() {
                 "ok" => HyperCoreBroadcastResult::Success(data),
                 _ => HyperCoreBroadcastResult::Error("Request failed".to_string()),

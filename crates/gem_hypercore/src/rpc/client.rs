@@ -5,31 +5,93 @@ use crate::models::{
     order::HypercorePerpetualFill,
     position::HypercoreAssetPositions,
     referral::HypercoreReferral,
-    response::{HyperCoreBroadcastResult, TransactionBroadcastResponse},
     user::{HypercoreAgentSession, HypercoreUserFee, HypercoreUserRole},
 };
-use async_trait::async_trait;
-use chain_traits::{ChainTraits, ChainTransactionLoad};
+use chain_traits::ChainTraits;
 use gem_client::Client;
-use num_bigint::BigInt;
-use primitives::{
-    Chain, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput,
-};
+use std::sync::Arc;
+
+use crate::config::HypercoreConfig;
+use primitives::{Chain, Preferences};
 use serde_json::json;
+use std::collections::HashMap;
 use std::error::Error;
+use std::sync::Mutex;
 
 #[derive(Debug)]
+pub struct InMemoryPreferences {
+    data: Mutex<HashMap<String, String>>,
+}
+
+impl Default for InMemoryPreferences {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl InMemoryPreferences {
+    pub fn new() -> Self {
+        Self {
+            data: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
+impl Preferences for InMemoryPreferences {
+    fn get(&self, key: String) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
+        Ok(self.data.lock().unwrap().get(&key).cloned())
+    }
+
+    fn set(&self, key: String, value: String) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.data.lock().unwrap().insert(key, value);
+        Ok(())
+    }
+
+    fn remove(&self, key: String) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.data.lock().unwrap().remove(&key);
+        Ok(())
+    }
+}
+
 pub struct HyperCoreClient<C: Client> {
     client: C,
     pub chain: Chain,
+    pub config: HypercoreConfig,
+    pub preferences: Arc<dyn Preferences>,
+    pub secure_preferences: Arc<dyn Preferences>,
+}
+
+impl<C: Client> std::fmt::Debug for HyperCoreClient<C> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("HyperCoreClient")
+            .field("chain", &self.chain)
+            .field("config", &self.config)
+            .field("preferences", &"<Preferences>")
+            .field("secure_preferences", &"<Preferences>")
+            .finish()
+    }
 }
 
 impl<C: Client> HyperCoreClient<C> {
     pub fn new(client: C) -> Self {
+        let preferences = Arc::new(InMemoryPreferences::new());
+        let secure_preferences = Arc::new(InMemoryPreferences::new());
         Self {
             client,
             chain: Chain::HyperCore,
+            config: HypercoreConfig::default(),
+            preferences,
+            secure_preferences,
+        }
+    }
+
+    pub fn new_with_preferences(client: C, preferences: Arc<dyn Preferences>, secure_preferences: Arc<dyn Preferences>) -> Self {
+        Self {
+            client,
+            chain: Chain::HyperCore,
+            config: HypercoreConfig::default(),
+            preferences,
+            secure_preferences,
         }
     }
 
@@ -40,18 +102,11 @@ impl<C: Client> HyperCoreClient<C> {
         Ok(self.client.post("/info", &payload, None).await?)
     }
 
-    async fn exchange(&self, payload: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
+    pub async fn exchange(&self, payload: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
         Ok(self.client.post("/exchange", &payload, None).await?)
     }
 
-    pub async fn transaction_broadcast(&self, data: String) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let json_data: serde_json::Value = serde_json::from_str(&data)?;
-        let response = self.exchange(json_data).await?;
-        match serde_json::from_value::<TransactionBroadcastResponse>(response)?.into_result(data) {
-            HyperCoreBroadcastResult::Success(result) => Ok(result),
-            HyperCoreBroadcastResult::Error(error) => Err(error.into()),
-        }
-    }
+
     pub async fn get_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
         self.info(json!({"type": "validatorSummaries"})).await
     }
@@ -145,7 +200,7 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_builder_fee(&self, user: &str, builder: &str) -> Result<i32, Box<dyn Error + Send + Sync>> {
+    pub async fn get_builder_fee(&self, user: &str, builder: &str) -> Result<u32, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "maxBuilderFee",
             "user": user,
@@ -160,24 +215,6 @@ impl<C: Client> HyperCoreClient<C> {
             "user": user
         }))
         .await
-    }
-}
-
-#[async_trait]
-impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
-    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadMetadata::None)
-    }
-
-    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: TransactionFee::default(),
-            metadata: input.metadata,
-        })
-    }
-
-    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(1)))])
     }
 }
 
