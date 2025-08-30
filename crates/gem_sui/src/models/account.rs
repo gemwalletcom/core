@@ -1,12 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SuiData<T> {
-    pub data: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Owner {
     String(String),
@@ -29,10 +23,6 @@ pub struct OwnerObject {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CoinMetadata {
-    pub id: String,
-    pub name: String,
-    pub decimals: i32,
-    pub symbol: String,
-    pub description: String,
+pub struct GasObject {
+    pub owner: Owner,
 }

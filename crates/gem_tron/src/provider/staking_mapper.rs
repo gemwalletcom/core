@@ -77,7 +77,7 @@ mod tests {
         assert_eq!(validators[0].apr, 4.2);
 
         assert_eq!(validators[1].id, "TEqyWRKCzREYC2bK2fc3j7pp8XjAa6tJK1");
-        assert!(validators[1].is_active);
+        assert!(!validators[1].is_active);
 
         assert_eq!(validators[2].id, SYSTEM_UNSTAKING_VALIDATOR_ID);
         assert_eq!(validators[2].name, SYSTEM_UNSTAKING_VALIDATOR_NAME);

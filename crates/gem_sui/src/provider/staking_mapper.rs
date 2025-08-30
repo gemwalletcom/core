@@ -1,4 +1,4 @@
-use crate::models::rpc::SuiSystemState as RpcSuiSystemState;
+use crate::models::RpcSuiSystemState;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
 use chrono::{DateTime, Utc};
 use num_bigint::BigInt;

@@ -20,7 +20,7 @@ use gem_solana::rpc::client::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_sui::rpc::SuiClient;
 use gem_ton::rpc::TonClient;
-use gem_tron::rpc::client::TronClient;
+use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::XRPClient;
 
 use primitives::{chain_cosmos::CosmosChain, Chain, EVMChain, NodeType};
@@ -119,7 +119,10 @@ impl ProviderFactory {
             Chain::Polkadot => Box::new(GenericProvider::new(PolkadotClient::new(gem_client.clone()))),
             Chain::Solana => Box::new(GenericProvider::new(SolanaClient::new(JsonRpcClient::new(gem_client.clone())))),
             Chain::Ton => Box::new(GenericProvider::new(TonClient::new(gem_client.clone()))),
-            Chain::Tron => Box::new(GenericProvider::new(TronClient::new_with_defaults(gem_client.clone()))),
+            Chain::Tron => Box::new(GenericProvider::new(TronClient::new(
+                gem_client.clone(),
+                TronGridClient::new(gem_client.clone()),
+            ))),
             Chain::HyperCore => Box::new(GenericProvider::new(HyperCoreClient::new(gem_client.clone()))),
         }
     }
