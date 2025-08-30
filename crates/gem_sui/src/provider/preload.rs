@@ -70,9 +70,14 @@ impl<C: Client + Clone> SuiClient<C> {
         address: &str,
         input_type: TransactionInputType,
     ) -> Result<(Vec<SuiCoin>, Vec<SuiCoin>), Box<dyn Error + Send + Sync>> {
-        match &input_type.get_asset().token_id {
-            None => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new())),
-            Some(token_id) => Ok(futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_coins(address, token_id))?),
+        match input_type {
+            TransactionInputType::Transfer(asset) => match asset.id.token_id {
+                None => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new())),
+                Some(token_id) => Ok(futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_coins(address, &token_id))?),
+            },
+            TransactionInputType::Stake(..) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new())),
+            TransactionInputType::Swap(_, _, _) => Ok((Vec::new(), Vec::new())),
+            _ => Err("Unsupported transaction type for Sui".into()),
         }
     }
 }

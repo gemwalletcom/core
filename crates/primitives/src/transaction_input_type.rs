@@ -1,5 +1,5 @@
 use crate::stake_type::StakeType;
-use crate::swap::ApprovalData;
+use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
 use crate::transaction_load_metadata::TransactionLoadMetadata;
 use crate::{Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransferDataExtra, WalletConnectionSessionAppMetadata};
@@ -12,7 +12,7 @@ use typeshare::typeshare;
 pub enum TransactionInputType {
     Transfer(Asset),
     Deposit(Asset),
-    Swap(Asset, Asset),
+    Swap(Asset, Asset, SwapData),
     Stake(Asset, StakeType),
     TokenApprove(Asset, ApprovalData),
     Generic(Asset, WalletConnectionSessionAppMetadata, TransferDataExtra),
@@ -24,7 +24,7 @@ impl TransactionInputType {
         match self {
             TransactionInputType::Transfer(asset) => asset,
             TransactionInputType::Deposit(asset) => asset,
-            TransactionInputType::Swap(asset, _) => asset,
+            TransactionInputType::Swap(asset, _, _) => asset,
             TransactionInputType::Stake(asset, _) => asset,
             TransactionInputType::TokenApprove(asset, _) => asset,
             TransactionInputType::Generic(asset, _, _) => asset,

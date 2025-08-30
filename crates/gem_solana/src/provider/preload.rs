@@ -18,7 +18,7 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
 
         let (sender_address, destination_address) = match input.input_type {
             TransactionInputType::Transfer(_) => (input.sender_address.clone(), input.destination_address.clone()),
-            TransactionInputType::Swap(_, _) => (input.sender_address.clone(), input.sender_address.clone()),
+            TransactionInputType::Swap(_, _, _) => (input.sender_address.clone(), input.sender_address.clone()),
             _ => (input.sender_address.clone(), input.destination_address.clone()),
         };
 

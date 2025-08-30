@@ -1,4 +1,4 @@
-use crate::{encode_split_and_stake, encode_token_transfer, encode_transfer, encode_unstake, models::*};
+use crate::{encode_split_and_stake, encode_token_transfer, encode_transfer, encode_unstake, models::*, validate_and_hash};
 use base64::{engine::general_purpose, Engine};
 use num_bigint::BigInt;
 use primitives::{
@@ -32,7 +32,7 @@ fn get_gas_limit(input_type: &TransactionInputType) -> u64 {
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)
         | TransactionInputType::Perpetual(_, _) => GAS_BUDGET,
-        TransactionInputType::Swap(_, _) => 50_000_000,
+        TransactionInputType::Swap(_, _, _) => 50_000_000,
         TransactionInputType::Stake(_, _) => GAS_BUDGET,
     }
 }
@@ -151,7 +151,12 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
             }
             StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) => Err("Unsupported stake type for Sui".into()),
         },
-        TransactionInputType::Swap(_, _) => Err("Swap transactions not yet implemented for Rust provider".into()),
+        TransactionInputType::Swap(_, _, data) => {
+            let tx_output = validate_and_hash(&data.data.data)?;
+            let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
+            let digest = hex::encode(&tx_output.hash);
+            Ok(format!("{}_{}", data, digest))
+        }
         _ => Err("Unsupported transaction type for Sui".into()),
     }
 }
