@@ -19,3 +19,4 @@ urlencoding = { workspace = true }
 url = { workspace = true }
 num-bigint = { workspace = true }
 futures = { workspace = true }
+serde_serializers = { path = "../serde_serializers" }

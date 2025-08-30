@@ -29,6 +29,7 @@ serde_serializers = { path = "../serde_serializers" }
 chrono = { workspace = true }
 
 gem_jsonrpc = { path = "../gem_jsonrpc" }
+futures = { workspace = true }
 
 # Optional dependencies for rpc feature
 num-bigint = { workspace = true, features = ["serde"] }

@@ -212,9 +212,7 @@ mod tests {
 
     #[test]
     fn test_map_transaction_blocks() {
-        let transaction_blocks = TransactionBlocks {
-            data: vec![],
-        };
+        let transaction_blocks = TransactionBlocks { data: vec![] };
         let transactions = map_transaction_blocks(transaction_blocks);
         assert_eq!(transactions.len(), 0);
     }
@@ -223,7 +221,7 @@ mod tests {
     fn test_map_transaction_status() {
         use crate::models::{Effect, GasObject, GasUsed, Owner, Status};
         use num_bigint::BigUint;
-        
+
         let digest = Digest {
             digest: "test".to_string(),
             effects: Effect {
@@ -231,11 +229,9 @@ mod tests {
                     computation_cost: BigUint::from(1000u32),
                     storage_cost: BigUint::from(500u32),
                     storage_rebate: BigUint::from(100u32),
-                    non_refundable_storage_fee: "0".to_string(),
+                    non_refundable_storage_fee: BigUint::from(0u32),
                 },
-                status: Status {
-                    status: "success".to_string(),
-                },
+                status: Status { status: "success".to_string() },
                 gas_object: GasObject {
                     owner: Owner::String("0x123".to_string()),
                 },
@@ -244,7 +240,7 @@ mod tests {
             events: vec![],
             timestamp_ms: 1234567890,
         };
-        
+
         let update = map_transaction_status(digest);
         assert_eq!(update.state, TransactionState::Confirmed);
     }

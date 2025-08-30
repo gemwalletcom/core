@@ -11,9 +11,12 @@ use num_bigint::BigInt;
 use primitives::chain::Chain;
 
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
-use crate::models::transaction::SuiBroadcastTransaction;
+use crate::models::transaction::{SuiBroadcastTransaction, SuiTransaction};
 use crate::models::SuiCoinMetadata;
-use crate::models::{Balance, Checkpoint, Digest, Digests, TransactionBlocks};
+#[cfg(feature = "rpc")]
+use crate::models::SuiObject;
+use crate::models::{Balance, Checkpoint, Digest, Digests, ResultData, TransactionBlocks};
+use primitives::transaction_load_metadata::SuiCoin;
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 pub struct SuiClient {
@@ -82,6 +85,21 @@ impl<C: Client + Clone> SuiClient<C> {
     pub async fn get_gas_price(&self) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
         let result = self.client.call::<String>("suix_getReferenceGasPrice", serde_json::json!([])).await?;
         Ok(result.parse().unwrap_or(BigInt::from(1000)))
+    }
+
+    pub async fn get_coins(&self, address: &str, coin_type: &str) -> Result<Vec<SuiCoin>, Box<dyn Error + Send + Sync>> {
+        let params = serde_json::json!([address, coin_type, null, null]);
+        Ok(self.client.call::<ResultData<Vec<SuiCoin>>>("suix_getCoins", params).await?.data)
+    }
+
+    pub async fn get_object(&self, object_id: String) -> Result<SuiObject, Box<dyn Error + Send + Sync>> {
+        let params = serde_json::json!([object_id, {"showContent": true}]);
+        Ok(self.client.call::<ResultData<SuiObject>>("sui_getObject", params).await?.data)
+    }
+
+    pub async fn dry_run(&self, tx_data: String) -> Result<SuiTransaction, Box<dyn Error + Send + Sync>> {
+        let params = serde_json::json!([tx_data]);
+        Ok(self.client.call("sui_dryRunTransactionBlock", params).await?)
     }
 
     pub async fn get_transaction(&self, transaction_id: String) -> Result<Digest, Box<dyn Error + Send + Sync>> {

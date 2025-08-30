@@ -10,16 +10,6 @@ use super::account::Owner;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SuiCoin {
-    pub coin_type: String,
-    pub coin_object_id: String,
-    pub balance: String,
-    pub version: String,
-    pub digest: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct SuiCoinBalance {
     pub coin_type: String,
     pub total_balance: String,
@@ -31,6 +21,14 @@ pub struct SuiCoinMetadata {
     pub decimals: i32,
     pub name: String,
     pub symbol: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SuiObject {
+    pub object_id: String,
+    pub digest: String,
+    pub version: String,
 }
 
 #[cfg(feature = "rpc")]

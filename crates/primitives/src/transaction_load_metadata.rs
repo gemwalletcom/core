@@ -1,7 +1,20 @@
 use crate::{solana_token_program::SolanaTokenProgramId, UTXO};
+use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_bigint_from_str;
 
 use std::collections::HashMap;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SuiCoin {
+    pub coin_type: String,
+    pub coin_object_id: String,
+    #[serde(deserialize_with = "deserialize_bigint_from_str")]
+    pub balance: BigInt,
+    pub version: String,
+    pub digest: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionLoadMetadata {
@@ -157,6 +170,13 @@ impl TransactionLoadMetadata {
             TransactionLoadMetadata::Solana { sender_token_address, .. } => Ok(sender_token_address.clone()),
             TransactionLoadMetadata::Ton { sender_token_address, .. } => Ok(sender_token_address.clone()),
             _ => Err("Sender token address not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_message_bytes(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Sui { message_bytes, .. } => Ok(message_bytes.clone()),
+            _ => Err("Message bytes not available for this metadata type".into()),
         }
     }
 }
