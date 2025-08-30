@@ -21,7 +21,7 @@ pub use zksync::ZkSync;
 pub mod blockscout;
 pub use blockscout::BlockScout;
 pub mod near;
-pub use near::NearBlocks;
+pub use near::{NearBlocks, NearIntentsExplorer};
 mod blocksec;
 pub use blocksec::Blocksec;
 mod algorand;
