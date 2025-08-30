@@ -28,6 +28,14 @@ ios_plist_data='{
   "bundle_structure": "%LANG_ISO%.lproj/InfoPlist.%FORMAT%",
   "include_tags": ["info_plist"]
 }'
+ios_widget_data='{
+  "format": "strings",
+  "export_empty_as": "base",
+  "export_sort": "first_added",
+  "original_filenames": false,
+  "bundle_structure": "%LANG_ISO%.lproj/Localizable.%FORMAT%",
+  "include_tags": ["widget"]
+}'
 # Android
 android_data='{
   "format": "xml",
@@ -88,6 +96,7 @@ case $1 in
   "ios")
     download_bundle "ios" "$ios_data" $2 $mobile_project_id
     download_bundle "ios_plist" "$ios_plist_data" $2 $mobile_project_id
+    download_bundle "ios_widget" "$ios_widget_data" "Packages/Localization/WidgetSources/Resources" $mobile_project_id
   ;;
   "android")
     download_bundle "android" "$android_data" $2 $mobile_project_id
