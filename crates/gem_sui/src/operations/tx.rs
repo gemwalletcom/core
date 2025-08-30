@@ -13,8 +13,7 @@ pub fn decode_transaction<T: DeserializeOwned>(tx: &str) -> Result<T, Error> {
 }
 
 pub fn validate_and_hash(encoded: &str) -> Result<TxOutput, Error> {
-    let tx_data = decode_transaction(encoded)?;
-    TxOutput::from_tx(&tx_data)
+    TxOutput::from_tx(&decode_transaction(encoded)?)
 }
 
 pub fn prefill_tx(ptb: TransactionBuilder) -> Transaction {

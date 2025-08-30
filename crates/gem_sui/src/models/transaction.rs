@@ -4,7 +4,7 @@ use serde_json::Value;
 #[cfg(feature = "rpc")]
 use num_bigint::BigUint;
 #[cfg(feature = "rpc")]
-use serde_serializers::{deserialize_u64_from_str, deserialize_biguint_from_str};
+use serde_serializers::{deserialize_biguint_from_str, deserialize_u64_from_str};
 
 #[cfg(feature = "rpc")]
 use super::account::GasObject;
@@ -26,7 +26,7 @@ pub struct SuiStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuiEffects {
-    pub gas_used: SuiGasUsed,
+    pub gas_used: GasUsed,
     pub status: SuiStatus,
     pub created: Option<Vec<SuiObjectChange>>,
 }
@@ -45,15 +45,15 @@ pub struct SuiObjectReference {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SuiGasUsed {
-    #[serde(rename = "computationCost")]
-    pub computation_cost: String,
-    #[serde(rename = "storageCost")]
-    pub storage_cost: String,
-    #[serde(rename = "storageRebate")]
-    pub storage_rebate: String,
-    #[serde(rename = "nonRefundableStorageFee")]
-    pub non_refundable_storage_fee: String,
+pub struct GasUsed {
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub computation_cost: BigUint,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub storage_cost: BigUint,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub storage_rebate: BigUint,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub non_refundable_storage_fee: BigUint,
 }
 
 pub use TransactionBroadcast as SuiBroadcastTransaction;
@@ -119,19 +119,6 @@ pub struct Effect {
     pub status: Status,
     #[serde(rename = "gasObject")]
     pub gas_object: GasObject,
-}
-
-#[cfg(feature = "rpc")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GasUsed {
-    #[serde(rename = "computationCost", deserialize_with = "deserialize_biguint_from_str")]
-    pub computation_cost: BigUint,
-    #[serde(rename = "storageCost", deserialize_with = "deserialize_biguint_from_str")]
-    pub storage_cost: BigUint,
-    #[serde(rename = "storageRebate", deserialize_with = "deserialize_biguint_from_str")]
-    pub storage_rebate: BigUint,
-    #[serde(rename = "nonRefundableStorageFee")]
-    pub non_refundable_storage_fee: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
