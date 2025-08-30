@@ -472,6 +472,16 @@ impl<C: Client + Clone> SolanaClient<C> {
 
         Ok(transactions)
     }
+
+    pub async fn get_token_accounts(&self, address: &str, token_mints: &[String]) -> Result<Vec<ValueResult<Vec<TokenAccountInfo>>>, Box<dyn Error + Send + Sync>> {
+        let calls: Vec<(String, serde_json::Value)> = token_mints
+            .iter()
+            .map(|mint| ("getTokenAccountsByOwner".to_string(), token_accounts_by_mint_params(address, mint)))
+            .collect();
+
+        let results = self.get_client().batch_call(calls).await?.extract();
+        Ok(results)
+    }
 }
 
 #[cfg(feature = "rpc")]
