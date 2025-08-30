@@ -64,29 +64,24 @@ pub enum JsonRpcResult<T> {
     Error(JsonRpcErrorResponse),
 }
 
-impl<T> JsonRpcResult<T>
-where
-    T: Clone,
-{
-    pub fn take(&self) -> Result<T, JsonRpcError> {
+impl<T> JsonRpcResult<T> {
+    pub fn take(self) -> Result<T, JsonRpcError> {
         match self {
-            JsonRpcResult::Value(value) => Ok(value.result.clone()),
-            JsonRpcResult::Error(error) => Err(error.error.clone()),
+            JsonRpcResult::Value(value) => Ok(value.result),
+            JsonRpcResult::Error(error) => Err(error.error),
         }
     }
 }
 
-pub trait Extractors<T> {
-    fn extract(self) -> Vec<T>;
-}
+pub struct JsonRpcResults<T>(pub Vec<JsonRpcResult<T>>);
 
-impl<T> Extractors<T> for Vec<JsonRpcResult<T>> {
-    fn extract(self) -> Vec<T> {
-        let mut results = Vec::new();
-        for (i, result) in self.into_iter().enumerate() {
+impl<T> JsonRpcResults<T> {
+    pub fn extract(self) -> Vec<T> {
+        let mut extracted = Vec::new();
+        for (i, result) in self.0.into_iter().enumerate() {
             match result {
                 JsonRpcResult::Value(response) => {
-                    results.push(response.result);
+                    extracted.push(response.result);
                 }
                 JsonRpcResult::Error(error) => {
                     eprintln!("Batch call error for request {}: {:?}", i, error);
@@ -94,6 +89,27 @@ impl<T> Extractors<T> for Vec<JsonRpcResult<T>> {
                 }
             }
         }
-        results
+        extracted
+    }
+}
+
+impl<T> Default for JsonRpcResults<T> {
+    fn default() -> Self {
+        JsonRpcResults(Vec::new())
+    }
+}
+
+impl<T> From<Vec<JsonRpcResult<T>>> for JsonRpcResults<T> {
+    fn from(vec: Vec<JsonRpcResult<T>>) -> Self {
+        JsonRpcResults(vec)
+    }
+}
+
+impl<T> IntoIterator for JsonRpcResults<T> {
+    type Item = JsonRpcResult<T>;
+    type IntoIter = std::vec::IntoIter<JsonRpcResult<T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }

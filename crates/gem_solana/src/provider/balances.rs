@@ -5,7 +5,6 @@ use std::error::Error;
 use crate::provider::balances_mapper::{map_balance_staking, map_coin_balance, map_token_accounts};
 use crate::rpc::client::{token_accounts_by_mint_params, SolanaClient};
 use gem_client::Client;
-use gem_jsonrpc::types::Extractors;
 use primitives::AssetBalance;
 
 #[cfg(feature = "rpc")]
@@ -17,10 +16,6 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        if token_ids.is_empty() {
-            return Ok(vec![]);
-        }
-
         let calls: Vec<(String, serde_json::Value)> = token_ids
             .iter()
             .map(|mint| ("getTokenAccountsByOwner".to_string(), token_accounts_by_mint_params(&address, mint)))
