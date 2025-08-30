@@ -1,4 +1,4 @@
-use crate::network::{JsonRpcError, JsonRpcResponse, JsonRpcResult};
+use crate::network::{JsonRpcError, JsonRpcResponse, JsonRpcResult, JsonRpcResults};
 use crate::swapper::SwapperError;
 use alloy_primitives::U256;
 
@@ -10,7 +10,7 @@ pub struct QuoteResult {
     pub gas_estimate: Option<String>,
 }
 
-pub fn get_best_quote<F>(batch_results: &[Result<Vec<JsonRpcResult<String>>, JsonRpcError>], decoder: F) -> Result<QuoteResult, SwapperError>
+pub fn get_best_quote<F>(batch_results: &[Result<JsonRpcResults<String>, JsonRpcError>], decoder: F) -> Result<QuoteResult, SwapperError>
 where
     F: Fn(&JsonRpcResponse<String>) -> Result<(U256, U256), SwapperError>,
 {
@@ -19,7 +19,7 @@ where
         .enumerate()
         .filter_map(|(batch_idx, batch_result)| {
             batch_result.as_ref().ok().map(|results| {
-                results
+                results.0
                     .iter()
                     .enumerate()
                     .filter_map(|(fee_idx, result)| match result {

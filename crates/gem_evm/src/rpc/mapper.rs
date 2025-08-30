@@ -253,10 +253,10 @@ mod tests {
 
     #[test]
     fn test_map_smart_contract_call() {
-        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx.json")).unwrap();
+        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx.json")).unwrap();
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
-        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx_receipt.json")).unwrap();
+        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx_receipt.json")).unwrap();
         let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
@@ -278,10 +278,10 @@ mod tests {
 
     #[test]
     fn test_has_smart_contract_indicators() {
-        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx.json")).unwrap();
+        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx.json")).unwrap();
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
-        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx_receipt.json")).unwrap();
+        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx_receipt.json")).unwrap();
         let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
@@ -293,11 +293,11 @@ mod tests {
     #[test]
     fn test_erc20_transfer() {
         let erc20_transfer_tx =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_erc20.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_erc20.json")).unwrap())
                 .unwrap()
                 .result;
         let erc20_transfer_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/transfer_erc20_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/transfer_erc20_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;
@@ -324,11 +324,11 @@ mod tests {
     #[test]
     fn test_nft_eip721_transfer() {
         let transaction =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip721.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721.json")).unwrap())
                 .unwrap()
                 .result;
         let transaction_reciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip721_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;
@@ -353,11 +353,11 @@ mod tests {
     #[test]
     fn test_nft_eip1155_transfer() {
         let transaction =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip1155.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip1155.json")).unwrap())
                 .unwrap()
                 .result;
         let transaction_reciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip1155_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/transfer_nft_eip1155_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;
@@ -382,11 +382,11 @@ mod tests {
     #[test]
     fn test_smart_contract_erc20_transfer() {
         let sc_erc20_tx =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/contract_erc20_tx.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/contract_erc20_tx.json")).unwrap())
                 .unwrap()
                 .result;
         let sc_erc20_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/contract_erc20_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/contract_erc20_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;
@@ -406,11 +406,11 @@ mod tests {
     #[test]
     fn test_native_transfer_high_gas_limit() {
         let transaction =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_high_gas_limit.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_high_gas_limit.json")).unwrap())
                 .unwrap()
                 .result;
         let transaction_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/transfer_high_gas_limit_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/transfer_high_gas_limit_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;

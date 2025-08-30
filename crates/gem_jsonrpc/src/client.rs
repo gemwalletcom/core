@@ -1,4 +1,4 @@
-use crate::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, ERROR_INTERNAL_ERROR};
+use crate::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, JsonRpcResults, ERROR_INTERNAL_ERROR};
 use gem_client::{Client, ClientError};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -72,7 +72,10 @@ impl<C: Client + Clone> JsonRpcClient<C> {
         self._request(request, ttl).await
     }
 
-    pub async fn batch_call<T: DeserializeOwned>(&self, calls: Vec<CallTuple>) -> Result<Vec<JsonRpcResult<T>>, JsonRpcError> {
+    pub async fn batch_call<T: DeserializeOwned>(&self, calls: Vec<CallTuple>) -> Result<JsonRpcResults<T>, JsonRpcError> {
+        if calls.is_empty() {
+            return Ok(Default::default());
+        }
         let requests: Vec<JsonRpcRequest> = calls
             .iter()
             .enumerate()
@@ -82,14 +85,14 @@ impl<C: Client + Clone> JsonRpcClient<C> {
         self.batch_request(requests).await
     }
 
-    pub async fn batch_call_requests<T: JsonRpcRequestConvert, U: DeserializeOwned>(&self, calls: Vec<T>) -> Result<Vec<JsonRpcResult<U>>, JsonRpcError> {
+    pub async fn batch_call_requests<T: JsonRpcRequestConvert, U: DeserializeOwned>(&self, calls: Vec<T>) -> Result<JsonRpcResults<U>, JsonRpcError> {
         let requests: Vec<JsonRpcRequest> = calls.iter().enumerate().map(|(index, request)| request.to_req(index as u64 + 1)).collect();
         self.batch_request(requests).await
     }
 
-    pub async fn batch_request<T: DeserializeOwned>(&self, requests: Vec<JsonRpcRequest>) -> Result<Vec<JsonRpcResult<T>>, JsonRpcError> {
+    pub async fn batch_request<T: DeserializeOwned>(&self, requests: Vec<JsonRpcRequest>) -> Result<JsonRpcResults<T>, JsonRpcError> {
         if requests.is_empty() {
-            return Ok(Vec::new());
+            return Ok(Default::default());
         }
 
         let results: Vec<JsonRpcResult<T>> = self.client.post("", &requests, None).await?;
@@ -100,7 +103,7 @@ impl<C: Client + Clone> JsonRpcClient<C> {
             });
         }
 
-        Ok(results)
+        Ok(JsonRpcResults(results))
     }
 
     async fn _request<T: DeserializeOwned>(&self, req: JsonRpcRequest, ttl: Option<u64>) -> Result<JsonRpcResult<T>, JsonRpcError> {

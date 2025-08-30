@@ -45,7 +45,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_aptos_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_aptos_test_client();
-        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await?;
+        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string()).await?;
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
         Ok(())
     }

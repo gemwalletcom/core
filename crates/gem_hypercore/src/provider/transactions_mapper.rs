@@ -15,21 +15,21 @@ mod tests {
 
     #[test]
     fn test_map_transaction_broadcast_success() {
-        let response: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/order_broadcast_filled.json")).unwrap();
+        let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/order_broadcast_filled.json")).unwrap();
         let result = map_transaction_broadcast(response, "test_hash".to_string()).unwrap();
         assert_eq!(result, "134896397196");
     }
 
     #[test]
     fn test_map_transaction_broadcast_error() {
-        let response: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/order_broadcast_error.json")).unwrap();
+        let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/order_broadcast_error.json")).unwrap();
         let result = map_transaction_broadcast(response, "test_hash".to_string());
         assert!(result.is_err());
     }
 
     #[test]
     fn test_map_transaction_broadcast_extra_agent_error() {
-        let response: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/transaction_broadcast_error_extra_agent.json")).unwrap();
+        let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_error_extra_agent.json")).unwrap();
         let result = map_transaction_broadcast(response, "test_hash".to_string());
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "Extra agent already used.");
