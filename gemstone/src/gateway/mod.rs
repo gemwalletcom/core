@@ -73,6 +73,10 @@ impl std::fmt::Debug for GemGateway {
 impl GemGateway {
     pub async fn provider(&self, chain: Chain) -> Result<Arc<dyn ChainTraits>, GatewayError> {
         let url = self.provider.get_endpoint(chain).unwrap();
+        self.provider_with_url(chain, url).await
+    }
+
+    pub async fn provider_with_url(&self, chain: Chain, url: String) -> Result<Arc<dyn ChainTraits>, GatewayError> {
         let alien_client = AlienClient::new(url.clone(), self.provider.clone());
         match chain {
             Chain::HyperCore => {
@@ -338,6 +342,22 @@ impl GemGateway {
 
     pub async fn get_is_token_address(&self, chain: Chain, token_id: String) -> Result<bool, GatewayError> {
         Ok(self.provider(chain).await?.get_is_token_address(&token_id))
+    }
+
+    pub async fn get_node_status(&self, chain: Chain, url: &str) -> Result<GemNodeStatus, GatewayError> {
+        let start_time = std::time::Instant::now();
+        let provider = self.provider_with_url(chain, url.to_string()).await?;
+
+        let (chain_id, latest_block_number) =
+            futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+
+        let latency_ms = start_time.elapsed().as_millis() as u64;
+
+        Ok(GemNodeStatus {
+            chain_id,
+            latest_block_number,
+            latency_ms,
+        })
     }
 }
 

@@ -14,6 +14,8 @@ pub mod name;
 pub use self::name::NameProvider;
 pub mod node;
 pub use self::node::{Node, NodeType};
+pub mod node_status;
+pub use self::node_status::NodeStatus;
 pub mod price;
 pub use self::price::{Price, PriceFull};
 pub mod asset;

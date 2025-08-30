@@ -1,4 +1,7 @@
-use crate::{SwapProvider, swap::{SwapData, SwapQuote, SwapQuoteData, SwapProviderData}};
+use crate::{
+    swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData},
+    SwapProvider,
+};
 
 impl SwapData {
     pub fn mock() -> Self {
@@ -62,19 +65,10 @@ impl SwapProviderData {
     }
 
     pub fn mock_with_provider(provider: SwapProvider) -> Self {
-        let (name, protocol_name) = match provider {
-            SwapProvider::UniswapV3 => ("Uniswap V3", "uniswap_v3"),
-            SwapProvider::UniswapV4 => ("Uniswap V4", "uniswap_v4"),
-            SwapProvider::Jupiter => ("Jupiter", "jupiter"),
-            SwapProvider::OneInch => ("1inch", "1inch"),
-            SwapProvider::PancakeSwap => ("PancakeSwap", "pancakeswap"),
-            SwapProvider::Thorchain => ("THORChain", "thorchain"),
-        };
-
         SwapProviderData {
             provider,
-            name: name.to_string(),
-            protocol_name: protocol_name.to_string(),
+            name: provider.name().to_string(),
+            protocol_name: provider.protocol_name().to_string(),
         }
     }
 }
