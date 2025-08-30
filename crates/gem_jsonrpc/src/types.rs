@@ -75,3 +75,25 @@ where
         }
     }
 }
+
+pub trait Extractors<T> {
+    fn extract(self) -> Vec<T>;
+}
+
+impl<T> Extractors<T> for Vec<JsonRpcResult<T>> {
+    fn extract(self) -> Vec<T> {
+        let mut results = Vec::new();
+        for (i, result) in self.into_iter().enumerate() {
+            match result {
+                JsonRpcResult::Value(response) => {
+                    results.push(response.result);
+                }
+                JsonRpcResult::Error(error) => {
+                    eprintln!("Batch call error for request {}: {:?}", i, error);
+                    // Continue processing other results
+                }
+            }
+        }
+        results
+    }
+}

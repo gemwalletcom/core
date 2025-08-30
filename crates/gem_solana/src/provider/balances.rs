@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use chain_traits::ChainBalances;
-use primitives::parallel_map;
-use std::{error::Error, sync::Arc};
+use std::error::Error;
 
 use crate::provider::balances_mapper::{map_balance_staking, map_coin_balance, map_token_accounts};
-use crate::rpc::client::SolanaClient;
+use crate::rpc::client::{token_accounts_by_mint_params, SolanaClient};
 use gem_client::Client;
+use gem_jsonrpc::types::Extractors;
 use primitives::AssetBalance;
 
 #[cfg(feature = "rpc")]
@@ -17,17 +17,23 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let address_arc = Arc::new(address);
-        let results = parallel_map(token_ids, |token_id| {
-            let address = address_arc.clone();
-            async move {
-                let accounts = self.get_token_accounts_by_mint(&address, &token_id).await?;
-                Ok::<Vec<AssetBalance>, Box<dyn Error + Send + Sync>>(map_token_accounts(&accounts, &token_id))
-            }
-        })
-        .await?;
+        if token_ids.is_empty() {
+            return Ok(vec![]);
+        }
 
-        Ok(results.into_iter().flatten().collect())
+        let calls: Vec<(String, serde_json::Value)> = token_ids
+            .iter()
+            .map(|mint| ("getTokenAccountsByOwner".to_string(), token_accounts_by_mint_params(&address, mint)))
+            .collect();
+
+        let results = self.get_client().batch_call(calls).await?.extract();
+        let balances: Vec<AssetBalance> = results
+            .into_iter()
+            .zip(&token_ids)
+            .flat_map(|(token_accounts, token_id)| map_token_accounts(&token_accounts, token_id))
+            .collect();
+
+        Ok(balances)
     }
 
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {

@@ -241,6 +241,30 @@ impl SolanaClient {
     }
 }
 
+pub fn token_accounts_by_owner_params(owner: &str, program_id: &str) -> serde_json::Value {
+    serde_json::json!([
+        owner,
+        {
+            "programId": program_id
+        },
+        {
+            "encoding": "jsonParsed"
+        }
+    ])
+}
+
+pub fn token_accounts_by_mint_params(owner: &str, mint: &str) -> serde_json::Value {
+    serde_json::json!([
+        owner,
+        {
+            "mint": mint
+        },
+        {
+            "encoding": "jsonParsed"
+        }
+    ])
+}
+
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> SolanaClient<C> {
     pub fn new(client: GenericJsonRpcClient<C>) -> Self {
@@ -267,15 +291,7 @@ impl<C: Client + Clone> SolanaClient<C> {
     }
 
     pub async fn get_token_accounts_by_owner(&self, owner: &str, program_id: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, Box<dyn Error + Send + Sync>> {
-        let params = serde_json::json!([
-            owner,
-            {
-                "programId": program_id
-            },
-            {
-                "encoding": "jsonParsed"
-            }
-        ]);
+        let params = token_accounts_by_owner_params(owner, program_id);
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
@@ -284,15 +300,7 @@ impl<C: Client + Clone> SolanaClient<C> {
     }
 
     pub async fn get_token_accounts_by_mint(&self, owner: &str, mint: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, Box<dyn Error + Send + Sync>> {
-        let params = serde_json::json!([
-            owner,
-            {
-                "mint": mint
-            },
-            {
-                "encoding": "jsonParsed"
-            }
-        ]);
+        let params = token_accounts_by_mint_params(owner, mint);
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
