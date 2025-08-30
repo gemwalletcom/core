@@ -7,7 +7,7 @@ prefix = ''
 "Int" = "Int"
 "Int32" = "Int"
 "Int64" = "Int64"
-"BigInt" = "BigInt"
+"BigInt" = "String"
 "DateTime" = "Date"
 "Value" = "TransactionMetadata" # Fix later to be adjustable
 

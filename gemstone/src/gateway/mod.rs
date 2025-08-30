@@ -12,7 +12,7 @@ use gem_solana::rpc::client::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_sui::rpc::client::SuiClient;
 use gem_ton::rpc::client::TonClient;
-use gem_tron::rpc::client::TronClient;
+use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
@@ -73,6 +73,10 @@ impl std::fmt::Debug for GemGateway {
 impl GemGateway {
     pub async fn provider(&self, chain: Chain) -> Result<Arc<dyn ChainTraits>, GatewayError> {
         let url = self.provider.get_endpoint(chain).unwrap();
+        self.provider_with_url(chain, url).await
+    }
+
+    pub async fn provider_with_url(&self, chain: Chain, url: String) -> Result<Arc<dyn ChainTraits>, GatewayError> {
         let alien_client = AlienClient::new(url.clone(), self.provider.clone());
         match chain {
             Chain::HyperCore => {
@@ -98,7 +102,7 @@ impl GemGateway {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
             }
             Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
-            Chain::Tron => Ok(Arc::new(TronClient::new(alien_client))),
+            Chain::Tron => Ok(Arc::new(TronClient::new(alien_client.clone(), TronGridClient::new(alien_client.clone())))),
             Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
             Chain::Solana => Ok(Arc::new(SolanaClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             _ => Err(GatewayError::InvalidChain(chain.to_string())),
@@ -120,11 +124,7 @@ impl GemGatewayEstimateFee for GemGateway {
 #[uniffi::export]
 impl GemGateway {
     #[uniffi::constructor]
-    pub fn new(
-        provider: Arc<dyn AlienProvider>,
-        preferences: Arc<dyn GemPreferences>,
-        secure_preferences: Arc<dyn GemPreferences>,
-    ) -> Self {
+    pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>) -> Self {
         Self {
             provider,
             preferences,
@@ -342,6 +342,22 @@ impl GemGateway {
 
     pub async fn get_is_token_address(&self, chain: Chain, token_id: String) -> Result<bool, GatewayError> {
         Ok(self.provider(chain).await?.get_is_token_address(&token_id))
+    }
+
+    pub async fn get_node_status(&self, chain: Chain, url: &str) -> Result<GemNodeStatus, GatewayError> {
+        let start_time = std::time::Instant::now();
+        let provider = self.provider_with_url(chain, url.to_string()).await?;
+
+        let (chain_id, latest_block_number) =
+            futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+
+        let latency_ms = start_time.elapsed().as_millis() as u64;
+
+        Ok(GemNodeStatus {
+            chain_id,
+            latest_block_number,
+            latency_ms,
+        })
     }
 }
 

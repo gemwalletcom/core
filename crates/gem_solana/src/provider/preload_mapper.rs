@@ -39,7 +39,7 @@ fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)
         | TransactionInputType::Perpetual(_, _) => BigInt::from(100_000),
-        TransactionInputType::Swap(_, _) => BigInt::from(420_000),
+        TransactionInputType::Swap(_, _, _) => BigInt::from(420_000),
         TransactionInputType::Stake(_, _) => BigInt::from(100_000),
     }
 }
@@ -55,7 +55,7 @@ fn get_multiple_of(input_type: &TransactionInputType) -> i64 {
             AssetSubtype::TOKEN => 50_000,
         },
         TransactionInputType::Stake(_, _) => 25_000,
-        TransactionInputType::Swap(_, _) => 100_000,
+        TransactionInputType::Swap(_, _, _) => 100_000,
     }
 }
 
@@ -109,7 +109,8 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{Asset, AssetId, AssetType, Chain};
+    use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider};
+    use primitives::swap::{SwapData, SwapQuote, SwapQuoteData, SwapProviderData};
 
     #[test]
     fn test_calculate_transaction_fee() {
@@ -160,6 +161,27 @@ mod tests {
                 symbol: "USDC".to_string(),
                 decimals: 6,
                 asset_type: AssetType::SPL,
+            },
+            SwapData {
+                quote: SwapQuote {
+                    from_value: "1000000000".to_string(),
+                    to_value: "1000000".to_string(),
+                    provider_data: SwapProviderData {
+                        provider: SwapProvider::Jupiter,
+                        name: "Jupiter".to_string(),
+                        protocol_name: "jupiter".to_string(),
+                    },
+                    wallet_address: "test".to_string(),
+                    slippage_bps: 50,
+                    eta_in_seconds: None,
+                },
+                data: SwapQuoteData {
+                    to: "test".to_string(),
+                    value: "0".to_string(),
+                    data: "0x".to_string(),
+                    approval: None,
+                    gas_limit: None,
+                },
             },
         );
 
@@ -322,6 +344,27 @@ mod tests {
                 symbol: "USDC".to_string(),
                 decimals: 6,
                 asset_type: AssetType::SPL,
+            },
+            SwapData {
+                quote: SwapQuote {
+                    from_value: "1000000000".to_string(),
+                    to_value: "1000000".to_string(),
+                    provider_data: SwapProviderData {
+                        provider: SwapProvider::Jupiter,
+                        name: "Jupiter".to_string(),
+                        protocol_name: "jupiter".to_string(),
+                    },
+                    wallet_address: "test".to_string(),
+                    slippage_bps: 50,
+                    eta_in_seconds: None,
+                },
+                data: SwapQuoteData {
+                    to: "test".to_string(),
+                    value: "0".to_string(),
+                    data: "0x".to_string(),
+                    approval: None,
+                    gas_limit: None,
+                },
             },
         );
 

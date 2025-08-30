@@ -22,7 +22,7 @@ impl<C: Client> ChainTransactions for StellarClient<C> {
         Ok(map_transaction_status(&result))
     }
 
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let payments = self.get_account_payments(address).await?;
         Ok(map_transactions(self.get_chain(), payments))
     }
@@ -52,7 +52,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_transactions_by_address() {
         let stellar_client = create_test_client();
-        let transactions = stellar_client.get_transactions_by_address(TEST_ADDRESS.to_string()).await.unwrap();
+        let transactions = stellar_client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
     }

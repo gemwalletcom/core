@@ -15,27 +15,19 @@ use crate::rpc::client::SuiClient;
 #[async_trait]
 impl<C: Client + Clone> ChainBalances for SuiClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-        let balance = self.get_balance(address).await?;
-        let asset_balance = map_balance_coin(balance);
-        Ok(asset_balance)
+        Ok(map_balance_coin(self.get_balance(address).await?))
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let all_balances = self.get_all_balances(address).await?;
-        let asset_balances = map_balance_tokens(all_balances, token_ids);
-        Ok(asset_balances)
+        Ok(map_balance_tokens(self.get_all_balances(address).await?, token_ids))
     }
 
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let delegations = self.get_stake_delegations(address).await?;
-        let staking_balance = map_balance_staking(delegations);
-        Ok(staking_balance)
+        Ok(map_balance_staking(self.get_stake_delegations(address).await?))
     }
 
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        let all_balances = self.get_all_balances(address).await?;
-        let asset_balances = map_assets_balances(all_balances);
-        Ok(asset_balances)
+        Ok(map_assets_balances(self.get_all_balances(address).await?))
     }
 }
 

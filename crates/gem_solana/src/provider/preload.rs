@@ -15,11 +15,18 @@ use crate::{get_token_program_id_by_address, rpc::client::SolanaClient};
 impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         let asset = input.input_type.get_asset();
+
+        let (sender_address, destination_address) = match input.input_type {
+            TransactionInputType::Transfer(_) => (input.sender_address.clone(), input.destination_address.clone()),
+            TransactionInputType::Swap(_, _, _) => (input.sender_address.clone(), input.sender_address.clone()),
+            _ => (input.sender_address.clone(), input.destination_address.clone()),
+        };
+
         if let Some(token_id) = &asset.id.token_id {
             let (block_hash, sender_accounts, recipient_accounts) = futures::try_join!(
                 self.get_latest_blockhash(),
-                self.get_token_accounts_by_mint(&input.sender_address, token_id),
-                self.get_token_accounts_by_mint(&input.destination_address, token_id)
+                self.get_token_accounts_by_mint(&sender_address, token_id),
+                self.get_token_accounts_by_mint(&destination_address, token_id)
             )?;
             let sender_token_account = sender_accounts.value.first().ok_or("Sender token address is empty")?;
             let sender_token_address = sender_token_account.pubkey.clone();

@@ -58,8 +58,8 @@ impl<T> ChainTransactionsProvider for GenericProvider<T>
 where
     T: ChainTransactions + ChainProvider + Send + Sync,
 {
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        self.client.get_transactions_by_address(address).await
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.client.get_transactions_by_address(address, limit).await
     }
 }
 

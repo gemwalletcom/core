@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_f64_from_str;
 
 use super::account::Balance;
 
@@ -33,7 +34,8 @@ pub struct UnbondingDelegation {
 pub struct UnbondingDelegationEntry {
     pub completion_time: String,
     pub creation_height: String,
-    pub balance: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub balance: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,7 +75,8 @@ pub struct ValidatorCommissionLegacy {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidatorCommissionRatesLegacy {
-    pub rate: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub rate: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -102,7 +105,8 @@ pub struct ValidatorCommission {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidatorCommissionRates {
-    pub rate: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub rate: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -112,6 +116,8 @@ pub struct StakingPoolResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StakingPool {
-    pub bonded_tokens: String,
-    pub not_bonded_tokens: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub bonded_tokens: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub not_bonded_tokens: f64,
 }

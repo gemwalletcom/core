@@ -6,6 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 reqwest = ["gem_client/reqwest"]
+chain_integration_tests = ["reqwest"]
 
 [dependencies]
 async-trait = { workspace = true }
@@ -30,3 +31,4 @@ getrandom = { workspace = true }
 [dev-dependencies]
 reqwest = { workspace = true }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

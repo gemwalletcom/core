@@ -165,7 +165,7 @@ impl SolanaClient {
         Ok(results.into_iter().flat_map(|x| x.take().ok()).collect())
     }
 
-    pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_signatures_for_address(&self, address: &str, limit: usize) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
         let params = vec![
             serde_json::json!(address),
             serde_json::json!({
@@ -434,7 +434,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getBlock", params).await
     }
 
-    pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_signatures_for_address(&self, address: &str, limit: usize) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
         let params = serde_json::json!([
             address,
             {

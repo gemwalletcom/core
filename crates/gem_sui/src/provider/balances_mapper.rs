@@ -1,4 +1,4 @@
-use crate::models::rpc::Balance as SuiBalance;
+use crate::models::Balance as SuiBalance;
 use crate::models::staking::SuiStakeDelegation;
 use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL};
 use num_bigint::BigUint;

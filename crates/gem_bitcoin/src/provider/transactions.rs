@@ -33,7 +33,7 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         Ok(vec![])
     }
 
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 }
@@ -70,7 +70,7 @@ mod chain_integration_tests {
     async fn test_bitcoin_get_transactions_by_address() {
         let bitcoin_client = create_bitcoin_test_client();
 
-        let transactions = bitcoin_client.get_transactions_by_address(TEST_ADDRESS.to_string()).await.unwrap();
+        let transactions = bitcoin_client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
     }

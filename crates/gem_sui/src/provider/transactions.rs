@@ -1,78 +1,46 @@
-use std::error::Error;
-
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainTransactionLoad, ChainTransactions};
+use chain_traits::ChainTransactions;
 #[cfg(feature = "rpc")]
 use gem_client::Client;
-use primitives::{
-    BroadcastOptions, FeePriority, FeeRate, GasPriceType, Transaction, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
-    TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate,
-};
+use primitives::{BroadcastOptions, Transaction, TransactionStateRequest, TransactionUpdate};
 
-use crate::provider::transactions_mapper;
+use crate::provider::transactions_mapper::{map_transaction, map_transaction_blocks, map_transaction_status};
 use crate::rpc::client::SuiClient;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
-impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
-    async fn get_transaction_preload(&self, _input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadMetadata::None)
-    }
-
-    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: TransactionFee::default(),
-            metadata: input.metadata,
-        })
-    }
-
-    async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        let gas_price = self.get_gas_price().await?;
-        Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(gas_price))])
-    }
-}
-
-#[cfg(feature = "rpc")]
-#[async_trait]
 impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
-    async fn transaction_broadcast(&self, _data: String, _options: BroadcastOptions) -> Result<String, Box<dyn std::error::Error + Sync + Send>> {
-        unimplemented!()
+    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn std::error::Error + Sync + Send>> {
+        let parts: Vec<&str> = data.split('_').collect();
+        if parts.len() != 2 {
+            return Err("Invalid transaction data format. Expected format: data_signature".into());
+        }
+
+        let transaction_data = parts[0].to_string();
+        let signature = parts[1].to_string();
+
+        Ok(self.broadcast(transaction_data, signature).await?.digest)
     }
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn std::error::Error + Sync + Send>> {
         let transaction = self.get_transaction(request.id).await?;
-        let state = match transaction.effects.status.status.as_str() {
-            "success" => primitives::TransactionState::Confirmed,
-            "failure" => primitives::TransactionState::Reverted,
-            _ => primitives::TransactionState::Pending,
-        };
-        Ok(TransactionUpdate::new_state(state))
+        Ok(map_transaction_status(transaction))
     }
 
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
-        let checkpoint = self.get_transactions_by_block(block).await?;
-        let mut transactions = Vec::new();
-
-        for tx_id in checkpoint.transactions {
-            if let Ok(tx) = self.get_transaction(tx_id).await {
-                if let Some(mapped_tx) = transactions_mapper::map_transaction(tx) {
-                    transactions.push(mapped_tx);
-                }
-            }
-        }
-
-        Ok(transactions)
+        let transaction_blocks = self.get_checkpoint_transactions(block, None).await?;
+        Ok(map_transaction_blocks(transaction_blocks))
     }
 
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
         Ok(self
             .get_transactions_by_address(address)
             .await?
             .data
             .into_iter()
-            .flat_map(transactions_mapper::map_transaction)
+            .flat_map(map_transaction)
             .collect())
     }
 }
@@ -80,14 +48,40 @@ impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::provider::testkit::*;
-    use chain_traits::ChainState;
+    use chain_traits::{ChainState, ChainTransactions};
+    use primitives::{TransactionState, TransactionStateRequest};
 
     #[tokio::test]
     async fn test_get_transactions_by_block() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_sui_test_client();
         let latest_block = client.get_block_latest_number().await?;
-        let transactions = client.get_transactions_by_block(latest_block - 1).await?;
-        println!("Transactions in block {}: {}", latest_block - 1, transactions.network_total_transactions);
+        let transactions = ChainTransactions::get_transactions_by_block(&client, latest_block - 1).await?;
+
+        println!("Transactions in block {}: {}", latest_block - 1, transactions.len());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_transaction_status() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_sui_test_client();
+        let request = TransactionStateRequest::new_id(TEST_TRANSACTION_ID.to_string());
+        let status = client.get_transaction_status(request).await?;
+
+        println!("Transaction status: {:?}", status);
+
+        assert!(status.state == TransactionState::Confirmed);
+        assert!(status.changes.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_sui_test_client();
+        let transactions = ChainTransactions::get_transactions_by_address(&client, TEST_ADDRESS.to_string(), Some(1)).await?;
+        println!("Address transactions count: {}", transactions.len());
+
+        assert!(!transactions.is_empty());
         Ok(())
     }
 }

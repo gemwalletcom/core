@@ -1,8 +1,6 @@
 use super::model::TronGridAccount;
-use crate::rpc::{
-    model::{Transaction, TransactionReceiptData},
-    TronMapper,
-};
+use crate::models::{Transaction, TransactionReceiptData};
+use crate::provider::transactions_mapper::map_transaction;
 use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Chain};
 
@@ -12,11 +10,11 @@ impl TronGridMapper {
     pub fn get_chain() -> Chain {
         Chain::Tron
     }
-    pub fn map_transactions(transactions: Vec<Transaction>, reciepts: Vec<TransactionReceiptData>) -> Vec<primitives::Transaction> {
+    pub fn map_transactions(transactions: Vec<Transaction>, receipts: Vec<TransactionReceiptData>) -> Vec<primitives::Transaction> {
         transactions
             .into_iter()
-            .zip(reciepts.iter())
-            .flat_map(|(transaction, receipt)| TronMapper::map_transaction(Self::get_chain(), transaction, receipt.clone()))
+            .zip(receipts.iter())
+            .flat_map(|(transaction, receipt)| map_transaction(Self::get_chain(), transaction, receipt.clone()))
             .collect()
     }
 

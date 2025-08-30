@@ -17,7 +17,7 @@ pub fn map_balance_staking(delegations: Delegations, unbonding: UnbondingDelegat
         .unbonding_responses
         .iter()
         .flat_map(|u| &u.entries)
-        .filter_map(|entry| BigNumberFormatter::value_from_amount(&entry.balance, 0).ok())
+        .filter_map(|entry| BigNumberFormatter::value_from_amount(&entry.balance.to_string(), 0).ok())
         .filter_map(|v| BigInt::from_str(&v).ok())
         .fold(BigInt::from(0), |acc, amount| acc + amount);
 

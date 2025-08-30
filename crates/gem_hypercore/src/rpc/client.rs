@@ -106,7 +106,6 @@ impl<C: Client> HyperCoreClient<C> {
         Ok(self.client.post("/exchange", &payload, None).await?)
     }
 
-
     pub async fn get_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
         self.info(json!({"type": "validatorSummaries"})).await
     }
@@ -219,3 +218,9 @@ impl<C: Client> HyperCoreClient<C> {
 }
 
 impl<C: Client> ChainTraits for HyperCoreClient<C> {}
+
+impl<C: Client> chain_traits::ChainProvider for HyperCoreClient<C> {
+    fn get_chain(&self) -> primitives::Chain {
+        Chain::HyperCore
+    }
+}

@@ -21,6 +21,12 @@ pub struct SuiSystemState {
     pub epoch_duration_ms: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcSuiSystemState {
+    pub active_validators: Vec<ValidatorInfo>,
+}
+
 #[cfg(feature = "rpc")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,4 +64,37 @@ pub struct SuiValidators {
 pub struct SuiValidator {
     pub address: String,
     pub apy: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorSet {
+    pub apys: Vec<ValidatorApy>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidatorApy {
+    pub address: String,
+    pub apy: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorInfo {
+    pub sui_address: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventStake {
+    pub amount: String,
+    pub staker_address: String,
+    pub validator_address: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EventUnstake {
+    pub principal_amount: String,
+    pub reward_amount: String,
+    pub staker_address: String,
+    pub validator_address: String,
 }

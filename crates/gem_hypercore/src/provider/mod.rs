@@ -12,6 +12,7 @@ pub mod preload_mapper;
 pub mod staking;
 pub mod staking_mapper;
 pub mod state;
+pub mod testkit;
 pub mod token;
 pub mod transactions;
 pub mod transactions_mapper;

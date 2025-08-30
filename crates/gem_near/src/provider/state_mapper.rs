@@ -2,7 +2,7 @@ use crate::models::fee::GasPrice;
 use primitives::{FeePriority, FeeRate, GasPriceType};
 
 pub fn map_gas_price_to_priorities(gas_price: &GasPrice) -> Result<Vec<FeeRate>, Box<dyn std::error::Error + Sync + Send>> {
-    let base_price = gas_price.gas_price.parse::<u64>()?;
+    let base_price = gas_price.gas_price;
 
     Ok(vec![
         FeeRate::new(FeePriority::Slow, GasPriceType::regular(base_price)),
@@ -21,7 +21,7 @@ mod tests {
     #[test]
     fn test_map_gas_price_to_priorities() {
         let gas_price = GasPrice {
-            gas_price: "1000000000".to_string(),
+            gas_price: 1000000000,
         };
 
         let result = map_gas_price_to_priorities(&gas_price).unwrap();

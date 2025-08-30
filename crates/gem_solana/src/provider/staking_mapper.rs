@@ -1,5 +1,6 @@
 use crate::models::{EpochInfo, TokenAccountInfo, VoteAccount};
 use chrono::Utc;
+use num_bigint::BigInt;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
 pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, network_apy: f64) -> Vec<DelegationValidator> {
@@ -27,11 +28,11 @@ pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: Epo
         .into_iter()
         .filter_map(|account| {
             if let Some(stake_info) = &account.account.data.parsed.info.stake {
-                let balance = account.account.lamports.to_string();
+                let balance = BigInt::from(account.account.lamports);
                 let validator_id = stake_info.delegation.voter.clone();
 
-                let activation_epoch = stake_info.delegation.activation_epoch.parse::<u64>().ok()?;
-                let deactivation_epoch = stake_info.delegation.deactivation_epoch.parse::<u64>().ok()?;
+                let activation_epoch = stake_info.delegation.activation_epoch;
+                let deactivation_epoch = stake_info.delegation.deactivation_epoch;
 
                 let is_active = deactivation_epoch == u64::MAX;
 
@@ -61,13 +62,13 @@ pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: Epo
                     _ => None,
                 };
 
-                let rewards = "0".to_string();
+                let rewards = BigInt::from(0);
 
                 return Some(DelegationBase {
                     asset_id: asset_id.clone(),
                     state,
                     balance,
-                    shares: "0".to_string(),
+                    shares: BigInt::from(0),
                     rewards,
                     completion_date,
                     delegation_id: account.pubkey.clone(),
@@ -113,8 +114,8 @@ mod tests {
                             token_amount: None,
                             stake: Some(crate::models::StakeInfo {
                                 delegation: crate::models::StakeDelegation {
-                                    activation_epoch: "100".to_string(),
-                                    deactivation_epoch: "18446744073709551615".to_string(),
+                                    activation_epoch: 100,
+                                    deactivation_epoch: 18446744073709551615,
                                     stake: "1000000".to_string(),
                                     voter: "validator1".to_string(),
                                 },
@@ -137,7 +138,7 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].validator_id, "validator1");
-        assert_eq!(result[0].balance, "1000000");
+        assert_eq!(result[0].balance.to_string(), "1000000");
         assert!(matches!(result[0].state, DelegationState::Active));
     }
 }

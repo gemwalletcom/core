@@ -60,7 +60,7 @@ impl Agent {
     fn generate_private_key(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         use alloy_primitives::{hex, B256};
         let mut buf = [0u8; 32];
-        getrandom::fill(&mut buf)?;
+        getrandom::fill(&mut buf).map_err(|e| format!("Random generation error: {}", e))?;
         Ok(hex::encode(B256::from(buf)))
     }
 

@@ -1,6 +1,41 @@
 use crate::gateway::GemUTXO;
+use num_bigint::BigInt;
 use primitives::solana_token_program::SolanaTokenProgramId;
-use primitives::TransactionLoadMetadata;
+use primitives::{TransactionLoadMetadata, transaction_load_metadata::SuiCoin};
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemSuiCoin {
+    pub coin_type: String,
+    pub coin_object_id: String,
+    pub balance: String,
+    pub version: String,
+    pub digest: String,
+}
+
+impl From<SuiCoin> for GemSuiCoin {
+    fn from(value: SuiCoin) -> Self {
+        Self {
+            coin_type: value.coin_type,
+            coin_object_id: value.coin_object_id,
+            balance: value.balance.to_string(),
+            version: value.version,
+            digest: value.digest,
+        }
+    }
+}
+
+impl From<GemSuiCoin> for SuiCoin {
+    fn from(value: GemSuiCoin) -> Self {
+        Self {
+            coin_type: value.coin_type,
+            coin_object_id: value.coin_object_id,
+            balance: value.balance.parse::<BigInt>().unwrap_or_default(),
+            version: value.version,
+            digest: value.digest,
+        }
+    }
+}
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemSolanaTokenProgramId {
@@ -91,6 +126,7 @@ pub enum GemTransactionLoadMetadata {
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
+        votes: HashMap<String, u64>,
     },
     Sui {
         message_bytes: String,
@@ -188,6 +224,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
+                votes,
             } => GemTransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -195,8 +232,13 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
+                votes,
             },
-            TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
+            TransactionLoadMetadata::Sui { message_bytes } => {
+                GemTransactionLoadMetadata::Sui {
+                    message_bytes,
+                }
+            },
             TransactionLoadMetadata::Hyperliquid {
                 approve_agent_required,
                 approve_referral_required,
@@ -299,6 +341,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
+                votes,
             } => TransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -306,8 +349,11 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
+                votes,
             },
-            GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
+            GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui {
+                message_bytes,
+            },
             GemTransactionLoadMetadata::Hyperliquid {
                 approve_agent_required,
                 approve_referral_required,

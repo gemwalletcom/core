@@ -3,7 +3,7 @@ use num_traits::Num;
 use primitives::{AssetBalance, AssetId, Chain};
 use std::error::Error;
 
-use crate::models::TronAccount;
+use crate::models::{TronAccount, TronReward};
 
 pub fn map_coin_balance(account: &TronAccount) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let available_balance = BigUint::from(account.balance.unwrap_or(0));
@@ -19,6 +19,39 @@ pub fn map_token_balance(balance_hex: &str, asset_id: AssetId) -> Result<AssetBa
     };
 
     Ok(AssetBalance::new(asset_id, balance))
+}
+
+pub fn map_staking_balance(account: &TronAccount, reward: &TronReward) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+    let staked_amount = account
+        .frozen_v2
+        .as_ref()
+        .map(|frozen_list| {
+            frozen_list
+                .iter()
+                .map(|frozen| frozen.amount.unwrap_or(0))
+                .sum::<u64>()
+        })
+        .unwrap_or(0);
+
+    let pending_amount = account
+        .unfrozen_v2
+        .as_ref()
+        .map(|unfrozen_list| {
+            unfrozen_list
+                .iter()
+                .map(|unfrozen| unfrozen.unfreeze_amount.unwrap_or(0))
+                .sum::<u64>()
+        })
+        .unwrap_or(0);
+
+    let rewards_amount = reward.reward;
+
+    Ok(AssetBalance::new_staking(
+        AssetId::from_chain(Chain::Tron),
+        BigUint::from(staked_amount),
+        BigUint::from(pending_amount),
+        BigUint::from(rewards_amount),
+    ))
 }
 
 pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -37,7 +70,7 @@ pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{TronAccount, TronSmartContractResult};
+    use crate::models::{TronAccount, TronFrozen, TronReward, TronSmartContractResult, TronUnfrozen};
     use primitives::{AssetId, Chain};
     use serde_json;
 
@@ -97,5 +130,61 @@ mod tests {
         let address = "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb";
         let parameter = format_address_parameter(address).unwrap();
         assert_eq!(parameter, "0000000000000000000000002e1d447fa4169390cf5f5b3d12d380decfbfe20f");
+    }
+
+    #[test]
+    fn test_map_staking_balance() {
+        let account = TronAccount {
+            balance: Some(1000),
+            address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            active_permission: None,
+            votes: None,
+            frozen_v2: Some(vec![
+                TronFrozen {
+                    frozen_type: Some("BANDWIDTH".to_string()),
+                    amount: Some(5000000),
+                },
+                TronFrozen {
+                    frozen_type: Some("ENERGY".to_string()),
+                    amount: Some(3000000),
+                },
+            ]),
+            unfrozen_v2: Some(vec![TronUnfrozen {
+                unfreeze_amount: Some(2000000),
+                unfreeze_expire_time: Some(1234567890),
+            }]),
+        };
+
+        let reward = TronReward {
+            reward: 100000,
+        };
+
+        let balance = map_staking_balance(&account, &reward).unwrap();
+
+        assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
+        assert_eq!(balance.balance.staked, BigUint::from(8000000_u64));
+        assert_eq!(balance.balance.pending, BigUint::from(2000000_u64));
+        assert_eq!(balance.balance.rewards, BigUint::from(100000_u64));
+    }
+
+    #[test]
+    fn test_map_staking_balance_empty_fields() {
+        let account = TronAccount {
+            balance: Some(1000),
+            address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            active_permission: None,
+            votes: None,
+            frozen_v2: None,
+            unfrozen_v2: None,
+        };
+
+        let reward = TronReward { reward: 0 };
+
+        let balance = map_staking_balance(&account, &reward).unwrap();
+
+        assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
+        assert_eq!(balance.balance.staked, BigUint::from(0_u64));
+        assert_eq!(balance.balance.pending, BigUint::from(0_u64));
+        assert_eq!(balance.balance.rewards, BigUint::from(0_u64));
     }
 }

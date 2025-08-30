@@ -3099,6 +3099,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "tokio",
 ]
 
 [[package]]
@@ -3212,6 +3213,7 @@ dependencies = [
  "chain_primitives",
  "chain_traits",
  "chrono",
+ "futures",
  "gem_client",
  "gem_jsonrpc",
  "hex",
@@ -5304,6 +5306,7 @@ dependencies = [
  "num-bigint",
  "serde",
  "serde_json",
+ "serde_serializers",
  "strum",
  "strum_macros",
  "typeshare",

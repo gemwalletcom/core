@@ -9,8 +9,8 @@ pub fn map_balance_coin(balance: String, chain: Chain) -> AssetBalance {
 }
 
 pub fn map_balance_staking(balance: &HypercoreStakeBalance, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-    let available_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.delegated, 18).unwrap_or_default();
-    let pending_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal, 18).unwrap_or_default();
+    let available_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.delegated.to_string(), 18).unwrap_or_default();
+    let pending_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal.to_string(), 18).unwrap_or_default();
 
     Ok(AssetBalance::new_balance(
         chain.as_asset_id(),
@@ -36,9 +36,9 @@ mod tests {
     #[test]
     fn test_map_balance_staking() {
         let stake_balance = HypercoreStakeBalance {
-            delegated: "1000000000000000000".to_string(),
-            undelegated: "0".to_string(),
-            total_pending_withdrawal: "100000000000000000".to_string(),
+            delegated: 1000000000000000000.0,
+            undelegated: 0.0,
+            total_pending_withdrawal: 100000000000000000.0,
         };
         let result = map_balance_staking(&stake_balance, Chain::SmartChain).unwrap();
 

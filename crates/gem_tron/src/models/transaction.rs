@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Int64, UInt64};
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TronTransactionBroadcast {
     pub result: bool,
@@ -27,8 +25,8 @@ pub struct TronTransactionContractRef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TronTransactionReceipt {
     #[serde(rename = "blockNumber")]
-    pub block_number: UInt64,
-    pub fee: Option<Int64>,
+    pub block_number: u64,
+    pub fee: Option<u64>,
     pub result: Option<String>,
     pub receipt: Option<TronReceipt>,
 }

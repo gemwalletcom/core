@@ -17,11 +17,11 @@ impl<C: Client> ChainStaking for HyperCoreClient<C> {
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Send + Sync>> {
         let validators = self.get_validators().await?;
-        Ok(staking_mapper::map_validators_to_delegation_validators(validators, self.chain, apy))
+        Ok(staking_mapper::map_staking_validators(validators, self.chain, apy))
     }
 
     async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
         let delegations = self.get_staking_delegations(&address).await?;
-        Ok(staking_mapper::map_delegations_to_delegation_bases(delegations, self.chain))
+        Ok(staking_mapper::map_staking_delegations(delegations, self.chain))
     }
 }

@@ -39,7 +39,7 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, recipient_token_a
                 base_fee
             }
         },
-        TransactionInputType::Swap(_, _) => {
+        TransactionInputType::Swap(_, _, _) => {
             options.insert(FeeOption::TokenAccountCreation, BigInt::from(JETTON_ACCOUNT_CREATION));
             base_fee
         }
