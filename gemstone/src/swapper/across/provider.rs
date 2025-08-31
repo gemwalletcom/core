@@ -27,6 +27,7 @@ use alloy_primitives::{
 use alloy_sol_types::{SolCall, SolValue};
 
 use async_trait::async_trait;
+use crate::network::jsonrpc_client_with_chain;
 use gem_evm::{
     across::{
         contracts::{
@@ -38,11 +39,15 @@ use gem_evm::{
     },
     erc20::IERC20,
     jsonrpc::TransactionObject,
+    multicall3::IMulticall3,
     weth::WETH9,
 };
+use gem_solana::{jsonrpc::SolanaRpc, models::prioritization_fee::SolanaPrioritizationFee};
 use num_bigint::{BigInt, Sign};
 use primitives::{swap::SwapStatus, AssetId, Chain, ChainType, EVMChain};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
+
+const DEFAULT_SOLANA_COMPUTE_LIMIT: u64 = 200_000;
 
 #[derive(Debug)]
 pub struct Across {
@@ -404,6 +409,90 @@ impl Across {
         U256::from_le_slice(&fee_in_token.to_bytes_le().1)
     }
 
+    async fn fetch_solana_unit_price(provider: Arc<dyn AlienProvider>) -> Result<u64, SwapperError> {
+        let client = jsonrpc_client_with_chain(provider, Chain::Solana);
+        let rpc_call = SolanaRpc::GetRecentPrioritizationFees;
+        let fees: Vec<SolanaPrioritizationFee> = client.request(rpc_call).await?;
+
+        if fees.is_empty() {
+            return Err(SwapperError::NetworkError);
+        }
+
+        // Calculate average prioritization fee from recent transactions
+        let total_fee: u64 = fees.iter().map(|f| f.prioritization_fee as u64).sum();
+        let average_fee = total_fee / fees.len() as u64;
+
+        // Return at least 1 microlamport per compute unit
+        Ok(std::cmp::max(1, average_fee))
+    }
+
+    async fn calculate_gas_price_and_fee(
+        &self,
+        gas_chain: Chain,
+        from_amount: &U256,
+        input_is_native: bool,
+        input_asset: &AssetId,
+        output_token: &Address,
+        wallet_address: &Address,
+        message: &[u8],
+        destination_deployment: &AcrossDeployment,
+        provider: Arc<dyn AlienProvider>,
+        eth_price_index: Option<usize>,
+        multicall_results: &[IMulticall3::Result],
+    ) -> Result<(U256, V3RelayData), SwapperError> {
+        if gas_chain == Chain::Solana {
+            let unit_price = Self::fetch_solana_unit_price(provider.clone()).await.unwrap_or(1);
+            let gas_fee = DEFAULT_SOLANA_COMPUTE_LIMIT * unit_price;
+
+            let chain_id = Self::get_destination_chain_id(&gas_chain)?;
+            let recipient = if message.is_empty() {
+                *wallet_address
+            } else {
+                Address::from_str(destination_deployment.multicall_handler().as_str()).unwrap()
+            };
+            let v3_relay_data = V3RelayData {
+                depositor: *wallet_address,
+                recipient,
+                exclusiveRelayer: Address::ZERO,
+                inputToken: Address::from_str(input_asset.token_id.clone().unwrap().as_ref()).unwrap(),
+                outputToken: *output_token,
+                inputAmount: *from_amount,
+                outputAmount: U256::from(100), // safe amount
+                originChainId: U256::from(chain_id),
+                depositId: u32::MAX,
+                fillDeadline: u32::MAX,
+                exclusivityDeadline: 0,
+                message: Bytes::from(message.to_vec()),
+            };
+
+            Ok((U256::from(gas_fee), v3_relay_data))
+        } else {
+            let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), gas_chain);
+            let gas_limit_req = self.estimate_gas_limit(
+                from_amount,
+                input_is_native,
+                input_asset,
+                output_token,
+                wallet_address,
+                message,
+                destination_deployment,
+                provider.clone(),
+                gas_chain,
+            );
+
+            let (tuple, gas_price) = futures::join!(gas_limit_req, gas_price_req);
+            let (gas_limit, v3_relay_data) = tuple?;
+            let mut gas_fee = gas_limit * gas_price?;
+
+            if let Some(index) = eth_price_index {
+                let eth_price = ChainlinkPriceFeed::decoded_answer(&multicall_results[index])?;
+                gas_fee = Self::calculate_fee_in_token(&gas_fee, &eth_price, 6);
+            }
+
+            Ok((gas_fee, v3_relay_data))
+        }
+    }
+
     pub fn get_eta_in_seconds(&self, from_chain: &Chain, to_chain: &Chain) -> Option<u32> {
         let from_chain = EVMChain::from_chain(*from_chain)?;
         let to_chain = EVMChain::from_chain(*to_chain)?;
@@ -569,26 +658,21 @@ impl Swapper for Across {
             self.message_for_multicall_handler(&remain_amount, &original_output_asset, &wallet_address, &output_token, &referral_config);
 
         let gas_chain = request.to_asset.chain();
-        let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), gas_chain);
-        let gas_limit_req = self.estimate_gas_limit(
-            &from_amount,
-            input_is_native,
-            &input_asset,
-            &output_token,
-            &wallet_address,
-            &message,
-            &destination_deployment,
-            provider.clone(),
-            gas_chain,
-        );
-
-        let (tuple, gas_price) = futures::join!(gas_limit_req, gas_price_req);
-        let (gas_limit, mut v3_relay_data) = tuple?;
-        let mut gas_fee = gas_limit * gas_price?;
-        if let Some(index) = eth_price_index {
-            let eth_price = ChainlinkPriceFeed::decoded_answer(&multicall_results[index])?;
-            gas_fee = Self::calculate_fee_in_token(&gas_fee, &eth_price, 6);
-        }
+        let (gas_fee, mut v3_relay_data) = self
+            .calculate_gas_price_and_fee(
+                gas_chain,
+                &from_amount,
+                input_is_native,
+                &input_asset,
+                &output_token,
+                &wallet_address,
+                &message,
+                &destination_deployment,
+                provider.clone(),
+                eth_price_index,
+                &multicall_results,
+            )
+            .await?;
         debug_println!("gas_fee: {}", gas_fee);
 
         // Check if bridge amount is too small

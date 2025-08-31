@@ -107,6 +107,8 @@ Follow the existing code style patterns unless explicitly asked to change:
 
 **IMPORTANT**: Always import models and types at the top of the file. Never use inline imports inside functions (e.g., `use crate::models::SomeType` inside a function). All imports must be declared in the file header section.
 
+**JSON-RPC Client Import**: When using `jsonrpc_client_with_chain` from the network module, always import it at the top of the file with `use crate::network::jsonrpc_client_with_chain;` rather than using inline imports within functions.
+
 ### Error Handling
 - Use `thiserror` for custom error types
 - Implement `From` traits for error conversion

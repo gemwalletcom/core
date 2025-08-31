@@ -16,9 +16,7 @@ impl AddressType {
                 bytes32[12..32].copy_from_slice(address.as_slice()); // Address is 20 bytes, starts at byte 12
                 Ok(bytes32)
             }
-            AddressType::Solana(address_str) => {
-                Self::solana_address_to_bytes32(address_str)
-            }
+            AddressType::Solana(address_str) => Self::solana_address_to_bytes32(address_str),
         }
     }
 

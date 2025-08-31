@@ -109,8 +109,8 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
     use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider};
-    use primitives::swap::{SwapData, SwapQuote, SwapQuoteData, SwapProviderData};
 
     #[test]
     fn test_calculate_transaction_fee() {

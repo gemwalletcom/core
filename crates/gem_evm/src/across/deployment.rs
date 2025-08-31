@@ -8,6 +8,7 @@ use std::collections::HashMap;
 pub const ACROSS_CONFIG_STORE: &str = "0x3B03509645713718B78951126E0A6de6f10043f5";
 pub const ACROSS_HUBPOOL: &str = "0xc186fA914353c44b2E33eBE05f21846F1048bEda";
 pub const MULTICALL_HANDLER: &str = "0x924a9f036260DdD5808007E1AA95f08eD08aA569";
+static SOLANA_CHAIN_ID: u64 = 34268394551451_u64;
 
 /// https://docs.across.to/developer-docs/developers/contract-addresses
 pub struct AcrossDeployment {
@@ -24,7 +25,11 @@ pub struct AssetMapping {
 
 impl AcrossDeployment {
     pub fn deployment_by_chain(chain: &Chain) -> Option<Self> {
-        let chain_id: u64 = chain.network_id().parse().unwrap();
+        let chain_id: u64 = if chain.chain_type() == ChainType::Solana {
+            SOLANA_CHAIN_ID
+        } else {
+            chain.network_id().parse().unwrap()
+        };
         match chain {
             Chain::Ethereum => Some(Self {
                 chain_id,

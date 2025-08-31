@@ -19,7 +19,8 @@ where
         .enumerate()
         .filter_map(|(batch_idx, batch_result)| {
             batch_result.as_ref().ok().map(|results| {
-                results.0
+                results
+                    .0
                     .iter()
                     .enumerate()
                     .filter_map(|(fee_idx, result)| match result {
