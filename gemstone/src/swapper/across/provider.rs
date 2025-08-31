@@ -41,7 +41,7 @@ use gem_evm::{
     weth::WETH9,
 };
 use num_bigint::{BigInt, Sign};
-use primitives::{swap::SwapStatus, AssetId, Chain, EVMChain};
+use primitives::{swap::SwapStatus, AssetId, Chain, ChainType, EVMChain};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
@@ -63,13 +63,11 @@ impl Across {
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
-        // Check if this is Solana to EVM (not supported yet)
         if from_asset.chain == Chain::Solana {
             return false;
         }
 
         if to_asset.chain == Chain::Solana {
-            // Only support USDC for now
             if to_asset != &SOLANA_USDC.id {
                 return false;
             }
@@ -83,7 +81,6 @@ impl Across {
                 .any(|mapping| mapping.set.contains(&from_normalized) && mapping.set.contains(&SOLANA_USDC.id));
         }
 
-        // Handle EVM to EVM pairs (existing logic)
         let from = match eth_address::normalize_weth_asset(from_asset) {
             Some(asset) => asset,
             None => return false,
@@ -98,10 +95,9 @@ impl Across {
     }
 
     fn get_address_type_for_chain(chain: Chain, token_id: Option<&str>) -> AddressType {
-        match chain {
-            Chain::Solana => AddressType::Solana(token_id.expect("token_id must be present for Solana assets").to_string()),
-            _ => {
-                // For EVM chains, parse the token_id as Address
+        match chain.chain_type() {
+            ChainType::Solana => AddressType::Solana(token_id.expect("token_id must be present for Solana assets").to_string()),
+            ChainType::Ethereum => {
                 let address = if let Some(id) = token_id {
                     Address::from_str(id).unwrap_or(Address::ZERO)
                 } else {
@@ -109,15 +105,14 @@ impl Across {
                 };
                 AddressType::Evm(address)
             }
+            _ => todo!(),
         }
     }
 
-    // Decode V3RelayData with proper cross-chain address handling
     fn decode_v3_relay_data(encoded_data: &[u8], request: &SwapperQuoteRequest) -> Result<V3RelayData, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
 
-        // If no Solana involved, use standard decoding
         if from_chain != Chain::Solana && to_chain != Chain::Solana {
             return V3RelayData::abi_decode(encoded_data).map_err(|_| SwapperError::InvalidRoute);
         }
@@ -135,8 +130,6 @@ impl Across {
         let output_token_offset = 4 * 32;
 
         // Convert Solana addresses back to EVM-compatible format for decoding
-        // This creates placeholder EVM addresses that will be replaced in the actual transaction
-
         // Fix inputToken if from Solana
         if from_chain == Chain::Solana && decode_data.len() >= input_token_offset + 32 {
             // Replace with zero address for decoding compatibility
@@ -203,7 +196,7 @@ impl Across {
             // For Solana, keep original asset ID and use a placeholder address
             // The actual full 32-byte Solana address will be inserted during encoding
             let solana_output_asset = request.to_asset.asset_id();
-            let placeholder_address = Address::ZERO; // Placeholder, gets replaced in fix_v3_relay_data_encoding_for_solana
+            let placeholder_address = Address::ZERO;
             Ok((solana_output_asset, placeholder_address))
         } else {
             let norm_output_asset = eth_address::normalize_weth_asset(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
@@ -212,9 +205,9 @@ impl Across {
         }
     }
 
-    fn get_destination_chain_id(chain: &Chain) -> Result<u32, SwapperError> {
+    fn get_destination_chain_id(chain: &Chain) -> Result<u64, SwapperError> {
         let deployment = AcrossDeployment::deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        deployment.chain_id.try_into().map_err(|_| SwapperError::NotSupportedChain)
+        Ok(deployment.chain_id)
     }
 
     fn calculate_relayer_fee_for_destination(
@@ -224,7 +217,6 @@ impl Across {
         sol_price: Option<&BigInt>,
     ) -> U256 {
         if Self::is_solana_destination(request) {
-            // Calculate Solana relayer fee: 0.000005 SOL converted to USDC using price feed
             if let Some(sol_usd_price) = sol_price {
                 // 0.000005 SOL in lamports (9 decimals) = 5000 lamports
                 let sol_fee_amount = U256::from(5000_u64);
@@ -238,15 +230,6 @@ impl Across {
             let from_amount_bigint = BigInt::from_bytes_le(Sign::Plus, &from_amount.to_le_bytes::<32>());
             let relayer_fee_percent = relayer_calc.capital_fee_percent(&from_amount_bigint, cost_config);
             fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals)
-        }
-    }
-
-    fn get_gas_chain_for_estimation(&self, request: &SwapperQuoteRequest) -> Chain {
-        if Self::is_solana_destination(request) {
-            // For Solana destination, use source chain for gas estimation
-            request.from_asset.chain()
-        } else {
-            request.to_asset.chain()
         }
     }
 
@@ -357,7 +340,7 @@ impl Across {
         provider: Arc<dyn AlienProvider>,
         chain: Chain,
     ) -> Result<(U256, V3RelayData), SwapperError> {
-        let chain_id: u32 = chain.network_id().parse().unwrap();
+        let chain_id = Self::get_destination_chain_id(&chain)?;
 
         let recipient = if message.is_empty() {
             *wallet_address
@@ -385,9 +368,15 @@ impl Across {
             repaymentChainId: U256::from(chain_id),
         }
         .abi_encode();
-        let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
-        let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await;
-        Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
+        if chain.chain_type() == ChainType::Ethereum {
+            let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
+            let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await;
+            Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
+        } else if chain.chain_type() == ChainType::Solana {
+            Ok((U256::from(200_000), v3_relay_data))
+        } else {
+            Err(SwapperError::NotImplemented)
+        }
     }
 
     pub fn update_v3_relay_data(
@@ -579,7 +568,7 @@ impl Swapper for Across {
         let (message, referral_fee) =
             self.message_for_multicall_handler(&remain_amount, &original_output_asset, &wallet_address, &output_token, &referral_config);
 
-        let gas_chain = self.get_gas_chain_for_estimation(request);
+        let gas_chain = request.to_asset.chain();
         let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), gas_chain);
         let gas_limit_req = self.estimate_gas_limit(
             &from_amount,
