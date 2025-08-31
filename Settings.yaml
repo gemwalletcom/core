@@ -21,6 +21,7 @@ moonpay:
 transak:
   key:
     public: ""
+    secret: ""
 mercuryo:
   key:
     public: ""
