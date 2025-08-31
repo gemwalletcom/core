@@ -3,6 +3,7 @@ use std::str::FromStr;
 pub use fiat::{FiatClient, FiatProviderFactory};
 
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
+use streamer::FiatWebhookPayload;
 use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
 
 // on ramp
@@ -89,9 +90,31 @@ pub async fn get_fiat_off_ramp_assets(fiat_client: &State<Mutex<FiatClient>>) ->
     Json(assets)
 }
 
-#[post("/fiat/webhooks/<provider>", format = "json", data = "<data>")]
-pub async fn create_fiat_webhook(provider: &str, data: Json<serde_json::Value>, fiat_client: &State<Mutex<FiatClient>>) -> Json<bool> {
-    println!("webhook: {}, data: {}", provider, serde_json::to_string(&data.0).unwrap());
-    let result = fiat_client.lock().await.create_fiat_webhook(provider, data.into_inner()).await.unwrap();
-    Json(result)
+#[post("/fiat/webhooks/<provider>", data = "<webhook_data>")]
+pub async fn create_fiat_webhook(
+    provider: &str,
+    webhook_data: Json<serde_json::Value>,
+    fiat_client: &State<Mutex<FiatClient>>,
+    stream_producer: &State<Mutex<streamer::StreamProducer>>,
+) -> Json<FiatWebhookPayload> {
+    let data = webhook_data.0;
+    println!("webhook from provider: {} | data: {}", provider, data);
+
+    let payload = fiat_client.lock().await.webhook(provider, data).await.unwrap();
+
+    println!("webhook from provider: {} | payload: {}", provider, payload);
+
+    match stream_producer.lock().await.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await {
+        Ok(_) => Json(payload),
+        Err(e) => {
+            println!("Failed to send webhook to queue: {}", e);
+            Json(FiatWebhookPayload::new(primitives::FiatProviderName::MoonPay, serde_json::Value::String("".to_string())))
+        }
+    }
+}
+
+#[get("/fiat/orders/<provider>/<order_id>")]
+pub async fn get_fiat_order(provider: &str, order_id: &str, fiat_client: &State<Mutex<FiatClient>>) -> Json<primitives::FiatTransaction> {
+    let order = fiat_client.lock().await.get_order_status(provider, order_id).await.unwrap();
+    Json(order)
 }

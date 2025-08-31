@@ -1,16 +1,14 @@
 use crate::{
     error::FiatError,
     model::{FiatMapping, FiatProviderAsset},
-    providers::moonpay::model::{Data, Webhook},
+    providers::moonpay::model::{Data, WebhookOrderId},
     FiatProvider,
 };
 use async_trait::async_trait;
 use std::error::Error;
 
-use super::{client::MoonPayClient, model::FiatCurrencyType};
-use primitives::{
-    AssetId, FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus,
-};
+use super::{client::MoonPayClient, mapper::map_order};
+use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -65,53 +63,14 @@ impl FiatProvider for MoonPayClient {
             .collect())
     }
 
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        let payload = self.get_transaction(order_id).await?;
+        map_order(payload)
+    }
+
     // full transaction: https://dev.moonpay.com/reference/reference-webhooks-buy
-    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = serde_json::from_value::<Data<Webhook>>(data)?.data;
-
-        let asset = payload.clone().currency.unwrap_or(payload.clone().base_currency);
-        let fiat_currency = payload.clone().quote_currency.unwrap_or(payload.clone().base_currency);
-        let asset = Self::map_asset(asset).unwrap();
-        let asset_id = AssetId::from(asset.chain.unwrap(), asset.token_id);
-
-        let transaction_type = if payload.clone().base_currency.currency_type == FiatCurrencyType::Fiat {
-            FiatQuoteType::Buy
-        } else {
-            FiatQuoteType::Sell
-        };
-        let currency_amount = match transaction_type {
-            FiatQuoteType::Buy => payload.base_currency_amount.unwrap_or_default(),
-            FiatQuoteType::Sell => payload.quote_currency_amount.unwrap_or_default(),
-        };
-
-        let status = match payload.status.as_str() {
-            "pending" | "waitingForDeposit" => FiatTransactionStatus::Pending,
-            "failed" => FiatTransactionStatus::Failed,
-            "completed" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown(payload.status),
-        };
-        let fee_provider = payload.fee_amount.unwrap_or_default();
-        let fee_network = payload.network_fee_amount.unwrap_or_default();
-        let fee_partner = payload.extra_fee_amount.unwrap_or_default();
-        let fiat_amount = currency_amount + fee_provider + fee_network + fee_partner;
-
-        let transaction = FiatTransaction {
-            asset_id: Some(asset_id),
-            transaction_type,
-            symbol: asset.symbol,
-            provider_id: Self::NAME.id(),
-            provider_transaction_id: payload.id,
-            status,
-            country: payload.country,
-            fiat_amount,
-            fiat_currency: fiat_currency.code.to_uppercase(),
-            transaction_hash: payload.crypto_transaction_id,
-            address: payload.wallet_address,
-            fee_provider: payload.fee_amount,
-            fee_network: payload.network_fee_amount,
-            fee_partner: payload.extra_fee_amount,
-        };
-
-        Ok(transaction)
+    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let payload = serde_json::from_value::<Data<WebhookOrderId>>(data)?.data;
+        Ok(payload.id)
     }
 }

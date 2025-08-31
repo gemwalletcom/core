@@ -1,0 +1,138 @@
+{
+    "type": "transaction_failed",
+    "data": {
+        "baseCurrency": {
+            "id": "edd81f1f-f735-4692-b410-6def107f17d2",
+            "updatedAt": "2024-11-26T13:40:31.967Z",
+            "minAmount": 30,
+            "minBuyAmount": 20,
+            "type": "fiat",
+            "decimals": null,
+            "code": "usd",
+            "icon": "https://static.moonpay.com/widget/currencies/usd.svg",
+            "isUtxoCompatible": false,
+            "maxAmount": 12000,
+            "maxBuyAmount": 30000,
+            "precision": 2,
+            "isSellSupported": true,
+            "createdAt": "2019-04-29T16:55:28.647Z",
+            "name": "US Dollar"
+        },
+        "baseCurrencyId": "edd81f1f-f735-4692-b410-6def107f17d2",
+        "cryptoTransactionId": null,
+        "externalCustomerId": null,
+        "isFromQuote": true,
+        "id": "1b6cdb1e-9299-45b1-9670-54db1ea5a21f",
+        "updatedAt": "2025-04-26T01:01:19.288Z",
+        "country": "USA",
+        "currency": {
+            "icon": "https://static.moonpay.com/widget/currencies/trx.jpg",
+            "confirmationsRequired": 12,
+            "updatedAt": "2025-04-26T01:00:13.412Z",
+            "id": "6761f845-9619-45d3-9159-8a3a73edcc11",
+            "notAllowedCountries": [],
+            "decimals": 6,
+            "precision": 1,
+            "metadata": {
+                "networkCode": "tron",
+                "chainId": null,
+                "coinType": null,
+                "contractAddress": null
+            },
+            "addressRegex": "^T[1-9A-HJ-NP-Za-km-z]{33}$",
+            "supportsTestMode": true,
+            "isSwapQuoteSupported": true,
+            "type": "crypto",
+            "maxSellAmount": 100000,
+            "testnetAddressRegex": "^T[1-9A-HJ-NP-Za-km-z]{33}$",
+            "isStableCoin": false,
+            "isSellSupported": true,
+            "createdAt": "2019-03-06T14:46:04.814Z",
+            "code": "trx",
+            "isSwapBaseSupported": false,
+            "maxBuyAmount": null,
+            "name": "TRON",
+            "notAllowedUSStates": [
+                "VI",
+                "NY"
+            ],
+            "supportsLiveMode": true,
+            "addressTagRegex": null,
+            "isUtxoCompatible": false,
+            "minSellAmount": 82.47353,
+            "isSupportedInUS": true,
+            "supportsAddressTag": false,
+            "isSuspended": false,
+            "minAmount": 20,
+            "minBuyAmount": 20.7,
+            "isBaseAsset": true,
+            "maxAmount": 2000
+        },
+        "gbpRate": 0.75115,
+        "areFeesIncluded": true,
+        "state": "WA",
+        "customerId": "e064a5ce-88cf-4cb4-a8a1-4592230f7e4a",
+        "eurRate": 0.8767,
+        "bankDepositInformation": null,
+        "walletAddress": "TYxT3F8pdkTDkhw4JsfodKnEgaYpNaANmW",
+        "usdRate": 1,
+        "bankAccountId": null,
+        "feeAmountDiscount": null,
+        "nftTransaction": null,
+        "walletAddressTag": null,
+        "baseCurrencyAmount": 15.39,
+        "failureReason": "Payment authorization declined",
+        "createdAt": "2025-04-26T01:01:16.555Z",
+        "nftToken": null,
+        "flow": "principal",
+        "status": "failed",
+        "widgetRedirectUrl": null,
+        "paymentMethod": "paypal",
+        "bankTransferReference": null,
+        "feeAmount": 3.99,
+        "cardId": null,
+        "networkFeeAmount": 0.47,
+        "externalTransactionId": null,
+        "redirectUrl": null,
+        "extraFeeAmount": 0.15,
+        "quoteCurrencyAmount": null,
+        "extraFeeAmountDiscount": null,
+        "returnUrl": "https://buy.moonpay.com/transaction_receipt",
+        "stages": [
+            {
+                "stage": "stage_one_waiting_payment",
+                "failureReason": "paypal_payment_failed",
+                "status": "failed",
+                "actions": [],
+                "metaData": []
+            },
+            {
+                "stage": "stage_two_verification",
+                "failureReason": null,
+                "status": "not_started",
+                "actions": [],
+                "metaData": [
+                    {
+                        "approvalStatus": "pending"
+                    }
+                ]
+            },
+            {
+                "stage": "stage_three_processing",
+                "failureReason": null,
+                "status": "not_started",
+                "actions": [],
+                "metaData": []
+            },
+            {
+                "stage": "stage_four_delivery",
+                "failureReason": null,
+                "status": "not_started",
+                "actions": [],
+                "metaData": []
+            }
+        ],
+        "currencyId": "6761f845-9619-45d3-9159-8a3a73edcc11"
+    },
+    "externalCustomerId": null
+}

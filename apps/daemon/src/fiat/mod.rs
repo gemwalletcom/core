@@ -6,7 +6,12 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
+use streamer::{run_consumer, ConsumerConfig, QueueName, StreamReader};
+
+use crate::fiat::fiat_webhook_consumer::FiatWebhookConsumer;
+
 mod fiat_assets_updater;
+pub mod fiat_webhook_consumer;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let update_fiat_assets_job = run_job("Update fiat assets", Duration::from_secs(3600), {
@@ -51,4 +56,27 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_fiat_buyable_assets_job),
         Box::pin(update_trending_fiat_assets_job),
     ]
+}
+
+pub async fn jobs_consumer(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
+    let fiat_webhook_consumer_job = job_runner::run_job("Fiat webhook consumer", Duration::from_millis(100), {
+        let settings = Arc::new(settings.clone());
+        move || {
+            let settings_clone = settings.clone();
+            async move {
+                let consumer = FiatWebhookConsumer::new(&settings_clone.postgres.url, (*settings_clone).clone());
+                let stream_reader = StreamReader::new(&settings_clone.rabbitmq.url, "daemon_fiat_consumer").await.unwrap();
+                let _ = run_consumer(
+                    "fiat_webhook_consumer",
+                    stream_reader,
+                    QueueName::FiatOrderWebhooks,
+                    consumer,
+                    ConsumerConfig::default(),
+                )
+                .await;
+            }
+        }
+    });
+
+    vec![Box::pin(fiat_webhook_consumer_job)]
 }

@@ -123,6 +123,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 fiat::get_fiat_on_ramp_assets,
                 fiat::get_fiat_off_ramp_assets,
                 fiat::create_fiat_webhook,
+                fiat::get_fiat_order,
                 config::get_config,
                 name::get_name_resolve,
                 devices::add_device,

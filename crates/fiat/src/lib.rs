@@ -23,8 +23,9 @@ impl FiatProviderFactory {
             request_client.clone(),
             settings.mercuryo.key.public.clone(),
             settings.mercuryo.key.secret.clone(),
+            settings.mercuryo.key.token.clone(),
         );
-        let transak = TransakClient::new(request_client.clone(), settings.transak.key.public);
+        let transak = TransakClient::new(request_client.clone(), settings.transak.key.public, settings.transak.key.secret);
         let banxa = BanxaClient::new(request_client.clone(), settings.banxa.url, settings.banxa.key.public, settings.banxa.key.secret);
         let paybis = PaybisClient::new(request_client.clone(), settings.paybis.key.public, settings.paybis.key.secret);
 

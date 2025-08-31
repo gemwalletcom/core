@@ -1,6 +1,6 @@
-use super::model::{Asset, Country, Response, TransakQuote};
+use super::model::{Asset, Country, Data, Response, TokenResponse, TransakOrderResponse, TransakQuote};
 use crate::model::{filter_token_id, FiatProviderAsset};
-use base64::{engine::general_purpose::STANDARD_NO_PAD as BASE64, Engine as _};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD as BASE64, Engine as _};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatQuoteType};
 use primitives::{FiatProviderName, FiatQuote};
@@ -14,13 +14,14 @@ const TRANSAK_REDIRECT_URL: &str = "https://global.transak.com";
 pub struct TransakClient {
     pub client: Client,
     pub api_key: String,
+    pub api_secret: String,
 }
 
 impl TransakClient {
     pub const NAME: FiatProviderName = FiatProviderName::Transak;
 
-    pub fn new(client: Client, api_key: String) -> Self {
-        TransakClient { client, api_key }
+    pub fn new(client: Client, api_key: String, api_secret: String) -> Self {
+        TransakClient { client, api_key, api_secret }
     }
 
     pub async fn get_buy_quote(
@@ -123,6 +124,36 @@ impl TransakClient {
             enabled: asset.is_allowed,
             unsupported_countries: Some(asset.unsupported_countries()),
         })
+    }
+
+    pub async fn refresh_token(&self) -> Result<Data<TokenResponse>, reqwest::Error> {
+        let url = format!("{TRANSAK_API_URL}/partners/api/v2/refresh-token?apiKey={}", self.api_key);
+        let body = serde_json::json!({
+            "apiKey": self.api_key
+        });
+
+        self.client
+            .post(&url)
+            .header("api-secret", &self.api_secret)
+            .header("Content-Type", "application/json; charset=utf-8")
+            .json(&body)
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    pub async fn get_transaction(&self, order_id: &str) -> Result<TransakOrderResponse, reqwest::Error> {
+        let token_data = self.refresh_token().await?;
+        let url = format!("{TRANSAK_API_URL}/partners/api/v2/order/{order_id}");
+        let response: Data<TransakOrderResponse> = self.client
+            .get(&url)
+            .header("access-token", &token_data.data.access_token)
+            .send()
+            .await?
+            .json()
+            .await?;
+        Ok(response.data)
     }
 
     pub fn decode_jwt_content(&self, jwt: &str) -> Result<String, Box<dyn std::error::Error>> {

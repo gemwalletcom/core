@@ -2,7 +2,7 @@ use crate::hmac_signature::generate_hmac_signature_from_base64_key;
 use crate::model::FiatProviderAsset;
 use crate::providers::paybis::mapper::map_asset_id;
 
-use super::model::{Currency, PaybisAssetsResponse, PaybisQuote, QuoteRequest};
+use super::model::{Currency, PaybisAssetsResponse, PaybisQuote, QuoteRequest, PaybisTransactionResponse};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
 use reqwest::Client;
@@ -66,6 +66,17 @@ impl PaybisClient {
     pub async fn get_assets(&self) -> Result<PaybisAssetsResponse, reqwest::Error> {
         let url = format!("{PAYBIS_API_BASE_URL}/v2/public/currency/pairs/buy-crypto");
         self.client.get(url).query(&[("apikey", &self.api_key)]).send().await?.json().await
+    }
+
+    pub async fn get_transaction(&self, transaction_id: &str) -> Result<PaybisTransactionResponse, reqwest::Error> {
+        let url = format!("{PAYBIS_API_BASE_URL}/v2/transactions");
+        self.client
+            .get(url)
+            .query(&[("apikey", self.api_key.as_str()), ("transaction_id", transaction_id)])
+            .send()
+            .await?
+            .json()
+            .await
     }
 
     pub fn map_asset(currency: Currency) -> Option<FiatProviderAsset> {

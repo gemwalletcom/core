@@ -1,0 +1,32 @@
+{
+    "eventId": "8fc6c31b-69fb-44b0-8cf9-bd2ffa3ccbf1",
+    "data": {
+        "card_masked_pan": null,
+        "status": "cancelled",
+        "amount": "0.00241764",
+        "card": {
+            "number": "9705"
+        },
+        "merchant_transaction_id": "f34d79d6-b8d4-4213-a29d-756467d003cb",
+        "updated_at": "2025-05-08 19:00:27",
+        "currency": "BTC",
+        "fiat_amount": "270.00",
+        "fiat_currency": "USD",
+        "updated_at_ts": 1746730827,
+        "payment_method": "card",
+        "type": "buy",
+        "id": "0dd76717e4ed94195",
+        "user": {
+            "country_code": "ee",
+            "email": "jeroenrijnberg@live.nl",
+            "uuid4": "17e976b8-d394-4c94-9544-f08fbe3eed22"
+        },
+        "partner_fee": "2.48",
+        "network": "BITCOIN",
+        "fee": "21.49",
+        "created_at_ts": 1746726046,
+        "created_at": "2025-05-08 17:40:46",
+        "rate": "102790.04",
+        "contract_address": null
+    }
+}

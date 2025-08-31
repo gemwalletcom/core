@@ -3,11 +3,11 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{fiat_transaction::FiatQuoteType, FiatBuyQuote, FiatSellQuote};
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{FiatBuyQuote, FiatSellQuote};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
 use std::error::Error;
 
-use super::{client::MercuryoClient, model::Webhook};
+use super::{client::MercuryoClient, mapper::map_order_from_response, model::Webhook};
 
 #[async_trait]
 impl FiatProvider for MercuryoClient {
@@ -64,40 +64,15 @@ impl FiatProvider for MercuryoClient {
             .collect())
     }
 
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        let response = self.get_transaction(order_id).await?;
+        let transaction = response.data.into_iter().next().ok_or("Transaction not found")?;
+        map_order_from_response(transaction)
+    }
+
     // full transaction: https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#22-callbacks-response-body
-    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let data = serde_json::from_value::<Webhook>(data)?.data;
-
-        // https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#3-transaction-status-types
-        let status = match data.status.as_str() {
-            "new" | "pending" | "order_scheduled" => FiatTransactionStatus::Pending,
-            "cancelled" | "order_failed" | "descriptor_failed" => FiatTransactionStatus::Failed,
-            "paid" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown(data.status),
-        };
-        let transaction_type = match data.transacton_type.as_str() {
-            "buy" => FiatQuoteType::Buy,
-            "sell" => FiatQuoteType::Sell,
-            _ => FiatQuoteType::Buy,
-        };
-
-        let transaction = FiatTransaction {
-            asset_id: None,
-            transaction_type,
-            symbol: data.currency,
-            provider_id: Self::NAME.id(),
-            provider_transaction_id: data.merchant_transaction_id.unwrap_or(data.id),
-            status,
-            country: data.user.map(|x| x.country_code.to_uppercase()),
-            fiat_amount: data.fiat_amount,
-            fiat_currency: data.fiat_currency,
-            transaction_hash: data.tx.clone().and_then(|x| x.id),
-            address: data.tx.clone().and_then(|x| x.address),
-            fee_provider: data.fee,
-            fee_network: None,
-            fee_partner: data.partner_fee,
-        };
-
-        Ok(transaction)
+    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let webhook_data = serde_json::from_value::<Webhook>(data)?.data;
+        Ok(webhook_data.merchant_transaction_id.unwrap_or(webhook_data.id))
     }
 }

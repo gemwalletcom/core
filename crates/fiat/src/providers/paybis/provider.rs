@@ -6,8 +6,8 @@ use crate::{
 use async_trait::async_trait;
 use std::error::Error;
 
-use super::{client::PaybisClient, model::PaybisWebhook};
-use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
+use super::{client::PaybisClient, model::PaybisWebhook, mapper::map_order_from_response};
+use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 
 #[async_trait]
 impl FiatProvider for PaybisClient {
@@ -58,39 +58,16 @@ impl FiatProvider for PaybisClient {
         Ok(vec![])
     }
 
-    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        let response = self.get_transaction(order_id).await?;
+        let transaction = response.transactions.into_iter()
+            .next()
+            .ok_or("Transaction not found")?;
+        map_order_from_response(transaction)
+    }
+
+    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let payload = serde_json::from_value::<PaybisWebhook>(data)?;
-
-        let transaction_type = FiatQuoteType::Buy;
-
-        let status = match payload.status.as_str() {
-            "pending" => FiatTransactionStatus::Pending,
-            "failed" | "cancelled" => FiatTransactionStatus::Failed,
-            "completed" | "success" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown(payload.status),
-        };
-
-        // We don't have enough information to determine the exact asset from the webhook
-        // The crypto_currency field doesn't specify which chain the asset is on
-        let asset_id = None;
-
-        let transaction = FiatTransaction {
-            asset_id,
-            transaction_type,
-            symbol: payload.crypto_currency.clone(),
-            provider_id: Self::NAME.id(),
-            provider_transaction_id: payload.id,
-            status,
-            country: payload.country,
-            fiat_amount: payload.fiat_amount,
-            fiat_currency: payload.fiat_currency.to_uppercase(),
-            transaction_hash: payload.transaction_hash,
-            address: payload.wallet_address,
-            fee_provider: payload.service_fee,
-            fee_network: payload.network_fee,
-            fee_partner: payload.partner_fee,
-        };
-
-        Ok(transaction)
+        Ok(payload.id)
     }
 }

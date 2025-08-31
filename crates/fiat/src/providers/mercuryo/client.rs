@@ -1,4 +1,4 @@
-use super::model::{Asset, Currencies, Quote, QuoteQuery, QuoteSellQuery, Response};
+use super::model::{Asset, Currencies, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
 use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
 use number_formatter::BigNumberFormatter;
@@ -15,13 +15,19 @@ pub struct MercuryoClient {
     // widget
     pub widget_id: String,
     pub secret_key: String,
+    pub partner_token: String,
 }
 
 impl MercuryoClient {
     pub const NAME: FiatProviderName = FiatProviderName::Mercuryo;
 
-    pub fn new(client: Client, widget_id: String, secret_key: String) -> Self {
-        MercuryoClient { client, widget_id, secret_key }
+    pub fn new(client: Client, widget_id: String, secret_key: String, partner_token: String) -> Self {
+        MercuryoClient {
+            client,
+            widget_id,
+            secret_key,
+            partner_token,
+        }
     }
 
     pub async fn get_quote_buy(&self, fiat_currency: String, symbol: String, fiat_amount: f64, network: String) -> Result<Quote, reqwest::Error> {
@@ -60,6 +66,18 @@ impl MercuryoClient {
         let query = [("type", "alpha2")];
         self.client
             .get(format!("{MERCURYO_API_BASE_URL}/v1.6/public/card-countries"))
+            .query(&query)
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    pub async fn get_transaction(&self, transaction_id: &str) -> Result<Response<Vec<MercuryoTransactionResponse>>, reqwest::Error> {
+        let query = [("merchant_transaction_id", transaction_id)];
+        self.client
+            .get(format!("{MERCURYO_API_BASE_URL}/v1.6/sdk-partner/transactions"))
+            .header("Sdk-Partner-Token", &self.partner_token)
             .query(&query)
             .send()
             .await?
