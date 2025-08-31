@@ -1,3 +1,4 @@
+pub(crate) use super::address_type::AddressType;
 use super::{
     api::AcrossApi,
     config_store::{ConfigStoreClient, TokenConfig},
@@ -24,7 +25,6 @@ use alloy_primitives::{
     Address, Bytes, U256,
 };
 use alloy_sol_types::{SolCall, SolValue};
-use bs58;
 
 use async_trait::async_trait;
 use gem_evm::{
@@ -43,39 +43,6 @@ use gem_evm::{
 use num_bigint::{BigInt, Sign};
 use primitives::{swap::SwapStatus, AssetId, Chain, EVMChain};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
-
-#[derive(Debug, Clone)]
-enum AddressType {
-    Evm(Address),
-    Solana(String),
-}
-
-impl AddressType {
-    fn to_bytes32(&self) -> Result<[u8; 32], SwapperError> {
-        match self {
-            AddressType::Evm(address) => {
-                // EVM address padded with zeros to 32 bytes
-                let mut bytes32 = [0u8; 32];
-                bytes32[12..32].copy_from_slice(address.as_slice()); // Address is 20 bytes, starts at byte 12
-                Ok(bytes32)
-            }
-            AddressType::Solana(address_str) => {
-                // Solana address - full 32 bytes
-                Self::solana_address_to_bytes32(address_str)
-            }
-        }
-    }
-
-    fn solana_address_to_bytes32(solana_address: &str) -> Result<[u8; 32], SwapperError> {
-        let decoded = bs58::decode(solana_address).into_vec().map_err(|_| SwapperError::InvalidAddress(solana_address.to_string()))?;
-
-        if decoded.len() != 32 {
-            return Err(SwapperError::InvalidAddress(solana_address.to_string()));
-        }
-
-        decoded.try_into().map_err(|_| SwapperError::InvalidAddress(solana_address.to_string()))
-    }
-}
 
 #[derive(Debug)]
 pub struct Across {
@@ -149,41 +116,41 @@ impl Across {
     fn decode_v3_relay_data(encoded_data: &[u8], request: &SwapperQuoteRequest) -> Result<V3RelayData, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
-        
+
         // If no Solana involved, use standard decoding
         if from_chain != Chain::Solana && to_chain != Chain::Solana {
             return V3RelayData::abi_decode(encoded_data).map_err(|_| SwapperError::InvalidRoute);
         }
-        
+
         // For cross-chain with Solana, we need to fix the addresses before decoding
         let mut decode_data = encoded_data.to_vec();
-        
+
         // V3RelayData struct fields in order:
         // 0: depositor (32 bytes)
-        // 1: recipient (32 bytes) 
+        // 1: recipient (32 bytes)
         // 2: exclusiveRelayer (32 bytes)
         // 3: inputToken (32 bytes) <- fix if from Solana
         // 4: outputToken (32 bytes) <- fix if to Solana
         let input_token_offset = 3 * 32;
         let output_token_offset = 4 * 32;
-        
+
         // Convert Solana addresses back to EVM-compatible format for decoding
         // This creates placeholder EVM addresses that will be replaced in the actual transaction
-        
-        // Fix inputToken if from Solana  
+
+        // Fix inputToken if from Solana
         if from_chain == Chain::Solana && decode_data.len() >= input_token_offset + 32 {
             // Replace with zero address for decoding compatibility
             let zero_addr_bytes = [0u8; 32];
             decode_data[input_token_offset..input_token_offset + 32].copy_from_slice(&zero_addr_bytes);
         }
-        
+
         // Fix outputToken if to Solana
         if to_chain == Chain::Solana && decode_data.len() >= output_token_offset + 32 {
-            // Replace with zero address for decoding compatibility  
+            // Replace with zero address for decoding compatibility
             let zero_addr_bytes = [0u8; 32];
             decode_data[output_token_offset..output_token_offset + 32].copy_from_slice(&zero_addr_bytes);
         }
-        
+
         V3RelayData::abi_decode(&decode_data).map_err(|_| SwapperError::InvalidRoute)
     }
 
