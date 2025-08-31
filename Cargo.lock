@@ -3053,6 +3053,7 @@ dependencies = [
  "async-trait",
  "bigdecimal",
  "chain_primitives",
+ "chain_traits",
  "chrono",
  "futures",
  "gem_bsc",

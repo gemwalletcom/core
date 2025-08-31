@@ -5,6 +5,7 @@ use gem_aptos::rpc::client::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::client::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
+use gem_evm::rpc::EthereumClient;
 use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::client::PolkadotClient;
@@ -19,7 +20,7 @@ use std::sync::Arc;
 pub mod models;
 
 pub use models::*;
-use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod};
+use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod, EVMChain};
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -105,7 +106,33 @@ impl GemGateway {
             Chain::Tron => Ok(Arc::new(TronClient::new(alien_client.clone(), TronGridClient::new(alien_client.clone())))),
             Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
             Chain::Solana => Ok(Arc::new(SolanaClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
-            _ => Err(GatewayError::InvalidChain(chain.to_string())),
+            Chain::Ethereum
+            | Chain::Arbitrum
+            | Chain::SmartChain
+            | Chain::Polygon
+            | Chain::Optimism
+            | Chain::Base
+            | Chain::AvalancheC
+            | Chain::OpBNB
+            | Chain::Fantom
+            | Chain::Gnosis
+            | Chain::Manta
+            | Chain::Blast
+            | Chain::ZkSync
+            | Chain::Linea
+            | Chain::Mantle
+            | Chain::Celo
+            | Chain::World
+            | Chain::Sonic
+            | Chain::Abstract
+            | Chain::Berachain
+            | Chain::Ink
+            | Chain::Unichain
+            | Chain::Hyperliquid
+            | Chain::Monad => Ok(Arc::new(EthereumClient::new(
+                jsonrpc_client_with_chain(self.provider.clone(), chain),
+                EVMChain::from_chain(chain).unwrap(),
+            ))),
         }
     }
 }

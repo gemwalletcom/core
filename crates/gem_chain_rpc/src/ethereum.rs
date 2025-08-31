@@ -11,18 +11,19 @@ use gem_evm::{
     ethereum_address_checksum,
     rpc::{alchemy::AlchemyClient, ankr::AnkrClient, EthereumClient, EthereumMapper},
 };
-use primitives::{Asset, AssetBalance, AssetId, Chain, EVMChain, NodeType, StakeValidator, Transaction};
+use primitives::{Asset, AssetBalance, AssetId, Chain, EVMChain, NodeType, StakeValidator, Transaction, TransactionState, TransactionType};
+use chrono::Utc;
 
-pub struct EthereumProvider {
-    client: EthereumClient,
+pub struct EthereumProvider<C: Client + Clone> {
+    client: EthereumClient<C>,
     node_type: NodeType,
     assets_provider: Box<dyn ChainAssetsProvider>,
     transactions_provider: Box<dyn ChainTransactionsProvider>,
 }
 
-impl EthereumProvider {
+impl<C: Client + Clone> EthereumProvider<C> {
     pub fn new(
-        client: EthereumClient,
+        client: EthereumClient<C>,
         node_type: NodeType,
         assets_provider: Box<dyn ChainAssetsProvider>,
         transactions_provider: Box<dyn ChainTransactionsProvider>,
@@ -37,7 +38,7 @@ impl EthereumProvider {
 }
 
 #[async_trait]
-impl ChainBlockProvider for EthereumProvider {
+impl<C: Client + Clone> ChainBlockProvider for EthereumProvider<C> {
     fn get_chain(&self) -> Chain {
         self.client.get_chain()
     }
@@ -60,7 +61,7 @@ impl ChainBlockProvider for EthereumProvider {
 }
 
 #[async_trait]
-impl ChainTokenDataProvider for EthereumProvider {
+impl<C: Client + Clone> ChainTokenDataProvider for EthereumProvider<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let name: String = self
             .client
@@ -95,21 +96,21 @@ impl ChainTokenDataProvider for EthereumProvider {
 }
 
 #[async_trait]
-impl ChainAssetsProvider for EthereumProvider {
+impl<C: Client + Clone> ChainAssetsProvider for EthereumProvider<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         self.assets_provider.get_assets_balances(address).await
     }
 }
 
 #[async_trait]
-impl ChainTransactionsProvider for EthereumProvider {
+impl<C: Client + Clone> ChainTransactionsProvider for EthereumProvider<C> {
     async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         self.transactions_provider.get_transactions_by_address(address, limit).await
     }
 }
 
 #[async_trait]
-impl ChainStakeProvider for EthereumProvider {
+impl<C: Client + Clone> ChainStakeProvider for EthereumProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         match self.client.chain {
             EVMChain::SmartChain => SmartChainProvider::new(self.client.clone()).get_validators().await,
@@ -128,7 +129,7 @@ impl ChainStakeProvider for EthereumProvider {
 // AlchemyClient
 
 #[async_trait]
-impl<C: Client> ChainAssetsProvider for AlchemyClient<C> {
+impl<C: Client + Clone> ChainAssetsProvider for AlchemyClient<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let response = self.get_token_balances(&address).await?;
         let balances = response
@@ -147,24 +148,56 @@ impl<C: Client> ChainAssetsProvider for AlchemyClient<C> {
 }
 
 #[async_trait]
-impl<C: Client> ChainTransactionsProvider for AlchemyClient<C> {
+impl<C: Client + Clone> ChainTransactionsProvider for AlchemyClient<C> {
     async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(self.get_transactions_by_address(address.as_str()).await?)
+        Ok(self.get_transactions_ids_by_address(address.as_str()).await?.into_iter().map(|hash| {
+            Transaction::new(
+                hash,
+                AssetId::from_chain(self.chain.to_chain()),
+                String::new(),
+                String::new(),
+                None,
+                TransactionType::Transfer,
+                TransactionState::Pending,
+                String::new(),
+                AssetId::from_chain(self.chain.to_chain()),
+                String::new(),
+                None,
+                None,
+                Utc::now(),
+            )
+        }).collect())
     }
 }
 
 // AnkrClient
 
 #[async_trait]
-impl ChainTransactionsProvider for AnkrClient {
+impl<C: Client + Clone> ChainTransactionsProvider for AnkrClient<C> {
     async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let limit = limit.unwrap_or(25) as i64;
-        Ok(self.get_transactions_by_address(address.as_str(), limit).await?)
+        Ok(self.get_transactions_ids_by_address(address.as_str(), limit).await?.into_iter().map(|hash| {
+            Transaction::new(
+                hash,
+                AssetId::from_chain(self.chain.to_chain()),
+                String::new(),
+                String::new(),
+                None,
+                TransactionType::Transfer,
+                TransactionState::Pending,
+                String::new(),
+                AssetId::from_chain(self.chain.to_chain()),
+                String::new(),
+                None,
+                None,
+                Utc::now(),
+            )
+        }).collect())
     }
 }
 
 #[async_trait]
-impl ChainAssetsProvider for AnkrClient {
+impl<C: Client + Clone> ChainAssetsProvider for AnkrClient<C> {
     async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let response = self.get_token_balances(&address).await?;
         let balances = response

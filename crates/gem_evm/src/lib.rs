@@ -24,6 +24,9 @@ pub mod models;
 #[cfg(feature = "rpc")]
 pub mod rpc;
 
+#[cfg(feature = "rpc")]
+pub mod provider;
+
 pub use address::ethereum_address_checksum;
 pub use eip712::{eip712_domain_types, EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue};
 

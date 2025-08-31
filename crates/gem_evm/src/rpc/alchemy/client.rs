@@ -1,33 +1,21 @@
 use std::error::Error;
 
-use crate::{
-    registry::ContractRegistry,
-    rpc::{
-        alchemy::{
-            model::{evm_chain_to_network, Data},
-            Transactions,
-        },
-        EthereumClient, EthereumMapper,
-    },
+use crate::rpc::alchemy::{
+    model::{evm_chain_to_network, Data},
+    Transactions, TokenBalances,
 };
-#[cfg(feature = "reqwest")]
 use gem_client::{Client, ContentType, CONTENT_TYPE};
 use primitives::EVMChain;
 use serde_json::json;
 
-use crate::rpc::alchemy::TokenBalances;
-
-#[cfg(feature = "reqwest")]
 #[derive(Clone)]
-pub struct AlchemyClient<C: Client> {
+pub struct AlchemyClient<C: Client + Clone> {
     pub chain: EVMChain,
     url: String,
     client: C,
-    ethereum_client: EthereumClient,
 }
 
-#[cfg(feature = "reqwest")]
-impl<C: Client> AlchemyClient<C> {
+impl<C: Client + Clone> AlchemyClient<C> {
     const DISABLED_RPC_CHAINS: [EVMChain; 5] = [EVMChain::Mantle, EVMChain::Hyperliquid, EVMChain::OpBNB, EVMChain::Monad, EVMChain::Fantom];
     const ENABLED_TRANSACTION_CHAINS: [EVMChain; 2] = [EVMChain::Ethereum, EVMChain::Base];
 
@@ -37,41 +25,19 @@ impl<C: Client> AlchemyClient<C> {
         headers
     }
 
-    pub fn new(ethereum_client: EthereumClient, client: C, api_key: String) -> Self {
-        let chain = ethereum_client.chain;
+    pub fn new(client: C, chain: EVMChain, api_key: String) -> Self {
         let url = format!("https://api.g.alchemy.com/data/v1/{api_key}");
 
         Self {
             chain,
             url,
             client,
-            ethereum_client,
         }
     }
 
-    pub async fn get_transactions_by_address(&self, address: &str) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transactions_ids_by_address(&self, address: &str) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let transactions = self.get_transactions_address(address).await?.data.transactions;
-        if transactions.is_empty() {
-            return Ok(vec![]);
-        }
-        let transactions_ids = transactions.iter().map(|x| x.hash.clone()).collect::<Vec<String>>();
-        let contract_registry = ContractRegistry::default();
-        Ok(self
-            .ethereum_client
-            .get_transactions(&transactions_ids)
-            .await?
-            .into_iter()
-            .filter_map(|(block, transaction, receipt, trace)| {
-                EthereumMapper::map_transaction(
-                    self.chain.to_chain(),
-                    &transaction,
-                    &receipt,
-                    Some(&trace),
-                    &block.timestamp,
-                    Some(&contract_registry),
-                )
-            })
-            .collect())
+        Ok(transactions.iter().map(|x| x.hash.clone()).collect())
     }
 
     // https://www.alchemy.com/docs/data/token-api/token-api-endpoints/alchemy-get-token-balances

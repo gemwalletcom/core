@@ -1,66 +1,29 @@
 use std::error::Error;
 
-#[cfg(feature = "reqwest")]
-use gem_client::ReqwestClient;
-#[cfg(feature = "reqwest")]
-use gem_jsonrpc::JsonRpcClient;
-
+use gem_client::Client;
+use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use primitives::EVMChain;
 use serde_json::json;
 
-use crate::{
-    registry::ContractRegistry,
-    rpc::{
-        ankr::model::{ankr_chain, TokenBalances, Transactions},
-        EthereumClient, EthereumMapper,
-    },
-};
+use crate::rpc::ankr::model::{ankr_chain, TokenBalances, Transactions};
 
-#[cfg(feature = "reqwest")]
+
 #[derive(Clone)]
-pub struct AnkrClient {
+pub struct AnkrClient<C: Client + Clone> {
     pub chain: EVMChain,
-    pub client: EthereumClient,
-    rpc_client: JsonRpcClient<ReqwestClient>,
+    rpc_client: GenericJsonRpcClient<C>,
 }
 
-#[cfg(feature = "reqwest")]
-impl AnkrClient {
-    pub fn new(client: EthereumClient, api_key: String) -> Self {
-        let url = format!("https://rpc.ankr.com/multichain/{api_key}");
-        let rpc_client = JsonRpcClient::new_reqwest(url);
-
+impl<C: Client + Clone> AnkrClient<C> {
+    pub fn new(client: GenericJsonRpcClient<C>, chain: EVMChain) -> Self {
         Self {
-            chain: client.chain,
-            client,
-            rpc_client,
+            chain,
+            rpc_client: client,
         }
     }
+}
 
-    pub async fn get_transactions_by_address(&self, address: &str, limit: i64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Send + Sync>> {
-        let transaction_ids = self.get_transactions_ids_by_address(address, limit).await?;
-        if transaction_ids.is_empty() {
-            return Ok(vec![]);
-        }
-        let contract_registry = ContractRegistry::default();
-        Ok(self
-            .client
-            .get_transactions(&transaction_ids)
-            .await?
-            .into_iter()
-            .filter_map(|(block, transaction, receipt, trace)| {
-                EthereumMapper::map_transaction(
-                    self.chain.to_chain(),
-                    &transaction,
-                    &receipt,
-                    Some(&trace),
-                    &block.timestamp,
-                    Some(&contract_registry),
-                )
-            })
-            .collect())
-    }
-
+impl<C: Client + Clone> AnkrClient<C> {
     pub async fn get_transactions_ids_by_address(&self, address: &str, limit: i64) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .get_ankr_transactions_by_address(address, limit)
