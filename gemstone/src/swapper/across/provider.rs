@@ -558,12 +558,22 @@ impl Swapper for Across {
 
         let eth_price_feed = ChainlinkPriceFeed::new_eth_usd_feed(provider.clone());
         let sol_price_feed = ChainlinkPriceFeed::new_sol_usd_feed(provider.clone());
-        if !input_is_native {
+        let mut next_call_index = 3; // utilization(0), utilization(from_amount), current_time
+        let eth_price_index = if !input_is_native {
             calls.push(eth_price_feed.latest_round_call3());
-        }
-        if Self::is_solana_destination(request) {
+            let index = next_call_index;
+            next_call_index += 1;
+            Some(index)
+        } else {
+            None
+        };
+        let sol_price_index = if Self::is_solana_destination(request) {
             calls.push(sol_price_feed.latest_round_call3());
-        }
+            let index = next_call_index;
+            Some(index)
+        } else {
+            None
+        };
 
         let multicall_req = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls);
 
@@ -585,9 +595,8 @@ impl Swapper for Across {
         debug_println!("lpfee: {}", lpfee);
 
         // Get SOL price if this is a Solana destination
-        let sol_price = if Self::is_solana_destination(request) {
-            let sol_price_index = if !input_is_native { 4 } else { 3 }; // Adjust index based on ETH price fetch
-            Some(ChainlinkPriceFeed::decoded_answer(&multicall_results[sol_price_index])?)
+        let sol_price = if let Some(index) = sol_price_index {
+            Some(ChainlinkPriceFeed::decoded_answer(&multicall_results[index])?)
         } else {
             None
         };
@@ -620,8 +629,8 @@ impl Swapper for Across {
         let (tuple, gas_price) = futures::join!(gas_limit_req, gas_price_req);
         let (gas_limit, mut v3_relay_data) = tuple?;
         let mut gas_fee = gas_limit * gas_price?;
-        if !input_is_native {
-            let eth_price = ChainlinkPriceFeed::decoded_answer(&multicall_results[3])?;
+        if let Some(index) = eth_price_index {
+            let eth_price = ChainlinkPriceFeed::decoded_answer(&multicall_results[index])?;
             gas_fee = Self::calculate_fee_in_token(&gas_fee, &eth_price, 6);
         }
         debug_println!("gas_fee: {}", gas_fee);
