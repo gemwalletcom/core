@@ -1,4 +1,4 @@
-use super::model::{Asset, Country, Data, Response, TokenResponse, TransakOrderResponse, TransakQuote};
+use super::models::{Asset, Country, Data, Response, TokenResponse, TransakOrderResponse, TransakQuote};
 use crate::model::{filter_token_id, FiatProviderAsset};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as BASE64, Engine as _};
 use number_formatter::BigNumberFormatter;

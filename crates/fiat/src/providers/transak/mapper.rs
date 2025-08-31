@@ -1,5 +1,5 @@
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
-use super::{client::TransakClient, model::{Asset, TransakOrderResponse}};
+use super::{client::TransakClient, models::{Asset, TransakOrderResponse}};
 
 pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
     match asset.network.name.as_str() {
@@ -130,7 +130,7 @@ pub fn map_order_from_response(payload: TransakOrderResponse) -> Result<FiatTran
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::transak::model::{Data, TransakOrderResponse};
+    use crate::providers::transak::models::{Data, TransakOrderResponse};
     use primitives::{FiatQuoteType, FiatTransactionStatus};
 
     #[test]

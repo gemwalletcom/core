@@ -2,7 +2,7 @@ use crate::hmac_signature::generate_hmac_signature_from_base64_key;
 use crate::model::FiatProviderAsset;
 use crate::providers::paybis::mapper::map_asset_id;
 
-use super::model::{Currency, PaybisAssetsResponse, PaybisQuote, QuoteRequest, PaybisTransactionResponse};
+use super::models::{Currency, PaybisAssetsResponse, PaybisQuote, QuoteRequest, PaybisTransactionResponse};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
 use reqwest::Client;

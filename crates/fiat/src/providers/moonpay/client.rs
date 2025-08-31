@@ -1,9 +1,9 @@
 use crate::hmac_signature::generate_hmac_signature;
 use crate::model::{filter_token_id, FiatProviderAsset};
-use crate::providers::moonpay::model::Webhook;
+use crate::providers::moonpay::models::Webhook;
 
 use super::mapper::map_asset_chain;
-use super::model::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
+use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote};
 use reqwest::Client;

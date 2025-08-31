@@ -1,4 +1,4 @@
-use super::model::{Asset, Currencies, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
+use super::models::{Asset, Currencies, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
 use crate::model::{FiatMapping, FiatProviderAsset};
 use hex;
 use number_formatter::BigNumberFormatter;

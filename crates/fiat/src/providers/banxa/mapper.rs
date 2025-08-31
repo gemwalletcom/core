@@ -1,5 +1,5 @@
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
-use super::{client::BanxaClient, model::Order};
+use super::{client::BanxaClient, models::Order};
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
     match chain.as_str() {

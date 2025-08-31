@@ -1,4 +1,4 @@
-use crate::providers::moonpay::model::{Asset, FiatCurrencyType, Webhook};
+use crate::providers::moonpay::models::{Asset, FiatCurrencyType, Webhook};
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
 use super::client::MoonPayClient;
@@ -87,7 +87,7 @@ pub fn map_order(payload: Webhook) -> Result<FiatTransaction, Box<dyn std::error
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::moonpay::model::Data;
+    use crate::providers::moonpay::models::Data;
 
     #[test]
     fn test_map_order_buy_failed() {

@@ -7,7 +7,7 @@ use primitives::{FiatBuyQuote, FiatSellQuote};
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
 use std::error::Error;
 
-use super::{client::MercuryoClient, mapper::map_order_from_response, model::Webhook};
+use super::{client::MercuryoClient, mapper::map_order_from_response, models::Webhook};
 
 #[async_trait]
 impl FiatProvider for MercuryoClient {

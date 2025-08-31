@@ -1,6 +1,6 @@
 use super::{
     client::MercuryoClient,
-    model::{BuyTransaction, MercuryoTransactionResponse, WithdrawTransaction},
+    models::{BuyTransaction, MercuryoTransactionResponse, WithdrawTransaction},
 };
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
@@ -150,7 +150,7 @@ fn map_sell_transaction(withdraw: WithdrawTransaction) -> Result<FiatTransaction
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::mercuryo::model::{MercuryoTransactionResponse, Response};
+    use crate::providers::mercuryo::models::{MercuryoTransactionResponse, Response};
     use primitives::{FiatQuoteType, FiatTransactionStatus};
 
     #[tokio::test]

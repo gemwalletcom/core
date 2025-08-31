@@ -10,7 +10,7 @@ use std::error::Error;
 use super::{
     client::BanxaClient,
     mapper::map_order,
-    model::{Webhook, ORDER_TYPE_SELL},
+    models::{Webhook, ORDER_TYPE_SELL},
 };
 
 #[async_trait]

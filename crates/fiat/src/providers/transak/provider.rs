@@ -1,7 +1,7 @@
 use super::{
     client::TransakClient,
     mapper::map_order_from_response,
-    model::{Data, WebhookPayload},
+    models::{Data, WebhookPayload},
 };
 use crate::{
     model::{FiatMapping, FiatProviderAsset},

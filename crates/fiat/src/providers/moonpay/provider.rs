@@ -1,7 +1,7 @@
 use crate::{
     error::FiatError,
     model::{FiatMapping, FiatProviderAsset},
-    providers::moonpay::model::{Data, WebhookOrderId},
+    providers::moonpay::models::{Data, WebhookOrderId},
     FiatProvider,
 };
 use async_trait::async_trait;

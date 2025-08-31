@@ -59,7 +59,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
 }
 
 pub async fn jobs_consumer(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
-    let fiat_webhook_consumer_job = job_runner::run_job("Fiat webhook consumer", Duration::from_millis(100), {
+    let fiat_webhook_consumer_job = job_runner::run_job("Fiat webhook consumer", Duration::from_secs(86000), {
         let settings = Arc::new(settings.clone());
         move || {
             let settings_clone = settings.clone();

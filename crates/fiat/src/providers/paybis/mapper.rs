@@ -1,6 +1,6 @@
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
-use super::{client::PaybisClient, model::{Currency, PaybisTransaction}};
+use super::{client::PaybisClient, models::{Currency, PaybisTransaction}};
 
 pub fn map_asset_id(currency: Currency) -> Option<AssetId> {
     if !currency.is_crypto() {

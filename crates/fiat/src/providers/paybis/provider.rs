@@ -6,7 +6,7 @@ use crate::{
 use async_trait::async_trait;
 use std::error::Error;
 
-use super::{client::PaybisClient, model::PaybisWebhook, mapper::map_order_from_response};
+use super::{client::PaybisClient, models::PaybisWebhook, mapper::map_order_from_response};
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 
 #[async_trait]
