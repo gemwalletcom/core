@@ -97,7 +97,7 @@ mod tests {
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
 
         // Load expected data from test file
-        let test_data: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/hl_action_open_long_order.json")).unwrap();
+        let test_data: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_action_open_long_order.json")).unwrap();
         let expected_action = &test_data["action"];
 
         assert_eq!(generated_action, *expected_action);
@@ -109,7 +109,7 @@ mod tests {
         let generated_action: serde_json::Value = serde_json::to_value(&order).unwrap();
 
         // Load expected data from test file
-        let test_data: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/hl_action_open_short_order.json")).unwrap();
+        let test_data: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_action_open_short_order.json")).unwrap();
         let expected_action = &test_data["action"];
 
         assert_eq!(generated_action, *expected_action);
@@ -126,7 +126,7 @@ mod tests {
         let pretty_generated = serde_json::to_string_pretty(&parsed).unwrap();
 
         // Load expected test data
-        let expected = include_str!("../../tests/data/hl_eip712_approve_agent.json").trim();
+        let expected = include_str!("../../testdata/hl_eip712_approve_agent.json").trim();
 
         assert_eq!(pretty_generated, expected);
     }
@@ -142,7 +142,7 @@ mod tests {
         let pretty_generated = serde_json::to_string_pretty(&parsed).unwrap();
 
         // Load expected test data
-        let expected = include_str!("../../tests/data/hl_eip712_withdraw.json").trim();
+        let expected = include_str!("../../testdata/hl_eip712_withdraw.json").trim();
 
         assert_eq!(pretty_generated, expected);
     }
@@ -263,7 +263,7 @@ mod tests {
 
         // Parse both generated and expected JSON for comparison
         let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
-        let expected: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/hl_eip712_core_to_evm.json")).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_core_to_evm.json")).unwrap();
 
         assert_eq!(parsed, expected);
     }
@@ -281,7 +281,7 @@ mod tests {
 
         // Parse both generated and expected JSON for comparison
         let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
-        let expected: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/hl_eip712_spot_send_l1.json")).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_spot_send_l1.json")).unwrap();
 
         assert_eq!(parsed, expected);
     }
@@ -294,7 +294,7 @@ mod tests {
 
         // Parse both generated and expected JSON for comparison
         let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
-        let expected: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/hl_eip712_perp_send_l1.json")).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_perp_send_l1.json")).unwrap();
 
         assert_eq!(parsed, expected);
     }
@@ -311,7 +311,7 @@ mod tests {
 
         // Parse both generated and expected JSON for comparison
         let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
-        let expected: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/hl_eip712_perp_to_spot.json")).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_perp_to_spot.json")).unwrap();
 
         assert_eq!(parsed, expected);
     }
@@ -352,7 +352,7 @@ mod tests {
 
         // Parse both generated and expected JSON for comparison
         let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
-        let expected: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/hl_eip712_spot_to_stake_balance.json")).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_spot_to_stake_balance.json")).unwrap();
 
         assert_eq!(parsed, expected);
     }
@@ -365,7 +365,7 @@ mod tests {
 
         // Parse both generated and expected JSON for comparison
         let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
-        let expected: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/hl_eip712_stake_to_validator.json")).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_stake_to_validator.json")).unwrap();
 
         assert_eq!(parsed, expected);
     }

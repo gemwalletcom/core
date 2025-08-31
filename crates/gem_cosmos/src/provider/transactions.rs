@@ -27,8 +27,9 @@ impl<C: Client> ChainTransactions for CosmosClient<C> {
         Ok(map_transactions(self.get_chain().as_chain(), receipts))
     }
 
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let transactions = self.get_transactions_by_address_with_limit(&address, 20).await?;
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let limit = limit.unwrap_or(20);
+        let transactions = self.get_transactions_by_address_with_limit(&address, limit).await?;
         Ok(map_transactions(self.get_chain().as_chain(), transactions))
     }
 }

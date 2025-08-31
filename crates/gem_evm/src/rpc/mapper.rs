@@ -67,7 +67,7 @@ impl EthereumMapper {
         let created_at = DateTime::from_timestamp(timestamp.clone().try_into().ok()?, 0)?;
 
         let is_smart_contract_call = transaction.to.is_some() && transaction.input.len() > 2;
-        let is_native_transfer = transaction.input == INPUT_0X && transaction.gas == TRANSFER_GAS_LIMIT;
+        let is_native_transfer = transaction.input == INPUT_0X && transaction_reciept.gas_used == BigUint::from(TRANSFER_GAS_LIMIT);
         let is_native_transfer_with_data = transaction.input.len() > 2
             && transaction.gas > TRANSFER_GAS_LIMIT
             && Self::get_data_cost(&transaction.input).is_some_and(|data_cost| transaction_reciept.gas_used <= BigUint::from(TRANSFER_GAS_LIMIT + data_cost));
@@ -253,10 +253,10 @@ mod tests {
 
     #[test]
     fn test_map_smart_contract_call() {
-        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx.json")).unwrap();
+        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx.json")).unwrap();
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
-        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx_receipt.json")).unwrap();
+        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx_receipt.json")).unwrap();
         let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
@@ -278,10 +278,10 @@ mod tests {
 
     #[test]
     fn test_has_smart_contract_indicators() {
-        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx.json")).unwrap();
+        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx.json")).unwrap();
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
-        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../tests/data/contract_call_tx_receipt.json")).unwrap();
+        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx_receipt.json")).unwrap();
         let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
             .unwrap()
             .result;
@@ -293,11 +293,11 @@ mod tests {
     #[test]
     fn test_erc20_transfer() {
         let erc20_transfer_tx =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_erc20.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_erc20.json")).unwrap())
                 .unwrap()
                 .result;
         let erc20_transfer_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/transfer_erc20_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/transfer_erc20_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;
@@ -324,11 +324,11 @@ mod tests {
     #[test]
     fn test_nft_eip721_transfer() {
         let transaction =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip721.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721.json")).unwrap())
                 .unwrap()
                 .result;
         let transaction_reciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip721_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;
@@ -353,11 +353,11 @@ mod tests {
     #[test]
     fn test_nft_eip1155_transfer() {
         let transaction =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip1155.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip1155.json")).unwrap())
                 .unwrap()
                 .result;
         let transaction_reciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/transfer_nft_eip1155_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/transfer_nft_eip1155_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;
@@ -382,11 +382,11 @@ mod tests {
     #[test]
     fn test_smart_contract_erc20_transfer() {
         let sc_erc20_tx =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../tests/data/contract_erc20_tx.json")).unwrap())
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/contract_erc20_tx.json")).unwrap())
                 .unwrap()
                 .result;
         let sc_erc20_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../tests/data/contract_erc20_receipt.json")).unwrap(),
+            serde_json::from_str(include_str!("../../testdata/contract_erc20_receipt.json")).unwrap(),
         )
         .unwrap()
         .result;
@@ -401,6 +401,30 @@ mod tests {
         assert_eq!(transaction.from, "0x58E1b0E63C905D5982324FCd9108582623b8132e");
         assert_eq!(transaction.to, "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC");
         assert_eq!(transaction.value, "930678651");
+    }
+
+    #[test]
+    fn test_native_transfer_high_gas_limit() {
+        let transaction =
+            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_high_gas_limit.json")).unwrap())
+                .unwrap()
+                .result;
+        let transaction_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
+            serde_json::from_str(include_str!("../../testdata/transfer_high_gas_limit_receipt.json")).unwrap(),
+        )
+        .unwrap()
+        .result;
+
+        let result = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_receipt, None, &BigUint::from(1735671600u64), None);
+
+        assert!(result.is_some());
+        let tx = result.unwrap();
+        assert_eq!(tx.transaction_type, TransactionType::Transfer);
+        assert_eq!(tx.asset_id, AssetId::from_chain(Chain::Ethereum));
+        assert_eq!(tx.from, "0x8D25Fb438C6efCD08679ffA82766869B50E24608");
+        assert_eq!(tx.to, "0x0700572b54ccA24Dad0eD4Cdad2c3d3ab6dB652a");
+        assert_eq!(tx.value, "2739900000000000000");
+        assert_eq!(tx.hash, "0x0c0626172dbba6984a2e95b3abf1caba39cf11d3c9bc99d7de9ac814671c0cb1");
     }
 
     #[test]

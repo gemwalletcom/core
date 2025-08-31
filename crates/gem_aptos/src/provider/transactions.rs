@@ -23,7 +23,7 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
         Ok(map_transactions(self.get_block_transactions(block).await?.transactions))
     }
 
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(map_transactions(self.get_transactions_by_address(_address).await?))
     }
 }

@@ -29,11 +29,7 @@ pub fn map_token_balances(resources: &[Resource<ResourceData>], token_ids: Vec<S
                 .map(|coin_data| coin_data.value.clone())
                 .unwrap_or_else(|| BigUint::from(0u32));
 
-            AssetBalance::new_with_active(
-                AssetId::from_token(chain, &token_id),
-                Balance::coin_balance(balance),
-                true,
-            )
+            AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance(balance), true)
         })
         .collect()
 }
@@ -59,7 +55,10 @@ mod tests {
     #[test]
     fn test_map_balance_tokens() {
         let balances = vec![
-            ("0x159df6b7689437016108a019fd5bef736bac692b6d4a1f10c941f6fbb9a74ca6::oft::CakeOFT".to_string(), 25379808),
+            (
+                "0x159df6b7689437016108a019fd5bef736bac692b6d4a1f10c941f6fbb9a74ca6::oft::CakeOFT".to_string(),
+                25379808,
+            ),
             (APTOS_NATIVE_COIN.to_string(), 1000000),
         ];
 
@@ -68,8 +67,11 @@ mod tests {
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].balance.available, BigUint::from(25379808_u64));
         assert_eq!(result[0].asset_id.chain, Chain::Aptos);
-        assert_eq!(result[0].asset_id.token_id, Some("0x159df6b7689437016108a019fd5bef736bac692b6d4a1f10c941f6fbb9a74ca6::oft::CakeOFT".to_string()));
-        
+        assert_eq!(
+            result[0].asset_id.token_id,
+            Some("0x159df6b7689437016108a019fd5bef736bac692b6d4a1f10c941f6fbb9a74ca6::oft::CakeOFT".to_string())
+        );
+
         assert_eq!(result[1].balance.available, BigUint::from(1000000_u64));
         assert_eq!(result[1].asset_id.chain, Chain::Aptos);
         assert_eq!(result[1].asset_id.token_id, Some(APTOS_NATIVE_COIN.to_string()));
@@ -77,7 +79,9 @@ mod tests {
 
     #[test]
     fn test_map_token_balances() {
-        let coin_data = CoinData { value: BigUint::from(1000000_u64) };
+        let coin_data = CoinData {
+            value: BigUint::from(1000000_u64),
+        };
 
         let resource = Resource {
             type_field: "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>".to_string(),

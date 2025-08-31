@@ -2,7 +2,7 @@ use crate::model::{
     Coin, CoinGeckoResponse, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending,
     TopGainersLosers,
 };
-use gem_client::{build_path_with_query, retry::retry_policy, Client, ReqwestClient};
+use gem_client::{build_path_with_query, retry, Client, ReqwestClient};
 use primitives::{FiatRate, DEFAULT_FIAT_CURRENCY};
 use reqwest::header::{HeaderMap, HeaderValue};
 use std::error::Error;
@@ -25,13 +25,7 @@ impl CoinGeckoClient<ReqwestClient> {
         if !api_key.is_empty() {
             headers.insert(COINGECKO_API_HEADER_KEY, HeaderValue::from_str(api_key).unwrap());
         }
-        let mut client_builder = reqwest::Client::builder().default_headers(headers);
-
-        // Only add retry policy for free tier (no API key)
-        if api_key.is_empty() {
-            let retry_policy_config = retry_policy(COINGECKO_API_HOST, 10);
-            client_builder = client_builder.retry(retry_policy_config);
-        }
+        let client_builder = reqwest::Client::builder().default_headers(headers);
 
         let reqwest_client = client_builder.build().unwrap();
         let client = ReqwestClient::new(url, reqwest_client);
@@ -53,11 +47,18 @@ impl<C: Client> CoinGeckoClient<C> {
     where
         T: serde::de::DeserializeOwned,
     {
-        let response: CoinGeckoResponse<T> = self.client.get(path).await?;
-        match response {
-            CoinGeckoResponse::Success(data) => Ok(data),
-            CoinGeckoResponse::Error(error) => Err(error.error.into()),
-        }
+        retry(
+            || async {
+                let response: CoinGeckoResponse<T> = self.client.get(path).await.map_err(|e| -> Box<dyn Error + Send + Sync> { Box::new(e) })?;
+                match response {
+                    CoinGeckoResponse::Success(data) => Ok(data),
+                    CoinGeckoResponse::Error(error) => Err(error.error.into()),
+                }
+            },
+            3,
+            None::<fn(&Box<dyn Error + Send + Sync>) -> bool>, // Use default retry behavior
+        )
+        .await
     }
 
     pub async fn get_global(&self) -> Result<Global, Box<dyn Error + Send + Sync>> {

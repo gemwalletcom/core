@@ -103,8 +103,8 @@ impl ChainAssetsProvider for EthereumProvider {
 
 #[async_trait]
 impl ChainTransactionsProvider for EthereumProvider {
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        self.transactions_provider.get_transactions_by_address(address).await
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.transactions_provider.get_transactions_by_address(address, limit).await
     }
 }
 
@@ -148,7 +148,7 @@ impl<C: Client> ChainAssetsProvider for AlchemyClient<C> {
 
 #[async_trait]
 impl<C: Client> ChainTransactionsProvider for AlchemyClient<C> {
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(self.get_transactions_by_address(address.as_str()).await?)
     }
 }
@@ -157,8 +157,9 @@ impl<C: Client> ChainTransactionsProvider for AlchemyClient<C> {
 
 #[async_trait]
 impl ChainTransactionsProvider for AnkrClient {
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(self.get_transactions_by_address(address.as_str(), 25).await?)
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        let limit = limit.unwrap_or(25) as i64;
+        Ok(self.get_transactions_by_address(address.as_str(), limit).await?)
     }
 }
 

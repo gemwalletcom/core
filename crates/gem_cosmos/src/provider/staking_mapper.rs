@@ -1,5 +1,7 @@
 use crate::models::staking::{Delegations, Rewards, StakingPoolResponse, UnbondingDelegations, Validator};
-use crate::models::{InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse, SupplyResponse};
+use crate::models::{InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse};
+use num_bigint::BigInt;
+use std::str::FromStr;
 
 #[cfg(test)]
 use crate::models::staking::{StakingPool, ValidatorCommission, ValidatorCommissionRates, ValidatorDescription, ValidatorsResponse};
@@ -7,21 +9,26 @@ use crate::models::staking::{StakingPool, ValidatorCommission, ValidatorCommissi
 #[cfg(test)]
 use crate::models::{OsmosisDistributionProportions, OsmosisMintParams};
 
-#[cfg(test)]
-use crate::models::SupplyAmount;
-use num_bigint::BigInt;
 use number_formatter::BigNumberFormatter;
 use primitives::chain_cosmos::CosmosChain;
 use primitives::{DelegationBase, DelegationState, DelegationValidator};
 use std::collections::HashMap;
-use std::str::FromStr;
 
 const BOND_STATUS_BONDED: &str = "BOND_STATUS_BONDED";
 
+/// Convert string amounts to BigInt, handling parsing errors gracefully
+fn parse_to_bigint(value: &str) -> BigInt {
+    BigInt::from_str(value).unwrap_or_default()
+}
+
 pub fn calculate_network_apy_cosmos(inflation: InflationResponse, staking_pool: StakingPoolResponse) -> Option<f64> {
-    let inflation_rate = inflation.inflation.parse::<f64>().unwrap_or(0.0);
-    let bonded_tokens = staking_pool.pool.bonded_tokens.parse::<f64>().unwrap_or(1.0);
-    let total_supply = bonded_tokens + staking_pool.pool.not_bonded_tokens.parse::<f64>().unwrap_or(0.0);
+    let inflation_rate = inflation.inflation;
+    let bonded_tokens = staking_pool.pool.bonded_tokens;
+    let total_supply = bonded_tokens + staking_pool.pool.not_bonded_tokens;
+
+    if bonded_tokens == 0.0 {
+        return Some(0.0);
+    }
 
     let network_apy = inflation_rate * (total_supply / bonded_tokens);
     Some(network_apy * 100.0)
@@ -31,13 +38,14 @@ pub fn calculate_network_apy_osmosis(
     mint_params: OsmosisMintParamsResponse,
     epoch_provisions: OsmosisEpochProvisionsResponse,
     staking_pool: StakingPoolResponse,
-    supply: SupplyResponse,
 ) -> Option<f64> {
-    let epoch_provisions = epoch_provisions.epoch_provisions.parse::<f64>().ok()?;
-    let staking_distribution = mint_params.params.distribution_proportions.staking.parse::<f64>().ok()?;
-    let bonded_tokens = staking_pool.pool.bonded_tokens.parse::<f64>().ok()?;
-    let _not_bonded_tokens = staking_pool.pool.not_bonded_tokens.parse::<f64>().ok()?;
-    let _total_supply = supply.amount.amount.parse::<f64>().ok()?;
+    let epoch_provisions = epoch_provisions.epoch_provisions;
+    let staking_distribution = mint_params.params.distribution_proportions.staking;
+    let bonded_tokens = staking_pool.pool.bonded_tokens;
+
+    if bonded_tokens == 0.0 {
+        return Some(0.0);
+    }
 
     let epochs_per_year = if mint_params.params.epoch_identifier == "day" { 365.0 } else { 52.0 };
 
@@ -53,7 +61,7 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, ap
     validators
         .into_iter()
         .map(|validator| {
-            let commission_rate = validator.commission.commission_rates.rate.parse::<f64>().unwrap_or(0.0);
+            let commission_rate = validator.commission.commission_rates.rate;
             let is_active = !validator.jailed && validator.status == BOND_STATUS_BONDED;
             let validator_apr = if is_active {
                 apy.map(|apr| apr - (apr * commission_rate)).unwrap_or(0.0)
@@ -66,7 +74,7 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, ap
                 id: validator.operator_address,
                 name: validator.description.moniker,
                 is_active,
-                commision: commission_rate * 100.0, // Convert to percentage
+                commision: commission_rate * 100.0,
                 apr: validator_apr,
             }
         })
@@ -124,9 +132,9 @@ pub fn map_staking_delegations(
         Some(DelegationBase {
             asset_id: asset_id.clone(),
             state,
-            balance: delegation.balance.amount,
-            shares: "0".to_string(),
-            rewards,
+            balance: parse_to_bigint(&delegation.balance.amount),
+            shares: BigInt::from(0),
+            rewards: parse_to_bigint(&rewards),
             completion_date: None,
             delegation_id: "".to_string(),
             validator_id: delegation.delegation.validator_address,
@@ -136,17 +144,17 @@ pub fn map_staking_delegations(
 
     for unbonding in unbonding_delegations.unbonding_responses {
         for entry in unbonding.entries {
-            let balance = BigInt::from_str(&entry.balance).unwrap_or_default().to_string();
+            let balance = parse_to_bigint(&entry.balance.to_string());
             let rewards = rewards_map
                 .get(&unbonding.validator_address)
-                .map(|r| r.to_string())
-                .unwrap_or_else(|| "0".to_string());
+                .map(|r| parse_to_bigint(&r.to_string()))
+                .unwrap_or_default();
 
             delegations.push(DelegationBase {
                 asset_id: asset_id.clone(),
                 state: DelegationState::Pending,
                 balance,
-                shares: "0".to_string(),
+                shares: BigInt::from(0),
                 rewards,
                 completion_date: entry.completion_time.parse::<chrono::DateTime<chrono::Utc>>().ok(),
                 delegation_id: entry.creation_height,
@@ -176,7 +184,7 @@ mod tests {
                 moniker: "Test Validator".to_string(),
             },
             commission: ValidatorCommission {
-                commission_rates: ValidatorCommissionRates { rate: "0.05".to_string() },
+                commission_rates: ValidatorCommissionRates { rate: 0.05 },
             },
         };
 
@@ -189,10 +197,10 @@ mod tests {
         let delegation = &result[0];
         assert_eq!(delegation.asset_id.to_string(), "cosmos");
         assert!(matches!(delegation.state, DelegationState::Active));
-        assert_eq!(delegation.balance, "10250000");
+        assert_eq!(delegation.balance.to_string(), "10250000");
         assert_eq!(delegation.validator_id, "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3");
-        assert_eq!(delegation.rewards, "0");
-        assert_eq!(delegation.shares, "0");
+        assert_eq!(delegation.rewards.to_string(), "0");
+        assert_eq!(delegation.shares.to_string(), "0");
         assert!(delegation.completion_date.is_none());
         assert_eq!(delegation.delegation_id, "");
     }
@@ -210,7 +218,7 @@ mod tests {
                 moniker: "Test Validator".to_string(),
             },
             commission: ValidatorCommission {
-                commission_rates: ValidatorCommissionRates { rate: "0.05".to_string() },
+                commission_rates: ValidatorCommissionRates { rate: 0.05 },
             },
         };
 
@@ -222,10 +230,10 @@ mod tests {
         let delegation = &result[0];
         assert_eq!(delegation.asset_id.to_string(), "cosmos");
         assert!(matches!(delegation.state, DelegationState::Active));
-        assert_eq!(delegation.balance, "10250000");
+        assert_eq!(delegation.balance.to_string(), "10250000");
         assert_eq!(delegation.validator_id, "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3");
-        assert_eq!(delegation.rewards, "307413"); // Integer part of decimal amount
-        assert_eq!(delegation.shares, "0");
+        assert_eq!(delegation.rewards.to_string(), "307413"); // Integer part of decimal amount
+        assert_eq!(delegation.shares.to_string(), "0");
         assert!(delegation.completion_date.is_none());
         assert_eq!(delegation.delegation_id, "");
     }
@@ -257,30 +265,23 @@ mod tests {
             params: OsmosisMintParams {
                 epoch_identifier: "day".to_string(),
                 distribution_proportions: OsmosisDistributionProportions {
-                    staking: "0.4".to_string(), // 40% of minted tokens go to staking
+                    staking: 0.4, // 40% of minted tokens go to staking
                 },
             },
         };
 
         let epoch_provisions = OsmosisEpochProvisionsResponse {
-            epoch_provisions: "100000000000".to_string(), // 100k OSMO per day
+            epoch_provisions: 100000000000.0, // 100k OSMO per day
         };
 
         let staking_pool = StakingPoolResponse {
             pool: StakingPool {
-                bonded_tokens: "400000000000000".to_string(),     // 400M OSMO bonded
-                not_bonded_tokens: "100000000000000".to_string(), // 100M OSMO not bonded
+                bonded_tokens: 400000000000000.0,     // 400M OSMO bonded
+                not_bonded_tokens: 100000000000000.0, // 100M OSMO not bonded
             },
         };
 
-        let supply = SupplyResponse {
-            amount: SupplyAmount {
-                denom: "uosmo".to_string(),
-                amount: "1000000000000000".to_string(), // 1B OSMO total supply
-            },
-        };
-
-        let result = calculate_network_apy_osmosis(mint_params, epoch_provisions, staking_pool, supply);
+        let result = calculate_network_apy_osmosis(mint_params, epoch_provisions, staking_pool);
 
         assert!(result.is_some());
         let apy = result.unwrap();

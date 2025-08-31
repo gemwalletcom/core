@@ -165,7 +165,7 @@ impl SolanaClient {
         Ok(results.into_iter().flat_map(|x| x.take().ok()).collect())
     }
 
-    pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_signatures_for_address(&self, address: &str, limit: usize) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
         let params = vec![
             serde_json::json!(address),
             serde_json::json!({
@@ -241,6 +241,30 @@ impl SolanaClient {
     }
 }
 
+pub fn token_accounts_by_owner_params(owner: &str, program_id: &str) -> serde_json::Value {
+    serde_json::json!([
+        owner,
+        {
+            "programId": program_id
+        },
+        {
+            "encoding": "jsonParsed"
+        }
+    ])
+}
+
+pub fn token_accounts_by_mint_params(owner: &str, mint: &str) -> serde_json::Value {
+    serde_json::json!([
+        owner,
+        {
+            "mint": mint
+        },
+        {
+            "encoding": "jsonParsed"
+        }
+    ])
+}
+
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> SolanaClient<C> {
     pub fn new(client: GenericJsonRpcClient<C>) -> Self {
@@ -267,15 +291,7 @@ impl<C: Client + Clone> SolanaClient<C> {
     }
 
     pub async fn get_token_accounts_by_owner(&self, owner: &str, program_id: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, Box<dyn Error + Send + Sync>> {
-        let params = serde_json::json!([
-            owner,
-            {
-                "programId": program_id
-            },
-            {
-                "encoding": "jsonParsed"
-            }
-        ]);
+        let params = token_accounts_by_owner_params(owner, program_id);
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
@@ -284,15 +300,7 @@ impl<C: Client + Clone> SolanaClient<C> {
     }
 
     pub async fn get_token_accounts_by_mint(&self, owner: &str, mint: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, Box<dyn Error + Send + Sync>> {
-        let params = serde_json::json!([
-            owner,
-            {
-                "mint": mint
-            },
-            {
-                "encoding": "jsonParsed"
-            }
-        ]);
+        let params = token_accounts_by_mint_params(owner, mint);
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
@@ -434,7 +442,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getBlock", params).await
     }
 
-    pub async fn get_signatures_for_address(&self, address: &str, limit: u64) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_signatures_for_address(&self, address: &str, limit: usize) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
         let params = serde_json::json!([
             address,
             {
@@ -463,6 +471,16 @@ impl<C: Client + Clone> SolanaClient<C> {
         }
 
         Ok(transactions)
+    }
+
+    pub async fn get_token_accounts(&self, address: &str, token_mints: &[String]) -> Result<Vec<ValueResult<Vec<TokenAccountInfo>>>, Box<dyn Error + Send + Sync>> {
+        let calls: Vec<(String, serde_json::Value)> = token_mints
+            .iter()
+            .map(|mint| ("getTokenAccountsByOwner".to_string(), token_accounts_by_mint_params(address, mint)))
+            .collect();
+
+        let results = self.get_client().batch_call(calls).await?.extract();
+        Ok(results)
     }
 }
 

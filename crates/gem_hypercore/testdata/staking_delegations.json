@@ -1,0 +1,12 @@
+[
+    {
+        "validator": "0x5ac99df645f3414876c816caa18b2d234024b487",
+        "amount": "2719.36493373",
+        "lockedUntilTimestamp": 1756512053068
+    },
+    {
+        "validator": "0xabcdeff4b3727b83a23697500eef089020df2cd2",
+        "amount": "18.14578086",
+        "lockedUntilTimestamp": 1755290095791
+    }
+]

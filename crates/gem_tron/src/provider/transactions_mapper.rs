@@ -1,8 +1,15 @@
-use crate::rpc::constants::{RECEIPT_FAILED, RECEIPT_OUT_OF_ENERGY};
-use crate::rpc::model::{TransactionReceiptData, TronTransactionBroadcast};
-use num_bigint::BigInt;
-use primitives::{TransactionChange, TransactionState, TransactionUpdate};
+use chrono::DateTime;
+use num_bigint::{BigInt, BigUint};
+use num_traits::Num;
+use primitives::{chain::Chain, AssetId, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
 use std::error::Error;
+
+use crate::address::TronAddress;
+use crate::models::{BlockTransactions, Transaction as TronTransaction, TransactionReceiptData, TronTransactionBroadcast};
+use crate::rpc::constants::{ERC20_TRANSFER_EVENT_SIGNATURE, RECEIPT_FAILED, RECEIPT_OUT_OF_ENERGY};
+
+const TRANSFER_CONTRACT: &str = "TransferContract";
+const TRIGGER_SMART_CONTRACT: &str = "TriggerSmartContract";
 
 fn decode_hex_message(hex_str: &str) -> String {
     match hex::decode(hex_str) {
@@ -39,10 +46,98 @@ pub fn map_transaction_status(receipt: &TransactionReceiptData) -> TransactionUp
     TransactionUpdate::new_state(TransactionState::Pending)
 }
 
+pub fn map_transactions_by_block(chain: Chain, block: BlockTransactions, receipts: Vec<TransactionReceiptData>) -> Vec<Transaction> {
+    block
+        .transactions
+        .into_iter()
+        .zip(receipts.iter())
+        .filter_map(|(transaction, receipt)| map_transaction(chain, transaction, receipt.clone()))
+        .collect()
+}
+
+pub fn map_transactions_by_address(transactions: Vec<TronTransaction>, receipts: Vec<TransactionReceiptData>) -> Vec<Transaction> {
+    transactions
+        .into_iter()
+        .zip(receipts.iter())
+        .filter_map(|(transaction, receipt)| map_transaction(Chain::Tron, transaction, receipt.clone()))
+        .collect()
+}
+
+pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: TransactionReceiptData) -> Option<Transaction> {
+    if let (Some(value), Some(contract_result)) = (transaction.raw_data.contract.first().cloned(), transaction.ret.first().cloned()) {
+        let state: TransactionState = if contract_result.contract_ret.clone() == "SUCCESS" {
+            TransactionState::Confirmed
+        } else {
+            TransactionState::Failed
+        };
+        let fee = receipt.fee.unwrap_or_default().to_string();
+        let created_at = DateTime::from_timestamp_millis(receipt.block_time_stamp)?;
+
+        if value.contract_type == TRANSFER_CONTRACT && !transaction.ret.is_empty() {
+            let from = TronAddress::from_hex(value.parameter.value.owner_address.unwrap_or_default().as_str()).unwrap_or_default();
+            let to = TronAddress::from_hex(value.parameter.value.to_address.unwrap_or_default().as_str()).unwrap_or_default();
+
+            let transaction = Transaction::new(
+                transaction.tx_id,
+                chain.as_asset_id(),
+                from,
+                to,
+                None,
+                TransactionType::Transfer,
+                state,
+                fee,
+                chain.as_asset_id(),
+                value.parameter.value.amount.unwrap_or_default().to_string(),
+                None,
+                None,
+                created_at,
+            );
+            return Some(transaction);
+        }
+        let logs = receipt.log.unwrap_or_default();
+        if value.contract_type == TRIGGER_SMART_CONTRACT
+            && logs.len() == 1
+            && logs.first()?.topics.clone().unwrap_or_default().len() == 3
+            && logs.first()?.topics.clone().unwrap_or_default().first()? == ERC20_TRANSFER_EVENT_SIGNATURE
+        {
+            let log = logs.first()?;
+            let from_string = format!("41{}", log.topics.clone().unwrap_or_default()[1].clone().chars().skip(24).collect::<String>());
+            let to_string = format!("41{}", log.topics.clone().unwrap_or_default()[2].clone().chars().skip(24).collect::<String>());
+            let token_id = TronAddress::from_hex(value.parameter.value.contract_address?.as_str()).unwrap_or_default();
+            let from = TronAddress::from_hex(from_string.as_str()).unwrap_or_default();
+            let to = TronAddress::from_hex(to_string.as_str()).unwrap_or_default();
+            let value = BigUint::from_str_radix(&log.data.clone().unwrap_or_default(), 16).unwrap();
+            let asset_id = AssetId {
+                chain,
+                token_id: Some(token_id),
+            };
+
+            let transaction = Transaction::new(
+                transaction.tx_id,
+                asset_id,
+                from,
+                to,
+                None,
+                TransactionType::Transfer,
+                state,
+                fee,
+                chain.as_asset_id(),
+                value.to_string(),
+                None,
+                None,
+                created_at,
+            );
+
+            return Some(transaction);
+        }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::rpc::model::{TransactionReceipt, TransactionReceiptData, TronTransactionBroadcast};
+    use crate::models::{TransactionReceipt, TransactionReceiptData, TronTransactionBroadcast};
 
     #[test]
     fn test_map_transaction_broadcast_error() {

@@ -25,8 +25,9 @@ impl<C: Client> ChainBalances for AptosClient<C> {
                 let balance = self.get_account_balance(&address, &token_id).await?;
                 Ok::<(String, u64), Box<dyn Error + Send + Sync>>((token_id, balance))
             }
-        }).await?;
-        
+        })
+        .await?;
+
         Ok(map_balance_tokens(results, self.get_chain()))
     }
 

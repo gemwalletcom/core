@@ -1,5 +1,6 @@
 pub mod asset;
 pub mod balances;
+pub mod node_status;
 pub mod perpetual;
 pub mod staking;
 pub mod transaction;
@@ -7,6 +8,7 @@ pub mod transaction_metadata;
 
 pub use asset::*;
 pub use balances::*;
+pub use node_status::*;
 pub use perpetual::*;
 pub use staking::*;
 pub use transaction::*;

@@ -1,10 +1,11 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
-use gem_client::{retry::standard_retry_policy, ReqwestClient};
+use gem_client::{retry_policy, ReqwestClient};
+use gem_hypercore::rpc::client::HyperCoreClient;
 pub use provider_config::ProviderConfig;
 
-use gem_chain_rpc::{ethereum::EthereumProvider, tron::TronProvider, ChainProvider, GenericProvider, HyperCoreProvider};
+use gem_chain_rpc::{ethereum::EthereumProvider, ChainProvider, GenericProvider};
 
 use gem_algorand::AlgorandClientIndexer;
 use gem_aptos::rpc::AptosClient;
@@ -12,7 +13,6 @@ use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
 use gem_evm::rpc::{ankr::AnkrClient, AlchemyClient, EthereumClient};
-use gem_hypercore::rpc::client::HyperCoreClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::PolkadotClient;
@@ -20,7 +20,7 @@ use gem_solana::rpc::client::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_sui::rpc::SuiClient;
 use gem_ton::rpc::TonClient;
-use gem_tron::rpc::client::TronClient;
+use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::XRPClient;
 
 use primitives::{chain_cosmos::CosmosChain, Chain, EVMChain, NodeType};
@@ -55,9 +55,11 @@ impl ProviderFactory {
             .and_then(|u| u.host_str().map(String::from))
             .unwrap_or_default();
 
-        let retry_policy = standard_retry_policy(host);
-
-        let reqwest_client = reqwest::Client::builder().retry(retry_policy).build().expect("Failed to build reqwest client");
+        let retry_policy_config = retry_policy(host, 3);
+        let reqwest_client = reqwest::Client::builder()
+            .retry(retry_policy_config)
+            .build()
+            .expect("Failed to build reqwest client");
 
         let chain = config.chain;
         let url = config.url;
@@ -117,8 +119,11 @@ impl ProviderFactory {
             Chain::Polkadot => Box::new(GenericProvider::new(PolkadotClient::new(gem_client.clone()))),
             Chain::Solana => Box::new(GenericProvider::new(SolanaClient::new(JsonRpcClient::new(gem_client.clone())))),
             Chain::Ton => Box::new(GenericProvider::new(TonClient::new(gem_client.clone()))),
-            Chain::Tron => Box::new(TronProvider::new(TronClient::new(gem_client.clone()))),
-            Chain::HyperCore => Box::new(HyperCoreProvider::new(HyperCoreClient::new(gem_client))),
+            Chain::Tron => Box::new(GenericProvider::new(TronClient::new(
+                gem_client.clone(),
+                TronGridClient::new(gem_client.clone()),
+            ))),
+            Chain::HyperCore => Box::new(GenericProvider::new(HyperCoreClient::new(gem_client.clone()))),
         }
     }
 

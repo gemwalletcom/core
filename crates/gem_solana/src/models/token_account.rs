@@ -1,6 +1,6 @@
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
-use serde_serializers::deserialize_biguint_from_str;
+use serde_serializers::{deserialize_biguint_from_str, deserialize_u64_from_str};
 
 use super::UInt64;
 
@@ -59,8 +59,10 @@ pub struct SolanaStake {
 pub struct SolanaStakeDelegation {
     pub voter: String,
     pub stake: String,
-    pub activation_epoch: String,
-    pub deactivation_epoch: String,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub activation_epoch: u64,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub deactivation_epoch: u64,
 }
 
 // parsed data: token

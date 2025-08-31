@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::deserialize_f64_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsmosisMintParamsResponse {
@@ -13,10 +14,12 @@ pub struct OsmosisMintParams {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsmosisDistributionProportions {
-    pub staking: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub staking: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsmosisEpochProvisionsResponse {
-    pub epoch_provisions: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub epoch_provisions: f64,
 }

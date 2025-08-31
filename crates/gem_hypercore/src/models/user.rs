@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_serializers::f64::deserialize_f64_from_str;
 
 use crate::models::UInt64;
 
@@ -18,6 +19,8 @@ pub struct HypercoreAgentSession {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreUserFee {
-    pub user_cross_rate: String,
-    pub active_referral_discount: String,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub user_cross_rate: f64,
+    #[serde(deserialize_with = "deserialize_f64_from_str")]
+    pub active_referral_discount: f64,
 }

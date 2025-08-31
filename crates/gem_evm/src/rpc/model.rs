@@ -134,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_decode_trace_replay_transaction() {
-        let json_str = include_str!("../../tests/data/trace_replay_tx_trace.json");
+        let json_str = include_str!("../../testdata/trace_replay_tx_trace.json");
         let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TransactionReplayTrace>>(json_str).unwrap().result;
 
         assert_eq!(

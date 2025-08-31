@@ -25,8 +25,9 @@ impl<C: Client> ChainTransactions for TonClient<C> {
         Ok(map_transactions(transactions.transactions))
     }
 
-    async fn get_transactions_by_address(&self, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let transactions = self.get_transactions_by_address(address, 100).await?;
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let limit = limit.unwrap_or(100);
+        let transactions = self.get_transactions_by_address(address, limit).await?;
         Ok(map_transactions(transactions.transactions))
     }
 }

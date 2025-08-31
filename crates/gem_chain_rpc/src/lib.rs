@@ -2,13 +2,9 @@
 
 pub mod ethereum;
 pub mod generic;
-pub mod hypercore;
 pub mod smartchain;
-pub mod tron;
 pub use self::ethereum::EthereumProvider;
-pub use self::hypercore::HyperCoreProvider;
 pub use self::smartchain::SmartChainProvider;
-pub use self::tron::TronProvider;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, StakeValidator, Transaction};
@@ -62,7 +58,7 @@ pub trait ChainAssetsProvider: Send + Sync {
 
 #[async_trait]
 pub trait ChainTransactionsProvider: Send + Sync {
-    async fn get_transactions_by_address(&self, _address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }
@@ -115,5 +111,4 @@ impl ChainTransactionsProvider for MockChainBlockClient {}
 #[async_trait]
 impl ChainStakeProvider for MockChainBlockClient {}
 
-// Generic provider exports
 pub use generic::GenericProvider;

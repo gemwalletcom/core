@@ -33,3 +33,48 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
         Ok(Some(map_balance_staking(&balance, self.chain)?))
     }
 }
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod integration_tests {
+    use crate::provider::testkit::{create_hypercore_test_client, TEST_ADDRESS};
+    use chain_traits::ChainBalances;
+    use num_bigint::BigUint;
+
+    #[tokio::test]
+    async fn test_hypercore_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_hypercore_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let balance = client.get_balance_coin(address).await?;
+
+        println!("Hypercore coin balance: {:?} {}", balance.balance.available, balance.asset_id);
+
+        assert!(balance.balance.available >= BigUint::from(0u64));
+        assert_eq!(balance.asset_id.chain, primitives::Chain::HyperCore);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_hypercore_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_hypercore_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let token_balances = client.get_balance_tokens(address, vec!["USDC".to_string()]).await?;
+
+        println!("Hypercore token balances count: {}", token_balances.len());
+
+        assert_eq!(token_balances.len(), 0);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_hypercore_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_hypercore_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let balance = client.get_balance_staking(address).await?.ok_or("not found")?;
+
+        println!("Hypercore staking balance: {:?}", balance.balance.staked);
+
+        assert!(balance.balance.staked >= BigUint::from(0u64));
+        assert_eq!(balance.asset_id.chain, primitives::Chain::HyperCore);
+        Ok(())
+    }
+}

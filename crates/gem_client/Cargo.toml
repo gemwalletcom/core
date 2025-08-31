@@ -5,7 +5,7 @@ edition = "2021"
 
 [features]
 default = []
-reqwest = ["dep:reqwest"]
+reqwest = ["dep:reqwest", "dep:tokio"]
 
 [dependencies]
 async-trait = { workspace = true }
@@ -15,3 +15,5 @@ serde_json = { workspace = true }
 serde_urlencoded = { workspace = true }
 reqwest = { workspace = true, optional = true }
 hex = { workspace = true }
+tokio = { workspace = true, features = ["time"], optional = true }
+tracing = { workspace = true }

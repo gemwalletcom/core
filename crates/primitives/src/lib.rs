@@ -14,6 +14,10 @@ pub mod name;
 pub use self::name::NameProvider;
 pub mod node;
 pub use self::node::{Node, NodeType};
+pub mod node_status;
+pub use self::node_status::NodeStatus;
+pub mod latency_type;
+pub use self::latency_type::{Latency, LatencyType};
 pub mod price;
 pub use self::price::{Price, PriceFull};
 pub mod asset;
@@ -172,6 +176,8 @@ pub mod broadcast_options;
 pub use self::broadcast_options::BroadcastOptions;
 pub mod parallel;
 pub use self::parallel::parallel_map;
+pub mod secure_preferences;
+pub use self::secure_preferences::{Preferences, PreferencesExt, SecurePreferences};
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;
