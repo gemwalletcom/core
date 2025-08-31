@@ -126,10 +126,10 @@ mod tests {
     #[test]
     fn test_calculate() {
         // https://etherscan.io/tx/0x23fe2ead060a3812a1f03c2e082b6fc8888b7c655a8f58f4ed19de00e8c9aaa6
-        let json_str = include_str!("../../tests/data/trace_replay_tx_trace.json");
+        let json_str = include_str!("../../testdata/trace_replay_tx_trace.json");
         let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TransactionReplayTrace>>(json_str).unwrap().result;
 
-        let json_str = include_str!("../../tests/data/trace_replay_tx_receipt.json");
+        let json_str = include_str!("../../testdata/trace_replay_tx_receipt.json");
         let receipt = serde_json::from_str::<JsonRpcResponse<TransactionReciept>>(json_str).unwrap().result;
 
         let differ = BalanceDiffer::new(Chain::Ethereum);

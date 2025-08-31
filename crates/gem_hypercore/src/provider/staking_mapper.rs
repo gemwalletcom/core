@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_map_staking_delegations() {
-        let delegations: Vec<HypercoreDelegationBalance> = serde_json::from_str(include_str!("../../tests/data/staking_delegations.json")).unwrap();
+        let delegations: Vec<HypercoreDelegationBalance> = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
 
         let result = map_staking_delegations(delegations, Chain::HyperCore);
 
