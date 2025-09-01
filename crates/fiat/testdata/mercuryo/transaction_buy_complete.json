@@ -1,0 +1,38 @@
+{
+    "status": 200,
+    "total": 1,
+    "next": null,
+    "prev": null,
+    "data": [
+        {
+            "buy": {
+                "id": "0dbd28d52087c8092",
+                "transaction_id": "0xc",
+                "widget_id": "e852c142-3718-47e7-a6fc-3fd58a87d85c",
+                "merchant_transaction_id": "f2e68ddb-ee2b-42ba",
+                "fiat_currency": "USD",
+                "fiat_amount": "99.00",
+                "currency": "ETH",
+                "amount": "0.057312834222948850",
+                "status": "paid",
+                "created_at": "2025-04-18 19:56:08",
+                "updated_at": "2025-04-18 19:56:21",
+                "card_country": "us"
+            },
+            "withdraw": {
+                "id": "0dbd28e5a51d70813",
+                "transaction_id": "0xc",
+                "widget_id": "e852c142-3718-47e7-a6fc-3fd58a87d85c",
+                "merchant_transaction_id": "f2e68ddb-ee2b-42ba",
+                "hash": "0x",
+                "url": "https://www.blockchair.com/ethereum/transaction/0x?from=mercuryo",
+                "address": "0x",
+                "currency": "ETH",
+                "amount": "0.057312834222948850",
+                "status": "completed",
+                "created_at": "2025-04-18 19:56:21",
+                "updated_at": "2025-04-18 20:02:35"
+            }
+        }
+    ]
+}

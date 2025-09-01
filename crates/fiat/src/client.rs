@@ -12,6 +12,7 @@ use crate::{
 };
 use futures::future::join_all;
 use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
+use streamer::FiatWebhookPayload;
 use reqwest::Client as RequestClient;
 use storage::{AssetFilter, DatabaseClient};
 
@@ -58,18 +59,31 @@ impl FiatClient {
         self.database.fiat().get_fiat_providers_countries()
     }
 
-    pub async fn create_fiat_webhook(&mut self, provider_name: &str, data: serde_json::Value) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_order_status(
+        &mut self,
+        provider_name: &str,
+        order_id: &str,
+    ) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         for provider in &self.providers {
             if provider.name().id() == provider_name {
-                let transaction = provider.webhook(data).await?;
-                let transaction = storage::models::FiatTransaction::from_primitive(transaction.clone());
-
-                let _ = self.database.fiat().add_fiat_transaction(transaction)?;
-
-                return Ok(true);
+                return provider.get_order_status(order_id).await;
             }
         }
-        Ok(false)
+        Err(format!("Provider {} not found", provider_name).into())
+    }
+
+    pub async fn webhook(
+        &mut self,
+        provider_name: &str,
+        webhook_data: serde_json::Value,
+    ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
+        for provider in &self.providers {
+            if provider.name().id() == provider_name {
+                let _order_id = provider.webhook_order_id(webhook_data.clone()).await?;
+                return Ok(FiatWebhookPayload::new(provider.name(), webhook_data));
+            }
+        }
+        Err(format!("Provider {} not found", provider_name).into())
     }
 
     fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {

@@ -1,19 +1,14 @@
 use alloy_primitives::{hex, Address, Bytes};
 use anyhow::anyhow;
-#[cfg(feature = "reqwest")]
-use gem_client::ReqwestClient;
-#[cfg(not(feature = "reqwest"))]
+use gem_client::Client;
+use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use gem_jsonrpc::types::{JsonRpcError, JsonRpcResult};
-#[cfg(feature = "reqwest")]
-use gem_jsonrpc::{
-    types::{JsonRpcError, JsonRpcResult},
-    JsonRpcClient,
-};
 
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::any::TypeId;
 use std::str::FromStr;
+
 
 use crate::rpc::model::{BlockTransactionsIds, TransactionReplayTrace};
 
@@ -24,17 +19,14 @@ pub const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
 pub const FUNCTION_ERC20_SYMBOL: &str = "0x95d89b41";
 pub const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 
-#[cfg(feature = "reqwest")]
 #[derive(Clone)]
-pub struct EthereumClient {
+pub struct EthereumClient<C: Client + Clone> {
     pub chain: EVMChain,
-    client: JsonRpcClient<ReqwestClient>,
+    client: GenericJsonRpcClient<C>,
 }
 
-#[cfg(feature = "reqwest")]
-impl EthereumClient {
-    pub fn new(chain: EVMChain, url: &str) -> Self {
-        let client = JsonRpcClient::new_reqwest(url.to_string());
+impl<C: Client + Clone> EthereumClient<C> {
+    pub fn new(client: GenericJsonRpcClient<C>, chain: EVMChain) -> Self {
         Self { chain, client }
     }
 
@@ -163,4 +155,18 @@ impl EthereumClient {
             Ok(acc)
         })
     }
+
+    pub async fn get_eth_balance(&self, address: &str) -> Result<String, anyhow::Error> {
+        let params = json!([address, "latest"]);
+        Ok(self.client.call("eth_getBalance", params).await?)
+    }
+
+    pub async fn get_chain_id(&self) -> Result<String, anyhow::Error> {
+        Ok(self.client.call("eth_chainId", json!([])).await?)
+    }
+
+    pub async fn get_block_number(&self) -> Result<String, anyhow::Error> {
+        Ok(self.client.call("eth_blockNumber", json!([])).await?)
+    }
 }
+

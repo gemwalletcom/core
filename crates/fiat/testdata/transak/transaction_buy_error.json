@@ -1,0 +1,213 @@
+{
+    "meta": {
+        "orderId": "df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a"
+    },
+    "data": {
+        "_id": "df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a",
+        "walletAddress": "0xf47abc9e2ed94fb555b3e31e08ad8aa8ac64eea0ff15ba0e7b443cef4aaabffe",
+        "createdAt": "2025-01-31T01:56:38.150Z",
+        "status": "FAILED",
+        "fiatCurrency": "USD",
+        "cryptoCurrency": "SUI",
+        "isBuyOrSell": "BUY",
+        "fiatAmount": 108,
+        "ipAddress": "2a02:aa7:4109:f49e:d427:521a:e6cf:4f9c",
+        "amountPaid": 108,
+        "paymentOptionId": "credit_debit_card",
+        "walletLink": false,
+        "quoteId": "e75764cd-1275-476e-b6fa-9af787b40974",
+        "orderProcessingType": "NORMAL",
+        "addressAdditionalData": false,
+        "network": "sui",
+        "appVersionName": "production-api",
+        "conversionPriceData": {
+            "_id": "0ffc3be9-65c4-4b86-b909-b965e09c7902",
+            "id": "0ffc3be9-65c4-4b86-b909-b965e09c7902",
+            "createdAt": "2025-01-31T01:56:38.136Z",
+            "fiatCurrency": "USD",
+            "cryptoCurrency": "SUI",
+            "paymentMethod": "credit_debit_card",
+            "fiatAmount": 108,
+            "network": "sui",
+            "cryptoAmount": 24.22,
+            "isBuyOrSell": "BUY",
+            "conversionPrice": 0.2398454786446223,
+            "marketConversionPrice": 0.24154589371980678,
+            "slippage": 0.7,
+            "cryptoLiquidityProvider": "transak",
+            "fiatLiquidityProvider": "coinbase",
+            "partnerApiKey": "b434f524-815b-4e4e-87ea-7c3851cce25b",
+            "sourceTokenAmount": 24.221994888320406,
+            "sourceToken": "SUI",
+            "notes": [
+                "Cryptocurrency Services Powered by Zero Hash."
+            ],
+            "fiatFeeAmount": 7.01,
+            "feeDecimal": 0.0649074074074074,
+            "swaps": [
+                {
+                    "sourceCurrency": "USD",
+                    "destinationCurrency": "USDT",
+                    "sourceAmount": 108,
+                    "destinationAmount": 107.99568017279307,
+                    "paymentMethod": "credit_debit_card",
+                    "liquidityProvider": "coinbase",
+                    "conversionPrice": 0.9999600015999359,
+                    "feeInSourceAmount": 0,
+                    "networkFeeInSourceAmount": 0,
+                    "marketConversionPrice": 0.9999600015999359,
+                    "isNonCustodial": false,
+                    "isFiatliquidityProvider": true,
+                    "isFiatPartnerDirectCryptoDeposit": false,
+                    "isFiatPartnerAccountWalletDeposit": false,
+                    "liquidityProviderData": false,
+                    "originalDestinationAmount": 107.99568017279307
+                },
+                {
+                    "sourceCurrency": "USDT",
+                    "destinationCurrency": "SUI",
+                    "sourceAmount": 107.99568017279307,
+                    "destinationAmount": 25.90331169361921,
+                    "liquidityProvider": "transak",
+                    "conversionPrice": 0.23985507246376814,
+                    "networkFeeInSourceAmount": 0,
+                    "networkFeeInDestinationAmount": 0,
+                    "marketConversionPrice": 0.23985507246376814,
+                    "liquidityProviderData": false,
+                    "isNonCustodial": false
+                },
+                {
+                    "sourceCurrency": "SUI",
+                    "destinationCurrency": "SUI",
+                    "sourceAmount": 25.90331169361921,
+                    "destinationAmount": 25.90331169361921,
+                    "liquidityProvider": "transak",
+                    "conversionPrice": 1,
+                    "isCryptoliquidityProvider": true,
+                    "networkFeeInSourceAmount": 0.14894999999999997,
+                    "networkFeeInDestinationAmount": 0.14894999999999997,
+                    "marketConversionPrice": 1,
+                    "liquidityProviderData": false,
+                    "isFiatPartnerAccountWalletDeposit": false
+                }
+            ],
+            "fees": [
+                {
+                    "name": "Transak fee",
+                    "value": 5.31,
+                    "id": "transak_fee",
+                    "ids": [
+                        "transak_fee"
+                    ]
+                },
+                {
+                    "name": "Gem Wallet fee",
+                    "value": 1.08,
+                    "id": "partner_fee",
+                    "ids": [
+                        "partner_fee"
+                    ]
+                },
+                {
+                    "name": "Network/Exchange fee",
+                    "value": 0.62,
+                    "id": "network_fee",
+                    "ids": [
+                        "network_fee"
+                    ]
+                }
+            ],
+            "fiatAmountInUsd": 108,
+            "internalFees": [
+                {
+                    "name": "Network/Exchange fee",
+                    "id": "network_fee",
+                    "value": 0.62
+                },
+                {
+                    "name": "Transak fee",
+                    "id": "transak_fee",
+                    "value": 5.31
+                },
+                {
+                    "name": "Gem Wallet fee",
+                    "id": "partner_fee",
+                    "value": 1.08
+                }
+            ],
+            "cost": {
+                "ethPriceInLocalCurrency": 3269.34,
+                "gasCostinLocalCurrency": 0.6209999999999999,
+                "transakMinimumFee": 0,
+                "transakFeeAmount": 5.31,
+                "fiatLiquidityProviderFee": 0,
+                "gasCostinLocalCurrencyByFiatPartner": 0,
+                "gasCostinLocalCurrencyByCryptoPartner": 0,
+                "partnerFeeDecimal": 0.01,
+                "partnerFeeInLocalCurrency": 1.08,
+                "totalFeeDecimal": 0.0649074074074074,
+                "totalFeeAmount": 7.01,
+                "gasCurrency": "SUI",
+                "gasInNativeToken": 0.15,
+                "gasCurrencyRateInUsd": 0.24154589371980678,
+                "totalAmountChargedByTransak": 7.010999999999999
+            }
+        },
+        "conversionPrice": 0.2398454786446223,
+        "cryptoAmount": 24.22,
+        "totalFeeInFiat": 7.01,
+        "fiatAmountInUsd": 108,
+        "countryCode": "DK",
+        "paymentOptions": [],
+        "autoExpiresAt": "2025-01-31T02:41:38+00:00",
+        "stateCode": "Midtjylland",
+        "orderChannelType": "WIDGET",
+        "tokenContractAddress": null,
+        "userKycType": "SIMPLE",
+        "cardPaymentData": {
+            "orderId": "df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a",
+            "paymentId": "679c2dd62c663d4eff0fb7aa",
+            "pgData": {
+                "redirectionRequired": true,
+                "redirectionRequestData": {
+                    "method": "GET",
+                    "header": {},
+                    "redirectUrl": "https://authentication-devices.checkout.com/sessions-interceptor/sid_rkcowarpojcenf2wai2av23fpq",
+                    "body": {}
+                }
+            },
+            "liquidityProvider": "CHECKOUT_POLAND",
+            "updatedAt": "2025-01-31T01:58:27.378Z",
+            "status": "DECLINED",
+            "statusReason": "Sorry! We are unable to process your order. Amount if paid, will be refunded.",
+            "processedOn": "2025-01-31T01:58:25.3964877Z"
+        },
+        "id": "df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a",
+        "lastNotifiedAt": "2025-01-31T01:58:27.682Z",
+        "statusHistories": [
+            {
+                "status": "AWAITING_PAYMENT_FROM_USER",
+                "createdAt": "2025-01-31T01:56:39.596Z",
+                "message": "*📦 New order by Magnus Pedersen* \n*Order Id:* df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a\n*Email:* magnus.pedersen3@icloud.com\n*Crypto Amount:* 24.22 SUI\n*Fiat Amount:* 108 USD\n*Payment Method:*  credit_debit_card\n*Liquidity Provider*  CHECKOUT_POLAND\n*Wallet Address:* 0xf47abc9e2ed94fb555b3e31e08ad8aa8ac64eea0ff15ba0e7b443cef4aaabffe\n*User Id:* 8cd20c52-05e3-4002-9fd5-487e21617d21 \n*Partner name:* Gem Wallet",
+                "isEmailSentToUser": false,
+                "partnerEventId": "ORDER_CREATED"
+            },
+            {
+                "status": "PROCESSING",
+                "createdAt": "2025-01-31T01:56:58.895Z",
+                "message": "*💸 Payment reconciled successfully. Received 108 USD",
+                "isEmailSentToUser": false,
+                "partnerEventId": "ORDER_PROCESSING"
+            },
+            {
+                "status": "FAILED",
+                "createdAt": "2025-01-31T01:58:27.682Z",
+                "message": "*🚫 Transaction Failed *\nOrder Id: df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a  \n*Reason-1 :*\n \t * reason_code *: DEFAULT,\n \t * tags *: others,\n \t * category *: fraud ,\n \t * internal_message *: Order failed!,\n \t * user communication *: Order Failed. Unfortunately we are not able to process your transaction at this time.",
+                "isEmailSentToUser": false,
+                "partnerEventId": "ORDER_FAILED"
+            }
+        ],
+        "lockedPriceId": "679c2e43ebdf395e105c0c19",
+        "statusReason": "Order failed an internal check!"
+    }
+}

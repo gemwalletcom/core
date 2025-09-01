@@ -7,7 +7,7 @@ use reqwest::{
 };
 use url::Url;
 
-use super::model::{Asset, Country, Order, PaymentMethod, Quote, ORDER_TYPE_BUY, ORDER_TYPE_SELL};
+use super::models::{Asset, Country, Order, PaymentMethod, Quote, ORDER_TYPE_BUY, ORDER_TYPE_SELL};
 
 const API_URL: &str = "https://api.banxa.com";
 

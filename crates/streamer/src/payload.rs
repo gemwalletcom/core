@@ -1,4 +1,4 @@
-use primitives::{AssetAddress, AssetId, Chain, ChainAddress, GorushNotification, Transaction};
+use primitives::{AssetAddress, AssetId, Chain, ChainAddress, FiatProviderName, GorushNotification, Transaction};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -157,5 +157,23 @@ impl ChainAddressPayload {
 impl fmt::Display for ChainAddressPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "chain: {}, address: {}", self.value.chain, self.value.address)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FiatWebhookPayload {
+    pub provider: FiatProviderName,
+    pub data: serde_json::Value,
+}
+
+impl FiatWebhookPayload {
+    pub fn new(provider: FiatProviderName, data: serde_json::Value) -> Self {
+        Self { provider, data }
+    }
+}
+
+impl fmt::Display for FiatWebhookPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "provider: {}", self.provider.id())
     }
 }

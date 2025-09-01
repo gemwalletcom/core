@@ -21,10 +21,12 @@ moonpay:
 transak:
   key:
     public: ""
+    secret: ""
 mercuryo:
   key:
     public: ""
     secret: ""
+    token: ""
 banxa:
   url: ""
   key:

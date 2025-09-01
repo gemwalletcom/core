@@ -1,5 +1,6 @@
 use alloy_primitives::hex;
 use async_trait::async_trait;
+use gem_client::Client;
 use std::error::Error;
 
 use crate::ChainStakeProvider;
@@ -10,12 +11,12 @@ use primitives::StakeValidator;
 const VALIDATORS_OFFSET: u16 = 0;
 const VALIDATORS_PAGE_LIMIT: u16 = 100;
 
-pub struct SmartChainProvider {
-    client: EthereumClient,
+pub struct SmartChainProvider<C: Client + Clone> {
+    client: EthereumClient<C>,
 }
 
-impl SmartChainProvider {
-    pub fn new(client: EthereumClient) -> Self {
+impl<C: Client + Clone> SmartChainProvider<C> {
+    pub fn new(client: EthereumClient<C>) -> Self {
         Self { client }
     }
 
@@ -31,7 +32,7 @@ impl SmartChainProvider {
 }
 
 #[async_trait]
-impl ChainStakeProvider for SmartChainProvider {
+impl<C: Client + Clone> ChainStakeProvider for SmartChainProvider<C> {
     async fn get_validators(&self) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
         let bsc_validators = self.fetch_validators().await?;
 

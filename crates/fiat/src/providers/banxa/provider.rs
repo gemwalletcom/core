@@ -3,13 +3,14 @@ use crate::{
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{FiatBuyQuote, FiatSellQuote};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
 use std::error::Error;
 
 use super::{
     client::BanxaClient,
-    model::{Webhook, ORDER_TYPE_SELL},
+    mapper::map_order,
+    models::{Webhook, ORDER_TYPE_SELL},
 };
 
 #[async_trait]
@@ -75,48 +76,13 @@ impl FiatProvider for BanxaClient {
             .collect())
     }
 
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        let order = self.get_order(order_id).await?;
+        map_order(order)
+    }
+
     // https://docs.banxa.com/docs/webhooks
-    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let data = serde_json::from_value::<Webhook>(data)?;
-        let order = self.get_order(&data.order_id).await?;
-
-        // https://docs.banxa.com/docs/order-status
-        let status = match order.status.as_str() {
-            "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress" | "coinTransferred" | "cryptoTransferred" | "extraVerification" => {
-                FiatTransactionStatus::Pending
-            }
-            "cancelled" | "declined" | "expired" | "refunded" => FiatTransactionStatus::Failed,
-            "complete" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown(order.status),
-        };
-        // TODO: Add order.crypto to asset mapping
-        //let assset_id = Self::map_asset(asset)
-        //    .first()
-        //    .map(|asset| AssetId::from(asset.chain.unwrap(), asset.token_id.clone()));
-
-        let transaction_type = match order.order_type.as_str() {
-            "BUY" => FiatQuoteType::Buy,
-            "SELL" => FiatQuoteType::Sell,
-            _ => FiatQuoteType::Buy,
-        };
-
-        let transaction = FiatTransaction {
-            asset_id: None,
-            transaction_type,
-            symbol: order.crypto.id,
-            provider_id: Self::NAME.id(),
-            provider_transaction_id: order.id,
-            status,
-            country: order.country,
-            fiat_amount: order.fiat_amount,
-            fiat_currency: order.fiat,
-            transaction_hash: order.tx_hash,
-            address: Some(order.wallet_address),
-            fee_provider: None,
-            fee_network: order.network_fee,
-            fee_partner: order.processing_fee,
-        };
-
-        Ok(transaction)
+    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(serde_json::from_value::<Webhook>(data)?.order_id)
     }
 }

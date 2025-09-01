@@ -12,7 +12,7 @@ pub struct FiatProvider {
     pub image_url: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
+#[derive(Debug, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq)]
 #[strum(serialize_all = "lowercase")]
 pub enum FiatProviderName {
     Mercuryo,

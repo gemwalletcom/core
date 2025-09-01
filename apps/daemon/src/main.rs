@@ -37,6 +37,7 @@ pub async fn main() {
         DaemonService::Alerter => alerter::jobs(settings.clone()).await,
         DaemonService::Pricer => pricer::jobs(settings.clone()).await,
         DaemonService::Fiat => fiat::jobs(settings.clone()).await,
+        DaemonService::FiatConsumer => fiat::jobs_consumer(settings.clone()).await,
         DaemonService::Assets => assets::jobs(settings.clone()).await,
         DaemonService::Version => version::jobs(settings.clone()).await,
         DaemonService::Transaction => transaction::jobs(settings.clone()).await,

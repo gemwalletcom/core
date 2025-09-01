@@ -1,11 +1,14 @@
-use super::{client::TransakClient, model::WebhookPayload};
+use super::{
+    client::TransakClient,
+    mapper::map_order_from_response,
+    models::{Data, WebhookPayload},
+};
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
-    providers::transak::model::WebhookEncryptedData,
     FiatProvider,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote, FiatTransaction, FiatTransactionStatus};
+use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 use std::error::Error;
 
 #[async_trait]
@@ -56,41 +59,16 @@ impl FiatProvider for TransakClient {
             .collect())
     }
 
-    async fn webhook(&self, data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = serde_json::from_value::<WebhookEncryptedData>(data)?;
-        let payload = self.decode_jwt_content(&payload.data).unwrap();
-        let payload = serde_json::from_str::<WebhookPayload>(&payload)?.webhook_data;
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+        let response = self.get_transaction(order_id).await?;
+        map_order_from_response(response)
+    }
 
-        let status = match payload.status.as_str() {
-            "ORDER_PAYMENT_VERIFYING" | "PAYMENT_DONE_MARKED_BY_USER" | "PENDING_DELIVERY_FROM_TRANSAK" | "AWAITING_PAYMENT_FROM_USER" => {
-                FiatTransactionStatus::Pending
-            }
-            "EXPIRED" | "FAILED" | "CANCELLED" | "REFUNDED" => FiatTransactionStatus::Failed,
-            "COMPLETED" => FiatTransactionStatus::Complete,
-            _ => FiatTransactionStatus::Unknown(payload.status),
-        };
-        let transaction_type = match payload.is_buy_or_sell.as_str() {
-            "BUY" => FiatQuoteType::Buy,
-            "SELL" => FiatQuoteType::Sell,
-            _ => FiatQuoteType::Buy,
-        };
-
-        let transaction = FiatTransaction {
-            asset_id: None,
-            transaction_type,
-            symbol: payload.crypto_currency,
-            provider_id: Self::NAME.id(),
-            provider_transaction_id: payload.id,
-            status,
-            country: payload.country_code,
-            fiat_amount: payload.fiat_amount,
-            fiat_currency: payload.fiat_currency,
-            transaction_hash: payload.transaction_hash,
-            address: Some(payload.wallet_address),
-            fee_provider: payload.conversion_price_data.as_ref().and_then(|data| data.fee("transak_fee")),
-            fee_network: payload.conversion_price_data.as_ref().and_then(|data| data.fee("network_fee")),
-            fee_partner: payload.conversion_price_data.as_ref().and_then(|data| data.fee("partner_fee")),
-        };
-        Ok(transaction)
+    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let encrypted_data = serde_json::from_value::<Data<String>>(data)?;
+        let decoded_payload = self.decode_jwt_content(&encrypted_data.data)
+            .map_err(|e| format!("Failed to decode Transak JWT: {}", e))?;
+        let webhook_payload = serde_json::from_str::<WebhookPayload>(&decoded_payload)?;
+        Ok(webhook_payload.webhook_data.id)
     }
 }

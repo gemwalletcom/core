@@ -113,7 +113,7 @@ mod tests {
         let chain = Chain::Ethereum;
         let explorers = get_block_explorers(chain);
 
-        assert_eq!(explorers.len(), 4);
+        assert_eq!(explorers.len(), 3);
         assert_eq!(explorers[0].name(), "Etherscan");
         assert_eq!(explorers[1].name(), "Blockchair");
 

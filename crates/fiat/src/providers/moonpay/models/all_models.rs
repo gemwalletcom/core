@@ -60,6 +60,11 @@ pub struct Asset {
     pub currency_type: FiatCurrencyType,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct WebhookOrderId {
+    pub id: String,
+}
+
 impl Asset {
     pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {
         let mut map = HashMap::new();
@@ -95,6 +100,7 @@ pub struct Webhook {
     pub currency: Option<Asset>,
     pub quote_currency: Option<Asset>,
     pub wallet_address: Option<String>,
+    pub refund_wallet_address: Option<String>,
     pub crypto_transaction_id: Option<String>,
     pub network_fee_amount: Option<f64>,
     pub extra_fee_amount: Option<f64>,

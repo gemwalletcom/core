@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use primitives::FiatTransaction;
 use std::error::Error;
 
 use crate::database::fiat::FiatStore;
@@ -9,7 +10,7 @@ pub trait FiatRepository {
     fn add_fiat_providers(&mut self, values: Vec<crate::models::FiatProvider>) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn add_fiat_providers_countries(&mut self, values: Vec<crate::models::FiatProviderCountry>) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn get_fiat_providers_countries(&mut self) -> Result<Vec<primitives::FiatProviderCountry>, Box<dyn Error + Send + Sync>>;
-    fn add_fiat_transaction(&mut self, transaction: crate::models::FiatTransaction) -> Result<usize, Box<dyn Error + Send + Sync>>;
+    fn add_fiat_transaction(&mut self, transaction: FiatTransaction) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn get_fiat_assets(&mut self) -> Result<Vec<crate::models::FiatAsset>, Box<dyn Error + Send + Sync>>;
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<String>, Box<dyn Error + Send + Sync>>;
     fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<crate::models::FiatAsset>, Box<dyn Error + Send + Sync>>;
@@ -38,8 +39,11 @@ impl FiatRepository for DatabaseClient {
         Ok(result.into_iter().map(|x| x.as_primitive()).collect())
     }
 
-    fn add_fiat_transaction(&mut self, transaction: crate::models::FiatTransaction) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(FiatStore::add_fiat_transaction(self, transaction)?)
+    fn add_fiat_transaction(&mut self, transaction: FiatTransaction) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(FiatStore::add_fiat_transaction(
+            self,
+            crate::models::FiatTransaction::from_primitive(transaction),
+        )?)
     }
 
     fn get_fiat_assets(&mut self) -> Result<Vec<crate::models::FiatAsset>, Box<dyn Error + Send + Sync>> {

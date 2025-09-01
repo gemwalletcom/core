@@ -95,9 +95,10 @@ impl ProviderFactory {
             | Chain::Hyperliquid
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
-                let ethereum_client = EthereumClient::new(chain, &url);
-                let assets_provider = AlchemyClient::new(ethereum_client.clone(), gem_client.clone(), config.alchemy_key.clone());
-                let transactions_provider = AnkrClient::new(ethereum_client.clone(), config.ankr_key.clone());
+                let rpc_client = JsonRpcClient::new(gem_client.clone());
+                let ethereum_client = EthereumClient::new(rpc_client.clone(), chain);
+                let assets_provider = AlchemyClient::new(gem_client.clone(), chain, config.alchemy_key.clone());
+                let transactions_provider = AnkrClient::new(rpc_client, chain);
                 Box::new(EthereumProvider::new(
                     ethereum_client,
                     config.node_type,

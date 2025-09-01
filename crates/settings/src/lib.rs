@@ -85,13 +85,21 @@ pub struct MoonPay {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Transak {
-    pub key: KeyPublic,
+    pub key: Key,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Mercuryo {
-    pub key: Key,
+    pub key: MercuryoKey,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct MercuryoKey {
+    pub secret: String,
+    pub public: String,
+    pub token: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

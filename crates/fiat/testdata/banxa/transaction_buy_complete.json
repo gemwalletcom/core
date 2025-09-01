@@ -1,0 +1,29 @@
+{
+    "createdAt": "2025-04-07T02:36:22.000000Z",
+    "updatedAt": "2025-04-07T04:11:08.000000Z",
+    "id": "1a0e15cbede2cd3776617683bd35b0f0",
+    "reference": 17067997,
+    "externalOrderId": null,
+    "externalCustomerId": "dlockersr@gmail.com",
+    "country": null,
+    "orderStatusUrl": "https://gemwallet.banxa.com/status/1a0e15cbede2cd3776617683bd35b0f0",
+    "orderType": "SELL",
+    "crypto": {
+        "id": "ETH",
+        "blockchain": "ETH",
+        "address": "0x0000000000000000000000000000000000000000",
+        "network": "1"
+    },
+    "fiat": "USD",
+    "fiatAmount": "3986",
+    "cryptoAmount": "2.5975",
+    "paymentMethodId": "ach-bank-transfer",
+    "paymentMethodName": "Ach bank transfer",
+    "processingFee": "0",
+    "networkFee": "0",
+    "transactionHash": null,
+    "walletAddress": "",
+    "walletAddressTag": null,
+    "status": "expired",
+    "metadata": null
+}

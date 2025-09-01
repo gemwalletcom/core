@@ -49,7 +49,7 @@ pub use self::fiat_assets::FiatAsset;
 pub use self::fiat_assets::FiatAssets;
 pub use self::fiat_transaction::{FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 pub mod fiat_provider;
-pub use self::fiat_provider::{FiatProviderCountry, FiatProviderName};
+pub use self::fiat_provider::{FiatProvider, FiatProviderCountry, FiatProviderName};
 pub mod fiat_quote_request;
 pub use self::fiat_quote_request::{FiatBuyQuote, FiatQuoteAmount, FiatQuoteRequest, FiatQuoteTypeResult, FiatSellQuote};
 pub mod fiat_rate;
