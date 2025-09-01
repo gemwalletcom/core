@@ -86,7 +86,7 @@ tracing = { version = "0.1" }
 uuid = { version = "1.18.0", features = ["v4"] }
 rand = { version = "0.9.2" }
 getrandom = { version = "0.3.3" }
-aws-sdk-s3 = { version = "1.103.0", features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1.104.0", features = ["behavior-version-latest"] }
 itertools = { version = "0.14.0" }
 
 # db
