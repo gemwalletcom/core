@@ -91,7 +91,7 @@ pub struct Data<T> {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Webhook {
+pub struct Transaction {
     pub id: String,
     pub status: String,
     pub base_currency_amount: Option<f64>,
@@ -106,7 +106,11 @@ pub struct Webhook {
     pub extra_fee_amount: Option<f64>,
     pub fee_amount: Option<f64>,
     pub country: Option<String>,
+    pub failure_reason: Option<String>,
 }
+
+// Keep Webhook for backward compatibility with existing webhook handling
+pub type Webhook = Transaction;
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]

@@ -1,5 +1,5 @@
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 use super::{client::BanxaClient, models::Order};
+use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
     match chain.as_str() {
@@ -43,7 +43,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
 pub fn map_order(order: Order) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
     let chain = map_asset_chain(order.crypto.blockchain.clone());
     let asset_id = chain.map(AssetId::from_chain);
-    
+
     let status = match order.status.as_str() {
         "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress" | "coinTransferred" | "cryptoTransferred" | "extraVerification" => {
             FiatTransactionStatus::Pending

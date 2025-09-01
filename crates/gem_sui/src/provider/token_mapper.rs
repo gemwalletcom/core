@@ -36,9 +36,9 @@ mod tests {
             decimals: 6,
         };
         let token_id = "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN";
-        
+
         let asset = map_token_data(Chain::Sui, token_id, metadata);
-        
+
         assert_eq!(asset.name, "USD Coin");
         assert_eq!(asset.symbol, "USDC");
         assert_eq!(asset.decimals, 6);

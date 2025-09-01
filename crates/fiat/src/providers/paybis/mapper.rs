@@ -1,6 +1,9 @@
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
-use super::{client::PaybisClient, models::{Currency, PaybisTransaction}};
+use super::{
+    client::PaybisClient,
+    models::{Currency, PaybisTransaction},
+};
 
 pub fn map_asset_id(currency: Currency) -> Option<AssetId> {
     if !currency.is_crypto() {
@@ -24,7 +27,6 @@ pub fn map_asset_id(currency: Currency) -> Option<AssetId> {
     }
 }
 
-
 pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
     match symbol {
         "BTC" => Some(AssetId::from_chain(Chain::Bitcoin)),
@@ -46,7 +48,7 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
 
 pub fn map_order_from_response(transaction: PaybisTransaction) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
     let asset_id = map_symbol_to_asset_id(&transaction.crypto_currency);
-    
+
     let status = match transaction.status.as_str() {
         "pending" => FiatTransactionStatus::Pending,
         "failed" | "cancelled" => FiatTransactionStatus::Failed,

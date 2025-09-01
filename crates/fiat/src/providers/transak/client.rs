@@ -146,7 +146,8 @@ impl TransakClient {
     pub async fn get_transaction(&self, order_id: &str) -> Result<TransakOrderResponse, reqwest::Error> {
         let token_data = self.refresh_token().await?;
         let url = format!("{TRANSAK_API_URL}/partners/api/v2/order/{order_id}");
-        let response: Data<TransakOrderResponse> = self.client
+        let response: Data<TransakOrderResponse> = self
+            .client
             .get(&url)
             .header("access-token", &token_data.data.access_token)
             .send()

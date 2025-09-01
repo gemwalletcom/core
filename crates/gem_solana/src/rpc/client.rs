@@ -473,7 +473,11 @@ impl<C: Client + Clone> SolanaClient<C> {
         Ok(transactions)
     }
 
-    pub async fn get_token_accounts(&self, address: &str, token_mints: &[String]) -> Result<Vec<ValueResult<Vec<TokenAccountInfo>>>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_token_accounts(
+        &self,
+        address: &str,
+        token_mints: &[String],
+    ) -> Result<Vec<ValueResult<Vec<TokenAccountInfo>>>, Box<dyn Error + Send + Sync>> {
         let calls: Vec<(String, serde_json::Value)> = token_mints
             .iter()
             .map(|mint| ("getTokenAccountsByOwner".to_string(), token_accounts_by_mint_params(address, mint)))

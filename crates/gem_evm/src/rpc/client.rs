@@ -9,7 +9,6 @@ use serde_json::json;
 use std::any::TypeId;
 use std::str::FromStr;
 
-
 use crate::rpc::model::{BlockTransactionsIds, TransactionReplayTrace};
 
 use super::model::{Block, Transaction, TransactionReciept};
@@ -136,6 +135,11 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(receipts)
     }
 
+    pub async fn get_transaction_receipt(&self, hash: &str) -> Result<TransactionReciept, JsonRpcError> {
+        let params = json!([hash]);
+        self.client.call("eth_getTransactionReceipt", params).await
+    }
+
     pub async fn trace_replay_block_transactions(&self, block_number: i64) -> Result<Vec<TransactionReplayTrace>, JsonRpcError> {
         let params = json!([format!("0x{:x}", block_number), json!(["stateDiff"])]);
         self.client.call("trace_replayBlockTransactions", params).await
@@ -168,5 +172,9 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_block_number(&self) -> Result<String, anyhow::Error> {
         Ok(self.client.call("eth_blockNumber", json!([])).await?)
     }
-}
 
+    pub async fn send_raw_transaction(&self, data: &str) -> Result<String, JsonRpcError> {
+        let params = json!([data]);
+        self.client.call("eth_sendRawTransaction", params).await
+    }
+}

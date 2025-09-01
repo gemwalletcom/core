@@ -1,0 +1,37 @@
+{
+    "status": 200,
+    "total": 1,
+    "next": null,
+    "prev": null,
+    "data": [
+        {
+            "sell": {
+                "id": "0dafb7b9b92525713",
+                "transaction_id": "0dafb7b9c93df2014",
+                "widget_id": "e852c142-3718-47e7-a6fc-3fd58a87d85c",
+                "merchant_transaction_id": "d9c80819-e0b2-4f6e-8a59-3eb6321daa4e",
+                "fiat_currency": "USD",
+                "fiat_amount": "29.32",
+                "currency": "ETH",
+                "amount": "0.021475865219999998",
+                "status": "succeeded",
+                "created_at": "2025-04-08 15:14:01",
+                "updated_at": "2025-04-08 15:14:20"
+            },
+            "deposit": {
+                "id": "0dafb7b721b63e8d2",
+                "transaction_id": "0dafb7b9b92525713",
+                "widget_id": "e852c142-3718-47e7-a6fc-3fd58a87d85c",
+                "merchant_transaction_id": "d9c80819-e0b2-4f6e-8a59-3eb6321daa4e",
+                "hash": "0xf07ff7195ac58ac23999aac7089210718f3f528167f05ba7880c5850648f66d4",
+                "url": null,
+                "address": "0x9837C4e9A7afac29eBd170b1b68AE16F3dE38298",
+                "currency": "ETH",
+                "amount": "0.021475865219999998",
+                "status": "completed",
+                "created_at": "2025-04-08 15:13:59",
+                "updated_at": "2025-04-08 15:13:59"
+            }
+        }
+    ]
+}

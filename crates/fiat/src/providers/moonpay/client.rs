@@ -1,9 +1,8 @@
 use crate::hmac_signature::generate_hmac_signature;
 use crate::model::{filter_token_id, FiatProviderAsset};
-use crate::providers::moonpay::models::Webhook;
 
 use super::mapper::map_asset_chain;
-use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote};
+use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote, Transaction};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote};
 use reqwest::Client;
@@ -87,7 +86,7 @@ impl MoonPayClient {
         Ok(vec![])
     }
 
-    pub async fn get_transaction(&self, transaction_id: &str) -> Result<Webhook, reqwest::Error> {
+    pub async fn get_transaction(&self, transaction_id: &str) -> Result<Transaction, reqwest::Error> {
         self.client
             .get(format!("{MOONPAY_API_BASE_URL}/v1/transactions/{transaction_id}"))
             .query(&[("apiKey", &self.api_key)])
@@ -95,6 +94,27 @@ impl MoonPayClient {
             .await?
             .json()
             .await
+    }
+
+    pub async fn get_sell_transaction(&self, transaction_id: &str) -> Result<Transaction, reqwest::Error> {
+        self.client
+            .get(format!("{MOONPAY_API_BASE_URL}/v3/sell_transactions/{transaction_id}"))
+            .query(&[("apiKey", &self.api_key)])
+            .send()
+            .await?
+            .json()
+            .await
+    }
+
+    pub async fn get_any_transaction(&self, transaction_id: &str) -> Result<Transaction, reqwest::Error> {
+        // Try buy transactions endpoint first (v1/transactions)
+        match self.get_transaction(transaction_id).await {
+            Ok(webhook) => Ok(webhook),
+            Err(_) => {
+                // If it fails, try sell transactions endpoint (v3/sell_transactions)
+                self.get_sell_transaction(transaction_id).await
+            }
+        }
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {

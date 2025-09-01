@@ -1,15 +1,15 @@
 use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
-use primitives::swap::{ApprovalData, SwapData, SwapQuote, SwapQuoteData, SwapProviderData};
-use primitives::SwapProvider;
+use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::FeeOption;
+use primitives::SwapProvider;
 use primitives::{
     GasPriceType, PerpetualConfirmData, PerpetualDirection, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput,
     TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputType,
     WalletConnectionSessionAppMetadata,
 };
-use std::str::FromStr;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionUpdate {
@@ -450,7 +450,11 @@ impl From<GemTransactionInputType> for TransactionInputType {
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
             GemTransactionInputType::Deposit { asset } => TransactionInputType::Deposit(asset.into()),
-            GemTransactionInputType::Swap { from_asset, to_asset, swap_data } => TransactionInputType::Swap(from_asset.into(), to_asset.into(), swap_data.into()),
+            GemTransactionInputType::Swap {
+                from_asset,
+                to_asset,
+                swap_data,
+            } => TransactionInputType::Swap(from_asset.into(), to_asset.into(), swap_data.into()),
             GemTransactionInputType::Stake { asset, stake_type: operation } => TransactionInputType::Stake(asset.into(), operation.into()),
             GemTransactionInputType::TokenApprove { asset, approval_data } => TransactionInputType::TokenApprove(asset.into(), approval_data.into()),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),

@@ -3,8 +3,8 @@ use std::str::FromStr;
 pub use fiat::{FiatClient, FiatProviderFactory};
 
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
-use streamer::FiatWebhookPayload;
 use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
+use streamer::FiatWebhookPayload;
 
 // on ramp
 
@@ -108,7 +108,10 @@ pub async fn create_fiat_webhook(
         Ok(_) => Json(payload),
         Err(e) => {
             println!("Failed to send webhook to queue: {}", e);
-            Json(FiatWebhookPayload::new(primitives::FiatProviderName::MoonPay, serde_json::Value::String("".to_string())))
+            Json(FiatWebhookPayload::new(
+                primitives::FiatProviderName::MoonPay,
+                serde_json::Value::String("".to_string()),
+            ))
         }
     }
 }

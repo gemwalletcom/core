@@ -1,5 +1,8 @@
+use super::{
+    client::TransakClient,
+    models::{Asset, TransakOrderResponse},
+};
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
-use super::{client::TransakClient, models::{Asset, TransakOrderResponse}};
 
 pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
     match asset.network.name.as_str() {
@@ -100,7 +103,7 @@ pub fn map_network_to_chain(network: &str) -> Option<Chain> {
             // For mainnet networks, we need to infer from symbol
             // This would need more logic based on the crypto_currency
             None
-        },
+        }
         _ => None,
     }
 }
@@ -135,7 +138,8 @@ mod tests {
 
     #[test]
     fn test_map_order_buy_failed() {
-        let response: Data<TransakOrderResponse> = serde_json::from_str(include_str!("../../../testdata/transak/transaction_buy_error.json")).expect("Failed to parse test data");
+        let response: Data<TransakOrderResponse> =
+            serde_json::from_str(include_str!("../../../testdata/transak/transaction_buy_error.json")).expect("Failed to parse test data");
 
         let result = map_order_from_response(response.data).expect("Failed to map order");
 
@@ -147,7 +151,10 @@ mod tests {
         assert_eq!(result.fiat_currency, "USD");
         assert_eq!(result.fiat_amount, 108.0);
         assert_eq!(result.country, Some("DK".to_string()));
-        assert_eq!(result.address, Some("0xf47abc9e2ed94fb555b3e31e08ad8aa8ac64eea0ff15ba0e7b443cef4aaabffe".to_string()));
+        assert_eq!(
+            result.address,
+            Some("0xf47abc9e2ed94fb555b3e31e08ad8aa8ac64eea0ff15ba0e7b443cef4aaabffe".to_string())
+        );
         assert!(result.asset_id.is_some()); // Should have asset ID for SUI
     }
 }

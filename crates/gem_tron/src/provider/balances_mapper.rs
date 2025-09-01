@@ -25,23 +25,13 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward) -> Result
     let staked_amount = account
         .frozen_v2
         .as_ref()
-        .map(|frozen_list| {
-            frozen_list
-                .iter()
-                .map(|frozen| frozen.amount.unwrap_or(0))
-                .sum::<u64>()
-        })
+        .map(|frozen_list| frozen_list.iter().map(|frozen| frozen.amount.unwrap_or(0)).sum::<u64>())
         .unwrap_or(0);
 
     let pending_amount = account
         .unfrozen_v2
         .as_ref()
-        .map(|unfrozen_list| {
-            unfrozen_list
-                .iter()
-                .map(|unfrozen| unfrozen.unfreeze_amount.unwrap_or(0))
-                .sum::<u64>()
-        })
+        .map(|unfrozen_list| unfrozen_list.iter().map(|unfrozen| unfrozen.unfreeze_amount.unwrap_or(0)).sum::<u64>())
         .unwrap_or(0);
 
     let rewards_amount = reward.reward;
@@ -155,9 +145,7 @@ mod tests {
             }]),
         };
 
-        let reward = TronReward {
-            reward: 100000,
-        };
+        let reward = TronReward { reward: 100000 };
 
         let balance = map_staking_balance(&account, &reward).unwrap();
 

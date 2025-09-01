@@ -12,9 +12,9 @@ use crate::{
 };
 use futures::future::join_all;
 use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
-use streamer::FiatWebhookPayload;
 use reqwest::Client as RequestClient;
 use storage::{AssetFilter, DatabaseClient};
+use streamer::FiatWebhookPayload;
 
 pub struct FiatClient {
     database: DatabaseClient,

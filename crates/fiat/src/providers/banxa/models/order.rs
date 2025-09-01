@@ -1,6 +1,6 @@
+use super::asset::Coin;
 use serde::Deserialize;
 use serde_serializers::{deserialize_f64_from_str, deserialize_option_f64_from_str};
-use super::asset::Coin;
 
 pub const ORDER_TYPE_BUY: &str = "buy";
 pub const ORDER_TYPE_SELL: &str = "sell";
