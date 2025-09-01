@@ -173,6 +173,11 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(self.client.call("eth_blockNumber", json!([])).await?)
     }
 
+    pub async fn get_transaction_count(&self, address: &str) -> Result<String, anyhow::Error> {
+        let params = json!([address, "latest"]);
+        Ok(self.client.call("eth_getTransactionCount", params).await?)
+    }
+
     pub async fn send_raw_transaction(&self, data: &str) -> Result<String, JsonRpcError> {
         let params = json!([data]);
         self.client.call("eth_sendRawTransaction", params).await
