@@ -10,10 +10,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_solana_token_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = SolanaClient::new(JsonRpcClient::new(ReqwestClient::new(
-            "https://api.mainnet-beta.solana.com".to_string(),
-            reqwest::Client::new(),
-        )));
+        let client = SolanaClient::new(JsonRpcClient::new_reqwest("https://api.mainnet-beta.solana.com".to_string()));
         let provider = GenericProvider::new(client);
         let token_data = provider.get_token_data("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()).await?;
 
@@ -25,10 +22,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_solana_get_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = SolanaClient::new(JsonRpcClient::new(ReqwestClient::new(
-            "https://api.mainnet-beta.solana.com".to_string(),
-            reqwest::Client::new(),
-        )));
+        let client = SolanaClient::new(JsonRpcClient::new_reqwest("https://api.mainnet-beta.solana.com".to_string()));
         let provider = GenericProvider::new(client);
 
         let validators = provider.get_validators().await?;
@@ -64,7 +58,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_smartchain_get_validators_and_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let ethereum_client = EthereumClient::new(EVMChain::SmartChain, "https://bsc-dataseed.binance.org");
+        let ethereum_client = EthereumClient::new(JsonRpcClient::new_reqwest("https://bsc-dataseed.binance.org".to_string()), EVMChain::SmartChain);
         let provider = SmartChainProvider::new(ethereum_client);
 
         let validators = provider.get_validators().await?;
