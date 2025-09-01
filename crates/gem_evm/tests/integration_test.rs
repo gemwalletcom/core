@@ -1,13 +1,14 @@
 #[cfg(test)]
 mod tests {
     use gem_evm::rpc::EthereumClient;
+    use gem_jsonrpc::JsonRpcClient;
     use num_bigint::BigUint;
     use primitives::{node_config::get_nodes_for_chain, Chain, EVMChain};
 
     #[tokio::test]
     async fn test_ethereum_client_get_latest_block() {
         let nodes = get_nodes_for_chain(Chain::Ethereum);
-        let client = EthereumClient::new(EVMChain::Ethereum, &nodes[0].url);
+        let client = EthereumClient::new(JsonRpcClient::new_reqwest(nodes[0].url.clone()), EVMChain::Ethereum);
         let latest_block = client.get_latest_block().await;
 
         assert!(latest_block.is_ok());
@@ -20,7 +21,7 @@ mod tests {
     #[tokio::test]
     async fn test_ethereum_client_get_block() {
         let nodes = get_nodes_for_chain(Chain::Ethereum);
-        let client = EthereumClient::new(EVMChain::Ethereum, &nodes[0].url);
+        let client = EthereumClient::new(JsonRpcClient::new_reqwest(nodes[0].url.clone()), EVMChain::Ethereum);
         let block = client.get_block(1).await;
 
         assert!(block.is_ok());
@@ -33,7 +34,7 @@ mod tests {
     #[tokio::test]
     async fn test_ethereum_client_eth_call_erc20_name() {
         let nodes = get_nodes_for_chain(Chain::Ethereum);
-        let client = EthereumClient::new(EVMChain::Ethereum, &nodes[0].url);
+        let client = EthereumClient::new(JsonRpcClient::new_reqwest(nodes[0].url.clone()), EVMChain::Ethereum);
         let usdc_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
         let name_call_data = "0x06fdde03";
         let result: Result<String, _> = client.eth_call(usdc_address, name_call_data).await;
@@ -48,7 +49,7 @@ mod tests {
     #[tokio::test]
     async fn test_ethereum_client_batch_calls() {
         let nodes = get_nodes_for_chain(Chain::Ethereum);
-        let client = EthereumClient::new(EVMChain::Ethereum, &nodes[0].url);
+        let client = EthereumClient::new(JsonRpcClient::new_reqwest(nodes[0].url.clone()), EVMChain::Ethereum);
         let latest_block = client.get_latest_block().await.unwrap();
         let prev_block = latest_block - 1;
 
@@ -68,7 +69,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_ethereum_client_trace_replay_block_transactions() {
-        let client = EthereumClient::new(EVMChain::Ethereum, "https://ethereum-public.nodies.app");
+        let client = EthereumClient::new(JsonRpcClient::new_reqwest("https://ethereum-public.nodies.app".to_string()), EVMChain::Ethereum);
         let traces = client.trace_replay_block_transactions(22838462).await;
 
         assert!(traces.is_ok());
