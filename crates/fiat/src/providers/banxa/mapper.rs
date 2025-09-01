@@ -95,9 +95,25 @@ mod tests {
         assert_eq!(result.symbol, "ETH");
         assert_eq!(result.fiat_currency, "USD");
         assert_eq!(result.fiat_amount, 3986.0);
+        assert!(result.asset_id.is_some());
+    }
+
+    #[test]
+    fn test_map_order_sell_failed() {
+        let response: Order = serde_json::from_str(include_str!("../../../testdata/banxa/transaction_sell_failed.json")).expect("Failed to parse test data");
+
+        let result = map_order(response).expect("Failed to map order");
+
+        assert_eq!(result.provider_id, "banxa");
+        assert_eq!(result.provider_transaction_id, "123");
+        assert!(matches!(result.status, FiatTransactionStatus::Failed));
+        assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
+        assert_eq!(result.symbol, "ETH");
+        assert_eq!(result.fiat_currency, "USD");
+        assert_eq!(result.fiat_amount, 595.3);
         assert_eq!(result.country, None);
-        assert_eq!(result.address, Some("".to_string()));
-        assert!(result.asset_id.is_some()); // Should have asset ID for ETH
+        assert_eq!(result.address, Some("0x123".to_string()));
+        assert!(result.asset_id.is_some());
         assert_eq!(result.fee_network, Some(0.0));
         assert_eq!(result.fee_partner, Some(0.0));
     }
