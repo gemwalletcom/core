@@ -26,8 +26,8 @@ use alloy_primitives::{
 };
 use alloy_sol_types::{SolCall, SolValue};
 
-use async_trait::async_trait;
 use crate::network::jsonrpc_client_with_chain;
+use async_trait::async_trait;
 use gem_evm::{
     across::{
         contracts::{
@@ -415,7 +415,7 @@ impl Across {
         let fees: Vec<SolanaPrioritizationFee> = client.request(rpc_call).await?;
 
         if fees.is_empty() {
-            return Err(SwapperError::NetworkError);
+            return Err(SwapperError::NetworkError("Failed to fetch recent prioritization fees".to_string()));
         }
 
         // Calculate average prioritization fee from recent transactions
@@ -441,7 +441,7 @@ impl Across {
         multicall_results: &[IMulticall3::Result],
     ) -> Result<(U256, V3RelayData), SwapperError> {
         if gas_chain == Chain::Solana {
-            let unit_price = Self::fetch_solana_unit_price(provider.clone()).await.unwrap_or(1);
+            let unit_price = Self::fetch_solana_unit_price(provider.clone()).await?;
             let gas_fee = DEFAULT_SOLANA_COMPUTE_LIMIT * unit_price;
 
             let chain_id = Self::get_destination_chain_id(&gas_chain)?;
