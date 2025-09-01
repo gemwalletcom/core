@@ -51,6 +51,7 @@ chain_traits = { path = "../chain_traits", optional = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 num-bigint = { workspace = true }
+reqwest = { workspace = true, features = ["json"] }
 
 [[test]]
 name = "integration_test"
