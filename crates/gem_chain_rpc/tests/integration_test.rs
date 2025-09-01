@@ -58,8 +58,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_smartchain_get_validators_and_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = JsonRpcClient::new_reqwest("https://bsc-dataseed.binance.org".to_string());
-        let ethereum_client = EthereumClient::new(client, EVMChain::SmartChain);
+        let ethereum_client = EthereumClient::new(JsonRpcClient::new_reqwest("https://bsc-dataseed.binance.org".to_string()), EVMChain::SmartChain);
         let provider = SmartChainProvider::new(ethereum_client);
 
         let validators = provider.get_validators().await?;
