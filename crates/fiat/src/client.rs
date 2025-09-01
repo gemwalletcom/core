@@ -14,17 +14,18 @@ use futures::future::join_all;
 use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use reqwest::Client as RequestClient;
 use storage::{AssetFilter, DatabaseClient};
-use streamer::FiatWebhookPayload;
+use streamer::{FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
     database: DatabaseClient,
     cacher: CacherClient,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ip_check_client: IPCheckClient,
+    stream_producer: StreamProducer,
 }
 
 impl FiatClient {
-    pub async fn new(database_url: &str, cacher: CacherClient, providers: Vec<Box<dyn FiatProvider + Send + Sync>>, ip_check_client: IPCheckClient) -> Self {
+    pub async fn new(database_url: &str, cacher: CacherClient, providers: Vec<Box<dyn FiatProvider + Send + Sync>>, ip_check_client: IPCheckClient, stream_producer: StreamProducer) -> Self {
         let database = DatabaseClient::new(database_url);
 
         Self {
@@ -32,6 +33,7 @@ impl FiatClient {
             cacher,
             providers,
             ip_check_client,
+            stream_producer,
         }
     }
 
@@ -85,6 +87,23 @@ impl FiatClient {
         }
         Err(format!("Provider {} not found", provider_name).into())
     }
+
+    pub async fn process_and_publish_webhook(
+        &mut self,
+        provider_name: &str,
+        webhook_data: serde_json::Value,
+    ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
+        let payload = self.webhook(provider_name, webhook_data).await?;
+        
+        match self.stream_producer.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await {
+            Ok(_) => Ok(payload),
+            Err(e) => {
+                println!("Failed to send webhook to queue: {}", e);
+                Ok(payload)
+            }
+        }
+    }
+
 
     fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
         let list = self
