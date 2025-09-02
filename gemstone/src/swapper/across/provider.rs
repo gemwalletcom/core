@@ -132,15 +132,12 @@ impl Across {
         request.to_asset.chain() == Chain::Solana
     }
 
-    fn get_output_asset_and_token(request: &SwapperQuoteRequest) -> Result<(AssetId, Address), SwapperError> {
+    fn get_output_asset(request: &SwapperQuoteRequest) -> Result<AssetId, SwapperError> {
         if Self::is_solana_destination(request) {
-            let solana_output_asset = request.to_asset.asset_id();
-            let placeholder_address = Address::ZERO;
-            Ok((solana_output_asset, placeholder_address))
+            Ok(request.to_asset.asset_id())
         } else {
             let norm_output_asset = eth_address::normalize_weth_asset(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
-            let output_token = eth_address::parse_asset_id(&norm_output_asset)?;
-            Ok((norm_output_asset, output_token))
+            Ok(norm_output_asset)
         }
     }
 
@@ -179,7 +176,7 @@ impl Across {
     }
 
     /// Return (message, referral_fee)
-    pub fn message_for_multicall_handler(
+    pub fn message_for_evm_multicall_handler(
         &self,
         amount: &U256,
         original_output_asset: &AssetId,
@@ -206,6 +203,28 @@ impl Across {
         };
         let message = instructions.abi_encode();
         (message, fee_amount)
+    }
+
+    /// Return (message, referral_fee) depending on destination chain type
+    pub fn message_for_multicall_handler(
+        &self,
+        amount: &U256,
+        original_output_asset: &AssetId,
+        output_token_evm: Option<&Address>,
+        user_address: &Address,
+        referral_fee: &SwapReferralFee,
+    ) -> (Vec<u8>, U256) {
+        match original_output_asset.chain.chain_type() {
+            ChainType::Ethereum => {
+                if let Some(token) = output_token_evm {
+                    self.message_for_evm_multicall_handler(amount, original_output_asset, token, user_address, referral_fee)
+                } else {
+                    (vec![], U256::from(0))
+                }
+            }
+            ChainType::Solana => (vec![], U256::from(0)),
+            _ => (vec![], U256::from(0)),
+        }
     }
 
     fn unwrap_weth_calls(
@@ -272,7 +291,7 @@ impl Across {
         amount: &U256,
         is_native: bool,
         input_asset: &AssetId,
-        output_token: &Address,
+        output_token: FixedBytes<32>,
         wallet_address: &Address,
         message: &[u8],
         deployment: &AcrossDeployment,
@@ -290,7 +309,6 @@ impl Across {
         };
         let recipient = Self::decode_address_bytes32(&recipient_evm);
         let input_token = Self::token_bytes32_for_chain(input_asset.chain, input_asset.token_id.as_deref())?;
-        let output_token = Self::decode_address_bytes32(output_token);
 
         let v3_relay_data = V3RelayData {
             depositor,
@@ -330,17 +348,17 @@ impl Across {
         user_address: &Address,
         output_amount: &U256,
         original_output_asset: &AssetId,
-        output_token: &Address,
+        output_token: Option<&Address>,
         timestamp: u32,
         referral_fee: &SwapReferralFee,
-    ) -> Result<(), SwapperError> {
-        let (message, _) = self.message_for_multicall_handler(output_amount, original_output_asset, output_token, user_address, referral_fee);
+    ) -> Result<U256, SwapperError> {
+        let (message, final_referral_fee) = self.message_for_multicall_handler(output_amount, original_output_asset, output_token, user_address, referral_fee);
 
         v3_relay_data.outputAmount = *output_amount;
         v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
         v3_relay_data.message = message.into();
 
-        Ok(())
+        Ok(final_referral_fee)
     }
 
     pub fn calculate_fee_in_token(fee_in_wei: &U256, token_price: &BigInt, token_decimals: u32) -> U256 {
@@ -372,7 +390,7 @@ impl Across {
         from_amount: &U256,
         input_is_native: bool,
         input_asset: &AssetId,
-        output_token: &Address,
+        output_token: FixedBytes<32>,
         wallet_address: &Address,
         message: &[u8],
         destination_deployment: &AcrossDeployment,
@@ -395,7 +413,7 @@ impl Across {
                 recipient: Self::decode_address_bytes32(&recipient_evm),
                 exclusiveRelayer: FixedBytes::from([0u8; 32]),
                 inputToken: Self::token_bytes32_for_chain(input_asset.chain, input_asset.token_id.as_deref())?,
-                outputToken: Self::decode_address_bytes32(output_token),
+                outputToken: output_token,
                 inputAmount: *from_amount,
                 outputAmount: U256::from(100), // safe amount
                 originChainId: U256::from(chain_id),
@@ -493,14 +511,14 @@ impl Swapper for Across {
         let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
         let wallet_address = eth_address::parse_str(&request.wallet_address)?;
 
-        let _from_deployment = AcrossDeployment::deployment_by_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
+        let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         if !Self::is_supported_pair(&request.from_asset.asset_id(), &request.to_asset.asset_id()) {
             return Err(SwapperError::NotSupportedPair);
         }
 
         let input_asset = eth_address::normalize_weth_asset(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
-        let (output_asset, output_token) = Self::get_output_asset_and_token(request)?;
+        let output_asset = Self::get_output_asset(request)?;
         let original_output_asset = request.to_asset.asset_id();
 
         // Get L1 token address
@@ -584,17 +602,28 @@ impl Swapper for Across {
         let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
 
         let remain_amount = from_amount - lpfee - relayer_fee;
-        let (message, referral_fee) =
-            self.message_for_multicall_handler(&remain_amount, &original_output_asset, &wallet_address, &output_token, &referral_config);
+        let output_token_evm = if request.to_asset.chain().chain_type() == ChainType::Ethereum {
+            Some(eth_address::parse_asset_id(&output_asset)?)
+        } else {
+            None
+        };
+        let (message, _estimation_referral_fee) = self.message_for_multicall_handler(
+            &remain_amount,
+            &original_output_asset,
+            output_token_evm.as_ref(),
+            &wallet_address,
+            &referral_config,
+        );
 
         let gas_chain = request.to_asset.chain();
+        let output_token_bytes = Self::token_bytes32_for_chain(output_asset.chain, output_asset.token_id.as_deref())?;
         let (gas_fee, mut v3_relay_data) = self
             .calculate_gas_price_and_fee(
                 gas_chain,
                 &from_amount,
                 input_is_native,
                 &input_asset,
-                &output_token,
+                output_token_bytes,
                 &wallet_address,
                 &message,
                 &destination_deployment,
@@ -610,17 +639,18 @@ impl Swapper for Across {
         }
 
         let output_amount = remain_amount - gas_fee;
-        let to_value = output_amount - referral_fee;
-
-        self.update_v3_relay_data(
+        // Update relay data and compute final referral fee inside the update method
+        let final_referral_fee = self.update_v3_relay_data(
             &mut v3_relay_data,
             &wallet_address,
             &output_amount,
             &original_output_asset,
-            &output_token,
+            output_token_evm.as_ref(),
             timestamp,
             &referral_config,
         )?;
+        let to_value = output_amount - final_referral_fee;
+
         let encoded_data = v3_relay_data.abi_encode();
         let route_data = HexEncode(encoded_data);
 
