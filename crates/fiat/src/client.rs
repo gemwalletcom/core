@@ -25,7 +25,13 @@ pub struct FiatClient {
 }
 
 impl FiatClient {
-    pub async fn new(database_url: &str, cacher: CacherClient, providers: Vec<Box<dyn FiatProvider + Send + Sync>>, ip_check_client: IPCheckClient, stream_producer: StreamProducer) -> Self {
+    pub async fn new(
+        database_url: &str,
+        cacher: CacherClient,
+        providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
+        ip_check_client: IPCheckClient,
+        stream_producer: StreamProducer,
+    ) -> Self {
         let database = DatabaseClient::new(database_url);
 
         Self {
@@ -94,7 +100,7 @@ impl FiatClient {
         webhook_data: serde_json::Value,
     ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
         let payload = self.webhook(provider_name, webhook_data).await?;
-        
+
         match self.stream_producer.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await {
             Ok(_) => Ok(payload),
             Err(e) => {
@@ -103,7 +109,6 @@ impl FiatClient {
             }
         }
     }
-
 
     fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
         let list = self

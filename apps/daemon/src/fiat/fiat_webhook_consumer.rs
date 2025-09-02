@@ -47,12 +47,13 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                 let transaction = provider.get_order_status(&order_id).await?;
 
                 println!(
-                    "Processing webhook for provider: {}, order_id: {}, status: {:?}, fiat_amount: {} {}",
+                    "Processing webhook for provider: {}, order_id: {}, symbol: {}, fiat_amount: {} {} status: {:?}",
                     provider.name().id(),
                     order_id,
-                    transaction.status,
+                    transaction.symbol,
                     transaction.fiat_amount,
-                    transaction.fiat_currency
+                    transaction.fiat_currency,
+                    transaction.status
                 );
 
                 self.database.fiat().add_fiat_transaction(transaction)?;
