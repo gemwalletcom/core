@@ -182,4 +182,28 @@ impl<C: Client + Clone> EthereumClient<C> {
         let params = json!([data]);
         self.client.call("eth_sendRawTransaction", params).await
     }
+
+    pub async fn batch_eth_call<const N: usize>(
+        &self,
+        contract_address: &str,
+        function_selectors: [&str; N],
+    ) -> Result<[String; N], Box<dyn std::error::Error + Sync + Send>> {
+        let calls: Vec<(String, serde_json::Value)> = function_selectors
+            .iter()
+            .map(|selector| ("eth_call".to_string(), json!([{"to": contract_address, "data": selector}, "latest"])))
+            .collect();
+
+        let results: Vec<String> = self
+            .client
+            .batch_call::<String>(calls)
+            .await?
+            .into_iter()
+            .map(|result| match result {
+                JsonRpcResult::Value(value) => Ok(value.result),
+                JsonRpcResult::Error(error) => Err(Box::new(error.error) as Box<dyn std::error::Error + Sync + Send>),
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        results.try_into().map_err(|_| "Array conversion failed".into())
+    }
 }
