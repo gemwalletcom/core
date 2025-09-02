@@ -331,15 +331,12 @@ impl Across {
             repaymentAddress: Self::decode_address_bytes32(wallet_address),
         }
         .abi_encode();
-        if chain.chain_type() == ChainType::Ethereum {
-            let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
-            let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await;
-            Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
-        } else if chain.chain_type() == ChainType::Solana {
-            Ok((U256::from(200_000), v3_relay_data))
-        } else {
-            Err(SwapperError::NotImplemented)
+        if chain.chain_type() != ChainType::Ethereum {
+            return Err(SwapperError::NotImplemented);
         }
+        let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
+        let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await;
+        Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
     }
 
     pub fn update_v3_relay_data(
@@ -639,7 +636,6 @@ impl Swapper for Across {
         }
 
         let output_amount = remain_amount - gas_fee;
-        // Update relay data and compute final referral fee inside the update method
         let final_referral_fee = self.update_v3_relay_data(
             &mut v3_relay_data,
             &wallet_address,
@@ -785,8 +781,15 @@ impl Swapper for Across {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gem_evm::{across::contracts::V3SpokePoolInterface::depositCall, multicall3::IMulticall3};
+    use gem_evm::{
+        across::contracts::{multicall_handler, V3SpokePoolInterface::depositCall},
+        erc20::IERC20,
+        multicall3::IMulticall3,
+        weth::WETH9,
+    };
     use primitives::asset_constants::*;
+    use crate::network::mock::AlienProviderMock;
+    use std::time::Duration;
 
     #[test]
     fn test_is_supported_pair() {
@@ -888,5 +891,168 @@ mod tests {
         let fee_in_token = Across::calculate_fee_in_token(&gas_fee, &price, 6);
 
         assert_eq!(fee_in_token.to_string(), "6243790");
+    }
+
+    #[test]
+    fn test_message_for_multicall_handler_eth_to_base() {
+        // ETH from Ethereum to Base (destination native -> unwrap WETH)
+        let across = Across::default();
+        let amount = U256::from_str("1000000000000000000").unwrap(); // 1 ETH
+
+        // Destination is Base native ETH
+        let original_output_asset = AssetId::from(Chain::Base, None);
+        let output_token_evm = Address::from_str("0x4200000000000000000000000000000000000006").unwrap(); // Base WETH
+        let user_address = Address::from_str("0x1111111111111111111111111111111111111111").unwrap();
+        let fee_address_str = "0x2222222222222222222222222222222222222222";
+        let referral_fee = SwapReferralFee {
+            address: fee_address_str.into(),
+            bps: 100, // 1%
+        };
+
+        let (message, fee_amount) = across.message_for_multicall_handler(
+            &amount,
+            &original_output_asset,
+            Some(&output_token_evm),
+            &user_address,
+            &referral_fee,
+        );
+
+        // Validate fee math
+        let expected_fee = amount * U256::from(100u64) / U256::from(10000u64);
+        let expected_user_amount = amount - expected_fee;
+        assert_eq!(fee_amount, expected_fee);
+
+        // Decode and validate instructions
+        let instructions = multicall_handler::Instructions::abi_decode(&message).unwrap();
+        assert_eq!(instructions.fallbackRecipient, user_address);
+        assert_eq!(instructions.calls.len(), 3);
+
+        // Call[0]: WETH.withdraw(amount)
+        let expected_withdraw = WETH9::withdrawCall { wad: amount }.abi_encode();
+        assert_eq!(instructions.calls[0].target, output_token_evm);
+        assert_eq!(instructions.calls[0].callData, Bytes::from(expected_withdraw));
+        assert_eq!(instructions.calls[0].value, U256::from(0));
+
+        // Call[1]: send ETH to user
+        assert_eq!(instructions.calls[1].target, user_address);
+        assert!(instructions.calls[1].callData.is_empty());
+        assert_eq!(instructions.calls[1].value, expected_user_amount);
+
+        // Call[2]: send ETH to referral address
+        let fee_address = Address::from_str(fee_address_str).unwrap();
+        assert_eq!(instructions.calls[2].target, fee_address);
+        assert!(instructions.calls[2].callData.is_empty());
+        assert_eq!(instructions.calls[2].value, expected_fee);
+    }
+
+    #[test]
+    fn test_message_for_multicall_handler_usdc_arb_to_op() {
+        // USDC from Arbitrum to Optimism (destination ERC20 -> transfer calls)
+        let across = Across::default();
+        let amount = U256::from(1_000_000u64); // 1 USDC (6 decimals)
+
+        // Destination is Optimism USDC (ERC20)
+        let original_output_asset: AssetId = USDC_OP_ASSET_ID.into();
+        let output_token_evm = Address::from_str("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85").unwrap(); // OP USDC
+        let user_address = Address::from_str("0x1111111111111111111111111111111111111111").unwrap();
+        let fee_address_str = "0x2222222222222222222222222222222222222222";
+        let referral_fee = SwapReferralFee {
+            address: fee_address_str.into(),
+            bps: 100, // 1%
+        };
+
+        let (message, fee_amount) = across.message_for_multicall_handler(
+            &amount,
+            &original_output_asset,
+            Some(&output_token_evm),
+            &user_address,
+            &referral_fee,
+        );
+
+        // Validate fee math
+        let expected_fee = amount * U256::from(100u64) / U256::from(10000u64);
+        let expected_user_amount = amount - expected_fee;
+        assert_eq!(fee_amount, expected_fee);
+
+        // Decode and validate instructions
+        let instructions = multicall_handler::Instructions::abi_decode(&message).unwrap();
+        assert_eq!(instructions.fallbackRecipient, user_address);
+        assert_eq!(instructions.calls.len(), 2);
+
+        // Call[0]: IERC20.transfer(user, user_amount)
+        let user_transfer = IERC20::transferCall { to: user_address, value: expected_user_amount }.abi_encode();
+        assert_eq!(instructions.calls[0].target, output_token_evm);
+        assert_eq!(instructions.calls[0].callData, Bytes::from(user_transfer));
+        assert_eq!(instructions.calls[0].value, U256::from(0));
+
+        // Call[1]: IERC20.transfer(fee_address, fee_amount)
+        let fee_address = Address::from_str(fee_address_str).unwrap();
+        let fee_transfer = IERC20::transferCall { to: fee_address, value: expected_fee }.abi_encode();
+        assert_eq!(instructions.calls[1].target, output_token_evm);
+        assert_eq!(instructions.calls[1].callData, Bytes::from(fee_transfer));
+        assert_eq!(instructions.calls[1].value, U256::from(0));
+    }
+
+    
+
+    #[tokio::test]
+    async fn test_estimate_gas_limit_evm_with_mock_and_recipient_selection() {
+        // Mock EVM gas estimation response and verify recipient selection
+        let across = Across::default();
+        let amount = U256::from(12345u64);
+        let input_asset = AssetId::from(Chain::Ethereum, None);
+        let output_token = Across::token_bytes32_for_chain(Chain::Optimism, Some("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85")) // OP USDC
+            .unwrap();
+        let wallet_address = Address::from_str("0x1111111111111111111111111111111111111111").unwrap();
+        let deployment = AcrossDeployment::deployment_by_chain(&Chain::Optimism).unwrap();
+
+        // Build a mock provider that always returns a valid JSON-RPC result for gas estimation
+        let provider = Arc::new(AlienProviderMock {
+            response: crate::network::mock::MockFn(Box::new(|_target| {
+                // JsonRpcResult<String> matching client.request expectation
+                "{\"id\":1,\"result\":\"0x5208\"}".to_string() // 21000
+            })),
+            timeout: Duration::from_millis(50),
+        });
+
+        // Case 1: empty message -> recipient is user address
+        let (gas_limit, v3_relay_data) = across
+            .estimate_gas_limit(
+                &amount,
+                true,
+                &input_asset,
+                output_token,
+                &wallet_address,
+                &[],
+                &deployment,
+                provider.clone(),
+                Chain::Optimism,
+            )
+            .await
+            .unwrap();
+        assert_eq!(gas_limit, U256::from(21000u64));
+        let expected_recipient_user = Across::decode_address_bytes32(&wallet_address);
+        assert_eq!(v3_relay_data.recipient, expected_recipient_user);
+
+        // Case 2: non-empty message -> recipient is multicall handler address
+        let message = vec![0x01];
+        let (gas_limit2, v3_relay_data2) = across
+            .estimate_gas_limit(
+                &amount,
+                true,
+                &input_asset,
+                output_token,
+                &wallet_address,
+                &message,
+                &deployment,
+                provider,
+                Chain::Optimism,
+            )
+            .await
+            .unwrap();
+        assert_eq!(gas_limit2, U256::from(21000u64));
+        let multicall_addr = Address::from_str(deployment.multicall_handler().as_str()).unwrap();
+        let expected_recipient_mc = Across::decode_address_bytes32(&multicall_addr);
+        assert_eq!(v3_relay_data2.recipient, expected_recipient_mc);
     }
 }
