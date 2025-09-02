@@ -64,7 +64,7 @@ impl FiatProvider for MoonPayClient {
     }
 
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = self.get_transaction(order_id).await?;
+        let payload = self.get_any_transaction(order_id).await?;
         map_order(payload)
     }
 

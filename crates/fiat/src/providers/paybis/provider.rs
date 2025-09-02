@@ -6,7 +6,7 @@ use crate::{
 use async_trait::async_trait;
 use std::error::Error;
 
-use super::{client::PaybisClient, models::PaybisWebhook, mapper::map_order_from_response};
+use super::{client::PaybisClient, mapper::map_order_from_response, models::PaybisWebhook};
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 
 #[async_trait]
@@ -60,9 +60,7 @@ impl FiatProvider for PaybisClient {
 
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let response = self.get_transaction(order_id).await?;
-        let transaction = response.transactions.into_iter()
-            .next()
-            .ok_or("Transaction not found")?;
+        let transaction = response.transactions.into_iter().next().ok_or("Transaction not found")?;
         map_order_from_response(transaction)
     }
 

@@ -39,4 +39,3 @@ mod chain_integration_tests {
         Ok(())
     }
 }
-

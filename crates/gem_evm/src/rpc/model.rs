@@ -62,10 +62,10 @@ impl TransactionReciept {
     }
 
     pub fn get_state(&self) -> TransactionState {
-        if self.status == "0x1" {
-            TransactionState::Confirmed
-        } else {
-            TransactionState::Failed
+        match self.status.as_str() {
+            "0x1" => TransactionState::Confirmed,
+            "0x0" => TransactionState::Reverted,
+            _ => TransactionState::Pending,
         }
     }
 }

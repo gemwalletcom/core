@@ -9,7 +9,6 @@ use serde_json::json;
 use std::any::TypeId;
 use std::str::FromStr;
 
-
 use crate::rpc::model::{BlockTransactionsIds, TransactionReplayTrace};
 
 use super::model::{Block, Transaction, TransactionReciept};
@@ -136,6 +135,11 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(receipts)
     }
 
+    pub async fn get_transaction_receipt(&self, hash: &str) -> Result<TransactionReciept, JsonRpcError> {
+        let params = json!([hash]);
+        self.client.call("eth_getTransactionReceipt", params).await
+    }
+
     pub async fn trace_replay_block_transactions(&self, block_number: i64) -> Result<Vec<TransactionReplayTrace>, JsonRpcError> {
         let params = json!([format!("0x{:x}", block_number), json!(["stateDiff"])]);
         self.client.call("trace_replayBlockTransactions", params).await
@@ -168,5 +172,38 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_block_number(&self) -> Result<String, anyhow::Error> {
         Ok(self.client.call("eth_blockNumber", json!([])).await?)
     }
-}
 
+    pub async fn get_transaction_count(&self, address: &str) -> Result<String, anyhow::Error> {
+        let params = json!([address, "latest"]);
+        Ok(self.client.call("eth_getTransactionCount", params).await?)
+    }
+
+    pub async fn send_raw_transaction(&self, data: &str) -> Result<String, JsonRpcError> {
+        let params = json!([data]);
+        self.client.call("eth_sendRawTransaction", params).await
+    }
+
+    pub async fn batch_eth_call<const N: usize>(
+        &self,
+        contract_address: &str,
+        function_selectors: [&str; N],
+    ) -> Result<[String; N], Box<dyn std::error::Error + Sync + Send>> {
+        let calls: Vec<(String, serde_json::Value)> = function_selectors
+            .iter()
+            .map(|selector| ("eth_call".to_string(), json!([{"to": contract_address, "data": selector}, "latest"])))
+            .collect();
+
+        let results: Vec<String> = self
+            .client
+            .batch_call::<String>(calls)
+            .await?
+            .into_iter()
+            .map(|result| match result {
+                JsonRpcResult::Value(value) => Ok(value.result),
+                JsonRpcResult::Error(error) => Err(Box::new(error.error) as Box<dyn std::error::Error + Sync + Send>),
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        results.try_into().map_err(|_| "Array conversion failed".into())
+    }
+}

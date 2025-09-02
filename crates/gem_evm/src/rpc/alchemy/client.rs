@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::rpc::alchemy::{
     model::{evm_chain_to_network, Data},
-    Transactions, TokenBalances,
+    TokenBalances, Transactions,
 };
 use gem_client::{Client, ContentType, CONTENT_TYPE};
 use primitives::EVMChain;
@@ -28,11 +28,7 @@ impl<C: Client + Clone> AlchemyClient<C> {
     pub fn new(client: C, chain: EVMChain, api_key: String) -> Self {
         let url = format!("https://api.g.alchemy.com/data/v1/{api_key}");
 
-        Self {
-            chain,
-            url,
-            client,
-        }
+        Self { chain, url, client }
     }
 
     pub async fn get_transactions_ids_by_address(&self, address: &str) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {

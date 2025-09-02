@@ -20,9 +20,7 @@ mod tests {
 
     #[test]
     fn test_map_gas_price_to_priorities() {
-        let gas_price = GasPrice {
-            gas_price: 1000000000,
-        };
+        let gas_price = GasPrice { gas_price: 1000000000 };
 
         let result = map_gas_price_to_priorities(&gas_price).unwrap();
         assert_eq!(result.len(), 3);

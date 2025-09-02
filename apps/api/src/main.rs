@@ -78,7 +78,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
-    let fiat_client = FiatClient::new(postgres_url, cacher_client.clone(), providers, ip_check_client).await;
+    let fiat_client = FiatClient::new(postgres_url, cacher_client.clone(), providers, ip_check_client, stream_producer.clone()).await;
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(postgres_url, nft_config).await;
     let markets_client = MarketsClient::new(postgres_url, cacher_client);
@@ -109,7 +109,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(chain_client))
         .manage(Mutex::new(markets_client))
-        .manage(Mutex::new(stream_producer))
         .mount("/", routes![status::get_status])
         .mount(
             "/v1",

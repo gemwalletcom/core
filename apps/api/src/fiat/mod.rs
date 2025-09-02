@@ -3,8 +3,8 @@ use std::str::FromStr;
 pub use fiat::{FiatClient, FiatProviderFactory};
 
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
-use streamer::FiatWebhookPayload;
 use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
+use streamer::FiatWebhookPayload;
 
 // on ramp
 
@@ -91,26 +91,9 @@ pub async fn get_fiat_off_ramp_assets(fiat_client: &State<Mutex<FiatClient>>) ->
 }
 
 #[post("/fiat/webhooks/<provider>", data = "<webhook_data>")]
-pub async fn create_fiat_webhook(
-    provider: &str,
-    webhook_data: Json<serde_json::Value>,
-    fiat_client: &State<Mutex<FiatClient>>,
-    stream_producer: &State<Mutex<streamer::StreamProducer>>,
-) -> Json<FiatWebhookPayload> {
-    let data = webhook_data.0;
-    println!("webhook from provider: {} | data: {}", provider, data);
-
-    let payload = fiat_client.lock().await.webhook(provider, data).await.unwrap();
-
-    println!("webhook from provider: {} | payload: {}", provider, payload);
-
-    match stream_producer.lock().await.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await {
-        Ok(_) => Json(payload),
-        Err(e) => {
-            println!("Failed to send webhook to queue: {}", e);
-            Json(FiatWebhookPayload::new(primitives::FiatProviderName::MoonPay, serde_json::Value::String("".to_string())))
-        }
-    }
+pub async fn create_fiat_webhook(provider: &str, webhook_data: Json<serde_json::Value>, fiat_client: &State<Mutex<FiatClient>>) -> Json<FiatWebhookPayload> {
+    let payload = fiat_client.lock().await.process_and_publish_webhook(provider, webhook_data.0).await.unwrap();
+    Json(payload)
 }
 
 #[get("/fiat/orders/<provider>/<order_id>")]

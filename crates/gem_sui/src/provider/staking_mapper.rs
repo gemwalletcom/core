@@ -1,5 +1,5 @@
-use crate::models::RpcSuiSystemState;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
+use crate::models::RpcSuiSystemState;
 use chrono::{DateTime, Utc};
 use num_bigint::BigInt;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, StakeValidator};

@@ -1,0 +1,39 @@
+{
+    "status": 200,
+    "total": 1,
+    "next": null,
+    "prev": null,
+    "data": [
+        {
+            "mobile_pay": {
+                "id": "0e6f5aaa12c783830",
+                "transaction_id": "0e6f5aaa17cb66612",
+                "widget_id": "e852c142-3718-47e7-a6fc-3fd58a87d85c",
+                "merchant_transaction_id": "036fecc9-0b73-4875-bd6f-2b868e30cf55",
+                "fiat_currency": "USD",
+                "fiat_amount": "20.00",
+                "currency": "TON",
+                "amount": "5.710288210",
+                "status": "paid",
+                "created_at": "2025-08-31 23:52:15",
+                "updated_at": "2025-08-31 23:52:25",
+                "payment_method": "google",
+                "card_country": null
+            },
+            "withdraw": {
+                "id": "0e6f5ab8ed8670995",
+                "transaction_id": "0e6f5aaa17cb66612",
+                "widget_id": "e852c142-3718-47e7-a6fc-3fd58a87d85c",
+                "merchant_transaction_id": "036fecc9-0b73-4875-bd6f-2b868e30cf55",
+                "hash": "0x",
+                "url": "https://tonscan.org/tx/0x",
+                "address": "UQByrYTVrJMttx88DbubyjV4nKy3waokfenb4QGJOP55Nn99",
+                "currency": "TON",
+                "amount": "5.710288210",
+                "status": "completed",
+                "created_at": "2025-08-31 23:52:24",
+                "updated_at": "2025-08-31 23:55:56"
+            }
+        }
+    ]
+}
