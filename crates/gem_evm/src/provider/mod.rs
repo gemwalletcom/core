@@ -1,10 +1,12 @@
 pub mod accounts;
 pub mod balances;
 pub mod balances_mapper;
+pub mod balances_smartchain;
 pub mod preload;
 pub mod preload_mapper;
 pub mod staking;
 pub mod staking_mapper;
+pub mod staking_smartchain;
 pub mod state;
 pub mod testkit;
 pub mod token;
