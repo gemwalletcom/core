@@ -60,9 +60,9 @@ impl NFTClient {
 
         let mut collections = Vec::new();
         for collection_id in missing_collection_ids {
-            match self.nft.get_collection(collection_id).await {
+            match self.nft.get_collection(collection_id.clone()).await {
                 Ok(collection) => collections.push(collection),
-                Err(e) => println!("nft preload collection error: {e}"),
+                Err(e) => println!("nft preload collection {} error: {e}", collection_id.id()),
             }
         }
         let new_collections = collections.clone().into_iter().map(storage::models::NftCollection::from_primitive).collect();

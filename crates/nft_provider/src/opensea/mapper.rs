@@ -1,5 +1,5 @@
 use gem_evm::ethereum_address_checksum;
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType};
+use primitives::{AssetLink, Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType};
 
 use super::model::{Collection, Nft, NftAsset, Trait};
 
@@ -59,23 +59,33 @@ impl Collection {
             id: collection.id(),
             name: self.name.clone(),
             symbol: Some(self.collection.clone()),
-            description: Some(self.description.clone()),
+            description: self.description.clone(),
             chain: collection.chain,
             contract_address: collection.contract_address.clone(),
             images: NFTImages {
-                preview: NFTResource::from_url(&self.image_url),
+                preview: NFTResource::from_url(self.image_url.as_deref().unwrap_or("")),
             },
             links: self.as_links(),
             is_verified: true,
         }
     }
 
-    pub fn as_links(&self) -> Vec<primitives::AssetLink> {
-        vec![
-            primitives::AssetLink::new(self.opensea_url.as_str(), LinkType::OpenSea),
-            primitives::AssetLink::new(self.project_url.as_str(), LinkType::Website),
-            primitives::AssetLink::new(self.discord_url.as_str(), LinkType::Discord),
-            primitives::AssetLink::new(self.telegram_url.as_str(), LinkType::Telegram),
-        ]
+    pub fn as_links(&self) -> Vec<AssetLink> {
+        let mut links = Vec::new();
+        
+        if let Some(opensea_url) = &self.opensea_url {
+            links.push(AssetLink::new(opensea_url.as_str(), LinkType::OpenSea));
+        }
+        if let Some(project_url) = &self.project_url {
+            links.push(AssetLink::new(project_url.as_str(), LinkType::Website));
+        }
+        if let Some(discord_url) = &self.discord_url {
+            links.push(AssetLink::new(discord_url.as_str(), LinkType::Discord));
+        }
+        if let Some(telegram_url) = &self.telegram_url {
+            links.push(AssetLink::new(telegram_url.as_str(), LinkType::Telegram));
+        }
+        
+        links
     }
 }
