@@ -208,7 +208,7 @@ Direct repository access methods available on DatabaseClient:
 - Use realistic contract addresses (USDC, etc.) for eth_call testing
 
 ### Code Formatting and Commits
-- **ALWAYS run `just format` before committing code**
+- **ALWAYS run `just lint` before committing code**
 - The formatter will automatically fix formatting issues across all crates
 - This ensures consistent code style throughout the workspace
 - Commit messages should be descriptive and follow conventional commit format

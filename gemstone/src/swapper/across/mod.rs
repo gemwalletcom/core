@@ -1,6 +1,5 @@
 pub mod provider;
 pub use provider::Across;
-mod address_type;
 pub mod api;
 pub mod config_store;
 pub mod hubpool;

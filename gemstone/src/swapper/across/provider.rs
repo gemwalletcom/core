@@ -1,4 +1,3 @@
-pub(crate) use super::address_type::AddressType;
 use super::{
     api::AcrossApi,
     config_store::{ConfigStoreClient, TokenConfig},
@@ -22,12 +21,13 @@ use crate::{
 };
 use alloy_primitives::{
     hex::{decode as HexDecode, encode_prefixed as HexEncode},
-    Address, Bytes, U256,
+    Address, Bytes, FixedBytes, U256,
 };
 use alloy_sol_types::{SolCall, SolValue};
 
 use crate::network::jsonrpc_client_with_chain;
 use async_trait::async_trait;
+use bs58;
 use gem_evm::{
     across::{
         contracts::{
@@ -99,97 +99,33 @@ impl Across {
             .any(|x| x.set.contains(&from) && x.set.contains(&to))
     }
 
-    fn get_address_type_for_chain(chain: Chain, token_id: Option<&str>) -> AddressType {
+    fn decode_address_bytes32(addr: &Address) -> FixedBytes<32> {
+        let mut bytes = [0u8; 32];
+        bytes[12..32].copy_from_slice(addr.as_slice());
+        FixedBytes::from(bytes)
+    }
+
+    fn decode_bs58_bytes32(addr: &str) -> Result<FixedBytes<32>, SwapperError> {
+        let decoded = bs58::decode(addr).into_vec().map_err(|_| SwapperError::InvalidAddress(addr.to_string()))?;
+        if decoded.len() != 32 {
+            return Err(SwapperError::InvalidAddress(addr.to_string()));
+        }
+        let bytes: [u8; 32] = decoded.try_into().map_err(|_| SwapperError::InvalidAddress(addr.to_string()))?;
+        Ok(FixedBytes::from(bytes))
+    }
+
+    fn token_bytes32_for_chain(chain: Chain, token_id: Option<&str>) -> Result<FixedBytes<32>, SwapperError> {
         match chain.chain_type() {
-            ChainType::Solana => AddressType::Solana(token_id.expect("token_id must be present for Solana assets").to_string()),
-            ChainType::Ethereum => {
-                let address = if let Some(id) = token_id {
-                    Address::from_str(id).unwrap_or(Address::ZERO)
-                } else {
-                    Address::ZERO
-                };
-                AddressType::Evm(address)
+            ChainType::Solana => {
+                let id = token_id.ok_or_else(|| SwapperError::InvalidAddress("missing token_id for Solana".into()))?;
+                Self::decode_bs58_bytes32(id)
             }
-            _ => todo!(),
+            ChainType::Ethereum => {
+                let id = token_id.unwrap_or("0x0000000000000000000000000000000000000000");
+                Ok(Self::decode_address_bytes32(&Address::from_str(id).unwrap()))
+            }
+            _ => Err(SwapperError::NotImplemented),
         }
-    }
-
-    fn decode_v3_relay_data(encoded_data: &[u8], request: &SwapperQuoteRequest) -> Result<V3RelayData, SwapperError> {
-        let from_chain = request.from_asset.chain();
-        let to_chain = request.to_asset.chain();
-
-        if from_chain != Chain::Solana && to_chain != Chain::Solana {
-            return V3RelayData::abi_decode(encoded_data).map_err(|_| SwapperError::InvalidRoute);
-        }
-
-        // For cross-chain with Solana, we need to fix the addresses before decoding
-        let mut decode_data = encoded_data.to_vec();
-
-        // V3RelayData struct fields in order:
-        // 0: depositor (32 bytes)
-        // 1: recipient (32 bytes)
-        // 2: exclusiveRelayer (32 bytes)
-        // 3: inputToken (32 bytes) <- fix if from Solana
-        // 4: outputToken (32 bytes) <- fix if to Solana
-        let input_token_offset = 3 * 32;
-        let output_token_offset = 4 * 32;
-
-        // Convert Solana addresses back to EVM-compatible format for decoding
-        // Fix inputToken if from Solana
-        if from_chain == Chain::Solana && decode_data.len() >= input_token_offset + 32 {
-            // Replace with zero address for decoding compatibility
-            let zero_addr_bytes = [0u8; 32];
-            decode_data[input_token_offset..input_token_offset + 32].copy_from_slice(&zero_addr_bytes);
-        }
-
-        // Fix outputToken if to Solana
-        if to_chain == Chain::Solana && decode_data.len() >= output_token_offset + 32 {
-            // Replace with zero address for decoding compatibility
-            let zero_addr_bytes = [0u8; 32];
-            decode_data[output_token_offset..output_token_offset + 32].copy_from_slice(&zero_addr_bytes);
-        }
-
-        V3RelayData::abi_decode(&decode_data).map_err(|_| SwapperError::InvalidRoute)
-    }
-
-    fn encode_v3_relay_data(relay_data: &V3RelayData, request: &SwapperQuoteRequest) -> Result<Vec<u8>, SwapperError> {
-        let from_chain = request.from_asset.chain();
-        let to_chain = request.to_asset.chain();
-
-        // If no Solana involved, use standard encoding
-        if from_chain != Chain::Solana && to_chain != Chain::Solana {
-            return Ok(relay_data.abi_encode());
-        }
-
-        // Start with standard encoding and fix the addresses
-        let mut encoded_data = relay_data.abi_encode();
-
-        // V3RelayData struct fields in order:
-        // 0: depositor (32 bytes)
-        // 1: recipient (32 bytes)
-        // 2: exclusiveRelayer (32 bytes)
-        // 3: inputToken (32 bytes) <- fix if from Solana
-        // 4: outputToken (32 bytes) <- fix if to Solana
-        let input_token_offset = 3 * 32;
-        let output_token_offset = 4 * 32;
-
-        // Fix inputToken if from Solana
-        if from_chain == Chain::Solana && encoded_data.len() >= input_token_offset + 32 {
-            let from_asset_id = request.from_asset.asset_id();
-            let input_addr_type = Self::get_address_type_for_chain(from_chain, from_asset_id.token_id.as_deref());
-            let input_bytes = input_addr_type.to_bytes32()?;
-            encoded_data[input_token_offset..input_token_offset + 32].copy_from_slice(&input_bytes);
-        }
-
-        // Fix outputToken if to Solana
-        if to_chain == Chain::Solana && encoded_data.len() >= output_token_offset + 32 {
-            let to_asset_id = request.to_asset.asset_id();
-            let output_addr_type = Self::get_address_type_for_chain(to_chain, to_asset_id.token_id.as_deref());
-            let output_bytes = output_addr_type.to_bytes32()?;
-            encoded_data[output_token_offset..output_token_offset + 32].copy_from_slice(&output_bytes);
-        }
-
-        Ok(encoded_data)
     }
 
     fn is_solana_destination(request: &SwapperQuoteRequest) -> bool {
@@ -198,8 +134,6 @@ impl Across {
 
     fn get_output_asset_and_token(request: &SwapperQuoteRequest) -> Result<(AssetId, Address), SwapperError> {
         if Self::is_solana_destination(request) {
-            // For Solana, keep original asset ID and use a placeholder address
-            // The actual full 32-byte Solana address will be inserted during encoding
             let solana_output_asset = request.to_asset.asset_id();
             let placeholder_address = Address::ZERO;
             Ok((solana_output_asset, placeholder_address))
@@ -347,30 +281,36 @@ impl Across {
     ) -> Result<(U256, V3RelayData), SwapperError> {
         let chain_id = Self::get_destination_chain_id(&chain)?;
 
-        let recipient = if message.is_empty() {
+        // Prepare bytes32 fields
+        let depositor = Self::decode_address_bytes32(wallet_address);
+        let recipient_evm = if message.is_empty() {
             *wallet_address
         } else {
             Address::from_str(deployment.multicall_handler().as_str()).unwrap()
         };
+        let recipient = Self::decode_address_bytes32(&recipient_evm);
+        let input_token = Self::token_bytes32_for_chain(input_asset.chain, input_asset.token_id.as_deref())?;
+        let output_token = Self::decode_address_bytes32(output_token);
 
         let v3_relay_data = V3RelayData {
-            depositor: *wallet_address,
+            depositor,
             recipient,
-            exclusiveRelayer: Address::ZERO,
-            inputToken: Address::from_str(input_asset.token_id.clone().unwrap().as_ref()).unwrap(),
-            outputToken: *output_token,
+            exclusiveRelayer: FixedBytes::from([0u8; 32]),
+            inputToken: input_token,
+            outputToken: output_token,
             inputAmount: *amount,
             outputAmount: U256::from(100), // safe amount
             originChainId: U256::from(chain_id),
-            depositId: u32::MAX,
+            depositId: U256::from(u32::MAX),
             fillDeadline: u32::MAX,
             exclusivityDeadline: 0,
             message: Bytes::from(message.to_vec()),
         };
         let value = if is_native { format!("{amount:#x}") } else { String::from("0x0") };
-        let data = V3SpokePoolInterface::fillV3RelayCall {
+        let data = V3SpokePoolInterface::fillRelayCall {
             relayData: v3_relay_data.clone(),
             repaymentChainId: U256::from(chain_id),
+            repaymentAddress: Self::decode_address_bytes32(wallet_address),
         }
         .abi_encode();
         if chain.chain_type() == ChainType::Ethereum {
@@ -445,21 +385,21 @@ impl Across {
             let gas_fee = DEFAULT_SOLANA_COMPUTE_LIMIT * unit_price;
 
             let chain_id = Self::get_destination_chain_id(&gas_chain)?;
-            let recipient = if message.is_empty() {
+            let recipient_evm = if message.is_empty() {
                 *wallet_address
             } else {
                 Address::from_str(destination_deployment.multicall_handler().as_str()).unwrap()
             };
             let v3_relay_data = V3RelayData {
-                depositor: *wallet_address,
-                recipient,
-                exclusiveRelayer: Address::ZERO,
-                inputToken: Address::from_str(input_asset.token_id.clone().unwrap().as_ref()).unwrap(),
-                outputToken: *output_token,
+                depositor: Self::decode_address_bytes32(wallet_address),
+                recipient: Self::decode_address_bytes32(&recipient_evm),
+                exclusiveRelayer: FixedBytes::from([0u8; 32]),
+                inputToken: Self::token_bytes32_for_chain(input_asset.chain, input_asset.token_id.as_deref())?,
+                outputToken: Self::decode_address_bytes32(output_token),
                 inputAmount: *from_amount,
                 outputAmount: U256::from(100), // safe amount
                 originChainId: U256::from(chain_id),
-                depositId: u32::MAX,
+                depositId: U256::from(u32::MAX),
                 fillDeadline: u32::MAX,
                 exclusivityDeadline: 0,
                 message: Bytes::from(message.to_vec()),
@@ -540,17 +480,14 @@ impl Swapper for Across {
     }
 
     async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
-        // does not support same chain swap
         if request.from_asset.chain() == request.to_asset.chain() {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        // Check for SOLANA -> EVM case (not supported yet)
         if request.from_asset.chain() == Chain::Solana {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        // Continue with EVM -> EVM logic
         let input_is_native = request.from_asset.is_native();
         let from_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
@@ -582,18 +519,15 @@ impl Swapper for Across {
         ];
         let results = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls).await?;
 
-        // Check if protocol is paused
         let is_paused = hubpool_client.decoded_paused_call3(&results[0])?;
         if is_paused {
             return Err(SwapperError::ComputeQuoteError("Across protocol is paused".into()));
         }
 
-        // Check bridge amount is too large (Across API has some limit in USD amount but we don't have that info)
         if from_amount > hubpool_client.decoded_pooled_token_call3(&results[2])?.liquidReserves {
             return Err(SwapperError::ComputeQuoteError("Bridge amount is too large".into()));
         }
 
-        // Prepare data for lp fee calculation (token config, utilization, current time)
         let token_config_req = config_client.fetch_config(&mainnet_token); // cache is used inside config_client
         let mut calls = vec![
             hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
@@ -633,26 +567,22 @@ impl Swapper for Across {
         let rate_model = Self::get_rate_model(&input_asset, &output_asset, &token_config);
         let cost_config = &asset_mapping.capital_cost;
 
-        // Calculate lp fee
         let lpfee_calc = LpFeeCalculator::new(rate_model);
         let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
         let lpfee = fees::multiply(from_amount, lpfee_percent, cost_config.decimals);
         debug_println!("lpfee: {}", lpfee);
 
-        // Get SOL price if this is a Solana destination
         let sol_price = if let Some(index) = sol_price_index {
             Some(ChainlinkPriceFeed::decoded_answer(&multicall_results[index])?)
         } else {
             None
         };
 
-        // Calculate relayer fee
         let relayer_fee = Self::calculate_relayer_fee_for_destination(request, from_amount, cost_config, sol_price.as_ref());
         debug_println!("relayer_fee: {}", relayer_fee);
 
         let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
 
-        // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
         let (message, referral_fee) =
             self.message_for_multicall_handler(&remain_amount, &original_output_asset, &wallet_address, &output_token, &referral_config);
@@ -675,7 +605,6 @@ impl Swapper for Across {
             .await?;
         debug_println!("gas_fee: {}", gas_fee);
 
-        // Check if bridge amount is too small
         if remain_amount < gas_fee {
             return Err(SwapperError::InputAmountTooSmall);
         }
@@ -683,7 +612,6 @@ impl Swapper for Across {
         let output_amount = remain_amount - gas_fee;
         let to_value = output_amount - referral_fee;
 
-        // Update v3 relay data with final amounts
         self.update_v3_relay_data(
             &mut v3_relay_data,
             &wallet_address,
@@ -693,8 +621,7 @@ impl Swapper for Across {
             timestamp,
             &referral_config,
         )?;
-        // Encode V3RelayData with proper cross-chain address handling
-        let encoded_data = Self::encode_v3_relay_data(&v3_relay_data, request)?;
+        let encoded_data = v3_relay_data.abi_encode();
         let route_data = HexEncode(encoded_data);
 
         Ok(SwapperQuote {
@@ -721,17 +648,37 @@ impl Swapper for Across {
         let dst_chain_id = Self::get_destination_chain_id(&quote.request.to_asset.chain())?;
         let route = &quote.data.routes[0];
         let route_data = HexDecode(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let v3_relay_data = Self::decode_v3_relay_data(&route_data, &quote.request)?;
+        let v3_relay_data = V3RelayData::abi_decode(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
-        let deposit_v3_call = V3SpokePoolInterface::depositV3Call {
-            depositor: v3_relay_data.depositor,
-            recipient: v3_relay_data.recipient,
-            inputToken: v3_relay_data.inputToken,
-            outputToken: v3_relay_data.outputToken,
+        let depositor = Self::decode_address_bytes32(&eth_address::parse_str(&quote.request.wallet_address)?);
+        let recipient = if quote.request.to_asset.chain() == Chain::Solana {
+            Self::decode_bs58_bytes32(&quote.request.destination_address)?
+        } else {
+            let recipient_evm = if v3_relay_data.message.is_empty() {
+                eth_address::parse_str(&quote.request.wallet_address)?
+            } else {
+                Address::from_str(deployment.multicall_handler().as_str()).unwrap()
+            };
+            Self::decode_address_bytes32(&recipient_evm)
+        };
+
+        // input token uses bytes32 (EVM padded or Solana raw depending on origin chain)
+        let input_asset_id = quote.request.from_asset.asset_id();
+        let input_token = Self::token_bytes32_for_chain(quote.request.from_asset.chain(), input_asset_id.token_id.as_deref())?;
+
+        // output token may be EVM or Solana depending on destination chain
+        let to_asset_id = quote.request.to_asset.asset_id();
+        let output_token = Self::token_bytes32_for_chain(quote.request.to_asset.chain(), to_asset_id.token_id.as_deref())?;
+
+        let deposit_v3_call = V3SpokePoolInterface::depositCall {
+            depositor,
+            recipient,
+            inputToken: input_token,
+            outputToken: output_token,
             inputAmount: v3_relay_data.inputAmount,
             outputAmount: v3_relay_data.outputAmount,
             destinationChainId: U256::from(dst_chain_id),
-            exclusiveRelayer: Address::ZERO,
+            exclusiveRelayer: FixedBytes::from([0u8; 32]),
             quoteTimestamp: v3_relay_data.fillDeadline - DEFAULT_FILL_TIMEOUT,
             fillDeadline: v3_relay_data.fillDeadline,
             exclusivityDeadline: 0,
@@ -748,7 +695,7 @@ impl Swapper for Across {
             } else {
                 check_approval_erc20(
                     quote.request.wallet_address.clone(),
-                    v3_relay_data.inputToken.to_string(),
+                    eth_address::parse_asset_id(&quote.request.from_asset.asset_id())?.to_string(),
                     deployment.spoke_pool.into(),
                     v3_relay_data.inputAmount,
                     provider.clone(),
@@ -808,7 +755,7 @@ impl Swapper for Across {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gem_evm::multicall3::IMulticall3;
+    use gem_evm::{across::contracts::V3SpokePoolInterface::depositCall, multicall3::IMulticall3};
     use primitives::asset_constants::*;
 
     #[test]
@@ -843,139 +790,57 @@ mod tests {
         // EVM -> Solana pairs
         let solana_usdc = SOLANA_USDC.id.clone();
 
-        // Test supported EVM -> Solana USDC pairs
         assert!(Across::is_supported_pair(&usdc_eth, &solana_usdc));
         assert!(Across::is_supported_pair(&usdc_arb, &solana_usdc));
 
-        // Test unsupported Solana pairs
         let solana_usdt = AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB");
         assert!(!Across::is_supported_pair(&usdc_eth, &solana_usdt)); // Only USDC supported
 
-        // Solana -> EVM pairs (not supported)
         assert!(!Across::is_supported_pair(&solana_usdc, &usdc_eth));
         assert!(!Across::is_supported_pair(&solana_usdc, &usdc_arb));
-
-        // Non-USDC to Solana (not supported)
         assert!(!Across::is_supported_pair(&weth_eth, &solana_usdc));
     }
 
     #[test]
     fn test_solana_address_to_bytes32() {
-        // Test USDC conversion to full 32 bytes
-        let usdc_result = AddressType::solana_address_to_bytes32("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
-        assert!(usdc_result.is_ok());
+        let bytes = Across::decode_bs58_bytes32("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap();
+        let expected = "0xc6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61";
 
-        // Real hex data: USDC token address decoded from base58 (full 32 bytes)
-        // EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v -> c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61
-        let expected_bytes = HexDecode("c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61").unwrap();
-        assert_eq!(usdc_result.unwrap().as_slice(), expected_bytes.as_slice());
+        assert_eq!(HexEncode(bytes), expected);
 
-        // Test USDT address - Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
-        let usdt_result = AddressType::solana_address_to_bytes32("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB");
-        assert!(usdt_result.is_ok());
-        // Verify it produces valid 32-byte array
-        let actual_usdt = usdt_result.unwrap();
-        assert_eq!(actual_usdt.len(), 32);
+        let bytes = Across::decode_bs58_bytes32("G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR").unwrap();
+        let expected = "0xe074190d46821cf0b318d4503f63178e25d76cc7d9d2498d54781fb95bb68868";
 
-        // Test invalid address
-        let invalid_result = AddressType::solana_address_to_bytes32("invalid_address");
-        assert!(invalid_result.is_err());
-
-        // Test short address
-        let short_result = AddressType::solana_address_to_bytes32("123");
-        assert!(short_result.is_err());
-    }
-
-    #[test]
-    fn test_address_type_enum() {
-        // Test EVM address type
-        let evm_addr = Address::from_str("0xaf88d065e77c8cc2239327c5edb3a432268e5831").unwrap();
-        let evm_type = AddressType::Evm(evm_addr);
-        let evm_bytes32 = evm_type.to_bytes32().unwrap();
-
-        // Should be padded with zeros
-        let mut expected_evm = [0u8; 32];
-        expected_evm[12..32].copy_from_slice(evm_addr.as_slice());
-        assert_eq!(evm_bytes32, expected_evm);
-
-        // Test Solana address type
-        let solana_type = AddressType::Solana("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string());
-        let solana_bytes32 = solana_type.to_bytes32().unwrap();
-
-        // Should be full 32 bytes
-        let expected_solana = HexDecode("c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61").unwrap();
-        assert_eq!(solana_bytes32.as_slice(), expected_solana.as_slice());
-
-        // Test get_address_type_for_chain
-        let evm_chain_type = Across::get_address_type_for_chain(Chain::Ethereum, Some("0xaf88d065e77c8cc2239327c5edb3a432268e5831"));
-        let solana_chain_type = Across::get_address_type_for_chain(Chain::Solana, Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"));
-
-        assert!(matches!(evm_chain_type, AddressType::Evm(_)));
-        assert!(matches!(solana_chain_type, AddressType::Solana(_)));
+        assert_eq!(HexEncode(bytes), expected);
     }
 
     #[test]
     fn test_v3_relay_data_solana_encoding() {
-        use gem_evm::across::contracts::V3SpokePoolInterface::V3RelayData;
-        use primitives::swap::{QuoteAsset, SwapMode};
-
-        // Create a mock V3RelayData
-        let input_token = Address::from_str("0xaf88d065e77c8cc2239327c5edb3a432268e5831").unwrap(); // USDC on Arbitrum
-        let placeholder_output_addr = Address::from_str("0x1234567890123456789012345678901234567890").unwrap();
-        let v3_relay_data = V3RelayData {
-            depositor: Address::ZERO,
-            recipient: Address::ZERO,
-            exclusiveRelayer: Address::ZERO,
+        // https://etherscan.io/tx/0xd2f84832c9e05ed6b9c1685e253c50c77d52334e354c8af665c7d1159946919b
+        let depositor_addr = Address::from_str("0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7").unwrap();
+        let input_token_addr = Address::from_str("0xaf88d065e77c8cc2239327c5edb3a432268e5831").unwrap(); // USDC on Arbitrum
+        let depositor = Across::decode_address_bytes32(&depositor_addr);
+        let recipient = Across::decode_bs58_bytes32("G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR").unwrap();
+        let input_token = Across::decode_address_bytes32(&input_token_addr);
+        let output_token = Across::decode_bs58_bytes32("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap();
+        let call = depositCall {
+            depositor,
+            recipient,
             inputToken: input_token,
-            outputToken: placeholder_output_addr,
-            inputAmount: U256::from(1000000u64), // 1 USDC
-            outputAmount: U256::from(1000000u64),
-            originChainId: U256::from(42161u64), // Arbitrum
-            depositId: 12345,
-            fillDeadline: 1700000000,
+            outputToken: output_token,
+            inputAmount: U256::from(7000000_u64),
+            outputAmount: U256::from(6997408_u64),
+            destinationChainId: U256::from(34268394551451_u64),
+            exclusiveRelayer: FixedBytes::from([0u8; 32]),
+            quoteTimestamp: 1756299179,
+            fillDeadline: 1756311051,
             exclusivityDeadline: 0,
             message: Bytes::new(),
         };
+        let encoded_call = call.abi_encode();
+        let call_data = "0xad5425c6000000000000000000000000514bcb1f9aabb904e6106bd1052b66d2706dbbb7e074190d46821cf0b318d4503f63178e25d76cc7d9d2498d54781fb95bb68868000000000000000000000000af88d065e77c8cc2239327c5edb3a432268e5831c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d6100000000000000000000000000000000000000000000000000000000006acfc000000000000000000000000000000000000000000000000000000000006ac5a000000000000000000000000000000000000000000000000000001f2abb7bf89b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000068aeffab0000000000000000000000000000000000000000000000000000000068af2e0b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001800000000000000000000000000000000000000000000000000000000000000000";
 
-        // Standard encoding (what we get without the fix)
-        let standard_encoded = v3_relay_data.abi_encode();
-
-        // Create a mock SwapperQuoteRequest for Solana destination
-        let solana_usdc = SOLANA_USDC.clone();
-        let arb_usdc = ARBITRUM_USDC.clone();
-        let request = SwapperQuoteRequest {
-            from_asset: QuoteAsset {
-                id: arb_usdc.id.to_string(),
-                symbol: arb_usdc.symbol,
-                decimals: arb_usdc.decimals as u32,
-            },
-            to_asset: QuoteAsset {
-                id: solana_usdc.id.to_string(),
-                symbol: solana_usdc.symbol,
-                decimals: solana_usdc.decimals as u32,
-            },
-            value: "1000000".to_string(),
-            wallet_address: "0x742d35Cc6634C0532925a3b8D0B4E4c7bf5389ef".to_string(),
-            destination_address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(),
-            mode: SwapMode::ExactIn,
-            options: Default::default(),
-        };
-
-        // Apply the cross-chain encoding
-        let fixed_encoded = Across::encode_v3_relay_data(&v3_relay_data, &request).unwrap();
-
-        // The fixed encoding should be different from the standard encoding for Solana destinations
-        assert_ne!(standard_encoded, fixed_encoded, "Fixed encoding should differ from standard encoding");
-
-        // Verify that the fixed encoding contains the full Solana address at the expected location
-        let output_token_offset = 4 * 32; // 4th field (0-indexed)
-        let expected_full_solana_bytes = AddressType::solana_address_to_bytes32("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap();
-
-        assert_eq!(
-            &fixed_encoded[output_token_offset..output_token_offset + 32],
-            &expected_full_solana_bytes[..],
-            "Fixed encoding should contain full 32-byte Solana address at outputToken position"
-        );
+        assert_eq!(HexEncode(encoded_call), call_data);
     }
 
     #[test]
