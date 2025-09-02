@@ -1,0 +1,62 @@
+{
+    "mintAddress": "HP82kPNXnQcozjDrV4dLYfV6wwABQDMVPJXezDbZXHEy",
+    "owner": "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H",
+    "supply": 1,
+    "collection": "pooks",
+    "collectionName": "pooks",
+    "name": "pooks #3726",
+    "updateAuthority": "CKKpdDfiNy5aHe4MVzGBBuAXtxmvGuTxeu4j8APrR4Po",
+    "primarySaleHappened": true,
+    "sellerFeeBasisPoints": 500,
+    "image": "https://bafybeidne5l7l5s6c3zezvcvmdq3o4hksminkbr3emy6maxr3zoomzymha.ipfs.nftstorage.link/3726.png?ext=png",
+    "attributes": [
+        {
+            "trait_type": "Background",
+            "value": "Dewdrop Delight"
+        },
+        {
+            "trait_type": "Body",
+            "value": "Human"
+        },
+        {
+            "trait_type": "Clothing",
+            "value": "White Karate Uniform"
+        },
+        {
+            "trait_type": "Eyes",
+            "value": "Angry"
+        },
+        {
+            "trait_type": "Hair",
+            "value": "Black Dreads"
+        },
+        {
+            "trait_type": "Headwear",
+            "value": "Blue Beanie"
+        },
+        {
+            "trait_type": "Mouth",
+            "value": "Big"
+        }
+    ],
+    "properties": {
+        "files": [
+            {
+                "uri": "https://bafybeidne5l7l5s6c3zezvcvmdq3o4hksminkbr3emy6maxr3zoomzymha.ipfs.nftstorage.link/3726.png?ext=png",
+                "type": "image/png"
+            }
+        ],
+        "category": "image",
+        "creators": [
+            {
+                "share": 9,
+                "address": "RRUMF9KYPcvNSmnicNMAFKx5wDYix3wjNa6bA7R6xqA"
+            },
+            {
+                "share": 91,
+                "address": "DFfDFeZ6SzE9Cu3jKiGAiPujXQk7ZJKm76E8KTAYXiv7"
+            }
+        ]
+    },
+    "listStatus": "unlisted"
+}

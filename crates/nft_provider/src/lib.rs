@@ -7,6 +7,7 @@ use primitives::{nft::NFTCollectionId, Chain, NFTAsset, NFTAssetId, NFTCollectio
 pub mod config;
 pub mod magiceden;
 pub mod opensea;
+pub mod testkit;
 
 pub use config::NFTProviderConfig;
 pub use magiceden::MagicEdenClient;

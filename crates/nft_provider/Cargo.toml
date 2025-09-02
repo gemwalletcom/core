@@ -12,3 +12,11 @@ async-trait = { workspace = true }
 
 primitives = { path = "../primitives" }
 gem_evm = { path = "../gem_evm" }
+
+[dev-dependencies]
+settings = { path = "../settings" }
+tokio = { workspace = true }
+
+[features]
+# Feature flag for integration tests
+nft_integration_tests = []
