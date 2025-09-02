@@ -81,4 +81,19 @@ impl StakeChain {
             Self::SmartChain | Self::Sui | Self::Solana | Self::HyperCore => false,
         }
     }
+
+    pub fn get_reserved_for_fees(&self) -> u64 {
+        match self {
+            Self::Cosmos => 25_000,
+            Self::Osmosis => 1000000,
+            Self::Injective => 10000000000000000,
+            Self::Sei => 2000000,
+            Self::Celestia => 100000,
+            Self::Solana => 75000,
+            Self::Sui => 5242440,
+            Self::SmartChain => 21000000000000,
+            Self::Tron => 0,
+            Self::HyperCore => 0, // TODO: update value
+        }
+    }
 }
