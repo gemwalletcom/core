@@ -16,7 +16,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let limit = self.get_max_elected_validators().await?;
         let call_data = encode_validators_call(0, limit);
-        
+
         let call = (
             "eth_call".to_string(),
             serde_json::json!([{
@@ -68,7 +68,9 @@ impl<C: Client + Clone> EthereumClient<C> {
             ),
         ];
 
-        let results: Vec<String> = self.batch_call::<String>(calls).await?
+        let results: Vec<String> = self
+            .batch_call::<String>(calls)
+            .await?
             .into_iter()
             .map(|result| match result {
                 JsonRpcResult::Value(value) => Ok(value.result),
