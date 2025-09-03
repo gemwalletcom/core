@@ -9,6 +9,7 @@ use serde_json::json;
 use std::any::TypeId;
 use std::str::FromStr;
 
+use crate::models::fee::EthereumFeeHistory;
 use crate::rpc::model::{BlockTransactionsIds, TransactionReplayTrace};
 
 use super::model::{Block, Transaction, TransactionReciept};
@@ -214,4 +215,14 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         results.try_into().map_err(|_| "Array conversion failed".into())
     }
+
+    pub async fn get_fee_history(&self, blocks: u64, reward_percentiles: Vec<u64>) -> Result<EthereumFeeHistory, JsonRpcError> {
+        let params = json!([
+            format!("0x{:x}", blocks),
+            "latest",
+            reward_percentiles
+        ]);
+        self.client.call("eth_feeHistory", params).await
+    }
+
 }
