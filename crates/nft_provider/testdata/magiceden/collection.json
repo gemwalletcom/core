@@ -1,0 +1,62 @@
+{
+    "symbol": "okay_bears",
+    "candyMachineIds": [],
+    "name": "Okay Bears",
+    "image": "https://bafybeiedc6mf2vtqv7l5hgz6wyd2juw4q423wfcsegvrnw7u6ixqshuciu.ipfs.w3s.link/okb.jpg",
+    "categories": [
+        "pfps"
+    ],
+    "description": "Okay Bears is a culture shift. A clean collection of 10,000 diverse bears building a virtuous community that will transcend the internet into the real world.",
+    "createdAt": "2022-04-26T20:05:25.338Z",
+    "enabledAttributesFilters": true,
+    "enabledVersionFilter": false,
+    "isDraft": false,
+    "website": "https://www.okaybears.com",
+    "twitter": "https://twitter.com/okaybears",
+    "discord": "https://discord.com/invite/okaybears",
+    "derivativeDetails": {
+        "originLink": "",
+        "originName": ""
+    },
+    "isDerivative": false,
+    "nftImageType": "",
+    "onChainCollectionAddress": "",
+    "rarity": {
+        "showHowrare": false,
+        "showMoonrank": true,
+        "showMagicEden": true
+    },
+    "updatedAt": "2025-08-17T20:53:14.567Z",
+    "watchlistCount": 10812,
+    "flagMessage": "",
+    "isFlagged": false,
+    "isVerified": true,
+    "blackListAttributes": [],
+    "blockedMints": [],
+    "enabledTotalSupply": true,
+    "enabledUniqueOwners": true,
+    "iframe": "",
+    "sortBy": "",
+    "stackBy": [],
+    "mmmStatus": "available",
+    "isEligibleForDiamonds": false,
+    "isEligibleForDiamondsForMaker": true,
+    "mmmAllowlistUpdatedAt": "2025-08-17T20:53:14.564Z",
+    "caller": "Update-Retool",
+    "carousel": false,
+    "efpcUpdatedAt": "2025-07-22T10:41:08.426Z",
+    "enabledBidding": true,
+    "excludeFromPopularCollections": false,
+    "fungibleTokenAddress": "",
+    "hasInscriptions": false,
+    "isMIP1": false,
+    "isOcp": false,
+    "lmnft": "",
+    "splTokens": [
+        "SOL",
+        "mSOL",
+        "USDC"
+    ],
+    "tags": [],
+    "treePubKeys": []
+}

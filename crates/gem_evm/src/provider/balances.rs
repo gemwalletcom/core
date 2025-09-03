@@ -4,7 +4,7 @@ use std::error::Error;
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::ChainBalances;
-use primitives::AssetBalance;
+use primitives::{AssetBalance, EVMChain};
 
 use crate::provider::balances_mapper::map_balance_coin;
 use crate::rpc::client::EthereumClient;
@@ -21,8 +21,11 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
         unimplemented!("get_balance_tokens")
     }
 
-    async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        unimplemented!("get_balance_staking")
+    async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
+        match self.chain {
+            EVMChain::SmartChain => self.get_smartchain_staking_balance(&address).await,
+            _ => Ok(None),
+        }
     }
 
     async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
@@ -32,15 +35,17 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use super::*;
-    use crate::provider::testkit::{create_arbitrum_test_client, create_ethereum_test_client, create_smartchain_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{
+        create_arbitrum_test_client, create_ethereum_test_client, create_smartchain_test_client, TEST_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS,
+    };
+    use chain_traits::ChainBalances;
+    use num_bigint::BigUint;
     use primitives::Chain;
 
     #[tokio::test]
     async fn test_ethereum_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ethereum_test_client();
-        let address = TEST_ADDRESS.to_string();
-        let balance = client.get_balance_coin(address).await?;
+        let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
 
         println!("Ethereum ETH Balance: {:?}", balance.balance.available);
 
@@ -53,8 +58,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_arbitrum_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_arbitrum_test_client();
-        let address = TEST_ADDRESS.to_string();
-        let balance = client.get_balance_coin(address).await?;
+        let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
 
         println!("Arbitrum ETH Balance: {:?}", balance.balance.available);
 
@@ -67,13 +71,24 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_smartchain_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_smartchain_test_client();
-        let address = TEST_ADDRESS.to_string();
-        let balance = client.get_balance_coin(address).await?;
+        let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
 
         println!("Smartchain BNB Balance: {:?}", balance.balance.available);
 
         assert_eq!(balance.asset_id.chain, Chain::SmartChain);
-        assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
+        assert!(balance.balance.available > BigUint::from(0u32));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_smartchain_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_smartchain_test_client();
+        let balance = client.get_balance_staking(TEST_SMARTCHAIN_STAKING_ADDRESS.to_string()).await?.unwrap();
+
+        println!("Smartchain BNB Balance: {:?}", balance);
+
+        assert!(balance.balance.staked > BigUint::from(1_000_000_000_000_000_000u64));
 
         Ok(())
     }
