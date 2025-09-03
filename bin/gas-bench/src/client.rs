@@ -1,10 +1,6 @@
 use anyhow::{anyhow, Result};
 
 use gem_evm::{ether_conv::EtherConv, jsonrpc::EthereumRpc};
-use gemstone::ethereum::{
-    calculator::GemFeeCalculator,
-    model::{GemEthereumFeeHistory, GemFeePriority, GemPriorityFeeRecord},
-};
 use gemstone::network::{alien_provider::NativeProvider, jsonrpc_client_with_chain};
 use num_bigint::BigInt;
 use num_traits::Num;

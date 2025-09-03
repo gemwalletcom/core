@@ -145,59 +145,6 @@ final class GemTestTests: XCTestCase {
         )
     }
 
-    func testPriorityFees() throws {
-        let feeHistory = GemEthereumFeeHistory(
-            reward: [
-                [
-                    "0xaa33c7",
-                    "0x54b27f6",
-                    "0x17016b10",
-                ],
-                [
-                    "0x7b4a2f",
-                    "0x2faf080",
-                    "0x5f5e100",
-                ],
-                [
-                    "0x1f93413",
-                    "0xdb58580",
-                    "0x21d7ba0f",
-                ],
-                [
-                    "0x54e0840",
-                    "0x1dcd6500",
-                    "0x379aa9ef",
-                ],
-                [
-                    "0x14d05f48",
-                    "0x1dcd6500",
-                    "0x3b9aca03",
-                ],
-            ],
-            baseFeePerGas: [
-                "0x4a22b648",
-                "0x46cfb436",
-                "0x486359e3",
-                "0x4c98640e",
-                "0x48e6ecea",
-                "0x44ee2016",
-            ],
-            gasUsedRatio: [
-                0.3206394427510866,
-                0.5890674544980715,
-                0.7324794824330592,
-                0.30713043651039335,
-                0.28207058333333335,
-            ],
-            oldestBlock: "0x15a339f"
-        )
-
-        let calculator = GemFeeCalculator()
-
-        let priorityFee = try calculator.calculateBasePriorityFees(chain: "ethereum", history: feeHistory)
-
-        print(priorityFee)
-    }
 
     func testEthereumCallDecoder() throws {
         let decoder = EthereumDecoder()
