@@ -2,6 +2,8 @@
 use primitives::FeeRate;
 
 pub const TEST_ADDRESS: &str = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
+pub const TOKEN_USDC_ADDRESS: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+pub const TOKEN_DAI_ADDRESS: &str = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 pub const TEST_SMARTCHAIN_STAKING_ADDRESS: &str = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
 
 #[cfg(all(feature = "rpc", feature = "reqwest"))]

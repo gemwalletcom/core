@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use chain_traits::ChainBalances;
 use primitives::{AssetBalance, EVMChain};
 
-use crate::provider::balances_mapper::map_balance_coin;
+use crate::provider::balances_mapper::{map_balance_coin, map_balance_tokens};
 use crate::rpc::client::EthereumClient;
 use gem_client::Client;
 
@@ -17,8 +17,9 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
         map_balance_coin(self.get_eth_balance(&address).await?, self.get_chain())
     }
 
-    async fn get_balance_tokens(&self, _address: String, _token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        unimplemented!("get_balance_tokens")
+    async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
+        let balance_results = self.batch_token_balance_calls(&address, &token_ids).await?;
+        map_balance_tokens(balance_results, token_ids, self.get_chain())
     }
 
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
@@ -37,6 +38,7 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
 mod chain_integration_tests {
     use crate::provider::testkit::{
         create_arbitrum_test_client, create_ethereum_test_client, create_smartchain_test_client, TEST_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS,
+        TOKEN_DAI_ADDRESS, TOKEN_USDC_ADDRESS,
     };
     use chain_traits::ChainBalances;
     use num_bigint::BigUint;
@@ -89,6 +91,28 @@ mod chain_integration_tests {
         println!("Smartchain BNB Balance: {:?}", balance);
 
         assert!(balance.balance.staked > BigUint::from(1_000_000_000_000_000_000u64));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+        let token_ids = vec![TOKEN_USDC_ADDRESS.to_string(), TOKEN_DAI_ADDRESS.to_string()];
+
+        let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids).await?;
+
+        println!("USDC Balance: {:?}", balances);
+
+        assert_eq!(balances.len(), 2);
+
+        assert_eq!(balances[0].asset_id.chain, Chain::Ethereum);
+        assert_eq!(balances[0].asset_id.token_id, Some(TOKEN_USDC_ADDRESS.to_string()));
+        assert!(balances[0].balance.available > BigUint::from(0u32));
+
+        assert_eq!(balances[1].asset_id.chain, Chain::Ethereum);
+        assert_eq!(balances[1].asset_id.token_id, Some(TOKEN_DAI_ADDRESS.to_string()));
+        assert!(balances[1].balance.available > BigUint::from(0u32));
 
         Ok(())
     }

@@ -9,8 +9,30 @@ pub fn map_balance_coin(balance_hex: String, chain: Chain) -> Result<AssetBalanc
     ))
 }
 
-pub fn map_balance_tokens(_balance_data: Vec<String>, _token_ids: Vec<String>) -> Vec<AssetBalance> {
-    unimplemented!("map_balance_tokens")
+pub fn map_balance_tokens(
+    balance_data: Vec<String>,
+    token_ids: Vec<String>,
+    chain: Chain,
+) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+    if balance_data.len() != token_ids.len() {
+        return Err("Balance data and token IDs length mismatch".into());
+    }
+
+    balance_data
+        .into_iter()
+        .zip(token_ids.into_iter())
+        .map(|(balance_hex, token_id)| {
+            let asset_id = primitives::AssetId {
+                chain,
+                token_id: Some(token_id),
+            };
+            let balance = serde_serializers::biguint_from_hex_str(&balance_hex)?;
+            Ok(AssetBalance::new_balance(
+                asset_id,
+                Balance::coin_balance(balance),
+            ))
+        })
+        .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()
 }
 
 pub fn map_balance_staking(_staking_data: String) -> Option<AssetBalance> {

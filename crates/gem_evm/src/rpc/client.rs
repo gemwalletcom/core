@@ -217,12 +217,16 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     pub async fn get_fee_history(&self, blocks: u64, reward_percentiles: Vec<u64>) -> Result<EthereumFeeHistory, JsonRpcError> {
-        let params = json!([
-            format!("0x{:x}", blocks),
-            "latest",
-            reward_percentiles
-        ]);
+        let params = json!([format!("0x{:x}", blocks), "latest", reward_percentiles]);
         self.client.call("eth_feeHistory", params).await
     }
 
+    pub async fn batch_token_balance_calls(&self, address: &str, contracts: &[String]) -> Result<Vec<String>, Box<dyn std::error::Error + Sync + Send>> {
+        let data = format!("0x70a08231000000000000000000000000{:0>40}", address.strip_prefix("0x").unwrap_or(address));
+        let calls: Vec<(String, serde_json::Value)> = contracts
+            .iter()
+            .map(|x| ("eth_call".to_string(), json!([{"to": x, "data": data}, "latest"])))
+            .collect();
+        Ok(self.client.batch_call::<String>(calls).await?.extract())
+    }
 }
