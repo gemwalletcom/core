@@ -44,6 +44,8 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                     }
                 };
 
+                println!("Fetching order status for provider: {}, order_id: {}", provider.name().id(), order_id);
+
                 let transaction = provider.get_order_status(&order_id).await?;
 
                 println!(
