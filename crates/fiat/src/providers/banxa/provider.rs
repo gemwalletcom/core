@@ -96,22 +96,21 @@ mod fiat_integration_tests {
     #[tokio::test]
     async fn test_banxa_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_banxa_test_client();
-        
+
         let request = FiatBuyQuote::mock();
         let mut mapping = FiatMapping::mock();
         mapping.network = Some("BTC".to_string());
-        
+
         let quote = FiatProvider::get_buy_quote(&client, request, mapping).await?;
-        
+
         println!("Banxa buy quote: {:?}", quote);
         assert_eq!(quote.provider.id, "banxa");
         assert_eq!(quote.fiat_currency, "USD");
         assert!(quote.crypto_amount > 0.0);
         assert_eq!(quote.fiat_amount, 100.0);
-        
+
         Ok(())
     }
-
 
     #[tokio::test]
     async fn test_banxa_get_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -120,7 +119,7 @@ mod fiat_integration_tests {
 
         assert!(!assets.is_empty());
         println!("Found {} Banxa assets", assets.len());
-        
+
         if let Some(asset) = assets.first() {
             assert!(!asset.id.is_empty());
             assert!(!asset.symbol.is_empty());
@@ -137,7 +136,7 @@ mod fiat_integration_tests {
 
         assert!(!countries.is_empty());
         println!("Found {} Banxa countries", countries.len());
-        
+
         if let Some(country) = countries.first() {
             assert_eq!(country.provider, "banxa");
             assert!(!country.alpha2.is_empty());
