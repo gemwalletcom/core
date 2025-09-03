@@ -87,7 +87,7 @@ impl Collection {
 mod tests {
     use super::*;
     use crate::magiceden::model;
-    use crate::testkit::{TEST_SOLANA_COLLECTION, TEST_SOLANA_COLLECTION_POOKS, TEST_SOLANA_TOKEN_ID, TEST_SOLANA_ADDRESS};
+    use crate::testkit::{TEST_SOLANA_ADDRESS, TEST_SOLANA_COLLECTION, TEST_SOLANA_COLLECTION_POOKS, TEST_SOLANA_TOKEN_ID};
     use primitives::{Chain, NFTCollectionId};
 
     #[test]

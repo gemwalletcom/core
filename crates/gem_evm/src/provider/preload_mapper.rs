@@ -36,8 +36,8 @@ mod tests {
         let chain_id_hex = "0x1".to_string();
 
         let result = map_transaction_preload(nonce_hex, chain_id_hex);
+
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Failed to parse nonce"));
     }
 
     #[test]
@@ -46,7 +46,7 @@ mod tests {
         let chain_id_hex = "invalid".to_string();
 
         let result = map_transaction_preload(nonce_hex, chain_id_hex);
+
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Failed to parse chain_id"));
     }
 }

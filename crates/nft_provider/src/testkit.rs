@@ -1,7 +1,7 @@
 #[cfg(all(test, feature = "nft_integration_tests"))]
-use crate::opensea::client::OpenSeaClient;
-#[cfg(all(test, feature = "nft_integration_tests"))]
 use crate::magiceden::client::MagicEdenClient;
+#[cfg(all(test, feature = "nft_integration_tests"))]
+use crate::opensea::client::OpenSeaClient;
 #[cfg(all(test, feature = "nft_integration_tests"))]
 use settings::Settings;
 
@@ -14,9 +14,7 @@ pub const TEST_SOLANA_TOKEN_ID: &str = "HP82kPNXnQcozjDrV4dLYfV6wwABQDMVPJXezDbZ
 
 #[cfg(all(test, feature = "nft_integration_tests"))]
 fn get_test_settings() -> Settings {
-    let settings_path = std::env::current_dir()
-        .expect("Failed to get current directory")
-        .join("../../Settings.yaml");
+    let settings_path = std::env::current_dir().expect("Failed to get current directory").join("../../Settings.yaml");
     Settings::new_setting_path(settings_path).expect("Failed to load settings for tests")
 }
 

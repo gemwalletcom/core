@@ -1,7 +1,7 @@
 use gem_evm::ethereum_address_checksum;
 use primitives::{AssetLink, Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType};
 
-use super::model::{Collection, Nft, NftAsset, NftsResponse, NftResponse, Trait};
+use super::model::{Collection, Nft, NftAsset, NftResponse, NftsResponse, Trait};
 
 pub fn map_assets(response: NftsResponse, chain: Chain) -> Vec<NFTAssetId> {
     response.nfts.into_iter().flat_map(|x| x.as_asset_id(chain)).collect()

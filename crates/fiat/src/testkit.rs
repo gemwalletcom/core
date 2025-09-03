@@ -1,20 +1,17 @@
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 use crate::client::FiatClient;
 #[cfg(all(test, feature = "fiat_integration_tests"))]
+use crate::model::FiatMapping;
+#[cfg(all(test, feature = "fiat_integration_tests"))]
 use crate::providers::{
     banxa::client::BanxaClient, mercuryo::client::MercuryoClient, moonpay::client::MoonPayClient, paybis::client::PaybisClient, transak::client::TransakClient,
 };
 #[cfg(all(test, feature = "fiat_integration_tests"))]
-use crate::model::FiatMapping;
-#[cfg(all(test, feature = "fiat_integration_tests"))]
 use settings::Settings;
-
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 fn get_test_settings() -> Settings {
-    let settings_path = std::env::current_dir()
-        .expect("Failed to get current directory")
-        .join("../../Settings.yaml");
+    let settings_path = std::env::current_dir().expect("Failed to get current directory").join("../../Settings.yaml");
     Settings::new_setting_path(settings_path).expect("Failed to load settings for tests")
 }
 
