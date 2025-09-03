@@ -13,6 +13,9 @@ pub mod error;
 pub use client::FiatClient;
 pub use ip_check_client::{IPAddressInfo, IPCheckClient};
 
+#[cfg(all(test, feature = "fiat_integration_tests"))]
+pub mod testkit;
+
 pub struct FiatProviderFactory {}
 impl FiatProviderFactory {
     pub fn new_providers(settings: Settings) -> Vec<Box<dyn FiatProvider + Send + Sync>> {

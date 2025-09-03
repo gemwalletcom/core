@@ -60,18 +60,11 @@ fn calculate_fee_by_bandwidth(available_bandwidth: u64, required_bandwidth: u64,
     }
 }
 
-pub fn calculate_stake_fee_rate(
-    account_usage: &TronAccountUsage,
-    stake_type: &StakeType,
-    total_staked: &BigInt,
-    input_value: &BigInt,
-) -> BigInt {
+pub fn calculate_stake_fee_rate(account_usage: &TronAccountUsage, stake_type: &StakeType, total_staked: &BigInt, input_value: &BigInt) -> BigInt {
     let available_bandwidth = get_available_bandwidth(account_usage);
-    
+
     match stake_type {
-        StakeType::Stake(_) => {
-            calculate_fee_by_bandwidth(available_bandwidth, 580, 2)
-        }
+        StakeType::Stake(_) => calculate_fee_by_bandwidth(available_bandwidth, 580, 2),
         StakeType::Unstake(_) => {
             if total_staked > input_value {
                 calculate_fee_by_bandwidth(available_bandwidth, 580, 2) // Partial unstake
@@ -79,9 +72,7 @@ pub fn calculate_stake_fee_rate(
                 calculate_fee_by_bandwidth(available_bandwidth, 300, 1) // Full unstake
             }
         }
-        StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Redelegate(_) => {
-            calculate_fee_by_bandwidth(available_bandwidth, 300, 1)
-        }
+        StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Redelegate(_) => calculate_fee_by_bandwidth(available_bandwidth, 300, 1),
     }
 }
 
@@ -172,16 +163,16 @@ mod tests {
             energy_used: Some(0),
             energy_limit: Some(0),
         };
-        
+
         assert_eq!(get_available_bandwidth(&account_usage), 1000);
-        
+
         let account_usage_zero = TronAccountUsage {
             free_net_used: None,
             free_net_limit: None,
             energy_used: Some(0),
             energy_limit: Some(0),
         };
-        
+
         assert_eq!(get_available_bandwidth(&account_usage_zero), 0);
     }
 
@@ -190,7 +181,7 @@ mod tests {
         assert_eq!(calculate_fee_by_bandwidth(500, 300, 1), BigInt::from(0));
         assert_eq!(calculate_fee_by_bandwidth(200, 300, 1), BigInt::from(BASE_FEE));
         assert_eq!(calculate_fee_by_bandwidth(200, 580, 2), BigInt::from(BASE_FEE * 2));
-        
+
         // Test with user's actual bandwidth scenario: 516 used, 1500 limit = 984 available
         assert_eq!(calculate_fee_by_bandwidth(984, 300, 1), BigInt::from(0)); // Full unstake should be free
         assert_eq!(calculate_fee_by_bandwidth(984, 580, 2), BigInt::from(0)); // Partial unstake should be free

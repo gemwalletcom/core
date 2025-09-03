@@ -60,9 +60,9 @@ impl NFTClient {
 
         let mut collections = Vec::new();
         for collection_id in missing_collection_ids {
-            match self.nft.get_collection(collection_id).await {
+            match self.nft.get_collection(collection_id.clone()).await {
                 Ok(collection) => collections.push(collection),
-                Err(e) => println!("nft preload collection error: {e}"),
+                Err(e) => println!("nft preload collection {} error: {e}", collection_id.id()),
             }
         }
         let new_collections = collections.clone().into_iter().map(storage::models::NftCollection::from_primitive).collect();
@@ -113,8 +113,7 @@ impl NFTClient {
     }
 
     pub fn get_subscriptions(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
-        let subscriptions = self.database.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
-        Ok(subscriptions)
+        self.database.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))
     }
 
     pub async fn get_nft_assets_by_chain(&mut self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {

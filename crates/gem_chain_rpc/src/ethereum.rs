@@ -6,13 +6,13 @@ use num_bigint::BigUint;
 use std::error::Error;
 
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider, SmartChainProvider};
+use chrono::Utc;
 use gem_evm::{
     erc20::{decode_abi_string, decode_abi_uint8, IERC20},
     ethereum_address_checksum,
     rpc::{alchemy::AlchemyClient, ankr::AnkrClient, EthereumClient, EthereumMapper},
 };
 use primitives::{Asset, AssetBalance, AssetId, Chain, EVMChain, NodeType, StakeValidator, Transaction, TransactionState, TransactionType};
-use chrono::Utc;
 
 pub struct EthereumProvider<C: Client + Clone> {
     client: EthereumClient<C>,
@@ -150,23 +150,28 @@ impl<C: Client + Clone> ChainAssetsProvider for AlchemyClient<C> {
 #[async_trait]
 impl<C: Client + Clone> ChainTransactionsProvider for AlchemyClient<C> {
     async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(self.get_transactions_ids_by_address(address.as_str()).await?.into_iter().map(|hash| {
-            Transaction::new(
-                hash,
-                AssetId::from_chain(self.chain.to_chain()),
-                String::new(),
-                String::new(),
-                None,
-                TransactionType::Transfer,
-                TransactionState::Pending,
-                String::new(),
-                AssetId::from_chain(self.chain.to_chain()),
-                String::new(),
-                None,
-                None,
-                Utc::now(),
-            )
-        }).collect())
+        Ok(self
+            .get_transactions_ids_by_address(address.as_str())
+            .await?
+            .into_iter()
+            .map(|hash| {
+                Transaction::new(
+                    hash,
+                    AssetId::from_chain(self.chain.to_chain()),
+                    String::new(),
+                    String::new(),
+                    None,
+                    TransactionType::Transfer,
+                    TransactionState::Pending,
+                    String::new(),
+                    AssetId::from_chain(self.chain.to_chain()),
+                    String::new(),
+                    None,
+                    None,
+                    Utc::now(),
+                )
+            })
+            .collect())
     }
 }
 
@@ -176,23 +181,28 @@ impl<C: Client + Clone> ChainTransactionsProvider for AlchemyClient<C> {
 impl<C: Client + Clone> ChainTransactionsProvider for AnkrClient<C> {
     async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let limit = limit.unwrap_or(25) as i64;
-        Ok(self.get_transactions_ids_by_address(address.as_str(), limit).await?.into_iter().map(|hash| {
-            Transaction::new(
-                hash,
-                AssetId::from_chain(self.chain.to_chain()),
-                String::new(),
-                String::new(),
-                None,
-                TransactionType::Transfer,
-                TransactionState::Pending,
-                String::new(),
-                AssetId::from_chain(self.chain.to_chain()),
-                String::new(),
-                None,
-                None,
-                Utc::now(),
-            )
-        }).collect())
+        Ok(self
+            .get_transactions_ids_by_address(address.as_str(), limit)
+            .await?
+            .into_iter()
+            .map(|hash| {
+                Transaction::new(
+                    hash,
+                    AssetId::from_chain(self.chain.to_chain()),
+                    String::new(),
+                    String::new(),
+                    None,
+                    TransactionType::Transfer,
+                    TransactionState::Pending,
+                    String::new(),
+                    AssetId::from_chain(self.chain.to_chain()),
+                    String::new(),
+                    None,
+                    None,
+                    Utc::now(),
+                )
+            })
+            .collect())
     }
 }
 

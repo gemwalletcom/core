@@ -1,5 +1,5 @@
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 use super::{client::BanxaClient, models::Order};
+use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
     match chain.as_str() {
@@ -43,7 +43,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
 pub fn map_order(order: Order) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
     let chain = map_asset_chain(order.crypto.blockchain.clone());
     let asset_id = chain.map(AssetId::from_chain);
-    
+
     let status = match order.status.as_str() {
         "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress" | "coinTransferred" | "cryptoTransferred" | "extraVerification" => {
             FiatTransactionStatus::Pending
@@ -95,9 +95,25 @@ mod tests {
         assert_eq!(result.symbol, "ETH");
         assert_eq!(result.fiat_currency, "USD");
         assert_eq!(result.fiat_amount, 3986.0);
+        assert!(result.asset_id.is_some());
+    }
+
+    #[test]
+    fn test_map_order_sell_failed() {
+        let response: Order = serde_json::from_str(include_str!("../../../testdata/banxa/transaction_sell_failed.json")).expect("Failed to parse test data");
+
+        let result = map_order(response).expect("Failed to map order");
+
+        assert_eq!(result.provider_id, "banxa");
+        assert_eq!(result.provider_transaction_id, "123");
+        assert!(matches!(result.status, FiatTransactionStatus::Failed));
+        assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
+        assert_eq!(result.symbol, "ETH");
+        assert_eq!(result.fiat_currency, "USD");
+        assert_eq!(result.fiat_amount, 595.3);
         assert_eq!(result.country, None);
-        assert_eq!(result.address, Some("".to_string()));
-        assert!(result.asset_id.is_some()); // Should have asset ID for ETH
+        assert_eq!(result.address, Some("0x123".to_string()));
+        assert!(result.asset_id.is_some());
         assert_eq!(result.fee_network, Some(0.0));
         assert_eq!(result.fee_partner, Some(0.0));
     }

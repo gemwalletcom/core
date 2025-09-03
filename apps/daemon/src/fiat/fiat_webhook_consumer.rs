@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use async_trait::async_trait;
+use fiat::FiatProvider;
 use fiat::FiatProviderFactory;
 use settings::Settings;
 use storage::DatabaseClient;
@@ -9,7 +10,7 @@ use streamer::FiatWebhookPayload;
 
 pub struct FiatWebhookConsumer {
     pub database: DatabaseClient,
-    pub providers: Vec<Box<dyn fiat::FiatProvider + Send + Sync>>,
+    pub providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
 }
 
 impl FiatWebhookConsumer {
@@ -30,7 +31,6 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
     async fn process(&mut self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         for provider in &self.providers {
             if provider.name() == payload.provider {
-                println!("Processing webhook for provider: {}", provider.name().id());
                 let order_id = match provider.webhook_order_id(payload.data.clone()).await {
                     Ok(order_id) => order_id,
                     Err(e) => {
@@ -44,9 +44,17 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                     }
                 };
 
-                println!("Processing webhook for provider: {}, order_id: {}", provider.name().id(), order_id);
-
                 let transaction = provider.get_order_status(&order_id).await?;
+
+                println!(
+                    "Processing webhook for provider: {}, order_id: {}, symbol: {}, fiat_amount: {} {} status: {:?}",
+                    provider.name().id(),
+                    order_id,
+                    transaction.symbol,
+                    transaction.fiat_amount,
+                    transaction.fiat_currency,
+                    transaction.status
+                );
 
                 self.database.fiat().add_fiat_transaction(transaction)?;
                 return Ok(true);

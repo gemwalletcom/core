@@ -31,15 +31,6 @@ streamer = { path = "../streamer" }
 [dev-dependencies]
 tokio-test = { version = "*" }
 
-# Integration tests that require manual execution
-[[test]]
-name = "paybis_integration_test"
-test = false
-
-[[test]]
-name = "moonpay_integration_test"
-test = false
-
-[[test]]
-name = "transak_integration_test"
-test = false
+[features]
+# Feature flag for integration tests
+fiat_integration_tests = ["primitives/testkit"]

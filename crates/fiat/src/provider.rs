@@ -39,7 +39,7 @@ where
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_countries().await
     }
-    
+
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_order_status(order_id).await
     }

@@ -1,0 +1,1 @@
+pub const STAKING_VALIDATORS_LIMIT: u16 = 128;

@@ -1,7 +1,7 @@
 use crate::gateway::GemUTXO;
 use num_bigint::BigInt;
 use primitives::solana_token_program::SolanaTokenProgramId;
-use primitives::{TransactionLoadMetadata, transaction_load_metadata::SuiCoin};
+use primitives::{transaction_load_metadata::SuiCoin, TransactionLoadMetadata};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -234,11 +234,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 witness_address,
                 votes,
             },
-            TransactionLoadMetadata::Sui { message_bytes } => {
-                GemTransactionLoadMetadata::Sui {
-                    message_bytes,
-                }
-            },
+            TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
             TransactionLoadMetadata::Hyperliquid {
                 approve_agent_required,
                 approve_referral_required,
@@ -351,9 +347,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 witness_address,
                 votes,
             },
-            GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui {
-                message_bytes,
-            },
+            GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
             GemTransactionLoadMetadata::Hyperliquid {
                 approve_agent_required,
                 approve_referral_required,

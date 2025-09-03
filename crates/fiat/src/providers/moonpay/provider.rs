@@ -64,7 +64,7 @@ impl FiatProvider for MoonPayClient {
     }
 
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = self.get_transaction(order_id).await?;
+        let payload = self.get_any_transaction(order_id).await?;
         map_order(payload)
     }
 
@@ -72,5 +72,65 @@ impl FiatProvider for MoonPayClient {
     async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let payload = serde_json::from_value::<Data<WebhookOrderId>>(data)?.data;
         Ok(payload.id)
+    }
+}
+
+#[cfg(all(test, feature = "fiat_integration_tests"))]
+mod fiat_integration_tests {
+    use crate::testkit::*;
+    use crate::{model::FiatMapping, FiatProvider};
+    use primitives::FiatBuyQuote;
+
+    #[tokio::test]
+    async fn test_moonpay_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_moonpay_test_client();
+
+        let request = FiatBuyQuote::mock();
+        let mut mapping = FiatMapping::mock();
+        mapping.network = Some("bitcoin".to_string());
+
+        let quote = FiatProvider::get_buy_quote(&client, request, mapping).await?;
+
+        println!("MoonPay buy quote: {:?}", quote);
+        assert_eq!(quote.provider.id, "moonpay");
+        assert_eq!(quote.fiat_currency, "USD");
+        assert!(quote.crypto_amount > 0.0);
+        assert_eq!(quote.fiat_amount, 100.0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_moonpay_get_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_moonpay_test_client();
+        let assets = FiatProvider::get_assets(&client).await?;
+
+        assert!(!assets.is_empty());
+        println!("Found {} MoonPay assets", assets.len());
+
+        if let Some(asset) = assets.first() {
+            assert!(!asset.id.is_empty());
+            assert!(!asset.symbol.is_empty());
+            println!("Sample MoonPay asset: {:?}", asset);
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_moonpay_get_countries() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_moonpay_test_client();
+        let countries = FiatProvider::get_countries(&client).await?;
+
+        assert!(!countries.is_empty());
+        println!("Found {} MoonPay countries", countries.len());
+
+        if let Some(country) = countries.first() {
+            assert_eq!(country.provider, "moonpay");
+            assert!(!country.alpha2.is_empty());
+            println!("Sample MoonPay country: {:?}", country);
+        }
+
+        Ok(())
     }
 }

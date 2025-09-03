@@ -22,17 +22,32 @@ impl MagicEdenClient {
     }
 
     pub async fn get_nfts_by_account(&self, account_address: &str) -> Result<Vec<Nft>, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/wallets/{}/tokens", Self::BASE_URL, account_address);
-        Ok(self.client.get(&url).send().await?.json::<Vec<Nft>>().await?)
+        Ok(self
+            .client
+            .get(format!("{}/v2/wallets/{account_address}/tokens", Self::BASE_URL))
+            .send()
+            .await?
+            .json::<Vec<Nft>>()
+            .await?)
     }
 
     pub async fn get_collection_id(&self, collection_id: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/collections/{}", Self::BASE_URL, collection_id);
-        Ok(self.client.get(&url).send().await?.json::<Collection>().await?)
+        Ok(self
+            .client
+            .get(format!("{}/collections/{collection_id}", Self::BASE_URL))
+            .send()
+            .await?
+            .json::<Collection>()
+            .await?)
     }
 
     pub async fn get_asset_id(&self, token_mint: &str) -> Result<Nft, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/tokens/{}", Self::BASE_URL, token_mint);
-        Ok(self.client.get(&url).send().await?.json::<Nft>().await?)
+        Ok(self
+            .client
+            .get(format!("{}/v2/tokens/{token_mint}", Self::BASE_URL))
+            .send()
+            .await?
+            .json::<Nft>()
+            .await?)
     }
 }

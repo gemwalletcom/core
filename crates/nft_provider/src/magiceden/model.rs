@@ -4,6 +4,7 @@ use serde::Deserialize;
 #[serde(rename_all = "camelCase")]
 pub struct Nft {
     pub mint_address: String,
+    pub owner: String,
     pub name: String,
     pub image: String,
     pub collection: String,
