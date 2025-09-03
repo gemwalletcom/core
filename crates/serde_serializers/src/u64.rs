@@ -13,7 +13,11 @@ where
     D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(deserializer)?;
-    s.parse::<u64>().map_err(serde::de::Error::custom)
+    if let Some(hex_val) = s.strip_prefix("0x") {
+        u64::from_str_radix(hex_val, 16).map_err(|_| de::Error::custom(format!("Invalid hex string for u64: {s}")))
+    } else {
+        s.parse::<u64>().map_err(serde::de::Error::custom)
+    }
 }
 
 pub fn deserialize_u64_from_str_or_int<'de, D>(deserializer: D) -> Result<u64, D::Error>
@@ -33,6 +37,7 @@ where
         _ => Err(de::Error::custom("u64 must be a number or a string")),
     }
 }
+
 
 pub fn deserialize_option_u64_from_str<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
 where
@@ -72,5 +77,34 @@ mod tests {
         let json = r#"{}"#;
         let result: TestStruct = serde_json::from_str(json).unwrap();
         assert_eq!(result.gas_used, None);
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    struct TestMixedStruct {
+        #[serde(deserialize_with = "deserialize_u64_from_str")]
+        pub value: u64,
+    }
+
+    #[test]
+    fn test_deserialize_u64_from_str_with_hex() {
+        // Test with 0x prefixed hex
+        let json = r#"{"value": "0x1a2b"}"#;
+        let result: TestMixedStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.value, 6699); // 0x1a2b = 6699
+
+        // Test with zero hex
+        let json = r#"{"value": "0x0"}"#;
+        let result: TestMixedStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.value, 0);
+
+        // Test with decimal string
+        let json = r#"{"value": "12345"}"#;
+        let result: TestMixedStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.value, 12345);
+
+        // Test with zero decimal
+        let json = r#"{"value": "0"}"#;
+        let result: TestMixedStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.value, 0);
     }
 }

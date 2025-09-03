@@ -79,7 +79,7 @@ mod tests {
             reward: vec![vec!["0x5f5e100".to_string(), "0xbebc200".to_string(), "0x11e1a300".to_string()]],
             base_fee_per_gas: vec![BigInt::from(20_000_000_000u64)],
             gas_used_ratio: vec![0.5],
-            oldest_block: "0x1234".to_string(),
+            oldest_block: 0x1234,
         }
     }
 
@@ -111,7 +111,7 @@ mod tests {
             reward: vec![vec!["0x5f5e100".to_string(), "0xbebc200".to_string(), "0x11e1a300".to_string()]],
             base_fee_per_gas: vec![BigInt::from(0u64)], // Zero base fee
             gas_used_ratio: vec![0.5],
-            oldest_block: "0x1234".to_string(),
+            oldest_block: 0x1234,
         };
 
         let result = map_transaction_fee_rates(EVMChain::SmartChain, &fee_history)?;
@@ -130,7 +130,7 @@ mod tests {
             reward: vec![vec!["invalid_hex".to_string()]],
             base_fee_per_gas: vec![BigInt::from(20_000_000_000u64)],
             gas_used_ratio: vec![0.5],
-            oldest_block: "0x1234".to_string(),
+            oldest_block: 0x1234,
         };
 
         let result = map_transaction_fee_rates(EVMChain::Ethereum, &fee_history);

@@ -22,7 +22,7 @@ pub const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 #[derive(Clone)]
 pub struct EthereumClient<C: Client + Clone> {
     pub chain: EVMChain,
-    client: GenericJsonRpcClient<C>,
+    pub client: GenericJsonRpcClient<C>,
 }
 
 impl<C: Client + Clone> EthereumClient<C> {
@@ -132,16 +132,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
     pub async fn get_transactions_receipts(&self, hashes: &[String]) -> Result<Vec<TransactionReciept>, JsonRpcError> {
         let calls: Vec<(String, serde_json::Value)> = hashes.iter().map(|hash| ("eth_getTransactionReceipt".to_string(), json!([hash]))).collect();
-
-        let results = self.client.batch_call::<TransactionReciept>(calls).await?;
-        let mut receipts = Vec::new();
-        for result in results {
-            match result {
-                JsonRpcResult::Value(value) => receipts.push(value.result),
-                JsonRpcResult::Error(error) => return Err(error.error),
-            }
-        }
-        Ok(receipts)
+        Ok(self.client.batch_call::<TransactionReciept>(calls).await?.extract())
     }
 
     pub async fn get_transaction_receipt(&self, hash: &str) -> Result<TransactionReciept, JsonRpcError> {
@@ -159,14 +150,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             .iter()
             .map(|hash| ("trace_replayTransaction".to_string(), json!([hash, json!("stateDiff")])))
             .collect();
-        let results = self.client.batch_call::<TransactionReplayTrace>(calls).await?;
-        results.into_iter().try_fold(Vec::new(), |mut acc, result| {
-            match result {
-                JsonRpcResult::Value(value) => acc.push(value.result),
-                JsonRpcResult::Error(error) => return Err(error.error),
-            }
-            Ok(acc)
-        })
+        Ok(self.client.batch_call::<TransactionReplayTrace>(calls).await?.extract())
     }
 
     pub async fn get_eth_balance(&self, address: &str) -> Result<String, anyhow::Error> {
@@ -201,18 +185,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             .iter()
             .map(|selector| ("eth_call".to_string(), json!([{"to": contract_address, "data": selector}, "latest"])))
             .collect();
-
-        let results: Vec<String> = self
-            .client
-            .batch_call::<String>(calls)
-            .await?
-            .into_iter()
-            .map(|result| match result {
-                JsonRpcResult::Value(value) => Ok(value.result),
-                JsonRpcResult::Error(error) => Err(Box::new(error.error) as Box<dyn std::error::Error + Sync + Send>),
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
+        let results = self.client.batch_call::<String>(calls).await?.extract();
         results.try_into().map_err(|_| "Array conversion failed".into())
     }
 
@@ -225,7 +198,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         let data = format!("0x70a08231000000000000000000000000{:0>40}", address.strip_prefix("0x").unwrap_or(address));
         let calls: Vec<(String, serde_json::Value)> = contracts
             .iter()
-            .map(|x| ("eth_call".to_string(), json!([{"to": x, "data": data}, "latest"])))
+            .map(|x| ("eth_call".to_string(), json!([{"to": x, "data": &data}, "latest"])))
             .collect();
         Ok(self.client.batch_call::<String>(calls).await?.extract())
     }
