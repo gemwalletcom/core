@@ -60,14 +60,11 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
     let fee_network = payload.network_fee_amount.unwrap_or_default();
     let fee_partner = payload.extra_fee_amount.unwrap_or_default();
 
-    // For buy transactions, fiat amount includes all fees (what user pays)
-    // For sell transactions, fiat amount is what user receives (fees already deducted from crypto)
     let fiat_amount = match transaction_type {
         FiatQuoteType::Buy => currency_amount + fee_provider + fee_network + fee_partner,
-        FiatQuoteType::Sell => currency_amount, // Already net amount user receives
+        FiatQuoteType::Sell => currency_amount,
     };
 
-    // For buy transactions, use wallet_address; for sell transactions, use refund_wallet_address
     let address = match transaction_type {
         FiatQuoteType::Buy => payload.wallet_address,
         FiatQuoteType::Sell => payload.refund_wallet_address.or(payload.wallet_address),
@@ -85,9 +82,6 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
         fiat_currency: fiat_currency.code.to_uppercase(),
         transaction_hash: payload.crypto_transaction_id,
         address,
-        fee_provider: payload.fee_amount,
-        fee_network: payload.network_fee_amount,
-        fee_partner: payload.extra_fee_amount,
     })
 }
 
@@ -113,9 +107,6 @@ mod tests {
         assert_eq!(result.fiat_amount, 20.0); // 15.39 + 3.99 + 0.47 + 0.15
         assert_eq!(result.country, Some("USA".to_string()));
         assert_eq!(result.address, Some("TYxT3F8pdkTDkhw4JsfodKnEgaYpNaANmW".to_string()));
-        assert_eq!(result.fee_provider, Some(3.99));
-        assert_eq!(result.fee_network, Some(0.47));
-        assert_eq!(result.fee_partner, Some(0.15));
     }
 
     #[test]
@@ -135,9 +126,6 @@ mod tests {
         assert_eq!(result.fiat_amount, 3123.07); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.country, Some("USA".to_string()));
         assert_eq!(result.address, Some("0xd41fdb03ba84762dd66a0af1a6c8540ff1ba5dfb".to_string()));
-        assert_eq!(result.fee_provider, Some(31.87));
-        assert_eq!(result.fee_network, None);
-        assert_eq!(result.fee_partner, Some(31.87));
     }
 
     #[test]
@@ -157,8 +145,6 @@ mod tests {
         assert_eq!(result.country, Some("USA".to_string()));
         assert_eq!(result.address, Some("0xd41fdb03ba84762dd66a0af1a6c8540ff1ba5dfb".to_string()));
         assert_eq!(result.transaction_hash, Some("0xabc123456789".to_string()));
-        assert_eq!(result.fee_provider, Some(31.87));
-        assert_eq!(result.fee_partner, Some(31.87));
     }
 
     #[test]
@@ -177,7 +163,5 @@ mod tests {
         assert_eq!(result.fiat_amount, 8419.77); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.country, None);
         assert_eq!(result.address, Some("qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a".to_string()));
-        assert_eq!(result.fee_provider, Some(400.94));
-        assert_eq!(result.fee_partner, Some(89.1));
     }
 }

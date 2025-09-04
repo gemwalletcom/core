@@ -165,6 +165,7 @@ impl fmt::Display for ChainAddressPayload {
 pub enum FiatWebhook {
     OrderId(String),
     Transaction(FiatTransaction),
+    None,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

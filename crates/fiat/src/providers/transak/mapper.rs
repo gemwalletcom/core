@@ -124,9 +124,6 @@ pub fn map_order_from_response(payload: TransakOrderResponse) -> Result<FiatTran
         fiat_currency: payload.fiat_currency,
         transaction_hash: payload.transaction_hash,
         address: payload.wallet_address,
-        fee_provider: None, // Not available in order response
-        fee_network: None,
-        fee_partner: None,
     })
 }
 

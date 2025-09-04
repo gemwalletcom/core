@@ -120,9 +120,6 @@ fn map_buy_transaction(buy: BuyTransaction, withdraw: Option<WithdrawTransaction
         fiat_currency: buy.fiat_currency,
         transaction_hash: withdraw.as_ref().and_then(|w| w.hash.clone()),
         address: withdraw.as_ref().and_then(|w| w.address.clone()),
-        fee_provider: None,
-        fee_network: None,
-        fee_partner: None,
     })
 }
 
@@ -163,9 +160,6 @@ fn map_mobile_pay_transaction(
         fiat_currency: mobile_pay.fiat_currency,
         transaction_hash: withdraw.as_ref().and_then(|w| w.hash.clone()),
         address: withdraw.as_ref().and_then(|w| w.address.clone()),
-        fee_provider: None,
-        fee_network: None,
-        fee_partner: None,
     })
 }
 
@@ -192,9 +186,6 @@ fn map_sell_transaction(withdraw: WithdrawTransaction) -> Result<FiatTransaction
         fiat_currency: "USD".to_string(),
         transaction_hash: withdraw.hash,
         address: withdraw.address,
-        fee_provider: None,
-        fee_network: None,
-        fee_partner: None,
     })
 }
 
@@ -221,9 +212,6 @@ fn map_sell_transaction_new(sell: SellTransaction, deposit: Option<DepositTransa
         fiat_currency: sell.fiat_currency,
         transaction_hash: deposit.as_ref().and_then(|d| d.hash.clone()),
         address: deposit.as_ref().and_then(|d| d.address.clone()),
-        fee_provider: None,
-        fee_network: None,
-        fee_partner: None,
     })
 }
 

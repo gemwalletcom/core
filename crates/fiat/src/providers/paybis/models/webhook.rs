@@ -7,52 +7,52 @@ pub struct PaybisWebhook {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct PaybisWebhookData {
-    pub transaction: PaybisWebhookTransaction,
+    pub transaction: PaybisTransaction,
     #[serde(rename = "amountFrom")]
-    pub amount_from: PaybisWebhookAmount,
+    pub amount_from: PaybisAmount,
     #[serde(rename = "amountTo")]
-    pub amount_to: PaybisWebhookAmount,
-    pub payment: Option<PaybisWebhookPayment>,
-    pub payout: Option<PaybisWebhookPayout>,
+    pub amount_to: PaybisAmount,
+    pub payment: Option<PaybisPayment>,
+    pub payout: Option<PaybisPayout>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisWebhookPayment {
-    pub card: Option<PaybisWebhookCard>,
+pub struct PaybisPayment {
+    pub card: Option<PaybisCard>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisWebhookCard {
+pub struct PaybisCard {
     #[serde(rename = "billingAddress")]
-    pub billing_address: PaybisWebhookBillingAddress,
+    pub billing_address: PaybisBillingAddress,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisWebhookBillingAddress {
-    pub country: PaybisWebhookCountry,
+pub struct PaybisBillingAddress {
+    pub country: PaybisCountry,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisWebhookCountry {
+pub struct PaybisCountry {
     pub code: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisWebhookPayout {
+pub struct PaybisPayout {
     pub transaction_hash: Option<String>,
     #[serde(rename = "destinationWalletAddress")]
-    pub destination_wallet_address: String,
+    pub destination_wallet_address: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisWebhookTransaction {
+pub struct PaybisTransaction {
     pub invoice: String,
     pub status: String,
     pub flow: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisWebhookAmount {
+pub struct PaybisAmount {
     pub amount: String,
     pub currency: String,
 }

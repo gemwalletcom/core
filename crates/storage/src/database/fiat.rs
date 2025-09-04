@@ -71,9 +71,6 @@ impl FiatStore for DatabaseClient {
             country: transaction.country.clone(),
             transaction_hash: transaction.transaction_hash.clone(),
             address: transaction.address.clone(),
-            fee_provider: transaction.fee_provider,
-            fee_partner: transaction.fee_partner,
-            fee_network: transaction.fee_network,
         };
 
         diesel::insert_into(fiat_transactions)

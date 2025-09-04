@@ -71,9 +71,6 @@ pub fn map_order(order: Order) -> Result<FiatTransaction, Box<dyn std::error::Er
         fiat_currency: order.fiat,
         transaction_hash: order.tx_hash,
         address: Some(order.wallet_address),
-        fee_provider: None,
-        fee_network: order.network_fee,
-        fee_partner: order.processing_fee,
     })
 }
 
@@ -114,7 +111,5 @@ mod tests {
         assert_eq!(result.country, None);
         assert_eq!(result.address, Some("0x123".to_string()));
         assert!(result.asset_id.is_some());
-        assert_eq!(result.fee_network, Some(0.0));
-        assert_eq!(result.fee_partner, Some(0.0));
     }
 }

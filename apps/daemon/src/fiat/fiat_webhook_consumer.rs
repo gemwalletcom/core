@@ -37,6 +37,10 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                         provider.get_order_status(order_id).await?
                     }
                     FiatWebhook::Transaction(transaction) => transaction.clone(),
+                    FiatWebhook::None => {
+                        println!("Ignoring webhook for provider: {}", provider.name().id());
+                        return Ok(true);
+                    }
                 };
 
                 println!(

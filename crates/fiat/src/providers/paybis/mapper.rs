@@ -1,8 +1,11 @@
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use streamer::FiatWebhook;
+
+use crate::providers::paybis::models::PaybisWebhook;
 
 use super::{
     client::PaybisClient,
-    models::{Currency, PaybisTransaction, PaybisWebhook},
+    models::{Currency, PaybisWebhookData},
 };
 
 pub fn map_asset_id(currency: Currency) -> Option<AssetId> {
@@ -53,81 +56,43 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
     }
 }
 
-pub fn map_order_from_response(transaction: PaybisTransaction) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-    let asset_id = map_symbol_to_asset_id(&transaction.crypto_currency);
-
-    let status = match transaction.status.as_str() {
-        "pending" | "confirming" => FiatTransactionStatus::Pending,
-        "failed" | "cancelled" | "canceled" => FiatTransactionStatus::Failed,
+pub fn map_status(status: &str) -> FiatTransactionStatus {
+    match status {
+        "started" | "pending" | "confirming" | "payment-authorized" => FiatTransactionStatus::Pending,
         "completed" | "success" => FiatTransactionStatus::Complete,
-        _ => FiatTransactionStatus::Unknown(transaction.status.clone()),
-    };
-
-    let transaction_type = FiatQuoteType::Buy; // TODO: Determine from API response
-
-    Ok(FiatTransaction {
-        asset_id,
-        transaction_type,
-        symbol: transaction.crypto_currency,
-        provider_id: PaybisClient::NAME.id(),
-        provider_transaction_id: transaction.id,
-        status,
-        country: transaction.country,
-        fiat_amount: transaction.fiat_amount,
-        fiat_currency: transaction.fiat_currency.to_uppercase(),
-        transaction_hash: transaction.transaction_hash,
-        address: transaction.wallet_address,
-        fee_provider: transaction.service_fee,
-        fee_network: transaction.network_fee,
-        fee_partner: transaction.partner_fee,
-    })
+        "failed" | "cancelled" | "canceled" | "rejected" => FiatTransactionStatus::Failed,
+        _ => FiatTransactionStatus::Unknown(status.to_string()),
+    }
 }
 
-pub fn map_webhook_order_id(data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    Ok(serde_json::from_value::<PaybisWebhook>(data)?.data.transaction.invoice)
+pub fn map_process_webhook(data: serde_json::Value) -> FiatWebhook {
+    match serde_json::from_value::<PaybisWebhook>(data) {
+        Ok(webhook) => map_webhook_data(webhook.data),
+        Err(_) => FiatWebhook::None,
+    }
 }
 
-pub fn map_webhook_to_transaction(data: serde_json::Value) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-    let webhook = serde_json::from_value::<PaybisWebhook>(data)?.data;
-
-    let transaction_type = match webhook.transaction.flow.as_str() {
-        "buyCrypto" => FiatQuoteType::Buy,
-        "sellCrypto" => FiatQuoteType::Sell,
-        _ => FiatQuoteType::Buy,
-    };
-
-    let status = match webhook.transaction.status.as_str() {
-        "started" | "pending" | "confirming" => FiatTransactionStatus::Pending,
-        "completed" | "success" => FiatTransactionStatus::Complete,
-        "failed" | "cancelled" | "canceled" => FiatTransactionStatus::Failed,
-        _ => FiatTransactionStatus::Unknown(webhook.transaction.status.clone()),
-    };
-
-    let crypto_currency = &webhook.amount_to.currency;
-    let fiat_currency = &webhook.amount_from.currency;
-    let asset_id = map_symbol_to_asset_id(crypto_currency);
-
-    let fiat_amount: f64 = webhook.amount_from.amount.parse().unwrap_or(0.0);
-
-    Ok(FiatTransaction {
-        asset_id,
-        transaction_type,
-        symbol: crypto_currency.clone(),
+pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
+    FiatWebhook::Transaction(FiatTransaction {
+        asset_id: map_symbol_to_asset_id(&webhook_data.amount_to.currency),
+        transaction_type: match webhook_data.transaction.flow.as_str() {
+            "buyCrypto" => FiatQuoteType::Buy,
+            "sellCrypto" => FiatQuoteType::Sell,
+            _ => FiatQuoteType::Buy,
+        },
+        symbol: webhook_data.amount_to.currency,
         provider_id: PaybisClient::NAME.id(),
-        provider_transaction_id: webhook.transaction.invoice,
-        status,
-        country: webhook
+        provider_transaction_id: webhook_data.transaction.invoice,
+        status: map_status(&webhook_data.transaction.status),
+        country: webhook_data
             .payment
             .as_ref()
             .and_then(|p| p.card.as_ref())
             .map(|c| c.billing_address.country.code.clone()),
-        fiat_amount,
-        fiat_currency: fiat_currency.to_uppercase(),
-        transaction_hash: webhook.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
-        address: webhook.payout.as_ref().map(|p| p.destination_wallet_address.clone()),
-        fee_provider: None,
-        fee_network: None,
-        fee_partner: None,
+        fiat_amount: webhook_data.amount_from.amount.parse().unwrap_or(0.0),
+        fiat_currency: webhook_data.amount_from.currency.to_uppercase(),
+        transaction_hash: webhook_data.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
+        address: webhook_data.payout.as_ref().and_then(|p| p.destination_wallet_address.clone()),
     })
 }
 
@@ -210,26 +175,61 @@ mod tests {
     }
 
     #[test]
-    fn test_map_webhook_order_id() {
-        let webhook_data: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json")).unwrap();
+    fn test_map_process_webhook() {
+        let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json")).unwrap();
 
-        let order_id = map_webhook_order_id(webhook_data.clone()).unwrap();
-        assert_eq!(order_id, "PB21095868675TX1");
+        let result = map_process_webhook(webhook_json);
+        if let FiatWebhook::Transaction(transaction) = result {
+            assert_eq!(transaction.provider_transaction_id, "PB21095868675TX1");
+            assert_eq!(transaction.symbol, "SOL");
+            assert_eq!(transaction.fiat_currency, "USD");
+        } else {
+            panic!("Expected FiatWebhook::Transaction variant");
+        }
     }
 
     #[test]
-    fn test_map_webhook_to_transaction() {
-        let webhook_data: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json")).unwrap();
+    fn test_map_process_webhook_with_payment() {
+        let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json")).unwrap();
 
-        let transaction = map_webhook_to_transaction(webhook_data.clone()).unwrap();
-        assert_eq!(transaction.provider_transaction_id, "PB21095868675TX1");
-        assert_eq!(transaction.symbol, "SOL");
-        assert_eq!(transaction.fiat_currency, "USD");
-        assert_eq!(transaction.fiat_amount, 50.0);
-        assert!(matches!(transaction.transaction_type, FiatQuoteType::Buy));
-        assert!(matches!(transaction.status, FiatTransactionStatus::Pending));
-        assert_eq!(transaction.country, Some("US".to_string()));
-        assert_eq!(transaction.address, Some("test123".to_string()));
-        assert_eq!(transaction.transaction_hash, None);
+        let result = map_process_webhook(webhook_json);
+        if let FiatWebhook::Transaction(transaction) = result {
+            assert_eq!(transaction.provider_transaction_id, "PB21095868675TX1");
+            assert_eq!(transaction.symbol, "SOL");
+            assert_eq!(transaction.fiat_currency, "USD");
+            assert_eq!(transaction.fiat_amount, 50.0);
+            assert!(matches!(transaction.transaction_type, FiatQuoteType::Buy));
+            assert!(matches!(transaction.status, FiatTransactionStatus::Pending));
+            assert_eq!(transaction.country, Some("US".to_string()));
+            assert_eq!(transaction.address, Some("test123".to_string()));
+            assert_eq!(transaction.transaction_hash, None);
+        } else {
+            panic!("Expected FiatWebhook::Transaction variant");
+        }
+    }
+
+    #[test]
+    fn test_map_process_webhook_no_payment() {
+        let webhook_json: serde_json::Value =
+            serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started_no_payment.json")).unwrap();
+
+        let result = map_process_webhook(webhook_json);
+        if let FiatWebhook::Transaction(transaction) = result {
+            assert_eq!(transaction.provider_transaction_id, "PB25095868675TX8");
+            assert_eq!(transaction.symbol, "SOL");
+            assert_eq!(transaction.fiat_currency, "USD");
+            assert_eq!(transaction.country, None);
+            assert_eq!(transaction.address, None);
+        } else {
+            panic!("Expected FiatWebhook::Transaction variant");
+        }
+    }
+
+    #[test]
+    fn test_verification_webhook_maps_to_none() {
+        let data: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_no_changes.json")).unwrap();
+
+        let result = map_process_webhook(data);
+        assert!(matches!(result, FiatWebhook::None), "Verification webhooks should map to FiatWebhook::None");
     }
 }

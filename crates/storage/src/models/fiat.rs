@@ -108,9 +108,6 @@ pub struct FiatTransaction {
     pub fiat_currency: String,
     pub address: Option<String>,
     pub transaction_hash: Option<String>,
-    pub fee_network: Option<f64>,
-    pub fee_partner: Option<f64>,
-    pub fee_provider: Option<f64>,
 }
 
 impl FiatTransaction {
@@ -127,9 +124,6 @@ impl FiatTransaction {
             fiat_currency: transaction.fiat_currency,
             transaction_hash: transaction.transaction_hash,
             address: transaction.address,
-            fee_provider: transaction.fee_provider,
-            fee_network: transaction.fee_network,
-            fee_partner: transaction.fee_partner,
         }
     }
 }
@@ -170,7 +164,4 @@ pub struct FiatTransactionUpdate {
     pub country: Option<String>,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
-    pub fee_network: Option<f64>,
-    pub fee_partner: Option<f64>,
-    pub fee_provider: Option<f64>,
 }
