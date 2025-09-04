@@ -23,7 +23,7 @@ impl THORChainName {
         match self {
             THORChainName::Doge => "d",        // DOGE.DOGE
             THORChainName::Thorchain => "r",   // THOR.RUNE
-            THORChainName::Ethereum => "e",    // "ETH.ETH"
+            THORChainName::Ethereum => "e",    // ETH.ETH
             THORChainName::Cosmos => "g",      // GAIA.ATOM
             THORChainName::Bitcoin => "b",     // BTC.BTC
             THORChainName::BitcoinCash => "c", // BCH.BCH
