@@ -6,6 +6,7 @@ use crate::{
 use async_trait::async_trait;
 use std::error::Error;
 
+use super::models::country::country_status;
 use super::{
     client::PaybisClient,
     mapper::{map_order_from_response, map_webhook_to_transaction},
@@ -55,7 +56,16 @@ impl FiatProvider for PaybisClient {
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(vec![])
+        let countries = country_status()
+            .iter()
+            .map(|(alpha2, is_allowed)| FiatProviderCountry {
+                provider: Self::NAME.id(),
+                alpha2: alpha2.to_string(),
+                is_allowed: *is_allowed,
+            })
+            .collect();
+
+        Ok(countries)
     }
 
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
@@ -120,6 +130,24 @@ mod fiat_integration_tests {
                 println!("{} asset: {:?}", symbol, asset);
             }
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_paybis_get_countries() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_paybis_test_client();
+        let countries = FiatProvider::get_countries(&client).await?;
+
+        assert!(!countries.is_empty());
+
+        let us_country = countries.iter().find(|c| c.alpha2 == "US").unwrap();
+        assert!(us_country.is_allowed);
+        assert_eq!(us_country.provider, "paybis");
+
+        let ly_country = countries.iter().find(|c| c.alpha2 == "LY").unwrap();
+        assert!(!ly_country.is_allowed);
+        assert_eq!(ly_country.provider, "paybis");
 
         Ok(())
     }
