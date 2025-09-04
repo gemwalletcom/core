@@ -29,7 +29,6 @@ cacher = { path = "../cacher" }
 streamer = { path = "../streamer" }
 
 [dev-dependencies]
-tokio-test = { version = "*" }
 
 [features]
 # Feature flag for integration tests

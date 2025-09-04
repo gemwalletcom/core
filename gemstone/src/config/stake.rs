@@ -38,7 +38,7 @@ mod tests {
                 can_redelegate: false,
                 can_withdraw: false,
                 can_claim_rewards: false,
-                reserved_for_fees: 5_242_440,
+                reserved_for_fees: 100000000,
             }
         );
     }

@@ -13,8 +13,13 @@ serde_json = { workspace = true }
 hex = { workspace = true }
 hmac = { workspace = true }
 sha2 = { workspace = true }
-reqwest-enum = { workspace = true }
+gem_client = { path = "../gem_client", features = ["reqwest"] }
 
 [dev-dependencies]
 serde_json = { workspace = true }
 tokio = { workspace = true }
+settings = { path = "../settings" }
+
+[[test]]
+name = "integration_test"
+test = false

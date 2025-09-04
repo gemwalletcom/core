@@ -31,6 +31,7 @@ nft_provider = { path = "../../crates/nft_provider" }
 nft_client = { path = "../../crates/nft_client" }
 cacher = { path = "../../crates/cacher" }
 streamer = { path = "../../crates/streamer" }
+gem_client = { path = "../../crates/gem_client", features = ["reqwest"] }
 gem_chain_rpc = { path = "../../crates/gem_chain_rpc" }
 
 security_provider = { path = "../../crates/security_provider" }
