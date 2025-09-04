@@ -6,13 +6,17 @@ use async_trait::async_trait;
 use chain_traits::ChainTransactions;
 use primitives::{BroadcastOptions, TransactionStateRequest, TransactionUpdate};
 
-use crate::{provider::transactions_mapper::map_transaction_status, rpc::client::EthereumClient};
+use crate::{
+    provider::transactions_mapper::{map_transaction_broadcast, map_transaction_status},
+    rpc::client::EthereumClient,
+};
 use gem_client::Client;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
     async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
+        let data = map_transaction_broadcast(&data);
         Ok(self.send_raw_transaction(&data).await?)
     }
 
