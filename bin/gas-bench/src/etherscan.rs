@@ -2,8 +2,8 @@
 
 use crate::client::GemstoneFeeData;
 use anyhow::{anyhow, Result};
-use primitives::{fee::FeePriority, PriorityFeeValue};
 use num_bigint::BigInt;
+use primitives::{fee::FeePriority, PriorityFeeValue};
 use serde::Deserialize;
 use serde_serializers::deserialize_u64_from_str;
 

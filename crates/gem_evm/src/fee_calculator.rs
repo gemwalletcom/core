@@ -1,6 +1,6 @@
 use std::cmp::min;
 
-use primitives::{fee::FeePriority, PriorityFeeValue, EVMChain};
+use primitives::{fee::FeePriority, EVMChain, PriorityFeeValue};
 
 use crate::models::fee::EthereumFeeHistory;
 
@@ -163,7 +163,9 @@ mod tests {
         let fee_history = create_test_fee_history();
         let priorities = [FeePriority::Slow, FeePriority::Normal, FeePriority::Fast];
 
-        let result = calculator.calculate_priority_fees(&fee_history, &priorities, BigInt::from(100_000_000)).unwrap();
+        let result = calculator
+            .calculate_priority_fees(&fee_history, &priorities, BigInt::from(100_000_000))
+            .unwrap();
 
         assert_eq!(result.len(), 3);
 
@@ -187,7 +189,9 @@ mod tests {
             oldest_block: 0,
         };
 
-        assert!(calculator.calculate_priority_fees(&empty_history, &[FeePriority::Slow], BigInt::from(100)).is_err());
+        assert!(calculator
+            .calculate_priority_fees(&empty_history, &[FeePriority::Slow], BigInt::from(100))
+            .is_err());
         assert!(calculator
             .calculate_priority_fees(&create_test_fee_history(), &[FeePriority::Slow, FeePriority::Normal], BigInt::from(100))
             .is_err());

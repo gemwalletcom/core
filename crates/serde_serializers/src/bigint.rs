@@ -45,7 +45,6 @@ where
         .collect()
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,11 +118,10 @@ mod tests {
     fn test_deserialize_bigint_vec_from_hex_str() {
         let json_data = r#"{"values":["0x1a","0xff","0x0"]}"#;
         let deserialized: TestVecStruct = serde_json::from_str(json_data).unwrap();
-        
+
         assert_eq!(deserialized.values.len(), 3);
         assert_eq!(deserialized.values[0], BigInt::from(26));
         assert_eq!(deserialized.values[1], BigInt::from(255));
         assert_eq!(deserialized.values[2], BigInt::from(0));
     }
-
 }
