@@ -10,6 +10,9 @@ mod eth_address;
 mod permit2_data;
 mod swapper_trait;
 
+#[cfg(test)]
+pub mod testkit;
+
 pub mod across;
 pub mod asset;
 pub mod cetus;

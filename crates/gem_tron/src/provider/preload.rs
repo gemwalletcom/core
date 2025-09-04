@@ -71,6 +71,13 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
             TransactionInputType::Stake(_asset, stake_type) => {
                 TransactionFee::new_from_fee(calculate_stake_fee_rate(&chain_parameters, &account_usage, stake_type)?)
             }
+            TransactionInputType::Swap(from_asset, _swap_type, _swap_data) => match from_asset.id.token_subtype() {
+                AssetSubtype::NATIVE => {
+                    let fee = calculate_transfer_fee_rate(&chain_parameters, &account_usage, false)?;
+                    TransactionFee::new_from_fee(fee)
+                }
+                AssetSubtype::TOKEN => return Err("No support for token swap".into()),
+            },
             _ => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
         };
 

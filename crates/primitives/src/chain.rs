@@ -354,11 +354,11 @@ impl Chain {
             | Self::Ton
             | Self::Xrp
             | Self::Berachain
-            | Self::Plasma => true,
+            | Self::Plasma
+            | Self::Tron => true,
             Self::Osmosis
             | Self::Celestia
             | Self::Injective
-            | Self::Tron
             | Self::Sei
             | Self::Noble
             | Self::Near

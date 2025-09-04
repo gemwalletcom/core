@@ -51,6 +51,7 @@ impl Swapper for ThorChain {
                 Chain::SmartChain => SwapperChainAsset::Assets(chain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone()]),
                 Chain::AvalancheC => SwapperChainAsset::Assets(chain, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
                 Chain::Base => SwapperChainAsset::Assets(chain, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone()]),
+                Chain::Tron => SwapperChainAsset::Assets(chain, vec![]), //Enable once live. vec![TRON_USDT.id.clone()]),
                 _ => SwapperChainAsset::Assets(chain, vec![]),
             })
             .collect()
@@ -235,5 +236,30 @@ impl Swapper for ThorChain {
             to_chain,
             to_tx_hash,
         })
+    }
+}
+
+#[cfg(all(test, feature = "swap_integration_tests"))]
+mod swap_integration_tests {
+    use super::*;
+    use crate::{network::alien_provider::NativeProvider, swapper::testkit::mock_quote};
+
+    #[tokio::test]
+    async fn test_thorchain_swap_trx_to_bnb() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let swapper = ThorChain::default();
+        let provider = Arc::new(NativeProvider::default());
+
+        let request = mock_quote(Chain::Tron.as_asset_id(), Chain::SmartChain.as_asset_id());
+
+        let quote = swapper.fetch_quote(&request, provider.clone()).await?;
+
+        println!("quote: {:#?}", quote);
+
+        assert_eq!(quote.from_value, request.value);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        assert!(quote.eta_in_seconds.is_some());
+        assert!(!quote.data.routes.is_empty());
+
+        Ok(())
     }
 }
