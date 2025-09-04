@@ -1,8 +1,8 @@
 // https://api.gasflow.dev/predict
 
 use anyhow::Result;
-use primitives::{fee::FeePriority, PriorityFeeValue};
 use num_bigint::BigInt;
+use primitives::{fee::FeePriority, PriorityFeeValue};
 use serde::Deserialize;
 
 use crate::client::GemstoneFeeData;
