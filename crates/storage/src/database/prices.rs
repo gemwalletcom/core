@@ -10,7 +10,7 @@ pub(crate) trait PricesStore {
     fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, diesel::result::Error>;
     fn get_prices(&mut self) -> Result<Vec<Price>, diesel::result::Error>;
     fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, diesel::result::Error>;
-    fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error>;
+    fn get_price(&mut self, asset_id: &str) -> Result<Option<Price>, diesel::result::Error>;
     fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error>;
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAsset>, diesel::result::Error>;
     fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error>;
@@ -60,13 +60,14 @@ impl PricesStore for DatabaseClient {
         use crate::schema::prices_assets::dsl::*;
         prices_assets.select(PriceAsset::as_select()).load(&mut self.connection)
     }
-    fn get_price(&mut self, asset_id: &str) -> Result<Price, diesel::result::Error> {
+    fn get_price(&mut self, asset_id: &str) -> Result<Option<Price>, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         prices
             .inner_join(prices_assets::table)
             .filter(prices_assets::asset_id.eq(asset_id))
             .select(Price::as_select())
             .first(&mut self.connection)
+            .optional()
     }
 
     fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, diesel::result::Error> {

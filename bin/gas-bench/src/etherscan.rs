@@ -2,7 +2,8 @@
 
 use crate::client::GemstoneFeeData;
 use anyhow::{anyhow, Result};
-use gemstone::ethereum::model::{GemFeePriority, GemPriorityFeeRecord};
+use primitives::{fee::FeePriority, PriorityFeeValue};
+use num_bigint::BigInt;
 use serde::Deserialize;
 use serde_serializers::deserialize_u64_from_str;
 
@@ -42,17 +43,17 @@ impl EtherscanResult {
             suggest_base_fee: self.suggest_base_fee.clone(),
             gas_used_ratio: gas_used_ratio_str,
             priority_fees: vec![
-                GemPriorityFeeRecord {
-                    priority: GemFeePriority::Slow,
-                    value: (safe_fee - base_fee).to_string(),
+                PriorityFeeValue {
+                    priority: FeePriority::Slow,
+                    value: BigInt::from((safe_fee - base_fee) as i64),
                 },
-                GemPriorityFeeRecord {
-                    priority: GemFeePriority::Normal,
-                    value: (propose_fee - base_fee).to_string(),
+                PriorityFeeValue {
+                    priority: FeePriority::Normal,
+                    value: BigInt::from((propose_fee - base_fee) as i64),
                 },
-                GemPriorityFeeRecord {
-                    priority: GemFeePriority::Fast,
-                    value: (fast_fee - base_fee).to_string(),
+                PriorityFeeValue {
+                    priority: FeePriority::Fast,
+                    value: BigInt::from((fast_fee - base_fee) as i64),
                 },
             ],
         }

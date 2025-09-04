@@ -13,7 +13,8 @@ use crate::{
     etherscan::EtherscanClient,
     gasflow::GasflowClient,
 };
-use gemstone::{ethereum::model::GemFeePriority, network::alien_provider::NativeProvider};
+use gemstone::network::alien_provider::NativeProvider;
+use primitives::fee::FeePriority;
 
 #[derive(Debug, Clone)]
 struct SourceFeeDetail {
@@ -101,10 +102,11 @@ async fn run(args: Cli) -> Result<()> {
             let mut normal = "N/A".to_string();
             let mut fast = "N/A".to_string();
             for fee_record in &data.priority_fees {
+                use gem_evm::ether_conv::EtherConv;
                 match fee_record.priority {
-                    GemFeePriority::Slow => slow = fee_record.value.clone(),
-                    GemFeePriority::Normal => normal = fee_record.value.clone(),
-                    GemFeePriority::Fast => fast = fee_record.value.clone(),
+                    FeePriority::Slow => slow = EtherConv::to_gwei(&fee_record.value),
+                    FeePriority::Normal => normal = EtherConv::to_gwei(&fee_record.value),
+                    FeePriority::Fast => fast = EtherConv::to_gwei(&fee_record.value),
                 }
             }
             SourceFeeDetail {

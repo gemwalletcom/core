@@ -1,7 +1,8 @@
 // https://api.gasflow.dev/predict
 
 use anyhow::Result;
-use gemstone::ethereum::model::{GemFeePriority, GemPriorityFeeRecord};
+use primitives::{fee::FeePriority, PriorityFeeValue};
+use num_bigint::BigInt;
 use serde::Deserialize;
 
 use crate::client::GemstoneFeeData;
@@ -45,17 +46,17 @@ impl GasflowResponse {
             suggest_base_fee: self.current_base_fee_gwei.to_string(),
             gas_used_ratio: gas_used_ratio_str,
             priority_fees: vec![
-                GemPriorityFeeRecord {
-                    priority: GemFeePriority::Slow,
-                    value: self.predicted_quantiles.minimum.to_string(),
+                PriorityFeeValue {
+                    priority: FeePriority::Slow,
+                    value: BigInt::from(self.predicted_quantiles.minimum as i64),
                 },
-                GemPriorityFeeRecord {
-                    priority: GemFeePriority::Normal,
-                    value: self.predicted_quantiles.normal.to_string(),
+                PriorityFeeValue {
+                    priority: FeePriority::Normal,
+                    value: BigInt::from(self.predicted_quantiles.normal as i64),
                 },
-                GemPriorityFeeRecord {
-                    priority: GemFeePriority::Fast,
-                    value: self.predicted_quantiles.fast.to_string(),
+                PriorityFeeValue {
+                    priority: FeePriority::Fast,
+                    value: BigInt::from(self.predicted_quantiles.fast as i64),
                 },
             ],
         }

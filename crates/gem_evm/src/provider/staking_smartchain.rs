@@ -2,7 +2,6 @@ use crate::constants::STAKING_VALIDATORS_LIMIT;
 use crate::rpc::client::EthereumClient;
 use chrono::DateTime;
 use gem_client::Client;
-use gem_jsonrpc::types::JsonRpcResult;
 use num_bigint::{BigInt, BigUint};
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
@@ -16,7 +15,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let limit = self.get_max_elected_validators().await?;
         let call_data = encode_validators_call(0, limit);
-        
+
         let call = (
             "eth_call".to_string(),
             serde_json::json!([{
@@ -68,13 +67,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             ),
         ];
 
-        let results: Vec<String> = self.batch_call::<String>(calls).await?
-            .into_iter()
-            .map(|result| match result {
-                JsonRpcResult::Value(value) => Ok(value.result),
-                JsonRpcResult::Error(error) => Err(error.error),
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
 
         let delegations_data = hex::decode(results[0].trim_start_matches("0x"))?;
         let delegations = decode_delegations_return(&delegations_data)?;
