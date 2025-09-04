@@ -89,14 +89,15 @@ impl FiatClient {
         webhook_data: serde_json::Value,
     ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.provider(provider_name)?;
-        let payload = match provider.webhook_order_id(webhook_data.clone()).await {
-            Ok(_) => Ok(FiatWebhookPayload::new(provider.name(), webhook_data.clone())),
+        let webhook_result = match provider.process_webhook(webhook_data.clone()).await {
+            Ok(result) => result,
             Err(e) => {
                 println!("Failed to decode webhook payload: {}, JSON payload: {}", e, webhook_data);
-                Err(e)
+                return Err(e);
             }
-        }?;
+        };
 
+        let payload = FiatWebhookPayload::new(provider.name(), webhook_data, webhook_result);
         self.stream_producer.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await?;
 
         Ok(payload)

@@ -6,7 +6,7 @@ use fiat::FiatProviderFactory;
 use settings::Settings;
 use storage::DatabaseClient;
 use streamer::consumer::MessageConsumer;
-use streamer::FiatWebhookPayload;
+use streamer::{FiatWebhook, FiatWebhookPayload};
 
 pub struct FiatWebhookConsumer {
     pub database: DatabaseClient,
@@ -31,27 +31,18 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
     async fn process(&mut self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         for provider in &self.providers {
             if provider.name() == payload.provider {
-                let order_id = match provider.webhook_order_id(payload.data.clone()).await {
-                    Ok(order_id) => order_id,
-                    Err(e) => {
-                        println!(
-                            "Failed to get order ID for webhook for provider {} with data: \n\n {:?}\n\n failed: {}",
-                            provider.name().id(),
-                            payload.data,
-                            e
-                        );
-                        return Ok(false);
+                let transaction = match &payload.payload {
+                    FiatWebhook::OrderId(order_id) => {
+                        println!("Fetching order status for provider: {}, order_id: {}", provider.name().id(), order_id);
+                        provider.get_order_status(order_id).await?
                     }
+                    FiatWebhook::Transaction(transaction) => transaction.clone(),
                 };
-
-                println!("Fetching order status for provider: {}, order_id: {}", provider.name().id(), order_id);
-
-                let transaction = provider.get_order_status(&order_id).await?;
 
                 println!(
                     "Processing webhook for provider: {}, order_id: {}, symbol: {}, fiat_amount: {} {} status: {:?}",
                     provider.name().id(),
-                    order_id,
+                    transaction.provider_transaction_id,
                     transaction.symbol,
                     transaction.fiat_amount,
                     transaction.fiat_currency,

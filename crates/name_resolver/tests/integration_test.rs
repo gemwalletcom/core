@@ -64,4 +64,3 @@ mod tests {
         assert_eq!(address.trim(), "2EGGxj2qbNAJNgLCPKca8sxZYetyTjnoRspTPjzN2D67");
     }
 }
-

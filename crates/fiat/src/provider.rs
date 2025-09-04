@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::model::{FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
+use streamer::FiatWebhook;
 
 #[async_trait]
 pub trait FiatProvider {
@@ -13,7 +14,7 @@ pub trait FiatProvider {
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>>;
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>>;
 
-    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>>;
+    async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[async_trait]
@@ -44,7 +45,7 @@ where
         (**self).get_order_status(order_id).await
     }
 
-    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).webhook_order_id(data).await
+    async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
+        (**self).process_webhook(data).await
     }
 }

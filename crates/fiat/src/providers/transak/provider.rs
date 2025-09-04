@@ -10,6 +10,7 @@ use crate::{
 use async_trait::async_trait;
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 use std::error::Error;
+use streamer::FiatWebhook;
 
 #[async_trait]
 impl FiatProvider for TransakClient {
@@ -64,13 +65,13 @@ impl FiatProvider for TransakClient {
         map_order_from_response(response)
     }
 
-    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
         let encrypted_data = serde_json::from_value::<Data<String>>(data)?;
         let decoded_payload = self
             .decode_jwt_content(&encrypted_data.data)
             .map_err(|e| format!("Failed to decode Transak JWT: {}", e))?;
         let webhook_payload = serde_json::from_str::<WebhookPayload>(&decoded_payload)?;
-        Ok(webhook_payload.webhook_data.id)
+        Ok(FiatWebhook::OrderId(webhook_payload.webhook_data.id))
     }
 }
 

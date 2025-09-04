@@ -8,9 +8,10 @@ use std::error::Error;
 
 use super::{
     client::PaybisClient,
-    mapper::{map_order_from_response, map_webhook_order_id},
+    mapper::{map_order_from_response, map_webhook_to_transaction},
 };
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
+use streamer::FiatWebhook;
 
 #[async_trait]
 impl FiatProvider for PaybisClient {
@@ -45,16 +46,12 @@ impl FiatProvider for PaybisClient {
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let response = self.get_assets().await?;
 
-        let assets = response
+        Ok(response
             .meta
             .currencies
             .into_iter()
             .flat_map(Self::map_asset)
-            .collect::<Vec<FiatProviderAsset>>();
-
-        println!("assets: {:#?}", assets);
-
-        Ok(assets)
+            .collect::<Vec<FiatProviderAsset>>())
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
@@ -67,8 +64,9 @@ impl FiatProvider for PaybisClient {
         map_order_from_response(transaction)
     }
 
-    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        map_webhook_order_id(data)
+    async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
+        let transaction = map_webhook_to_transaction(data)?;
+        Ok(FiatWebhook::Transaction(transaction))
     }
 }
 
@@ -76,7 +74,7 @@ impl FiatProvider for PaybisClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{model::FiatMapping, FiatProvider};
-    use primitives::FiatBuyQuote;
+    use primitives::{Chain, FiatBuyQuote};
 
     #[tokio::test]
     async fn test_paybis_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -103,12 +101,24 @@ mod fiat_integration_tests {
         let assets = FiatProvider::get_assets(&client).await?;
 
         assert!(!assets.is_empty());
+
         println!("Found {} Paybis assets", assets.len());
 
-        if let Some(asset) = assets.first() {
-            assert!(!asset.id.is_empty());
-            assert!(!asset.symbol.is_empty());
-            println!("Sample Paybis asset: {:?}", asset);
+        let expected_assets = vec![
+            ("USDT-TRC20", Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")),
+            ("TRX", Chain::Tron, None),
+            ("XRP", Chain::Xrp, None),
+        ];
+
+        for (symbol, expected_chain, expected_token_id) in expected_assets {
+            let asset = assets.iter().find(|asset| asset.symbol == symbol);
+            assert!(asset.is_some(), "{} asset should exist", symbol);
+
+            if let Some(asset) = asset {
+                assert_eq!(asset.chain, Some(expected_chain));
+                assert_eq!(asset.token_id.as_deref(), expected_token_id);
+                println!("{} asset: {:?}", symbol, asset);
+            }
         }
 
         Ok(())

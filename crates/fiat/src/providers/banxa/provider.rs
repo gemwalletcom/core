@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use primitives::{FiatBuyQuote, FiatSellQuote};
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
 use std::error::Error;
+use streamer::FiatWebhook;
 
 use super::{
     client::BanxaClient,
@@ -82,8 +83,9 @@ impl FiatProvider for BanxaClient {
     }
 
     // https://docs.banxa.com/docs/webhooks
-    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(serde_json::from_value::<Webhook>(data)?.order_id)
+    async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
+        let order_id = serde_json::from_value::<Webhook>(data)?.order_id;
+        Ok(FiatWebhook::OrderId(order_id))
     }
 }
 

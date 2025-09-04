@@ -6,6 +6,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use std::error::Error;
+use streamer::FiatWebhook;
 
 use super::{client::MoonPayClient, mapper::map_order};
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
@@ -68,10 +69,9 @@ impl FiatProvider for MoonPayClient {
         map_order(payload)
     }
 
-    // full transaction: https://dev.moonpay.com/reference/reference-webhooks-buy
-    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
         let payload = serde_json::from_value::<Data<WebhookOrderId>>(data)?.data;
-        Ok(payload.id)
+        Ok(FiatWebhook::OrderId(payload.id))
     }
 }
 

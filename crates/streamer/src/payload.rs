@@ -1,4 +1,4 @@
-use primitives::{AssetAddress, AssetId, Chain, ChainAddress, FiatProviderName, GorushNotification, Transaction};
+use primitives::{AssetAddress, AssetId, Chain, ChainAddress, FiatProviderName, FiatTransaction, GorushNotification, Transaction};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -161,14 +161,22 @@ impl fmt::Display for ChainAddressPayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::large_enum_variant)]
+pub enum FiatWebhook {
+    OrderId(String),
+    Transaction(FiatTransaction),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FiatWebhookPayload {
     pub provider: FiatProviderName,
     pub data: serde_json::Value,
+    pub payload: FiatWebhook,
 }
 
 impl FiatWebhookPayload {
-    pub fn new(provider: FiatProviderName, data: serde_json::Value) -> Self {
-        Self { provider, data }
+    pub fn new(provider: FiatProviderName, data: serde_json::Value, payload: FiatWebhook) -> Self {
+        Self { provider, data, payload }
     }
 }
 
