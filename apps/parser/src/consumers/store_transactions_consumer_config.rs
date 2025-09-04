@@ -1,5 +1,6 @@
 use chrono::{Duration, NaiveDateTime, Utc};
-use primitives::{AssetId, Chain, Transaction, TransactionType};
+use number_formatter::BigNumberFormatter;
+use primitives::{Asset, AssetSubtype, Chain, Price, Transaction, TransactionType};
 
 #[derive(Default)]
 pub struct StoreTransactionsConsumerConfig {}
@@ -16,26 +17,13 @@ impl StoreTransactionsConsumerConfig {
         }
     }
 
-    pub fn minimum_transfer_amount(&self, chain: Chain) -> Option<u64> {
-        match chain {
-            Chain::Tron | Chain::Xrp => Some(10_000),
-            Chain::Stellar => Some(50_000),
-            Chain::Polkadot => Some(10_000_000),
-            Chain::Solana => Some(10_000),
-            Chain::Ethereum | Chain::SmartChain => Some(10_000_000_000_000),
-            _ => None,
-        }
-    }
-
-    pub fn filter_transaction(&self, transaction: &Transaction) -> bool {
-        self.filter_transaction_by_value(&transaction.value, &transaction.asset_id, &transaction.transaction_type)
-    }
-
-    pub fn filter_transaction_by_value(&self, value: &str, asset_id: &AssetId, transaction_type: &TransactionType) -> bool {
-        if *transaction_type == TransactionType::Transfer && asset_id.is_native() {
-            if let Ok(value) = value.parse::<u64>() {
-                if let Some(minimum_transfer_amount) = self.minimum_transfer_amount(asset_id.chain) {
-                    return value > minimum_transfer_amount;
+    pub fn is_transaction_sufficient_amount(&self, transaction: &Transaction, asset: Option<Asset>, price: Option<Price>, min_amount: f64) -> bool {
+        if let Some(asset) = asset {
+            if transaction.transaction_type == TransactionType::Transfer && asset.id.token_subtype() == AssetSubtype::TOKEN {
+                if let Some(amount) = BigNumberFormatter::value_as_f64(&transaction.value, asset.decimals as u32) {
+                    if let Some(price) = price {
+                        return amount * price.price > min_amount;
+                    }
                 }
             }
         }
@@ -63,19 +51,42 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_transaction() {
+    fn test_is_transaction_sufficient_amount() {
+        use chrono::Utc;
+        use primitives::AssetId;
+
         let options = StoreTransactionsConsumerConfig::default();
+
+        let token_asset = Some(Asset::mock_erc20());
+        let native_asset = Some(Asset::mock_btc());
+
+        let price_high = Some(Price::new(1.0, 0.0, Utc::now()));
+        let price_low = Some(Price::new(0.005, 0.0, Utc::now()));
+
+        let transaction_transfer = Transaction::mock_with_params(
+            AssetId::from(Chain::Ethereum, Some("0xA0b86a33E6441066d64bb38954e41F6b4b925c59".to_string())),
+            TransactionType::Transfer,
+            "100000".to_string(),
+        );
+
+        let transaction_swap = Transaction::mock_with_params(
+            AssetId::from(Chain::Ethereum, Some("0xA0b86a33E6441066d64bb38954e41F6b4b925c59".to_string())),
+            TransactionType::Swap,
+            "100000".to_string(),
+        );
+
         let test_cases = vec![
-            ("1", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, false),
-            ("20000000000000", AssetId::from_chain(Chain::SmartChain), TransactionType::Transfer, true),
-            ("10000", AssetId::from_chain(Chain::Solana), TransactionType::Transfer, false),
-            ("10000", AssetId::from(Chain::Solana, Some("1".to_string())), TransactionType::Transfer, true),
-            ("10001", AssetId::from_chain(Chain::Solana), TransactionType::Transfer, true),
-            ("invalid", AssetId::from_chain(Chain::Ethereum), TransactionType::Transfer, true),
+            (transaction_transfer.clone(), token_asset.clone(), price_high, 0.01, true),
+            (transaction_transfer.clone(), token_asset.clone(), price_low, 0.01, false),
+            (transaction_transfer.clone(), token_asset.clone(), price_high, 0.5, false),
+            (transaction_transfer.clone(), native_asset.clone(), price_low, 0.01, true),
+            (transaction_transfer.clone(), None, price_high, 0.01, true),
+            (transaction_transfer.clone(), token_asset.clone(), None, 0.01, true),
+            (transaction_swap.clone(), token_asset.clone(), price_low, 0.01, true),
         ];
 
-        for (transaction_value, asset_id, transaction_type, expected) in test_cases {
-            assert_eq!(options.filter_transaction_by_value(transaction_value, &asset_id, &transaction_type), expected);
+        for (transaction, asset, price, min_amount, expected) in test_cases {
+            assert_eq!(options.is_transaction_sufficient_amount(&transaction, asset, price, min_amount), expected);
         }
     }
 }

@@ -25,3 +25,6 @@ streamer = { path = "../../crates/streamer" }
 cacher = { path = "../../crates/cacher" }
 nft_client = { path = "../../crates/nft_client" }
 nft_provider = { path = "../../crates/nft_provider" }
+
+[dev-dependencies]
+primitives = { path = "../../crates/primitives", features = ["testkit"] }

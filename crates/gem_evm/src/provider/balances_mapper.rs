@@ -20,7 +20,7 @@ pub fn map_balance_tokens(
 
     balance_data
         .into_iter()
-        .zip(token_ids.into_iter())
+        .zip(token_ids)
         .map(|(balance_hex, token_id)| {
             let asset_id = primitives::AssetId {
                 chain,

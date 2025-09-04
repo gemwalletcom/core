@@ -24,7 +24,7 @@ impl PriceAlertsRepository for DatabaseClient {
         let results = PriceAlertsStore::get_price_alerts(self, after_notified_at)?;
         Ok(results
             .into_iter()
-            .map(|(alert, price, device)| (alert.as_primitive(), price.as_price_primitive(), device.as_primitive()))
+            .map(|(alert, price, device)| (alert.as_primitive(), price.as_primitive(), device.as_primitive()))
             .collect())
     }
 

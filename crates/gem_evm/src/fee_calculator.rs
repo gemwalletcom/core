@@ -18,6 +18,12 @@ pub fn get_reward_percentiles() -> [u64; 3] {
 
 pub struct FeeCalculator;
 
+impl Default for FeeCalculator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FeeCalculator {
     pub fn new() -> Self {
         Self
