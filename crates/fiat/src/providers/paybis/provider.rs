@@ -65,8 +65,7 @@ impl FiatProvider for PaybisClient {
     }
 
     async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = serde_json::from_value::<PaybisWebhook>(data)?;
-        Ok(payload.id)
+        Ok(serde_json::from_value::<PaybisWebhook>(data)?.transaction_id)
     }
 }
 
