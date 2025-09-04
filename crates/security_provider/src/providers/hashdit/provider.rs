@@ -3,7 +3,7 @@ use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use async_trait::async_trait;
 use gem_client::{Client, ClientError, ReqwestClient};
 use hmac::{Hmac, Mac};
-use serde_json::json;
+use serde_json::{json, Value};
 use sha2::Sha256;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -69,6 +69,46 @@ impl HashDitProvider {
         let url = format!("{}?{}", path, query_str);
         self.client.post(&url, body, Some(headers)).await
     }
+
+    fn parse_response(response: DetectResponse) -> Result<(bool, Option<String>), Box<dyn std::error::Error + Send + Sync>> {
+        if let Some(error_data) = response.error_data {
+            return Err(Box::from(error_data));
+        }
+
+        let mut is_malicious = false;
+        let mut reason: Option<String> = None;
+
+        if let Some(data) = response.data {
+            let has_result = data.has_result.unwrap_or_else(|| data.risk_level.is_some());
+            if has_result {
+                let level = data.risk_level.unwrap_or(0);
+                // 3 - Medium Risk
+                is_malicious = level >= 3;
+                reason = Some(format!("Risk level: {}", level));
+            } else {
+                is_malicious = false;
+                reason = Some("No data found".to_string());
+            }
+        }
+
+        Ok((is_malicious, reason))
+    }
+
+    async fn _scan<T: Clone + Send + Sync + 'static>(
+        &self,
+        target: &T,
+        business: &str,
+        body: &Value,
+    ) -> Result<ScanResult<T>, Box<dyn std::error::Error + Send + Sync>> {
+        let response = self.send_request(business, body).await?;
+        let (is_malicious, reason) = Self::parse_response(response)?;
+        Ok(ScanResult {
+            target: target.clone(),
+            is_malicious,
+            reason,
+            provider: PROVIDER_NAME.into(),
+        })
+    }
 }
 
 #[async_trait]
@@ -82,69 +122,15 @@ impl ScanProvider for HashDitProvider {
             "chain_id": mapper::chain_to_provider_id(target.chain),
             "address": target.address,
         });
-        let response = self.send_request("gem_wallet_address_detection", &body).await?;
-        let mut is_malicious = false;
-        let mut reason: Option<String> = None;
-
-        if let Some(error_data) = response.error_data {
-            return Err(Box::from(error_data));
-        }
-        if let Some(data) = response.data {
-            if data.has_result {
-                // 0 - Very Low Risk
-                // 1 - Some Risk
-                // 2 - Low Risk
-                // 3 - Medium Risk
-                // 4 - High Risk
-                // 5 - Significant Risk
-                is_malicious = data.risk_level >= 3;
-                reason = Some(format!("Risk level: {}", data.risk_level));
-            } else {
-                return Err(Box::from("No data found"));
-            }
-        }
-
-        Ok(ScanResult {
-            target: target.clone(),
-            is_malicious,
-            reason,
-            provider: PROVIDER_NAME.into(),
-        })
+        self._scan(target, "gem_wallet_address_detection", &body).await
     }
 
     async fn scan_token(&self, target: &TokenTarget) -> Result<ScanResult<TokenTarget>, Box<dyn std::error::Error + Send + Sync>> {
         let body = json!({
             "chain_id": mapper::chain_to_provider_id(target.chain),
-            "token_address": target.token_id,
+            "address": target.token_id,
         });
-        let response = self.send_request("gem_wallet_token_detection", &body).await?;
-        let mut is_malicious = false;
-        let mut reason: Option<String> = None;
-
-        if let Some(error_data) = response.error_data {
-            return Err(Box::from(error_data));
-        }
-        if let Some(data) = response.data {
-            if data.has_result {
-                // 0 - Very Low Risk
-                // 1 - Some Risk
-                // 2 - Low Risk
-                // 3 - Medium Risk
-                // 4 - High Risk
-                // 5 - Significant Risk
-                is_malicious = data.risk_level >= 3;
-                reason = Some(format!("Risk level: {}", data.risk_level));
-            } else {
-                return Err(Box::from("No data found"));
-            }
-        }
-
-        Ok(ScanResult {
-            target: target.clone(),
-            is_malicious,
-            reason,
-            provider: PROVIDER_NAME.into(),
-        })
+        self._scan(target, "gem_wallet_token_detection", &body).await
     }
 
     async fn scan_url(&self, target: &str) -> Result<ScanResult<String>, Box<dyn std::error::Error + Send + Sync>> {

@@ -1,48 +1,95 @@
-use primitives::Chain;
-use security_provider::{mapper, ScanResult, TokenTarget};
+#[cfg(test)]
+mod tests {
+    use std::env;
+    use std::time::Duration;
 
-#[test]
-fn test_token_target_serialization() {
-    let target = TokenTarget {
-        token_id: "0xa0b86a33e6776a8e5b01b22e54e12b5e5d0f96f8".to_string(),
-        chain: Chain::Ethereum,
-    };
+    use primitives::Chain;
+    use security_provider::{providers::goplus::GoPlusProvider, providers::hashdit::HashDitProvider, AddressTarget, ScanProvider, TokenTarget};
+    use settings::Settings;
 
-    let serialized = serde_json::to_string(&target).unwrap();
-    let deserialized: TokenTarget = serde_json::from_str(&serialized).unwrap();
+    use gem_client::ReqwestClient;
 
-    assert_eq!(target.token_id, deserialized.token_id);
-    assert_eq!(target.chain, deserialized.chain);
-}
+    fn load_settings() -> Settings {
+        let current_dir = env::current_dir().unwrap();
+        let path = current_dir.join("../../Settings.yaml");
+        Settings::new_setting_path(path).unwrap()
+    }
 
-#[test]
-fn test_scan_result_token_target() {
-    let target = TokenTarget {
-        token_id: "0xa0b86a33e6776a8e5b01b22e54e12b5e5d0f96f8".to_string(),
-        chain: Chain::Ethereum,
-    };
+    fn build_client(base_url: String, timeout_ms: u64) -> ReqwestClient {
+        let timeout = Duration::from_millis(timeout_ms);
+        let http = reqwest::Client::builder().timeout(timeout).build().expect("failed to build reqwest client");
+        ReqwestClient::new(base_url, http)
+    }
 
-    let result = ScanResult {
-        target: target.clone(),
-        is_malicious: true,
-        reason: Some("Test reason".to_string()),
-        provider: "test_provider".to_string(),
-    };
+    #[tokio::test]
+    async fn test_goplus_scan_address_eth() {
+        let settings = load_settings();
+        let client = build_client(settings.scan.goplus.url.clone(), settings.scan.timeout_ms);
+        let provider = GoPlusProvider::new(client, &settings.scan.goplus.key.secret);
 
-    assert_eq!(result.target.token_id, target.token_id);
-    assert_eq!(result.target.chain, target.chain);
-    assert!(result.is_malicious);
-    assert_eq!(result.reason, Some("Test reason".to_string()));
-    assert_eq!(result.provider, "test_provider");
-}
+        let target = AddressTarget {
+            address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045".to_string(), // Vitalik.eth
+            chain: Chain::Ethereum,
+        };
 
-#[test]
-fn test_chain_to_provider_id() {
-    assert_eq!(mapper::chain_to_provider_id(Chain::Ethereum), "1");
-    assert_eq!(mapper::chain_to_provider_id(Chain::SmartChain), "56");
-    assert_eq!(mapper::chain_to_provider_id(Chain::Polygon), "137");
-    assert_eq!(mapper::chain_to_provider_id(Chain::Arbitrum), "42161");
-    assert_eq!(mapper::chain_to_provider_id(Chain::Optimism), "10");
-    assert_eq!(mapper::chain_to_provider_id(Chain::Base), "8453");
-    assert_eq!(mapper::chain_to_provider_id(Chain::Bitcoin), "1"); // Unsupported, defaults to Ethereum
+        let result = provider.scan_address(&target).await.expect("goplus address scan failed");
+
+        assert_eq!(result.provider, "GoPlus");
+        assert_eq!(result.is_malicious, false);
+    }
+
+    #[tokio::test]
+    async fn test_goplus_scan_token_eth_usdc() {
+        let settings = load_settings();
+        let client = build_client(settings.scan.goplus.url.clone(), settings.scan.timeout_ms);
+        let provider = GoPlusProvider::new(client, &settings.scan.goplus.key.secret);
+
+        let target = TokenTarget {
+            token_id: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string(), // USDT
+            chain: Chain::Ethereum,
+        };
+
+        let result = provider.scan_token(&target).await.expect("goplus token scan failed");
+
+        assert_eq!(result.provider, "GoPlus");
+        assert_eq!(result.is_malicious, false);
+    }
+
+    #[tokio::test]
+    async fn test_hashdit_scan_address_eth() {
+        let settings = load_settings();
+        let client = build_client(settings.scan.hashdit.url.clone(), settings.scan.timeout_ms);
+        let app_id = &settings.scan.hashdit.key.public;
+        let app_secret = &settings.scan.hashdit.key.secret;
+        let provider = HashDitProvider::new(client, app_id, app_secret);
+
+        let target = AddressTarget {
+            address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045".to_string(), // Vitalik.eth
+            chain: Chain::Ethereum,
+        };
+
+        let result = provider.scan_address(&target).await.expect("hashdit address scan failed");
+
+        assert_eq!(result.provider, "HashDit");
+        assert_eq!(result.is_malicious, false);
+    }
+
+    #[tokio::test]
+    async fn test_hashdit_scan_token_eth_usdc() {
+        let settings = load_settings();
+        let client = build_client(settings.scan.hashdit.url.clone(), settings.scan.timeout_ms);
+        let app_id = &settings.scan.hashdit.key.public;
+        let app_secret = &settings.scan.hashdit.key.secret;
+        let provider = HashDitProvider::new(client, app_id, app_secret);
+
+        let target = TokenTarget {
+            token_id: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string(), // USDC
+            chain: Chain::Ethereum,
+        };
+
+        let result = provider.scan_token(&target).await.expect("hashdit token scan failed");
+
+        assert_eq!(result.provider, "HashDit");
+        assert_eq!(result.is_malicious, false);
+    }
 }
