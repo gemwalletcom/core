@@ -55,6 +55,7 @@ pub fn filter_token_id(chain: Option<Chain>, token_id: Option<String>) -> Option
             "0x0000000000000000000000000000000000001010", // matic
             "0x0000000000000000000000000000000000000000",
             "0x471ece3750da237f93b8e339c536989b8978a438", // celo
+            "0x4200000000000000000000000000000000000006", // worldchain
             CosmosDenom::Uosmo.as_ref(),                  // osmosis
             CosmosDenom::Usei.as_ref(),                   // sei
             CosmosDenom::Inj.as_ref(),                    // osmosis

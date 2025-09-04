@@ -30,6 +30,13 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "stellar" => Some(Chain::Stellar),
         "algorand" => Some(Chain::Algorand),
         "polkadot" => Some(Chain::Polkadot),
+        "berachain" => Some(Chain::Berachain),
+        "sonic" => Some(Chain::Sonic),
+        "celestia" => Some(Chain::Celestia),
+        "noble" => Some(Chain::Noble),
+        "worldchain" => Some(Chain::World),
+        "injective" => Some(Chain::Injective),
+        "cardano" => Some(Chain::Cardano),
         _ => None,
     }
 }
