@@ -6,7 +6,10 @@ use crate::{
 use async_trait::async_trait;
 use std::error::Error;
 
-use super::{client::PaybisClient, mapper::map_order_from_response, models::PaybisWebhook};
+use super::{
+    client::PaybisClient,
+    mapper::{map_order_from_response, map_webhook_order_id},
+};
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 
 #[async_trait]
@@ -65,7 +68,7 @@ impl FiatProvider for PaybisClient {
     }
 
     async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(serde_json::from_value::<PaybisWebhook>(data)?.transaction_id)
+        map_webhook_order_id(data)
     }
 }
 

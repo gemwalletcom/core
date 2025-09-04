@@ -2,7 +2,7 @@ use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransaction
 
 use super::{
     client::PaybisClient,
-    models::{Currency, PaybisTransaction},
+    models::{Currency, PaybisTransaction, PaybisWebhook},
 };
 
 pub fn map_asset_id(currency: Currency) -> Option<AssetId> {
@@ -76,6 +76,10 @@ pub fn map_order_from_response(transaction: PaybisTransaction) -> Result<FiatTra
     })
 }
 
+pub fn map_webhook_order_id(data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    Ok(serde_json::from_value::<PaybisWebhook>(data)?.data.transaction.invoice)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -113,5 +117,14 @@ mod tests {
             }),
             None
         );
+    }
+
+    #[test]
+    fn test_map_webhook_order_id() {
+        let webhook_json = include_str!("../../../testdata/paybis/webhook_transaction_started.json");
+        let webhook_data: serde_json::Value = serde_json::from_str(webhook_json).unwrap();
+
+        let order_id = map_webhook_order_id(webhook_data.clone()).unwrap();
+        assert_eq!(order_id, "PB21095868675TX1");
     }
 }

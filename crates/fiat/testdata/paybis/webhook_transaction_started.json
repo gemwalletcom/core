@@ -1,0 +1,104 @@
+{
+    "timestamp": 1757018105,
+    "event": "TRANSACTION_STATUS_CHANGED",
+    "data": {
+        "requestId": "3b388a91-d1fa-456e-b94a",
+        "partnerUserId": "493f2476-f0d4-43b3-9458",
+        "userEmail": "test@test.com",
+        "userIp": "1.1.1.1",
+        "quote": {
+            "quoteId": "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a",
+            "amountTo": {
+                "amount": "0.23230161",
+                "currency": "SOL"
+            },
+            "amountFrom": {
+                "amount": "50.00000000",
+                "currency": "USD"
+            },
+            "amountReceived": {
+                "amount": "47.39",
+                "currency": "USD"
+            },
+            "currencyCodeTo": "SOL",
+            "currencyCodeFrom": "USD",
+            "fees": {
+                "currency": "USD",
+                "network_fee": "0.01",
+                "service_fee": "2.60",
+                "partner_fee": "0.50",
+                "total_fee": "2.61"
+            },
+            "feesInUsd": {
+                "network_fee": "0.01",
+                "service_fee": "2.60",
+                "partner_fee": "0.50",
+                "total_fee": "2.61"
+            },
+            "directionChange": "from",
+            "expiresAt": "2025-09-04T20:37:12+0000"
+        },
+        "transaction": {
+            "status": "started",
+            "rejectReason": null,
+            "invoice": "PB21095868675TX1",
+            "flow": "buyCrypto",
+            "createdAt": "2025-09-04T20:35:04+0000",
+            "statusUpdatedAt": "2025-09-04T20:35:48+0000"
+        },
+        "payment": {
+            "id": "gem-wallet-credit-card",
+            "name": "Credit/Debit Card",
+            "card": {
+                "source": "direct",
+                "cardholderName": "Test",
+                "maskedCardNumber": "111111******1111",
+                "expirationDate": "11/2030",
+                "billingAddress": {
+                    "country": {
+                        "name": "United States of America",
+                        "code": "US"
+                    },
+                    "state": {
+                        "name": "New York",
+                        "code": "NY"
+                    },
+                    "zip": "10001",
+                    "city": "New York",
+                    "address": "1 Main Street"
+                }
+            },
+            "errorCode": null
+        },
+        "payout": {
+            "id": "solana",
+            "name": "Solana",
+            "transaction_hash": null,
+            "explorer_link": null,
+            "destinationWalletAddress": "test123"
+        },
+        "amountFrom": {
+            "amount": "50.00",
+            "currency": "USD"
+        },
+        "amountTo": {
+            "amount": "0.23230161",
+            "currency": "SOL"
+        },
+        "promoCode": null
+    },
+    "meta": {
+        "assets": [
+            {
+                "currency": "SOL",
+                "currencyCode": "SOL",
+                "displayName": "Solana",
+                "blockchain": "solana",
+                "network": "mainnet",
+                "decimals": 9,
+                "tokenContract": null,
+                "hasDestinationTag": false
+            }
+        ]
+    }
+}
