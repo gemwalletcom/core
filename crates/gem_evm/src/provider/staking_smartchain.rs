@@ -67,6 +67,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             ),
         ];
 
+
         let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
 
         let delegations_data = hex::decode(results[0].trim_start_matches("0x"))?;
