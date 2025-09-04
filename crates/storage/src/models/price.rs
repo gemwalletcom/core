@@ -111,7 +111,7 @@ impl Price {
 }
 
 impl Price {
-    pub fn as_price_primitive(&self) -> primitives::Price {
+    pub fn as_primitive(&self) -> primitives::Price {
         primitives::Price::new(self.price, self.price_change_percentage_24h, self.last_updated_at.and_utc())
     }
 
@@ -138,7 +138,7 @@ impl Price {
     pub fn as_price_asset_info(&self, asset_id: AssetId) -> AssetPriceInfo {
         AssetPriceInfo {
             asset_id,
-            price: self.as_price_primitive(),
+            price: self.as_primitive(),
             market: self.as_market_primitive(),
         }
     }

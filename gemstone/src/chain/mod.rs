@@ -79,6 +79,7 @@ fn chain_transaction_timeout_seconds(chain: Chain) -> u32 {
     match chain.chain_type() {
         ChainType::Bitcoin => 1_209_600, // 2 weeks (mempool timeout)
         ChainType::Solana => chain.block_time() * 150,
+        ChainType::Ethereum => chain.block_time() * 120,
         _ => chain.block_time() * 600,
     }
 }

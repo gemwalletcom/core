@@ -61,9 +61,11 @@ impl AssetsRepository for DatabaseClient {
 
     fn get_asset_full(&mut self, asset_id: &str) -> Result<primitives::AssetFull, Box<dyn Error + Send + Sync>> {
         use crate::database::assets_links::AssetsLinksStore;
+        use crate::database::prices::PricesStore;
         use crate::database::tag::TagStore;
 
         let asset = AssetsStore::get_asset(self, asset_id)?;
+        let price = PricesStore::get_price(self, asset_id)?;
         let links = AssetsLinksStore::get_asset_links(self, asset_id)?
             .into_iter()
             .map(|x| x.as_primitive())
@@ -71,6 +73,7 @@ impl AssetsRepository for DatabaseClient {
         let tags = TagStore::get_assets_tags_for_asset(self, asset_id)?.into_iter().map(|x| x.tag_id).collect();
 
         Ok(primitives::AssetFull {
+            price: price.map(|x| x.as_primitive()),
             asset: asset.as_primitive(),
             properties: asset.as_property_primitive(),
             score: asset.as_score_primitive(),

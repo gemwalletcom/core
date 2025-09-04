@@ -23,11 +23,8 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
     }
     async fn process(&mut self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
-        let transactions = payload
-            .transactions
-            .into_iter()
-            .filter(|x| self.config.filter_transaction(x))
-            .collect::<Vec<_>>();
+        let transactions = payload.transactions;
+
         let is_notify_devices = !payload.blocks.is_empty();
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.lock().await.subscriptions().get_subscriptions(chain, addresses)?;
@@ -62,11 +59,19 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                             .collect::<Vec<_>>();
                         (existing_assets, missing_assets_ids)
                     };
+                    let asset = existing_assets.first();
+                    let price = if let Some(asset) = asset {
+                        self.database.lock().await.prices().get_price(&asset.id.to_string())?.map(|x| x.as_primitive())
+                    } else {
+                        None
+                    };
 
                     fetch_assets_payload.extend_from_slice(&missing_assets_ids);
 
                     if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
                         println!("outdated transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
+                    } else if !self.config.is_transaction_sufficient_amount(&transaction, asset.cloned(), price, 0.01) {
+                        println!("insufficient amount, transaction: {}", transaction.id.clone(),);
                     } else if payload.blocks.is_empty() {
                         println!("empty blocks, transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
                     } else if assets_ids.ids_set() == assets_ids.ids_set() && is_notify_devices {

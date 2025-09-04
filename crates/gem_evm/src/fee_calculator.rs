@@ -1,6 +1,6 @@
 use std::cmp::min;
 
-use primitives::{fee::FeePriority, EVMChain};
+use primitives::{fee::FeePriority, PriorityFeeValue, EVMChain};
 
 use crate::models::fee::EthereumFeeHistory;
 
@@ -18,9 +18,10 @@ pub fn get_reward_percentiles() -> [u64; 3] {
 
 pub struct FeeCalculator;
 
-pub struct PriorityFeeRecord {
-    pub priority: FeePriority,
-    pub value: BigInt,
+impl Default for FeeCalculator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl FeeCalculator {
@@ -52,7 +53,7 @@ impl FeeCalculator {
         fee_history: &EthereumFeeHistory,
         priorities: &[FeePriority],
         min_priority_fee: BigInt,
-    ) -> Result<Vec<PriorityFeeRecord>, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<Vec<PriorityFeeValue>, Box<dyn std::error::Error + Sync + Send>> {
         if fee_history.reward.is_empty() {
             return Err("fee_history.reward is empty".into());
         }
@@ -89,7 +90,7 @@ impl FeeCalculator {
                     }
                 };
 
-                PriorityFeeRecord { priority, value }
+                PriorityFeeValue { priority, value }
             })
             .collect();
 
@@ -120,7 +121,7 @@ mod tests {
                 BigInt::from(2541053471u64),
             ],
             gas_used_ratio: vec![0.4787648265769147, 0.30434244444444447, 0.5349411706429458, 0.707018, 0.37411107986145914],
-            oldest_block: "0x15a2da9".to_string(),
+            oldest_block: 22832041,
         }
     }
 
@@ -183,7 +184,7 @@ mod tests {
             reward: vec![],
             base_fee_per_gas: vec![],
             gas_used_ratio: vec![],
-            oldest_block: "0x0".to_string(),
+            oldest_block: 0,
         };
 
         assert!(calculator.calculate_priority_fees(&empty_history, &[FeePriority::Slow], BigInt::from(100)).is_err());

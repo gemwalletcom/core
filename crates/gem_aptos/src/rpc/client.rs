@@ -101,7 +101,6 @@ impl<C: Client> AptosClient<C> {
 
                 match asset_type {
                     AssetSubtype::NATIVE => {
-                        // For native transfers, simulate the transaction
                         let simulated = self
                             .simulate_transaction(
                                 &input.sender_address,

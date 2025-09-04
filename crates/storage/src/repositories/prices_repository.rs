@@ -10,7 +10,7 @@ pub trait PricesRepository {
     fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, Box<dyn Error + Send + Sync>>;
     fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>>;
     fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, Box<dyn Error + Send + Sync>>;
-    fn get_price(&mut self, asset_id: &str) -> Result<Price, Box<dyn Error + Send + Sync>>;
+    fn get_price(&mut self, asset_id: &str) -> Result<Option<Price>, Box<dyn Error + Send + Sync>>;
     fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAsset>, Box<dyn Error + Send + Sync>>;
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAsset>, Box<dyn Error + Send + Sync>>;
     fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>>;
@@ -34,7 +34,7 @@ impl PricesRepository for DatabaseClient {
         Ok(PricesStore::get_prices_assets(self)?)
     }
 
-    fn get_price(&mut self, asset_id: &str) -> Result<Price, Box<dyn Error + Send + Sync>> {
+    fn get_price(&mut self, asset_id: &str) -> Result<Option<Price>, Box<dyn Error + Send + Sync>> {
         Ok(PricesStore::get_price(self, asset_id)?)
     }
 
