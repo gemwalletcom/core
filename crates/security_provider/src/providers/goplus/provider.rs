@@ -1,18 +1,18 @@
 use crate::providers::goplus::models::{Response, SecurityAddress, SecurityToken};
 use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use async_trait::async_trait;
+use gem_client::{build_path_with_query, Client, ReqwestClient};
 use std::result::Result;
 
 static PROVIDER_NAME: &str = "GoPlus";
 
 pub struct GoPlusProvider {
-    client: reqwest::Client,
-    url: String,
+    client: ReqwestClient,
 }
 
 impl GoPlusProvider {
-    pub fn new(client: reqwest::Client, url: &str, _api_key: &str) -> Self {
-        GoPlusProvider { client, url: url.into() }
+    pub fn new(client: ReqwestClient, _api_key: &str) -> Self {
+        GoPlusProvider { client }
     }
 }
 
@@ -23,9 +23,10 @@ impl ScanProvider for GoPlusProvider {
     }
 
     async fn scan_address(&self, target: &AddressTarget) -> Result<ScanResult<AddressTarget>, Box<dyn std::error::Error + Send + Sync>> {
-        let url: String = format!("{}/api/v1/address_security/{}", self.url, target.address);
-        let query = [("chain_id", mapper::chain_to_provider_id(target.chain))];
-        let response = self.client.get(&url).query(&query).send().await?.json::<Response<SecurityAddress>>().await?;
+        let path: String = format!("/api/v1/address_security/{}", target.address);
+        let query = vec![("chain_id", mapper::chain_to_provider_id(target.chain))];
+        let url = build_path_with_query(&path, &query)?;
+        let response = self.client.get::<Response<SecurityAddress>>(&url).await?;
 
         Ok(ScanResult {
             target: target.clone(),
@@ -36,9 +37,10 @@ impl ScanProvider for GoPlusProvider {
     }
 
     async fn scan_token(&self, target: &TokenTarget) -> Result<ScanResult<TokenTarget>, Box<dyn std::error::Error + Send + Sync>> {
-        let url: String = format!("{}/api/v1/token_security/{}", self.url, target.token_id);
-        let query = [("chain_id", mapper::chain_to_provider_id(target.chain))];
-        let response = self.client.get(&url).query(&query).send().await?.json::<Response<SecurityToken>>().await?;
+        let path: String = format!("/api/v1/token_security/{}", target.token_id);
+        let query = vec![("chain_id", mapper::chain_to_provider_id(target.chain))];
+        let url = build_path_with_query(&path, &query)?;
+        let response = self.client.get::<Response<SecurityToken>>(&url).await?;
 
         Ok(ScanResult {
             target: target.clone(),

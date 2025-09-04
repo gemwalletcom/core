@@ -335,6 +335,7 @@ dependencies = [
  "futures",
  "futures-util",
  "gem_chain_rpc",
+ "gem_client",
  "name_resolver",
  "nft_client",
  "nft_provider",
@@ -5821,19 +5822,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reqwest-enum"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d80914e0f5ffa68bfa2aa9fe51144a57d91e3760ff495a22576f9134d47d4496"
-dependencies = [
- "futures",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 2.0.16",
-]
-
-[[package]]
 name = "rfc6979"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6505,11 +6493,11 @@ name = "security_provider"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "gem_client",
  "hex",
  "hmac",
  "primitives",
  "reqwest",
- "reqwest-enum",
  "serde",
  "serde_json",
  "sha2",

@@ -1,23 +1,24 @@
-use crate::providers::hashdit::{api::HashDitApi, models::DetectResponse};
-
+use crate::providers::hashdit::models::DetectResponse;
 use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use async_trait::async_trait;
+use gem_client::{Client, ClientError, ReqwestClient};
 use hmac::{Hmac, Mac};
-use reqwest_enum::{target::Target, Error};
+use serde_json::json;
 use sha2::Sha256;
+use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;
 
 static PROVIDER_NAME: &str = "HashDit";
 
 pub struct HashDitProvider {
-    client: reqwest::Client,
+    client: ReqwestClient,
     app_id: String,
     app_secret: String,
 }
 
 impl HashDitProvider {
-    pub fn new(client: reqwest::Client, app_id: &str, app_secret: &str) -> Self {
+    pub fn new(client: ReqwestClient, app_id: &str, app_secret: &str) -> Self {
         HashDitProvider {
             client,
             app_id: app_id.to_string(),
@@ -25,8 +26,7 @@ impl HashDitProvider {
         }
     }
 
-    fn generate_msg_for_sig(&self, timestamp: &str, nonce: &str, method: &str, url: &str, query: &str, body: &[u8]) -> String {
-        let body = if body.is_empty() { "" } else { std::str::from_utf8(body).unwrap_or_default() };
+    fn generate_msg_for_sig(&self, timestamp: &str, nonce: &str, method: &str, url: &str, query: &str, body: &str) -> String {
         if !query.is_empty() {
             format!("{};{};{};{};{};{};{}", self.app_id, timestamp, nonce, method, url, query, body)
         } else {
@@ -42,35 +42,32 @@ impl HashDitProvider {
         hex::encode(code_bytes)
     }
 
-    fn build_request(&self, target: HashDitApi) -> Result<reqwest::RequestBuilder, Error> {
-        let url = format!("{}{}", target.base_url(), target.path());
-        let mut request = self.client.request(target.method().into(), url);
-
-        let query = target.query();
-        let query_str = target.query_string();
-        let body = target.body()?;
+    async fn send_request<T: serde::Serialize + Send + Sync>(&self, business: &str, body: &T) -> Result<DetectResponse, ClientError> {
+        let query = HashMap::from([("business".to_string(), business.to_string())]);
+        let query_str = query.iter().map(|(k, v)| format!("{}={}", k, v)).collect::<Vec<String>>().join("&");
+        let method = "POST";
+        let path = "/security-api/public/app/v1/detect";
 
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
             .as_millis()
             .to_string();
-        let nonce: String = uuid::Uuid::new_v4().to_string().replace("-", "");
-        let method = target.method().to_string();
+        let nonce: String = uuid::Uuid::new_v4().to_string().replace('-', "");
 
-        // Generate message for signature
-        let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, &method, &target.path(), &query_str, &body.to_bytes());
+        let body_str = serde_json::to_string(body).unwrap_or_default();
+        let msg_for_sig = self.generate_msg_for_sig(&timestamp, &nonce, method, path, &query_str, &body_str);
         let sig = self.compute_sig(&msg_for_sig);
 
-        request = request
-            .header("Content-Type", "application/json;charset=UTF-8")
-            .header("X-Signature-appid", &self.app_id)
-            .header("X-Signature-signature", sig)
-            .header("X-Signature-timestamp", timestamp)
-            .header("X-Signature-nonce", nonce)
-            .query(&query)
-            .body(body.inner);
-        Ok(request)
+        let mut headers = HashMap::new();
+        headers.insert("Content-Type".to_string(), "application/json;charset=UTF-8".to_string());
+        headers.insert("X-Signature-appid".to_string(), self.app_id.clone());
+        headers.insert("X-Signature-signature".to_string(), sig);
+        headers.insert("X-Signature-timestamp".to_string(), timestamp);
+        headers.insert("X-Signature-nonce".to_string(), nonce);
+
+        let url = format!("{}?{}", path, query_str);
+        self.client.post(&url, body, Some(headers)).await
     }
 }
 
@@ -81,17 +78,18 @@ impl ScanProvider for HashDitProvider {
     }
 
     async fn scan_address(&self, target: &AddressTarget) -> Result<ScanResult<AddressTarget>, Box<dyn std::error::Error + Send + Sync>> {
-        let api = HashDitApi::DetectAddress(target.address.clone(), mapper::chain_to_provider_id(target.chain));
-        let request = self.build_request(api)?;
-        let response = self.client.execute(request.build()?).await?;
+        let body = json!({
+            "chain_id": mapper::chain_to_provider_id(target.chain),
+            "address": target.address,
+        });
+        let response = self.send_request("gem_wallet_address_detection", &body).await?;
         let mut is_malicious = false;
         let mut reason: Option<String> = None;
 
-        let body = response.json::<DetectResponse>().await?;
-        if let Some(error_data) = body.error_data {
+        if let Some(error_data) = response.error_data {
             return Err(Box::from(error_data));
         }
-        if let Some(data) = body.data {
+        if let Some(data) = response.data {
             if data.has_result {
                 // 0 - Very Low Risk
                 // 1 - Some Risk
@@ -106,7 +104,6 @@ impl ScanProvider for HashDitProvider {
             }
         }
 
-        // Implement HashDit-specific scanning logic
         Ok(ScanResult {
             target: target.clone(),
             is_malicious,
@@ -116,17 +113,18 @@ impl ScanProvider for HashDitProvider {
     }
 
     async fn scan_token(&self, target: &TokenTarget) -> Result<ScanResult<TokenTarget>, Box<dyn std::error::Error + Send + Sync>> {
-        let api = HashDitApi::DetectToken(target.token_id.clone(), mapper::chain_to_provider_id(target.chain));
-        let request = self.build_request(api)?;
-        let response = self.client.execute(request.build()?).await?;
+        let body = json!({
+            "chain_id": mapper::chain_to_provider_id(target.chain),
+            "token_address": target.token_id,
+        });
+        let response = self.send_request("gem_wallet_token_detection", &body).await?;
         let mut is_malicious = false;
         let mut reason: Option<String> = None;
 
-        let body = response.json::<DetectResponse>().await?;
-        if let Some(error_data) = body.error_data {
+        if let Some(error_data) = response.error_data {
             return Err(Box::from(error_data));
         }
-        if let Some(data) = body.data {
+        if let Some(data) = response.data {
             if data.has_result {
                 // 0 - Very Low Risk
                 // 1 - Some Risk
@@ -150,8 +148,10 @@ impl ScanProvider for HashDitProvider {
     }
 
     async fn scan_url(&self, target: &str) -> Result<ScanResult<String>, Box<dyn std::error::Error + Send + Sync>> {
-        let api = HashDitApi::DetectURL(target.to_string());
-        let _request = self.build_request(api);
+        let body = json!({
+            "url": target,
+        });
+        let _response = self.send_request("gem_wallet_url_detection", &body).await?;
 
         unimplemented!()
     }
