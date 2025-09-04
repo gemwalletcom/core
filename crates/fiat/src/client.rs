@@ -43,6 +43,14 @@ impl FiatClient {
         }
     }
 
+    fn provider(&self, provider_name: &str) -> Result<&(dyn FiatProvider + Send + Sync), Box<dyn std::error::Error + Send + Sync>> {
+        self.providers
+            .iter()
+            .find(|provider| provider.name().id() == provider_name)
+            .map(|provider| provider.as_ref())
+            .ok_or_else(|| format!("Provider {} not found", provider_name).into())
+    }
+
     pub fn request_client(timeout_seconds: u64) -> RequestClient {
         RequestClient::builder().timeout(Duration::from_secs(timeout_seconds)).build().unwrap()
     }
@@ -72,26 +80,7 @@ impl FiatClient {
         provider_name: &str,
         order_id: &str,
     ) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        for provider in &self.providers {
-            if provider.name().id() == provider_name {
-                return provider.get_order_status(order_id).await;
-            }
-        }
-        Err(format!("Provider {} not found", provider_name).into())
-    }
-
-    pub async fn webhook(
-        &mut self,
-        provider_name: &str,
-        webhook_data: serde_json::Value,
-    ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
-        for provider in &self.providers {
-            if provider.name().id() == provider_name {
-                let _order_id = provider.webhook_order_id(webhook_data.clone()).await?;
-                return Ok(FiatWebhookPayload::new(provider.name(), webhook_data));
-            }
-        }
-        Err(format!("Provider {} not found", provider_name).into())
+        self.provider(provider_name)?.get_order_status(order_id).await
     }
 
     pub async fn process_and_publish_webhook(
@@ -99,21 +88,18 @@ impl FiatClient {
         provider_name: &str,
         webhook_data: serde_json::Value,
     ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = match self.webhook(provider_name, webhook_data.clone()).await {
-            Ok(payload) => payload,
+        let provider = self.provider(provider_name)?;
+        let payload = match provider.webhook_order_id(webhook_data.clone()).await {
+            Ok(_) => Ok(FiatWebhookPayload::new(provider.name(), webhook_data.clone())),
             Err(e) => {
-                println!("Failed to process webhook: {}, payload: {:#?}", e, webhook_data);
-                return Err(e);
+                println!("Failed to decode webhook payload: {}, JSON payload: {}", e, webhook_data);
+                Err(e)
             }
-        };
+        }?;
 
-        match self.stream_producer.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await {
-            Ok(_) => Ok(payload),
-            Err(e) => {
-                println!("Failed to send webhook to queue: {}", e);
-                Ok(payload)
-            }
-        }
+        self.stream_producer.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await?;
+
+        Ok(payload)
     }
 
     fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
