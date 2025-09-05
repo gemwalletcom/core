@@ -15,7 +15,7 @@ pub struct AssetPrice {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct AssetMarket {
     pub market_cap: Option<f64>,

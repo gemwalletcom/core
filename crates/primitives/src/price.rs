@@ -46,7 +46,7 @@ pub struct PriceFull {
 #[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Equatable")]
 struct PriceData {
     asset: Asset,
     price: Option<Price>,
