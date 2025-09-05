@@ -219,9 +219,6 @@ diesel::table! {
         transaction_hash -> Nullable<Varchar>,
         #[max_length = 256]
         address -> Nullable<Varchar>,
-        fee_provider -> Nullable<Float8>,
-        fee_network -> Nullable<Float8>,
-        fee_partner -> Nullable<Float8>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
         #[max_length = 32]
