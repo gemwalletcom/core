@@ -36,12 +36,12 @@ impl FiatProvider for TransakClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_supported_assets()
-            .await?
+        let (assets, fiat_currencies) = tokio::try_join!(self.get_supported_assets(), self.get_fiat_currencies())?;
+
+        let assets = assets
             .response
             .into_iter()
-            .flat_map(Self::map_asset)
+            .flat_map(|asset| super::mapper::map_asset_with_limits(asset, &fiat_currencies.response))
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
     }
@@ -112,6 +112,26 @@ mod fiat_integration_tests {
             assert!(!asset.id.is_empty());
             assert!(!asset.symbol.is_empty());
             println!("Sample Transak asset: {:?}", asset);
+        }
+
+        let assets_with_buy_limits = assets.iter().filter(|a| !a.buy_limits.is_empty()).count();
+        let assets_with_sell_limits = assets.iter().filter(|a| !a.sell_limits.is_empty()).count();
+
+        println!("Assets with buy limits: {}", assets_with_buy_limits);
+        println!("Assets with sell limits: {}", assets_with_sell_limits);
+
+        assert!(assets_with_buy_limits > 0, "Expected at least some assets to have buy limits");
+
+        if let Some(asset_with_limits) = assets.iter().find(|a| !a.buy_limits.is_empty()) {
+            println!(
+                "Asset with limits: {} has {} buy limits",
+                asset_with_limits.symbol,
+                asset_with_limits.buy_limits.len()
+            );
+
+            let first_limit = &asset_with_limits.buy_limits[0];
+            assert!(first_limit.min_amount.is_some() || first_limit.max_amount.is_some());
+            println!("Sample limit: {:?}", first_limit);
         }
 
         Ok(())

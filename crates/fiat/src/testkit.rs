@@ -57,6 +57,8 @@ impl FiatMapping {
             symbol: "BTC".to_string(),
             network: Some("BITCOIN".to_string()),
             unsupported_countries: std::collections::HashMap::new(),
+            buy_limits: vec![],
+            sell_limits: vec![],
         }
     }
 }
