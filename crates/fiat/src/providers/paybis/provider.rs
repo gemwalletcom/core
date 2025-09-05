@@ -150,21 +150,19 @@ mod fiat_integration_tests {
     #[tokio::test]
     async fn test_process_webhook_verification_maps_to_none() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_paybis_test_client();
-        let verification_webhook: serde_json::Value = 
-            serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_no_changes.json"))?;
-        
+        let verification_webhook: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_no_changes.json"))?;
+
         let result = client.process_webhook(verification_webhook).await?;
         assert!(matches!(result, FiatWebhook::None), "Verification webhooks should map to FiatWebhook::None");
-        
+
         Ok(())
     }
 
     #[tokio::test]
     async fn test_process_webhook_transaction() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_paybis_test_client();
-        let transaction_webhook: serde_json::Value = 
-            serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json"))?;
-        
+        let transaction_webhook: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json"))?;
+
         let result = client.process_webhook(transaction_webhook).await?;
         if let FiatWebhook::Transaction(transaction) = result {
             assert_eq!(transaction.provider_transaction_id, "PB21095868675TX1");
@@ -173,7 +171,7 @@ mod fiat_integration_tests {
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
         }
-        
+
         Ok(())
     }
 }

@@ -207,7 +207,11 @@ impl SwapMapper {
                             V4Action::SWAP_EXACT_IN(params) => {
                                 let path_keys = params.path;
                                 let from_token = params.currencyIn;
-                                let to_token = path_keys[path_keys.len() - 1].intermediateCurrency;
+                                let to_token = if path_keys.is_empty() {
+                                    continue;
+                                } else {
+                                    path_keys[path_keys.len() - 1].intermediateCurrency
+                                };
                                 from_asset = Some(AssetId {
                                     chain: *chain,
                                     token_id: if from_token == Address::ZERO {
