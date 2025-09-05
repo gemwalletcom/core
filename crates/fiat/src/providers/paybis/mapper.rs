@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use primitives::currency::Currency;
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType};
+use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType};
 use streamer::FiatWebhook;
 
 use crate::model::FiatProviderAsset;
@@ -101,26 +101,27 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
     })
 }
 
-pub fn map_asset(currency: PaybisCurrency) -> Option<FiatProviderAsset> {
+fn map_asset(currency: PaybisCurrency, buy_limits: Vec<FiatAssetLimits>, sell_limits: Vec<FiatAssetLimits>) -> Option<FiatProviderAsset> {
     if !currency.is_crypto() {
         return None;
     }
     let asset = map_asset_id(currency.clone());
     Some(FiatProviderAsset {
         id: currency.code.clone(),
+        provider: FiatProviderName::Paybis,
         chain: asset.as_ref().map(|x| x.chain),
         token_id: asset.as_ref().and_then(|x| x.token_id.clone()),
         symbol: currency.code.clone(),
         network: currency.blockchain_name.clone(),
         enabled: true,
         unsupported_countries: Some(currency.unsupported_countries()),
-        buy_limits: vec![],
-        sell_limits: vec![],
+        buy_limits,
+        sell_limits,
     })
 }
 
 pub fn map_assets(currencies: Vec<PaybisCurrency>) -> Vec<FiatProviderAsset> {
-    currencies.into_iter().flat_map(map_asset).collect()
+    currencies.into_iter().flat_map(|currency| map_asset(currency, vec![], vec![])).collect()
 }
 
 fn map_payment_type(payment_method_name: &str) -> Option<PaymentType> {
@@ -136,11 +137,6 @@ pub fn map_assets_with_limits(currencies: Vec<PaybisCurrency>, limits: &PaybisDa
     currencies
         .into_iter()
         .filter_map(|currency| {
-            if !currency.is_crypto() {
-                return None;
-            }
-
-            let asset = map_asset_id(currency.clone());
             let asset_buy_limits = limits
                 .data
                 .iter()
@@ -163,17 +159,7 @@ pub fn map_assets_with_limits(currencies: Vec<PaybisCurrency>, limits: &PaybisDa
                 })
                 .collect();
 
-            Some(FiatProviderAsset {
-                id: currency.code.clone(),
-                chain: asset.as_ref().map(|x| x.chain),
-                token_id: asset.as_ref().and_then(|x| x.token_id.clone()),
-                symbol: currency.code.clone(),
-                network: currency.blockchain_name.clone(),
-                enabled: true,
-                unsupported_countries: Some(currency.unsupported_countries()),
-                buy_limits: asset_buy_limits,
-                sell_limits: vec![],
-            })
+            map_asset(currency, asset_buy_limits, vec![])
         })
         .collect()
 }

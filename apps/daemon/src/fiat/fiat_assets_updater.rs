@@ -76,7 +76,6 @@ impl FiatAssetsUpdater {
                     println!("update_assets for provider: {}, assets: {:?}", provider.name().id(), assets.len());
                     fiat_assets.extend(assets.clone());
 
-                    let provider_id = provider.name().id();
                     let validated_assets: Vec<(FiatProviderAsset, Option<primitives::AssetId>)> = assets
                         .into_iter()
                         .map(|fiat_asset| {
@@ -89,7 +88,7 @@ impl FiatAssetsUpdater {
 
                     let assets = validated_assets
                         .into_iter()
-                        .map(|(fiat_asset, asset)| self.map_fiat_asset(provider_id.clone(), fiat_asset, asset))
+                        .map(|(fiat_asset, asset)| self.map_fiat_asset(fiat_asset, asset))
                         .collect::<Vec<primitives::FiatAsset>>();
 
                     let insert_assets = assets
@@ -138,11 +137,11 @@ impl FiatAssetsUpdater {
         Ok(true)
     }
 
-    fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset, asset_id: Option<primitives::AssetId>) -> primitives::FiatAsset {
+    fn map_fiat_asset(&self, fiat_asset: FiatProviderAsset, asset_id: Option<primitives::AssetId>) -> primitives::FiatAsset {
         primitives::FiatAsset {
             id: fiat_asset.id,
             asset_id,
-            provider,
+            provider: fiat_asset.provider.id(),
             symbol: fiat_asset.symbol,
             network: fiat_asset.network,
             token_id: fiat_asset.token_id,

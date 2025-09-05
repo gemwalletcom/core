@@ -6,7 +6,7 @@ use crate::model::{filter_token_id, FiatProviderAsset};
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
 use primitives::PaymentType;
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
 pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
     match asset.network.name.as_str() {
@@ -162,6 +162,7 @@ pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
 
     Some(FiatProviderAsset {
         id: asset.clone().unique_id,
+        provider: FiatProviderName::Transak,
         chain,
         token_id,
         symbol: asset.clone().symbol,

@@ -1,6 +1,6 @@
 use chain_primitives::format_token_id;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::{AssetId, Chain, CosmosDenom};
+use primitives::{AssetId, Chain, CosmosDenom, FiatProviderName};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -29,6 +29,7 @@ pub struct FiatMapping {
 #[derive(Debug, Clone)]
 pub struct FiatProviderAsset {
     pub id: String,
+    pub provider: FiatProviderName,
     pub chain: Option<Chain>,
     pub symbol: String,
     pub token_id: Option<String>,

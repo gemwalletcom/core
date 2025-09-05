@@ -6,7 +6,7 @@ use crate::model::{filter_token_id, FiatProviderAsset};
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
 use primitives::PaymentType;
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
     match chain.as_str() {
@@ -81,54 +81,39 @@ pub fn map_order(order: Order) -> Result<FiatTransaction, Box<dyn std::error::Er
     })
 }
 
-pub fn map_asset(asset: Asset) -> Vec<FiatProviderAsset> {
+fn map_asset_base(asset: Asset, buy_limits: Vec<FiatAssetLimits>, sell_limits: Vec<FiatAssetLimits>) -> Vec<FiatProviderAsset> {
+    let asset_id = asset.id.clone();
     asset
-        .clone()
         .blockchains
         .into_iter()
         .map(|blockchain| {
             let chain = map_asset_chain(blockchain.clone().id.clone());
             let token_id = filter_token_id(chain, blockchain.clone().address);
-            let id = asset.clone().id + "-" + blockchain.clone().id.as_str();
+            let id = asset_id.clone() + "-" + blockchain.clone().id.as_str();
             FiatProviderAsset {
                 id,
+                provider: FiatProviderName::Banxa,
                 chain,
                 token_id,
-                symbol: asset.clone().id.clone(),
+                symbol: asset_id.clone(),
                 network: Some(blockchain.id),
                 enabled: true,
                 unsupported_countries: Some(blockchain.unsupported_countries.list_map()),
-                buy_limits: vec![],
-                sell_limits: vec![],
+                buy_limits: buy_limits.clone(),
+                sell_limits: sell_limits.clone(),
             }
         })
         .collect()
 }
 
+pub fn map_asset(asset: Asset) -> Vec<FiatProviderAsset> {
+    map_asset_base(asset, vec![], vec![])
+}
+
 pub fn map_asset_with_limits(asset: Asset, buy_fiat_currencies: &[FiatCurrency], sell_fiat_currencies: &[FiatCurrency]) -> Vec<FiatProviderAsset> {
-    asset
-        .clone()
-        .blockchains
-        .into_iter()
-        .map(|blockchain| {
-            let chain = map_asset_chain(blockchain.clone().id.clone());
-            let token_id = filter_token_id(chain, blockchain.clone().address);
-            let id = asset.clone().id + "-" + blockchain.clone().id.as_str();
-            let buy_limits = map_limits(buy_fiat_currencies, FiatQuoteType::Buy);
-            let sell_limits = map_limits(sell_fiat_currencies, FiatQuoteType::Sell);
-            FiatProviderAsset {
-                id,
-                chain,
-                token_id,
-                symbol: asset.clone().id.clone(),
-                network: Some(blockchain.id),
-                enabled: true,
-                unsupported_countries: Some(blockchain.unsupported_countries.list_map()),
-                buy_limits,
-                sell_limits,
-            }
-        })
-        .collect()
+    let buy_limits = map_limits(buy_fiat_currencies, FiatQuoteType::Buy);
+    let sell_limits = map_limits(sell_fiat_currencies, FiatQuoteType::Sell);
+    map_asset_base(asset, buy_limits, sell_limits)
 }
 
 fn map_limits(fiat_currencies: &[FiatCurrency], quote_type: FiatQuoteType) -> Vec<FiatAssetLimits> {

@@ -8,7 +8,7 @@ use crate::model::FiatProviderAsset;
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
 use primitives::PaymentType;
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 use std::collections::HashMap;
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
@@ -214,6 +214,7 @@ fn map_asset_base(asset: Asset, buy_limits: Vec<FiatAssetLimits>, sell_limits: V
     let token_id = if asset.contract.is_empty() { None } else { Some(asset.contract.clone()) };
     Some(FiatProviderAsset {
         id: asset.clone().currency + "_" + asset.network.as_str(),
+        provider: FiatProviderName::Mercuryo,
         chain,
         token_id,
         symbol: asset.clone().currency,

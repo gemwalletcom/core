@@ -167,6 +167,7 @@ impl MoonPayClient {
 
         Some(FiatProviderAsset {
             id: asset.clone().code,
+            provider: FiatProviderName::MoonPay,
             chain,
             token_id,
             symbol: asset.clone().code,
