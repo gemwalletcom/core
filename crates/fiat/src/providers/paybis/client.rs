@@ -69,12 +69,11 @@ impl PaybisClient {
     }
 
     pub fn map_asset(currency: Currency) -> Option<FiatProviderAsset> {
-        let asset = map_asset_id(currency.clone())?;
-
+        let asset = map_asset_id(currency.clone());
         Some(FiatProviderAsset {
             id: currency.code.clone(),
-            chain: Some(asset.chain),
-            token_id: asset.token_id,
+            chain: asset.as_ref().map(|x| x.chain),
+            token_id: asset.as_ref().and_then(|x| x.token_id.clone()),
             symbol: currency.code.clone(),
             network: currency.blockchain_name.clone(),
             enabled: true,
