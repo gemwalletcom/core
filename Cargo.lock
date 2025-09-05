@@ -6831,9 +6831,9 @@ dependencies = [
 
 [[package]]
 name = "solana-primitives"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "219ba3f9350e1ea77c5337de61e11034e4c7ec665696ba0fd8434d2580db7ff2"
+checksum = "03a869df7709a24229ccaaafe8008e67d266c8add74611c74847099a6a0a7df4"
 dependencies = [
  "base64 0.22.1",
  "borsh 0.10.4",
