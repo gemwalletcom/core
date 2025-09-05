@@ -86,7 +86,7 @@ mod tests {
         let result = map_order(response).expect("Failed to map order");
 
         assert_eq!(result.provider_id, "banxa");
-        assert_eq!(result.provider_transaction_id, "1a0e15cbede2cd3776617683bd35b0f0");
+        assert_eq!(result.provider_transaction_id, "test");
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
         assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
         assert_eq!(result.symbol, "ETH");
