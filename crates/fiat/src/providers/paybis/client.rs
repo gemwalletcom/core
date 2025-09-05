@@ -69,6 +69,9 @@ impl PaybisClient {
     }
 
     pub fn map_asset(currency: Currency) -> Option<FiatProviderAsset> {
+        if !currency.is_crypto() {
+            return None;
+        }
         let asset = map_asset_id(currency.clone());
         Some(FiatProviderAsset {
             id: currency.code.clone(),
