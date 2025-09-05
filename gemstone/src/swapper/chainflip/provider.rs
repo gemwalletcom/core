@@ -284,7 +284,7 @@ impl Swapper for ChainflipProvider {
                 Ok(swap_quote_data)
             }
             VaultSwapResponse::Solana(response) => {
-                let data = tx_builder::build_solana_tx(quote.request.wallet_address.clone(), &response, provider.clone())
+                let data = tx_builder::build_solana_tx(&quote.request.wallet_address, &response, provider.clone())
                     .await
                     .map_err(SwapperError::TransactionError)?;
                 let swap_quote_data = SwapperQuoteData {

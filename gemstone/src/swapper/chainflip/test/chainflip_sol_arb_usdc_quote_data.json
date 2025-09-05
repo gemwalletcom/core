@@ -1,0 +1,41 @@
+{
+    "jsonrpc": "2.0",
+    "result": {
+      "chain": "Solana",
+      "program_id": "J88B7gmadHzTNGiy54c9Ms8BsEXNdB2fntFyhKpk3qoT",
+      "accounts": [
+        {
+          "pubkey": "ACLMuTFvDAb3oecQQGkTVqpUbhCKHG3EZ9uNXHK1W9ka",
+          "is_signer": false,
+          "is_writable": false
+        },
+        {
+          "pubkey": "3tJ67qa2GDfvv2wcMYNUfN5QBZrFpTwcU8ASZKMvCTVU",
+          "is_signer": false,
+          "is_writable": true
+        },
+        {
+          "pubkey": "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
+          "is_signer": true,
+          "is_writable": true
+        },
+        {
+          "pubkey": "GrPKTiTrwut3V4Pnp92UjRXXzta5KmQGsPPyjHNsccJB",
+          "is_signer": false,
+          "is_writable": true
+        },
+        {
+          "pubkey": "FmAcjWaRFUxGWBfGT7G3CzcFeJFsewQ4KPJVG4f6fcob",
+          "is_signer": false,
+          "is_writable": true
+        },
+        {
+          "pubkey": "11111111111111111111111111111111",
+          "is_signer": false,
+          "is_writable": false
+        }
+      ],
+      "data": "0xa3265ce2f3698dc4801d2c04000000000400000014000000514bcb1f9aabb904e6106bd1052b66d2706dbbb707000000006c000000000a00000085fba93ee29c604fa858a351688c01290841eafb19c63a70a475d3c7bc3bef9fcaa145b6f3fdd478e926fa7302d075310000000000000000000000000000000000001e83d2972d3dca3a330d60c2777ee5b8d25683c63fa359116985609830f42054050004002d1100000038924cc334561890e3a819407353710e09"
+    },
+    "id": 1757035218
+  }
