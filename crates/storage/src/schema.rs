@@ -155,6 +155,8 @@ diesel::table! {
         is_enabled -> Bool,
         is_enabled_by_provider -> Bool,
         unsupported_countries -> Nullable<Jsonb>,
+        buy_limits -> Nullable<Jsonb>,
+        sell_limits -> Nullable<Jsonb>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

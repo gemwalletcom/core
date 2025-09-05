@@ -7,7 +7,10 @@ use async_trait::async_trait;
 use std::error::Error;
 
 use super::models::country::country_status;
-use super::{client::PaybisClient, mapper::map_process_webhook};
+use super::{
+    client::PaybisClient,
+    mapper::{map_assets_with_limits, map_process_webhook},
+};
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
 use streamer::FiatWebhook;
 
@@ -19,7 +22,7 @@ impl FiatProvider for PaybisClient {
 
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
-            .get_buy_quote(request_map.symbol, request.fiat_currency.to_uppercase(), request.fiat_amount)
+            .get_buy_quote(request_map.symbol, request.fiat_currency.as_ref().to_uppercase(), request.fiat_amount)
             .await?;
 
         if quote.payment_methods.is_empty() {
@@ -31,7 +34,7 @@ impl FiatProvider for PaybisClient {
 
     async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let quote = self
-            .get_sell_quote(request_map.symbol, request.fiat_currency.to_uppercase(), request.crypto_amount)
+            .get_sell_quote(request_map.symbol, request.fiat_currency.as_ref().to_uppercase(), request.crypto_amount)
             .await?;
 
         if quote.payment_methods.is_empty() {
@@ -42,14 +45,10 @@ impl FiatProvider for PaybisClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let response = self.get_assets().await?;
+        let assets = PaybisClient::get_assets(self).await?;
+        let limits = PaybisClient::get_payment_method_limits(self).await?;
 
-        Ok(response
-            .meta
-            .currencies
-            .into_iter()
-            .flat_map(Self::map_asset)
-            .collect::<Vec<FiatProviderAsset>>())
+        Ok(map_assets_with_limits(assets.meta.currencies, &limits))
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
@@ -78,6 +77,7 @@ impl FiatProvider for PaybisClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{model::FiatMapping, FiatProvider};
+    use primitives::currency::Currency;
     use primitives::{Chain, FiatBuyQuote};
     use streamer::FiatWebhook;
 
@@ -103,11 +103,9 @@ mod fiat_integration_tests {
     #[tokio::test]
     async fn test_paybis_get_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_paybis_test_client();
-        let assets = FiatProvider::get_assets(&client).await?;
+        let result = FiatProvider::get_assets(&client).await?;
 
-        assert!(!assets.is_empty());
-
-        println!("Found {} Paybis assets", assets.len());
+        assert!(!result.is_empty());
 
         let expected_assets = vec![
             ("USDT-TRC20", Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")),
@@ -116,15 +114,29 @@ mod fiat_integration_tests {
         ];
 
         for (symbol, expected_chain, expected_token_id) in expected_assets {
-            let asset = assets.iter().find(|asset| asset.symbol == symbol);
+            let asset = result.iter().find(|asset| asset.symbol == symbol);
             assert!(asset.is_some(), "{} asset should exist", symbol);
 
             if let Some(asset) = asset {
                 assert_eq!(asset.chain, Some(expected_chain));
                 assert_eq!(asset.token_id.as_deref(), expected_token_id);
+
                 println!("{} asset: {:?}", symbol, asset);
             }
         }
+
+        let usdt_trc20_asset = result.iter().find(|asset| asset.symbol == "USDT-TRC20");
+        if let Some(asset) = usdt_trc20_asset {
+            assert!(!asset.buy_limits.is_empty(), "USDT-TRC20 should have buy limits");
+            let usd_buy_limit = asset.buy_limits.iter().find(|limit| limit.currency == Currency::USD);
+            if let Some(limit) = usd_buy_limit {
+                assert_eq!(limit.min_amount, Some(5.0));
+                assert_eq!(limit.max_amount, Some(1000000.0));
+            }
+        }
+
+        let assets_with_limits = result.iter().filter(|a| !a.buy_limits.is_empty()).count();
+        println!("Found {} assets with {} having buy limits", result.len(), assets_with_limits);
 
         Ok(())
     }
@@ -174,4 +186,5 @@ mod fiat_integration_tests {
 
         Ok(())
     }
+
 }

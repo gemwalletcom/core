@@ -35,6 +35,8 @@ impl FiatStore for DatabaseClient {
                 network.eq(excluded(network)),
                 token_id.eq(excluded(token_id)),
                 unsupported_countries.eq(excluded(unsupported_countries)),
+                buy_limits.eq(excluded(buy_limits)),
+                sell_limits.eq(excluded(sell_limits)),
                 is_enabled_by_provider.eq(excluded(is_enabled_by_provider)),
             ))
             .execute(&mut self.connection)

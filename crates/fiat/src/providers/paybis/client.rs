@@ -1,8 +1,5 @@
-use crate::hmac_signature::generate_hmac_signature_from_base64_key;
-use crate::model::FiatProviderAsset;
-use crate::providers::paybis::mapper::map_asset_id;
-
-use super::models::{Currency, PaybisAssetsResponse, PaybisQuote, QuoteRequest};
+use super::models::{PaybisData, PaybisQuote, PaymentMethodWithLimits, QuoteRequest};
+use crate::{hmac_signature::generate_hmac_signature_from_base64_key, providers::paybis::models::Assets};
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
 use reqwest::Client;
@@ -63,25 +60,14 @@ impl PaybisClient {
             .await
     }
 
-    pub async fn get_assets(&self) -> Result<PaybisAssetsResponse, reqwest::Error> {
+    pub async fn get_assets(&self) -> Result<Assets, reqwest::Error> {
         let url = format!("{PAYBIS_API_BASE_URL}/v2/public/currency/pairs/buy-crypto");
         self.client.get(url).query(&[("apikey", &self.api_key)]).send().await?.json().await
     }
 
-    pub fn map_asset(currency: Currency) -> Option<FiatProviderAsset> {
-        if !currency.is_crypto() {
-            return None;
-        }
-        let asset = map_asset_id(currency.clone());
-        Some(FiatProviderAsset {
-            id: currency.code.clone(),
-            chain: asset.as_ref().map(|x| x.chain),
-            token_id: asset.as_ref().and_then(|x| x.token_id.clone()),
-            symbol: currency.code.clone(),
-            network: currency.blockchain_name.clone(),
-            enabled: true,
-            unsupported_countries: Some(currency.unsupported_countries()),
-        })
+    pub async fn get_payment_method_limits(&self) -> Result<PaybisData<Vec<PaymentMethodWithLimits>>, reqwest::Error> {
+        let url = format!("{PAYBIS_API_BASE_URL}/v2/public/payment-method-list-with-limits");
+        self.client.get(url).query(&[("apikey", &self.api_key)]).send().await?.json().await
     }
 
     pub fn get_buy_fiat_quote(&self, request: FiatBuyQuote, quote: PaybisQuote) -> FiatQuote {
@@ -94,12 +80,12 @@ impl PaybisClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency.clone(),
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount,
             crypto_value,
             redirect_url: self.redirect_url(
                 &request.wallet_address,
-                &request.fiat_currency,
+                request.fiat_currency.as_ref(),
                 &quote.currency_code_to,
                 request.fiat_amount,
                 true,

@@ -1,4 +1,5 @@
 use chain_primitives::format_token_id;
+use primitives::fiat_assets::FiatAssetLimits;
 use primitives::{AssetId, Chain, CosmosDenom};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -21,6 +22,8 @@ pub struct FiatMapping {
     pub symbol: String,
     pub network: Option<String>,
     pub unsupported_countries: HashMap<String, Vec<String>>,
+    pub buy_limits: Vec<FiatAssetLimits>,
+    pub sell_limits: Vec<FiatAssetLimits>,
 }
 
 #[derive(Debug, Clone)]
@@ -32,6 +35,8 @@ pub struct FiatProviderAsset {
     pub network: Option<String>,
     pub enabled: bool,
     pub unsupported_countries: Option<HashMap<String, Vec<String>>>,
+    pub buy_limits: Vec<FiatAssetLimits>,
+    pub sell_limits: Vec<FiatAssetLimits>,
 }
 
 impl FiatProviderAsset {

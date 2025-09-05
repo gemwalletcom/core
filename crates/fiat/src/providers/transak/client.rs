@@ -78,7 +78,7 @@ impl TransakClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: quote.crypto_amount,
             crypto_value,
             redirect_url: self.redirect_url(quote, request.wallet_address),
@@ -123,6 +123,8 @@ impl TransakClient {
             network: Some(asset.clone().network.name),
             enabled: asset.is_allowed,
             unsupported_countries: Some(asset.unsupported_countries()),
+            buy_limits: vec![],
+            sell_limits: vec![],
         })
     }
 

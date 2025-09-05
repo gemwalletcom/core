@@ -96,6 +96,8 @@ impl MercuryoClient {
             network: Some(asset.network),
             enabled: true,
             unsupported_countries: None,
+            buy_limits: vec![],
+            sell_limits: vec![],
         })
     }
 
@@ -105,7 +107,7 @@ impl MercuryoClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: quote.clone().amount,
             crypto_value,
             redirect_url: self.redirect_url(
@@ -122,7 +124,7 @@ impl MercuryoClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.fiat_amount,
-            fiat_currency: request.fiat_currency,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: quote.amount,
             crypto_value: request.crypto_value,
             redirect_url: self.redirect_url(

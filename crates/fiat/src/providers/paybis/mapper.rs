@@ -1,14 +1,19 @@
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use std::str::FromStr;
+
+use primitives::currency::Currency;
+use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType};
 use streamer::FiatWebhook;
 
-use crate::providers::paybis::models::PaybisWebhook;
+use crate::model::FiatProviderAsset;
+use crate::providers::paybis::models::{PaybisData, PaymentMethodWithLimits};
+use primitives::fiat_assets::FiatAssetLimits;
 
 use super::{
     client::PaybisClient,
-    models::{Currency, PaybisWebhookData},
+    models::{Currency as PaybisCurrency, PaybisWebhookData},
 };
 
-pub fn map_asset_id(currency: Currency) -> Option<AssetId> {
+pub fn map_asset_id(currency: PaybisCurrency) -> Option<AssetId> {
     if !currency.is_crypto() {
         return None;
     }
@@ -66,7 +71,7 @@ pub fn map_status(status: &str) -> FiatTransactionStatus {
 }
 
 pub fn map_process_webhook(data: serde_json::Value) -> FiatWebhook {
-    match serde_json::from_value::<PaybisWebhook>(data) {
+    match serde_json::from_value::<PaybisData<PaybisWebhookData>>(data) {
         Ok(webhook) => map_webhook_data(webhook.data),
         Err(_) => FiatWebhook::None,
     }
@@ -96,6 +101,83 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
     })
 }
 
+pub fn map_asset(currency: PaybisCurrency) -> Option<FiatProviderAsset> {
+    if !currency.is_crypto() {
+        return None;
+    }
+    let asset = map_asset_id(currency.clone());
+    Some(FiatProviderAsset {
+        id: currency.code.clone(),
+        chain: asset.as_ref().map(|x| x.chain),
+        token_id: asset.as_ref().and_then(|x| x.token_id.clone()),
+        symbol: currency.code.clone(),
+        network: currency.blockchain_name.clone(),
+        enabled: true,
+        unsupported_countries: Some(currency.unsupported_countries()),
+        buy_limits: vec![],
+        sell_limits: vec![],
+    })
+}
+
+pub fn map_assets(currencies: Vec<PaybisCurrency>) -> Vec<FiatProviderAsset> {
+    currencies.into_iter().flat_map(map_asset).collect()
+}
+
+fn map_payment_type(payment_method_name: &str) -> Option<PaymentType> {
+    match payment_method_name {
+        "gem-wallet-credit-card" => Some(PaymentType::Card),
+        "gem-wallet-google-pay-credit-card" => Some(PaymentType::GooglePay),
+        "gem-wallet-apple-pay-credit-card" => Some(PaymentType::ApplePay),
+        _ => None,
+    }
+}
+
+pub fn map_assets_with_limits(currencies: Vec<PaybisCurrency>, limits: &PaybisData<Vec<PaymentMethodWithLimits>>) -> Vec<FiatProviderAsset> {
+    currencies
+        .into_iter()
+        .filter_map(|currency| {
+            if !currency.is_crypto() {
+                return None;
+            }
+
+            let asset = map_asset_id(currency.clone());
+            let asset_buy_limits = limits
+                .data
+                .iter()
+                .filter_map(|payment_method| map_payment_type(&payment_method.name).map(|payment_type| (payment_method, payment_type)))
+                .flat_map(|(payment_method, payment_type)| {
+                    payment_method.pairs.iter().filter_map({
+                        let value = currency.code.clone();
+                        move |currency_pair| {
+                            currency_pair.to.iter().find(|c| c.currency_code == value).and_then(|currency_limit| {
+                                Currency::from_str(currency_pair.from.as_str()).ok().map(|fiat_currency| FiatAssetLimits {
+                                    currency: fiat_currency,
+                                    payment_type: payment_type.clone(),
+                                    quote_type: FiatQuoteType::Buy,
+                                    min_amount: Some(currency_limit.min_amount),
+                                    max_amount: Some(currency_limit.max_amount),
+                                })
+                            })
+                        }
+                    })
+                })
+                .collect();
+
+            Some(FiatProviderAsset {
+                id: currency.code.clone(),
+                chain: asset.as_ref().map(|x| x.chain),
+                token_id: asset.as_ref().and_then(|x| x.token_id.clone()),
+                symbol: currency.code.clone(),
+                network: currency.blockchain_name.clone(),
+                enabled: true,
+                unsupported_countries: Some(currency.unsupported_countries()),
+                buy_limits: asset_buy_limits,
+                sell_limits: vec![],
+            })
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -103,7 +185,7 @@ mod tests {
     #[test]
     fn test_map_asset_id() {
         assert_eq!(
-            map_asset_id(Currency {
+            map_asset_id(PaybisCurrency {
                 code: "ETH".to_string(),
                 blockchain_name: Some("ethereum".to_string()),
             }),
@@ -111,7 +193,7 @@ mod tests {
         );
 
         assert_eq!(
-            map_asset_id(Currency {
+            map_asset_id(PaybisCurrency {
                 code: "BTC".to_string(),
                 blockchain_name: Some("bitcoin".to_string()),
             }),
@@ -119,7 +201,7 @@ mod tests {
         );
 
         assert_eq!(
-            map_asset_id(Currency {
+            map_asset_id(PaybisCurrency {
                 code: "UNKNOWN".to_string(),
                 blockchain_name: Some("unknown-chain".to_string()),
             }),
@@ -127,7 +209,7 @@ mod tests {
         );
 
         assert_eq!(
-            map_asset_id(Currency {
+            map_asset_id(PaybisCurrency {
                 code: "USD".to_string(),
                 blockchain_name: None,
             }),
@@ -231,5 +313,44 @@ mod tests {
 
         let result = map_process_webhook(data);
         assert!(matches!(result, FiatWebhook::None), "Verification webhooks should map to FiatWebhook::None");
+    }
+
+    #[test]
+    fn test_paybis_limits_parsing() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let limits: PaybisData<Vec<PaymentMethodWithLimits>> = serde_json::from_str(include_str!("../../../testdata/paybis/assets_with_limits.json"))?;
+
+        let test_currencies = vec![
+            PaybisCurrency {
+                code: "USDT-TRC20".to_string(),
+                blockchain_name: Some("tron".to_string()),
+            },
+            PaybisCurrency {
+                code: "TRX".to_string(),
+                blockchain_name: Some("tron".to_string()),
+            },
+            PaybisCurrency {
+                code: "XRP".to_string(),
+                blockchain_name: Some("xrp".to_string()),
+            },
+        ];
+
+        let mapped_assets = map_assets_with_limits(test_currencies, &limits);
+
+        // Test that assets with limits have expected min/max amounts
+        let usdt_trc20 = mapped_assets.iter().find(|a| a.symbol == "USDT-TRC20").expect("USDT-TRC20 should exist");
+        assert!(!usdt_trc20.buy_limits.is_empty(), "USDT-TRC20 should have buy limits");
+
+        // Find USD limit
+        let usd_limit = usdt_trc20.buy_limits.iter().find(|limit| limit.currency == Currency::USD);
+        assert!(usd_limit.is_some(), "Should have USD limit");
+
+        if let Some(limit) = usd_limit {
+            assert_eq!(limit.min_amount, Some(5.0));
+            assert_eq!(limit.max_amount, Some(20000.0));
+            assert_eq!(limit.payment_type, PaymentType::Card);
+            assert_eq!(limit.quote_type, FiatQuoteType::Buy);
+        }
+
+        Ok(())
     }
 }

@@ -15,6 +15,7 @@ pub trait FiatProvider {
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>>;
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>>;
+
 }
 
 #[async_trait]
@@ -48,4 +49,5 @@ where
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
         (**self).process_webhook(data).await
     }
+
 }

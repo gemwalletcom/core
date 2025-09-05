@@ -124,6 +124,8 @@ impl FiatClient {
                         symbol: x.clone().symbol,
                         network: x.clone().network,
                         unsupported_countries: x.clone().unsupported_countries(),
+                        buy_limits: x.clone().buy_limits(),
+                        sell_limits: x.clone().sell_limits(),
                     },
                 )
             })
@@ -188,6 +190,44 @@ impl FiatClient {
             .await
     }
 
+    fn check_asset_limits(request: &FiatQuoteRequest, mapping: &FiatMapping) -> Result<(), FiatError> {
+        let fiat_currency = request.fiat_currency.clone();
+
+        let limits = match request.quote_type {
+            FiatQuoteType::Buy => &mapping.buy_limits,
+            FiatQuoteType::Sell => &mapping.sell_limits,
+        };
+
+        if limits.is_empty() {
+            return Ok(());
+        }
+
+        let amount = match request.quote_type {
+            FiatQuoteType::Buy => request.fiat_amount,
+            FiatQuoteType::Sell => request.fiat_amount, // For sell, we'd need fiat equivalent
+        };
+
+        if let Some(amount) = amount {
+            for limit in limits {
+                if limit.currency == fiat_currency {
+                    if let Some(min_amount) = limit.min_amount {
+                        if amount < min_amount {
+                            return Err(FiatError::InsufficientAmount(amount, min_amount));
+                        }
+                    }
+                    if let Some(max_amount) = limit.max_amount {
+                        if amount > max_amount {
+                            return Err(FiatError::ExcessiveAmount(amount, max_amount));
+                        }
+                    }
+                    return Ok(());
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     async fn get_quotes_in_parallel<F>(
         &mut self,
         request: FiatQuoteRequest,
@@ -219,16 +259,22 @@ impl FiatClient {
 
                 async move {
                     if !countries.contains(&country_code) {
-                        Err(FiatQuoteError::new(provider_id, FiatError::UnsupportedCountry(country_code).to_string()))
+                        Err(FiatQuoteError::new(
+                            provider_id.clone(),
+                            FiatError::UnsupportedCountry(country_code).to_string(),
+                        ))
                     } else if mapping.unsupported_countries.clone().contains_key(&country_code) {
                         Err(FiatQuoteError::new(
-                            provider_id,
-                            FiatError::UnsupportedCountryAsset(country_code, mapping.symbol).to_string(),
+                            provider_id.clone(),
+                            FiatError::UnsupportedCountryAsset(country_code, mapping.symbol.clone()).to_string(),
                         ))
                     } else {
-                        match quote_fn(provider, request, mapping).await {
-                            Ok(quote) => Ok(quote),
-                            Err(e) => Err(FiatQuoteError::new(provider_id, e.to_string())),
+                        match Self::check_asset_limits(&request, &mapping) {
+                            Ok(_) => match quote_fn(provider, request, mapping).await {
+                                Ok(quote) => Ok(quote),
+                                Err(e) => Err(FiatQuoteError::new(provider_id, e.to_string())),
+                            },
+                            Err(limit_error) => Err(FiatQuoteError::new(provider_id, limit_error.to_string())),
                         }
                     }
                 }
@@ -273,10 +319,94 @@ fn sort_by_fiat_amount(a: &FiatQuote, b: &FiatQuote) -> std::cmp::Ordering {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::fiat_assets::FiatAssetLimits;
+    use primitives::FiatQuoteType;
+    use std::collections::HashMap;
+
 
     #[test]
     fn test_precision() {
         assert_eq!(precision(1.123, 2), 1.12);
         assert_eq!(precision(1.123, 5), 1.123);
+    }
+
+    #[test]
+    fn check_asset_limits_buy_within_limits() {
+        let request = FiatQuoteRequest::mock();
+        let mapping = FiatMapping {
+            symbol: "BTC".to_string(),
+            network: None,
+            unsupported_countries: HashMap::new(),
+            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0, FiatQuoteType::Buy)],
+            sell_limits: vec![],
+        };
+        assert!(FiatClient::check_asset_limits(&request, &mapping).is_ok());
+    }
+
+    #[test]
+    fn check_asset_limits_buy_below_minimum() {
+        let mut request = FiatQuoteRequest::mock();
+        request.fiat_amount = Some(25.0);
+        let mapping = FiatMapping {
+            symbol: "BTC".to_string(),
+            network: None,
+            unsupported_countries: HashMap::new(),
+            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0, FiatQuoteType::Buy)],
+            sell_limits: vec![],
+        };
+        match FiatClient::check_asset_limits(&request, &mapping).unwrap_err() {
+            FiatError::InsufficientAmount(amount, min) => {
+                assert_eq!(amount, 25.0);
+                assert_eq!(min, 50.0);
+            }
+            _ => panic!("Expected InsufficientAmount error"),
+        }
+    }
+
+    #[test]
+    fn check_asset_limits_buy_above_maximum() {
+        let mut request = FiatQuoteRequest::mock();
+        request.fiat_amount = Some(300.0);
+        let mapping = FiatMapping {
+            symbol: "BTC".to_string(),
+            network: None,
+            unsupported_countries: HashMap::new(),
+            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0, FiatQuoteType::Buy)],
+            sell_limits: vec![],
+        };
+        match FiatClient::check_asset_limits(&request, &mapping).unwrap_err() {
+            FiatError::ExcessiveAmount(amount, max) => {
+                assert_eq!(amount, 300.0);
+                assert_eq!(max, 200.0);
+            }
+            _ => panic!("Expected ExcessiveAmount error"),
+        }
+    }
+
+    #[test]
+    fn check_asset_limits_sell_within_limits() {
+        let mut request = FiatQuoteRequest::mock();
+        request.quote_type = FiatQuoteType::Sell;
+        let mapping = FiatMapping {
+            symbol: "BTC".to_string(),
+            network: None,
+            unsupported_countries: HashMap::new(),
+            buy_limits: vec![],
+            sell_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0, FiatQuoteType::Sell)],
+        };
+        assert!(FiatClient::check_asset_limits(&request, &mapping).is_ok());
+    }
+
+    #[test]
+    fn check_asset_limits_no_limits() {
+        let request = FiatQuoteRequest::mock();
+        let mapping = FiatMapping {
+            symbol: "BTC".to_string(),
+            network: None,
+            unsupported_countries: HashMap::new(),
+            buy_limits: vec![],
+            sell_limits: vec![],
+        };
+        assert!(FiatClient::check_asset_limits(&request, &mapping).is_ok());
     }
 }

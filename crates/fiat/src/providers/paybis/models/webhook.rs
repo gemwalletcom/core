@@ -1,11 +1,6 @@
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisWebhook {
-    pub data: PaybisWebhookData,
-}
-
-#[derive(Debug, Clone, Deserialize)]
 pub struct PaybisWebhookData {
     pub transaction: PaybisTransaction,
     #[serde(rename = "amountFrom")]

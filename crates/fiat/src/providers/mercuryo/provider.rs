@@ -19,7 +19,7 @@ impl FiatProvider for MercuryoClient {
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_quote_buy(
-                request.fiat_currency.clone(),
+                request.fiat_currency.as_ref().to_string(),
                 request_map.symbol.clone(),
                 request.fiat_amount,
                 request_map.network.clone().unwrap_or_default(),
@@ -32,7 +32,7 @@ impl FiatProvider for MercuryoClient {
     async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let quote = self
             .get_quote_sell(
-                request.fiat_currency.clone(),
+                request.fiat_currency.as_ref().to_string(),
                 request_map.symbol.clone(),
                 request.crypto_amount,
                 request_map.network.clone().unwrap_or_default(),

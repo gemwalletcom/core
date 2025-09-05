@@ -559,4 +559,28 @@ mod tests {
 
         assert!(swap_tx.metadata.is_some());
     }
+
+    #[test]
+    fn test_v4_swap_empty_path_no_panic() {
+        use crate::uniswap::{actions::V4Action, contracts::v4::IV4Router};
+        use alloy_primitives::Address;
+
+        let action = V4Action::SWAP_EXACT_IN(IV4Router::ExactInputParams {
+            currencyIn: Address::ZERO,
+            path: vec![],
+            amountIn: 1000000000000000000_u128,
+            amountOutMinimum: 0,
+        });
+
+        let encoded_actions = crate::uniswap::actions::encode_actions(&[action]);
+        let decoded_actions = crate::uniswap::actions::decode_action_data(&encoded_actions);
+        assert!(decoded_actions.is_ok());
+
+        let actions = decoded_actions.unwrap();
+        assert_eq!(actions.len(), 1);
+
+        if let V4Action::SWAP_EXACT_IN(params) = &actions[0] {
+            assert!(params.path.is_empty());
+        }
+    }
 }

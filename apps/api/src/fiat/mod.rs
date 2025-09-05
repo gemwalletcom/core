@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 pub use fiat::{FiatClient, FiatProviderFactory};
 
+use primitives::currency::Currency;
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
 use streamer::FiatWebhookPayload;
@@ -33,7 +34,7 @@ pub async fn get_fiat_quotes(
         quote_type,
         ip_address: ip_address.unwrap_or(&ip.to_string()).to_string(),
         fiat_amount,
-        fiat_currency: currency.to_string(),
+        fiat_currency: Currency::from_str(currency).unwrap_or(Currency::USD),
         crypto_value: crypto_value.map(|x| x.to_string()),
         wallet_address: wallet_address.to_string(),
         provider_id: provider_id.map(|x| x.to_string()),
@@ -63,7 +64,7 @@ pub async fn get_fiat_on_ramp_quotes(
         quote_type: FiatQuoteType::Buy,
         ip_address: ip_address.unwrap_or(ip.to_string()),
         fiat_amount: Some(amount),
-        fiat_currency: currency,
+        fiat_currency: Currency::from_str(&currency).unwrap_or(Currency::USD),
         crypto_value: None,
         wallet_address,
         provider_id,

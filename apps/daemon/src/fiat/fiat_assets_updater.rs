@@ -1,6 +1,6 @@
 use chrono::{Duration, Utc};
 use fiat::{model::FiatProviderAsset, FiatProvider};
-use primitives::{AssetTag, Diff};
+use primitives::{currency::Currency, AssetTag, Diff};
 use storage::{AssetFilter, AssetUpdate, DatabaseClient};
 
 pub struct FiatAssetsUpdater {
@@ -77,7 +77,6 @@ impl FiatAssetsUpdater {
                     fiat_assets.extend(assets.clone());
 
                     let assets = assets
-                        .clone()
                         .iter()
                         .map(|x| self.map_fiat_asset(provider.name().id(), x.clone()))
                         .collect::<Vec<primitives::FiatAsset>>();
@@ -130,15 +129,18 @@ impl FiatAssetsUpdater {
 
     fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset) -> primitives::FiatAsset {
         let asset_id = fiat_asset.asset_id();
+
         primitives::FiatAsset {
-            id: fiat_asset.clone().id,
+            id: fiat_asset.id,
             asset_id,
             provider,
-            symbol: fiat_asset.clone().symbol,
-            network: fiat_asset.clone().network,
-            token_id: fiat_asset.clone().token_id,
-            enabled: fiat_asset.clone().enabled,
-            unsupported_countries: fiat_asset.clone().unsupported_countries.unwrap_or_default(),
+            symbol: fiat_asset.symbol,
+            network: fiat_asset.network,
+            token_id: fiat_asset.token_id,
+            enabled: fiat_asset.enabled,
+            unsupported_countries: fiat_asset.unsupported_countries.unwrap_or_default(),
+            buy_limits: fiat_asset.buy_limits.into_iter().filter(|x| x.currency == Currency::USD).collect::<Vec<_>>(), // stored usd only for now
+            sell_limits: fiat_asset.sell_limits.into_iter().filter(|x| x.currency == Currency::USD).collect::<Vec<_>>(), // stored usd only for now
         }
     }
 }

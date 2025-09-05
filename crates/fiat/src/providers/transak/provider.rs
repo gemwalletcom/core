@@ -22,7 +22,7 @@ impl FiatProvider for TransakClient {
         let quote = self
             .get_buy_quote(
                 request_map.symbol.clone(),
-                request.fiat_currency.clone(),
+                request.fiat_currency.as_ref().to_string(),
                 request.fiat_amount,
                 request_map.network.unwrap_or_default(),
                 request.ip_address.clone(),

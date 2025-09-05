@@ -25,7 +25,7 @@ impl FiatProvider for BanxaClient {
             .get_quote_buy(
                 &request_map.clone().symbol,
                 &request_map.clone().network.unwrap_or_default(),
-                &request.fiat_currency,
+                request.fiat_currency.as_ref(),
                 request.fiat_amount,
             )
             .await?;
@@ -39,7 +39,7 @@ impl FiatProvider for BanxaClient {
             .get_payment_methods(ORDER_TYPE_SELL)
             .await?
             .into_iter()
-            .find(|x| x.supported_fiats.contains(&request.fiat_currency))
+            .find(|x| x.supported_fiats.contains(&request.fiat_currency.as_ref().to_string()))
             .ok_or("Payment method not found")?;
 
         let quote = self
@@ -47,7 +47,7 @@ impl FiatProvider for BanxaClient {
                 &method.id,
                 &request_map.symbol,
                 &request_map.clone().network.unwrap_or_default(),
-                &request.fiat_currency,
+                request.fiat_currency.as_ref(),
                 request.crypto_amount,
             )
             .await?;

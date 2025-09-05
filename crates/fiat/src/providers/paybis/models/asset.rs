@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct PaybisAssetsResponse {
+pub struct Assets {
     pub meta: MetaData,
 }
 

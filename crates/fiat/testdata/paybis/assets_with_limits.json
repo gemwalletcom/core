@@ -1,0 +1,1113 @@
+{
+    "data": [
+        {
+            "name": "gem-wallet-credit-card",
+            "displayName": "Credit/Debit Card",
+            "isRecurring": false,
+            "pairs": [
+                {
+                    "from": "USD",
+                    "to": [
+                        {
+                            "currency": "BTC",
+                            "currencyCode": "BTC",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "ETH",
+                            "currencyCode": "ETH",
+                            "minAmount": "10",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "ETH",
+                            "currencyCode": "ETH-BASE",
+                            "minAmount": "10",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDT",
+                            "currencyCode": "USDT-TRC20",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDT",
+                            "currencyCode": "USDT",
+                            "minAmount": "10",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDT",
+                            "currencyCode": "USDT-POLYGON",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDT",
+                            "currencyCode": "USDT-SOL",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "BNB",
+                            "currencyCode": "BNBSC",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC",
+                            "minAmount": "10",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC-POLYGON",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC-BASE",
+                            "minAmount": "10",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC-STELLAR",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC-SOL",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "XRP",
+                            "currencyCode": "XRP",
+                            "minAmount": "30",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "TON",
+                            "currencyCode": "TON",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "ADA",
+                            "currencyCode": "ADA",
+                            "minAmount": "50",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "DOGE",
+                            "currencyCode": "DOGE",
+                            "minAmount": "5",
+                            "maxAmount": "15000"
+                        },
+                        {
+                            "currency": "POL",
+                            "currencyCode": "POL",
+                            "minAmount": "5",
+                            "maxAmount": "10000"
+                        },
+                        {
+                            "currency": "SOL",
+                            "currencyCode": "SOL",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "DOT",
+                            "currencyCode": "DOT",
+                            "minAmount": "50",
+                            "maxAmount": "10000"
+                        },
+                        {
+                            "currency": "LTC",
+                            "currencyCode": "LTC",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "SHIB",
+                            "currencyCode": "SHIB",
+                            "minAmount": "10",
+                            "maxAmount": "15000"
+                        },
+                        {
+                            "currency": "AVAX",
+                            "currencyCode": "AVAXC",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "TRX",
+                            "currencyCode": "TRX",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "DAI",
+                            "currencyCode": "DAI",
+                            "minAmount": "50",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "LINK",
+                            "currencyCode": "LINK",
+                            "minAmount": "50",
+                            "maxAmount": "10000"
+                        },
+                        {
+                            "currency": "ETC",
+                            "currencyCode": "ETC",
+                            "minAmount": "10",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "UNI",
+                            "currencyCode": "UNI",
+                            "minAmount": "50",
+                            "maxAmount": "10000"
+                        },
+                        {
+                            "currency": "XLM",
+                            "currencyCode": "XLM",
+                            "minAmount": "5",
+                            "maxAmount": "10000"
+                        },
+                        {
+                            "currency": "BCH",
+                            "currencyCode": "BCH",
+                            "minAmount": "5",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "LDO",
+                            "currencyCode": "LDO",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "APE",
+                            "currencyCode": "APE",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "PEPE",
+                            "currencyCode": "PEPE",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "ARB",
+                            "currencyCode": "ARB",
+                            "minAmount": "10",
+                            "maxAmount": "10000"
+                        },
+                        {
+                            "currency": "QNT",
+                            "currencyCode": "QNT",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "AAVE",
+                            "currencyCode": "AAVE",
+                            "minAmount": "50",
+                            "maxAmount": "15000"
+                        },
+                        {
+                            "currency": "XTZ",
+                            "currencyCode": "XTZ",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "IMX",
+                            "currencyCode": "IMX",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "OP",
+                            "currencyCode": "OP",
+                            "minAmount": "10",
+                            "maxAmount": "20000"
+                        },
+                        {
+                            "currency": "BONK",
+                            "currencyCode": "BONK-SOL",
+                            "minAmount": "5",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "AXS",
+                            "currencyCode": "AXS",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "SAND",
+                            "currencyCode": "SAND",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "CHZ",
+                            "currencyCode": "CHZ",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "RPL",
+                            "currencyCode": "RPL",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "CRV",
+                            "currencyCode": "CRV",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "MKR",
+                            "currencyCode": "MKR",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "CAKE",
+                            "currencyCode": "CAKE",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "FXS",
+                            "currencyCode": "FXS",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "XEC",
+                            "currencyCode": "XEC",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "ASTR",
+                            "currencyCode": "ASTR-PARACHAIN",
+                            "minAmount": "10",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "TWT",
+                            "currencyCode": "TWT",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "ZIL",
+                            "currencyCode": "ZIL",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "WOO",
+                            "currencyCode": "WOO",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "CVX",
+                            "currencyCode": "CVX",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "1INCH",
+                            "currencyCode": "ONEINCH",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "DYDX",
+                            "currencyCode": "DYDX",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "NEXO",
+                            "currencyCode": "NEXO",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "BAT",
+                            "currencyCode": "BAT",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "MASK",
+                            "currencyCode": "MASK",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "ENS",
+                            "currencyCode": "ENS",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "HOT",
+                            "currencyCode": "HOT",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "ANKR",
+                            "currencyCode": "ANKR",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "AUDIO",
+                            "currencyCode": "AUDIO",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "COMP",
+                            "currencyCode": "COMP",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "YFI",
+                            "currencyCode": "YFI",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "JASMY",
+                            "currencyCode": "JASMY",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "GNO",
+                            "currencyCode": "GNO",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "T",
+                            "currencyCode": "T",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "FET",
+                            "currencyCode": "FET",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "SSV",
+                            "currencyCode": "SSV",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "SUSHI",
+                            "currencyCode": "SUSHI",
+                            "minAmount": "50",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "GLM",
+                            "currencyCode": "GLM",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "ONT",
+                            "currencyCode": "ONT",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "ACH",
+                            "currencyCode": "ACH",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "BICO",
+                            "currencyCode": "BICO",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "FLUX",
+                            "currencyCode": "FLUX",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "SKL",
+                            "currencyCode": "SKL",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "CELR",
+                            "currencyCode": "CELR",
+                            "minAmount": "50",
+                            "maxAmount": "10000"
+                        },
+                        {
+                            "currency": "LPT",
+                            "currencyCode": "LPT",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "GLMR",
+                            "currencyCode": "GLMR",
+                            "minAmount": "10",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "AMP",
+                            "currencyCode": "AMP",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "STORJ",
+                            "currencyCode": "STORJ",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "ILV",
+                            "currencyCode": "ILV",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "STG",
+                            "currencyCode": "STG",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        },
+                        {
+                            "currency": "KNC",
+                            "currencyCode": "KNC",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "PUNDIX",
+                            "currencyCode": "PUNDIX",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "SYN",
+                            "currencyCode": "SYN",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "NMR",
+                            "currencyCode": "NMR",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "CELO",
+                            "currencyCode": "CELO",
+                            "minAmount": "15",
+                            "maxAmount": "5000"
+                        },
+                        {
+                            "currency": "GTC",
+                            "currencyCode": "GTC",
+                            "minAmount": "50",
+                            "maxAmount": "1000"
+                        },
+                        {
+                            "currency": "PERP",
+                            "currencyCode": "PERP",
+                            "minAmount": "50",
+                            "maxAmount": "2500"
+                        }
+                    ]
+                },
+                {
+                    "from": "XAF",
+                    "to": [
+                        {
+                            "currency": "BTC",
+                            "currencyCode": "BTC",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "ETH",
+                            "currencyCode": "ETH",
+                            "minAmount": "6000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "ETH",
+                            "currencyCode": "ETH-BASE",
+                            "minAmount": "6000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDT",
+                            "currencyCode": "USDT-TRC20",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDT",
+                            "currencyCode": "USDT",
+                            "minAmount": "6000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDT",
+                            "currencyCode": "USDT-POLYGON",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDT",
+                            "currencyCode": "USDT-SOL",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "BNB",
+                            "currencyCode": "BNBSC",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC",
+                            "minAmount": "6000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC-POLYGON",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC-BASE",
+                            "minAmount": "6000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC-STELLAR",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "USDC",
+                            "currencyCode": "USDC-SOL",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "XRP",
+                            "currencyCode": "XRP",
+                            "minAmount": "20000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "TON",
+                            "currencyCode": "TON",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "ADA",
+                            "currencyCode": "ADA",
+                            "minAmount": "30000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "DOGE",
+                            "currencyCode": "DOGE",
+                            "minAmount": "3000",
+                            "maxAmount": "8000000"
+                        },
+                        {
+                            "currency": "POL",
+                            "currencyCode": "POL",
+                            "minAmount": "3000",
+                            "maxAmount": "5500000"
+                        },
+                        {
+                            "currency": "SOL",
+                            "currencyCode": "SOL",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "DOT",
+                            "currencyCode": "DOT",
+                            "minAmount": "30000",
+                            "maxAmount": "5500000"
+                        },
+                        {
+                            "currency": "LTC",
+                            "currencyCode": "LTC",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "SHIB",
+                            "currencyCode": "SHIB",
+                            "minAmount": "6000",
+                            "maxAmount": "8000000"
+                        },
+                        {
+                            "currency": "AVAX",
+                            "currencyCode": "AVAXC",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "TRX",
+                            "currencyCode": "TRX",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "DAI",
+                            "currencyCode": "DAI",
+                            "minAmount": "30000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "LINK",
+                            "currencyCode": "LINK",
+                            "minAmount": "30000",
+                            "maxAmount": "5500000"
+                        },
+                        {
+                            "currency": "ETC",
+                            "currencyCode": "ETC",
+                            "minAmount": "6000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "UNI",
+                            "currencyCode": "UNI",
+                            "minAmount": "30000",
+                            "maxAmount": "5500000"
+                        },
+                        {
+                            "currency": "XLM",
+                            "currencyCode": "XLM",
+                            "minAmount": "3000",
+                            "maxAmount": "5500000"
+                        },
+                        {
+                            "currency": "BCH",
+                            "currencyCode": "BCH",
+                            "minAmount": "3000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "LDO",
+                            "currencyCode": "LDO",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "APE",
+                            "currencyCode": "APE",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "PEPE",
+                            "currencyCode": "PEPE",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "ARB",
+                            "currencyCode": "ARB",
+                            "minAmount": "6000",
+                            "maxAmount": "5500000"
+                        },
+                        {
+                            "currency": "QNT",
+                            "currencyCode": "QNT",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "AAVE",
+                            "currencyCode": "AAVE",
+                            "minAmount": "30000",
+                            "maxAmount": "8000000"
+                        },
+                        {
+                            "currency": "XTZ",
+                            "currencyCode": "XTZ",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "IMX",
+                            "currencyCode": "IMX",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "OP",
+                            "currencyCode": "OP",
+                            "minAmount": "6000",
+                            "maxAmount": "10000000"
+                        },
+                        {
+                            "currency": "BONK",
+                            "currencyCode": "BONK-SOL",
+                            "minAmount": "3000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "AXS",
+                            "currencyCode": "AXS",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "SAND",
+                            "currencyCode": "SAND",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "CHZ",
+                            "currencyCode": "CHZ",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "RPL",
+                            "currencyCode": "RPL",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "CRV",
+                            "currencyCode": "CRV",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "MKR",
+                            "currencyCode": "MKR",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "CAKE",
+                            "currencyCode": "CAKE",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "FXS",
+                            "currencyCode": "FXS",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "XEC",
+                            "currencyCode": "XEC",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "ASTR",
+                            "currencyCode": "ASTR-PARACHAIN",
+                            "minAmount": "6000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "TWT",
+                            "currencyCode": "TWT",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "ZIL",
+                            "currencyCode": "ZIL",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "WOO",
+                            "currencyCode": "WOO",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "CVX",
+                            "currencyCode": "CVX",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "1INCH",
+                            "currencyCode": "ONEINCH",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "DYDX",
+                            "currencyCode": "DYDX",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "NEXO",
+                            "currencyCode": "NEXO",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "BAT",
+                            "currencyCode": "BAT",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "MASK",
+                            "currencyCode": "MASK",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "ENS",
+                            "currencyCode": "ENS",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "HOT",
+                            "currencyCode": "HOT",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "ANKR",
+                            "currencyCode": "ANKR",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "AUDIO",
+                            "currencyCode": "AUDIO",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "COMP",
+                            "currencyCode": "COMP",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "YFI",
+                            "currencyCode": "YFI",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "JASMY",
+                            "currencyCode": "JASMY",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "GNO",
+                            "currencyCode": "GNO",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "T",
+                            "currencyCode": "T",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "FET",
+                            "currencyCode": "FET",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "SSV",
+                            "currencyCode": "SSV",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "SUSHI",
+                            "currencyCode": "SUSHI",
+                            "minAmount": "30000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "GLM",
+                            "currencyCode": "GLM",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "ONT",
+                            "currencyCode": "ONT",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "ACH",
+                            "currencyCode": "ACH",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "BICO",
+                            "currencyCode": "BICO",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "FLUX",
+                            "currencyCode": "FLUX",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "SKL",
+                            "currencyCode": "SKL",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "CELR",
+                            "currencyCode": "CELR",
+                            "minAmount": "30000",
+                            "maxAmount": "5500000"
+                        },
+                        {
+                            "currency": "LPT",
+                            "currencyCode": "LPT",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "GLMR",
+                            "currencyCode": "GLMR",
+                            "minAmount": "6000",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "AMP",
+                            "currencyCode": "AMP",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "STORJ",
+                            "currencyCode": "STORJ",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "ILV",
+                            "currencyCode": "ILV",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "STG",
+                            "currencyCode": "STG",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        },
+                        {
+                            "currency": "KNC",
+                            "currencyCode": "KNC",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "PUNDIX",
+                            "currencyCode": "PUNDIX",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "SYN",
+                            "currencyCode": "SYN",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "NMR",
+                            "currencyCode": "NMR",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "CELO",
+                            "currencyCode": "CELO",
+                            "minAmount": "8500",
+                            "maxAmount": "2500000"
+                        },
+                        {
+                            "currency": "GTC",
+                            "currencyCode": "GTC",
+                            "minAmount": "30000",
+                            "maxAmount": "550000"
+                        },
+                        {
+                            "currency": "PERP",
+                            "currencyCode": "PERP",
+                            "minAmount": "30000",
+                            "maxAmount": "1000000"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

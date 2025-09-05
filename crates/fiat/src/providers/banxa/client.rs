@@ -112,6 +112,8 @@ impl BanxaClient {
                     network: Some(blockchain.id),
                     enabled: true,
                     unsupported_countries: Some(blockchain.unsupported_countries.list_map()),
+                    buy_limits: vec![],
+                    sell_limits: vec![],
                 }
             })
             .collect()
@@ -125,7 +127,7 @@ impl BanxaClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: quote.crypto_amount,
             crypto_value,
             redirect_url,
@@ -139,7 +141,7 @@ impl BanxaClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.fiat_amount,
-            fiat_currency: request.fiat_currency,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: request.crypto_amount,
             crypto_value: request.crypto_value,
             redirect_url,
@@ -155,7 +157,7 @@ impl BanxaClient {
             .append_pair("orderType", "buy")
             .append_pair("coinType", &fiat_mapping.symbol)
             .append_pair("blockchain", &fiat_mapping.network.unwrap_or_default())
-            .append_pair("fiatType", request.fiat_currency.as_str())
+            .append_pair("fiatType", request.fiat_currency.as_ref())
             .append_pair("fiatAmount", &request.fiat_amount.to_string())
             .append_pair("walletAddress", &request.wallet_address);
         components.as_str().to_string()
@@ -168,7 +170,7 @@ impl BanxaClient {
             .append_pair("orderType", "sell")
             .append_pair("coinType", &fiat_mapping.symbol)
             .append_pair("blockchain", &fiat_mapping.network.unwrap_or_default())
-            .append_pair("fiatType", request.fiat_currency.as_str())
+            .append_pair("fiatType", request.fiat_currency.as_ref())
             .append_pair("coinAmount", request.crypto_amount.to_string().as_str())
             .append_pair("walletAddress", &request.wallet_address);
         components.as_str().to_string()
