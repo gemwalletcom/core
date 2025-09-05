@@ -13,6 +13,10 @@ CREATE TABLE fiat_transactions (
     transaction_hash VARCHAR(256),
     address VARCHAR(256),
 
+    fee_provider float,
+    fee_network float,
+    fee_partner float,
+    
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
 

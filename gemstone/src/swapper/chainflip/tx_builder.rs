@@ -56,19 +56,17 @@ mod tests {
         let blockhash_b58 = "BZcyEKqjBNG5bEY6i5ev6PfPTgDSB9LwovJE1hJfJoHF".to_string();
         let mock = AlienProviderMock {
             response: MockFn(Box::new(move |_| {
-                format!(
-                    r#"{{
-                        "jsonrpc": "2.0",
-                        "result": {{
-                            "value": {{
-                                "blockhash": "{}",
-                                "lastValidBlockHeight": 342893948
-                            }}
-                        }},
-                        "id": 1757035220
-                    }}"#,
-                    blockhash_b58
-                )
+                serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "result": {
+                        "value": {
+                            "blockhash": blockhash_b58,
+                            "lastValidBlockHeight": 342893948
+                        }
+                    },
+                    "id": 1757035220
+                })
+                .to_string()
             })),
             timeout: Duration::from_millis(10),
         };
