@@ -1,7 +1,8 @@
 use super::{
     client::MercuryoClient,
-    models::{BuyTransaction, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction},
+    models::{Asset, BuyTransaction, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction},
 };
+use crate::model::FiatProviderAsset;
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
@@ -212,6 +213,22 @@ fn map_sell_transaction_new(sell: SellTransaction, deposit: Option<DepositTransa
         fiat_currency: sell.fiat_currency,
         transaction_hash: deposit.as_ref().and_then(|d| d.hash.clone()),
         address: deposit.as_ref().and_then(|d| d.address.clone()),
+    })
+}
+
+pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
+    let chain = map_asset_chain(asset.network.clone());
+    let token_id = if asset.contract.is_empty() { None } else { Some(asset.contract.clone()) };
+    Some(FiatProviderAsset {
+        id: asset.clone().currency + "_" + asset.network.as_str(),
+        chain,
+        token_id,
+        symbol: asset.clone().currency,
+        network: Some(asset.network),
+        enabled: true,
+        unsupported_countries: None,
+        buy_limits: vec![],
+        sell_limits: vec![],
     })
 }
 

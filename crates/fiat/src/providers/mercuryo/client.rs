@@ -1,5 +1,5 @@
 use super::models::{Asset, Currencies, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
-use crate::model::{FiatMapping, FiatProviderAsset};
+use crate::model::FiatMapping;
 use hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
@@ -85,21 +85,6 @@ impl MercuryoClient {
             .await
     }
 
-    pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = super::mapper::map_asset_chain(asset.network.clone());
-        let token_id = if asset.contract.is_empty() { None } else { Some(asset.contract.clone()) };
-        Some(FiatProviderAsset {
-            id: asset.clone().currency + "_" + asset.network.as_str(),
-            chain,
-            token_id,
-            symbol: asset.clone().currency,
-            network: Some(asset.network),
-            enabled: true,
-            unsupported_countries: None,
-            buy_limits: vec![],
-            sell_limits: vec![],
-        })
-    }
 
     pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
         let crypto_value = BigNumberFormatter::f64_as_value(quote.clone().amount, request.asset.decimals as u32).unwrap_or_default();

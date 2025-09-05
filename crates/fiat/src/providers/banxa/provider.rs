@@ -55,11 +55,12 @@ impl FiatProvider for BanxaClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets_buy()
-            .await?
+        let (assets, buy_fiat_currencies, sell_fiat_currencies) =
+            tokio::try_join!(self.get_assets_buy(), self.get_fiat_currencies("buy"), self.get_fiat_currencies("sell"))?;
+
+        let assets = assets
             .into_iter()
-            .flat_map(Self::map_asset)
+            .flat_map(|asset| super::mapper::map_asset_with_limits(asset, &buy_fiat_currencies, &sell_fiat_currencies))
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
     }
@@ -120,12 +121,13 @@ mod fiat_integration_tests {
         let assets = FiatProvider::get_assets(&client).await?;
 
         assert!(!assets.is_empty());
-        println!("Found {} Banxa assets", assets.len());
 
-        if let Some(asset) = assets.first() {
-            assert!(!asset.id.is_empty());
-            assert!(!asset.symbol.is_empty());
-            println!("Sample Banxa asset: {:?}", asset);
+        let assets_with_buy_limits = assets.iter().filter(|a| !a.buy_limits.is_empty()).count();
+        assert!(assets_with_buy_limits > 0);
+
+        if let Some(asset_with_limits) = assets.iter().find(|a| !a.buy_limits.is_empty()) {
+            let first_limit = &asset_with_limits.buy_limits[0];
+            assert!(first_limit.min_amount.is_some() || first_limit.max_amount.is_some());
         }
 
         Ok(())

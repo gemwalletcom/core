@@ -1,4 +1,4 @@
-use crate::model::{filter_token_id, FiatMapping, FiatProviderAsset};
+use crate::model::FiatMapping;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
 use reqwest::{
@@ -7,7 +7,7 @@ use reqwest::{
 };
 use url::Url;
 
-use super::models::{Asset, Country, Order, PaymentMethod, Quote, ORDER_TYPE_BUY, ORDER_TYPE_SELL};
+use super::models::{Asset, Country, FiatCurrency, Order, PaymentMethod, Quote, ORDER_TYPE_BUY, ORDER_TYPE_SELL};
 
 const API_URL: &str = "https://api.banxa.com";
 
@@ -95,29 +95,11 @@ impl BanxaClient {
         self.client.get(&url).headers(self.get_headers()).send().await?.json().await
     }
 
-    pub fn map_asset(asset: Asset) -> Vec<FiatProviderAsset> {
-        asset
-            .clone()
-            .blockchains
-            .into_iter()
-            .map(|blockchain| {
-                let chain = super::mapper::map_asset_chain(blockchain.clone().id.clone());
-                let token_id = filter_token_id(chain, blockchain.clone().address);
-                let id = asset.clone().id + "-" + blockchain.clone().id.as_str();
-                FiatProviderAsset {
-                    id,
-                    chain,
-                    token_id,
-                    symbol: asset.clone().id.clone(),
-                    network: Some(blockchain.id),
-                    enabled: true,
-                    unsupported_countries: Some(blockchain.unsupported_countries.list_map()),
-                    buy_limits: vec![],
-                    sell_limits: vec![],
-                }
-            })
-            .collect()
+    pub async fn get_fiat_currencies(&self, order_type: &str) -> Result<Vec<FiatCurrency>, reqwest::Error> {
+        let url = format!("{}/{}/v2/fiats/{}", API_URL, self.merchant_key, order_type);
+        self.client.get(&url).headers(self.get_headers()).send().await?.json().await
     }
+
 
     pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, fiat_mapping: FiatMapping, quote: Quote) -> FiatQuote {
         let redirect_url = self.get_redirect_buy_url(request.clone(), fiat_mapping);

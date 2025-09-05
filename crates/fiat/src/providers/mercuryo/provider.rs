@@ -46,7 +46,7 @@ impl FiatProvider for MercuryoClient {
             .get_assets()
             .await?
             .into_iter()
-            .flat_map(Self::map_asset)
+            .flat_map(super::mapper::map_asset)
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
     }

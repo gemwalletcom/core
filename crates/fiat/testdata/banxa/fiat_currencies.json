@@ -1,0 +1,46 @@
+[
+    {
+        "id": "EUR",
+        "description": "Euro",
+        "symbol": "\u20ac",
+        "supportedPaymentMethods": [
+            {
+                "id": "debit-credit-card",
+                "name": "Debit credit card",
+                "minimum": "20",
+                "maximum": "15000"
+            },
+            {
+                "id": "google-pay",
+                "name": "Google pay",
+                "minimum": "17",
+                "maximum": "10000"
+            },
+            {
+                "id": "sepa-bank-transfer",
+                "name": "Sepa bank transfer",
+                "minimum": "46",
+                "maximum": "30000"
+            }
+        ]
+    },
+    {
+        "id": "USD",
+        "description": "United States Dollar",
+        "symbol": "$",
+        "supportedPaymentMethods": [
+            {
+                "id": "debit-credit-card",
+                "name": "Debit credit card",
+                "minimum": "20",
+                "maximum": "15000"
+            },
+            {
+                "id": "google-pay",
+                "name": "Google pay",
+                "minimum": "20",
+                "maximum": "15000"
+            }
+        ]
+    }
+]
