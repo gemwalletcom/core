@@ -5,6 +5,7 @@ use super::{
 };
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
+    providers::transak::mapper::map_asset_with_limits,
     FiatProvider,
 };
 use async_trait::async_trait;
@@ -37,13 +38,11 @@ impl FiatProvider for TransakClient {
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let (assets, fiat_currencies) = tokio::try_join!(self.get_supported_assets(), self.get_fiat_currencies())?;
-
-        let assets = assets
+        Ok(assets
             .response
             .into_iter()
-            .flat_map(|asset| super::mapper::map_asset_with_limits(asset, &fiat_currencies.response))
-            .collect::<Vec<FiatProviderAsset>>();
-        Ok(assets)
+            .flat_map(|asset| map_asset_with_limits(asset, &fiat_currencies.response))
+            .collect::<Vec<FiatProviderAsset>>())
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {

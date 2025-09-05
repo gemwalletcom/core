@@ -1,5 +1,6 @@
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
+    providers::mercuryo::mapper::map_asset_with_limits,
     FiatProvider,
 };
 use async_trait::async_trait;
@@ -42,11 +43,12 @@ impl FiatProvider for MercuryoClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets()
-            .await?
+        let currencies = self.get_currencies().await?;
+        let assets = currencies
+            .config
+            .crypto_currencies
             .into_iter()
-            .flat_map(super::mapper::map_asset)
+            .flat_map(|asset| map_asset_with_limits(asset, &currencies.fiat_payment_methods))
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
     }

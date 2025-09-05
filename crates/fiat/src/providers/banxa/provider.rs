@@ -1,5 +1,6 @@
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
+    providers::banxa::mapper::map_asset_with_limits,
     FiatProvider,
 };
 use async_trait::async_trait;
@@ -60,7 +61,7 @@ impl FiatProvider for BanxaClient {
 
         let assets = assets
             .into_iter()
-            .flat_map(|asset| super::mapper::map_asset_with_limits(asset, &buy_fiat_currencies, &sell_fiat_currencies))
+            .flat_map(|x| map_asset_with_limits(x, &buy_fiat_currencies, &sell_fiat_currencies))
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
     }

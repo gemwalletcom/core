@@ -62,6 +62,12 @@ impl MercuryoClient {
         Ok(response.data.config.crypto_currencies)
     }
 
+    pub async fn get_currencies(&self) -> Result<Currencies, reqwest::Error> {
+        let url = format!("{MERCURYO_API_BASE_URL}/v1.6/lib/currencies");
+        let response = self.client.get(&url).send().await?.json::<Response<Currencies>>().await?;
+        Ok(response.data)
+    }
+
     pub async fn get_countries(&self) -> Result<Response<Vec<String>>, reqwest::Error> {
         let query = [("type", "alpha2")];
         self.client

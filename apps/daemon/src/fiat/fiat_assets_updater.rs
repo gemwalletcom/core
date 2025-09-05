@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use fiat::{model::FiatProviderAsset, FiatProvider};
 use primitives::{currency::Currency, AssetTag, Diff};
-use storage::{AssetFilter, AssetUpdate, DatabaseClient};
+use storage::{AssetFilter, AssetUpdate, AssetsRepository, DatabaseClient};
 
 pub struct FiatAssetsUpdater {
     database: DatabaseClient,
@@ -76,9 +76,20 @@ impl FiatAssetsUpdater {
                     println!("update_assets for provider: {}, assets: {:?}", provider.name().id(), assets.len());
                     fiat_assets.extend(assets.clone());
 
-                    let assets = assets
-                        .iter()
-                        .map(|x| self.map_fiat_asset(provider.name().id(), x.clone()))
+                    let provider_id = provider.name().id();
+                    let validated_assets: Vec<(FiatProviderAsset, Option<primitives::AssetId>)> = assets
+                        .into_iter()
+                        .map(|fiat_asset| {
+                            (
+                                fiat_asset.clone(),
+                                fiat_asset.asset_id().filter(|id| self.database.get_asset(&id.to_string()).is_ok()),
+                            )
+                        })
+                        .collect();
+
+                    let assets = validated_assets
+                        .into_iter()
+                        .map(|(fiat_asset, asset)| self.map_fiat_asset(provider_id.clone(), fiat_asset, asset))
                         .collect::<Vec<primitives::FiatAsset>>();
 
                     let insert_assets = assets
@@ -127,9 +138,7 @@ impl FiatAssetsUpdater {
         Ok(true)
     }
 
-    fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset) -> primitives::FiatAsset {
-        let asset_id = fiat_asset.asset_id();
-
+    fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset, asset_id: Option<primitives::AssetId>) -> primitives::FiatAsset {
         primitives::FiatAsset {
             id: fiat_asset.id,
             asset_id,
