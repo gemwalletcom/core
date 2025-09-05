@@ -1,21 +1,26 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to AI assistants (Claude Code, Gemini, Codex, etc.) when working with code in this repository.
+Guidance for AI assistants (Claude Code, Gemini, Codex, etc.) collaborating on this repository.
+
+## Purpose & Audience
+
+This document orients coding agents to the repo structure, development workflow, coding standards, and core architectural patterns used across Gem Wallet Core.
 
 ## Project Overview
 
-Gem Wallet Core is a Rust-based cryptocurrency wallet backend engine supporting 35+ blockchain networks. It's structured as a Cargo workspace with 40+ crates providing comprehensive wallet functionality including transaction processing, asset management, DeFi integrations, and cross-platform mobile support.
+Gem Wallet Core is a Rust-based cryptocurrency wallet backend engine supporting 35+ blockchain networks. It is a Cargo workspace with 40+ crates covering transaction processing, asset management, DeFi integrations, and cross-platform mobile support.
 
-## Architecture
+## Repository Layout
 
-### Core Applications (`apps/`)
-- **API Server** (`apps/api/`) - REST API with WebSocket price streaming
-- **Daemon** (`apps/daemon/`) - Background services for asset updates, push notifications, transaction indexing
-- **Parser** (`apps/parser/`) - Multi-chain transaction parsing with message queue integration
-- **Setup** (`apps/setup/`) - Database initialization
+### Applications (`apps/`)
+- **API Server** (`apps/api/`): REST API with WebSocket price streaming
+- **Daemon** (`apps/daemon/`): Background services for asset updates, push notifications, transaction indexing
+- **Parser** (`apps/parser/`): Multi-chain transaction parsing with message queue integration
+- **Setup** (`apps/setup/`): Database initialization
 
 ### Cross-Platform Library (`gemstone/`)
 Shared Rust library compiled to iOS Swift Package and Android AAR using UniFFI bindings. Contains blockchain RPC clients, swap integrations, payment URI decoding, and message signing.
+ - Key module: `gemstone::swapper` — swapper module for on-device swap integrations
 
 ### Blockchain Support
 Individual `gem_*` crates for each blockchain with unified RPC client patterns:
@@ -24,123 +29,133 @@ Individual `gem_*` crates for each blockchain with unified RPC client patterns:
 - Alternative L1s: Solana, Sui, TON, Aptos, NEAR, Stellar, Algorand
 - Cosmos ecosystem: Cosmos Hub, Osmosis, Celestia, Injective, Sei, Noble
 
-### Core Services
-- `primitives/` - Central types and models shared across the system
-- `storage/` - Database models, migrations, and data access layer using Diesel ORM
-- `name_resolver/` - ENS, SNS, and other naming service integrations
-- `gem_evm/` - EVM blockchain support with unified RPC client patterns
-- `gem_jsonrpc/` - Internal JSON-RPC client library (replaces external alloy dependencies)
-- `fiat/` - Integration with fiat providers (MoonPay, Transak, Mercuryo, Banxa)
-- `nft/` - NFT marketplace integrations (OpenSea, Magic Eden, NFTScan)
-- `pricer/` - Asset pricing from CoinGecko and DEX sources
-- `localizer/` - i18n support for 20+ languages using Fluent
-
-## Development Commands
-
-All commands use `just` task runner:
-
-### Building
-- `just build` - Build workspace
-- `just build-gemstone` - Build cross-platform library
-- `just gemstone build-ios` - Build iOS Swift Package (in gemstone/)
-- `just gemstone build-android` - Build Android AAR (in gemstone/)
-
-### Testing
-- `just test-workspace` - Run all workspace tests
-- `just test-all` - Run all tests including integration
-- `just test <CRATE>` - Test specific crate
-- `just gemstone test-ios` - Run iOS integration tests (in gemstone/)
-- `cargo test --test integration_test --package <CRATE> --features <FEATURE>` - Run integration tests manually
-
-### Code Quality
-- `just format` - Format all code
-- `just lint` - Run clippy with warnings as errors
-- `just fix` - Auto-fix clippy issues
-- `just unused` - Find unused dependencies with cargo-machete
-
-### Database
-- `just migrate` - Run Diesel migrations
-- `just setup-services` - Start Docker services (PostgreSQL, Redis, Meilisearch, RabbitMQ)
-
-### Mobile Development
-- `just gemstone install-ios-targets` - Install iOS Rust targets (in gemstone/)
-- `just gemstone install-android-targets` - Install Android Rust targets and cargo-ndk (in gemstone/)
-- Mobile builds require UniFFI bindings generation and platform-specific compilation
-
-### Utilities
-- `just localize` - Update localization files
-- `just generate-ts-primitives` - Generate TypeScript types from Rust
-- `just outdated` - Check for outdated dependencies
+### Core Services (selected crates)
+- `primitives/`: Central types and models shared across the system
+- `storage/`: Database models, migrations, and data access layer using Diesel ORM
+- `name_resolver/`: ENS, SNS, and other naming service integrations
+- `gem_evm/`: EVM blockchain support with unified RPC client patterns
+- `gem_jsonrpc/`: Internal JSON-RPC client library (replaces external alloy dependencies)
+- `gem_client/`: Client trait abstraction used across services; implementations: `ReqwestClient` (backend) and `AlienProvider` (mobile)
+- `serde_serializers/`: Custom Serde serializers/deserializers used across crates
+- `security_provider/`: Security provider abstractions and utilities
+- `gem_hypercore/`: Perpetuals (perps) support via Hyperliquid integration
+- `fiat/`: Integration with fiat providers (MoonPay, Transak, Mercuryo, Banxa)
+- `nft/`: NFT marketplace integrations (OpenSea, Magic Eden, NFTScan)
+- `pricer/`: Asset pricing from CoinGecko and DEX sources
+- `localizer/`: i18n support for 20+ languages using Fluent
 
 ## Technology Stack
 
-- **Framework**: Rust workspace with Rocket web framework
-- **Database**: PostgreSQL (primary), Redis (caching)
-- **Message Queue**: RabbitMQ with Lapin
-- **RPC**: Custom `gem_jsonrpc` client library for blockchain interactions
-- **Mobile**: UniFFI for iOS/Android bindings
-- **Serialization**: Serde with custom serializers
-- **Async**: Tokio runtime
-- **Testing**: Built-in Rust testing with integration tests
+- Framework: Rust workspace with Rocket web framework
+- Database: PostgreSQL (primary), Redis (caching)
+- Message Queue: RabbitMQ with Lapin
+- RPC: Custom `gem_jsonrpc` client library for blockchain interactions
+- Mobile: UniFFI for iOS/Android bindings
+- Serialization: Serde with custom serializers
+- Async: Tokio runtime
+- Testing: Built-in Rust testing with integration tests
 
-## Coding Style
+## Development Workflow
 
-Follow the existing code style patterns unless explicitly asked to change:
+All commands use the `just` task runner. Run from the workspace root unless specified.
+
+### Build
+- `just build`: Build the workspace
+- `just build-gemstone`: Build cross-platform library
+- `just gemstone build-ios`: Build iOS Swift Package (run in `gemstone/`)
+- `just gemstone build-android`: Build Android AAR (run in `gemstone/`)
+
+### Test
+- `just test-workspace`: Run all workspace tests
+- `just test-all`: Run all tests including integration
+- `just test <CRATE>`: Test a specific crate
+- `just gemstone test-ios`: Run iOS integration tests (run in `gemstone/`)
+- `cargo test --test integration_test --package <CRATE> --features <FEATURE>`: Run integration tests manually
+
+### Code Quality
+- `just format`: Format all code
+- `just lint`: Run clippy with warnings as errors
+- `just fix`: Auto-fix clippy issues
+- `just unused`: Find unused dependencies with cargo-machete
+
+### Database
+- `just migrate`: Run Diesel migrations
+- `just setup-services`: Start Docker services (PostgreSQL, Redis, Meilisearch, RabbitMQ)
+
+### Mobile
+- `just gemstone install-ios-targets`: Install iOS Rust targets (run in `gemstone/`)
+- `just gemstone install-android-targets`: Install Android Rust targets and `cargo-ndk` (run in `gemstone/`)
+- Note: Mobile builds require UniFFI bindings generation and platform-specific compilation
+
+### Utilities
+- `just localize`: Update localization files
+- `just generate-ts-primitives`: Generate TypeScript types from Rust
+- `just outdated`: Check for outdated dependencies
+
+## Coding Standards
+
+Follow the existing code style patterns unless explicitly asked to change.
 
 ### Code Formatting
-- **Line length**: 160 characters maximum (configured in rustfmt.toml)
-- **Indentation**: 4 spaces (Rust standard)
-- **Imports**: Automatically reordered with rustfmt
+- Line length: 160 characters maximum (configured in `rustfmt.toml`)
+- Indentation: 4 spaces (Rust standard)
+- Imports: Automatically reordered with rustfmt
+ - ALWAYS run `just format` before committing
+ - Formatter enforces consistent style across all crates/workspace
 
-### Naming Conventions
-- **Files/modules**: `snake_case` (e.g., `asset_id.rs`, `chain_address.rs`)
-- **Crates**: Prefixed naming (`gem_*` for blockchains, `security_*` for security)
-- **Functions/variables**: `snake_case` 
-- **Structs/enums**: `PascalCase`
-- **Constants**: `SCREAMING_SNAKE_CASE`
+### Commit Messages
+- Write descriptive messages following conventional commit format
 
-### Import Organization
+### Naming
+- Files/modules: `snake_case` (e.g., `asset_id.rs`, `chain_address.rs`)
+- Crates: Prefixed naming (`gem_*` for blockchains, `security_*` for security)
+- Functions/variables: `snake_case`
+- Structs/enums: `PascalCase`
+- Constants: `SCREAMING_SNAKE_CASE`
+
+### Imports
 1. Standard library imports first
 2. External crate imports
-3. Local crate imports  
+3. Local crate imports
 4. Module re-exports with `pub use`
 
-**IMPORTANT**: Always import models and types at the top of the file. Never use inline imports inside functions (e.g., `use crate::models::SomeType` inside a function). All imports must be declared in the file header section.
+IMPORTANT: Always import models and types at the top of the file. Never use inline imports inside functions (e.g., `use crate::models::SomeType` inside a function). Declare all imports in the file header.
 
 ### Error Handling
 - Use `thiserror` for custom error types
 - Implement `From` traits for error conversion
-- Consistent `Result<T, Error>` return types
-- Propagate errors with `?` operator
+- Use consistent `Result<T, Error>` return types
+- Propagate errors with the `?` operator
 
 ### Database Patterns
 - Separate database models from domain primitives
 - Use `as_primitive()` methods for conversion
 - Diesel ORM with PostgreSQL backend
-- Transaction support and upsert operations
+- Support transactions and upserts
 
 ### Async Patterns
 - Tokio runtime throughout
-- Async client structs with `Result<T, Error>` methods
-- `Arc<tokio::sync::Mutex<T>>` for shared async state
+- Async client structs returning `Result<T, Error>`
+- Use `Arc<tokio::sync::Mutex<T>>` for shared async state
 
-### Testing
-- Integration tests in separate `tests/` directories
-- `#[tokio::test]` for async tests
-- Descriptive test names with `test_` prefix
-- `Result<(), Box<dyn std::error::Error + Send + Sync>>` for test error handling
-- Integration tests configured with `test = false` and `required-features` for manual execution
-- Use real blockchain networks for RPC client testing (Ethereum mainnet, etc.)
-- **Test Data Management**: For long JSON test data (>20 lines), prefer storing in `tests/data/` directory and loading with `include_str!()` macro rather than inline strings to improve readability and maintainability
+## Architecture & Patterns
 
-## Repository Pattern
+### Key Development Patterns
+- One crate per blockchain using unified RPC client patterns
+- UniFFI bindings require careful Rust API design for mobile compatibility
+- Use `BigDecimal` for financial precision
+- Use async/await with Tokio across services
+- Database models use Diesel ORM with automatic migrations
+- Consider cross-platform performance constraints for mobile
+
+### Repository Pattern
 
 Services access repositories through direct methods on `DatabaseClient`. This pattern:
-- Provides clean separation between data access and business logic
-- Each repository handles a specific domain (assets, devices, etc.)
-- DatabaseClient implements all repository traits directly
-- Repository methods return primitive types, not database models
-- Simplified API with direct method calls
+- Separates data access and business logic
+- Assigns each repository a specific domain (assets, devices, etc.)
+- Implements all repository traits directly on `DatabaseClient`
+- Returns primitive types from repository methods, not database models
+- Simplifies the API via direct method calls
 
 Example:
 ```rust
@@ -166,47 +181,44 @@ impl AssetsClient {
 }
 ```
 
-Direct repository access methods available on DatabaseClient:
+Direct repository access methods available on `DatabaseClient` include:
 - `assets()` - Asset operations
-- `devices()` - Device operations  
+- `devices()` - Device operations
 - `subscriptions()` - Subscription operations
 - `prices()` - Price operations
 - `transactions()` - Transaction operations
-- And many more...
-
-## Key Development Patterns
-
-- Each blockchain has its own crate with unified RPC client patterns
-- UniFFI bindings require careful Rust API design for mobile compatibility
-- BigDecimal used throughout for financial precision
-- Extensive use of async/await with Tokio
-- Database models use Diesel ORM with automatic migrations
-- Cross-platform compatibility considerations for mobile performance
+- And more...
 
 ### RPC Client Patterns
 - Use `gem_jsonrpc::JsonRpcClient` for blockchain RPC interactions
-- Prefer `alloy_primitives::hex::encode_prefixed()` for hex encoding with 0x prefix
+- Prefer `alloy_primitives::hex::encode_prefixed()` for hex encoding with `0x` prefix
 - Use `alloy_primitives::Address::to_string()` instead of manual formatting
-- RPC calls expect hex strings directly - avoid double encoding
-- Batch operations use `JsonRpcClient::batch_call()` for multiple requests
-- Error handling with `JsonRpcError` type and proper propagation
+- RPC calls expect hex strings directly; avoid double encoding
+- Use `JsonRpcClient::batch_call()` for batch operations
+- Propagate errors via `JsonRpcError`
 
 ### Blockchain Provider Patterns
 - Each blockchain crate has a `provider/` directory with trait implementations
-- Provider methods should get raw data from RPC client, then use mapper functions for conversion
-- Mapper functions are located in separate `*_mapper.rs` files for clean separation
-- Example pattern: `get_balance_coin()` calls `self.get_balance()` then `balances_mapper::map_coin_balance()`
+- Provider methods should fetch raw data via RPC, then call mapper functions for conversion
+- Place mapper functions in separate `*_mapper.rs` files for clean separation
+- Example: `get_balance_coin()` calls `self.get_balance()` then `balances_mapper::map_coin_balance()`
 - This pattern ensures consistent data transformation and testability across all blockchain implementations
+
+ 
+
+## Testing
+
+### Conventions
+- Place integration tests in `tests/` directories
+- Use `#[tokio::test]` for async tests
+- Prefix test names descriptively with `test_`
+- Use `Result<(), Box<dyn std::error::Error + Send + Sync>>` for test error handling
+- Configure integration tests with `test = false` and appropriate `required-features` for manual execution
+- Prefer real networks for RPC client tests (e.g., Ethereum mainnet)
+- Test data management: For long JSON test data (>20 lines), store in `testdata/` and load with `include_str!()`; per-crate layout is typically `src/`, `tests/`, `testdata/`
 
 ### Integration Testing
 - Add integration tests for RPC functionality to verify real network compatibility
-- Use `#[tokio::test]` for async integration tests
-- Test with recent blocks for batch operations (more reliable than historical blocks)
-- Integration tests should verify both successful calls and proper error handling
-- Use realistic contract addresses (USDC, etc.) for eth_call testing
-
-### Code Formatting and Commits
-- **ALWAYS run `just format` before committing code**
-- The formatter will automatically fix formatting issues across all crates
-- This ensures consistent code style throughout the workspace
-- Commit messages should be descriptive and follow conventional commit format
+- Prefer recent blocks for batch operations (more reliable than historical blocks)
+- Verify both successful calls and proper error propagation
+- Use realistic contract addresses (e.g., USDC) for `eth_call` testing
