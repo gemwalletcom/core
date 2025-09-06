@@ -40,6 +40,7 @@ use rocket::tokio::sync::Mutex;
 use rocket::{routes, Build, Rocket};
 use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
+use gem_tracing::SentryTracing;
 use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
 use streamer::StreamProducer;
@@ -181,6 +182,8 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
 #[tokio::main]
 async fn main() {
     let settings = Settings::new().unwrap();
+    
+    let _tracing = SentryTracing::init(&settings, "api");
 
     let service = std::env::args().nth(1).unwrap_or_default();
     let service = APIService::from_str(service.as_str()).ok().unwrap_or(APIService::Api);

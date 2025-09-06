@@ -5,7 +5,7 @@ pub use fiat::{FiatClient, FiatProviderFactory};
 use primitives::currency::Currency;
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
-use streamer::FiatWebhookPayload;
+use streamer::FiatWebhook;
 
 // on ramp
 
@@ -92,8 +92,16 @@ pub async fn get_fiat_off_ramp_assets(fiat_client: &State<Mutex<FiatClient>>) ->
 }
 
 #[post("/fiat/webhooks/<provider>", data = "<webhook_data>")]
-pub async fn create_fiat_webhook(provider: &str, webhook_data: Json<serde_json::Value>, fiat_client: &State<Mutex<FiatClient>>) -> Json<FiatWebhookPayload> {
-    Json(fiat_client.lock().await.process_and_publish_webhook(provider, webhook_data.0).await.unwrap())
+pub async fn create_fiat_webhook(provider: &str, webhook_data: Json<serde_json::Value>, fiat_client: &State<Mutex<FiatClient>>) -> Json<FiatWebhook> {
+    Json(
+        fiat_client
+            .lock()
+            .await
+            .process_and_publish_webhook(provider, webhook_data.0)
+            .await
+            .unwrap()
+            .payload,
+    )
 }
 
 #[get("/fiat/orders/<provider>/<order_id>")]

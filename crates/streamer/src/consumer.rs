@@ -6,6 +6,7 @@ use std::{
 
 use crate::{QueueName, StreamReader};
 use async_trait::async_trait;
+use gem_tracing::{error_with_context, info_with_context};
 use serde::Deserialize;
 use tokio;
 
@@ -42,18 +43,18 @@ where
     R: std::default::Default + std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
-    println!("Running consumer {name} for queue {queue_name}");
+    info_with_context("running consumer", &[("consumer", name), ("queue", &queue_name.to_string())]);
 
     stream_reader
         .read::<P, _>(queue_name, move |payload| {
-            println!("consumer {name} received: {payload}");
+            info_with_context("consumer received", &[("consumer", name), ("payload", &payload.to_string())]);
             let start = Instant::now();
             let result = tokio::task::block_in_place(|| {
                 tokio::runtime::Handle::current().block_on(async {
                     match consumer.should_process(payload.clone()).await {
                         Ok(true) => consumer.process(payload.clone()).await,
                         Ok(false) => {
-                            println!("consumer {name} should not process: {payload}");
+                            info_with_context("consumer should not process", &[("consumer", name), ("payload", &payload.to_string())]);
                             Ok(R::default())
                         }
                         Err(e) => Err(e),
@@ -62,11 +63,26 @@ where
             });
             match result {
                 Ok(result) => {
-                    println!("consumer {} result: {:?}, elapsed: {:?}", name, result, start.elapsed());
+                    info_with_context(
+                        "consumer result",
+                        &[
+                            ("consumer", name),
+                            ("result", &format!("{:?}", result)),
+                            ("elapsed_ms", &start.elapsed().as_millis().to_string()),
+                        ],
+                    );
                     Ok(())
                 }
                 Err(e) => {
-                    println!("consumer {}, payload: {}, error: {}, elapsed: {:?}", name, payload, e, start.elapsed());
+                    error_with_context(
+                        "consumer error",
+                        &*e,
+                        &[
+                            ("consumer", name),
+                            ("payload", &payload.to_string()),
+                            ("elapsed_ms", &start.elapsed().as_millis().to_string()),
+                        ],
+                    );
                     std::thread::sleep(config.timeout_on_error);
                     if config.skip_on_error {
                         Ok(())

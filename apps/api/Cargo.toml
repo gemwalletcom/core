@@ -17,6 +17,7 @@ strum = { workspace = true }
 strum_macros = { workspace = true }
 redis = { workspace = true }
 
+gem_tracing = { path = "../../crates/tracing" }
 storage = { path = "../../crates/storage" }
 pricer = { path = "../../crates/pricer" }
 fiat = { path = "../../crates/fiat" }

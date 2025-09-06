@@ -13,6 +13,7 @@ async-trait = { workspace = true }
 rand = { workspace = true }
 num-bigint = { workspace = true }
 
+gem_tracing = { path = "../../crates/tracing" }
 primitives = { path = "../../crates/primitives" }
 storage = { path = "../../crates/storage" }
 settings = { path = "../../crates/settings" }

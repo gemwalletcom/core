@@ -12,26 +12,26 @@ mod transaction;
 mod version;
 
 use crate::model::DaemonService;
+use gem_tracing::{info_with_context, SentryTracing};
 use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
 
 #[tokio::main]
 pub async fn main() {
-    println!("daemon init");
+    let service_arg = std::env::args().nth(1).unwrap_or_default();
 
-    let service = std::env::args().nth(1).unwrap_or_default();
-
-    println!("daemon start service: {service}");
-
-    let settings = settings::Settings::new().unwrap();
-
-    let service = DaemonService::from_str(service.as_str()).unwrap_or_else(|_| {
+    let service = DaemonService::from_str(service_arg.as_str()).unwrap_or_else(|_| {
         panic!(
             "Expected a valid service: {:?}",
             DaemonService::all().iter().map(|x| x.as_ref()).collect::<Vec<_>>()
         );
     });
+
+    let settings = settings::Settings::new().unwrap();
+    let _tracing = SentryTracing::init(&settings, service.as_ref());
+
+    info_with_context("daemon start", &[("service", service.as_ref())]);
 
     let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service {
         DaemonService::Alerter => alerter::jobs(settings.clone()).await,

@@ -13,7 +13,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let settings = settings.clone();
         move || {
             let mut validator_scanner = ValidatorScanner::new(ChainProviders::from_settings(&settings), &settings.postgres.url, &settings.assets.url);
-            async move { validator_scanner.update_validators().await }
+            async move { validator_scanner.update_validators("Update chain validators").await }
         }
     });
 
@@ -21,7 +21,11 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let settings = settings.clone();
         move || {
             let mut validator_scanner = ValidatorScanner::new(ChainProviders::from_settings(&settings), &settings.postgres.url, &settings.assets.url);
-            async move { validator_scanner.update_validators_from_static_assets().await }
+            async move {
+                validator_scanner
+                    .update_validators_from_static_assets("Update validators from static assets")
+                    .await
+            }
         }
     });
 

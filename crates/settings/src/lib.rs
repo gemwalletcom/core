@@ -36,6 +36,7 @@ pub struct Settings {
     pub ankr: Ankr,
     pub trongrid: Trongrid,
     pub assets: Assets,
+    pub sentry: Option<Sentry>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -399,4 +400,11 @@ pub struct DaemonSearch {
 #[allow(unused)]
 pub struct Assets {
     pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Sentry {
+    pub dsn: String,
+    pub sample_rate: f32,
 }
