@@ -63,7 +63,7 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
 
 pub fn map_status(status: &str) -> FiatTransactionStatus {
     match status {
-        "started" | "pending" | "confirming" | "payment-authorized" => FiatTransactionStatus::Pending,
+        "started" | "pending" | "confirming" | "payment-authorized" | "paid" => FiatTransactionStatus::Pending,
         "completed" | "success" => FiatTransactionStatus::Complete,
         "failed" | "cancelled" | "canceled" | "rejected" => FiatTransactionStatus::Failed,
         _ => FiatTransactionStatus::Unknown(status.to_string()),
