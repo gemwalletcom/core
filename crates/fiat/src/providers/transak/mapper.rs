@@ -8,8 +8,8 @@ use primitives::fiat_assets::FiatAssetLimits;
 use primitives::PaymentType;
 use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
-pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
-    match asset.network.name.as_str() {
+pub fn map_asset_chain(network: &str, coin_id: Option<&str>) -> Option<Chain> {
+    match network {
         "ethereum" => Some(Chain::Ethereum),
         "polygon" => Some(Chain::Polygon),
         "aptos" => Some(Chain::Aptos),
@@ -37,7 +37,7 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "berachain" => Some(Chain::Berachain),
         "hyperevm" => Some(Chain::Hyperliquid),
         "hyperliquid" => Some(Chain::HyperCore),
-        "mainnet" => match asset.coin_id.as_str() {
+        "mainnet" => match coin_id? {
             "bitcoin" => Some(Chain::Bitcoin),
             "litecoin" => Some(Chain::Litecoin),
             "ripple" => Some(Chain::Xrp),
@@ -74,42 +74,9 @@ fn map_transaction_type(transaction_type: &str) -> FiatQuoteType {
     }
 }
 
-pub fn map_network_to_chain(network: &str) -> Option<Chain> {
-    match network {
-        "ethereum" => Some(Chain::Ethereum),
-        "polygon" => Some(Chain::Polygon),
-        "aptos" => Some(Chain::Aptos),
-        "sui" => Some(Chain::Sui),
-        "arbitrum" => Some(Chain::Arbitrum),
-        "optimism" => Some(Chain::Optimism),
-        "base" => Some(Chain::Base),
-        "bsc" => Some(Chain::SmartChain),
-        "tron" => Some(Chain::Tron),
-        "solana" => Some(Chain::Solana),
-        "avaxcchain" => Some(Chain::AvalancheC),
-        "ton" => Some(Chain::Ton),
-        "osmosis" => Some(Chain::Osmosis),
-        "fantom" => Some(Chain::Fantom),
-        "injective" => Some(Chain::Injective),
-        "sei" => Some(Chain::Sei),
-        "linea" => Some(Chain::Linea),
-        "zksync" => Some(Chain::ZkSync),
-        "celo" => Some(Chain::Celo),
-        "mantle" => Some(Chain::Mantle),
-        "opbnb" => Some(Chain::OpBNB),
-        "unichain" => Some(Chain::Unichain),
-        "stellar" => Some(Chain::Stellar),
-        "algorand" => Some(Chain::Algorand),
-        "berachain" => Some(Chain::Berachain),
-        "hyperevm" => Some(Chain::Hyperliquid),
-        "hyperliquid" => Some(Chain::HyperCore),
-        "mainnet" => None,
-        _ => None,
-    }
-}
 
 pub fn map_order_from_response(payload: TransakOrderResponse) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-    let chain = map_network_to_chain(&payload.network);
+    let chain = map_asset_chain(&payload.network, None);
     let asset_id = chain.map(AssetId::from_chain);
 
     Ok(FiatTransaction {
@@ -157,7 +124,7 @@ fn map_limits(fiat_currencies: &[FiatCurrency], quote_type: FiatQuoteType) -> Ve
 }
 
 pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-    let chain = map_asset_chain(asset.clone());
+    let chain = map_asset_chain(&asset.network.name, Some(&asset.coin_id));
     let token_id = filter_token_id(chain, asset.clone().address);
 
     Some(FiatProviderAsset {
