@@ -97,8 +97,9 @@ impl<C: Client + Clone> SuiClient<C> {
 mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::*;
+    use base64::{engine::general_purpose, Engine};
     use chain_traits::ChainTransactionLoad;
-    use primitives::{Asset, Chain, FeePriority};
+    use primitives::{Asset, Chain, FeePriority, StakeType, TransactionLoadInput};
 
     #[tokio::test]
     async fn test_sui_get_transaction_fee_rates() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -133,6 +134,52 @@ mod chain_integration_tests {
         //     }
         //     _ => panic!("Expected Sui metadata"),
         // }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_sui_get_transaction_preload_unstake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_sui_test_client();
+
+        let delegation_id = "0x32c6c9d1de51d1df1d69687ee29c9759c06ae48e6dbb024e2cd81499b4058d51";
+        let user_address = "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6";
+
+        let delegation = primitives::Delegation::mock_with_id(delegation_id.to_string());
+        let stake_type = StakeType::Unstake(delegation);
+
+        let input = TransactionLoadInput {
+            sender_address: user_address.to_string(),
+            destination_address: user_address.to_string(),
+            value: "1000000000".to_string(),
+            input_type: TransactionInputType::Stake(Asset::from_chain(Chain::Sui), stake_type),
+            gas_price: primitives::GasPriceType::regular(BigInt::from(1000)),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::None,
+        };
+
+        let result = client.get_transaction_load(input).await?;
+
+        match result.metadata {
+            TransactionLoadMetadata::Sui { message_bytes } => {
+                assert!(!message_bytes.is_empty());
+                println!("Sui unstake transaction data: {} chars", message_bytes.len());
+
+                assert!(message_bytes.contains('_'));
+                let parts: Vec<&str> = message_bytes.split('_').collect();
+                assert_eq!(parts.len(), 2);
+
+                assert!(general_purpose::STANDARD.decode(parts[0]).is_ok());
+                assert!(hex::decode(parts[1]).is_ok());
+            }
+            _ => panic!("Expected Sui metadata for unstake transaction"),
+        }
+
+        assert!(result.fee.fee > BigInt::from(0));
+        assert_eq!(result.fee.gas_limit, BigInt::from(GAS_BUDGET));
+
+        println!("Unstake transaction fee: {}", result.fee.fee);
 
         Ok(())
     }
