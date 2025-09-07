@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
-#[cfg(feature = "rpc")]
 use num_bigint::BigUint;
-#[cfg(feature = "rpc")]
 use serde_serializers::{deserialize_biguint_from_str, deserialize_u64_from_str};
 
 #[cfg(feature = "rpc")]

@@ -59,10 +59,12 @@ pub fn map_preload_metadata(_coins: Vec<SuiCoin>) -> Result<TransactionLoadMetad
     Ok(TransactionLoadMetadata::Sui { message_bytes: "".to_string() })
 }
 
-pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>, coins: Vec<SuiCoin>) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let gas_coins: Vec<Coin> = gas_coins.into_iter().map(Into::into).collect();
-    let coins: Vec<Coin> = coins.into_iter().map(Into::into).collect();
-
+pub fn map_transaction_data(
+    input: TransactionLoadInput,
+    gas_coins: Vec<SuiCoin>,
+    coins: Vec<SuiCoin>,
+    objects: Vec<SuiObject>,
+) -> Result<String, Box<dyn Error + Send + Sync>> {
     let gas_price = input.gas_price.gas_price().to_string().parse().unwrap_or(0);
 
     match input.input_type {
@@ -72,7 +74,7 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                     sender: input.sender_address,
                     recipient: input.destination_address,
                     amount: input.value.parse().unwrap_or(0),
-                    coins: gas_coins,
+                    coins: gas_coins.into_iter().map(Into::into).collect(),
                     send_max: false,
                     gas: Gas {
                         budget: GAS_BUDGET,
@@ -85,15 +87,12 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                 Ok(format!("{}_{}", data, digest))
             }
             Some(_token_id) => {
-                if gas_coins.is_empty() {
-                    return Err("No gas coins available for token transfer".into());
-                }
-                let gas_coin = gas_coins.first().unwrap().clone();
+                let gas_coin = gas_coins.first().ok_or("No gas coins available for token transfer")?.clone().into();
                 let token_transfer_input = TokenTransferInput {
                     sender: input.sender_address,
                     recipient: input.destination_address,
                     amount: input.value.parse().unwrap_or(0),
-                    tokens: coins,
+                    tokens: coins.into_iter().map(Into::into).collect(),
                     gas: Gas {
                         budget: GAS_BUDGET,
                         price: gas_price,
@@ -116,7 +115,7 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                         budget: GAS_BUDGET,
                         price: gas_price,
                     },
-                    coins: gas_coins,
+                    coins: gas_coins.into_iter().map(Into::into).collect(),
                 };
                 let tx_output = encode_split_and_stake(&stake_input)?;
                 let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
@@ -124,15 +123,16 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                 Ok(format!("{}_{}", data, digest))
             }
             StakeType::Unstake(delegation) => {
-                if gas_coins.is_empty() {
-                    return Err("No gas coins available for unstake".into());
-                }
-                let gas_coin = gas_coins.first().unwrap().clone();
+                let gas_coin = gas_coins.first().ok_or("No gas coins available for unstake")?.clone().into();
+                let staked_object = objects
+                    .iter()
+                    .find(|obj| obj.object_id == delegation.base.delegation_id)
+                    .ok_or("Staked SUI object not found in provided objects")?;
 
                 let staked_sui = crate::models::Object {
-                    object_id: delegation.base.delegation_id.clone(),
-                    version: 1,
-                    digest: "".to_string(),
+                    object_id: staked_object.object_id.clone(),
+                    version: staked_object.version.parse().unwrap_or(0),
+                    digest: staked_object.digest.clone(),
                 };
 
                 let unstake_input = UnstakeInput {
@@ -158,5 +158,40 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
             Ok(format!("{}_{}", data, digest))
         }
         _ => Err("Unsupported transaction type for Sui".into()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::SuiObject;
+    use primitives::{Asset, Chain, Delegation, StakeType, TransactionInputType, TransactionLoadInput};
+
+    #[test]
+    fn test_unstake_uses_object_reference() {
+        let delegation_id = "0x1234567890abcdef1234567890abcdef12345678";
+        let delegation = Delegation::mock_with_id(delegation_id.to_string());
+        let input_type = TransactionInputType::Stake(
+            Asset::from_chain(Chain::Sui),
+            StakeType::Unstake(delegation),
+        );
+        let input = TransactionLoadInput::mock_with_input_type(input_type);
+
+        let gas_coins = vec![SuiCoin {
+            coin_type: "0x2::sui::SUI".to_string(),
+            coin_object_id: "0xabcdef1234567890abcdef1234567890abcdef12".to_string(),
+            balance: "5000000000".parse().unwrap(),
+            version: "100".to_string(),
+            digest: "HdfF7hswRuvbXbEXjGjmUCt7gLybhvbPvvK8zZbCqyD8".to_string(),
+        }];
+
+        let objects = vec![SuiObject {
+            object_id: delegation_id.to_string(),
+            version: "12345".to_string(),
+            digest: "CU86BjXRF1XHFRjKBasCYEuaQxhHuyGBpuoJyqsrYoX5".to_string(),
+        }];
+
+        let result = map_transaction_data(input, gas_coins, vec![], objects);
+        assert!(result.is_ok());
     }
 }

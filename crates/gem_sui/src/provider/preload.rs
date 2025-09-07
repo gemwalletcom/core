@@ -1,6 +1,6 @@
 use std::{collections::HashMap, error::Error};
 
-use crate::SUI_COIN_TYPE;
+use crate::{models::SuiObject, SUI_COIN_TYPE};
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
@@ -9,7 +9,7 @@ use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::{
-    transaction_load_metadata::SuiCoin, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
+    transaction_load_metadata::SuiCoin, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
     TransactionLoadMetadata, TransactionPreloadInput,
 };
 
@@ -26,8 +26,8 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        let (gas_coins, coins) = self.get_coins_for_input_type(&input.sender_address.clone(), input.input_type.clone()).await?;
-        let message_bytes = map_transaction_data(input.clone(), gas_coins.clone(), coins.clone())?;
+        let (gas_coins, coins, objects) = self.get_coins_for_input_type(&input.sender_address.clone(), input.input_type.clone()).await?;
+        let message_bytes = map_transaction_data(input.clone(), gas_coins.clone(), coins.clone(), objects)?;
 
         let fee = self.calculate_actual_fee(&message_bytes, &input.gas_price).await?;
 
@@ -69,14 +69,25 @@ impl<C: Client + Clone> SuiClient<C> {
         &self,
         address: &str,
         input_type: TransactionInputType,
-    ) -> Result<(Vec<SuiCoin>, Vec<SuiCoin>), Box<dyn Error + Send + Sync>> {
+    ) -> Result<(Vec<SuiCoin>, Vec<SuiCoin>, Vec<SuiObject>), Box<dyn Error + Send + Sync>> {
         match input_type {
             TransactionInputType::Transfer(asset) => match asset.id.token_id {
-                None => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new())),
-                Some(token_id) => Ok(futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_coins(address, &token_id))?),
+                None => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new(), Vec::new())),
+                Some(token_id) => {
+                    let (gas_coins, coins) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_coins(address, &token_id))?;
+                    Ok((gas_coins, coins, Vec::new()))
+                }
             },
-            TransactionInputType::Stake(..) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new())),
-            TransactionInputType::Swap(_, _, _) => Ok((Vec::new(), Vec::new())),
+            TransactionInputType::Stake(_, stake_type) => match stake_type {
+                StakeType::Stake(_) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new(), Vec::new())),
+                StakeType::Unstake(delegation) => {
+                    let (gas_coins, staked_object) =
+                        futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_object(delegation.base.delegation_id.clone()))?;
+                    Ok((gas_coins, Vec::new(), vec![staked_object]))
+                }
+                _ => Err("Unsupported stake type for Sui".into()),
+            },
+            TransactionInputType::Swap(_, _, _) => Ok((Vec::new(), Vec::new(), Vec::new())),
             _ => Err("Unsupported transaction type for Sui".into()),
         }
     }
