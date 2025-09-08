@@ -84,22 +84,14 @@ impl PriceClient {
     }
 
     pub fn get_fiat_rate(&mut self, symbol: &str) -> Result<FiatRate, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .database
-            .fiat()
-            .get_fiat_rates()?
-            .iter()
-            .find(|x| x.symbol == symbol)
-            .ok_or(format!("No fiat rate found for symbol: {symbol}"))?
-            .clone())
+        self.database.fiat().get_fiat_rate(symbol)
     }
 
     // cache
 
     pub async fn get_asset_price(&mut self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error + Send + Sync>> {
         let rate = self.get_fiat_rate(currency)?.rate;
-        let prices = self.get_cache_prices(vec![asset_id.to_string()]).await?;
-        let price = prices.first().cloned().ok_or(format!("No price available for asset_id: {asset_id}"))?;
+        let price = self.get_cache_price(asset_id).await?;
 
         Ok(AssetMarketPrice {
             price: Some(price.as_price_primitive_with_rate(rate)),
@@ -127,6 +119,10 @@ impl PriceClient {
     pub async fn get_cache_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceInfo>, Box<dyn Error + Send + Sync>> {
         let keys: Vec<String> = asset_ids.iter().map(|x| x.to_string()).collect();
         self.cacher_client.get_values(keys).await
+    }
+
+    pub async fn get_cache_price(&mut self, asset_id: &str) -> Result<AssetPriceInfo, Box<dyn Error + Send + Sync>> {
+        self.cacher_client.get_value(asset_id).await
     }
 
     pub async fn get_asset_prices(&mut self, currency: &str, asset_ids: Vec<String>) -> Result<AssetPrices, Box<dyn Error + Send + Sync>> {

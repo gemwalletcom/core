@@ -11,6 +11,7 @@ mod nft;
 mod parser;
 mod price_alerts;
 mod prices;
+mod responders;
 mod scan;
 mod status;
 mod subscriptions;
@@ -27,6 +28,7 @@ use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::{FiatClient, FiatProviderFactory};
+use gem_tracing::SentryTracing;
 use metrics::MetricsClient;
 use model::APIService;
 use name_resolver::client::Client as NameClient;
@@ -40,7 +42,6 @@ use rocket::tokio::sync::Mutex;
 use rocket::{routes, Build, Rocket};
 use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
-use gem_tracing::SentryTracing;
 use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
 use streamer::StreamProducer;
@@ -182,17 +183,17 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
 #[tokio::main]
 async fn main() {
     let settings = Settings::new().unwrap();
-    
-    let _tracing = SentryTracing::init(&settings, "api");
 
+    let _tracing = SentryTracing::init(&settings, "api");
     let service = std::env::args().nth(1).unwrap_or_default();
     let service = APIService::from_str(service.as_str()).ok().unwrap_or(APIService::Api);
 
     println!("api start service: {}", service.as_ref());
 
     let rocket_api = match service {
-        APIService::WebsocketPrices => rocket_ws_prices(settings).await,
-        APIService::Api => rocket_api(settings).await,
+        APIService::WebsocketPrices => rocket_ws_prices(settings.clone()).await,
+        APIService::Api => rocket_api(settings.clone()).await,
     };
+
     rocket_api.launch().await.expect("Failed to launch Rocket");
 }

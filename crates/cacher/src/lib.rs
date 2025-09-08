@@ -2,7 +2,10 @@ use std::error::Error;
 
 use redis::{AsyncCommands, Client};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+mod error;
 mod keys;
+pub use error::*;
 pub use keys::*;
 
 #[derive(Debug, Clone)]
@@ -42,11 +45,6 @@ impl CacherClient {
         Ok(connection.set_ex::<&str, String, ()>(key, value.clone(), seconds).await?)
     }
 
-    pub async fn get_string(&mut self, key: &str) -> Result<String, Box<dyn Error>> {
-        let mut connection = self.client.get_multiplexed_async_connection().await?;
-        Ok(connection.get(key).await?)
-    }
-
     pub async fn set_value<T: serde::Serialize>(&mut self, key: &str, value: &T) -> Result<(), Box<dyn Error + Send + Sync>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
         Ok(connection.set::<&str, String, ()>(key, serde_json::to_string(value)?).await?)
@@ -54,8 +52,11 @@ impl CacherClient {
 
     pub async fn get_value<T: serde::de::DeserializeOwned>(&mut self, key: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
         let mut connection = self.client.get_multiplexed_async_connection().await?;
-        let value: String = connection.get(key).await?;
-        Ok(serde_json::from_str(&value)?)
+        let value: Option<String> = connection.get(key).await?;
+        match value {
+            Some(s) => Ok(serde_json::from_str(&s)?),
+            None => Err(Box::new(CacheError::NotFound(key.to_string()))),
+        }
     }
 
     pub async fn get_values<T, I>(&mut self, keys: Vec<String>) -> Result<T, Box<dyn Error + Send + Sync>>
