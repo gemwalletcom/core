@@ -43,13 +43,14 @@ impl SentryTracing {
     }
 }
 
-pub use sentry::{capture_message, configure_scope, Level};
+pub use sentry::{capture_message, configure_scope, start_transaction, Level, TransactionContext};
 
 pub fn error_with_context<E: std::error::Error + ?Sized>(message: &str, error: &E, context: &[(&str, &str)]) {
     let subscriber = get_subscriber();
     tracing::subscriber::with_default(subscriber, || {
         tracing::error!("{}: {}", message, error);
     });
+
     sentry::configure_scope(|scope| {
         for (key, value) in context {
             scope.set_tag(key, value);
@@ -71,27 +72,6 @@ pub fn info_with_context(message: &str, context: &[(&str, &str)]) {
             tracing::info!("{} {}", message, fields.join(" "));
         }
     });
-}
-
-pub fn warn_with_context(message: &str, context: &[(&str, &str)]) {
-    let subscriber = get_subscriber();
-    tracing::subscriber::with_default(subscriber, || {
-        let mut fields = vec![];
-        for (key, value) in context {
-            fields.push(format!("{}={}", key, value));
-        }
-        if fields.is_empty() {
-            tracing::warn!("{}", message);
-        } else {
-            tracing::warn!("{} {}", message, fields.join(" "));
-        }
-    });
-    sentry::configure_scope(|scope| {
-        for (key, value) in context {
-            scope.set_tag(key, value);
-        }
-    });
-    sentry::capture_message(message, sentry::Level::Warning);
 }
 
 pub fn error<E: std::error::Error + ?Sized>(message: &str, error: &E) {

@@ -3,6 +3,8 @@ use primitives::ResponseResult;
 use rocket::response::{Responder, Response};
 use rocket::serde::json::Json;
 use rocket::{http::Status, Request};
+use serde::Serialize;
+use strum::ParseError;
 
 #[derive(Debug)]
 pub enum ApiError {
@@ -32,6 +34,12 @@ impl From<CacheError> for ApiError {
     }
 }
 
+impl From<ParseError> for ApiError {
+    fn from(error: ParseError) -> Self {
+        ApiError::NotFound(format!("Invalid parameter: {}", error))
+    }
+}
+
 impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
     fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
         let mut current_error: &dyn std::error::Error = error.as_ref();
@@ -49,5 +57,19 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
         }
 
         ApiError::InternalServerError("Service error".to_string())
+    }
+}
+
+pub struct ApiResponse<T>(pub ResponseResult<T>);
+
+impl<T> From<T> for ApiResponse<T> {
+    fn from(data: T) -> Self {
+        ApiResponse(ResponseResult::new(data))
+    }
+}
+
+impl<'r, T: Serialize> Responder<'r, 'static> for ApiResponse<T> {
+    fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
+        Json(self.0).respond_to(request)
     }
 }

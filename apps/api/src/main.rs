@@ -8,6 +8,7 @@ mod metrics;
 mod model;
 mod name;
 mod nft;
+mod params;
 mod parser;
 mod price_alerts;
 mod prices;
@@ -37,7 +38,6 @@ use nft_client::NFTClient;
 use nft_provider::NFTProviderConfig;
 use parser::ParserClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
-use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{routes, Build, Rocket};
 use scan::{ScanClient, ScanProviderFactory};
@@ -86,13 +86,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let markets_client = MarketsClient::new(postgres_url, cacher_client);
 
     rocket::build()
-        .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
-            let runtime = tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .expect("Failed to create Tokio runtime");
-            rocket.manage(runtime)
-        }))
         .manage(Mutex::new(fiat_client))
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(charts_client))
@@ -146,7 +139,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 parser::get_parser_block_finalize,
                 parser::get_parser_block_number_latest,
                 swap::get_swap_assets,
-                nft::get_nft_assets,
+                nft::get_nft_assets_old,
                 nft::get_nft_assets_by_chain,
                 nft::get_nft_collection,
                 nft::get_nft_asset,
@@ -166,7 +159,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::transaction::get_transactions,
             ],
         )
-        .mount("/v2", routes![transactions::get_transactions_by_device_id_v2])
+        .mount("/v2", routes![transactions::get_transactions_by_device_id_v2, nft::get_nft_assets_v2,])
         .mount(settings.metrics.path, routes![metrics::get_metrics])
 }
 

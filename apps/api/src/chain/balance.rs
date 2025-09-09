@@ -1,14 +1,13 @@
-use rocket::{get, serde::json::Json, tokio::sync::Mutex, State};
-use std::str::FromStr;
+use rocket::{get, tokio::sync::Mutex, State};
 
-use primitives::{AssetBalance, Chain, ChainAddress};
+use crate::params::ChainParam;
+use crate::responders::{ApiError, ApiResponse};
+use primitives::{AssetBalance, ChainAddress};
 
 use super::ChainClient;
 
 #[get("/chain/balances/<chain>/<address>")]
-pub async fn get_balances(chain: String, address: String, chain_client: &State<Mutex<ChainClient>>) -> Json<Vec<AssetBalance>> {
-    let chain = Chain::from_str(&chain).unwrap();
-    let request = ChainAddress::new(chain, address);
-    let balances = chain_client.lock().await.get_balances(request).await.unwrap();
-    Json(balances)
+pub async fn get_balances(chain: ChainParam, address: &str, client: &State<Mutex<ChainClient>>) -> Result<ApiResponse<Vec<AssetBalance>>, ApiError> {
+    let request = ChainAddress::new(chain.0, address.to_string());
+    Ok(client.lock().await.get_balances(request).await?.into())
 }
