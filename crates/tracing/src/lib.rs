@@ -26,6 +26,7 @@ impl SentryTracing {
                 dsn: Some(sentry.dsn.parse().ok()?),
                 send_default_pii: false,
                 sample_rate: sentry.sample_rate,
+                attach_stacktrace: true,
                 ..Default::default()
             };
 
