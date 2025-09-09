@@ -89,7 +89,7 @@ mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{create_arbitrum_test_client, create_ethereum_test_client, create_smartchain_test_client, print_fee_rates, TEST_ADDRESS};
     use num_bigint::BigInt;
-    use primitives::{Asset, Chain, TransactionInputType};
+    use primitives::{Asset, Chain, FeePriority, GasPriceType, TransactionInputType, TransactionLoadInput};
 
     #[tokio::test]
     async fn test_ethereum_get_transaction_preload() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -183,6 +183,94 @@ mod chain_integration_tests {
             assert!(fee_rate.gas_price_type.gas_price() < BigInt::from(1_000_000_000));
             assert!(fee_rate.gas_price_type.priority_fee() > BigInt::from(0));
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_preload_transfer() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+
+        let preload_input = TransactionPreloadInput {
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Ethereum)),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
+        };
+        let metadata = client.get_transaction_preload(preload_input.clone()).await?;
+
+        let fee_rates = [FeeRate::new(
+            FeePriority::Normal,
+            GasPriceType::eip1559(BigInt::from(177554820), BigInt::from(100000000)),
+        )];
+
+        let gas_price = fee_rates.first().ok_or("No fee rates available")?.gas_price_type.clone();
+
+        let load_input = TransactionLoadInput {
+            input_type: preload_input.input_type,
+            sender_address: preload_input.sender_address.clone(),
+            destination_address: preload_input.destination_address.clone(),
+            value: "100000000000000".to_string(),
+            gas_price,
+            memo: None,
+            is_max_value: false,
+            metadata,
+        };
+
+        let load_data = client.get_transaction_load(load_input).await?;
+
+        println!("Transaction load data: {:#?}", load_data);
+
+        assert!(load_data.fee.fee == BigInt::from(3728651220000u64));
+
+        assert!(load_data.fee.gas_limit == BigInt::from(21000));
+
+        assert!(load_data.metadata.get_sequence()? > 0);
+        assert_eq!(load_data.metadata.get_chain_id()?, "1");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_preload_transfer_token() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+
+        let preload_input = TransactionPreloadInput {
+            input_type: TransactionInputType::Transfer(Asset::mock_erc20()),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
+        };
+        let metadata = client.get_transaction_preload(preload_input.clone()).await?;
+
+        let fee_rates = [FeeRate::new(
+            FeePriority::Normal,
+            GasPriceType::eip1559(BigInt::from(177554820), BigInt::from(100000000)),
+        )];
+
+        let gas_price = fee_rates.first().ok_or("No fee rates available")?.gas_price_type.clone();
+
+        let load_input = TransactionLoadInput {
+            input_type: preload_input.input_type,
+            sender_address: preload_input.sender_address.clone(),
+            destination_address: preload_input.destination_address.clone(),
+            value: "1000000".to_string(),
+            gas_price,
+            memo: None,
+            is_max_value: false,
+            metadata,
+        };
+
+        let load_data = client.get_transaction_load(load_input).await?;
+
+        println!("Token transfer load data: {:#?}", load_data);
+
+        assert!(load_data.fee.fee > BigInt::from(0));
+        assert!(load_data.fee.gas_limit > BigInt::from(0));
+
+        assert!(load_data.fee.gas_limit > BigInt::from(21000));
+        assert!(load_data.fee.gas_limit < BigInt::from(75000));
+
+        assert!(load_data.metadata.get_sequence()? > 0);
+        assert_eq!(load_data.metadata.get_chain_id()?, "1");
 
         Ok(())
     }
