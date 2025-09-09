@@ -4,10 +4,12 @@ use rocket::response::{Responder, Response};
 use rocket::serde::json::Json;
 use rocket::{http::Status, Request};
 use serde::Serialize;
+use storage::DatabaseError;
 use strum::ParseError;
 
 #[derive(Debug)]
 pub enum ApiError {
+    BadRequest(String),
     NotFound(String),
     InternalServerError(String),
 }
@@ -15,6 +17,7 @@ pub enum ApiError {
 impl<'r> Responder<'r, 'static> for ApiError {
     fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
         let (status, message) = match self {
+            ApiError::BadRequest(msg) => (Status::BadRequest, msg),
             ApiError::NotFound(msg) => (Status::NotFound, msg),
             ApiError::InternalServerError(msg) => (Status::InternalServerError, msg),
         };
@@ -40,6 +43,15 @@ impl From<ParseError> for ApiError {
     }
 }
 
+impl From<DatabaseError> for ApiError {
+    fn from(error: DatabaseError) -> Self {
+        match error {
+            DatabaseError::NotFound => ApiError::NotFound(error.to_string()),
+            DatabaseError::Internal(msg) => ApiError::InternalServerError(msg),
+        }
+    }
+}
+
 impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
     fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
         let mut current_error: &dyn std::error::Error = error.as_ref();
@@ -49,6 +61,9 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
                     CacheError::NotFound(key) => CacheError::NotFound(key.clone()),
                 };
                 return reconstructed.into();
+            }
+            if let Some(db_error) = current_error.downcast_ref::<DatabaseError>() {
+                return db_error.clone().into();
             }
             match current_error.source() {
                 Some(source) => current_error = source,

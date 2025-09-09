@@ -65,8 +65,8 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                 match self.database.fiat().add_fiat_transaction(transaction) {
                     Ok(_) => return Ok(true),
                     Err(e) => {
-                        error_with_context("add_fiat_transaction", &*e, &[("provider", &provider.name().id())]);
-                        return Err(e);
+                        error_with_context("add_fiat_transaction", &e, &[("provider", &provider.name().id())]);
+                        return Err(e.into());
                     }
                 }
             }

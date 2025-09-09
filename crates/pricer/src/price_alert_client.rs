@@ -41,12 +41,12 @@ impl PriceAlertClient {
     }
 
     pub async fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.database.price_alerts().add_price_alerts(device_id, price_alerts)
+        Ok(self.database.price_alerts().add_price_alerts(device_id, price_alerts)?)
     }
 
     pub async fn delete_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = price_alerts.iter().map(|x| x.id()).collect::<HashSet<_>>().into_iter().collect();
-        self.database.price_alerts().delete_price_alerts(device_id, ids)
+        Ok(self.database.price_alerts().delete_price_alerts(device_id, ids)?)
     }
 
     pub async fn get_devices_to_alert(&mut self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {

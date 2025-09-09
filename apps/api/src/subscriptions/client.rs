@@ -23,14 +23,14 @@ impl SubscriptionsClient {
             .map(|x| ChainAddressPayload::new(primitives::ChainAddress::new(x.chain, x.address)))
             .collect::<Vec<_>>();
         self.stream_producer.publish_to_exchange_batch(ExchangeName::NewAddresses, &payload).await?;
-        result
+        Ok(result?)
     }
 
     pub async fn get_subscriptions_by_device_id(&mut self, device_id: &str) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
-        self.database.subscriptions().get_subscriptions_by_device_id(device_id, None)
+        Ok(self.database.subscriptions().get_subscriptions_by_device_id(device_id, None)?)
     }
 
     pub async fn delete_subscriptions(&mut self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.database.subscriptions().delete_subscriptions(subscriptions, device_id)
+        Ok(self.database.subscriptions().delete_subscriptions(subscriptions, device_id)?)
     }
 }

@@ -5,7 +5,7 @@ use primitives::{response::ResponseResultOld, NFTAsset, NFTData};
 use rocket::http::ContentType;
 use rocket::response::{self, Responder};
 use rocket::Request;
-use rocket::{get, put, response::status::NotFound, serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{get, put, tokio::sync::Mutex, State};
 use std::collections::HashMap;
 use std::io::Cursor;
 
@@ -16,12 +16,8 @@ pub async fn get_nft_assets_old(
     device_id: &str,
     wallet_index: i32,
     client: &State<Mutex<NFTClient>>,
-) -> Result<Json<ResponseResultOld<Vec<NFTData>>>, NotFound<String>> {
-    let result = client.lock().await.get_nft_assets(device_id, wallet_index).await;
-    match result {
-        Ok(data) => Ok(Json(ResponseResultOld::new(data))),
-        Err(err) => Err(NotFound(err.to_string())),
-    }
+) -> Result<ApiResponse<ResponseResultOld<Vec<NFTData>>>, ApiError> {
+    Ok(ResponseResultOld::new(client.lock().await.get_nft_assets(device_id, wallet_index).await?).into())
 }
 
 #[get("/nft/assets/device/<device_id>?<wallet_index>")]
@@ -63,8 +59,8 @@ pub async fn get_nft_collection(collection_id: &str, client: &State<Mutex<NFTCli
 }
 
 #[get("/nft/assets/<asset_id>/image_preview")]
-pub async fn get_nft_asset_image_preview(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<ImageResponse, NotFound<String>> {
-    let (image_data, content_type, upstream_headers) = client.lock().await.get_nft_asset_image(asset_id).await.map_err(|e| NotFound(e.to_string()))?;
+pub async fn get_nft_asset_image_preview(asset_id: &str, client: &State<Mutex<NFTClient>>) -> Result<ImageResponse, ApiError> {
+    let (image_data, content_type, upstream_headers) = client.lock().await.get_nft_asset_image(asset_id).await?;
     let content_type = ContentType::parse_flexible(content_type.as_ref().unwrap_or(&"image/png".to_string())).unwrap_or(ContentType::PNG);
     let cache_control = upstream_headers
         .get("cache-control")

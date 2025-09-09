@@ -113,7 +113,7 @@ impl NFTClient {
     }
 
     pub fn get_subscriptions(&mut self, device_id: &str, wallet_index: i32) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
-        self.database.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))
+        Ok(self.database.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?)
     }
 
     pub async fn get_nft_assets_by_chain(&mut self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {

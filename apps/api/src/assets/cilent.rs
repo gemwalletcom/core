@@ -16,20 +16,32 @@ impl AssetsClient {
 
     pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let assets = assets.into_iter().map(|x| x.as_basic_primitive()).collect();
-        self.database.assets().add_assets(assets)
+        self.database
+            .assets()
+            .add_assets(assets)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 
     #[allow(unused)]
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        self.database.assets().get_asset(asset_id)
+        self.database
+            .assets()
+            .get_asset(asset_id)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
-        self.database.assets().get_assets_basic(asset_ids)
+        self.database
+            .assets()
+            .get_assets_basic(asset_ids)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 
     pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
-        self.database.assets().get_asset_full(asset_id)
+        self.database
+            .assets()
+            .get_asset_full(asset_id)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 
     pub fn get_assets_by_device_id(
@@ -42,7 +54,10 @@ impl AssetsClient {
 
         let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
 
-        self.database.assets_addresses().get_assets_by_addresses(chain_addresses, from_timestamp, true)
+        self.database
+            .assets_addresses()
+            .get_assets_by_addresses(chain_addresses, from_timestamp, true)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
 

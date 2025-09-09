@@ -1,7 +1,7 @@
 use api_connector::PusherClient;
-use primitives::{GorushNotification, PushNotification, PushNotificationTypes};
+use primitives::{Device, GorushNotification, PushNotification, PushNotificationTypes};
 use std::error::Error;
-use storage::{models::UpdateDevice, DatabaseClient};
+use storage::{models::UpdateDevice, DatabaseClient, DatabaseError};
 
 pub struct DevicesClient {
     database: DatabaseClient,
@@ -14,18 +14,18 @@ impl DevicesClient {
         Self { database, pusher }
     }
 
-    pub fn add_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error + Send + Sync>> {
+    pub fn add_device(&mut self, device: Device) -> Result<Device, DatabaseError> {
         let add_device = UpdateDevice::from_primitive(device.clone());
         let device = self.database.devices().add_device(add_device)?;
         Ok(device)
     }
 
-    pub fn get_device(&mut self, device_id: &str) -> Result<primitives::Device, Box<dyn Error + Send + Sync>> {
+    pub fn get_device(&mut self, device_id: &str) -> Result<Device, DatabaseError> {
         let device = self.database.devices().get_device(device_id)?;
         Ok(device)
     }
 
-    pub fn update_device(&mut self, device: primitives::device::Device) -> Result<primitives::device::Device, Box<dyn Error + Send + Sync>> {
+    pub fn update_device(&mut self, device: Device) -> Result<Device, DatabaseError> {
         let update_device = UpdateDevice::from_primitive(device);
         let device = self.database.devices().update_device(update_device)?;
         Ok(device)
@@ -46,7 +46,7 @@ impl DevicesClient {
         Ok(self.pusher.push_notifications(vec![notification]).await?.counts > 0)
     }
 
-    pub fn delete_device(&mut self, device_id: &str) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub fn delete_device(&mut self, device_id: &str) -> Result<usize, DatabaseError> {
         self.database.devices().delete_device(device_id)
     }
 }

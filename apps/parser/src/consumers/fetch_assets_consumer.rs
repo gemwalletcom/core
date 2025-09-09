@@ -28,7 +28,7 @@ impl MessageConsumer<FetchAssetsPayload, usize> for FetchAssetsConsumer {
     async fn process(&mut self, payload: FetchAssetsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         if let Some(token_id) = payload.asset_id.token_id {
             let asset = self.providers.get_token_data(payload.asset_id.chain, token_id.to_string()).await?;
-            return self.database.lock().await.assets().add_assets(vec![asset.as_basic_primitive()]);
+            return Ok(self.database.lock().await.assets().add_assets(vec![asset.as_basic_primitive()])?);
         }
         Ok(0)
     }

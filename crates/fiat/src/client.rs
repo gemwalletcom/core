@@ -72,7 +72,7 @@ impl FiatClient {
     }
 
     pub async fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        self.database.fiat().get_fiat_providers_countries()
+        Ok(self.database.fiat().get_fiat_providers_countries()?)
     }
 
     pub async fn get_order_status(
@@ -142,7 +142,7 @@ impl FiatClient {
     }
 
     pub async fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        self.database.assets().get_asset(asset_id)
+        Ok(self.database.assets().get_asset(asset_id)?)
     }
 
     pub async fn get_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {

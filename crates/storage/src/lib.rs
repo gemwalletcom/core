@@ -3,10 +3,12 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
 
 pub mod database;
+pub mod error;
 pub use self::database::{
     assets::{AssetFilter, AssetUpdate},
     DatabaseClient,
 };
+pub use self::error::DatabaseError;
 pub mod models;
 pub use self::models::ScanAddressType;
 pub mod repositories;
