@@ -1,6 +1,5 @@
 pub mod asset;
 pub mod block_explorer;
-pub mod bsc;
 pub mod chain;
 pub mod config;
 pub mod ethereum;

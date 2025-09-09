@@ -22,7 +22,10 @@ impl<C: Client> ChainTransactionLoad for AptosClient<C> {
         let gas_limit = self.calculate_gas_limit(&input).await?;
         let fee = TransactionFee::calculate(gas_limit, &input.gas_price);
 
-        Ok(TransactionLoadData { fee, metadata: input.metadata })
+        Ok(TransactionLoadData {
+            fee,
+            metadata: input.metadata,
+        })
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {

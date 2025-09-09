@@ -52,7 +52,10 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         let fee = calculate_transaction_fee(&input.input_type, &input.gas_price, input.metadata.get_recipient_token_address()?);
-        Ok(TransactionLoadData { fee, metadata: input.metadata })
+        Ok(TransactionLoadData { 
+            fee, 
+            metadata: input.metadata,
+        })
     }
 
     async fn get_transaction_fee_rates(&self, input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {

@@ -259,6 +259,14 @@ mod tests {
     }
 
     #[test]
+    fn test_encode_claim_call() {
+        let data = encode_claim_call("0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A", 0).unwrap();
+        
+        // Check the function selector
+        assert_eq!(hex::encode(&data[0..4]), "aad3ec96");
+    }
+
+    #[test]
     fn test_encode_claim_batch_call() {
         let data = encode_claim_batch_call(vec!["0xE5572297718e1943A92BfEde2E67A060439e8EFd".to_string()], vec![0]).unwrap();
 

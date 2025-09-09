@@ -1,4 +1,4 @@
-use crate::{solana_token_program::SolanaTokenProgramId, UTXO};
+use crate::{solana_token_program::SolanaTokenProgramId, stake_type::StakeData, UTXO};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_bigint_from_str;
@@ -44,6 +44,7 @@ pub enum TransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
+        stake_data: Option<StakeData>,
     },
     Near {
         sequence: u64,

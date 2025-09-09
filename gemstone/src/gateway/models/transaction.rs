@@ -8,6 +8,7 @@ use primitives::{
     TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputType,
     WalletConnectionSessionAppMetadata,
 };
+use primitives::stake_type::StakeData;
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -42,6 +43,12 @@ pub struct GemTransactionStateRequest {
     pub sender_address: String,
     pub created_at: i64,
     pub block_number: i64,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemStakeData {
+    pub data: Option<String>,
+    pub to: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -322,6 +329,24 @@ impl From<GemWalletConnectionSessionAppMetadata> for WalletConnectionSessionAppM
             icon: value.icon,
             redirect_native: value.redirect_native,
             redirect_universal: value.redirect_universal,
+        }
+    }
+}
+
+impl From<GemStakeData> for StakeData {
+    fn from(value: GemStakeData) -> Self {
+        StakeData {
+            data: value.data,
+            to: value.to,
+        }
+    }
+}
+
+impl From<StakeData> for GemStakeData {
+    fn from(value: StakeData) -> Self {
+        GemStakeData {
+            data: value.data,
+            to: value.to,
         }
     }
 }

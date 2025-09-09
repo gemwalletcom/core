@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
+use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::{
@@ -29,6 +30,7 @@ pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<Tr
     Ok(TransactionLoadMetadata::Evm {
         nonce,
         chain_id: chain_id.parse::<u64>()?,
+        stake_data: None,
     })
 }
 
@@ -70,10 +72,7 @@ pub fn get_transaction_data(chain: EVMChain, input: &TransactionLoadInput) -> Re
         TransactionInputType::TokenApprove(_, approval) => Ok(encode_erc20_approve(&approval.spender)?),
         TransactionInputType::Generic(_, _, extra) => Ok(extra.data.clone().unwrap_or_default()),
         TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
-            Chain::SmartChain => {
-                let value = BigInt::from_str_radix(&input.value, 10)?;
-                Ok(encode_stake_hub(stake_type, &input.destination_address, &value)?)
-            }
+            Chain::SmartChain => encode_stake_hub(stake_type, &BigInt::from_str_radix(&input.value, 10)?),
             _ => Err("Unsupported chain for staking".into()),
         },
         _ => Err("Unsupported transfer type".into()),
@@ -99,8 +98,7 @@ pub fn get_transaction_to(chain: EVMChain, input: &TransactionLoadInput) -> Resu
         TransactionInputType::TokenApprove(_, approval) => Ok(approval.token.clone()),
         TransactionInputType::Generic(_, _, _) => Ok(input.destination_address.clone()),
         TransactionInputType::Stake(_, _) => match chain.to_chain() {
-            Chain::SmartChain => Ok("0x0000000000000000000000000000000000002002".to_string()),
-            Chain::Ethereum => Ok(input.destination_address.clone()),
+            Chain::SmartChain => Ok(STAKE_HUB_ADDRESS.to_string()),
             _ => Err("Unsupported chain for staking".into()),
         },
         _ => Err("Unsupported transfer type".into()),
@@ -128,7 +126,7 @@ pub fn get_transaction_value(chain: EVMChain, input: &TransactionLoadInput) -> R
         TransactionInputType::TokenApprove(_, _) => Ok(BigInt::from(0)),
         TransactionInputType::Generic(_, _, _) => Ok(value),
         TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
-            Chain::SmartChain | Chain::Ethereum => match stake_type {
+            Chain::SmartChain => match stake_type {
                 StakeType::Stake(_) => Ok(value),
                 StakeType::Unstake(_) | StakeType::Redelegate(_) | StakeType::Withdraw(_) => Ok(BigInt::from(0)),
                 _ => Ok(BigInt::from(0)),
@@ -194,20 +192,31 @@ fn encode_erc20_approve(spender: &str) -> Result<Vec<u8>, Box<dyn Error + Send +
     Ok(call.abi_encode())
 }
 
-fn encode_stake_hub(stake_type: &StakeType, validator_address: &str, _amount: &BigInt) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
     match stake_type {
-        StakeType::Stake(_) => gem_bsc::stake_hub::encode_delegate_call(validator_address, false).map_err(|e| e.to_string().into()),
+        StakeType::Stake(validator) => gem_bsc::stake_hub::encode_delegate_call(&validator.id, false).map_err(|e| e.to_string().into()),
         StakeType::Unstake(delegation) => {
-            gem_bsc::stake_hub::encode_undelegate_call(&delegation.base.validator_id, &delegation.base.shares.to_string()).map_err(|e| e.to_string().into())
+            // Calculate shares based on amount and delegation balance/shares ratio
+            let amount_shares = amount * &delegation.base.shares / &delegation.base.balance;
+
+            gem_bsc::stake_hub::encode_undelegate_call(&delegation.validator.id, &amount_shares.to_string()).map_err(|e| e.to_string().into())
         }
-        StakeType::Redelegate(redelegate_data) => gem_bsc::stake_hub::encode_redelegate_call(
-            &redelegate_data.delegation.base.validator_id,
-            &redelegate_data.to_validator.id,
-            &redelegate_data.delegation.base.shares.to_string(),
-            false,
-        )
-        .map_err(|e| e.to_string().into()),
-        StakeType::Withdraw(delegation) => gem_bsc::stake_hub::encode_claim_call(&delegation.base.validator_id, 0).map_err(|e| e.to_string().into()),
+        StakeType::Redelegate(redelegate_data) => {
+            // Calculate shares based on amount and delegation balance/shares ratio
+            let amount_shares = amount * &redelegate_data.delegation.base.shares / &redelegate_data.delegation.base.balance;
+
+            gem_bsc::stake_hub::encode_redelegate_call(
+                &redelegate_data.delegation.validator.id,
+                &redelegate_data.to_validator.id,
+                &amount_shares.to_string(),
+                false,
+            )
+            .map_err(|e| e.to_string().into())
+        }
+        StakeType::Withdraw(delegation) => {
+            // Request number 0 means claim all
+            gem_bsc::stake_hub::encode_claim_call(&delegation.validator.id, 0).map_err(|e| e.to_string().into())
+        }
         _ => Err("Unsupported stake type for StakeHub".into()),
     }
 }
@@ -215,6 +224,7 @@ fn encode_stake_hub(stake_type: &StakeType, validator_address: &str, _amount: &B
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
 
     #[test]
     fn test_map_transaction_preload_with_hex_prefix() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -224,9 +234,10 @@ mod tests {
         let result = map_transaction_preload(nonce_hex, chain_id)?;
 
         match result {
-            TransactionLoadMetadata::Evm { nonce, chain_id } => {
+            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => {
                 assert_eq!(nonce, 10);
                 assert_eq!(chain_id, 1);
+                assert!(stake_data.is_none());
             }
             _ => panic!("Expected Evm variant"),
         }
@@ -335,5 +346,152 @@ mod tests {
 
         let min_priority = BigInt::from(primitives::EVMChain::Ethereum.min_priority_fee());
         assert_eq!(min_priority.to_string(), "100000000");
+    }
+
+    #[test]
+    fn test_encode_stake_hub_delegate() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let validator = DelegationValidator {
+            chain: Chain::SmartChain,
+            id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
+            name: "Test Validator".to_string(),
+            is_active: true,
+            commision: 5.0,
+            apr: 10.0,
+        };
+
+        let stake_type = StakeType::Stake(validator);
+        let amount = BigInt::from(1_000_000_000_000_000_000u64); // 1 BNB
+
+        let result = encode_stake_hub(&stake_type, &amount)?;
+
+        // Should encode a delegate call
+        assert!(!result.is_empty());
+        // The first 4 bytes should be the function selector for delegate
+        let selector = &result[0..4];
+        assert_eq!(hex::encode(selector), "982ef0a7");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_stake_hub_unstake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let delegation = Delegation {
+            base: DelegationBase {
+                asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
+                state: DelegationState::Active,
+                balance: BigInt::from(2_000_000_000_000_000_000u64), // 2 BNB
+                shares: BigInt::from(1_900_000_000_000_000_000u64),  // Slightly less shares
+                rewards: BigInt::from(0),
+                completion_date: None,
+                delegation_id: "test".to_string(),
+                validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+            },
+            validator: DelegationValidator {
+                chain: Chain::SmartChain,
+                id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+                name: "Test Validator".to_string(),
+                is_active: true,
+                commision: 5.0,
+                apr: 10.0,
+            },
+            price: None,
+        };
+
+        let stake_type = StakeType::Unstake(delegation);
+        let amount = BigInt::from(1_000_000_000_000_000_000u64); // Unstake 1 BNB
+
+        let result = encode_stake_hub(&stake_type, &amount)?;
+
+        assert!(!result.is_empty());
+        // The first 4 bytes should be the function selector for undelegate
+        let selector = &result[0..4];
+        assert_eq!(hex::encode(selector), "4d99dd16");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_stake_hub_redelegate() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let delegation = Delegation {
+            base: DelegationBase {
+                asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
+                state: DelegationState::Active,
+                balance: BigInt::from(2_000_000_000_000_000_000u64), // 2 BNB
+                shares: BigInt::from(1_900_000_000_000_000_000u64),  // Slightly less shares
+                rewards: BigInt::from(0),
+                completion_date: None,
+                delegation_id: "test".to_string(),
+                validator_id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
+            },
+            validator: DelegationValidator {
+                chain: Chain::SmartChain,
+                id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
+                name: "Source Validator".to_string(),
+                is_active: true,
+                commision: 5.0,
+                apr: 10.0,
+            },
+            price: None,
+        };
+
+        let to_validator = DelegationValidator {
+            chain: Chain::SmartChain,
+            id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+            name: "Target Validator".to_string(),
+            is_active: true,
+            commision: 3.0,
+            apr: 12.0,
+        };
+
+        let redelegate_data = RedelegateData { delegation, to_validator };
+
+        let stake_type = StakeType::Redelegate(redelegate_data);
+        let amount = BigInt::from(1_000_000_000_000_000_000u64); // Redelegate 1 BNB
+
+        let result = encode_stake_hub(&stake_type, &amount)?;
+
+        assert!(!result.is_empty());
+        // The first 4 bytes should be the function selector for redelegate
+        let selector = &result[0..4];
+        assert_eq!(hex::encode(selector), "59491871");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_stake_hub_withdraw() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let delegation = Delegation {
+            base: DelegationBase {
+                asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
+                state: DelegationState::AwaitingWithdrawal,
+                balance: BigInt::from(1_000_000_000_000_000_000u64),
+                shares: BigInt::from(1_000_000_000_000_000_000u64),
+                rewards: BigInt::from(0),
+                completion_date: None,
+                delegation_id: "test".to_string(),
+                validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+            },
+            validator: DelegationValidator {
+                chain: Chain::SmartChain,
+                id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+                name: "Test Validator".to_string(),
+                is_active: true,
+                commision: 5.0,
+                apr: 10.0,
+            },
+            price: None,
+        };
+
+        let stake_type = StakeType::Withdraw(delegation);
+        let amount = BigInt::from(0); // Amount doesn't matter for withdraw
+
+        let result = encode_stake_hub(&stake_type, &amount)?;
+
+        assert!(!result.is_empty());
+        // The first 4 bytes should be the function selector for claim
+        let selector = &result[0..4];
+        assert_eq!(hex::encode(selector), "aad3ec96");
+
+        Ok(())
     }
 }

@@ -1,25 +1,27 @@
+#[cfg(feature = "rpc")]
+use super::preload_optimism::OptimismGasOracle;
 use crate::fee_calculator::{get_fee_history_blocks, get_reward_percentiles};
+use crate::provider::preload_mapper::{
+    bigint_to_hex_string, bytes_to_hex_string, calculate_gas_limit_with_increase, get_extra_fee_gas_limit, get_transaction_data, get_transaction_to,
+    get_transaction_value, map_transaction_fee_rates, map_transaction_preload,
+};
+use crate::rpc::client::EthereumClient;
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::ChainTransactionLoad;
+use gem_client::Client;
 #[cfg(feature = "rpc")]
 use num_bigint::BigInt;
+#[cfg(feature = "rpc")]
+use primitives::stake_type::StakeData;
+use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
 use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 #[cfg(feature = "rpc")]
 use serde_serializers::bigint::bigint_from_hex_str;
 use std::collections::HashMap;
 use std::error::Error;
-
-#[cfg(feature = "rpc")]
-use super::preload_optimism::OptimismGasOracle;
-use crate::provider::preload_mapper::{
-    bigint_to_hex_string, bytes_to_hex_string, calculate_gas_limit_with_increase, get_extra_fee_gas_limit, get_transaction_data, get_transaction_to,
-    get_transaction_value, map_transaction_fee_rates, map_transaction_preload,
-};
-use crate::rpc::client::EthereumClient;
-use gem_client::Client;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
@@ -65,21 +67,38 @@ impl<C: Client + Clone> EthereumClient<C> {
         let gas_limit = calculate_gas_limit_with_increase(gas_estimate);
         let fee = self.calculate_fee(&input, &gas_limit).await?;
 
-        Ok(TransactionLoadData {
-            fee,
-            metadata: input.metadata.clone(),
-        })
+        let metadata = if let TransactionInputType::Stake(_, _) = &input.input_type {
+            match input.metadata {
+                TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
+                    nonce,
+                    chain_id,
+                    stake_data: Some(StakeData {
+                        data: if data.is_empty() { None } else { Some(hex::encode(&data)) },
+                        to: Some(to),
+                    }),
+                },
+                _ => input.metadata,
+            }
+        } else {
+            input.metadata
+        };
+
+        Ok(TransactionLoadData { fee, metadata })
     }
 
     pub async fn calculate_fee(&self, input: &TransactionLoadInput, gas_limit: &BigInt) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
         if self.chain.is_opstack() {
             OptimismGasOracle::new(self.chain, self.clone()).calculate_fee(input, gas_limit).await
         } else {
-            let extra_gas_limit = get_extra_fee_gas_limit(input)?;
-            let gas_limit = gas_limit + &extra_gas_limit;
-            let fee = input.gas_price.gas_price() * &gas_limit;
+            let gas_limit = gas_limit + get_extra_fee_gas_limit(input)?;
+            let fee = input.gas_price.total_fee() * &gas_limit;
 
-            Ok(TransactionFee::new_gas_price_type(input.gas_price.clone(), fee, gas_limit, HashMap::new()))
+            Ok(TransactionFee::new_gas_price_type(
+                GasPriceType::eip1559(input.gas_price.total_fee(), input.gas_price.priority_fee()),
+                fee,
+                gas_limit.clone(),
+                HashMap::new(),
+            ))
         }
     }
 }
@@ -97,7 +116,7 @@ mod chain_integration_tests {
         let input = TransactionPreloadInput {
             input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Ethereum)),
             sender_address: TEST_ADDRESS.to_string(),
-            destination_address: "0x0000000000000000000000000000000000000000".to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
         };
 
         let metadata = client.get_transaction_preload(input).await?;
@@ -116,7 +135,7 @@ mod chain_integration_tests {
         let input = TransactionPreloadInput {
             input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::SmartChain)),
             sender_address: TEST_ADDRESS.to_string(),
-            destination_address: "0x0000000000000000000000000000000000000000".to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
         };
 
         let metadata = client.get_transaction_preload(input).await?;

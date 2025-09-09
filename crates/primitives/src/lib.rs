@@ -171,7 +171,7 @@ pub use self::transaction_preload_input::TransactionPreloadInput;
 pub mod transaction_fee;
 pub use self::transaction_fee::{FeeOption, TransactionFee};
 pub mod stake_type;
-pub use self::stake_type::{RedelegateData, StakeType};
+pub use self::stake_type::{RedelegateData, StakeData, StakeType};
 pub mod transaction_load_metadata;
 pub use self::transaction_load_metadata::TransactionLoadMetadata;
 pub mod transaction_input_type;
