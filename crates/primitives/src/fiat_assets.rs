@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 use crate::currency::Currency;
-use crate::{AssetId, FiatQuoteType, PaymentType};
+use crate::{AssetId, PaymentType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
@@ -15,12 +15,10 @@ pub struct FiatAssets {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatAssetLimits {
     pub currency: Currency,
     pub payment_type: PaymentType,
-    pub quote_type: FiatQuoteType,
     pub min_amount: Option<f64>,
     pub max_amount: Option<f64>,
 }

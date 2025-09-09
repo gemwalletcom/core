@@ -1,9 +1,11 @@
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
-    providers::mercuryo::mapper::map_asset_with_limits,
+    providers::mercuryo::mapper::{map_asset_limits, map_asset_with_limits},
     FiatProvider,
 };
 use async_trait::async_trait;
+use futures::future;
+use primitives::currency::Currency;
 use primitives::{FiatBuyQuote, FiatSellQuote};
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
 use std::error::Error;
@@ -44,13 +46,27 @@ impl FiatProvider for MercuryoClient {
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let currencies = self.get_currencies().await?;
-        let assets = currencies
-            .config
-            .crypto_currencies
+        let currency = Currency::USD;
+
+        let assets_with_limits = future::join_all(currencies.config.crypto_currencies.into_iter().map(|asset| {
+            let fiat_payment_methods = currencies.fiat_payment_methods.clone();
+            let currency = currency.clone();
+            async move {
+                match self.get_currency_limits(asset.currency.clone(), currency.as_ref().to_string()).await {
+                    Ok(response) => (
+                        asset,
+                        map_asset_limits(response.data.get(currency.as_ref()), currency.clone(), &fiat_payment_methods),
+                    ),
+                    Err(_) => (asset, map_asset_limits(None, currency, &fiat_payment_methods)),
+                }
+            }
+        }))
+        .await;
+
+        Ok(assets_with_limits
             .into_iter()
-            .flat_map(|asset| map_asset_with_limits(asset, &currencies.fiat_payment_methods))
-            .collect::<Vec<FiatProviderAsset>>();
-        Ok(assets)
+            .filter_map(|(asset, limits)| map_asset_with_limits(asset, limits.clone(), limits))
+            .collect())
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
@@ -111,12 +127,13 @@ mod fiat_integration_tests {
         let assets = FiatProvider::get_assets(&client).await?;
 
         assert!(!assets.is_empty());
-        println!("Found {} Mercuryo assets", assets.len());
 
-        if let Some(asset) = assets.first() {
-            assert!(!asset.id.is_empty());
-            assert!(!asset.symbol.is_empty());
-            println!("Sample Mercuryo asset: {:?}", asset);
+        let assets_with_limits = assets.iter().filter(|a| !a.buy_limits.is_empty()).count();
+        assert!(assets_with_limits > 0);
+
+        if let Some(asset) = assets.iter().find(|a| !a.buy_limits.is_empty()) {
+            assert_eq!(asset.buy_limits.len(), asset.sell_limits.len());
+            assert!(asset.buy_limits[0].min_amount.is_some() || asset.buy_limits[0].max_amount.is_some());
         }
 
         Ok(())

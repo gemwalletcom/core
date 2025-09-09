@@ -1,4 +1,3 @@
-use super::models::{Asset, Currencies, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
 use crate::model::FiatMapping;
 use hex;
 use number_formatter::BigNumberFormatter;
@@ -6,7 +5,10 @@ use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
 use primitives::{FiatProviderName, FiatQuote};
 use reqwest::Client;
 use sha2::{Digest, Sha512};
+use std::collections::HashMap;
 use url::Url;
+
+use super::models::{Asset, Currencies, CurrencyLimits, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
 
 const MERCURYO_API_BASE_URL: &str = "https://api.mercuryo.io";
 const MERCURYO_REDIRECT_URL: &str = "https://exchange.mercuryo.io";
@@ -89,6 +91,12 @@ impl MercuryoClient {
             .await?
             .json()
             .await
+    }
+
+    pub async fn get_currency_limits(&self, from: String, to: String) -> Result<Response<HashMap<String, CurrencyLimits>>, reqwest::Error> {
+        let query = [("from", from), ("to", to), ("widget_id", self.widget_id.clone())];
+        let url = format!("{MERCURYO_API_BASE_URL}/v1.6/public/currency-limits");
+        self.client.get(&url).query(&query).send().await?.json().await
     }
 
 

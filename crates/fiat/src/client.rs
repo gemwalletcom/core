@@ -323,7 +323,6 @@ mod tests {
     use primitives::FiatQuoteType;
     use std::collections::HashMap;
 
-
     #[test]
     fn test_precision() {
         assert_eq!(precision(1.123, 2), 1.12);
@@ -337,7 +336,7 @@ mod tests {
             symbol: "BTC".to_string(),
             network: None,
             unsupported_countries: HashMap::new(),
-            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0, FiatQuoteType::Buy)],
+            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0)],
             sell_limits: vec![],
         };
         assert!(FiatClient::check_asset_limits(&request, &mapping).is_ok());
@@ -351,7 +350,7 @@ mod tests {
             symbol: "BTC".to_string(),
             network: None,
             unsupported_countries: HashMap::new(),
-            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0, FiatQuoteType::Buy)],
+            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0)],
             sell_limits: vec![],
         };
         match FiatClient::check_asset_limits(&request, &mapping).unwrap_err() {
@@ -371,7 +370,7 @@ mod tests {
             symbol: "BTC".to_string(),
             network: None,
             unsupported_countries: HashMap::new(),
-            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0, FiatQuoteType::Buy)],
+            buy_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0)],
             sell_limits: vec![],
         };
         match FiatClient::check_asset_limits(&request, &mapping).unwrap_err() {
@@ -392,7 +391,7 @@ mod tests {
             network: None,
             unsupported_countries: HashMap::new(),
             buy_limits: vec![],
-            sell_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0, FiatQuoteType::Sell)],
+            sell_limits: vec![FiatAssetLimits::mock_usd(50.0, 200.0)],
         };
         assert!(FiatClient::check_asset_limits(&request, &mapping).is_ok());
     }

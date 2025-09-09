@@ -1,6 +1,6 @@
-use crate::{Asset, Chain, FiatBuyQuote, FiatQuoteRequest, FiatQuoteType, PaymentType};
 use crate::currency::Currency;
 use crate::fiat_assets::FiatAssetLimits;
+use crate::{Asset, Chain, FiatBuyQuote, FiatQuoteRequest, FiatQuoteType, PaymentType};
 
 impl FiatBuyQuote {
     pub fn mock() -> Self {
@@ -36,17 +36,15 @@ impl FiatAssetLimits {
         FiatAssetLimits {
             currency: Currency::USD,
             payment_type: PaymentType::Card,
-            quote_type: FiatQuoteType::Buy,
             min_amount: Some(50.0),
             max_amount: Some(10000.0),
         }
     }
 
-    pub fn mock_usd(min_amount: f64, max_amount: f64, quote_type: FiatQuoteType) -> Self {
+    pub fn mock_usd(min_amount: f64, max_amount: f64) -> Self {
         FiatAssetLimits {
             currency: Currency::USD,
             payment_type: PaymentType::Card,
-            quote_type,
             min_amount: Some(min_amount),
             max_amount: Some(max_amount),
         }

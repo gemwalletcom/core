@@ -74,7 +74,6 @@ fn map_transaction_type(transaction_type: &str) -> FiatQuoteType {
     }
 }
 
-
 pub fn map_order_from_response(payload: TransakOrderResponse) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
     let chain = map_asset_chain(&payload.network, None);
     let asset_id = chain.map(AssetId::from_chain);
@@ -113,7 +112,6 @@ fn map_limits(fiat_currencies: &[FiatCurrency], quote_type: FiatQuoteType) -> Ve
                     Some(FiatAssetLimits {
                         currency: currency.clone(),
                         payment_type,
-                        quote_type: quote_type.clone(),
                         min_amount,
                         max_amount,
                     })

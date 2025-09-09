@@ -149,7 +149,6 @@ pub fn map_assets_with_limits(currencies: Vec<PaybisCurrency>, limits: &PaybisDa
                                 Currency::from_str(currency_pair.from.as_str()).ok().map(|fiat_currency| FiatAssetLimits {
                                     currency: fiat_currency,
                                     payment_type: payment_type.clone(),
-                                    quote_type: FiatQuoteType::Buy,
                                     min_amount: Some(currency_limit.min_amount),
                                     max_amount: Some(currency_limit.max_amount),
                                 })
@@ -334,7 +333,6 @@ mod tests {
             assert_eq!(limit.min_amount, Some(5.0));
             assert_eq!(limit.max_amount, Some(20000.0));
             assert_eq!(limit.payment_type, PaymentType::Card);
-            assert_eq!(limit.quote_type, FiatQuoteType::Buy);
         }
 
         Ok(())

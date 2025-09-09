@@ -1,15 +1,9 @@
-use super::{
-    client::MercuryoClient,
-    models::{
-        Asset, BuyTransaction, DepositTransaction, FiatPaymentMethod, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction,
-    },
-};
-use crate::model::FiatProviderAsset;
-use primitives::currency::Currency;
-use primitives::fiat_assets::FiatAssetLimits;
-use primitives::PaymentType;
-use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 use std::collections::HashMap;
+
+use super::models::{Asset, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction};
+use crate::{model::FiatProviderAsset, providers::mercuryo::models::FiatPaymentMethod};
+use primitives::{currency::Currency, fiat_assets::FiatAssetLimits, PaymentType};
+use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
     match chain.as_str() {
@@ -73,6 +67,40 @@ pub fn map_symbol_to_chain(symbol: &str) -> Option<Chain> {
     }
 }
 
+fn map_limits(fiat_payment_methods: &HashMap<String, FiatPaymentMethod>) -> Vec<FiatAssetLimits> {
+    fiat_payment_methods
+        .iter()
+        .filter_map(|(currency_code, fiat_method)| {
+            let currency = currency_code.parse::<Currency>().ok()?;
+            Some((currency, fiat_method))
+        })
+        .flat_map(|(currency, fiat_method)| {
+            fiat_method
+                .payment_methods
+                .iter()
+                .filter_map(|payment_method| {
+                    let payment_type = map_payment_type(&payment_method.code, &payment_method.name)?;
+                    Some(FiatAssetLimits {
+                        currency: currency.clone(),
+                        payment_type,
+                        min_amount: Some(fiat_method.limits.min),
+                        max_amount: Some(fiat_method.limits.max),
+                    })
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+fn map_payment_type(payment_code: &str, payment_name: &str) -> Option<PaymentType> {
+    match payment_code {
+        "card" if payment_name == "Visa" => Some(PaymentType::Card),
+        "google" => Some(PaymentType::GooglePay),
+        "apple" => Some(PaymentType::ApplePay),
+        _ => None,
+    }
+}
+
 pub fn map_order_from_response(transaction: MercuryoTransactionResponse) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
     if let Some(buy) = transaction.buy {
         return map_buy_transaction(buy, transaction.withdraw);
@@ -131,7 +159,7 @@ fn map_buy_like_transaction(
         asset_id,
         transaction_type: FiatQuoteType::Buy,
         symbol: currency.to_string(),
-        provider_id: MercuryoClient::NAME.id(),
+        provider_id: FiatProviderName::Mercuryo.id(),
         provider_transaction_id: merchant_transaction_id,
         status,
         country: card_country.map(|c| c.to_uppercase()),
@@ -178,7 +206,7 @@ fn map_sell_transaction(withdraw: WithdrawTransaction) -> Result<FiatTransaction
         asset_id,
         transaction_type: FiatQuoteType::Sell,
         symbol: withdraw.currency,
-        provider_id: MercuryoClient::NAME.id(),
+        provider_id: FiatProviderName::Mercuryo.id(),
         provider_transaction_id: withdraw.merchant_transaction_id,
         status,
         country: None,
@@ -198,7 +226,7 @@ fn map_sell_transaction_new(sell: SellTransaction, deposit: Option<DepositTransa
         asset_id,
         transaction_type: FiatQuoteType::Sell,
         symbol: sell.currency,
-        provider_id: MercuryoClient::NAME.id(),
+        provider_id: FiatProviderName::Mercuryo.id(),
         provider_transaction_id: sell.merchant_transaction_id,
         status,
         country: None,
@@ -230,44 +258,23 @@ pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
     map_asset_base(asset, vec![], vec![])
 }
 
-pub fn map_asset_with_limits(asset: Asset, fiat_payment_methods: &HashMap<String, FiatPaymentMethod>) -> Option<FiatProviderAsset> {
-    let buy_limits = map_limits(fiat_payment_methods, FiatQuoteType::Buy);
-    let sell_limits = map_limits(fiat_payment_methods, FiatQuoteType::Sell);
+pub fn map_asset_with_limits(asset: Asset, buy_limits: Vec<FiatAssetLimits>, sell_limits: Vec<FiatAssetLimits>) -> Option<FiatProviderAsset> {
     map_asset_base(asset, buy_limits, sell_limits)
 }
 
-fn map_limits(fiat_payment_methods: &HashMap<String, FiatPaymentMethod>, quote_type: FiatQuoteType) -> Vec<FiatAssetLimits> {
-    fiat_payment_methods
-        .iter()
-        .filter_map(|(currency_code, fiat_method)| {
-            let currency = currency_code.parse::<Currency>().ok()?;
-            Some((currency, fiat_method))
-        })
-        .flat_map(|(currency, fiat_method)| {
-            fiat_method
-                .payment_methods
-                .iter()
-                .filter_map(|payment_method| {
-                    let payment_type = map_payment_type(&payment_method.code, &payment_method.name)?;
-                    Some(FiatAssetLimits {
-                        currency: currency.clone(),
-                        payment_type,
-                        quote_type: quote_type.clone(),
-                        min_amount: Some(fiat_method.limits.min),
-                        max_amount: Some(fiat_method.limits.max),
-                    })
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect()
-}
-
-fn map_payment_type(payment_code: &str, payment_name: &str) -> Option<PaymentType> {
-    match payment_code {
-        "card" if payment_name == "Visa" => Some(PaymentType::Card),
-        "google" => Some(PaymentType::GooglePay),
-        "apple" => Some(PaymentType::ApplePay),
-        _ => None,
+pub fn map_asset_limits(
+    currency_limits: Option<&CurrencyLimits>,
+    currency: Currency,
+    fiat_payment_methods: &HashMap<String, FiatPaymentMethod>,
+) -> Vec<FiatAssetLimits> {
+    match currency_limits {
+        Some(limits) => vec![FiatAssetLimits {
+            currency,
+            payment_type: PaymentType::Card,
+            min_amount: Some(limits.min),
+            max_amount: Some(limits.max),
+        }],
+        None => map_limits(fiat_payment_methods),
     }
 }
 
@@ -275,8 +282,7 @@ fn map_payment_type(payment_code: &str, payment_name: &str) -> Option<PaymentTyp
 mod tests {
     use super::*;
     use crate::providers::mercuryo::models::{Currencies, MercuryoTransactionResponse, Response};
-    use primitives::currency::Currency;
-    use primitives::{FiatQuoteType, FiatTransactionStatus, PaymentType};
+    use primitives::{FiatQuoteType, FiatTransactionStatus};
 
     #[tokio::test]
     async fn test_map_order_from_buy_complete_response() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -343,36 +349,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_map_asset_with_limits() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let currencies = serde_json::from_str::<Response<Currencies>>(include_str!("../../../testdata/mercuryo/assets.json"))?.data;
-        let asset = currencies.config.crypto_currencies.first().unwrap();
-
-        let result = map_asset_with_limits(asset.clone(), &currencies.fiat_payment_methods).unwrap();
-
-        assert!(!result.buy_limits.is_empty());
-        assert!(!result.sell_limits.is_empty());
-
-        let usd_buy_limit = result
-            .buy_limits
-            .iter()
-            .find(|limit| limit.currency == Currency::USD && limit.payment_type == PaymentType::Card);
-        assert!(usd_buy_limit.is_some());
-        assert_eq!(usd_buy_limit.unwrap().min_amount, Some(29.33));
-        assert_eq!(usd_buy_limit.unwrap().max_amount, Some(5865.20));
-
-        Ok(())
-    }
-
-    #[tokio::test]
     async fn test_map_trump_asset() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let currencies = serde_json::from_str::<Response<Currencies>>(include_str!("../../../testdata/mercuryo/assets.json"))?.data;
-        
-        let trump_asset = currencies.config.crypto_currencies
+
+        let trump_asset = currencies
+            .config
+            .crypto_currencies
             .iter()
             .find(|asset| asset.currency == "TRUMP" && asset.network == "SOLANA")
             .unwrap();
 
-        let result = map_asset_with_limits(trump_asset.clone(), &currencies.fiat_payment_methods).unwrap();
+        let result = map_asset_with_limits(trump_asset.clone(), vec![], vec![]).unwrap();
 
         assert_eq!(result.symbol, "TRUMP");
         assert_eq!(result.chain, Some(Chain::Solana));
@@ -386,21 +373,17 @@ mod tests {
     #[tokio::test]
     async fn test_contract_assets_mapping() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let currencies = serde_json::from_str::<Response<Currencies>>(include_str!("../../../testdata/mercuryo/assets.json"))?.data;
-        
-        let all_assets: Vec<_> = currencies.config.crypto_currencies
+
+        let all_assets: Vec<_> = currencies
+            .config
+            .crypto_currencies
             .into_iter()
-            .flat_map(|asset| map_asset_with_limits(asset, &currencies.fiat_payment_methods))
+            .flat_map(|asset| map_asset_with_limits(asset, vec![], vec![]))
             .collect();
 
-        let contract_assets: Vec<_> = all_assets
-            .iter()
-            .filter(|asset| asset.token_id.is_some())
-            .collect();
+        let contract_assets: Vec<_> = all_assets.iter().filter(|asset| asset.token_id.is_some()).collect();
 
-        let trump_assets: Vec<_> = all_assets
-            .iter()
-            .filter(|asset| asset.symbol == "TRUMP")
-            .collect();
+        let trump_assets: Vec<_> = all_assets.iter().filter(|asset| asset.symbol == "TRUMP").collect();
 
         println!("Total assets: {}", all_assets.len());
         println!("Contract-based assets: {}", contract_assets.len());

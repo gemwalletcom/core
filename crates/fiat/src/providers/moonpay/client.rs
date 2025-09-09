@@ -141,7 +141,6 @@ impl MoonPayClient {
                 .map(|x| FiatAssetLimits {
                     currency: Currency::USD,
                     payment_type: x.clone(),
-                    quote_type: FiatQuoteType::Buy,
                     min_amount: asset.min_buy_amount,
                     max_amount: asset.max_buy_amount,
                 })
@@ -156,7 +155,6 @@ impl MoonPayClient {
                 .map(|x| FiatAssetLimits {
                     currency: Currency::USD,
                     payment_type: x.clone(),
-                    quote_type: FiatQuoteType::Sell,
                     min_amount: asset.min_sell_amount,
                     max_amount: asset.max_sell_amount,
                 })

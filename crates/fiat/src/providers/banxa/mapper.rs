@@ -111,12 +111,10 @@ pub fn map_asset(asset: Asset) -> Vec<FiatProviderAsset> {
 }
 
 pub fn map_asset_with_limits(asset: Asset, buy_fiat_currencies: &[FiatCurrency], sell_fiat_currencies: &[FiatCurrency]) -> Vec<FiatProviderAsset> {
-    let buy_limits = map_limits(buy_fiat_currencies, FiatQuoteType::Buy);
-    let sell_limits = map_limits(sell_fiat_currencies, FiatQuoteType::Sell);
-    map_asset_base(asset, buy_limits, sell_limits)
+    map_asset_base(asset, map_limits(buy_fiat_currencies), map_limits(sell_fiat_currencies))
 }
 
-fn map_limits(fiat_currencies: &[FiatCurrency], quote_type: FiatQuoteType) -> Vec<FiatAssetLimits> {
+fn map_limits(fiat_currencies: &[FiatCurrency]) -> Vec<FiatAssetLimits> {
     fiat_currencies
         .iter()
         .filter_map(|fiat_currency| fiat_currency.id.parse::<Currency>().ok().map(|currency| (currency, fiat_currency)))
@@ -129,7 +127,6 @@ fn map_limits(fiat_currencies: &[FiatCurrency], quote_type: FiatQuoteType) -> Ve
                     Some(FiatAssetLimits {
                         currency: currency.clone(),
                         payment_type,
-                        quote_type: quote_type.clone(),
                         min_amount: Some(payment_method.minimum),
                         max_amount: Some(payment_method.maximum),
                     })
@@ -192,8 +189,8 @@ mod tests {
     fn test_map_limits() {
         let fiat_currencies: Vec<FiatCurrency> = serde_json::from_str(include_str!("../../../testdata/banxa/fiat_currencies.json")).unwrap();
 
-        let buy_limits = map_limits(&fiat_currencies, FiatQuoteType::Buy);
-        let sell_limits = map_limits(&fiat_currencies, FiatQuoteType::Sell);
+        let buy_limits = map_limits(&fiat_currencies);
+        let sell_limits = map_limits(&fiat_currencies);
 
         assert_eq!(buy_limits.len(), 4); // 2 EUR + 2 USD payment methods (sepa-bank-transfer not supported)
         assert_eq!(sell_limits.len(), 4);
