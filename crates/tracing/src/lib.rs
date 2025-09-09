@@ -50,7 +50,6 @@ pub fn error_with_context<E: std::error::Error + ?Sized>(message: &str, error: &
         tracing::error!("{}: {}", message, error);
     });
     sentry::configure_scope(|scope| {
-        scope.set_tag("error_type", error.to_string());
         for (key, value) in context {
             scope.set_tag(key, value);
         }

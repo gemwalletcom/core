@@ -56,9 +56,9 @@ impl TransactionFee {
         }
     }
 
-    pub fn new_gas_price_type(gas_price_type: GasPriceType, gas_limit: BigInt, options: HashMap<FeeOption, BigInt>) -> Self {
+    pub fn new_gas_price_type(gas_price_type: GasPriceType, base_fee: BigInt, gas_limit: BigInt, options: HashMap<FeeOption, BigInt>) -> Self {
         Self {
-            fee: gas_price_type.total_fee() + options.values().sum::<BigInt>(),
+            fee: base_fee + options.values().sum::<BigInt>(),
             gas_price_type,
             gas_limit,
             options,
@@ -93,5 +93,36 @@ mod tests {
         assert_eq!(fee.fee, BigInt::from(100000u64)); // 100 * 1000
         assert_eq!(fee.gas_price_type.gas_price(), BigInt::from(100u64));
         assert_eq!(fee.gas_limit, BigInt::from(1000u64));
+    }
+
+    #[test]
+    fn test_new_gas_price_type() {
+        // Without options
+        let fee = TransactionFee::new_gas_price_type(
+            GasPriceType::regular(BigInt::from(200)),
+            BigInt::from(50000),
+            BigInt::from(500),
+            HashMap::new(),
+        );
+        assert_eq!(fee.fee, BigInt::from(50000));
+        assert_eq!(fee.gas_limit, BigInt::from(500));
+
+        // With options
+        let fee = TransactionFee::new_gas_price_type(
+            GasPriceType::regular(BigInt::from(150)),
+            BigInt::from(30000),
+            BigInt::from(400),
+            HashMap::from([(FeeOption::TokenAccountCreation, BigInt::from(5000))]),
+        );
+        assert_eq!(fee.fee, BigInt::from(35000)); // 30000 + 5000
+
+        // With EIP-1559
+        let fee = TransactionFee::new_gas_price_type(
+            GasPriceType::eip1559(BigInt::from(300), BigInt::from(10)),
+            BigInt::from(60000),
+            BigInt::from(200),
+            HashMap::new(),
+        );
+        assert_eq!(fee.gas_price_type.priority_fee(), BigInt::from(10));
     }
 }

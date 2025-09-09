@@ -34,7 +34,7 @@ use gem_evm::{
         deployment::AcrossDeployment,
         fees::{self, LpFeeCalculator, RateModel, RelayerFeeCalculator},
     },
-    erc20::IERC20,
+    contracts::erc20::IERC20,
     jsonrpc::TransactionObject,
     weth::WETH9,
 };

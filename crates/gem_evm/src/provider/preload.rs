@@ -1,14 +1,23 @@
-use std::error::Error;
-
 use crate::fee_calculator::{get_fee_history_blocks, get_reward_percentiles};
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::ChainTransactionLoad;
 #[cfg(feature = "rpc")]
-use primitives::{FeeRate, TransactionInputType, TransactionLoadMetadata, TransactionPreloadInput};
+use num_bigint::BigInt;
+#[cfg(feature = "rpc")]
+use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+#[cfg(feature = "rpc")]
+use serde_serializers::bigint::bigint_from_hex_str;
+use std::collections::HashMap;
+use std::error::Error;
 
-use crate::provider::preload_mapper::{map_transaction_fee_rates, map_transaction_preload};
+#[cfg(feature = "rpc")]
+use super::preload_optimism::OptimismGasOracle;
+use crate::provider::preload_mapper::{
+    bigint_to_hex_string, bytes_to_hex_string, calculate_gas_limit_with_increase, get_extra_fee_gas_limit, get_transaction_data, get_transaction_to,
+    get_transaction_value, map_transaction_fee_rates, map_transaction_preload,
+};
 use crate::rpc::client::EthereumClient;
 use gem_client::Client;
 
@@ -28,6 +37,50 @@ impl<C: Client + Clone> ChainTransactionLoad for EthereumClient<C> {
             .await?;
 
         map_transaction_fee_rates(self.chain, &fee_history)
+    }
+
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        self.map_transaction_load(input).await
+    }
+}
+
+#[cfg(feature = "rpc")]
+impl<C: Client + Clone> EthereumClient<C> {
+    pub async fn map_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        let data = get_transaction_data(self.chain, &input)?;
+        let to = get_transaction_to(self.chain, &input)?;
+        let value = get_transaction_value(self.chain, &input)?;
+
+        let gas_estimate = {
+            let estimate = self
+                .estimate_gas(
+                    &input.sender_address,
+                    &to,
+                    Some(&bigint_to_hex_string(&value)),
+                    Some(&bytes_to_hex_string(&data)),
+                )
+                .await?;
+            bigint_from_hex_str(&estimate)?
+        };
+        let gas_limit = calculate_gas_limit_with_increase(gas_estimate);
+        let fee = self.calculate_fee(&input, &gas_limit).await?;
+
+        Ok(TransactionLoadData {
+            fee,
+            metadata: input.metadata.clone(),
+        })
+    }
+
+    pub async fn calculate_fee(&self, input: &TransactionLoadInput, gas_limit: &BigInt) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
+        if self.chain.is_opstack() {
+            OptimismGasOracle::new(self.chain, self.clone()).calculate_fee(input, gas_limit).await
+        } else {
+            let extra_gas_limit = get_extra_fee_gas_limit(input)?;
+            let gas_limit = gas_limit + &extra_gas_limit;
+            let fee = input.gas_price.gas_price() * &gas_limit;
+
+            Ok(TransactionFee::new_gas_price_type(input.gas_price.clone(), fee, gas_limit, HashMap::new()))
+        }
     }
 }
 

@@ -3,7 +3,7 @@ pub mod model;
 
 use alloy_primitives::Address;
 use alloy_sol_types::SolCall;
-use gem_evm::erc20::IERC20;
+use gem_evm::contracts::erc20::IERC20;
 
 use crate::swapper::SwapperError;
 

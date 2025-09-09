@@ -4,7 +4,7 @@ use alloy_primitives::hex;
 use alloy_sol_types::SolInterface;
 use anyhow::{anyhow, Result};
 
-use crate::erc20::IERC20::IERC20Calls;
+use crate::contracts::erc20::IERC20::IERC20Calls;
 
 #[derive(Debug, PartialEq)]
 pub struct DecodedCallParam {

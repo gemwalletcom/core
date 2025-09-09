@@ -12,7 +12,7 @@ pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_ty
             BigInt::from(input_type.get_asset().id.chain.token_activation_fee().unwrap_or(0)),
         );
     }
-    TransactionFee::new_gas_price_type(gas_price_type.clone(), get_gas_limit(input_type), options)
+    TransactionFee::new_gas_price_type(gas_price_type.clone(), gas_price_type.total_fee(), get_gas_limit(input_type), options)
 }
 
 pub fn calculate_priority_fee(input_type: &TransactionInputType, prioritization_fees: &[SolanaPrioritizationFee]) -> BigInt {
