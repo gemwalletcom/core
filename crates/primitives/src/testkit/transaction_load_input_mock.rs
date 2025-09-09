@@ -27,5 +27,4 @@ impl TransactionLoadInput {
             metadata: TransactionLoadMetadata::None,
         }
     }
-
 }

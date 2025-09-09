@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{Asset, FiatQuoteType};
 use crate::currency::Currency;
+use crate::{Asset, FiatQuoteType};
 
 pub enum FiatQuoteAmount {
     Fiat(f64),

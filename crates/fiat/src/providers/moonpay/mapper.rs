@@ -179,26 +179,26 @@ mod tests {
     fn test_map_asset_with_limits() {
         let assets: Vec<Asset> = serde_json::from_str(include_str!("../../../testdata/moonpay/assets.json")).expect("Failed to parse test data");
         let cardano = assets.iter().find(|a| a.code == "ada").expect("Cardano not found");
-        
+
         let result = MoonPayClient::map_asset(cardano.clone()).expect("Failed to map asset");
-        
+
         assert_eq!(result.symbol, "ada");
         assert_eq!(result.chain, Some(Chain::Cardano));
         assert!(result.enabled);
-        
+
         assert_eq!(result.buy_limits.len(), 3);
         let card_limit = result.buy_limits.iter().find(|limit| limit.payment_type == PaymentType::Card).unwrap();
         assert_eq!(card_limit.min_amount, Some(6.1));
         assert_eq!(card_limit.max_amount, None);
-        
+
         assert!(result.buy_limits.iter().any(|limit| limit.payment_type == PaymentType::ApplePay));
         assert!(result.buy_limits.iter().any(|limit| limit.payment_type == PaymentType::GooglePay));
-        
+
         assert_eq!(result.sell_limits.len(), 3);
         let sell_card_limit = result.sell_limits.iter().find(|limit| limit.payment_type == PaymentType::Card).unwrap();
         assert_eq!(sell_card_limit.min_amount, Some(24.3607));
         assert_eq!(sell_card_limit.max_amount, Some(12000.0));
-        
+
         assert!(result.sell_limits.iter().any(|limit| limit.payment_type == PaymentType::ApplePay));
         assert!(result.sell_limits.iter().any(|limit| limit.payment_type == PaymentType::GooglePay));
     }

@@ -186,5 +186,4 @@ mod fiat_integration_tests {
 
         Ok(())
     }
-
 }

@@ -261,7 +261,7 @@ mod tests {
     #[test]
     fn test_encode_claim_call() {
         let data = encode_claim_call("0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A", 0).unwrap();
-        
+
         // Check the function selector
         assert_eq!(hex::encode(&data[0..4]), "aad3ec96");
     }

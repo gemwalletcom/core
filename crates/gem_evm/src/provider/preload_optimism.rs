@@ -12,10 +12,7 @@ use crate::rpc::client::EthereumClient;
 use gem_client::Client;
 use primitives::GasPriceType;
 
-use super::preload_mapper::{
-    bytes_to_hex_string, get_extra_fee_gas_limit, get_transaction_data, get_transaction_to,
-    get_transaction_value,
-};
+use super::preload_mapper::{bytes_to_hex_string, get_extra_fee_gas_limit, get_transaction_data, get_transaction_to, get_transaction_value};
 
 const OPTIMISM_GAS_ORACLE_CONTRACT: &str = "0x420000000000000000000000000000000000000F";
 

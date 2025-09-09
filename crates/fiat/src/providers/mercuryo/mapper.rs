@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use super::models::{Asset, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction};
+use super::models::{
+    Asset, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction,
+};
 use crate::{model::FiatProviderAsset, providers::mercuryo::models::FiatPaymentMethod};
 use primitives::{currency::Currency, fiat_assets::FiatAssetLimits, PaymentType};
 use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};

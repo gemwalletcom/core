@@ -100,7 +100,6 @@ impl BanxaClient {
         self.client.get(&url).headers(self.get_headers()).send().await?.json().await
     }
 
-
     pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, fiat_mapping: FiatMapping, quote: Quote) -> FiatQuote {
         let redirect_url = self.get_redirect_buy_url(request.clone(), fiat_mapping);
         let crypto_value = BigNumberFormatter::f64_as_value(quote.crypto_amount, request.asset.decimals as u32).unwrap_or_default();

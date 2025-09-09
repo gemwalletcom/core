@@ -208,14 +208,14 @@ impl<C: Client + Clone> EthereumClient<C> {
             "from": from,
             "to": to
         });
-        
+
         if let Some(value) = value {
             params_obj["value"] = json!(value);
         }
         if let Some(data) = data {
             params_obj["data"] = json!(data);
         }
-        
+
         let params = json!([params_obj, "latest"]);
         Ok(self.client.call("eth_estimateGas", params).await?)
     }

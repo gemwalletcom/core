@@ -98,12 +98,7 @@ mod tests {
     #[test]
     fn test_new_gas_price_type() {
         // Without options
-        let fee = TransactionFee::new_gas_price_type(
-            GasPriceType::regular(BigInt::from(200)),
-            BigInt::from(50000),
-            BigInt::from(500),
-            HashMap::new(),
-        );
+        let fee = TransactionFee::new_gas_price_type(GasPriceType::regular(BigInt::from(200)), BigInt::from(50000), BigInt::from(500), HashMap::new());
         assert_eq!(fee.fee, BigInt::from(50000));
         assert_eq!(fee.gas_limit, BigInt::from(500));
 

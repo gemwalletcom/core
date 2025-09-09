@@ -19,7 +19,11 @@ impl FiatProvider for MoonPayClient {
 
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
-            .get_buy_quote(request_map.symbol.to_lowercase(), request.fiat_currency.as_ref().to_lowercase(), request.fiat_amount)
+            .get_buy_quote(
+                request_map.symbol.to_lowercase(),
+                request.fiat_currency.as_ref().to_lowercase(),
+                request.fiat_amount,
+            )
             .await?;
 
         if quote.total_amount > request.fiat_amount {
@@ -35,7 +39,11 @@ impl FiatProvider for MoonPayClient {
             return Err(FiatError::FiatSellNotAllowed.into());
         }
         let quote = self
-            .get_sell_quote(request_map.symbol.to_lowercase(), request.fiat_currency.as_ref().to_lowercase(), request.crypto_amount)
+            .get_sell_quote(
+                request_map.symbol.to_lowercase(),
+                request.fiat_currency.as_ref().to_lowercase(),
+                request.crypto_amount,
+            )
             .await?;
 
         Ok(self.get_sell_fiat_quote(request, quote))

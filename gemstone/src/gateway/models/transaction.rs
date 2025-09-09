@@ -1,5 +1,6 @@
 use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
+use primitives::stake_type::StakeData;
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::FeeOption;
 use primitives::SwapProvider;
@@ -8,7 +9,6 @@ use primitives::{
     TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputType,
     WalletConnectionSessionAppMetadata,
 };
-use primitives::stake_type::StakeData;
 use std::collections::HashMap;
 use std::str::FromStr;
 

@@ -171,10 +171,7 @@ mod tests {
     fn test_unstake_uses_object_reference() {
         let delegation_id = "0x1234567890abcdef1234567890abcdef12345678";
         let delegation = Delegation::mock_with_id(delegation_id.to_string());
-        let input_type = TransactionInputType::Stake(
-            Asset::from_chain(Chain::Sui),
-            StakeType::Unstake(delegation),
-        );
+        let input_type = TransactionInputType::Stake(Asset::from_chain(Chain::Sui), StakeType::Unstake(delegation));
         let input = TransactionLoadInput::mock_with_input_type(input_type);
 
         let gas_coins = vec![SuiCoin {

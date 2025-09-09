@@ -115,7 +115,6 @@ impl TransakClient {
         self.client.get(&url).send().await?.json().await
     }
 
-
     pub async fn refresh_token(&self) -> Result<Data<TokenResponse>, reqwest::Error> {
         let url = format!("{TRANSAK_API_URL}/partners/api/v2/refresh-token?apiKey={}", self.api_key);
         let body = serde_json::json!({

@@ -1,4 +1,4 @@
-use crate::gateway::{GemUTXO, GemStakeData};
+use crate::gateway::{GemStakeData, GemUTXO};
 use num_bigint::BigInt;
 use primitives::solana_token_program::SolanaTokenProgramId;
 use primitives::{transaction_load_metadata::SuiCoin, TransactionLoadMetadata};
@@ -181,8 +181,8 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano {
                 utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
             },
-            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => GemTransactionLoadMetadata::Evm { 
-                nonce, 
+            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => GemTransactionLoadMetadata::Evm {
+                nonce,
                 chain_id,
                 stake_data: stake_data.map(|sd| sd.into()),
             },
@@ -298,13 +298,11 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano {
                 utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
             },
-            GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => {
-                TransactionLoadMetadata::Evm { 
-                    nonce, 
-                    chain_id,
-                    stake_data: stake_data.map(|sd| sd.into()),
-                }
-            }
+            GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => TransactionLoadMetadata::Evm {
+                nonce,
+                chain_id,
+                stake_data: stake_data.map(|sd| sd.into()),
+            },
             GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {
                 sequence,

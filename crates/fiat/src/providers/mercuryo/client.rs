@@ -99,7 +99,6 @@ impl MercuryoClient {
         self.client.get(&url).query(&query).send().await?.json().await
     }
 
-
     pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
         let crypto_value = BigNumberFormatter::f64_as_value(quote.clone().amount, request.asset.decimals as u32).unwrap_or_default();
         FiatQuote {

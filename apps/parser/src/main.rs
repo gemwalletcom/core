@@ -22,9 +22,9 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.last().cloned().unwrap_or_default();
     let settings = Settings::new().unwrap();
-    
+
     let _tracing = SentryTracing::init(&settings, "parser");
-    
+
     let database = Arc::new(Mutex::new(DatabaseClient::new(&settings.postgres.url)));
 
     if mode == "consumers" {
