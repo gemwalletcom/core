@@ -78,6 +78,8 @@ pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
 pub mod address_name;
 pub use self::address_name::AddressName;
+pub mod address_status;
+pub use self::address_status::AddressStatus;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;

@@ -269,6 +269,16 @@ impl GemGateway {
         Ok(utxos.into_iter().map(|u| u.into()).collect())
     }
 
+    pub async fn get_address_status(&self, chain: Chain, address: String) -> Result<Vec<GemAddressStatus>, GatewayError> {
+        let status = self
+            .provider(chain)
+            .await?
+            .get_address_status(address)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(status.into_iter().map(|s| s.into()).collect())
+    }
+
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
         let metadata = self
             .provider(chain)
