@@ -40,7 +40,6 @@ num-bigint = { workspace = true }
 num-traits = { workspace = true }
 bigdecimal = { workspace = true }
 
-
 # rpc feature
 chrono = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }

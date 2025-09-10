@@ -28,6 +28,10 @@ pub struct TronAccountPermission {
 pub struct TronAccountUsage {
     pub free_net_used: Option<u64>,
     pub free_net_limit: Option<u64>,
+    #[serde(rename = "NetUsed")]
+    pub net_used: Option<u64>,
+    #[serde(rename = "NetLimit")]
+    pub net_limit: Option<u64>,
     #[serde(rename = "EnergyUsed")]
     pub energy_used: Option<u64>,
     #[serde(rename = "EnergyLimit")]

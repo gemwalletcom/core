@@ -35,8 +35,8 @@ impl<C: Client> ChainBalances for TronClient<C> {
     }
 
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let (account, reward) = futures::try_join!(self.get_account(&address), self.get_reward(&address))?;
-        Ok(Some(map_staking_balance(&account, &reward)?))
+        let (account, reward, usage) = futures::try_join!(self.get_account(&address), self.get_reward(&address), self.get_account_usage(&address))?;
+        Ok(Some(map_staking_balance(&account, &reward, &usage)?))
     }
 }
 
@@ -95,6 +95,19 @@ mod chain_integration_tests {
         assert_eq!(balance.asset_id.chain, Chain::Tron);
         assert_eq!(balance.asset_id.token_id, None);
         assert!(balance.balance.staked > BigUint::from(0u32));
+
+        let metadata = balance.balance.metadata.as_ref().ok_or("Metadata not found")?;
+
+        println!("metadata: {:#?}", metadata);
+
+        assert!(metadata.bandwidth_available > 0);
+        assert!(metadata.bandwidth_total >= 600);
+
+        //assert!(metadata.energy_available);
+        //assert!(metadata.energy_total > 0);
+
+        assert!(metadata.bandwidth_available <= metadata.bandwidth_total);
+        assert!(metadata.energy_available <= metadata.energy_total);
 
         Ok(())
     }

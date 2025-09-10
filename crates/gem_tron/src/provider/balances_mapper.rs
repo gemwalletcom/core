@@ -1,9 +1,9 @@
 use num_bigint::BigUint;
 use num_traits::Num;
-use primitives::{AssetBalance, AssetId, Chain};
+use primitives::{asset_balance::BalanceMetadata, AssetBalance, AssetId, Chain};
 use std::error::Error;
 
-use crate::models::{TronAccount, TronReward};
+use crate::models::{TronAccount, TronAccountUsage, TronReward};
 
 pub fn map_coin_balance(account: &TronAccount) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let available_balance = BigUint::from(account.balance.unwrap_or(0));
@@ -21,7 +21,7 @@ pub fn map_token_balance(balance_hex: &str, asset_id: AssetId) -> Result<AssetBa
     Ok(AssetBalance::new(asset_id, balance))
 }
 
-pub fn map_staking_balance(account: &TronAccount, reward: &TronReward) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &TronAccountUsage) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let staked_amount = account
         .frozen_v2
         .as_ref()
@@ -36,11 +36,26 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward) -> Result
 
     let rewards_amount = reward.reward;
 
-    Ok(AssetBalance::new_staking(
+    let energy_total = usage.energy_limit.unwrap_or(0);
+    let energy_available = energy_total - usage.energy_used.unwrap_or(0);
+
+    let bandwidth_total = usage.free_net_limit.unwrap_or(0) + usage.net_limit.unwrap_or(0);
+    let bandwidth_available = (usage.free_net_limit.unwrap_or(0) - usage.free_net_used.unwrap_or(0))
+        + (usage.net_limit.unwrap_or(0) - usage.net_used.unwrap_or(0));
+
+    let metadata = BalanceMetadata {
+        energy_available,
+        energy_total,
+        bandwidth_available,
+        bandwidth_total,
+    };
+
+    Ok(AssetBalance::new_staking_with_metadata(
         AssetId::from_chain(Chain::Tron),
         BigUint::from(staked_amount),
         BigUint::from(pending_amount),
         BigUint::from(rewards_amount),
+        metadata,
     ))
 }
 
@@ -146,8 +161,16 @@ mod tests {
         };
 
         let reward = TronReward { reward: 100000 };
+        let usage = TronAccountUsage {
+            energy_limit: Some(1000000),
+            energy_used: Some(500000),
+            free_net_limit: Some(1000000),
+            free_net_used: Some(500000),
+            net_used: Some(200000),
+            net_limit: Some(1000000),
+        };
 
-        let balance = map_staking_balance(&account, &reward).unwrap();
+        let balance = map_staking_balance(&account, &reward, &usage).unwrap();
 
         assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
         assert_eq!(balance.balance.staked, BigUint::from(8000000_u64));
@@ -167,12 +190,82 @@ mod tests {
         };
 
         let reward = TronReward { reward: 0 };
-
-        let balance = map_staking_balance(&account, &reward).unwrap();
+        let usage = TronAccountUsage {
+            energy_limit: Some(1000000),
+            energy_used: Some(500000),
+            free_net_limit: Some(1000000),
+            free_net_used: Some(500000),
+            net_used: Some(200000),
+            net_limit: Some(1000000),
+        };
+        let balance = map_staking_balance(&account, &reward, &usage).unwrap();
 
         assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
         assert_eq!(balance.balance.staked, BigUint::from(0_u64));
         assert_eq!(balance.balance.pending, BigUint::from(0_u64));
         assert_eq!(balance.balance.rewards, BigUint::from(0_u64));
+    }
+
+    #[test]
+    fn test_map_staking_balance_metadata() {
+        let account = TronAccount {
+            balance: Some(1000),
+            address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            active_permission: None,
+            votes: None,
+            frozen_v2: Some(vec![TronFrozen {
+                frozen_type: Some("ENERGY".to_string()),
+                amount: Some(1000000),
+            }]),
+            unfrozen_v2: None,
+        };
+
+        let reward = TronReward { reward: 50000 };
+        let usage = TronAccountUsage {
+            energy_limit: Some(2000000),
+            energy_used: Some(800000),
+            free_net_limit: Some(1500),
+            free_net_used: Some(500),
+            net_used: Some(0),
+            net_limit: Some(5000),
+        };
+
+        let balance = map_staking_balance(&account, &reward, &usage).unwrap();
+        let metadata = balance.balance.metadata.as_ref().unwrap();
+
+        assert_eq!(metadata.energy_available, 1200000);
+        assert_eq!(metadata.energy_total, 2000000);
+        assert_eq!(metadata.bandwidth_available, 6000);
+        assert_eq!(metadata.bandwidth_total, 6500);
+    }
+
+    #[test]
+    fn test_map_staking_balance_metadata_with_none_values() {
+        let account = TronAccount {
+            balance: None,
+            address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            active_permission: None,
+            votes: None,
+            frozen_v2: None,
+            unfrozen_v2: None,
+        };
+
+        let reward = TronReward { reward: 0 };
+        let usage = TronAccountUsage {
+            energy_limit: None,
+            energy_used: None,
+            free_net_limit: None,
+            free_net_used: None,
+            net_used: None,
+            net_limit: None,
+        };
+
+        let balance = map_staking_balance(&account, &reward, &usage).unwrap();
+        let metadata = balance.balance.metadata.as_ref().unwrap();
+
+        assert_eq!(metadata.energy_available, 0);
+        assert_eq!(metadata.energy_total, 0);
+        assert_eq!(metadata.bandwidth_available, 0);
+        assert_eq!(metadata.bandwidth_total, 0);
     }
 }

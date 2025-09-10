@@ -69,6 +69,6 @@ mod tests {
 
         assert_eq!(balance.balance.available, BigUint::from(71414422_u64));
         assert_eq!(balance.balance.reserved, BigUint::from(200000_u64));
-        assert_eq!(balance.is_active, Some(true));
+        assert!(balance.is_active);
     }
 }
