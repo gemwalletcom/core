@@ -37,7 +37,6 @@ pub fn map_asset_chain(network: &str, coin_id: Option<&str>) -> Option<Chain> {
         "berachain" => Some(Chain::Berachain),
         "hyperevm" => Some(Chain::Hyperliquid),
         "hyperliquid" => Some(Chain::HyperCore),
-        "linea" => Some(Chain::Linea),
         "mainnet" => match coin_id? {
             "bitcoin" => Some(Chain::Bitcoin),
             "litecoin" => Some(Chain::Litecoin),
