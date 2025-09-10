@@ -9,7 +9,6 @@ mod model;
 mod name;
 mod nft;
 mod params;
-mod parser;
 mod price_alerts;
 mod prices;
 mod responders;
@@ -36,7 +35,6 @@ use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
 use nft_client::NFTClient;
 use nft_provider::NFTProviderConfig;
-use parser::ParserClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
 use rocket::{routes, Build, Rocket};
@@ -73,7 +71,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(postgres_url, security_providers).await;
-    let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
     let assets_search_client = AssetsSearchClient::new(&search_index_client).await;
@@ -98,7 +95,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(transactions_client))
         .manage(Mutex::new(metrics_client))
         .manage(Mutex::new(scan_client))
-        .manage(Mutex::new(parser_client))
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
         .manage(Mutex::new(price_alert_client))
@@ -135,9 +131,9 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 subscriptions::delete_subscriptions,
                 transactions::get_transactions_by_device_id_v1,
                 transactions::get_transactions_by_id,
-                parser::get_parser_block,
-                parser::get_parser_block_finalize,
-                parser::get_parser_block_number_latest,
+                chain::transaction::get_block_transactions,
+                chain::transaction::get_block_transactions_finalize,
+                chain::transaction::get_latest_block_number,
                 swap::get_swap_assets,
                 nft::get_nft_assets_old,
                 nft::get_nft_assets_by_chain,

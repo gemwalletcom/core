@@ -57,4 +57,17 @@ impl ChainProviders {
     pub async fn get_staking_apy(&self, chain: Chain) -> Result<f64, Box<dyn Error + Send + Sync>> {
         self.providers.iter().find(|x| x.get_chain() == chain).unwrap().get_staking_apy().await
     }
+
+    pub async fn get_latest_block(&self, chain: Chain) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        self.providers.iter().find(|x| x.get_chain() == chain).unwrap().get_latest_block().await
+    }
+
+    pub async fn get_block_transactions(&self, chain: Chain, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.providers
+            .iter()
+            .find(|x| x.get_chain() == chain)
+            .unwrap()
+            .get_transactions(block_number)
+            .await
+    }
 }
