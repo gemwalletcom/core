@@ -15,6 +15,7 @@ name = "gemstone"
 [features]
 default = []
 reqwest_provider = ["dep:reqwest"]
+swap_integration_tests = ["reqwest_provider"]
 
 [dependencies]
 primitives = { path = "../crates/primitives" }

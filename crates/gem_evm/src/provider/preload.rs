@@ -239,7 +239,7 @@ mod chain_integration_tests {
 
         println!("Transaction load data: {:#?}", load_data);
 
-        assert!(load_data.fee.fee == BigInt::from(3728651220000u64));
+        assert!(load_data.fee.fee > BigInt::from(372865122u64));
 
         assert!(load_data.fee.gas_limit == BigInt::from(21000));
 

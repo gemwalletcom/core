@@ -40,8 +40,8 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
     let energy_available = energy_total - usage.energy_used.unwrap_or(0);
 
     let bandwidth_total = usage.free_net_limit.unwrap_or(0) + usage.net_limit.unwrap_or(0);
-    let bandwidth_available = (usage.free_net_limit.unwrap_or(0) - usage.free_net_used.unwrap_or(0))
-        + (usage.net_limit.unwrap_or(0) - usage.net_used.unwrap_or(0));
+    let bandwidth_available =
+        (usage.free_net_limit.unwrap_or(0) - usage.free_net_used.unwrap_or(0)) + (usage.net_limit.unwrap_or(0) - usage.net_used.unwrap_or(0));
 
     let metadata = BalanceMetadata {
         energy_available,
