@@ -31,9 +31,7 @@ pub struct ProxyRequestService {
     pub domain_configs: HashMap<String, Domain>,
     pub metrics: Metrics,
     pub cache: RequestCache,
-    // Reuse HTTP client to avoid expensive recreation on each request
     pub client: HttpClient,
-    // Pre-allocated header filter list to avoid array creation on each request
     pub keep_headers: Arc<[HeaderName]>,
 }
 
@@ -104,15 +102,16 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                         } else {
                             None
                         };
+                        
+                        let rpc_method = if method == hyper::Method::POST { extract_rpc_method(&body) } else { None };
+                        let method_label = rpc_method.as_deref().unwrap_or(&path);
+                        metrics.add_proxy_request_by_method(host.as_str(), method_label);
 
                         if let Some(ref key) = cache_key {
                             if let Some(cached) = cache.get(&chain, key).await {
-                                let rpc_method = if method == hyper::Method::POST { extract_rpc_method(&body) } else { None };
+                                metrics.add_cache_hit(host.as_str(), method_label);
 
-                                let cache_label = rpc_method.as_deref().unwrap_or(&path);
-                                metrics.add_cache_hit(host.as_str(), cache_label);
-
-                                if let Some(ref method_name) = rpc_method {
+                                if let Some(ref rpc_method) = rpc_method {
                                     info_with_context(
                                         "Cache HIT",
                                         &[
@@ -120,7 +119,7 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                                             ("host", host.as_str()),
                                             ("method", method.as_str()),
                                             ("path", &path),
-                                            ("rpc_method", method_name.as_str()),
+                                            ("rpc_method", rpc_method.as_str()),
                                         ],
                                     );
                                 } else {
@@ -130,27 +129,22 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                                     );
                                 }
 
-                                metrics.add_proxy_response(host.as_str(), cache_label, url.uri.host().unwrap_or_default(), cached.status, 0);
+                                metrics.add_proxy_response(host.as_str(), method_label, url.uri.host().unwrap_or_default(), cached.status, 0);
                                 return Self::cached_response(cached).await;
                             }
                         }
 
-                        // Only parse request if we have a cache miss - avoid redundant parsing
-                        let rpc_method = if method == hyper::Method::POST { extract_rpc_method(&body) } else { None };
-
                         let mut context = vec![("host", host.as_str()), ("method", method.as_str()), ("uri", path.as_str())];
-                        if let Some(ref rpc_method_name) = rpc_method {
-                            context.push(("rpc_method", rpc_method_name.as_str()));
+                        if let Some(ref rpc_method) = rpc_method {
+                            context.push(("rpc_method", rpc_method.as_str()));
                         }
                         context.push(("user_agent", &user_agent_str));
                         info_with_context("Incoming request", &context);
 
                         if cache_key.is_some() {
-                            let cache_label = rpc_method.as_deref().unwrap_or(&path);
-                            metrics.add_cache_miss(host.as_str(), cache_label);
+                            metrics.add_cache_miss(host.as_str(), method_label);
                         }
 
-                        // Avoid double body cloning - reuse the body directly
                         let new_req = Request::builder()
                             .method(parts.method)
                             .uri(parts.uri)
@@ -174,23 +168,13 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                             ],
                         );
 
-                        if let Some(ref rpc_method_name) = rpc_method {
-                            metrics.add_proxy_response(
-                                host.as_str(),
-                                rpc_method_name,
-                                url.uri.host().unwrap_or_default(),
-                                status,
-                                now.elapsed().as_millis(),
-                            );
-                        } else {
-                            metrics.add_proxy_response(
-                                host.as_str(),
-                                url.uri.path(),
-                                url.uri.host().unwrap_or_default(),
-                                status,
-                                now.elapsed().as_millis(),
-                            );
-                        }
+                        metrics.add_proxy_response(
+                            host.as_str(),
+                            method_label,
+                            url.uri.host().unwrap_or_default(),
+                            status,
+                            now.elapsed().as_millis(),
+                        );
 
                         let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers).await?;
 
@@ -215,8 +199,8 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
 
                                 let mut context = vec![("chain", chain.as_ref()), ("host", host.as_str())];
 
-                                if let Some(ref rpc_method_name) = rpc_method {
-                                    context.push(("rpc_method", rpc_method_name.as_str()));
+                                if let Some(ref rpc_method) = rpc_method {
+                                    context.push(("rpc_method", rpc_method.as_str()));
                                 } else {
                                     context.push(("path", path.as_str()));
                                     context.push(("method", method.as_str()));
@@ -237,6 +221,8 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                             "Incoming request",
                             &[("host", &host), ("method", method.as_str()), ("uri", &path), ("user_agent", &user_agent_str)],
                         );
+                        
+                        metrics.add_proxy_request_by_method(&host, &path);
 
                         let (parts, body) = req.into_parts();
                         let body_bytes = body.collect().await?.to_bytes();

@@ -14,6 +14,7 @@ pub struct Metrics {
     registry: Arc<Registry>,
     proxy_requests: Family<ProxyRequestLabels, Counter>,
     proxy_requests_by_user_agent: Family<ProxyRequestByAgentLabels, Gauge>,
+    proxy_requests_by_method: Family<ProxyRequestByMethodLabels, Counter>,
     proxy_response_latency: Family<ResponseLabels, Histogram>,
     node_host_current: Family<HostCurrentStateLabels, Gauge>,
     #[allow(dead_code)]
@@ -32,6 +33,12 @@ pub struct ProxyRequestLabels {
 pub struct ProxyRequestByAgentLabels {
     host: String,
     user_agent: String,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+pub struct ProxyRequestByMethodLabels {
+    host: String,
+    method: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -63,6 +70,7 @@ impl Metrics {
     pub fn new(config: MetricsConfig) -> Self {
         let proxy_requests = Family::<ProxyRequestLabels, Counter>::default();
         let proxy_requests_by_user_agent = Family::<ProxyRequestByAgentLabels, Gauge>::default();
+        let proxy_requests_by_method = Family::<ProxyRequestByMethodLabels, Counter>::default();
         let proxy_response_latency =
             Family::<ResponseLabels, Histogram>::new_with_constructor(|| {
                 Histogram::new(exponential_buckets(50.0, 1.44, 12))
@@ -82,6 +90,11 @@ impl Metrics {
             "proxy_requests_by_user_agent_total",
             "Proxy requests by host and user agent",
             proxy_requests_by_user_agent.clone(),
+        );
+        registry.register(
+            "proxy_requests_by_method",
+            "Proxy requests by host and method (HTTP path or RPC method)",
+            proxy_requests_by_method.clone(),
         );
         registry.register(
             "proxy_response_latency",
@@ -113,6 +126,7 @@ impl Metrics {
             registry: Arc::new(registry),
             proxy_requests,
             proxy_requests_by_user_agent,
+            proxy_requests_by_method,
             proxy_response_latency,
             node_host_current,
             node_block_latest,
@@ -147,6 +161,16 @@ impl Metrics {
             .get_or_create(&ProxyRequestByAgentLabels {
                 host: host.to_string(),
                 user_agent: categorized_agent,
+            })
+            .inc();
+    }
+    
+    pub fn add_proxy_request_by_method(&self, host: &str, method: &str) {
+        let method = self.truncate_path(method);
+        self.proxy_requests_by_method
+            .get_or_create(&ProxyRequestByMethodLabels {
+                host: host.to_string(),
+                method,
             })
             .inc();
     }
