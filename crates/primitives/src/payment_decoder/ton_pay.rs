@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use super::error::{PaymentDecoderError, Result};
 
 use crate::{AssetId, Chain};
 
@@ -14,7 +14,7 @@ pub struct TonPayment {
 pub fn parse(uri: &str) -> Result<TonPayment> {
     let scheme = format!("{TON_PAY_SCHEME}:");
     if !uri.starts_with(&scheme) {
-        return Err(anyhow!("Not supported scheme"));
+        return Err(PaymentDecoderError::InvalidScheme);
     }
     let query_part = &uri[scheme.len()..];
     let recipient = extract_address(query_part)?;
@@ -32,7 +32,7 @@ fn extract_address(query_part: &str) -> Result<String> {
     } else if parts.len() == 1 {
         Ok(parts[0].to_string())
     } else {
-        Err(anyhow!("Invalid URI format: {}", query_part))
+        Err(PaymentDecoderError::InvalidFormat(format!("Invalid URI format: {}", query_part)))
     }
 }
 
