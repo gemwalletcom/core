@@ -2540,7 +2540,6 @@ dependencies = [
  "chain_traits",
  "config",
  "futures",
- "gem_chain_rpc",
  "gem_tracing",
  "http-body-util",
  "hyper 1.7.0",

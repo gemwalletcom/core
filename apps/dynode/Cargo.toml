@@ -4,7 +4,6 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-# Workspace dependencies
 config = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -12,20 +11,17 @@ tokio = { workspace = true }
 futures = { workspace = true }
 prometheus-client = { workspace = true }
 reqwest = { workspace = true }
+async-trait = { workspace = true }
 
-# Internal crates
 primitives = { path = "../../crates/primitives" }
 gem_tracing = { path = "../../crates/tracing" }
-gem_chain_rpc = { path = "../../crates/gem_chain_rpc" }
 chain_traits = { path = "../../crates/chain_traits" }
 settings_chain = { path = "../../crates/settings_chain" }
 
-# Dynode-specific dependencies (not in workspace)
-async-trait = { version = "0.1.89" }
 bytes = { version = "1.10.1" }
-hyper = { version = "1.6.0", features = ["server"] }
-hyper-util = { version = "0.1.11", features = ["client-legacy", "http1"] }
+hyper = { version = "1.7.0", features = ["server"] }
+hyper-util = { version = "0.1.16", features = ["client-legacy", "http1"] }
 hyper-tls = { version = "0.6.0" }
 http-body-util = { version = "0.1.3" }
-regex = { version = "1.11.1" }
-moka = { version = "0.12", features = ["future"] }
+regex = { version = "1.11.2" }
+moka = { version = "0.12.10", features = ["future"] }
