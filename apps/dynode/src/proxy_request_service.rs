@@ -102,7 +102,7 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                         } else {
                             None
                         };
-                        
+
                         let rpc_method = if method == hyper::Method::POST { extract_rpc_method(&body) } else { None };
                         let method_label = rpc_method.as_deref().unwrap_or(&path);
                         metrics.add_proxy_request_by_method(host.as_str(), method_label);
@@ -111,34 +111,29 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                             if let Some(cached) = cache.get(&chain, key).await {
                                 metrics.add_cache_hit(host.as_str(), method_label);
 
-                                if let Some(ref rpc_method) = rpc_method {
-                                    info_with_context(
-                                        "Cache HIT",
-                                        &[
-                                            ("chain", chain.as_ref()),
-                                            ("host", host.as_str()),
-                                            ("method", method.as_str()),
-                                            ("path", &path),
-                                            ("rpc_method", rpc_method.as_str()),
-                                        ],
-                                    );
-                                } else {
-                                    info_with_context(
-                                        "Cache HIT",
-                                        &[("chain", chain.as_ref()), ("host", host.as_str()), ("method", method.as_str()), ("path", &path)],
-                                    );
-                                }
+                                info_with_context(
+                                    "Cache HIT",
+                                    &[
+                                        ("chain", chain.as_ref()),
+                                        ("host", host.as_str()),
+                                        ("method", method.as_str()),
+                                        ("path", &path),
+                                        ("rpc_method", method_label),
+                                    ],
+                                );
 
                                 metrics.add_proxy_response(host.as_str(), method_label, url.uri.host().unwrap_or_default(), cached.status, 0);
                                 return Self::cached_response(cached).await;
                             }
                         }
 
-                        let mut context = vec![("host", host.as_str()), ("method", method.as_str()), ("uri", path.as_str())];
-                        if let Some(ref rpc_method) = rpc_method {
-                            context.push(("rpc_method", rpc_method.as_str()));
-                        }
-                        context.push(("user_agent", &user_agent_str));
+                        let context = vec![
+                            ("host", host.as_str()),
+                            ("method", method.as_str()),
+                            ("uri", path.as_str()),
+                            ("rpc_method", method_label),
+                            ("user_agent", &user_agent_str),
+                        ];
                         info_with_context("Incoming request", &context);
 
                         if cache_key.is_some() {
@@ -197,17 +192,15 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                                 let ttl_str = ttl.to_string();
                                 let size_str = body_size.to_string();
 
-                                let mut context = vec![("chain", chain.as_ref()), ("host", host.as_str())];
-
-                                if let Some(ref rpc_method) = rpc_method {
-                                    context.push(("rpc_method", rpc_method.as_str()));
-                                } else {
-                                    context.push(("path", path.as_str()));
-                                    context.push(("method", method.as_str()));
-                                }
-
-                                context.push(("ttl_seconds", &ttl_str));
-                                context.push(("size_bytes", &size_str));
+                                let context = vec![
+                                    ("chain", chain.as_ref()),
+                                    ("host", host.as_str()),
+                                    ("method", method.as_str()),
+                                    ("path", path.as_str()),
+                                    ("rpc_method", method_label),
+                                    ("ttl_seconds", &ttl_str),
+                                    ("size_bytes", &size_str),
+                                ];
 
                                 info_with_context("Cache SET", &context);
 
@@ -221,7 +214,7 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                             "Incoming request",
                             &[("host", &host), ("method", method.as_str()), ("uri", &path), ("user_agent", &user_agent_str)],
                         );
-                        
+
                         metrics.add_proxy_request_by_method(&host, &path);
 
                         let (parts, body) = req.into_parts();
