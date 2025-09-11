@@ -105,6 +105,7 @@ impl GemSwapper {
                 Box::new(ProxyProvider::new_cetus_aggregator()),
                 Box::new(ProxyProvider::new_relay()),
                 Box::new(uniswap::universal_router::new_aerodrome()),
+                Box::new(proxy::new_near_intents()),
             ],
         }
     }
