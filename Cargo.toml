@@ -12,6 +12,7 @@ resolver = "2"
 members = [
     "apps/api",
     "apps/daemon",
+    "apps/dynode",
     "apps/parser",
     "apps/setup",
 
@@ -40,8 +41,7 @@ members = [
     "crates/localizer",
     "crates/job_runner",
     "crates/search_index",
-    "crates/nft_provider",
-    "crates/nft_client",
+    "crates/nft",
     "crates/serde_serializers",
     "crates/number_formatter",
     "crates/pricer_dex",

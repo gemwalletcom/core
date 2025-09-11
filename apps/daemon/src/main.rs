@@ -12,7 +12,7 @@ mod transaction;
 mod version;
 
 use crate::model::DaemonService;
-use gem_tracing::{info_with_context, SentryTracing};
+use gem_tracing::{info_with_context, SentryConfig, SentryTracing};
 use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
@@ -29,7 +29,11 @@ pub async fn main() {
     });
 
     let settings = settings::Settings::new().unwrap();
-    let _tracing = SentryTracing::init(&settings, service.as_ref());
+    let sentry_config = settings.sentry.as_ref().map(|s| SentryConfig {
+        dsn: s.dsn.clone(),
+        sample_rate: s.sample_rate,
+    });
+    let _tracing = SentryTracing::init(sentry_config.as_ref(), service.as_ref());
 
     info_with_context("daemon start", &[("service", service.as_ref())]);
 

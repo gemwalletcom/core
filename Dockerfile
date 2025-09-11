@@ -1,7 +1,5 @@
 FROM rust:1.89.0-bookworm AS chef
-# We only pay the installation cost once,
-# it will be cached from the second build onwards
-RUN cargo install cargo-chef --version 0.1.72
+RUN cargo install cargo-chef
 WORKDIR /app
 
 FROM chef AS planner

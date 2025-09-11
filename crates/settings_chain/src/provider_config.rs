@@ -22,6 +22,10 @@ impl ProviderConfig {
         }
     }
 
+    pub fn new_url(chain: Chain, url: &str) -> Self {
+        Self::new(chain, url, NodeType::Default, "", "", "")
+    }
+
     pub fn with_url(&self, url: &str) -> Self {
         Self {
             url: url.to_string(),

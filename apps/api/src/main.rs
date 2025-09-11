@@ -22,19 +22,18 @@ mod websocket_prices;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use ::nft::{NFTClient, NFTProviderConfig};
 use api_connector::PusherClient;
 use assets::{AssetsClient, AssetsSearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::{FiatClient, FiatProviderFactory};
-use gem_tracing::SentryTracing;
+use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
-use nft_client::NFTClient;
-use nft_provider::NFTProviderConfig;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
 use rocket::{routes, Build, Rocket};
@@ -173,7 +172,11 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
 async fn main() {
     let settings = Settings::new().unwrap();
 
-    let _tracing = SentryTracing::init(&settings, "api");
+    let sentry_config = settings.sentry.as_ref().map(|s| SentryConfig {
+        dsn: s.dsn.clone(),
+        sample_rate: s.sample_rate,
+    });
+    let _tracing = SentryTracing::init(sentry_config.as_ref(), "api");
     let service = std::env::args().nth(1).unwrap_or_default();
     let service = APIService::from_str(service.as_str()).ok().unwrap_or(APIService::Api);
 

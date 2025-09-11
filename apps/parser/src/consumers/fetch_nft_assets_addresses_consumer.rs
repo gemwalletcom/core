@@ -1,9 +1,9 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 use tokio::sync::Mutex;
 
+use ::nft::NFTClient;
 use async_trait::async_trait;
 use cacher::CacherClient;
-use nft_client::NFTClient;
 use storage::DatabaseClient;
 use streamer::{consumer::MessageConsumer, ChainAddressPayload, StreamProducer};
 

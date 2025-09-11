@@ -1,6 +1,6 @@
 use crate::params::ChainParam;
 use crate::responders::{ApiError, ApiResponse};
-use nft_client::NFTClient;
+use ::nft::NFTClient;
 use primitives::{response::ResponseResultOld, NFTAsset, NFTData};
 use rocket::http::ContentType;
 use rocket::response::{self, Responder};

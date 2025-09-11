@@ -1,0 +1,76 @@
+domains:
+  - domain: localhost:3000
+    chain: ethereum
+    poll_interval_seconds: 10
+    urls:
+      - url: https://eth.llamarpc.com
+        headers:
+          x-api-key: test
+        urls_override:
+          "/":
+            url: https://rpc.ankr.com/eth
+        #headers:
+        #  x-api-key: test2
+        #
+      - url: https://rpc.ankr.com/eth
+
+  - domain: localhost:3002
+    chain: bitcoin
+    urls:
+      - url: https://blockbook.btc.zelcore.io
+
+  - domain: localhost:3003
+    chain: solana
+    poll_interval_seconds: 15
+    block_delay: 5
+    urls:
+      - url: https://api.mainnet-beta.solana.com
+      - url: https://api.tatum.io/v3/blockchain/node/solana-mainnet
+      #- url: https://solana.drpc.org
+
+  - domain: localhost:3004
+    chain: cosmos
+    urls:
+      - url: https://cosmos-rest.publicnode.com
+
+  - domain: localhost:3005
+    chain: ton
+    urls:
+      - url: https://toncenter.com
+
+  - domain: localhost:3006
+    chain: tron
+    urls:
+      - url: https://api.trongrid.io
+
+  - domain: localhost:3007
+    chain: aptos
+    urls:
+      - url: https://fullnode.mainnet.aptoslabs.com
+
+  - domain: localhost:3008
+    chain: sui
+    urls:
+      - url: https://sui-mainnet-endpoint.blockvision.org
+
+  - domain: localhost:3009
+    chain: xrp
+    poll_interval_seconds: 30
+    urls:
+      - url: https://s1.ripple.com:51234
+      - url: https://s2.ripple.com:51234
+
+  - domain: localhost:3010
+    chain: near
+    poll_interval_seconds: 60
+    block_delay: 5
+    urls:
+      - url: https://rpc.mainnet.near.org
+      - url: https://free.rpc.fastnear.com
+  
+  # - domain: localhost:3011
+  #   chain: unknown
+  #   poll_interval_seconds: 60
+  #   block_delay: 5
+  #   urls:
+  #     - url: https://rpc.mainnet.near.org

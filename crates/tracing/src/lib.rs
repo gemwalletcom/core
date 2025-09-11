@@ -1,5 +1,4 @@
 use sentry::ClientInitGuard;
-use settings::Settings;
 use std::sync::{Arc, OnceLock};
 use tracing_subscriber::FmtSubscriber;
 
@@ -11,13 +10,18 @@ fn get_subscriber() -> Arc<FmtSubscriber> {
         .clone()
 }
 
+pub struct SentryConfig {
+    pub dsn: String,
+    pub sample_rate: f32,
+}
+
 pub struct SentryTracing {
     _guard: Option<ClientInitGuard>,
 }
 
 impl SentryTracing {
-    pub fn init(settings: &Settings, service: &str) -> Self {
-        let _guard = settings.sentry.as_ref().and_then(|sentry| {
+    pub fn init(config: Option<&SentryConfig>, service: &str) -> Self {
+        let _guard = config.and_then(|sentry| {
             if sentry.dsn.is_empty() {
                 return None;
             }

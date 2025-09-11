@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
-use nft_provider::get_image_mime_type;
-use nft_provider::opensea::{model::Collection, OpenSeaClient};
+use ::nft::provider::get_image_mime_type;
+use ::nft::providers::opensea::{model::Collection, OpenSeaClient};
 use primitives::{Chain, LinkType};
 use storage::{
     models::{nft_collection::UpdateNftCollectionImageUrl, NftCollection, NftLink},
