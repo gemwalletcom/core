@@ -181,11 +181,9 @@ impl CacheProvider for MemoryCache {
     }
 }
 
-/// Type alias for backward compatibility
 pub type RequestCache = MemoryCache;
 
 impl RequestCache {
-    /// Static method for creating cache keys (for backward compatibility)
     pub fn create_cache_key(host: &str, path: &str, method: &str, body: Option<&Bytes>) -> String {
         let mut key = format!("{}:{}:{}", host, method, path);
         
@@ -194,5 +192,85 @@ impl RequestCache {
         }
         
         key
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{CacheConfig, CacheRule};
+    use bytes::Bytes;
+    use primitives::Chain;
+    use std::collections::HashMap;
+
+    fn create_test_config() -> CacheConfig {
+        let mut rules = HashMap::new();
+        rules.insert(
+            "ethereum".to_string(),
+            vec![
+                CacheRule {
+                    path: Some("/api/v1/data".to_string()),
+                    method: Some("GET".to_string()),
+                    rpc_method: None,
+                    ttl_seconds: 300,
+                },
+                CacheRule {
+                    path: None,
+                    method: None,
+                    rpc_method: Some("eth_blockNumber".to_string()),
+                    ttl_seconds: 60,
+                },
+            ],
+        );
+        
+        CacheConfig {
+            max_memory_mb: 100,
+            rules,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_cache_operations() {
+        let config = create_test_config();
+        let cache = RequestCache::new(config);
+
+        let response = CachedResponse {
+            body: Bytes::from("test body"),
+            status: 200,
+            content_type: Some("application/json".to_string()),
+            ttl_seconds: 0,
+        };
+
+        cache.set(&Chain::Ethereum, "test_key".to_string(), response.clone(), 60).await;
+        
+        let cached = cache.get(&Chain::Ethereum, "test_key").await;
+        assert!(cached.is_some());
+        assert_eq!(cached.unwrap().status, 200);
+    }
+
+    #[test]
+    fn test_cache_key_creation() {
+        let key = RequestCache::create_cache_key("example.com", "/api/data", "GET", None);
+        assert_eq!(key, "example.com:GET:/api/data");
+
+        let body = Bytes::from(r#"{"method":"eth_call","params":[]}"#);
+        let key = RequestCache::create_cache_key("example.com", "/", "POST", Some(&body));
+        assert!(key.contains("eth_call"));
+    }
+
+    #[test]
+    fn test_should_cache() {
+        let config = create_test_config();
+        let cache = RequestCache::new(config);
+
+        let ttl = cache.should_cache(&Chain::Ethereum, "/api/v1/data", "GET", None);
+        assert_eq!(ttl, Some(300));
+
+        let body = Bytes::from(r#"{"method":"eth_blockNumber"}"#);
+        let ttl = cache.should_cache(&Chain::Ethereum, "/", "POST", Some(&body));
+        assert_eq!(ttl, Some(60));
+
+        let ttl = cache.should_cache(&Chain::Ethereum, "/unknown", "GET", None);
+        assert_eq!(ttl, None);
     }
 }

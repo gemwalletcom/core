@@ -227,3 +227,43 @@ impl Metrics {
         buffer
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{MetricsConfig, UserAgentPatterns};
+
+    #[test]
+    fn test_cache_metrics_labels() {
+        let config = MetricsConfig {
+            user_agent_patterns: UserAgentPatterns::default(),
+        };
+        let metrics = Metrics::new(config);
+
+        metrics.add_cache_hit("example.com", "eth_blockNumber");
+        metrics.add_cache_miss("example.com", "/api/v1/data");
+
+        let output = metrics.get_metrics();
+        assert!(output.contains("cache_hits"));
+        assert!(output.contains("cache_misses"));
+    }
+
+    #[test]
+    fn test_path_truncation() {
+        let config = MetricsConfig {
+            user_agent_patterns: UserAgentPatterns::default(),
+        };
+        let metrics = Metrics::new(config);
+
+        metrics.add_proxy_response(
+            "example.com",
+            "/api/v1/verylongpaththatexceedstwentycharacters",
+            "node1.example.com",
+            200,
+            100,
+        );
+
+        let output = metrics.get_metrics();
+        assert!(output.contains("proxy_response_latency"));
+    }
+}

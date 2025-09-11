@@ -3,10 +3,8 @@ pub mod chain_client;
 pub mod config;
 pub mod metrics;
 pub mod metrics_service;
+pub mod node_monitor;
 pub mod node_service;
 pub mod proxy_request_service;
 pub mod request_parser;
 pub mod request_url;
-
-#[cfg(test)]
-mod tests;

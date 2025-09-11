@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let node_service = NodeService::new(config.domains_map(), metrics.clone(), config.cache.clone());
     let node_service_clone = node_service.clone();
     tokio::task::spawn(async move {
-        node_service_clone.update_block_numbers().await;
+        node_service_clone.start_monitoring().await;
     });
 
     let node_server = async move {
