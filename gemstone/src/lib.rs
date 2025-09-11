@@ -59,6 +59,12 @@ impl From<Box<dyn std::error::Error>> for GemstoneError {
     }
 }
 
+impl From<primitives::payment_decoder::PaymentDecoderError> for GemstoneError {
+    fn from(error: primitives::payment_decoder::PaymentDecoderError) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
 impl From<AlienError> for GemstoneError {
     fn from(error: AlienError) -> Self {
         Self::AnyError { msg: error.to_string() }
