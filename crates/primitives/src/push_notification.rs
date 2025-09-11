@@ -13,6 +13,7 @@ pub enum PushNotificationTypes {
     PriceAlert, // PriceAlert payload
     BuyAsset,   // PushNotificationBuyAsset payload
     SwapAsset,  // PushNotificationSwapAsset payload
+    Support,    // PushNotificationSupport payload
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
