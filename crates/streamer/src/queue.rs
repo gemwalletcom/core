@@ -29,6 +29,8 @@ pub enum QueueName {
     FetchTransactions,
     // Process fiat order webhooks
     FiatOrderWebhooks,
+    // Process support webhooks
+    SupportWebhooks,
 }
 
 impl QueueName {
@@ -53,6 +55,7 @@ impl fmt::Display for QueueName {
             QueueName::FetchTransactions => write!(f, "fetch_transactions"),
             QueueName::FetchNftAssetsAddressesAssociations => write!(f, "fetch_nft_assets_addresses_associations"),
             QueueName::FiatOrderWebhooks => write!(f, "fiat_order_webhooks"),
+            QueueName::SupportWebhooks => write!(f, "support_webhooks"),
         }
     }
 }

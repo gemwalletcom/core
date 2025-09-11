@@ -186,3 +186,20 @@ impl fmt::Display for FiatWebhookPayload {
         write!(f, "provider: {}", self.provider.id())
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupportWebhookPayload {
+    pub data: serde_json::Value,
+}
+
+impl SupportWebhookPayload {
+    pub fn new(data: serde_json::Value) -> Self {
+        Self { data }
+    }
+}
+
+impl fmt::Display for SupportWebhookPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "support webhook: {}")
+    }
+}
