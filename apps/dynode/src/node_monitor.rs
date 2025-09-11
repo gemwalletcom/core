@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc, time::Instant};
 
 use futures::future;
-use gem_tracing::info_with_context;
+use gem_tracing::{error_with_context, info_with_context};
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
@@ -71,14 +71,18 @@ impl NodeMonitor {
 
                             let blocks_str = format!("{:?}", results.clone().into_iter().map(|x| x.block_number).collect::<Vec<u64>>());
 
-                            info_with_context(
-                                "Status",
-                                &[
-                                    ("url", &value.url.url),
-                                    ("is_behind", &is_url_behind.to_string()),
-                                    ("block_numbers", &blocks_str),
-                                ],
-                            );
+                            if is_url_behind {
+                                error_with_context(
+                                    "Status",
+                                    &std::io::Error::other("Node behind"),
+                                    &[("domain", &domain.domain), ("url", &value.url.url), ("blocks", &blocks_str)],
+                                );
+                            } else {
+                                info_with_context(
+                                    "Status",
+                                    &[("url", &value.url.url), ("is_behind", &is_url_behind.to_string()), ("blocks", &blocks_str)],
+                                );
+                            }
 
                             if is_url_behind {
                                 if let Some(node) = Domain::find_highest_block_number(results.clone()) {
