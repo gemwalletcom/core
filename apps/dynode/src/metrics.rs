@@ -71,21 +71,14 @@ impl Metrics {
         let proxy_requests = Family::<ProxyRequestLabels, Counter>::default();
         let proxy_requests_by_user_agent = Family::<ProxyRequestByAgentLabels, Gauge>::default();
         let proxy_requests_by_method = Family::<ProxyRequestByMethodLabels, Counter>::default();
-        let proxy_response_latency =
-            Family::<ResponseLabels, Histogram>::new_with_constructor(|| {
-                Histogram::new(exponential_buckets(50.0, 1.44, 12))
-            });
+        let proxy_response_latency = Family::<ResponseLabels, Histogram>::new_with_constructor(|| Histogram::new(exponential_buckets(50.0, 1.44, 12)));
         let node_host_current = Family::<HostCurrentStateLabels, Gauge>::default();
         let node_block_latest = Family::<HostStateLabels, Gauge>::default();
         let cache_hits = Family::<CacheLabels, Counter>::default();
         let cache_misses = Family::<CacheLabels, Counter>::default();
 
         let mut registry = <Registry>::with_prefix("dynode");
-        registry.register(
-            "proxy_requests",
-            "Proxy requests by host",
-            proxy_requests.clone(),
-        );
+        registry.register("proxy_requests", "Proxy requests by host", proxy_requests.clone());
         registry.register(
             "proxy_requests_by_user_agent_total",
             "Proxy requests by host and user agent",
@@ -101,26 +94,10 @@ impl Metrics {
             "Proxy requests served a response by host and path",
             proxy_response_latency.clone(),
         );
-        registry.register(
-            "node_host_current",
-            "Node current host url",
-            node_host_current.clone(),
-        );
-        registry.register(
-            "node_block_latest",
-            "Node block latest",
-            node_block_latest.clone(),
-        );
-        registry.register(
-            "cache_hits",
-            "Cache hits by host and path",
-            cache_hits.clone(),
-        );
-        registry.register(
-            "cache_misses",
-            "Cache misses by host and path",
-            cache_misses.clone(),
-        );
+        registry.register("node_host_current", "Node current host url", node_host_current.clone());
+        registry.register("node_block_latest", "Node block latest", node_block_latest.clone());
+        registry.register("cache_hits", "Cache hits by host and path", cache_hits.clone());
+        registry.register("cache_misses", "Cache misses by host and path", cache_misses.clone());
 
         Self {
             registry: Arc::new(registry),
@@ -150,11 +127,7 @@ impl Metrics {
     }
 
     pub fn add_proxy_request(&self, host: &str, user_agent: &str) {
-        self.proxy_requests
-            .get_or_create(&ProxyRequestLabels {
-                host: host.to_string(),
-            })
-            .inc();
+        self.proxy_requests.get_or_create(&ProxyRequestLabels { host: host.to_string() }).inc();
 
         let categorized_agent = self.categorize_user_agent(user_agent);
         self.proxy_requests_by_user_agent
@@ -164,7 +137,7 @@ impl Metrics {
             })
             .inc();
     }
-    
+
     pub fn add_proxy_request_by_method(&self, host: &str, method: &str) {
         let method = self.truncate_path(method);
         self.proxy_requests_by_method
@@ -177,25 +150,12 @@ impl Metrics {
 
     fn truncate_path(&self, path: &str) -> String {
         path.split('/')
-            .map(|segment| {
-                if segment.len() > 20 {
-                    ":value".to_string()
-                } else {
-                    segment.to_string()
-                }
-            })
+            .map(|segment| if segment.len() > 20 { ":value".to_string() } else { segment.to_string() })
             .collect::<Vec<String>>()
             .join("/")
     }
 
-    pub fn add_proxy_response(
-        &self,
-        host: &str,
-        path: &str,
-        remote_host: &str,
-        status: u16,
-        latency: u128,
-    ) {
+    pub fn add_proxy_response(&self, host: &str, path: &str, remote_host: &str, status: u16, latency: u128) {
         let path = self.truncate_path(path);
         self.proxy_response_latency
             .get_or_create(&ResponseLabels {
@@ -219,30 +179,18 @@ impl Metrics {
     #[allow(dead_code)]
     pub fn set_node_block_latest(&self, host: &str, value: u64) {
         self.node_block_latest
-            .get_or_create(&HostStateLabels {
-                host: host.to_string(),
-            })
+            .get_or_create(&HostStateLabels { host: host.to_string() })
             .set(value as i64);
     }
 
     pub fn add_cache_hit(&self, host: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_hits
-            .get_or_create(&CacheLabels {
-                host: host.to_string(),
-                path,
-            })
-            .inc();
+        self.cache_hits.get_or_create(&CacheLabels { host: host.to_string(), path }).inc();
     }
 
     pub fn add_cache_miss(&self, host: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_misses
-            .get_or_create(&CacheLabels {
-                host: host.to_string(),
-                path,
-            })
-            .inc();
+        self.cache_misses.get_or_create(&CacheLabels { host: host.to_string(), path }).inc();
     }
 
     pub fn get_metrics(&self) -> String {
@@ -279,13 +227,7 @@ mod tests {
         };
         let metrics = Metrics::new(config);
 
-        metrics.add_proxy_response(
-            "example.com",
-            "/api/v1/verylongpaththatexceedstwentycharacters",
-            "node1.example.com",
-            200,
-            100,
-        );
+        metrics.add_proxy_response("example.com", "/api/v1/verylongpaththatexceedstwentycharacters", "node1.example.com", 200, 100);
 
         let output = metrics.get_metrics();
         assert!(output.contains("proxy_response_latency"));
