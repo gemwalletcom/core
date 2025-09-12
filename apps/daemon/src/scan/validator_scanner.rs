@@ -1,5 +1,5 @@
 use api_connector::StaticAssetsClient;
-use gem_tracing::{error_with_context, info_with_context};
+use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{Chain, StakeValidator};
 use settings_chain::ChainProviders;
 use std::error::Error;
@@ -25,8 +25,8 @@ impl ValidatorScanner {
 
         for chain in chains {
             match self.update_validators_for_chain(chain).await {
-                Ok(count) => info_with_context(name, &[("chain", chain.as_ref()), ("count", &count.to_string())]),
-                Err(e) => error_with_context(name, &*e, &[("chain", chain.as_ref())]),
+                Ok(count) => info_with_fields!(name, chain = chain.as_ref(), count = count.to_string()),
+                Err(e) => error_with_fields!(name, &*e, chain = chain.as_ref()),
             }
         }
         Ok(())
@@ -46,8 +46,8 @@ impl ValidatorScanner {
 
         for chain in chains {
             match self.update_validators_from_static_assets_for_chain(chain, &static_assets_client).await {
-                Ok(count) => info_with_context(name, &[("chain", chain.as_ref()), ("count", &count.to_string())]),
-                Err(e) => error_with_context(name, &*e, &[("chain", chain.as_ref())]),
+                Ok(count) => info_with_fields!(name, chain = chain.as_ref(), count = count.to_string()),
+                Err(e) => error_with_fields!(name, &*e, chain = chain.as_ref()),
             }
         }
         Ok(())

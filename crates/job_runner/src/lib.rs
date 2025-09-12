@@ -1,4 +1,4 @@
-use gem_tracing::info_with_context;
+use gem_tracing::info_with_fields;
 use std::future::Future;
 use tokio::time::{Duration, Instant};
 
@@ -11,11 +11,11 @@ where
     loop {
         let now = Instant::now();
 
-        info_with_context("job start", &[("job", name), ("interval", &interval_duration.as_secs().to_string())]);
+        info_with_fields!("job start", job = name, interval = interval_duration.as_secs().to_string());
 
         let _result = job_fn().await;
 
-        info_with_context("job complete", &[("job", name), ("duration_ms", &now.elapsed().as_millis().to_string())]);
+        info_with_fields!("job complete", job = name, duration_ms = now.elapsed().as_millis().to_string());
 
         tokio::time::sleep(interval_duration).await;
     }

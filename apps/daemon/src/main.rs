@@ -13,7 +13,7 @@ mod transaction;
 mod version;
 
 use crate::model::DaemonService;
-use gem_tracing::{info_with_context, SentryConfig, SentryTracing};
+use gem_tracing::{info_with_fields, SentryConfig, SentryTracing};
 use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
@@ -36,7 +36,7 @@ pub async fn main() {
     });
     let _tracing = SentryTracing::init(sentry_config.as_ref(), service.as_ref());
 
-    info_with_context("daemon start", &[("service", service.as_ref())]);
+    info_with_fields!("daemon start", service = service.as_ref());
 
     let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service {
         DaemonService::Alerter => alerter::jobs(settings.clone()).await,

@@ -15,11 +15,10 @@ impl SupportClient {
         Self { database, stream_producer }
     }
 
-    pub async fn process_webhook(&mut self, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn process_webhook(&mut self, device_id: String, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
         if payload.event != EVENT_MESSAGE_CREATED && payload.message_type != MESSAGE_TYPE_OUTGOING {
             return Ok(());
         }
-        let device_id = payload.get_device_id().ok_or("Device ID not found")?;
         let device = self.database.devices().get_device(&device_id)?;
         self.send_support_push_notification(device, payload).await?;
 

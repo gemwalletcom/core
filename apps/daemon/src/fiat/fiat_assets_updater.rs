@@ -1,6 +1,6 @@
 use chrono::{Duration, Utc};
 use fiat::{model::FiatProviderAsset, FiatProvider};
-use gem_tracing::{error_with_context, info_with_context};
+use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{currency::Currency, AssetTag, Diff, FiatProviderName};
 use storage::{AssetFilter, AssetUpdate, AssetsRepository, DatabaseClient};
 
@@ -76,10 +76,10 @@ impl FiatAssetsUpdater {
             let provider_name = self.providers[i].name();
             match self.update_fiat_assets_for_provider(provider_name.clone()).await {
                 Ok(count) => {
-                    info_with_context(name, &[("provider", &provider_name.id()), ("assets", &count.to_string())]);
+                    info_with_fields!(name, provider = provider_name.id(), assets = count.to_string());
                     total_assets += count;
                 }
-                Err(e) => error_with_context(name, &*e, &[("provider", &provider_name.id())]),
+                Err(e) => error_with_fields!(name, &*e, provider = provider_name.id()),
             }
         }
 
@@ -130,8 +130,8 @@ impl FiatAssetsUpdater {
         for i in 0..self.providers.len() {
             let provider_name = self.providers[i].name();
             match self.update_fiat_countries_for_provider(provider_name.clone()).await {
-                Ok(count) => info_with_context(name, &[("provider", &provider_name.id()), ("countries", &count.to_string())]),
-                Err(e) => error_with_context(name, &*e, &[("provider", &provider_name.id())]),
+                Ok(count) => info_with_fields!(name, provider = provider_name.id(), countries = count.to_string()),
+                Err(e) => error_with_fields!(name, &*e, provider = provider_name.id()),
             }
         }
         Ok(true)

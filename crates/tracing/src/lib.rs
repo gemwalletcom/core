@@ -50,43 +50,6 @@ impl SentryTracing {
 
 pub use sentry::{capture_message, configure_scope, start_transaction, Level, TransactionContext};
 
-pub fn error_with_context<E: std::error::Error + ?Sized>(message: &str, error: &E, context: &[(&str, &str)]) {
-    let subscriber = get_subscriber();
-    tracing::subscriber::with_default(subscriber, || {
-        let mut fields = vec![];
-        for (key, value) in context {
-            fields.push(format!("{}={}", key, value));
-        }
-        if fields.is_empty() {
-            tracing::error!("{}: {}", message, error);
-        } else {
-            tracing::error!("{}: {} {}", message, error, fields.join(" "));
-        }
-    });
-
-    sentry::configure_scope(|scope| {
-        for (key, value) in context {
-            scope.set_tag(key, value);
-        }
-    });
-    sentry::capture_message(message, sentry::Level::Error);
-}
-
-pub fn info_with_context(message: &str, context: &[(&str, &str)]) {
-    let subscriber = get_subscriber();
-    tracing::subscriber::with_default(subscriber, || {
-        let mut fields = vec![];
-        for (key, value) in context {
-            fields.push(format!("{}={}", key, value));
-        }
-        if fields.is_empty() {
-            tracing::info!("{}", message);
-        } else {
-            tracing::info!("{} {}", message, fields.join(" "));
-        }
-    });
-}
-
 pub struct DurationMs(pub Duration);
 
 impl std::fmt::Display for DurationMs {
