@@ -118,7 +118,7 @@ impl Swapper for ThorChain {
                 slippage_bps: request.options.slippage.bps,
             },
             request: request.clone(),
-            eta_in_seconds: Some(quote.total_swap_seconds.unwrap_or_default()),
+            eta_in_seconds: Some(self.get_eta_in_seconds(request.to_asset.chain(), quote.total_swap_seconds)),
         };
 
         Ok(quote)
