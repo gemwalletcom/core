@@ -117,4 +117,18 @@ mod tests {
         let result = thorchain.value_to(value.clone(), 8);
         assert_eq!(result, BigInt::from(10000000));
     }
+
+    #[test]
+    fn test_get_eta_in_seconds() {
+        let thorchain = ThorChain::default();
+
+        let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, None);
+        assert_eq!(eta, 660);
+
+        let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, Some(1200));
+        assert_eq!(eta, 1860);
+
+        let eta = thorchain.get_eta_in_seconds(Chain::SmartChain, Some(648));
+        assert_eq!(eta, 709);
+    }
 }
