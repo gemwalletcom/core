@@ -1,10 +1,10 @@
 use crate::config::{CacheConfig, CacheRule};
+use crate::request_types::{RequestType, JsonRpcRequest};
 use async_trait::async_trait;
 use bytes::Bytes;
 use moka::future::Cache;
 use moka::Expiry;
 use primitives::Chain;
-use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -32,42 +32,9 @@ pub trait CacheProvider: Send + Sync {
     /// Check if a request should be cached based on rules
     fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, body: Option<&Bytes>) -> Option<u64>;
 
-    /// Create a cache key from request parameters
-    fn create_cache_key(host: &str, path: &str, method: &str, body: Option<&Bytes>) -> String {
-        let mut key = format!("{}:{}:{}", host, method, path);
+    /// Check if a request should be cached based on RequestType
+    fn should_cache_request(&self, chain_type: &Chain, request_type: &RequestType) -> Option<u64>;
 
-        if let Some(body) = body {
-            Self::append_body_to_key(&mut key, body);
-        }
-
-        key
-    }
-
-    fn append_body_to_key(key: &mut String, body: &Bytes) {
-        let Ok(body_str) = std::str::from_utf8(body) else {
-            return;
-        };
-
-        if let Ok(json) = serde_json::from_str::<Value>(body_str) {
-            Self::append_json_to_key(key, &json);
-        } else {
-            key.push(':');
-            key.push_str(body_str);
-        }
-    }
-
-    fn append_json_to_key(key: &mut String, json: &Value) {
-        if let Some(rpc_method) = json.get("method").and_then(|m| m.as_str()) {
-            key.push(':');
-            key.push_str(rpc_method);
-
-            if let Some(params) = json.get("params") {
-                key.push(':');
-                let params_str = serde_json::to_string(params).unwrap_or_else(|_| params.to_string());
-                key.push_str(&params_str);
-            }
-        }
-    }
 }
 
 struct CacheExpiry;
@@ -127,20 +94,6 @@ impl MemoryCache {
         }
     }
 
-    fn check_rpc_rule(&self, rule: &CacheRule, body: Option<&Bytes>) -> Option<u64> {
-        let rpc_method_name = rule.rpc_method.as_ref()?;
-        let body = body?;
-
-        let json_str = std::str::from_utf8(body).ok()?;
-        let json: Value = serde_json::from_str(json_str).ok()?;
-        let method = json.get("method")?.as_str()?;
-
-        if method == rpc_method_name {
-            Some(rule.ttl_seconds)
-        } else {
-            None
-        }
-    }
 }
 
 #[async_trait]
@@ -160,16 +113,35 @@ impl CacheProvider for MemoryCache {
         self.config.rules.get(chain_type.as_ref()).cloned().unwrap_or_default()
     }
 
-    fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, body: Option<&Bytes>) -> Option<u64> {
+    fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, _body: Option<&Bytes>) -> Option<u64> {
         let rules = self.get_cache_rules(chain_type);
 
         for rule in rules {
             if let Some(ttl) = self.check_path_rule(&rule, path, method) {
                 return Some(ttl);
             }
+        }
 
-            if let Some(ttl) = self.check_rpc_rule(&rule, body) {
-                return Some(ttl);
+        None
+    }
+
+    fn should_cache_request(&self, chain_type: &Chain, request_type: &RequestType) -> Option<u64> {
+        let rules = self.get_cache_rules(chain_type);
+
+        for rule in rules {
+            match request_type {
+                RequestType::Regular { path, method, .. } => {
+                    if let Some(ttl) = self.check_path_rule(&rule, path, method) {
+                        return Some(ttl);
+                    }
+                }
+                RequestType::JsonRpc(JsonRpcRequest::Single(call)) => {
+                    if let Some(rpc_method_name) = &rule.rpc_method {
+                        if call.method == *rpc_method_name {
+                            return Some(rule.ttl_seconds);
+                        }
+                    }
+                }
             }
         }
 
@@ -179,17 +151,6 @@ impl CacheProvider for MemoryCache {
 
 pub type RequestCache = MemoryCache;
 
-impl RequestCache {
-    pub fn create_cache_key(host: &str, path: &str, method: &str, body: Option<&Bytes>) -> String {
-        let mut key = format!("{}:{}:{}", host, method, path);
-
-        if let Some(body) = body {
-            <MemoryCache as CacheProvider>::append_body_to_key(&mut key, body);
-        }
-
-        key
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -241,29 +202,34 @@ mod tests {
         assert_eq!(cached.unwrap().status, 200);
     }
 
-    #[test]
-    fn test_cache_key_creation() {
-        let key = RequestCache::create_cache_key("example.com", "/api/data", "GET", None);
-        assert_eq!(key, "example.com:GET:/api/data");
-
-        let body = Bytes::from(r#"{"method":"eth_call","params":[]}"#);
-        let key = RequestCache::create_cache_key("example.com", "/", "POST", Some(&body));
-        assert!(key.contains("eth_call"));
-    }
 
     #[test]
     fn test_should_cache() {
         let config = create_test_config();
         let cache = RequestCache::new(config);
 
-        let ttl = cache.should_cache(&Chain::Ethereum, "/api/v1/data", "GET", None);
+        // Test path-based caching
+        let request_type = RequestType::Regular {
+            path: "/api/v1/data".to_string(),
+            method: "GET".to_string(),
+            body: Bytes::new(),
+        };
+        let ttl = cache.should_cache_request(&Chain::Ethereum, &request_type);
         assert_eq!(ttl, Some(300));
 
-        let body = Bytes::from(r#"{"method":"eth_blockNumber"}"#);
-        let ttl = cache.should_cache(&Chain::Ethereum, "/", "POST", Some(&body));
+        // Test RPC method-based caching
+        let body = Bytes::from(r#"{"method":"eth_blockNumber","params":[],"id":1}"#);
+        let request_type = RequestType::from_request("POST", "/".to_string(), body);
+        let ttl = cache.should_cache_request(&Chain::Ethereum, &request_type);
         assert_eq!(ttl, Some(60));
 
-        let ttl = cache.should_cache(&Chain::Ethereum, "/unknown", "GET", None);
+        // Test unknown request - should not be cached
+        let request_type = RequestType::Regular {
+            path: "/unknown".to_string(),
+            method: "GET".to_string(),
+            body: Bytes::new(),
+        };
+        let ttl = cache.should_cache_request(&Chain::Ethereum, &request_type);
         assert_eq!(ttl, None);
     }
 }

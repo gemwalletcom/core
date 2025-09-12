@@ -1,4 +1,5 @@
 use crate::cache::CacheProvider;
+use crate::request_types::RequestType;
 use bytes::Bytes;
 use http_body_util::{BodyExt, Full};
 use hyper::header::{self, HeaderName};
@@ -21,7 +22,6 @@ type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
 use crate::cache::{CachedResponse, RequestCache};
 use crate::config::{Domain, Url};
 use crate::metrics::Metrics;
-use crate::request_parser::extract_rpc_methods;
 use crate::request_url::RequestUrl;
 use gem_tracing::info_with_context;
 
@@ -70,188 +70,168 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
 
         let user_agent = headers.get("user-agent").and_then(|x| x.to_str().ok()).unwrap_or_default();
 
-        match self.domains.get(host) {
-            Some(domain) => {
-                let url = domain.url.clone();
-                let url = RequestUrl::from_uri(url.clone(), url.urls_override.clone().unwrap_or_default(), req.uri());
+        let domain = match self.domains.get(host) {
+            Some(d) => d,
+            None => return async move { Ok(Response::builder().status(404).body(Full::new(Bytes::from("unsupported domain"))).unwrap()) }.boxed(),
+        };
 
-                self.metrics.add_proxy_request(host, user_agent);
+        let url = domain.url.clone();
+        let url = RequestUrl::from_uri(url.clone(), url.urls_override.clone().unwrap_or_default(), req.uri());
 
-                let metrics = self.metrics.clone();
-                let host = host.to_string();
-                let cache = self.cache.clone();
-                let domain_config = self.domain_configs.get(&host).cloned();
-                let method = req.method().clone();
-                let path = req.uri().path().to_string();
-                let path_with_query = req.uri().path_and_query().map(|pq| pq.as_str()).unwrap_or(req.uri().path()).to_string();
-                let user_agent_str = user_agent.to_string();
-                let client = self.client.clone();
-                let keep_headers = self.keep_headers.clone();
+        self.metrics.add_proxy_request(host, user_agent);
 
-                async move {
-                    let now = Instant::now();
-
-                    if let Some(domain_config) = domain_config {
-                        let chain = domain_config.chain;
-                        let (parts, incoming_body) = req.into_parts();
-                        let body = incoming_body.collect().await?.to_bytes();
-
-                        let cache_ttl = cache.should_cache(&chain, &path_with_query, method.as_str(), Some(&body));
-                        let cache_key = if cache_ttl.is_some() {
-                            Some(RequestCache::create_cache_key(&host, &path_with_query, method.as_str(), Some(&body)))
-                        } else {
-                            None
-                        };
-
-                        let rpc_methods = if method == hyper::Method::POST { extract_rpc_methods(&body) } else { vec![] };
-                        let methods_for_metrics: Vec<String> = if !rpc_methods.is_empty() { rpc_methods.clone() } else { vec![path.clone()] };
-                        let methods_display = methods_for_metrics.join(",");
-
-                        for method in &methods_for_metrics {
-                            metrics.add_proxy_request_by_method(host.as_str(), method);
-                        }
-
-                        if let Some(ref key) = cache_key {
-                            if let Some(cached) = cache.get(&chain, key).await {
-                                for method in &methods_for_metrics {
-                                    metrics.add_cache_hit(host.as_str(), method);
-                                }
-
-                                info_with_context(
-                                    "Cache HIT",
-                                    &[
-                                        ("chain", chain.as_ref()),
-                                        ("host", host.as_str()),
-                                        ("method", method.as_str()),
-                                        ("path", &path),
-                                        ("rpc_method", &methods_display),
-                                    ],
-                                );
-
-                                for method in &methods_for_metrics {
-                                    metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), cached.status, 0);
-                                }
-                                return Self::cached_response(cached).await;
-                            }
-                        }
-
-                        let context = vec![
-                            ("host", host.as_str()),
-                            ("method", method.as_str()),
-                            ("uri", path.as_str()),
-                            ("rpc_method", &methods_display),
-                            ("user_agent", &user_agent_str),
-                        ];
-                        info_with_context("Incoming request", &context);
-
-                        if cache_key.is_some() {
-                            for method in &methods_for_metrics {
-                                metrics.add_cache_miss(host.as_str(), method);
-                            }
-                        }
-
-                        let new_req = Request::builder()
-                            .method(parts.method)
-                            .uri(parts.uri)
-                            .body(Full::new(body.clone()))
-                            .expect("failed to build request");
-                        let new_req = {
-                            let mut r = new_req;
-                            *r.headers_mut() = parts.headers;
-                            r
-                        };
-
-                        let response = Self::proxy_pass_get_data(new_req, url.clone(), &client, &keep_headers).await?;
-                        let status = response.status().as_u16();
-
-                        info_with_context(
-                            "Proxy response",
-                            &[
-                                ("host", url.uri.host().unwrap_or_default()),
-                                ("status", &response.status().to_string()),
-                                ("latency", &format!("{}ms", now.elapsed().as_millis())),
-                            ],
-                        );
-
-                        for method in &methods_for_metrics {
-                            metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), status, now.elapsed().as_millis());
-                        }
-
-                        let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers).await?;
-
-                        if status == 200 && cache_ttl.is_some() && cache_key.is_some() {
-                            if let (Some(ttl), Some(key)) = (cache_ttl, cache_key) {
-                                let content_type = processed_response
-                                    .headers()
-                                    .get(header::CONTENT_TYPE)
-                                    .and_then(|v| v.to_str().ok())
-                                    .map(|s| s.to_string());
-
-                                let body_size = body_bytes.len();
-                                let cached_resp = CachedResponse {
-                                    body: body_bytes,
-                                    status,
-                                    content_type,
-                                    ttl_seconds: ttl,
-                                };
-
-                                let ttl_str = ttl.to_string();
-                                let size_str = body_size.to_string();
-
-                                let context = vec![
-                                    ("chain", chain.as_ref()),
-                                    ("host", host.as_str()),
-                                    ("method", method.as_str()),
-                                    ("path", path.as_str()),
-                                    ("rpc_method", &methods_display),
-                                    ("ttl_seconds", &ttl_str),
-                                    ("size_bytes", &size_str),
-                                ];
-
-                                info_with_context("Cache SET", &context);
-
-                                cache.set(&chain, key, cached_resp, ttl).await;
-                            }
-                        }
-
-                        Ok(processed_response)
-                    } else {
-                        info_with_context(
-                            "Incoming request",
-                            &[("host", &host), ("method", method.as_str()), ("uri", &path), ("user_agent", &user_agent_str)],
-                        );
-
-                        metrics.add_proxy_request_by_method(&host, &path);
-
-                        let (parts, body) = req.into_parts();
-                        let body_bytes = body.collect().await?.to_bytes();
-                        let full_body_req = Request::from_parts(parts, Full::new(body_bytes));
-                        let response = Self::proxy_pass_get_data(full_body_req, url.clone(), &client, &keep_headers).await?;
-
-                        info_with_context(
-                            "Proxy response",
-                            &[
-                                ("host", url.uri.host().unwrap_or_default()),
-                                ("status", &response.status().to_string()),
-                                ("latency", &format!("{}ms", now.elapsed().as_millis())),
-                            ],
-                        );
-
-                        metrics.add_proxy_response(
-                            host.as_str(),
-                            url.uri.path(),
-                            url.uri.host().unwrap_or_default(),
-                            response.status().as_u16(),
-                            now.elapsed().as_millis(),
-                        );
-
-                        Self::proxy_pass_response(response, &keep_headers).await.map(|(resp, _)| resp)
-                    }
+        let metrics = self.metrics.clone();
+        let host = host.to_string();
+        let cache = self.cache.clone();
+        let domain_config = match self.domain_configs.get(&host) {
+            Some(d) => d.clone(),
+            None => {
+                return async move {
+                    Ok(Response::builder()
+                        .status(404)
+                        .body(Full::new(Bytes::from("no domain config for host")))
+                        .unwrap())
                 }
                 .boxed()
             }
-            _ => async move { Ok(Response::builder().body(Full::new(Bytes::from("unsupported domain"))).unwrap()) }.boxed(),
+        };
+        let method = req.method().clone();
+        let path = req.uri().path().to_string();
+        let path_with_query = req.uri().path_and_query().map(|pq| pq.as_str()).unwrap_or(req.uri().path()).to_string();
+        let user_agent_str = user_agent.to_string();
+        let client = self.client.clone();
+        let keep_headers = self.keep_headers.clone();
+
+        async move {
+            let now = Instant::now();
+
+            let chain = domain_config.chain;
+            let (parts, incoming_body) = req.into_parts();
+            let body = incoming_body.collect().await?.to_bytes();
+
+            let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
+
+            let cache_ttl = cache.should_cache_request(&chain, &request_type);
+
+            let cache_key = if cache_ttl.is_some() {
+                Some(request_type.cache_key(&host, &path_with_query))
+            } else {
+                None
+            };
+
+            let methods_for_metrics = request_type.get_methods_for_metrics();
+            let methods_display = request_type.get_methods_list();
+
+            for method in &methods_for_metrics {
+                metrics.add_proxy_request_by_method(host.as_str(), method);
+            }
+
+            if let Some(ref key) = cache_key {
+                if let Some(cached) = cache.get(&chain, key).await {
+                    for method in &methods_for_metrics {
+                        metrics.add_cache_hit(host.as_str(), method);
+                    }
+
+                    info_with_context(
+                        "Cache HIT",
+                        &[
+                            ("chain", chain.as_ref()),
+                            ("host", host.as_str()),
+                            ("method", method.as_str()),
+                            ("path", &path),
+                            ("rpc_method", &methods_display),
+                        ],
+                    );
+
+                    for method in &methods_for_metrics {
+                        metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), cached.status, 0);
+                    }
+                    return Self::cached_response(cached).await;
+                }
+            }
+
+            let context = vec![
+                ("host", host.as_str()),
+                ("method", method.as_str()),
+                ("uri", path.as_str()),
+                ("rpc_method", &methods_display),
+                ("user_agent", &user_agent_str),
+            ];
+            info_with_context("Incoming request", &context);
+
+            if cache_key.is_some() {
+                for method in &methods_for_metrics {
+                    metrics.add_cache_miss(host.as_str(), method);
+                }
+            }
+
+            let new_req = Request::builder()
+                .method(parts.method)
+                .uri(parts.uri)
+                .body(Full::new(body.clone()))
+                .expect("failed to build request");
+            let new_req = {
+                let mut r = new_req;
+                *r.headers_mut() = parts.headers;
+                r
+            };
+
+            let response = Self::proxy_pass_get_data(new_req, url.clone(), &client, &keep_headers).await?;
+            let status = response.status().as_u16();
+
+            info_with_context(
+                "Proxy response",
+                &[
+                    ("host", url.uri.host().unwrap_or_default()),
+                    ("status", &response.status().to_string()),
+                    ("latency", &format!("{}ms", now.elapsed().as_millis())),
+                ],
+            );
+
+            for method in &methods_for_metrics {
+                metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), status, now.elapsed().as_millis());
+            }
+
+            let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers).await?;
+
+            if status == 200 && cache_ttl.is_some() && cache_key.is_some() {
+                if let (Some(ttl), Some(key)) = (cache_ttl, cache_key) {
+                    let content_type = processed_response
+                        .headers()
+                        .get(header::CONTENT_TYPE)
+                        .and_then(|v| v.to_str().ok())
+                        .map(|s| s.to_string());
+
+                    let body_size = body_bytes.len();
+                    let cached_resp = CachedResponse {
+                        body: body_bytes,
+                        status,
+                        content_type,
+                        ttl_seconds: ttl,
+                    };
+
+                    let ttl_str = ttl.to_string();
+                    let size_str = body_size.to_string();
+
+                    let context = vec![
+                        ("chain", chain.as_ref()),
+                        ("host", host.as_str()),
+                        ("method", method.as_str()),
+                        ("path", path.as_str()),
+                        ("rpc_method", &methods_display),
+                        ("ttl_seconds", &ttl_str),
+                        ("size_bytes", &size_str),
+                    ];
+
+                    info_with_context("Cache SET", &context);
+
+                    cache.set(&chain, key, cached_resp, ttl).await;
+                }
+            }
+
+            Ok(processed_response)
         }
+        .boxed()
     }
 }
 

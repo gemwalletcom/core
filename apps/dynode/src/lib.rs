@@ -7,4 +7,5 @@ pub mod node_monitor;
 pub mod node_service;
 pub mod proxy_request_service;
 pub mod request_parser;
+pub mod request_types;
 pub mod request_url;
