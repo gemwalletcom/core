@@ -21,7 +21,7 @@ type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
 use crate::cache::{CachedResponse, RequestCache};
 use crate::config::{Domain, Url};
 use crate::metrics::Metrics;
-use crate::request_parser::extract_rpc_method;
+use crate::request_parser::extract_rpc_methods;
 use crate::request_url::RequestUrl;
 use gem_tracing::info_with_context;
 
@@ -103,13 +103,19 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                             None
                         };
 
-                        let rpc_method = if method == hyper::Method::POST { extract_rpc_method(&body) } else { None };
-                        let method_label = rpc_method.as_deref().unwrap_or(&path);
-                        metrics.add_proxy_request_by_method(host.as_str(), method_label);
+                        let rpc_methods = if method == hyper::Method::POST { extract_rpc_methods(&body) } else { vec![] };
+                        let methods_for_metrics: Vec<String> = if !rpc_methods.is_empty() { rpc_methods.clone() } else { vec![path.clone()] };
+                        let methods_display = methods_for_metrics.join(",");
+
+                        for method in &methods_for_metrics {
+                            metrics.add_proxy_request_by_method(host.as_str(), method);
+                        }
 
                         if let Some(ref key) = cache_key {
                             if let Some(cached) = cache.get(&chain, key).await {
-                                metrics.add_cache_hit(host.as_str(), method_label);
+                                for method in &methods_for_metrics {
+                                    metrics.add_cache_hit(host.as_str(), method);
+                                }
 
                                 info_with_context(
                                     "Cache HIT",
@@ -118,11 +124,13 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                                         ("host", host.as_str()),
                                         ("method", method.as_str()),
                                         ("path", &path),
-                                        ("rpc_method", method_label),
+                                        ("rpc_method", &methods_display),
                                     ],
                                 );
 
-                                metrics.add_proxy_response(host.as_str(), method_label, url.uri.host().unwrap_or_default(), cached.status, 0);
+                                for method in &methods_for_metrics {
+                                    metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), cached.status, 0);
+                                }
                                 return Self::cached_response(cached).await;
                             }
                         }
@@ -131,13 +139,15 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                             ("host", host.as_str()),
                             ("method", method.as_str()),
                             ("uri", path.as_str()),
-                            ("rpc_method", method_label),
+                            ("rpc_method", &methods_display),
                             ("user_agent", &user_agent_str),
                         ];
                         info_with_context("Incoming request", &context);
 
                         if cache_key.is_some() {
-                            metrics.add_cache_miss(host.as_str(), method_label);
+                            for method in &methods_for_metrics {
+                                metrics.add_cache_miss(host.as_str(), method);
+                            }
                         }
 
                         let new_req = Request::builder()
@@ -163,13 +173,9 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                             ],
                         );
 
-                        metrics.add_proxy_response(
-                            host.as_str(),
-                            method_label,
-                            url.uri.host().unwrap_or_default(),
-                            status,
-                            now.elapsed().as_millis(),
-                        );
+                        for method in &methods_for_metrics {
+                            metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), status, now.elapsed().as_millis());
+                        }
 
                         let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers).await?;
 
@@ -197,7 +203,7 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                                     ("host", host.as_str()),
                                     ("method", method.as_str()),
                                     ("path", path.as_str()),
-                                    ("rpc_method", method_label),
+                                    ("rpc_method", &methods_display),
                                     ("ttl_seconds", &ttl_str),
                                     ("size_bytes", &size_str),
                                 ];
