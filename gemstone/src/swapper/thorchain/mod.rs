@@ -7,6 +7,7 @@ mod provider;
 
 use chain::THORChainName;
 use num_bigint::BigInt;
+use primitives::Chain;
 use std::str::FromStr;
 
 use super::{SwapperProvider, SwapperProviderType};
@@ -55,6 +56,10 @@ impl ThorChain {
         } else {
             BigInt::from_str(value.as_str()).unwrap() / BigInt::from(10).pow((decimals).unsigned_abs())
         }
+    }
+
+    fn get_eta_in_seconds(&self, destination_chain: Chain, total_swap_seconds: Option<u32>) -> u32 {
+        destination_chain.block_time() + 60 + total_swap_seconds.unwrap_or(0)
     }
 }
 

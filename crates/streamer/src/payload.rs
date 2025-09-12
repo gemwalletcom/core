@@ -200,6 +200,6 @@ impl SupportWebhookPayload {
 
 impl fmt::Display for SupportWebhookPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "support webhook")
+        write!(f, "support webhook: {}", self.data)
     }
 }
