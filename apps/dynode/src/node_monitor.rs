@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc, time::Instant};
 
 use futures::future;
-use gem_tracing::{error_with_context, info_with_context};
+use gem_tracing::{error_with_fields, info_with_fields};
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
@@ -72,29 +72,26 @@ impl NodeMonitor {
                             let blocks_str = format!("{:?}", results.clone().into_iter().map(|x| x.block_number).collect::<Vec<u64>>());
 
                             if is_url_behind {
-                                error_with_context(
+                                error_with_fields!(
                                     "Status",
                                     &std::io::Error::other("Node behind"),
-                                    &[("domain", &domain.domain), ("url", &value.url.url), ("blocks", &blocks_str)],
+                                    domain = &domain.domain,
+                                    url = &value.url.url,
+                                    blocks = &blocks_str,
                                 );
                             } else {
-                                info_with_context(
-                                    "Status",
-                                    &[("url", &value.url.url), ("is_behind", &is_url_behind.to_string()), ("blocks", &blocks_str)],
-                                );
+                                info_with_fields!("Status", url = &value.url.url, is_behind = &is_url_behind.to_string(), blocks = &blocks_str,);
                             }
 
                             if is_url_behind {
                                 if let Some(node) = Domain::find_highest_block_number(results.clone()) {
                                     NodeService::update_node_domain(&nodes, domain.domain.clone(), NodeDomain { url: node.url.clone() }).await;
 
-                                    info_with_context(
+                                    info_with_fields!(
                                         "Node switch",
-                                        &[
-                                            ("domain", &domain.domain),
-                                            ("new_node", &node.url.url),
-                                            ("latency_ms", &node.latency.to_string()),
-                                        ],
+                                        domain = &domain.domain,
+                                        new_node = &node.url.url,
+                                        latency_ms = &node.latency.to_string(),
                                     );
                                 }
                             }

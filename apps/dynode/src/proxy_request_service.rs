@@ -11,7 +11,6 @@ use hyper::{body::Incoming as IncomingBody, Request, Response};
 use hyper_tls::HttpsConnector;
 use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use std::collections::HashMap;
-use std::fmt::format;
 use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
@@ -24,7 +23,7 @@ use crate::cache::{CachedResponse, RequestCache};
 use crate::config::{Domain, Url};
 use crate::metrics::Metrics;
 use crate::request_url::RequestUrl;
-use gem_tracing::info_with_context;
+use gem_tracing::{info_with_fields, DurationMs};
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequestService {
@@ -100,8 +99,16 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
 
             let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
 
-            let cache_ttl = cache.should_cache_request(&chain, &request_type);
+            info_with_fields!(
+                "Incoming request",
+                host = host.as_str(),
+                method = method.as_str(),
+                uri = path.as_str(),
+                rpc_method = &request_type.get_methods_list(),
+                user_agent = &user_agent_str,
+            );
 
+            let cache_ttl = cache.should_cache_request(&chain, &request_type);
             let cache_key = if cache_ttl.is_some() {
                 Some(request_type.cache_key(&host, &path_with_query))
             } else {
@@ -109,96 +116,14 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             };
 
             let methods_for_metrics = request_type.get_methods_for_metrics();
-            let methods_display = request_type.get_methods_list();
 
             for method in &methods_for_metrics {
                 metrics.add_proxy_request_by_method(host.as_str(), method);
             }
 
             if let Some(ref key) = cache_key {
-                if let Some(cached) = cache.get(&chain, key).await {
-                    for method in &methods_for_metrics {
-                        metrics.add_cache_hit(host.as_str(), method);
-                    }
-
-                    let response = match &request_type {
-                        RequestType::JsonRpc(JsonRpcRequest::Single(original_call)) => {
-                            let data = cached.to_jsonrpc_response(original_call);
-                            let mut response = Response::new(Full::new(data));
-                            *response.status_mut() = hyper::StatusCode::from_u16(cached.status).unwrap_or(hyper::StatusCode::OK);
-
-                            response
-                                .headers_mut()
-                                .insert(header::CONTENT_TYPE, Self::get_content_type_header(&cached.content_type));
-
-                            Ok(response)
-                        }
-                        RequestType::Regular { .. } => Ok(Self::cached_response_sync(cached.clone())),
-                    };
-
-                    let latency_ms = now.elapsed().as_millis();
-                    let latency_str;
-                    let latency_ref = if latency_ms < 10 {
-                        // Use static strings for common small values
-                        match latency_ms {
-                            0 => "0ms",
-                            1 => "1ms",
-                            2 => "2ms",
-                            3 => "3ms",
-                            4 => "4ms",
-                            5 => "5ms",
-                            6 => "6ms",
-                            7 => "7ms",
-                            8 => "8ms",
-                            9 => "9ms",
-                            _ => {
-                                latency_str = format!("{}ms", latency_ms);
-                                &latency_str
-                            }
-                        }
-                    } else {
-                        latency_str = format!("{}ms", latency_ms);
-                        &latency_str
-                    };
-
-                    info_with_context(
-                        "Cache HIT",
-                        &[
-                            ("chain", chain.as_ref()),
-                            ("host", host.as_str()),
-                            ("method", method.as_str()),
-                            ("path", &path),
-                            ("rpc_method", &methods_display),
-                            ("latency", latency_ref),
-                        ],
-                    );
-
-                    for method in &methods_for_metrics {
-                        metrics.add_proxy_response(
-                            host.as_str(),
-                            method,
-                            url.uri.host().unwrap_or_default(),
-                            cached.status,
-                            0, // Cache hit latency is essentially 0
-                        );
-                    }
-
-                    return response;
-                }
-            }
-
-            let context = vec![
-                ("host", host.as_str()),
-                ("method", method.as_str()),
-                ("uri", path.as_str()),
-                ("rpc_method", &methods_display),
-                ("user_agent", &user_agent_str),
-            ];
-            info_with_context("Incoming request", &context);
-
-            if cache_key.is_some() {
-                for method in &methods_for_metrics {
-                    metrics.add_cache_miss(host.as_str(), method);
+                if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, host.as_str(), &method, &path, &url, &metrics, now).await {
+                    return result;
                 }
             }
 
@@ -216,20 +141,19 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             let response = Self::proxy_pass_get_data(new_req, url.clone(), &client, &keep_headers).await?;
             let status = response.status().as_u16();
 
-            info_with_context(
-                "Proxy response",
-                &[
-                    ("host", url.uri.host().unwrap_or_default()),
-                    ("status", &response.status().to_string()),
-                    ("latency", &format!("{}ms", now.elapsed().as_millis())),
-                ],
-            );
+            let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers).await?;
+            let latency_ms = now.elapsed().as_millis();
 
             for method in &methods_for_metrics {
-                metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), status, now.elapsed().as_millis());
+                metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), status, latency_ms);
             }
 
-            let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers).await?;
+            info_with_fields!(
+                "Proxy response",
+                host = url.uri.host().unwrap_or_default(),
+                status = status,
+                latency = DurationMs(now.elapsed()),
+            );
 
             if status == 200 {
                 if let (Some(ttl), Some(key)) = (cache_ttl, cache_key) {
@@ -255,6 +179,63 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
 }
 
 impl ProxyRequestService {
+    async fn try_cache_hit(
+        cache: &RequestCache,
+        chain: primitives::Chain,
+        cache_key: &str,
+        request_type: &RequestType,
+        host: &str,
+        method: &hyper::Method,
+        path: &str,
+        url: &RequestUrl,
+        metrics: &Metrics,
+        now: std::time::Instant,
+    ) -> Option<Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>>> {
+        if let Some(cached) = cache.get(&chain, cache_key).await {
+            let methods_for_metrics = request_type.get_methods_for_metrics();
+            for method_name in &methods_for_metrics {
+                metrics.add_cache_hit(host, method_name);
+            }
+
+            let response = match request_type {
+                RequestType::JsonRpc(JsonRpcRequest::Single(original_call)) => {
+                    let data = cached.to_jsonrpc_response(original_call);
+                    let mut response = Response::new(Full::new(data));
+                    *response.status_mut() = hyper::StatusCode::from_u16(cached.status).unwrap_or(hyper::StatusCode::OK);
+
+                    response
+                        .headers_mut()
+                        .insert(header::CONTENT_TYPE, Self::get_content_type_header(&cached.content_type));
+
+                    Ok(response)
+                }
+                RequestType::Regular { .. } => Ok(Self::cached_response_sync(cached.clone())),
+            };
+
+            info_with_fields!(
+                "Cache HIT",
+                chain = chain.as_ref(),
+                host = host,
+                method = method.as_str(),
+                path = path,
+                rpc_method = &request_type.get_methods_list(),
+                latency = DurationMs(now.elapsed()),
+            );
+
+            for method_name in &methods_for_metrics {
+                metrics.add_proxy_response(host, method_name, url.uri.host().unwrap_or_default(), cached.status, now.elapsed().as_millis());
+            }
+
+            Some(response)
+        } else {
+            let methods_for_metrics = request_type.get_methods_for_metrics();
+            for method_name in &methods_for_metrics {
+                metrics.add_cache_miss(host, method_name);
+            }
+            None
+        }
+    }
+
     fn get_content_type_header(content_type_str: &str) -> header::HeaderValue {
         content_type_str.parse().unwrap_or_else(|_| "application/json".parse().unwrap())
     }
@@ -285,24 +266,19 @@ impl ProxyRequestService {
             RequestType::Regular { .. } => CachedResponse::new(body_bytes.clone(), status, content_type, cache_ttl),
         };
 
-        let ttl_str = cache_ttl.to_string();
-        let size_str = body_size.to_string();
-        let methods_display = request_type.get_methods_list();
-        let latency_str = format!("{}ms", now.elapsed().as_millis());
         cache.set(&chain, cache_key, cached, cache_ttl).await;
 
-        let context = vec![
-            ("chain", chain.as_ref()),
-            ("host", &host),
-            ("method", method.as_str()),
-            ("path", &path),
-            ("rpc_method", &methods_display),
-            ("ttl_seconds", &ttl_str),
-            ("size_bytes", &size_str),
-            ("latency_ms", &latency_str),
-        ];
-
-        info_with_context("Cache SET", &context);
+        info_with_fields!(
+            "Cache SET",
+            chain = chain.as_ref(),
+            host = &host,
+            method = method.as_str(),
+            path = &path,
+            rpc_method = &request_type.get_methods_list(),
+            ttl_seconds = cache_ttl,
+            size_bytes = body_size,
+            latency = DurationMs(now.elapsed()),
+        );
     }
 
     async fn proxy_pass_response(

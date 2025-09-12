@@ -4,7 +4,7 @@ use dynode::metrics_service::MetricsService;
 use dynode::node_service::NodeService;
 
 use futures::future::join;
-use gem_tracing::{error_with_context, info_with_context};
+use gem_tracing::{error_with_fields, info_with_fields};
 use hyper::server::conn::http1;
 use hyper_util::rt::TokioIo;
 use std::{
@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
             tokio::task::spawn(async move {
                 if let Err(err) = http1::Builder::new().serve_connection(io, service).await {
-                    error_with_context("Failed to serve connection", &err, &[]);
+                    error_with_fields!("Failed to serve connection", &err,);
                 }
             });
         }
@@ -57,15 +57,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
             tokio::task::spawn(async move {
                 if let Err(err) = http1::Builder::new().serve_connection(io, metrics_service).await {
-                    error_with_context("Error serving metrics connection", &err, &[]);
+                    error_with_fields!("Error serving metrics connection", &err,);
                 }
             });
         }
     };
 
-    info_with_context(
+    info_with_fields!(
         "Server started",
-        &[("node_address", &node_address.to_string()), ("metrics_address", &metrics_address.to_string())],
+        node_address = &node_address.to_string(),
+        metrics_address = &metrics_address.to_string(),
     );
 
     let _ret = join(node_server, metrics_server).await;
