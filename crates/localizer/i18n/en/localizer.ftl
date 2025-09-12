@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 Create or Import Walle
 notification_onboarding_create_import_wallet_description = Create a new wallet or import yours in just few taps.
 notification_onboarding_welcome_description = Start your crypto journey. Tap to set up your crypto wallet.
 notification_onboarding_buy_asset_description = Securely buy {$name} today—simple, reliable, and instant.
+support_new_message_title = New message from Support

@@ -1,6 +1,6 @@
 use crate::responders::{ApiError, ApiResponse};
 use rocket::{post, serde::json::Json, tokio::sync::Mutex, State};
-use streamer::{StreamProducer, QueueName, SupportWebhookPayload};
+use streamer::{QueueName, StreamProducer, SupportWebhookPayload};
 
 pub struct WebhooksClient {
     stream_producer: StreamProducer,
@@ -26,10 +26,5 @@ pub async fn create_support_webhook(
     webhook_data: Json<serde_json::Value>,
     webhooks_client: &State<Mutex<WebhooksClient>>,
 ) -> Result<ApiResponse<SupportWebhookPayload>, ApiError> {
-    Ok(webhooks_client
-        .lock()
-        .await
-        .process_support_webhook(webhook_data.0)
-        .await?
-        .into())
+    Ok(webhooks_client.lock().await.process_support_webhook(webhook_data.0).await?.into())
 }

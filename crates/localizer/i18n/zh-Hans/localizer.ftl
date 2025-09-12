@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 创建或导入钱包
 notification_onboarding_create_import_wallet_description = 只需轻点几下即可创建新钱包或导入您的钱包。
 notification_onboarding_welcome_description = 开启您的加密货币之旅。点击设置您的加密货币钱包。
 notification_onboarding_buy_asset_description = 今天安全地购买{$name} ——简单、可靠、即时。
+support_new_message_title = 来自支持的新消息

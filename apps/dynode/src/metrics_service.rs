@@ -18,9 +18,7 @@ impl Service<Request<IncomingBody>> for MetricsService {
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     fn call(&self, _req: Request<IncomingBody>) -> Self::Future {
-        let res = Ok(Response::builder()
-            .body(Full::new(Bytes::from(self.metrics.get_metrics())))
-            .unwrap());
+        let res = Ok(Response::builder().body(Full::new(Bytes::from(self.metrics.get_metrics()))).unwrap());
 
         Box::pin(async { res })
     }

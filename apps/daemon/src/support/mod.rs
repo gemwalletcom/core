@@ -1,11 +1,13 @@
+pub mod model;
+pub mod support_client;
 pub mod support_webhook_consumer;
 
+use settings::Settings;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use settings::Settings;
-use streamer::{ConsumerConfig, QueueName, run_consumer, StreamReader};
+use streamer::{run_consumer, ConsumerConfig, QueueName, StreamReader};
 use support_webhook_consumer::SupportWebhookConsumer;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
@@ -14,7 +16,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         move || {
             let settings_clone = settings.clone();
             async move {
-                let consumer = SupportWebhookConsumer::new();
+                let consumer = SupportWebhookConsumer::new(&settings_clone).await.unwrap();
                 let stream_reader = StreamReader::new(&settings_clone.rabbitmq.url, "daemon_support_consumer").await.unwrap();
                 let _ = run_consumer(
                     "support_webhook_consumer",

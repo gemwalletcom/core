@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 ایجاد یا وار
 notification_onboarding_create_import_wallet_description = فقط با چند لمس، یک کیف پول جدید ایجاد کنید یا کیف پول خودتان را وارد کنید.
 notification_onboarding_welcome_description = سفر کریپتویی خود را آغاز کنید. برای تنظیم کیف پول کریپتوی خود، روی ضربه بزنید.
 notification_onboarding_buy_asset_description = همین امروز با خیال راحت از {$name} خرید کنید - ساده، قابل اعتماد و فوری.
+support_new_message_title = پیام جدید از پشتیبانی
