@@ -4,11 +4,17 @@ use serde_json::Value;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcCall {
-    pub jsonrpc: Option<String>,
+    pub jsonrpc: String,
     pub method: String,
     pub params: Value,
-    pub id: Value,
+    pub id: u64,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct JsonRpcResponse {
+    pub result: Value,
+}
+
 
 #[derive(Debug, Clone)]
 pub enum RequestType {
@@ -38,7 +44,11 @@ impl RequestType {
                 }
             }
         }
-        RequestType::Regular { path, method: method.to_string(), body }
+        RequestType::Regular {
+            path,
+            method: method.to_string(),
+            body,
+        }
     }
 
     pub fn get_methods_for_metrics(&self) -> Vec<String> {
@@ -50,6 +60,13 @@ impl RequestType {
 
     pub fn get_methods_list(&self) -> String {
         self.get_methods_for_metrics().join(",")
+    }
+
+    pub fn content_type(&self) -> &'static str {
+        match self {
+            Self::JsonRpc(_) => "application/json",
+            Self::Regular { .. } => "application/json", // Default, could be enhanced based on body content
+        }
     }
 
     pub fn cache_key(&self, host: &str, path: &str) -> String {
@@ -82,10 +99,10 @@ mod tests {
     #[test]
     fn test_cache_key_generation() {
         let call = JsonRpcCall {
-            jsonrpc: Some("2.0".to_string()),
+            jsonrpc: "2.0".to_string(),
             method: "eth_blockNumber".to_string(),
             params: json!([]),
-            id: json!(1),
+            id: 1,
         };
 
         let request = JsonRpcRequest::Single(call);
@@ -97,10 +114,10 @@ mod tests {
     #[test]
     fn test_cache_key_with_params() {
         let call = JsonRpcCall {
-            jsonrpc: Some("2.0".to_string()),
+            jsonrpc: "2.0".to_string(),
             method: "eth_getBalance".to_string(),
             params: json!(["0x123", "latest"]),
-            id: json!(1),
+            id: 1,
         };
 
         let request = JsonRpcRequest::Single(call);
@@ -114,10 +131,10 @@ mod tests {
     #[test]
     fn test_cache_key_null_params() {
         let call = JsonRpcCall {
-            jsonrpc: Some("2.0".to_string()),
+            jsonrpc: "2.0".to_string(),
             method: "eth_blockNumber".to_string(),
             params: Value::Null,
-            id: json!(1),
+            id: 1,
         };
 
         let request = JsonRpcRequest::Single(call);

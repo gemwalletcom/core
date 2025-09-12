@@ -14,19 +14,19 @@ cache:
   max_memory_mb: 1024
   rules:
     tron:
-      - path: "/wallet/getchainparameters"
-        method: "GET"
+      - path: /wallet/getchainparameters
+        method: GET
         ttl_seconds: 86400  # 1 day
-      - path: "/wallet/listwitnesses"
-        method: "GET"
+      - path: /wallet/listwitnesses
+        method: GET
         ttl_seconds: 86400  # 1 day
     solana:
-      - rpc_method: "getVoteAccounts"
+      - rpc_method: getVoteAccounts
         ttl_seconds: 3600  # 1 hour
     sui:
-      - rpc_method: "suix_getValidatorsApy"
+      - rpc_method: suix_getValidatorsApy
         ttl_seconds: 3600  # 1 hour
     cosmos:
-      - path: "/cosmos/staking/v1beta1/validators"
-        method: "GET"
+      - path: /cosmos/staking/v1beta1/validators
+        method: GET
         ttl_seconds: 300  # 5 minutes

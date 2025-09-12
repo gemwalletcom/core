@@ -1,5 +1,5 @@
 use crate::config::{CacheConfig, CacheRule};
-use crate::request_types::{RequestType, JsonRpcRequest};
+use crate::request_types::{JsonRpcCall, JsonRpcRequest, RequestType};
 use async_trait::async_trait;
 use bytes::Bytes;
 use moka::future::Cache;
@@ -13,8 +13,27 @@ use std::time::{Duration, Instant};
 pub struct CachedResponse {
     pub body: Bytes,
     pub status: u16,
-    pub content_type: Option<String>,
+    pub content_type: String,
     pub ttl_seconds: u64,
+}
+
+impl CachedResponse {
+    pub fn new(body: Bytes, status: u16, content_type: String, ttl_seconds: u64) -> Self {
+        Self {
+            body,
+            status,
+            content_type,
+            ttl_seconds,
+        }
+    }
+
+    pub fn to_jsonrpc_response(&self, original_call: &JsonRpcCall) -> Bytes {
+        let result_str = std::str::from_utf8(&self.body).unwrap_or("null");
+        Bytes::from(format!(
+            r#"{{"jsonrpc":"{}","result":{},"id":{}}}"#,
+            original_call.jsonrpc, result_str, original_call.id
+        ))
+    }
 }
 
 /// Trait for cache implementations
@@ -34,7 +53,6 @@ pub trait CacheProvider: Send + Sync {
 
     /// Check if a request should be cached based on RequestType
     fn should_cache_request(&self, chain_type: &Chain, request_type: &RequestType) -> Option<u64>;
-
 }
 
 struct CacheExpiry;
@@ -93,7 +111,6 @@ impl MemoryCache {
             None
         }
     }
-
 }
 
 #[async_trait]
@@ -151,7 +168,6 @@ impl CacheProvider for MemoryCache {
 
 pub type RequestCache = MemoryCache;
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -191,7 +207,7 @@ mod tests {
         let response = CachedResponse {
             body: Bytes::from("test body"),
             status: 200,
-            content_type: Some("application/json".to_string()),
+            content_type: "application/json".to_string(),
             ttl_seconds: 0,
         };
 
@@ -201,7 +217,6 @@ mod tests {
         assert!(cached.is_some());
         assert_eq!(cached.unwrap().status, 200);
     }
-
 
     #[test]
     fn test_should_cache() {
@@ -218,7 +233,7 @@ mod tests {
         assert_eq!(ttl, Some(300));
 
         // Test RPC method-based caching
-        let body = Bytes::from(r#"{"method":"eth_blockNumber","params":[],"id":1}"#);
+        let body = Bytes::from(r#"{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}"#);
         let request_type = RequestType::from_request("POST", "/".to_string(), body);
         let ttl = cache.should_cache_request(&Chain::Ethereum, &request_type);
         assert_eq!(ttl, Some(60));
