@@ -30,14 +30,12 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "XLM" => Some(AssetId::from_chain(Chain::Stellar)),
         "TRX" => Some(AssetId::from_chain(Chain::Tron)),
         "ADA" => Some(AssetId::from_chain(Chain::Cardano)),
-        "OP" => Some(AssetId::from_chain(Chain::Optimism)),
         "LTC" => Some(AssetId::from_chain(Chain::Litecoin)),
         "DOT" => Some(AssetId::from_chain(Chain::Polkadot)),
         "CELO" => Some(AssetId::from_chain(Chain::Celo)),
         "TON" => Some(AssetId::from_chain(Chain::Ton)),
         "DOGE" => Some(AssetId::from_chain(Chain::Doge)),
 
-        "ARB" => Some(AssetId::from_chain(Chain::Arbitrum)),
         "AVAXC" => Some(AssetId::from_chain(Chain::AvalancheC)),
 
         "ETH-BASE" => Some(AssetId::from_chain(Chain::Base)),
@@ -56,6 +54,9 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
 
         "USDC" => Some(AssetId::from(Chain::Ethereum, Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string()))),
         "USDT" => Some(AssetId::from(Chain::Ethereum, Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string()))),
+
+        "ARB" => Some(AssetId::from(Chain::Arbitrum, Some("0x912CE59144191C1204E64559FE8253a0e49E6548".to_string()))),
+        "OP" => Some(AssetId::from(Chain::Optimism, Some("0x4200000000000000000000000000000000000042".to_string()))),
 
         _ => None,
     }
