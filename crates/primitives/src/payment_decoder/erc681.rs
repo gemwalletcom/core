@@ -35,7 +35,10 @@ impl TransactionRequest {
         let main_parts: Vec<&str> = parts[0].split('/').collect();
 
         // The first part should be the target address with optional chain id and pay prefix
-        let mut target_address = main_parts.first().ok_or(PaymentDecoderError::MissingField("target address".to_string()))?.to_string();
+        let mut target_address = main_parts
+            .first()
+            .ok_or(PaymentDecoderError::MissingField("target address".to_string()))?
+            .to_string();
 
         // Parse chain id in integer and 0x format
         let target_parts = target_address.split('@').collect::<Vec<&str>>();

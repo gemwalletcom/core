@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 Criar ou importar cart
 notification_onboarding_create_import_wallet_description = Crie uma nova carteira ou importe a sua em apenas alguns toques.
 notification_onboarding_welcome_description = Comece sua jornada com criptomoedas. Toque para configurar sua carteira de criptomoedas.
 notification_onboarding_buy_asset_description = Compre {$name} com segurança hoje mesmo — simples, confiável e instantâneo.
+support_new_message_title = Nova mensagem do Suporte

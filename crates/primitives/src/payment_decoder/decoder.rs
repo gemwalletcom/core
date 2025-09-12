@@ -1,5 +1,5 @@
-use crate::{asset_id::AssetId, Chain};
 use super::error::{PaymentDecoderError, Result};
+use crate::{asset_id::AssetId, Chain};
 use std::{collections::HashMap, fmt, str::FromStr};
 
 use super::{

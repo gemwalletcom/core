@@ -34,7 +34,9 @@ pub fn parse(uri: &str) -> Result<RequestType> {
     }
 
     // Handle Transfer Request
-    let (recipient, query) = query_part.split_once('?').ok_or_else(|| PaymentDecoderError::InvalidFormat("Invalid URL query string".to_string()))?;
+    let (recipient, query) = query_part
+        .split_once('?')
+        .ok_or_else(|| PaymentDecoderError::InvalidFormat("Invalid URL query string".to_string()))?;
 
     let mut query_params = HashMap::new();
     for pair in query.split('&') {

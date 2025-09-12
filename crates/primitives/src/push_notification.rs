@@ -111,3 +111,10 @@ pub struct PushNotificationSwapAsset {
     pub from_asset_id: String,
     pub to_asset_id: String,
 }
+
+#[typeshare(swift = "Equatable, Sendable")]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PushNotificationSupport {
+    pub conversation_id: i64,
+}

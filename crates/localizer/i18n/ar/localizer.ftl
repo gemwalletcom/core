@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 إنشاء أو است
 notification_onboarding_create_import_wallet_description = قم بإنشاء محفظة جديدة أو استيراد محفظتك ببضع نقرات فقط.
 notification_onboarding_welcome_description = ابدأ رحلتك مع العملات المشفرة. انقر لإعداد محفظة العملات المشفرة الخاصة بك.
 notification_onboarding_buy_asset_description = اشتري {$name} اليوم بشكل آمن - بسيط وموثوق وفوري.
+support_new_message_title = رسالة جديدة من الدعم

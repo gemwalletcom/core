@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 צור או ייבא �
 notification_onboarding_create_import_wallet_description = צור ארנק חדש או ייבא ארנק בכמה לחיצות בלבד.
 notification_onboarding_welcome_description = התחל את מסע הקריפטו שלך. הקש כדי להגדיר את ארנק הקריפטו שלך.
 notification_onboarding_buy_asset_description = קנה את {$name} בצורה מאובטחת עוד היום - פשוט, אמין ומיידי.
+support_new_message_title = הודעה חדשה מהתמיכה

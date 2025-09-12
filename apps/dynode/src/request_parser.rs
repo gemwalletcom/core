@@ -38,11 +38,10 @@ mod tests {
     fn test_extract_single_rpc_method() {
         let single_request = r#"{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}"#;
         let body = Bytes::from(single_request);
-        
+
         let methods = extract_rpc_methods(&body);
         assert_eq!(methods.len(), 1);
         assert_eq!(methods[0], "eth_blockNumber");
-        
     }
 
     #[test]
@@ -53,7 +52,7 @@ mod tests {
             {"jsonrpc":"2.0","method":"eth_call","params":[{},"latest"],"id":3}
         ]"#;
         let body = Bytes::from(batch_request);
-        
+
         let methods = extract_rpc_methods(&body);
         assert_eq!(methods.len(), 3);
         assert_eq!(methods[0], "eth_blockNumber");
@@ -65,7 +64,7 @@ mod tests {
     fn test_extract_invalid_json() {
         let invalid_json = r#"not valid json"#;
         let body = Bytes::from(invalid_json);
-        
+
         let methods = extract_rpc_methods(&body);
         assert_eq!(methods.len(), 0);
     }
@@ -74,7 +73,7 @@ mod tests {
     fn test_extract_empty_batch() {
         let empty_batch = r#"[]"#;
         let body = Bytes::from(empty_batch);
-        
+
         let methods = extract_rpc_methods(&body);
         assert_eq!(methods.len(), 0);
     }
