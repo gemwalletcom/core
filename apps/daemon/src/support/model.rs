@@ -7,12 +7,17 @@ pub const EVENT_CONVERSATION_UPDATED: &str = "conversation_updated";
 pub struct ChatwootWebhookPayload {
     pub event: String,
     pub message_type: Option<String>,
-    pub meta: Option<MetaSender>,
+    pub conversation: Option<Conversation>,
     pub content: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MetaSender {
+pub struct Conversation {
+    pub meta: Meta,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Meta {
     pub sender: Sender,
 }
 
@@ -24,14 +29,13 @@ pub struct CustomAttributes {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sender {
-    pub name: String,
     pub custom_attributes: Option<CustomAttributes>,
 }
 
 impl ChatwootWebhookPayload {
     pub fn get_device_id(&self) -> Option<String> {
-        self.meta
+        self.conversation
             .as_ref()
-            .and_then(|meta| meta.sender.custom_attributes.as_ref().and_then(|attrs| attrs.device_id.clone()))
+            .and_then(|conversation| conversation.meta.sender.custom_attributes.as_ref().and_then(|attrs| attrs.device_id.clone()))
     }
 }
