@@ -47,16 +47,33 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
 
         "USDC-SOL" => Some(AssetId::from(Chain::Solana, Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()))),
         "USDT-SOL" => Some(AssetId::from(Chain::Solana, Some("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB".to_string()))),
+        "BONK-SOL" => Some(AssetId::from(Chain::Solana, Some("DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263".to_string()))),
 
         "USDT-TRC20" => Some(AssetId::from(Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string()))),
 
         "BNB" | "BNBSC" => Some(AssetId::from_chain(Chain::SmartChain)),
+        "CAKE" => Some(AssetId::from(Chain::SmartChain, Some("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string()))),
+        "TWT" => Some(AssetId::from(Chain::SmartChain, Some("0x4B0F1812e5Df2A09796481Ff14017e6005508003".to_string()))),
 
         "USDC" => Some(AssetId::from(Chain::Ethereum, Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string()))),
         "USDT" => Some(AssetId::from(Chain::Ethereum, Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string()))),
+        "LINK" => Some(AssetId::from(Chain::Ethereum, Some("0x514910771AF9Ca656af840dff83E8264EcF986CA".to_string()))),
+        "PEPE" => Some(AssetId::from(Chain::Ethereum, Some("0x6982508145454Ce325dDbE47a25d4ec3d2311933".to_string()))),
+        "MKR" => Some(AssetId::from(Chain::Ethereum, Some("0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2".to_string()))),
+        "CRV" => Some(AssetId::from(Chain::Ethereum, Some("0xD533a949740bb3306d119CC777fa900bA034cd52".to_string()))),
+        "COMP" => Some(AssetId::from(Chain::Ethereum, Some("0xc00e94Cb662C3520282E6f5717214004A7f26888".to_string()))),
+        "PERP" => Some(AssetId::from(Chain::Ethereum, Some("0xbC396689893D065F41bc2C6EcbeE5e0085233447".to_string()))),
+        "SHIB" => Some(AssetId::from(Chain::Ethereum, Some("0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE".to_string()))),
+        "UNI" => Some(AssetId::from(Chain::Ethereum, Some("0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984".to_string()))),
+        "AAVE" => Some(AssetId::from(Chain::Ethereum, Some("0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9".to_string()))),
 
         "ARB" => Some(AssetId::from(Chain::Arbitrum, Some("0x912CE59144191C1204E64559FE8253a0e49E6548".to_string()))),
         "OP" => Some(AssetId::from(Chain::Optimism, Some("0x4200000000000000000000000000000000000042".to_string()))),
+
+        "USDC-STELLAR" => Some(AssetId::from(
+            Chain::Stellar,
+            Some("GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC".to_string()),
+        )),
 
         _ => None,
     }
@@ -233,9 +250,19 @@ mod tests {
         let token_tests = vec![
             ("USDC", Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
             ("USDC-BASE", Chain::Base, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"),
+            ("USDC-POLYGON", Chain::Polygon, "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"),
             ("USDC-SOL", Chain::Solana, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
             ("USDT", Chain::Ethereum, "0xdAC17F958D2ee523a2206206994597C13D831ec7"),
+            ("USDT-POLYGON", Chain::Polygon, "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
+            ("USDT-SOL", Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
             ("USDT-TRC20", Chain::Tron, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"),
+            ("LINK", Chain::Ethereum, "0x514910771AF9Ca656af840dff83E8264EcF986CA"),
+            ("PEPE", Chain::Ethereum, "0x6982508145454Ce325dDbE47a25d4ec3d2311933"),
+            ("MKR", Chain::Ethereum, "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"),
+            ("CRV", Chain::Ethereum, "0xD533a949740bb3306d119CC777fa900bA034cd52"),
+            ("COMP", Chain::Ethereum, "0xc00e94Cb662C3520282E6f5717214004A7f26888"),
+            ("CAKE", Chain::SmartChain, "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82"),
+            ("BONK-SOL", Chain::Solana, "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"),
         ];
 
         for (symbol, expected_chain, expected_token_id) in token_tests {
@@ -303,6 +330,7 @@ mod tests {
         let result = map_process_webhook(data);
         assert!(matches!(result, FiatWebhook::None), "Verification webhooks should map to FiatWebhook::None");
     }
+
 
     #[test]
     fn test_paybis_limits_parsing() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
