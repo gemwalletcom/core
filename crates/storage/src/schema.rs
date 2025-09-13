@@ -133,6 +133,10 @@ diesel::table! {
         currency -> Varchar,
         subscriptions_version -> Int4,
         is_price_alerts_enabled -> Bool,
+        #[max_length = 64]
+        os -> Nullable<Varchar>,
+        #[max_length = 128]
+        model -> Nullable<Varchar>,
     }
 }
 

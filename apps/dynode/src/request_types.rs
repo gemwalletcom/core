@@ -15,7 +15,6 @@ pub struct JsonRpcResponse {
     pub result: Value,
 }
 
-
 #[derive(Debug, Clone)]
 pub enum RequestType {
     Regular { path: String, method: String, body: Bytes },
