@@ -98,14 +98,27 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             let body = incoming_body.collect().await?.to_bytes();
             let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
 
-            info_with_fields!(
-                "Incoming request",
-                host = host.as_str(),
-                method = method.as_str(),
-                uri = path.as_str(),
-                rpc_method = &request_type.get_methods_list(),
-                user_agent = &user_agent_str,
-            );
+            match &request_type {
+                RequestType::JsonRpc(_) => {
+                    info_with_fields!(
+                        "Incoming JSON RPC request",
+                        host = host.as_str(),
+                        method = method.as_str(),
+                        uri = path.as_str(),
+                        rpc_method = &request_type.get_methods_list(),
+                        user_agent = &user_agent_str,
+                    );
+                }
+                RequestType::Regular { .. } => {
+                    info_with_fields!(
+                        "Incoming request",
+                        host = host.as_str(),
+                        method = method.as_str(),
+                        uri = path.as_str(),
+                        user_agent = &user_agent_str,
+                    );
+                }
+            }
 
             let cache_ttl = cache.should_cache_request(&chain, &request_type);
             let cache_key = if cache_ttl.is_some() {
@@ -209,16 +222,6 @@ impl ProxyRequestService {
                 RequestType::Regular { .. } => Ok(Self::cached_response_sync(cached.clone())),
             };
 
-            info_with_fields!(
-                "Cache HIT",
-                chain = chain.as_ref(),
-                host = host,
-                method = method.as_str(),
-                path = path,
-                rpc_method = &request_type.get_methods_list(),
-                latency = DurationMs(now.elapsed()),
-            );
-
             for method_name in &methods_for_metrics {
                 metrics.add_proxy_response(host, method_name, url.uri.host().unwrap_or_default(), cached.status, now.elapsed().as_millis());
             }
@@ -271,7 +274,6 @@ impl ProxyRequestService {
             host = &host,
             method = method.as_str(),
             path = &path,
-            rpc_method = &request_type.get_methods_list(),
             ttl_seconds = cache_ttl,
             size_bytes = body_size,
             latency = DurationMs(now.elapsed()),
