@@ -8,6 +8,7 @@ pub struct ChatwootWebhookPayload {
     pub event: String,
     pub message_type: Option<String>,
     pub conversation: Option<Conversation>,
+    pub meta: Option<Meta>,
     pub content: Option<String>,
 }
 
@@ -36,6 +37,12 @@ impl ChatwootWebhookPayload {
     pub fn get_device_id(&self) -> Option<String> {
         self.conversation
             .as_ref()
-            .and_then(|conversation| conversation.meta.sender.custom_attributes.as_ref().and_then(|attrs| attrs.device_id.clone()))
+            .map(|c| &c.meta)
+            .or(self.meta.as_ref())?
+            .sender
+            .custom_attributes
+            .as_ref()?
+            .device_id
+            .clone()
     }
 }
