@@ -12,9 +12,14 @@ pub fn map_token_data_metaplex(
 ) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
     let name = meta.data.name.trim_matches(char::from(0)).to_string();
     let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
-    let decimals = token_info.decimals;
+    let decimals: i32 = token_info.decimals;
+    let asset_type = if token_info.extensions.is_some() {
+        AssetType::SPL2022
+    } else {
+        AssetType::SPL
+    };
 
-    Ok(Asset::new(AssetId::from_token(chain, &token_id), name, symbol, decimals, AssetType::TOKEN))
+    Ok(Asset::new(AssetId::from_token(chain, &token_id), name, symbol, decimals, asset_type))
 }
 
 pub fn map_token_data_spl_token_2022(chain: Chain, token_id: String, token_info: &TokenInfo) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
@@ -36,7 +41,7 @@ pub fn map_token_data_spl_token_2022(chain: Chain, token_id: String, token_info:
         token_metadata.name,
         token_metadata.symbol,
         token_info.decimals,
-        AssetType::TOKEN,
+        AssetType::SPL2022,
     ))
 }
 
