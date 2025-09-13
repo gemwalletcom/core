@@ -96,7 +96,6 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             let chain = domain_config.chain;
             let (parts, incoming_body) = req.into_parts();
             let body = incoming_body.collect().await?.to_bytes();
-
             let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
 
             info_with_fields!(
@@ -116,7 +115,6 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             };
 
             let methods_for_metrics = request_type.get_methods_for_metrics();
-
             for method in &methods_for_metrics {
                 metrics.add_proxy_request_by_method(host.as_str(), method);
             }
@@ -142,10 +140,9 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             let status = response.status().as_u16();
 
             let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers).await?;
-            let latency_ms = now.elapsed().as_millis();
 
             for method in &methods_for_metrics {
-                metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), status, latency_ms);
+                metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), status, now.elapsed().as_millis());
             }
 
             info_with_fields!(
@@ -321,7 +318,7 @@ impl ProxyRequestService {
     pub fn persist_headers(headers: &HeaderMap, list: &[HeaderName]) -> HeaderMap {
         headers
             .iter()
-            .filter_map(|(k, v)| if list.contains(&k) { Some((k.clone(), v.clone())) } else { None })
+            .filter_map(|(k, v)| if list.contains(k) { Some((k.clone(), v.clone())) } else { None })
             .collect()
     }
 
