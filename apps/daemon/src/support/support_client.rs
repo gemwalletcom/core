@@ -1,4 +1,6 @@
-use super::model::{ChatwootWebhookPayload, EVENT_MESSAGE_CREATED, MESSAGE_TYPE_OUTGOING};
+use crate::support::model::EVENT_CONVERSATION_UPDATED;
+
+use super::model::{ChatwootWebhookPayload, EVENT_MESSAGE_CREATED};
 use localizer::LanguageLocalizer;
 use primitives::{push_notification::PushNotificationSupport, GorushNotification, PushNotification, PushNotificationTypes};
 use std::error::Error;
@@ -16,7 +18,7 @@ impl SupportClient {
     }
 
     pub async fn process_webhook(&mut self, device_id: String, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if payload.event != EVENT_MESSAGE_CREATED && payload.message_type != MESSAGE_TYPE_OUTGOING {
+        if payload.event != EVENT_MESSAGE_CREATED || payload.event != EVENT_CONVERSATION_UPDATED {
             return Ok(());
         }
         let device = self.database.devices().get_device(&device_id)?;
@@ -36,10 +38,7 @@ impl SupportClient {
 
         let data = PushNotification {
             notification_type: PushNotificationTypes::Support,
-            data: serde_json::to_value(PushNotificationSupport {
-                conversation_id: payload.conversation.id,
-            })
-            .ok(),
+            data: serde_json::to_value(PushNotificationSupport {}).ok(),
         };
         let notification = GorushNotification::from_device(device, title, message, data);
         let notifications_payload = NotificationsPayload::new(vec![notification]);

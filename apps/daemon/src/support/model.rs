@@ -1,31 +1,19 @@
 use serde::{Deserialize, Serialize};
 
 pub const EVENT_MESSAGE_CREATED: &str = "message_created";
-pub const MESSAGE_TYPE_OUTGOING: &str = "outgoing";
+pub const EVENT_CONVERSATION_UPDATED: &str = "conversation_updated";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatwootWebhookPayload {
     pub event: String,
-    pub message_type: String,
-    pub conversation: Conversation,
+    pub message_type: Option<String>,
+    pub meta: Option<MetaSender>,
     pub content: Option<String>,
-    pub sender: Option<Sender>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Conversation {
-    pub id: i64,
-    pub meta: ConversationMeta,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConversationMeta {
-    pub sender: MetaSender,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetaSender {
-    pub custom_attributes: Option<CustomAttributes>,
+    pub sender: Sender,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,15 +25,13 @@ pub struct CustomAttributes {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Sender {
     pub name: String,
+    pub custom_attributes: Option<CustomAttributes>,
 }
 
 impl ChatwootWebhookPayload {
     pub fn get_device_id(&self) -> Option<String> {
-        self.conversation
-            .meta
-            .sender
-            .custom_attributes
+        self.meta
             .as_ref()
-            .and_then(|attrs| attrs.device_id.clone())
+            .and_then(|meta| meta.sender.custom_attributes.as_ref().and_then(|attrs| attrs.device_id.clone()))
     }
 }

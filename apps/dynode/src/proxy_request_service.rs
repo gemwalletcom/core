@@ -133,7 +133,7 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             }
 
             if let Some(ref key) = cache_key {
-                if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, host.as_str(), &method, &path, &url, &metrics, now).await {
+                if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, host.as_str(), &url, &metrics, now).await {
                     return result;
                 }
             }
@@ -195,8 +195,6 @@ impl ProxyRequestService {
         cache_key: &str,
         request_type: &RequestType,
         host: &str,
-        method: &hyper::Method,
-        path: &str,
         url: &RequestUrl,
         metrics: &Metrics,
         now: std::time::Instant,
