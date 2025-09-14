@@ -2,7 +2,6 @@ pub mod cache;
 pub mod chain_client;
 pub mod config;
 pub mod metrics;
-pub mod metrics_service;
 pub mod node_monitor;
 pub mod node_service;
 pub mod proxy_request_service;

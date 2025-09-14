@@ -132,7 +132,7 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                 metrics.add_proxy_request_by_method(host.as_str(), method);
             }
 
-            if let Some(ref key) = cache_key {
+            if let Some(key) = &cache_key {
                 if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, host.as_str(), &url, &metrics, now).await {
                     return result;
                 }

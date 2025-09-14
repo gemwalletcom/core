@@ -13,6 +13,9 @@ metrics:
 cache:
   max_memory_mb: 1024
   rules:
+    ethereum:
+      - rpc_method: eth_chainId
+        ttl_seconds: 3600  # 1 hour
     tron:
       - path: /wallet/getchainparameters
         method: GET

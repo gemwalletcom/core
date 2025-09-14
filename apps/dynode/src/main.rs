@@ -1,6 +1,5 @@
 use dynode::config::{self, MetricsConfig};
-use dynode::metrics::Metrics;
-use dynode::metrics_service::MetricsService;
+use dynode::metrics::{Metrics, MetricsService};
 use dynode::node_service::NodeService;
 
 use futures::future::join;

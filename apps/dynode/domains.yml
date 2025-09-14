@@ -4,11 +4,11 @@ domains:
     poll_interval_seconds: 10
     urls:
       - url: https://eth.llamarpc.com
-        headers:
-          x-api-key: test
-        urls_override:
-          "/":
-            url: https://rpc.ankr.com/eth
+        # headers:
+        #   x-api-key: test
+        # urls_override:
+        #   "/":
+        #     url: https://rpc.ankr.com/eth
         #headers:
         #  x-api-key: test2
         #
