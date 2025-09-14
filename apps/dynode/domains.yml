@@ -1,8 +1,9 @@
 domains:
-  - domain: localhost:3000
+  - domain: ethereum
     chain: ethereum
     #poll_interval_seconds: 10
     urls:
+      - url: https://rpc.ankr.com/eth
       - url: https://eth.llamarpc.com
         # headers:
         #   x-api-key: test
