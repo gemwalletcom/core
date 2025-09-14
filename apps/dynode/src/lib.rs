@@ -9,4 +9,5 @@ pub mod proxy_request_service;
 pub mod request_parser;
 pub mod request_types;
 pub mod request_url;
+pub mod request_builder;
 pub mod response_builder;

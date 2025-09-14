@@ -14,7 +14,6 @@ use hyper_tls::HttpsConnector;
 use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use std::future::Future;
 use std::pin::Pin;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -24,6 +23,7 @@ use crate::cache::RequestCache;
 use crate::config::{Domain, Url};
 use crate::metrics::Metrics;
 use crate::request_url::RequestUrl;
+use crate::request_builder::RequestBuilder;
 use gem_tracing::{info_with_fields, DurationMs};
 
 #[derive(Debug, Clone)]
@@ -141,21 +141,22 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             }
 
             if let RequestType::JsonRpc(rpc_request) = &request_type {
-                return JsonRpcHandler::handle_request(rpc_request, chain, &host, &path_with_query, &cache, &metrics, &url, &client, now).await;
+                return JsonRpcHandler::handle_request(
+                    rpc_request,
+                    chain,
+                    &host,
+                    &path_with_query,
+                    &cache,
+                    &metrics,
+                    &url,
+                    &client,
+                    &method,
+                    now,
+                )
+                .await;
             }
 
-            let new_req = Request::builder()
-                .method(parts.method)
-                .uri(parts.uri)
-                .body(Full::new(body.clone()))
-                .expect("failed to build request");
-            let new_req = {
-                let mut r = new_req;
-                *r.headers_mut() = parts.headers;
-                r
-            };
-
-            let response = Self::proxy_pass_get_data(new_req, url.clone(), &client, &keep_headers).await?;
+            let response = Self::proxy_pass_get_data(parts.method, parts.headers, body.clone(), url.clone(), &client, &keep_headers).await?;
             let status = response.status().as_u16();
 
             let upstream_headers = ResponseBuilder::create_upstream_headers(url.uri.host(), now.elapsed());
@@ -297,31 +298,18 @@ impl ProxyRequestService {
     }
 
     async fn proxy_pass_get_data(
-        original_request: Request<Full<Bytes>>,
+        method: hyper::Method,
+        original_headers: HeaderMap,
+        body: Bytes,
         url: RequestUrl,
         client: &HttpClient,
         keep_headers: &[HeaderName],
     ) -> Result<Response<IncomingBody>, Box<dyn std::error::Error + Send + Sync>> {
-        let original_headers = original_request.headers().clone();
-        let mut request = Request::builder()
-            .method(original_request.method())
-            .uri(url.clone().uri)
-            .body(original_request.into_body())
-            .expect("invalid request params");
-
-        let mut new_headers = Self::persist_headers(&original_headers, keep_headers);
-        for (key, value) in url.params.clone() {
-            new_headers.append(HeaderName::from_str(&key).unwrap(), value.clone().parse().unwrap());
-        }
-        *request.headers_mut() = new_headers;
-
+        let request = RequestBuilder::build_forwarded(&method, &url, body, &original_headers, keep_headers)?;
         Ok(client.request(request).await?)
     }
 
     pub fn persist_headers(headers: &HeaderMap, list: &[HeaderName]) -> HeaderMap {
-        headers
-            .iter()
-            .filter_map(|(k, v)| if list.contains(k) { Some((k.clone(), v.clone())) } else { None })
-            .collect()
+        RequestBuilder::filter_headers(headers, list)
     }
 }

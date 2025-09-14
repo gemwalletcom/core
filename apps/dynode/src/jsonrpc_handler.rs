@@ -1,17 +1,17 @@
 use crate::cache::{CacheProvider, CachedResponse, RequestCache};
 use crate::metrics::Metrics;
 use crate::request_types::{JsonRpcCall, JsonRpcError, JsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
+use crate::request_builder::RequestBuilder;
 use crate::request_url::RequestUrl;
 use crate::response_builder::ResponseBuilder;
 use bytes::Bytes;
 use gem_tracing::{info_with_fields, DurationMs};
 use http_body_util::{BodyExt, Full};
-use hyper::header::{self, HeaderName};
-use hyper::{HeaderMap, Request, Response};
+use hyper::header;
+use hyper::{HeaderMap, Method, Response};
 use hyper_tls::HttpsConnector;
 use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use primitives::Chain;
-use std::str::FromStr;
 
 type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
 
@@ -30,6 +30,7 @@ impl JsonRpcHandler {
         metrics: &Metrics,
         url: &RequestUrl,
         client: &HttpClient,
+        method: &Method,
         start_time: std::time::Instant,
     ) -> Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>> {
         let calls = request.get_calls();
@@ -44,7 +45,7 @@ impl JsonRpcHandler {
             Vec::new()
         } else {
             let uncached_calls: Vec<&JsonRpcCall> = uncached_indices.iter().map(|&i| calls[i]).collect();
-            Self::fetch_responses(&uncached_calls, chain, host, path, cache, url, client, start_time).await?
+            Self::fetch_responses(&uncached_calls, chain, host, path, cache, url, client, method, start_time).await?
         };
 
         let responses = Self::build_responses(&calls, &cached_responses, &upstream_responses, uncached_indices.clone());
@@ -110,6 +111,7 @@ impl JsonRpcHandler {
         cache: &RequestCache,
         url: &RequestUrl,
         client: &HttpClient,
+        method: &Method,
         start_time: std::time::Instant,
     ) -> Result<Vec<JsonRpcResult>, Box<dyn std::error::Error + Send + Sync>> {
         let body = if calls.len() == 1 {
@@ -118,21 +120,7 @@ impl JsonRpcHandler {
             serde_json::to_vec(&calls)?
         };
 
-        let mut headers = hyper::HeaderMap::new();
-        headers.insert(header::CONTENT_TYPE, JSON_HEADER.clone());
-        for (key, value) in &url.params {
-            if let (Ok(name), Ok(val)) = (HeaderName::from_str(key), value.parse()) {
-                headers.append(name, val);
-            }
-        }
-
-        let request = Request::builder().method("POST").uri(url.uri.clone()).body(Full::new(Bytes::from(body)))?;
-
-        let req = {
-            let mut req = request;
-            *req.headers_mut() = headers;
-            req
-        };
+        let req = RequestBuilder::build_jsonrpc(url, method, Bytes::from(body))?;
 
         let response = client.request(req).await?;
         let status = response.status().as_u16();
@@ -222,4 +210,6 @@ impl JsonRpcHandler {
         response.headers_mut().extend(headers);
         Ok(response)
     }
+
+    
 }
