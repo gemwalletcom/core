@@ -36,23 +36,14 @@ impl CachedResponse {
     }
 }
 
-/// Trait for cache implementations
 #[async_trait]
 pub trait CacheProvider: Send + Sync {
-    /// Get a value from the cache
     async fn get(&self, chain_type: &Chain, key: &str) -> Option<CachedResponse>;
-
-    /// Set a value in the cache with TTL
     async fn set(&self, chain_type: &Chain, key: String, response: CachedResponse, ttl_seconds: u64);
-
-    /// Get cache rules for a specific chain type
     fn get_cache_rules(&self, chain_type: &Chain) -> Vec<CacheRule>;
-
-    /// Check if a request should be cached based on rules
     fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, body: Option<&Bytes>) -> Option<u64>;
-
-    /// Check if a request should be cached based on RequestType
     fn should_cache_request(&self, chain_type: &Chain, request_type: &RequestType) -> Option<u64>;
+    fn should_cache_call(&self, chain_type: &Chain, call: &crate::request_types::JsonRpcCall) -> Option<u64>;
 }
 
 struct CacheExpiry;
@@ -63,7 +54,6 @@ impl Expiry<String, CachedResponse> for CacheExpiry {
     }
 }
 
-/// In-memory cache implementation using Moka
 #[derive(Debug, Clone)]
 pub struct MemoryCache {
     caches: Arc<HashMap<String, Cache<String, CachedResponse>>>,
@@ -159,11 +149,31 @@ impl CacheProvider for MemoryCache {
                         }
                     }
                 }
+                RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => {
+                    if rule.rpc_method.is_some() {
+                        return Some(rule.ttl_seconds);
+                    }
+                }
             }
         }
 
         None
     }
+
+    fn should_cache_call(&self, chain_type: &Chain, call: &crate::request_types::JsonRpcCall) -> Option<u64> {
+        let rules = self.get_cache_rules(chain_type);
+
+        for rule in rules {
+            if let Some(rpc_method_name) = &rule.rpc_method {
+                if call.method == *rpc_method_name {
+                    return Some(rule.ttl_seconds);
+                }
+            }
+        }
+
+        None
+    }
+
 }
 
 pub type RequestCache = MemoryCache;

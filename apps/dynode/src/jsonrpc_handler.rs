@@ -1,0 +1,229 @@
+use crate::cache::{CachedResponse, CacheProvider, RequestCache};
+use crate::request_types::{JsonRpcCall, JsonRpcError, JsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
+use bytes::Bytes;
+use http_body_util::{BodyExt, Full};
+use hyper::header::{self, HeaderName};
+use hyper::{Request, Response};
+use hyper_tls::HttpsConnector;
+use hyper_util::client::legacy::{connect::HttpConnector, Client};
+use primitives::Chain;
+use std::str::FromStr;
+use crate::metrics::Metrics;
+use crate::request_url::RequestUrl;
+use gem_tracing::{info_with_fields, DurationMs};
+
+type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
+
+const JSON_CONTENT_TYPE: &str = "application/json";
+const JSON_HEADER: header::HeaderValue = header::HeaderValue::from_static(JSON_CONTENT_TYPE);
+
+pub struct JsonRpcHandler;
+
+impl JsonRpcHandler {
+    pub async fn handle_request(
+        request: &JsonRpcRequest,
+        chain: Chain,
+        host: &str,
+        path: &str,
+        cache: &RequestCache,
+        metrics: &Metrics,
+        url: &RequestUrl,
+        client: &HttpClient,
+        start_time: std::time::Instant,
+    ) -> Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>> {
+        let calls = request.get_calls();
+
+        for call in &calls {
+            metrics.add_proxy_request_by_method(host, &call.method);
+        }
+
+        let (cached_responses, uncached_indices) = Self::check_cache(&calls, chain, host, path, cache, metrics).await;
+
+        let upstream_responses = if uncached_indices.is_empty() {
+            Vec::new()
+        } else {
+            let uncached_calls: Vec<&JsonRpcCall> = uncached_indices.iter().map(|&i| calls[i]).collect();
+            Self::fetch_responses(&uncached_calls, chain, host, path, cache, url, client, start_time).await?
+        };
+
+        let responses = Self::build_responses(&calls, &cached_responses, &upstream_responses, uncached_indices);
+
+        for call in &calls {
+            metrics.add_proxy_response(host, &call.method, url.uri.host().unwrap_or_default(), 200, start_time.elapsed().as_millis());
+        }
+
+        info_with_fields!(
+            "Proxy response",
+            host = url.uri.host().unwrap_or_default(),
+            status = 200,
+            latency = DurationMs(start_time.elapsed()),
+        );
+
+        match request {
+            JsonRpcRequest::Single(_) => Self::build_json_response(&responses[0]),
+            JsonRpcRequest::Batch(_) => Self::build_json_response(&responses),
+        }
+    }
+
+    async fn check_cache(
+        calls: &[&JsonRpcCall],
+        chain: Chain,
+        host: &str,
+        path: &str,
+        cache: &RequestCache,
+        metrics: &Metrics,
+    ) -> (Vec<Option<CachedResponse>>, Vec<usize>) {
+        let mut cached_responses = Vec::new();
+        let mut uncached_indices = Vec::new();
+
+        for (i, call) in calls.iter().enumerate() {
+            let cache_key = call.cache_key(host, path);
+            if cache.should_cache_call(&chain, call).is_some() {
+                if let Some(cached) = cache.get(&chain, &cache_key).await {
+                    cached_responses.push(Some(cached));
+                    metrics.add_cache_hit(host, &call.method);
+
+                    info_with_fields!("Cache HIT", chain = chain.as_ref(), host = host, method = call.method.as_str(),);
+                } else {
+                    cached_responses.push(None);
+                    uncached_indices.push(i);
+                    metrics.add_cache_miss(host, &call.method);
+                }
+            } else {
+                cached_responses.push(None);
+                uncached_indices.push(i);
+                metrics.add_cache_miss(host, &call.method);
+            }
+        }
+
+        (cached_responses, uncached_indices)
+    }
+
+    async fn fetch_responses(
+        calls: &[&JsonRpcCall],
+        chain: Chain,
+        host: &str,
+        path: &str,
+        cache: &RequestCache,
+        url: &RequestUrl,
+        client: &HttpClient,
+        start_time: std::time::Instant,
+    ) -> Result<Vec<JsonRpcResult>, Box<dyn std::error::Error + Send + Sync>> {
+        let body = if calls.len() == 1 {
+            serde_json::to_vec(&calls[0])?
+        } else {
+            serde_json::to_vec(&calls)?
+        };
+
+        let mut headers = hyper::HeaderMap::new();
+        headers.insert(header::CONTENT_TYPE, JSON_HEADER.clone());
+        for (key, value) in &url.params {
+            if let (Ok(name), Ok(val)) = (HeaderName::from_str(key), value.parse()) {
+                headers.append(name, val);
+            }
+        }
+
+        let request = Request::builder().method("POST").uri(url.uri.clone()).body(Full::new(Bytes::from(body)))?;
+
+        let req = {
+            let mut req = request;
+            *req.headers_mut() = headers;
+            req
+        };
+
+        let response = client.request(req).await?;
+        let status = response.status().as_u16();
+        let body_bytes = response.collect().await?.to_bytes();
+
+        let responses = if status == 200 {
+            if calls.len() == 1 {
+                vec![serde_json::from_slice(&body_bytes)?]
+            } else {
+                serde_json::from_slice(&body_bytes)?
+            }
+        } else {
+            Vec::new()
+        };
+
+        Self::cache_responses(&responses, calls, chain, host, path, cache, start_time).await;
+
+        Ok(responses)
+    }
+
+    async fn cache_responses(
+        responses: &[JsonRpcResult],
+        calls: &[&JsonRpcCall],
+        chain: Chain,
+        host: &str,
+        path: &str,
+        cache: &RequestCache,
+        now: std::time::Instant,
+    ) {
+        for (i, response) in responses.iter().enumerate() {
+            if let (Some(call), JsonRpcResult::Success(success)) = (calls.get(i), response) {
+                if let Some(ttl) = cache.should_cache_call(&chain, call) {
+                    let result_bytes = Bytes::from(serde_json::to_string(&success.result).unwrap_or_default());
+                    let size_bytes = result_bytes.len();
+                    let cached = CachedResponse::new(result_bytes, 200, JSON_CONTENT_TYPE.to_string(), ttl);
+                    let cache_key = call.cache_key(host, path);
+                    cache.set(&chain, cache_key, cached, ttl).await;
+
+                    info_with_fields!(
+                        "Cache SET",
+                        chain = chain.as_ref(),
+                        host = host,
+                        method = call.method.as_str(),
+                        ttl_seconds = ttl,
+                        size_bytes = size_bytes,
+                        latency = DurationMs(now.elapsed()),
+                    );
+                }
+            }
+        }
+    }
+
+    fn build_responses(calls: &[&JsonRpcCall], cached: &[Option<CachedResponse>], upstream: &[JsonRpcResult], _: Vec<usize>) -> Vec<JsonRpcResult> {
+        let mut upstream_idx = 0;
+        calls
+            .iter()
+            .enumerate()
+            .map(|(i, call)| {
+                if let Some(Some(cache)) = cached.get(i) {
+                    let result = serde_json::from_slice(&cache.body).unwrap_or_default();
+                    JsonRpcResult::Success(JsonRpcResponse { result, id: call.id })
+                } else if let Some(response) = upstream.get(upstream_idx) {
+                    upstream_idx += 1;
+                    response.clone()
+                } else {
+                    JsonRpcResult::Error(JsonRpcErrorResponse {
+                        error: JsonRpcError {
+                            code: -32603,
+                            message: "Internal error".to_string(),
+                            data: Some(serde_json::json!({"reason": "No response received"})),
+                        },
+                        id: call.id,
+                    })
+                }
+            })
+            .collect()
+    }
+
+    fn build_json_response<T: serde::Serialize>(data: &T) -> Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>> {
+        let response_body = serde_json::to_vec(data)?;
+        Self::build_response(Bytes::from(response_body), 200, JSON_CONTENT_TYPE)
+    }
+
+    fn build_response(data: Bytes, status: u16, content_type: &str) -> Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>> {
+        let mut response = Response::new(Full::new(data));
+        *response.status_mut() = hyper::StatusCode::from_u16(status).unwrap_or(hyper::StatusCode::OK);
+        response.headers_mut().insert(
+            header::CONTENT_TYPE,
+            if content_type == JSON_CONTENT_TYPE {
+                JSON_HEADER.clone()
+            } else {
+                content_type.parse().unwrap_or(JSON_HEADER.clone())
+            },
+        );
+        Ok(response)
+    }
+}

@@ -1,6 +1,7 @@
 pub mod cache;
 pub mod chain_client;
 pub mod config;
+pub mod jsonrpc_handler;
 pub mod metrics;
 pub mod node_monitor;
 pub mod node_service;
@@ -8,3 +9,4 @@ pub mod proxy_request_service;
 pub mod request_parser;
 pub mod request_types;
 pub mod request_url;
+pub mod response_builder;

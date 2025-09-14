@@ -1,16 +1,17 @@
-use crate::cache::CacheProvider;
+use crate::cache::{CacheProvider, CachedResponse};
+use crate::jsonrpc_handler::JsonRpcHandler;
 use crate::request_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
+use crate::response_builder::ResponseBuilder;
 use bytes::Bytes;
 use http_body_util::{BodyExt, Full};
-use hyper::header::{self, HeaderName};
+use hyper::header::{self, HeaderMap, HeaderName};
 use hyper::service::Service;
-use hyper::HeaderMap;
+use std::collections::HashMap;
 
 use futures::FutureExt;
 use hyper::{body::Incoming as IncomingBody, Request, Response};
 use hyper_tls::HttpsConnector;
 use hyper_util::client::legacy::{connect::HttpConnector, Client};
-use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
@@ -19,7 +20,7 @@ use std::time::Instant;
 
 type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
 
-use crate::cache::{CachedResponse, RequestCache};
+use crate::cache::RequestCache;
 use crate::config::{Domain, Url};
 use crate::metrics::Metrics;
 use crate::request_url::RequestUrl;
@@ -132,6 +133,10 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
                 metrics.add_proxy_request_by_method(host.as_str(), method);
             }
 
+            if let RequestType::JsonRpc(rpc_request) = &request_type {
+                return JsonRpcHandler::handle_request(rpc_request, chain, &host, &path_with_query, &cache, &metrics, &url, &client, now).await;
+            }
+
             if let Some(key) = &cache_key {
                 if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, host.as_str(), &url, &metrics, now).await {
                     return result;
@@ -208,16 +213,10 @@ impl ProxyRequestService {
             let response = match request_type {
                 RequestType::JsonRpc(JsonRpcRequest::Single(original_call)) => {
                     let data = cached.to_jsonrpc_response(original_call);
-                    let mut response = Response::new(Full::new(data));
-                    *response.status_mut() = hyper::StatusCode::from_u16(cached.status).unwrap_or(hyper::StatusCode::OK);
-
-                    response
-                        .headers_mut()
-                        .insert(header::CONTENT_TYPE, Self::get_content_type_header(&cached.content_type));
-
-                    Ok(response)
+                    ResponseBuilder::build(data, cached.status, &cached.content_type)
                 }
-                RequestType::Regular { .. } => Ok(Self::cached_response_sync(cached.clone())),
+                RequestType::Regular { .. } => Ok(ResponseBuilder::build_cached(cached.clone())),
+                RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => return None,
             };
 
             for method_name in &methods_for_metrics {
@@ -232,10 +231,6 @@ impl ProxyRequestService {
             }
             None
         }
-    }
-
-    fn get_content_type_header(content_type_str: &str) -> header::HeaderValue {
-        content_type_str.parse().unwrap_or_else(|_| "application/json".parse().unwrap())
     }
 
     async fn store_cache(
@@ -320,29 +315,5 @@ impl ProxyRequestService {
             .iter()
             .filter_map(|(k, v)| if list.contains(k) { Some((k.clone(), v.clone())) } else { None })
             .collect()
-    }
-
-    fn cached_response_sync(cached: CachedResponse) -> Response<Full<Bytes>> {
-        let mut response = Response::new(Full::from(cached.body));
-
-        // Most cached responses are 200, avoid parsing if possible
-        if cached.status == 200 {
-            *response.status_mut() = hyper::StatusCode::OK;
-        } else {
-            *response.status_mut() = hyper::StatusCode::from_u16(cached.status).unwrap_or(hyper::StatusCode::OK);
-        }
-
-        // Most responses are application/json, avoid parsing if possible
-        if cached.content_type == "application/json" {
-            response
-                .headers_mut()
-                .insert(header::CONTENT_TYPE, header::HeaderValue::from_static("application/json"));
-        } else {
-            response
-                .headers_mut()
-                .insert(header::CONTENT_TYPE, Self::get_content_type_header(&cached.content_type));
-        }
-
-        response
     }
 }

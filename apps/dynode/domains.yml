@@ -1,7 +1,7 @@
 domains:
   - domain: localhost:3000
     chain: ethereum
-    poll_interval_seconds: 10
+    #poll_interval_seconds: 10
     urls:
       - url: https://eth.llamarpc.com
         # headers:
@@ -21,7 +21,7 @@ domains:
 
   - domain: localhost:3003
     chain: solana
-    poll_interval_seconds: 15
+    #poll_interval_seconds: 15
     block_delay: 5
     urls:
       - url: https://api.mainnet-beta.solana.com

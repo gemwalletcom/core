@@ -67,6 +67,6 @@ mod tests {
         assert_eq!(token_data.name, "PayPal USD");
         assert_eq!(token_data.symbol, "PYUSD");
         assert_eq!(token_data.decimals, 6);
-        assert_eq!(token_data.asset_type, AssetType::TOKEN);
+        assert_eq!(token_data.asset_type, AssetType::SPL2022);
     }
 }
