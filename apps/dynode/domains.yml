@@ -14,12 +14,12 @@ domains:
         #
       - url: https://rpc.ankr.com/eth
 
-  - domain: localhost:3002
+  - domain: bitcoin
     chain: bitcoin
     urls:
       - url: https://blockbook.btc.zelcore.io
 
-  - domain: localhost:3003
+  - domain: solana
     chain: solana
     #poll_interval_seconds: 15
     block_delay: 5
@@ -28,12 +28,12 @@ domains:
       - url: https://api.tatum.io/v3/blockchain/node/solana-mainnet
       #- url: https://solana.drpc.org
 
-  - domain: localhost:3004
+  - domain: cosmos
     chain: cosmos
     urls:
       - url: https://cosmos-rest.publicnode.com
 
-  - domain: localhost:3005
+  - domain: ton
     chain: ton
     urls:
       - url: https://toncenter.com
@@ -43,27 +43,32 @@ domains:
     urls:
       - url: https://api.trongrid.io
 
-  - domain: localhost:3007
+  - domain: aptos
     chain: aptos
     urls:
       - url: https://fullnode.mainnet.aptoslabs.com
 
-  - domain: localhost:3008
+  - domain: sui
     chain: sui
     urls:
       - url: https://sui-mainnet-endpoint.blockvision.org
 
-  - domain: localhost:3009
+  - domain: xrp
     chain: xrp
     poll_interval_seconds: 30
     urls:
       - url: https://s1.ripple.com:51234
       - url: https://s2.ripple.com:51234
 
-  - domain: localhost:3010
+  - domain: near
     chain: near
     poll_interval_seconds: 60
     block_delay: 5
     urls:
       - url: https://rpc.mainnet.near.org
       - url: https://free.rpc.fastnear.com
+
+  - domain: hypercore
+    chain: hypercore
+    urls:
+      - url: https://api.hyperliquid.xyz

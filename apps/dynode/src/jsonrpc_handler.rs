@@ -1,16 +1,17 @@
-use crate::cache::{CachedResponse, CacheProvider, RequestCache};
+use crate::cache::{CacheProvider, CachedResponse, RequestCache};
+use crate::metrics::Metrics;
 use crate::request_types::{JsonRpcCall, JsonRpcError, JsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
+use crate::request_url::RequestUrl;
+use crate::response_builder::ResponseBuilder;
 use bytes::Bytes;
+use gem_tracing::{info_with_fields, DurationMs};
 use http_body_util::{BodyExt, Full};
 use hyper::header::{self, HeaderName};
-use hyper::{Request, Response};
+use hyper::{HeaderMap, Request, Response};
 use hyper_tls::HttpsConnector;
 use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use primitives::Chain;
 use std::str::FromStr;
-use crate::metrics::Metrics;
-use crate::request_url::RequestUrl;
-use gem_tracing::{info_with_fields, DurationMs};
 
 type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
 
@@ -46,7 +47,7 @@ impl JsonRpcHandler {
             Self::fetch_responses(&uncached_calls, chain, host, path, cache, url, client, start_time).await?
         };
 
-        let responses = Self::build_responses(&calls, &cached_responses, &upstream_responses, uncached_indices);
+        let responses = Self::build_responses(&calls, &cached_responses, &upstream_responses, uncached_indices.clone());
 
         for call in &calls {
             metrics.add_proxy_response(host, &call.method, url.uri.host().unwrap_or_default(), 200, start_time.elapsed().as_millis());
@@ -59,9 +60,11 @@ impl JsonRpcHandler {
             latency = DurationMs(start_time.elapsed()),
         );
 
+        let upstream_headers = ResponseBuilder::create_upstream_headers(url.uri.host(), start_time.elapsed());
+
         match request {
-            JsonRpcRequest::Single(_) => Self::build_json_response(&responses[0]),
-            JsonRpcRequest::Batch(_) => Self::build_json_response(&responses),
+            JsonRpcRequest::Single(_) => Self::build_json_response_with_headers(&responses[0], upstream_headers),
+            JsonRpcRequest::Batch(_) => Self::build_json_response_with_headers(&responses, upstream_headers),
         }
     }
 
@@ -208,22 +211,15 @@ impl JsonRpcHandler {
             .collect()
     }
 
-    fn build_json_response<T: serde::Serialize>(data: &T) -> Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>> {
+    fn build_json_response_with_headers<T: serde::Serialize>(
+        data: &T,
+        headers: HeaderMap,
+    ) -> Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
-        Self::build_response(Bytes::from(response_body), 200, JSON_CONTENT_TYPE)
-    }
-
-    fn build_response(data: Bytes, status: u16, content_type: &str) -> Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>> {
-        let mut response = Response::new(Full::new(data));
-        *response.status_mut() = hyper::StatusCode::from_u16(status).unwrap_or(hyper::StatusCode::OK);
-        response.headers_mut().insert(
-            header::CONTENT_TYPE,
-            if content_type == JSON_CONTENT_TYPE {
-                JSON_HEADER.clone()
-            } else {
-                content_type.parse().unwrap_or(JSON_HEADER.clone())
-            },
-        );
+        let mut response = Response::new(Full::new(Bytes::from(response_body)));
+        *response.status_mut() = hyper::StatusCode::OK;
+        response.headers_mut().insert(header::CONTENT_TYPE, JSON_HEADER.clone());
+        response.headers_mut().extend(headers);
         Ok(response)
     }
 }
