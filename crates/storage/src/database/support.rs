@@ -3,8 +3,7 @@ use diesel::prelude::*;
 
 pub(crate) trait SupportStore {
     fn add_support_device(&mut self, value: Support) -> Result<Support, diesel::result::Error>;
-    fn get_support_by_support_id(&mut self, support_id_param: &str) -> Result<Support, diesel::result::Error>;
-    fn get_device_by_support_id(&mut self, support_id_param: &str) -> Result<Device, diesel::result::Error>;
+    fn get_support_device(&mut self, support_id_param: &str) -> Result<Device, diesel::result::Error>;
 }
 
 impl SupportStore for DatabaseClient {
@@ -20,19 +19,11 @@ impl SupportStore for DatabaseClient {
             .get_result(&mut self.connection)
     }
 
-    fn get_support_by_support_id(&mut self, support_id_param: &str) -> Result<Support, diesel::result::Error> {
-        use crate::schema::support::dsl::*;
-        support
-            .filter(support_id.eq(support_id_param))
-            .select(Support::as_select())
-            .first(&mut self.connection)
-    }
-
-    fn get_device_by_support_id(&mut self, support_id_param: &str) -> Result<Device, diesel::result::Error> {
+    fn get_support_device(&mut self, support_device_id: &str) -> Result<Device, diesel::result::Error> {
         use crate::schema::{devices, support};
         support::table
             .inner_join(devices::table)
-            .filter(support::support_id.eq(support_id_param))
+            .filter(support::support_id.eq(support_device_id))
             .select(Device::as_select())
             .first(&mut self.connection)
     }
@@ -49,11 +40,7 @@ impl DatabaseClient {
         )
     }
 
-    pub fn get_support_by_support_id(&mut self, support_id: &str) -> Result<Support, diesel::result::Error> {
-        SupportStore::get_support_by_support_id(self, support_id)
-    }
-
-    pub fn get_device_by_support_id(&mut self, support_id: &str) -> Result<Device, diesel::result::Error> {
-        SupportStore::get_device_by_support_id(self, support_id)
+    pub fn get_support_device(&mut self, support_device_id: &str) -> Result<Device, diesel::result::Error> {
+        SupportStore::get_support_device(self, support_device_id)
     }
 }

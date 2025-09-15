@@ -20,7 +20,7 @@ impl SupportClient {
             return Ok(());
         }
 
-        let device = self.database.get_device_by_support_id(&support_device_id)?.as_primitive();
+        let device = self.database.get_support_device(&support_device_id)?.as_primitive();
 
         let language_localizer = LanguageLocalizer::new_with_language(&device.locale);
         let title = language_localizer.notification_support_new_message_title();

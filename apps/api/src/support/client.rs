@@ -12,7 +12,6 @@ impl SupportClient {
     }
 
     pub fn add_support_device(&mut self, support_id: &str, device_id: &str) -> Result<SupportDevice, DatabaseError> {
-        let device = self.database.get_device(device_id)?;
-        self.database.support().add_support_device(support_id, device.id)
+        self.database.support().add_support_device(support_id, device_id)
     }
 }
