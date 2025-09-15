@@ -1,4 +1,4 @@
-use crate::support::model::EVENT_CONVERSATION_UPDATED;
+use crate::support::model::{EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_UPDATED};
 
 use super::model::{ChatwootWebhookPayload, EVENT_MESSAGE_CREATED};
 use localizer::LanguageLocalizer;
@@ -18,7 +18,7 @@ impl SupportClient {
     }
 
     pub async fn process_webhook(&mut self, device_id: String, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if payload.event != EVENT_CONVERSATION_UPDATED {
+        if payload.event != EVENT_MESSAGE_CREATED {
             return Ok(());
         }
         let device = self.database.devices().get_device(&device_id)?;

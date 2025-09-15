@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 pub const EVENT_MESSAGE_CREATED: &str = "message_created";
-pub const EVENT_CONVERSATION_UPDATED: &str = "conversation_updated";
+//pub const EVENT_MESSAGE_UPDATED: &str = "message_updated";
+//pub const EVENT_CONVERSATION_UPDATED: &str = "conversation_updated";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatwootWebhookPayload {
