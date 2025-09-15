@@ -22,8 +22,8 @@ type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
 use crate::cache::RequestCache;
 use crate::config::{Domain, Url};
 use crate::metrics::Metrics;
-use crate::request_url::RequestUrl;
 use crate::request_builder::RequestBuilder;
+use crate::request_url::RequestUrl;
 use gem_tracing::{info_with_fields, DurationMs};
 
 #[derive(Debug, Clone)]
@@ -42,7 +42,6 @@ pub struct NodeDomain {
 }
 
 impl ProxyRequestService {
-
     pub fn new(domains: HashMap<String, NodeDomain>, domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache) -> Self {
         let https = HttpsConnector::new();
         let client = Client::builder(hyper_util::rt::TokioExecutor::new()).build(https);
@@ -103,7 +102,7 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             match &request_type {
                 RequestType::JsonRpc(_) => {
                     info_with_fields!(
-                        "Incoming JSON RPC request",
+                        "Incoming request",
                         host = host.as_str(),
                         method = method.as_str(),
                         uri = path.as_str(),
@@ -141,19 +140,7 @@ impl Service<Request<IncomingBody>> for ProxyRequestService {
             }
 
             if let RequestType::JsonRpc(rpc_request) = &request_type {
-                return JsonRpcHandler::handle_request(
-                    rpc_request,
-                    chain,
-                    &host,
-                    &path_with_query,
-                    &cache,
-                    &metrics,
-                    &url,
-                    &client,
-                    &method,
-                    now,
-                )
-                .await;
+                return JsonRpcHandler::handle_request(rpc_request, chain, &host, &path_with_query, &cache, &metrics, &url, &client, &method, now).await;
             }
 
             let response = Self::proxy_pass_get_data(parts.method, parts.headers, body.clone(), url.clone(), &client, &keep_headers).await?;
