@@ -90,7 +90,7 @@ itertools = { version = "0.14.0" }
 
 # db
 diesel = { version = "2.2.12", features = ["postgres", "chrono", "serde_json"] }
-diesel_migrations = { version = "2.2.0" }
+diesel_migrations = { version = "2.3.0" }
 redis = { version = "0.32.5", features = [
     "tokio-comp",
     "json",
