@@ -44,7 +44,7 @@ impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
                 info_with_fields!("Support webhook processed", device_id = device_id, event = webhook_payload.event);
             }
             Err(e) => {
-                error_with_fields!("Failed to process support webhook", &*e, payload = payload.data.to_string());
+                error_with_fields!("Support webhook failed", &*e, payload = payload.data.to_string());
                 return Err(e);
             }
         }

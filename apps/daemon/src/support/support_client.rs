@@ -18,20 +18,10 @@ impl SupportClient {
     }
 
     pub async fn process_webhook(&mut self, device_id: String, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if payload.event != EVENT_MESSAGE_CREATED || payload.event != EVENT_CONVERSATION_UPDATED {
+        if payload.event != EVENT_CONVERSATION_UPDATED {
             return Ok(());
         }
         let device = self.database.devices().get_device(&device_id)?;
-        self.send_support_push_notification(device, payload).await?;
-
-        Ok(())
-    }
-
-    async fn send_support_push_notification(
-        &mut self,
-        device: primitives::Device,
-        payload: &ChatwootWebhookPayload,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let language_localizer = LanguageLocalizer::new_with_language(&device.locale);
         let title = language_localizer.notification_support_new_message_title();
         let message = payload.content.clone().unwrap_or_default();
