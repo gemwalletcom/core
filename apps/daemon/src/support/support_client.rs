@@ -1,5 +1,3 @@
-use crate::support::model::{EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_UPDATED};
-
 use super::model::{ChatwootWebhookPayload, EVENT_MESSAGE_CREATED};
 use localizer::LanguageLocalizer;
 use primitives::{push_notification::PushNotificationSupport, GorushNotification, PushNotification, PushNotificationTypes};
