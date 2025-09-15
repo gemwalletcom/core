@@ -6,9 +6,7 @@ use hyper::header::{self, HeaderName};
 use hyper::{HeaderMap, Method, Request};
 
 use crate::request_url::RequestUrl;
-
-const JSON_CONTENT_TYPE: &str = "application/json";
-const JSON_HEADER: header::HeaderValue = header::HeaderValue::from_static(JSON_CONTENT_TYPE);
+use crate::constants::JSON_HEADER;
 
 pub struct RequestBuilder;
 
@@ -60,5 +58,57 @@ impl RequestBuilder {
             .iter()
             .filter_map(|(k, v)| if keep_headers.contains(k) { Some((k.clone(), v.clone())) } else { None })
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Url;
+    use hyper::http::Method as HttpMethod;
+
+    fn make_request_url(base: &str, path: &str, header_kv: Option<(&str, &str)>) -> RequestUrl {
+        let mut url = Url { url: base.to_string(), headers: None, urls_override: None };
+        if let Some((k, v)) = header_kv {
+            url.headers = Some({
+                let mut m = std::collections::HashMap::new();
+                m.insert(k.to_string(), v.to_string());
+                m
+            });
+        }
+        let orig = hyper::Uri::from_str(path).unwrap();
+        RequestUrl::from_uri(url, std::collections::HashMap::new(), &orig)
+    }
+
+    #[test]
+    fn test_build_jsonrpc_sets_headers_and_uri() {
+        let req_url = make_request_url("https://example.com", "/rpc", Some(("x-api-key", "secret")));
+        let req = RequestBuilder::build_jsonrpc(&req_url, &HttpMethod::POST, Bytes::from("{}".as_bytes().to_vec())).expect("build_jsonrpc");
+
+        assert_eq!(req.method(), &HttpMethod::POST);
+        assert_eq!(req.uri().to_string(), "https://example.com/rpc");
+
+        let headers = req.headers();
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), &header::HeaderValue::from_static("application/json"));
+        assert_eq!(headers.get("x-api-key").unwrap(), &header::HeaderValue::from_str("secret").unwrap());
+    }
+
+    #[test]
+    fn test_build_forwarded_filters_and_applies_params() {
+        let req_url = make_request_url("https://example.com", "/data", Some(("x-api-key", "k")));
+
+        let mut orig_headers = HeaderMap::new();
+        orig_headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static("application/json"));
+        orig_headers.insert("x-drop", header::HeaderValue::from_static("dropme"));
+
+        let keep = [header::CONTENT_TYPE];
+        let req = RequestBuilder::build_forwarded(&HttpMethod::GET, &req_url, Bytes::from_static(b""), &orig_headers, &keep).expect("build_forwarded");
+
+        assert_eq!(req.method(), &HttpMethod::GET);
+        assert_eq!(req.uri().to_string(), "https://example.com/data");
+        let headers = req.headers();
+        assert!(headers.get("x-drop").is_none());
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), &header::HeaderValue::from_static("application/json"));
+        assert_eq!(headers.get("x-api-key").unwrap(), &header::HeaderValue::from_static("k"));
     }
 }

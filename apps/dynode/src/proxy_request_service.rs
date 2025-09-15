@@ -8,16 +8,13 @@ use hyper::header::{self, HeaderMap, HeaderName};
 use hyper::service::Service;
 use std::collections::HashMap;
 
+use crate::http_client::{self, HttpClient};
 use futures::FutureExt;
 use hyper::{body::Incoming as IncomingBody, Request, Response};
-use hyper_tls::HttpsConnector;
-use hyper_util::client::legacy::{connect::HttpConnector, Client};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Instant;
-
-type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
 
 use crate::cache::RequestCache;
 use crate::config::{Domain, Url};
@@ -43,8 +40,7 @@ pub struct NodeDomain {
 
 impl ProxyRequestService {
     pub fn new(domains: HashMap<String, NodeDomain>, domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache) -> Self {
-        let https = HttpsConnector::new();
-        let client = Client::builder(hyper_util::rt::TokioExecutor::new()).build(https);
+        let client = http_client::new();
 
         let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING]);
 
@@ -298,5 +294,29 @@ impl ProxyRequestService {
 
     pub fn persist_headers(headers: &HeaderMap, list: &[HeaderName]) -> HeaderMap {
         RequestBuilder::filter_headers(headers, list)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hyper::header;
+
+    #[test]
+    fn test_persist_headers_filters_correctly() {
+        let mut headers = HeaderMap::new();
+        headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static("application/json"));
+        headers.insert("x-keep", header::HeaderValue::from_static("1"));
+        headers.insert("x-drop", header::HeaderValue::from_static("0"));
+
+        let keep = [header::CONTENT_TYPE, HeaderName::from_static("x-keep")];
+        let filtered = ProxyRequestService::persist_headers(&headers, &keep);
+
+        assert!(filtered.get("x-drop").is_none());
+        assert_eq!(filtered.get("x-keep").unwrap(), &header::HeaderValue::from_static("1"));
+        assert_eq!(
+            filtered.get(header::CONTENT_TYPE).unwrap(),
+            &header::HeaderValue::from_static("application/json")
+        );
     }
 }

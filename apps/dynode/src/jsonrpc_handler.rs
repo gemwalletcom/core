@@ -1,4 +1,5 @@
 use crate::cache::{CacheProvider, CachedResponse, RequestCache};
+use crate::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
 use crate::metrics::Metrics;
 use crate::request_types::{JsonRpcCall, JsonRpcError, JsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
 use crate::request_builder::RequestBuilder;
@@ -9,14 +10,8 @@ use gem_tracing::{info_with_fields, DurationMs};
 use http_body_util::{BodyExt, Full};
 use hyper::header;
 use hyper::{HeaderMap, Method, Response};
-use hyper_tls::HttpsConnector;
-use hyper_util::client::legacy::{connect::HttpConnector, Client};
+use crate::http_client::HttpClient;
 use primitives::Chain;
-
-type HttpClient = Client<HttpsConnector<HttpConnector>, Full<Bytes>>;
-
-const JSON_CONTENT_TYPE: &str = "application/json";
-const JSON_HEADER: header::HeaderValue = header::HeaderValue::from_static(JSON_CONTENT_TYPE);
 
 pub struct JsonRpcHandler;
 
@@ -66,8 +61,9 @@ impl JsonRpcHandler {
         match request {
             JsonRpcRequest::Single(_) => Self::build_json_response_with_headers(&responses[0], upstream_headers),
             JsonRpcRequest::Batch(_) => Self::build_json_response_with_headers(&responses, upstream_headers),
-        }
     }
+}
+
 
     async fn check_cache(
         calls: &[&JsonRpcCall],
@@ -173,7 +169,7 @@ impl JsonRpcHandler {
         }
     }
 
-    fn build_responses(calls: &[&JsonRpcCall], cached: &[Option<CachedResponse>], upstream: &[JsonRpcResult], _: Vec<usize>) -> Vec<JsonRpcResult> {
+    pub(crate) fn build_responses(calls: &[&JsonRpcCall], cached: &[Option<CachedResponse>], upstream: &[JsonRpcResult], _: Vec<usize>) -> Vec<JsonRpcResult> {
         let mut upstream_idx = 0;
         calls
             .iter()
@@ -211,5 +207,32 @@ impl JsonRpcHandler {
         Ok(response)
     }
 
-    
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn make_call(id: u64, method: &str) -> JsonRpcCall {
+        JsonRpcCall { jsonrpc: "2.0".into(), method: method.into(), params: json!([]), id }
+    }
+
+    #[test]
+    fn test_build_responses_prefers_cache_then_upstream() {
+        let call1 = make_call(1, "eth_blockNumber");
+        let call2 = make_call(2, "eth_gasPrice");
+        let calls = vec![&call1, &call2];
+
+        let cached_body = Bytes::from(serde_json::to_vec(&json!("0x123")).unwrap());
+        let cached = CachedResponse::new(cached_body, 200, "application/json".into(), 60);
+        let cached_vec = vec![Some(cached), None];
+
+        let upstream = vec![JsonRpcResult::Success(JsonRpcResponse { result: json!("0x456"), id: 2 })];
+
+        let out = JsonRpcHandler::build_responses(&calls, &cached_vec, &upstream, vec![1]);
+
+        assert!(matches!(&out[0], JsonRpcResult::Success(JsonRpcResponse { result, id }) if result == &json!("0x123") && *id == 1));
+        assert!(matches!(&out[1], JsonRpcResult::Success(JsonRpcResponse { result, id }) if result == &json!("0x456") && *id == 2));
+    }
 }

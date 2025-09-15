@@ -1,9 +1,7 @@
 use bytes::Bytes;
 use http_body_util::Full;
 use hyper::{header, HeaderMap, Response};
-
-const JSON_CONTENT_TYPE: &str = "application/json";
-const JSON_HEADER: header::HeaderValue = header::HeaderValue::from_static(JSON_CONTENT_TYPE);
+use crate::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
 
 pub struct ResponseBuilder;
 
