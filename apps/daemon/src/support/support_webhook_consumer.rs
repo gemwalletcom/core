@@ -31,17 +31,17 @@ impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
 
     async fn process(&mut self, payload: SupportWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let webhook_payload = serde_json::from_value::<ChatwootWebhookPayload>(payload.data.clone())?;
-        let device_id = webhook_payload.get_device_id();
 
-        if device_id.is_none() {
-            info_with_fields!("Support webhook is missing device_id, skip", payload = payload.data.to_string());
+        let support_device_id = if let Some(support_device_id) = webhook_payload.get_support_device_id() {
+            support_device_id
+        } else {
+            info_with_fields!("Support webhook missing support_device_id, skip", payload = payload.data.to_string());
             return Ok(true);
-        }
-        let device_id = device_id.unwrap();
+        };
 
-        match self.support_client.process_webhook(device_id.clone(), &webhook_payload).await {
+        match self.support_client.process_webhook(support_device_id.clone(), &webhook_payload).await {
             Ok(_) => {
-                info_with_fields!("Support webhook processed", device_id = device_id, event = webhook_payload.event);
+                info_with_fields!("Support webhook processed", support_device_id = support_device_id, event = webhook_payload.event);
             }
             Err(e) => {
                 error_with_fields!("Support webhook failed", &*e, payload = payload.data.to_string());

@@ -15,11 +15,13 @@ impl SupportClient {
         Self { database, stream_producer }
     }
 
-    pub async fn process_webhook(&mut self, device_id: String, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn process_webhook(&mut self, support_device_id: String, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
         if payload.event != EVENT_MESSAGE_CREATED {
             return Ok(());
         }
-        let device = self.database.devices().get_device(&device_id)?;
+
+        let device = self.database.get_device_by_support_id(&support_device_id)?.as_primitive();
+
         let language_localizer = LanguageLocalizer::new_with_language(&device.locale);
         let title = language_localizer.notification_support_new_message_title();
         let message = payload.content.clone().unwrap_or_default();

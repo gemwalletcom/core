@@ -25,8 +25,8 @@ pub struct Meta {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CustomAttributes {
-    #[serde(rename = "deviceId")]
-    pub device_id: Option<String>,
+    #[serde(rename = "supportDeviceId")]
+    pub support_device_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,7 +35,7 @@ pub struct Sender {
 }
 
 impl ChatwootWebhookPayload {
-    pub fn get_device_id(&self) -> Option<String> {
+    pub fn get_support_device_id(&self) -> Option<String> {
         self.conversation
             .as_ref()
             .map(|c| &c.meta)
@@ -43,7 +43,7 @@ impl ChatwootWebhookPayload {
             .sender
             .custom_attributes
             .as_ref()?
-            .device_id
+            .support_device_id
             .clone()
     }
 }

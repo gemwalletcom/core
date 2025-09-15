@@ -15,6 +15,7 @@ mod responders;
 mod scan;
 mod status;
 mod subscriptions;
+mod support;
 mod swap;
 mod transactions;
 mod webhooks;
@@ -44,6 +45,7 @@ use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
 use streamer::StreamProducer;
 use subscriptions::SubscriptionsClient;
+use support::SupportClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
 use webhooks::WebhooksClient;
@@ -83,6 +85,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let nft_client = NFTClient::new(postgres_url, nft_config).await;
     let markets_client = MarketsClient::new(postgres_url, cacher_client);
     let webhooks_client = WebhooksClient::new(stream_producer.clone()).await;
+    let support_client = SupportClient::new(postgres_url);
 
     rocket::build()
         .manage(Mutex::new(fiat_client))
@@ -103,6 +106,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(chain_client))
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
+        .manage(Mutex::new(support_client))
         .mount("/", routes![status::get_status])
         .mount(
             "/v1",
@@ -157,6 +161,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::balance::get_balances,
                 chain::transaction::get_transactions,
                 webhooks::create_support_webhook,
+                support::add_device,
             ],
         )
         .mount("/v2", routes![transactions::get_transactions_by_device_id_v2, nft::get_nft_assets_v2,])

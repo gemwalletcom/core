@@ -16,6 +16,7 @@ pub mod prices;
 pub mod releases;
 pub mod scan_addresses;
 pub mod subscriptions;
+pub mod support;
 pub mod tag;
 pub mod transactions;
 
@@ -27,7 +28,7 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 use crate::{
     AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DevicesRepository, FiatRepository,
     LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PriceAlertsRepository, PricesRepository,
-    ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, TagRepository, TransactionsRepository,
+    ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
 };
 
 pub struct DatabaseClient {
@@ -107,6 +108,10 @@ impl DatabaseClient {
     }
 
     pub fn subscriptions(&mut self) -> &mut dyn SubscriptionsRepository {
+        self
+    }
+
+    pub fn support(&mut self) -> &mut dyn SupportRepository {
         self
     }
 
