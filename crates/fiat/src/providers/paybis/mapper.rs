@@ -349,7 +349,6 @@ mod tests {
         assert!(matches!(result, FiatWebhook::None), "Verification webhooks should map to FiatWebhook::None");
     }
 
-
     #[test]
     fn test_paybis_limits_parsing() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let limits: PaybisData<Vec<PaymentMethodWithLimits>> = serde_json::from_str(include_str!("../../../testdata/paybis/assets_with_limits.json"))?;

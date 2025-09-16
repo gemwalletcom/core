@@ -1,7 +1,20 @@
 use bytes::Bytes;
-use http_body_util::Full;
-use hyper::{header, HeaderMap, Response};
+use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
+
 use crate::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
+
+#[derive(Debug, Clone)]
+pub struct ProxyResponse {
+    pub status: u16,
+    pub headers: HeaderMap,
+    pub body: Bytes,
+}
+
+impl ProxyResponse {
+    pub fn new(status: u16, headers: HeaderMap, body: Bytes) -> Self {
+        Self { status, headers, body }
+    }
+}
 
 pub struct ResponseBuilder;
 
@@ -10,47 +23,52 @@ impl ResponseBuilder {
         let mut headers = HeaderMap::new();
 
         if let Some(host) = upstream_host {
-            headers.insert("X-Upstream-Host", host.parse().unwrap_or_else(|_| "unknown".parse().unwrap()));
+            headers.insert(
+                HeaderName::from_static("x-upstream-host"),
+                HeaderValue::from_str(host).unwrap_or_else(|_| HeaderValue::from_static("unknown")),
+            );
         }
 
-        headers.insert("X-Upstream-Latency", format!("{}ms", latency.as_millis()).parse().unwrap());
+        headers.insert(
+            HeaderName::from_static("x-upstream-latency"),
+            HeaderValue::from_str(&format!("{}ms", latency.as_millis())).unwrap_or_else(|_| HeaderValue::from_static("0ms")),
+        );
 
         headers
     }
-    pub fn build_with_headers(data: Bytes, status: u16, content_type: &str, additional_headers: HeaderMap) -> Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>> {
-        let mut response = Response::new(Full::new(data));
-        *response.status_mut() = hyper::StatusCode::from_u16(status).unwrap_or(hyper::StatusCode::OK);
 
-        response.headers_mut().insert(
-            header::CONTENT_TYPE,
-            if content_type == JSON_CONTENT_TYPE {
-                JSON_HEADER.clone()
-            } else {
-                content_type.parse().unwrap_or(JSON_HEADER.clone())
-            },
-        );
+    pub fn build_with_headers(
+        data: Bytes,
+        status: u16,
+        content_type: &str,
+        additional_headers: HeaderMap,
+    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let mut headers = HeaderMap::new();
 
-        response.headers_mut().extend(additional_headers);
-        Ok(response)
+        let content_header = if content_type == JSON_CONTENT_TYPE {
+            JSON_HEADER.clone()
+        } else {
+            HeaderValue::from_str(content_type).unwrap_or_else(|_| JSON_HEADER.clone())
+        };
+
+        headers.insert(header::CONTENT_TYPE, content_header);
+        headers.extend(additional_headers);
+
+        Ok(ProxyResponse::new(status, headers, data))
     }
 
-    pub fn build_cached_with_headers(cached: crate::cache::CachedResponse, additional_headers: HeaderMap) -> Response<Full<Bytes>> {
-        let mut response = Response::new(Full::from(cached.body));
-
-        *response.status_mut() = if cached.status == 200 {
-            hyper::StatusCode::OK
-        } else {
-            hyper::StatusCode::from_u16(cached.status).unwrap_or(hyper::StatusCode::OK)
-        };
+    pub fn build_cached_with_headers(cached: crate::cache::CachedResponse, additional_headers: HeaderMap) -> ProxyResponse {
+        let mut headers = HeaderMap::new();
 
         let content_header = if cached.content_type == JSON_CONTENT_TYPE {
             JSON_HEADER.clone()
         } else {
-            cached.content_type.parse().unwrap_or(JSON_HEADER.clone())
+            HeaderValue::from_str(&cached.content_type).unwrap_or_else(|_| JSON_HEADER.clone())
         };
-        response.headers_mut().insert(header::CONTENT_TYPE, content_header);
 
-        response.headers_mut().extend(additional_headers);
-        response
+        headers.insert(header::CONTENT_TYPE, content_header);
+        headers.extend(additional_headers);
+
+        ProxyResponse::new(cached.status, headers, cached.body)
     }
 }

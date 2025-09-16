@@ -41,7 +41,11 @@ impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
 
         match self.support_client.process_webhook(support_device_id.clone(), &webhook_payload).await {
             Ok(_) => {
-                info_with_fields!("Support webhook processed", support_device_id = support_device_id, event = webhook_payload.event);
+                info_with_fields!(
+                    "Support webhook processed",
+                    support_device_id = support_device_id,
+                    event = webhook_payload.event
+                );
             }
             Err(e) => {
                 error_with_fields!("Support webhook failed", &*e, payload = payload.data.to_string());

@@ -39,7 +39,7 @@ domains:
     urls:
       - url: https://toncenter.com
 
-  - domain: localhost:3006
+  - domain: tron
     chain: tron
     urls:
       - url: https://api.trongrid.io

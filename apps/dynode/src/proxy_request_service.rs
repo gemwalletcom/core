@@ -1,27 +1,19 @@
-use crate::cache::{CacheProvider, CachedResponse};
-use crate::jsonrpc_handler::JsonRpcHandler;
-use crate::request_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
-use crate::response_builder::ResponseBuilder;
-use bytes::Bytes;
-use http_body_util::{BodyExt, Full};
-use hyper::header::{self, HeaderMap, HeaderName};
-use hyper::service::Service;
-use std::collections::HashMap;
-
-use crate::http_client::{self, HttpClient};
-use futures::FutureExt;
-use hyper::{body::Incoming as IncomingBody, Request, Response};
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
-use std::time::Instant;
-
-use crate::cache::RequestCache;
+use crate::cache::{CacheProvider, CachedResponse, RequestCache};
 use crate::config::{Domain, Url};
+use crate::http_client::{self, HttpClient};
+use crate::jsonrpc_handler::JsonRpcHandler;
 use crate::metrics::Metrics;
 use crate::request_builder::RequestBuilder;
+use crate::request_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
 use crate::request_url::RequestUrl;
+use crate::response_builder::{ProxyResponse, ResponseBuilder};
+use bytes::Bytes;
 use gem_tracing::{info_with_fields, DurationMs};
+use reqwest::header::{self, HeaderMap, HeaderName};
+use reqwest::Method;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequestService {
@@ -41,7 +33,6 @@ pub struct NodeDomain {
 impl ProxyRequestService {
     pub fn new(domains: HashMap<String, NodeDomain>, domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache) -> Self {
         let client = http_client::new();
-
         let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING]);
 
         Self {
@@ -53,134 +44,141 @@ impl ProxyRequestService {
             keep_headers,
         }
     }
-}
 
-impl Service<Request<IncomingBody>> for ProxyRequestService {
-    type Response = Response<Full<Bytes>>;
-    type Error = Box<dyn std::error::Error + Send + Sync>;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
-
-    fn call(&self, req: Request<IncomingBody>) -> Self::Future {
+    pub async fn handle_request(
+        &self,
+        method: Method,
+        headers: HeaderMap,
+        body: Bytes,
+        path: String,
+        path_with_query: String,
+        host: String,
+        user_agent: String,
+    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let now = Instant::now();
-        let headers = req.headers().clone();
-
-        let host = headers.get("host").expect("invalid host").to_str().unwrap_or_default();
-
-        let user_agent = headers.get("user-agent").and_then(|x| x.to_str().ok()).unwrap_or_default();
-
-        let (domain, domain_config) = if let (Some(domain), Some(domain_config)) = (self.domains.get(host), self.domain_configs.get(host)) {
-            (domain, domain_config.clone())
-        } else {
-            return async move { Ok(Response::builder().status(404).body(Full::new(Bytes::from("domain not found"))).unwrap()) }.boxed();
-        };
-
-        let url = domain.url.clone();
-        let url = RequestUrl::from_uri(url.clone(), url.urls_override.clone().unwrap_or_default(), req.uri());
-
-        self.metrics.add_proxy_request(host, user_agent);
 
         let metrics = self.metrics.clone();
-        let host = host.to_string();
         let cache = self.cache.clone();
-        let method = req.method().clone();
-        let path = req.uri().path().to_string();
-        let path_with_query = req.uri().path_and_query().map(|pq| pq.as_str()).unwrap_or(req.uri().path()).to_string();
-        let user_agent_str = user_agent.to_string();
         let client = self.client.clone();
         let keep_headers = self.keep_headers.clone();
 
-        async move {
-            let chain = domain_config.chain;
-            let (parts, incoming_body) = req.into_parts();
-            let body = incoming_body.collect().await?.to_bytes();
-            let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
-
-            match &request_type {
-                RequestType::JsonRpc(_) => {
-                    info_with_fields!(
-                        "Incoming request",
-                        host = host.as_str(),
-                        method = method.as_str(),
-                        uri = path.as_str(),
-                        rpc_method = &request_type.get_methods_list(),
-                        user_agent = &user_agent_str,
-                    );
-                }
-                RequestType::Regular { .. } => {
-                    info_with_fields!(
-                        "Incoming request",
-                        host = host.as_str(),
-                        method = method.as_str(),
-                        uri = path.as_str(),
-                        user_agent = &user_agent_str,
-                    );
-                }
+        let (domain, domain_config) = match (self.domains.get(&host), self.domain_configs.get(&host)) {
+            (Some(domain), Some(config)) => (domain.clone(), config.clone()),
+            _ => {
+                let response = ResponseBuilder::build_with_headers(Bytes::from_static(b"domain not found"), 404, "text/plain", HeaderMap::new())?;
+                return Ok(response);
             }
+        };
 
-            let cache_ttl = cache.should_cache_request(&chain, &request_type);
-            let cache_key = if cache_ttl.is_some() {
-                Some(request_type.cache_key(&host, &path_with_query))
-            } else {
-                None
-            };
+        let chain = domain_config.chain;
+        let base_url = domain.url.clone();
+        let overrides = base_url.urls_override.clone().unwrap_or_default();
+        let request_url = RequestUrl::from_parts(base_url, overrides, &path_with_query);
 
-            let methods_for_metrics = request_type.get_methods_for_metrics();
-            for method in &methods_for_metrics {
-                metrics.add_proxy_request_by_method(host.as_str(), method);
+        metrics.add_proxy_request(&host, &user_agent);
+
+        let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
+
+        match &request_type {
+            RequestType::JsonRpc(_) => {
+                info_with_fields!(
+                    "Incoming request",
+                    host = host.as_str(),
+                    method = method.as_str(),
+                    uri = path.as_str(),
+                    rpc_method = &request_type.get_methods_list(),
+                    user_agent = &user_agent,
+                );
             }
-
-            if let Some(key) = &cache_key {
-                if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, host.as_str(), &url, &metrics, now).await {
-                    return result;
-                }
+            RequestType::Regular { .. } => {
+                info_with_fields!(
+                    "Incoming request",
+                    host = host.as_str(),
+                    method = method.as_str(),
+                    uri = path.as_str(),
+                    user_agent = &user_agent,
+                );
             }
-
-            if let RequestType::JsonRpc(rpc_request) = &request_type {
-                return JsonRpcHandler::handle_request(rpc_request, chain, &host, &path_with_query, &cache, &metrics, &url, &client, &method, now).await;
-            }
-
-            let response = Self::proxy_pass_get_data(parts.method, parts.headers, body.clone(), url.clone(), &client, &keep_headers).await?;
-            let status = response.status().as_u16();
-
-            let upstream_headers = ResponseBuilder::create_upstream_headers(url.uri.host(), now.elapsed());
-            let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers, upstream_headers).await?;
-
-            for method in &methods_for_metrics {
-                metrics.add_proxy_response(host.as_str(), method, url.uri.host().unwrap_or_default(), status, now.elapsed().as_millis());
-            }
-
-            info_with_fields!(
-                "Proxy response",
-                host = url.uri.host().unwrap_or_default(),
-                status = status,
-                latency = DurationMs(now.elapsed()),
-            );
-
-            if status == 200 {
-                if let (Some(ttl), Some(key)) = (cache_ttl, cache_key) {
-                    tokio::spawn(Self::store_cache(
-                        status,
-                        ttl,
-                        key,
-                        body_bytes.clone(),
-                        request_type.clone(),
-                        chain,
-                        host.clone(),
-                        method.clone(),
-                        path.clone(),
-                        cache.clone(),
-                        now,
-                    ));
-                }
-            }
-
-            Ok(processed_response)
         }
-        .boxed()
-    }
-}
 
-impl ProxyRequestService {
+        let cache_ttl = cache.should_cache_request(&chain, &request_type);
+        let cache_key = if cache_ttl.is_some() {
+            Some(request_type.cache_key(&host, &path_with_query))
+        } else {
+            None
+        };
+
+        let methods_for_metrics = request_type.get_methods_for_metrics();
+        for method_name in &methods_for_metrics {
+            metrics.add_proxy_request_by_method(&host, method_name);
+        }
+
+        if let Some(key) = cache_key.as_ref() {
+            if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &request_url, &metrics, now).await {
+                return result;
+            }
+        }
+
+        if let RequestType::JsonRpc(rpc_request) = &request_type {
+            return JsonRpcHandler::handle_request(
+                rpc_request,
+                chain,
+                &host,
+                &path_with_query,
+                &cache,
+                &metrics,
+                &request_url,
+                &client,
+                &method,
+                now,
+            )
+            .await;
+        }
+
+        let response = Self::proxy_pass_get_data(method.clone(), headers, body.clone(), request_url.clone(), &client, &keep_headers).await?;
+        let status = response.status().as_u16();
+
+        let upstream_headers = ResponseBuilder::create_upstream_headers(request_url.url.host_str(), now.elapsed());
+        let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers, upstream_headers).await?;
+
+        for method_name in &methods_for_metrics {
+            metrics.add_proxy_response(
+                &host,
+                method_name,
+                request_url.url.host_str().unwrap_or_default(),
+                status,
+                now.elapsed().as_millis(),
+            );
+        }
+
+        info_with_fields!(
+            "Proxy response",
+            host = request_url.url.host_str().unwrap_or_default(),
+            status = status,
+            latency = DurationMs(now.elapsed()),
+        );
+
+        if status == 200 {
+            if let (Some(ttl), Some(key)) = (cache_ttl, cache_key.clone()) {
+                tokio::spawn(Self::store_cache(
+                    status,
+                    ttl,
+                    key,
+                    body_bytes.clone(),
+                    request_type.clone(),
+                    chain,
+                    host.clone(),
+                    method.clone(),
+                    path.clone(),
+                    cache.clone(),
+                    now,
+                ));
+            }
+        }
+
+        Ok(processed_response)
+    }
+
     async fn try_cache_hit(
         cache: &RequestCache,
         chain: primitives::Chain,
@@ -190,7 +188,7 @@ impl ProxyRequestService {
         url: &RequestUrl,
         metrics: &Metrics,
         now: std::time::Instant,
-    ) -> Option<Result<Response<Full<Bytes>>, Box<dyn std::error::Error + Send + Sync>>> {
+    ) -> Option<Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>>> {
         if let Some(cached) = cache.get(&chain, cache_key).await {
             let methods_for_metrics = request_type.get_methods_for_metrics();
             for method_name in &methods_for_metrics {
@@ -199,7 +197,8 @@ impl ProxyRequestService {
 
             info_with_fields!("Cache HIT", chain = chain.as_ref(), host = host, method = &methods_for_metrics.join(","));
 
-            let upstream_headers = ResponseBuilder::create_upstream_headers(url.uri.host(), now.elapsed());
+            let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), now.elapsed());
+            let status = cached.status;
 
             let response = match request_type {
                 RequestType::JsonRpc(JsonRpcRequest::Single(original_call)) => {
@@ -211,7 +210,7 @@ impl ProxyRequestService {
             };
 
             for method_name in &methods_for_metrics {
-                metrics.add_proxy_response(host, method_name, url.uri.host().unwrap_or_default(), cached.status, now.elapsed().as_millis());
+                metrics.add_proxy_response(host, method_name, url.url.host_str().unwrap_or_default(), status, now.elapsed().as_millis());
             }
 
             Some(response)
@@ -232,7 +231,7 @@ impl ProxyRequestService {
         request_type: RequestType,
         chain: primitives::Chain,
         host: String,
-        method: hyper::Method,
+        method: Method,
         path: String,
         cache: RequestCache,
         request_start: Instant,
@@ -264,32 +263,30 @@ impl ProxyRequestService {
     }
 
     async fn proxy_pass_response(
-        response: Response<IncomingBody>,
+        response: reqwest::Response,
         keep_headers: &[HeaderName],
         additional_headers: HeaderMap,
-    ) -> Result<(Response<Full<Bytes>>, Bytes), Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<(ProxyResponse, Bytes), Box<dyn std::error::Error + Send + Sync>> {
         let resp_headers = response.headers().clone();
-        let status = response.status();
-        let body = response.collect().await?.to_bytes();
+        let status = response.status().as_u16();
+        let body = response.bytes().await?;
 
-        let mut new_response = Response::new(Full::from(body.clone()));
-        *new_response.status_mut() = status;
-        *new_response.headers_mut() = Self::persist_headers(&resp_headers, keep_headers);
-        new_response.headers_mut().extend(additional_headers);
+        let mut headers = Self::persist_headers(&resp_headers, keep_headers);
+        headers.extend(additional_headers);
 
-        Ok((new_response, body))
+        Ok((ProxyResponse::new(status, headers, body.clone()), body))
     }
 
     async fn proxy_pass_get_data(
-        method: hyper::Method,
+        method: Method,
         original_headers: HeaderMap,
         body: Bytes,
         url: RequestUrl,
         client: &HttpClient,
         keep_headers: &[HeaderName],
-    ) -> Result<Response<IncomingBody>, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<reqwest::Response, Box<dyn std::error::Error + Send + Sync>> {
         let request = RequestBuilder::build_forwarded(&method, &url, body, &original_headers, keep_headers)?;
-        Ok(client.request(request).await?)
+        Ok(client.execute(request).await?)
     }
 
     pub fn persist_headers(headers: &HeaderMap, list: &[HeaderName]) -> HeaderMap {
@@ -300,7 +297,7 @@ impl ProxyRequestService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hyper::header;
+    use reqwest::header;
 
     #[test]
     fn test_persist_headers_filters_correctly() {
