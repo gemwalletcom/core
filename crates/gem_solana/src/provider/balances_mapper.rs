@@ -55,6 +55,8 @@ pub fn map_balance_staking(stake_accounts: Vec<TokenAccountInfo>) -> Option<Asse
 
     Some(AssetBalance::new_staking(
         AssetId::from_chain(Chain::Solana),
+        BigUint::from(0u32),
+        BigUint::from(0u32),
         BigUint::from(total_staked),
         BigUint::from(0u32),
         BigUint::from(0u32),

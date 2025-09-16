@@ -115,7 +115,7 @@ impl<C: Client> TronClient<C> {
                         }
                         *current_votes.entry(redelegate_data.to_validator.id.clone()).or_insert(0) += vote_amount;
                     }
-                    StakeType::Rewards(_) | StakeType::Withdraw(_) => {}
+                    StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) => {}
                 }
 
                 current_votes.retain(|_, &mut v| v > 0);

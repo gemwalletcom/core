@@ -22,10 +22,28 @@ pub fn map_token_balance(balance_hex: &str, asset_id: AssetId) -> Result<AssetBa
 }
 
 pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &TronAccountUsage) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-    let staked_amount = account
+    let (bandwidth_frozen, energy_frozen) = account
         .frozen_v2
         .as_ref()
-        .map(|frozen_list| frozen_list.iter().map(|frozen| frozen.amount.unwrap_or(0)).sum::<u64>())
+        .map(|frozen_list| {
+            let mut bandwidth = 0u64;
+            let mut energy = 0u64;
+
+            for frozen in frozen_list {
+                let amount = frozen.amount.unwrap_or(0);
+                match frozen.frozen_type.as_deref() {
+                    Some("ENERGY") => energy += amount,
+                    _ => bandwidth += amount, // None or "BANDWIDTH" defaults to bandwidth
+                }
+            }
+            (bandwidth, energy)
+        })
+        .unwrap_or((0, 0));
+
+    let voted_amount = account
+        .votes
+        .as_ref()
+        .map(|votes| votes.iter().map(|vote| vote.vote_count * 10_u64.pow(6)).sum::<u64>())
         .unwrap_or(0);
 
     let pending_amount = account
@@ -52,9 +70,11 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
 
     Ok(AssetBalance::new_staking_with_metadata(
         AssetId::from_chain(Chain::Tron),
-        BigUint::from(staked_amount),
-        BigUint::from(pending_amount),
-        BigUint::from(rewards_amount),
+        BigUint::from(bandwidth_frozen), // frozen = bandwidth frozen
+        BigUint::from(energy_frozen),    // locked = energy frozen
+        BigUint::from(voted_amount),     // staked = voted amount
+        BigUint::from(pending_amount),   // pending = unfreezing amount
+        BigUint::from(rewards_amount),   // rewards = voting rewards
         metadata,
     ))
 }
@@ -75,7 +95,7 @@ pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{TronAccount, TronFrozen, TronReward, TronSmartContractResult, TronUnfrozen};
+    use crate::models::{TronAccount, TronFrozen, TronReward, TronSmartContractResult, TronUnfrozen, TronVote};
     use primitives::{AssetId, Chain};
     use serde_json;
 
@@ -173,7 +193,9 @@ mod tests {
         let balance = map_staking_balance(&account, &reward, &usage).unwrap();
 
         assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
-        assert_eq!(balance.balance.staked, BigUint::from(8000000_u64));
+        assert_eq!(balance.balance.frozen, BigUint::from(5000000_u64));
+        assert_eq!(balance.balance.locked, BigUint::from(3000000_u64));
+        assert_eq!(balance.balance.staked, BigUint::from(0_u64));
         assert_eq!(balance.balance.pending, BigUint::from(2000000_u64));
         assert_eq!(balance.balance.rewards, BigUint::from(100000_u64));
     }
@@ -201,9 +223,54 @@ mod tests {
         let balance = map_staking_balance(&account, &reward, &usage).unwrap();
 
         assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
+        assert_eq!(balance.balance.frozen, BigUint::from(0_u64));
+        assert_eq!(balance.balance.locked, BigUint::from(0_u64));
         assert_eq!(balance.balance.staked, BigUint::from(0_u64));
         assert_eq!(balance.balance.pending, BigUint::from(0_u64));
         assert_eq!(balance.balance.rewards, BigUint::from(0_u64));
+    }
+
+    #[test]
+    fn test_map_staking_balance_with_votes() {
+        let account = TronAccount {
+            balance: Some(1000),
+            address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            active_permission: None,
+            votes: Some(vec![
+                TronVote {
+                    vote_address: "TJApZYJwPKuQR7tL6FmvD6jDjbYpHESZGH".to_string(),
+                    vote_count: 3000000,
+                },
+                TronVote {
+                    vote_address: "TEqyWRKCzREYC2bK2fc3j7pp8XjAa6tJK1".to_string(),
+                    vote_count: 2000000,
+                },
+            ]),
+            frozen_v2: Some(vec![TronFrozen {
+                frozen_type: Some("BANDWIDTH".to_string()),
+                amount: Some(8000000),
+            }]),
+            unfrozen_v2: None,
+        };
+
+        let reward = TronReward { reward: 50000 };
+        let usage = TronAccountUsage {
+            energy_limit: Some(1000000),
+            energy_used: Some(500000),
+            free_net_limit: Some(1000000),
+            free_net_used: Some(500000),
+            net_used: Some(200000),
+            net_limit: Some(1000000),
+        };
+
+        let balance = map_staking_balance(&account, &reward, &usage).unwrap();
+
+        assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
+        assert_eq!(balance.balance.frozen, BigUint::from(8000000_u64));
+        assert_eq!(balance.balance.locked, BigUint::from(0_u64));
+        assert_eq!(balance.balance.staked, BigUint::from(5000000000000_u64));
+        assert_eq!(balance.balance.pending, BigUint::from(0_u64));
+        assert_eq!(balance.balance.rewards, BigUint::from(50000_u64));
     }
 
     #[test]

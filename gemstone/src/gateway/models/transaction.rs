@@ -1,6 +1,6 @@
 use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
-use primitives::stake_type::StakeData;
+use primitives::stake_type::{StakeData, TronFreezeData, TronFreezeType, TronResource};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::FeeOption;
 use primitives::SwapProvider;
@@ -69,6 +69,27 @@ pub enum GemStakeType {
     Withdraw {
         delegation: GemDelegation,
     },
+    Freeze {
+        freeze_data: GemTronFreezeData,
+    },
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemTronFreezeData {
+    pub freeze_type: GemTronFreezeType,
+    pub resource: GemTronResource,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemTronFreezeType {
+    Freeze,
+    Unfreeze,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemTronResource {
+    Bandwidth,
+    Energy,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -299,6 +320,7 @@ impl From<GemStakeType> for StakeType {
             }),
             GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().map(|v| v.into()).collect()),
             GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation.into()),
+            GemStakeType::Freeze { freeze_data } => StakeType::Freeze(freeze_data.into()),
         }
     }
 }
@@ -316,6 +338,7 @@ impl From<StakeType> for GemStakeType {
                 validators: validators.into_iter().map(|v| v.into()).collect(),
             },
             StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation: delegation.into() },
+            StakeType::Freeze(freeze_data) => GemStakeType::Freeze { freeze_data: freeze_data.into() },
         }
     }
 }
@@ -696,6 +719,60 @@ impl From<GemSwapProviderData> for SwapProviderData {
             provider: SwapProvider::from_str(&value.provider).unwrap_or(SwapProvider::UniswapV3),
             name: value.name,
             protocol_name: value.protocol_name,
+        }
+    }
+}
+
+impl From<TronFreezeData> for GemTronFreezeData {
+    fn from(value: TronFreezeData) -> Self {
+        GemTronFreezeData {
+            freeze_type: value.freeze_type.into(),
+            resource: value.resource.into(),
+        }
+    }
+}
+
+impl From<GemTronFreezeData> for TronFreezeData {
+    fn from(value: GemTronFreezeData) -> Self {
+        TronFreezeData {
+            freeze_type: value.freeze_type.into(),
+            resource: value.resource.into(),
+        }
+    }
+}
+
+impl From<TronFreezeType> for GemTronFreezeType {
+    fn from(value: TronFreezeType) -> Self {
+        match value {
+            TronFreezeType::Freeze => GemTronFreezeType::Freeze,
+            TronFreezeType::Unfreeze => GemTronFreezeType::Unfreeze,
+        }
+    }
+}
+
+impl From<GemTronFreezeType> for TronFreezeType {
+    fn from(value: GemTronFreezeType) -> Self {
+        match value {
+            GemTronFreezeType::Freeze => TronFreezeType::Freeze,
+            GemTronFreezeType::Unfreeze => TronFreezeType::Unfreeze,
+        }
+    }
+}
+
+impl From<TronResource> for GemTronResource {
+    fn from(value: TronResource) -> Self {
+        match value {
+            TronResource::Bandwidth => GemTronResource::Bandwidth,
+            TronResource::Energy => GemTronResource::Energy,
+        }
+    }
+}
+
+impl From<GemTronResource> for TronResource {
+    fn from(value: GemTronResource) -> Self {
+        match value {
+            GemTronResource::Bandwidth => TronResource::Bandwidth,
+            GemTronResource::Energy => TronResource::Energy,
         }
     }
 }

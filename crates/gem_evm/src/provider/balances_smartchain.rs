@@ -54,7 +54,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         Ok(Some(AssetBalance::new_balance(
             self.get_chain().as_asset_id(),
-            Balance::stake_balance(staked, pending, None),
+            Balance::stake_balance(BigUint::from(0u32), BigUint::from(0u32), staked, pending, None),
         )))
     }
 }
