@@ -59,7 +59,7 @@ fn proxy_routes() -> Vec<Route> {
     methods.into_iter().map(|method| Route::new(method, "/<path..>", ProxyHandler)).collect()
 }
 
-#[rocket::get("/")]
+#[rocket::get("/metrics")]
 async fn metrics_endpoint(metrics: &State<Metrics>) -> RawText<String> {
     RawText(metrics.get_metrics())
 }
