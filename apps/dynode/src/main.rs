@@ -157,10 +157,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .manage(metrics)
         .mount("/", routes![metrics_endpoint]);
 
-    let (proxy_result, metrics_result) = rocket::tokio::join!(proxy_server.launch(), metrics_server.launch());
-
-    proxy_result?;
-    metrics_result?;
+    rocket::tokio::try_join!(proxy_server.launch(), metrics_server.launch())?;
 
     Ok(())
 }
