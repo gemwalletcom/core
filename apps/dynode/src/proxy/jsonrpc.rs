@@ -1,16 +1,17 @@
 use crate::cache::{CacheProvider, CachedResponse, RequestCache};
-use crate::constants::JSON_CONTENT_TYPE;
-use crate::http_client::HttpClient;
+use crate::jsonrpc_types::{JsonRpcCall, JsonRpcError, JsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
 use crate::metrics::Metrics;
-use crate::request_builder::RequestBuilder;
-use crate::request_types::{JsonRpcCall, JsonRpcError, JsonRpcErrorResponse, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
-use crate::request_url::RequestUrl;
-use crate::response_builder::{ProxyResponse, ResponseBuilder};
+use crate::proxy::constants::JSON_CONTENT_TYPE;
+use crate::proxy::request_builder::RequestBuilder;
+use crate::proxy::request_url::RequestUrl;
+use crate::proxy::response_builder::ResponseBuilder;
 use bytes::Bytes;
 use gem_tracing::{info_with_fields, DurationMs};
 use primitives::Chain;
 use reqwest::header::HeaderMap;
 use reqwest::Method;
+
+use crate::proxy::ProxyResponse;
 
 pub struct JsonRpcHandler;
 
@@ -23,7 +24,7 @@ impl JsonRpcHandler {
         cache: &RequestCache,
         metrics: &Metrics,
         url: &RequestUrl,
-        client: &HttpClient,
+        client: &reqwest::Client,
         method: &Method,
         start_time: std::time::Instant,
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
@@ -110,7 +111,7 @@ impl JsonRpcHandler {
         path: &str,
         cache: &RequestCache,
         url: &RequestUrl,
-        client: &HttpClient,
+        client: &reqwest::Client,
         method: &Method,
         start_time: std::time::Instant,
     ) -> Result<Vec<JsonRpcResult>, Box<dyn std::error::Error + Send + Sync>> {
@@ -173,7 +174,12 @@ impl JsonRpcHandler {
         }
     }
 
-    pub(crate) fn build_responses(calls: &[&JsonRpcCall], cached: &[Option<CachedResponse>], upstream: &[JsonRpcResult], _: Vec<usize>) -> Vec<JsonRpcResult> {
+    pub(crate) fn build_responses(
+        calls: &[&JsonRpcCall],
+        cached: &[Option<CachedResponse>],
+        upstream: &[JsonRpcResult],
+        _: Vec<usize>,
+    ) -> Vec<JsonRpcResult> {
         let mut upstream_idx = 0;
         calls
             .iter()
@@ -199,7 +205,10 @@ impl JsonRpcHandler {
             .collect()
     }
 
-    fn build_json_response_with_headers<T: serde::Serialize>(data: &T, headers: HeaderMap) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+    fn build_json_response_with_headers<T: serde::Serialize>(
+        data: &T,
+        headers: HeaderMap,
+    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
         ResponseBuilder::build_with_headers(Bytes::from(response_body), 200, JSON_CONTENT_TYPE, headers)
     }

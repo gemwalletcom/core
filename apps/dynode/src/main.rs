@@ -3,10 +3,10 @@ use std::net::IpAddr;
 use std::str::FromStr;
 
 use bytes::Bytes;
-use dynode::config::{self, MetricsConfig};
+use dynode::config::{MetricsConfig, NodeConfig};
 use dynode::metrics::Metrics;
-use dynode::node_service::NodeService;
-use dynode::response_builder::ProxyResponse;
+use dynode::monitoring::NodeService;
+use dynode::proxy::ProxyResponse;
 use gem_tracing::{error_with_fields, info_with_fields};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::Method;
@@ -17,7 +17,7 @@ use rocket::outcome::Outcome as RequestOutcome;
 use rocket::response::{content::RawText, Responder, Response};
 use rocket::route::{Handler, Outcome, Route};
 use rocket::tokio::io::AsyncReadExt;
-use rocket::{routes, Request, State};
+use rocket::{Request, State};
 
 const BODY_READ_LIMIT_MB: u64 = 32;
 
@@ -45,24 +45,23 @@ impl Handler for ProxyHandler {
     }
 }
 
+fn proxy_routes() -> Vec<Route> {
+    let methods = [
+        RocketMethod::Get,
+        RocketMethod::Post,
+        RocketMethod::Put,
+        RocketMethod::Patch,
+        RocketMethod::Delete,
+        RocketMethod::Options,
+        RocketMethod::Head,
+    ];
+
+    methods.into_iter().map(|method| Route::new(method, "/<path..>", ProxyHandler)).collect()
+}
+
 #[rocket::get("/")]
 async fn metrics_endpoint(metrics: &State<Metrics>) -> RawText<String> {
     RawText(metrics.get_metrics())
-}
-
-fn build_response(proxy: ProxyResponse) -> Response<'static> {
-    let mut builder = Response::build();
-    let status = Status::from_code(proxy.status).unwrap_or(Status::Ok);
-    builder.status(status);
-
-    for (name, value) in proxy.headers.iter() {
-        if let Ok(value_str) = value.to_str() {
-            builder.raw_header(name.as_str().to_string(), value_str.to_string());
-        }
-    }
-
-    builder.sized_body(proxy.body.len(), Cursor::new(proxy.body.to_vec()));
-    builder.finalize()
 }
 
 async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, Status> {
@@ -102,6 +101,21 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
     }
 }
 
+fn build_response(proxy: ProxyResponse) -> Response<'static> {
+    let mut builder = Response::build();
+    let status = Status::from_code(proxy.status).unwrap_or(Status::Ok);
+    builder.status(status);
+
+    for (name, value) in proxy.headers.iter() {
+        if let Ok(value_str) = value.to_str() {
+            builder.raw_header(name.as_str().to_string(), value_str.to_string());
+        }
+    }
+
+    builder.sized_body(proxy.body.len(), Cursor::new(proxy.body.to_vec()));
+    builder.finalize()
+}
+
 struct ProxyRocketResponse(ProxyResponse);
 
 #[rocket::async_trait]
@@ -111,23 +125,9 @@ impl<'r> Responder<'r, 'static> for ProxyRocketResponse {
     }
 }
 
-fn proxy_routes() -> Vec<Route> {
-    let methods = [
-        RocketMethod::Get,
-        RocketMethod::Post,
-        RocketMethod::Put,
-        RocketMethod::Patch,
-        RocketMethod::Delete,
-        RocketMethod::Options,
-        RocketMethod::Head,
-    ];
-
-    methods.into_iter().map(|method| Route::new(method, "/<path..>", ProxyHandler)).collect()
-}
-
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let config = config::NodeConfig::new()?;
+    let config = NodeConfig::new()?;
 
     let node_address = IpAddr::from_str(config.address.as_str())?;
     let metrics_address = IpAddr::from_str(config.metrics.address.as_str())?;
@@ -155,7 +155,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let metrics_server = rocket::custom(Config::figment().merge(("address", metrics_address)).merge(("port", config.metrics.port)))
         .manage(metrics)
-        .mount("/", routes![metrics_endpoint]);
+        .mount("/", rocket::routes![metrics_endpoint]);
 
     rocket::tokio::try_join!(proxy_server.launch(), metrics_server.launch())?;
 

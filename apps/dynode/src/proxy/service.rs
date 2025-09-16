@@ -1,14 +1,14 @@
 use crate::cache::{CacheProvider, CachedResponse, RequestCache};
 use crate::config::{Domain, Url};
-use crate::http_client::{self, HttpClient};
-use crate::jsonrpc_handler::JsonRpcHandler;
+use crate::jsonrpc_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
 use crate::metrics::Metrics;
-use crate::request_builder::RequestBuilder;
-use crate::request_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
-use crate::request_url::RequestUrl;
-use crate::response_builder::{ProxyResponse, ResponseBuilder};
+use crate::proxy::jsonrpc::JsonRpcHandler;
+use crate::proxy::request_builder::RequestBuilder;
+use crate::proxy::request_url::RequestUrl;
+use crate::proxy::response_builder::{ProxyResponse, ResponseBuilder};
 use bytes::Bytes;
 use gem_tracing::{info_with_fields, DurationMs};
+use primitives::Chain;
 use reqwest::header::{self, HeaderMap, HeaderName};
 use reqwest::Method;
 use std::collections::HashMap;
@@ -21,7 +21,7 @@ pub struct ProxyRequestService {
     pub domain_configs: HashMap<String, Domain>,
     pub metrics: Metrics,
     pub cache: RequestCache,
-    pub client: HttpClient,
+    pub client: reqwest::Client,
     pub keep_headers: Arc<[HeaderName]>,
 }
 
@@ -32,7 +32,7 @@ pub struct NodeDomain {
 
 impl ProxyRequestService {
     pub fn new(domains: HashMap<String, NodeDomain>, domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache) -> Self {
-        let client = http_client::new();
+        let client = reqwest::Client::new();
         let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING]);
 
         Self {
@@ -181,7 +181,7 @@ impl ProxyRequestService {
 
     async fn try_cache_hit(
         cache: &RequestCache,
-        chain: primitives::Chain,
+        chain: Chain,
         cache_key: &str,
         request_type: &RequestType,
         host: &str,
@@ -229,7 +229,7 @@ impl ProxyRequestService {
         cache_key: String,
         body_bytes: Bytes,
         request_type: RequestType,
-        chain: primitives::Chain,
+        chain: Chain,
         host: String,
         method: Method,
         path: String,
@@ -282,7 +282,7 @@ impl ProxyRequestService {
         original_headers: HeaderMap,
         body: Bytes,
         url: RequestUrl,
-        client: &HttpClient,
+        client: &reqwest::Client,
         keep_headers: &[HeaderName],
     ) -> Result<reqwest::Response, Box<dyn std::error::Error + Send + Sync>> {
         let request = RequestBuilder::build_forwarded(&method, &url, body, &original_headers, keep_headers)?;

@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
 
-use crate::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
+use super::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
 
 #[derive(Debug, Clone)]
 pub struct ProxyResponse {
@@ -70,5 +70,13 @@ impl ResponseBuilder {
         headers.extend(additional_headers);
 
         ProxyResponse::new(cached.status, headers, cached.body)
+    }
+
+    pub fn build_json_response_with_headers<T: serde::Serialize>(
+        data: &T,
+        headers: HeaderMap,
+    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let response_body = serde_json::to_vec(data)?;
+        Self::build_with_headers(Bytes::from(response_body), 200, JSON_CONTENT_TYPE, headers)
     }
 }

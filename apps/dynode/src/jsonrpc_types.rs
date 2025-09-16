@@ -58,7 +58,6 @@ impl JsonRpcResult {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub enum RequestType {
     Regular { path: String, method: String, body: Bytes },
@@ -198,7 +197,7 @@ mod tests {
         let call = JsonRpcCall {
             jsonrpc: "2.0".to_string(),
             method: "eth_blockNumber".to_string(),
-            params: Value::Null,
+            params: json!(null),
             id: 1,
         };
 

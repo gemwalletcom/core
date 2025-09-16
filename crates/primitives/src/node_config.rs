@@ -64,6 +64,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::Tron => vec![
             Node::new("https://api.trongrid.io", NodePriority::High),
             Node::new("https://api.frankfurt.trongrid.io", NodePriority::High),
+            Node::new("https://tron-rpc.publicnode.com", NodePriority::High),
         ],
         Chain::Doge => vec![],
         Chain::Optimism => vec![

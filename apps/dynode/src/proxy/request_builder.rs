@@ -4,8 +4,8 @@ use bytes::Bytes;
 use reqwest::header::{self, HeaderMap, HeaderName};
 use reqwest::{Method, Request};
 
-use crate::constants::JSON_HEADER;
-use crate::request_url::RequestUrl;
+use super::constants::JSON_HEADER;
+use super::request_url::RequestUrl;
 
 pub struct RequestBuilder;
 

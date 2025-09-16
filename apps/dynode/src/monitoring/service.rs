@@ -3,13 +3,10 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, Url};
+use crate::config::{CacheConfig, Domain};
 use crate::metrics::Metrics;
-use crate::node_monitor::NodeMonitor;
-use crate::{
-    config::Domain,
-    proxy_request_service::{NodeDomain, ProxyRequestService},
-};
+use crate::monitoring::NodeMonitor;
+use crate::proxy::{NodeDomain, ProxyRequestService};
 
 #[derive(Debug, Clone)]
 pub struct NodeService {
@@ -17,20 +14,6 @@ pub struct NodeService {
     pub nodes: Arc<Mutex<HashMap<String, NodeDomain>>>,
     pub metrics: Arc<Metrics>,
     pub cache: RequestCache,
-}
-
-#[derive(Debug)]
-pub struct NodeRawResult {
-    pub url: Url,
-    pub result: Result<u64, Box<dyn std::error::Error + Send + Sync>>,
-    pub latency: u64,
-}
-
-#[derive(Debug, Clone)]
-pub struct NodeResult {
-    pub url: Url,
-    pub block_number: u64,
-    pub latency: u64,
 }
 
 impl NodeService {
