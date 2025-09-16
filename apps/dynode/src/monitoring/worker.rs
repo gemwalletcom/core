@@ -5,11 +5,11 @@ use gem_tracing::{error_with_fields, info_with_fields};
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
+use super::chain_client::ChainClient;
+use crate::config::{Domain, NodeResult, Url};
 use crate::metrics::Metrics;
 use crate::monitoring::NodeService;
-use crate::config::{Domain, NodeResult, Url};
 use crate::proxy::NodeDomain;
-use super::chain_client::ChainClient;
 
 pub struct NodeMonitor {
     domains: HashMap<String, Domain>,
@@ -69,14 +69,7 @@ impl NodeMonitor {
                         if let Some(value) = NodeService::get_node_domain(&nodes.clone(), domain.domain.clone()).await {
                             let is_url_behind = domain.is_url_behind(value.url.clone(), results.clone());
 
-                            let blocks_str = format!(
-                                "{:?}",
-                                results
-                                    .clone()
-                                    .into_iter()
-                                    .map(|x| x.block_number)
-                                    .collect::<Vec<u64>>()
-                            );
+                            let blocks_str = format!("{:?}", results.clone().into_iter().map(|x| x.block_number).collect::<Vec<u64>>());
 
                             if is_url_behind {
                                 error_with_fields!(

@@ -50,7 +50,11 @@ struct CacheExpiry;
 
 impl Expiry<String, CachedResponse> for CacheExpiry {
     fn expire_after_create(&self, _key: &String, value: &CachedResponse, _current_time: Instant) -> Option<Duration> {
-        Some(Duration::from_secs(value.ttl_seconds))
+        if value.ttl_seconds == 0 {
+            None
+        } else {
+            Some(Duration::from_secs(value.ttl_seconds))
+        }
     }
 }
 
@@ -90,12 +94,16 @@ impl MemoryCache {
             .build()
     }
 
-    fn check_path_rule(&self, rule: &CacheRule, path: &str, method: &str) -> Option<u64> {
-        let rule_path = rule.path.as_ref()?;
+    fn check_path_rule(&self, rule: &CacheRule, path: &str, method: &str, body: Option<&Bytes>) -> Option<u64> {
         let rule_method = rule.method.as_ref()?;
+        if !method.eq_ignore_ascii_case(rule_method) {
+            return None;
+        }
 
+        let rule_path = rule.path.as_ref()?;
         let path_without_query = path.split('?').next().unwrap_or(path);
-        if path_without_query == rule_path && method.eq_ignore_ascii_case(rule_method) {
+
+        if path_without_query == rule_path && rule.matches_body(body) {
             Some(rule.ttl_seconds)
         } else {
             None
@@ -120,11 +128,11 @@ impl CacheProvider for MemoryCache {
         self.config.rules.get(chain_type.as_ref()).cloned().unwrap_or_default()
     }
 
-    fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, _body: Option<&Bytes>) -> Option<u64> {
+    fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, body: Option<&Bytes>) -> Option<u64> {
         let rules = self.get_cache_rules(chain_type);
 
         for rule in rules {
-            if let Some(ttl) = self.check_path_rule(&rule, path, method) {
+            if let Some(ttl) = self.check_path_rule(&rule, path, method, body) {
                 return Some(ttl);
             }
         }
@@ -137,8 +145,8 @@ impl CacheProvider for MemoryCache {
 
         for rule in rules {
             match request_type {
-                RequestType::Regular { path, method, .. } => {
-                    if let Some(ttl) = self.check_path_rule(&rule, path, method) {
+                RequestType::Regular { path, method, body } => {
+                    if let Some(ttl) = self.check_path_rule(&rule, path, method, Some(body)) {
                         return Some(ttl);
                     }
                 }
@@ -183,6 +191,7 @@ mod tests {
     use bytes::Bytes;
     use primitives::Chain;
     use std::collections::HashMap;
+    use std::time::Instant;
 
     fn create_test_config() -> CacheConfig {
         let mut rules = HashMap::new();
@@ -194,20 +203,19 @@ mod tests {
                     method: Some("GET".to_string()),
                     rpc_method: None,
                     ttl_seconds: 300,
+                    params: HashMap::new(),
                 },
                 CacheRule {
                     path: None,
                     method: None,
                     rpc_method: Some("eth_blockNumber".to_string()),
                     ttl_seconds: 60,
+                    params: HashMap::new(),
                 },
             ],
         );
 
-        CacheConfig {
-            max_memory_mb: 64,
-            rules,
-        }
+        CacheConfig { max_memory_mb: 64, rules }
     }
 
     #[tokio::test]
@@ -234,6 +242,47 @@ mod tests {
         assert_eq!(ttl, Some(300));
 
         let ttl = cache.should_cache(&chain, "/api/v1/data", "POST", None);
+        assert_eq!(ttl, None);
+    }
+
+    #[test]
+    fn test_cache_expiry_without_ttl() {
+        let expiry = CacheExpiry;
+        let response = CachedResponse::new(Bytes::from("no-expire"), 200, "application/json".to_string(), 0);
+        let key = "no_expire_key".to_string();
+
+        let expiry_duration = expiry.expire_after_create(&key, &response, Instant::now());
+        assert!(expiry_duration.is_none());
+    }
+
+    #[test]
+    fn test_should_cache_with_params() {
+        let mut config = create_test_config();
+        if let Some(rules) = config.rules.get_mut("ethereum") {
+            let mut params = HashMap::new();
+            params.insert("type".to_string(), "metaAndAssetCtxs".to_string());
+
+            rules.push(CacheRule {
+                path: Some("/info".to_string()),
+                method: Some("POST".to_string()),
+                rpc_method: None,
+                ttl_seconds: 200,
+                params,
+            });
+        }
+
+        let cache = MemoryCache::new(config);
+        let chain = Chain::Ethereum;
+
+        let matching_body = Bytes::from(r#"{"type":"metaAndAssetCtxs"}"#);
+        let ttl = cache.should_cache(&chain, "/info", "POST", Some(&matching_body));
+        assert_eq!(ttl, Some(200));
+
+        let non_matching_body = Bytes::from(r#"{"type":"other"}"#);
+        let ttl = cache.should_cache(&chain, "/info", "POST", Some(&non_matching_body));
+        assert_eq!(ttl, None);
+
+        let ttl = cache.should_cache(&chain, "/info", "POST", None);
         assert_eq!(ttl, None);
     }
 

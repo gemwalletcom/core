@@ -174,12 +174,7 @@ impl JsonRpcHandler {
         }
     }
 
-    pub(crate) fn build_responses(
-        calls: &[&JsonRpcCall],
-        cached: &[Option<CachedResponse>],
-        upstream: &[JsonRpcResult],
-        _: Vec<usize>,
-    ) -> Vec<JsonRpcResult> {
+    pub(crate) fn build_responses(calls: &[&JsonRpcCall], cached: &[Option<CachedResponse>], upstream: &[JsonRpcResult], _: Vec<usize>) -> Vec<JsonRpcResult> {
         let mut upstream_idx = 0;
         calls
             .iter()
@@ -205,10 +200,7 @@ impl JsonRpcHandler {
             .collect()
     }
 
-    fn build_json_response_with_headers<T: serde::Serialize>(
-        data: &T,
-        headers: HeaderMap,
-    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+    fn build_json_response_with_headers<T: serde::Serialize>(data: &T, headers: HeaderMap) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
         ResponseBuilder::build_with_headers(Bytes::from(response_body), 200, JSON_CONTENT_TYPE, headers)
     }
