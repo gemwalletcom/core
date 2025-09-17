@@ -52,7 +52,7 @@ mod chain_integration_tests {
         assert_eq!(asset.symbol, "USDC");
         assert_eq!(asset.name, "USD Coin");
         assert_eq!(asset.decimals, 6);
-        assert_eq!(asset.asset_type, AssetType::TOKEN);
+        assert_eq!(asset.asset_type, AssetType::SPL);
 
         Ok(())
     }
@@ -69,7 +69,7 @@ mod chain_integration_tests {
         assert_eq!(asset.symbol, "PYUSD");
         assert_eq!(asset.name, "PayPal USD");
         assert_eq!(asset.decimals, 6);
-        assert_eq!(asset.asset_type, AssetType::TOKEN);
+        assert_eq!(asset.asset_type, AssetType::SPL2022);
 
         Ok(())
     }

@@ -207,7 +207,11 @@ impl SwapMapper {
                             V4Action::SWAP_EXACT_IN(params) => {
                                 let path_keys = params.path;
                                 let from_token = params.currencyIn;
-                                let to_token = path_keys[path_keys.len() - 1].intermediateCurrency;
+                                let to_token = if path_keys.is_empty() {
+                                    continue;
+                                } else {
+                                    path_keys[path_keys.len() - 1].intermediateCurrency
+                                };
                                 from_asset = Some(AssetId {
                                     chain: *chain,
                                     token_id: if from_token == Address::ZERO {
@@ -554,5 +558,29 @@ mod tests {
         .unwrap();
 
         assert!(swap_tx.metadata.is_some());
+    }
+
+    #[test]
+    fn test_v4_swap_empty_path_no_panic() {
+        use crate::uniswap::{actions::V4Action, contracts::v4::IV4Router};
+        use alloy_primitives::Address;
+
+        let action = V4Action::SWAP_EXACT_IN(IV4Router::ExactInputParams {
+            currencyIn: Address::ZERO,
+            path: vec![],
+            amountIn: 1000000000000000000_u128,
+            amountOutMinimum: 0,
+        });
+
+        let encoded_actions = crate::uniswap::actions::encode_actions(&[action]);
+        let decoded_actions = crate::uniswap::actions::decode_action_data(&encoded_actions);
+        assert!(decoded_actions.is_ok());
+
+        let actions = decoded_actions.unwrap();
+        assert_eq!(actions.len(), 1);
+
+        if let V4Action::SWAP_EXACT_IN(params) = &actions[0] {
+            assert!(params.path.is_empty());
+        }
     }
 }

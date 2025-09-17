@@ -1,3 +1,4 @@
+use gem_client::ReqwestClient;
 use security_provider::providers::goplus::GoPlusProvider;
 use security_provider::providers::hashdit::HashDitProvider;
 use security_provider::ScanProvider;
@@ -13,9 +14,12 @@ impl ScanProviderFactory {
             .unwrap();
 
         vec![
-            Box::new(GoPlusProvider::new(client.clone(), &settings.scan.goplus.url, &settings.scan.goplus.key.public)),
+            Box::new(GoPlusProvider::new(
+                ReqwestClient::new(settings.scan.goplus.url.clone(), client.clone()),
+                &settings.scan.goplus.key.public,
+            )),
             Box::new(HashDitProvider::new(
-                client.clone(),
+                ReqwestClient::new(settings.scan.hashdit.url.clone(), client.clone()),
                 &settings.scan.hashdit.key.public,
                 &settings.scan.hashdit.key.secret,
             )),

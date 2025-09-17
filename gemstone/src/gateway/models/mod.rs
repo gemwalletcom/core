@@ -14,7 +14,12 @@ pub use staking::*;
 pub use transaction::*;
 pub use transaction_metadata::*;
 
-use primitives::{BroadcastOptions, FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
+use primitives::{AddressStatus, BroadcastOptions, FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemAddressStatus {
+    MultiSignature,
+}
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemUTXO {
@@ -60,6 +65,22 @@ pub struct GemTransactionPreloadInput {
 }
 
 // Conversion implementations
+impl From<AddressStatus> for GemAddressStatus {
+    fn from(status: AddressStatus) -> Self {
+        match status {
+            AddressStatus::MultiSignature => GemAddressStatus::MultiSignature,
+        }
+    }
+}
+
+impl From<GemAddressStatus> for AddressStatus {
+    fn from(status: GemAddressStatus) -> Self {
+        match status {
+            GemAddressStatus::MultiSignature => AddressStatus::MultiSignature,
+        }
+    }
+}
+
 impl From<UTXO> for GemUTXO {
     fn from(utxo: UTXO) -> Self {
         Self {

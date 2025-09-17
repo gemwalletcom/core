@@ -4,12 +4,13 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, Transaction, TransactionFee, TransactionInputType,
-    TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
+    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, Transaction, TransactionFee,
+    TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest,
+    TransactionUpdate, UTXO,
 };
 
 pub trait ChainTraits:
-    ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainTransactionLoad
+    ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainTransactionLoad + ChainAddressStatus
 {
 }
 
@@ -108,6 +109,13 @@ pub trait ChainTransactionLoad: Send + Sync {
     }
 
     async fn get_utxos(&self, _address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
+}
+
+#[async_trait]
+pub trait ChainAddressStatus: Send + Sync {
+    async fn get_address_status(&self, _address: String) -> Result<Vec<AddressStatus>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 }

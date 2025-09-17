@@ -1,4 +1,4 @@
-use chrono::Local;
+use gem_tracing::info_with_fields;
 use std::future::Future;
 use tokio::time::{Duration, Instant};
 
@@ -11,22 +11,11 @@ where
     loop {
         let now = Instant::now();
 
-        println!(
-            "{}: start: {}, interval: {}s",
-            Local::now().format("%Y-%m-%d %H:%M:%S.%3f"),
-            name,
-            interval_duration.as_secs()
-        );
+        info_with_fields!("job start", job = name, interval = interval_duration.as_secs().to_string());
 
-        let result = job_fn().await;
+        let _result = job_fn().await;
 
-        println!(
-            "{}: done in {}ms: {}. Result: {:?}",
-            Local::now().format("%Y-%m-%d %H:%M:%S.%3f"),
-            now.elapsed().as_millis(),
-            name,
-            result
-        );
+        info_with_fields!("job complete", job = name, duration_ms = now.elapsed().as_millis().to_string());
 
         tokio::time::sleep(interval_duration).await;
     }

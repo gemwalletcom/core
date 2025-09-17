@@ -37,7 +37,7 @@ use gem_evm::{
         deployment::AcrossDeployment,
         fees::{self, LpFeeCalculator, RateModel, RelayerFeeCalculator},
     },
-    erc20::IERC20,
+    contracts::erc20::IERC20,
     jsonrpc::TransactionObject,
     multicall3::IMulticall3,
     weth::WETH9,
@@ -793,7 +793,7 @@ mod tests {
     use crate::network::mock::AlienProviderMock;
     use gem_evm::{
         across::contracts::{multicall_handler, V3SpokePoolInterface::depositCall},
-        erc20::IERC20,
+        contracts::erc20::IERC20,
         multicall3::IMulticall3,
         weth::WETH9,
     };

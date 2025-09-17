@@ -1,12 +1,14 @@
-use super::models::{Asset, Currencies, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
-use crate::model::{FiatMapping, FiatProviderAsset};
+use crate::model::FiatMapping;
 use hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
 use primitives::{FiatProviderName, FiatQuote};
 use reqwest::Client;
 use sha2::{Digest, Sha512};
+use std::collections::HashMap;
 use url::Url;
+
+use super::models::{Asset, Currencies, CurrencyLimits, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
 
 const MERCURYO_API_BASE_URL: &str = "https://api.mercuryo.io";
 const MERCURYO_REDIRECT_URL: &str = "https://exchange.mercuryo.io";
@@ -62,6 +64,12 @@ impl MercuryoClient {
         Ok(response.data.config.crypto_currencies)
     }
 
+    pub async fn get_currencies(&self) -> Result<Currencies, reqwest::Error> {
+        let url = format!("{MERCURYO_API_BASE_URL}/v1.6/lib/currencies");
+        let response = self.client.get(&url).send().await?.json::<Response<Currencies>>().await?;
+        Ok(response.data)
+    }
+
     pub async fn get_countries(&self) -> Result<Response<Vec<String>>, reqwest::Error> {
         let query = [("type", "alpha2")];
         self.client
@@ -85,18 +93,10 @@ impl MercuryoClient {
             .await
     }
 
-    pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = super::mapper::map_asset_chain(asset.network.clone());
-        let token_id = if asset.contract.is_empty() { None } else { Some(asset.contract.clone()) };
-        Some(FiatProviderAsset {
-            id: asset.clone().currency + "_" + asset.network.as_str(),
-            chain,
-            token_id,
-            symbol: asset.clone().currency,
-            network: Some(asset.network),
-            enabled: true,
-            unsupported_countries: None,
-        })
+    pub async fn get_currency_limits(&self, from: String, to: String) -> Result<Response<HashMap<String, CurrencyLimits>>, reqwest::Error> {
+        let query = [("from", from), ("to", to), ("widget_id", self.widget_id.clone())];
+        let url = format!("{MERCURYO_API_BASE_URL}/v1.6/public/currency-limits");
+        self.client.get(&url).query(&query).send().await?.json().await
     }
 
     pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
@@ -105,7 +105,7 @@ impl MercuryoClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: quote.clone().amount,
             crypto_value,
             redirect_url: self.redirect_url(
@@ -122,7 +122,7 @@ impl MercuryoClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.fiat_amount,
-            fiat_currency: request.fiat_currency,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: quote.amount,
             crypto_value: request.crypto_value,
             redirect_url: self.redirect_url(

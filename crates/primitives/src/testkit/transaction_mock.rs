@@ -20,11 +20,7 @@ impl Transaction {
         )
     }
 
-    pub fn mock_with_params(
-        asset_id: AssetId,
-        transaction_type: TransactionType,
-        value: String,
-    ) -> Self {
+    pub fn mock_with_params(asset_id: AssetId, transaction_type: TransactionType, value: String) -> Self {
         Transaction::new(
             "0x1234567890abcdef".to_string(),
             asset_id.clone(),

@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 Tạo hoặc Nhập V�
 notification_onboarding_create_import_wallet_description = Tạo ví mới hoặc nhập ví của bạn chỉ bằng vài thao tác.
 notification_onboarding_welcome_description = Bắt đầu hành trình tiền điện tử của bạn. Nhấn để thiết lập ví tiền điện tử của bạn.
 notification_onboarding_buy_asset_description = Mua {$name} một cách an toàn ngay hôm nay—đơn giản, đáng tin cậy và nhanh chóng.
+support_new_message_title = Tin nhắn mới từ bộ phận Hỗ trợ

@@ -1,5 +1,5 @@
 use crate::{
-    erc20::{decode_abi_string, decode_abi_uint8},
+    contracts::erc20::{decode_abi_string, decode_abi_uint8},
     ethereum_address_checksum,
 };
 use primitives::{Asset, AssetId, Chain};

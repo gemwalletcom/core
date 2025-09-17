@@ -62,7 +62,7 @@ impl PriceClient {
     }
 
     pub fn get_prices(&mut self) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
-        self.database.prices().get_prices()
+        Ok(self.database.prices().get_prices()?)
     }
 
     pub fn get_prices_ids(&mut self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
@@ -70,36 +70,29 @@ impl PriceClient {
     }
 
     pub fn get_prices_assets(&mut self) -> Result<Vec<PriceAsset>, Box<dyn Error + Send + Sync>> {
-        self.database.prices().get_prices_assets()
+        Ok(self.database.prices().get_prices_assets()?)
     }
 
     pub async fn set_fiat_rates(&mut self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.database
-            .fiat()
-            .set_fiat_rates(rates.into_iter().map(storage::models::FiatRate::from_primitive).collect())
-    }
-
-    pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
-        self.database.fiat().get_fiat_rates()
-    }
-
-    pub fn get_fiat_rate(&mut self, symbol: &str) -> Result<FiatRate, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
             .fiat()
-            .get_fiat_rates()?
-            .iter()
-            .find(|x| x.symbol == symbol)
-            .ok_or(format!("No fiat rate found for symbol: {symbol}"))?
-            .clone())
+            .set_fiat_rates(rates.into_iter().map(storage::models::FiatRate::from_primitive).collect())?)
+    }
+
+    pub fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.fiat().get_fiat_rates()?)
+    }
+
+    pub fn get_fiat_rate(&mut self, symbol: &str) -> Result<FiatRate, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.fiat().get_fiat_rate(symbol)?)
     }
 
     // cache
 
     pub async fn get_asset_price(&mut self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error + Send + Sync>> {
         let rate = self.get_fiat_rate(currency)?.rate;
-        let prices = self.get_cache_prices(vec![asset_id.to_string()]).await?;
-        let price = prices.first().cloned().ok_or(format!("No price available for asset_id: {asset_id}"))?;
+        let price = self.get_cache_price(asset_id).await?;
 
         Ok(AssetMarketPrice {
             price: Some(price.as_price_primitive_with_rate(rate)),
@@ -129,6 +122,10 @@ impl PriceClient {
         self.cacher_client.get_values(keys).await
     }
 
+    pub async fn get_cache_price(&mut self, asset_id: &str) -> Result<AssetPriceInfo, Box<dyn Error + Send + Sync>> {
+        self.cacher_client.get_value(asset_id).await
+    }
+
     pub async fn get_asset_prices(&mut self, currency: &str, asset_ids: Vec<String>) -> Result<AssetPrices, Box<dyn Error + Send + Sync>> {
         let rate = self.get_fiat_rate(currency)?.rate;
         let prices = self
@@ -147,22 +144,22 @@ impl PriceClient {
 
     // charts
     pub async fn add_charts(&mut self, charts: Vec<Chart>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.database.charts().add_charts(charts)
+        Ok(self.database.charts().add_charts(charts)?)
     }
 
     pub fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.database.prices().delete_prices_updated_at_before(time)
+        Ok(self.database.prices().delete_prices_updated_at_before(time)?)
     }
 
     pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.database.charts().aggregate_hourly_charts()
+        Ok(self.database.charts().aggregate_hourly_charts()?)
     }
 
     pub async fn aggregate_daily_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.database.charts().aggregate_daily_charts()
+        Ok(self.database.charts().aggregate_daily_charts()?)
     }
 
     pub async fn cleanup_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.database.charts().cleanup_charts_data()
+        Ok(self.database.charts().cleanup_charts_data()?)
     }
 }

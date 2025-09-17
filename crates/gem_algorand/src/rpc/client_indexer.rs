@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::models::{Account, AssetResponse, Block, BlockHeaders, Transactions};
 
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainAccount, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits, ChainTransactionLoad};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits, ChainTransactionLoad};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
@@ -63,6 +63,9 @@ impl<C: Client> ChainAccount for AlgorandClientIndexer<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client> ChainPerpetual for AlgorandClientIndexer<C> {}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainAddressStatus for AlgorandClientIndexer<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client> ChainTransactionLoad for AlgorandClientIndexer<C> {}

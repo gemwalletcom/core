@@ -1,6 +1,6 @@
 use std::{collections::HashMap, error::Error};
 
-use crate::SUI_COIN_TYPE;
+use crate::{models::SuiObject, SUI_COIN_TYPE};
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
@@ -9,7 +9,7 @@ use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::{
-    transaction_load_metadata::SuiCoin, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
+    transaction_load_metadata::SuiCoin, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
     TransactionLoadMetadata, TransactionPreloadInput,
 };
 
@@ -26,8 +26,8 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        let (gas_coins, coins) = self.get_coins_for_input_type(&input.sender_address.clone(), input.input_type.clone()).await?;
-        let message_bytes = map_transaction_data(input.clone(), gas_coins.clone(), coins.clone())?;
+        let (gas_coins, coins, objects) = self.get_coins_for_input_type(&input.sender_address.clone(), input.input_type.clone()).await?;
+        let message_bytes = map_transaction_data(input.clone(), gas_coins.clone(), coins.clone(), objects)?;
 
         let fee = self.calculate_actual_fee(&message_bytes, &input.gas_price).await?;
 
@@ -69,14 +69,25 @@ impl<C: Client + Clone> SuiClient<C> {
         &self,
         address: &str,
         input_type: TransactionInputType,
-    ) -> Result<(Vec<SuiCoin>, Vec<SuiCoin>), Box<dyn Error + Send + Sync>> {
+    ) -> Result<(Vec<SuiCoin>, Vec<SuiCoin>, Vec<SuiObject>), Box<dyn Error + Send + Sync>> {
         match input_type {
             TransactionInputType::Transfer(asset) => match asset.id.token_id {
-                None => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new())),
-                Some(token_id) => Ok(futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_coins(address, &token_id))?),
+                None => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new(), Vec::new())),
+                Some(token_id) => {
+                    let (gas_coins, coins) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_coins(address, &token_id))?;
+                    Ok((gas_coins, coins, Vec::new()))
+                }
             },
-            TransactionInputType::Stake(..) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new())),
-            TransactionInputType::Swap(_, _, _) => Ok((Vec::new(), Vec::new())),
+            TransactionInputType::Stake(_, stake_type) => match stake_type {
+                StakeType::Stake(_) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new(), Vec::new())),
+                StakeType::Unstake(delegation) => {
+                    let (gas_coins, staked_object) =
+                        futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_object(delegation.base.delegation_id.clone()))?;
+                    Ok((gas_coins, Vec::new(), vec![staked_object]))
+                }
+                _ => Err("Unsupported stake type for Sui".into()),
+            },
+            TransactionInputType::Swap(_, _, _) => Ok((Vec::new(), Vec::new(), Vec::new())),
             _ => Err("Unsupported transaction type for Sui".into()),
         }
     }
@@ -86,8 +97,9 @@ impl<C: Client + Clone> SuiClient<C> {
 mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::*;
+    use base64::{engine::general_purpose, Engine};
     use chain_traits::ChainTransactionLoad;
-    use primitives::{Asset, Chain, FeePriority};
+    use primitives::{Asset, Chain, FeePriority, StakeType, TransactionLoadInput};
 
     #[tokio::test]
     async fn test_sui_get_transaction_fee_rates() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -122,6 +134,52 @@ mod chain_integration_tests {
         //     }
         //     _ => panic!("Expected Sui metadata"),
         // }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_sui_get_transaction_preload_unstake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_sui_test_client();
+
+        let delegation_id = "0x32c6c9d1de51d1df1d69687ee29c9759c06ae48e6dbb024e2cd81499b4058d51";
+        let user_address = "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6";
+
+        let delegation = primitives::Delegation::mock_with_id(delegation_id.to_string());
+        let stake_type = StakeType::Unstake(delegation);
+
+        let input = TransactionLoadInput {
+            sender_address: user_address.to_string(),
+            destination_address: user_address.to_string(),
+            value: "1000000000".to_string(),
+            input_type: TransactionInputType::Stake(Asset::from_chain(Chain::Sui), stake_type),
+            gas_price: primitives::GasPriceType::regular(BigInt::from(1000)),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::None,
+        };
+
+        let result = client.get_transaction_load(input).await?;
+
+        match result.metadata {
+            TransactionLoadMetadata::Sui { message_bytes } => {
+                assert!(!message_bytes.is_empty());
+                println!("Sui unstake transaction data: {} chars", message_bytes.len());
+
+                assert!(message_bytes.contains('_'));
+                let parts: Vec<&str> = message_bytes.split('_').collect();
+                assert_eq!(parts.len(), 2);
+
+                assert!(general_purpose::STANDARD.decode(parts[0]).is_ok());
+                assert!(hex::decode(parts[1]).is_ok());
+            }
+            _ => panic!("Expected Sui metadata for unstake transaction"),
+        }
+
+        assert!(result.fee.fee > BigInt::from(0));
+        assert_eq!(result.fee.gas_limit, BigInt::from(GAS_BUDGET));
+
+        println!("Unstake transaction fee: {}", result.fee.fee);
 
         Ok(())
     }

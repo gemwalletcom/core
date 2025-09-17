@@ -38,7 +38,6 @@ where
     }
 }
 
-
 pub fn deserialize_option_u64_from_str<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
 where
     D: Deserializer<'de>,

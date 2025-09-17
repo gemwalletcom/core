@@ -9,6 +9,7 @@ pub use pusher::Pusher;
 pub mod consumers;
 pub mod parser_proxy;
 
+use gem_tracing::{SentryConfig, SentryTracing};
 use primitives::{node::NodeState, Chain};
 use settings::Settings;
 use std::{str::FromStr, sync::Arc, time::Duration};
@@ -21,6 +22,13 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args: Vec<String> = std::env::args().collect();
     let mode = args.last().cloned().unwrap_or_default();
     let settings = Settings::new().unwrap();
+
+    let sentry_config = settings.sentry.as_ref().map(|s| SentryConfig {
+        dsn: s.dsn.clone(),
+        sample_rate: s.sample_rate,
+    });
+    let _tracing = SentryTracing::init(sentry_config.as_ref(), "parser");
+
     let database = Arc::new(Mutex::new(DatabaseClient::new(&settings.postgres.url)));
 
     if mode == "consumers" {

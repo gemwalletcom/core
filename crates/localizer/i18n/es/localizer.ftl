@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 Crear o importar una b
 notification_onboarding_create_import_wallet_description = Crea una nueva billetera o importa la tuya con solo unos pocos toques.
 notification_onboarding_welcome_description = Empieza tu aventura con las criptomonedas. Toca para configurar tu billetera.
 notification_onboarding_buy_asset_description = Compre {$name} de forma segura hoy: simple, confiable e instantáneo.
+support_new_message_title = Nuevo mensaje de Soporte

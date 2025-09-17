@@ -1,0 +1,9 @@
+{
+    "timestamp": 1757025162,
+    "event": "VERIFICATION_STATUS_UPDATED",
+    "data": {
+        "partnerUserId": "9b056096-51af-4ae7",
+        "status": "started",
+        "residenceCountry": null
+    }
+}

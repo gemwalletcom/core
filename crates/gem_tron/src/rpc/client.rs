@@ -14,7 +14,7 @@ use crate::models::{
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
 use crate::rpc::trongrid::client::TronGridClient;
 use gem_client::Client;
-use gem_evm::erc20::{decode_abi_string, decode_abi_uint8};
+use gem_evm::contracts::erc20::{decode_abi_string, decode_abi_uint8};
 
 #[derive(Clone)]
 pub struct TronClient<C: Client> {

@@ -4,7 +4,7 @@ use crate::models::account::BitcoinAccount;
 use crate::models::block::{BitcoinBlock, BitcoinNodeInfo, Block, Status};
 use crate::models::fee::BitcoinFeeResult;
 use crate::models::transaction::{AddressDetails, BitcoinTransactionBroacastResult, BitcoinUTXO, Transaction};
-use chain_traits::{ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
+use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
 use gem_client::{Client, ContentType, CONTENT_TYPE};
 use primitives::{chain::Chain, BitcoinChain};
 use std::collections::HashMap;
@@ -70,6 +70,8 @@ impl<C: Client> BitcoinClient<C> {
 impl<C: Client> ChainStaking for BitcoinClient<C> {}
 
 impl<C: Client> ChainPerpetual for BitcoinClient<C> {}
+
+impl<C: Client> ChainAddressStatus for BitcoinClient<C> {}
 
 impl<C: Client> ChainToken for BitcoinClient<C> {}
 

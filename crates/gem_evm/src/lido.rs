@@ -3,7 +3,7 @@ use alloy_sol_types::{sol, SolCall};
 use anyhow::Error;
 use std::str::FromStr;
 
-use crate::erc2612::Permit;
+use crate::contracts::erc2612::Permit;
 
 sol! {
     #[derive(Debug, PartialEq)]
@@ -118,7 +118,7 @@ pub fn decode_request_withdrawals_return(result: &[u8]) -> Result<Vec<String>, E
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::erc2612::Permit;
+    use crate::contracts::erc2612::Permit;
     #[test]
     fn test_encode_submit_with_referral() {
         let referral = "0x4C49d4Bd6a571827B4A556a0e1e3071DA6231B9D";

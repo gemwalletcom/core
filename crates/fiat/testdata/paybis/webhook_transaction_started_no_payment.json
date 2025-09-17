@@ -1,0 +1,85 @@
+{
+    "timestamp": 1757025123,
+    "event": "TRANSACTION_STATUS_CHANGED",
+    "data": {
+        "requestId": "63f0c91b-5382-45d6-8fb9",
+        "partnerUserId": "2f17a7b3-845b-4a07-b9b9",
+        "userEmail": "test@test.com",
+        "userIp": "1.1.1.1",
+        "quote": {
+            "quoteId": "59b799d4-dc8c-458d-b9c7-292726ab6255",
+            "amountTo": {
+                "amount": "0.22726373",
+                "currency": "SOL"
+            },
+            "amountFrom": {
+                "amount": "50.00000000",
+                "currency": "USD"
+            },
+            "amountReceived": {
+                "amount": "46.49",
+                "currency": "USD"
+            },
+            "currencyCodeTo": "SOL",
+            "currencyCodeFrom": "USD",
+            "fees": {
+                "currency": "USD",
+                "network_fee": "0.01",
+                "service_fee": "3.50",
+                "partner_fee": "0.50",
+                "total_fee": "3.51"
+            },
+            "feesInUsd": {
+                "network_fee": "0.01",
+                "service_fee": "3.50",
+                "partner_fee": "0.50",
+                "total_fee": "3.51"
+            },
+            "directionChange": "from",
+            "expiresAt": "2025-09-04T22:59:23+0000"
+        },
+        "transaction": {
+            "status": "started",
+            "rejectReason": null,
+            "invoice": "PB25095868675TX8",
+            "flow": "buyCrypto",
+            "createdAt": "2025-09-04T22:32:02+0000",
+            "statusUpdatedAt": "2025-09-04T22:32:37+0000"
+        },
+        "payment": {
+            "id": null,
+            "name": "Online Banking",
+            "card": null,
+            "errorCode": null
+        },
+        "payout": {
+            "id": "solana",
+            "name": "Solana",
+            "transaction_hash": null,
+            "explorer_link": null
+        },
+        "amountFrom": {
+            "amount": "50.00",
+            "currency": "USD"
+        },
+        "amountTo": {
+            "amount": "0.22726373",
+            "currency": "SOL"
+        },
+        "promoCode": null
+    },
+    "meta": {
+        "assets": [
+            {
+                "currency": "SOL",
+                "currencyCode": "SOL",
+                "displayName": "Solana",
+                "blockchain": "solana",
+                "network": "mainnet",
+                "decimals": 9,
+                "tokenContract": null,
+                "hasDestinationTag": false
+            }
+        ]
+    }
+}

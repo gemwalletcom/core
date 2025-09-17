@@ -68,10 +68,12 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
                     fetch_assets_payload.extend_from_slice(&missing_assets_ids);
 
-                    if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
-                        println!("outdated transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
-                    } else if !self.config.is_transaction_sufficient_amount(&transaction, asset.cloned(), price, 0.01) {
+                    if !self.config.is_transaction_sufficient_amount(&transaction, asset.cloned(), price, 0.01) {
                         println!("insufficient amount, transaction: {}", transaction.id.clone(),);
+
+                        transactions_map.remove(&transaction.id.clone());
+                    } else if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
+                        println!("outdated transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
                     } else if payload.blocks.is_empty() {
                         println!("empty blocks, transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
                     } else if assets_ids.ids_set() == assets_ids.ids_set() && is_notify_devices {

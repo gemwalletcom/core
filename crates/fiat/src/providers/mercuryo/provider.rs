@@ -1,11 +1,15 @@
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
+    providers::mercuryo::mapper::{map_asset_limits, map_asset_with_limits},
     FiatProvider,
 };
 use async_trait::async_trait;
+use futures::future;
+use primitives::currency::Currency;
 use primitives::{FiatBuyQuote, FiatSellQuote};
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
 use std::error::Error;
+use streamer::FiatWebhook;
 
 use super::{client::MercuryoClient, mapper::map_order_from_response, models::Webhook};
 
@@ -18,7 +22,7 @@ impl FiatProvider for MercuryoClient {
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_quote_buy(
-                request.fiat_currency.clone(),
+                request.fiat_currency.as_ref().to_string(),
                 request_map.symbol.clone(),
                 request.fiat_amount,
                 request_map.network.clone().unwrap_or_default(),
@@ -31,7 +35,7 @@ impl FiatProvider for MercuryoClient {
     async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let quote = self
             .get_quote_sell(
-                request.fiat_currency.clone(),
+                request.fiat_currency.as_ref().to_string(),
                 request_map.symbol.clone(),
                 request.crypto_amount,
                 request_map.network.clone().unwrap_or_default(),
@@ -41,13 +45,28 @@ impl FiatProvider for MercuryoClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets()
-            .await?
+        let currencies = self.get_currencies().await?;
+        let currency = Currency::USD;
+
+        let assets_with_limits = future::join_all(currencies.config.crypto_currencies.into_iter().map(|asset| {
+            let fiat_payment_methods = currencies.fiat_payment_methods.clone();
+            let currency = currency.clone();
+            async move {
+                match self.get_currency_limits(asset.currency.clone(), currency.as_ref().to_string()).await {
+                    Ok(response) => (
+                        asset,
+                        map_asset_limits(response.data.get(currency.as_ref()), currency.clone(), &fiat_payment_methods),
+                    ),
+                    Err(_) => (asset, map_asset_limits(None, currency, &fiat_payment_methods)),
+                }
+            }
+        }))
+        .await;
+
+        Ok(assets_with_limits
             .into_iter()
-            .flat_map(Self::map_asset)
-            .collect::<Vec<FiatProviderAsset>>();
-        Ok(assets)
+            .filter_map(|(asset, limits)| map_asset_with_limits(asset, limits.clone(), limits))
+            .collect())
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
@@ -71,9 +90,10 @@ impl FiatProvider for MercuryoClient {
     }
 
     // full transaction: https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#22-callbacks-response-body
-    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
         let webhook_data = serde_json::from_value::<Webhook>(data)?.data;
-        Ok(webhook_data.merchant_transaction_id.unwrap_or(webhook_data.id))
+        let order_id = webhook_data.merchant_transaction_id.unwrap_or(webhook_data.id);
+        Ok(FiatWebhook::OrderId(order_id))
     }
 }
 
@@ -107,12 +127,13 @@ mod fiat_integration_tests {
         let assets = FiatProvider::get_assets(&client).await?;
 
         assert!(!assets.is_empty());
-        println!("Found {} Mercuryo assets", assets.len());
 
-        if let Some(asset) = assets.first() {
-            assert!(!asset.id.is_empty());
-            assert!(!asset.symbol.is_empty());
-            println!("Sample Mercuryo asset: {:?}", asset);
+        let assets_with_limits = assets.iter().filter(|a| !a.buy_limits.is_empty()).count();
+        assert!(assets_with_limits > 0);
+
+        if let Some(asset) = assets.iter().find(|a| !a.buy_limits.is_empty()) {
+            assert_eq!(asset.buy_limits.len(), asset.sell_limits.len());
+            assert!(asset.buy_limits[0].min_amount.is_some() || asset.buy_limits[0].max_amount.is_some());
         }
 
         Ok(())

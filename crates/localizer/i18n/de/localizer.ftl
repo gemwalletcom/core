@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 Wallet erstellen oder 
 notification_onboarding_create_import_wallet_description = Erstellen Sie mit nur wenigen Fingertipps eine neue Brieftasche oder importieren Sie Ihre eigene.
 notification_onboarding_welcome_description = Beginnen Sie Ihre Krypto-Reise. Tippen Sie hier, um Ihr Krypto-Wallet einzurichten.
 notification_onboarding_buy_asset_description = Kaufen Sie {$name} noch heute sicher – einfach, zuverlässig und sofort.
+support_new_message_title = Neue Nachricht vom Support

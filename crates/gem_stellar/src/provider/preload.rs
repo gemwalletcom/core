@@ -32,6 +32,7 @@ impl<C: Client> ChainTransactionLoad for StellarClient<C> {
         } else {
             TransactionFee::new_from_fee_with_option(input.gas_price.gas_price(), FeeOption::TokenAccountCreation, BigInt::from(0))
         };
+
         Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 

@@ -2,6 +2,14 @@ use crate::rpc::model::TransactionReciept;
 use num_bigint::BigInt;
 use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 
+pub fn map_transaction_broadcast(data: &str) -> String {
+    if data.starts_with("0x") {
+        data.to_string()
+    } else {
+        format!("0x{}", data)
+    }
+}
+
 pub fn map_transaction_status(receipt: &TransactionReciept) -> TransactionUpdate {
     if receipt.status == "0x0" || receipt.status == "0x1" {
         let state = match receipt.status.as_str() {
@@ -22,6 +30,12 @@ pub fn map_transaction_status(receipt: &TransactionReciept) -> TransactionUpdate
 mod tests {
     use super::*;
     use num_bigint::BigUint;
+
+    #[test]
+    fn map_transaction_broadcast_encode() {
+        assert_eq!(map_transaction_broadcast("123"), "0x123");
+        assert_eq!(map_transaction_broadcast("0x123"), "0x123");
+    }
 
     #[test]
     fn map_transaction_status_confirmed() {

@@ -49,7 +49,7 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, recipient_token_a
         _ => base_fee.clone(),
     };
 
-    TransactionFee::new_gas_price_type(GasPriceType::regular(fee), BigInt::from(0), options)
+    TransactionFee::new_gas_price_type(GasPriceType::regular(fee.clone()), fee.clone(), BigInt::from(1), options)
 }
 
 #[async_trait]

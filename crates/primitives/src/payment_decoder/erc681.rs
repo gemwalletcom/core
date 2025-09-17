@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use super::error::{PaymentDecoderError, Result};
 use std::collections::HashMap;
 
 pub const ETHEREUM_SCHEME: &str = "ethereum";
@@ -18,13 +18,13 @@ impl TransactionRequest {
         // Split the URI into the scheme and the main part
         let splits = uri.split(':').collect::<Vec<&str>>();
         if splits.len() != 2 {
-            return Err(anyhow!("Invalid uri without expected ':'"));
+            return Err(PaymentDecoderError::InvalidFormat("Invalid uri without expected ':'".to_string()));
         }
 
         // Validate the scheme
         let prefix = splits[0];
         if !prefix.eq(ETHEREUM_SCHEME) {
-            return Err(anyhow!("Not supported scheme"));
+            return Err(PaymentDecoderError::InvalidScheme);
         }
 
         // Split the main part and the query string
@@ -35,7 +35,10 @@ impl TransactionRequest {
         let main_parts: Vec<&str> = parts[0].split('/').collect();
 
         // The first part should be the target address with optional chain id and pay prefix
-        let mut target_address = main_parts.first().ok_or(anyhow!("Missing target address"))?.to_string();
+        let mut target_address = main_parts
+            .first()
+            .ok_or(PaymentDecoderError::MissingField("target address".to_string()))?
+            .to_string();
 
         // Parse chain id in integer and 0x format
         let target_parts = target_address.split('@').collect::<Vec<&str>>();

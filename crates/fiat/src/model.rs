@@ -1,5 +1,6 @@
 use chain_primitives::format_token_id;
-use primitives::{AssetId, Chain, CosmosDenom};
+use primitives::fiat_assets::FiatAssetLimits;
+use primitives::{AssetId, Chain, CosmosDenom, FiatProviderName};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -21,17 +22,22 @@ pub struct FiatMapping {
     pub symbol: String,
     pub network: Option<String>,
     pub unsupported_countries: HashMap<String, Vec<String>>,
+    pub buy_limits: Vec<FiatAssetLimits>,
+    pub sell_limits: Vec<FiatAssetLimits>,
 }
 
 #[derive(Debug, Clone)]
 pub struct FiatProviderAsset {
     pub id: String,
+    pub provider: FiatProviderName,
     pub chain: Option<Chain>,
     pub symbol: String,
     pub token_id: Option<String>,
     pub network: Option<String>,
     pub enabled: bool,
     pub unsupported_countries: Option<HashMap<String, Vec<String>>>,
+    pub buy_limits: Vec<FiatAssetLimits>,
+    pub sell_limits: Vec<FiatAssetLimits>,
 }
 
 impl FiatProviderAsset {
@@ -55,6 +61,7 @@ pub fn filter_token_id(chain: Option<Chain>, token_id: Option<String>) -> Option
             "0x0000000000000000000000000000000000001010", // matic
             "0x0000000000000000000000000000000000000000",
             "0x471ece3750da237f93b8e339c536989b8978a438", // celo
+            "0x4200000000000000000000000000000000000006", // worldchain
             CosmosDenom::Uosmo.as_ref(),                  // osmosis
             CosmosDenom::Usei.as_ref(),                   // sei
             CosmosDenom::Inj.as_ref(),                    // osmosis

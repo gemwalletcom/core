@@ -3,10 +3,11 @@ use std::error::Error;
 use async_trait::async_trait;
 use fiat::FiatProvider;
 use fiat::FiatProviderFactory;
+use gem_tracing::{error_with_fields, info_with_fields};
 use settings::Settings;
 use storage::DatabaseClient;
 use streamer::consumer::MessageConsumer;
-use streamer::FiatWebhookPayload;
+use streamer::{FiatWebhook, FiatWebhookPayload};
 
 pub struct FiatWebhookConsumer {
     pub database: DatabaseClient,
@@ -31,35 +32,41 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
     async fn process(&mut self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         for provider in &self.providers {
             if provider.name() == payload.provider {
-                let order_id = match provider.webhook_order_id(payload.data.clone()).await {
-                    Ok(order_id) => order_id,
-                    Err(e) => {
-                        println!(
-                            "Failed to get order ID for webhook for provider {} with data: \n\n {:?}\n\n failed: {}",
-                            provider.name().id(),
-                            payload.data,
-                            e
-                        );
-                        return Ok(false);
+                let transaction = match &payload.payload {
+                    FiatWebhook::OrderId(order_id) => {
+                        info_with_fields!("fetching order status", provider = provider.name().id(), order_id = order_id);
+                        match provider.get_order_status(order_id).await {
+                            Ok(transaction) => transaction,
+                            Err(e) => {
+                                error_with_fields!("get_order_status", &*e, provider = provider.name().id(), order_id = order_id);
+                                return Err(e);
+                            }
+                        }
+                    }
+                    FiatWebhook::Transaction(transaction) => transaction.clone(),
+                    FiatWebhook::None => {
+                        info_with_fields!("ignoring webhook", provider = provider.name().id());
+                        return Ok(true);
                     }
                 };
 
-                println!("Fetching order status for provider: {}, order_id: {}", provider.name().id(), order_id);
-
-                let transaction = provider.get_order_status(&order_id).await?;
-
-                println!(
-                    "Processing webhook for provider: {}, order_id: {}, symbol: {}, fiat_amount: {} {} status: {:?}",
-                    provider.name().id(),
-                    order_id,
-                    transaction.symbol,
-                    transaction.fiat_amount,
-                    transaction.fiat_currency,
-                    transaction.status
+                info_with_fields!(
+                    "processing webhook",
+                    provider = provider.name().id(),
+                    order_id = transaction.provider_transaction_id.as_str(),
+                    symbol = transaction.symbol.as_str(),
+                    fiat_amount = transaction.fiat_amount.to_string(),
+                    fiat_currency = transaction.fiat_currency.as_str(),
+                    status = format!("{:?}", transaction.status)
                 );
 
-                self.database.fiat().add_fiat_transaction(transaction)?;
-                return Ok(true);
+                match self.database.fiat().add_fiat_transaction(transaction) {
+                    Ok(_) => return Ok(true),
+                    Err(e) => {
+                        error_with_fields!("add_fiat_transaction", &e, provider = provider.name().id());
+                        return Err(e.into());
+                    }
+                }
             }
         }
 

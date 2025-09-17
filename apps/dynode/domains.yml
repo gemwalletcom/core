@@ -1,0 +1,75 @@
+domains:
+  - domain: ethereum
+    chain: ethereum
+    #poll_interval_seconds: 10
+    urls:
+      - url: https://rpc.ankr.com/eth
+      - url: https://eth.llamarpc.com
+        # headers:
+        #   x-api-key: test
+        # urls_override:
+        #   "/":
+        #     url: https://rpc.ankr.com/eth
+        #headers:
+        #  x-api-key: test2
+        #
+      - url: https://rpc.ankr.com/eth
+
+  - domain: bitcoin
+    chain: bitcoin
+    urls:
+      - url: https://blockbook.btc.zelcore.io
+
+  - domain: solana
+    chain: solana
+    #poll_interval_seconds: 15
+    block_delay: 5
+    urls:
+      - url: https://api.mainnet-beta.solana.com
+      - url: https://api.tatum.io/v3/blockchain/node/solana-mainnet
+      #- url: https://solana.drpc.org
+
+  - domain: cosmos
+    chain: cosmos
+    urls:
+      - url: https://cosmos-rest.publicnode.com
+
+  - domain: ton
+    chain: ton
+    urls:
+      - url: https://toncenter.com
+
+  - domain: tron
+    chain: tron
+    urls:
+      - url: https://api.trongrid.io
+
+  - domain: aptos
+    chain: aptos
+    urls:
+      - url: https://fullnode.mainnet.aptoslabs.com
+
+  - domain: sui
+    chain: sui
+    urls:
+      - url: https://sui-mainnet-endpoint.blockvision.org
+
+  - domain: xrp
+    chain: xrp
+    poll_interval_seconds: 30
+    urls:
+      - url: https://s1.ripple.com:51234
+      - url: https://s2.ripple.com:51234
+
+  - domain: near
+    chain: near
+    poll_interval_seconds: 60
+    block_delay: 5
+    urls:
+      - url: https://rpc.mainnet.near.org
+      - url: https://free.rpc.fastnear.com
+
+  - domain: hypercore
+    chain: hypercore
+    urls:
+      - url: https://api.hyperliquid.xyz

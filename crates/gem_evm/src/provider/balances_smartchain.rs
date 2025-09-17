@@ -52,10 +52,9 @@ impl<C: Client + Clone> EthereumClient<C> {
             .filter_map(|u| BigUint::from_str(&u.amount).ok())
             .fold(BigUint::from(0u32), |acc, amount| acc + amount);
 
-        Ok(Some(AssetBalance {
-            asset_id: self.get_chain().as_asset_id(),
-            balance: Balance::stake_balance(staked, pending, None),
-            is_active: Some(true),
-        }))
+        Ok(Some(AssetBalance::new_balance(
+            self.get_chain().as_asset_id(),
+            Balance::stake_balance(staked, pending, None),
+        )))
     }
 }

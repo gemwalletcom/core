@@ -8,34 +8,35 @@ mod metrics;
 mod model;
 mod name;
 mod nft;
-mod parser;
+mod params;
 mod price_alerts;
 mod prices;
+mod responders;
 mod scan;
 mod status;
 mod subscriptions;
+mod support;
 mod swap;
 mod transactions;
+mod webhooks;
 mod websocket_prices;
 
 use std::str::FromStr;
 use std::sync::Arc;
 
+use ::nft::{NFTClient, NFTProviderConfig};
 use api_connector::PusherClient;
 use assets::{AssetsClient, AssetsSearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::{FiatClient, FiatProviderFactory};
+use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
 use name_resolver::client::Client as NameClient;
 use name_resolver::NameProviderFactory;
-use nft_client::NFTClient;
-use nft_provider::NFTProviderConfig;
-use parser::ParserClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
-use rocket::fairing::AdHoc;
 use rocket::tokio::sync::Mutex;
 use rocket::{routes, Build, Rocket};
 use scan::{ScanClient, ScanProviderFactory};
@@ -44,8 +45,10 @@ use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
 use streamer::StreamProducer;
 use subscriptions::SubscriptionsClient;
+use support::SupportClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
+use webhooks::WebhooksClient;
 use websocket_prices::PriceObserverConfig;
 
 async fn rocket_api(settings: Settings) -> Rocket<Build> {
@@ -71,7 +74,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(postgres_url, security_providers).await;
-    let parser_client = ParserClient::new(settings_clone.clone()).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
     let assets_search_client = AssetsSearchClient::new(&search_index_client).await;
@@ -82,15 +84,10 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(postgres_url, nft_config).await;
     let markets_client = MarketsClient::new(postgres_url, cacher_client);
+    let webhooks_client = WebhooksClient::new(stream_producer.clone()).await;
+    let support_client = SupportClient::new(postgres_url);
 
     rocket::build()
-        .attach(AdHoc::on_ignite("Tokio Runtime Configuration", |rocket| async {
-            let runtime = tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .expect("Failed to create Tokio runtime");
-            rocket.manage(runtime)
-        }))
         .manage(Mutex::new(fiat_client))
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(charts_client))
@@ -103,12 +100,13 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(transactions_client))
         .manage(Mutex::new(metrics_client))
         .manage(Mutex::new(scan_client))
-        .manage(Mutex::new(parser_client))
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(chain_client))
         .manage(Mutex::new(markets_client))
+        .manage(Mutex::new(webhooks_client))
+        .manage(Mutex::new(support_client))
         .mount("/", routes![status::get_status])
         .mount(
             "/v1",
@@ -140,11 +138,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 subscriptions::delete_subscriptions,
                 transactions::get_transactions_by_device_id_v1,
                 transactions::get_transactions_by_id,
-                parser::get_parser_block,
-                parser::get_parser_block_finalize,
-                parser::get_parser_block_number_latest,
+                chain::transaction::get_latest_block_number,
+                chain::transaction::get_block_transactions,
+                chain::transaction::get_block_transactions_finalize,
                 swap::get_swap_assets,
-                nft::get_nft_assets,
+                nft::get_nft_assets_old,
                 nft::get_nft_assets_by_chain,
                 nft::get_nft_collection,
                 nft::get_nft_asset,
@@ -162,9 +160,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::token::get_token,
                 chain::balance::get_balances,
                 chain::transaction::get_transactions,
+                webhooks::create_support_webhook,
+                support::add_device,
             ],
         )
-        .mount("/v2", routes![transactions::get_transactions_by_device_id_v2])
+        .mount("/v2", routes![transactions::get_transactions_by_device_id_v2, nft::get_nft_assets_v2,])
         .mount(settings.metrics.path, routes![metrics::get_metrics])
 }
 
@@ -182,14 +182,20 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
 async fn main() {
     let settings = Settings::new().unwrap();
 
+    let sentry_config = settings.sentry.as_ref().map(|s| SentryConfig {
+        dsn: s.dsn.clone(),
+        sample_rate: s.sample_rate,
+    });
+    let _tracing = SentryTracing::init(sentry_config.as_ref(), "api");
     let service = std::env::args().nth(1).unwrap_or_default();
     let service = APIService::from_str(service.as_str()).ok().unwrap_or(APIService::Api);
 
     println!("api start service: {}", service.as_ref());
 
     let rocket_api = match service {
-        APIService::WebsocketPrices => rocket_ws_prices(settings).await,
-        APIService::Api => rocket_api(settings).await,
+        APIService::WebsocketPrices => rocket_ws_prices(settings.clone()).await,
+        APIService::Api => rocket_api(settings.clone()).await,
     };
+
     rocket_api.launch().await.expect("Failed to launch Rocket");
 }

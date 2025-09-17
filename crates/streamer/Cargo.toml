@@ -12,4 +12,5 @@ lapin = { workspace = true }
 async-trait = { workspace = true }
 strum = { workspace = true }
 
+gem_tracing = { path = "../tracing" }
 primitives = { path = "../primitives" }

@@ -261,3 +261,7 @@ nft:
     key:
       public: ""
       secret: ""
+
+sentry:
+  dsn: ""
+  sample_rate: 1.0

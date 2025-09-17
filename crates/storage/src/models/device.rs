@@ -18,6 +18,8 @@ pub struct Device {
     pub is_price_alerts_enabled: bool,
     pub version: String,
     pub subscriptions_version: i32,
+    pub os: Option<String>,
+    pub model: Option<String>,
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
@@ -34,6 +36,8 @@ pub struct UpdateDevice {
     pub is_price_alerts_enabled: bool,
     pub version: String,
     pub subscriptions_version: i32,
+    pub os: Option<String>,
+    pub model: Option<String>,
 }
 
 impl Device {
@@ -44,6 +48,8 @@ impl Device {
         primitives::Device {
             id: self.device_id.clone(),
             platform,
+            os: self.os.clone(),
+            model: self.model.clone(),
             platform_store,
             token: self.token.clone(),
             locale: self.locale.clone(),
@@ -61,6 +67,8 @@ impl UpdateDevice {
         Self {
             device_id: device.id,
             platform: device.platform.as_str().to_string(),
+            os: device.os,
+            model: device.model,
             platform_store: device.platform_store.map(|x| x.as_ref().to_string()),
             token: device.token,
             locale: device.locale,

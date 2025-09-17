@@ -269,6 +269,16 @@ impl GemGateway {
         Ok(utxos.into_iter().map(|u| u.into()).collect())
     }
 
+    pub async fn get_address_status(&self, chain: Chain, address: String) -> Result<Vec<GemAddressStatus>, GatewayError> {
+        let status = self
+            .provider(chain)
+            .await?
+            .get_address_status(address)
+            .await
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+        Ok(status.into_iter().map(|s| s.into()).collect())
+    }
+
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
         let metadata = self
             .provider(chain)
@@ -346,7 +356,7 @@ impl GemGateway {
     }
 
     pub async fn get_candlesticks(&self, chain: Chain, symbol: String, period: String) -> Result<Vec<GemChartCandleStick>, GatewayError> {
-        let chart_period = ChartPeriod::new(period).ok_or_else(|| GatewayError::ParseError("Invalid chart period".to_string()))?;
+        let chart_period = ChartPeriod::new(period).unwrap();
         let candlesticks = self
             .provider(chain)
             .await?
@@ -390,15 +400,6 @@ impl GemGateway {
 
 #[derive(Debug, Clone, uniffi::Error, thiserror::Error)]
 pub enum GatewayError {
-    #[error("Invalid chain: {0}")]
-    InvalidChain(String),
-
     #[error("Network error: {0}")]
     NetworkError(String),
-
-    #[error("Parse error: {0}")]
-    ParseError(String),
-
-    #[error("Balance not found: {0}")]
-    BalanceNotFound(String),
 }

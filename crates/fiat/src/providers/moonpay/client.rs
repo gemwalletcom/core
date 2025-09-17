@@ -4,7 +4,9 @@ use crate::model::{filter_token_id, FiatProviderAsset};
 use super::mapper::map_asset_chain;
 use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote, Transaction};
 use number_formatter::BigNumberFormatter;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote};
+use primitives::currency::Currency;
+use primitives::fiat_assets::FiatAssetLimits;
+use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote, PaymentType};
 use reqwest::Client;
 use url::Url;
 
@@ -131,14 +133,47 @@ impl MoonPayClient {
         let token_id = filter_token_id(chain, contract_address);
         let enabled = !asset.is_suspended.unwrap_or(true);
 
+        let payment_types = PaymentType::all();
+
+        let buy_limits = if asset.min_buy_amount.is_some() || asset.max_buy_amount.is_some() {
+            payment_types
+                .iter()
+                .map(|x| FiatAssetLimits {
+                    currency: Currency::USD,
+                    payment_type: x.clone(),
+                    min_amount: asset.min_buy_amount,
+                    max_amount: asset.max_buy_amount,
+                })
+                .collect()
+        } else {
+            vec![]
+        };
+
+        let sell_limits = if asset.min_sell_amount.is_some() || asset.max_sell_amount.is_some() {
+            payment_types
+                .iter()
+                .map(|x| FiatAssetLimits {
+                    currency: Currency::USD,
+                    payment_type: x.clone(),
+                    min_amount: asset.min_sell_amount,
+                    max_amount: asset.max_sell_amount,
+                })
+                .collect()
+        } else {
+            vec![]
+        };
+
         Some(FiatProviderAsset {
             id: asset.clone().code,
+            provider: FiatProviderName::MoonPay,
             chain,
             token_id,
             symbol: asset.clone().code,
             network: asset.clone().metadata.map(|x| x.network_code),
             enabled,
             unsupported_countries: Some(asset.unsupported_countries()),
+            buy_limits,
+            sell_limits,
         })
     }
 
@@ -149,7 +184,7 @@ impl MoonPayClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.clone().fiat_amount,
-            fiat_currency: request.clone().fiat_currency,
+            fiat_currency: request.clone().fiat_currency.as_ref().to_string(),
             crypto_amount: quote.quote_currency_amount,
             crypto_value,
             redirect_url: self.redirect_url(FiatQuoteTypeResult::Buy(request.clone()), request.fiat_amount, &quote.quote_currency_code),
@@ -163,7 +198,7 @@ impl MoonPayClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.quote_currency_amount,
-            fiat_currency: request.clone().fiat_currency,
+            fiat_currency: request.clone().fiat_currency.as_ref().to_string(),
             crypto_amount,
             crypto_value,
             redirect_url: self.redirect_url(FiatQuoteTypeResult::Sell(request), crypto_amount, &quote.base_currency_code),

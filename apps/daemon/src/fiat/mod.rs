@@ -19,7 +19,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         move || {
             let providers = FiatProviderFactory::new_providers((*settings).clone());
             let mut fiat_assets_updater = FiatAssetsUpdater::new(&settings.postgres.url, providers);
-            async move { fiat_assets_updater.update_fiat_assets().await }
+            async move { fiat_assets_updater.update_fiat_assets("fiat_update_assets").await }
         }
     });
 
@@ -28,7 +28,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         move || {
             let providers = FiatProviderFactory::new_providers((*settings).clone());
             let mut fiat_assets_updater = FiatAssetsUpdater::new(&settings.postgres.url, providers);
-            async move { fiat_assets_updater.update_fiat_providers_countries().await }
+            async move { fiat_assets_updater.update_fiat_countries("fiat_update_countries").await }
         }
     });
 

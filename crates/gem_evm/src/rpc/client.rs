@@ -202,4 +202,21 @@ impl<C: Client + Clone> EthereumClient<C> {
             .collect();
         Ok(self.client.batch_call::<String>(calls).await?.extract())
     }
+
+    pub async fn estimate_gas(&self, from: &str, to: &str, value: Option<&str>, data: Option<&str>) -> Result<String, anyhow::Error> {
+        let mut params_obj = json!({
+            "from": from,
+            "to": to
+        });
+
+        if let Some(value) = value {
+            params_obj["value"] = json!(value);
+        }
+        if let Some(data) = data {
+            params_obj["data"] = json!(data);
+        }
+
+        let params = json!([params_obj, "latest"]);
+        Ok(self.client.call("eth_estimateGas", params).await?)
+    }
 }

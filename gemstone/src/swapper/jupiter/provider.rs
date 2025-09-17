@@ -208,3 +208,56 @@ impl Swapper for Jupiter {
         Ok(data)
     }
 }
+
+#[cfg(all(test, feature = "swap_integration_tests"))]
+mod swap_integration_tests {
+    use super::*;
+    use crate::{
+        network::alien_provider::NativeProvider,
+        swapper::{models::SwapperOptions, remote_models::SwapperQuoteAsset, SwapperMode},
+    };
+    use primitives::AssetId;
+
+    #[tokio::test]
+    async fn test_jupiter_provider_fetch_quote() -> Result<(), SwapperError> {
+        let provider = Jupiter::default();
+        let network_provider = Arc::new(NativeProvider::default());
+
+        let options = SwapperOptions {
+            slippage: 100.into(),
+            fee: None,
+            preferred_providers: vec![],
+        };
+
+        let request = SwapperQuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from(Chain::Solana, Some(USDC_TOKEN_MINT.to_string()))),
+            wallet_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
+            destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
+            value: "1000000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options,
+        };
+
+        let quote = provider.fetch_quote(&request, network_provider).await?;
+
+        assert_eq!(quote.from_value, request.value);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        assert_eq!(quote.data.provider, provider.provider().clone());
+        assert_eq!(quote.data.routes.len(), 1);
+
+        let route = &quote.data.routes[0];
+        assert_eq!(
+            route.input,
+            AssetId::from(Chain::Solana, Some("So11111111111111111111111111111111111111112".to_string()))
+        );
+        assert_eq!(route.output, AssetId::from(Chain::Solana, Some(USDC_TOKEN_MINT.to_string())));
+        assert!(!route.route_data.is_empty());
+
+        let quote_response: QuoteResponse = serde_json::from_str(&route.route_data)?;
+        assert_eq!(quote_response.input_mint, "So11111111111111111111111111111111111111112");
+        assert_eq!(quote_response.output_mint, USDC_TOKEN_MINT);
+
+        Ok(())
+    }
+}

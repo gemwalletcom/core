@@ -3,7 +3,7 @@ use std::error::Error;
 
 use crate::models::rpc::*;
 
-use chain_traits::{ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
+use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::Chain;
 
@@ -154,6 +154,8 @@ impl<C: Client> XRPClient<C> {
 impl<C: Client> ChainStaking for XRPClient<C> {}
 
 impl<C: Client> ChainPerpetual for XRPClient<C> {}
+
+impl<C: Client> ChainAddressStatus for XRPClient<C> {}
 
 impl<C: Client> chain_traits::ChainAccount for XRPClient<C> {}
 

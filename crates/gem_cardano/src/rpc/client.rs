@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use chain_traits::{ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
+use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
 use gem_client::Client;
 use primitives::chain::Chain;
 
@@ -126,6 +126,8 @@ impl<C: Client> CardanoClient<C> {
 impl<C: Client> ChainStaking for CardanoClient<C> {}
 
 impl<C: Client> ChainPerpetual for CardanoClient<C> {}
+
+impl<C: Client> ChainAddressStatus for CardanoClient<C> {}
 
 impl<C: Client> ChainTraits for CardanoClient<C> {}
 

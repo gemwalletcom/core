@@ -44,7 +44,10 @@ test CRATE:
 
 test-integration:
     @echo "Running integration tests only..."
-    cargo test --lib --all --features chain_integration_tests -- --test-threads=1
+    cargo test --lib --all --features chain_integration_tests -- chain_integration_tests --test-threads=1
+    cargo test --lib -p gemstone --features swap_integration_tests -- swap_integration_tests --test-threads=1
+    cargo test --lib -p fiat --features fiat_integration_tests -- fiat_integration_tests --test-threads=1 
+    cargo test --lib -p nft --features nft_integration_tests -- nft_integration_tests --test-threads=1 
 
 build-integration-tests:
     @echo "Building all integration tests..."

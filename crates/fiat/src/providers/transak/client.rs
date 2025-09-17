@@ -1,9 +1,8 @@
-use super::models::{Asset, Country, Data, Response, TokenResponse, TransakOrderResponse, TransakQuote};
-use crate::model::{filter_token_id, FiatProviderAsset};
+use super::models::{Asset, Country, Data, FiatCurrency, Response, TokenResponse, TransakOrderResponse, TransakQuote};
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD as BASE64, Engine as _};
 use number_formatter::BigNumberFormatter;
-use primitives::{FiatBuyQuote, FiatQuoteType};
-use primitives::{FiatProviderName, FiatQuote};
+use primitives::FiatBuyQuote;
+use primitives::{FiatProviderName, FiatQuote, FiatQuoteType};
 use reqwest::Client;
 use url::Url;
 
@@ -78,7 +77,7 @@ impl TransakClient {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: quote.crypto_amount,
             crypto_value,
             redirect_url: self.redirect_url(quote, request.wallet_address),
@@ -111,19 +110,9 @@ impl TransakClient {
         self.client.get(&url).send().await?.json().await
     }
 
-    pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = super::mapper::map_asset_chain(asset.clone());
-        let token_id = filter_token_id(chain, asset.clone().address);
-
-        Some(FiatProviderAsset {
-            id: asset.clone().unique_id,
-            chain,
-            token_id,
-            symbol: asset.clone().symbol,
-            network: Some(asset.clone().network.name),
-            enabled: asset.is_allowed,
-            unsupported_countries: Some(asset.unsupported_countries()),
-        })
+    pub async fn get_fiat_currencies(&self) -> Result<Response<Vec<FiatCurrency>>, reqwest::Error> {
+        let url = format!("{TRANSAK_API_URL}/fiat/public/v1/currencies/fiat-currencies");
+        self.client.get(&url).send().await?.json().await
     }
 
     pub async fn refresh_token(&self) -> Result<Data<TokenResponse>, reqwest::Error> {

@@ -1,29 +1,41 @@
 use serde::{Deserialize, Serialize};
-use typeshare::typeshare;
 
-#[typeshare(swift = "Sendable")]
-#[typeshare(swiftGenericConstraints = "T: Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResponseResult<T> {
-    pub data: T,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<ResponseError>,
+#[serde(untagged)]
+pub enum ResponseResult<T> {
+    Success(T),
+    Error(ResponseError),
 }
 
 impl<T> ResponseResult<T> {
     pub fn new(data: T) -> Self {
-        Self { data, error: None }
+        ResponseResult::Success(data)
+    }
+
+    pub fn error(error: String) -> Self {
+        ResponseResult::Error(ResponseError {
+            error: ErrorDetail { message: error },
+        })
     }
 }
 
-#[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseError {
-    pub error: String,
+    pub error: ErrorDetail,
 }
 
-impl From<Box<dyn std::error::Error + Send + Sync>> for ResponseError {
-    fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
-        Self { error: error.to_string() }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResponseResultNew<T> {
+    pub data: T,
+}
+
+impl<T> ResponseResultNew<T> {
+    pub fn new(data: T) -> Self {
+        Self { data }
     }
 }

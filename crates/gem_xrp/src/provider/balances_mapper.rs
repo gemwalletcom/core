@@ -106,6 +106,6 @@ mod tests {
         let balance = &result[0];
         assert_eq!(balance.asset_id, AssetId::from_token(Chain::Xrp, "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"));
         assert_eq!(balance.balance.available, BigUint::from(171000000000000_u64));
-        assert_eq!(balance.is_active, Some(true));
+        assert!(balance.is_active);
     }
 }

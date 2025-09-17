@@ -1,5 +1,5 @@
+use super::error::{PaymentDecoderError, Result};
 use crate::{asset_id::AssetId, Chain};
-use anyhow::{anyhow, Result};
 use std::{collections::HashMap, fmt, str::FromStr};
 
 use super::{
@@ -142,7 +142,7 @@ impl PaymentURLDecoder {
                         link: None,
                     })
                 } else {
-                    Err(anyhow!("BIP21 format is incorrect"))
+                    Err(PaymentDecoderError::InvalidFormat("BIP21 format is incorrect".to_string()))
                 }
             }
             // Handle any other case (shouldn't normally happen)

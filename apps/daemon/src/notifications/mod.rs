@@ -34,6 +34,12 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             "observers_notifications",
             QueueName::NotificationsObservers,
         ),
+        create_notification_job(
+            settings.clone(),
+            "Support Notifications Consumer",
+            "support_notifications",
+            QueueName::NotificationsSupport,
+        ),
     ]
 }
 

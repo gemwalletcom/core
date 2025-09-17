@@ -1,10 +1,10 @@
 pub mod client;
+use crate::responders::{ApiError, ApiResponse};
 pub use client::TransactionsClient;
-
 use primitives::Transaction;
 use primitives::TransactionsFetchOption;
 use primitives::TransactionsResponse;
-use rocket::{get, serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{get, tokio::sync::Mutex, State};
 
 #[get("/transactions/device/<device_id>?<wallet_index>&<asset_id>&<from_timestamp>")]
 pub async fn get_transactions_by_device_id_v1(
@@ -13,13 +13,13 @@ pub async fn get_transactions_by_device_id_v1(
     asset_id: Option<String>,
     from_timestamp: Option<u32>,
     client: &State<Mutex<TransactionsClient>>,
-) -> Json<Vec<Transaction>> {
+) -> Result<ApiResponse<Vec<Transaction>>, ApiError> {
     let options: TransactionsFetchOption = TransactionsFetchOption {
         wallet_index,
         asset_id,
         from_timestamp,
     };
-    Json(client.lock().await.get_transactions_by_device_id(device_id, options).unwrap().transactions)
+    Ok(client.lock().await.get_transactions_by_device_id(device_id, options)?.transactions.into())
 }
 
 #[get("/transactions/device/<device_id>?<wallet_index>&<asset_id>&<from_timestamp>")]
@@ -29,16 +29,16 @@ pub async fn get_transactions_by_device_id_v2(
     asset_id: Option<String>,
     from_timestamp: Option<u32>,
     client: &State<Mutex<TransactionsClient>>,
-) -> Json<TransactionsResponse> {
+) -> Result<ApiResponse<TransactionsResponse>, ApiError> {
     let options: TransactionsFetchOption = TransactionsFetchOption {
         wallet_index,
         asset_id,
         from_timestamp,
     };
-    Json(client.lock().await.get_transactions_by_device_id(device_id, options).unwrap())
+    Ok(client.lock().await.get_transactions_by_device_id(device_id, options)?.into())
 }
 
 #[get("/transactions/<id>")]
-pub async fn get_transactions_by_id(id: &str, client: &State<Mutex<TransactionsClient>>) -> Json<Vec<Transaction>> {
-    Json(client.lock().await.get_transactions_by_id(id).unwrap())
+pub async fn get_transactions_by_id(id: &str, client: &State<Mutex<TransactionsClient>>) -> Result<ApiResponse<Vec<Transaction>>, ApiError> {
+    Ok(client.lock().await.get_transactions_by_id(id)?.into())
 }

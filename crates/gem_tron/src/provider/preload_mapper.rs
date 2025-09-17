@@ -103,6 +103,8 @@ mod tests {
         let account_usage = TronAccountUsage {
             free_net_used: Some(0),
             free_net_limit: Some(1500),
+            net_used: Some(0),
+            net_limit: Some(0),
             energy_used: Some(0),
             energy_limit: Some(0),
         };
@@ -127,6 +129,8 @@ mod tests {
         let account_usage = TronAccountUsage {
             free_net_used: Some(0),
             free_net_limit: Some(1500),
+            net_used: Some(0),
+            net_limit: Some(0),
             energy_used: Some(0),
             energy_limit: Some(32000),
         };
@@ -160,6 +164,8 @@ mod tests {
         let account_usage = TronAccountUsage {
             free_net_used: Some(500),
             free_net_limit: Some(1500),
+            net_used: Some(0),
+            net_limit: Some(0),
             energy_used: Some(0),
             energy_limit: Some(0),
         };
@@ -169,6 +175,8 @@ mod tests {
         let account_usage_zero = TronAccountUsage {
             free_net_used: None,
             free_net_limit: None,
+            net_used: None,
+            net_limit: None,
             energy_used: Some(0),
             energy_limit: Some(0),
         };

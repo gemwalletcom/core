@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 ウォレットを作�
 notification_onboarding_create_import_wallet_description = 数回タップするだけで、新しいウォレットを作成したり、既存のウォレットをインポートしたりできます。
 notification_onboarding_welcome_description = 暗号通貨の旅を始めましょう。タップして暗号通貨ウォレットを設定しましょう。
 notification_onboarding_buy_asset_description = 今すぐ{$name}を安全に購入しましょう。シンプル、信頼性が高く、即時にご利用いただけます。
+support_new_message_title = サポートからの新しいメッセージ

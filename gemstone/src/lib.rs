@@ -1,6 +1,5 @@
 pub mod asset;
 pub mod block_explorer;
-pub mod bsc;
 pub mod chain;
 pub mod config;
 pub mod ethereum;
@@ -56,6 +55,12 @@ impl From<String> for GemstoneError {
 
 impl From<Box<dyn std::error::Error>> for GemstoneError {
     fn from(error: Box<dyn std::error::Error>) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<primitives::payment_decoder::PaymentDecoderError> for GemstoneError {
+    fn from(error: primitives::payment_decoder::PaymentDecoderError) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }

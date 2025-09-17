@@ -1,6 +1,9 @@
 use crate::providers::moonpay::models::{Asset, FiatCurrencyType, Transaction};
 use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
+#[cfg(test)]
+use primitives::PaymentType;
+
 use super::client::MoonPayClient;
 
 pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
@@ -30,6 +33,13 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
         "stellar" => Some(Chain::Stellar),
         "algorand" => Some(Chain::Algorand),
         "polkadot" => Some(Chain::Polkadot),
+        "berachain" => Some(Chain::Berachain),
+        "sonic" => Some(Chain::Sonic),
+        "celestia" => Some(Chain::Celestia),
+        "noble" => Some(Chain::Noble),
+        "worldchain" => Some(Chain::World),
+        "injective" => Some(Chain::Injective),
+        "cardano" => Some(Chain::Cardano),
         _ => None,
     }
 }
@@ -60,14 +70,11 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
     let fee_network = payload.network_fee_amount.unwrap_or_default();
     let fee_partner = payload.extra_fee_amount.unwrap_or_default();
 
-    // For buy transactions, fiat amount includes all fees (what user pays)
-    // For sell transactions, fiat amount is what user receives (fees already deducted from crypto)
     let fiat_amount = match transaction_type {
         FiatQuoteType::Buy => currency_amount + fee_provider + fee_network + fee_partner,
-        FiatQuoteType::Sell => currency_amount, // Already net amount user receives
+        FiatQuoteType::Sell => currency_amount,
     };
 
-    // For buy transactions, use wallet_address; for sell transactions, use refund_wallet_address
     let address = match transaction_type {
         FiatQuoteType::Buy => payload.wallet_address,
         FiatQuoteType::Sell => payload.refund_wallet_address.or(payload.wallet_address),
@@ -85,20 +92,17 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
         fiat_currency: fiat_currency.code.to_uppercase(),
         transaction_hash: payload.crypto_transaction_id,
         address,
-        fee_provider: payload.fee_amount,
-        fee_network: payload.network_fee_amount,
-        fee_partner: payload.extra_fee_amount,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::moonpay::models::{Data, Webhook};
+    use crate::providers::moonpay::models::{Data, Transaction};
 
     #[test]
     fn test_map_order_buy_failed() {
-        let webhook_data: Data<Webhook> =
+        let webhook_data: Data<Transaction> =
             serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_buy_complete.json")).expect("Failed to parse test data");
         let payload = webhook_data.data;
 
@@ -113,14 +117,11 @@ mod tests {
         assert_eq!(result.fiat_amount, 20.0); // 15.39 + 3.99 + 0.47 + 0.15
         assert_eq!(result.country, Some("USA".to_string()));
         assert_eq!(result.address, Some("TYxT3F8pdkTDkhw4JsfodKnEgaYpNaANmW".to_string()));
-        assert_eq!(result.fee_provider, Some(3.99));
-        assert_eq!(result.fee_network, Some(0.47));
-        assert_eq!(result.fee_partner, Some(0.15));
     }
 
     #[test]
     fn test_map_order_sell_pending() {
-        let webhook_data: Data<Webhook> =
+        let webhook_data: Data<Transaction> =
             serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_sell_complete_.json")).expect("Failed to parse test data");
         let payload = webhook_data.data;
 
@@ -135,14 +136,11 @@ mod tests {
         assert_eq!(result.fiat_amount, 3123.07); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.country, Some("USA".to_string()));
         assert_eq!(result.address, Some("0xd41fdb03ba84762dd66a0af1a6c8540ff1ba5dfb".to_string()));
-        assert_eq!(result.fee_provider, Some(31.87));
-        assert_eq!(result.fee_network, None);
-        assert_eq!(result.fee_partner, Some(31.87));
     }
 
     #[test]
     fn test_map_order_v3_sell_complete() {
-        let webhook_data: Webhook =
+        let webhook_data: Transaction =
             serde_json::from_str(include_str!("../../../testdata/moonpay/sell_transaction_complete.json")).expect("Failed to parse test data");
 
         let result = map_order(webhook_data).expect("Failed to map order");
@@ -157,8 +155,6 @@ mod tests {
         assert_eq!(result.country, Some("USA".to_string()));
         assert_eq!(result.address, Some("0xd41fdb03ba84762dd66a0af1a6c8540ff1ba5dfb".to_string()));
         assert_eq!(result.transaction_hash, Some("0xabc123456789".to_string()));
-        assert_eq!(result.fee_provider, Some(31.87));
-        assert_eq!(result.fee_partner, Some(31.87));
     }
 
     #[test]
@@ -177,7 +173,33 @@ mod tests {
         assert_eq!(result.fiat_amount, 8419.77); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.country, None);
         assert_eq!(result.address, Some("qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a".to_string()));
-        assert_eq!(result.fee_provider, Some(400.94));
-        assert_eq!(result.fee_partner, Some(89.1));
+    }
+
+    #[test]
+    fn test_map_asset_with_limits() {
+        let assets: Vec<Asset> = serde_json::from_str(include_str!("../../../testdata/moonpay/assets.json")).expect("Failed to parse test data");
+        let cardano = assets.iter().find(|a| a.code == "ada").expect("Cardano not found");
+
+        let result = MoonPayClient::map_asset(cardano.clone()).expect("Failed to map asset");
+
+        assert_eq!(result.symbol, "ada");
+        assert_eq!(result.chain, Some(Chain::Cardano));
+        assert!(result.enabled);
+
+        assert_eq!(result.buy_limits.len(), 3);
+        let card_limit = result.buy_limits.iter().find(|limit| limit.payment_type == PaymentType::Card).unwrap();
+        assert_eq!(card_limit.min_amount, Some(6.1));
+        assert_eq!(card_limit.max_amount, None);
+
+        assert!(result.buy_limits.iter().any(|limit| limit.payment_type == PaymentType::ApplePay));
+        assert!(result.buy_limits.iter().any(|limit| limit.payment_type == PaymentType::GooglePay));
+
+        assert_eq!(result.sell_limits.len(), 3);
+        let sell_card_limit = result.sell_limits.iter().find(|limit| limit.payment_type == PaymentType::Card).unwrap();
+        assert_eq!(sell_card_limit.min_amount, Some(24.3607));
+        assert_eq!(sell_card_limit.max_amount, Some(12000.0));
+
+        assert!(result.sell_limits.iter().any(|limit| limit.payment_type == PaymentType::ApplePay));
+        assert!(result.sell_limits.iter().any(|limit| limit.payment_type == PaymentType::GooglePay));
     }
 }

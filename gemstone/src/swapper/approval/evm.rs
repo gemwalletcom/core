@@ -5,7 +5,7 @@ use alloy_primitives::{hex::decode as HexDecode, Address, U256};
 use alloy_sol_types::SolCall;
 
 use gem_evm::{
-    erc20::IERC20,
+    contracts::erc20::IERC20,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     permit2::IAllowanceTransfer,
 };

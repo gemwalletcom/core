@@ -3,14 +3,13 @@ use std::str::FromStr;
 
 pub mod across;
 pub mod address;
-pub mod constants;
 pub mod call_decoder;
 pub mod chainlink;
-pub mod fee_calculator;
+pub mod constants;
+pub mod contracts;
 pub mod eip712;
-pub mod erc20;
-pub mod erc2612;
 pub mod ether_conv;
+pub mod fee_calculator;
 pub mod jsonrpc;
 pub mod lido;
 pub mod multicall3;

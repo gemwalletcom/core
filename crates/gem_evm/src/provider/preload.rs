@@ -1,16 +1,27 @@
-use std::error::Error;
-
+#[cfg(feature = "rpc")]
+use super::preload_optimism::OptimismGasOracle;
 use crate::fee_calculator::{get_fee_history_blocks, get_reward_percentiles};
+use crate::provider::preload_mapper::{
+    bigint_to_hex_string, bytes_to_hex_string, calculate_gas_limit_with_increase, get_extra_fee_gas_limit, get_transaction_data, get_transaction_to,
+    get_transaction_value, map_transaction_fee_rates, map_transaction_preload,
+};
+use crate::rpc::client::EthereumClient;
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::ChainTransactionLoad;
-#[cfg(feature = "rpc")]
-use primitives::{FeeRate, TransactionInputType, TransactionLoadMetadata, TransactionPreloadInput};
-
-use crate::provider::preload_mapper::{map_transaction_fee_rates, map_transaction_preload};
-use crate::rpc::client::EthereumClient;
 use gem_client::Client;
+#[cfg(feature = "rpc")]
+use num_bigint::BigInt;
+#[cfg(feature = "rpc")]
+use primitives::stake_type::StakeData;
+use primitives::GasPriceType;
+#[cfg(feature = "rpc")]
+use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+#[cfg(feature = "rpc")]
+use serde_serializers::bigint::bigint_from_hex_str;
+use std::collections::HashMap;
+use std::error::Error;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
@@ -29,6 +40,67 @@ impl<C: Client + Clone> ChainTransactionLoad for EthereumClient<C> {
 
         map_transaction_fee_rates(self.chain, &fee_history)
     }
+
+    async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        self.map_transaction_load(input).await
+    }
+}
+
+#[cfg(feature = "rpc")]
+impl<C: Client + Clone> EthereumClient<C> {
+    pub async fn map_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
+        let data = get_transaction_data(self.chain, &input)?;
+        let to = get_transaction_to(self.chain, &input)?;
+        let value = get_transaction_value(self.chain, &input)?;
+
+        let gas_estimate = {
+            let estimate = self
+                .estimate_gas(
+                    &input.sender_address,
+                    &to,
+                    Some(&bigint_to_hex_string(&value)),
+                    Some(&bytes_to_hex_string(&data)),
+                )
+                .await?;
+            bigint_from_hex_str(&estimate)?
+        };
+        let gas_limit = calculate_gas_limit_with_increase(gas_estimate);
+        let fee = self.calculate_fee(&input, &gas_limit).await?;
+
+        let metadata = if let TransactionInputType::Stake(_, _) = &input.input_type {
+            match input.metadata {
+                TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
+                    nonce,
+                    chain_id,
+                    stake_data: Some(StakeData {
+                        data: if data.is_empty() { None } else { Some(hex::encode(&data)) },
+                        to: Some(to),
+                    }),
+                },
+                _ => input.metadata,
+            }
+        } else {
+            input.metadata
+        };
+
+        Ok(TransactionLoadData { fee, metadata })
+    }
+
+    pub async fn calculate_fee(&self, input: &TransactionLoadInput, gas_limit: &BigInt) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
+        if self.chain.is_opstack() {
+            OptimismGasOracle::new(self.chain, self.clone()).calculate_fee(input, gas_limit).await
+        } else {
+            let gas_limit = gas_limit + get_extra_fee_gas_limit(input)?;
+            let fee = input.gas_price.total_fee() * &gas_limit;
+
+            Ok(TransactionFee::new_gas_price_type(
+                GasPriceType::eip1559(input.gas_price.total_fee(), input.gas_price.priority_fee()),
+                fee,
+                gas_limit.clone(),
+                HashMap::new(),
+            ))
+        }
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
@@ -36,7 +108,7 @@ mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{create_arbitrum_test_client, create_ethereum_test_client, create_smartchain_test_client, print_fee_rates, TEST_ADDRESS};
     use num_bigint::BigInt;
-    use primitives::{Asset, Chain, TransactionInputType};
+    use primitives::{Asset, Chain, FeePriority, GasPriceType, TransactionInputType, TransactionLoadInput};
 
     #[tokio::test]
     async fn test_ethereum_get_transaction_preload() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -44,7 +116,7 @@ mod chain_integration_tests {
         let input = TransactionPreloadInput {
             input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Ethereum)),
             sender_address: TEST_ADDRESS.to_string(),
-            destination_address: "0x0000000000000000000000000000000000000000".to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
         };
 
         let metadata = client.get_transaction_preload(input).await?;
@@ -63,7 +135,7 @@ mod chain_integration_tests {
         let input = TransactionPreloadInput {
             input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::SmartChain)),
             sender_address: TEST_ADDRESS.to_string(),
-            destination_address: "0x0000000000000000000000000000000000000000".to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
         };
 
         let metadata = client.get_transaction_preload(input).await?;
@@ -130,6 +202,94 @@ mod chain_integration_tests {
             assert!(fee_rate.gas_price_type.gas_price() < BigInt::from(1_000_000_000));
             assert!(fee_rate.gas_price_type.priority_fee() > BigInt::from(0));
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_preload_transfer() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+
+        let preload_input = TransactionPreloadInput {
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Ethereum)),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
+        };
+        let metadata = client.get_transaction_preload(preload_input.clone()).await?;
+
+        let fee_rates = [FeeRate::new(
+            FeePriority::Normal,
+            GasPriceType::eip1559(BigInt::from(177554820), BigInt::from(100000000)),
+        )];
+
+        let gas_price = fee_rates.first().ok_or("No fee rates available")?.gas_price_type.clone();
+
+        let load_input = TransactionLoadInput {
+            input_type: preload_input.input_type,
+            sender_address: preload_input.sender_address.clone(),
+            destination_address: preload_input.destination_address.clone(),
+            value: "100000000000000".to_string(),
+            gas_price,
+            memo: None,
+            is_max_value: false,
+            metadata,
+        };
+
+        let load_data = client.get_transaction_load(load_input).await?;
+
+        println!("Transaction load data: {:#?}", load_data);
+
+        assert!(load_data.fee.fee > BigInt::from(372865122u64));
+
+        assert!(load_data.fee.gas_limit == BigInt::from(21000));
+
+        assert!(load_data.metadata.get_sequence()? > 0);
+        assert_eq!(load_data.metadata.get_chain_id()?, "1");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_preload_transfer_token() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+
+        let preload_input = TransactionPreloadInput {
+            input_type: TransactionInputType::Transfer(Asset::mock_erc20()),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
+        };
+        let metadata = client.get_transaction_preload(preload_input.clone()).await?;
+
+        let fee_rates = [FeeRate::new(
+            FeePriority::Normal,
+            GasPriceType::eip1559(BigInt::from(177554820), BigInt::from(100000000)),
+        )];
+
+        let gas_price = fee_rates.first().ok_or("No fee rates available")?.gas_price_type.clone();
+
+        let load_input = TransactionLoadInput {
+            input_type: preload_input.input_type,
+            sender_address: preload_input.sender_address.clone(),
+            destination_address: preload_input.destination_address.clone(),
+            value: "1000000".to_string(),
+            gas_price,
+            memo: None,
+            is_max_value: false,
+            metadata,
+        };
+
+        let load_data = client.get_transaction_load(load_input).await?;
+
+        println!("Token transfer load data: {:#?}", load_data);
+
+        assert!(load_data.fee.fee > BigInt::from(0));
+        assert!(load_data.fee.gas_limit > BigInt::from(0));
+
+        assert!(load_data.fee.gas_limit > BigInt::from(21000));
+        assert!(load_data.fee.gas_limit < BigInt::from(75000));
+
+        assert!(load_data.metadata.get_sequence()? > 0);
+        assert_eq!(load_data.metadata.get_chain_id()?, "1");
 
         Ok(())
     }

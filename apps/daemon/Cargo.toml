@@ -16,6 +16,7 @@ aws-sdk-s3 = { workspace = true }
 itertools = { workspace = true}
 async-trait = { workspace = true }
 
+gem_tracing = { path = "../../crates/tracing" }
 settings = { path = "../../crates/settings" }
 storage = { path = "../../crates/storage" }
 api_connector = { path = "../../crates/api_connector" }
@@ -23,7 +24,7 @@ coingecko = { path = "../../crates/coingecko" }
 pricer = { path = "../../crates/pricer" }
 primitives = { path = "../../crates/primitives" }
 fiat = { path = "../../crates/fiat" }
-nft_provider = { path = "../../crates/nft_provider" }
+nft = { path = "../../crates/nft" }
 job_runner = { path = "../../crates/job_runner" }
 chain_primitives = { path = "../../crates/chain_primitives" }
 search_index = { path = "../../crates/search_index" }

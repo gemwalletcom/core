@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use super::error::{PaymentDecoderError, Result};
 use std::collections::HashMap;
 use url::Url;
 pub const SOLANA_PAY_SCHEME: &str = "solana";
@@ -23,7 +23,7 @@ pub struct PayTransfer {
 pub fn parse(uri: &str) -> Result<RequestType> {
     let scheme = format!("{SOLANA_PAY_SCHEME}:");
     if !uri.starts_with(&scheme) {
-        return Err(anyhow!("Not supported scheme"));
+        return Err(PaymentDecoderError::InvalidScheme);
     }
 
     let query_part = uri.replace(&scheme, "");
@@ -34,7 +34,9 @@ pub fn parse(uri: &str) -> Result<RequestType> {
     }
 
     // Handle Transfer Request
-    let (recipient, query) = query_part.split_once('?').ok_or_else(|| anyhow!("Invalid URL query string"))?;
+    let (recipient, query) = query_part
+        .split_once('?')
+        .ok_or_else(|| PaymentDecoderError::InvalidFormat("Invalid URL query string".to_string()))?;
 
     let mut query_params = HashMap::new();
     for pair in query.split('&') {

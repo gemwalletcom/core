@@ -16,6 +16,7 @@ pub enum DaemonService {
     Nft,
     Notifications,
     Scan,
+    ConsumerSupport,
 }
 
 impl DaemonService {

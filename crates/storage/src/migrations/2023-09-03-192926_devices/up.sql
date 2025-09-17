@@ -9,9 +9,11 @@ CREATE TABLE devices (
     version VARCHAR(8) NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
-    currency VARCHAR(8) NOT NULL REFERENCES fiat_rates (id) ON DELETE CASCADE, 
+    currency VARCHAR(8) NOT NULL REFERENCES fiat_rates (id) ON DELETE CASCADE,
     subscriptions_version INTEGER NOT NULL DEFAULT 0,
     is_price_alerts_enabled boolean NOT NULL DEFAULT false,
+    os VARCHAR(64),
+    model VARCHAR(128),
     UNIQUE(device_id)
 );
 

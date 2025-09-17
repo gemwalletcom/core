@@ -95,6 +95,6 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].balance.available, BigUint::from(1000000_u64));
-        assert_eq!(result[0].is_active, Some(true));
+        assert!(result[0].is_active);
     }
 }

@@ -9,11 +9,10 @@ pub mod store_transactions_consumer_config;
 use std::error::Error;
 use std::sync::Arc;
 
+use ::nft::{NFTClient, NFTProviderConfig};
 pub use assets_addresses_consumer::AssetsAddressesConsumer;
 use cacher::CacherClient;
 pub use fetch_assets_consumer::FetchAssetsConsumer;
-use nft_client::NFTClient;
-use nft_provider::NFTProviderConfig;
 use settings::Settings;
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;

@@ -9,7 +9,7 @@ use super::balances_mapper::map_balance_coin;
 use crate::rpc::client::BitcoinClient;
 
 impl<C: Client> BitcoinClient<C> {
-    fn full_address(&self, address: &str) -> String {
+    pub fn full_address(&self, address: &str) -> String {
         match self.chain {
             BitcoinChain::BitcoinCash => {
                 if address.starts_with("bitcoincash:") {
@@ -26,8 +26,7 @@ impl<C: Client> BitcoinClient<C> {
 #[async_trait]
 impl<C: Client> ChainBalances for BitcoinClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-        let full_address = self.full_address(&address);
-        let account = self.get_balance(&full_address).await?;
+        let account = self.get_balance(&self.full_address(&address)).await?;
         Ok(map_balance_coin(&account, self.chain))
     }
 

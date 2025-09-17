@@ -1,6 +1,6 @@
 use chrono::{Duration, NaiveDateTime, Utc};
 use number_formatter::BigNumberFormatter;
-use primitives::{Asset, AssetSubtype, Chain, Price, Transaction, TransactionType};
+use primitives::{Asset, Chain, Price, Transaction, TransactionType};
 
 #[derive(Default)]
 pub struct StoreTransactionsConsumerConfig {}
@@ -19,7 +19,7 @@ impl StoreTransactionsConsumerConfig {
 
     pub fn is_transaction_sufficient_amount(&self, transaction: &Transaction, asset: Option<Asset>, price: Option<Price>, min_amount: f64) -> bool {
         if let Some(asset) = asset {
-            if transaction.transaction_type == TransactionType::Transfer && asset.id.token_subtype() == AssetSubtype::TOKEN {
+            if transaction.transaction_type == TransactionType::Transfer {
                 if let Some(amount) = BigNumberFormatter::value_as_f64(&transaction.value, asset.decimals as u32) {
                     if let Some(price) = price {
                         return amount * price.price > min_amount;
@@ -79,7 +79,7 @@ mod tests {
             (transaction_transfer.clone(), token_asset.clone(), price_high, 0.01, true),
             (transaction_transfer.clone(), token_asset.clone(), price_low, 0.01, false),
             (transaction_transfer.clone(), token_asset.clone(), price_high, 0.5, false),
-            (transaction_transfer.clone(), native_asset.clone(), price_low, 0.01, true),
+            (transaction_transfer.clone(), native_asset.clone(), price_low, 0.01, false),
             (transaction_transfer.clone(), None, price_high, 0.01, true),
             (transaction_transfer.clone(), token_asset.clone(), None, 0.01, true),
             (transaction_swap.clone(), token_asset.clone(), price_low, 0.01, true),

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use chain_traits::ChainPerpetual;
+use chain_traits::{ChainAddressStatus, ChainPerpetual};
 use gem_client::Client;
 use primitives::{
     perpetual::{PerpetualData, PerpetualPositionsSummary},
@@ -49,3 +49,6 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
         Ok(map_candlesticks(candlesticks))
     }
 }
+
+#[async_trait]
+impl<C: Client> ChainAddressStatus for HyperCoreClient<C> {}

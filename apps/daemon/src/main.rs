@@ -8,30 +8,35 @@ mod notifications;
 mod pricer;
 mod scan;
 mod search;
+mod support;
 mod transaction;
 mod version;
 
 use crate::model::DaemonService;
+use gem_tracing::{info_with_fields, SentryConfig, SentryTracing};
 use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
 
 #[tokio::main]
 pub async fn main() {
-    println!("daemon init");
+    let service_arg = std::env::args().nth(1).unwrap_or_default();
 
-    let service = std::env::args().nth(1).unwrap_or_default();
-
-    println!("daemon start service: {service}");
-
-    let settings = settings::Settings::new().unwrap();
-
-    let service = DaemonService::from_str(service.as_str()).unwrap_or_else(|_| {
+    let service = DaemonService::from_str(service_arg.as_str()).unwrap_or_else(|_| {
         panic!(
             "Expected a valid service: {:?}",
             DaemonService::all().iter().map(|x| x.as_ref()).collect::<Vec<_>>()
         );
     });
+
+    let settings = settings::Settings::new().unwrap();
+    let sentry_config = settings.sentry.as_ref().map(|s| SentryConfig {
+        dsn: s.dsn.clone(),
+        sample_rate: s.sample_rate,
+    });
+    let _tracing = SentryTracing::init(sentry_config.as_ref(), service.as_ref());
+
+    info_with_fields!("daemon start", service = service.as_ref());
 
     let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service {
         DaemonService::Alerter => alerter::jobs(settings.clone()).await,
@@ -46,6 +51,7 @@ pub async fn main() {
         DaemonService::Nft => nft::jobs(settings.clone()).await,
         DaemonService::Notifications => notifications::jobs(settings.clone()).await,
         DaemonService::Scan => scan::jobs(settings.clone()).await,
+        DaemonService::ConsumerSupport => support::jobs(settings.clone()).await,
     };
 
     let _ = futures::future::join_all(services).await;

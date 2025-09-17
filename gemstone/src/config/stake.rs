@@ -8,6 +8,7 @@ pub struct StakeChainConfig {
     pub can_redelegate: bool,
     pub can_withdraw: bool,
     pub can_claim_rewards: bool,
+    pub reserved_for_fees: u64,
 }
 
 pub fn get_stake_config(chain: StakeChain) -> StakeChainConfig {
@@ -18,6 +19,7 @@ pub fn get_stake_config(chain: StakeChain) -> StakeChainConfig {
         can_redelegate: chain.get_can_redelegate(),
         can_withdraw: chain.get_can_withdraw(),
         can_claim_rewards: chain.get_can_claim_rewards(),
+        reserved_for_fees: chain.get_reserved_for_fees(),
     }
 }
 
@@ -35,7 +37,8 @@ mod tests {
                 change_amount_on_unstake: false,
                 can_redelegate: false,
                 can_withdraw: false,
-                can_claim_rewards: false
+                can_claim_rewards: false,
+                reserved_for_fees: 100000000,
             }
         );
     }

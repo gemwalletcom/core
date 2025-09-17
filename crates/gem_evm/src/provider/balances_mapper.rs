@@ -9,11 +9,7 @@ pub fn map_balance_coin(balance_hex: String, chain: Chain) -> Result<AssetBalanc
     ))
 }
 
-pub fn map_balance_tokens(
-    balance_data: Vec<String>,
-    token_ids: Vec<String>,
-    chain: Chain,
-) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+pub fn map_balance_tokens(balance_data: Vec<String>, token_ids: Vec<String>, chain: Chain) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
     if balance_data.len() != token_ids.len() {
         return Err("Balance data and token IDs length mismatch".into());
     }
@@ -27,10 +23,7 @@ pub fn map_balance_tokens(
                 token_id: Some(token_id),
             };
             let balance = serde_serializers::biguint_from_hex_str(&balance_hex)?;
-            Ok(AssetBalance::new_balance(
-                asset_id,
-                Balance::coin_balance(balance),
-            ))
+            Ok(AssetBalance::new_balance(asset_id, Balance::coin_balance(balance)))
         })
         .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()
 }

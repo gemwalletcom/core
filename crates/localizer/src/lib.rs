@@ -210,4 +210,9 @@ impl LanguageLocalizer {
             fl!(self.loader.as_ref(), "notification_onboarding_buy_asset_description", name = name),
         )
     }
+
+    // support
+    pub fn notification_support_new_message_title(&self) -> String {
+        fl!(self.loader.as_ref(), "support_new_message_title")
+    }
 }

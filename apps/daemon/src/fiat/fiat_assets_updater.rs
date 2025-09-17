@@ -1,7 +1,8 @@
 use chrono::{Duration, Utc};
 use fiat::{model::FiatProviderAsset, FiatProvider};
-use primitives::{AssetTag, Diff};
-use storage::{AssetFilter, AssetUpdate, DatabaseClient};
+use gem_tracing::{error_with_fields, info_with_fields};
+use primitives::{currency::Currency, AssetTag, Diff, FiatProviderName};
+use storage::{AssetFilter, AssetUpdate, AssetsRepository, DatabaseClient};
 
 pub struct FiatAssetsUpdater {
     database: DatabaseClient,
@@ -62,83 +63,101 @@ impl FiatAssetsUpdater {
     pub async fn update_trending_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let from = Utc::now() - Duration::days(30);
         let asset_ids = self.database.fiat().get_fiat_assets_popular(from.naive_utc(), 30)?;
-        self.database
+        Ok(self
+            .database
             .tag()
-            .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())
+            .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }
 
-    pub async fn update_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let mut fiat_assets: Vec<FiatProviderAsset> = Vec::new();
+    pub async fn update_fiat_assets(&mut self, name: &str) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let mut total_assets = 0;
 
-        for provider in self.providers.iter() {
-            match provider.get_assets().await {
-                Ok(assets) => {
-                    println!("update_assets for provider: {}, assets: {:?}", provider.name().id(), assets.len());
-                    fiat_assets.extend(assets.clone());
-
-                    let assets = assets
-                        .clone()
-                        .iter()
-                        .map(|x| self.map_fiat_asset(provider.name().id(), x.clone()))
-                        .collect::<Vec<primitives::FiatAsset>>();
-
-                    let insert_assets = assets
-                        .into_iter()
-                        .map(storage::models::FiatAsset::from_primitive)
-                        .collect::<Vec<storage::models::FiatAsset>>();
-
-                    for asset in insert_assets.clone() {
-                        match self.database.add_fiat_assets(vec![asset.clone()]) {
-                            Ok(_) => {}
-                            Err(err) => {
-                                println!(
-                                    "add_fiat_assets for provider: {}, {:?}:{:?} error: {}",
-                                    provider.name().id(),
-                                    asset.code,
-                                    asset.asset_id,
-                                    err
-                                );
-                            }
-                        }
-                    }
+        for i in 0..self.providers.len() {
+            let provider_name = self.providers[i].name();
+            match self.update_fiat_assets_for_provider(provider_name.clone()).await {
+                Ok(count) => {
+                    info_with_fields!(name, provider = provider_name.id(), assets = count.to_string());
+                    total_assets += count;
                 }
-                Err(err) => {
-                    println!("update_assets for provider: {}, error: {}", provider.name().id(), err);
-                }
+                Err(e) => error_with_fields!(name, &*e, provider = provider_name.id()),
             }
         }
 
-        Ok(fiat_assets.len())
+        Ok(total_assets)
     }
 
-    pub async fn update_fiat_providers_countries(&mut self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
-        for provider in self.providers.iter() {
-            match provider.get_countries().await {
-                Ok(countries) => {
-                    println!("update_countries for provider: {}, countries: {:?}", provider.name().id(), countries.len());
-                    let _ = self
-                        .database
-                        .add_fiat_providers_countries(countries.into_iter().map(storage::models::FiatProviderCountry::from_primitive).collect());
-                }
-                Err(err) => {
-                    println!("update_countries for provider: {}, error: {}", provider.name().id(), err);
-                }
+    fn get_provider(&self, provider_name: FiatProviderName) -> Result<&(dyn FiatProvider + Send + Sync), Box<dyn std::error::Error + Send + Sync>> {
+        self.providers
+            .iter()
+            .find(|p| p.name() == provider_name)
+            .map(|p| p.as_ref())
+            .ok_or_else(|| format!("Provider {} not found", provider_name.id()).into())
+    }
+
+    async fn update_fiat_assets_for_provider(&mut self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let provider = self.get_provider(provider_name)?;
+        let assets = provider.get_assets().await?;
+        let asset_count = assets.len();
+
+        let validated_assets: Vec<(FiatProviderAsset, Option<primitives::AssetId>)> = assets
+            .into_iter()
+            .map(|fiat_asset| {
+                (
+                    fiat_asset.clone(),
+                    fiat_asset.asset_id().filter(|id| self.database.get_asset(&id.to_string()).is_ok()),
+                )
+            })
+            .collect();
+
+        let assets = validated_assets
+            .into_iter()
+            .map(|(fiat_asset, asset)| self.map_fiat_asset(fiat_asset, asset))
+            .collect::<Vec<primitives::FiatAsset>>();
+
+        let insert_assets = assets
+            .into_iter()
+            .map(storage::models::FiatAsset::from_primitive)
+            .collect::<Vec<storage::models::FiatAsset>>();
+
+        for asset in insert_assets {
+            self.database.add_fiat_assets(vec![asset])?;
+        }
+
+        Ok(asset_count)
+    }
+
+    pub async fn update_fiat_countries(&mut self, name: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        for i in 0..self.providers.len() {
+            let provider_name = self.providers[i].name();
+            match self.update_fiat_countries_for_provider(provider_name.clone()).await {
+                Ok(count) => info_with_fields!(name, provider = provider_name.id(), countries = count.to_string()),
+                Err(e) => error_with_fields!(name, &*e, provider = provider_name.id()),
             }
         }
         Ok(true)
     }
 
-    fn map_fiat_asset(&self, provider: String, fiat_asset: FiatProviderAsset) -> primitives::FiatAsset {
-        let asset_id = fiat_asset.asset_id();
+    async fn update_fiat_countries_for_provider(&mut self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let provider = self.get_provider(provider_name)?;
+        let countries = provider.get_countries().await?;
+        let country_count = countries.len();
+        self.database
+            .add_fiat_providers_countries(countries.into_iter().map(storage::models::FiatProviderCountry::from_primitive).collect())?;
+        Ok(country_count)
+    }
+
+    fn map_fiat_asset(&self, fiat_asset: FiatProviderAsset, asset_id: Option<primitives::AssetId>) -> primitives::FiatAsset {
         primitives::FiatAsset {
-            id: fiat_asset.clone().id,
+            id: fiat_asset.id,
             asset_id,
-            provider,
-            symbol: fiat_asset.clone().symbol,
-            network: fiat_asset.clone().network,
-            token_id: fiat_asset.clone().token_id,
-            enabled: fiat_asset.clone().enabled,
-            unsupported_countries: fiat_asset.clone().unsupported_countries.unwrap_or_default(),
+            provider: fiat_asset.provider.id(),
+            symbol: fiat_asset.symbol,
+            network: fiat_asset.network,
+            token_id: fiat_asset.token_id,
+            enabled: fiat_asset.enabled,
+            unsupported_countries: fiat_asset.unsupported_countries.unwrap_or_default(),
+            buy_limits: fiat_asset.buy_limits.into_iter().filter(|x| x.currency == Currency::USD).collect::<Vec<_>>(), // stored usd only for now
+            sell_limits: fiat_asset.sell_limits.into_iter().filter(|x| x.currency == Currency::USD).collect::<Vec<_>>(), // stored usd only for now
         }
     }
 }

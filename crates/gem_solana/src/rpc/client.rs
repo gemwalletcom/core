@@ -7,7 +7,7 @@ use crate::models::{
 };
 use chain_traits::ChainProvider;
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainTraits};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
@@ -495,6 +495,10 @@ impl<C: Client + Clone> ChainAccount for SolanaClient<C> {}
 #[cfg(feature = "rpc")]
 #[async_trait::async_trait]
 impl<C: Client + Clone> ChainPerpetual for SolanaClient<C> {}
+
+#[cfg(feature = "rpc")]
+#[async_trait::async_trait]
+impl<C: Client + Clone> ChainAddressStatus for SolanaClient<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> ChainTraits for SolanaClient<C> {}

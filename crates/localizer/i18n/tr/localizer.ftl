@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 Cüzdan Oluşturun vey
 notification_onboarding_create_import_wallet_description = Sadece birkaç dokunuşla yeni bir cüzdan oluşturun veya kendi cüzdanınızı içe aktarın.
 notification_onboarding_welcome_description = Kripto yolculuğunuza başlayın. Kripto cüzdanınızı kurmak için dokunun.
 notification_onboarding_buy_asset_description = {$name} bugün güvenli bir şekilde satın alın: basit, güvenilir ve anında.
+support_new_message_title = Destek'ten yeni mesaj

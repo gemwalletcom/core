@@ -7,6 +7,7 @@ mod provider;
 
 use chain::THORChainName;
 use num_bigint::BigInt;
+use primitives::Chain;
 use std::str::FromStr;
 
 use super::{SwapperProvider, SwapperProviderType};
@@ -14,6 +15,7 @@ use super::{SwapperProvider, SwapperProviderType};
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
 const QUOTE_QUANTITY: i64 = 0;
+const OUTBOUND_DELAY_SECONDS: u32 = 60;
 
 // FIXME: estimate gas limit with memo x bytes
 const DEFAULT_DEPOSIT_GAS_LIMIT: u64 = 90_000;
@@ -55,6 +57,10 @@ impl ThorChain {
         } else {
             BigInt::from_str(value.as_str()).unwrap() / BigInt::from(10).pow((decimals).unsigned_abs())
         }
+    }
+
+    fn get_eta_in_seconds(&self, destination_chain: Chain, total_swap_seconds: Option<u32>) -> u32 {
+        destination_chain.block_time() / 1000 + OUTBOUND_DELAY_SECONDS + total_swap_seconds.unwrap_or(0)
     }
 }
 
@@ -110,5 +116,19 @@ mod tests {
 
         let result = thorchain.value_to(value.clone(), 8);
         assert_eq!(result, BigInt::from(10000000));
+    }
+
+    #[test]
+    fn test_get_eta_in_seconds() {
+        let thorchain = ThorChain::default();
+
+        let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, None);
+        assert_eq!(eta, 660);
+
+        let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, Some(1200));
+        assert_eq!(eta, 1860);
+
+        let eta = thorchain.get_eta_in_seconds(Chain::SmartChain, Some(648));
+        assert_eq!(eta, 709);
     }
 }

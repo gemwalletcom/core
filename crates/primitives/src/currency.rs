@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, AsRefStr, EnumString, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
+#[strum(serialize_all = "UPPERCASE")]
 pub enum Currency {
     MXN,
     CHF,
@@ -50,4 +52,10 @@ pub enum Currency {
     MYR,
     AED,
     SEK,
+}
+
+impl std::fmt::Display for Currency {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }

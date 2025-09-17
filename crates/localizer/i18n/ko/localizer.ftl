@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 지갑 생성 또는 �
 notification_onboarding_create_import_wallet_description = 몇 번만 탭하면 새로운 지갑을 만들거나 기존 지갑을 가져올 수 있습니다.
 notification_onboarding_welcome_description = 암호화폐 여정을 시작하세요. 탭하여 암호화폐 지갑을 설정하세요.
 notification_onboarding_buy_asset_description = 오늘 {$name} 안전하게 구매하세요. 간편하고 안정적이며 즉각적입니다.
+support_new_message_title = 지원팀의 새 메시지

@@ -67,24 +67,6 @@ final class GemTestTests: XCTestCase {
         )
     }
 
-    func testDecodingBscDelegations() throws {
-        let result = Data(
-            hex:
-            "00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000773760b0708a5cc369c346993a0c225d8e4043b10000000000000000000000000000000000000000000000000de0b6b3b015a6430000000000000000000000000000000000000000000000000dd62dce1850f388000000000000000000000000ee448667ffc3d15ca023a6deef2d0faf084c0716000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a0000000000000000000000000000000000000000000000000e09ef1d9101a1740000000000000000000000000000000000000000000000000e028d70463b87f8"
-        )!
-
-        let delegations = try Gemstone.bscDecodeDelegationsReturn(
-            result: result
-        )
-
-        XCTAssertEqual(delegations.count, 2)
-        XCTAssertEqual(
-            delegations[1].validatorAddress,
-            "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A"
-        )
-        XCTAssertEqual(delegations[1].amount, "1011602501587280244")
-    }
-
     func testGetEvmChainConfig() throws {
         let config = Config().getEvmChainConfig(chain: "zksync")
 
@@ -144,7 +126,6 @@ final class GemTestTests: XCTestCase {
             "d9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68"
         )
     }
-
 
     func testEthereumCallDecoder() throws {
         let decoder = EthereumDecoder()

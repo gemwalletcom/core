@@ -1,4 +1,4 @@
-use primitives::{AssetBalance, AssetId, Balance};
+use primitives::{asset_balance::BalanceMetadata, AssetBalance, AssetId, Balance};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemAssetBalance {
@@ -17,6 +17,15 @@ pub struct GemBalance {
     pub rewards: String,
     pub reserved: String,
     pub withdrawable: String,
+    pub metadata: Option<GemBalanceMetadata>,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemBalanceMetadata {
+    pub energy_available: u64,
+    pub energy_total: u64,
+    pub bandwidth_available: u64,
+    pub bandwidth_total: u64,
 }
 
 impl From<AssetBalance> for GemAssetBalance {
@@ -24,7 +33,7 @@ impl From<AssetBalance> for GemAssetBalance {
         Self {
             asset_id: value.asset_id,
             balance: value.balance.into(),
-            is_active: value.is_active.unwrap_or(true),
+            is_active: value.is_active,
         }
     }
 }
@@ -40,6 +49,18 @@ impl From<Balance> for GemBalance {
             rewards: value.rewards.to_string(),
             reserved: value.reserved.to_string(),
             withdrawable: value.withdrawable.to_string(),
+            metadata: value.metadata.map(|m| m.into()),
+        }
+    }
+}
+
+impl From<BalanceMetadata> for GemBalanceMetadata {
+    fn from(value: BalanceMetadata) -> Self {
+        Self {
+            energy_available: value.energy_available,
+            energy_total: value.energy_total,
+            bandwidth_available: value.bandwidth_available,
+            bandwidth_total: value.bandwidth_total,
         }
     }
 }
@@ -55,6 +76,7 @@ impl GemBalance {
             rewards: "0".to_string(),
             reserved: "0".to_string(),
             withdrawable: "0".to_string(),
+            metadata: None,
         }
     }
 }

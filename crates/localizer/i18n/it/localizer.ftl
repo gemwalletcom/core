@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 Crea o importa un port
 notification_onboarding_create_import_wallet_description = Crea un nuovo portafoglio o importa il tuo in pochi tocchi.
 notification_onboarding_welcome_description = Inizia il tuo viaggio nel mondo delle criptovalute. Tocca per configurare il tuo portafoglio.
 notification_onboarding_buy_asset_description = Acquista {$name} oggi stesso in modo sicuro: semplice, affidabile e immediato.
+support_new_message_title = Nuovo messaggio dal supporto

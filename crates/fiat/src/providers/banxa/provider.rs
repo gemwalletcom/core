@@ -1,11 +1,13 @@
 use crate::{
     model::{FiatMapping, FiatProviderAsset},
+    providers::banxa::mapper::map_asset_with_limits,
     FiatProvider,
 };
 use async_trait::async_trait;
 use primitives::{FiatBuyQuote, FiatSellQuote};
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
 use std::error::Error;
+use streamer::FiatWebhook;
 
 use super::{
     client::BanxaClient,
@@ -24,7 +26,7 @@ impl FiatProvider for BanxaClient {
             .get_quote_buy(
                 &request_map.clone().symbol,
                 &request_map.clone().network.unwrap_or_default(),
-                &request.fiat_currency,
+                request.fiat_currency.as_ref(),
                 request.fiat_amount,
             )
             .await?;
@@ -38,7 +40,7 @@ impl FiatProvider for BanxaClient {
             .get_payment_methods(ORDER_TYPE_SELL)
             .await?
             .into_iter()
-            .find(|x| x.supported_fiats.contains(&request.fiat_currency))
+            .find(|x| x.supported_fiats.contains(&request.fiat_currency.as_ref().to_string()))
             .ok_or("Payment method not found")?;
 
         let quote = self
@@ -46,7 +48,7 @@ impl FiatProvider for BanxaClient {
                 &method.id,
                 &request_map.symbol,
                 &request_map.clone().network.unwrap_or_default(),
-                &request.fiat_currency,
+                request.fiat_currency.as_ref(),
                 request.crypto_amount,
             )
             .await?;
@@ -54,11 +56,12 @@ impl FiatProvider for BanxaClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets_buy()
-            .await?
+        let (assets, buy_fiat_currencies, sell_fiat_currencies) =
+            tokio::try_join!(self.get_assets_buy(), self.get_fiat_currencies("buy"), self.get_fiat_currencies("sell"))?;
+
+        let assets = assets
             .into_iter()
-            .flat_map(Self::map_asset)
+            .flat_map(|x| map_asset_with_limits(x, &buy_fiat_currencies, &sell_fiat_currencies))
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
     }
@@ -82,8 +85,9 @@ impl FiatProvider for BanxaClient {
     }
 
     // https://docs.banxa.com/docs/webhooks
-    async fn webhook_order_id(&self, data: serde_json::Value) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(serde_json::from_value::<Webhook>(data)?.order_id)
+    async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
+        let order_id = serde_json::from_value::<Webhook>(data)?.order_id;
+        Ok(FiatWebhook::OrderId(order_id))
     }
 }
 
@@ -118,12 +122,13 @@ mod fiat_integration_tests {
         let assets = FiatProvider::get_assets(&client).await?;
 
         assert!(!assets.is_empty());
-        println!("Found {} Banxa assets", assets.len());
 
-        if let Some(asset) = assets.first() {
-            assert!(!asset.id.is_empty());
-            assert!(!asset.symbol.is_empty());
-            println!("Sample Banxa asset: {:?}", asset);
+        let assets_with_buy_limits = assets.iter().filter(|a| !a.buy_limits.is_empty()).count();
+        assert!(assets_with_buy_limits > 0);
+
+        if let Some(asset_with_limits) = assets.iter().find(|a| !a.buy_limits.is_empty()) {
+            let first_limit = &asset_with_limits.buy_limits[0];
+            assert!(first_limit.min_amount.is_some() || first_limit.max_amount.is_some());
         }
 
         Ok(())

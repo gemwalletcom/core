@@ -28,3 +28,4 @@ notification_onboarding_create_import_wallet_title = 💎 Buat atau Impor Dompet
 notification_onboarding_create_import_wallet_description = Buat dompet baru atau impor dompet Anda hanya dalam beberapa ketukan.
 notification_onboarding_welcome_description = Mulailah perjalanan kripto Anda. Ketuk untuk menyiapkan dompet kripto Anda.
 notification_onboarding_buy_asset_description = Beli {$name} dengan aman hari ini—mudah, andal, dan instan.
+support_new_message_title = Pesan baru dari Dukungan

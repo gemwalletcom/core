@@ -133,6 +133,10 @@ diesel::table! {
         currency -> Varchar,
         subscriptions_version -> Int4,
         is_price_alerts_enabled -> Bool,
+        #[max_length = 64]
+        os -> Nullable<Varchar>,
+        #[max_length = 128]
+        model -> Nullable<Varchar>,
     }
 }
 
@@ -155,6 +159,8 @@ diesel::table! {
         is_enabled -> Bool,
         is_enabled_by_provider -> Bool,
         unsupported_countries -> Nullable<Jsonb>,
+        buy_limits -> Nullable<Jsonb>,
+        sell_limits -> Nullable<Jsonb>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -219,9 +225,6 @@ diesel::table! {
         transaction_hash -> Nullable<Varchar>,
         #[max_length = 256]
         address -> Nullable<Varchar>,
-        fee_provider -> Nullable<Float8>,
-        fee_network -> Nullable<Float8>,
-        fee_partner -> Nullable<Float8>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
         #[max_length = 32]
@@ -466,6 +469,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    support (id) {
+        id -> Int4,
+        #[max_length = 32]
+        support_id -> Varchar,
+        device_id -> Int4,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     tags (id) {
         #[max_length = 64]
         id -> Varchar,
@@ -564,6 +578,7 @@ diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
+diesel::joinable!(support -> devices (device_id));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions -> transactions_types (kind));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
@@ -601,6 +616,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     scan_addresses_types,
     subscriptions,
     subscriptions_addresses_exclude,
+    support,
     tags,
     transactions,
     transactions_addresses,

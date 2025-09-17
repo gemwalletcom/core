@@ -13,6 +13,7 @@ async-trait = { workspace = true }
 rand = { workspace = true }
 num-bigint = { workspace = true }
 
+gem_tracing = { path = "../../crates/tracing" }
 primitives = { path = "../../crates/primitives" }
 storage = { path = "../../crates/storage" }
 settings = { path = "../../crates/settings" }
@@ -23,8 +24,7 @@ localizer = { path = "../../crates/localizer" }
 number_formatter = { path = "../../crates/number_formatter" }
 streamer = { path = "../../crates/streamer" }
 cacher = { path = "../../crates/cacher" }
-nft_client = { path = "../../crates/nft_client" }
-nft_provider = { path = "../../crates/nft_provider" }
+nft = { path = "../../crates/nft" }
 
 [dev-dependencies]
 primitives = { path = "../../crates/primitives", features = ["testkit"] }

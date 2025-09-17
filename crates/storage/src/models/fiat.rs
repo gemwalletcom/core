@@ -42,6 +42,8 @@ pub struct FiatAsset {
     pub token_id: Option<String>,
     pub is_enabled: bool, // managed by db
     pub is_enabled_by_provider: bool,
+    pub buy_limits: Option<serde_json::Value>,
+    pub sell_limits: Option<serde_json::Value>,
     pub unsupported_countries: Option<serde_json::Value>,
 }
 
@@ -58,6 +60,8 @@ impl FiatAsset {
             token_id: asset.token_id,
             is_enabled: asset.enabled,
             is_enabled_by_provider: asset.enabled,
+            buy_limits: Some(serde_json::to_value(asset.buy_limits).unwrap()),
+            sell_limits: Some(serde_json::to_value(asset.sell_limits).unwrap()),
             unsupported_countries: Some(serde_json::to_value(asset.unsupported_countries).unwrap()),
         }
     }
@@ -68,6 +72,20 @@ impl FiatAsset {
 
     pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {
         self.unsupported_countries
+            .as_ref()
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default()
+    }
+
+    pub fn buy_limits(&self) -> Vec<primitives::fiat_assets::FiatAssetLimits> {
+        self.buy_limits
+            .as_ref()
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default()
+    }
+
+    pub fn sell_limits(&self) -> Vec<primitives::fiat_assets::FiatAssetLimits> {
+        self.sell_limits
             .as_ref()
             .and_then(|v| serde_json::from_value(v.clone()).ok())
             .unwrap_or_default()
@@ -108,9 +126,6 @@ pub struct FiatTransaction {
     pub fiat_currency: String,
     pub address: Option<String>,
     pub transaction_hash: Option<String>,
-    pub fee_network: Option<f64>,
-    pub fee_partner: Option<f64>,
-    pub fee_provider: Option<f64>,
 }
 
 impl FiatTransaction {
@@ -127,9 +142,6 @@ impl FiatTransaction {
             fiat_currency: transaction.fiat_currency,
             transaction_hash: transaction.transaction_hash,
             address: transaction.address,
-            fee_provider: transaction.fee_provider,
-            fee_network: transaction.fee_network,
-            fee_partner: transaction.fee_partner,
         }
     }
 }
@@ -170,7 +182,4 @@ pub struct FiatTransactionUpdate {
     pub country: Option<String>,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
-    pub fee_network: Option<f64>,
-    pub fee_partner: Option<f64>,
-    pub fee_provider: Option<f64>,
 }

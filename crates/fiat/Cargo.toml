@@ -21,7 +21,7 @@ thiserror = { workspace = true }
 
 settings = { path = "../settings" }
 storage = { path = "../storage" }
-primitives = { path = "../primitives" }
+primitives = { path = "../primitives", features = ["testkit"] }
 chain_primitives = { path = "../chain_primitives" }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
@@ -29,7 +29,6 @@ cacher = { path = "../cacher" }
 streamer = { path = "../streamer" }
 
 [dev-dependencies]
-tokio-test = { version = "*" }
 
 [features]
 # Feature flag for integration tests

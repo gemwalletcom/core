@@ -13,6 +13,7 @@ pub enum PushNotificationTypes {
     PriceAlert, // PriceAlert payload
     BuyAsset,   // PushNotificationBuyAsset payload
     SwapAsset,  // PushNotificationSwapAsset payload
+    Support,    // PushNotificationSupport payload
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -110,3 +111,8 @@ pub struct PushNotificationSwapAsset {
     pub from_asset_id: String,
     pub to_asset_id: String,
 }
+
+#[typeshare(swift = "Equatable, Sendable")]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PushNotificationSupport {}

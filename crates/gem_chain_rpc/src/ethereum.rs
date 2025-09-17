@@ -8,7 +8,7 @@ use std::error::Error;
 use crate::{ChainAssetsProvider, ChainBlockProvider, ChainStakeProvider, ChainTokenDataProvider, ChainTransactionsProvider, SmartChainProvider};
 use chrono::Utc;
 use gem_evm::{
-    erc20::{decode_abi_string, decode_abi_uint8, IERC20},
+    contracts::erc20::{decode_abi_string, decode_abi_uint8, IERC20},
     ethereum_address_checksum,
     rpc::{alchemy::AlchemyClient, ankr::AnkrClient, EthereumClient, EthereumMapper},
 };

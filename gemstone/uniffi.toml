@@ -5,3 +5,4 @@ cdylib_name = "gemstone"
 ffi_module_name = "GemstoneFFI"
 generate_module_map = false
 experimental_sendable_value_types = true
+omit_localized_error_conformance = true

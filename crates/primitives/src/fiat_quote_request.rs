@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::currency::Currency;
 use crate::{Asset, FiatQuoteType};
 
 pub enum FiatQuoteAmount {
@@ -17,7 +18,7 @@ pub struct FiatQuoteRequest {
     pub quote_type: FiatQuoteType,
     #[typeshare(skip)]
     pub ip_address: String,
-    pub fiat_currency: String,
+    pub fiat_currency: Currency,
     pub fiat_amount: Option<f64>,
     pub crypto_value: Option<String>,
     pub wallet_address: String,
@@ -30,7 +31,7 @@ pub struct FiatBuyQuote {
     pub asset: Asset,
     pub asset_id: String,
     pub ip_address: String,
-    pub fiat_currency: String,
+    pub fiat_currency: Currency,
     pub fiat_amount: f64,
     pub fiat_value: String,
     pub wallet_address: String,
@@ -41,7 +42,7 @@ pub struct FiatSellQuote {
     pub asset: Asset,
     pub asset_id: String,
     pub ip_address: String,
-    pub fiat_currency: String,
+    pub fiat_currency: Currency,
     pub crypto_amount: f64,
     pub crypto_value: String,
     pub wallet_address: String,

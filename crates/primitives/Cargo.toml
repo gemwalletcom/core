@@ -14,9 +14,7 @@ serde_json = { workspace = true }
 chrono = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
-anyhow = { workspace = true }
 urlencoding = { workspace = true }
 url = { workspace = true }
 num-bigint = { workspace = true }
-futures = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }

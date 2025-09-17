@@ -1,4 +1,4 @@
-use crate::{debug_println, network::AlienProvider};
+use crate::{debug_println, network::AlienProvider, swapper::proxy::provider::ProxyProvider};
 
 use num_traits::ToPrimitive;
 use std::{fmt::Debug, sync::Arc};
@@ -99,11 +99,11 @@ impl GemSwapper {
                 Box::new(uniswap::universal_router::new_wagmi()),
                 Box::new(uniswap::universal_router::new_reservoir()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
-                Box::new(proxy::new_stonfi_v2()),
-                Box::new(proxy::new_mayan()),
+                Box::new(ProxyProvider::new_stonfi_v2()),
+                Box::new(ProxyProvider::new_mayan()),
                 Box::new(chainflip::ChainflipProvider::default()),
-                Box::new(proxy::new_cetus_aggregator()),
-                Box::new(proxy::new_relay()),
+                Box::new(ProxyProvider::new_cetus_aggregator()),
+                Box::new(ProxyProvider::new_relay()),
                 Box::new(uniswap::universal_router::new_aerodrome()),
             ],
         }
