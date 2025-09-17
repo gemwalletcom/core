@@ -40,6 +40,7 @@ pub const BASE_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33B
 pub const BASE_WBTC_TOKEN_ID: &str = "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c";
 // Hyperliquid
 pub const HYPEREVM_USDC_TOKEN_ID: &str = "0xb88339CB7199b77E23DB6E890353E22632Ba630f";
+pub const HYPEREVM_USDT_TOKEN_ID: &str = "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb";
 // Solana
 pub const SOLANA_USDC_TOKEN_ID: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 pub const SOLANA_USDT_TOKEN_ID: &str = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
@@ -360,6 +361,13 @@ lazy_static! {
         AssetId::from_token(Chain::Hyperliquid, HYPEREVM_USDC_TOKEN_ID),
         USDC_NAME.to_owned(),
         USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref HYPEREVM_USDT: Asset = Asset::new(
+        AssetId::from_token(Chain::Hyperliquid, HYPEREVM_USDT_TOKEN_ID),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
         6,
         AssetType::ERC20,
     );

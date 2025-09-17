@@ -135,7 +135,7 @@ impl AcrossDeployment {
                 vec![USDT_ARB_ASSET_ID.into(), USDC_ARB_ASSET_ID.into(), WETH_ARB_ASSET_ID.into()],
             ),
             (Chain::Base, vec![WETH_BASE_ASSET_ID.into(), USDC_BASE_ASSET_ID.into()]),
-            (Chain::Hyperliquid, vec![USDC_HYPEREVM_ASSET_ID.into()]),
+            (Chain::Hyperliquid, vec![USDC_HYPEREVM_ASSET_ID.into(), USDT_HYPEREVM_ASSET_ID.into()]),
             (Chain::Linea, vec![USDT_LINEA_ASSET_ID.into(), WETH_LINEA_ASSET_ID.into()]),
             (Chain::ZkSync, vec![WETH_ZKSYNC_ASSET_ID.into(), USDT_ZKSYNC_ASSET_ID.into()]),
             (Chain::World, vec![WETH_WORLD_ASSET_ID.into()]),
@@ -214,6 +214,7 @@ impl AcrossDeployment {
                     USDT_POLYGON_ASSET_ID.into(),
                     USDT_ZKSYNC_ASSET_ID.into(),
                     USDT_INK_ASSET_ID.into(),
+                    USDT_HYPEREVM_ASSET_ID.into(),
                 ]),
             },
             // USDT on BSC decimals are 18
