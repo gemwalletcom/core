@@ -348,7 +348,7 @@ pub fn hyper_serialize_update_leverage(update_leverage: &HyperUpdateLeverage) ->
 
 #[uniffi::export]
 pub fn hyper_transfer_to_hyper_evm(amount: String, time: u64, token: String) -> HyperSpotSend {
-    actions::SpotSend::new(amount, actions::HYPERCORE_EVM_BRIDGE_ADDRESS.to_string(), time, token)
+    actions::SpotSend::new(amount, actions::HYPE_SYSTEM_ADDRESS.to_string(), time, token)
 }
 
 #[uniffi::export]

@@ -3050,6 +3050,7 @@ dependencies = [
  "hex",
  "num-bigint",
  "num-traits",
+ "number_formatter",
  "primitives",
  "rand 0.9.2",
  "reqwest",

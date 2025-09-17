@@ -259,7 +259,10 @@ pub static UNICHAIN_USDC: LazyLock<Asset> =
     LazyLock::new(|| Asset::new(USDC_UNICHAIN_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
 pub static UNICHAIN_DAI: LazyLock<Asset> =
     LazyLock::new(|| Asset::new(DAI_UNICHAIN_ASSET_ID.into(), DAI_NAME.to_owned(), DAI_SYMBOL.to_owned(), 18, AssetType::ERC20));
+// HyperCore
+pub static HYPERCORE_HYPE: LazyLock<Asset> = LazyLock::new(|| Asset::from_chain(Chain::HyperCore));
 // HyperEvm
+pub static HYPEREVM_HYPE: LazyLock<Asset> = LazyLock::new(|| Asset::from_chain(Chain::Hyperliquid));
 pub static HYPEREVM_USDC: LazyLock<Asset> =
     LazyLock::new(|| Asset::new(USDC_HYPEREVM_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
 pub static HYPEREVM_USDT: LazyLock<Asset> =
