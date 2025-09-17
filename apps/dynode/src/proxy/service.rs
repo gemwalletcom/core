@@ -114,7 +114,7 @@ impl ProxyRequestService {
         }
 
         if let Some(key) = cache_key.as_ref() {
-            if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &request_url, &metrics, now).await {
+            if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &path_with_query, &request_url, &metrics, now).await {
                 return result;
             }
         }
@@ -144,6 +144,7 @@ impl ProxyRequestService {
         for method_name in &methods_for_metrics {
             metrics.add_proxy_response(
                 &host,
+                &path_with_query,
                 method_name,
                 request_url.url.host_str().unwrap_or_default(),
                 status,
@@ -185,6 +186,7 @@ impl ProxyRequestService {
         cache_key: &str,
         request_type: &RequestType,
         host: &str,
+        path: &str,
         url: &RequestUrl,
         metrics: &Metrics,
         now: std::time::Instant,
@@ -210,7 +212,14 @@ impl ProxyRequestService {
             };
 
             for method_name in &methods_for_metrics {
-                metrics.add_proxy_response(host, method_name, url.url.host_str().unwrap_or_default(), status, now.elapsed().as_millis());
+                metrics.add_proxy_response(
+                    host,
+                    path,
+                    method_name,
+                    url.url.host_str().unwrap_or_default(),
+                    status,
+                    now.elapsed().as_millis(),
+                );
             }
 
             Some(response)

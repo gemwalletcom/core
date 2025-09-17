@@ -48,6 +48,7 @@ impl JsonRpcHandler {
         for call in &calls {
             metrics.add_proxy_response(
                 host,
+                path,
                 &call.method,
                 url.url.host_str().unwrap_or_default(),
                 200,
