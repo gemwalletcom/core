@@ -13,7 +13,6 @@ config = { workspace = true }
 prometheus-client = { workspace = true }
 reqwest = { workspace = true }
 futures = { workspace = true }
-futures-util = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
 redis = { workspace = true }
@@ -36,4 +35,3 @@ gem_client = { path = "../../crates/gem_client", features = ["reqwest"] }
 gem_chain_rpc = { path = "../../crates/gem_chain_rpc" }
 
 security_provider = { path = "../../crates/security_provider" }
-

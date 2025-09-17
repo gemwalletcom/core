@@ -1,4 +1,4 @@
-use futures_util::StreamExt;
+use rocket::futures::StreamExt;
 use primitives::websocket::WebSocketPricePayload;
 use redis::aio::MultiplexedConnection;
 use rocket_ws::stream::DuplexStream;

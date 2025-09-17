@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::sync::Arc;
 
-use futures_util::SinkExt;
+use rocket::futures::SinkExt;
 use pricer::PriceClient;
 use primitives::{asset::AssetHashSetExt, AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
 use redis::aio::MultiplexedConnection;

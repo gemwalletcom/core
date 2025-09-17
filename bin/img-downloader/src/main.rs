@@ -6,7 +6,6 @@ use coingecko::{CoinGeckoClient, CoinInfo};
 use settings::Settings;
 
 use clap::Parser;
-use futures_util::StreamExt;
 use std::{error::Error, fs, io::Write, path::Path, thread::sleep, time::Duration};
 
 /// Assets image downloader from coingecko
@@ -158,9 +157,7 @@ async fn download_image(url: &str, path: &str) -> Result<(), Box<dyn Error + Sen
         return Err("<== image not found".into());
     }
     let mut file = fs::File::create(path)?;
-    let mut stream = response.bytes_stream();
-    while let Some(bytess) = stream.next().await {
-        _ = file.write(&bytess?)?;
-    }
+    let bytes = response.bytes().await?;
+    file.write_all(&bytes)?;
     Ok(())
 }
