@@ -33,7 +33,7 @@ pub fn calculate_transfer_token_fee_rate(
     let energy_fee = get_chain_parameter_value(chain_parameters, GET_ENERGY_FEE)?;
     let new_account_fee_in_smart_contract = get_chain_parameter_value(chain_parameters, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT)?;
 
-    let available_energy = BigInt::from(account_usage.energy_limit.unwrap_or(0)) - BigInt::from(account_usage.energy_used.unwrap_or(0));
+    let available_energy = BigInt::from(account_usage.energy_limit.saturating_sub(account_usage.energy_used));
     let energy_shortfall = std::cmp::max(BigInt::from(0), increase_by_percent(&gas_limit, 20) - available_energy);
     let token_transfer_fee = BigInt::from(energy_fee) * energy_shortfall;
 
@@ -49,7 +49,7 @@ fn increase_by_percent(value: &BigInt, percent: u32) -> BigInt {
 }
 
 fn get_available_bandwidth(account_usage: &TronAccountUsage) -> u64 {
-    (account_usage.free_net_limit.unwrap_or(0)) - (account_usage.free_net_used.unwrap_or(0))
+    account_usage.free_net_limit.saturating_sub(account_usage.free_net_used)
 }
 
 fn calculate_fee_by_bandwidth(available_bandwidth: u64, required_bandwidth: u64, fee_multiplier: i64) -> BigInt {
@@ -101,12 +101,12 @@ mod tests {
             },
         ];
         let account_usage = TronAccountUsage {
-            free_net_used: Some(0),
-            free_net_limit: Some(1500),
-            net_used: Some(0),
-            net_limit: Some(0),
-            energy_used: Some(0),
-            energy_limit: Some(0),
+            free_net_used: 0,
+            free_net_limit: 1500,
+            net_used: 0,
+            net_limit: 0,
+            energy_used: 0,
+            energy_limit: 0,
         };
         let result = calculate_transfer_fee_rate(&parameters, &account_usage, false);
         assert!(result.is_ok());
@@ -127,12 +127,12 @@ mod tests {
             },
         ];
         let account_usage = TronAccountUsage {
-            free_net_used: Some(0),
-            free_net_limit: Some(1500),
-            net_used: Some(0),
-            net_limit: Some(0),
-            energy_used: Some(0),
-            energy_limit: Some(32000),
+            free_net_used: 0,
+            free_net_limit: 1500,
+            net_used: 0,
+            net_limit: 0,
+            energy_used: 0,
+            energy_limit: 32000,
         };
         let gas_limit = BigInt::from(32000); // Reasonable default for TRC20 transfers
         let result = calculate_transfer_token_fee_rate(&parameters, &account_usage, false, gas_limit);
@@ -162,23 +162,23 @@ mod tests {
     #[test]
     fn test_get_available_bandwidth() {
         let account_usage = TronAccountUsage {
-            free_net_used: Some(500),
-            free_net_limit: Some(1500),
-            net_used: Some(0),
-            net_limit: Some(0),
-            energy_used: Some(0),
-            energy_limit: Some(0),
+            free_net_used: 500,
+            free_net_limit: 1500,
+            net_used: 0,
+            net_limit: 0,
+            energy_used: 0,
+            energy_limit: 0,
         };
 
         assert_eq!(get_available_bandwidth(&account_usage), 1000);
 
         let account_usage_zero = TronAccountUsage {
-            free_net_used: None,
-            free_net_limit: None,
-            net_used: None,
-            net_limit: None,
-            energy_used: Some(0),
-            energy_limit: Some(0),
+            free_net_used: 0,
+            free_net_limit: 0,
+            net_used: 0,
+            net_limit: 0,
+            energy_used: 0,
+            energy_limit: 0,
         };
 
         assert_eq!(get_available_bandwidth(&account_usage_zero), 0);

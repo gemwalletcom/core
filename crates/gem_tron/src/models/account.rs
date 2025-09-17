@@ -26,16 +26,18 @@ pub struct TronAccountPermission {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TronAccountUsage {
-    pub free_net_used: Option<u64>,
-    pub free_net_limit: Option<u64>,
-    #[serde(rename = "NetUsed")]
-    pub net_used: Option<u64>,
-    #[serde(rename = "NetLimit")]
-    pub net_limit: Option<u64>,
-    #[serde(rename = "EnergyUsed")]
-    pub energy_used: Option<u64>,
-    #[serde(rename = "EnergyLimit")]
-    pub energy_limit: Option<u64>,
+    #[serde(default)]
+    pub free_net_used: u64,
+    #[serde(default)]
+    pub free_net_limit: u64,
+    #[serde(rename = "NetUsed", default)]
+    pub net_used: u64,
+    #[serde(rename = "NetLimit", default)]
+    pub net_limit: u64,
+    #[serde(rename = "EnergyUsed", default)]
+    pub energy_used: u64,
+    #[serde(rename = "EnergyLimit", default)]
+    pub energy_limit: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,12 +55,14 @@ pub struct TronVote {
 pub struct TronFrozen {
     #[serde(rename = "type")]
     pub frozen_type: Option<String>,
-    pub amount: Option<u64>,
+    #[serde(default)]
+    pub amount: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TronUnfrozen {
-    pub unfreeze_amount: Option<u64>,
+    #[serde(default)]
+    pub unfreeze_amount: u64,
     pub unfreeze_expire_time: Option<u64>,
 }
 

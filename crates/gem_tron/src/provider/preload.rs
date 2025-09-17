@@ -64,7 +64,7 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
                 let total_staked = account
                     .frozen_v2
                     .as_ref()
-                    .map(|frozen_list| frozen_list.iter().map(|frozen| BigInt::from(frozen.amount.unwrap_or(0))).sum::<BigInt>())
+                    .map(|frozen_list| frozen_list.iter().map(|frozen| BigInt::from(frozen.amount)).sum::<BigInt>())
                     .unwrap_or_else(|| BigInt::from(0));
 
                 let input_value = BigInt::from_str(&input.value)?;

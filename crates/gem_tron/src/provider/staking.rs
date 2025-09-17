@@ -61,7 +61,8 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
 
         if let Some(unfrozen_v2) = account.unfrozen_v2 {
             for unfrozen in unfrozen_v2 {
-                if let (Some(expire_time), Some(amount)) = (unfrozen.unfreeze_expire_time, unfrozen.unfreeze_amount) {
+                if let Some(expire_time) = unfrozen.unfreeze_expire_time {
+                    let amount = unfrozen.unfreeze_amount;
                     let completion_date = DateTime::from_timestamp((expire_time / 1000) as i64, 0).unwrap_or_else(Utc::now);
 
                     let now = Utc::now();

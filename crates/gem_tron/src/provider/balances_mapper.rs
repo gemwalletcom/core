@@ -25,41 +25,32 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
     let (bandwidth_frozen, energy_frozen) = account
         .frozen_v2
         .as_ref()
-        .map(|frozen_list| {
-            let mut bandwidth = 0u64;
-            let mut energy = 0u64;
-
-            for frozen in frozen_list {
-                let amount = frozen.amount.unwrap_or(0);
+        .map_or((0, 0), |frozen_list| {
+            frozen_list.iter().fold((0u64, 0u64), |(bandwidth, energy), frozen| {
                 match frozen.frozen_type.as_deref() {
-                    Some("ENERGY") => energy += amount,
-                    _ => bandwidth += amount, // None or "BANDWIDTH" defaults to bandwidth
+                    Some("ENERGY") => (bandwidth, energy + frozen.amount),
+                    _ => (bandwidth + frozen.amount, energy),
                 }
-            }
-            (bandwidth, energy)
-        })
-        .unwrap_or((0, 0));
+            })
+        });
 
     let voted_amount = account
         .votes
         .as_ref()
-        .map(|votes| votes.iter().map(|vote| vote.vote_count * 10_u64.pow(6)).sum::<u64>())
-        .unwrap_or(0);
+        .map_or(0, |votes| votes.iter().map(|vote| vote.vote_count * 10_u64.pow(6)).sum());
 
     let pending_amount = account
         .unfrozen_v2
         .as_ref()
-        .map(|unfrozen_list| unfrozen_list.iter().map(|unfrozen| unfrozen.unfreeze_amount.unwrap_or(0)).sum::<u64>())
-        .unwrap_or(0);
+        .map_or(0, |unfrozen_list| unfrozen_list.iter().map(|unfrozen| unfrozen.unfreeze_amount).sum());
 
     let rewards_amount = reward.reward;
 
-    let energy_total = usage.energy_limit.unwrap_or(0);
-    let energy_available = energy_total - usage.energy_used.unwrap_or(0);
+    let energy_total = usage.energy_limit;
+    let energy_available = energy_total.saturating_sub(usage.energy_used);
 
-    let bandwidth_total = usage.free_net_limit.unwrap_or(0) + usage.net_limit.unwrap_or(0);
-    let bandwidth_available =
-        (usage.free_net_limit.unwrap_or(0) - usage.free_net_used.unwrap_or(0)) + (usage.net_limit.unwrap_or(0) - usage.net_used.unwrap_or(0));
+    let bandwidth_total = usage.free_net_limit + usage.net_limit;
+    let bandwidth_available = usage.free_net_limit.saturating_sub(usage.free_net_used) + usage.net_limit.saturating_sub(usage.net_used);
 
     let metadata = BalanceMetadata {
         energy_available,
@@ -190,27 +181,27 @@ mod tests {
             frozen_v2: Some(vec![
                 TronFrozen {
                     frozen_type: Some("BANDWIDTH".to_string()),
-                    amount: Some(5000000),
+                    amount: 5000000,
                 },
                 TronFrozen {
                     frozen_type: Some("ENERGY".to_string()),
-                    amount: Some(3000000),
+                    amount: 3000000,
                 },
             ]),
             unfrozen_v2: Some(vec![TronUnfrozen {
-                unfreeze_amount: Some(2000000),
+                unfreeze_amount: 2000000,
                 unfreeze_expire_time: Some(1234567890),
             }]),
         };
 
         let reward = TronReward { reward: 100000 };
         let usage = TronAccountUsage {
-            energy_limit: Some(1000000),
-            energy_used: Some(500000),
-            free_net_limit: Some(1000000),
-            free_net_used: Some(500000),
-            net_used: Some(200000),
-            net_limit: Some(1000000),
+            energy_limit: 1000000,
+            energy_used: 500000,
+            free_net_limit: 1000000,
+            free_net_used: 500000,
+            net_used: 200000,
+            net_limit: 1000000,
         };
 
         let balance = map_staking_balance(&account, &reward, &usage).unwrap();
@@ -236,12 +227,12 @@ mod tests {
 
         let reward = TronReward { reward: 0 };
         let usage = TronAccountUsage {
-            energy_limit: Some(1000000),
-            energy_used: Some(500000),
-            free_net_limit: Some(1000000),
-            free_net_used: Some(500000),
-            net_used: Some(200000),
-            net_limit: Some(1000000),
+            energy_limit: 1000000,
+            energy_used: 500000,
+            free_net_limit: 1000000,
+            free_net_used: 500000,
+            net_used: 200000,
+            net_limit: 1000000,
         };
         let balance = map_staking_balance(&account, &reward, &usage).unwrap();
 
@@ -271,19 +262,19 @@ mod tests {
             ]),
             frozen_v2: Some(vec![TronFrozen {
                 frozen_type: Some("BANDWIDTH".to_string()),
-                amount: Some(8000000),
+                amount: 8000000,
             }]),
             unfrozen_v2: None,
         };
 
         let reward = TronReward { reward: 50000 };
         let usage = TronAccountUsage {
-            energy_limit: Some(1000000),
-            energy_used: Some(500000),
-            free_net_limit: Some(1000000),
-            free_net_used: Some(500000),
-            net_used: Some(200000),
-            net_limit: Some(1000000),
+            energy_limit: 1000000,
+            energy_used: 500000,
+            free_net_limit: 1000000,
+            free_net_used: 500000,
+            net_used: 200000,
+            net_limit: 1000000,
         };
 
         let balance = map_staking_balance(&account, &reward, &usage).unwrap();
@@ -305,19 +296,19 @@ mod tests {
             votes: None,
             frozen_v2: Some(vec![TronFrozen {
                 frozen_type: Some("ENERGY".to_string()),
-                amount: Some(1000000),
+                amount: 1000000,
             }]),
             unfrozen_v2: None,
         };
 
         let reward = TronReward { reward: 50000 };
         let usage = TronAccountUsage {
-            energy_limit: Some(2000000),
-            energy_used: Some(800000),
-            free_net_limit: Some(1500),
-            free_net_used: Some(500),
-            net_used: Some(0),
-            net_limit: Some(5000),
+            energy_limit: 2000000,
+            energy_used: 800000,
+            free_net_limit: 1500,
+            free_net_used: 500,
+            net_used: 0,
+            net_limit: 5000,
         };
 
         let balance = map_staking_balance(&account, &reward, &usage).unwrap();
@@ -371,12 +362,12 @@ mod tests {
 
         let reward = TronReward { reward: 0 };
         let usage = TronAccountUsage {
-            energy_limit: None,
-            energy_used: None,
-            free_net_limit: None,
-            free_net_used: None,
-            net_used: None,
-            net_limit: None,
+            energy_limit: 0,
+            energy_used: 0,
+            free_net_limit: 0,
+            free_net_used: 0,
+            net_used: 0,
+            net_limit: 0,
         };
 
         let balance = map_staking_balance(&account, &reward, &usage).unwrap();
