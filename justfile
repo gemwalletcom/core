@@ -51,7 +51,6 @@ test-integration:
 
 build-integration-tests:
     @echo "Building all integration tests..."
-    cargo test --no-run --test integration_test --package gem_chain_rpc
     cargo test --no-run --test integration_test --package gem_evm --features rpc,reqwest
     cargo test --no-run --test integration_test --package security_provider
     cargo test --no-run --test integration_test --package name_resolver
