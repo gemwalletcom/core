@@ -16,7 +16,6 @@ rocket = { workspace = true }
 
 primitives = { path = "../../crates/primitives" }
 gem_tracing = { path = "../../crates/tracing" }
-chain_traits = { path = "../../crates/chain_traits" }
 settings_chain = { path = "../../crates/settings_chain" }
 
 bytes = { version = "1.10.1" }

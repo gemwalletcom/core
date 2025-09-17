@@ -2544,7 +2544,6 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "bytes",
- "chain_traits",
  "config",
  "futures",
  "gem_tracing",
