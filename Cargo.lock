@@ -475,11 +475,8 @@ version = "1.0.0"
 dependencies = [
  "api_connector",
  "cacher",
- "chain_primitives",
  "config",
  "fiat",
- "futures",
- "gem_chain_rpc",
  "gem_client",
  "gem_tracing",
  "name_resolver",
@@ -500,7 +497,6 @@ dependencies = [
  "storage",
  "streamer",
  "strum",
- "strum_macros",
  "tokio",
 ]
 
@@ -1840,7 +1836,6 @@ dependencies = [
  "storage",
  "streamer",
  "strum",
- "strum_macros",
  "tokio",
 ]
 
@@ -2980,14 +2975,10 @@ name = "gem_polkadot"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "bs58",
  "chain_traits",
  "chrono",
- "futures",
  "gem_client",
- "hex",
  "num-bigint",
- "number_formatter",
  "primitives",
  "reqwest",
  "serde",
@@ -3187,7 +3178,6 @@ dependencies = [
  "serde_urlencoded",
  "solana-primitives",
  "strum",
- "strum_macros",
  "sui-sdk-types",
  "sui-transaction-builder",
  "thiserror 2.0.16",
@@ -5185,7 +5175,6 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "strum",
- "strum_macros",
  "typeshare",
  "url",
 ]

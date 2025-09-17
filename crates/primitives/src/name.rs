@@ -1,7 +1,6 @@
 use crate::chain::Chain;
 use serde::Serialize;
-use strum::EnumString;
-use strum_macros::AsRefStr;
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Serialize)]

@@ -11,10 +11,6 @@ rpc = [
     "dep:async-trait",
     "dep:gem_client",
     "dep:chain_traits",
-    "dep:number_formatter",
-    "dep:futures",
-    "dep:hex",
-    "dep:bs58",
 ]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest"]
@@ -31,12 +27,6 @@ serde_serializers = { path = "../serde_serializers", optional = true }
 async-trait = { workspace = true, optional = true }
 gem_client = { path = "../gem_client", optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
-number_formatter = { path = "../number_formatter", optional = true }
-futures = { workspace = true, optional = true }
-
-# Required dependencies for transaction encoding
-hex = { workspace = true, optional = true }
-bs58 = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "macros"] }

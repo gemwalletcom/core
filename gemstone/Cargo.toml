@@ -52,7 +52,6 @@ thiserror.workspace = true
 
 anyhow.workspace = true
 strum = { workspace = true }
-strum_macros = { workspace = true }
 chrono = { workspace = true }
 
 base64.workspace = true

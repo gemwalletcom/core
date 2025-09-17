@@ -11,8 +11,7 @@ reqwest = { workspace = true }
 futures = { workspace = true }
 chrono = { workspace = true }
 strum = { workspace = true }
-strum_macros = { workspace = true }
-itertools = { workspace = true}
+itertools = { workspace = true }
 async-trait = { workspace = true }
 
 gem_tracing = { path = "../../crates/tracing" }

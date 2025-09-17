@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
-use strum::EnumString;
-use strum::{EnumIter, IntoEnumIterator};
-use strum_macros::AsRefStr;
+use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
 #[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize, EnumIter)]
