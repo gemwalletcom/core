@@ -32,8 +32,8 @@ jobs:
 
       - name: Prepare image names
         run: |
-          echo "CORE_IMAGE=$(echo ghcr.io/${GITHUB_REPOSITORY_OWNER}/core/core | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          echo "DYNODE_IMAGE=$(echo ghcr.io/${GITHUB_REPOSITORY_OWNER}/core/dynode | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "CORE_IMAGE=$(echo ghcr.io/${GITHUB_REPOSITORY_OWNER}/core | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "DYNODE_IMAGE=$(echo ghcr.io/${GITHUB_REPOSITORY_OWNER}/dynode | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
