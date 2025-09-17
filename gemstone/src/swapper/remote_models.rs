@@ -39,6 +39,7 @@ pub enum SwapperProvider {
     Chainflip,
     CetusAggregator,
     Relay,
+    Hyperliquid,
 }
 
 #[uniffi::remote(Record)]

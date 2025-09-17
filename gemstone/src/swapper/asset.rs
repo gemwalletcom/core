@@ -354,6 +354,8 @@ lazy_static! {
         18,
         AssetType::ERC20,
     );
+    pub static ref HYPERCORE_HYPE: Asset = Asset::from_chain(Chain::HyperCore);
+    pub static ref HYPERLIQUID_HYPE: Asset = Asset::from_chain(Chain::Hyperliquid);
     // Solana
     pub static ref SOLANA_USDC: Asset = Asset::new(
         AssetId::from_token(Chain::Solana, SOLANA_USDC_TOKEN_ID),

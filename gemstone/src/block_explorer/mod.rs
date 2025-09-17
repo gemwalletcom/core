@@ -60,7 +60,8 @@ impl Explorer {
             | SwapperProvider::StonfiV2
             | SwapperProvider::Reservoir
             | SwapperProvider::Aerodrome
-            | SwapperProvider::Symbiosis => get_block_explorer(self.chain, explorer_name),
+            | SwapperProvider::Symbiosis
+            | SwapperProvider::Hyperliquid => get_block_explorer(self.chain, explorer_name),
         };
         Some(ExplorerURL::new(&explorer.name(), &explorer.get_tx_url(transaction_id)))
     }
