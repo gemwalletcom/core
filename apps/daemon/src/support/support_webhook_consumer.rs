@@ -7,7 +7,7 @@ use storage::DatabaseClient;
 use streamer::consumer::MessageConsumer;
 use streamer::{StreamProducer, SupportWebhookPayload};
 
-use super::model::{ChatwootWebhookPayload, EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_CREATED};
+use super::model::{ChatwootWebhookPayload, EVENT_CONVERSATION_STATUS_CHANGED, EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_CREATED};
 use super::support_client::SupportClient;
 
 pub struct SupportWebhookConsumer {
@@ -48,7 +48,9 @@ impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
 
         let result = match webhook_payload.event.as_str() {
             EVENT_MESSAGE_CREATED => self.support_client.handle_message_created(&support_device_id, &webhook_payload).await,
-            EVENT_CONVERSATION_UPDATED => self.support_client.handle_conversation_updated(&support_device_id, &webhook_payload),
+            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => {
+                self.support_client.handle_conversation_updated(&support_device_id, &webhook_payload)
+            }
             _ => {
                 info_with_fields!(
                     "Support webhook event skipped",
