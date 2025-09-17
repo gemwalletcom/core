@@ -16,7 +16,7 @@ use crate::rpc::client::BitcoinClient;
 #[async_trait]
 impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
-        let utxos = self.get_utxos(&input.sender_address).await?;
+        let utxos = self.get_utxos(&self.full_address(&input.sender_address)).await?;
         Ok(map_transaction_preload(utxos, input))
     }
 
