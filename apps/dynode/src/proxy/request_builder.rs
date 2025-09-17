@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use bytes::Bytes;
 use reqwest::header::{self, HeaderMap, HeaderName};
 use reqwest::{Method, Request};
 
@@ -10,7 +9,7 @@ use super::request_url::RequestUrl;
 pub struct RequestBuilder;
 
 impl RequestBuilder {
-    pub fn build_jsonrpc(url: &RequestUrl, method: &Method, body: Bytes) -> Result<Request, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn build_jsonrpc(url: &RequestUrl, method: &Method, body: Vec<u8>) -> Result<Request, Box<dyn std::error::Error + Send + Sync>> {
         let mut headers = HeaderMap::new();
         headers.insert(header::CONTENT_TYPE, JSON_HEADER.clone());
         Self::apply_url_params(&mut headers, url);
@@ -20,7 +19,7 @@ impl RequestBuilder {
     pub fn build_forwarded(
         method: &Method,
         url: &RequestUrl,
-        body: Bytes,
+        body: Vec<u8>,
         original_headers: &HeaderMap,
         keep_headers: &[HeaderName],
     ) -> Result<Request, Box<dyn std::error::Error + Send + Sync>> {
@@ -29,7 +28,7 @@ impl RequestBuilder {
         Self::build(method, url, body, headers)
     }
 
-    fn build(method: &Method, url: &RequestUrl, body: Bytes, headers: HeaderMap) -> Result<Request, Box<dyn std::error::Error + Send + Sync>> {
+    fn build(method: &Method, url: &RequestUrl, body: Vec<u8>, headers: HeaderMap) -> Result<Request, Box<dyn std::error::Error + Send + Sync>> {
         let mut request = Request::new(method.clone(), url.url.clone());
         *request.headers_mut() = headers;
         *request.body_mut() = Some(body.into());
@@ -77,7 +76,7 @@ mod tests {
     #[test]
     fn test_build_jsonrpc_sets_headers_and_uri() {
         let req_url = make_request_url("https://example.com", "/rpc", Some(("x-api-key", "secret")));
-        let req = RequestBuilder::build_jsonrpc(&req_url, &HttpMethod::POST, Bytes::from("{}".as_bytes().to_vec())).expect("build_jsonrpc");
+        let req = RequestBuilder::build_jsonrpc(&req_url, &HttpMethod::POST, b"{}".to_vec()).expect("build_jsonrpc");
 
         assert_eq!(req.method(), &HttpMethod::POST);
         assert_eq!(req.url().to_string(), "https://example.com/rpc");
@@ -99,7 +98,7 @@ mod tests {
         orig_headers.insert("x-drop", header::HeaderValue::from_static("dropme"));
 
         let keep = [header::CONTENT_TYPE];
-        let req = RequestBuilder::build_forwarded(&HttpMethod::GET, &req_url, Bytes::from_static(b""), &orig_headers, &keep).expect("build_forwarded");
+        let req = RequestBuilder::build_forwarded(&HttpMethod::GET, &req_url, Vec::new(), &orig_headers, &keep).expect("build_forwarded");
 
         assert_eq!(req.method(), &HttpMethod::GET);
         assert_eq!(req.url().to_string(), "https://example.com/data");

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use bytes::Bytes;
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -23,7 +22,7 @@ pub struct CacheRule {
 }
 
 impl CacheRule {
-    pub fn matches_body(&self, body: Option<&Bytes>) -> bool {
+    pub fn matches_body(&self, body: Option<&[u8]>) -> bool {
         if self.params.is_empty() {
             return true;
         }

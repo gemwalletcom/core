@@ -11,13 +11,11 @@ tokio = { workspace = true }
 futures = { workspace = true }
 prometheus-client = { workspace = true }
 reqwest = { workspace = true }
-async-trait = { workspace = true }
 rocket = { workspace = true }
 
 primitives = { path = "../../crates/primitives" }
 gem_tracing = { path = "../../crates/tracing" }
 settings_chain = { path = "../../crates/settings_chain" }
 
-bytes = { version = "1.10.1" }
 regex = { version = "1.11.2" }
 moka = { version = "0.12.10", features = ["future"] }

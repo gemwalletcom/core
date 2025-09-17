@@ -1,4 +1,3 @@
-use bytes::Bytes;
 use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
 
 use super::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
@@ -7,11 +6,11 @@ use super::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
 pub struct ProxyResponse {
     pub status: u16,
     pub headers: HeaderMap,
-    pub body: Bytes,
+    pub body: Vec<u8>,
 }
 
 impl ProxyResponse {
-    pub fn new(status: u16, headers: HeaderMap, body: Bytes) -> Self {
+    pub fn new(status: u16, headers: HeaderMap, body: Vec<u8>) -> Self {
         Self { status, headers, body }
     }
 }
@@ -38,7 +37,7 @@ impl ResponseBuilder {
     }
 
     pub fn build_with_headers(
-        data: Bytes,
+        data: Vec<u8>,
         status: u16,
         content_type: &str,
         additional_headers: HeaderMap,
@@ -77,6 +76,6 @@ impl ResponseBuilder {
         headers: HeaderMap,
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
-        Self::build_with_headers(Bytes::from(response_body), 200, JSON_CONTENT_TYPE, headers)
+        Self::build_with_headers(response_body, 200, JSON_CONTENT_TYPE, headers)
     }
 }
