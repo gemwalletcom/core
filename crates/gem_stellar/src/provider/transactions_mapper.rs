@@ -4,6 +4,13 @@ use chrono::DateTime;
 use num_bigint::BigInt;
 use primitives::{chain::Chain, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
 use std::error::Error;
+use url::form_urlencoded;
+
+pub fn encode_transaction_data(data: &str) -> String {
+    form_urlencoded::Serializer::new(String::new())
+        .append_pair("tx", data)
+        .finish()
+}
 
 pub fn map_transaction_broadcast(response: &StellarTransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
     if let Some(hash) = &response.hash {
@@ -72,6 +79,14 @@ mod tests {
     use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
     use num_bigint::{BigInt, BigUint};
     use primitives::TransactionChange;
+
+    #[test]
+    fn test_encode_transaction_data_variants() {
+        assert_eq!(encode_transaction_data("payload"), "tx=payload");
+
+        let special = encode_transaction_data("tx=abc/123?&value=42 +more");
+        assert_eq!(special, "tx=tx%3Dabc%2F123%3F%26value%3D42+%2Bmore");
+    }
 
     #[test]
     fn test_map_transaction_broadcast_success() {

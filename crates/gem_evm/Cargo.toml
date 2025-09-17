@@ -28,7 +28,6 @@ gem_bsc = { path = "../gem_bsc" }
 
 itertools = { workspace = true, optional = true }
 hex = { workspace = true }
-itoa = { workspace = true }
 anyhow = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["eip712-serde"] }
