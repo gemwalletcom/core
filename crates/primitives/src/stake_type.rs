@@ -19,24 +19,24 @@ pub struct StakeData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
-pub enum TronResource {
+pub enum Resource {
     Bandwidth,
     Energy,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
-pub enum TronFreezeType {
+pub enum FreezeType {
     Freeze,
     Unfreeze,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
-pub struct TronFreezeData {
+pub struct FreezeData {
     #[serde(rename = "freezeType")]
-    pub freeze_type: TronFreezeType,
-    pub resource: TronResource,
+    pub freeze_type: FreezeType,
+    pub resource: Resource,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,5 +48,5 @@ pub enum StakeType {
     Redelegate(RedelegateData),
     Rewards(Vec<DelegationValidator>),
     Withdraw(Delegation),
-    Freeze(TronFreezeData),
+    Freeze(FreezeData),
 }

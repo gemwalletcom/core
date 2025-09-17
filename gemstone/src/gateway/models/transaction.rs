@@ -1,6 +1,6 @@
 use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
-use primitives::stake_type::{StakeData, TronFreezeData, TronFreezeType, TronResource};
+use primitives::stake_type::{StakeData, FreezeData, FreezeType, Resource};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::FeeOption;
 use primitives::SwapProvider;
@@ -70,24 +70,24 @@ pub enum GemStakeType {
         delegation: GemDelegation,
     },
     Freeze {
-        freeze_data: GemTronFreezeData,
+        freeze_data: GemFreezeData,
     },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemTronFreezeData {
-    pub freeze_type: GemTronFreezeType,
-    pub resource: GemTronResource,
+pub struct GemFreezeData {
+    pub freeze_type: GemFreezeType,
+    pub resource: GemResource,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemTronFreezeType {
+pub enum GemFreezeType {
     Freeze,
     Unfreeze,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemTronResource {
+pub enum GemResource {
     Bandwidth,
     Energy,
 }
@@ -723,56 +723,56 @@ impl From<GemSwapProviderData> for SwapProviderData {
     }
 }
 
-impl From<TronFreezeData> for GemTronFreezeData {
-    fn from(value: TronFreezeData) -> Self {
-        GemTronFreezeData {
+impl From<FreezeData> for GemFreezeData {
+    fn from(value: FreezeData) -> Self {
+        GemFreezeData {
             freeze_type: value.freeze_type.into(),
             resource: value.resource.into(),
         }
     }
 }
 
-impl From<GemTronFreezeData> for TronFreezeData {
-    fn from(value: GemTronFreezeData) -> Self {
-        TronFreezeData {
+impl From<GemFreezeData> for FreezeData {
+    fn from(value: GemFreezeData) -> Self {
+        FreezeData {
             freeze_type: value.freeze_type.into(),
             resource: value.resource.into(),
         }
     }
 }
 
-impl From<TronFreezeType> for GemTronFreezeType {
-    fn from(value: TronFreezeType) -> Self {
+impl From<FreezeType> for GemFreezeType {
+    fn from(value: FreezeType) -> Self {
         match value {
-            TronFreezeType::Freeze => GemTronFreezeType::Freeze,
-            TronFreezeType::Unfreeze => GemTronFreezeType::Unfreeze,
+            FreezeType::Freeze => GemFreezeType::Freeze,
+            FreezeType::Unfreeze => GemFreezeType::Unfreeze,
         }
     }
 }
 
-impl From<GemTronFreezeType> for TronFreezeType {
-    fn from(value: GemTronFreezeType) -> Self {
+impl From<GemFreezeType> for FreezeType {
+    fn from(value: GemFreezeType) -> Self {
         match value {
-            GemTronFreezeType::Freeze => TronFreezeType::Freeze,
-            GemTronFreezeType::Unfreeze => TronFreezeType::Unfreeze,
+            GemFreezeType::Freeze => FreezeType::Freeze,
+            GemFreezeType::Unfreeze => FreezeType::Unfreeze,
         }
     }
 }
 
-impl From<TronResource> for GemTronResource {
-    fn from(value: TronResource) -> Self {
+impl From<Resource> for GemResource {
+    fn from(value: Resource) -> Self {
         match value {
-            TronResource::Bandwidth => GemTronResource::Bandwidth,
-            TronResource::Energy => GemTronResource::Energy,
+            Resource::Bandwidth => GemResource::Bandwidth,
+            Resource::Energy => GemResource::Energy,
         }
     }
 }
 
-impl From<GemTronResource> for TronResource {
-    fn from(value: GemTronResource) -> Self {
+impl From<GemResource> for Resource {
+    fn from(value: GemResource) -> Self {
         match value {
-            GemTronResource::Bandwidth => TronResource::Bandwidth,
-            GemTronResource::Energy => TronResource::Energy,
+            GemResource::Bandwidth => Resource::Bandwidth,
+            GemResource::Energy => Resource::Energy,
         }
     }
 }
