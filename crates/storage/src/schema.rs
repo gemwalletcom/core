@@ -474,6 +474,7 @@ diesel::table! {
         #[max_length = 32]
         support_id -> Varchar,
         device_id -> Int4,
+        unread -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

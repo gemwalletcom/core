@@ -162,6 +162,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::transaction::get_transactions,
                 webhooks::create_support_webhook,
                 support::add_device,
+                support::get_support_device,
             ],
         )
         .mount("/v2", routes![transactions::get_transactions_by_device_id_v2, nft::get_nft_assets_v2,])

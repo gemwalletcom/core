@@ -200,6 +200,6 @@ impl SupportWebhookPayload {
 
 impl fmt::Display for SupportWebhookPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.data)
+        write!(f, "size: {} bytes", serde_json::to_vec(&self.data).unwrap().len())
     }
 }
