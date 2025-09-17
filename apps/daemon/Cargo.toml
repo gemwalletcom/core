@@ -12,7 +12,6 @@ futures = { workspace = true }
 chrono = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
-aws-sdk-s3 = { workspace = true }
 itertools = { workspace = true}
 async-trait = { workspace = true }
 
