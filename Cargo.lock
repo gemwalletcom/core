@@ -2364,7 +2364,6 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
- "bigdecimal",
  "cacher",
  "chain_primitives",
  "futures",
@@ -2699,14 +2698,11 @@ dependencies = [
 name = "gas-bench"
 version = "1.0.0"
 dependencies = [
- "alloy-primitives",
  "anyhow",
  "clap",
- "futures",
  "gem_evm",
  "gemstone",
  "num-bigint",
- "num-traits",
  "prettytable-rs",
  "primitives",
  "reqwest",
@@ -2800,37 +2796,20 @@ version = "1.0.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
- "anyhow",
  "async-trait",
  "chain_traits",
  "chrono",
  "futures",
- "gem_algorand",
- "gem_aptos",
- "gem_bitcoin",
  "gem_bsc",
- "gem_cardano",
  "gem_client",
  "gem_cosmos",
  "gem_evm",
- "gem_hypercore",
  "gem_jsonrpc",
- "gem_near",
- "gem_polkadot",
  "gem_solana",
- "gem_stellar",
- "gem_sui",
- "gem_ton",
- "gem_tron",
- "gem_xrp",
  "hex",
  "num-bigint",
- "number_formatter",
  "primitives",
  "reqwest",
- "serde",
- "serde_json",
- "serde_serializers",
  "tokio",
 ]
 
@@ -2887,10 +2866,8 @@ dependencies = [
  "chain_primitives",
  "chain_traits",
  "chrono",
- "futures",
  "gem_bsc",
  "gem_client",
- "gem_hash",
  "gem_jsonrpc",
  "hex",
  "itertools 0.14.0",
@@ -3071,7 +3048,6 @@ dependencies = [
  "gem_client",
  "hex",
  "num-bigint",
- "number_formatter",
  "primitives",
  "reqwest",
  "serde",
@@ -3148,7 +3124,6 @@ dependencies = [
  "gem_algorand",
  "gem_aptos",
  "gem_bitcoin",
- "gem_bsc",
  "gem_cardano",
  "gem_client",
  "gem_cosmos",
@@ -3171,7 +3146,6 @@ dependencies = [
  "primitives",
  "rand 0.9.2",
  "reqwest",
- "rmp-serde",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -3183,7 +3157,6 @@ dependencies = [
  "thiserror 2.0.16",
  "tokio",
  "uniffi",
- "url",
 ]
 
 [[package]]
@@ -3821,10 +3794,7 @@ dependencies = [
  "chain_primitives",
  "clap",
  "coingecko",
- "gem_client",
- "gem_evm",
  "reqwest",
- "serde",
  "settings",
  "tokio",
 ]
@@ -4020,7 +3990,6 @@ checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 name = "job_runner"
 version = "1.0.0"
 dependencies = [
- "chrono",
  "gem_tracing",
  "tokio",
 ]
@@ -4182,9 +4151,9 @@ checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
 
 [[package]]
 name = "libredox"
-version = "0.1.9"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "391290121bad3d37fbddad76d8f5d1c1c314cfc646d143d7e07a3086ddff0ce3"
+checksum = "416f7e718bdb06000964960ffa43b4335ad4012ae8b99060261aa4a8088d5ccb"
 dependencies = [
  "bitflags 2.9.4",
  "libc",
@@ -4813,7 +4782,6 @@ dependencies = [
  "number_formatter",
  "primitives",
  "rand 0.9.2",
- "serde",
  "serde_json",
  "settings",
  "settings_chain",
@@ -5145,12 +5113,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "chrono",
- "gem_chain_rpc",
- "gem_client",
- "gem_solana",
  "primitives",
- "serde",
- "serde_json",
  "tokio",
 ]
 

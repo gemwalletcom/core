@@ -23,7 +23,6 @@ gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
 gem_solana = { path = "../crates/gem_solana", features = ["rpc"] }
 gem_ton = { path = "../crates/gem_ton", features = ["rpc"] }
 gem_tron = { path = "../crates/gem_tron", features = ["rpc"] }
-gem_bsc = { path = "../crates/gem_bsc" }
 gem_evm = { path = "../crates/gem_evm", features = ["rpc"] }
 gem_sui = { path = "../crates/gem_sui", features = ["rpc"] }
 gem_aptos = { path = "../crates/gem_aptos", features = ["rpc"] }
@@ -62,7 +61,6 @@ async-trait.workspace = true
 alloy-primitives.workspace = true
 alloy-sol-types.workspace = true
 hex.workspace = true
-url.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 futures.workspace = true
@@ -71,7 +69,6 @@ solana-primitives = "0.2.0"
 lazy_static.workspace = true
 bigdecimal.workspace = true
 rand.workspace = true
-rmp-serde.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
