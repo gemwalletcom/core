@@ -497,6 +497,7 @@ impl Swapper for Across {
             SwapperChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone(), ZKSYNC_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_USDC.id.clone()]),
             SwapperChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
             SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_ETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),

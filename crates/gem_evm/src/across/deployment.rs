@@ -71,6 +71,11 @@ impl AcrossDeployment {
                 chain_type: ChainType::Ethereum,
                 spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
             }),
+            Chain::Hyperliquid => Some(Self {
+                chain_id,
+                chain_type: ChainType::Ethereum,
+                spoke_pool: "0x35E63eA3eb0fb7A3bc543C71FB66412e1F6B0E04",
+            }),
             Chain::ZkSync => Some(Self {
                 chain_id,
                 chain_type: ChainType::Ethereum,
@@ -108,6 +113,8 @@ impl AcrossDeployment {
             324 => "0x863859ef502F0Ee9676626ED5B418037252eFeb2".into(),
             // SmartChain
             56 => "0xAC537C12fE8f544D712d71ED4376a502EEa944d7".into(),
+            // HyperEvm
+            999 => "0x5E7840E06fAcCb6d1c3b5F5E0d1d3d07F2829bba".into(),
             _ => MULTICALL_HANDLER.into(),
         }
     }
@@ -128,6 +135,7 @@ impl AcrossDeployment {
                 vec![USDT_ARB_ASSET_ID.into(), USDC_ARB_ASSET_ID.into(), WETH_ARB_ASSET_ID.into()],
             ),
             (Chain::Base, vec![WETH_BASE_ASSET_ID.into(), USDC_BASE_ASSET_ID.into()]),
+            (Chain::Hyperliquid, vec![USDC_HYPEREVM_ASSET_ID.into()]),
             (Chain::Linea, vec![USDT_LINEA_ASSET_ID.into(), WETH_LINEA_ASSET_ID.into()]),
             (Chain::ZkSync, vec![WETH_ZKSYNC_ASSET_ID.into(), USDT_ZKSYNC_ASSET_ID.into()]),
             (Chain::World, vec![WETH_WORLD_ASSET_ID.into()]),
@@ -176,6 +184,7 @@ impl AcrossDeployment {
                     USDC_ETH_ASSET_ID.into(),
                     USDC_OP_ASSET_ID.into(),
                     USDC_POLYGON_ASSET_ID.into(),
+                    USDC_HYPEREVM_ASSET_ID.into(),
                     USDC_UNICHAIN_ASSET_ID.into(),
                     USDC_SOLANA_ASSET_ID.into(),
                 ]),
