@@ -1,6 +1,6 @@
-use rocket::futures::StreamExt;
 use primitives::websocket::WebSocketPricePayload;
 use redis::aio::MultiplexedConnection;
+use rocket::futures::StreamExt;
 use rocket_ws::stream::DuplexStream;
 use tokio::sync::mpsc::UnboundedReceiver;
 

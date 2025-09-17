@@ -1,4 +1,7 @@
-use primitives::{AssetBalance, Balance, Chain};
+use crate::ethereum_address_checksum;
+use num_bigint::BigUint;
+use num_traits::Zero;
+use primitives::{AssetBalance, AssetId, Balance, Chain};
 use serde_serializers::biguint_from_hex_str;
 use std::error::Error;
 
@@ -32,8 +35,19 @@ pub fn map_balance_staking(_staking_data: String) -> Option<AssetBalance> {
     unimplemented!("map_balance_staking")
 }
 
-pub fn map_assets_balances(_balance_data: Vec<String>) -> Vec<AssetBalance> {
-    unimplemented!("map_assets_balances")
+pub fn map_assets_balances(balances: Vec<(String, BigUint)>, chain: Chain) -> Vec<AssetBalance> {
+    balances
+        .into_iter()
+        .filter_map(|(token_address, balance)| {
+            if balance.is_zero() {
+                return None;
+            }
+
+            let checksum_address = ethereum_address_checksum(&token_address).ok()?;
+            let asset_id = AssetId::from_token(chain, &checksum_address);
+            Some(AssetBalance::new_balance(asset_id, Balance::coin_balance(balance)))
+        })
+        .collect()
 }
 
 #[cfg(test)]

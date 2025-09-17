@@ -48,6 +48,7 @@ primitives = { path = "../primitives", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 num-bigint = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
+settings = { path = "../settings" }
 
 [[test]]
 name = "integration_test"

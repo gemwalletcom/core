@@ -41,6 +41,19 @@ impl<C: Client + Clone> EthereumClient<C> {
             .collect())
     }
 
+    pub async fn get_smartchain_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
+        let validators = self.get_smartchain_validators(0.0).await?;
+        let max_apr = validators
+            .into_iter()
+            .filter(|validator| validator.is_active)
+            .filter_map(|validator| if validator.apr.is_finite() { Some(validator.apr) } else { None })
+            .fold(None, |acc: Option<f64>, apr| match acc {
+                Some(current) if current >= apr => Some(current),
+                _ => Some(apr),
+            });
+        Ok(max_apr)
+    }
+
     pub async fn get_smartchain_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
         use alloy_primitives::hex::encode_prefixed;
         use gem_bsc::stake_hub::{

@@ -7,9 +7,7 @@ use std::error::Error;
 use url::form_urlencoded;
 
 pub fn encode_transaction_data(data: &str) -> String {
-    form_urlencoded::Serializer::new(String::new())
-        .append_pair("tx", data)
-        .finish()
+    form_urlencoded::Serializer::new(String::new()).append_pair("tx", data).finish()
 }
 
 pub fn map_transaction_broadcast(response: &StellarTransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {

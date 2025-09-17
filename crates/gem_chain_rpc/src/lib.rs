@@ -1,10 +1,6 @@
 // lib.rs
 
-pub mod ethereum;
 pub mod generic;
-pub mod smartchain;
-pub use self::ethereum::EthereumProvider;
-pub use self::smartchain::SmartChainProvider;
 
 use async_trait::async_trait;
 use primitives::{chain::Chain, Asset, AssetBalance, StakeValidator, Transaction};

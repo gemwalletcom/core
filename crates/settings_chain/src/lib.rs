@@ -5,7 +5,7 @@ use gem_client::{retry_policy, ReqwestClient};
 use gem_hypercore::rpc::client::HyperCoreClient;
 pub use provider_config::ProviderConfig;
 
-use gem_chain_rpc::{ethereum::EthereumProvider, ChainProvider, GenericProvider};
+use gem_chain_rpc::{ChainProvider, GenericProvider};
 
 use gem_algorand::AlgorandClientIndexer;
 use gem_aptos::rpc::AptosClient;
@@ -96,15 +96,11 @@ impl ProviderFactory {
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
                 let rpc_client = JsonRpcClient::new(gem_client.clone());
-                let ethereum_client = EthereumClient::new(rpc_client.clone(), chain);
-                let assets_provider = AlchemyClient::new(gem_client.clone(), chain, config.alchemy_key.clone());
-                let transactions_provider = AnkrClient::new(rpc_client, chain);
-                Box::new(EthereumProvider::new(
-                    ethereum_client,
-                    config.node_type,
-                    Box::new(assets_provider.clone()),
-                    Box::new(transactions_provider.clone()),
-                ))
+                let ethereum_client = EthereumClient::new(rpc_client.clone(), chain)
+                    .with_node_type(config.node_type)
+                    .with_alchemy_client(AlchemyClient::new(gem_client.clone(), chain, config.alchemy_key.clone()))
+                    .with_ankr_client(AnkrClient::new(rpc_client, chain));
+                Box::new(GenericProvider::new(ethereum_client))
             }
             Chain::Cardano => Box::new(GenericProvider::new(CardanoClient::new(gem_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Noble | Chain::Sei => {

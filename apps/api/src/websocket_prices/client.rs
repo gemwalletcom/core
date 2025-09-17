@@ -2,12 +2,12 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::sync::Arc;
 
-use rocket::futures::SinkExt;
 use pricer::PriceClient;
 use primitives::{asset::AssetHashSetExt, AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
 use redis::aio::MultiplexedConnection;
 use redis::PushInfo;
 use redis::PushKind;
+use rocket::futures::SinkExt;
 use rocket::serde::json::serde_json;
 use rocket::tokio::sync::Mutex;
 use rocket_ws::stream::DuplexStream;

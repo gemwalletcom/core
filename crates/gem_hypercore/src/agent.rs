@@ -1,8 +1,8 @@
 use alloy_primitives::Address;
 use gem_hash::keccak::keccak256;
+use primitives::Preferences;
 use rand::rngs::OsRng;
 use rand::TryRngCore;
-use primitives::Preferences;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use std::error::Error;
 use std::sync::Arc;

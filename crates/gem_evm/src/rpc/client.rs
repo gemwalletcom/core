@@ -9,11 +9,13 @@ use serde_json::json;
 use std::any::TypeId;
 use std::str::FromStr;
 
+use super::{
+    alchemy::AlchemyClient,
+    ankr::AnkrClient,
+    model::{Block, BlockTransactionsIds, Transaction, TransactionReciept, TransactionReplayTrace},
+};
 use crate::models::fee::EthereumFeeHistory;
-use crate::rpc::model::{BlockTransactionsIds, TransactionReplayTrace};
-
-use super::model::{Block, Transaction, TransactionReciept};
-use primitives::{Chain, EVMChain};
+use primitives::{Chain, EVMChain, NodeType};
 
 pub const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
 pub const FUNCTION_ERC20_SYMBOL: &str = "0x95d89b41";
@@ -23,11 +25,35 @@ pub const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 pub struct EthereumClient<C: Client + Clone> {
     pub chain: EVMChain,
     pub client: GenericJsonRpcClient<C>,
+    pub(crate) node_type: NodeType,
+    pub(crate) alchemy_client: Option<AlchemyClient<C>>,
+    pub(crate) ankr_client: Option<AnkrClient<C>>,
 }
 
 impl<C: Client + Clone> EthereumClient<C> {
     pub fn new(client: GenericJsonRpcClient<C>, chain: EVMChain) -> Self {
-        Self { chain, client }
+        Self {
+            chain,
+            client,
+            node_type: NodeType::Default,
+            alchemy_client: None,
+            ankr_client: None,
+        }
+    }
+
+    pub fn with_node_type(mut self, node_type: NodeType) -> Self {
+        self.node_type = node_type;
+        self
+    }
+
+    pub fn with_alchemy_client(mut self, alchemy_client: AlchemyClient<C>) -> Self {
+        self.alchemy_client = Some(alchemy_client);
+        self
+    }
+
+    pub fn with_ankr_client(mut self, ankr_client: AnkrClient<C>) -> Self {
+        self.ankr_client = Some(ankr_client);
+        self
     }
 
     pub fn get_chain(&self) -> Chain {
@@ -104,7 +130,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         let transactions = self.get_transactions_by_hash(hashes).await?;
         let reciepts = self.get_transactions_receipts(hashes).await?;
         let traces = self.trace_replay_transactions(hashes).await?;
-        let block_ids = reciepts.iter().map(|x| x.block_number.clone()).collect::<Vec<String>>();
+        let block_ids = reciepts.iter().map(|x| x.block_number.to_string()).collect::<Vec<String>>();
         let blocks = self.get_blocks(&block_ids, false).await?;
 
         Ok(blocks

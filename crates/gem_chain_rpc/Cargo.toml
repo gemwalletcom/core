@@ -27,7 +27,3 @@ num-bigint = { workspace = true }
 tokio.workspace = true
 reqwest.workspace = true
 gem_jsonrpc = { path = "../gem_jsonrpc" }
-
-[[test]]
-name = "integration_test"
-test = false
