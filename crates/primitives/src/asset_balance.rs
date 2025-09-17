@@ -31,25 +31,17 @@ impl AssetBalance {
         Self { asset_id, balance, is_active }
     }
 
-    pub fn new_staking(asset_id: AssetId, frozen: BigUint, locked: BigUint, staked: BigUint, pending: BigUint, rewards: BigUint) -> Self {
+    pub fn new_staking(asset_id: AssetId, staked: BigUint, pending: BigUint, rewards: BigUint) -> Self {
         Self {
             asset_id,
-            balance: Balance::stake_balance(frozen, locked, staked, pending, Some(rewards)),
+            balance: Balance::stake_balance(staked, pending, Some(rewards)),
             is_active: true,
         }
     }
-    pub fn new_staking_with_metadata(
-        asset_id: AssetId,
-        frozen: BigUint,
-        locked: BigUint,
-        staked: BigUint,
-        pending: BigUint,
-        rewards: BigUint,
-        metadata: BalanceMetadata,
-    ) -> Self {
+    pub fn new_staking_with_metadata(asset_id: AssetId, staked: BigUint, pending: BigUint, rewards: BigUint, metadata: BalanceMetadata) -> Self {
         Self {
             asset_id,
-            balance: Balance::stake_balance_with_metadata(frozen, locked, staked, pending, Some(rewards), Some(metadata)),
+            balance: Balance::stake_balance_with_metadata(staked, pending, Some(rewards), Some(metadata)),
             is_active: true,
         }
     }
@@ -107,22 +99,15 @@ impl Balance {
         }
     }
 
-    pub fn stake_balance(frozen: BigUint, locked: BigUint, staked: BigUint, pending: BigUint, rewards: Option<BigUint>) -> Self {
-        Self::stake_balance_with_metadata(frozen, locked, staked, pending, rewards, None)
+    pub fn stake_balance(staked: BigUint, pending: BigUint, rewards: Option<BigUint>) -> Self {
+        Self::stake_balance_with_metadata(staked, pending, rewards, None)
     }
 
-    pub fn stake_balance_with_metadata(
-        frozen: BigUint,
-        locked: BigUint,
-        staked: BigUint,
-        pending: BigUint,
-        rewards: Option<BigUint>,
-        metadata: Option<BalanceMetadata>,
-    ) -> Self {
+    pub fn stake_balance_with_metadata(staked: BigUint, pending: BigUint, rewards: Option<BigUint>, metadata: Option<BalanceMetadata>) -> Self {
         Self {
             available: BigUint::from(0u32),
-            frozen,
-            locked,
+            frozen: BigUint::from(0u32),
+            locked: BigUint::from(0u32),
             staked,
             pending,
             rewards: rewards.unwrap_or(BigUint::from(0u32)),

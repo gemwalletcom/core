@@ -14,7 +14,7 @@ pub fn map_balance_staking(balance: &HypercoreStakeBalance, chain: Chain) -> Res
 
     Ok(AssetBalance::new_balance(
         chain.as_asset_id(),
-        Balance::stake_balance(BigUint::from(0u32), BigUint::from(0u32), available_biguint, pending_biguint, None),
+        Balance::stake_balance(available_biguint, pending_biguint, None),
     ))
 }
 

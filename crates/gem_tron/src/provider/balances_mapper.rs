@@ -1,6 +1,6 @@
 use num_bigint::BigUint;
 use num_traits::Num;
-use primitives::{asset_balance::BalanceMetadata, AssetBalance, AssetId, Chain};
+use primitives::{asset_balance::{Balance, BalanceMetadata}, AssetBalance, AssetId, Chain};
 use std::error::Error;
 
 use crate::models::{TronAccount, TronAccountUsage, TronReward};
@@ -68,14 +68,16 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
         bandwidth_total,
     };
 
-    Ok(AssetBalance::new_staking_with_metadata(
+    Ok(AssetBalance::new_balance(
         AssetId::from_chain(Chain::Tron),
-        BigUint::from(bandwidth_frozen), // frozen = bandwidth frozen
-        BigUint::from(energy_frozen),    // locked = energy frozen
-        BigUint::from(voted_amount),     // staked = voted amount
-        BigUint::from(pending_amount),   // pending = unfreezing amount
-        BigUint::from(rewards_amount),   // rewards = voting rewards
-        metadata,
+        create_tron_stake_balance(
+            BigUint::from(bandwidth_frozen),
+            BigUint::from(energy_frozen),
+            BigUint::from(voted_amount),
+            BigUint::from(pending_amount),
+            BigUint::from(rewards_amount),
+            metadata,
+        ),
     ))
 }
 
@@ -90,6 +92,27 @@ pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn 
 
     let address_bytes = &owner_bytes[1..21];
     Ok(format!("{:0>64}", hex::encode(address_bytes)))
+}
+
+fn create_tron_stake_balance(
+    frozen: BigUint, // bandwidth frozen
+    locked: BigUint, // energy frozen
+    staked: BigUint, // voted amount
+    pending: BigUint, // unfreezing amount
+    rewards: BigUint, // voting rewards
+    metadata: BalanceMetadata,
+) -> Balance {
+    Balance {
+        available: BigUint::from(0u32),
+        frozen,
+        locked,
+        staked,
+        pending,
+        rewards,
+        reserved: BigUint::from(0u32),
+        withdrawable: BigUint::from(0u32),
+        metadata: Some(metadata),
+    }
 }
 
 #[cfg(test)]
@@ -304,6 +327,35 @@ mod tests {
         assert_eq!(metadata.energy_total, 2000000);
         assert_eq!(metadata.bandwidth_available, 6000);
         assert_eq!(metadata.bandwidth_total, 6500);
+    }
+
+    #[test]
+    fn test_create_tron_stake_balance() {
+        let metadata = BalanceMetadata {
+            energy_available: 1000,
+            energy_total: 2000,
+            bandwidth_available: 500,
+            bandwidth_total: 1000,
+        };
+
+        let balance = create_tron_stake_balance(
+            BigUint::from(100_u64),
+            BigUint::from(200_u64),
+            BigUint::from(300_u64),
+            BigUint::from(400_u64),
+            BigUint::from(500_u64),
+            metadata.clone(),
+        );
+
+        assert_eq!(balance.available, BigUint::from(0_u32));
+        assert_eq!(balance.frozen, BigUint::from(100_u64));
+        assert_eq!(balance.locked, BigUint::from(200_u64));
+        assert_eq!(balance.staked, BigUint::from(300_u64));
+        assert_eq!(balance.pending, BigUint::from(400_u64));
+        assert_eq!(balance.rewards, BigUint::from(500_u64));
+        assert_eq!(balance.reserved, BigUint::from(0_u32));
+        assert_eq!(balance.withdrawable, BigUint::from(0_u32));
+        assert_eq!(balance.metadata, Some(metadata));
     }
 
     #[test]

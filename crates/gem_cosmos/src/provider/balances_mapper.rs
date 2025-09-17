@@ -34,8 +34,6 @@ pub fn map_balance_staking(delegations: Delegations, unbonding: UnbondingDelegat
 
     AssetBalance::new_staking(
         chain.as_asset_id(),
-        BigUint::from(0u32),
-        BigUint::from(0u32),
         BigUint::try_from(staked).unwrap_or_default(),
         BigUint::try_from(pending).unwrap_or_default(),
         BigUint::try_from(rewards).unwrap_or_default(),

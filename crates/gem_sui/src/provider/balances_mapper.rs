@@ -43,7 +43,7 @@ pub fn map_balance_staking(delegations: Vec<SuiStakeDelegation>) -> Option<Asset
 
     Some(AssetBalance::new_balance(
         Chain::Sui.as_asset_id(),
-        Balance::stake_balance(BigUint::from(0u32), BigUint::from(0u32), BigUint::try_from(staked).unwrap_or_default(), BigUint::from(0u32), None),
+        Balance::stake_balance(BigUint::try_from(staked).unwrap_or_default(), BigUint::from(0u32), None),
     ))
 }
 
@@ -56,13 +56,7 @@ pub fn map_staking_balance(delegations: Vec<SuiStakeDelegation>) -> AssetBalance
 
     AssetBalance::new_balance(
         Chain::Sui.as_asset_id(),
-        Balance::stake_balance(
-            BigUint::from(0u32),
-            BigUint::from(0u32),
-            BigUint::try_from(staked_total).unwrap_or_default(),
-            BigUint::from(0u32),
-            None,
-        ),
+        Balance::stake_balance(BigUint::try_from(staked_total).unwrap_or_default(), BigUint::from(0u32), None),
     )
 }
 
