@@ -110,7 +110,7 @@ async fn main() {
             vec![
                 QueueName::FetchAssetsAddressesAssociations,
                 QueueName::FetchTransactions,
-                //QueueName::FetchNftAssetsAddressesAssociations,
+                QueueName::FetchNftAssetsAddressesAssociations,
             ],
         )
         .await;

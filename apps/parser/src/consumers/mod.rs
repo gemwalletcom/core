@@ -39,6 +39,7 @@ pub async fn run_consumers(settings: Settings, database: Arc<Mutex<DatabaseClien
     tokio::spawn(run_consumer_fetch_assets_mappings(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_store_assets_mappings(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_fetch_blocks(settings.clone()));
+    tokio::spawn(run_consumer_fetch_nft_assets_mappings(settings.clone(), database.clone()));
     std::future::pending::<()>().await;
     Ok(())
 }
@@ -127,6 +128,25 @@ pub async fn run_consumer_fetch_assets_mappings(settings: Settings, database: Ar
         name,
         stream_reader,
         QueueName::FetchAssetsAddressesAssociations,
+        consumer,
+        ConsumerConfig::default(),
+    )
+    .await
+}
+
+pub async fn run_consumer_fetch_nft_assets_mappings(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let name = "fetch_nft_assets_mappings";
+    let stream_reader = StreamReader::new(&settings.rabbitmq.url, name).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
+    let cacher = CacherClient::new(&settings.redis.url);
+    let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
+    let nft_client = NFTClient::new(&settings.postgres.url, nft_config).await;
+    let nft_client = Arc::new(Mutex::new(nft_client));
+    let consumer = FetchNftAssetsAddressesConsumer::new(database.clone(), stream_producer, cacher, nft_client);
+    streamer::run_consumer::<ChainAddressPayload, FetchNftAssetsAddressesConsumer, usize>(
+        name,
+        stream_reader,
+        QueueName::FetchNftAssetsAddressesAssociations,
         consumer,
         ConsumerConfig::default(),
     )
