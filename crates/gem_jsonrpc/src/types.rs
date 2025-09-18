@@ -53,7 +53,7 @@ pub struct JsonRpcResponse<T> {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcErrorResponse {
-    pub id: u64,
+    pub id: Option<u64>,
     pub error: JsonRpcError,
 }
 

@@ -5,14 +5,14 @@ use std::{
 };
 
 use crate::ParserOptions;
-use gem_chain_rpc::ChainBlockProvider;
+use chain_traits::ChainTraits;
 use primitives::Chain;
 use storage::DatabaseClient;
 use streamer::{FetchBlocksPayload, QueueName, StreamProducer, TransactionsPayload};
 
 pub struct Parser {
     chain: Chain,
-    provider: Box<dyn ChainBlockProvider>,
+    provider: Box<dyn ChainTraits>,
     stream_producer: StreamProducer,
     database: DatabaseClient,
     options: ParserOptions,
@@ -24,7 +24,7 @@ pub struct ParserBlocksResult {
 }
 
 impl Parser {
-    pub fn new(provider: Box<dyn ChainBlockProvider>, stream_producer: StreamProducer, database: DatabaseClient, options: ParserOptions) -> Self {
+    pub fn new(provider: Box<dyn ChainTraits>, stream_producer: StreamProducer, database: DatabaseClient, options: ParserOptions) -> Self {
         Self {
             chain: provider.get_chain(),
             provider,
@@ -45,14 +45,15 @@ impl Parser {
             }
             let next_current_block = state.current_block + state.await_blocks as i64;
 
-            match self.provider.get_latest_block().await {
+            match self.provider.get_block_latest_number().await {
                 Ok(latest_block) => {
-                    let _ = self.database.parser_state().set_parser_state_latest_block(self.chain.as_ref(), latest_block);
+                    let latest_block_i64 = latest_block as i64;
+                    let _ = self.database.parser_state().set_parser_state_latest_block(self.chain.as_ref(), latest_block_i64);
                     // initial start
                     if state.current_block == 0 {
-                        let _ = self.database.parser_state().set_parser_state_current_block(self.chain.as_ref(), latest_block);
+                        let _ = self.database.parser_state().set_parser_state_current_block(self.chain.as_ref(), latest_block_i64);
                     }
-                    if next_current_block >= latest_block {
+                    if next_current_block >= latest_block_i64 {
                         println!(
                             "parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}",
                             self.chain.as_ref(),
@@ -78,7 +79,7 @@ impl Parser {
                 let state = self.database.parser_state().get_parser_state(self.chain.as_ref())?;
                 let start_block = state.current_block + 1;
                 let end_block = cmp::min(start_block + state.parallel_blocks as i64 - 1, state.latest_block - state.await_blocks as i64);
-                let next_blocks = (start_block..=end_block).collect::<Vec<_>>();
+                let next_blocks: Vec<u64> = (start_block..=end_block).map(|b| b as u64).collect();
                 let to_go_blocks = state.latest_block - end_block - state.await_blocks as i64;
 
                 if next_blocks.is_empty() {
@@ -135,7 +136,7 @@ impl Parser {
         }
     }
 
-    pub async fn parse_blocks(&mut self, blocks: Vec<i64>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn parse_blocks(&mut self, blocks: Vec<u64>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let transactions = self.provider.get_transactions_in_blocks(blocks.clone()).await?;
         if transactions.is_empty() {
             return Ok(0);

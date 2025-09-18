@@ -2791,29 +2791,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gem_chain_rpc"
-version = "1.0.0"
-dependencies = [
- "alloy-primitives",
- "alloy-sol-types",
- "async-trait",
- "chain_traits",
- "chrono",
- "futures",
- "gem_bsc",
- "gem_client",
- "gem_cosmos",
- "gem_evm",
- "gem_jsonrpc",
- "gem_solana",
- "hex",
- "num-bigint",
- "primitives",
- "reqwest",
- "tokio",
-]
-
-[[package]]
 name = "gem_client"
 version = "0.1.0"
 dependencies = [
@@ -4773,9 +4750,9 @@ dependencies = [
  "api_connector",
  "async-trait",
  "cacher",
+ "chain_traits",
  "chrono",
  "futures",
- "gem_chain_rpc",
  "gem_tracing",
  "localizer",
  "nft",
@@ -6495,11 +6472,12 @@ dependencies = [
 name = "settings_chain"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "chain_traits",
  "gem_algorand",
  "gem_aptos",
  "gem_bitcoin",
  "gem_cardano",
- "gem_chain_rpc",
  "gem_client",
  "gem_cosmos",
  "gem_evm",

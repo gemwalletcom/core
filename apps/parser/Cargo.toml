@@ -17,7 +17,7 @@ primitives = { path = "../../crates/primitives" }
 storage = { path = "../../crates/storage" }
 settings = { path = "../../crates/settings" }
 settings_chain = { path = "../../crates/settings_chain" }
-gem_chain_rpc = { path = "../../crates/gem_chain_rpc" }
+chain_traits = { path = "../../crates/chain_traits" }
 api_connector = { path = "../../crates/api_connector" }
 localizer = { path = "../../crates/localizer" }
 number_formatter = { path = "../../crates/number_formatter" }

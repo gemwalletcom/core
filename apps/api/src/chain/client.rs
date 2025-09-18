@@ -38,7 +38,7 @@ impl ChainClient {
         block_number: i64,
         transaction_type: Option<&str>,
     ) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let transactions = self.providers.get_block_transactions(chain, block_number).await?;
+        let transactions = self.providers.get_block_transactions(chain, block_number as u64).await?;
         Ok(self.filter_transactions(transactions, transaction_type))
     }
 
@@ -69,6 +69,6 @@ impl ChainClient {
     }
 
     pub async fn get_latest_block(&self, chain: Chain) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        self.providers.get_latest_block(chain).await
+        Ok(self.providers.get_latest_block(chain).await? as i64)
     }
 }

@@ -4,27 +4,28 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-reqwest = { workspace = true }
+async-trait = { workspace = true }
 url = { workspace = true }
+reqwest = { workspace = true }
 
 primitives = { path = "../primitives" }
-gem_chain_rpc = { path = "../gem_chain_rpc" }
-gem_solana = { path = "../gem_solana", features = ["rpc", "reqwest"] }
-gem_algorand = { path = "../gem_algorand", features = ["rpc"] }
-gem_aptos = { path = "../gem_aptos", features = ["rpc"] }
-gem_xrp = { path = "../gem_xrp", features = ["rpc"] }
-gem_evm = { path = "../gem_evm", features = ["rpc"] }
-gem_bitcoin = { path = "../gem_bitcoin", features = ["rpc", "reqwest"] }
-gem_cardano = { path = "../gem_cardano", features = ["rpc", "reqwest"] }
-gem_cosmos = { path = "../gem_cosmos", features = ["rpc"] }
-gem_near = { path = "../gem_near", features = ["rpc"] }
-gem_polkadot = { path = "../gem_polkadot", features = ["rpc"] }
-gem_stellar = { path = "../gem_stellar", features = ["rpc"] }
-gem_sui = { path = "../gem_sui", features = ["rpc"] }
-gem_ton = { path = "../gem_ton", features = ["rpc"] }
-gem_tron = { path = "../gem_tron", features = ["rpc"] }
-gem_hypercore = { path = "../gem_hypercore", features = ["reqwest"] }
+chain_traits = { path = "../chain_traits" }
+settings = { path = "../settings" }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
 gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"] }
 
-settings = { path = "../settings" }
+gem_algorand = { path = "../gem_algorand", features = ["rpc", "reqwest"] }
+gem_aptos = { path = "../gem_aptos", features = ["rpc", "reqwest"] }
+gem_bitcoin = { path = "../gem_bitcoin", features = ["rpc", "reqwest"] }
+gem_cardano = { path = "../gem_cardano", features = ["rpc", "reqwest"] }
+gem_cosmos = { path = "../gem_cosmos", features = ["rpc", "reqwest"] }
+gem_evm = { path = "../gem_evm", features = ["rpc", "reqwest"] }
+gem_hypercore = { path = "../gem_hypercore", features = ["reqwest"] }
+gem_near = { path = "../gem_near", features = ["rpc", "reqwest"] }
+gem_polkadot = { path = "../gem_polkadot", features = ["rpc", "reqwest"] }
+gem_solana = { path = "../gem_solana", features = ["rpc", "reqwest"] }
+gem_stellar = { path = "../gem_stellar", features = ["rpc", "reqwest"] }
+gem_sui = { path = "../gem_sui", features = ["rpc", "reqwest"] }
+gem_ton = { path = "../gem_ton", features = ["rpc", "reqwest"] }
+gem_tron = { path = "../gem_tron", features = ["rpc", "reqwest"] }
+gem_xrp = { path = "../gem_xrp", features = ["rpc", "reqwest"] }

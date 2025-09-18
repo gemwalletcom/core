@@ -79,6 +79,35 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
         };
         Ok(load_transactions_by_hashes(self, self.node_type.clone(), &hashes).await?)
     }
+
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let block_i64 = block as i64;
+        let block_data = self.get_block(block_i64).await?;
+        let receipts = self.get_block_receipts(block_i64).await?;
+
+        if block_data.transactions.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let traces = if self.node_type == NodeType::Archive {
+            let transaction_hashes: Vec<String> = block_data.transactions.iter().map(|tx| tx.hash.clone()).collect();
+            Some(self.trace_replay_transactions(&transaction_hashes).await?)
+        } else {
+            None
+        };
+
+        let chain = self.get_chain();
+        Ok(block_data
+            .transactions
+            .into_iter()
+            .zip(receipts)
+            .enumerate()
+            .filter_map(|(index, (tx, receipt))| {
+                let trace = traces.as_ref().and_then(|entries| entries.get(index));
+                EthereumMapper::map_transaction(chain, &tx, &receipt, trace, &block_data.timestamp, Some(&CONTRACT_REGISTRY))
+            })
+            .collect())
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]

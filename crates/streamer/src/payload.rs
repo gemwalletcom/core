@@ -5,7 +5,7 @@ use std::fmt;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionsPayload {
     pub chain: Chain,
-    pub blocks: Vec<i64>,
+    pub blocks: Vec<u64>,
     pub transactions: Vec<Transaction>,
 }
 
@@ -22,7 +22,7 @@ impl fmt::Display for TransactionsPayload {
 }
 
 impl TransactionsPayload {
-    pub fn new(chain: Chain, blocks: Vec<i64>, transactions: Vec<Transaction>) -> Self {
+    pub fn new(chain: Chain, blocks: Vec<u64>, transactions: Vec<Transaction>) -> Self {
         Self { chain, blocks, transactions }
     }
 }
@@ -64,7 +64,7 @@ impl FetchAssetsPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FetchBlocksPayload {
     pub chain: Chain,
-    pub blocks: Vec<i64>,
+    pub blocks: Vec<u64>,
 }
 
 impl fmt::Display for FetchBlocksPayload {
@@ -74,7 +74,7 @@ impl fmt::Display for FetchBlocksPayload {
 }
 
 impl FetchBlocksPayload {
-    pub fn new(chain: Chain, blocks: Vec<i64>) -> Self {
+    pub fn new(chain: Chain, blocks: Vec<u64>) -> Self {
         Self { chain, blocks }
     }
 }
