@@ -10,6 +10,7 @@ pub struct TronAccountRequest {
 pub struct TronAccount {
     pub balance: Option<u64>,
     pub address: Option<String>,
+    pub owner_permission: Option<TronAccountOwnerPermission>,
     pub active_permission: Option<Vec<TronAccountPermission>>,
     pub votes: Option<Vec<TronVote>>,
     #[serde(rename = "frozenV2")]
@@ -21,6 +22,11 @@ pub struct TronAccount {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TronAccountPermission {
     pub threshold: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TronAccountOwnerPermission {
+    pub permission_name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

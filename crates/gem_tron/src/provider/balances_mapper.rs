@@ -1,6 +1,9 @@
 use num_bigint::BigUint;
 use num_traits::Num;
-use primitives::{asset_balance::{Balance, BalanceMetadata}, AssetBalance, AssetId, Chain};
+use primitives::{
+    asset_balance::{Balance, BalanceMetadata},
+    AssetBalance, AssetId, Chain,
+};
 use std::error::Error;
 
 use crate::models::{TronAccount, TronAccountUsage, TronReward};
@@ -22,17 +25,14 @@ pub fn map_token_balance(balance_hex: &str, asset_id: AssetId) -> Result<AssetBa
 }
 
 pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &TronAccountUsage) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-    let (bandwidth_frozen, energy_frozen) = account
-        .frozen_v2
-        .as_ref()
-        .map_or((0, 0), |frozen_list| {
-            frozen_list.iter().fold((0u64, 0u64), |(bandwidth, energy), frozen| {
-                match frozen.frozen_type.as_deref() {
-                    Some("ENERGY") => (bandwidth, energy + frozen.amount),
-                    _ => (bandwidth + frozen.amount, energy),
-                }
+    let (bandwidth_frozen, energy_frozen) = account.frozen_v2.as_ref().map_or((0, 0), |frozen_list| {
+        frozen_list
+            .iter()
+            .fold((0u64, 0u64), |(bandwidth, energy), frozen| match frozen.frozen_type.as_deref() {
+                Some("ENERGY") => (bandwidth, energy + frozen.amount),
+                _ => (bandwidth + frozen.amount, energy),
             })
-        });
+    });
 
     let vote_amount = account
         .votes
@@ -86,9 +86,9 @@ pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn 
 }
 
 fn new_stake_balance(
-    frozen: BigUint, // bandwidth frozen
-    locked: BigUint, // energy frozen
-    staked: BigUint, // vote amount
+    frozen: BigUint,  // bandwidth frozen
+    locked: BigUint,  // energy frozen
+    staked: BigUint,  // vote amount
     pending: BigUint, // unfreezing amount
     rewards: BigUint, // voting rewards
     metadata: BalanceMetadata,
@@ -154,6 +154,7 @@ mod tests {
         let account = TronAccount {
             balance: None,
             address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            owner_permission: None,
             active_permission: None,
             votes: None,
             frozen_v2: None,
@@ -176,6 +177,7 @@ mod tests {
         let account = TronAccount {
             balance: Some(1000),
             address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            owner_permission: None,
             active_permission: None,
             votes: None,
             frozen_v2: Some(vec![
@@ -219,6 +221,7 @@ mod tests {
         let account = TronAccount {
             balance: Some(1000),
             address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            owner_permission: None,
             active_permission: None,
             votes: None,
             frozen_v2: None,
@@ -249,6 +252,7 @@ mod tests {
         let account = TronAccount {
             balance: Some(1000),
             address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            owner_permission: None,
             active_permission: None,
             votes: Some(vec![
                 TronVote {
@@ -292,6 +296,7 @@ mod tests {
         let account = TronAccount {
             balance: Some(1000),
             address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            owner_permission: None,
             active_permission: None,
             votes: None,
             frozen_v2: Some(vec![TronFrozen {
@@ -354,6 +359,7 @@ mod tests {
         let account = TronAccount {
             balance: None,
             address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            owner_permission: None,
             active_permission: None,
             votes: None,
             frozen_v2: None,
