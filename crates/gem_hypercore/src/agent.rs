@@ -1,11 +1,11 @@
-use alloy_primitives::Address;
+use alloy_primitives::{hex, Address};
 use gem_hash::keccak::keccak256;
+use k256::{
+    elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
+    SecretKey,
+};
 use primitives::Preferences;
-use rand::rngs::OsRng;
-use rand::TryRngCore;
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
-use std::error::Error;
-use std::sync::Arc;
+use std::{error::Error, sync::Arc};
 
 pub struct Agent {
     preferences: Arc<dyn Preferences>,
@@ -59,20 +59,17 @@ impl Agent {
     }
 
     fn generate_private_key(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        use alloy_primitives::{hex, B256};
         let mut rng = OsRng;
-        let mut buf = [0u8; 32];
-        rng.try_fill_bytes(&mut buf).map_err(|e| format!("Random generation error: {}", e))?;
-        Ok(hex::encode(B256::from(buf)))
+        let secret_key = SecretKey::random(&mut rng);
+        Ok(hex::encode(secret_key.to_bytes()))
     }
 
     fn derive_address(&self, private_key_hex: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let private_key_bytes = alloy_primitives::hex::decode(private_key_hex)?;
-        let secp = Secp256k1::new();
-        let secret_key = SecretKey::from_byte_array(private_key_bytes.try_into().map_err(|_| "Invalid private key length")?)?;
-        let public_key = PublicKey::from_secret_key(&secp, &secret_key);
-        let public_key_bytes = public_key.serialize_uncompressed();
-        let hash = keccak256(&public_key_bytes[1..]);
+        let private_key_bytes = hex::decode(private_key_hex)?;
+        let secret_key = SecretKey::from_slice(&private_key_bytes).map_err(|_| "Invalid private key")?;
+        let public_key = secret_key.public_key();
+        let encoded_point = public_key.to_encoded_point(false);
+        let hash = keccak256(&encoded_point.as_bytes()[1..]);
         Ok(Address::from_slice(&hash[12..]).to_string().to_lowercase())
     }
 }
