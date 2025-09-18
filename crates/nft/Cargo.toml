@@ -7,16 +7,17 @@ edition = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
-futures.workspace = true 
+futures.workspace = true
 async-trait = { workspace = true }
 
 primitives = { path = "../primitives" }
 storage = { path = "../storage" }
 gem_evm = { path = "../gem_evm" }
 
+settings = { path = "../settings", optional = true }
+
 [dev-dependencies]
-settings = { path = "../settings" }
 tokio = { workspace = true }
 
 [features]
-nft_integration_tests = []
+nft_integration_tests = ["dep:settings"]
