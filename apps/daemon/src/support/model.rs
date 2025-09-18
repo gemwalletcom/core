@@ -4,6 +4,9 @@ pub const EVENT_MESSAGE_CREATED: &str = "message_created";
 pub const EVENT_CONVERSATION_STATUS_CHANGED: &str = "conversation_status_changed";
 pub const EVENT_CONVERSATION_UPDATED: &str = "conversation_updated";
 
+pub const MESSAGE_TYPE_INCOMING: &str = "incoming";
+pub const MESSAGE_TYPE_OUTGOING: &str = "outgoing";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatwootWebhookPayload {
     pub event: String,
