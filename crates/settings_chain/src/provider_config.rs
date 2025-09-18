@@ -1,6 +1,6 @@
 use primitives::{Chain, NodeType};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ProviderConfig {
     pub chain: Chain,
     pub url: String,
@@ -20,10 +20,6 @@ impl ProviderConfig {
             ankr_key: ankr_key.to_string(),
             trongrid_key: trongrid_key.to_string(),
         }
-    }
-
-    pub fn new_url(chain: Chain, url: &str) -> Self {
-        Self::new(chain, url, NodeType::Default, "", "", "")
     }
 
     pub fn with_url(&self, url: &str) -> Self {

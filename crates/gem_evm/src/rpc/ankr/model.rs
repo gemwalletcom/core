@@ -7,6 +7,8 @@ use serde_serializers::deserialize_biguint_from_hex_str;
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub hash: String,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub timestamp: BigUint,
 }
 
 #[derive(Debug, Deserialize)]

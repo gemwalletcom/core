@@ -45,7 +45,7 @@ mod tests {
             l1_fee: None,
             logs: vec![],
             status: "0x1".to_string(),
-            block_number: "0x123".to_string(),
+            block_number: BigUint::from(0x123u32),
         };
 
         let result = map_transaction_status(&receipt);
@@ -62,7 +62,7 @@ mod tests {
             l1_fee: None,
             logs: vec![],
             status: "0x0".to_string(),
-            block_number: "0x123".to_string(),
+            block_number: BigUint::from(0x123u32),
         };
 
         let result = map_transaction_status(&receipt);
@@ -79,7 +79,7 @@ mod tests {
             l1_fee: None,
             logs: vec![],
             status: "0x2".to_string(),
-            block_number: "0x123".to_string(),
+            block_number: BigUint::from(0x123u32),
         };
 
         let result = map_transaction_status(&receipt);
@@ -96,7 +96,7 @@ mod tests {
             l1_fee: Some(BigUint::from(5000000000000000u64)),
             logs: vec![],
             status: "0x1".to_string(),
-            block_number: "0x123".to_string(),
+            block_number: BigUint::from(0x123u32),
         };
 
         let result = map_transaction_status(&receipt);

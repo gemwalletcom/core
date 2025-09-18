@@ -5,16 +5,14 @@ version = { workspace = true }
 
 [dependencies]
 rocket = { workspace = true }
+rocket_ws = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 config = { workspace = true }
 prometheus-client = { workspace = true }
 reqwest = { workspace = true }
-futures = { workspace = true }
-futures-util = { workspace = true }
 strum = { workspace = true }
-strum_macros = { workspace = true }
 redis = { workspace = true }
 
 gem_tracing = { path = "../../crates/tracing" }
@@ -26,13 +24,10 @@ settings_chain = { path = "../../crates/settings_chain" }
 name_resolver = { path = "../../crates/name_resolver" }
 primitives = { path = "../../crates/primitives" }
 api_connector = { path = "../../crates/api_connector" }
-chain_primitives = { path = "../../crates/chain_primitives" }
 search_index = { path = "../../crates/search_index" }
 nft = { path = "../../crates/nft" }
 cacher = { path = "../../crates/cacher" }
 streamer = { path = "../../crates/streamer" }
 gem_client = { path = "../../crates/gem_client", features = ["reqwest"] }
-gem_chain_rpc = { path = "../../crates/gem_chain_rpc" }
 
 security_provider = { path = "../../crates/security_provider" }
-rocket_ws = { workspace = true }

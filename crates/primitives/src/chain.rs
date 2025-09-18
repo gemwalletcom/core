@@ -1,8 +1,7 @@
 use std::{fmt, str::FromStr};
 
 use serde::{Deserialize, Serialize};
-use strum::{EnumIter, IntoEnumIterator};
-use strum_macros::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
 use crate::{AssetId, AssetType, ChainType, StakeChain};

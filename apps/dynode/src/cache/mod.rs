@@ -1,24 +1,24 @@
 use crate::config::{CacheConfig, CacheRule};
 use crate::jsonrpc_types::{JsonRpcCall, JsonRpcRequest, RequestType};
-use async_trait::async_trait;
-use bytes::Bytes;
 use moka::future::Cache;
 use moka::Expiry;
 use primitives::Chain;
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
 pub struct CachedResponse {
-    pub body: Bytes,
+    pub body: Vec<u8>,
     pub status: u16,
     pub content_type: String,
     pub ttl_seconds: u64,
 }
 
 impl CachedResponse {
-    pub fn new(body: Bytes, status: u16, content_type: String, ttl_seconds: u64) -> Self {
+    pub fn new(body: Vec<u8>, status: u16, content_type: String, ttl_seconds: u64) -> Self {
         Self {
             body,
             status,
@@ -27,21 +27,19 @@ impl CachedResponse {
         }
     }
 
-    pub fn to_jsonrpc_response(&self, original_call: &JsonRpcCall) -> Bytes {
+    pub fn to_jsonrpc_response(&self, original_call: &JsonRpcCall) -> Vec<u8> {
         let result_str = std::str::from_utf8(&self.body).unwrap_or("null");
-        Bytes::from(format!(
-            r#"{{"jsonrpc":"{}","result":{},"id":{}}}"#,
-            original_call.jsonrpc, result_str, original_call.id
-        ))
+        format!(r#"{{"jsonrpc":"{}","result":{},"id":{}}}"#, original_call.jsonrpc, result_str, original_call.id).into_bytes()
     }
 }
 
-#[async_trait]
+type CacheFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+
 pub trait CacheProvider: Send + Sync {
-    async fn get(&self, chain_type: &Chain, key: &str) -> Option<CachedResponse>;
-    async fn set(&self, chain_type: &Chain, key: String, response: CachedResponse, ttl_seconds: u64);
+    fn get<'a>(&'a self, chain_type: &'a Chain, key: &'a str) -> CacheFuture<'a, Option<CachedResponse>>;
+    fn set<'a>(&'a self, chain_type: &'a Chain, key: String, response: CachedResponse, ttl_seconds: u64) -> CacheFuture<'a, ()>;
     fn get_cache_rules(&self, chain_type: &Chain) -> Vec<CacheRule>;
-    fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, body: Option<&Bytes>) -> Option<u64>;
+    fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, body: Option<&[u8]>) -> Option<u64>;
     fn should_cache_request(&self, chain_type: &Chain, request_type: &RequestType) -> Option<u64>;
     fn should_cache_call(&self, chain_type: &Chain, call: &JsonRpcCall) -> Option<u64>;
 }
@@ -94,7 +92,7 @@ impl MemoryCache {
             .build()
     }
 
-    fn check_path_rule(&self, rule: &CacheRule, path: &str, method: &str, body: Option<&Bytes>) -> Option<u64> {
+    fn check_path_rule(&self, rule: &CacheRule, path: &str, method: &str, body: Option<&[u8]>) -> Option<u64> {
         let rule_method = rule.method.as_ref()?;
         if !method.eq_ignore_ascii_case(rule_method) {
             return None;
@@ -111,16 +109,24 @@ impl MemoryCache {
     }
 }
 
-#[async_trait]
 impl CacheProvider for MemoryCache {
-    async fn get(&self, chain_type: &Chain, key: &str) -> Option<CachedResponse> {
-        self.caches.get(chain_type.as_ref())?.get(key).await
+    fn get<'a>(&'a self, chain_type: &'a Chain, key: &'a str) -> CacheFuture<'a, Option<CachedResponse>> {
+        if let Some(cache) = self.caches.get(chain_type.as_ref()).cloned() {
+            let key = key.to_string();
+            Box::pin(async move { cache.get(&key).await })
+        } else {
+            Box::pin(async { None })
+        }
     }
 
-    async fn set(&self, chain_type: &Chain, key: String, response: CachedResponse, ttl_seconds: u64) {
-        if let Some(cache) = self.caches.get(chain_type.as_ref()) {
-            let response_with_ttl = CachedResponse { ttl_seconds, ..response };
-            cache.insert(key, response_with_ttl).await;
+    fn set<'a>(&'a self, chain_type: &'a Chain, key: String, response: CachedResponse, ttl_seconds: u64) -> CacheFuture<'a, ()> {
+        if let Some(cache) = self.caches.get(chain_type.as_ref()).cloned() {
+            Box::pin(async move {
+                let response_with_ttl = CachedResponse { ttl_seconds, ..response };
+                cache.insert(key, response_with_ttl).await;
+            })
+        } else {
+            Box::pin(async {})
         }
     }
 
@@ -128,7 +134,7 @@ impl CacheProvider for MemoryCache {
         self.config.rules.get(chain_type.as_ref()).cloned().unwrap_or_default()
     }
 
-    fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, body: Option<&Bytes>) -> Option<u64> {
+    fn should_cache(&self, chain_type: &Chain, path: &str, method: &str, body: Option<&[u8]>) -> Option<u64> {
         let rules = self.get_cache_rules(chain_type);
 
         for rule in rules {
@@ -146,7 +152,7 @@ impl CacheProvider for MemoryCache {
         for rule in rules {
             match request_type {
                 RequestType::Regular { path, method, body } => {
-                    if let Some(ttl) = self.check_path_rule(&rule, path, method, Some(body)) {
+                    if let Some(ttl) = self.check_path_rule(&rule, path, method, Some(body.as_slice())) {
                         return Some(ttl);
                     }
                 }
@@ -188,7 +194,6 @@ pub type RequestCache = MemoryCache;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bytes::Bytes;
     use primitives::Chain;
     use std::collections::HashMap;
     use std::time::Instant;
@@ -224,7 +229,7 @@ mod tests {
         let cache = MemoryCache::new(config);
         let chain = Chain::Ethereum;
 
-        let response = CachedResponse::new(Bytes::from("test"), 200, "application/json".to_string(), 60);
+        let response = CachedResponse::new(b"test".to_vec(), 200, "application/json".to_string(), 60);
         cache.set(&chain, "test_key".to_string(), response.clone(), 60).await;
 
         let cached = cache.get(&chain, "test_key").await.unwrap();
@@ -248,7 +253,7 @@ mod tests {
     #[test]
     fn test_cache_expiry_without_ttl() {
         let expiry = CacheExpiry;
-        let response = CachedResponse::new(Bytes::from("no-expire"), 200, "application/json".to_string(), 0);
+        let response = CachedResponse::new(b"no-expire".to_vec(), 200, "application/json".to_string(), 0);
         let key = "no_expire_key".to_string();
 
         let expiry_duration = expiry.expire_after_create(&key, &response, Instant::now());
@@ -274,12 +279,12 @@ mod tests {
         let cache = MemoryCache::new(config);
         let chain = Chain::Ethereum;
 
-        let matching_body = Bytes::from(r#"{"type":"metaAndAssetCtxs"}"#);
-        let ttl = cache.should_cache(&chain, "/info", "POST", Some(&matching_body));
+        let matching_body = r#"{"type":"metaAndAssetCtxs"}"#.as_bytes().to_vec();
+        let ttl = cache.should_cache(&chain, "/info", "POST", Some(matching_body.as_slice()));
         assert_eq!(ttl, Some(200));
 
-        let non_matching_body = Bytes::from(r#"{"type":"other"}"#);
-        let ttl = cache.should_cache(&chain, "/info", "POST", Some(&non_matching_body));
+        let non_matching_body = r#"{"type":"other"}"#.as_bytes().to_vec();
+        let ttl = cache.should_cache(&chain, "/info", "POST", Some(non_matching_body.as_slice()));
         assert_eq!(ttl, None);
 
         let ttl = cache.should_cache(&chain, "/info", "POST", None);

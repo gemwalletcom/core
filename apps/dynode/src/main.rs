@@ -2,7 +2,6 @@ use std::io::Cursor;
 use std::net::IpAddr;
 use std::str::FromStr;
 
-use bytes::Bytes;
 use dynode::config::{MetricsConfig, NodeConfig};
 use dynode::metrics::Metrics;
 use dynode::monitoring::NodeService;
@@ -90,7 +89,7 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
     let proxy_service = node_service.get_proxy_request().await;
 
     match proxy_service
-        .handle_request(method, headers, Bytes::from(body_vec), path, path_with_query, host, user_agent)
+        .handle_request(method, headers, body_vec, path, path_with_query, host, user_agent)
         .await
     {
         Ok(proxy_response) => Ok(proxy_response),
@@ -102,17 +101,20 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
 }
 
 fn build_response(proxy: ProxyResponse) -> Response<'static> {
+    let ProxyResponse { status, headers, body } = proxy;
+
     let mut builder = Response::build();
-    let status = Status::from_code(proxy.status).unwrap_or(Status::Ok);
+    let status = Status::from_code(status).unwrap_or(Status::Ok);
     builder.status(status);
 
-    for (name, value) in proxy.headers.iter() {
+    for (name, value) in headers.iter() {
         if let Ok(value_str) = value.to_str() {
             builder.raw_header(name.as_str().to_string(), value_str.to_string());
         }
     }
 
-    builder.sized_body(proxy.body.len(), Cursor::new(proxy.body.to_vec()));
+    let body_len = body.len();
+    builder.sized_body(body_len, Cursor::new(body));
     builder.finalize()
 }
 

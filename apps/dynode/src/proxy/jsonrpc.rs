@@ -5,7 +5,6 @@ use crate::proxy::constants::JSON_CONTENT_TYPE;
 use crate::proxy::request_builder::RequestBuilder;
 use crate::proxy::request_url::RequestUrl;
 use crate::proxy::response_builder::ResponseBuilder;
-use bytes::Bytes;
 use gem_tracing::{info_with_fields, DurationMs};
 use primitives::Chain;
 use reqwest::header::HeaderMap;
@@ -48,6 +47,7 @@ impl JsonRpcHandler {
         for call in &calls {
             metrics.add_proxy_response(
                 host,
+                path,
                 &call.method,
                 url.url.host_str().unwrap_or_default(),
                 200,
@@ -121,11 +121,11 @@ impl JsonRpcHandler {
             serde_json::to_vec(&calls)?
         };
 
-        let req = RequestBuilder::build_jsonrpc(url, method, Bytes::from(body))?;
+        let req = RequestBuilder::build_jsonrpc(url, method, body)?;
 
         let response = client.execute(req).await?;
         let status = response.status().as_u16();
-        let body_bytes = response.bytes().await?;
+        let body_bytes = response.bytes().await?.to_vec();
 
         let responses = if status == 200 {
             if calls.len() == 1 {
@@ -154,7 +154,7 @@ impl JsonRpcHandler {
         for (i, response) in responses.iter().enumerate() {
             if let (Some(call), JsonRpcResult::Success(success)) = (calls.get(i), response) {
                 if let Some(ttl) = cache.should_cache_call(&chain, call) {
-                    let result_bytes = Bytes::from(serde_json::to_string(&success.result).unwrap_or_default());
+                    let result_bytes = serde_json::to_string(&success.result).unwrap_or_default().into_bytes();
                     let size_bytes = result_bytes.len();
                     let cached = CachedResponse::new(result_bytes, 200, JSON_CONTENT_TYPE.to_string(), ttl);
                     let cache_key = call.cache_key(host, path);
@@ -202,7 +202,7 @@ impl JsonRpcHandler {
 
     fn build_json_response_with_headers<T: serde::Serialize>(data: &T, headers: HeaderMap) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
-        ResponseBuilder::build_with_headers(Bytes::from(response_body), 200, JSON_CONTENT_TYPE, headers)
+        ResponseBuilder::build_with_headers(response_body, 200, JSON_CONTENT_TYPE, headers)
     }
 }
 
@@ -226,7 +226,7 @@ mod tests {
         let call2 = make_call(2, "eth_gasPrice");
         let calls = vec![&call1, &call2];
 
-        let cached_body = Bytes::from(serde_json::to_vec(&json!("0x123")).unwrap());
+        let cached_body = serde_json::to_vec(&json!("0x123")).unwrap();
         let cached = CachedResponse::new(cached_body, 200, "application/json".into(), 60);
         let cached_vec = vec![Some(cached), None];
 

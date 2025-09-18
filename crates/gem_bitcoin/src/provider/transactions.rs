@@ -5,7 +5,7 @@ use std::error::Error;
 
 use gem_client::Client;
 
-use crate::rpc::client::BitcoinClient;
+use crate::{provider::transactions_mapper::map_transactions, rpc::client::BitcoinClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for BitcoinClient<C> {
@@ -29,8 +29,23 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         Ok(TransactionUpdate::new_state(status))
     }
 
-    async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let mut transactions = Vec::new();
+        let mut page = 1;
+
+        loop {
+            let block = self.get_block(block, page).await?;
+
+            transactions.extend(map_transactions(self.get_chain(), block.txs));
+
+            if block.total_pages == block.page {
+                break;
+            }
+
+            page += 1;
+        }
+
+        Ok(transactions)
     }
 
     async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {

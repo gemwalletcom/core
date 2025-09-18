@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use strum::EnumIter;
-use strum_macros::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumIter, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumIter, AsRefStr, EnumString)]

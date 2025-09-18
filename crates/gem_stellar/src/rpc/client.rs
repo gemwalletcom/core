@@ -11,6 +11,8 @@ use gem_client::{Client, ContentType};
 use primitives::Chain;
 use std::collections::HashMap;
 
+use crate::provider::transactions_mapper::encode_transaction_data;
+
 #[derive(Debug)]
 pub struct StellarClient<C: Client> {
     client: C,
@@ -43,8 +45,7 @@ impl<C: Client> StellarClient<C> {
     }
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<StellarTransactionBroadcast, Box<dyn Error + Send + Sync>> {
-        let encoded_data = urlencoding::encode(data);
-        let body = format!("tx={}", encoded_data);
+        let body = encode_transaction_data(data);
         let headers = Some(HashMap::from([(
             "Content-Type".to_string(),
             ContentType::ApplicationFormUrlEncoded.as_str().to_string(),

@@ -1,8 +1,7 @@
 use crate::Chain;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use strum::{EnumIter, IntoEnumIterator};
-use strum_macros::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
 #[derive(Debug, PartialEq)]

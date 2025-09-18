@@ -221,7 +221,7 @@ mod tests {
             l1_fee: None,
             logs: vec![log],
             status: "0x1".to_string(),
-            block_number: "0x1234".to_string(),
+            block_number: BigUint::from(0x1234u32),
         }
     }
 
@@ -235,6 +235,7 @@ mod tests {
             value: BigUint::from(1000000000000000000u64),
             gas: 280395,
             input: "0x".to_string(),
+            block_number: BigUint::from(0x1234u32),
         };
 
         let log = Log {
@@ -272,6 +273,7 @@ mod tests {
             value: BigUint::from(0u32),
             gas: 384404,
             input: "0x".to_string(),
+            block_number: BigUint::from(0x1234u32),
         };
 
         let log = Log {
@@ -309,6 +311,7 @@ mod tests {
             value: BigUint::from(0u32),
             gas: 485626,
             input: "0x".to_string(),
+            block_number: BigUint::from(0x1234u32),
         };
 
         let log = Log {
@@ -346,6 +349,7 @@ mod tests {
             value: BigUint::from(0u32),
             gas: 150000,
             input: "0x".to_string(),
+            block_number: BigUint::from(0x1234u32),
         };
 
         let log = Log {
@@ -381,6 +385,7 @@ mod tests {
             value: BigUint::from(0u32),
             gas: 21000,
             input: "0x".to_string(),
+            block_number: BigUint::from(0x1234u32),
         };
 
         let log = Log {
@@ -410,6 +415,7 @@ mod tests {
             gas: 21000,
             input: "0x982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000"
                 .to_string(),
+            block_number: BigUint::from(0x1234u32),
         };
 
         let log = Log {

@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use chain_traits::ChainBalances;
 use primitives::{AssetBalance, EVMChain};
 
-use crate::provider::balances_mapper::{map_balance_coin, map_balance_tokens};
+use crate::provider::balances_mapper::{map_assets_balances, map_balance_coin, map_balance_tokens};
 use crate::rpc::client::EthereumClient;
 use gem_client::Client;
 
@@ -29,8 +29,19 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
         }
     }
 
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        unimplemented!("get_assets_balances")
+    async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        if let Some(alchemy_client) = &self.alchemy_client {
+            let balances = alchemy_client
+                .get_token_balances(address.as_str())
+                .await?
+                .data
+                .tokens
+                .into_iter()
+                .map(|token| (token.token_address, token.token_balance))
+                .collect();
+            return Ok(map_assets_balances(balances, self.get_chain()));
+        }
+        return Ok(vec![]);
     }
 }
 

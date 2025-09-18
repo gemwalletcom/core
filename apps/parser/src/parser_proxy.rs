@@ -8,8 +8,8 @@ use std::{
 };
 
 use async_trait::async_trait;
-use gem_chain_rpc::{ChainAssetsProvider, ChainBlockProvider, ChainProvider, ChainTokenDataProvider, ChainTransactionsProvider};
-use primitives::{node::ChainNode, Asset, AssetBalance, Chain, Node, Transaction};
+use chain_traits::*;
+use primitives::{node::ChainNode, Chain, Node, Transaction};
 
 #[derive(Clone, Debug)]
 pub struct ParserProxyUrlConfig {
@@ -18,7 +18,7 @@ pub struct ParserProxyUrlConfig {
 
 pub struct ParserProxy {
     pub chain: Chain,
-    pub providers: Vec<Box<dyn ChainProvider>>,
+    pub providers: Vec<Box<dyn ChainTraits>>,
     pub providers_urls: Vec<String>,
     provider_current_index: Arc<Mutex<usize>>,
 }
@@ -91,23 +91,36 @@ impl ParserProxy {
     }
 }
 
-#[async_trait]
-impl ChainBlockProvider for ParserProxy {
+impl ChainProvider for ParserProxy {
     fn get_chain(&self) -> Chain {
         self.chain
     }
+}
 
-    async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
+#[async_trait]
+impl ChainState for ParserProxy {
+    async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
         let provider_index = *self.provider_current_index.lock().unwrap();
-        match self.providers[provider_index].get_latest_block().await {
+        match self.providers[provider_index].get_chain_id().await {
+            Ok(chain_id) => Ok(chain_id),
+            Err(err) => Err(self.handle_error(err)),
+        }
+    }
+
+    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+        let provider_index = *self.provider_current_index.lock().unwrap();
+        match self.providers[provider_index].get_block_latest_number().await {
             Ok(block) => Ok(block),
             Err(err) => Err(self.handle_error(err)),
         }
     }
+}
 
-    async fn get_transactions(&self, block_number: i64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+#[async_trait]
+impl ChainTransactions for ParserProxy {
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let provider_index = *self.provider_current_index.lock().unwrap();
-        match self.providers[provider_index].get_transactions(block_number).await {
+        match self.providers[provider_index].get_transactions_by_block(block).await {
             Ok(txs) => Ok(txs),
             Err(err) => Err(self.handle_error(err)),
         }
@@ -115,34 +128,24 @@ impl ChainBlockProvider for ParserProxy {
 }
 
 #[async_trait]
-impl ChainTokenDataProvider for ParserProxy {
-    async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        let provider_index = *self.provider_current_index.lock().unwrap();
-        match self.providers[provider_index].get_token_data(token_id).await {
-            Ok(asset) => Ok(asset),
-            Err(err) => Err(self.handle_error(err)),
-        }
-    }
-}
+impl ChainBalances for ParserProxy {}
 
 #[async_trait]
-impl ChainAssetsProvider for ParserProxy {
-    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        let provider_index = *self.provider_current_index.lock().unwrap();
-        match self.providers[provider_index].get_assets_balances(address).await {
-            Ok(balances) => Ok(balances),
-            Err(err) => Err(self.handle_error(err)),
-        }
-    }
-}
+impl ChainStaking for ParserProxy {}
 
 #[async_trait]
-impl ChainTransactionsProvider for ParserProxy {
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let provider_index = *self.provider_current_index.lock().unwrap();
-        match self.providers[provider_index].get_transactions_by_address(address, limit).await {
-            Ok(txs) => Ok(txs),
-            Err(err) => Err(self.handle_error(err)),
-        }
-    }
-}
+impl ChainAccount for ParserProxy {}
+
+#[async_trait]
+impl ChainPerpetual for ParserProxy {}
+
+#[async_trait]
+impl ChainToken for ParserProxy {}
+
+#[async_trait]
+impl ChainTransactionLoad for ParserProxy {}
+
+#[async_trait]
+impl ChainAddressStatus for ParserProxy {}
+
+impl ChainTraits for ParserProxy {}

@@ -1,7 +1,7 @@
 use primitives::Chain;
-use strum::IntoEnumIterator;
+use strum::{EnumIter, IntoEnumIterator};
 
-#[derive(Debug, Clone, PartialEq, Eq, strum_macros::EnumIter)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter)]
 pub enum THORChainName {
     Doge,
     Thorchain,

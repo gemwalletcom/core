@@ -13,7 +13,10 @@ use gem_client::Client;
 #[async_trait]
 impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
     async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        unimplemented!("get_staking_apy")
+        match self.chain {
+            EVMChain::SmartChain => self.get_smartchain_staking_apy().await,
+            _ => Ok(None),
+        }
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {

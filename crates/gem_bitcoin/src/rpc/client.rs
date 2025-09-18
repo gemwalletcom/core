@@ -28,8 +28,8 @@ impl<C: Client> BitcoinClient<C> {
         Ok(self.client.get("/api/").await?)
     }
 
-    pub async fn get_block(&self, block_number: i64, page: usize, limit: usize) -> Result<Block, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v2/block/{block_number}?page={page}&limit={limit}")).await?)
+    pub async fn get_block(&self, block_number: u64, page: usize) -> Result<Block, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/api/v2/block/{block_number}?page={page}")).await?)
     }
 
     pub async fn get_address_details(&self, address: &str, limit: usize) -> Result<AddressDetails, Box<dyn Error + Send + Sync>> {

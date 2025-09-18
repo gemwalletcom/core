@@ -1,4 +1,4 @@
-use super::model::{ChatwootWebhookPayload, EVENT_MESSAGE_CREATED};
+use super::model::ChatwootWebhookPayload;
 use localizer::LanguageLocalizer;
 use primitives::{push_notification::PushNotificationSupport, GorushNotification, PushNotification, PushNotificationTypes};
 use std::error::Error;
@@ -15,12 +15,12 @@ impl SupportClient {
         Self { database, stream_producer }
     }
 
-    pub async fn process_webhook(&mut self, support_device_id: String, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if payload.event != EVENT_MESSAGE_CREATED {
-            return Ok(());
-        }
+    pub async fn handle_message_created(&mut self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let device = self.database.get_support_device(support_device_id)?.as_primitive();
 
-        let device = self.database.get_support_device(&support_device_id)?.as_primitive();
+        if let Some(unread) = payload.get_unread() {
+            self.database.support().support_update_unread(support_device_id, unread)?;
+        }
 
         let language_localizer = LanguageLocalizer::new_with_language(&device.locale);
         let title = language_localizer.notification_support_new_message_title();
@@ -33,6 +33,14 @@ impl SupportClient {
         let notification = GorushNotification::from_device(device, title, message, data);
         let notifications_payload = NotificationsPayload::new(vec![notification]);
         self.stream_producer.publish_notifications_support(notifications_payload).await?;
+
+        Ok(())
+    }
+
+    pub fn handle_conversation_updated(&mut self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if let Some(unread) = payload.get_unread() {
+            self.database.support().support_update_unread(support_device_id, unread)?;
+        }
 
         Ok(())
     }

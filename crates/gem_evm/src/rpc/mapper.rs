@@ -437,6 +437,7 @@ mod tests {
             gas: 280395,
             input: "0x982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000"
                 .to_string(),
+            block_number: BigUint::from(0x1234u32),
         };
 
         let receipt = TransactionReciept {
@@ -454,7 +455,7 @@ mod tests {
                     .to_string(),
             }],
             status: "0x1".to_string(),
-            block_number: "0x1234".to_string(),
+            block_number: BigUint::from(0x1234u32),
         };
 
         let result = EthereumMapper::map_transaction(Chain::SmartChain, &transaction, &receipt, None, &BigUint::from(1735671600u64), None);

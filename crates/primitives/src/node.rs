@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use strum_macros::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

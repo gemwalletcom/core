@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use strum_macros::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 use crate::{Asset, AssetId, Device, Price, DEFAULT_FIAT_CURRENCY};

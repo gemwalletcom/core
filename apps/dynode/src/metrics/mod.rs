@@ -57,6 +57,7 @@ struct ResponseLabels {
     host: String,
     remote_host: String,
     path: String,
+    method: String,
     status: u16,
 }
 
@@ -91,7 +92,7 @@ impl Metrics {
         );
         registry.register(
             "proxy_response_latency",
-            "Proxy requests served a response by host and path",
+            "Proxy responses by host, path, method, and status",
             proxy_response_latency.clone(),
         );
         registry.register("node_host_current", "Node current host url", node_host_current.clone());
@@ -139,13 +140,17 @@ impl Metrics {
     }
 
     pub fn add_proxy_request_by_method(&self, host: &str, method: &str) {
-        let method = self.truncate_path(method);
+        let method = self.truncate_method(method);
         self.proxy_requests_by_method
             .get_or_create(&ProxyRequestByMethodLabels {
                 host: host.to_string(),
                 method,
             })
             .inc();
+    }
+
+    fn truncate_method(&self, method: &str) -> String {
+        self.truncate_path(method)
     }
 
     fn truncate_path(&self, path: &str) -> String {
@@ -155,12 +160,14 @@ impl Metrics {
             .join("/")
     }
 
-    pub fn add_proxy_response(&self, host: &str, path: &str, remote_host: &str, status: u16, latency: u128) {
+    pub fn add_proxy_response(&self, host: &str, path: &str, method: &str, remote_host: &str, status: u16, latency: u128) {
         let path = self.truncate_path(path);
+        let method = self.truncate_method(method);
         self.proxy_response_latency
             .get_or_create(&ResponseLabels {
                 host: host.to_string(),
                 path,
+                method,
                 remote_host: remote_host.to_string(),
                 status,
             })

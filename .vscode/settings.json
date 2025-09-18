@@ -11,15 +11,17 @@
     "[yaml]": {
         "editor.formatOnSave": true
     },
-    "files.exclude": {
-        "**/target": true
-    },
+    "search.useIgnoreFiles": true, // respect .gitignore
+    "search.useGlobalIgnoreFiles": true, // also respect global .gitignore
     "search.exclude": {
-        "**/target": true,
-        "**/node_modules": true,
-        "**/dist": true,
-        "**/build": true,
-        "**/.build": true,
-        "**/.git": true
+        "**/target/**": true,
+        "**/.git/**": true
+    },
+    "files.exclude": {
+        "**/target/": true,
+        "**/.git/": true
+    },
+    "files.watcherExclude": {
+        "**/target/**": true
     }
 }

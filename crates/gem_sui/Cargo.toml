@@ -19,7 +19,7 @@ primitives = { path = "../primitives" }
 chain_primitives = { path = "../chain_primitives" }
 sui-types = { workspace = true }
 sui-transaction-builder = { workspace = true }
-bcs = { workspace = true }
+bcs = { version = "0.1.6" }
 hex = { workspace = true }
 base64 = { workspace = true }
 anyhow = { workspace = true }

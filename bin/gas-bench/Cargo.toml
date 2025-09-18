@@ -6,12 +6,9 @@ edition.workspace = true
 [dependencies]
 clap = { version = "4.5.45", features = ["derive", "env"] }
 
-alloy-primitives = { workspace = true }
 anyhow = { workspace = true }
-futures = { workspace = true }
 tokio = { workspace = true }
 num-bigint = { workspace = true }
-num-traits = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
 serde = { workspace = true, features = ["derive"] }
 prettytable-rs = "^0.10"

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, Display, EnumString};
 use typeshare::typeshare;
 
-use crate::{AssetId, Chain, Price};
+use crate::{AssetId, Chain, Price, StakeValidator};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -27,6 +27,12 @@ pub struct DelegationBase {
     pub completion_date: Option<DateTime<Utc>>,
     pub delegation_id: String,
     pub validator_id: String,
+}
+
+impl From<DelegationValidator> for StakeValidator {
+    fn from(value: DelegationValidator) -> Self {
+        StakeValidator::new(value.id, value.name)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
