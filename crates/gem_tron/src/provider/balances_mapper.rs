@@ -34,7 +34,7 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
             })
         });
 
-    let voted_amount = account
+    let vote_amount = account
         .votes
         .as_ref()
         .map_or(0, |votes| votes.iter().map(|vote| vote.vote_count * 10_u64.pow(6)).sum());
@@ -61,10 +61,10 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
 
     Ok(AssetBalance::new_balance(
         AssetId::from_chain(Chain::Tron),
-        create_tron_stake_balance(
+        new_stake_balance(
             BigUint::from(bandwidth_frozen),
             BigUint::from(energy_frozen),
-            BigUint::from(voted_amount),
+            BigUint::from(vote_amount),
             BigUint::from(pending_amount),
             BigUint::from(rewards_amount),
             metadata,
@@ -85,10 +85,10 @@ pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn 
     Ok(format!("{:0>64}", hex::encode(address_bytes)))
 }
 
-fn create_tron_stake_balance(
+fn new_stake_balance(
     frozen: BigUint, // bandwidth frozen
     locked: BigUint, // energy frozen
-    staked: BigUint, // voted amount
+    staked: BigUint, // vote amount
     pending: BigUint, // unfreezing amount
     rewards: BigUint, // voting rewards
     metadata: BalanceMetadata,
@@ -321,7 +321,7 @@ mod tests {
     }
 
     #[test]
-    fn test_create_tron_stake_balance() {
+    fn test_new_stake_balance() {
         let metadata = BalanceMetadata {
             energy_available: 1000,
             energy_total: 2000,
@@ -329,7 +329,7 @@ mod tests {
             bandwidth_total: 1000,
         };
 
-        let balance = create_tron_stake_balance(
+        let balance = new_stake_balance(
             BigUint::from(100_u64),
             BigUint::from(200_u64),
             BigUint::from(300_u64),
