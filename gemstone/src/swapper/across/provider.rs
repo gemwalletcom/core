@@ -1,11 +1,12 @@
+use super::models::{DestinationMessage, QuoteContext, RelayRecipient};
 use super::{
     api::AcrossApi,
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
+    solana::{AcrossPlusMessage, CompiledIx, MULTICALL_HANDLER},
     DEFAULT_FILL_TIMEOUT,
 };
 use crate::{
-    config::swap_config::SwapReferralFee,
     debug_println,
     ethereum::jsonrpc as eth_rpc,
     network::AlienProvider,
@@ -39,15 +40,27 @@ use gem_evm::{
     },
     contracts::erc20::IERC20,
     jsonrpc::TransactionObject,
-    multicall3::IMulticall3,
     weth::WETH9,
 };
 use gem_solana::{jsonrpc::SolanaRpc, models::prioritization_fee::SolanaPrioritizationFee};
 use num_bigint::{BigInt, Sign};
 use primitives::{swap::SwapStatus, AssetId, Chain, ChainType, EVMChain};
-use std::{fmt::Debug, str::FromStr, sync::Arc};
+use solana_primitives::{
+    instructions::{associated_token::get_associated_token_address, program_ids, token::transfer_checked},
+    types::{find_program_address, Instruction as SolInstruction, Pubkey as SolanaPubkey},
+};
+use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
 
 const DEFAULT_SOLANA_COMPUTE_LIMIT: u64 = 200_000;
+
+struct PoolState {
+    token_config: TokenConfig,
+    utilization_before: BigInt,
+    utilization_after: BigInt,
+    timestamp: u32,
+    eth_price: Option<BigInt>,
+    sol_price: Option<BigInt>,
+}
 
 #[derive(Debug)]
 pub struct Across {
@@ -114,6 +127,20 @@ impl Across {
         Ok(FixedBytes::from(bytes))
     }
 
+    fn recipient_to_fixed_bytes(recipient: &RelayRecipient) -> Result<FixedBytes<32>, SwapperError> {
+        match recipient {
+            RelayRecipient::Evm(address) => Ok(Self::decode_address_bytes32(address)),
+            RelayRecipient::Solana(pubkey) => Ok(FixedBytes::from(*pubkey.as_bytes())),
+        }
+    }
+
+    fn recipient_evm_address(recipient: &RelayRecipient) -> Option<&Address> {
+        match recipient {
+            RelayRecipient::Evm(address) => Some(address),
+            RelayRecipient::Solana(_) => None,
+        }
+    }
+
     fn token_bytes32_for_asset(asset: &AssetId) -> Result<FixedBytes<32>, SwapperError> {
         match asset.chain.chain_type() {
             ChainType::Solana => {
@@ -155,6 +182,176 @@ impl Across {
         Ok(deployment.chain_id)
     }
 
+    fn build_context<'a>(&self, request: &'a SwapperQuoteRequest) -> Result<QuoteContext<'a>, SwapperError> {
+        if request.from_asset.chain() == request.to_asset.chain() {
+            return Err(SwapperError::NotSupportedPair);
+        }
+
+        if request.from_asset.chain() == Chain::Solana {
+            return Err(SwapperError::NotSupportedPair);
+        }
+
+        let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
+        let wallet_address = eth_address::parse_str(&request.wallet_address)?;
+        let from_chain = request.from_asset.chain();
+        let to_chain = request.to_asset.chain();
+        let from_chain_evm = EVMChain::from_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
+
+        let _origin_deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
+        let destination_deployment = AcrossDeployment::deployment_by_chain(&to_chain).ok_or(SwapperError::NotSupportedChain)?;
+
+        if !Self::is_supported_pair(&request.from_asset.asset_id(), &request.to_asset.asset_id()) {
+            return Err(SwapperError::NotSupportedPair);
+        }
+
+        let input_asset = eth_address::normalize_weth_asset(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
+        let output_asset = Self::get_output_asset(request)?;
+        let original_output_asset = request.to_asset.asset_id();
+
+        let asset_mapping = AcrossDeployment::asset_mappings()
+            .into_iter()
+            .find(|mapping| mapping.set.contains(&input_asset))
+            .ok_or(SwapperError::NotSupportedPair)?;
+        let mainnet_asset = asset_mapping
+            .set
+            .iter()
+            .find(|asset| asset.chain == Chain::Ethereum)
+            .cloned()
+            .ok_or(SwapperError::NotSupportedPair)?;
+        let mainnet_token = eth_address::normalize_weth_address(&mainnet_asset, from_chain_evm)?;
+
+        let referral_fees = request.options.fee.clone().unwrap_or_default();
+        let referral_fee = if to_chain == Chain::Solana {
+            if referral_fees.solana.address.is_empty() {
+                referral_fees.evm_bridge.clone()
+            } else {
+                referral_fees.solana.clone()
+            }
+        } else {
+            referral_fees.evm_bridge.clone()
+        };
+
+        let output_token_decimals =
+            u8::try_from(asset_mapping.capital_cost.decimals).map_err(|_| SwapperError::ComputeQuoteError("Unsupported token decimals".into()))?;
+
+        Ok(QuoteContext {
+            from_amount,
+            wallet_address,
+            from_chain,
+            to_chain,
+            input_is_native: request.from_asset.is_native(),
+            input_asset,
+            output_asset,
+            original_output_asset,
+            mainnet_token,
+            capital_cost: asset_mapping.capital_cost,
+            referral_fee,
+            destination_deployment,
+            destination_address: if to_chain == Chain::Solana {
+                Some(request.destination_address.as_str())
+            } else {
+                None
+            },
+            output_token_decimals,
+        })
+    }
+
+    async fn fetch_pool_state(&self, ctx: &QuoteContext<'_>, provider: Arc<dyn AlienProvider>) -> Result<PoolState, SwapperError> {
+        let hubpool_client = HubPoolClient::new(provider.clone(), Chain::Ethereum);
+        let config_client = ConfigStoreClient::new(provider.clone(), Chain::Ethereum);
+
+        let preflight_calls = vec![
+            hubpool_client.paused_call3(),
+            hubpool_client.sync_call3(&ctx.mainnet_token),
+            hubpool_client.pooled_token_call3(&ctx.mainnet_token),
+        ];
+        let preflight_results = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, preflight_calls).await?;
+
+        if hubpool_client.decoded_paused_call3(&preflight_results[0])? {
+            return Err(SwapperError::ComputeQuoteError("Across protocol is paused".into()));
+        }
+
+        let reserves = hubpool_client.decoded_pooled_token_call3(&preflight_results[2])?.liquidReserves;
+        if ctx.from_amount > reserves {
+            return Err(SwapperError::ComputeQuoteError("Bridge amount is too large".into()));
+        }
+
+        let token_config_future = config_client.fetch_config(&ctx.mainnet_token);
+
+        let mut call_requests = vec![
+            hubpool_client.utilization_call3(&ctx.mainnet_token, U256::from(0)),
+            hubpool_client.utilization_call3(&ctx.mainnet_token, ctx.from_amount),
+            hubpool_client.get_current_time(),
+        ];
+
+        let mut index_tracker: HashMap<&'static str, usize> = HashMap::new();
+        let mut next_index = 3usize;
+
+        if !ctx.input_is_native {
+            call_requests.push(ChainlinkPriceFeed::new_eth_usd_feed(provider.clone()).latest_round_call3());
+            index_tracker.insert("eth_price", next_index);
+            next_index += 1;
+        }
+
+        if ctx.to_chain == Chain::Solana {
+            call_requests.push(ChainlinkPriceFeed::new_sol_usd_feed(provider.clone()).latest_round_call3());
+            index_tracker.insert("sol_price", next_index);
+        }
+
+        let multicall_future = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, call_requests);
+        let (token_config, multicall_results) = futures::join!(token_config_future, multicall_future);
+
+        let token_config = token_config?;
+        let multicall_results = multicall_results?;
+
+        let utilization_before = hubpool_client.decoded_utilization_call3(&multicall_results[0])?;
+        let utilization_after = hubpool_client.decoded_utilization_call3(&multicall_results[1])?;
+        let timestamp = hubpool_client.decoded_current_time(&multicall_results[2])?;
+
+        let eth_price = index_tracker
+            .get("eth_price")
+            .map(|index| ChainlinkPriceFeed::decoded_answer(&multicall_results[*index]))
+            .transpose()?;
+        let sol_price = index_tracker
+            .get("sol_price")
+            .map(|index| ChainlinkPriceFeed::decoded_answer(&multicall_results[*index]))
+            .transpose()?;
+
+        Ok(PoolState {
+            token_config,
+            utilization_before,
+            utilization_after,
+            timestamp,
+            eth_price,
+            sol_price,
+        })
+    }
+
+    fn build_v3_relay_data(
+        &self,
+        ctx: &QuoteContext<'_>,
+        recipient: FixedBytes<32>,
+        output_token: FixedBytes<32>,
+        message: &[u8],
+    ) -> Result<V3RelayData, SwapperError> {
+        let chain_id = Self::get_destination_chain_id(&ctx.to_chain)?;
+
+        Ok(V3RelayData {
+            depositor: Self::decode_address_bytes32(&ctx.wallet_address),
+            recipient,
+            exclusiveRelayer: FixedBytes::from([0u8; 32]),
+            inputToken: Self::token_bytes32_for_asset(&ctx.input_asset)?,
+            outputToken: output_token,
+            inputAmount: ctx.from_amount,
+            outputAmount: U256::from(100),
+            originChainId: U256::from(chain_id),
+            depositId: U256::from(u32::MAX),
+            fillDeadline: u32::MAX,
+            exclusivityDeadline: 0,
+            message: Bytes::from(message.to_vec()),
+        })
+    }
+
     fn calculate_relayer_fee_for_destination(
         request: &SwapperQuoteRequest,
         from_amount: U256,
@@ -184,56 +381,162 @@ impl Across {
         rate_model.clone().into()
     }
 
-    /// Return (message, referral_fee)
-    pub fn message_for_evm_multicall_handler(
-        &self,
-        amount: &U256,
-        original_output_asset: &AssetId,
-        output_token: &Address,
-        user_address: &Address,
-        referral_fee: &SwapReferralFee,
-    ) -> (Vec<u8>, U256) {
-        if referral_fee.bps == 0 {
-            return (vec![], U256::from(0));
+    fn build_destination_message(&self, ctx: &QuoteContext<'_>, amount: &U256, output_token_evm: Option<&Address>) -> Result<DestinationMessage, SwapperError> {
+        match ctx.to_chain.chain_type() {
+            ChainType::Ethereum => self.build_evm_destination_message(ctx, amount, output_token_evm),
+            ChainType::Solana => self.build_solana_destination_message(ctx, amount),
+            _ => Err(SwapperError::NotSupportedPair),
         }
-        let fee_address = Address::from_str(&referral_fee.address).unwrap();
+    }
+
+    fn build_evm_destination_message(
+        &self,
+        ctx: &QuoteContext<'_>,
+        amount: &U256,
+        output_token_evm: Option<&Address>,
+    ) -> Result<DestinationMessage, SwapperError> {
+        let referral_fee = &ctx.referral_fee;
+        if referral_fee.bps == 0 || referral_fee.address.is_empty() {
+            return Ok(DestinationMessage {
+                bytes: vec![],
+                referral_fee: U256::from(0),
+                recipient: RelayRecipient::Evm(ctx.wallet_address),
+            });
+        }
+
+        let token = output_token_evm.ok_or(SwapperError::NotSupportedPair)?;
+        let fee_address = Address::from_str(&referral_fee.address).map_err(|_| SwapperError::InvalidAddress(referral_fee.address.clone()))?;
         let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
         let user_amount = amount - fee_amount;
 
-        let calls = if original_output_asset.is_native() {
-            // output_token is WETH and we need to unwrap it
-            Self::unwrap_weth_calls(output_token, amount, user_address, &user_amount, &fee_address, &fee_amount)
+        let calls = if ctx.original_output_asset.is_native() {
+            Self::unwrap_weth_calls(token, amount, &ctx.wallet_address, &user_amount, &fee_address, &fee_amount)
         } else {
-            Self::erc20_transfer_calls(output_token, user_address, &user_amount, &fee_address, &fee_amount)
+            Self::erc20_transfer_calls(token, &ctx.wallet_address, &user_amount, &fee_address, &fee_amount)
         };
+
         let instructions = multicall_handler::Instructions {
             calls,
-            fallbackRecipient: *user_address,
+            fallbackRecipient: ctx.wallet_address,
         };
         let message = instructions.abi_encode();
-        (message, fee_amount)
+        let multicall_address = Address::from_str(ctx.destination_deployment.multicall_handler().as_str()).unwrap();
+
+        Ok(DestinationMessage {
+            bytes: message,
+            referral_fee: fee_amount,
+            recipient: RelayRecipient::Evm(multicall_address),
+        })
     }
 
-    /// Return (message, referral_fee) depending on destination chain type
-    pub fn message_for_multicall_handler(
-        &self,
-        amount: &U256,
-        original_output_asset: &AssetId,
-        output_token_evm: Option<&Address>,
-        user_address: &Address,
-        referral_fee: &SwapReferralFee,
-    ) -> (Vec<u8>, U256) {
-        match original_output_asset.chain.chain_type() {
-            ChainType::Ethereum => {
-                if let Some(token) = output_token_evm {
-                    self.message_for_evm_multicall_handler(amount, original_output_asset, token, user_address, referral_fee)
-                } else {
-                    (vec![], U256::from(0))
-                }
-            }
-            ChainType::Solana => (vec![], U256::from(0)),
-            _ => (vec![], U256::from(0)),
+    fn build_solana_destination_message(&self, ctx: &QuoteContext<'_>, amount: &U256) -> Result<DestinationMessage, SwapperError> {
+        let destination_address = ctx
+            .destination_address
+            .ok_or_else(|| SwapperError::InvalidAddress("Missing Solana destination address".into()))?;
+        let user_account = SolanaPubkey::from_str(destination_address).map_err(|_| SwapperError::InvalidAddress(destination_address.into()))?;
+
+        let referral_fee = &ctx.referral_fee;
+        if referral_fee.bps == 0 || referral_fee.address.is_empty() {
+            return Ok(DestinationMessage {
+                bytes: vec![],
+                referral_fee: U256::from(0),
+                recipient: RelayRecipient::Solana(user_account),
+            });
         }
+
+        let referral_account = SolanaPubkey::from_str(&referral_fee.address).map_err(|_| SwapperError::InvalidAddress(referral_fee.address.clone()))?;
+        let handler_program = SolanaPubkey::from_str(MULTICALL_HANDLER).map_err(|_| SwapperError::InvalidAddress(MULTICALL_HANDLER.into()))?;
+        let (handler_signer, _) = find_program_address(&handler_program, &[b"handler_signer"])
+            .map_err(|_| SwapperError::ComputeQuoteError("Failed to derive handler signer".into()))?;
+
+        let mint_id = ctx
+            .original_output_asset
+            .token_id
+            .as_deref()
+            .ok_or_else(|| SwapperError::InvalidAddress("Missing Solana mint".into()))?;
+        let mint = SolanaPubkey::from_str(mint_id).map_err(|_| SwapperError::InvalidAddress(mint_id.into()))?;
+
+        let token_program =
+            SolanaPubkey::from_str(program_ids::TOKEN_PROGRAM_ID).map_err(|_| SwapperError::InvalidAddress(program_ids::TOKEN_PROGRAM_ID.into()))?;
+
+        let handler_token_account = get_associated_token_address(&handler_signer, &mint);
+
+        let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
+        let user_amount = amount - fee_amount;
+
+        let fee_amount_u64: u64 = fee_amount.try_into().map_err(|_| SwapperError::InvalidAmount("Referral fee overflow".into()))?;
+        let user_amount_u64: u64 = user_amount.try_into().map_err(|_| SwapperError::InvalidAmount("User amount overflow".into()))?;
+
+        let transfer_fee_ix = transfer_checked(
+            &handler_token_account,
+            &referral_account,
+            &mint,
+            &handler_signer,
+            fee_amount_u64,
+            ctx.output_token_decimals,
+        );
+        let transfer_user_ix = transfer_checked(
+            &handler_token_account,
+            &user_account,
+            &mint,
+            &handler_signer,
+            user_amount_u64,
+            ctx.output_token_decimals,
+        );
+
+        let accounts = vec![handler_token_account, referral_account, user_account, handler_signer, mint, token_program];
+
+        let compiled_ixs = self.compile_solana_instructions(&[transfer_fee_ix, transfer_user_ix], &accounts)?;
+        let handler_message = borsh::to_vec(&compiled_ixs).map_err(|_| SwapperError::ComputeQuoteError("Failed to encode handler message".into()))?;
+
+        let across_message = AcrossPlusMessage {
+            handler: handler_program,
+            read_only_len: 3,
+            value_amount: 0,
+            accounts,
+            handler_message,
+        };
+        let message_bytes = borsh::to_vec(&across_message).map_err(|_| SwapperError::ComputeQuoteError("Failed to encode Across message".into()))?;
+
+        Ok(DestinationMessage {
+            bytes: message_bytes,
+            referral_fee: fee_amount,
+            recipient: RelayRecipient::Solana(handler_signer),
+        })
+    }
+
+    fn compile_solana_instructions(&self, instructions: &[SolInstruction], accounts: &[SolanaPubkey]) -> Result<Vec<CompiledIx>, SwapperError> {
+        let mut account_index_map: HashMap<String, u8> = HashMap::new();
+        for (idx, account) in accounts.iter().enumerate() {
+            account_index_map.insert(account.to_base58(), (idx + 1) as u8);
+        }
+
+        let mut compiled = Vec::with_capacity(instructions.len());
+        for instruction in instructions {
+            let program_key = instruction.program_id.to_base58();
+            let program_index = account_index_map
+                .get(&program_key)
+                .copied()
+                .ok_or_else(|| SwapperError::ComputeQuoteError("Program account missing from message".into()))?;
+
+            let mut account_key_indexes = Vec::with_capacity(instruction.accounts.len());
+            for account in &instruction.accounts {
+                let key = account.pubkey.to_base58();
+                let index = account_index_map
+                    .get(&key)
+                    .copied()
+                    .ok_or_else(|| SwapperError::ComputeQuoteError("Account missing from message".into()))?;
+                account_key_indexes.push(index);
+            }
+
+            compiled.push(CompiledIx {
+                program_id_index: program_index,
+                account_key_indexes,
+                data: instruction.data.clone(),
+            });
+        }
+
+        Ok(compiled)
     }
 
     fn unwrap_weth_calls(
@@ -295,76 +598,46 @@ impl Across {
         ]
     }
 
-    pub async fn estimate_gas_limit(
+    async fn estimate_gas_limit(
         &self,
-        amount: &U256,
-        is_native: bool,
-        input_asset: &AssetId,
+        ctx: &QuoteContext<'_>,
+        destination_message: &DestinationMessage,
         output_token: FixedBytes<32>,
-        wallet_address: &Address,
-        message: &[u8],
-        deployment: &AcrossDeployment,
         provider: Arc<dyn AlienProvider>,
-        chain: Chain,
     ) -> Result<(U256, V3RelayData), SwapperError> {
-        let chain_id = Self::get_destination_chain_id(&chain)?;
-
-        // Prepare bytes32 fields
-        let depositor = Self::decode_address_bytes32(wallet_address);
-        let recipient_evm = if message.is_empty() {
-            *wallet_address
-        } else {
-            Address::from_str(deployment.multicall_handler().as_str()).unwrap()
-        };
-        let recipient = Self::decode_address_bytes32(&recipient_evm);
-        let input_token = Self::token_bytes32_for_asset(input_asset)?;
-
-        let v3_relay_data = V3RelayData {
-            depositor,
-            recipient,
-            exclusiveRelayer: FixedBytes::from([0u8; 32]),
-            inputToken: input_token,
-            outputToken: output_token,
-            inputAmount: *amount,
-            outputAmount: U256::from(100), // safe amount
-            originChainId: U256::from(chain_id),
-            depositId: U256::from(u32::MAX),
-            fillDeadline: u32::MAX,
-            exclusivityDeadline: 0,
-            message: Bytes::from(message.to_vec()),
-        };
-        let value = if is_native { format!("{amount:#x}") } else { String::from("0x0") };
-        let data = V3SpokePoolInterface::fillRelayCall {
-            relayData: v3_relay_data.clone(),
-            repaymentChainId: U256::from(chain_id),
-            repaymentAddress: Self::decode_address_bytes32(wallet_address),
-        }
-        .abi_encode();
+        let chain = ctx.to_chain;
         if chain.chain_type() != ChainType::Ethereum {
             return Err(SwapperError::NotImplemented);
         }
-        let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
+
+        let recipient_address = Self::recipient_evm_address(&destination_message.recipient).ok_or(SwapperError::NotImplemented)?;
+        let recipient = Self::decode_address_bytes32(recipient_address);
+        let v3_relay_data = self.build_v3_relay_data(ctx, recipient, output_token, &destination_message.bytes)?;
+
+        let value = if ctx.input_is_native {
+            format!("{:#x}", ctx.from_amount)
+        } else {
+            String::from("0x0")
+        };
+        let chain_id = Self::get_destination_chain_id(&chain)?;
+        let data = V3SpokePoolInterface::fillRelayCall {
+            relayData: v3_relay_data.clone(),
+            repaymentChainId: U256::from(chain_id),
+            repaymentAddress: Self::decode_address_bytes32(&ctx.wallet_address),
+        }
+        .abi_encode();
+
+        let tx = TransactionObject::new_call_to_value(ctx.destination_deployment.spoke_pool, &value, data);
         let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await;
         Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
     }
 
-    pub fn update_v3_relay_data(
-        &self,
-        v3_relay_data: &mut V3RelayData,
-        user_address: &Address,
-        output_amount: &U256,
-        original_output_asset: &AssetId,
-        output_token: Option<&Address>,
-        timestamp: u32,
-        referral_fee: &SwapReferralFee,
-    ) -> Result<U256, SwapperError> {
-        let (message, final_referral_fee) = self.message_for_multicall_handler(output_amount, original_output_asset, output_token, user_address, referral_fee);
-
+    fn update_v3_relay_data(&self, v3_relay_data: &mut V3RelayData, output_amount: &U256, timestamp: u32, destination_message: DestinationMessage) -> U256 {
         v3_relay_data.outputAmount = *output_amount;
         v3_relay_data.fillDeadline = timestamp + DEFAULT_FILL_TIMEOUT;
-        v3_relay_data.message = message.into();
+        v3_relay_data.message = destination_message.bytes.into();
 
-        Ok(final_referral_fee)
+        destination_message.referral_fee
     }
 
     pub fn calculate_fee_in_token(fee_in_wei: &U256, token_price: &BigInt, token_decimals: u32) -> U256 {
@@ -392,65 +665,31 @@ impl Across {
 
     async fn calculate_gas_price_and_fee(
         &self,
-        gas_chain: Chain,
-        from_amount: &U256,
-        input_is_native: bool,
-        input_asset: &AssetId,
+        ctx: &QuoteContext<'_>,
+        destination_message: &DestinationMessage,
         output_token: FixedBytes<32>,
-        wallet_address: &Address,
-        message: &[u8],
-        destination_deployment: &AcrossDeployment,
         provider: Arc<dyn AlienProvider>,
-        eth_price_index: Option<usize>,
-        multicall_results: &[IMulticall3::Result],
+        eth_price: Option<&BigInt>,
     ) -> Result<(U256, V3RelayData), SwapperError> {
-        if gas_chain == Chain::Solana {
+        if ctx.to_chain == Chain::Solana {
             let unit_price = Self::fetch_solana_unit_price(provider.clone()).await?;
             let gas_fee = DEFAULT_SOLANA_COMPUTE_LIMIT * unit_price;
 
-            let chain_id = Self::get_destination_chain_id(&gas_chain)?;
-            let recipient_evm = if message.is_empty() {
-                *wallet_address
-            } else {
-                Address::from_str(destination_deployment.multicall_handler().as_str()).unwrap()
-            };
-            let v3_relay_data = V3RelayData {
-                depositor: Self::decode_address_bytes32(wallet_address),
-                recipient: Self::decode_address_bytes32(&recipient_evm),
-                exclusiveRelayer: FixedBytes::from([0u8; 32]),
-                inputToken: Self::token_bytes32_for_asset(input_asset)?,
-                outputToken: output_token,
-                inputAmount: *from_amount,
-                outputAmount: U256::from(100), // safe amount
-                originChainId: U256::from(chain_id),
-                depositId: U256::from(u32::MAX),
-                fillDeadline: u32::MAX,
-                exclusivityDeadline: 0,
-                message: Bytes::from(message.to_vec()),
-            };
+            let recipient = Self::recipient_to_fixed_bytes(&destination_message.recipient)?;
+            let v3_relay_data = self.build_v3_relay_data(ctx, recipient, output_token, &destination_message.bytes)?;
 
             Ok((U256::from(gas_fee), v3_relay_data))
         } else {
+            let gas_chain = ctx.to_chain;
             let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), gas_chain);
-            let gas_limit_req = self.estimate_gas_limit(
-                from_amount,
-                input_is_native,
-                input_asset,
-                output_token,
-                wallet_address,
-                message,
-                destination_deployment,
-                provider.clone(),
-                gas_chain,
-            );
+            let gas_limit_req = self.estimate_gas_limit(ctx, destination_message, output_token, provider.clone());
 
             let (tuple, gas_price) = futures::join!(gas_limit_req, gas_price_req);
             let (gas_limit, v3_relay_data) = tuple?;
             let mut gas_fee = gas_limit * gas_price?;
 
-            if let Some(index) = eth_price_index {
-                let eth_price = ChainlinkPriceFeed::decoded_answer(&multicall_results[index])?;
-                gas_fee = Self::calculate_fee_in_token(&gas_fee, &eth_price, 6);
+            if let Some(price) = eth_price {
+                gas_fee = Self::calculate_fee_in_token(&gas_fee, price, 6);
             }
 
             Ok((gas_fee, v3_relay_data))
@@ -505,156 +744,56 @@ impl Swapper for Across {
     }
 
     async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
-        if request.from_asset.chain() == request.to_asset.chain() {
-            return Err(SwapperError::NotSupportedPair);
-        }
+        let ctx = self.build_context(request)?;
+        let pool_state = self.fetch_pool_state(&ctx, provider.clone()).await?;
 
-        if request.from_asset.chain() == Chain::Solana {
-            return Err(SwapperError::NotSupportedPair);
-        }
-
-        let input_is_native = request.from_asset.is_native();
-        let from_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
-        let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
-        let wallet_address = eth_address::parse_str(&request.wallet_address)?;
-
-        let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
-        let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
-        if !Self::is_supported_pair(&request.from_asset.asset_id(), &request.to_asset.asset_id()) {
-            return Err(SwapperError::NotSupportedPair);
-        }
-
-        let input_asset = eth_address::normalize_weth_asset(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
-        let output_asset = Self::get_output_asset(request)?;
-        let original_output_asset = request.to_asset.asset_id();
-
-        // Get L1 token address
-        let mappings = AcrossDeployment::asset_mappings();
-        let asset_mapping = mappings.iter().find(|x| x.set.contains(&input_asset)).unwrap();
-        let asset_mainnet = asset_mapping.set.iter().find(|x| x.chain == Chain::Ethereum).unwrap();
-        let mainnet_token = eth_address::normalize_weth_address(asset_mainnet, from_chain)?;
-
-        let hubpool_client = HubPoolClient::new(provider.clone(), Chain::Ethereum);
-        let config_client = ConfigStoreClient::new(provider.clone(), Chain::Ethereum);
-
-        let calls = vec![
-            hubpool_client.paused_call3(),
-            hubpool_client.sync_call3(&mainnet_token),
-            hubpool_client.pooled_token_call3(&mainnet_token),
-        ];
-        let results = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls).await?;
-
-        let is_paused = hubpool_client.decoded_paused_call3(&results[0])?;
-        if is_paused {
-            return Err(SwapperError::ComputeQuoteError("Across protocol is paused".into()));
-        }
-
-        if from_amount > hubpool_client.decoded_pooled_token_call3(&results[2])?.liquidReserves {
-            return Err(SwapperError::ComputeQuoteError("Bridge amount is too large".into()));
-        }
-
-        let token_config_req = config_client.fetch_config(&mainnet_token); // cache is used inside config_client
-        let mut calls = vec![
-            hubpool_client.utilization_call3(&mainnet_token, U256::from(0)),
-            hubpool_client.utilization_call3(&mainnet_token, from_amount),
-            hubpool_client.get_current_time(),
-        ];
-
-        let eth_price_feed = ChainlinkPriceFeed::new_eth_usd_feed(provider.clone());
-        let sol_price_feed = ChainlinkPriceFeed::new_sol_usd_feed(provider.clone());
-        let mut next_call_index = 3; // utilization(0), utilization(from_amount), current_time
-        let eth_price_index = if !input_is_native {
-            calls.push(eth_price_feed.latest_round_call3());
-            let index = next_call_index;
-            next_call_index += 1;
-            Some(index)
-        } else {
-            None
-        };
-        let sol_price_index = if Self::is_solana_destination(request) {
-            calls.push(sol_price_feed.latest_round_call3());
-            let index = next_call_index;
-            Some(index)
-        } else {
-            None
-        };
-
-        let multicall_req = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls);
-
-        let batch_results = futures::join!(token_config_req, multicall_req);
-        let token_config = batch_results.0?;
-        let multicall_results = batch_results.1?;
-
-        let util_before = hubpool_client.decoded_utilization_call3(&multicall_results[0])?;
-        let util_after = hubpool_client.decoded_utilization_call3(&multicall_results[1])?;
-        let timestamp = hubpool_client.decoded_current_time(&multicall_results[2])?;
-
-        let rate_model = Self::get_rate_model(&input_asset, &output_asset, &token_config);
-        let cost_config = &asset_mapping.capital_cost;
-
+        let rate_model = Self::get_rate_model(&ctx.input_asset, &ctx.output_asset, &pool_state.token_config);
         let lpfee_calc = LpFeeCalculator::new(rate_model);
-        let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
-        let lpfee = fees::multiply(from_amount, lpfee_percent, cost_config.decimals);
+        let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&pool_state.utilization_before, &pool_state.utilization_after, false);
+        let lpfee = fees::multiply(ctx.from_amount, lpfee_percent, ctx.capital_cost.decimals);
         debug_println!("lpfee: {}", lpfee);
 
-        let sol_price = if let Some(index) = sol_price_index {
-            Some(ChainlinkPriceFeed::decoded_answer(&multicall_results[index])?)
-        } else {
-            None
-        };
-
-        let relayer_fee = Self::calculate_relayer_fee_for_destination(request, from_amount, cost_config, sol_price.as_ref());
+        let relayer_fee = Self::calculate_relayer_fee_for_destination(request, ctx.from_amount, &ctx.capital_cost, pool_state.sol_price.as_ref());
         debug_println!("relayer_fee: {}", relayer_fee);
 
-        let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
+        if lpfee + relayer_fee >= ctx.from_amount {
+            return Err(SwapperError::InputAmountTooSmall);
+        }
+        let remain_amount = ctx.from_amount - lpfee - relayer_fee;
 
-        let remain_amount = from_amount - lpfee - relayer_fee;
-        let output_token_evm = if request.to_asset.chain().chain_type() == ChainType::Ethereum {
-            Some(eth_address::parse_asset_id(&output_asset)?)
+        let output_token_evm = if ctx.to_chain.chain_type() == ChainType::Ethereum {
+            Some(eth_address::parse_asset_id(&ctx.output_asset)?)
         } else {
             None
         };
-        let (message, _estimation_referral_fee) = self.message_for_multicall_handler(
-            &remain_amount,
-            &original_output_asset,
-            output_token_evm.as_ref(),
-            &wallet_address,
-            &referral_config,
-        );
 
-        let gas_chain = request.to_asset.chain();
-        let output_token_bytes = Self::token_bytes32_for_asset(&output_asset)?;
+        let initial_destination_message = self.build_destination_message(&ctx, &remain_amount, output_token_evm.as_ref())?;
+        let output_token_bytes = Self::token_bytes32_for_asset(&ctx.output_asset)?;
         let (gas_fee, mut v3_relay_data) = self
             .calculate_gas_price_and_fee(
-                gas_chain,
-                &from_amount,
-                input_is_native,
-                &input_asset,
+                &ctx,
+                &initial_destination_message,
                 output_token_bytes,
-                &wallet_address,
-                &message,
-                &destination_deployment,
                 provider.clone(),
-                eth_price_index,
-                &multicall_results,
+                pool_state.eth_price.as_ref(),
             )
             .await?;
         debug_println!("gas_fee: {}", gas_fee);
 
-        if remain_amount < gas_fee {
+        if remain_amount <= gas_fee {
             return Err(SwapperError::InputAmountTooSmall);
         }
-
         let output_amount = remain_amount - gas_fee;
-        let final_referral_fee = self.update_v3_relay_data(
-            &mut v3_relay_data,
-            &wallet_address,
-            &output_amount,
-            &original_output_asset,
-            output_token_evm.as_ref(),
-            timestamp,
-            &referral_config,
-        )?;
+
+        let final_destination_message = self.build_destination_message(&ctx, &output_amount, output_token_evm.as_ref())?;
+        let recipient_bytes = Self::recipient_to_fixed_bytes(&final_destination_message.recipient)?;
+        if v3_relay_data.recipient != recipient_bytes {
+            v3_relay_data.recipient = recipient_bytes;
+        }
+        let final_referral_fee = self.update_v3_relay_data(&mut v3_relay_data, &output_amount, pool_state.timestamp, final_destination_message);
+        if final_referral_fee > output_amount {
+            return Err(SwapperError::InputAmountTooSmall);
+        }
         let to_value = output_amount - final_referral_fee;
 
         let encoded_data = v3_relay_data.abi_encode();
@@ -667,14 +806,14 @@ impl Swapper for Across {
                 provider: self.provider.clone(),
                 slippage_bps: request.options.slippage.bps,
                 routes: vec![SwapperRoute {
-                    input: input_asset.clone(),
-                    output: output_asset.clone(),
+                    input: ctx.input_asset.clone(),
+                    output: ctx.output_asset.clone(),
                     route_data,
                     gas_limit: Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()),
                 }],
             },
             request: request.clone(),
-            eta_in_seconds: self.get_eta_in_seconds(&request.from_asset.chain(), &request.to_asset.chain()),
+            eta_in_seconds: self.get_eta_in_seconds(&ctx.from_chain, &ctx.to_chain),
         })
     }
 
@@ -687,16 +826,7 @@ impl Swapper for Across {
         let v3_relay_data = V3RelayData::abi_decode(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
         let depositor = Self::decode_address_bytes32(&eth_address::parse_str(&quote.request.wallet_address)?);
-        let recipient = if quote.request.to_asset.chain() == Chain::Solana {
-            Self::decode_bs58_bytes32(&quote.request.destination_address)?
-        } else {
-            let recipient_evm = if v3_relay_data.message.is_empty() {
-                eth_address::parse_str(&quote.request.wallet_address)?
-            } else {
-                Address::from_str(deployment.multicall_handler().as_str()).unwrap()
-            };
-            Self::decode_address_bytes32(&recipient_evm)
-        };
+        let recipient = v3_relay_data.recipient;
 
         // input token uses bytes32 (EVM padded or Solana raw depending on origin chain)
         let input_asset_id = quote.request.from_asset.asset_id();
@@ -791,15 +921,79 @@ impl Swapper for Across {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::network::mock::AlienProviderMock;
+    use crate::config::swap_config::SwapReferralFee;
+    use crate::network::mock::{AlienProviderMock, MockFn};
+    use crate::swapper::{
+        across::solana::AcrossPlusMessage,
+        models::{SwapperOptions, SwapperQuoteRequest},
+        remote_models::{SwapperMode, SwapperQuoteAsset},
+    };
     use gem_evm::{
-        across::contracts::{multicall_handler, V3SpokePoolInterface::depositCall},
-        contracts::erc20::IERC20,
+        across::contracts::{multicall_handler, spoke_pool::V3SpokePoolInterface::depositCall},
         multicall3::IMulticall3,
         weth::WETH9,
     };
+    use num_bigint::BigInt;
     use primitives::asset_constants::*;
     use std::time::Duration;
+
+    fn make_quote_asset(asset_id: &AssetId, decimals: u32) -> SwapperQuoteAsset {
+        SwapperQuoteAsset {
+            id: asset_id.to_string(),
+            symbol: String::new(),
+            decimals,
+        }
+    }
+
+    fn make_request(from_asset: AssetId, to_asset: AssetId, wallet: &str, destination: &str, value: &str) -> SwapperQuoteRequest {
+        SwapperQuoteRequest {
+            from_asset: make_quote_asset(&from_asset, 18),
+            to_asset: make_quote_asset(&to_asset, 18),
+            wallet_address: wallet.into(),
+            destination_address: destination.into(),
+            value: value.into(),
+            mode: SwapperMode::ExactIn,
+            options: SwapperOptions::default(),
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn make_quote_context<'a>(
+        _request: &'a SwapperQuoteRequest,
+        from_amount: U256,
+        wallet_address: &str,
+        from_chain: Chain,
+        to_chain: Chain,
+        input_asset: AssetId,
+        output_asset: AssetId,
+        original_output_asset: AssetId,
+        referral_fee: SwapReferralFee,
+        destination_address: Option<&'a str>,
+        input_is_native: bool,
+        output_token_decimals: u8,
+    ) -> QuoteContext<'a> {
+        QuoteContext {
+            from_amount,
+            wallet_address: Address::from_str(wallet_address).unwrap(),
+            from_chain,
+            to_chain,
+            input_is_native,
+            input_asset,
+            output_asset,
+            original_output_asset,
+            mainnet_token: Address::from_str("0x0000000000000000000000000000000000000001").unwrap(),
+            capital_cost: fees::CapitalCostConfig {
+                lower_bound: BigInt::from(0),
+                upper_bound: BigInt::from(0),
+                cutoff: BigInt::from(1),
+                decimals: output_token_decimals as u32,
+            },
+            referral_fee,
+            destination_deployment: AcrossDeployment::deployment_by_chain(&to_chain).unwrap(),
+            destination_address,
+            output_token_decimals,
+        }
+    }
 
     #[test]
     fn test_is_supported_pair() {
@@ -904,109 +1098,139 @@ mod tests {
     }
 
     #[test]
-    fn test_message_for_multicall_handler_eth_to_base() {
-        // ETH from Ethereum to Base (destination native -> unwrap WETH)
+    fn test_build_destination_message_eth_to_base() {
         let across = Across::default();
         let amount = U256::from_str("1000000000000000000").unwrap(); // 1 ETH
-
-        // Destination is Base native ETH
-        let original_output_asset = AssetId::from(Chain::Base, None);
-        let output_token_evm = Address::from_str("0x4200000000000000000000000000000000000006").unwrap(); // Base WETH
-        let user_address = Address::from_str("0x1111111111111111111111111111111111111111").unwrap();
-        let fee_address_str = "0x2222222222222222222222222222222222222222";
+        let request = make_request(
+            AssetId::from_chain(Chain::Ethereum),
+            AssetId::from_chain(Chain::Base),
+            "0x1111111111111111111111111111111111111111",
+            "11111111111111111111111111111111",
+            amount.to_string().as_str(),
+        );
         let referral_fee = SwapReferralFee {
-            address: fee_address_str.into(),
-            bps: 100, // 1%
+            address: "0x2222222222222222222222222222222222222222".into(),
+            bps: 100,
         };
+        let ctx = make_quote_context(
+            &request,
+            amount,
+            &request.wallet_address,
+            Chain::Ethereum,
+            Chain::Base,
+            AssetId::from_chain(Chain::Ethereum),
+            AssetId::from_token(Chain::Base, "0x4200000000000000000000000000000000000006"),
+            AssetId::from_chain(Chain::Base),
+            referral_fee,
+            None,
+            true,
+            18,
+        );
 
-        let (message, fee_amount) =
-            across.message_for_multicall_handler(&amount, &original_output_asset, Some(&output_token_evm), &user_address, &referral_fee);
+        let output_token = Address::from_str("0x4200000000000000000000000000000000000006").unwrap();
+        let destination_message = across.build_destination_message(&ctx, &amount, Some(&output_token)).unwrap();
 
-        // Validate fee math
         let expected_fee = amount * U256::from(100u64) / U256::from(10000u64);
-        let expected_user_amount = amount - expected_fee;
+        assert_eq!(destination_message.referral_fee, expected_fee);
 
-        assert_eq!(fee_amount, expected_fee);
-
-        // Decode and validate instructions
-        let instructions = multicall_handler::Instructions::abi_decode(&message).unwrap();
-
-        assert_eq!(instructions.fallbackRecipient, user_address);
+        let instructions = multicall_handler::Instructions::abi_decode(&destination_message.bytes).unwrap();
+        assert_eq!(instructions.fallbackRecipient, ctx.wallet_address);
         assert_eq!(instructions.calls.len(), 3);
 
-        // Call[0]: WETH.withdraw(amount)
         let expected_withdraw = WETH9::withdrawCall { wad: amount }.abi_encode();
-
-        assert_eq!(instructions.calls[0].target, output_token_evm);
+        assert_eq!(instructions.calls[0].target, output_token);
         assert_eq!(instructions.calls[0].callData, Bytes::from(expected_withdraw));
-        assert_eq!(instructions.calls[0].value, U256::from(0));
-
-        // Call[1]: send ETH to user
-        assert_eq!(instructions.calls[1].target, user_address);
-        assert!(instructions.calls[1].callData.is_empty());
-        assert_eq!(instructions.calls[1].value, expected_user_amount);
-
-        // Call[2]: send ETH to referral address
-        let fee_address = Address::from_str(fee_address_str).unwrap();
-
-        assert_eq!(instructions.calls[2].target, fee_address);
-        assert!(instructions.calls[2].callData.is_empty());
-        assert_eq!(instructions.calls[2].value, expected_fee);
+        assert_eq!(instructions.calls[1].value + instructions.calls[2].value, amount);
     }
 
     #[test]
-    fn test_message_for_multicall_handler_usdc_arb_to_op() {
-        // USDC from Arbitrum to Optimism (destination ERC20 -> transfer calls)
+    fn test_build_destination_message_usdc_to_optimism() {
         let across = Across::default();
-        let amount = U256::from(1_000_000u64); // 1 USDC (6 decimals)
-
-        // Destination is Optimism USDC (ERC20)
-        let original_output_asset: AssetId = USDC_OP_ASSET_ID.into();
-        let output_token_evm = Address::from_str("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85").unwrap(); // OP USDC
-        let user_address = Address::from_str("0x1111111111111111111111111111111111111111").unwrap();
-        let fee_address_str = "0x2222222222222222222222222222222222222222";
+        let amount = U256::from(1_000_000u64);
+        let request = make_request(
+            AssetId::from_token(Chain::Arbitrum, "0xaf88d065e77c8cc2239327c5edb3a432268e5831"),
+            USDC_OP_ASSET_ID.into(),
+            "0x1111111111111111111111111111111111111111",
+            "11111111111111111111111111111111",
+            amount.to_string().as_str(),
+        );
         let referral_fee = SwapReferralFee {
-            address: fee_address_str.into(),
-            bps: 100, // 1%
+            address: "0x2222222222222222222222222222222222222222".into(),
+            bps: 100,
         };
+        let ctx = make_quote_context(
+            &request,
+            amount,
+            &request.wallet_address,
+            Chain::Arbitrum,
+            Chain::Optimism,
+            AssetId::from_token(Chain::Arbitrum, "0xaf88d065e77c8cc2239327c5edb3a432268e5831"),
+            USDC_OP_ASSET_ID.into(),
+            USDC_OP_ASSET_ID.into(),
+            referral_fee,
+            None,
+            false,
+            6,
+        );
 
-        let (message, fee_amount) =
-            across.message_for_multicall_handler(&amount, &original_output_asset, Some(&output_token_evm), &user_address, &referral_fee);
+        let token_address = Address::from_str("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85").unwrap();
+        let destination_message = across.build_destination_message(&ctx, &amount, Some(&token_address)).unwrap();
 
-        // Validate fee math
         let expected_fee = amount * U256::from(100u64) / U256::from(10000u64);
-        let expected_user_amount = amount - expected_fee;
+        assert_eq!(destination_message.referral_fee, expected_fee);
 
-        assert_eq!(fee_amount, expected_fee);
-
-        // Decode and validate instructions
-        let instructions = multicall_handler::Instructions::abi_decode(&message).unwrap();
-
-        assert_eq!(instructions.fallbackRecipient, user_address);
+        let instructions = multicall_handler::Instructions::abi_decode(&destination_message.bytes).unwrap();
         assert_eq!(instructions.calls.len(), 2);
-
-        // Call[0]: IERC20.transfer(user, user_amount)
-        let user_transfer = IERC20::transferCall {
-            to: user_address,
-            value: expected_user_amount,
-        }
-        .abi_encode();
-
-        assert_eq!(instructions.calls[0].target, output_token_evm);
-        assert_eq!(instructions.calls[0].callData, Bytes::from(user_transfer));
+        assert_eq!(instructions.calls[0].target, token_address);
+        assert_eq!(instructions.calls[1].target, token_address);
         assert_eq!(instructions.calls[0].value, U256::from(0));
-
-        // Call[1]: IERC20.transfer(fee_address, fee_amount)
-        let fee_address = Address::from_str(fee_address_str).unwrap();
-        let fee_transfer = IERC20::transferCall {
-            to: fee_address,
-            value: expected_fee,
-        }
-        .abi_encode();
-
-        assert_eq!(instructions.calls[1].target, output_token_evm);
-        assert_eq!(instructions.calls[1].callData, Bytes::from(fee_transfer));
         assert_eq!(instructions.calls[1].value, U256::from(0));
+    }
+
+    #[test]
+    fn test_build_destination_message_solana_with_referral() {
+        let across = Across::default();
+        let amount = U256::from(2_000_000u64);
+        let destination = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
+        let referral_address = "5fmLrs2GuhfDP1B51ziV5Kd1xtAr9rw1jf3aQ4ihZ2gy";
+        let request = make_request(
+            AssetId::from_token(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
+            SOLANA_USDC.id.clone(),
+            "0x1111111111111111111111111111111111111111",
+            destination,
+            amount.to_string().as_str(),
+        );
+        let referral_fee = SwapReferralFee {
+            address: referral_address.into(),
+            bps: 100,
+        };
+        let ctx = make_quote_context(
+            &request,
+            amount,
+            &request.wallet_address,
+            Chain::Ethereum,
+            Chain::Solana,
+            AssetId::from_token(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
+            SOLANA_USDC.id.clone(),
+            SOLANA_USDC.id.clone(),
+            referral_fee,
+            Some(destination),
+            false,
+            6,
+        );
+
+        let destination_message = across.build_destination_message(&ctx, &amount, None).unwrap();
+        let expected_fee = amount * U256::from(100u64) / U256::from(10000u64);
+        assert_eq!(destination_message.referral_fee, expected_fee);
+
+        let across_message: AcrossPlusMessage = borsh::from_slice(&destination_message.bytes).unwrap();
+        assert_eq!(across_message.read_only_len, 3);
+        assert!(across_message.accounts.iter().any(|acc| acc.to_string() == destination));
+        assert!(across_message.accounts.iter().any(|acc| acc.to_string() == referral_address));
+
+        let compiled: Vec<CompiledIx> = borsh::from_slice(&across_message.handler_message).unwrap();
+        assert_eq!(compiled.len(), 2);
+        assert_eq!(compiled[0].account_key_indexes.len(), 4);
     }
 
     #[tokio::test]
@@ -1014,14 +1238,34 @@ mod tests {
         // Mock EVM gas estimation response and verify recipient selection
         let across = Across::default();
         let amount = U256::from(12345u64);
-        let input_asset = AssetId::from(Chain::Ethereum, None);
-        let output_token = Across::decode_address_bytes32(&Address::from_str("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85").unwrap()); // OP USDC
-        let wallet_address = Address::from_str("0x1111111111111111111111111111111111111111").unwrap();
-        let deployment = AcrossDeployment::deployment_by_chain(&Chain::Optimism).unwrap();
+        let wallet = "0x1111111111111111111111111111111111111111";
+        let request = make_request(
+            AssetId::from_token(Chain::Ethereum, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
+            USDC_OP_ASSET_ID.into(),
+            wallet,
+            wallet,
+            amount.to_string().as_str(),
+        );
+        let input_asset = AssetId::from_token(Chain::Ethereum, "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
+        let output_token = Across::decode_address_bytes32(&Address::from_str("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85").unwrap());
+        let ctx = make_quote_context(
+            &request,
+            amount,
+            wallet,
+            Chain::Ethereum,
+            Chain::Optimism,
+            input_asset.clone(),
+            USDC_OP_ASSET_ID.into(),
+            USDC_OP_ASSET_ID.into(),
+            SwapReferralFee::default(),
+            None,
+            true,
+            6,
+        );
 
         // Build a mock provider that always returns a valid JSON-RPC result for gas estimation
         let provider = Arc::new(AlienProviderMock {
-            response: crate::network::mock::MockFn(Box::new(|_target| {
+            response: MockFn(Box::new(|_target| {
                 // JsonRpcResult<String> matching client.request expectation
                 "{\"id\":1,\"result\":\"0x5208\"}".to_string() // 21000
             })),
@@ -1029,24 +1273,16 @@ mod tests {
         });
 
         // Case 1: empty message -> recipient is user address
-        let (gas_limit, v3_relay_data) = across
-            .estimate_gas_limit(
-                &amount,
-                true,
-                &input_asset,
-                output_token,
-                &wallet_address,
-                &[],
-                &deployment,
-                provider.clone(),
-                Chain::Optimism,
-            )
-            .await
-            .unwrap();
+        let empty_message = DestinationMessage {
+            bytes: vec![],
+            referral_fee: U256::ZERO,
+            recipient: RelayRecipient::Evm(Address::from_str(wallet).unwrap()),
+        };
+        let (gas_limit, v3_relay_data) = across.estimate_gas_limit(&ctx, &empty_message, output_token, provider.clone()).await.unwrap();
 
         assert_eq!(gas_limit, U256::from(21000u64));
 
-        let expected_recipient_user = Across::decode_address_bytes32(&wallet_address);
+        let expected_recipient_user = Across::decode_address_bytes32(&Address::from_str(wallet).unwrap());
 
         assert_eq!(v3_relay_data.recipient, expected_recipient_user);
 
@@ -1057,25 +1293,16 @@ mod tests {
         assert_eq!(v3_relay_data.outputToken, output_token);
 
         // Case 2: non-empty message -> recipient is multicall handler address
-        let message = vec![0x01];
-        let (gas_limit2, v3_relay_data2) = across
-            .estimate_gas_limit(
-                &amount,
-                true,
-                &input_asset,
-                output_token,
-                &wallet_address,
-                &message,
-                &deployment,
-                provider.clone(),
-                Chain::Optimism,
-            )
-            .await
-            .unwrap();
+        let multicall_addr = Address::from_str(ctx.destination_deployment.multicall_handler().as_str()).unwrap();
+        let message = DestinationMessage {
+            bytes: vec![0x01],
+            referral_fee: U256::ZERO,
+            recipient: RelayRecipient::Evm(multicall_addr),
+        };
+        let (gas_limit2, v3_relay_data2) = across.estimate_gas_limit(&ctx, &message, output_token, provider.clone()).await.unwrap();
 
         assert_eq!(gas_limit2, U256::from(21000u64));
 
-        let multicall_addr = Address::from_str(deployment.multicall_handler().as_str()).unwrap();
         let expected_recipient_mc = Across::decode_address_bytes32(&multicall_addr);
 
         assert_eq!(v3_relay_data2.recipient, expected_recipient_mc);
@@ -1083,23 +1310,28 @@ mod tests {
         assert_eq!(v3_relay_data2.outputToken, output_token);
 
         // Case 3: ETH (Ethereum) -> ETH (Base) should use WETH addresses for input/output tokens
-        let base_deployment = AcrossDeployment::deployment_by_chain(&Chain::Base).unwrap();
         let base_weth = "0x4200000000000000000000000000000000000006";
         let output_token_base = Across::decode_address_bytes32(&Address::from_str(base_weth).unwrap());
-        let (gas_limit3, v3_relay_data3) = across
-            .estimate_gas_limit(
-                &amount,
-                true,
-                &input_asset,      // native ETH on Ethereum
-                output_token_base, // WETH on Base
-                &wallet_address,
-                &[],
-                &base_deployment,
-                provider,
-                Chain::Base,
-            )
-            .await
-            .unwrap();
+        let base_ctx = make_quote_context(
+            &request,
+            amount,
+            wallet,
+            Chain::Ethereum,
+            Chain::Base,
+            input_asset.clone(),
+            AssetId::from_token(Chain::Base, base_weth),
+            AssetId::from_chain(Chain::Base),
+            SwapReferralFee::default(),
+            None,
+            true,
+            18,
+        );
+        let base_message = DestinationMessage {
+            bytes: vec![],
+            referral_fee: U256::ZERO,
+            recipient: RelayRecipient::Evm(Address::from_str(wallet).unwrap()),
+        };
+        let (gas_limit3, v3_relay_data3) = across.estimate_gas_limit(&base_ctx, &base_message, output_token_base, provider).await.unwrap();
 
         assert_eq!(gas_limit3, U256::from(21000u64));
 
