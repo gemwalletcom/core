@@ -5,11 +5,11 @@ use gem_tracing::{error_with_fields, info_with_fields};
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
-use crate::chain_client::ChainClient;
-use crate::config::Domain;
+use super::chain_client::ChainClient;
+use crate::config::{Domain, NodeResult, Url};
 use crate::metrics::Metrics;
-use crate::node_service::{NodeRawResult, NodeResult, NodeService};
-use crate::proxy_request_service::NodeDomain;
+use crate::monitoring::NodeService;
+use crate::proxy::NodeDomain;
 
 pub struct NodeMonitor {
     domains: HashMap<String, Domain>,
@@ -104,17 +104,20 @@ impl NodeMonitor {
         }
     }
 
-    // Future method for checking if nodes are in sync
     pub async fn check_nodes_sync(&self, _domain: &str) -> bool {
-        // This can be implemented to check if all nodes for a domain
-        // have similar block heights (within a threshold)
         true
     }
 
-    // Future method for getting node health status
     pub async fn get_node_health(&self, _domain: &str) -> NodeHealth {
         NodeHealth::Healthy
     }
+}
+
+#[derive(Debug)]
+pub struct NodeRawResult {
+    pub url: Url,
+    pub result: Result<u64, Box<dyn std::error::Error + Send + Sync>>,
+    pub latency: u64,
 }
 
 #[derive(Debug, Clone)]

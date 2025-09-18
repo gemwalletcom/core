@@ -1,7 +1,8 @@
 use alloy_primitives::Address;
 use gem_hash::keccak::keccak256;
-use getrandom;
 use primitives::Preferences;
+use rand::rngs::OsRng;
+use rand::TryRngCore;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use std::error::Error;
 use std::sync::Arc;
@@ -59,8 +60,9 @@ impl Agent {
 
     fn generate_private_key(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         use alloy_primitives::{hex, B256};
+        let mut rng = OsRng;
         let mut buf = [0u8; 32];
-        getrandom::fill(&mut buf).map_err(|e| format!("Random generation error: {}", e))?;
+        rng.try_fill_bytes(&mut buf).map_err(|e| format!("Random generation error: {}", e))?;
         Ok(hex::encode(B256::from(buf)))
     }
 

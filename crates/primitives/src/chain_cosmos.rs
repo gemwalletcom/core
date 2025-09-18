@@ -1,8 +1,7 @@
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-use strum::EnumIter;
-use strum_macros::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumIter, EnumString};
 use typeshare::typeshare;
 
 use crate::Chain;

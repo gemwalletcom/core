@@ -1,5 +1,5 @@
 pub mod parser;
-use gem_chain_rpc::ChainBlockProvider;
+use chain_traits::ChainProvider;
 pub use parser::Parser;
 pub mod parser_options;
 pub use parser_options::ParserOptions;

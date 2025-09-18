@@ -5,14 +5,10 @@ edition = { workspace = true }
 
 [dependencies]
 tokio = { workspace = true }
-serde = { workspace = true }
-reqwest = { workspace = true, features = ["stream"] }
+reqwest = { workspace = true }
 
-futures-util = { workspace = true }
 clap = { version = "4.5.45", features = ["derive"] }
 
 chain_primitives = { path = "../../crates/chain_primitives" }
 coingecko = { path = "../../crates/coingecko" }
 settings = { path = "../../crates/settings" }
-gem_client = { path = "../../crates/gem_client", features = ["reqwest"] }
-gem_evm = { path = "../../crates/gem_evm" }

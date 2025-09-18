@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::Transaction;
+
 type Int = u64;
 
 // Domain models
@@ -37,7 +39,7 @@ pub struct Blockbook {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Block {
-    pub page: i64,
-    pub total_pages: i64,
-    pub txs: Vec<crate::models::transaction::Transaction>,
+    pub page: u64,
+    pub total_pages: u64,
+    pub txs: Vec<Transaction>,
 }

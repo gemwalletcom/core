@@ -2,7 +2,7 @@ use crate::GasPriceType;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use strum_macros::{AsRefStr, Display, EnumString};
+use strum::{AsRefStr, Display, EnumString};
 
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, Display, EnumString, PartialEq, Eq, Hash)]
 pub enum FeeOption {

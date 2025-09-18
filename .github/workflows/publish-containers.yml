@@ -1,0 +1,73 @@
+name: Publish Containers
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Container to build"
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - core
+          - dynode
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare image names
+        run: |
+          echo "CORE_IMAGE=$(echo ghcr.io/${GITHUB_REPOSITORY_OWNER}/core | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "DYNODE_IMAGE=$(echo ghcr.io/${GITHUB_REPOSITORY_OWNER}/dynode | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
+
+      - name: Build and push core image
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'core' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          cache-from: type=gha,scope=core
+          cache-to: type=gha,scope=core,mode=max
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          tags: |
+            ${{ env.CORE_IMAGE }}:latest
+            ${{ env.CORE_IMAGE }}:${{ github.sha }}
+
+      - name: Build and push dynode image
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'dynode' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./dynode.Dockerfile
+          push: true
+          cache-from: type=gha,scope=dynode
+          cache-to: type=gha,scope=dynode,mode=max
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          tags: |
+            ${{ env.DYNODE_IMAGE }}:latest
+            ${{ env.DYNODE_IMAGE }}:${{ github.sha }}

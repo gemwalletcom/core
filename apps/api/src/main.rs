@@ -158,10 +158,13 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::staking::get_validators,
                 chain::staking::get_staking_apy,
                 chain::token::get_token,
-                chain::balance::get_balances,
+                chain::balance::get_balances_coin,
+                chain::balance::get_balances_assets,
+                chain::balance::get_balances_staking,
                 chain::transaction::get_transactions,
                 webhooks::create_support_webhook,
                 support::add_device,
+                support::get_support_device,
             ],
         )
         .mount("/v2", routes![transactions::get_transactions_by_device_id_v2, nft::get_nft_assets_v2,])

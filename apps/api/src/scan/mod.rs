@@ -1,5 +1,5 @@
 use crate::responders::{ApiError, ApiResponse};
-use primitives::{response::ResponseResultOld, ScanAddress, ScanTransaction, ScanTransactionPayload};
+use primitives::{response::ResponseResultNew, ScanAddress, ScanTransaction, ScanTransactionPayload};
 use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
 
 pub mod client;
@@ -12,13 +12,13 @@ pub use providers::ScanProviderFactory;
 pub async fn scan_transaction(
     request: Json<ScanTransactionPayload>,
     client: &State<Mutex<ScanClient>>,
-) -> Result<ApiResponse<ResponseResultOld<ScanTransaction>>, ApiError> {
+) -> Result<ApiResponse<ResponseResultNew<ScanTransaction>>, ApiError> {
     let result: ScanTransaction = client.lock().await.get_scan_transaction(request.0).await?;
-    Ok(ResponseResultOld::new(result).into())
+    Ok(ResponseResultNew::new(result).into())
 }
 
 #[get("/scan/address/<address>")]
-pub async fn get_scan_address(address: String, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ResponseResultOld<Vec<ScanAddress>>>, ApiError> {
+pub async fn get_scan_address(address: String, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ResponseResultNew<Vec<ScanAddress>>>, ApiError> {
     let scan_addresses = client.lock().await.get_scan_address(&address).await?;
-    Ok(ResponseResultOld::new(scan_addresses).into())
+    Ok(ResponseResultNew::new(scan_addresses).into())
 }

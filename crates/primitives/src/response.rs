@@ -30,11 +30,11 @@ pub struct ErrorDetail {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResponseResultOld<T> {
+pub struct ResponseResultNew<T> {
     pub data: T,
 }
 
-impl<T> ResponseResultOld<T> {
+impl<T> ResponseResultNew<T> {
     pub fn new(data: T) -> Self {
         Self { data }
     }

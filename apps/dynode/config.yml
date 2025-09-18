@@ -33,9 +33,13 @@ cache:
       - path: /cosmos/staking/v1beta1/validators
         method: GET
         ttl_seconds: 300  # 5 minutes
-    # hypercore:
-    #   - path: /info
-    #     method: POST
-    #     ttl_seconds: 3600  # 1 hour
-    #     params:
-    #       type: "metaAndAssetCtxs"
+    bitcoin:
+      - path: /api/v2/block/**
+        method: GET
+        ttl_seconds: 0  # never expires
+    hypercore:
+      - path: /info
+        method: POST
+        ttl_seconds: 3600  # 1 hour
+        params:
+          type: metaAndAssetCtxs

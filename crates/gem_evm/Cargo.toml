@@ -9,7 +9,6 @@ rpc = [
     "gem_jsonrpc/client",
     "dep:chrono",
     "dep:async-trait",
-    "dep:futures",
     "dep:lazy_static",
     "dep:itertools",
     "dep:chain_traits",
@@ -20,7 +19,6 @@ chain_integration_tests = ["rpc", "reqwest"]
 [dependencies]
 primitives = { path = "../primitives" }
 chain_primitives = { path = "../chain_primitives" }
-gem_hash = { path = "../gem_hash" }
 serde_serializers = { path = "../serde_serializers" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
@@ -28,7 +26,6 @@ gem_bsc = { path = "../gem_bsc" }
 
 itertools = { workspace = true, optional = true }
 hex = { workspace = true }
-itoa = { workspace = true }
 anyhow = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["eip712-serde"] }
@@ -43,7 +40,6 @@ bigdecimal = { workspace = true }
 # rpc feature
 chrono = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
-futures = { workspace = true, optional = true }
 lazy_static = { workspace = true, optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 
@@ -52,6 +48,7 @@ primitives = { path = "../primitives", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 num-bigint = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
+settings = { path = "../settings" }
 
 [[test]]
 name = "integration_test"

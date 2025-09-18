@@ -14,7 +14,6 @@ base64 = { workspace = true }
 futures = { workspace = true }
 async-trait = { workspace = true }
 hex = { workspace = true }
-bigdecimal = { workspace = true }
 uuid = { workspace = true }
 tokio = { workspace = true }
 thiserror = { workspace = true }

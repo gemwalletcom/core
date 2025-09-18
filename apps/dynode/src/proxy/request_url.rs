@@ -1,37 +1,37 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
-use hyper::Uri;
+use reqwest::Url as ReqwestUrl;
 
 use crate::config::Url;
 
 #[derive(Debug, Clone)]
 pub struct RequestUrl {
-    pub uri: Uri,
+    pub url: ReqwestUrl,
     pub params: HashMap<String, String>,
 }
 
 impl RequestUrl {
-    pub fn from_uri(url: Url, url_override: HashMap<String, Url>, original_uri: &Uri) -> RequestUrl {
-        let path = if original_uri.path() == "/" {
-            String::new()
+    pub fn from_parts(url: Url, url_override: HashMap<String, Url>, original_path_and_query: &str) -> RequestUrl {
+        let path = if original_path_and_query == "/" {
+            "".to_string()
         } else {
-            original_uri.to_string()
+            original_path_and_query.to_string()
         };
-        let uri = url.url + &path;
-        let uri = uri.parse::<hyper::Uri>().expect("invalid url");
+        let combined = format!("{}{}", url.url, path);
+        let resolved = ReqwestUrl::parse(&combined).expect("invalid url");
 
-        for (path, endpoint) in url_override.clone() {
-            if uri.path() == path {
-                let uri = Uri::from_str(endpoint.url.clone().as_str()).unwrap();
+        for (override_path, endpoint) in url_override {
+            if resolved.path() == override_path {
+                let override_url = ReqwestUrl::parse(&endpoint.url).expect("invalid override url");
                 return RequestUrl {
-                    uri,
+                    url: override_url,
                     params: endpoint.headers.unwrap_or_default(),
                 };
             }
         }
 
         RequestUrl {
-            uri,
+            url: resolved,
             params: url.headers.unwrap_or_default(),
         }
     }
@@ -40,7 +40,6 @@ impl RequestUrl {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{collections::HashMap, str::FromStr};
 
     #[test]
     fn test_from_uri() {
@@ -49,9 +48,8 @@ mod tests {
             headers: Some(HashMap::new()),
             urls_override: None,
         };
-        let original_uri = Uri::from_str("/path").unwrap();
-        let request_url = RequestUrl::from_uri(url.clone(), HashMap::new(), &original_uri);
-        assert_eq!(request_url.uri.to_string(), "https://example.com/path");
+        let request_url = RequestUrl::from_parts(url.clone(), HashMap::new(), "/path");
+        assert_eq!(request_url.url.to_string(), "https://example.com/path");
         assert!(request_url.params.is_empty());
 
         let mut urls_override = HashMap::new();
@@ -67,8 +65,8 @@ mod tests {
                 urls_override: None,
             },
         );
-        let request_url = RequestUrl::from_uri(url, urls_override, &original_uri);
-        assert_eq!(request_url.uri.to_string(), "https://override.com/");
+        let request_url = RequestUrl::from_parts(url, urls_override, "/path");
+        assert_eq!(request_url.url.to_string(), "https://override.com/");
         assert_eq!(*request_url.params.get("key").unwrap(), "value".to_string());
     }
 }

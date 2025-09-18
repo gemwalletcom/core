@@ -32,6 +32,8 @@ pub struct Transaction {
     pub hash: String,
     pub input: String,
     pub to: Option<String>,
+    #[serde(rename = "blockNumber", default, deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub block_number: BigUint,
     #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
     pub value: BigUint,
     // #[serde(rename = "type")]
@@ -49,7 +51,8 @@ pub struct TransactionReciept {
     pub l1_fee: Option<BigUint>,
     pub logs: Vec<Log>,
     pub status: String,
-    pub block_number: String,
+    #[serde(default, deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub block_number: BigUint,
 }
 
 impl TransactionReciept {

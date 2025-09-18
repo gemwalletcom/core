@@ -1,5 +1,4 @@
-use strum::EnumIter;
-use strum_macros::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumIter, EnumString};
 
 #[derive(Debug, Clone, AsRefStr, EnumString, EnumIter, PartialEq)]
 #[strum(serialize_all = "snake_case")]

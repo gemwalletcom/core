@@ -25,7 +25,7 @@ impl<C: Client> ChainBalances for StellarClient<C> {
         Ok(None)
     }
 
-    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+    async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let account = self.get_stellar_account(&address).await?;
         Ok(map_all_balances(self.get_chain(), account))
     }

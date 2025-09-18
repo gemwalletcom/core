@@ -20,24 +20,14 @@ impl<C: Client + Clone> AnkrClient<C> {
 }
 
 impl<C: Client + Clone> AnkrClient<C> {
-    pub async fn get_transactions_ids_by_address(&self, address: &str, limit: i64) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .get_ankr_transactions_by_address(address, limit)
-            .await?
-            .transactions
-            .into_iter()
-            .map(|x| x.hash)
-            .collect::<Vec<String>>())
-    }
-
     /// Reference: https://www.ankr.com/docs/advanced-api/query-methods/#ankr_gettransactionsbyaddress
-    pub async fn get_ankr_transactions_by_address(&self, address: &str, limit: i64) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
+    pub async fn get_ankr_transactions_by_address(&self, address: &str, limit: Option<usize>) -> Result<Transactions, Box<dyn Error + Send + Sync>> {
         if let Some(chain) = ankr_chain(self.chain) {
             let params = serde_json::json!({
                 "address": address,
                 "blockchain": chain,
-                "page_size": limit,
-                "desc_order": true
+                "pageSize": limit.unwrap_or(1),
+                "descOrder": true
             });
             Ok(self.rpc_client.call("ankr_getTransactionsByAddress", params).await?)
         } else {

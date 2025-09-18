@@ -1,7 +1,7 @@
 use crate::params::ChainParam;
 use crate::responders::{ApiError, ApiResponse};
 use ::nft::NFTClient;
-use primitives::{response::ResponseResultOld, NFTAsset, NFTData};
+use primitives::{response::ResponseResultNew, NFTAsset, NFTData};
 use rocket::http::ContentType;
 use rocket::response::{self, Responder};
 use rocket::Request;
@@ -16,8 +16,8 @@ pub async fn get_nft_assets_old(
     device_id: &str,
     wallet_index: i32,
     client: &State<Mutex<NFTClient>>,
-) -> Result<ApiResponse<ResponseResultOld<Vec<NFTData>>>, ApiError> {
-    Ok(ResponseResultOld::new(client.lock().await.get_nft_assets(device_id, wallet_index).await?).into())
+) -> Result<ApiResponse<ResponseResultNew<Vec<NFTData>>>, ApiError> {
+    Ok(ResponseResultNew::new(client.lock().await.get_nft_assets(device_id, wallet_index).await?).into())
 }
 
 #[get("/nft/assets/device/<device_id>?<wallet_index>")]

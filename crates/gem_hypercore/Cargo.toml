@@ -26,7 +26,7 @@ number_formatter = { path = "../number_formatter" }
 primitives = { path = "../primitives" }
 chain_traits = { path = "../chain_traits" }
 secp256k1 = { workspace = true }
-getrandom = { workspace = true }
+rand = { workspace = true }
 
 [dev-dependencies]
 reqwest = { workspace = true }

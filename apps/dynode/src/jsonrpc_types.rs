@@ -1,4 +1,3 @@
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -58,10 +57,9 @@ impl JsonRpcResult {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub enum RequestType {
-    Regular { path: String, method: String, body: Bytes },
+    Regular { path: String, method: String, body: Vec<u8> },
     JsonRpc(JsonRpcRequest),
 }
 
@@ -95,7 +93,7 @@ impl JsonRpcRequest {
 }
 
 impl RequestType {
-    pub fn from_request(method: &str, path: String, body: Bytes) -> Self {
+    pub fn from_request(method: &str, path: String, body: Vec<u8>) -> Self {
         if method == "POST" {
             if let Ok(body_str) = std::str::from_utf8(&body) {
                 if let Ok(call) = serde_json::from_str::<JsonRpcCall>(body_str) {
@@ -198,7 +196,7 @@ mod tests {
         let call = JsonRpcCall {
             jsonrpc: "2.0".to_string(),
             method: "eth_blockNumber".to_string(),
-            params: Value::Null,
+            params: json!(null),
             id: 1,
         };
 
@@ -215,7 +213,7 @@ mod tests {
             {"jsonrpc":"2.0","method":"eth_getBalance","params":["0x123","latest"],"id":2}
         ]"#;
 
-        let body = Bytes::from(batch_json);
+        let body = batch_json.as_bytes().to_vec();
         let request_type = RequestType::from_request("POST", "/rpc".to_string(), body);
 
         match request_type {
@@ -296,7 +294,7 @@ mod tests {
             {"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":1}
         ]"#;
 
-        let body = Bytes::from(batch_json);
+        let body = batch_json.as_bytes().to_vec();
         let request_type = RequestType::from_request("POST", "/rpc".to_string(), body);
 
         match request_type {

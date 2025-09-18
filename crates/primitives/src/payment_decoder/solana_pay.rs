@@ -1,5 +1,6 @@
 use super::error::{PaymentDecoderError, Result};
 use std::collections::HashMap;
+use url::form_urlencoded;
 use url::Url;
 pub const SOLANA_PAY_SCHEME: &str = "solana";
 
@@ -28,8 +29,12 @@ pub fn parse(uri: &str) -> Result<RequestType> {
 
     let query_part = uri.replace(&scheme, "");
     if query_part.starts_with("https") {
-        let unescaped = urlencoding::decode(&query_part).unwrap();
-        let url = Url::parse(&unescaped)?;
+        let encoded = format!("value={query_part}");
+        let decoded = form_urlencoded::parse(encoded.as_bytes())
+            .next()
+            .map(|(_, v)| v.into_owned())
+            .ok_or_else(|| PaymentDecoderError::InvalidFormat("Invalid percent encoding".to_string()))?;
+        let url = Url::parse(&decoded)?;
         return Ok(RequestType::Transaction(url.to_string()));
     }
 
@@ -38,18 +43,13 @@ pub fn parse(uri: &str) -> Result<RequestType> {
         .split_once('?')
         .ok_or_else(|| PaymentDecoderError::InvalidFormat("Invalid URL query string".to_string()))?;
 
-    let mut query_params = HashMap::new();
-    for pair in query.split('&') {
-        if let Some((key, value)) = pair.split_once('=') {
-            query_params.insert(key.to_string(), value.to_string());
-        }
-    }
+    let query_params: HashMap<String, String> = form_urlencoded::parse(query.as_bytes()).into_owned().collect();
 
     let amount = query_params.get("amount").cloned();
     let spl_token = query_params.get("spl-token").cloned();
     let reference = query_params.get("reference").map(|v| v.split(',').map(String::from).collect());
     let label = query_params.get("label").cloned();
-    let message = query_params.get("message").map(|v| urlencoding::decode(v).unwrap().into_owned());
+    let message = query_params.get("message").cloned();
     let memo = query_params.get("memo").cloned();
 
     Ok(RequestType::Transfer(PayTransfer {
@@ -66,6 +66,28 @@ pub fn parse(uri: &str) -> Result<RequestType> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_parse_transaction_encoded_https() {
+        let uri = "solana:https%3A%2F%2Fmy.site%2Fpay%3Fcheckout%3D1";
+        let link = match parse(uri).unwrap() {
+            RequestType::Transaction(pay_url) => pay_url,
+            _ => panic!("Wrong type"),
+        };
+
+        assert_eq!(link, "https://my.site/pay?checkout=1");
+    }
+
+    #[test]
+    fn test_parse_transaction_plain_https() {
+        let uri = "solana:https://another.example/pay";
+        let link = match parse(uri).unwrap() {
+            RequestType::Transaction(pay_url) => pay_url,
+            _ => panic!("Wrong type"),
+        };
+
+        assert_eq!(link, "https://another.example/pay");
+    }
 
     #[test]
     fn test_parse_transfer() {

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use primitives::Chain;
+use primitives::{Chain, NodeType};
 use settings_chain::{ProviderConfig, ProviderFactory};
 
 pub struct ChainClient {
@@ -14,7 +14,7 @@ impl ChainClient {
     }
 
     pub async fn get_latest_block(&self) -> Result<u64, Box<dyn Error + Send + Sync>> {
-        let config = ProviderConfig::new_url(self.chain, &self.url);
-        Ok(ProviderFactory::new_provider(config).get_latest_block().await? as u64)
+        let config = ProviderConfig::new(self.chain, &self.url, NodeType::Default, "", "", "");
+        ProviderFactory::new_provider(config).get_block_latest_number().await
     }
 }
