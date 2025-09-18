@@ -13,6 +13,7 @@ pub enum SolanaRpc {
     GetMultipleAccounts(Vec<String>),
     GetEpochInfo,
     GetLatestBlockhash,
+    GetRecentPrioritizationFees,
 }
 
 impl Display for SolanaRpc {
@@ -23,6 +24,7 @@ impl Display for SolanaRpc {
             SolanaRpc::GetMultipleAccounts(_) => write!(f, "getMultipleAccounts"),
             SolanaRpc::GetEpochInfo => write!(f, "getEpochInfo"),
             SolanaRpc::GetLatestBlockhash => write!(f, "getLatestBlockhash"),
+            SolanaRpc::GetRecentPrioritizationFees => write!(f, "getRecentPrioritizationFees"),
         }
     }
 }
@@ -43,7 +45,7 @@ impl JsonRpcRequestConvert for SolanaRpc {
                 Value::Array(accounts.iter().map(|x| serde_json::to_value(x).unwrap()).collect()),
                 serde_json::to_value(default_config).unwrap(),
             ],
-            SolanaRpc::GetEpochInfo | SolanaRpc::GetLatestBlockhash => vec![],
+            SolanaRpc::GetEpochInfo | SolanaRpc::GetLatestBlockhash | SolanaRpc::GetRecentPrioritizationFees => vec![],
         };
 
         JsonRpcRequest::new(id, &method, params.into())
