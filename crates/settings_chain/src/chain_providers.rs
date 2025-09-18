@@ -31,8 +31,20 @@ impl ChainProviders {
         self.get_provider(chain)?.get_token_data(token_id).await
     }
 
-    pub async fn get_assets_balances(&self, chain: Chain, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        self.get_provider(chain)?.get_assets_balances(address).await
+    pub async fn get_balance_coin(&self, chain: Chain, address: String) -> Result<AssetBalance, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_balance_coin(address).await
+    }
+
+    pub async fn get_balance_tokens(&self, chain: Chain, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_balance_tokens(address, token_ids).await
+    }
+
+    pub async fn get_balance_assets(&self, chain: Chain, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_balance_assets(address).await
+    }
+
+    pub async fn get_balance_staking(&self, chain: Chain, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_balance_staking(address).await
     }
 
     pub async fn get_transactions_in_blocks(&self, chain: Chain, blocks: Vec<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {

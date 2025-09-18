@@ -29,25 +29,19 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
         }
     }
 
-    async fn get_assets_balances(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        let mut assets = Vec::new();
-
+    async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         if let Some(alchemy_client) = &self.alchemy_client {
-            if let Ok(response) = alchemy_client.get_token_balances(address.as_str()).await {
-                let balances = response
-                    .data
-                    .tokens
-                    .into_iter()
-                    .map(|token| (token.token_address, token.token_balance))
-                    .collect();
-                assets.extend(map_assets_balances(balances, self.get_chain()));
-            }
+            let balances = alchemy_client
+                .get_token_balances(address.as_str())
+                .await?
+                .data
+                .tokens
+                .into_iter()
+                .map(|token| (token.token_address, token.token_balance))
+                .collect();
+            return Ok(map_assets_balances(balances, self.get_chain()));
         }
-
-        let coin_balance = self.get_balance_coin(address).await?;
-        assets.insert(0, coin_balance);
-
-        Ok(assets)
+        return Ok(vec![]);
     }
 }
 

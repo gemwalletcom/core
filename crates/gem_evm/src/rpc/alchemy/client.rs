@@ -11,8 +11,11 @@ use serde_json::json;
 #[derive(Clone)]
 pub struct AlchemyClient<C: Client + Clone> {
     pub chain: EVMChain,
-    url: String,
     client: C,
+}
+
+pub fn alchemy_url(api_key: &str) -> String {
+    format!("https://api.g.alchemy.com/data/v1/{api_key}")
 }
 
 impl<C: Client + Clone> AlchemyClient<C> {
@@ -25,10 +28,8 @@ impl<C: Client + Clone> AlchemyClient<C> {
         headers
     }
 
-    pub fn new(client: C, chain: EVMChain, api_key: String) -> Self {
-        let url = format!("https://api.g.alchemy.com/data/v1/{api_key}");
-
-        Self { chain, url, client }
+    pub fn new(client: C, chain: EVMChain) -> Self {
+        Self { chain, client }
     }
 
     pub async fn get_transactions_ids_by_address(&self, address: &str) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
@@ -44,7 +45,6 @@ impl<C: Client + Clone> AlchemyClient<C> {
             });
         }
         let chain = evm_chain_to_network(self.chain);
-        let url = format!("{}/assets/tokens/balances/by-address", &self.url);
         let payload = json!({
             "addresses": [
                 {
@@ -54,7 +54,10 @@ impl<C: Client + Clone> AlchemyClient<C> {
             ],
             "includeNativeTokens": false,
         });
-        Ok(self.client.post(&url, &payload, Some(Self::common_headers())).await?)
+        Ok(self
+            .client
+            .post("/assets/tokens/balances/by-address", &payload, Some(Self::common_headers()))
+            .await?)
     }
     // https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-transaction-history-by-address
     //TODO:
@@ -65,7 +68,6 @@ impl<C: Client + Clone> AlchemyClient<C> {
             });
         }
         let chain = evm_chain_to_network(self.chain);
-        let url = format!("{}/transactions/history/by-address", &self.url);
         let payload = json!({
             "addresses": [
                 {
@@ -75,6 +77,9 @@ impl<C: Client + Clone> AlchemyClient<C> {
             ],
             "limit": 25,
         });
-        Ok(self.client.post(&url, &payload, Some(Self::common_headers())).await?)
+        Ok(self
+            .client
+            .post("/transactions/history/by-address", &payload, Some(Self::common_headers()))
+            .await?)
     }
 }

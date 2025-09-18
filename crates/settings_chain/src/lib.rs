@@ -12,7 +12,7 @@ use gem_aptos::rpc::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
-use gem_evm::rpc::{ankr::AnkrClient, AlchemyClient, EthereumClient};
+use gem_evm::rpc::{alchemy::client::alchemy_url, ankr::AnkrClient, AlchemyClient, EthereumClient};
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::PolkadotClient;
@@ -66,10 +66,9 @@ impl ProviderFactory {
         let gem_client = ReqwestClient::new(url.clone(), reqwest_client.clone());
 
         match chain {
-            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => Box::new(BitcoinClient::new(
-                gem_client,
-                primitives::BitcoinChain::from_chain(chain).unwrap(),
-            )),
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {
+                Box::new(BitcoinClient::new(gem_client, primitives::BitcoinChain::from_chain(chain).unwrap()))
+            }
             Chain::Ethereum
             | Chain::SmartChain
             | Chain::Polygon
@@ -98,7 +97,10 @@ impl ProviderFactory {
                 let rpc_client = JsonRpcClient::new(gem_client.clone());
                 let ethereum_client = EthereumClient::new(rpc_client.clone(), chain)
                     .with_node_type(config.node_type)
-                    .with_alchemy_client(AlchemyClient::new(gem_client.clone(), chain, config.alchemy_key.clone()))
+                    .with_alchemy_client(AlchemyClient::new(
+                        ReqwestClient::new(alchemy_url(&config.alchemy_key), reqwest_client.clone()),
+                        chain,
+                    ))
                     .with_ankr_client(AnkrClient::new(rpc_client, chain));
                 Box::new(ethereum_client)
             }
@@ -116,10 +118,7 @@ impl ProviderFactory {
             Chain::Polkadot => Box::new(PolkadotClient::new(gem_client.clone())),
             Chain::Solana => Box::new(SolanaClient::new(JsonRpcClient::new(gem_client.clone()))),
             Chain::Ton => Box::new(TonClient::new(gem_client.clone())),
-            Chain::Tron => Box::new(TronClient::new(
-                gem_client.clone(),
-                TronGridClient::new(gem_client.clone()),
-            )),
+            Chain::Tron => Box::new(TronClient::new(gem_client.clone(), TronGridClient::new(gem_client.clone()))),
             Chain::HyperCore => Box::new(HyperCoreClient::new(gem_client.clone())),
         }
     }

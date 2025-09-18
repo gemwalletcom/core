@@ -16,8 +16,16 @@ impl ChainClient {
         self.providers.get_token_data(chain, token_id).await
     }
 
-    pub async fn get_balances(&self, request: ChainAddress) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        self.providers.get_assets_balances(request.chain, request.address).await
+    pub async fn get_balances_coin(&self, request: ChainAddress) -> Result<AssetBalance, Box<dyn Error + Send + Sync>> {
+        self.providers.get_balance_coin(request.chain, request.address).await
+    }
+
+    pub async fn get_balances_staking(&self, request: ChainAddress) -> Result<Option<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        self.providers.get_balance_staking(request.chain, request.address).await
+    }
+
+    pub async fn get_balances_assets(&self, request: ChainAddress) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        self.providers.get_balance_assets(request.chain, request.address).await
     }
 
     pub async fn get_transactions(&self, request: ChainAddress) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {

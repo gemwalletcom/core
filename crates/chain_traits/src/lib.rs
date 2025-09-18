@@ -10,7 +10,16 @@ use primitives::{
 };
 
 pub trait ChainTraits:
-    ChainProvider + ChainBalances + ChainStaking + ChainTransactions + ChainState + ChainAccount + ChainPerpetual + ChainToken + ChainTransactionLoad + ChainAddressStatus
+    ChainProvider
+    + ChainBalances
+    + ChainStaking
+    + ChainTransactions
+    + ChainState
+    + ChainAccount
+    + ChainPerpetual
+    + ChainToken
+    + ChainTransactionLoad
+    + ChainAddressStatus
 {
 }
 
@@ -29,8 +38,8 @@ pub trait ChainBalances: Send + Sync {
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support balance operations".into())
     }
-    async fn get_assets_balances(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Err("Chain does not support balance operations".into())
     }
 }
 
