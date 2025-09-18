@@ -762,8 +762,8 @@ impl From<GemFreezeType> for FreezeType {
 impl From<Resource> for GemResource {
     fn from(value: Resource) -> Self {
         match value {
-            Resource::BANDWIDTH => GemResource::Bandwidth,
-            Resource::ENERGY => GemResource::Energy,
+            Resource::Bandwidth => GemResource::Bandwidth,
+            Resource::Energy => GemResource::Energy,
         }
     }
 }
@@ -771,8 +771,8 @@ impl From<Resource> for GemResource {
 impl From<GemResource> for Resource {
     fn from(value: GemResource) -> Self {
         match value {
-            GemResource::Bandwidth => Resource::BANDWIDTH,
-            GemResource::Energy => Resource::ENERGY,
+            GemResource::Bandwidth => Resource::Bandwidth,
+            GemResource::Energy => Resource::Energy,
         }
     }
 }
