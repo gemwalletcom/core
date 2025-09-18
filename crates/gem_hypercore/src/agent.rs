@@ -1,8 +1,10 @@
-use alloy_primitives::{hex, Address, B256};
+use alloy_primitives::{hex, Address};
 use gem_hash::keccak::keccak256;
-use k256::{elliptic_curve::sec1::ToEncodedPoint, SecretKey};
+use k256::{
+    elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
+    SecretKey,
+};
 use primitives::Preferences;
-use rand::{rngs::OsRng, TryRngCore};
 use std::{error::Error, sync::Arc};
 
 pub struct Agent {
@@ -58,9 +60,8 @@ impl Agent {
 
     fn generate_private_key(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let mut rng = OsRng;
-        let mut buf = [0u8; 32];
-        rng.try_fill_bytes(&mut buf).map_err(|e| format!("Random generation error: {}", e))?;
-        Ok(hex::encode(B256::from(buf)))
+        let secret_key = SecretKey::random(&mut rng);
+        Ok(hex::encode(secret_key.to_bytes()))
     }
 
     fn derive_address(&self, private_key_hex: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
