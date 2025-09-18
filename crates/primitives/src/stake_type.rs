@@ -20,8 +20,8 @@ pub struct StakeData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub enum Resource {
-    Bandwidth,
-    Energy,
+    BANDWIDTH,
+    ENERGY,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
