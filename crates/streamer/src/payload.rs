@@ -139,7 +139,10 @@ impl AssetsAddressPayload {
 
 impl fmt::Display for AssetsAddressPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "addresses: {}", self.values.len())
+        for value in self.values.iter() {
+            write!(f, "address: {}, asset_id: {}", value.address, value.asset_id)?;
+        }
+        Ok(())
     }
 }
 
