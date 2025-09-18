@@ -121,6 +121,14 @@ impl Pusher {
                 let message = format!("Closed perpetual position for {value} at {to_address}");
                 Ok(Message { title, message: Some(message) })
             }
+            TransactionType::StakeFreeze => Ok(Message {
+                title: localizer.notification_freeze_title(self.get_value(amount, asset.symbol.clone()).as_str()),
+                message: None,
+            }),
+            TransactionType::StakeUnfreeze => Ok(Message {
+                title: localizer.notification_unfreeze_title(self.get_value(amount, asset.symbol.clone()).as_str()),
+                message: None,
+            }),
         }
     }
 

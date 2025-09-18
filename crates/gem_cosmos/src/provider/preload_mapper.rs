@@ -66,6 +66,7 @@ fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 
             StakeType::Redelegate(_) => 1_250_000,
             StakeType::Rewards(_) => 750_000,
             StakeType::Withdraw(_) => 750_000,
+            StakeType::Freeze(_) => panic!("Freeze operations not supported on Cosmos chains"),
         },
     }
 }

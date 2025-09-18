@@ -1,6 +1,6 @@
 use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
-use primitives::stake_type::StakeData;
+use primitives::stake_type::{StakeData, FreezeData, FreezeType, Resource};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::FeeOption;
 use primitives::SwapProvider;
@@ -69,6 +69,27 @@ pub enum GemStakeType {
     Withdraw {
         delegation: GemDelegation,
     },
+    Freeze {
+        freeze_data: GemFreezeData,
+    },
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemFreezeData {
+    pub freeze_type: GemFreezeType,
+    pub resource: GemResource,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemFreezeType {
+    Freeze,
+    Unfreeze,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemResource {
+    Bandwidth,
+    Energy,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -299,6 +320,7 @@ impl From<GemStakeType> for StakeType {
             }),
             GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().map(|v| v.into()).collect()),
             GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation.into()),
+            GemStakeType::Freeze { freeze_data } => StakeType::Freeze(freeze_data.into()),
         }
     }
 }
@@ -316,6 +338,7 @@ impl From<StakeType> for GemStakeType {
                 validators: validators.into_iter().map(|v| v.into()).collect(),
             },
             StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation: delegation.into() },
+            StakeType::Freeze(freeze_data) => GemStakeType::Freeze { freeze_data: freeze_data.into() },
         }
     }
 }
@@ -696,6 +719,60 @@ impl From<GemSwapProviderData> for SwapProviderData {
             provider: SwapProvider::from_str(&value.provider).unwrap_or(SwapProvider::UniswapV3),
             name: value.name,
             protocol_name: value.protocol_name,
+        }
+    }
+}
+
+impl From<FreezeData> for GemFreezeData {
+    fn from(value: FreezeData) -> Self {
+        GemFreezeData {
+            freeze_type: value.freeze_type.into(),
+            resource: value.resource.into(),
+        }
+    }
+}
+
+impl From<GemFreezeData> for FreezeData {
+    fn from(value: GemFreezeData) -> Self {
+        FreezeData {
+            freeze_type: value.freeze_type.into(),
+            resource: value.resource.into(),
+        }
+    }
+}
+
+impl From<FreezeType> for GemFreezeType {
+    fn from(value: FreezeType) -> Self {
+        match value {
+            FreezeType::Freeze => GemFreezeType::Freeze,
+            FreezeType::Unfreeze => GemFreezeType::Unfreeze,
+        }
+    }
+}
+
+impl From<GemFreezeType> for FreezeType {
+    fn from(value: GemFreezeType) -> Self {
+        match value {
+            GemFreezeType::Freeze => FreezeType::Freeze,
+            GemFreezeType::Unfreeze => FreezeType::Unfreeze,
+        }
+    }
+}
+
+impl From<Resource> for GemResource {
+    fn from(value: Resource) -> Self {
+        match value {
+            Resource::Bandwidth => GemResource::Bandwidth,
+            Resource::Energy => GemResource::Energy,
+        }
+    }
+}
+
+impl From<GemResource> for Resource {
+    fn from(value: GemResource) -> Self {
+        match value {
+            GemResource::Bandwidth => Resource::Bandwidth,
+            GemResource::Energy => Resource::Energy,
         }
     }
 }

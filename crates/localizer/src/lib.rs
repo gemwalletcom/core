@@ -185,6 +185,14 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_claim_rewards_title", value = value)
     }
 
+    pub fn notification_freeze_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_freeze_title", value = value)
+    }
+
+    pub fn notification_unfreeze_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_unfreeze_title", value = value)
+    }
+
     pub fn notification_swap_title(&self, from_symbol: &str, to_symbol: &str) -> String {
         fl!(
             self.loader.as_ref(),

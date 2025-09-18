@@ -16,6 +16,8 @@ pub enum TransactionType {
     StakeRewards,
     StakeRedelegate,
     StakeWithdraw,
+    StakeFreeze,
+    StakeUnfreeze,
     AssetActivation,
     SmartContractCall,
     PerpetualOpenPosition,

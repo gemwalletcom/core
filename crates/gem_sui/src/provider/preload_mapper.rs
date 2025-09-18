@@ -149,7 +149,7 @@ pub fn map_transaction_data(
                 let digest = hex::encode(&tx_output.hash);
                 Ok(format!("{}_{}", data, digest))
             }
-            StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) => Err("Unsupported stake type for Sui".into()),
+            StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) => Err("Unsupported stake type for Sui".into()),
         },
         TransactionInputType::Swap(_, _, data) => {
             let tx_output = validate_and_hash(&data.data.data)?;
