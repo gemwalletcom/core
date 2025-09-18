@@ -52,6 +52,8 @@ pub const SUI_WAL_TOKEN_ID: &str = "0x356a26eb9e012a68958082340d4c4116e7f55615cf
 pub const SUI_SBUSDT_TOKEN_ID: &str = "0x375f70cf2ae4c00bf37117d0c85a2c71545e6ee05c4a5c7d282cd66a4504b068::usdt::USDT";
 // Thorchain
 pub const THORCHAIN_TCY_TOKEN_ID: &str = "tcy";
+// Tron
+pub const TRON_USDT_TOKEN_ID: &str = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 
 lazy_static! {
     // ethereum
@@ -425,6 +427,14 @@ lazy_static! {
         "TCY".to_owned(),
         "TCY".to_owned(),
         8,
+        AssetType::TOKEN,
+    );
+    // Tron
+    pub static ref TRON_USDT: Asset = Asset::new(
+        AssetId::from_token(Chain::Tron, TRON_USDT_TOKEN_ID),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
+        6,
         AssetType::TOKEN,
     );
 

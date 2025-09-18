@@ -74,6 +74,10 @@ impl THORChainAsset {
                 THORCHAIN_TCY_TOKEN_ID => Some(chain.asset(THORCHAIN_TCY.clone())),
                 _ => None,
             },
+            THORChainName::Tron => match token_id {
+                TRON_USDT_TOKEN_ID => Some(chain.asset(TRON_USDT.clone())),
+                _ => None,
+            },
             _ => None,
         }
     }
