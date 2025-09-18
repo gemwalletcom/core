@@ -23,6 +23,8 @@ impl TransactionAddresses {
             | TransactionType::StakeRewards
             | TransactionType::StakeRedelegate
             | TransactionType::StakeWithdraw
+            | TransactionType::StakeFreeze
+            | TransactionType::StakeUnfreeze
             | TransactionType::TransferNFT
             | TransactionType::AssetActivation
             | TransactionType::SmartContractCall
