@@ -8,6 +8,7 @@ pub mod preload_optimism;
 pub mod staking;
 pub mod staking_mapper;
 pub mod staking_smartchain;
+pub mod staking_ethereum;
 pub mod state;
 pub mod testkit;
 pub mod token;

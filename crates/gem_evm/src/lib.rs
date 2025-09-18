@@ -8,10 +8,10 @@ pub mod chainlink;
 pub mod constants;
 pub mod contracts;
 pub mod eip712;
+pub mod everstake;
 pub mod ether_conv;
 pub mod fee_calculator;
 pub mod jsonrpc;
-pub mod lido;
 pub mod multicall3;
 pub mod permit2;
 #[cfg(feature = "rpc")]

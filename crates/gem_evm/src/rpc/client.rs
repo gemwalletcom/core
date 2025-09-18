@@ -15,6 +15,10 @@ use super::{
     model::{Block, BlockTransactionsIds, Transaction, TransactionReciept, TransactionReplayTrace},
 };
 use crate::models::fee::EthereumFeeHistory;
+#[cfg(feature = "rpc")]
+use crate::multicall3::{IMulticall3, deployment_by_chain, IMulticall3::{Call3, Result as MulticallResult}};
+#[cfg(feature = "rpc")]
+use alloy_sol_types::SolCall;
 use primitives::{Chain, EVMChain, NodeType};
 
 pub const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
@@ -244,5 +248,26 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let params = json!([params_obj, "latest"]);
         Ok(self.client.call("eth_estimateGas", params).await?)
+    }
+
+    #[cfg(feature = "rpc")]
+    pub async fn multicall3(&self, calls: Vec<Call3>) -> Result<Vec<MulticallResult>, Box<dyn std::error::Error + Sync + Send>> {
+        let multicall_address = deployment_by_chain(&self.chain);
+        let multicall_data = IMulticall3::aggregate3Call { calls }.abi_encode();
+
+        let call = (
+            "eth_call".to_string(),
+            json!([{
+                "to": multicall_address,
+                "data": hex::encode_prefixed(&multicall_data)
+            }, "latest"]),
+        );
+
+        let result: String = self.call(call.0, call.1).await?;
+        let result_data = hex::decode(&result)?;
+        let multicall_results = IMulticall3::aggregate3Call::abi_decode_returns(&result_data)
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Sync + Send>)?;
+
+        Ok(multicall_results)
     }
 }
