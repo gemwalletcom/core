@@ -4,17 +4,14 @@ use gem_client::Client;
 use primitives::AddressStatus;
 use std::error::Error;
 
+use crate::provider::address_mapper;
 use crate::rpc::client::TronClient;
 
 #[async_trait]
 impl<C: Client + Clone> ChainAddressStatus for TronClient<C> {
     async fn get_address_status(&self, address: String) -> Result<Vec<AddressStatus>, Box<dyn Error + Sync + Send>> {
         let account = self.get_account(&address).await?;
-        let permissions = account.active_permission.unwrap_or_default();
-        if permissions.len() > 1 || permissions.iter().any(|p| p.threshold > 1) {
-            return Ok(vec![AddressStatus::MultiSignature]);
-        }
-        Ok(vec![])
+        Ok(address_mapper::map_address_status(&account))
     }
 }
 
@@ -30,7 +27,11 @@ mod chain_integration_tests {
 
         let status = client.get_address_status(TEST_ADDRESS.to_string()).await?;
 
-        assert!(status.is_empty(), "Expected empty status for regular wallet");
+        assert!(status.is_empty());
+
+        let status = client.get_address_status("TYeyZXywpA921LEtw2PF3obK4B8Jjgpp32".to_string()).await?;
+
+        assert!(status.is_empty());
 
         Ok(())
     }
@@ -40,6 +41,22 @@ mod chain_integration_tests {
         let client = create_test_client();
 
         let status = client.get_address_status("TDTcR8wBLadFYRekvobSSswHaj351EDNRT".to_string()).await?;
+
+        println!("Status: {:?}", status);
+
+        assert!(
+            status.contains(&AddressStatus::MultiSignature),
+            "Expected multi-signature status for known multi-sig wallet"
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_address_status_multi_signature_owner() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+
+        let status = client.get_address_status("THzbnFasHU6AsHfbKahznBNC3Ss591zwPS".to_string()).await?;
 
         println!("Status: {:?}", status);
 

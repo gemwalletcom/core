@@ -112,7 +112,7 @@ borsh = { version = "1.5.7", features = ["derive"] }
 bcs = { version = "0.1.6" }
 sui-types = { package = "sui-sdk-types", version = "0.0.6", features = ["serde"] }
 sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.6" }
-secp256k1 = { version = "0.31.1" }
+k256 = { version = "0.13.4" }
 
 uniffi = { version = "0.29.4" }
 uniffi_bindgen = { version = "0.29.4" }

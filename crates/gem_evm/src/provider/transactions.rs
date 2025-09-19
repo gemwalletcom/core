@@ -162,7 +162,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_ethereum_get_assets_balances() -> Result<(), Box<dyn Error + Send + Sync>> {
         let client = create_ethereum_test_client();
-        let balances = ChainBalances::get_assets_balances(&client, TEST_ADDRESS.to_string()).await?;
+        let balances = ChainBalances::get_balance_assets(&client, TEST_ADDRESS.to_string()).await?;
 
         assert!(!balances.is_empty());
 

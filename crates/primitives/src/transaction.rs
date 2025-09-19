@@ -266,6 +266,8 @@ impl Transaction {
             | TransactionType::StakeRewards
             | TransactionType::StakeRedelegate
             | TransactionType::StakeWithdraw
+            | TransactionType::StakeFreeze
+            | TransactionType::StakeUnfreeze
             | TransactionType::AssetActivation
             | TransactionType::TransferNFT
             | TransactionType::SmartContractCall
@@ -289,6 +291,8 @@ impl Transaction {
             | TransactionType::StakeRewards
             | TransactionType::StakeRedelegate
             | TransactionType::StakeWithdraw
+            | TransactionType::StakeFreeze
+            | TransactionType::StakeUnfreeze
             | TransactionType::AssetActivation
             | TransactionType::TransferNFT
             | TransactionType::SmartContractCall

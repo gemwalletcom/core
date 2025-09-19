@@ -1,4 +1,4 @@
-use super::model::{ChatwootWebhookPayload, MESSAGE_TYPE_OUTGOING};
+use super::model::{ChatwootWebhookPayload, MESSAGE_TYPE_INCOMING};
 use localizer::LanguageLocalizer;
 use primitives::{push_notification::PushNotificationSupport, GorushNotification, PushNotification, PushNotificationTypes};
 use std::error::Error;
@@ -23,7 +23,7 @@ impl SupportClient {
         }
 
         if let Some(message_type) = payload.message_type.clone() {
-            if message_type == MESSAGE_TYPE_OUTGOING {
+            if message_type == MESSAGE_TYPE_INCOMING {
                 let language_localizer = LanguageLocalizer::new_with_language(&device.locale);
                 let title = language_localizer.notification_support_new_message_title();
                 let message = payload.content.clone().unwrap_or_default();

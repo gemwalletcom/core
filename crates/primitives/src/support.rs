@@ -8,6 +8,5 @@ pub struct SupportDevice {
     pub support_id: String,
     #[serde(skip_serializing)]
     pub device_id: String,
-    #[serde(default)]
     pub unread: i32,
 }

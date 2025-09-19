@@ -19,10 +19,35 @@ pub struct StakeData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub enum Resource {
+    Bandwidth,
+    Energy,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+pub enum FreezeType {
+    Freeze,
+    Unfreeze,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+pub struct FreezeData {
+    #[serde(rename = "freezeType")]
+    pub freeze_type: FreezeType,
+    pub resource: Resource,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "content")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub enum StakeType {
     Stake(DelegationValidator),
     Unstake(Delegation),
     Redelegate(RedelegateData),
     Rewards(Vec<DelegationValidator>),
     Withdraw(Delegation),
+    Freeze(FreezeData),
 }

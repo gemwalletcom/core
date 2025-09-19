@@ -6,6 +6,7 @@ pub const EVENT_CONVERSATION_UPDATED: &str = "conversation_updated";
 
 #[allow(dead_code)]
 pub const MESSAGE_TYPE_INCOMING: &str = "incoming";
+#[allow(dead_code)]
 pub const MESSAGE_TYPE_OUTGOING: &str = "outgoing";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
