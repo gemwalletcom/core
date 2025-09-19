@@ -39,9 +39,10 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::{create_smartchain_test_client, create_ethereum_test_client, TEST_SMARTCHAIN_STAKING_ADDRESS};
+    use crate::provider::testkit::{create_ethereum_test_client, create_smartchain_test_client, TEST_SMARTCHAIN_STAKING_ADDRESS};
     use chain_traits::ChainStaking;
-    use primitives::Chain;
+    use num_bigint::BigInt;
+    use primitives::{Chain, DelegationState};
 
     #[tokio::test]
     async fn test_smartchain_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -118,27 +119,30 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_ethereum_get_staking_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ethereum_test_client();
-        let address = "0x742d35Cc6635C0532925a3b8C17Eb08d64B6b8cb".to_string();
+        let address = "0xF3A43C831D4462019635C5E08F4c0920218f3b93".to_string();
         let delegations = client.get_staking_delegations(address).await?;
 
         println!("Ethereum Delegations count: {}", delegations.len());
         println!("Ethereum Delegations: {:?}", delegations);
 
-        // The delegations may be empty if the address has no stakes, but the call should succeed
         for delegation in &delegations {
             println!(
                 "Delegation - Validator: {}, Balance: {}, State: {:?}",
                 delegation.validator_id, delegation.balance, delegation.state
             );
             assert_eq!(delegation.asset_id.chain, Chain::Ethereum);
-            assert!(
-                delegation.state == DelegationState::Active
-                    || delegation.state == DelegationState::Pending
-                    || delegation.state == DelegationState::Undelegating
-                    || delegation.state == DelegationState::Rewards
-            );
-            // Balance should be a valid number string
-            assert!(delegation.balance.parse::<u128>().is_ok());
+            assert!(matches!(
+                delegation.state,
+                DelegationState::Active
+                    | DelegationState::Pending
+                    | DelegationState::Undelegating
+                    | DelegationState::Inactive
+                    | DelegationState::Activating
+                    | DelegationState::Deactivating
+                    | DelegationState::AwaitingWithdrawal
+            ));
+            // Balance should be a valid positive number
+            assert!(delegation.balance >= BigInt::from(0));
         }
 
         Ok(())

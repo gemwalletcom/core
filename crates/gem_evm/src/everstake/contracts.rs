@@ -35,4 +35,3 @@ sol! {
         function withdrawRequest(address staker) view returns (WithdrawRequest memory);
     }
 }
-

@@ -2,6 +2,7 @@ use crate::everstake::WithdrawRequest;
 use alloy_primitives::U256;
 use chrono::{DateTime, Utc};
 use num_bigint::BigInt;
+use num_traits::Zero;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState};
 use std::str::FromStr;
 
@@ -17,10 +18,10 @@ pub fn map_deposited_balance_to_delegation(validator_id: &str, balance: &str, st
         },
         state,
         balance: BigInt::from_str(balance).unwrap_or_default(),
-        shares: BigInt::from_str(balance).unwrap_or_default(), // For Everstake, shares ≈ balance
+        shares: BigInt::zero(),
         rewards: BigInt::default(),
         completion_date: None,
-        delegation_id: format!("{}-{}", validator_id, balance),
+        delegation_id: format!("{}-{}", validator_id, state.as_ref()),
         validator_id: validator_id.to_string(),
     })
 }
@@ -47,7 +48,7 @@ pub fn map_withdraw_request_to_delegation(validator_id: &str, withdraw_request: 
         shares: BigInt::from_str(&withdraw_request.amount.to_string()).unwrap_or_default(),
         rewards: BigInt::default(),
         completion_date,
-        delegation_id: format!("{}-withdraw-{}", validator_id, withdraw_request.amount),
+        delegation_id: format!("{}-{}", validator_id, DelegationState::Undelegating.as_ref()),
         validator_id: validator_id.to_string(),
     })
 }
@@ -67,7 +68,7 @@ pub fn map_balance_string_to_delegation(validator_id: &str, balance: &str, state
         shares: BigInt::from_str(balance).unwrap_or_default(),
         rewards: BigInt::default(),
         completion_date: None,
-        delegation_id: format!("{}-{}", validator_id, balance),
+        delegation_id: format!("{}-{}", validator_id, state.as_ref()),
         validator_id: validator_id.to_string(),
     })
 }
@@ -103,6 +104,7 @@ mod tests {
         assert_eq!(delegation.balance, BigInt::from_str("1000000000000000000").unwrap());
         assert!(matches!(delegation.state, DelegationState::Active));
         assert_eq!(delegation.asset_id.chain, Chain::Ethereum);
+        assert_eq!(delegation.delegation_id, "0x123-active");
 
         // Test zero balance
         let empty_delegation = map_deposited_balance_to_delegation("0x123", "0", DelegationState::Active);
@@ -125,6 +127,7 @@ mod tests {
         assert_eq!(delegation.balance, BigInt::from_str("1000000000000000000").unwrap());
         assert!(matches!(delegation.state, DelegationState::Undelegating));
         assert!(delegation.completion_date.is_some());
+        assert_eq!(delegation.delegation_id, "0x456-undelegating");
     }
 
     #[test]

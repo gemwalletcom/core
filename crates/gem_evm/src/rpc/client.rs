@@ -16,7 +16,10 @@ use super::{
 };
 use crate::models::fee::EthereumFeeHistory;
 #[cfg(feature = "rpc")]
-use crate::multicall3::{IMulticall3, deployment_by_chain, IMulticall3::{Call3, Result as MulticallResult}};
+use crate::multicall3::{
+    deployment_by_chain, IMulticall3,
+    IMulticall3::{Call3, Result as MulticallResult},
+};
 #[cfg(feature = "rpc")]
 use alloy_sol_types::SolCall;
 use primitives::{Chain, EVMChain, NodeType};
@@ -265,8 +268,8 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let result: String = self.call(call.0, call.1).await?;
         let result_data = hex::decode(&result)?;
-        let multicall_results = IMulticall3::aggregate3Call::abi_decode_returns(&result_data)
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Sync + Send>)?;
+        let multicall_results =
+            IMulticall3::aggregate3Call::abi_decode_returns(&result_data).map_err(|e| Box::new(e) as Box<dyn std::error::Error + Sync + Send>)?;
 
         Ok(multicall_results)
     }
