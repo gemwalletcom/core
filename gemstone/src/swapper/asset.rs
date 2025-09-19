@@ -354,6 +354,21 @@ lazy_static! {
         18,
         AssetType::ERC20,
     );
+    // HyperEvm
+    pub static ref HYPEREVM_USDC: Asset = Asset::new(
+        USDC_HYPEREVM_ASSET_ID.into(),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
+    pub static ref HYPEREVM_USDT: Asset = Asset::new(
+        USDT_HYPEREVM_ASSET_ID.into(),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    );
     // Solana
     pub static ref SOLANA_USDC: Asset = Asset::new(
         AssetId::from_token(Chain::Solana, SOLANA_USDC_TOKEN_ID),

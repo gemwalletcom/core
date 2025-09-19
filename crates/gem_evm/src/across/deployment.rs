@@ -73,6 +73,10 @@ impl AcrossDeployment {
                 chain_id,
                 spoke_pool: "0x4e8E101924eDE233C13e2D8622DC8aED2872d505",
             }),
+            Chain::Hyperliquid => Some(Self {
+                chain_id,
+                spoke_pool: "0x35E63eA3eb0fb7A3bc543C71FB66412e1F6B0E04",
+            }),
             _ => None,
         }
     }
@@ -85,6 +89,8 @@ impl AcrossDeployment {
             324 => "0x863859ef502F0Ee9676626ED5B418037252eFeb2".into(),
             // SmartChain
             56 => "0xAC537C12fE8f544D712d71ED4376a502EEa944d7".into(),
+            // HyperEvm
+            999 => "0x5E7840E06fAcCb6d1c3b5F5E0d1d3d07F2829bba".into(),
             _ => MULTICALL_HANDLER.into(),
         }
     }
@@ -105,6 +111,7 @@ impl AcrossDeployment {
                 vec![USDT_ARB_ASSET_ID.into(), USDC_ARB_ASSET_ID.into(), WETH_ARB_ASSET_ID.into()],
             ),
             (Chain::Base, vec![WETH_BASE_ASSET_ID.into(), USDC_BASE_ASSET_ID.into()]),
+            (Chain::Hyperliquid, vec![USDC_HYPEREVM_ASSET_ID.into(), USDT_HYPEREVM_ASSET_ID.into()]),
             (Chain::Linea, vec![USDT_LINEA_ASSET_ID.into(), WETH_LINEA_ASSET_ID.into()]),
             (Chain::ZkSync, vec![WETH_ZKSYNC_ASSET_ID.into(), USDT_ZKSYNC_ASSET_ID.into()]),
             (Chain::World, vec![WETH_WORLD_ASSET_ID.into()]),
@@ -153,6 +160,7 @@ impl AcrossDeployment {
                     USDC_OP_ASSET_ID.into(),
                     USDC_POLYGON_ASSET_ID.into(),
                     USDC_UNICHAIN_ASSET_ID.into(),
+                    USDC_HYPEREVM_ASSET_ID.into(),
                 ]),
             },
             // USDC on BSC decimals are 18
@@ -180,6 +188,7 @@ impl AcrossDeployment {
                     USDT_POLYGON_ASSET_ID.into(),
                     USDT_ZKSYNC_ASSET_ID.into(),
                     USDT_INK_ASSET_ID.into(),
+                    USDT_HYPEREVM_ASSET_ID.into(),
                 ]),
             },
             // USDT on BSC decimals are 18
