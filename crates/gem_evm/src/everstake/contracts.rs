@@ -6,21 +6,16 @@ sol! {
         function stake(uint64 source) payable returns (uint256);
         function unstake(uint256 value, uint16 allowedInterchangeNum, uint64 source) returns (uint256);
         function unstakePending(uint256 amount) returns (uint256);
-        function activateStake() returns (uint256);
-        function restake(uint256 activatedSlots) returns (uint256);
+        function claimWithdrawRequest();
     }
 
     #[derive(Debug, PartialEq)]
     interface EverstakeAccounting {
-        function deposit(address account, uint256 depositToPendingValue) returns (bool);
-
-        // Query functions for user data
         function autocompoundBalanceOf(address account) view returns (uint256);
         function depositedBalanceOf(address account) view returns (uint256);
         function pendingDepositedBalanceOf(address account) view returns (uint256);
         function pendingBalanceOf(address account) view returns (uint256);
         function pendingRestakedRewardOf(address account) view returns (uint256);
-        function restakedRewardOf(address account) view returns (uint256);
     }
 
     #[derive(Debug, PartialEq)]

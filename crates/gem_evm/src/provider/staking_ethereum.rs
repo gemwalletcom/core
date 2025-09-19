@@ -1,12 +1,14 @@
-use alloy_primitives::Address;
+use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
 use gem_client::Client;
+use num_bigint::{BigInt, Sign};
+use num_traits::Zero;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::{error::Error, str::FromStr};
 
 use crate::everstake::{
-    combine_active_balances, map_balance_string_to_delegation, map_withdraw_request_to_delegation, EverstakeAccounting, EverstakePoolQuery,
-    EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS,
+    map_balance_to_delegation, map_withdraw_request_to_delegation, EverstakeAccounting, EverstakePoolQuery, EVERSTAKE_ACCOUNTING_ADDRESS,
+    EVERSTAKE_POOL_ADDRESS,
 };
 use crate::multicall3::{create_call3, decode_call3_return, IMulticall3};
 use crate::rpc::client::EthereumClient;
@@ -33,42 +35,35 @@ impl<C: Client + Clone> EthereumClient<C> {
         let staker = Address::from_str(address).map_err(|e| Box::new(e) as Box<dyn Error + Sync + Send>)?;
 
         let calls = vec![
-            create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, EverstakeAccounting::depositedBalanceOfCall { account }),
-            create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, EverstakeAccounting::pendingBalanceOfCall { account }),
             create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, EverstakeAccounting::autocompoundBalanceOfCall { account }),
-            create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, EverstakeAccounting::pendingRestakedRewardOfCall { account }),
+            create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, EverstakeAccounting::pendingDepositedBalanceOfCall { account }),
             create_call3(EVERSTAKE_POOL_ADDRESS, EverstakePoolQuery::withdrawRequestCall { staker }),
         ];
+        let call_count = calls.len();
 
-        let multicall_results = self.multicall3(calls).await?;
+        let multicall_results = self.multicall3(calls.clone()).await?;
         let mut delegations = Vec::new();
-
-        // Process multicall3 results
-        if multicall_results.len() != 5 {
+        if multicall_results.len() != call_count {
             return Err("Unexpected number of multicall results".into());
         }
 
-        // Decode balance results
-        let deposited_balance = Self::decode_balance_result::<EverstakeAccounting::depositedBalanceOfCall>(&multicall_results[0]);
-        let pending_balance = Self::decode_balance_result::<EverstakeAccounting::pendingBalanceOfCall>(&multicall_results[1]);
-        let autocompound_balance = Self::decode_balance_result::<EverstakeAccounting::autocompoundBalanceOfCall>(&multicall_results[2]);
+        let autocompound_balance = Self::decode_balance_result::<EverstakeAccounting::autocompoundBalanceOfCall>(&multicall_results[0]);
+        let pending_deposited_balance = Self::decode_balance_result::<EverstakeAccounting::pendingDepositedBalanceOfCall>(&multicall_results[1]);
+        let pending_balance = Self::decode_balance_result::<EverstakeAccounting::pendingBalanceOfCall>(&multicall_results[2]);
 
-        // Combine active balances (deposited + autocompound) into single active delegation
-        if let Some(total_active_balance) = combine_active_balances(&deposited_balance, &autocompound_balance) {
-            if let Some(delegation) = map_balance_string_to_delegation(EVERSTAKE_POOL_ADDRESS, &total_active_balance, DelegationState::Active) {
-                delegations.push(delegation);
-            }
+        let active_balance = autocompound_balance - pending_deposited_balance;
+        if active_balance > BigInt::zero() {
+            delegations.push(map_balance_to_delegation(&active_balance, &BigInt::zero(), DelegationState::Active));
+        }
+        if pending_balance > BigInt::zero() {
+            delegations.push(map_balance_to_delegation(&pending_balance, &BigInt::zero(), DelegationState::Pending));
         }
 
-        // Add pending balance as separate delegation
-        if let Some(delegation) = map_balance_string_to_delegation(EVERSTAKE_POOL_ADDRESS, &pending_balance, DelegationState::Pending) {
-            delegations.push(delegation);
-        }
-
-        // Add withdrawal request as unstaking delegation
-        if multicall_results[4].success {
-            if let Ok(withdraw_request) = decode_call3_return::<EverstakePoolQuery::withdrawRequestCall>(&multicall_results[4]) {
-                if let Some(delegation) = map_withdraw_request_to_delegation(EVERSTAKE_POOL_ADDRESS, &withdraw_request) {
+        if multicall_results[call_count - 1].success {
+            if let Ok(withdraw_request) = decode_call3_return::<EverstakePoolQuery::withdrawRequestCall>(&multicall_results[3]) {
+                let amount_bytes = withdraw_request.amount.to_be_bytes::<32>();
+                let balance = BigInt::from_bytes_be(Sign::Plus, &amount_bytes);
+                if let Some(delegation) = map_withdraw_request_to_delegation(&withdraw_request, &balance) {
                     delegations.push(delegation);
                 }
             }
@@ -77,14 +72,20 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(delegations)
     }
 
-    fn decode_balance_result<T: SolCall>(result: &IMulticall3::Result) -> String
+    fn decode_balance_result<T: SolCall>(result: &IMulticall3::Result) -> BigInt
     where
-        T::Return: ToString,
+        T::Return: Into<U256>,
     {
         if result.success {
-            decode_call3_return::<T>(result).map(|r| r.to_string()).unwrap_or_else(|_| "0".to_string())
+            decode_call3_return::<T>(result)
+                .map(|value| {
+                    let value: U256 = value.into();
+                    let bytes = value.to_be_bytes::<32>();
+                    BigInt::from_bytes_be(Sign::Plus, &bytes)
+                })
+                .unwrap_or(BigInt::zero())
         } else {
-            "0".to_string()
+            BigInt::zero()
         }
     }
 }
