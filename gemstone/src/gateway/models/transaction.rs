@@ -1,6 +1,6 @@
 use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
 use num_bigint::BigInt;
-use primitives::stake_type::{StakeData, FreezeData, FreezeType, Resource};
+use primitives::stake_type::{FreezeData, FreezeType, Resource, StakeData};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::FeeOption;
 use primitives::SwapProvider;
@@ -338,7 +338,9 @@ impl From<StakeType> for GemStakeType {
                 validators: validators.into_iter().map(|v| v.into()).collect(),
             },
             StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation: delegation.into() },
-            StakeType::Freeze(freeze_data) => GemStakeType::Freeze { freeze_data: freeze_data.into() },
+            StakeType::Freeze(freeze_data) => GemStakeType::Freeze {
+                freeze_data: freeze_data.into(),
+            },
         }
     }
 }

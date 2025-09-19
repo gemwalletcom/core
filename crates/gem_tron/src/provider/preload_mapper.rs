@@ -72,7 +72,9 @@ pub fn calculate_stake_fee_rate(account_usage: &TronAccountUsage, stake_type: &S
                 calculate_fee_by_bandwidth(available_bandwidth, 300, 1) // Full unstake
             }
         }
-        StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Redelegate(_) | StakeType::Freeze(_) => calculate_fee_by_bandwidth(available_bandwidth, 300, 1),
+        StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Redelegate(_) | StakeType::Freeze(_) => {
+            calculate_fee_by_bandwidth(available_bandwidth, 300, 1)
+        }
     }
 }
 

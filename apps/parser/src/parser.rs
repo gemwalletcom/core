@@ -48,10 +48,16 @@ impl Parser {
             match self.provider.get_block_latest_number().await {
                 Ok(latest_block) => {
                     let latest_block_i64 = latest_block as i64;
-                    let _ = self.database.parser_state().set_parser_state_latest_block(self.chain.as_ref(), latest_block_i64);
+                    let _ = self
+                        .database
+                        .parser_state()
+                        .set_parser_state_latest_block(self.chain.as_ref(), latest_block_i64);
                     // initial start
                     if state.current_block == 0 {
-                        let _ = self.database.parser_state().set_parser_state_current_block(self.chain.as_ref(), latest_block_i64);
+                        let _ = self
+                            .database
+                            .parser_state()
+                            .set_parser_state_current_block(self.chain.as_ref(), latest_block_i64);
                     }
                     if next_current_block >= latest_block_i64 {
                         println!(
