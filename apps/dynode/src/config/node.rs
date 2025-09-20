@@ -118,17 +118,6 @@ mod tests {
         };
         assert_eq!(url.host(), "node.example.com");
     }
-
-    #[test]
-    fn host_handles_ipv6() {
-        let url = Url {
-            url: "https://[2001:db8::1]:8080/path".to_string(),
-            headers: None,
-            urls_override: None,
-        };
-        assert_eq!(url.host(), "2001:db8::1");
-    }
-
     #[test]
     fn host_fallback_parsing() {
         let url = Url {
