@@ -21,6 +21,7 @@ pub struct Metrics {
     node_block_latest: Family<HostStateLabels, Gauge>,
     cache_hits: Family<CacheLabels, Counter>,
     cache_misses: Family<CacheLabels, Counter>,
+    node_switches: Family<NodeSwitchLabels, Counter>,
     config: Arc<MetricsConfig>,
 }
 
@@ -67,6 +68,13 @@ pub struct CacheLabels {
     path: String,
 }
 
+#[derive(Clone, Hash, PartialEq, Eq, Debug, EncodeLabelSet)]
+pub struct NodeSwitchLabels {
+    chain: String,
+    old_host: String,
+    new_host: String,
+}
+
 impl Metrics {
     pub fn new(config: MetricsConfig) -> Self {
         let proxy_requests = Family::<ProxyRequestLabels, Counter>::default();
@@ -77,6 +85,7 @@ impl Metrics {
         let node_block_latest = Family::<HostStateLabels, Gauge>::default();
         let cache_hits = Family::<CacheLabels, Counter>::default();
         let cache_misses = Family::<CacheLabels, Counter>::default();
+        let node_switches = Family::<NodeSwitchLabels, Counter>::default();
 
         let mut registry = Registry::with_prefix("dynode");
         registry.register("proxy_requests", "Proxy requests by host", proxy_requests.clone());
@@ -99,6 +108,7 @@ impl Metrics {
         registry.register("node_block_latest", "Node block latest", node_block_latest.clone());
         registry.register("cache_hits", "Cache hits by host and path", cache_hits.clone());
         registry.register("cache_misses", "Cache misses by host and path", cache_misses.clone());
+        registry.register("node_switches_total", "Node switches by chain and host", node_switches.clone());
 
         Self {
             registry: Arc::new(registry),
@@ -110,6 +120,7 @@ impl Metrics {
             node_block_latest,
             cache_hits,
             cache_misses,
+            node_switches,
             config: Arc::new(config),
         }
     }
@@ -174,6 +185,16 @@ impl Metrics {
     pub fn add_cache_miss(&self, host: &str, path: &str) {
         let path = self.truncate_path(path);
         self.cache_misses.get_or_create(&CacheLabels { host: host.to_string(), path }).inc();
+    }
+
+    pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str) {
+        self.node_switches
+            .get_or_create(&NodeSwitchLabels {
+                chain: chain.to_string(),
+                old_host: old_host.to_string(),
+                new_host: new_host.to_string(),
+            })
+            .inc();
     }
 
     pub fn get_metrics(&self) -> String {

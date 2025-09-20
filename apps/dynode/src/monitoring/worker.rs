@@ -104,6 +104,7 @@ impl NodeMonitor {
                 )
                 .await;
                 metrics.set_node_host_current(&domain.domain, &best_candidate.url.url);
+                metrics.add_node_switch(domain.chain.as_ref(), &current_node.url.url, &best_candidate.url.url);
 
                 NodeTelemetry::log_node_switch(domain, &current_node.url, &best_candidate);
             }
