@@ -2,6 +2,9 @@ use std::collections::HashMap;
 
 use primitives::Chain;
 use serde::Deserialize;
+use url::Url as UrlParser;
+
+use super::NodeMonitoringConfig;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Domain {
@@ -13,19 +16,19 @@ pub struct Domain {
 }
 
 impl Domain {
-    pub fn get_poll_interval_seconds(&self) -> u64 {
-        self.poll_interval_seconds.unwrap_or(60 * 15)
+    pub fn get_poll_interval_seconds(&self, monitoring_config: &NodeMonitoringConfig) -> u64 {
+        self.poll_interval_seconds.unwrap_or(monitoring_config.poll_interval_seconds)
     }
 
-    pub fn get_block_delay(&self) -> u64 {
-        self.block_delay.unwrap_or(100)
+    pub fn get_block_delay(&self, monitoring_config: &NodeMonitoringConfig) -> u64 {
+        self.block_delay.unwrap_or(monitoring_config.block_delay)
     }
 
-    pub fn is_url_behind(&self, url: Url, results: Vec<NodeResult>) -> bool {
+    pub fn is_url_behind(&self, url: Url, results: Vec<NodeResult>, monitoring_config: &NodeMonitoringConfig) -> bool {
         if let Some(index) = results.iter().position(|r| r.url == url) {
             let node = results[index].clone();
             if let Some(max_block_number) = Self::find_highest_block_number(results) {
-                if node.block_number + self.get_block_delay() >= max_block_number.block_number {
+                if node.block_number + self.get_block_delay(monitoring_config) >= max_block_number.block_number {
                     return false;
                 }
             }
@@ -47,29 +50,11 @@ pub struct Url {
 
 impl Url {
     pub fn host(&self) -> String {
-        let trimmed = self.url.trim();
-        let mut value = match trimmed.find("://") {
-            Some(index) => &trimmed[index + 3..],
-            None => trimmed,
-        };
-
-        value = value.trim_start_matches('/');
-        let host_port = value.split(|c| c == '/' || c == '?' || c == '#').next().unwrap_or("");
-
-        if host_port.is_empty() {
-            return trimmed.to_string();
+        if let Ok(parsed_url) = UrlParser::parse(&self.url) {
+            parsed_url.host_str().unwrap_or_default().to_string()
+        } else {
+            self.url.clone()
         }
-
-        if host_port.starts_with('[') {
-            if let Some(end) = host_port.find(']') {
-                return host_port[1..end].to_string();
-            }
-        }
-
-        host_port
-            .split_once(':')
-            .map(|(host, _)| host.to_string())
-            .unwrap_or_else(|| host_port.to_string())
     }
 }
 
@@ -82,7 +67,7 @@ pub struct NodeResult {
 
 #[cfg(test)]
 mod tests {
-    use super::Url;
+    use super::*;
 
     #[test]
     fn host_strips_scheme_and_path() {
@@ -142,5 +127,135 @@ mod tests {
             urls_override: None,
         };
         assert_eq!(url.host(), "2001:db8::1");
+    }
+
+    #[test]
+    fn host_fallback_parsing() {
+        let url = Url {
+            url: "https://fallback.example.com:8080/path".to_string(),
+            headers: None,
+            urls_override: None,
+        };
+        assert_eq!(url.host(), "fallback.example.com");
+    }
+
+    #[test]
+    fn get_poll_interval_seconds_uses_domain_override() {
+        use crate::config::NodeMonitoringConfig;
+
+        let domain = Domain {
+            domain: "test".to_string(),
+            chain: primitives::Chain::Ethereum,
+            block_delay: None,
+            poll_interval_seconds: Some(20),
+            urls: vec![],
+        };
+
+        let monitoring_config = NodeMonitoringConfig {
+            poll_interval_seconds: 45,
+            block_delay: 100,
+        };
+
+        assert_eq!(domain.get_poll_interval_seconds(&monitoring_config), 20);
+    }
+
+    #[test]
+    fn get_poll_interval_seconds_uses_global_fallback() {
+        use crate::config::NodeMonitoringConfig;
+
+        let domain = Domain {
+            domain: "test".to_string(),
+            chain: primitives::Chain::Ethereum,
+            block_delay: None,
+            poll_interval_seconds: None,
+            urls: vec![],
+        };
+
+        let monitoring_config = NodeMonitoringConfig {
+            poll_interval_seconds: 45,
+            block_delay: 100,
+        };
+
+        assert_eq!(domain.get_poll_interval_seconds(&monitoring_config), 45);
+    }
+
+    #[test]
+    fn get_poll_interval_seconds_uses_default_fallback() {
+        use crate::config::NodeMonitoringConfig;
+
+        let domain = Domain {
+            domain: "test".to_string(),
+            chain: primitives::Chain::Ethereum,
+            block_delay: None,
+            poll_interval_seconds: None,
+            urls: vec![],
+        };
+
+        let monitoring_config = NodeMonitoringConfig {
+            poll_interval_seconds: 60 * 15,
+            block_delay: 100,
+        };
+
+        assert_eq!(domain.get_poll_interval_seconds(&monitoring_config), 60 * 15);
+    }
+
+    #[test]
+    fn get_block_delay_uses_domain_override() {
+        use crate::config::NodeMonitoringConfig;
+
+        let domain = Domain {
+            domain: "test".to_string(),
+            chain: primitives::Chain::Ethereum,
+            block_delay: Some(50),
+            poll_interval_seconds: None,
+            urls: vec![],
+        };
+
+        let monitoring_config = NodeMonitoringConfig {
+            poll_interval_seconds: 60 * 15,
+            block_delay: 200,
+        };
+
+        assert_eq!(domain.get_block_delay(&monitoring_config), 50);
+    }
+
+    #[test]
+    fn get_block_delay_uses_global_fallback() {
+        use crate::config::NodeMonitoringConfig;
+
+        let domain = Domain {
+            domain: "test".to_string(),
+            chain: primitives::Chain::Ethereum,
+            block_delay: None,
+            poll_interval_seconds: None,
+            urls: vec![],
+        };
+
+        let monitoring_config = NodeMonitoringConfig {
+            poll_interval_seconds: 60 * 15,
+            block_delay: 200,
+        };
+
+        assert_eq!(domain.get_block_delay(&monitoring_config), 200);
+    }
+
+    #[test]
+    fn get_block_delay_uses_default_fallback() {
+        use crate::config::NodeMonitoringConfig;
+
+        let domain = Domain {
+            domain: "test".to_string(),
+            chain: primitives::Chain::Ethereum,
+            block_delay: None,
+            poll_interval_seconds: None,
+            urls: vec![],
+        };
+
+        let monitoring_config = NodeMonitoringConfig {
+            poll_interval_seconds: 60 * 15,
+            block_delay: 100,
+        };
+
+        assert_eq!(domain.get_block_delay(&monitoring_config), 100);
     }
 }

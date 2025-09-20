@@ -8,7 +8,7 @@ use tokio::time::{sleep, Duration};
 use super::chain_client::ChainClient;
 use super::sync::{NodeStatusObservation, NodeSyncAnalyzer};
 use super::telemetry::NodeTelemetry;
-use crate::config::{Domain, Url};
+use crate::config::{Domain, NodeMonitoringConfig, Url};
 use crate::metrics::Metrics;
 use crate::monitoring::NodeService;
 use crate::proxy::NodeDomain;
@@ -17,11 +17,12 @@ pub struct NodeMonitor {
     domains: HashMap<String, Domain>,
     nodes: Arc<Mutex<HashMap<String, NodeDomain>>>,
     metrics: Arc<Metrics>,
+    monitoring_config: NodeMonitoringConfig,
 }
 
 impl NodeMonitor {
-    pub fn new(domains: HashMap<String, Domain>, nodes: Arc<Mutex<HashMap<String, NodeDomain>>>, metrics: Arc<Metrics>) -> Self {
-        Self { domains, nodes, metrics }
+    pub fn new(domains: HashMap<String, Domain>, nodes: Arc<Mutex<HashMap<String, NodeDomain>>>, metrics: Arc<Metrics>, monitoring_config: NodeMonitoringConfig) -> Self {
+        Self { domains, nodes, metrics, monitoring_config }
     }
 
     pub async fn start_monitoring(&self) {
@@ -40,6 +41,7 @@ impl NodeMonitor {
             let domain_clone = domain;
             let nodes = Arc::clone(&self.nodes);
             let metrics = Arc::clone(&self.metrics);
+            let monitoring_config = self.monitoring_config.clone();
             let initial_delay = Duration::from_millis(((index as u64) + 1) * 250);
 
             tokio::task::spawn(async move {
@@ -50,7 +52,7 @@ impl NodeMonitor {
                         NodeTelemetry::log_monitor_error(&domain_clone, err.as_ref());
                     }
 
-                    sleep(Duration::from_secs(domain_clone.get_poll_interval_seconds())).await;
+                    sleep(Duration::from_secs(domain_clone.get_poll_interval_seconds(&monitoring_config))).await;
                 }
             });
         }

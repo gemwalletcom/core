@@ -38,8 +38,9 @@ rpc = [
     "dep:number_formatter",
 ]
 reqwest = ["gem_client/reqwest"]
-chain_integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
+settings = { path = "../settings", features = ["testkit"] }

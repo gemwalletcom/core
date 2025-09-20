@@ -1,7 +1,7 @@
-use crate::{Client, ClientError, ContentType, CONTENT_TYPE};
+use crate::{Client, ClientError, ContentType, CONTENT_TYPE, retry_policy};
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, str::FromStr, time::Duration};
 
 #[derive(Debug, Clone)]
 pub struct ReqwestClient {
@@ -12,6 +12,19 @@ pub struct ReqwestClient {
 impl ReqwestClient {
     pub fn new(url: String, client: reqwest::Client) -> Self {
         Self { base_url: url, client }
+    }
+
+    pub fn new_with_retry(url: String, timeout_secs: u64, max_retries: u32) -> Self {
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(timeout_secs))
+            .retry(retry_policy(url.clone(), max_retries))
+            .build()
+            .expect("Failed to build reqwest client with retry");
+        Self { base_url: url, client }
+    }
+
+    pub fn new_test_client(url: String) -> Self {
+        Self::new_with_retry(url, 30, 3)
     }
 
     fn build_url(&self, path: &str) -> String {

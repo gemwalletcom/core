@@ -7,10 +7,7 @@ pub const TEST_SMARTCHAIN_STAKING_ADDRESS: &str = "0xBA4D1d35bCe0e8F28E5a3403e7a
 use primitives::FeeRate;
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]
-fn get_test_settings() -> settings::Settings {
-    let settings_path = std::env::current_dir().expect("Failed to get current directory").join("../../Settings.yaml");
-    settings::Settings::new_setting_path(settings_path).expect("Failed to load settings for tests")
-}
+use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]
 fn build_test_client(chain: primitives::EVMChain, rpc_url: &str) -> crate::rpc::client::EthereumClient<gem_client::ReqwestClient> {
@@ -21,8 +18,10 @@ fn build_test_client(chain: primitives::EVMChain, rpc_url: &str) -> crate::rpc::
     let settings = get_test_settings();
     let rpc_client = JsonRpcClient::new_reqwest(rpc_url.to_string());
 
-    let http_client = reqwest::Client::builder().build().expect("Failed to build reqwest client for tests");
-    let alchemy_client = AlchemyClient::new(ReqwestClient::new(alchemy_url(&settings.alchemy.key.secret), http_client.clone()), chain);
+    let alchemy_client = AlchemyClient::new(
+        ReqwestClient::new_test_client(alchemy_url(&settings.alchemy.key.secret)),
+        chain
+    );
 
     let ankr_client = AnkrClient::new(
         JsonRpcClient::new_reqwest(format!("https://rpc.ankr.com/multichain/{}", settings.ankr.key.secret)),
@@ -36,22 +35,26 @@ fn build_test_client(chain: primitives::EVMChain, rpc_url: &str) -> crate::rpc::
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]
 pub fn create_ethereum_test_client() -> crate::rpc::client::EthereumClient<gem_client::ReqwestClient> {
-    build_test_client(primitives::EVMChain::Ethereum, "https://eth.llamarpc.com")
+    let settings = get_test_settings();
+    build_test_client(primitives::EVMChain::Ethereum, &settings.chains.ethereum.url)
 }
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]
 pub fn create_smartchain_test_client() -> crate::rpc::client::EthereumClient<gem_client::ReqwestClient> {
-    build_test_client(primitives::EVMChain::SmartChain, "https://bsc-dataseed4.bnbchain.org")
+    let settings = get_test_settings();
+    build_test_client(primitives::EVMChain::SmartChain, &settings.chains.smartchain.url)
 }
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]
 pub fn create_polygon_test_client() -> crate::rpc::client::EthereumClient<gem_client::ReqwestClient> {
-    build_test_client(primitives::EVMChain::Polygon, "https://polygon.llamarpc.com")
+    let settings = get_test_settings();
+    build_test_client(primitives::EVMChain::Polygon, &settings.chains.polygon.url)
 }
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]
 pub fn create_arbitrum_test_client() -> crate::rpc::client::EthereumClient<gem_client::ReqwestClient> {
-    build_test_client(primitives::EVMChain::Arbitrum, "https://arb1.arbitrum.io/rpc")
+    let settings = get_test_settings();
+    build_test_client(primitives::EVMChain::Arbitrum, &settings.chains.arbitrum.url)
 }
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]

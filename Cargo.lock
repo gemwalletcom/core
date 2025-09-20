@@ -2156,6 +2156,7 @@ dependencies = [
  "serde_json",
  "settings_chain",
  "tokio",
+ "url",
 ]
 
 [[package]]
@@ -2727,6 +2728,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "tokio",
 ]
 
@@ -2809,6 +2811,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "sha2",
  "tokio",
 ]
@@ -2946,6 +2949,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "sha2",
  "thiserror 2.0.16",
  "tokio",
@@ -2992,6 +2996,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "sui-sdk-types",
  "sui-transaction-builder",
  "tokio",
@@ -3014,6 +3019,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "tokio",
  "tonlib-core",
 ]
@@ -3045,6 +3051,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "settings",
  "tokio",
 ]
 
@@ -3064,6 +3071,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "tokio",
 ]
 

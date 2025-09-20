@@ -14,7 +14,7 @@ rpc = [
     "dep:chain_traits",
 ]
 reqwest = ["gem_jsonrpc/reqwest", "gem_client/reqwest"]
-chain_integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -48,7 +48,7 @@ primitives = { path = "../primitives", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 num-bigint = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
-settings = { path = "../settings" }
+settings = { path = "../settings", features = ["testkit"] }
 
 [[test]]
 name = "integration_test"

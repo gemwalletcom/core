@@ -408,3 +408,6 @@ pub struct Sentry {
     pub dsn: String,
     pub sample_rate: f32,
 }
+
+#[cfg(feature = "testkit")]
+pub mod testkit;

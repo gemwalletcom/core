@@ -35,7 +35,6 @@ mod chain_integration_tests {
         let node_status = client.get_node_status().await?;
 
         assert!(node_status.in_sync);
-        assert!(node_status.latest_block_number.is_some());
         assert!(node_status.latest_block_number.unwrap_or(0) > 0);
 
         Ok(())

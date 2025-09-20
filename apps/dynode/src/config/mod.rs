@@ -12,6 +12,27 @@ pub use metrics::{MetricsConfig, UserAgentPatterns};
 pub use node::{Domain, NodeResult, Url};
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct NodeMonitoringConfig {
+    pub poll_interval_seconds: u64,
+    pub block_delay: u64,
+}
+
+impl Default for NodeMonitoringConfig {
+    fn default() -> Self {
+        Self {
+            poll_interval_seconds: 60 * 15,
+            block_delay: 100,
+        }
+    }
+}
+
+impl NodeMonitoringConfig {
+    pub fn get_poll_interval_seconds(&self) -> u64 {
+        self.poll_interval_seconds
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct NodeConfig {
     pub port: u16,
     pub address: String,
@@ -19,6 +40,8 @@ pub struct NodeConfig {
     pub domains: Vec<Domain>,
     #[serde(default)]
     pub cache: CacheConfig,
+    #[serde(default)]
+    pub monitoring: NodeMonitoringConfig,
 }
 
 impl NodeConfig {
