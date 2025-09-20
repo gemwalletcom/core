@@ -78,7 +78,7 @@ impl Metrics {
         let cache_hits = Family::<CacheLabels, Counter>::default();
         let cache_misses = Family::<CacheLabels, Counter>::default();
 
-        let mut registry = <Registry>::with_prefix("dynode");
+        let mut registry = Registry::with_prefix("dynode");
         registry.register("proxy_requests", "Proxy requests by host", proxy_requests.clone());
         registry.register(
             "proxy_requests_by_user_agent_total",
@@ -114,19 +114,6 @@ impl Metrics {
         }
     }
 
-    fn categorize_user_agent(&self, user_agent: &str) -> String {
-        for (category, patterns) in &self.config.user_agent_patterns.patterns {
-            for pattern in patterns {
-                if let Ok(re) = Regex::new(pattern) {
-                    if re.is_match(user_agent) {
-                        return category.clone();
-                    }
-                }
-            }
-        }
-        "unknown".to_string()
-    }
-
     pub fn add_proxy_request(&self, host: &str, user_agent: &str) {
         self.proxy_requests.get_or_create(&ProxyRequestLabels { host: host.to_string() }).inc();
 
@@ -147,17 +134,6 @@ impl Metrics {
                 method,
             })
             .inc();
-    }
-
-    fn truncate_method(&self, method: &str) -> String {
-        self.truncate_path(method)
-    }
-
-    fn truncate_path(&self, path: &str) -> String {
-        path.split('/')
-            .map(|segment| if segment.len() > 20 { ":value".to_string() } else { segment.to_string() })
-            .collect::<Vec<String>>()
-            .join("/")
     }
 
     pub fn add_proxy_response(&self, host: &str, path: &str, method: &str, remote_host: &str, status: u16, latency: u128) {
@@ -202,7 +178,31 @@ impl Metrics {
 
     pub fn get_metrics(&self) -> String {
         let mut buffer = String::new();
-        encode(&mut buffer, &self.registry).unwrap();
+        encode(&mut buffer, &self.registry).expect("failed to encode metrics");
         buffer
+    }
+
+    fn truncate_method(&self, method: &str) -> String {
+        self.truncate_path(method)
+    }
+
+    fn truncate_path(&self, path: &str) -> String {
+        path.split('/')
+            .map(|segment| if segment.len() > 20 { ":value".to_string() } else { segment.to_string() })
+            .collect::<Vec<String>>()
+            .join("/")
+    }
+
+    fn categorize_user_agent(&self, user_agent: &str) -> String {
+        for (category, patterns) in &self.config.user_agent_patterns.patterns {
+            for pattern in patterns {
+                if let Ok(re) = Regex::new(pattern) {
+                    if re.is_match(user_agent) {
+                        return category.clone();
+                    }
+                }
+            }
+        }
+        "unknown".to_string()
     }
 }

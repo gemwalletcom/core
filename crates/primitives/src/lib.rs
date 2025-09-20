@@ -16,6 +16,8 @@ pub mod node;
 pub use self::node::{Node, NodeType};
 pub mod node_status;
 pub use self::node_status::NodeStatus;
+pub mod node_sync_status;
+pub use self::node_sync_status::{NodeStatusState, NodeSyncStatus};
 pub mod latency_type;
 pub use self::latency_type::{Latency, LatencyType};
 pub mod price;

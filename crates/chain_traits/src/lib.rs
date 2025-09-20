@@ -4,8 +4,8 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, Transaction, TransactionFee,
-    TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest,
+    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction,
+    TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest,
     TransactionUpdate, UTXO,
 };
 
@@ -88,6 +88,9 @@ pub trait ChainTransactions: Send + Sync {
 #[async_trait]
 pub trait ChainState: Send + Sync {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>>;
+    async fn get_node_status(&self) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
+        Ok(NodeSyncStatus::in_sync())
+    }
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>>;
 }
 

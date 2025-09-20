@@ -14,6 +14,7 @@ pub struct BitcoinBlock {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BitcoinNodeInfo {
     pub blockbook: BitcoinBlockbook,
+    pub backend: Option<BitcoinBackend>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +23,13 @@ pub struct BitcoinBlockbook {
     pub in_sync: bool,
     pub last_block_time: String,
     pub best_height: Int,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BitcoinBackend {
+    pub blocks: Int,
+    pub chain: Option<String>,
 }
 
 // RPC models

@@ -1,20 +1,29 @@
-use std::error::Error;
+use std::time::Instant;
 
-use primitives::{Chain, NodeType};
+use primitives::{Chain, NodeStatusState, NodeType};
 use settings_chain::{ProviderConfig, ProviderFactory};
 
+use super::sync::NodeStatusObservation;
+use crate::config::Url;
+
 pub struct ChainClient {
-    chain: Chain,
-    url: String,
+    config: ProviderConfig,
+    url: Url,
 }
 
 impl ChainClient {
-    pub fn new(chain: Chain, url: String) -> Self {
-        Self { chain, url }
+    pub fn new(chain: Chain, url: Url) -> Self {
+        let config = ProviderConfig::new(chain, &url.url, NodeType::Default, "", "", "");
+        Self { config, url }
     }
 
-    pub async fn get_latest_block(&self) -> Result<u64, Box<dyn Error + Send + Sync>> {
-        let config = ProviderConfig::new(self.chain, &self.url, NodeType::Default, "", "", "");
-        ProviderFactory::new_provider(config).get_block_latest_number().await
+    pub async fn fetch_status(&self) -> NodeStatusObservation {
+        let started_at = Instant::now();
+        let state = match ProviderFactory::new_provider(self.config.clone()).get_node_status().await {
+            Ok(status) => NodeStatusState::healthy(status),
+            Err(err) => NodeStatusState::error(err.to_string()),
+        };
+
+        NodeStatusObservation::new(self.url.clone(), state, started_at.elapsed())
     }
 }

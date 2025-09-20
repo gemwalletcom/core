@@ -19,6 +19,13 @@ domains:
     chain: bitcoin
     urls:
       - url: https://blockbook.btc.zelcore.io
+  
+  - domain: litecoin
+    chain: litecoin
+    poll_interval_seconds: 15
+    urls:
+      - url: https://1blockbook.lt1c.zelcore.io
+      - url: https://blockbook.ltc.zelcore.io
 
   - domain: solana
     chain: solana
