@@ -1,5 +1,6 @@
 use num_bigint::BigInt;
-use primitives::{chain_cosmos::CosmosChain, FeePriority, FeeRate, GasPriceType};
+use primitives::{chain_cosmos::CosmosChain, FeePriority, FeeRate, GasPriceType, NodeSyncStatus};
+use std::error::Error;
 
 pub fn calculate_fee_rates(chain: CosmosChain, base_fee: BigInt) -> Vec<FeeRate> {
     match chain {
@@ -12,5 +13,26 @@ pub fn calculate_fee_rates(chain: CosmosChain, base_fee: BigInt) -> Vec<FeeRate>
                 FeeRate::new(FeePriority::Fast, GasPriceType::regular(&base_fee * BigInt::from(2))),
             ]
         }
+    }
+}
+
+pub fn map_node_status(latest_block: u64) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
+    let current_block = Some(latest_block);
+    let latest_block_number = Some(latest_block);
+    Ok(NodeSyncStatus::new(true, latest_block_number, current_block))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_map_node_status() {
+        let latest_block = 12345678u64;
+        let mapped = map_node_status(latest_block).unwrap();
+
+        assert!(mapped.in_sync);
+        assert_eq!(mapped.latest_block_number, Some(12345678));
+        assert_eq!(mapped.current_block_number, Some(12345678));
     }
 }

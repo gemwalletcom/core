@@ -12,6 +12,8 @@ pub mod staking_mapper;
 #[cfg(feature = "rpc")]
 pub mod state;
 #[cfg(feature = "rpc")]
+pub mod state_mapper;
+#[cfg(feature = "rpc")]
 pub mod token;
 #[cfg(feature = "rpc")]
 pub mod token_mapper;

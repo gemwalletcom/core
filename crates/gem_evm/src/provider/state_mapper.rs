@@ -2,9 +2,9 @@ use crate::rpc::model::EthSyncingStatus;
 use primitives::NodeSyncStatus;
 use std::error::Error;
 
-pub fn map_node_status(sync_status: &EthSyncingStatus) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
+pub fn map_node_status(sync_status: &EthSyncingStatus, latest_block: u64) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
     match sync_status {
-        EthSyncingStatus::NotSyncing(_) => Ok(NodeSyncStatus::new(true, None, None)),
+        EthSyncingStatus::NotSyncing(_) => Ok(NodeSyncStatus::new(true, Some(latest_block), Some(latest_block))),
         EthSyncingStatus::Syncing(info) => {
             let latest = info.highest_block.to_string().parse::<u64>().ok();
             let current = info.current_block.to_string().parse::<u64>().ok();
@@ -24,11 +24,12 @@ mod tests {
     #[test]
     fn test_map_node_status_not_syncing() {
         let status = EthSyncingStatus::NotSyncing(false);
-        let mapped = map_node_status(&status).unwrap();
+        let latest_block = 12345678u64;
+        let mapped = map_node_status(&status, latest_block).unwrap();
 
         assert!(mapped.in_sync);
-        assert_eq!(mapped.latest_block_number, None);
-        assert_eq!(mapped.current_block_number, None);
+        assert_eq!(mapped.latest_block_number, Some(12345678));
+        assert_eq!(mapped.current_block_number, Some(12345678));
     }
 
     #[test]
@@ -38,8 +39,9 @@ mod tests {
             highest_block: BigUint::from(10u64),
         };
         let status = EthSyncingStatus::Syncing(info);
+        let latest_block = 12345678u64;
 
-        let mapped = map_node_status(&status).unwrap();
+        let mapped = map_node_status(&status, latest_block).unwrap();
 
         assert!(!mapped.in_sync);
         assert_eq!(mapped.current_block_number, Some(5));

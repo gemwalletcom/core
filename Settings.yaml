@@ -43,66 +43,66 @@ charter:
   timer: 60
 name:
   ens:
-    url: "https://eth.llamarpc.com"
+    url: https://eth.llamarpc.com
   ud:
-    url: "https://api.unstoppabledomains.com"
+    url: https://api.unstoppabledomains.com
     key:
       secret: ""
   sns:
-    url: "https://sns-sdk-proxy.bonfida.workers.dev"
+    url: https://sns-sdk-proxy.bonfida.workers.dev
   ton:
-    url: "https://toncenter.com"
+    url: https://toncenter.com
   eths:
-    url: "https://api.eths.center"
+    url: https://api.eths.center
   spaceid:
-    url: "https://api.prd.space.id"
+    url: https://api.prd.space.id
   did:
-    url: "https://indexer-basic.did.id"
+    url: https://indexer-basic.did.id
   suins:
-    url: "https://suins-rpc.mainnet.sui.io"
+    url: https://suins-rpc.mainnet.sui.io
   aptos:
-    url: "https://aptosnames.com"
+    url: https://aptosnames.com
   injective:
-    url: "https://injective-rest.publicnode.com"
+    url: https://injective-rest.publicnode.com
   icns:
-    url: "https://osmosis-rest.publicnode.com"
+    url: https://osmosis-rest.publicnode.com
   lens:
-    url: "https://api-v2.lens.dev"
+    url: https://api-v2.lens.dev
   base:
-    url: "https://mainnet.base.org"
+    url: https://mainnet.base.org
   hyperliquid:
-    url: "https://rpc.hyperliquid.xyz/evm"
+    url: https://rpc.hyperliquid.xyz/evm
   alldomains:
-    url: "https://api.mainnet-beta.solana.com"
+    url: https://solana-rpc.publicnode.com
 
 metrics:
   path: /metrics
 chains:
   solana:
-    url: "https://api.mainnet-beta.solana.com"
+    url: https://solana-rpc.publicnode.com
   ethereum:
-    url: "https://ethereum-rpc.publicnode.com"
-    archive_url: "https://eth-pokt.nodies.app"
+    url: https://ethereum-rpc.publicnode.com
+    archive_url: https://eth-pokt.nodies.app
   smartchain:
-    url: "https://bsc-dataseed1.bnbchain.org"
+    url: https://bsc-dataseed1.bnbchain.org
   polygon:
-    url: "https://polygon.llamarpc.com"
+    url: https://polygon.llamarpc.com
   optimism:
-    url: "https://mainnet.optimism.io"
+    url: https://mainnet.optimism.io
   arbitrum:
-    url: "https://arb1.arbitrum.io/rpc"
+    url: https://arb1.arbitrum.io/rpc
   base:
-    url: "https://base-public.nodies.app"
+    url: https://base-public.nodies.app
   opbnb:
-    url: "https://opbnb-mainnet-rpc.bnbchain.org"
+    url: https://opbnb-mainnet-rpc.bnbchain.org
   avalanchec:
-    url: "https://api.avax.network/ext/bc/C/rpc"
+    url: https://api.avax.network/ext/bc/C/rpc
   fantom:
-    url: "https://fantom.publicnode.com"
+    url: https://fantom.publicnode.com
   gnosis:
-    url: "https://gnosis.publicnode.com"
+    url: https://gnosis.publicnode.com
   ton:
-    url: "https://toncenter.com"
+    url: https://toncenter.com
   cosmos:
     url: "https://cosmos-rest.publicnode.com"
   osmosis:
@@ -112,33 +112,33 @@ chains:
   tron:
     url: "https://api.trongrid.io"
   xrp:
-    url: "https://s1.ripple.com:51234/"
+    url: https://s1.ripple.com:51234/
   aptos:
-    url: "https://fullnode.mainnet.aptoslabs.com"
+    url: https://fullnode.mainnet.aptoslabs.com
   sui:
-    url: "https://suins-rpc.mainnet.sui.io"
+    url: https://suins-rpc.mainnet.sui.io
   celestia:
-    url: "https://celestia-rest.publicnode.com"
+    url: https://celestia-rest.publicnode.com
   injective:
-    url: "https://injective-rest.publicnode.com"
+    url: https://injective-rest.publicnode.com
   sei:
-    url: "https://sei-api.polkachu.com"
+    url: https://sei-api.polkachu.com
   manta:
-    url: "https://pacific-rpc.manta.network/http"
+    url: https://pacific-rpc.manta.network/http
   blast:
-    url: "https://rpc.blastblockchain.com"
+    url: https://rpc.blastblockchain.com
   noble:
-    url: "https://rest.cosmos.directory/noble"
+    url: https://rest.cosmos.directory/noble
   zksync:
-    url: "https://mainnet.era.zksync.io"
+    url: https://mainnet.era.zksync.io
   linea:
-    url: "https://linea.drpc.org"
+    url: https://linea.drpc.org
   mantle:
-    url: "https://rpc.mantle.xyz"
+    url: https://rpc.mantle.xyz
   celo:
-    url: "https://forno.celo.org"
+    url: https://forno.celo.org
   near:
-    url: "https://rpc.mainnet.fastnear.com"
+    url: https://rpc.mainnet.fastnear.com
   bitcoin:
     url: https://blockbook.btc.zelcore.io
   bitcoincash:

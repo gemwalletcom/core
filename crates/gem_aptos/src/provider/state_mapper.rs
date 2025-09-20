@@ -1,6 +1,6 @@
-use crate::models::Transaction;
+use crate::models::{Ledger, Transaction};
 use num_bigint::BigInt;
-use primitives::{TransactionChange, TransactionState, TransactionUpdate};
+use primitives::{NodeSyncStatus, TransactionChange, TransactionState, TransactionUpdate};
 use std::error::Error;
 
 pub fn map_transaction_state(transaction: &Transaction) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
@@ -18,6 +18,12 @@ pub fn map_transaction_state(transaction: &Transaction) -> Result<TransactionUpd
     }
 
     Ok(TransactionUpdate { state, changes })
+}
+
+pub fn map_node_status(ledger: &Ledger) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
+    let current_block = Some(ledger.block_height);
+    let latest_block_number = Some(ledger.block_height);
+    Ok(NodeSyncStatus::new(true, latest_block_number, current_block))
 }
 
 #[cfg(test)]
@@ -68,5 +74,18 @@ mod tests {
 
         assert_eq!(result.state, TransactionState::Reverted);
         assert_eq!(result.changes.len(), 1);
+    }
+
+    #[test]
+    fn test_map_node_status() {
+        let ledger = Ledger {
+            chain_id: 1,
+            block_height: 987654321,
+        };
+        let mapped = map_node_status(&ledger).unwrap();
+
+        assert!(mapped.in_sync);
+        assert_eq!(mapped.latest_block_number, Some(987654321));
+        assert_eq!(mapped.current_block_number, Some(987654321));
     }
 }

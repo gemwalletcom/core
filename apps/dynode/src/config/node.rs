@@ -14,7 +14,7 @@ pub struct Domain {
 
 impl Domain {
     pub fn get_poll_interval_seconds(&self) -> u64 {
-        self.poll_interval_seconds.unwrap_or(600)
+        self.poll_interval_seconds.unwrap_or(60 * 15)
     }
 
     pub fn get_block_delay(&self) -> u64 {

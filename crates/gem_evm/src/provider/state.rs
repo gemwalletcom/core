@@ -21,13 +21,14 @@ impl<C: Client + Clone> ChainState for EthereumClient<C> {
     }
 
     async fn get_node_status(&self) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
-        let sync_status = EthereumClient::get_sync_status(self).await?;
-        state_mapper::map_node_status(&sync_status)
+        let sync_status = self.get_sync_status().await?;
+        let latest_block = self.get_block_latest_number().await?;
+        state_mapper::map_node_status(&sync_status, latest_block)
     }
 
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        let block_number = EthereumClient::get_block_number(self).await?;
-        Ok(u64::from_str_radix(block_number.trim_start_matches("0x"), 16)?)
+        let block_number = self.get_latest_block().await?;
+        Ok(block_number)
     }
 }
 
