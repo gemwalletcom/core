@@ -4,6 +4,22 @@ use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_biguint_from_hex_str, deserialize_biguint_from_option_hex_str, deserialize_u64_from_str_or_int};
 use std::collections::HashMap;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum EthSyncingStatus {
+    NotSyncing(bool),
+    Syncing(EthSyncingInfo),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EthSyncingInfo {
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub current_block: BigUint,
+    #[serde(deserialize_with = "deserialize_biguint_from_hex_str")]
+    pub highest_block: BigUint,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Block {

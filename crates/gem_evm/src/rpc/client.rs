@@ -12,7 +12,7 @@ use std::str::FromStr;
 use super::{
     alchemy::AlchemyClient,
     ankr::AnkrClient,
-    model::{Block, BlockTransactionsIds, Transaction, TransactionReciept, TransactionReplayTrace},
+    model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace},
 };
 use crate::models::fee::EthereumFeeHistory;
 use primitives::{Chain, EVMChain, NodeType};
@@ -190,6 +190,10 @@ impl<C: Client + Clone> EthereumClient<C> {
 
     pub async fn get_block_number(&self) -> Result<String, anyhow::Error> {
         Ok(self.client.call("eth_blockNumber", json!([])).await?)
+    }
+
+    pub async fn get_sync_status(&self) -> Result<EthSyncingStatus, JsonRpcError> {
+        self.client.call("eth_syncing", json!([])).await
     }
 
     pub async fn get_transaction_count(&self, address: &str) -> Result<String, anyhow::Error> {
