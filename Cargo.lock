@@ -1473,7 +1473,6 @@ version = "1.0.0"
 dependencies = [
  "chrono",
  "gem_client",
- "lazy_static",
  "primitives",
  "reqwest",
  "serde",
@@ -2835,7 +2834,6 @@ dependencies = [
  "gem_jsonrpc",
  "hex",
  "itertools 0.14.0",
- "lazy_static",
  "num-bigint",
  "num-traits",
  "primitives",
@@ -2945,7 +2943,6 @@ dependencies = [
  "gem_jsonrpc",
  "num-bigint",
  "primitives",
- "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -3109,7 +3106,6 @@ dependencies = [
  "gem_tron",
  "gem_xrp",
  "hex",
- "lazy_static",
  "num-bigint",
  "num-traits",
  "primitives",
@@ -4161,7 +4157,6 @@ version = "1.0.0"
 dependencies = [
  "i18n-embed",
  "i18n-embed-fl",
- "once_cell",
  "rust-embed",
 ]
 
@@ -4400,7 +4395,6 @@ dependencies = [
  "gem_ton",
  "hex",
  "idna",
- "lazy_static",
  "primitives",
  "reqwest",
  "serde",
@@ -6435,7 +6429,6 @@ dependencies = [
 name = "settings_chain"
 version = "1.0.0"
 dependencies = [
- "async-trait",
  "chain_traits",
  "gem_algorand",
  "gem_aptos",

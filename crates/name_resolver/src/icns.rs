@@ -1,10 +1,9 @@
 use async_trait::async_trait;
-use lazy_static::lazy_static;
 
 use base64::{engine::general_purpose, Engine};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, sync::LazyLock};
 
 use crate::client::NameClient;
 use primitives::{Chain, NameProvider};
@@ -20,15 +19,16 @@ pub struct Record {
 }
 
 const RESOLVER: &str = "osmo1xk0s8xgktn9x5vwcgtjdxqzadg88fgn33p8u9cnpdxwemvxscvast52cdd";
+
 // https://github.com/satoshilabs/slips/blob/master/slip-0173.md
-lazy_static! {
-    static ref DOMAIN_MAP: HashMap<&'static str, Chain> = HashMap::from([
+static DOMAIN_MAP: LazyLock<HashMap<&'static str, Chain>> = LazyLock::new(|| {
+    HashMap::from([
         ("cosmos", Chain::Cosmos),
         ("osmo", Chain::Osmosis),
         ("celestia", Chain::Celestia),
         ("sei", Chain::Sei),
-    ]);
-}
+    ])
+});
 
 pub struct IcnsClient {
     api_url: String,

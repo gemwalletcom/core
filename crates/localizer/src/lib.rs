@@ -1,19 +1,19 @@
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader},
     DefaultLocalizer, LanguageLoader, Localizer, RustEmbedNotifyAssets,
 };
 use i18n_embed_fl::fl;
-use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
 #[folder = "i18n/"]
 pub struct LocalizationsEmbed;
 
-pub static LOCALIZATIONS: Lazy<RustEmbedNotifyAssets<LocalizationsEmbed>> =
-    Lazy::new(|| RustEmbedNotifyAssets::new(std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("i18n/")));
+pub static LOCALIZATIONS: LazyLock<RustEmbedNotifyAssets<LocalizationsEmbed>> = LazyLock::new(|| {
+    RustEmbedNotifyAssets::new(std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("i18n/"))
+});
 
 macro_rules! fl {
     ($loader:expr, $message_id:literal) => {{
