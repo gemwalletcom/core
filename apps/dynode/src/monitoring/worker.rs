@@ -85,7 +85,7 @@ impl NodeMonitor {
 
         NodeTelemetry::log_node_unhealthy(domain, &current_observation);
 
-        let fallback_urls: Vec<Url> = domain.urls.iter().cloned().filter(|url| *url != current_node.url).collect();
+        let fallback_urls: Vec<Url> = domain.urls.iter().filter(|&url| *url != current_node.url).cloned().collect();
 
         if fallback_urls.is_empty() {
             NodeTelemetry::log_no_candidate(domain, &[]);
