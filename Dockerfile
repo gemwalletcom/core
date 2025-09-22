@@ -1,16 +1,18 @@
+# syntax=docker/dockerfile:1
 FROM rust:1.89.0-bookworm AS builder
 WORKDIR /app
 
 # Copy source
-COPY . .
+COPY --link . .
 
-# Build with full caching
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
+# Build with full caching using BuildKit cache mounts
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-core \
     cargo build --release --bin api --bin daemon --bin parser --bin setup
 
 # Copy binaries from cache to layer
-RUN --mount=type=cache,target=/app/target \
+RUN --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-core \
     mkdir -p /output && \
     cp /app/target/release/api /output/ && \
     cp /app/target/release/daemon /output/ && \
