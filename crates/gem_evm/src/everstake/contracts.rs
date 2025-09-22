@@ -2,31 +2,25 @@ use alloy_sol_types::sol;
 
 sol! {
     #[derive(Debug, PartialEq)]
-    interface EverstakePool {
+    interface IPool {
         function stake(uint64 source) payable returns (uint256);
         function unstake(uint256 value, uint16 allowedInterchangeNum, uint64 source) returns (uint256);
         function unstakePending(uint256 amount) returns (uint256);
-        function claimWithdrawRequest();
     }
 
     #[derive(Debug, PartialEq)]
-    interface EverstakeAccounting {
+    interface IAccounting {
         function autocompoundBalanceOf(address account) view returns (uint256);
         function depositedBalanceOf(address account) view returns (uint256);
         function pendingDepositedBalanceOf(address account) view returns (uint256);
         function pendingBalanceOf(address account) view returns (uint256);
         function pendingRestakedRewardOf(address account) view returns (uint256);
+        function withdrawRequest(address staker) view returns (WithdrawRequest memory);
     }
 
     #[derive(Debug, PartialEq)]
     struct WithdrawRequest {
-        uint256 amount;
-        uint256 requestTime;
-        bool processed;
-    }
-
-    #[derive(Debug, PartialEq)]
-    interface EverstakePoolQuery {
-        function withdrawRequest(address staker) view returns (WithdrawRequest memory);
+        uint256 requested;
+        uint256 readyForClaim;
     }
 }
