@@ -2385,7 +2385,6 @@ dependencies = [
  "sha2",
  "storage",
  "streamer",
- "thiserror 2.0.16",
  "tokio",
  "url",
  "uuid",
@@ -2798,7 +2797,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded",
- "thiserror 2.0.16",
  "tokio",
 ]
 
@@ -2897,7 +2895,6 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "thiserror 2.0.16",
 ]
 
 [[package]]
@@ -2960,7 +2957,6 @@ dependencies = [
  "serde_serializers",
  "settings",
  "sha2",
- "thiserror 2.0.16",
  "tokio",
 ]
 
@@ -3131,7 +3127,6 @@ dependencies = [
  "strum",
  "sui-sdk-types",
  "sui-transaction-builder",
- "thiserror 2.0.16",
  "tokio",
  "uniffi",
 ]

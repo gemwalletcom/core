@@ -29,11 +29,20 @@ pub fn lib_version() -> String {
 }
 
 /// GemstoneError
-#[derive(Debug, thiserror::Error, uniffi::Error)]
+#[derive(Debug, uniffi::Error)]
 pub enum GemstoneError {
-    #[error("{msg}")]
     AnyError { msg: String },
 }
+
+impl std::fmt::Display for GemstoneError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::AnyError { msg } => write!(f, "{}", msg),
+        }
+    }
+}
+
+impl std::error::Error for GemstoneError {}
 
 impl From<anyhow::Error> for GemstoneError {
     fn from(error: anyhow::Error) -> Self {

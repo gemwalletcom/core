@@ -23,7 +23,6 @@ integration = []
 
 [dependencies]
 curve25519-dalek = { workspace = true }
-thiserror = { workspace = true }
 sha2 = { workspace = true }
 bs58 = { workspace = true }
 borsh = { workspace = true }

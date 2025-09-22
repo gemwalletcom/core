@@ -47,7 +47,6 @@ sui-types = { workspace = true }
 sui-transaction-builder = { workspace = true }
 # uniffi
 uniffi.workspace = true
-thiserror.workspace = true
 
 anyhow.workspace = true
 strum = { workspace = true }

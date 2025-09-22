@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt::{Debug, Display};
-use thiserror::Error;
 
 pub const JSONRPC_VERSION: &str = "2.0";
 
@@ -33,7 +32,7 @@ impl JsonRpcRequest {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Error)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcError {
     pub code: i32,
     pub message: String,
@@ -44,6 +43,8 @@ impl Display for JsonRpcError {
         write!(f, "{} ({})", self.message, self.code)
     }
 }
+
+impl std::error::Error for JsonRpcError {}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcResponse<T> {

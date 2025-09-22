@@ -4,7 +4,6 @@
 use {
     borsh::{BorshDeserialize, BorshSerialize},
     std::{convert::TryFrom, fmt, mem, str::FromStr},
-    thiserror::Error,
 };
 
 /// Number of bytes in a pubkey
@@ -18,24 +17,42 @@ const MAX_BASE58_LEN: usize = 44;
 
 const PDA_MARKER: &[u8; 21] = b"ProgramDerivedAddress";
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PubkeyError {
     /// Length of the seed is too long for address generation
-    #[error("Length of the seed is too long for address generation")]
     MaxSeedLengthExceeded,
-    #[error("Provided seeds do not result in a valid address")]
     InvalidSeeds,
-    #[error("Provided owner is not allowed")]
     IllegalOwner,
 }
 
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
+impl fmt::Display for PubkeyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MaxSeedLengthExceeded => write!(f, "Length of the seed is too long for address generation"),
+            Self::InvalidSeeds => write!(f, "Provided seeds do not result in a valid address"),
+            Self::IllegalOwner => write!(f, "Provided owner is not allowed"),
+        }
+    }
+}
+
+impl std::error::Error for PubkeyError {}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParsePubkeyError {
-    #[error("String is the wrong size")]
     WrongSize,
-    #[error("Invalid Base58 string")]
     Invalid,
 }
+
+impl fmt::Display for ParsePubkeyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::WrongSize => write!(f, "String is the wrong size"),
+            Self::Invalid => write!(f, "Invalid Base58 string"),
+        }
+    }
+}
+
+impl std::error::Error for ParsePubkeyError {}
 
 impl From<u64> for PubkeyError {
     fn from(error: u64) -> Self {
