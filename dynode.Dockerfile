@@ -3,7 +3,12 @@ WORKDIR /app
 
 COPY . .
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
     cargo build --release --package dynode
+
+RUN --mount=type=cache,target=/app/target \
+    mkdir -p /output && \
+    cp /app/target/release/dynode /output/
 
 FROM debian:bookworm AS runtime
 WORKDIR /app
@@ -13,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/dynode /app/
+COPY --from=builder /output/dynode /app/
 
 COPY --from=builder /app/apps/dynode/config.yml /app/
 COPY --from=builder /app/apps/dynode/domains.yml /app/
