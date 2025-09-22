@@ -6,4 +6,4 @@ edition = { workspace = true }
 [dependencies]
 num-bigint = { workspace = true }
 bigdecimal = { workspace = true }
-rusty-money = { workspace = true }
+rust_decimal = { version = "1.38.0", features = ["serde-with-str"] }
