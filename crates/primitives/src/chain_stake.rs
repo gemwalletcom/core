@@ -32,7 +32,7 @@ impl StakeChain {
     pub fn get_lock_time(&self) -> u64 {
         match self {
             Self::Cosmos | Self::Injective | Self::Sei | Self::Celestia => 1_814_400,
-            Self::Ethereum => 518_400, // ~6 days for Ethereum staking withdrawal
+            Self::Ethereum => 1_209_600, // ~14 days, Exit Queue is dynamic
             Self::Solana => 259200,
             Self::Sui => 86400,
             Self::Osmosis | Self::Tron => 1_209_600,
