@@ -1,4 +1,4 @@
-use crate::models::GemAddressStatus;
+use crate::models::*;
 use crate::network::{jsonrpc_client_with_chain, AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::client::AlgorandClient;
@@ -18,9 +18,6 @@ use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
-pub mod models;
-
-pub use models::*;
 use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod, EVMChain};
 
 #[uniffi::export(with_foreign)]
