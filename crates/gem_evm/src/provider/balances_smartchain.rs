@@ -1,4 +1,3 @@
-use crate::constants::STAKING_VALIDATORS_LIMIT;
 use crate::rpc::client::EthereumClient;
 use gem_client::Client;
 use num_bigint::BigUint;
@@ -9,38 +8,7 @@ use std::str::FromStr;
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_smartchain_staking_balance(&self, address: &str) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        use alloy_primitives::hex::encode_prefixed;
-        use gem_bsc::stake_hub::{
-            decode_delegations_return, decode_undelegations_return, encode_delegations_call, encode_undelegations_call, HUB_READER_ADDRESS,
-        };
-
-        let delegations_call_data = encode_delegations_call(address, 0, STAKING_VALIDATORS_LIMIT)?;
-        let undelegations_call_data = encode_undelegations_call(address, 0, STAKING_VALIDATORS_LIMIT)?;
-
-        let calls = vec![
-            (
-                "eth_call".to_string(),
-                serde_json::json!([{
-                    "to": HUB_READER_ADDRESS,
-                    "data": encode_prefixed(&delegations_call_data)
-                }, "latest"]),
-            ),
-            (
-                "eth_call".to_string(),
-                serde_json::json!([{
-                    "to": HUB_READER_ADDRESS,
-                    "data": encode_prefixed(&undelegations_call_data)
-                }, "latest"]),
-            ),
-        ];
-
-        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
-
-        let delegations_data = hex::decode(results[0].trim_start_matches("0x"))?;
-        let delegations = decode_delegations_return(&delegations_data)?;
-
-        let undelegations_data = hex::decode(results[1].trim_start_matches("0x"))?;
-        let undelegations = decode_undelegations_return(&undelegations_data)?;
+        let (delegations, undelegations) = self.fetch_smartchain_staking_state(address).await?;
 
         let staked = delegations
             .iter()

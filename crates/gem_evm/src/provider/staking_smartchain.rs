@@ -1,18 +1,18 @@
-use crate::constants::STAKING_VALIDATORS_LIMIT;
-use crate::rpc::client::EthereumClient;
+use crate::{constants::STAKING_VALIDATORS_LIMIT, rpc::client::EthereumClient};
+use alloy_primitives::hex::encode_prefixed;
 use chrono::DateTime;
+use gem_bsc::stake_hub::{
+    decode_delegations_return, decode_undelegations_return, decode_validators_return, encode_delegations_call, encode_undelegations_call,
+    encode_validators_call, HUB_READER_ADDRESS, STAKE_HUB_ADDRESS,
+};
 use gem_client::Client;
 use num_bigint::{BigInt, BigUint};
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
-use std::error::Error;
-use std::str::FromStr;
+use std::{error::Error, str::FromStr};
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_smartchain_validators(&self, _apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        use alloy_primitives::hex::encode_prefixed;
-        use gem_bsc::stake_hub::{decode_validators_return, encode_validators_call, HUB_READER_ADDRESS};
-
         let limit = self.get_max_elected_validators().await?;
         let call_data = encode_validators_call(0, limit);
 
@@ -55,38 +55,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     pub async fn get_smartchain_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
-        use alloy_primitives::hex::encode_prefixed;
-        use gem_bsc::stake_hub::{
-            decode_delegations_return, decode_undelegations_return, encode_delegations_call, encode_undelegations_call, HUB_READER_ADDRESS,
-        };
-
-        let delegations_call_data = encode_delegations_call(address, 0, STAKING_VALIDATORS_LIMIT)?;
-        let undelegations_call_data = encode_undelegations_call(address, 0, STAKING_VALIDATORS_LIMIT)?;
-
-        let calls = vec![
-            (
-                "eth_call".to_string(),
-                serde_json::json!([{
-                    "to": HUB_READER_ADDRESS,
-                    "data": encode_prefixed(&delegations_call_data)
-                }, "latest"]),
-            ),
-            (
-                "eth_call".to_string(),
-                serde_json::json!([{
-                    "to": HUB_READER_ADDRESS,
-                    "data": encode_prefixed(&undelegations_call_data)
-                }, "latest"]),
-            ),
-        ];
-
-        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
-
-        let delegations_data = hex::decode(results[0].trim_start_matches("0x"))?;
-        let delegations = decode_delegations_return(&delegations_data)?;
-
-        let undelegations_data = hex::decode(results[1].trim_start_matches("0x"))?;
-        let undelegations = decode_undelegations_return(&undelegations_data)?;
+        let (delegations, undelegations) = self.fetch_smartchain_staking_state(address).await?;
 
         let mut result = Vec::new();
 
@@ -148,9 +117,42 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(result)
     }
 
-    async fn get_max_elected_validators(&self) -> Result<u16, Box<dyn Error + Sync + Send>> {
-        use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
+    pub(crate) async fn fetch_smartchain_staking_state(
+        &self,
+        address: &str,
+    ) -> Result<(Vec<gem_bsc::stake_hub::BscDelegation>, Vec<gem_bsc::stake_hub::BscUndelegation>), Box<dyn Error + Sync + Send>> {
+        let delegations_call_data = encode_delegations_call(address, 0, STAKING_VALIDATORS_LIMIT)?;
+        let undelegations_call_data = encode_undelegations_call(address, 0, STAKING_VALIDATORS_LIMIT)?;
 
+        let calls = vec![
+            (
+                "eth_call".to_string(),
+                serde_json::json!([{
+                    "to": HUB_READER_ADDRESS,
+                    "data": encode_prefixed(&delegations_call_data)
+                }, "latest"]),
+            ),
+            (
+                "eth_call".to_string(),
+                serde_json::json!([{
+                    "to": HUB_READER_ADDRESS,
+                    "data": encode_prefixed(&undelegations_call_data)
+                }, "latest"]),
+            ),
+        ];
+
+        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
+
+        let delegations_data = hex::decode(results[0].trim_start_matches("0x"))?;
+        let delegations = decode_delegations_return(&delegations_data)?;
+
+        let undelegations_data = hex::decode(results[1].trim_start_matches("0x"))?;
+        let undelegations = decode_undelegations_return(&undelegations_data)?;
+
+        Ok((delegations, undelegations))
+    }
+
+    async fn get_max_elected_validators(&self) -> Result<u16, Box<dyn Error + Sync + Send>> {
         let call = (
             "eth_call".to_string(),
             serde_json::json!([{
