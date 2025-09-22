@@ -2,7 +2,7 @@ use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use sui_types::{Address, ObjectDigest, ObjectId};
 
-use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, OptionU64, SuiData, I32};
+use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, SuiData, I32};
 use serde_serializers::{deserialize_bigint_from_str as deserialize_bigint, serialize_bigint};
 
 #[allow(unused)]
@@ -50,17 +50,6 @@ pub struct CetusPoolObject {
     pub tick_spacing: i32,
     #[serde(deserialize_with = "deserialize_bigint", serialize_with = "serialize_bigint")]
     pub liquidity: BigInt,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Tick {
-    pub head: Vec<MoveObject<OptionU64>>,
-    pub id: MoveObjectId,
-    pub level: String,
-    pub list_p: String,
-    pub max_level: String,
-    pub size: String,
-    pub tail: MoveObject<OptionU64>,
 }
 
 #[derive(Debug, Clone)]

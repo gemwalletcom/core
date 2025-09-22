@@ -247,6 +247,6 @@ impl<C: Client + Clone> EthereumClient<C> {
         }
 
         let params = json!([params_obj, "latest"]);
-        Ok(self.client.call("eth_estimateGas", params).await?)
+        self.client.call("eth_estimateGas", params).await
     }
 }
