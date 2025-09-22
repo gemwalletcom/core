@@ -1,4 +1,4 @@
-use anyhow::Error;
+use std::error::Error;
 use base64::{engine::general_purpose, Engine as _};
 use bcs;
 use sui_transaction_builder::unresolved::Input;
@@ -74,7 +74,7 @@ pub struct TxOutput {
 }
 
 impl TxOutput {
-    pub fn from_tx(tx_data: &Transaction) -> Result<Self, Error> {
+    pub fn from_tx(tx_data: &Transaction) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let digest = tx_data.signing_digest();
         let tx_data = bcs::to_bytes(tx_data)?;
         Ok(Self {

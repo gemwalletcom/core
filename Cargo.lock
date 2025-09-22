@@ -2693,7 +2693,6 @@ dependencies = [
 name = "gas-bench"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "clap",
  "gem_evm",
  "gemstone",
@@ -2766,7 +2765,6 @@ version = "1.0.0"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
- "anyhow",
  "hex",
 ]
 
@@ -2803,7 +2801,6 @@ dependencies = [
 name = "gem_cosmos"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "base64 0.22.1",
  "bech32",
@@ -2832,7 +2829,6 @@ dependencies = [
  "alloy-json-abi",
  "alloy-primitives",
  "alloy-sol-types",
- "anyhow",
  "async-trait",
  "bigdecimal",
  "chain_primitives",
@@ -2888,7 +2884,6 @@ dependencies = [
 name = "gem_jsonrpc"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "gem_client",
  "reqwest",
  "serde",
@@ -2937,7 +2932,6 @@ dependencies = [
 name = "gem_solana"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "base64 0.22.1",
  "borsh 1.5.7",
@@ -2982,7 +2976,6 @@ dependencies = [
 name = "gem_sui"
 version = "1.0.0"
 dependencies = [
- "anyhow",
  "async-trait",
  "base64 0.22.1",
  "bcs",
@@ -4378,7 +4371,6 @@ dependencies = [
  "alloy-ens",
  "alloy-primitives",
  "alloy-sol-types",
- "anyhow",
  "async-trait",
  "base64 0.22.1",
  "borsh 1.5.7",
@@ -6776,15 +6768,6 @@ dependencies = [
  "serde_with",
  "sui-sdk-types",
  "thiserror 2.0.16",
-]
-
-[[package]]
-name = "swapper-dump"
-version = "0.1.0"
-dependencies = [
- "gemstone",
- "primitives",
- "tokio",
 ]
 
 [[package]]

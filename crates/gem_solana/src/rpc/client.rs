@@ -103,8 +103,8 @@ impl SolanaClient {
             .to_string();
 
         let result: ValueResult<Option<ValueData<Vec<String>>>> = self.get_account_info(&metadata_key, "base64").await?;
-        let value = result.value.ok_or(anyhow::anyhow!("Failed to get metadata"))?;
-        let meta = decode_metadata(&value.data[0]).map_err(|_| anyhow::anyhow!("Failed to decode metadata"))?;
+        let value = result.value.ok_or("Failed to get metadata")?;
+        let meta = decode_metadata(&value.data[0]).map_err(|_| "Failed to decode metadata")?;
         Ok(meta)
     }
 

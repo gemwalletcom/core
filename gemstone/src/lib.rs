@@ -44,8 +44,8 @@ impl std::fmt::Display for GemstoneError {
 
 impl std::error::Error for GemstoneError {}
 
-impl From<anyhow::Error> for GemstoneError {
-    fn from(error: anyhow::Error) -> Self {
+impl From<Box<dyn std::error::Error + Send + Sync>> for GemstoneError {
+    fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }

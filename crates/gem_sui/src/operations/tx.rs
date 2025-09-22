@@ -1,4 +1,4 @@
-use anyhow::Error;
+use std::error::Error;
 use base64::{engine::general_purpose, Engine as _};
 use serde::de::DeserializeOwned;
 use sui_transaction_builder::{unresolved::Input, TransactionBuilder};
@@ -6,13 +6,13 @@ use sui_types::{Address, ObjectDigest, ObjectId, Transaction};
 
 use crate::{models::TxOutput, EMPTY_ADDRESS};
 
-pub fn decode_transaction<T: DeserializeOwned>(tx: &str) -> Result<T, Error> {
+pub fn decode_transaction<T: DeserializeOwned>(tx: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
     let bytes = general_purpose::STANDARD.decode(tx)?;
     let tx = bcs::from_bytes::<T>(&bytes)?;
     Ok(tx)
 }
 
-pub fn validate_and_hash(encoded: &str) -> Result<TxOutput, Error> {
+pub fn validate_and_hash(encoded: &str) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     TxOutput::from_tx(&decode_transaction(encoded)?)
 }
 

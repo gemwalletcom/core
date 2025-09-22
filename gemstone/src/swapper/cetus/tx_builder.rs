@@ -1,5 +1,5 @@
 use crate::sui::rpc::CoinAsset;
-use anyhow::{anyhow, Result};
+use std::error::Error;
 use gem_sui::{sui_clock_object_input, ObjectID, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -34,7 +34,7 @@ pub struct BuildCoinResult {
 pub struct TransactionBuilder;
 
 impl TransactionBuilder {
-    pub fn build_zero_value_coin(all_coins: &[CoinAsset], ptb: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<BuildCoinResult> {
+    pub fn build_zero_value_coin(all_coins: &[CoinAsset], ptb: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<BuildCoinResult, Box<dyn Error + Send + Sync>> {
         let function = Function::new(
             ObjectID::from(SUI_FRAMEWORK_PACKAGE_ID).addr(),
             Identifier::from_str(MODULE_COIN)?,
@@ -58,7 +58,7 @@ impl TransactionBuilder {
         amount: &BigInt,
         coin_type: &str,
         fix_amount: bool,
-    ) -> Result<BuildCoinResult> {
+    ) -> Result<BuildCoinResult, Box<dyn Error + Send + Sync>> {
         let coin_assets = CoinAssist::get_coin_assets(coin_type, all_coins);
         // Mint zero coin if amount is 0
         if amount == &BigInt::from(0u64) {
@@ -67,12 +67,12 @@ impl TransactionBuilder {
 
         let amount_total = CoinAssist::calculate_total_balance(&coin_assets);
         if amount_total < *amount {
-            return Err(anyhow!(
+            return Err(format!(
                 "The amount({}) is Insufficient balance for {}, expect {}",
                 amount_total,
                 coin_type,
                 amount
-            ));
+            ).into());
         }
 
         Self::build_one_coin(ptb, &coin_assets, amount, coin_type, fix_amount)
@@ -84,7 +84,7 @@ impl TransactionBuilder {
         amount: &BigInt,
         coin_type: &str,
         fix_amount: bool,
-    ) -> Result<BuildCoinResult> {
+    ) -> Result<BuildCoinResult, Box<dyn Error + Send + Sync>> {
         if coin_type == SUI_COIN_TYPE_FULL {
             if amount == &BigInt::from(0) && coin_assets.len() > 1 {
                 let results = CoinAssist::select_coins_gte(coin_assets, amount);
@@ -116,11 +116,11 @@ impl TransactionBuilder {
         coin_assets: &[CoinAsset],
         amount: &BigInt,
         fix_amount: bool,
-    ) -> Result<BuildCoinResult> {
+    ) -> Result<BuildCoinResult, Box<dyn Error + Send + Sync>> {
         let (selected_coins, remain_coins) = CoinAssist::select_coins_gte(coin_assets, amount);
 
         if selected_coins.is_empty() {
-            return Err(anyhow!("No coins selected for splitting"));
+            return Err("No coins selected for splitting".into());
         }
 
         let total_selected_amount = CoinAssist::calculate_total_balance(&selected_coins);
@@ -165,7 +165,7 @@ impl TransactionBuilder {
         cetus_config: &CetusConfig,
         primary_coin_input_a: &BuildCoinResult,
         primary_coin_input_b: &BuildCoinResult,
-    ) -> Result<()> {
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let sqrt_price_limit = if params.a2b { MIN_PRICE_SQRT_LIMIT } else { MAX_PRICE_SQRT_LIMIT };
         let type_arguments = vec![TypeTag::from_str(&params.coin_type_a)?, TypeTag::from_str(&params.coin_type_b)?];
         let has_swap_partner = params.swap_partner.is_some();
@@ -229,7 +229,7 @@ impl TransactionBuilder {
         Ok(())
     }
 
-    pub fn build_swap_transaction(cetus_config: &CetusConfig, params: &SwapParams, all_coin_asset: &[CoinAsset]) -> Result<ProgrammableTransactionBuilder> {
+    pub fn build_swap_transaction(cetus_config: &CetusConfig, params: &SwapParams, all_coin_asset: &[CoinAsset]) -> Result<ProgrammableTransactionBuilder, Box<dyn Error + Send + Sync>> {
         let mut ptb = ProgrammableTransactionBuilder::new();
 
         // Calculate the input amounts based on direction and swap mode

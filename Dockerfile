@@ -13,7 +13,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
 # Use specific target for better caching
-RUN cargo build --release --workspace --exclude gemstone
+RUN cargo build --release --bin api --bin daemon --bin parser --bin setup
 
 # We do not need the Rust toolchain to run the binary!
 FROM debian:bookworm AS runtime

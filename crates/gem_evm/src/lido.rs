@@ -1,6 +1,5 @@
 use alloy_primitives::{Address, FixedBytes, U256};
 use alloy_sol_types::{sol, SolCall};
-use anyhow::Error;
 use std::str::FromStr;
 
 use crate::contracts::erc2612::Permit;
@@ -41,32 +40,32 @@ sol! {
     }
 }
 
-pub fn encode_submit_with_referral(referral: &str) -> Result<Vec<u8>, Error> {
+pub fn encode_submit_with_referral(referral: &str) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
     let _referral = if referral.is_empty() {
         Address::new([0u8; 20])
     } else {
-        Address::from_str(referral).map_err(Error::msg)?
+        Address::from_str(referral)?
     };
     let call = Lido::submitCall { _referral };
     Ok(call.abi_encode())
 }
 
-pub fn encode_request_withdrawals_with_permit(amounts: Vec<String>, owner: &str, permit: &Permit) -> Result<Vec<u8>, Error> {
+pub fn encode_request_withdrawals_with_permit(amounts: Vec<String>, owner: &str, permit: &Permit) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
     let mut _amounts = vec![];
     for amount in amounts.iter() {
-        let uint256 = U256::from_str(amount).map_err(Error::msg)?;
+        let uint256 = U256::from_str(amount)?;
         _amounts.push(uint256);
     }
 
-    let r: [u8; 32] = permit.r.clone().try_into().map_err(|e| anyhow::anyhow!("invalid r in signature {:?}", e))?;
-    let s: [u8; 32] = permit.s.clone().try_into().map_err(|e| anyhow::anyhow!("invalid s in signature {:?}", e))?;
+    let r: [u8; 32] = permit.r.clone().try_into().map_err(|e| format!("invalid r in signature {:?}", e))?;
+    let s: [u8; 32] = permit.s.clone().try_into().map_err(|e| format!("invalid s in signature {:?}", e))?;
 
     let call = WithdrawalQueueERC721::requestWithdrawalsWithPermitCall {
         _amounts,
-        _owner: Address::from_str(owner).map_err(Error::msg)?,
+        _owner: Address::from_str(owner)?,
         _permit: PermitInput {
-            value: U256::from_str(&permit.value).map_err(Error::msg)?,
-            deadline: U256::from_str(&permit.deadline).map_err(Error::msg)?,
+            value: U256::from_str(&permit.value)?,
+            deadline: U256::from_str(&permit.deadline)?,
             v: permit.v,
             r: FixedBytes::from_slice(&r),
             s: FixedBytes::from_slice(&s),
@@ -75,23 +74,23 @@ pub fn encode_request_withdrawals_with_permit(amounts: Vec<String>, owner: &str,
     Ok(call.abi_encode())
 }
 
-pub fn encode_get_withdrawal_request_ids(owner: &str) -> Result<Vec<u8>, Error> {
+pub fn encode_get_withdrawal_request_ids(owner: &str) -> Result<Vec<u8>, alloy_primitives::hex::FromHexError> {
     let call = WithdrawalQueueERC721::getWithdrawalRequestsCall {
-        _owner: Address::from_str(owner).map_err(Error::msg)?,
+        _owner: Address::from_str(owner)?,
     };
     Ok(call.abi_encode())
 }
 
-pub fn decode_get_withdrawal_request_ids(result: &[u8]) -> Result<Vec<String>, Error> {
-    let decoded = WithdrawalQueueERC721::getWithdrawalRequestsCall::abi_decode_returns(result).map_err(Error::msg)?;
+pub fn decode_get_withdrawal_request_ids(result: &[u8]) -> Result<Vec<String>, alloy_sol_types::Error> {
+    let decoded = WithdrawalQueueERC721::getWithdrawalRequestsCall::abi_decode_returns(result)?;
     let requests = decoded.into_iter().map(|x| x.to_string()).collect();
     Ok(requests)
 }
 
-pub fn encode_get_withdrawal_request_status(request_ids: &[String]) -> Result<Vec<u8>, Error> {
+pub fn encode_get_withdrawal_request_status(request_ids: &[String]) -> Result<Vec<u8>, alloy_primitives::ruint::ParseError> {
     let mut _request_ids = vec![];
     for request_id in request_ids.iter() {
-        let uint256 = U256::from_str(request_id).map_err(Error::msg)?;
+        let uint256 = U256::from_str(request_id)?;
         _request_ids.push(uint256);
     }
 
@@ -99,19 +98,19 @@ pub fn encode_get_withdrawal_request_status(request_ids: &[String]) -> Result<Ve
     Ok(call.abi_encode())
 }
 
-pub fn decode_get_withdrawal_request_status(result: &[u8]) -> Result<Vec<WithdrawalRequestStatus>, Error> {
-    let decoded = WithdrawalQueueERC721::getWithdrawalStatusCall::abi_decode_returns(result).map_err(Error::msg)?;
+pub fn decode_get_withdrawal_request_status(result: &[u8]) -> Result<Vec<WithdrawalRequestStatus>, alloy_sol_types::Error> {
+    let decoded = WithdrawalQueueERC721::getWithdrawalStatusCall::abi_decode_returns(result)?;
     Ok(decoded.into_iter().collect())
 }
 
-pub fn encode_claim_withdrawal(request_id: &str) -> Result<Vec<u8>, Error> {
-    let request_id = U256::from_str(request_id).map_err(Error::msg)?;
+pub fn encode_claim_withdrawal(request_id: &str) -> Result<Vec<u8>, alloy_primitives::ruint::ParseError> {
+    let request_id = U256::from_str(request_id)?;
     let call = WithdrawalQueueERC721::claimWithdrawalCall { _requestId: request_id };
     Ok(call.abi_encode())
 }
 
-pub fn decode_request_withdrawals_return(result: &[u8]) -> Result<Vec<String>, Error> {
-    let decoded = WithdrawalQueueERC721::requestWithdrawalsWithPermitCall::abi_decode_returns(result).map_err(Error::msg)?;
+pub fn decode_request_withdrawals_return(result: &[u8]) -> Result<Vec<String>, alloy_sol_types::Error> {
+    let decoded = WithdrawalQueueERC721::requestWithdrawalsWithPermitCall::abi_decode_returns(result)?;
     Ok(decoded.into_iter().map(|x| x.to_string()).collect())
 }
 
