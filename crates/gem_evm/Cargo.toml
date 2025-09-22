@@ -8,12 +8,11 @@ default = []
 rpc = [
     "gem_jsonrpc/client",
     "dep:async-trait",
-    "dep:lazy_static",
     "dep:itertools",
     "dep:chain_traits",
 ]
 reqwest = ["gem_jsonrpc/reqwest", "gem_client/reqwest"]
-chain_integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -39,7 +38,6 @@ bigdecimal = { workspace = true }
 # rpc feature
 chrono = { workspace = true }
 async-trait = { workspace = true, optional = true }
-lazy_static = { workspace = true, optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 
 [dev-dependencies]
@@ -47,7 +45,7 @@ primitives = { path = "../primitives", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 num-bigint = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
-settings = { path = "../settings" }
+settings = { path = "../settings", features = ["testkit"] }
 
 [[test]]
 name = "integration_test"

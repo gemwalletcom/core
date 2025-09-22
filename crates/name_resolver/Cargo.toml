@@ -7,18 +7,17 @@ version = { workspace = true }
 anyhow.workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
-reqwest.workspace = true
+reqwest  = { workspace = true }
 async-trait = { workspace = true }
 base64 = { workspace = true }
-borsh.workspace = true
+borsh  = { workspace = true }
 hex = { workspace = true }
-lazy_static = { workspace = true }
-alloy-primitives.workspace = true
-alloy-sol-types.workspace = true
-alloy-ens.workspace = true
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+alloy-ens = { workspace = true }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
 gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"] }
-idna = { workspace = true }
+idna = { version = "1.1.0" }
 
 settings = { path = "../settings" }
 primitives = { path = "../primitives" }

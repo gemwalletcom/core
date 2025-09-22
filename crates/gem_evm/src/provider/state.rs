@@ -5,8 +5,12 @@ use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::ChainState;
 
+#[cfg(feature = "rpc")]
+use crate::provider::state_mapper;
 use crate::rpc::client::EthereumClient;
 use gem_client::Client;
+#[cfg(feature = "rpc")]
+use primitives::NodeSyncStatus;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
@@ -16,9 +20,15 @@ impl<C: Client + Clone> ChainState for EthereumClient<C> {
         Ok(u64::from_str_radix(chain_id.trim_start_matches("0x"), 16)?.to_string())
     }
 
+    async fn get_node_status(&self) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
+        let sync_status = self.get_sync_status().await?;
+        let latest_block = self.get_block_latest_number().await?;
+        state_mapper::map_node_status(&sync_status, latest_block)
+    }
+
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        let block_number = EthereumClient::get_block_number(self).await?;
-        Ok(u64::from_str_radix(block_number.trim_start_matches("0x"), 16)?)
+        let block_number = self.get_latest_block().await?;
+        Ok(block_number)
     }
 }
 
@@ -71,6 +81,18 @@ mod chain_integration_tests {
         println!("SmartChain Latest Block: {}", block_number);
 
         assert!(block_number > 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_get_node_status() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+        let node_status = ChainState::get_node_status(&client).await?;
+
+        println!("Ethereum Node Status: {:?}", node_status);
+
+        assert!(node_status.in_sync);
 
         Ok(())
     }

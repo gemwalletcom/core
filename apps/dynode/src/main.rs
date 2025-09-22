@@ -138,7 +138,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         user_agent_patterns: config.metrics.user_agent_patterns.clone(),
     };
     let metrics = Metrics::new(metrics_config);
-    let node_service = NodeService::new(config.domains_map(), metrics.clone(), config.cache.clone());
+    let node_service = NodeService::new(config.domains_map(), metrics.clone(), config.cache.clone(), config.monitoring.clone());
     let node_service_clone = node_service.clone();
 
     rocket::tokio::spawn(async move {

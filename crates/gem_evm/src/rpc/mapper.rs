@@ -1,8 +1,8 @@
 use chrono::DateTime;
 use itertools::izip;
-use lazy_static::lazy_static;
 use num_bigint::BigUint;
 use num_traits::Num;
+use std::sync::LazyLock;
 
 use super::{staking_mapper::StakingMapper, swap_mapper::SwapMapper};
 use crate::{
@@ -20,9 +20,7 @@ pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4
 pub const TRANSFER_SINGLE: &str = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62";
 pub const TRANSFER_GAS_LIMIT: u64 = 21000;
 
-lazy_static! {
-    pub static ref CONTRACT_REGISTRY: ContractRegistry = ContractRegistry::default();
-}
+pub static CONTRACT_REGISTRY: LazyLock<ContractRegistry> = LazyLock::new(ContractRegistry::default);
 pub struct EthereumMapper;
 
 impl EthereumMapper {

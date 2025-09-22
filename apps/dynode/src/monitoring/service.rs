@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, Domain};
+use crate::config::{CacheConfig, Domain, NodeMonitoringConfig};
 use crate::metrics::Metrics;
 use crate::monitoring::NodeMonitor;
 use crate::proxy::{NodeDomain, ProxyRequestService};
@@ -14,10 +14,11 @@ pub struct NodeService {
     pub nodes: Arc<Mutex<HashMap<String, NodeDomain>>>,
     pub metrics: Arc<Metrics>,
     pub cache: RequestCache,
+    pub monitoring_config: NodeMonitoringConfig,
 }
 
 impl NodeService {
-    pub fn new(domains: HashMap<String, Domain>, metrics: Metrics, cache_config: CacheConfig) -> Self {
+    pub fn new(domains: HashMap<String, Domain>, metrics: Metrics, cache_config: CacheConfig, monitoring_config: NodeMonitoringConfig) -> Self {
         let mut hash_map: HashMap<String, NodeDomain> = HashMap::new();
 
         for (key, domain) in domains.clone() {
@@ -30,6 +31,7 @@ impl NodeService {
             nodes: Arc::new(Mutex::new(hash_map)),
             metrics: Arc::new(metrics),
             cache: RequestCache::new(cache_config),
+            monitoring_config,
         }
     }
 
@@ -56,7 +58,7 @@ impl NodeService {
     }
 
     pub async fn start_monitoring(&self) {
-        let monitor = NodeMonitor::new(self.domains.clone(), Arc::clone(&self.nodes), Arc::clone(&self.metrics));
+        let monitor = NodeMonitor::new(self.domains.clone(), Arc::clone(&self.nodes), Arc::clone(&self.metrics), self.monitoring_config.clone());
 
         monitor.start_monitoring().await;
     }

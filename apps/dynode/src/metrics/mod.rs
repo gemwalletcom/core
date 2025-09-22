@@ -21,6 +21,7 @@ pub struct Metrics {
     node_block_latest: Family<HostStateLabels, Gauge>,
     cache_hits: Family<CacheLabels, Counter>,
     cache_misses: Family<CacheLabels, Counter>,
+    node_switches: Family<NodeSwitchLabels, Counter>,
     config: Arc<MetricsConfig>,
 }
 
@@ -67,6 +68,13 @@ pub struct CacheLabels {
     path: String,
 }
 
+#[derive(Clone, Hash, PartialEq, Eq, Debug, EncodeLabelSet)]
+pub struct NodeSwitchLabels {
+    chain: String,
+    old_host: String,
+    new_host: String,
+}
+
 impl Metrics {
     pub fn new(config: MetricsConfig) -> Self {
         let proxy_requests = Family::<ProxyRequestLabels, Counter>::default();
@@ -77,8 +85,9 @@ impl Metrics {
         let node_block_latest = Family::<HostStateLabels, Gauge>::default();
         let cache_hits = Family::<CacheLabels, Counter>::default();
         let cache_misses = Family::<CacheLabels, Counter>::default();
+        let node_switches = Family::<NodeSwitchLabels, Counter>::default();
 
-        let mut registry = <Registry>::with_prefix("dynode");
+        let mut registry = Registry::with_prefix("dynode");
         registry.register("proxy_requests", "Proxy requests by host", proxy_requests.clone());
         registry.register(
             "proxy_requests_by_user_agent_total",
@@ -99,6 +108,7 @@ impl Metrics {
         registry.register("node_block_latest", "Node block latest", node_block_latest.clone());
         registry.register("cache_hits", "Cache hits by host and path", cache_hits.clone());
         registry.register("cache_misses", "Cache misses by host and path", cache_misses.clone());
+        registry.register("node_switches_total", "Node switches by chain and host", node_switches.clone());
 
         Self {
             registry: Arc::new(registry),
@@ -110,21 +120,9 @@ impl Metrics {
             node_block_latest,
             cache_hits,
             cache_misses,
+            node_switches,
             config: Arc::new(config),
         }
-    }
-
-    fn categorize_user_agent(&self, user_agent: &str) -> String {
-        for (category, patterns) in &self.config.user_agent_patterns.patterns {
-            for pattern in patterns {
-                if let Ok(re) = Regex::new(pattern) {
-                    if re.is_match(user_agent) {
-                        return category.clone();
-                    }
-                }
-            }
-        }
-        "unknown".to_string()
     }
 
     pub fn add_proxy_request(&self, host: &str, user_agent: &str) {
@@ -147,17 +145,6 @@ impl Metrics {
                 method,
             })
             .inc();
-    }
-
-    fn truncate_method(&self, method: &str) -> String {
-        self.truncate_path(method)
-    }
-
-    fn truncate_path(&self, path: &str) -> String {
-        path.split('/')
-            .map(|segment| if segment.len() > 20 { ":value".to_string() } else { segment.to_string() })
-            .collect::<Vec<String>>()
-            .join("/")
     }
 
     pub fn add_proxy_response(&self, host: &str, path: &str, method: &str, remote_host: &str, status: u16, latency: u128) {
@@ -200,9 +187,43 @@ impl Metrics {
         self.cache_misses.get_or_create(&CacheLabels { host: host.to_string(), path }).inc();
     }
 
+    pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str) {
+        self.node_switches
+            .get_or_create(&NodeSwitchLabels {
+                chain: chain.to_string(),
+                old_host: old_host.to_string(),
+                new_host: new_host.to_string(),
+            })
+            .inc();
+    }
+
     pub fn get_metrics(&self) -> String {
         let mut buffer = String::new();
-        encode(&mut buffer, &self.registry).unwrap();
+        encode(&mut buffer, &self.registry).expect("failed to encode metrics");
         buffer
+    }
+
+    fn truncate_method(&self, method: &str) -> String {
+        self.truncate_path(method)
+    }
+
+    fn truncate_path(&self, path: &str) -> String {
+        path.split('/')
+            .map(|segment| if segment.len() > 20 { ":value".to_string() } else { segment.to_string() })
+            .collect::<Vec<String>>()
+            .join("/")
+    }
+
+    fn categorize_user_agent(&self, user_agent: &str) -> String {
+        for (category, patterns) in &self.config.user_agent_patterns.patterns {
+            for pattern in patterns {
+                if let Ok(re) = Regex::new(pattern) {
+                    if re.is_match(user_agent) {
+                        return category.clone();
+                    }
+                }
+            }
+        }
+        "unknown".to_string()
     }
 }

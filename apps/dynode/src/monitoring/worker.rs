@@ -1,12 +1,14 @@
-use std::{collections::HashMap, sync::Arc, time::Instant};
+use std::{collections::HashMap, sync::Arc};
 
 use futures::future;
-use gem_tracing::{error_with_fields, info_with_fields};
+use primitives::Chain;
 use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
 use super::chain_client::ChainClient;
-use crate::config::{Domain, NodeResult, Url};
+use super::sync::{NodeStatusObservation, NodeSyncAnalyzer};
+use super::telemetry::NodeTelemetry;
+use crate::config::{Domain, NodeMonitoringConfig, Url};
 use crate::metrics::Metrics;
 use crate::monitoring::NodeService;
 use crate::proxy::NodeDomain;
@@ -15,114 +17,114 @@ pub struct NodeMonitor {
     domains: HashMap<String, Domain>,
     nodes: Arc<Mutex<HashMap<String, NodeDomain>>>,
     metrics: Arc<Metrics>,
+    monitoring_config: NodeMonitoringConfig,
 }
 
 impl NodeMonitor {
-    pub fn new(domains: HashMap<String, Domain>, nodes: Arc<Mutex<HashMap<String, NodeDomain>>>, metrics: Arc<Metrics>) -> Self {
-        Self { domains, nodes, metrics }
+    pub fn new(domains: HashMap<String, Domain>, nodes: Arc<Mutex<HashMap<String, NodeDomain>>>, metrics: Arc<Metrics>, monitoring_config: NodeMonitoringConfig) -> Self {
+        Self { domains, nodes, metrics, monitoring_config }
     }
 
     pub async fn start_monitoring(&self) {
-        for (_, domain) in self.domains.clone() {
-            self.metrics.set_node_host_current(&domain.domain, &domain.urls.first().unwrap().url);
-
-            if domain.urls.len() > 1 {
-                let domain = domain.clone();
-                let nodes = Arc::clone(&self.nodes);
-
-                tokio::task::spawn(async move {
-                    loop {
-                        let tasks: Vec<_> = domain
-                            .clone()
-                            .urls
-                            .iter()
-                            .map(|url| {
-                                let chain = domain.chain;
-                                let url = url.clone();
-                                tokio::spawn(async move {
-                                    let now = Instant::now();
-                                    let client = ChainClient::new(chain, url.url.clone());
-                                    let result = client.get_latest_block().await;
-
-                                    NodeRawResult {
-                                        url: url.clone(),
-                                        result,
-                                        latency: now.elapsed().as_millis() as u64,
-                                    }
-                                })
-                            })
-                            .collect();
-
-                        let results: Vec<NodeResult> = future::join_all(tasks)
-                            .await
-                            .into_iter()
-                            .filter_map(|res| res.ok())
-                            .filter_map(|res| {
-                                res.result.ok().map(|block_number| NodeResult {
-                                    url: res.url,
-                                    block_number,
-                                    latency: res.latency,
-                                })
-                            })
-                            .collect();
-
-                        if let Some(value) = NodeService::get_node_domain(&nodes.clone(), domain.domain.clone()).await {
-                            let is_url_behind = domain.is_url_behind(value.url.clone(), results.clone());
-
-                            let blocks_str = format!("{:?}", results.clone().into_iter().map(|x| x.block_number).collect::<Vec<u64>>());
-
-                            if is_url_behind {
-                                error_with_fields!(
-                                    "Status",
-                                    &std::io::Error::other("Node behind"),
-                                    domain = &domain.domain,
-                                    url = &value.url.url,
-                                    blocks = &blocks_str,
-                                );
-                            } else {
-                                info_with_fields!("Status", url = &value.url.url, is_behind = &is_url_behind.to_string(), blocks = &blocks_str,);
-                            }
-
-                            if is_url_behind {
-                                if let Some(node) = Domain::find_highest_block_number(results.clone()) {
-                                    NodeService::update_node_domain(&nodes, domain.domain.clone(), NodeDomain { url: node.url.clone() }).await;
-
-                                    info_with_fields!(
-                                        "Node switch",
-                                        domain = &domain.domain,
-                                        new_node = &node.url.url,
-                                        latency_ms = &node.latency.to_string(),
-                                    );
-                                }
-                            }
-                        }
-
-                        sleep(Duration::from_secs(domain.get_poll_interval_seconds())).await;
-                    }
-                });
+        for (index, domain) in self.domains.values().cloned().enumerate() {
+            if domain.urls.len() <= 1 {
+                if let Some(url) = domain.urls.first() {
+                    self.metrics.set_node_host_current(&domain.domain, &url.url);
+                }
+                continue;
             }
+
+            if let Some(url) = domain.urls.first() {
+                self.metrics.set_node_host_current(&domain.domain, &url.url);
+            }
+
+            let domain_clone = domain;
+            let nodes = Arc::clone(&self.nodes);
+            let metrics = Arc::clone(&self.metrics);
+            let monitoring_config = self.monitoring_config.clone();
+            let initial_delay = Duration::from_millis(((index as u64) + 1) * 250);
+
+            tokio::task::spawn(async move {
+                sleep(initial_delay).await;
+
+                loop {
+                    if let Err(err) = Self::evaluate_domain(&domain_clone, &nodes, &metrics).await {
+                        NodeTelemetry::log_monitor_error(&domain_clone, err.as_ref());
+                    }
+
+                    sleep(Duration::from_secs(domain_clone.get_poll_interval_seconds(&monitoring_config))).await;
+                }
+            });
         }
     }
 
-    pub async fn check_nodes_sync(&self, _domain: &str) -> bool {
-        true
+    async fn evaluate_domain(
+        domain: &Domain,
+        nodes: &Arc<Mutex<HashMap<String, NodeDomain>>>,
+        metrics: &Arc<Metrics>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if domain.urls.len() <= 1 {
+            return Ok(());
+        }
+
+        let current_node = match NodeService::get_node_domain(nodes, domain.domain.clone()).await {
+            Some(node) => node,
+            None => {
+                NodeTelemetry::log_missing_current(domain);
+                return Ok(());
+            }
+        };
+
+        let current_observation = Self::fetch_status(domain.chain, current_node.url.clone()).await;
+        NodeTelemetry::log_status_debug(domain, &[current_observation.clone()]);
+
+        if NodeSyncAnalyzer::is_node_healthy(&current_observation) {
+            NodeTelemetry::log_node_healthy(domain, &current_observation);
+            return Ok(());
+        }
+
+        NodeTelemetry::log_node_unhealthy(domain, &current_observation);
+
+        let fallback_urls: Vec<Url> = domain.urls.iter().cloned().filter(|url| *url != current_node.url).collect();
+
+        if fallback_urls.is_empty() {
+            NodeTelemetry::log_no_candidate(domain, &[]);
+            return Ok(());
+        }
+
+        let fallback_statuses = Self::fetch_statuses(domain.chain, fallback_urls).await;
+        NodeTelemetry::log_status_debug(domain, &fallback_statuses);
+
+        if let Some(best_candidate) = NodeSyncAnalyzer::select_best_node(&current_node.url, &fallback_statuses) {
+            if best_candidate.url.url != current_node.url.url {
+                NodeService::update_node_domain(
+                    nodes,
+                    domain.domain.clone(),
+                    NodeDomain {
+                        url: best_candidate.url.clone(),
+                    },
+                )
+                .await;
+                metrics.set_node_host_current(&domain.domain, &best_candidate.url.url);
+                metrics.add_node_switch(domain.chain.as_ref(), &current_node.url.url, &best_candidate.url.url);
+
+                NodeTelemetry::log_node_switch(domain, &current_node.url, &best_candidate);
+            }
+        } else {
+            NodeTelemetry::log_no_candidate(domain, &fallback_statuses);
+        }
+
+        Ok(())
     }
 
-    pub async fn get_node_health(&self, _domain: &str) -> NodeHealth {
-        NodeHealth::Healthy
+    async fn fetch_statuses(chain: Chain, urls: Vec<Url>) -> Vec<NodeStatusObservation> {
+        let futures = urls.into_iter().map(move |url| Self::fetch_status(chain, url));
+
+        future::join_all(futures).await
     }
-}
 
-#[derive(Debug)]
-pub struct NodeRawResult {
-    pub url: Url,
-    pub result: Result<u64, Box<dyn std::error::Error + Send + Sync>>,
-    pub latency: u64,
-}
-
-#[derive(Debug, Clone)]
-pub enum NodeHealth {
-    Healthy,
-    Behind,
-    Unreachable,
+    async fn fetch_status(chain: Chain, url: Url) -> NodeStatusObservation {
+        let client = ChainClient::new(chain, url);
+        client.fetch_status().await
+    }
 }

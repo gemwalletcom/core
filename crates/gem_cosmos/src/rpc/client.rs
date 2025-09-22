@@ -25,7 +25,7 @@ impl<C: Client> CosmosClient<C> {
         self.chain
     }
 
-    pub fn get_amount(&self, coins: Vec<cosmos_sdk_proto::cosmos::base::v1beta1::Coin>) -> Option<String> {
+    pub fn get_amount(&self, coins: Vec<crate::models::Coin>) -> Option<String> {
         Some(
             coins
                 .into_iter()

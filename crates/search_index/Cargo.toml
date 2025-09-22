@@ -5,6 +5,7 @@ edition = { workspace = true }
 
 [dependencies]
 serde = { workspace = true }
-meilisearch-sdk = { workspace = true }
+
+meilisearch-sdk = { version = "0.29.1" }
 
 primitives = { path = "../primitives" }

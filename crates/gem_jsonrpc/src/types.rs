@@ -47,13 +47,13 @@ impl Display for JsonRpcError {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcResponse<T> {
-    pub id: u64,
+    pub id: Option<u64>,
     pub result: T,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcErrorResponse {
-    pub id: u64,
+    pub id: Option<u64>,
     pub error: JsonRpcError,
 }
 

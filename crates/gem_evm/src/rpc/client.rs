@@ -12,7 +12,7 @@ use std::str::FromStr;
 use super::{
     alchemy::AlchemyClient,
     ankr::AnkrClient,
-    model::{Block, BlockTransactionsIds, Transaction, TransactionReciept, TransactionReplayTrace},
+    model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace},
 };
 use crate::models::fee::EthereumFeeHistory;
 #[cfg(feature = "rpc")]
@@ -107,10 +107,10 @@ impl<C: Client + Clone> EthereumClient<C> {
         self.client.call("eth_getBlockReceipts", params).await
     }
 
-    pub async fn get_latest_block(&self) -> Result<i64, anyhow::Error> {
+    pub async fn get_latest_block(&self) -> Result<u64, anyhow::Error> {
         let block_hex: String = self.client.call("eth_blockNumber", json!([])).await?;
         let block_hex = block_hex.trim_start_matches("0x");
-        i64::from_str_radix(block_hex, 16).map_err(|e| anyhow!("Invalid block number format: {}", e))
+        u64::from_str_radix(block_hex, 16).map_err(|e| anyhow!("Invalid block number format: {}", e))
     }
 
     pub async fn get_blocks(&self, blocks: &[String], include_transactions: bool) -> Result<Vec<BlockTransactionsIds>, JsonRpcError> {
@@ -186,22 +186,26 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(self.client.batch_call::<TransactionReplayTrace>(calls).await?.extract())
     }
 
-    pub async fn get_eth_balance(&self, address: &str) -> Result<String, anyhow::Error> {
+    pub async fn get_eth_balance(&self, address: &str) -> Result<String, JsonRpcError> {
         let params = json!([address, "latest"]);
-        Ok(self.client.call("eth_getBalance", params).await?)
+        self.client.call("eth_getBalance", params).await
     }
 
-    pub async fn get_chain_id(&self) -> Result<String, anyhow::Error> {
-        Ok(self.client.call("eth_chainId", json!([])).await?)
+    pub async fn get_chain_id(&self) -> Result<String, JsonRpcError> {
+        self.client.call("eth_chainId", json!([])).await
     }
 
-    pub async fn get_block_number(&self) -> Result<String, anyhow::Error> {
-        Ok(self.client.call("eth_blockNumber", json!([])).await?)
+    pub async fn get_block_number(&self) -> Result<String, JsonRpcError> {
+        self.client.call("eth_blockNumber", json!([])).await
     }
 
-    pub async fn get_transaction_count(&self, address: &str) -> Result<String, anyhow::Error> {
+    pub async fn get_sync_status(&self) -> Result<EthSyncingStatus, JsonRpcError> {
+        self.client.call("eth_syncing", json!([])).await
+    }
+
+    pub async fn get_transaction_count(&self, address: &str) -> Result<String, JsonRpcError> {
         let params = json!([address, "latest"]);
-        Ok(self.client.call("eth_getTransactionCount", params).await?)
+        self.client.call("eth_getTransactionCount", params).await
     }
 
     pub async fn send_raw_transaction(&self, data: &str) -> Result<String, JsonRpcError> {
@@ -236,7 +240,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(self.client.batch_call::<String>(calls).await?.extract())
     }
 
-    pub async fn estimate_gas(&self, from: &str, to: &str, value: Option<&str>, data: Option<&str>) -> Result<String, anyhow::Error> {
+    pub async fn estimate_gas(&self, from: &str, to: &str, value: Option<&str>, data: Option<&str>) -> Result<String, JsonRpcError> {
         let mut params_obj = json!({
             "from": from,
             "to": to

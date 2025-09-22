@@ -1,6 +1,5 @@
 use chain_primitives::format_token_id;
-use coingecko::mapper::COINGECKO_CHAIN_MAP;
-use coingecko::{get_chain_for_coingecko_platform_id, CoinGeckoClient, CoinInfo};
+use coingecko::{get_chain_for_coingecko_platform_id, COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo};
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;

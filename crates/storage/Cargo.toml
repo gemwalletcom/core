@@ -7,9 +7,9 @@ edition = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 redis = { workspace = true }
-diesel = { workspace = true }
-diesel_migrations = { workspace = true }
 chrono = { workspace = true }
 
+diesel = { version = "2.2.12", features = ["postgres", "chrono", "serde_json"] }
+diesel_migrations = { version = "2.3.0" }
 
 primitives = { path = "../primitives" }

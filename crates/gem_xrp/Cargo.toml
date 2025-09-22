@@ -7,7 +7,7 @@ edition = "2024"
 default = []
 rpc = ["dep:chrono", "dep:serde_serializers", "dep:chain_traits", "dep:gem_client"]
 reqwest = ["gem_client/reqwest"]
-chain_integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -28,3 +28,4 @@ serde_serializers = { path = "../serde_serializers", optional = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 reqwest = { workspace = true }
 
+settings = { path = "../settings", features = ["testkit"] }

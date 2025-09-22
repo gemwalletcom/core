@@ -10,6 +10,7 @@ pub mod staking_ethereum;
 pub mod staking_mapper;
 pub mod staking_smartchain;
 pub mod state;
+pub mod state_mapper;
 pub mod testkit;
 pub mod token;
 pub mod token_mapper;
