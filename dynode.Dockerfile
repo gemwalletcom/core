@@ -2,8 +2,8 @@ FROM rust:1.89.0-bookworm AS builder
 WORKDIR /app
 
 COPY . .
-
-RUN cargo build --release --package dynode
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo build --release --package dynode
 
 FROM debian:bookworm AS runtime
 WORKDIR /app
