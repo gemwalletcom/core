@@ -21,6 +21,13 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         match &input.input_type {
+            TransactionInputType::Transfer(_) => {
+                // Only signature is required
+                return Ok(TransactionLoadData {
+                    fee: TransactionFee::new_from_fee(BigInt::from(0)),
+                    metadata: TransactionLoadMetadata::None,
+                });
+            }
             TransactionInputType::Perpetual(_, perpetual_type) => {
                 let cache = HyperCoreCache::new(self.preferences.clone(), self.config.clone());
 
