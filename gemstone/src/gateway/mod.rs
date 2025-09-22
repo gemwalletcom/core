@@ -1,3 +1,4 @@
+use crate::models::GemAddressStatus;
 use crate::network::{jsonrpc_client_with_chain, AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::client::AlgorandClient;

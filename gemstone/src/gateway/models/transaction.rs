@@ -1,12 +1,12 @@
 use crate::gateway::{GemAsset, GemDelegation, GemDelegationValidator, GemGasPriceType, GemTransactionLoadMetadata};
+use crate::models::{GemFeeOption, GemFreezeType, GemPerpetualDirection, GemResource, GemTransferDataOutputType};
 use num_bigint::BigInt;
-use primitives::stake_type::{FreezeData, FreezeType, Resource, StakeData};
+use primitives::stake_type::{FreezeData, StakeData};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
-use primitives::FeeOption;
 use primitives::SwapProvider;
 use primitives::{
-    GasPriceType, PerpetualConfirmData, PerpetualDirection, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput,
-    TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputType,
+    FeeOption, GasPriceType, PerpetualConfirmData, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput,
+    TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra,
     WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
@@ -80,18 +80,6 @@ pub struct GemFreezeData {
     pub resource: GemResource,
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemFreezeType {
-    Freeze,
-    Unfreeze,
-}
-
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemResource {
-    Bandwidth,
-    Energy,
-}
-
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemWalletConnectionSessionAppMetadata {
     pub name: String,
@@ -100,12 +88,6 @@ pub struct GemWalletConnectionSessionAppMetadata {
     pub icon: String,
     pub redirect_native: Option<String>,
     pub redirect_universal: Option<String>,
-}
-
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemTransferDataOutputType {
-    EncodedTransaction,
-    Signature,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -153,12 +135,6 @@ pub struct GemSwapProviderData {
     pub provider: String,
     pub name: String,
     pub protocol_name: String,
-}
-
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemPerpetualDirection {
-    Short,
-    Long,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -222,10 +198,6 @@ pub struct GemTransactionLoadInput {
     pub metadata: GemTransactionLoadMetadata,
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq, uniffi::Enum)]
-pub enum GemFeeOption {
-    TokenAccountCreation,
-}
 
 #[derive(Debug, Default, Clone, uniffi::Record)]
 pub struct GemFeeOptions {
@@ -389,24 +361,6 @@ impl From<WalletConnectionSessionAppMetadata> for GemWalletConnectionSessionAppM
     }
 }
 
-impl From<GemTransferDataOutputType> for TransferDataOutputType {
-    fn from(value: GemTransferDataOutputType) -> Self {
-        match value {
-            GemTransferDataOutputType::EncodedTransaction => TransferDataOutputType::EncodedTransaction,
-            GemTransferDataOutputType::Signature => TransferDataOutputType::Signature,
-        }
-    }
-}
-
-impl From<TransferDataOutputType> for GemTransferDataOutputType {
-    fn from(value: TransferDataOutputType) -> Self {
-        match value {
-            TransferDataOutputType::EncodedTransaction => GemTransferDataOutputType::EncodedTransaction,
-            TransferDataOutputType::Signature => GemTransferDataOutputType::Signature,
-        }
-    }
-}
-
 impl From<GemTransferDataExtra> for TransferDataExtra {
     fn from(value: GemTransferDataExtra) -> Self {
         TransferDataExtra {
@@ -449,24 +403,6 @@ impl From<ApprovalData> for GemApprovalData {
     }
 }
 
-impl From<GemPerpetualDirection> for PerpetualDirection {
-    fn from(value: GemPerpetualDirection) -> Self {
-        match value {
-            GemPerpetualDirection::Short => PerpetualDirection::Short,
-            GemPerpetualDirection::Long => PerpetualDirection::Long,
-        }
-    }
-}
-
-impl From<PerpetualDirection> for GemPerpetualDirection {
-    fn from(value: PerpetualDirection) -> Self {
-        match value {
-            PerpetualDirection::Short => GemPerpetualDirection::Short,
-            PerpetualDirection::Long => GemPerpetualDirection::Long,
-        }
-    }
-}
-
 impl From<GemPerpetualConfirmData> for PerpetualConfirmData {
     fn from(value: GemPerpetualConfirmData) -> Self {
         PerpetualConfirmData {
@@ -492,8 +428,6 @@ impl From<PerpetualConfirmData> for GemPerpetualConfirmData {
         }
     }
 }
-
-// Helper function to create a placeholder SwapData for conversions
 
 impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
@@ -567,22 +501,6 @@ impl From<GemGasPriceType> for GasPriceType {
     }
 }
 
-impl From<FeeOption> for GemFeeOption {
-    fn from(value: FeeOption) -> Self {
-        match value {
-            FeeOption::TokenAccountCreation => GemFeeOption::TokenAccountCreation,
-        }
-    }
-}
-
-impl From<GemFeeOption> for FeeOption {
-    fn from(value: GemFeeOption) -> Self {
-        match value {
-            GemFeeOption::TokenAccountCreation => FeeOption::TokenAccountCreation,
-        }
-    }
-}
-
 impl GemFeeOptions {
     pub fn with_option(mut self, option: GemFeeOption, value: String) -> Self {
         self.options.insert(option, value);
@@ -636,7 +554,6 @@ impl From<TransactionFee> for GemTransactionLoadFee {
     }
 }
 
-// SwapData conversions
 impl From<SwapData> for GemSwapData {
     fn from(value: SwapData) -> Self {
         GemSwapData {
@@ -743,38 +660,3 @@ impl From<GemFreezeData> for FreezeData {
     }
 }
 
-impl From<FreezeType> for GemFreezeType {
-    fn from(value: FreezeType) -> Self {
-        match value {
-            FreezeType::Freeze => GemFreezeType::Freeze,
-            FreezeType::Unfreeze => GemFreezeType::Unfreeze,
-        }
-    }
-}
-
-impl From<GemFreezeType> for FreezeType {
-    fn from(value: GemFreezeType) -> Self {
-        match value {
-            GemFreezeType::Freeze => FreezeType::Freeze,
-            GemFreezeType::Unfreeze => FreezeType::Unfreeze,
-        }
-    }
-}
-
-impl From<Resource> for GemResource {
-    fn from(value: Resource) -> Self {
-        match value {
-            Resource::Bandwidth => GemResource::Bandwidth,
-            Resource::Energy => GemResource::Energy,
-        }
-    }
-}
-
-impl From<GemResource> for Resource {
-    fn from(value: GemResource) -> Self {
-        match value {
-            GemResource::Bandwidth => Resource::Bandwidth,
-            GemResource::Energy => Resource::Energy,
-        }
-    }
-}

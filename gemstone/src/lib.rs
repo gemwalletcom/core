@@ -6,6 +6,7 @@ pub mod ethereum;
 pub mod gateway;
 pub mod hyperliquid;
 pub mod message;
+pub mod models;
 pub mod network;
 pub mod payment;
 pub mod sui;

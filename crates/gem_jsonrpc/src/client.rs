@@ -2,7 +2,6 @@ use crate::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcR
 use gem_client::{Client, ClientError};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::error::Error;
 use std::time::SystemTime;
 
 pub type CallTuple = (String, Value);

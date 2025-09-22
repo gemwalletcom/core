@@ -1,65 +1,7 @@
 use crate::gateway::{GemStakeData, GemUTXO};
-use num_bigint::BigInt;
-use primitives::solana_token_program::SolanaTokenProgramId;
-use primitives::{transaction_load_metadata::SuiCoin, TransactionLoadMetadata};
+use crate::models::GemSolanaTokenProgramId;
+use primitives::TransactionLoadMetadata;
 use std::collections::HashMap;
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSuiCoin {
-    pub coin_type: String,
-    pub coin_object_id: String,
-    pub balance: String,
-    pub version: String,
-    pub digest: String,
-}
-
-impl From<SuiCoin> for GemSuiCoin {
-    fn from(value: SuiCoin) -> Self {
-        Self {
-            coin_type: value.coin_type,
-            coin_object_id: value.coin_object_id,
-            balance: value.balance.to_string(),
-            version: value.version,
-            digest: value.digest,
-        }
-    }
-}
-
-impl From<GemSuiCoin> for SuiCoin {
-    fn from(value: GemSuiCoin) -> Self {
-        Self {
-            coin_type: value.coin_type,
-            coin_object_id: value.coin_object_id,
-            balance: value.balance.parse::<BigInt>().unwrap_or_default(),
-            version: value.version,
-            digest: value.digest,
-        }
-    }
-}
-
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemSolanaTokenProgramId {
-    Token,
-    Token2022,
-}
-
-impl From<SolanaTokenProgramId> for GemSolanaTokenProgramId {
-    fn from(value: SolanaTokenProgramId) -> Self {
-        match value {
-            SolanaTokenProgramId::Token => GemSolanaTokenProgramId::Token,
-            SolanaTokenProgramId::Token2022 => GemSolanaTokenProgramId::Token2022,
-        }
-    }
-}
-
-impl From<GemSolanaTokenProgramId> for SolanaTokenProgramId {
-    fn from(value: GemSolanaTokenProgramId) -> Self {
-        match value {
-            GemSolanaTokenProgramId::Token => SolanaTokenProgramId::Token,
-            GemSolanaTokenProgramId::Token2022 => SolanaTokenProgramId::Token2022,
-        }
-    }
-}
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemTransactionLoadMetadata {
