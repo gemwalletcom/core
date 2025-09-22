@@ -13,10 +13,10 @@ services:
       ROCKET_ADDRESS: 0.0.0.0
       ROCKET_PORT: 8000
       BINARY: api
-      REDIS_URL: "redis://default:@redis:6379"
-      POSTGRES_URL: "postgres://username:password@postgres/api"
+      REDIS_URL: redis://default:@redis:6379
+      POSTGRES_URL: postgres://username:password@postgres/api
     ports:
-      - "8000:8000"
+      - 8000:8000
     restart: always
     depends_on:
       - app_build
@@ -28,8 +28,8 @@ services:
     container_name: setup
     environment:
       BINARY: setup
-      REDIS_URL: "redis://default:@redis:6379"
-      POSTGRES_URL: "postgres://username:password@postgres/api"
+      REDIS_URL: redis://default:@redis:6379
+      POSTGRES_URL: postgres://username:password@postgres/api
     depends_on:
       - app_build
       - redis
@@ -40,8 +40,8 @@ services:
     container_name: daemon
     environment:
       BINARY: daemon
-      REDIS_URL: "redis://default:@redis:6379"
-      POSTGRES_URL: "postgres://username:password@postgres/api"
+      REDIS_URL: redis://default:@redis:6379
+      POSTGRES_URL: postgres://username:password@postgres/api
     depends_on:
       - app_build
       - setup
@@ -53,7 +53,7 @@ services:
     container_name: parser
     environment:
       BINARY: parser
-      POSTGRES_URL: "postgres://username:password@postgres/api"
+      POSTGRES_URL: postgres://username:password@postgres/api
     depends_on:
       - app_build
       - setup
