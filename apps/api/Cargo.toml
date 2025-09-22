@@ -15,7 +15,7 @@ reqwest = { workspace = true }
 strum = { workspace = true }
 redis = { workspace = true }
 
-gem_tracing = { path = "../../crates/tracing" }
+gem_tracing = { path = "../../crates/tracing", features = ["sentry"] }
 storage = { path = "../../crates/storage" }
 pricer = { path = "../../crates/pricer" }
 fiat = { path = "../../crates/fiat" }

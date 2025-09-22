@@ -6,4 +6,4 @@ edition = { workspace = true }
 [dependencies]
 tokio = { workspace = true }
 
-gem_tracing = { path = "../tracing" }
+gem_tracing = { path = "../tracing", features = ["sentry"] }
