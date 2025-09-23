@@ -1,7 +1,6 @@
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolCall};
-use anyhow::Error;
-use std::str::FromStr;
+use std::{error::Error, str::FromStr};
 
 pub const HUB_READER_ADDRESS: &str = "0x830295c0abe7358f7e24bc38408095621474280b";
 pub const STAKE_HUB_ADDRESS: &str = "0x0000000000000000000000000000000000002002";
@@ -77,8 +76,8 @@ pub fn encode_validators_call(offset: u16, limit: u16) -> Vec<u8> {
     call.abi_encode()
 }
 
-pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, Error> {
-    let decoded = IHubReader::getValidatorsCall::abi_decode_returns(result).map_err(Error::msg)?;
+pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, Box<dyn Error + Send + Sync>> {
+    let decoded = IHubReader::getValidatorsCall::abi_decode_returns(result)?;
     let validators = decoded
         .iter()
         .map(|validator| BscValidator {
@@ -92,14 +91,14 @@ pub fn decode_validators_return(result: &[u8]) -> Result<Vec<BscValidator>, Erro
     Ok(validators)
 }
 
-pub fn encode_delegations_call(delegator: &str, offset: u16, limit: u16) -> Result<Vec<u8>, Error> {
-    let delegator = Address::from_str(delegator).map_err(Error::msg)?;
+pub fn encode_delegations_call(delegator: &str, offset: u16, limit: u16) -> Result<Vec<u8>, alloy_primitives::hex::FromHexError> {
+    let delegator = Address::from_str(delegator)?;
     let call = IHubReader::getDelegationsCall { delegator, offset, limit };
     Ok(call.abi_encode())
 }
 
-pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, Error> {
-    let decoded = IHubReader::getDelegationsCall::abi_decode_returns(result).map_err(anyhow::Error::msg)?;
+pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, Box<dyn Error + Send + Sync>> {
+    let decoded = IHubReader::getDelegationsCall::abi_decode_returns(result)?;
     let delegations = decoded
         .iter()
         .map(|delegation| BscDelegation {
@@ -112,14 +111,14 @@ pub fn decode_delegations_return(result: &[u8]) -> Result<Vec<BscDelegation>, Er
     Ok(delegations)
 }
 
-pub fn encode_undelegations_call(delegator: &str, offset: u16, limit: u16) -> Result<Vec<u8>, Error> {
-    let delegator = Address::from_str(delegator).map_err(Error::msg)?;
+pub fn encode_undelegations_call(delegator: &str, offset: u16, limit: u16) -> Result<Vec<u8>, alloy_primitives::hex::FromHexError> {
+    let delegator = Address::from_str(delegator)?;
     let call = IHubReader::getUndelegationsCall { delegator, offset, limit };
     Ok(call.abi_encode())
 }
 
-pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscUndelegation>, Error> {
-    let decoded = IHubReader::getUndelegationsCall::abi_decode_returns(result).map_err(Error::msg)?;
+pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscUndelegation>, Box<dyn Error + Send + Sync>> {
+    let decoded = IHubReader::getUndelegationsCall::abi_decode_returns(result)?;
     let undelegations = decoded
         .iter()
         .map(|undelegation| BscUndelegation {
@@ -133,8 +132,8 @@ pub fn decode_undelegations_return(result: &[u8]) -> Result<Vec<BscUndelegation>
     Ok(undelegations)
 }
 
-pub fn encode_delegate_call(operator_address: &str, delegate_vote_power: bool) -> Result<Vec<u8>, Error> {
-    let operator_address = Address::from_str(operator_address).map_err(Error::msg)?;
+pub fn encode_delegate_call(operator_address: &str, delegate_vote_power: bool) -> Result<Vec<u8>, alloy_primitives::hex::FromHexError> {
+    let operator_address = Address::from_str(operator_address)?;
     let call = IStakeHub::delegateCall {
         operatorAddress: operator_address,
         delegateVotePower: delegate_vote_power,
@@ -142,9 +141,9 @@ pub fn encode_delegate_call(operator_address: &str, delegate_vote_power: bool) -
     Ok(call.abi_encode())
 }
 
-pub fn encode_undelegate_call(operator_address: &str, shares: &str) -> Result<Vec<u8>, Error> {
-    let address = Address::from_str(operator_address).map_err(Error::msg)?;
-    let amount = U256::from_str(shares).map_err(anyhow::Error::msg)?;
+pub fn encode_undelegate_call(operator_address: &str, shares: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+    let address = Address::from_str(operator_address)?;
+    let amount = U256::from_str(shares)?;
     let call = IStakeHub::undelegateCall {
         operatorAddress: address,
         shares: amount,
@@ -152,10 +151,10 @@ pub fn encode_undelegate_call(operator_address: &str, shares: &str) -> Result<Ve
     Ok(call.abi_encode())
 }
 
-pub fn encode_redelegate_call(src_validator: &str, dst_validator: &str, shares: &str, delegate_vote_power: bool) -> Result<Vec<u8>, Error> {
-    let src_validator = Address::from_str(src_validator).map_err(Error::msg)?;
-    let dst_validator = Address::from_str(dst_validator).map_err(Error::msg)?;
-    let amount = U256::from_str(shares).map_err(Error::msg)?;
+pub fn encode_redelegate_call(src_validator: &str, dst_validator: &str, shares: &str, delegate_vote_power: bool) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+    let src_validator = Address::from_str(src_validator)?;
+    let dst_validator = Address::from_str(dst_validator)?;
+    let amount = U256::from_str(shares)?;
     let call = IStakeHub::redelegateCall {
         srcValidator: src_validator,
         dstValidator: dst_validator,
@@ -165,8 +164,8 @@ pub fn encode_redelegate_call(src_validator: &str, dst_validator: &str, shares: 
     Ok(call.abi_encode())
 }
 
-pub fn encode_claim_call(operator_address: &str, request_number: u64) -> Result<Vec<u8>, Error> {
-    let operator_address = Address::from_str(operator_address).map_err(Error::msg)?;
+pub fn encode_claim_call(operator_address: &str, request_number: u64) -> Result<Vec<u8>, alloy_primitives::hex::FromHexError> {
+    let operator_address = Address::from_str(operator_address)?;
     let call = IStakeHub::claimCall {
         operatorAddress: operator_address,
         requestNumber: U256::from(request_number),
@@ -174,11 +173,11 @@ pub fn encode_claim_call(operator_address: &str, request_number: u64) -> Result<
     Ok(call.abi_encode())
 }
 
-pub fn encode_claim_batch_call(operator_addresses: Vec<String>, request_numbers: Vec<u64>) -> Result<Vec<u8>, Error> {
+pub fn encode_claim_batch_call(operator_addresses: Vec<String>, request_numbers: Vec<u64>) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
     let operator_addresses = operator_addresses
         .iter()
-        .map(|x| Address::from_str(x).map_err(Error::msg))
-        .collect::<Result<Vec<Address>, Error>>()?;
+        .map(|x| Address::from_str(x))
+        .collect::<Result<Vec<Address>, _>>()?;
     let request_numbers = request_numbers.iter().map(|x| U256::from(*x)).collect::<Vec<U256>>();
     let call = IStakeHub::claimBatchCall {
         operatorAddresses: operator_addresses,

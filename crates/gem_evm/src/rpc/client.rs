@@ -1,5 +1,4 @@
 use alloy_primitives::{hex, Address, Bytes};
-use anyhow::anyhow;
 use gem_client::Client;
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use gem_jsonrpc::types::{JsonRpcError, JsonRpcResult};
@@ -75,7 +74,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(self.client.batch_call::<T>(calls).await?.into_iter().collect())
     }
 
-    pub async fn eth_call<T: DeserializeOwned + 'static>(&self, contract_address: &str, call_data: &str) -> Result<T, anyhow::Error> {
+    pub async fn eth_call<T: DeserializeOwned + 'static>(&self, contract_address: &str, call_data: &str) -> Result<T, Box<dyn std::error::Error + Send + Sync>> {
         let to_address = Address::from_str(contract_address)?;
 
         let params = json!([
@@ -87,13 +86,13 @@ impl<C: Client + Clone> EthereumClient<C> {
         ]);
 
         let result: String = self.client.call("eth_call", params).await?;
-        let result_bytes = Bytes::from(hex::decode(&result).map_err(|e| anyhow!(e))?);
+        let result_bytes = Bytes::from(hex::decode(&result)?);
 
         // Deserialize T (hex string or struct) from the returned bytes.
         if TypeId::of::<T>() == TypeId::of::<String>() {
             Ok(serde_json::from_value(serde_json::Value::String(result_bytes.to_string()))?)
         } else {
-            serde_json::from_slice(&result_bytes).map_err(|e| anyhow!(e))
+            Ok(serde_json::from_slice(&result_bytes)?)
         }
     }
 
@@ -107,10 +106,10 @@ impl<C: Client + Clone> EthereumClient<C> {
         self.client.call("eth_getBlockReceipts", params).await
     }
 
-    pub async fn get_latest_block(&self) -> Result<u64, anyhow::Error> {
+    pub async fn get_latest_block(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         let block_hex: String = self.client.call("eth_blockNumber", json!([])).await?;
         let block_hex = block_hex.trim_start_matches("0x");
-        u64::from_str_radix(block_hex, 16).map_err(|e| anyhow!("Invalid block number format: {}", e))
+        Ok(u64::from_str_radix(block_hex, 16)?)
     }
 
     pub async fn get_blocks(&self, blocks: &[String], include_transactions: bool) -> Result<Vec<BlockTransactionsIds>, JsonRpcError> {

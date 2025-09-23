@@ -1,5 +1,4 @@
 use chrono::DateTime;
-use itertools::izip;
 use num_bigint::BigUint;
 use num_traits::Num;
 use std::sync::LazyLock;
@@ -31,8 +30,10 @@ impl EthereumMapper {
         traces: Option<Vec<TransactionReplayTrace>>,
     ) -> Vec<primitives::Transaction> {
         match traces {
-            Some(traces) => izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
-                .filter_map(|(transaction, receipt, trace)| {
+            Some(traces) => block.transactions.into_iter()
+                .zip(transactions_reciepts.iter())
+                .zip(traces.iter())
+                .filter_map(|((transaction, receipt), trace)| {
                     EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp, Some(&CONTRACT_REGISTRY))
                 })
                 .collect(),

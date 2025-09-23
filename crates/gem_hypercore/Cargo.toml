@@ -15,7 +15,7 @@ serde_json = { workspace = true }
 chrono = { workspace = true }
 num-bigint = { workspace = true }
 alloy-primitives = { workspace = true }
-rmp-serde = { workspace = true }
+rmp-serde = { version = "1.3.0" }
 futures = { workspace = true }
 
 gem_client = { path = "../gem_client" }

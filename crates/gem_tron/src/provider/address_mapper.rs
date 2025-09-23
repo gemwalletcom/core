@@ -19,6 +19,25 @@ pub fn map_address_status(account: &TronAccount) -> Vec<AddressStatus> {
 }
 
 #[cfg(test)]
+impl TronAccount {
+    pub fn mock() -> Self {
+        use crate::models::{TronAccountOwnerPermission, TronAccountPermission};
+
+        TronAccount {
+            balance: None,
+            address: None,
+            owner_permission: Some(TronAccountOwnerPermission {
+                permission_name: "owner".to_string(),
+            }),
+            active_permission: Some(vec![TronAccountPermission { threshold: 1 }]),
+            votes: None,
+            frozen_v2: None,
+            unfrozen_v2: None,
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::models::account::{TronAccount, TronAccountOwnerPermission, TronAccountPermission};
@@ -56,24 +75,5 @@ mod tests {
             permission_name: "custom".to_string(),
         });
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
-    }
-}
-
-#[cfg(test)]
-impl TronAccount {
-    pub fn mock() -> Self {
-        use crate::models::{TronAccountOwnerPermission, TronAccountPermission};
-
-        TronAccount {
-            balance: None,
-            address: None,
-            owner_permission: Some(TronAccountOwnerPermission {
-                permission_name: "owner".to_string(),
-            }),
-            active_permission: Some(vec![TronAccountPermission { threshold: 1 }]),
-            votes: None,
-            frozen_v2: None,
-            unfrozen_v2: None,
-        }
     }
 }

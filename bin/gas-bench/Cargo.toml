@@ -6,7 +6,6 @@ edition.workspace = true
 [dependencies]
 clap = { version = "4.5.45", features = ["derive", "env"] }
 
-anyhow = { workspace = true }
 tokio = { workspace = true }
 num-bigint = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }

@@ -8,7 +8,6 @@ default = []
 rpc = [
     "gem_jsonrpc/client",
     "dep:async-trait",
-    "dep:itertools",
     "dep:chain_traits",
 ]
 reqwest = ["gem_jsonrpc/reqwest", "gem_client/reqwest"]
@@ -22,9 +21,7 @@ gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
 gem_bsc = { path = "../gem_bsc" }
 
-itertools = { workspace = true, optional = true }
 hex = { workspace = true }
-anyhow = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["eip712-serde"] }
 alloy-dyn-abi = { workspace = true, features = ["eip712"] }

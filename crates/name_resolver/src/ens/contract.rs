@@ -1,10 +1,10 @@
 use alloy_ens::namehash;
 use alloy_primitives::{hex, Address, Bytes, U256};
 use alloy_sol_types::{sol, SolCall};
-use anyhow::{anyhow, Result};
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 use serde_json::json;
+use std::error::Error;
 use std::str::FromStr;
 
 sol! {
@@ -25,19 +25,19 @@ pub struct Contract {
 }
 
 impl Contract {
-    pub fn new(rpc_url: &str, registry_address_hex: &str) -> Result<Self> {
+    pub fn new(rpc_url: &str, registry_address_hex: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let client = JsonRpcClient::new(ReqwestClient::new(rpc_url.to_string(), reqwest::Client::new()));
         let registry_address = Address::from_str(registry_address_hex)?;
         Ok(Self { registry_address, client })
     }
-    pub async fn resolver(&self, name: &str) -> Result<Address> {
+    pub async fn resolver(&self, name: &str) -> Result<Address, Box<dyn Error + Send + Sync>> {
         let node = namehash(name);
         let call = ENSRegistry::resolverCall { node };
         let calldata = Bytes::from(call.abi_encode());
 
         let result_bytes = self.eth_call(self.registry_address, calldata).await?;
         if result_bytes.is_empty() || result_bytes.iter().all(|&b| b == 0) {
-            return Err(anyhow!("No resolver set or resolver address is zero"));
+            return Err("No resolver set or resolver address is zero".into());
         }
         // The result of resolver(bytes32) is an address, which is 20 bytes.
         // It might be padded to 32 bytes in the return data.
@@ -47,12 +47,12 @@ impl Contract {
         } else if result_bytes.len() == 20 {
             Ok(Address::from_slice(&result_bytes))
         } else {
-            Err(anyhow!("Invalid resolver address format returned"))
+            Err("Invalid resolver address format returned".into())
         }
     }
 
     #[allow(unused)]
-    pub async fn addr(&self, resolver_address_hex: &str, name: &str, coin_id: u32) -> Result<Bytes> {
+    pub async fn addr(&self, resolver_address_hex: &str, name: &str, coin_id: u32) -> Result<Bytes, Box<dyn Error + Send + Sync>> {
         let node = namehash(name);
         let resolver_address = Address::from_str(resolver_address_hex)?;
         let call = ENSResolver::addr_with_coin_typeCall {
@@ -64,7 +64,7 @@ impl Contract {
         self.eth_call(resolver_address, calldata).await
     }
 
-    pub async fn legacy_addr(&self, resolver_address_hex: &str, name: &str) -> Result<Address> {
+    pub async fn legacy_addr(&self, resolver_address_hex: &str, name: &str) -> Result<Address, Box<dyn Error + Send + Sync>> {
         let node = namehash(name);
         let resolver_address = Address::from_str(resolver_address_hex)?;
         let call = ENSResolver::addrCall { node };
@@ -72,18 +72,18 @@ impl Contract {
 
         let result_bytes = self.eth_call(resolver_address, calldata).await?;
         if result_bytes.is_empty() || result_bytes.iter().all(|&b| b == 0) {
-            return Err(anyhow!("No address found or address is zero"));
+            return Err("No address found or address is zero".into());
         }
         if result_bytes.len() == 32 && result_bytes[0..12].iter().all(|&b| b == 0) {
             Ok(Address::from_slice(&result_bytes[12..]))
         } else if result_bytes.len() == 20 {
             Ok(Address::from_slice(&result_bytes))
         } else {
-            Err(anyhow!("Invalid address format returned"))
+            Err("Invalid address format returned".into())
         }
     }
 
-    async fn eth_call(&self, to: Address, data: Bytes) -> Result<Bytes> {
+    async fn eth_call(&self, to: Address, data: Bytes) -> Result<Bytes, Box<dyn Error + Send + Sync>> {
         let params = json!([
             {
                 "to": to.to_string(),
@@ -91,8 +91,8 @@ impl Contract {
             },
             "latest"
         ]);
-        let result: String = self.client.call("eth_call", params).await.map_err(|e| anyhow!("{}", e))?;
-        let bytes = hex::decode(&result).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?;
+        let result: String = self.client.call("eth_call", params).await?;
+        let bytes = hex::decode(&result)?;
         Ok(Bytes::from(bytes))
     }
 }

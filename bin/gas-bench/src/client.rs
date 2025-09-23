@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use std::error::Error;
 
 use gem_evm::fee_calculator::FeeCalculator;
 use gem_evm::models::fee::EthereumFeeHistory;
@@ -42,7 +42,7 @@ impl GemstoneClient {
         Self { native_provider }
     }
 
-    pub async fn fetch_base_priority_fees(&self, blocks: u64, reward_percentiles: Vec<u64>, min_priority_fee: u64) -> Result<GemstoneFeeData> {
+    pub async fn fetch_base_priority_fees(&self, blocks: u64, reward_percentiles: Vec<u64>, min_priority_fee: u64) -> Result<GemstoneFeeData, Box<dyn Error + Send + Sync>> {
         let client = jsonrpc_client_with_chain(self.native_provider.clone(), Chain::Ethereum);
         let call = EthereumRpc::FeeHistory { blocks, reward_percentiles };
 
@@ -51,13 +51,13 @@ impl GemstoneClient {
         let base_fee_for_next = fee_history_data
             .base_fee_per_gas
             .last()
-            .ok_or_else(|| anyhow!("Fee history missing base_fee_per_gas data"))?;
+            .ok_or("Fee history missing base_fee_per_gas data")?;
 
         let service = FeeCalculator::new();
         let priorities = vec![FeePriority::Slow, FeePriority::Normal, FeePriority::Fast];
         let calculated_priority_fees = service
             .calculate_priority_fees(&fee_history_data, &priorities, BigInt::from(min_priority_fee))
-            .map_err(|e| anyhow!("Failed to calculate priority fees: {}", e))?;
+            .map_err(|e| format!("Failed to calculate priority fees: {}", e))?;
 
         let gas_used_ratio = fee_history_data.gas_used_ratio.last().map(|val_ref| format!("{:.1}%", *val_ref * 100.0));
 

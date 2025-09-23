@@ -1,38 +1,46 @@
 use crate::network::{AlienError, JsonRpcError};
 use std::fmt::Debug;
 
-#[derive(Debug, thiserror::Error, uniffi::Error)]
+#[derive(Debug, uniffi::Error)]
 pub enum SwapperError {
-    #[error("Not supported chain")]
     NotSupportedChain,
-    #[error("Not supported asset")]
     NotSupportedAsset,
-    #[error("Not supported pair")]
     NotSupportedPair,
-    #[error("No available provider")]
     NoAvailableProvider,
-    #[error("Invalid address {0}")]
     InvalidAddress(String),
-    #[error("Invalid amount {0}")]
     InvalidAmount(String),
-    #[error("Input amount is too small")]
     InputAmountTooSmall,
-    #[error("Invalid route or route data")]
     InvalidRoute,
-    #[error("Network related error: {0}")]
     NetworkError(String),
-    #[error("ABI error: {0}")]
     ABIError(String),
-    #[error("Compute quote error: {0}")]
     ComputeQuoteError(String),
-    #[error("Transaction error: {0}")]
     TransactionError(String),
-
-    #[error("No quote available")]
     NoQuoteAvailable,
-    #[error("Not implemented")]
     NotImplemented,
 }
+
+impl std::fmt::Display for SwapperError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotSupportedChain => write!(f, "Not supported chain"),
+            Self::NotSupportedAsset => write!(f, "Not supported asset"),
+            Self::NotSupportedPair => write!(f, "Not supported pair"),
+            Self::NoAvailableProvider => write!(f, "No available provider"),
+            Self::InvalidAddress(addr) => write!(f, "Invalid address {}", addr),
+            Self::InvalidAmount(amount) => write!(f, "Invalid amount {}", amount),
+            Self::InputAmountTooSmall => write!(f, "Input amount is too small"),
+            Self::InvalidRoute => write!(f, "Invalid route or route data"),
+            Self::NetworkError(msg) => write!(f, "Network related error: {}", msg),
+            Self::ABIError(msg) => write!(f, "ABI error: {}", msg),
+            Self::ComputeQuoteError(msg) => write!(f, "Compute quote error: {}", msg),
+            Self::TransactionError(msg) => write!(f, "Transaction error: {}", msg),
+            Self::NoQuoteAvailable => write!(f, "No quote available"),
+            Self::NotImplemented => write!(f, "Not implemented"),
+        }
+    }
+}
+
+impl std::error::Error for SwapperError {}
 
 impl From<AlienError> for SwapperError {
     fn from(err: AlienError) -> Self {

@@ -1,6 +1,5 @@
 // https://api.gasflow.dev/predict
 
-use anyhow::Result;
 use num_bigint::BigInt;
 use primitives::{fee::FeePriority, PriorityFeeValue};
 use serde::Deserialize;
@@ -74,8 +73,7 @@ impl GasflowClient {
         }
     }
 
-    pub async fn fetch_prediction(&self) -> Result<GasflowResponse> {
-        let response = self.client.get(GASFLOW_API_URL).send().await?.json::<GasflowResponse>().await?;
-        Ok(response)
+    pub async fn fetch_prediction(&self) -> Result<GasflowResponse, reqwest::Error> {
+        self.client.get(GASFLOW_API_URL).send().await?.json::<GasflowResponse>().await
     }
 }

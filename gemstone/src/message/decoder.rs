@@ -7,6 +7,8 @@ use super::{
 };
 use crate::GemstoneError;
 use gem_evm::eip712::eip712_hash_message;
+const SIGNATURE_LENGTH: usize = 65;
+const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
 
 #[derive(Debug, PartialEq, uniffi::Enum)]
 pub enum MessagePreview {
@@ -83,7 +85,17 @@ impl SignMessageDecoder {
 
     pub fn get_result(&self, data: &[u8]) -> String {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Eip712 => hex::encode_prefixed(data),
+            SignDigestType::Eip191 => {
+                if data.len() < SIGNATURE_LENGTH {
+                    return hex::encode_prefixed(data);
+                }
+                let mut signature = data.to_vec();
+                if signature[RECOVERY_ID_INDEX] < 1 {
+                    signature[RECOVERY_ID_INDEX] += 27;
+                }
+                hex::encode_prefixed(&signature)
+            }
+            SignDigestType::Sign | SignDigestType::Eip712 => hex::encode_prefixed(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
     }
@@ -145,6 +157,22 @@ mod tests {
             Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "0xdeadbeef"),
             _ => panic!("Unexpected preview result"),
         }
+    }
+
+    #[test]
+    fn test_get_result_eip191() {
+        let data =
+            hex::decode("d80c5ffe75fcbac0706c5c5d3b8884ae3588c30065a95075e07fa6ebc24e56433e5030992ef438b1d23437ec8d66d3197b1ad92f85222af1624d8f295907a65800")
+                .expect("Invalid hex string");
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::Eip191,
+            data: data.clone(),
+        });
+        let result = decoder.get_result(data.as_slice());
+        assert_eq!(
+            result,
+            "0xd80c5ffe75fcbac0706c5c5d3b8884ae3588c30065a95075e07fa6ebc24e56433e5030992ef438b1d23437ec8d66d3197b1ad92f85222af1624d8f295907a6581b"
+        );
     }
 
     #[test]

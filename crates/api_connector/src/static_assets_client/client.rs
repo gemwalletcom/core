@@ -1,6 +1,5 @@
 use super::models::Validator;
 use primitives::chain::Chain;
-use std::error::Error;
 
 pub struct StaticAssetsClient {
     url: String,
@@ -15,9 +14,8 @@ impl StaticAssetsClient {
         }
     }
 
-    pub async fn get_validators(&self, chain: Chain) -> Result<Vec<Validator>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_validators(&self, chain: Chain) -> Result<Vec<Validator>, reqwest::Error> {
         let url = format!("{}/blockchains/{chain}/validators.json", self.url);
-        let response = self.client.get(&url).send().await?;
-        Ok(response.json().await?)
+        self.client.get(&url).send().await?.json().await
     }
 }

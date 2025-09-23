@@ -55,12 +55,12 @@ pub fn create_call3(target: &str, call: impl SolCall) -> IMulticall3::Call3 {
     }
 }
 
-pub fn decode_call3_return<T: SolCall>(result: &IMulticall3::Result) -> Result<T::Return, anyhow::Error> {
+pub fn decode_call3_return<T: SolCall>(result: &IMulticall3::Result) -> Result<T::Return, Box<dyn std::error::Error + Send + Sync>> {
     if result.success {
-        let decoded = T::abi_decode_returns(&result.returnData).map_err(|e| anyhow::anyhow!("{:?} abi decode error: {:?}", T::SIGNATURE, e))?;
+        let decoded = T::abi_decode_returns(&result.returnData).map_err(|e| format!("{:?} abi decode error: {:?}", T::SIGNATURE, e))?;
         Ok(decoded)
     } else {
-        Err(anyhow::anyhow!(format!("{:?} failed", T::SIGNATURE)))
+        Err(format!("{:?} failed", T::SIGNATURE).into())
     }
 }
 

@@ -1,7 +1,9 @@
-use sentry::ClientInitGuard;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tracing_subscriber::FmtSubscriber;
+
+mod sentry;
+pub use sentry::*;
 
 static TRACING_SUBSCRIBER: OnceLock<Arc<FmtSubscriber>> = OnceLock::new();
 
@@ -10,45 +12,6 @@ pub fn get_subscriber() -> Arc<FmtSubscriber> {
         .get_or_init(|| Arc::new(tracing_subscriber::fmt().with_target(false).finish()))
         .clone()
 }
-
-pub struct SentryConfig {
-    pub dsn: String,
-    pub sample_rate: f32,
-}
-
-pub struct SentryTracing {
-    _guard: Option<ClientInitGuard>,
-}
-
-impl SentryTracing {
-    pub fn init(config: Option<&SentryConfig>, service: &str) -> Self {
-        let _guard = config.and_then(|sentry| {
-            if sentry.dsn.is_empty() {
-                return None;
-            }
-
-            let options = sentry::ClientOptions {
-                dsn: Some(sentry.dsn.parse().ok()?),
-                send_default_pii: false,
-                sample_rate: sentry.sample_rate,
-                attach_stacktrace: true,
-                ..Default::default()
-            };
-
-            let guard = sentry::init(options);
-
-            sentry::configure_scope(|scope| {
-                scope.set_tag("service", service);
-            });
-
-            Some(guard)
-        });
-
-        Self { _guard }
-    }
-}
-
-pub use sentry::{capture_message, configure_scope, start_transaction, Level, TransactionContext};
 
 pub struct DurationMs(pub Duration);
 
@@ -89,12 +52,12 @@ pub fn error_with_fields_impl<E: std::error::Error + ?Sized>(message: &str, erro
         }
     });
 
-    sentry::configure_scope(|scope| {
+    configure_scope(|scope| {
         for (key, value) in fields {
             scope.set_tag(key, value.to_string());
         }
     });
-    sentry::capture_message(message, sentry::Level::Error);
+    capture_message(message, Level::Error);
 }
 
 #[macro_export]
@@ -126,5 +89,5 @@ pub fn error<E: std::error::Error + ?Sized>(message: &str, error: &E) {
     tracing::subscriber::with_default(subscriber, || {
         tracing::error!("{}: {}", message, error);
     });
-    sentry::capture_error(error);
+    capture_error(error);
 }

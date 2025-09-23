@@ -2,7 +2,7 @@ mod client;
 mod etherscan;
 mod gasflow;
 
-use anyhow::Result;
+use std::error::Error;
 use clap::Parser;
 use prettytable::{format, Cell, Row, Table};
 use std::{collections::HashMap, sync::Arc, time::Duration};
@@ -58,7 +58,7 @@ struct Cli {
     etherscan_api_key: String,
 }
 
-async fn run(args: Cli) -> Result<()> {
+async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut ticker = interval(Duration::from_secs(6));
     let native_provider = Arc::new(NativeProvider::new().set_debug(args.debug));
 
@@ -222,7 +222,7 @@ async fn run(args: Cli) -> Result<()> {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let args = Cli::parse();
     if args.debug {
         eprintln!("gas-bench: debug mode enabled by CLI flag.");
