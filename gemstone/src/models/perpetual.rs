@@ -5,7 +5,7 @@ use primitives::{
 };
 
 use super::asset::GemAsset;
-use super::transaction::GemPerpetualType;
+use super::transaction::{GemPerpetualType};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemPerpetualPositionsSummary {
@@ -181,6 +181,32 @@ impl From<PerpetualType> for GemPerpetualType {
         match value {
             PerpetualType::Open(data) => GemPerpetualType::Open { data: data.into() },
             PerpetualType::Close(data) => GemPerpetualType::Close { data: data.into() },
+        }
+    }
+}
+
+impl From<primitives::PerpetualConfirmData> for super::transaction::GemPerpetualConfirmData {
+    fn from(value: primitives::PerpetualConfirmData) -> Self {
+        super::transaction::GemPerpetualConfirmData {
+            direction: value.direction,
+            asset: value.asset.into(),
+            asset_index: value.asset_index,
+            price: value.price.to_string(),
+            fiat_value: value.fiat_value,
+            size: value.size.to_string(),
+        }
+    }
+}
+
+impl From<super::transaction::GemPerpetualConfirmData> for primitives::PerpetualConfirmData {
+    fn from(value: super::transaction::GemPerpetualConfirmData) -> Self {
+        primitives::PerpetualConfirmData {
+            direction: value.direction,
+            asset: value.asset.into(),
+            asset_index: value.asset_index,
+            price: value.price.parse().unwrap_or_default(),
+            fiat_value: value.fiat_value,
+            size: value.size.parse().unwrap_or_default(),
         }
     }
 }

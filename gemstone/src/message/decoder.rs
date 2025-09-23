@@ -7,6 +7,9 @@ use super::{
 };
 use crate::GemstoneError;
 use gem_evm::eip712::eip712_hash_message;
+const SIGNATURE_LENGTH: usize = 65;
+const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
+const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
 
 #[derive(Debug, PartialEq, uniffi::Enum)]
 pub enum MessagePreview {
@@ -83,7 +86,17 @@ impl SignMessageDecoder {
 
     pub fn get_result(&self, data: &[u8]) -> String {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Eip712 => hex::encode_prefixed(data),
+            SignDigestType::Eip191 | SignDigestType::Eip712 => {
+                if data.len() < SIGNATURE_LENGTH {
+                    return hex::encode_prefixed(data);
+                }
+                let mut signature = data.to_vec();
+                if signature[RECOVERY_ID_INDEX] < ETHEREUM_RECOVERY_ID_OFFSET {
+                    signature[RECOVERY_ID_INDEX] += ETHEREUM_RECOVERY_ID_OFFSET;
+                }
+                hex::encode_prefixed(&signature)
+            }
+            SignDigestType::Sign => hex::encode_prefixed(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
     }
@@ -145,6 +158,60 @@ mod tests {
             Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "0xdeadbeef"),
             _ => panic!("Unexpected preview result"),
         }
+    }
+
+    #[test]
+    fn test_get_result_eip191() {
+        let data =
+            hex::decode("d80c5ffe75fcbac0706c5c5d3b8884ae3588c30065a95075e07fa6ebc24e56433e5030992ef438b1d23437ec8d66d3197b1ad92f85222af1624d8f295907a65800")
+                .expect("Invalid hex string");
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::Eip191,
+            data: data.clone(),
+        });
+        let result = decoder.get_result(data.as_slice());
+        assert_eq!(
+            result,
+            "0xd80c5ffe75fcbac0706c5c5d3b8884ae3588c30065a95075e07fa6ebc24e56433e5030992ef438b1d23437ec8d66d3197b1ad92f85222af1624d8f295907a6581b"
+        );
+    }
+
+    #[test]
+    fn test_get_result_recovery_id_conversion() {
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::Eip191,
+            data: b"test".to_vec(),
+        });
+
+        // Test recovery ID 0 -> 27 (0x1b)
+        let mut sig = vec![0u8; 65];
+        sig[64] = 0;
+        assert!(decoder.get_result(&sig).ends_with("1b"));
+
+        // Test recovery ID 1 -> 28 (0x1c)
+        sig[64] = 1;
+        assert!(decoder.get_result(&sig).ends_with("1c"));
+
+        // Test already converted IDs stay unchanged
+        sig[64] = 27;
+        assert!(decoder.get_result(&sig).ends_with("1b"));
+
+        sig[64] = 28;
+        assert!(decoder.get_result(&sig).ends_with("1c"));
+    }
+
+    #[test]
+    fn test_get_result_sign_no_recovery_offset() {
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::Sign,
+            data: b"test".to_vec(),
+        });
+
+        let sig = vec![0u8; 65];
+        let result = decoder.get_result(&sig);
+
+        assert!(result.ends_with("00"));
+        assert_eq!(result, "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
     }
 
     #[test]

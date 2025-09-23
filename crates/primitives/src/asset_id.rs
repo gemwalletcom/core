@@ -60,14 +60,13 @@ impl AssetId {
             if let Ok(chain) = asset_id.parse::<Chain>() {
                 return Some(AssetId { chain, token_id: None });
             }
-        } else if split.len() >= 2 {
-            if let Ok(chain) = split[0].parse::<Chain>() {
+        } else if split.len() >= 2
+            && let Ok(chain) = split[0].parse::<Chain>() {
                 return Some(AssetId {
                     chain,
                     token_id: Some(split[1..split.len()].join("_")),
                 });
             }
-        }
         None
     }
 

@@ -1,0 +1,36 @@
+{
+    "ret": [
+        {
+            "contractRet": "SUCCESS"
+        }
+    ],
+    "signature": [
+        "2b7379d3e3d2611e6380411f1fb352c947202427c124221956621758c39ea12c226da1f7582fd73ce948f3101abda31cb2dc188e605a528fabc061e70035cddf00"
+    ],
+    "txID": "13e1c94e80557043ccb7946c6ef57789955c30eec6c76061bba69ffc8e51601d",
+    "raw_data": {
+        "contract": [
+            {
+                "parameter": {
+                    "value": {
+                        "owner_address": "412e1d447fa4169390cf5f5b3d12d380decfbfe20f",
+                        "votes": [
+                            {
+                                "vote_address": "4162398d516b555ac64af24416e05c199c01823048",
+                                "vote_count": 2125
+                            }
+                        ],
+                        "support": true
+                    },
+                    "type_url": "type.googleapis.com/protocol.VoteWitnessContract"
+                },
+                "type": "VoteWitnessContract"
+            }
+        ],
+        "ref_block_bytes": "75b4",
+        "ref_block_hash": "f5056a839ac36ca7",
+        "expiration": 1758261849000,
+        "timestamp": 1758225849000
+    },
+    "raw_data_hex": "0a0275b42208f5056a839ac36ca740a8d7ca8496335a6d080412690a30747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e566f74655769746e657373436f6e747261637412350a15412e1d447fa4169390cf5f5b3d12d380decfbfe20f121a0a154162398d516b555ac64af24416e05c199c0182304810cd10180170a8b5b5f39533"
+}

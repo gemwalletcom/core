@@ -4,7 +4,6 @@ use primitives::{AssetId, Chain, StakeValidator, Transaction, TransactionState, 
 use sha2::{Digest, Sha256};
 use std::error::Error;
 
-use crate::constants::MESSAGES;
 use crate::models::BroadcastResponse;
 use crate::models::{AuthInfo, Message, TransactionBody, TransactionResponse, Validator};
 
@@ -34,21 +33,7 @@ pub fn map_transaction_status(transaction: TransactionResponse) -> TransactionUp
 
 pub fn map_transaction_decode(body: String) -> Option<String> {
     let bytes = general_purpose::STANDARD.decode(body.clone()).ok()?;
-    let tx: cosmos_sdk_proto::cosmos::tx::v1beta1::Tx = cosmos_sdk_proto::prost::Message::decode(&*bytes).ok()?;
-    let tx_body = tx.clone().body?;
-
-    // only decode supported transactions.
-    if tx_body
-        .clone()
-        .messages
-        .into_iter()
-        .filter(|x| MESSAGES.contains(&x.type_url.as_str()))
-        .collect::<Vec<_>>()
-        .is_empty()
-    {
-        return None;
-    }
-    Some(get_hash(bytes.clone()))
+    Some(get_hash(bytes))
 }
 
 pub fn get_hash(bytes: Vec<u8>) -> String {

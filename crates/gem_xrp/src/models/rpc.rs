@@ -25,7 +25,7 @@ pub struct LedgerData {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AccountObjects {
-    pub account_objects: Vec<AccountObject>,
+    pub account_objects: Option<Vec<AccountObject>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -169,8 +169,8 @@ pub struct TransactionMemoData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountInfo {
-    #[serde(rename = "Balance")]
-    pub balance: String,
+    #[serde(rename = "Balance", deserialize_with = "deserialize_u64_from_str")]
+    pub balance: u64,
     #[serde(rename = "Sequence")]
     pub sequence: u64,
     #[serde(rename = "OwnerCount")]

@@ -1,5 +1,7 @@
 use crate::models::fee::GasPrice;
-use primitives::{FeePriority, FeeRate, GasPriceType};
+use crate::models::Block;
+use primitives::{FeePriority, FeeRate, GasPriceType, NodeSyncStatus};
+use std::error::Error;
 
 pub fn map_gas_price_to_priorities(gas_price: &GasPrice) -> Result<Vec<FeeRate>, Box<dyn std::error::Error + Sync + Send>> {
     let base_price = gas_price.gas_price;
@@ -9,6 +11,12 @@ pub fn map_gas_price_to_priorities(gas_price: &GasPrice) -> Result<Vec<FeeRate>,
         FeeRate::new(FeePriority::Normal, GasPriceType::regular(base_price)),
         FeeRate::new(FeePriority::Fast, GasPriceType::regular(base_price * 2)),
     ])
+}
+
+pub fn map_node_status(block: &Block) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
+    let current_block = Some(block.header.height);
+    let latest_block_number = Some(block.header.height);
+    Ok(NodeSyncStatus::new(true, latest_block_number, current_block))
 }
 
 #[cfg(test)]
@@ -36,5 +44,22 @@ mod tests {
             GasPriceType::Regular { gas_price } => assert_eq!(gas_price, &BigInt::from(2000000000u64)),
             _ => panic!("Expected Regular gas price"),
         }
+    }
+
+    #[test]
+    fn test_map_node_status() {
+        use crate::models::{Block, BlockHeader};
+
+        let block = Block {
+            header: BlockHeader {
+                hash: String::new(),
+                height: 123456789,
+            },
+        };
+        let mapped = map_node_status(&block).unwrap();
+
+        assert!(mapped.in_sync);
+        assert_eq!(mapped.latest_block_number, Some(123456789));
+        assert_eq!(mapped.current_block_number, Some(123456789));
     }
 }

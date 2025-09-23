@@ -21,7 +21,7 @@ pub struct GemDecodedCallParam {
 pub struct EthereumDecoder;
 
 impl EthereumDecoder {
-    pub fn decode_call_internal(calldata: &str, abi: Option<&str>) -> anyhow::Result<GemDecodedCall> {
+    pub fn decode_call_internal(calldata: &str, abi: Option<&str>) -> Result<GemDecodedCall, Box<dyn std::error::Error + Send + Sync>> {
         call_decoder::decode_call(calldata, abi)
     }
 }

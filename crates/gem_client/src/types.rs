@@ -1,16 +1,25 @@
-use thiserror::Error;
+use std::fmt;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum ClientError {
-    #[error("Network error: {0}")]
     Network(String),
-    #[error("Timeout error")]
     Timeout,
-    #[error("HTTP error: status {status}, body: {body}")]
     Http { status: u16, body: String },
-    #[error("Serialization error: {0}")]
     Serialization(String),
 }
+
+impl fmt::Display for ClientError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Network(msg) => write!(f, "Network error: {}", msg),
+            Self::Timeout => write!(f, "Timeout error"),
+            Self::Http { status, body } => write!(f, "HTTP error: status {}, body: {}", status, body),
+            Self::Serialization(msg) => write!(f, "Serialization error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for ClientError {}
 
 impl From<serde_json::Error> for ClientError {
     fn from(err: serde_json::Error) -> Self {

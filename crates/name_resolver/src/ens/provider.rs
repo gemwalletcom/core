@@ -1,4 +1,4 @@
-use anyhow::Result;
+use std::error::Error;
 
 use super::{contract::Contract, normalizer::normalize_domain};
 use primitives::Chain;
@@ -9,12 +9,12 @@ pub struct Provider {
 }
 
 impl Provider {
-    pub fn new(url: String) -> Result<Self> {
+    pub fn new(url: String) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let contract = Contract::new(&url, REGISTRY)?;
         Ok(Provider { contract })
     }
 
-    pub async fn resolve_name(&self, name: &str, _chain: Chain) -> Result<String> {
+    pub async fn resolve_name(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let name = normalize_domain(name)?;
         let resolver_address = self.contract.resolver(&name).await?;
         // TODO: support other chain lookup

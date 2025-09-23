@@ -1,7 +1,6 @@
 use alloy_ens::namehash;
 use alloy_primitives::{hex, Address, Bytes, U256};
 use alloy_sol_types::SolCall;
-use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
@@ -71,7 +70,7 @@ impl NameClient for Hyperliquid {
                 "latest"
             ]);
             let result_str: String = self.client.call("eth_call", params).await?;
-            let result = Bytes::from(hex::decode(&result_str).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?);
+            let result = Bytes::from(hex::decode(&result_str).map_err(|e| format!("Failed to decode hex response: {}", e))?);
             let address = HyperliquidNames::tokenIdToAddressCall::abi_decode_returns(&result)?.0;
             let address = Address::from(address);
             return Ok(address.to_checksum(None));
@@ -89,7 +88,7 @@ impl NameClient for Hyperliquid {
         ]);
 
         let result_str: String = self.client.call("eth_call", params).await?;
-        let result = Bytes::from(hex::decode(&result_str).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?);
+        let result = Bytes::from(hex::decode(&result_str).map_err(|e| format!("Failed to decode hex response: {}", e))?);
 
         // Get full record json
         let registrator = Router::getCurrentRegistratorCall::abi_decode_returns(&result)?.0;
@@ -102,13 +101,13 @@ impl NameClient for Hyperliquid {
             "latest"
         ]);
         let result_str: String = self.client.call("eth_call", params).await?;
-        let result = Bytes::from(hex::decode(&result_str).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?);
+        let result = Bytes::from(hex::decode(&result_str).map_err(|e| format!("Failed to decode hex response: {}", e))?);
 
         let record_json = Registrator::getFullRecordJSONCall::abi_decode_returns(&result)?;
         let record: Record = serde_json::from_str(&record_json)?;
 
         let slip44 = chain.as_slip44();
-        let chain_address = record.data.chain_addresses.get(&slip44.to_string()).ok_or(anyhow!("Chain not found"))?;
+        let chain_address = record.data.chain_addresses.get(&slip44.to_string()).ok_or("Chain not found".to_string())?;
         if EVMChain::from_chain(chain).is_some() {
             let address = Address::from_str(chain_address)?;
             return Ok(address.to_checksum(None));

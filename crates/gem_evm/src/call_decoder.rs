@@ -2,7 +2,7 @@ use alloy_dyn_abi::{DynSolValue, JsonAbiExt};
 use alloy_json_abi::JsonAbi;
 use alloy_primitives::hex;
 use alloy_sol_types::SolInterface;
-use anyhow::{anyhow, Result};
+use std::error::Error;
 
 use crate::contracts::erc20::IERC20::IERC20Calls;
 
@@ -19,20 +19,19 @@ pub struct DecodedCall {
     pub params: Vec<DecodedCallParam>,
 }
 
-pub fn decode_call(calldata: &str, abi: Option<&str>) -> Result<DecodedCall> {
+pub fn decode_call(calldata: &str, abi: Option<&str>) -> Result<DecodedCall, Box<dyn Error + Send + Sync>> {
     let calldata = hex::decode(calldata)?;
 
     // Check minimum calldata length early
     if calldata.len() < 4 {
-        return Err(anyhow!("Calldata too short"));
+        return Err("Calldata too short".into());
     }
 
     // Try ERC20 interface first if no ABI provided
-    if abi.is_none() {
-        if let Ok(call) = IERC20Calls::abi_decode(&calldata) {
+    if abi.is_none()
+        && let Ok(call) = IERC20Calls::abi_decode(&calldata) {
             return Ok(call.into());
         }
-    }
 
     if let Some(abi_str) = abi {
         let abi = serde_json::from_str::<JsonAbi>(abi_str)?;
@@ -55,14 +54,14 @@ pub fn decode_call(calldata: &str, abi: Option<&str>) -> Result<DecodedCall> {
                             .collect(),
                     });
                 } else {
-                    return Err(anyhow!("Failed to decode function parameters for {}", function.name));
+                    return Err(format!("Failed to decode function parameters for {}", function.name).into());
                 }
             }
         }
-        return Err(anyhow!("No matching function found for selector {:02x?}", selector));
+        return Err(format!("No matching function found for selector {:02x?}", selector).into());
     }
 
-    Err(anyhow!("Failed to decode calldata"))
+    Err("Failed to decode calldata".into())
 }
 
 pub fn format_param_value(value: &DynSolValue) -> String {

@@ -13,7 +13,7 @@ rpc = [
     "dep:futures"
 ]
 reqwest = ["gem_client/reqwest"]
-chain_integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -32,3 +32,4 @@ futures = { workspace = true, optional = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
+settings = { path = "../settings", features = ["testkit"] }

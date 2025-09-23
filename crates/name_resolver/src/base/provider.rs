@@ -1,7 +1,6 @@
 use alloy_ens::namehash;
 use alloy_primitives::{hex, Address, Bytes};
 use alloy_sol_types::SolCall;
-use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
@@ -32,7 +31,7 @@ impl Basenames {
         }
     }
 
-    async fn get_address_from_resolver(&self, name: &str) -> Result<Address> {
+    async fn get_address_from_resolver(&self, name: &str) -> Result<Address, Box<dyn Error + Send + Sync>> {
         let node = namehash(name);
         let call_data = L2Resolver::addrCall { node }.abi_encode();
 
@@ -44,15 +43,10 @@ impl Basenames {
             "latest"
         ]);
 
-        let result: String = self
-            .client
-            .call("eth_call", params)
-            .await
-            .map_err(|e| anyhow!("eth_call RPC request failed: {}", e))?;
+        let result: String = self.client.call("eth_call", params).await?;
+        let response_bytes = Bytes::from(hex::decode(&result)?);
 
-        let response_bytes = Bytes::from(hex::decode(&result).map_err(|e| anyhow!("Failed to decode hex response: {}", e))?);
-
-        L2Resolver::addrCall::abi_decode_returns(response_bytes.as_ref()).map_err(|e| anyhow!("Failed to decode ABI returns for addr: {}", e))
+        L2Resolver::addrCall::abi_decode_returns(response_bytes.as_ref()).map_err(Into::into)
     }
 }
 
@@ -62,12 +56,12 @@ impl NameClient for Basenames {
         match self.get_address_from_resolver(name).await {
             Ok(addr) => {
                 if addr.is_zero() {
-                    Err(anyhow!("Address not found").into())
+                    Err("Address not found".into())
                 } else {
                     Ok(addr.to_checksum(None))
                 }
             }
-            Err(e) => Err(anyhow!(e).into()),
+            Err(e) => Err(e),
         }
     }
 

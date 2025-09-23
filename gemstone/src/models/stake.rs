@@ -1,6 +1,22 @@
 use num_bigint::BigInt;
+use primitives::stake_type::{FreezeType, Resource};
 use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator};
 use std::str::FromStr;
+
+pub type GemFreezeType = FreezeType;
+pub type GemResource = Resource;
+
+#[uniffi::remote(Enum)]
+pub enum FreezeType {
+    Freeze,
+    Unfreeze,
+}
+
+#[uniffi::remote(Enum)]
+pub enum Resource {
+    Bandwidth,
+    Energy,
+}
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemDelegationValidator {
@@ -85,7 +101,7 @@ impl From<GemDelegation> for Delegation {
         Self {
             base: delegation.base.into(),
             validator: delegation.validator.into(),
-            price: None, // Gateway models don't include price information
+            price: None,
         }
     }
 }

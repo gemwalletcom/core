@@ -164,12 +164,14 @@ mod chain_integration_tests {
         let client = create_ethereum_test_client();
         let balances = ChainBalances::get_balance_assets(&client, TEST_ADDRESS.to_string()).await?;
 
+        println!("Balances: {:#?}", balances);
+
         assert!(!balances.is_empty());
 
-        let has_native = balances
+        let has_assets = balances
             .iter()
-            .any(|balance| balance.asset_id.token_id.is_none() && balance.balance.available > BigUint::from(0u32));
-        assert!(has_native);
+            .any(|balance| balance.asset_id.token_id.is_some() && balance.balance.available > BigUint::from(0u32));
+        assert!(has_assets);
 
         Ok(())
     }

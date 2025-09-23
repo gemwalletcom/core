@@ -352,6 +352,6 @@ mod tests {
             error_response.error.message,
             "Transaction simulation failed: Error processing Instruction 3: custom program error: 0x1771"
         );
-        assert_eq!(error_response.id, 1755839259);
+        assert_eq!(error_response.id, Some(1755839259));
     }
 }

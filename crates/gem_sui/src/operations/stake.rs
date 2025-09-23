@@ -1,7 +1,7 @@
 use crate::models::*;
 
 use crate::{sui_system_state_object_input, ObjectID, SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID};
-use anyhow::{anyhow, Error};
+use std::error::Error;
 
 use std::str::FromStr;
 use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder};
@@ -10,14 +10,14 @@ use sui_types::{Address, Argument, Identifier};
 pub static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
 pub static SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 
-pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Error> {
+pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.stake_amount) {
         return Err(err);
     }
 
     let stake_chain = primitives::StakeChain::Sui;
     if input.stake_amount < stake_chain.get_min_stake_amount() {
-        return Err(anyhow!("stake amount is too small"));
+        return Err("stake amount is too small".into());
     }
 
     let sender = Address::from_str(&input.sender)?;
@@ -57,7 +57,7 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Error> {
     TxOutput::from_tx(&tx)
 }
 
-pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Error> {
+pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     let mut ptb = TransactionBuilder::new();
 
     let sender = Address::from_str(&input.sender)?;

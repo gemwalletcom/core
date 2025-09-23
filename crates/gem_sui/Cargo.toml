@@ -12,7 +12,7 @@ rpc = [
     "dep:chain_traits",
 ]
 reqwest = ["gem_jsonrpc/reqwest"]
-chain_integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -22,7 +22,6 @@ sui-transaction-builder = { workspace = true }
 bcs = { version = "0.1.6" }
 hex = { workspace = true }
 base64 = { workspace = true }
-anyhow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
@@ -41,3 +40,4 @@ chain_traits = { path = "../chain_traits", optional = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 primitives = { path = "../primitives", features = ["testkit"] }
+settings = { path = "../settings", features = ["testkit"] }

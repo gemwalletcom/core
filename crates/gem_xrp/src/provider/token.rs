@@ -12,7 +12,7 @@ impl<C: Client> ChainToken for XRPClient<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
         let objects = self.get_account_objects(&token_id).await?;
 
-        if let Some(asset) = objects.account_objects.first() {
+        if let Some(asset) = objects.account_objects.unwrap_or_default().first() {
             let currency = &asset.low_limit.currency;
             let currency_bytes = hex::decode(currency.trim_end_matches('0')).map_err(|_| "Invalid currency hex")?;
             let symbol = String::from_utf8(currency_bytes.into_iter().filter(|&b| b != 0).collect()).unwrap_or_else(|_| currency.clone());

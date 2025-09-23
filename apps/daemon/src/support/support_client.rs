@@ -22,8 +22,8 @@ impl SupportClient {
             self.database.support().support_update_unread(support_device_id, unread)?;
         }
 
-        if let Some(message_type) = payload.message_type.clone() {
-            if message_type == MESSAGE_TYPE_INCOMING {
+        if let Some(message_type) = payload.message_type.clone()
+            && message_type == MESSAGE_TYPE_INCOMING {
                 let language_localizer = LanguageLocalizer::new_with_language(&device.locale);
                 let title = language_localizer.notification_support_new_message_title();
                 let message = payload.content.clone().unwrap_or_default();
@@ -36,7 +36,6 @@ impl SupportClient {
                 let notifications_payload = NotificationsPayload::new(vec![notification]);
                 self.stream_producer.publish_notifications_support(notifications_payload).await?;
             }
-        }
 
         Ok(())
     }

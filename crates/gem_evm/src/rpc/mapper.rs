@@ -1,8 +1,7 @@
 use chrono::DateTime;
-use itertools::izip;
-use lazy_static::lazy_static;
 use num_bigint::BigUint;
 use num_traits::Num;
+use std::sync::LazyLock;
 
 use super::{staking_mapper::StakingMapper, swap_mapper::SwapMapper};
 use crate::{
@@ -20,9 +19,7 @@ pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4
 pub const TRANSFER_SINGLE: &str = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62";
 pub const TRANSFER_GAS_LIMIT: u64 = 21000;
 
-lazy_static! {
-    pub static ref CONTRACT_REGISTRY: ContractRegistry = ContractRegistry::default();
-}
+pub static CONTRACT_REGISTRY: LazyLock<ContractRegistry> = LazyLock::new(ContractRegistry::default);
 pub struct EthereumMapper;
 
 impl EthereumMapper {
@@ -33,8 +30,10 @@ impl EthereumMapper {
         traces: Option<Vec<TransactionReplayTrace>>,
     ) -> Vec<primitives::Transaction> {
         match traces {
-            Some(traces) => izip!(block.transactions.into_iter(), transactions_reciepts.iter(), traces.iter())
-                .filter_map(|(transaction, receipt, trace)| {
+            Some(traces) => block.transactions.into_iter()
+                .zip(transactions_reciepts.iter())
+                .zip(traces.iter())
+                .filter_map(|((transaction, receipt), trace)| {
                     EthereumMapper::map_transaction(chain, &transaction, receipt, Some(trace), &block.timestamp, Some(&CONTRACT_REGISTRY))
                 })
                 .collect(),
@@ -92,11 +91,10 @@ impl EthereumMapper {
         }
 
         // Try to decode Uniswap V3 or V4 transaction
-        if transaction.to.is_some() && transaction.input.len() >= 8 {
-            if let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry) {
+        if transaction.to.is_some() && transaction.input.len() >= 8
+            && let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry) {
                 return Some(tx);
             }
-        }
 
         // nft eip 721
 
@@ -105,8 +103,7 @@ impl EthereumMapper {
                 .logs
                 .last()
                 .is_some_and(|log| log.topics.len() == 4 && log.topics.first().is_some_and(|x| x == TRANSFER_TOPIC))
-        {
-            if let Some(log) = transaction_reciept.logs.last() {
+            && let Some(log) = transaction_reciept.logs.last() {
                 let address = ethereum_address_from_topic(&log.topics[2])?;
                 let token_id = BigUint::from_str_radix(&log.topics[3].replace("0x", ""), 16).ok()?;
                 let contract_address = ethereum_address_checksum(&log.address).ok()?;
@@ -129,7 +126,6 @@ impl EthereumMapper {
                 );
                 return Some(transaction);
             }
-        }
 
         // nft eip 1155
 
@@ -138,8 +134,7 @@ impl EthereumMapper {
                 .logs
                 .last()
                 .is_some_and(|log| log.topics.len() == 4 && log.topics.first().is_some_and(|x| x == TRANSFER_SINGLE))
-        {
-            if let Some(log) = transaction_reciept.logs.last() {
+            && let Some(log) = transaction_reciept.logs.last() {
                 let to_address = ethereum_address_from_topic(&log.topics[3])?;
                 let token_id = BigUint::from_str_radix(&log.data.replace("0x", "")[0..64], 16).ok()?;
                 let contract_address = ethereum_address_checksum(&log.address).ok()?;
@@ -162,7 +157,6 @@ impl EthereumMapper {
                 );
                 return Some(transaction);
             }
-        }
 
         // erc20 transfer - check both direct transfer calls and smart contract calls that emit transfer events
         let transfer_log = transaction_reciept.logs.iter().find(|log| {

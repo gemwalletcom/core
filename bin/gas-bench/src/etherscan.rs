@@ -1,7 +1,7 @@
 // https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=YourApiKeyToken
 
 use crate::client::GemstoneFeeData;
-use anyhow::{anyhow, Result};
+use std::error::Error;
 use num_bigint::BigInt;
 use primitives::{fee::FeePriority, PriorityFeeValue};
 use serde::Deserialize;
@@ -80,11 +80,11 @@ impl EtherscanClient {
         }
     }
 
-    pub async fn fetch_gas_oracle(&self) -> Result<EtherscanResponse> {
+    pub async fn fetch_gas_oracle(&self) -> Result<EtherscanResponse, Box<dyn Error + Send + Sync>> {
         let url = format!("{}?module=gastracker&action=gasoracle&apikey={}", ETHERSCAN_API_URL, self.api_key);
         let response = self.client.get(&url).send().await?.json::<EtherscanResponse>().await?;
         if response.status != "1" {
-            return Err(anyhow!("Etherscan API error: {}", response.message));
+            return Err(format!("Etherscan API error: {}", response.message).into());
         }
         Ok(response)
     }

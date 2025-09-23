@@ -178,12 +178,11 @@ pub fn validate_pairs(token_pairs: &[TokenPair]) -> bool {
     let mut iter = token_pairs.iter().peekable();
     let mut valid = true;
     while let Some(current_pair) = iter.next() {
-        if let Some(next_pair) = iter.peek() {
-            if current_pair.token_out != next_pair.token_in {
+        if let Some(next_pair) = iter.peek()
+            && current_pair.token_out != next_pair.token_in {
                 valid = false;
                 break;
             }
-        }
     }
     valid
 }

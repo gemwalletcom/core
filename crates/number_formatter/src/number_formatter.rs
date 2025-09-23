@@ -1,4 +1,4 @@
-use rusty_money::{iso, Formatter, Money, Params};
+use crate::currency::{iso, Formatter, Money, Params};
 
 pub struct NumberFormatter {}
 
@@ -8,8 +8,8 @@ impl NumberFormatter {
     }
 
     pub fn currency(&self, value: f64, currency: &str) -> Option<String> {
-        let money = Money::from_str(value.to_string().as_str(), iso::USD).ok()?;
         let iso_currency = iso::find(currency).unwrap_or(iso::USD);
+        let money = Money::from_str(&value.to_string(), iso_currency).ok()?;
 
         let rounding = if value < 0.0001 {
             9
@@ -27,7 +27,7 @@ impl NumberFormatter {
             rounding: Some(rounding),
             ..Default::default()
         };
-        Some(Formatter::money(&money, params))
+        Some(Formatter::format(&money, params))
     }
 
     pub fn percent(&self, value: f64, _locale: &str) -> String {

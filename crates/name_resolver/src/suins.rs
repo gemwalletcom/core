@@ -4,7 +4,6 @@ use primitives::chain::Chain;
 use primitives::NameProvider;
 use std::error::Error;
 
-use anyhow::{anyhow, Result};
 use gem_client::ReqwestClient;
 use gem_jsonrpc::{types::JsonRpcError, JsonRpcClient};
 
@@ -31,7 +30,7 @@ impl NameClient for SuinsClient {
             .client
             .call("suix_resolveNameServiceAddress", params)
             .await
-            .map_err(|e: JsonRpcError| anyhow!(e))?;
+            .map_err(|e: JsonRpcError| e.to_string())?;
         Ok(address)
     }
 

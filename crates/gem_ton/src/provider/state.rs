@@ -3,7 +3,9 @@ use chain_traits::ChainState;
 use std::error::Error;
 
 use gem_client::Client;
+use primitives::NodeSyncStatus;
 
+use crate::provider::state_mapper;
 use crate::rpc::client::TonClient;
 
 #[async_trait]
@@ -14,6 +16,11 @@ impl<C: Client> ChainState for TonClient<C> {
 
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_master_head().await?.last.seqno)
+    }
+
+    async fn get_node_status(&self) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
+        let chainhead = self.get_master_head().await?;
+        state_mapper::map_node_status(&chainhead)
     }
 }
 
@@ -37,6 +44,18 @@ mod chain_integration_tests {
         let latest_block = client.get_block_latest_number().await?;
         println!("Latest block: {}", latest_block);
         assert!(latest_block > 0);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_node_status() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ton_test_client();
+        let node_status = client.get_node_status().await?;
+
+        assert!(node_status.in_sync);
+        assert!(node_status.latest_block_number.is_some());
+        assert!(node_status.latest_block_number.unwrap_or(0) > 0);
+
         Ok(())
     }
 }

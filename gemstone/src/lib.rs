@@ -1,11 +1,10 @@
-pub mod asset;
 pub mod block_explorer;
-pub mod chain;
 pub mod config;
 pub mod ethereum;
 pub mod gateway;
 pub mod hyperliquid;
 pub mod message;
+pub mod models;
 pub mod network;
 pub mod payment;
 pub mod sui;
@@ -29,14 +28,23 @@ pub fn lib_version() -> String {
 }
 
 /// GemstoneError
-#[derive(Debug, thiserror::Error, uniffi::Error)]
+#[derive(Debug, uniffi::Error)]
 pub enum GemstoneError {
-    #[error("{msg}")]
     AnyError { msg: String },
 }
 
-impl From<anyhow::Error> for GemstoneError {
-    fn from(error: anyhow::Error) -> Self {
+impl std::fmt::Display for GemstoneError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::AnyError { msg } => write!(f, "{}", msg),
+        }
+    }
+}
+
+impl std::error::Error for GemstoneError {}
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for GemstoneError {
+    fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }

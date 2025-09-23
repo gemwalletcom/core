@@ -22,7 +22,7 @@ mod tests {
     fn test_map_transaction_preload_with_account_data() {
         let account_result = AccountInfoResult {
             account_data: Some(AccountInfo {
-                balance: "1000000".to_string(),
+                balance: 1000000,
                 sequence: 12345,
                 owner_count: 0,
                 account: Some("rAccount123".to_string()),

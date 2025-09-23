@@ -1,4 +1,4 @@
-pub mod bitcoin_chain;
+pub mod chain;
 pub mod docs;
 pub mod evm_chain;
 pub mod node;
@@ -9,15 +9,15 @@ pub mod swap_config;
 pub mod validators;
 pub mod wallet_connect;
 
-use crate::chain::ChainConfig;
+use crate::config::chain::ChainConfig;
 use gem_solana;
 use primitives::{
     node_config::{self, Node},
-    BitcoinChain, Chain, EVMChain, SolanaTokenProgramId, StakeChain,
+    Chain, EVMChain, SolanaTokenProgramId, StakeChain,
 };
 use std::{collections::HashMap, str::FromStr};
+
 use {
-    bitcoin_chain::{get_bitcoin_chain_config, BitcoinChainConfig},
     docs::{get_docs_url, DocsUrl},
     evm_chain::{get_evm_chain_config, EVMChainConfig},
     public::{get_public_url, PublicUrl, ASSETS_URL},
@@ -69,17 +69,12 @@ impl Config {
 
     fn get_chain_config(&self, chain: String) -> ChainConfig {
         let chain = Chain::from_str(&chain).unwrap();
-        crate::chain::get_chain_config(chain)
+        crate::config::chain::get_chain_config(chain)
     }
 
     fn get_evm_chain_config(&self, chain: String) -> EVMChainConfig {
         let chain = EVMChain::from_str(&chain).unwrap();
         get_evm_chain_config(chain)
-    }
-
-    fn get_bitcoin_chain_config(&self, chain: String) -> BitcoinChainConfig {
-        let chain = BitcoinChain::from_str(&chain).unwrap();
-        get_bitcoin_chain_config(chain)
     }
 
     fn get_wallet_connect_config(&self) -> WalletConnectConfig {

@@ -1,3 +1,4 @@
+use crate::models::*;
 use crate::network::{jsonrpc_client_with_chain, AlienClient, AlienProvider};
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::client::AlgorandClient;
@@ -17,9 +18,6 @@ use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
-pub mod models;
-
-pub use models::*;
 use primitives::{chain_cosmos::CosmosChain, BitcoinChain, Chain, ChartPeriod, EVMChain};
 
 #[uniffi::export(with_foreign)]
@@ -276,7 +274,7 @@ impl GemGateway {
             .get_address_status(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(status.into_iter().map(|s| s.into()).collect())
+        Ok(status.into_iter().collect())
     }
 
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
@@ -398,8 +396,17 @@ impl GemGateway {
     }
 }
 
-#[derive(Debug, Clone, uniffi::Error, thiserror::Error)]
+#[derive(Debug, Clone, uniffi::Error)]
 pub enum GatewayError {
-    #[error("Network error: {0}")]
     NetworkError(String),
 }
+
+impl std::fmt::Display for GatewayError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NetworkError(msg) => write!(f, "Network error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for GatewayError {}

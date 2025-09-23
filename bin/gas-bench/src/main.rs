@@ -2,7 +2,7 @@ mod client;
 mod etherscan;
 mod gasflow;
 
-use anyhow::Result;
+use std::error::Error;
 use clap::Parser;
 use prettytable::{format, Cell, Row, Table};
 use std::{collections::HashMap, sync::Arc, time::Duration};
@@ -58,7 +58,7 @@ struct Cli {
     etherscan_api_key: String,
 }
 
-async fn run(args: Cli) -> Result<()> {
+async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut ticker = interval(Duration::from_secs(6));
     let native_provider = Arc::new(NativeProvider::new().set_debug(args.debug));
 
@@ -124,11 +124,10 @@ async fn run(args: Cli) -> Result<()> {
             if !entry.iter().any(|d| d.source_name == "Gemstone") {
                 entry.push(process_fee_data("Gemstone", &data));
             }
-        } else if let Err(e) = gemstone_res {
-            if args.debug {
+        } else if let Err(e) = gemstone_res
+            && args.debug {
                 eprintln!("gas-bench: Error fetching Gemstone data: {e:?}");
             }
-        }
 
         if let Ok(data) = etherscan_res {
             let fee_data = data.result.fee_data();
@@ -136,11 +135,10 @@ async fn run(args: Cli) -> Result<()> {
             if !entry.iter().any(|d| d.source_name == "Etherscan") {
                 entry.push(process_fee_data("Etherscan", &fee_data));
             }
-        } else if let Err(e) = etherscan_res {
-            if args.debug {
+        } else if let Err(e) = etherscan_res
+            && args.debug {
                 eprintln!("Error fetching Etherscan data: {e:?}");
             }
-        }
 
         if let Ok(data) = gasflow_res {
             let fee_data = data.fee_data();
@@ -148,11 +146,10 @@ async fn run(args: Cli) -> Result<()> {
             if !entry.iter().any(|d| d.source_name == "Gasflow") {
                 entry.push(process_fee_data("Gasflow", &fee_data));
             }
-        } else if let Err(e) = gasflow_res {
-            if args.debug {
+        } else if let Err(e) = gasflow_res
+            && args.debug {
                 eprintln!("Error fetching Gasflow data: {e:?}");
             }
-        }
 
         if args.debug {
             eprintln!("Debug: Aggregated block_data summary:");
@@ -188,8 +185,8 @@ async fn run(args: Cli) -> Result<()> {
             if args.debug {
                 eprintln!("Debug: Attempting to print table for block: {current_block_to_print}");
             }
-            if let Some(details_for_block) = block_data.get(&current_block_to_print) {
-                if details_for_block.len() >= 2 {
+            if let Some(details_for_block) = block_data.get(&current_block_to_print)
+                && details_for_block.len() >= 2 {
                     println!("\n--- Block: {current_block_to_print} ---");
                     let mut table = Table::new();
                     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
@@ -215,14 +212,13 @@ async fn run(args: Cli) -> Result<()> {
                     table.printstd();
                     last_printed_block_opt = Some(current_block_to_print);
                 }
-            }
         }
     }
     // Ok(()) // Loop is infinite, this is not reached
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let args = Cli::parse();
     if args.debug {
         eprintln!("gas-bench: debug mode enabled by CLI flag.");

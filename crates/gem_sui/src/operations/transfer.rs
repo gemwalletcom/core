@@ -1,10 +1,10 @@
 use crate::models::*;
-use anyhow::{anyhow, Error};
+use std::error::Error;
 use std::str::FromStr;
 use sui_transaction_builder::{unresolved::Input, Serialized, TransactionBuilder};
 use sui_types::{Address, Argument};
 
-pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
+pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.amount) {
         return Err(err);
     }
@@ -35,7 +35,7 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Error> {
     TxOutput::from_tx(&tx)
 }
 
-pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Error> {
+pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.tokens, input.amount) {
         return Err(err);
     }
@@ -44,7 +44,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Err
     let recipient = Address::from_str(&input.recipient)?;
 
     if input.tokens.is_empty() {
-        return Err(anyhow!("tokens vector is empty"));
+        return Err("tokens vector is empty".into());
     }
 
     let mut coins_inputs: Vec<Argument> = input.tokens.clone().into_iter().map(|x| ptb.input(x.object.to_input())).collect();

@@ -11,7 +11,7 @@ pub mod models;
 pub mod jsonrpc;
 pub mod operations;
 
-use anyhow::{anyhow, Error};
+use std::error::Error;
 use models::Coin;
 pub use models::ObjectID;
 pub use operations::*;
@@ -39,14 +39,14 @@ pub fn sui_clock_object_input() -> Input {
     Input::shared(ObjectID::from(SUI_CLOCK_OBJECT_ID).id(), 1, false)
 }
 
-pub fn validate_enough_balance(coins: &[Coin], amount: u64) -> Option<Error> {
+pub fn validate_enough_balance(coins: &[Coin], amount: u64) -> Option<Box<dyn Error + Send + Sync>> {
     if coins.is_empty() {
-        return Some(anyhow!("coins list is empty"));
+        return Some("coins list is empty".into());
     }
 
     let total_amount: u64 = coins.iter().map(|x| x.balance).sum();
     if total_amount < amount {
-        return Some(anyhow!(format!("total amount ({}) is less than amount to send ({})", total_amount, amount),));
+        return Some(format!("total amount ({}) is less than amount to send ({})", total_amount, amount).into());
     }
     None
 }

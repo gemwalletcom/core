@@ -3,7 +3,6 @@
 use {
     sha2::{Digest, Sha256},
     std::{convert::TryFrom, fmt, mem, str::FromStr},
-    thiserror::Error,
 };
 
 /// Size of a hash in bytes.
@@ -57,13 +56,22 @@ impl fmt::Display for Hash {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Error)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseHashError {
-    #[error("string decoded to wrong size for hash")]
     WrongSize,
-    #[error("failed to decoded string to hash")]
     Invalid,
 }
+
+impl fmt::Display for ParseHashError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::WrongSize => write!(f, "string decoded to wrong size for hash"),
+            Self::Invalid => write!(f, "failed to decoded string to hash"),
+        }
+    }
+}
+
+impl std::error::Error for ParseHashError {}
 
 impl FromStr for Hash {
     type Err = ParseHashError;

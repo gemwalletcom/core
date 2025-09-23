@@ -98,13 +98,13 @@ impl Cetus {
         buy_amount_in: bool,
         amount: BigInt,
         client: Arc<SuiClient>,
-    ) -> Result<CalculatedSwapResult, anyhow::Error> {
+    ) -> Result<CalculatedSwapResult, Box<dyn std::error::Error + Send + Sync>> {
         let call = self.pre_swap_call(pool, pool_obj, a2b, buy_amount_in, amount)?;
         let result: InspectResult = client.rpc_call(call).await?;
         self.decode_swap_result(&result)
     }
 
-    fn pre_swap_call(&self, pool: &CetusPool, pool_obj: &SharedObject, a2b: bool, buy_amount_in: bool, amount: BigInt) -> Result<SuiRpc, anyhow::Error> {
+    fn pre_swap_call(&self, pool: &CetusPool, pool_obj: &SharedObject, a2b: bool, buy_amount_in: bool, amount: BigInt) -> Result<SuiRpc, Box<dyn std::error::Error + Send + Sync>> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
 
@@ -128,7 +128,7 @@ impl Cetus {
         Ok(SuiRpc::InspectTransactionBlock(EMPTY_ADDRESS.to_string(), STANDARD.encode(tx_bytes)))
     }
 
-    fn decode_swap_result(&self, result: &InspectResult) -> Result<CalculatedSwapResult, anyhow::Error> {
+    fn decode_swap_result(&self, result: &InspectResult) -> Result<CalculatedSwapResult, Box<dyn std::error::Error + Send + Sync>> {
         let event = result
             .events
             .as_array()

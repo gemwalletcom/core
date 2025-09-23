@@ -22,14 +22,14 @@ pub fn calculate_priority_fee(input_type: &TransactionInputType, prioritization_
 
     let multiple_of = get_multiple_of(input_type);
 
-    let priority_fee_base = if fees.is_empty() {
+    
+    if fees.is_empty() {
         BigInt::from(multiple_of)
     } else {
         let average = fees.iter().sum::<i64>() / fees.len() as i64;
         let rounded = round_to_nearest(average, multiple_of, true);
         BigInt::from(std::cmp::max(rounded, multiple_of))
-    };
-    priority_fee_base
+    }
 }
 
 fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
