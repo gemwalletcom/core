@@ -10,9 +10,8 @@ sol! {
 
     #[derive(Debug, PartialEq)]
     interface IAccounting {
-        function pendingBalanceOf(address account) view returns (uint256);
-        function autocompoundBalanceOf(address account) view returns (uint256);
         function depositedBalanceOf(address account) view returns (uint256);
+        function pendingBalanceOf(address account) view returns (uint256);
         function pendingDepositedBalanceOf(address account) view returns (uint256);
         function withdrawRequest(address staker) view returns (WithdrawRequest memory);
         function claimWithdrawRequest() external;

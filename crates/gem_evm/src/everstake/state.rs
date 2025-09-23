@@ -10,7 +10,7 @@ use crate::rpc::client::EthereumClient;
 use super::{EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting, WithdrawRequest};
 
 pub struct EverstakeAccountState {
-    pub autocompound_balance: BigInt,
+    pub deposited_balance: BigInt,
     pub pending_balance: BigInt,
     pub pending_deposited_balance: BigInt,
     pub withdraw_request: WithdrawRequest,
@@ -24,7 +24,7 @@ pub async fn fetch_everstake_account_state<C: Client + Clone>(
     let staker = account;
 
     let calls = vec![
-        create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::autocompoundBalanceOfCall { account }),
+        create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::depositedBalanceOfCall { account }),
         create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::pendingBalanceOfCall { account }),
         create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::pendingDepositedBalanceOfCall { account }),
         create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::withdrawRequestCall { staker }),
@@ -36,13 +36,13 @@ pub async fn fetch_everstake_account_state<C: Client + Clone>(
         return Err("Unexpected number of multicall results".into());
     }
 
-    let autocompound_balance = decode_balance_result::<IAccounting::autocompoundBalanceOfCall>(&multicall_results[0]);
+    let deposited_balance = decode_balance_result::<IAccounting::depositedBalanceOfCall>(&multicall_results[0]);
     let pending_balance = decode_balance_result::<IAccounting::pendingBalanceOfCall>(&multicall_results[1]);
     let pending_deposited_balance = decode_balance_result::<IAccounting::pendingDepositedBalanceOfCall>(&multicall_results[2]);
     let withdraw_request = decode_call3_return::<IAccounting::withdrawRequestCall>(&multicall_results[3])?;
 
     Ok(EverstakeAccountState {
-        autocompound_balance,
+        deposited_balance,
         pending_balance,
         pending_deposited_balance,
         withdraw_request,

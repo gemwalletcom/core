@@ -7,11 +7,11 @@ use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::{
-    fee::FeePriority, fee::GasPriceType, Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata,
+    Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
 };
 
 use crate::contracts::IERC20;
-use crate::everstake::{IAccounting, IPool, DEFAULT_ALLOWED_INTERCHANGE_NUM, EVERSTAKE_POOL_ADDRESS, EVERSTAKE_SOURCE};
+use crate::everstake::{DEFAULT_ALLOWED_INTERCHANGE_NUM, EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS, EVERSTAKE_SOURCE, IAccounting, IPool};
 use crate::fee_calculator::FeeCalculator;
 use crate::models::fee::EthereumFeeHistory;
 
@@ -99,9 +99,13 @@ pub fn get_transaction_to(chain: EVMChain, input: &TransactionLoadInput) -> Resu
         }
         TransactionInputType::TokenApprove(_, approval) => Ok(approval.token.clone()),
         TransactionInputType::Generic(_, _, _) => Ok(input.destination_address.clone()),
-        TransactionInputType::Stake(_, _) => match chain.to_chain() {
+        TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
             Chain::SmartChain => Ok(STAKE_HUB_ADDRESS.to_string()),
-            Chain::Ethereum => Ok(EVERSTAKE_POOL_ADDRESS.to_string()),
+            Chain::Ethereum => match stake_type {
+                StakeType::Stake(_) | StakeType::Unstake(_) => Ok(EVERSTAKE_POOL_ADDRESS.to_string()),
+                StakeType::Withdraw(_) => Ok(EVERSTAKE_ACCOUNTING_ADDRESS.to_string()),
+                _ => Err("Unsupported stake type".into()),
+            },
             _ => Err("Unsupported chain for staking".into()),
         },
         _ => Err("Unsupported transfer type".into()),
@@ -256,7 +260,7 @@ fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::everstake::{IAccounting, EVERSTAKE_POOL_ADDRESS};
+    use crate::everstake::{EVERSTAKE_POOL_ADDRESS, IAccounting};
     use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
 
     fn everstake_validator() -> DelegationValidator {

@@ -29,7 +29,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let mut delegations = Vec::new();
 
-        let active_balance = state.autocompound_balance;
+        let active_balance = state.deposited_balance;
         if active_balance > BigInt::zero() {
             delegations.push(map_balance_to_delegation(&active_balance, DelegationState::Active));
         }
