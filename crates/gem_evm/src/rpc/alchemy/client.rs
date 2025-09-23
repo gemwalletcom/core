@@ -63,19 +63,24 @@ impl<C: Client + Clone> AlchemyClient<C> {
                 data: Transactions { transactions: vec![] },
             });
         }
-        let chain = evm_chain_to_network(self.chain);
-        let payload = json!({
-            "addresses": [
-                {
-                    "address": address,
-                    "networks": [chain]
-                }
-            ],
-            "limit": 25,
-        });
-        Ok(self
-            .client
-            .post("/transactions/history/by-address", &payload, Some(Self::common_headers()))
-            .await?)
+        if let Some(chain) = evm_chain_to_network(self.chain) {
+            let payload = json!({
+                    "addresses": [
+                        {
+                            "address": address,
+                            "networks": [chain]
+                    }
+                ],
+                "limit": 25,
+            });
+
+            return Ok(self
+                .client
+                .post("/transactions/history/by-address", &payload, Some(Self::common_headers()))
+                .await?);
+        }
+        Ok(Data {
+            data: Transactions { transactions: vec![] },
+        })
     }
 }

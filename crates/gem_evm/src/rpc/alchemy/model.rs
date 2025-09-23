@@ -59,7 +59,7 @@ pub fn evm_chain_to_network(chain: EVMChain) -> Option<String> {
         EVMChain::Berachain => Some("berachain-mainnet".to_string()),
         EVMChain::Ink => Some("ink-mainnet".to_string()),
         EVMChain::Unichain => Some("unichain-mainnet".to_string()),
-        EVMChain::Manta => Some("manta-mainnet".to_string()),
+        EVMChain::Manta => None, //Some("manta-mainnet".to_string()),
         EVMChain::Hyperliquid => Some("hyperliquid-mainnet".to_string()),
         EVMChain::Monad => Some("monad-mainnet".to_string()),
     }
