@@ -1,9 +1,9 @@
 use crate::{constants::STAKING_VALIDATORS_LIMIT, rpc::client::EthereumClient};
-use alloy_primitives::hex::encode_prefixed;
-use chrono::DateTime;
+use alloy_primitives::hex;
+use chrono::{DateTime, Utc};
 use gem_bsc::stake_hub::{
-    decode_delegations_return, decode_undelegations_return, decode_validators_return, encode_delegations_call, encode_undelegations_call,
-    encode_validators_call, HUB_READER_ADDRESS, STAKE_HUB_ADDRESS,
+    HUB_READER_ADDRESS, STAKE_HUB_ADDRESS, decode_delegations_return, decode_undelegations_return, decode_validators_return, encode_delegations_call,
+    encode_undelegations_call, encode_validators_call,
 };
 use gem_client::Client;
 use num_bigint::{BigInt, BigUint};
@@ -20,12 +20,12 @@ impl<C: Client + Clone> EthereumClient<C> {
             "eth_call".to_string(),
             serde_json::json!([{
             "to": HUB_READER_ADDRESS,
-            "data": encode_prefixed(&call_data)
+            "data": hex::encode_prefixed(&call_data)
         }, "latest"]),
         );
 
         let result: String = self.call(call.0, call.1).await?;
-        let result_data = hex::decode(result.trim_start_matches("0x"))?;
+        let result_data = hex::decode(result)?;
         let validators = decode_validators_return(&result_data)?;
 
         Ok(validators
@@ -101,6 +101,16 @@ impl<C: Client + Clone> EthereumClient<C> {
                     None
                 };
 
+                let state = if let Some(ref completion_date) = completion_date {
+                    if *completion_date > Utc::now() {
+                        DelegationState::Undelegating
+                    } else {
+                        DelegationState::AwaitingWithdrawal
+                    }
+                } else {
+                    DelegationState::Undelegating
+                };
+
                 result.push(DelegationBase {
                     asset_id: asset_id.clone(),
                     delegation_id: undelegation.delegator_address.clone(),
@@ -109,7 +119,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                     shares,
                     rewards: BigInt::from(0u32),
                     completion_date,
-                    state: DelegationState::Undelegating,
+                    state,
                 });
             }
         }
@@ -129,24 +139,24 @@ impl<C: Client + Clone> EthereumClient<C> {
                 "eth_call".to_string(),
                 serde_json::json!([{
                     "to": HUB_READER_ADDRESS,
-                    "data": encode_prefixed(&delegations_call_data)
+                    "data": hex::encode_prefixed(&delegations_call_data)
                 }, "latest"]),
             ),
             (
                 "eth_call".to_string(),
                 serde_json::json!([{
                     "to": HUB_READER_ADDRESS,
-                    "data": encode_prefixed(&undelegations_call_data)
+                    "data": hex::encode_prefixed(&undelegations_call_data)
                 }, "latest"]),
             ),
         ];
 
         let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
 
-        let delegations_data = hex::decode(results[0].trim_start_matches("0x"))?;
+        let delegations_data = hex::decode(&results[0])?;
         let delegations = decode_delegations_return(&delegations_data)?;
 
-        let undelegations_data = hex::decode(results[1].trim_start_matches("0x"))?;
+        let undelegations_data = hex::decode(&results[1])?;
         let undelegations = decode_undelegations_return(&undelegations_data)?;
 
         Ok((delegations, undelegations))
