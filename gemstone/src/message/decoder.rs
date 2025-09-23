@@ -86,7 +86,7 @@ impl SignMessageDecoder {
 
     pub fn get_result(&self, data: &[u8]) -> String {
         match self.message.sign_type {
-            SignDigestType::Eip191 | SignDigestType::Sign | SignDigestType::Eip712 => {
+            SignDigestType::Eip191 | SignDigestType::Eip712 => {
                 if data.len() < SIGNATURE_LENGTH {
                     return hex::encode_prefixed(data);
                 }
@@ -96,6 +96,7 @@ impl SignMessageDecoder {
                 }
                 hex::encode_prefixed(&signature)
             }
+            SignDigestType::Sign => hex::encode_prefixed(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
     }
@@ -197,6 +198,20 @@ mod tests {
 
         sig[64] = 28;
         assert!(decoder.get_result(&sig).ends_with("1c"));
+    }
+
+    #[test]
+    fn test_get_result_sign_no_recovery_offset() {
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::Sign,
+            data: b"test".to_vec(),
+        });
+
+        let sig = vec![0u8; 65];
+        let result = decoder.get_result(&sig);
+
+        assert!(result.ends_with("00"));
+        assert_eq!(result, "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
     }
 
     #[test]
