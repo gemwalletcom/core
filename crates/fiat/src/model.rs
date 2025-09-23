@@ -74,10 +74,9 @@ pub fn filter_token_id(chain: Option<Chain>, token_id: Option<String>) -> Option
         ]
         .contains(&contract_address.as_str())
     });
-    if let Some(chain) = chain {
-        if let Some(token_id) = token_id {
+    if let Some(chain) = chain
+        && let Some(token_id) = token_id {
             return format_token_id(chain, token_id);
         }
-    }
     token_id
 }

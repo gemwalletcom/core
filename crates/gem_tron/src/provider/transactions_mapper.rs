@@ -32,11 +32,10 @@ pub fn map_transaction_broadcast(response: &TronTransactionBroadcast) -> Result<
 }
 
 pub fn map_transaction_status(receipt: &TransactionReceiptData) -> TransactionUpdate {
-    if let Some(receipt_result) = &receipt.receipt.result {
-        if receipt_result == RECEIPT_OUT_OF_ENERGY || receipt_result == RECEIPT_FAILED {
+    if let Some(receipt_result) = &receipt.receipt.result
+        && (receipt_result == RECEIPT_OUT_OF_ENERGY || receipt_result == RECEIPT_FAILED) {
             return TransactionUpdate::new_state(TransactionState::Reverted);
         }
-    }
 
     if receipt.block_number > 0 {
         let mut changes = vec![];

@@ -39,14 +39,13 @@ impl SwapMapper {
         contract_registry: Option<&ContractRegistry>,
     ) -> Option<primitives::Transaction> {
         // Check if it is a uniswap transaction
-        if let Some(to_address) = &transaction.to {
-            if let Some(provider) = get_provider_by_chain_contract(chain, to_address) {
+        if let Some(to_address) = &transaction.to
+            && let Some(provider) = get_provider_by_chain_contract(chain, to_address) {
                 let input_bytes = hex::decode(transaction.input.clone()).ok()?;
                 if let Some(swap_metadata) = Self::try_map_uniswap_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
                     return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
                 }
             }
-        }
 
         // Calculate balance diffs for swap detection
         if let Some(trace) = trace {
@@ -200,8 +199,8 @@ impl SwapMapper {
                     Self::transfer_value_from_receipt(from, &to_token, transaction_reciept).unwrap_or(swap_exact_in.amount_out_min.to_string())
                 }
             }
-            if command == &V4_SWAP_COMMAND {
-                if let Ok(decoded_actions_vec) = decode_action_data(input) {
+            if command == &V4_SWAP_COMMAND
+                && let Ok(decoded_actions_vec) = decode_action_data(input) {
                     for action in decoded_actions_vec {
                         match action {
                             V4Action::SWAP_EXACT_IN(params) => {
@@ -236,12 +235,11 @@ impl SwapMapper {
                         }
                     }
                 }
-            }
         }
 
-        if let Some(from_asset) = from_asset {
-            if let Some(to_asset) = to_asset {
-                if !from_value.is_empty() && !to_value.is_empty() {
+        if let Some(from_asset) = from_asset
+            && let Some(to_asset) = to_asset
+                && !from_value.is_empty() && !to_value.is_empty() {
                     return Some(TransactionSwapMetadata {
                         from_asset,
                         to_asset,
@@ -250,8 +248,6 @@ impl SwapMapper {
                         provider: Some(provider.to_string()),
                     });
                 }
-            }
-        }
         None
     }
 }

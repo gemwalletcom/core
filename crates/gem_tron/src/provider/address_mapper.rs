@@ -3,17 +3,15 @@ use primitives::AddressStatus;
 use crate::models::account::TronAccount;
 
 pub fn map_address_status(account: &TronAccount) -> Vec<AddressStatus> {
-    if let Some(owner_permission) = &account.owner_permission {
-        if owner_permission.permission_name != "owner" {
+    if let Some(owner_permission) = &account.owner_permission
+        && owner_permission.permission_name != "owner" {
             return vec![AddressStatus::MultiSignature];
         }
-    }
 
-    if let Some(active_permissions) = &account.active_permission {
-        if active_permissions.len() > 1 || active_permissions.iter().any(|p| p.threshold > 1) {
+    if let Some(active_permissions) = &account.active_permission
+        && (active_permissions.len() > 1 || active_permissions.iter().any(|p| p.threshold > 1)) {
             return vec![AddressStatus::MultiSignature];
         }
-    }
 
     vec![]
 }

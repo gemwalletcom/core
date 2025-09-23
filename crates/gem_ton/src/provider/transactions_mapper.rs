@@ -29,17 +29,15 @@ fn map_transaction_state(transaction: &TransactionMessage) -> TransactionState {
             if !compute_phase.success.unwrap_or(false) {
                 return TransactionState::Failed;
             }
-            if let Some(exit_code) = compute_phase.exit_code {
-                if exit_code != 0 && exit_code != 1 {
+            if let Some(exit_code) = compute_phase.exit_code
+                && exit_code != 0 && exit_code != 1 {
                     return TransactionState::Failed;
                 }
-            }
         }
-        if let Some(action) = &description.action {
-            if !action.success.unwrap_or(false) {
+        if let Some(action) = &description.action
+            && !action.success.unwrap_or(false) {
                 return TransactionState::Failed;
             }
-        }
     }
 
     if transaction.out_msgs.is_empty() {
@@ -51,13 +49,11 @@ fn map_transaction_state(transaction: &TransactionMessage) -> TransactionState {
     //     return TransactionState::Failed;
     // }
 
-    if let Some(in_msg) = &transaction.in_msg {
-        if let Some(opcode) = &in_msg.opcode {
-            if FAILED_OPERATION_OPCODES.contains(&opcode.as_str()) {
+    if let Some(in_msg) = &transaction.in_msg
+        && let Some(opcode) = &in_msg.opcode
+            && FAILED_OPERATION_OPCODES.contains(&opcode.as_str()) {
                 return TransactionState::Failed;
             }
-        }
-    }
 
     TransactionState::Confirmed
 }
@@ -101,11 +97,11 @@ fn map_transaction_message(transaction: TransactionMessage) -> Option<Transactio
     }
 
     // Handle incoming transfers (with in message but no out messages)
-    if transaction.out_msgs.is_empty() {
-        if let Some(in_msg) = &transaction.in_msg {
-            if let (Some(value), Some(source)) = (&in_msg.value, &in_msg.source) {
-                if let Ok(value_int) = value.parse::<i64>() {
-                    if value_int > 0 {
+    if transaction.out_msgs.is_empty()
+        && let Some(in_msg) = &transaction.in_msg
+            && let (Some(value), Some(source)) = (&in_msg.value, &in_msg.source)
+                && let Ok(value_int) = value.parse::<i64>()
+                    && value_int > 0 {
                         let from = parse_address(source)?;
                         let to = parse_address(&in_msg.destination)?;
 
@@ -125,10 +121,6 @@ fn map_transaction_message(transaction: TransactionMessage) -> Option<Transactio
                             created_at,
                         ));
                     }
-                }
-            }
-        }
-    }
 
     None
 }
@@ -145,23 +137,20 @@ fn is_simple_transfer(out_message: &crate::models::OutMessage) -> bool {
 }
 
 fn extract_memo<T: HasMemo>(message: &T) -> Option<String> {
-    if let Some(comment) = message.comment() {
-        if !comment.is_empty() {
+    if let Some(comment) = message.comment()
+        && !comment.is_empty() {
             return Some(comment.clone());
         }
-    }
 
     if let Some(decoded_body) = message.decoded_body() {
-        if let Some(text) = &decoded_body.text {
-            if !text.is_empty() {
+        if let Some(text) = &decoded_body.text
+            && !text.is_empty() {
                 return Some(text.clone());
             }
-        }
-        if let Some(comment) = &decoded_body.comment {
-            if !comment.is_empty() {
+        if let Some(comment) = &decoded_body.comment
+            && !comment.is_empty() {
                 return Some(comment.clone());
             }
-        }
     }
 
     None

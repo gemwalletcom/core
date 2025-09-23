@@ -112,11 +112,10 @@ impl ProxyRequestService {
             metrics.add_proxy_request_by_method(&host, method_name);
         }
 
-        if let Some(key) = cache_key.as_ref() {
-            if let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &path_with_query, &request_url, &metrics, now).await {
+        if let Some(key) = cache_key.as_ref()
+            && let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &path_with_query, &request_url, &metrics, now).await {
                 return result;
             }
-        }
 
         if let RequestType::JsonRpc(rpc_request) = &request_type {
             return JsonRpcHandler::handle_request(
@@ -158,8 +157,8 @@ impl ProxyRequestService {
             latency = DurationMs(now.elapsed()),
         );
 
-        if status == 200 {
-            if let (Some(ttl), Some(key)) = (cache_ttl, cache_key.clone()) {
+        if status == 200
+            && let (Some(ttl), Some(key)) = (cache_ttl, cache_key.clone()) {
                 tokio::spawn(Self::store_cache(
                     status,
                     ttl,
@@ -174,7 +173,6 @@ impl ProxyRequestService {
                     now,
                 ));
             }
-        }
 
         Ok(processed_response)
     }

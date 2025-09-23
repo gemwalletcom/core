@@ -1,6 +1,6 @@
 [workspace.package]
 version = "1.0.0"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 homepage = "https://gemwallet.com/"
 description = "Gem Wallet Core library in Rust"

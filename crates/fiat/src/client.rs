@@ -210,16 +210,14 @@ impl FiatClient {
         if let Some(amount) = amount {
             for limit in limits {
                 if limit.currency == fiat_currency {
-                    if let Some(min_amount) = limit.min_amount {
-                        if amount < min_amount {
+                    if let Some(min_amount) = limit.min_amount
+                        && amount < min_amount {
                             return Err(FiatError::InsufficientAmount(amount, min_amount));
                         }
-                    }
-                    if let Some(max_amount) = limit.max_amount {
-                        if amount > max_amount {
+                    if let Some(max_amount) = limit.max_amount
+                        && amount > max_amount {
                             return Err(FiatError::ExcessiveAmount(amount, max_amount));
                         }
-                    }
                     return Ok(());
                 }
             }

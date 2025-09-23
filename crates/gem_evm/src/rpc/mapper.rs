@@ -91,11 +91,10 @@ impl EthereumMapper {
         }
 
         // Try to decode Uniswap V3 or V4 transaction
-        if transaction.to.is_some() && transaction.input.len() >= 8 {
-            if let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry) {
+        if transaction.to.is_some() && transaction.input.len() >= 8
+            && let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry) {
                 return Some(tx);
             }
-        }
 
         // nft eip 721
 
@@ -104,8 +103,7 @@ impl EthereumMapper {
                 .logs
                 .last()
                 .is_some_and(|log| log.topics.len() == 4 && log.topics.first().is_some_and(|x| x == TRANSFER_TOPIC))
-        {
-            if let Some(log) = transaction_reciept.logs.last() {
+            && let Some(log) = transaction_reciept.logs.last() {
                 let address = ethereum_address_from_topic(&log.topics[2])?;
                 let token_id = BigUint::from_str_radix(&log.topics[3].replace("0x", ""), 16).ok()?;
                 let contract_address = ethereum_address_checksum(&log.address).ok()?;
@@ -128,7 +126,6 @@ impl EthereumMapper {
                 );
                 return Some(transaction);
             }
-        }
 
         // nft eip 1155
 
@@ -137,8 +134,7 @@ impl EthereumMapper {
                 .logs
                 .last()
                 .is_some_and(|log| log.topics.len() == 4 && log.topics.first().is_some_and(|x| x == TRANSFER_SINGLE))
-        {
-            if let Some(log) = transaction_reciept.logs.last() {
+            && let Some(log) = transaction_reciept.logs.last() {
                 let to_address = ethereum_address_from_topic(&log.topics[3])?;
                 let token_id = BigUint::from_str_radix(&log.data.replace("0x", "")[0..64], 16).ok()?;
                 let contract_address = ethereum_address_checksum(&log.address).ok()?;
@@ -161,7 +157,6 @@ impl EthereumMapper {
                 );
                 return Some(transaction);
             }
-        }
 
         // erc20 transfer - check both direct transfer calls and smart contract calls that emit transfer events
         let transfer_log = transaction_reciept.logs.iter().find(|log| {
