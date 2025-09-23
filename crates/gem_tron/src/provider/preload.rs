@@ -1,14 +1,16 @@
+use std::collections::HashMap;
+use std::error::Error;
+use std::str::FromStr;
+
 use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
 use num_bigint::BigInt;
-use std::{error::Error, str::FromStr};
 
 use gem_client::Client;
 use primitives::{
     AssetSubtype, FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
     TransactionLoadMetadata, TransactionPreloadInput,
 };
-use std::collections::HashMap;
 
 use crate::{
     provider::{
@@ -46,9 +48,9 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
 
         let fee = match &input.input_type {
             TransactionInputType::Transfer(asset) => match asset.id.token_subtype() {
-                AssetSubtype::NATIVE => calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?,
+                AssetSubtype::NATIVE => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
                 AssetSubtype::TOKEN => {
-                    let gas_limit = self
+                    let estimated_energy = self
                         .estimate_trc20_transfer_gas(
                             input.sender_address.clone(),
                             asset.id.token_id.clone().unwrap(),
@@ -56,27 +58,20 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
                             input.value.clone(),
                         )
                         .await?;
-                    calculate_transfer_token_fee_rate(&chain_parameters, &account_usage, is_new_account, BigInt::from_str(&gas_limit)?)?
+                    let energy_used = BigInt::from_str(&estimated_energy).map_err(|err| -> Box<dyn Error + Send + Sync> { Box::new(err) })?;
+                    let (total_fee, chargeable_energy, energy_price) = calculate_transfer_token_fee_rate(&chain_parameters, &account_usage, energy_used.clone())?;
+                    let gas_price_type = GasPriceType::regular(energy_price);
+
+                    TransactionFee::new_gas_price_type(gas_price_type, total_fee, chargeable_energy, HashMap::new())
                 }
             },
             TransactionInputType::Stake(_asset, stake_type) => {
-                let account = self.get_account(&input.sender_address).await?;
-                let total_staked = account
-                    .frozen_v2
-                    .as_ref()
-                    .map(|frozen_list| frozen_list.iter().map(|frozen| BigInt::from(frozen.amount)).sum::<BigInt>())
-                    .unwrap_or_else(|| BigInt::from(0));
-
-                let input_value = BigInt::from_str(&input.value)?;
-                calculate_stake_fee_rate(&account_usage, stake_type, &total_staked, &input_value)
+                TransactionFee::new_from_fee(calculate_stake_fee_rate(&chain_parameters, &account_usage, stake_type)?)
             }
-            _ => calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?,
+            _ => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
         };
 
-        Ok(TransactionLoadData {
-            fee: TransactionFee::new_from_fee(fee),
-            metadata,
-        })
+        Ok(TransactionLoadData { fee, metadata })
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Send + Sync>> {
@@ -87,7 +82,10 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
 impl<C: Client> TronClient<C> {
     async fn get_is_new_account_for_input_type(&self, address: &str, input_type: TransactionInputType) -> Result<bool, Box<dyn Error + Send + Sync>> {
         match input_type {
-            TransactionInputType::Transfer(_) => Ok(self.is_new_account(address).await?),
+            TransactionInputType::Transfer(asset) => match asset.id.token_subtype() {
+                AssetSubtype::NATIVE => Ok(self.is_new_account(address).await?),
+                AssetSubtype::TOKEN => Ok(false),
+            },
             _ => Ok(false),
         }
     }
