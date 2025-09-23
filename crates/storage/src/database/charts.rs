@@ -1,8 +1,8 @@
+use crate::DatabaseClient;
 use crate::models::Chart;
 use crate::schema::charts::dsl::{charts, coin_id};
 use crate::schema::charts_daily::dsl::{charts_daily, coin_id as daily_coin_id};
 use crate::schema::charts_hourly::dsl::{charts_hourly, coin_id as hourly_coin_id};
-use crate::DatabaseClient;
 use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::result::Error;

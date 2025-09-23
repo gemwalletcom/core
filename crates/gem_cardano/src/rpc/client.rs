@@ -53,9 +53,10 @@ impl<C: Client> CardanoClient<C> {
         let response: GraphqlData<BalanceResponse> = self.client.post("/", &json, None).await?;
 
         if let Some(errors) = response.errors
-            && let Some(error) = errors.first() {
-                return Err(error.message.clone().into());
-            }
+            && let Some(error) = errors.first()
+        {
+            return Err(error.message.clone().into());
+        }
 
         if let Some(data) = response.data {
             Ok(data.utxos.aggregate.sum.value.unwrap_or_else(|| "0".to_string()))
@@ -93,14 +94,16 @@ impl<C: Client> CardanoClient<C> {
         let response: GraphqlData<TransactionBroadcast> = self.client.post("/", &json, None).await?;
 
         if let Some(errors) = response.errors
-            && let Some(error) = errors.first() {
-                return Err(error.message.clone().into());
-            }
+            && let Some(error) = errors.first()
+        {
+            return Err(error.message.clone().into());
+        }
 
         if let Some(data) = response.data
-            && let Some(submit_transaction) = data.submit_transaction {
-                return Ok(submit_transaction.hash);
-            }
+            && let Some(submit_transaction) = data.submit_transaction
+        {
+            return Ok(submit_transaction.hash);
+        }
 
         Err("Failed to broadcast transaction - no data or hash returned".into())
     }

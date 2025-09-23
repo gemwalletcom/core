@@ -1,5 +1,5 @@
-use crate::models::fee::GasPrice;
 use crate::models::Block;
+use crate::models::fee::GasPrice;
 use primitives::{FeePriority, FeeRate, GasPriceType, NodeSyncStatus};
 use std::error::Error;
 

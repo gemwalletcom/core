@@ -1,4 +1,4 @@
-use rocket::{get, tokio::sync::Mutex, State};
+use rocket::{State, get, tokio::sync::Mutex};
 
 use crate::params::ChainParam;
 use crate::responders::{ApiError, ApiResponse};

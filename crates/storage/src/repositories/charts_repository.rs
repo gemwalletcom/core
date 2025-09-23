@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
-use crate::database::charts::{ChartResult, ChartsStore};
 use crate::DatabaseClient;
+use crate::database::charts::{ChartResult, ChartsStore};
 use primitives::ChartPeriod;
 
 pub trait ChartsRepository {

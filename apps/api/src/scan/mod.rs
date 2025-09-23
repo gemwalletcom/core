@@ -1,6 +1,6 @@
 use crate::responders::{ApiError, ApiResponse};
-use primitives::{response::ResponseResultNew, ScanAddress, ScanTransaction, ScanTransactionPayload};
-use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
+use primitives::{ScanAddress, ScanTransaction, ScanTransactionPayload, response::ResponseResultNew};
+use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 
 pub mod client;
 pub mod providers;

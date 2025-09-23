@@ -33,7 +33,6 @@ impl<C: Client> StellarClient<C> {
         Ok(self.client.get("/").await?)
     }
 
-
     pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<StellarTransactionStatus, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/transactions/{}", transaction_id)).await?)
     }

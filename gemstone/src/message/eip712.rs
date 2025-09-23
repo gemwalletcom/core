@@ -1,5 +1,5 @@
 use alloy_primitives::hex;
-use gem_evm::{eip712::parse_eip712_json, EIP712Domain, EIP712TypedValue};
+use gem_evm::{EIP712Domain, EIP712TypedValue, eip712::parse_eip712_json};
 
 type GemEIP712MessageDomain = EIP712Domain;
 

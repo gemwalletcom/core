@@ -58,7 +58,12 @@ impl NodeService {
     }
 
     pub async fn start_monitoring(&self) {
-        let monitor = NodeMonitor::new(self.domains.clone(), Arc::clone(&self.nodes), Arc::clone(&self.metrics), self.monitoring_config.clone());
+        let monitor = NodeMonitor::new(
+            self.domains.clone(),
+            Arc::clone(&self.nodes),
+            Arc::clone(&self.metrics),
+            self.monitoring_config.clone(),
+        );
 
         monitor.start_monitoring().await;
     }

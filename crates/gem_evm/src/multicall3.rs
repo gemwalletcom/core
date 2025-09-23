@@ -1,4 +1,4 @@
-use alloy_sol_types::{sol, SolCall};
+use alloy_sol_types::{SolCall, sol};
 use primitives::EVMChain;
 
 // https://www.multicall3.com/

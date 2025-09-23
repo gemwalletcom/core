@@ -29,9 +29,10 @@ pub fn decode_call(calldata: &str, abi: Option<&str>) -> Result<DecodedCall, Box
 
     // Try ERC20 interface first if no ABI provided
     if abi.is_none()
-        && let Ok(call) = IERC20Calls::abi_decode(&calldata) {
-            return Ok(call.into());
-        }
+        && let Ok(call) = IERC20Calls::abi_decode(&calldata)
+    {
+        return Ok(call.into());
+    }
 
     if let Some(abi_str) = abi {
         let abi = serde_json::from_str::<JsonAbi>(abi_str)?;

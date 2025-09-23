@@ -6,8 +6,8 @@ pub mod steam_producer_queue;
 pub mod stream_producer;
 pub mod stream_reader;
 
-pub use consumer::run_consumer;
 pub use consumer::ConsumerConfig;
+pub use consumer::run_consumer;
 pub use exchange::ExchangeName;
 pub use payload::*;
 pub use primitives::AssetId;

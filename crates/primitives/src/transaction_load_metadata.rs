@@ -1,4 +1,4 @@
-use crate::{solana_token_program::SolanaTokenProgramId, stake_type::StakeData, UTXO};
+use crate::{UTXO, solana_token_program::SolanaTokenProgramId, stake_type::StakeData};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_bigint_from_str;

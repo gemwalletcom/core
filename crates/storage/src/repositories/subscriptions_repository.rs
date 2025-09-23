@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
-use crate::database::subscriptions::SubscriptionsStore;
 use crate::DatabaseClient;
+use crate::database::subscriptions::SubscriptionsStore;
 use primitives::{Chain, DeviceSubscription, Subscription as PrimitiveSubscription};
 
 pub trait SubscriptionsRepository {

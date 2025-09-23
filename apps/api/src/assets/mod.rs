@@ -1,7 +1,7 @@
 pub mod cilent;
 use crate::responders::{ApiError, ApiResponse};
 pub use cilent::{AssetsClient, AssetsSearchClient};
-use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 
 use std::str::FromStr;
 

@@ -1,11 +1,11 @@
 use crate::client::NameClient;
 use async_trait::async_trait;
-use primitives::chain::Chain;
 use primitives::NameProvider;
+use primitives::chain::Chain;
 use std::error::Error;
 
 use gem_client::ReqwestClient;
-use gem_jsonrpc::{types::JsonRpcError, JsonRpcClient};
+use gem_jsonrpc::{JsonRpcClient, types::JsonRpcError};
 
 pub struct SuinsClient {
     client: JsonRpcClient<ReqwestClient>,

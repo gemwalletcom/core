@@ -1,4 +1,4 @@
-use super::metadata::{Explorer, Metadata, ACCOUNT_PATH, TX_PATH};
+use super::metadata::{ACCOUNT_PATH, Explorer, Metadata, TX_PATH};
 use crate::block_explorer::BlockExplorer;
 
 pub struct XrpScan;

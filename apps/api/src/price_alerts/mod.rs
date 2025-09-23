@@ -1,7 +1,7 @@
 use crate::responders::{ApiError, ApiResponse};
 pub use pricer::PriceAlertClient;
 use primitives::PriceAlerts;
-use rocket::{delete, get, post, serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{State, delete, get, post, serde::json::Json, tokio::sync::Mutex};
 
 #[get("/price_alerts/<device_id>")]
 pub async fn get_price_alerts(device_id: &str, client: &State<Mutex<PriceAlertClient>>) -> Result<ApiResponse<PriceAlerts>, ApiError> {

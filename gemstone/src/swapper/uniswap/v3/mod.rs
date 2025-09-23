@@ -6,7 +6,7 @@ pub mod provider;
 pub use provider::UniswapV3;
 
 use crate::swapper::SwapperProviderType;
-use gem_evm::uniswap::{deployment::v3::V3Deployment, FeeTier};
+use gem_evm::uniswap::{FeeTier, deployment::v3::V3Deployment};
 use primitives::Chain;
 use std::fmt::Debug;
 

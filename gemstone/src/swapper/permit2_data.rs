@@ -1,7 +1,7 @@
 use crate::swapper::SwapperError;
 use alloy_primitives::{
-    aliases::{U160, U48},
     Bytes, U256,
+    aliases::{U48, U160},
 };
 use serde::{Deserialize, Serialize, Serializer};
 use std::{

@@ -1,6 +1,6 @@
 use alloy_ens::namehash;
-use alloy_primitives::{hex, Address, Bytes, U256};
-use alloy_sol_types::{sol, SolCall};
+use alloy_primitives::{Address, Bytes, U256, hex};
+use alloy_sol_types::{SolCall, sol};
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 use serde_json::json;

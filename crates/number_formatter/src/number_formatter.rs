@@ -1,4 +1,4 @@
-use crate::currency::{iso, Formatter, Money, Params};
+use crate::currency::{Formatter, Money, Params, iso};
 
 pub struct NumberFormatter {}
 

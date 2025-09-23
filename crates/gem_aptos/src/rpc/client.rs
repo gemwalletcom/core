@@ -3,7 +3,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::chain::Chain;
 use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 use crate::models::{
     Account, Block, GasFee, Ledger, Resource, ResourceData, Transaction, TransactionPayload, TransactionResponse, TransactionSignature, TransactionSimulation,

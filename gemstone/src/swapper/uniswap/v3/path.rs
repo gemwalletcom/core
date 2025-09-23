@@ -1,13 +1,12 @@
 use alloy_primitives::{Address, Bytes};
 use gem_evm::uniswap::{
-    path::{build_direct_pair, build_pairs, BasePair, TokenPair},
     FeeTier,
+    path::{BasePair, TokenPair, build_direct_pair, build_pairs},
 };
 
 use crate::swapper::{
-    eth_address,
-    uniswap::swap_route::{get_intermediaries, RouteData},
-    SwapperError, SwapperRoute,
+    SwapperError, SwapperRoute, eth_address,
+    uniswap::swap_route::{RouteData, get_intermediaries},
 };
 
 pub fn build_paths(token_in: &Address, token_out: &Address, fee_tiers: &[FeeTier], base_pair: &BasePair) -> Vec<Vec<(Vec<TokenPair>, Bytes)>> {

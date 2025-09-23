@@ -22,25 +22,33 @@ impl<C: Client> ChainBalances for CardanoClient<C> {
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
     }
+
+    async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
+    use num_bigint::BigUint;
+
     use super::*;
-    use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{TEST_ADDRESS, create_test_client};
 
     #[tokio::test]
-    async fn test_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let _client = create_test_client();
-        // Note: Cardano API integration test disabled - requires API key
-        // let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
-        // assert_eq!(balance.asset_id.chain, Chain::Cardano);
-        println!("Cardano balance test - API integration disabled");
+    async fn test_cardano_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let balance = client.get_balance_coin(address).await?;
+
+        println!("Balance: {:?} {}", balance.balance.available, balance.asset_id);
+
+        assert!(balance.balance.available > BigUint::from(0u64));
         Ok(())
     }
 
     #[tokio::test]
-    async fn test_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_cardano_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
         let token_ids = vec![];
         let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids).await?;
@@ -50,11 +58,19 @@ mod chain_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_cardano_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
         let balance = client.get_balance_staking(TEST_ADDRESS.to_string()).await?;
 
         assert!(balance.is_none());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_cardano_get_balance_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+        let assets = client.get_balance_assets(TEST_ADDRESS.to_string()).await?;
+        assert!(assets.is_empty());
         Ok(())
     }
 }

@@ -7,8 +7,8 @@ use gem_client::Client;
 use primitives::AssetBalance;
 
 use super::balances_mapper::{map_balance_tokens, map_native_balance};
-use crate::rpc::client::AptosClient;
 use crate::APTOS_NATIVE_COIN;
+use crate::rpc::client::AptosClient;
 
 #[async_trait]
 impl<C: Client> ChainBalances for AptosClient<C> {
@@ -36,11 +36,15 @@ impl<C: Client> ChainBalances for AptosClient<C> {
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
     }
+
+    async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::{create_aptos_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{TEST_ADDRESS, create_aptos_test_client};
     use chain_traits::ChainBalances;
     use primitives::Chain;
 
@@ -70,6 +74,16 @@ mod chain_integration_tests {
             println!("Token balance: {:?}", balance);
         }
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_aptos_get_balance_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let assets = client.get_balance_assets(address).await?;
+
+        assert_eq!(assets.len(), 0);
         Ok(())
     }
 }

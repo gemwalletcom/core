@@ -13,9 +13,9 @@ use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 #[cfg(feature = "rpc")]
 use num_bigint::BigInt;
+use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
 use primitives::stake_type::StakeData;
-use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
 use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 #[cfg(feature = "rpc")]
@@ -106,7 +106,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{create_arbitrum_test_client, create_ethereum_test_client, create_smartchain_test_client, print_fee_rates, TEST_ADDRESS};
+    use crate::provider::testkit::{TEST_ADDRESS, create_arbitrum_test_client, create_ethereum_test_client, create_smartchain_test_client, print_fee_rates};
     use num_bigint::BigInt;
     use primitives::{Asset, Chain, FeePriority, GasPriceType, TransactionInputType, TransactionLoadInput};
 

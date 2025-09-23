@@ -6,7 +6,7 @@ use gem_aptos::models::Resource;
 use num_bigint::BigUint;
 use std::{str::FromStr, sync::Arc};
 
-use super::model::{TokenPairReserve, PANCAKE_SWAP_APTOS_ADDRESS};
+use super::model::{PANCAKE_SWAP_APTOS_ADDRESS, TokenPairReserve};
 
 #[derive(Debug)]
 pub struct PancakeSwapAptosClient {
@@ -35,11 +35,7 @@ impl PancakeSwapAptosClient {
     }
 
     fn sort_assets<T: Ord>(&self, asset1: T, asset2: T) -> (T, T) {
-        if asset1 <= asset2 {
-            (asset1, asset2)
-        } else {
-            (asset2, asset1)
-        }
+        if asset1 <= asset2 { (asset1, asset2) } else { (asset2, asset1) }
     }
 
     pub async fn get_quote(&self, endpoint: &str, from_asset: &str, to_asset: &str, value: &str, slippage_bps: u32) -> Result<String, SwapperError> {

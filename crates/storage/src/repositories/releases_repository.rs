@@ -1,8 +1,8 @@
 use crate::DatabaseError;
 
+use crate::DatabaseClient;
 use crate::database::releases::ReleasesStore;
 use crate::models::Release;
-use crate::DatabaseClient;
 
 pub trait ReleasesRepository {
     fn get_releases(&mut self) -> Result<Vec<Release>, DatabaseError>;

@@ -3,7 +3,7 @@ use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL, SUI_STAKE_EVENT, SUI_UNSTAKE_EVEN
 use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::{TimeZone, Utc};
 use num_bigint::BigUint;
-use primitives::{chain::Chain, AssetId, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType, TransactionUpdate};
+use primitives::{AssetId, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType, TransactionUpdate, chain::Chain};
 
 const CHAIN: Chain = Chain::Sui;
 

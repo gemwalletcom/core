@@ -6,7 +6,7 @@ mod tests {
         alldomains::AllDomainsClient, base::Basenames, client::NameClient, ens::ENSClient, hyperliquid::Hyperliquid, injective::InjectiveNameClient,
         suins::SuinsClient,
     };
-    use primitives::{node_config::get_nodes_for_chain, Chain};
+    use primitives::{Chain, node_config::get_nodes_for_chain};
     use settings::Settings;
 
     #[tokio::test]

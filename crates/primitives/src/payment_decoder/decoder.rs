@@ -1,9 +1,9 @@
 use super::error::{PaymentDecoderError, Result};
-use crate::{asset_id::AssetId, Chain};
+use crate::{Chain, asset_id::AssetId};
 use std::{collections::HashMap, fmt, str::FromStr};
 
 use super::{
-    erc681::{TransactionRequest, ETHEREUM_SCHEME},
+    erc681::{ETHEREUM_SCHEME, TransactionRequest},
     solana_pay::{self, PayTransfer as SolanaPayTransfer, SOLANA_PAY_SCHEME},
     ton_pay::{self, TON_PAY_SCHEME},
 };

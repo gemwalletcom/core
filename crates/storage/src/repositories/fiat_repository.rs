@@ -2,8 +2,8 @@ use crate::DatabaseError;
 use chrono::NaiveDateTime;
 use primitives::FiatTransaction;
 
-use crate::database::fiat::FiatStore;
 use crate::DatabaseClient;
+use crate::database::fiat::FiatStore;
 
 pub trait FiatRepository {
     fn add_fiat_assets(&mut self, values: Vec<crate::models::FiatAsset>) -> Result<usize, DatabaseError>;

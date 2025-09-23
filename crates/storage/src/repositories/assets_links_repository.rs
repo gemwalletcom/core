@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
 use crate::database::assets_links::AssetsLinksStore;
-use crate::{models::AssetLink, DatabaseClient};
+use crate::{DatabaseClient, models::AssetLink};
 use primitives::AssetLink as PrimitiveAssetLink;
 
 pub trait AssetsLinksRepository {

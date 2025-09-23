@@ -1,7 +1,7 @@
 use crate::{
+    FiatProvider,
     model::{FiatMapping, FiatProviderAsset},
     providers::mercuryo::mapper::{map_asset_limits, map_asset_with_limits},
-    FiatProvider,
 };
 use async_trait::async_trait;
 use futures::future;
@@ -100,7 +100,7 @@ impl FiatProvider for MercuryoClient {
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 mod fiat_integration_tests {
     use crate::testkit::*;
-    use crate::{model::FiatMapping, FiatProvider};
+    use crate::{FiatProvider, model::FiatMapping};
     use primitives::FiatBuyQuote;
 
     #[tokio::test]

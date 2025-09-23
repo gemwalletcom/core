@@ -1,8 +1,8 @@
 use super::broker::SolanaVaultSwapResponse;
-use crate::network::{jsonrpc_client_with_chain, AlienProvider};
+use crate::network::{AlienProvider, jsonrpc_client_with_chain};
 use alloy_primitives::hex;
-use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
 use gem_solana::{jsonrpc::SolanaRpc, models::LatestBlockhash};
 use primitives::Chain;
 use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder};
@@ -77,7 +77,10 @@ mod tests {
 
         let tx_b64 = build_solana_tx(wallet_address, &response.result, provider).await?;
 
-        assert_eq!(tx_b64, "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAMHhfupPuKcYE+oWKNRaIwBKQhB6vsZxjpwpHXTx7w7758q21EdC4D4NruUv9F26xeVqhYm0WXVWkSIjeQIxD3II9tUC6aOjrGBy017zEItREWS3QDEQI/vMhwSVTo/1e2664X/uFi6gx6sRwFnSAPu1ODmcAsu2sf8IuwYArWOf4gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIigdk5jnaVQcjb3Nozv0qlnESZ8J6eouD4cHFznUdrH/mnbBDL8THYGfUWCdASi1avvhnxRbvqBSGASZBJCzCac8CA/vjlRh67l6xlM0hAuQsp8uvbznxa/E9H2wqvhzgEGBgUBAAMCBLYBoyZc4vNpjcSAHSwEAAAAAAQAAAAUAAAAUUvLH5qruQTmEGvRBStm0nBtu7cHAAAAAGwAAAAACgAAAIX7qT7inGBPqFijUWiMASkIQer7GcY6cKR108e8O++fyqFFtvP91HjpJvpzAtB1MQAAAAAAAAAAAAAAAAAAAAAAAB6D0pctPco6Mw1gwnd+5bjSVoPGP6NZEWmFYJgw9CBUBQAEAC0RAAAAOJJMwzRWGJDjqBlAc1NxDgk=");
+        assert_eq!(
+            tx_b64,
+            "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAMHhfupPuKcYE+oWKNRaIwBKQhB6vsZxjpwpHXTx7w7758q21EdC4D4NruUv9F26xeVqhYm0WXVWkSIjeQIxD3II9tUC6aOjrGBy017zEItREWS3QDEQI/vMhwSVTo/1e2664X/uFi6gx6sRwFnSAPu1ODmcAsu2sf8IuwYArWOf4gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIigdk5jnaVQcjb3Nozv0qlnESZ8J6eouD4cHFznUdrH/mnbBDL8THYGfUWCdASi1avvhnxRbvqBSGASZBJCzCac8CA/vjlRh67l6xlM0hAuQsp8uvbznxa/E9H2wqvhzgEGBgUBAAMCBLYBoyZc4vNpjcSAHSwEAAAAAAQAAAAUAAAAUUvLH5qruQTmEGvRBStm0nBtu7cHAAAAAGwAAAAACgAAAIX7qT7inGBPqFijUWiMASkIQer7GcY6cKR108e8O++fyqFFtvP91HjpJvpzAtB1MQAAAAAAAAAAAAAAAAAAAAAAAB6D0pctPco6Mw1gwnd+5bjSVoPGP6NZEWmFYJgw9CBUBQAEAC0RAAAAOJJMwzRWGJDjqBlAc1NxDgk="
+        );
 
         Ok(())
     }

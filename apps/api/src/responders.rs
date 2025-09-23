@@ -1,9 +1,9 @@
 use cacher::CacheError;
-use primitives::response::ResponseResultNew;
 use primitives::ResponseResult;
+use primitives::response::ResponseResultNew;
 use rocket::response::{Responder, Response};
 use rocket::serde::json::Json;
-use rocket::{http::Status, Request};
+use rocket::{Request, http::Status};
 use serde::Serialize;
 use storage::DatabaseError;
 use strum::ParseError;

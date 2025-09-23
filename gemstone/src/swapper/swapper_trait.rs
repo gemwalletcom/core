@@ -7,7 +7,7 @@ use crate::network::AlienProvider;
 use async_trait::async_trait;
 use std::{fmt::Debug, sync::Arc};
 
-use primitives::{swap::SwapStatus, Chain};
+use primitives::{Chain, swap::SwapStatus};
 
 #[async_trait]
 pub trait Swapper: Send + Sync + Debug {

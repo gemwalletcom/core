@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use storage::DatabaseClient;
-use streamer::{consumer::MessageConsumer, AssetsAddressPayload};
+use streamer::{AssetsAddressPayload, consumer::MessageConsumer};
 use tokio::sync::Mutex;
 
 pub struct AssetsAddressesConsumer {

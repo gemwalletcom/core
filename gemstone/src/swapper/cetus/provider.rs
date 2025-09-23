@@ -1,20 +1,20 @@
 use alloy_primitives::U256;
 use async_trait::async_trait;
-use base64::{engine::general_purpose::STANDARD, Engine as _};
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 use bcs;
 use futures::join;
 use num_bigint::BigInt;
 use num_traits::{FromBytes, ToBytes, ToPrimitive};
 use std::{str::FromStr, sync::Arc};
-use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder};
+use sui_transaction_builder::{Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder, unresolved::Input};
 use sui_types::{Address, Identifier, ObjectId, TypeTag};
 
 use super::{
-    api::{models::CetusPool, CetusClient},
-    models::{CalculatedSwapResult, CetusConfig, CetusPoolType, RoutePoolData, SharedObject, SwapParams},
-    tx_builder::TransactionBuilder,
     CETUS_CLMM_PACKAGE_ID, CETUS_GLOBAL_CONFIG_ID, CETUS_GLOBAL_CONFIG_SHARED_VERSION, CETUS_MAINNET_PARTNER_ID, CETUS_PARTNER_SHARED_VERSION,
     CETUS_ROUTER_PACKAGE_ID,
+    api::{CetusClient, models::CetusPool},
+    models::{CalculatedSwapResult, CetusConfig, CetusPoolType, RoutePoolData, SharedObject, SwapParams},
+    tx_builder::TransactionBuilder,
 };
 use crate::{
     debug_println,
@@ -22,19 +22,19 @@ use crate::{
     sui::{
         gas_budget::GasBudgetCalculator,
         rpc::{
-            models::{InspectEvent, InspectResult},
             SuiClient,
+            models::{InspectEvent, InspectResult},
         },
     },
     swapper::{
-        slippage::apply_slippage_in_bp, FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperProviderData,
-        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute,
+        FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
+        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, slippage::apply_slippage_in_bp,
     },
 };
 use gem_sui::{
+    EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
     jsonrpc::{ObjectDataOptions, SuiData, SuiRpc},
     models::TxOutput,
-    EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
 };
 use primitives::{AssetId, Chain};
 
@@ -104,7 +104,14 @@ impl Cetus {
         self.decode_swap_result(&result)
     }
 
-    fn pre_swap_call(&self, pool: &CetusPool, pool_obj: &SharedObject, a2b: bool, buy_amount_in: bool, amount: BigInt) -> Result<SuiRpc, Box<dyn std::error::Error + Send + Sync>> {
+    fn pre_swap_call(
+        &self,
+        pool: &CetusPool,
+        pool_obj: &SharedObject,
+        a2b: bool,
+        buy_amount_in: bool,
+        amount: BigInt,
+    ) -> Result<SuiRpc, Box<dyn std::error::Error + Send + Sync>> {
         let mut ptb = ProgrammableTransactionBuilder::new();
         let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
 
@@ -329,7 +336,7 @@ mod tests {
     use super::*;
     use crate::sui::{
         gas_budget,
-        rpc::{models::InspectGasUsed, CoinAsset},
+        rpc::{CoinAsset, models::InspectGasUsed},
     };
     use gem_sui::tx::decode_transaction;
     use sui_types::{ObjectDigest, Transaction, TransactionKind};
@@ -379,7 +386,7 @@ mod tests {
         let mut ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &params, &all_coins).unwrap();
         let tx = gem_sui::tx::prefill_tx(ptb.clone());
 
-        let expected_kind= "AAkACAAvaFkAAAAAAQHapGKSYyw8TY8x8j6g+bNqKP82d+loSYDkQ4QDpno9jy4FGAAAAAAAAQEBUeiDunwLVmomy8ipTNM+sKvUGKd8weYK0i/ZsfKc0qv7mnEWAAAAAAEBAQixh1tlQchH8F7XHQTLz6ZuToYZvzuJI7B8W1QJQzNmHn5DHgAAAAABAAEBAAgAL2hZAAAAAAAI3l0zAAAAAAAAEK8zG6gyf7s1scT+/wAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAQAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgRjb2luBHplcm8BB9ujRnLjDLBlsfk+OrVTGHaP1v72bBWULJ98uEbi+QDnBHVzZGMEVVNEQwAAAgABAQAAADpaqQ/6M9CRANe2lB6hwP/mq2bncGLd0mMgwbBzqrsQDnBvb2xfc2NyaXB0X3YyFXN3YXBfYjJhX3dpdGhfcGFydG5lcgIH26NGcuMMsGWx+T46tVMYdo/W/vZsFZQsn3y4RuL5AOcEdXNkYwRVU0RDAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgNzdWkDU1VJAAoBAQABAgABAwACAAACAQABBAABBQABBgABBwABCAA=";
+        let expected_kind = "AAkACAAvaFkAAAAAAQHapGKSYyw8TY8x8j6g+bNqKP82d+loSYDkQ4QDpno9jy4FGAAAAAAAAQEBUeiDunwLVmomy8ipTNM+sKvUGKd8weYK0i/ZsfKc0qv7mnEWAAAAAAEBAQixh1tlQchH8F7XHQTLz6ZuToYZvzuJI7B8W1QJQzNmHn5DHgAAAAABAAEBAAgAL2hZAAAAAAAI3l0zAAAAAAAAEK8zG6gyf7s1scT+/wAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAQAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgRjb2luBHplcm8BB9ujRnLjDLBlsfk+OrVTGHaP1v72bBWULJ98uEbi+QDnBHVzZGMEVVNEQwAAAgABAQAAADpaqQ/6M9CRANe2lB6hwP/mq2bncGLd0mMgwbBzqrsQDnBvb2xfc2NyaXB0X3YyFXN3YXBfYjJhX3dpdGhfcGFydG5lcgIH26NGcuMMsGWx+T46tVMYdo/W/vZsFZQsn3y4RuL5AOcEdXNkYwRVU0RDAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgNzdWkDU1VJAAoBAQABAgABAwACAAACAQABBAABBQABBgABBwABCAA=";
         let expected_decoded: TransactionKind = decode_transaction(expected_kind).unwrap();
 
         assert_eq!(STANDARD.encode(bcs::to_bytes(&tx.kind).unwrap()), expected_kind);

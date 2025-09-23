@@ -1,8 +1,8 @@
-use alloy_primitives::{hex, Address};
+use alloy_primitives::{Address, hex};
 use gem_hash::keccak::keccak256;
 use k256::{
-    elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
     SecretKey,
+    elliptic_curve::{rand_core::OsRng, sec1::ToEncodedPoint},
 };
 use primitives::Preferences;
 use std::{error::Error, sync::Arc};

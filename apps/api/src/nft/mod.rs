@@ -1,11 +1,11 @@
 use crate::params::ChainParam;
 use crate::responders::{ApiError, ApiResponse};
 use ::nft::NFTClient;
-use primitives::{response::ResponseResultNew, NFTAsset, NFTData};
+use primitives::{NFTAsset, NFTData, response::ResponseResultNew};
+use rocket::Request;
 use rocket::http::ContentType;
 use rocket::response::{self, Responder};
-use rocket::Request;
-use rocket::{get, put, tokio::sync::Mutex, State};
+use rocket::{State, get, put, tokio::sync::Mutex};
 use std::collections::HashMap;
 use std::io::Cursor;
 

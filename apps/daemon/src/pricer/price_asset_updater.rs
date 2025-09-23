@@ -1,5 +1,5 @@
 use chain_primitives::format_token_id;
-use coingecko::{get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain, Coin, CoinGeckoClient};
+use coingecko::{Coin, CoinGeckoClient, get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use pricer::PriceClient;
 use primitives::Chain;
 use storage::models::PriceAsset;
@@ -47,12 +47,13 @@ impl PriceAssetUpdater {
                 if let Some(chain) = platform {
                     let token_id = token_id.unwrap_or_default();
                     if !token_id.is_empty()
-                        && let Some(asset_id) = get_asset_id(chain, token_id) {
-                            return Some(PriceAsset {
-                                asset_id,
-                                price_id: coin.id.clone(),
-                            });
-                        }
+                        && let Some(asset_id) = get_asset_id(chain, token_id)
+                    {
+                        return Some(PriceAsset {
+                            asset_id,
+                            price_id: coin.id.clone(),
+                        });
+                    }
                 }
                 None
             })

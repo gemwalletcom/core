@@ -2,12 +2,12 @@ use crate::model::FiatMapping;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
 use reqwest::{
-    header::{HeaderMap, HeaderValue},
     Client,
+    header::{HeaderMap, HeaderValue},
 };
 use url::Url;
 
-use super::models::{Asset, Country, FiatCurrency, Order, PaymentMethod, Quote, ORDER_TYPE_BUY, ORDER_TYPE_SELL};
+use super::models::{Asset, Country, FiatCurrency, ORDER_TYPE_BUY, ORDER_TYPE_SELL, Order, PaymentMethod, Quote};
 
 const API_URL: &str = "https://api.banxa.com";
 

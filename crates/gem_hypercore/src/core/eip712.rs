@@ -1,5 +1,5 @@
 use alloy_primitives::Address;
-use gem_evm::eip712::{eip712_domain_types, EIP712Type};
+use gem_evm::eip712::{EIP712Type, eip712_domain_types};
 use primitives::Chain;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

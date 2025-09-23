@@ -1,6 +1,6 @@
 use std::cmp::min;
 
-use primitives::{fee::FeePriority, EVMChain, PriorityFeeValue};
+use primitives::{EVMChain, PriorityFeeValue, fee::FeePriority};
 
 use crate::models::fee::EthereumFeeHistory;
 
@@ -83,11 +83,7 @@ impl FeeCalculator {
                     let sum = fees.iter().cloned().fold(BigInt::from(0), |a, b| a + b);
                     let avg = &sum / BigInt::from(fees.len());
                     let min_value = min_priority_fee.clone();
-                    if avg < min_value {
-                        min_value
-                    } else {
-                        avg
-                    }
+                    if avg < min_value { min_value } else { avg }
                 };
 
                 PriorityFeeValue { priority, value }
@@ -189,11 +185,15 @@ mod tests {
             oldest_block: 0,
         };
 
-        assert!(calculator
-            .calculate_priority_fees(&empty_history, &[FeePriority::Slow], BigInt::from(100))
-            .is_err());
-        assert!(calculator
-            .calculate_priority_fees(&create_test_fee_history(), &[FeePriority::Slow, FeePriority::Normal], BigInt::from(100))
-            .is_err());
+        assert!(
+            calculator
+                .calculate_priority_fees(&empty_history, &[FeePriority::Slow], BigInt::from(100))
+                .is_err()
+        );
+        assert!(
+            calculator
+                .calculate_priority_fees(&create_test_fee_history(), &[FeePriority::Slow, FeePriority::Normal], BigInt::from(100))
+                .is_err()
+        );
     }
 }

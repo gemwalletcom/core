@@ -29,7 +29,7 @@ pub mod rpc;
 pub mod provider;
 
 pub use address::ethereum_address_checksum;
-pub use eip712::{eip712_domain_types, EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue};
+pub use eip712::{EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue, eip712_domain_types};
 
 pub fn parse_u256(value: &str) -> Option<U256> {
     if let Some(stripped) = value.strip_prefix("0x") {

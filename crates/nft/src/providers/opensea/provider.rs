@@ -36,8 +36,8 @@ impl NFTProvider for OpenSeaClient {
 
 #[cfg(all(test, feature = "nft_integration_tests"))]
 mod nft_integration_tests {
-    use crate::testkit::*;
     use crate::NFTProvider;
+    use crate::testkit::*;
     use primitives::{Chain, NFTAssetId, NFTCollectionId};
 
     #[tokio::test]

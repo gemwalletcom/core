@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use futures::StreamExt;
-use lapin::{options::*, types::FieldTable, Channel, Connection, ConnectionProperties};
+use lapin::{Channel, Connection, ConnectionProperties, options::*, types::FieldTable};
 use serde::de::DeserializeOwned;
 
 use crate::QueueName;

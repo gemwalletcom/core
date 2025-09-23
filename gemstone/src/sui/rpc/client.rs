@@ -1,7 +1,7 @@
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use gem_sui::{
-    jsonrpc::{SuiData, SuiRpc},
     SUI_COIN_TYPE, SUI_COIN_TYPE_FULL,
+    jsonrpc::{SuiData, SuiRpc},
 };
 use serde::de::DeserializeOwned;
 use std::sync::Arc;

@@ -1,8 +1,8 @@
 use crate::DatabaseError;
 
+use crate::DatabaseClient;
 use crate::database::tag::TagStore;
 use crate::models::{AssetTag, Tag};
-use crate::DatabaseClient;
 
 pub trait TagRepository {
     fn add_tags(&mut self, values: Vec<Tag>) -> Result<usize, DatabaseError>;

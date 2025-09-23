@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use gem_tracing::{error_with_fields, error_with_fields_impl, info_with_fields_impl, DurationMs};
+use gem_tracing::{DurationMs, error_with_fields, error_with_fields_impl, info_with_fields_impl};
 use primitives::NodeStatusState;
 
 use crate::config::{Domain, Url};

@@ -1,5 +1,5 @@
 use crate::schema::prices_assets;
-use crate::{models::*, DatabaseClient};
+use crate::{DatabaseClient, models::*};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::upsert::excluded;

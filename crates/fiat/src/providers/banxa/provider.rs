@@ -1,7 +1,7 @@
 use crate::{
+    FiatProvider,
     model::{FiatMapping, FiatProviderAsset},
     providers::banxa::mapper::map_asset_with_limits,
-    FiatProvider,
 };
 use async_trait::async_trait;
 use primitives::{FiatBuyQuote, FiatSellQuote};
@@ -12,7 +12,7 @@ use streamer::FiatWebhook;
 use super::{
     client::BanxaClient,
     mapper::map_order,
-    models::{Webhook, ORDER_TYPE_SELL},
+    models::{ORDER_TYPE_SELL, Webhook},
 };
 
 #[async_trait]
@@ -94,7 +94,7 @@ impl FiatProvider for BanxaClient {
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 mod fiat_integration_tests {
     use crate::testkit::*;
-    use crate::{model::FiatMapping, FiatProvider};
+    use crate::{FiatProvider, model::FiatMapping};
     use primitives::FiatBuyQuote;
 
     #[tokio::test]

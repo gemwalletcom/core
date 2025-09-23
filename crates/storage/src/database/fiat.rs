@@ -1,5 +1,5 @@
 use crate::schema::fiat_providers;
-use crate::{models::*, DatabaseClient};
+use crate::{DatabaseClient, models::*};
 use chrono::NaiveDateTime;
 use diesel::associations::HasTable;
 use diesel::dsl::count_star;

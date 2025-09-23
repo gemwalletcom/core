@@ -12,20 +12,20 @@ pub mod wallet_connect;
 use crate::config::chain::ChainConfig;
 use gem_solana;
 use primitives::{
-    node_config::{self, Node},
     Chain, EVMChain, SolanaTokenProgramId, StakeChain,
+    node_config::{self, Node},
 };
 use std::{collections::HashMap, str::FromStr};
 
 use {
-    docs::{get_docs_url, DocsUrl},
-    evm_chain::{get_evm_chain_config, EVMChainConfig},
-    public::{get_public_url, PublicUrl, ASSETS_URL},
-    social::{get_social_url, get_social_url_deeplink, SocialUrl},
-    stake::{get_stake_config, StakeChainConfig},
-    swap_config::{get_swap_config, SwapConfig},
+    docs::{DocsUrl, get_docs_url},
+    evm_chain::{EVMChainConfig, get_evm_chain_config},
+    public::{ASSETS_URL, PublicUrl, get_public_url},
+    social::{SocialUrl, get_social_url, get_social_url_deeplink},
+    stake::{StakeChainConfig, get_stake_config},
+    swap_config::{SwapConfig, get_swap_config},
     validators::get_validators,
-    wallet_connect::{get_wallet_connect_config, WalletConnectConfig},
+    wallet_connect::{WalletConnectConfig, get_wallet_connect_config},
 };
 
 /// Config

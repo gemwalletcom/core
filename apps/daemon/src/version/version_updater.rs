@@ -1,4 +1,4 @@
-use primitives::{config::Release, PlatformStore};
+use primitives::{PlatformStore, config::Release};
 use std::error::Error;
 use storage::DatabaseClient;
 

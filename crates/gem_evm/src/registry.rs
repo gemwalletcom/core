@@ -1,4 +1,4 @@
-use alloy_primitives::{address, Address};
+use alloy_primitives::{Address, address};
 use primitives::Chain;
 
 #[derive(Debug, Clone)]

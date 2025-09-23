@@ -1,4 +1,4 @@
-use crate::types::{JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, JsonRpcResults, ERROR_INTERNAL_ERROR};
+use crate::types::{ERROR_INTERNAL_ERROR, JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, JsonRpcResults};
 use gem_client::{Client, ClientError};
 use serde::de::DeserializeOwned;
 use serde_json::Value;

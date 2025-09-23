@@ -5,10 +5,10 @@ use std::sync::Arc;
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use storage::DatabaseClient;
 
+use crate::NFTProviderConfig;
 use crate::factory::NFTProviderFactory;
 use crate::image_fetcher::ImageFetcher;
 use crate::provider::NFTProviderClient;
-use crate::NFTProviderConfig;
 
 pub struct NFTClient {
     database: Box<DatabaseClient>,

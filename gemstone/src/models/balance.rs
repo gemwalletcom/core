@@ -1,4 +1,4 @@
-use primitives::{asset_balance::BalanceMetadata, AssetBalance, AssetId, Balance};
+use primitives::{AssetBalance, AssetId, Balance, asset_balance::BalanceMetadata};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemAssetBalance {

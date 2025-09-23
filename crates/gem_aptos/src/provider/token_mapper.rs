@@ -20,8 +20,8 @@ pub fn map_token_data(resource: &Resource<CoinInfo>, token_id: &str) -> Result<A
 mod tests {
     use super::*;
     use crate::{
-        models::{CoinInfo, Resource},
         APTOS_NATIVE_COIN,
+        models::{CoinInfo, Resource},
     };
 
     #[test]

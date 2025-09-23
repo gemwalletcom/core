@@ -1,4 +1,4 @@
-use super::{WithdrawRequest, EVERSTAKE_POOL_ADDRESS};
+use super::{EVERSTAKE_POOL_ADDRESS, WithdrawRequest};
 use num_bigint::{BigInt, Sign};
 use num_traits::Zero;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState};

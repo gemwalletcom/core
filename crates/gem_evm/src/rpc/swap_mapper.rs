@@ -1,4 +1,4 @@
-use alloy_primitives::{hex, Address};
+use alloy_primitives::{Address, hex};
 use alloy_sol_types::SolCall;
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
@@ -12,8 +12,8 @@ use crate::{
         model::{Transaction, TransactionReciept, TransactionReplayTrace},
     },
     uniswap::{
-        actions::{decode_action_data, V4Action},
-        command::{Sweep, UnwrapWeth, V3SwapExactIn, SWEEP_COMMAND, UNWRAP_WETH_COMMAND, V3_SWAP_EXACT_IN_COMMAND, V4_SWAP_COMMAND, WRAP_ETH_COMMAND},
+        actions::{V4Action, decode_action_data},
+        command::{SWEEP_COMMAND, Sweep, UNWRAP_WETH_COMMAND, UnwrapWeth, V3_SWAP_EXACT_IN_COMMAND, V3SwapExactIn, V4_SWAP_COMMAND, WRAP_ETH_COMMAND},
         contracts::IUniversalRouter,
         deployment::get_provider_by_chain_contract,
         path::decode_path,
@@ -40,12 +40,13 @@ impl SwapMapper {
     ) -> Option<primitives::Transaction> {
         // Check if it is a uniswap transaction
         if let Some(to_address) = &transaction.to
-            && let Some(provider) = get_provider_by_chain_contract(chain, to_address) {
-                let input_bytes = hex::decode(transaction.input.clone()).ok()?;
-                if let Some(swap_metadata) = Self::try_map_uniswap_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
-                    return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
-                }
+            && let Some(provider) = get_provider_by_chain_contract(chain, to_address)
+        {
+            let input_bytes = hex::decode(transaction.input.clone()).ok()?;
+            if let Some(swap_metadata) = Self::try_map_uniswap_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
+                return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
             }
+        }
 
         // Calculate balance diffs for swap detection
         if let Some(trace) = trace {
@@ -200,54 +201,57 @@ impl SwapMapper {
                 }
             }
             if command == &V4_SWAP_COMMAND
-                && let Ok(decoded_actions_vec) = decode_action_data(input) {
-                    for action in decoded_actions_vec {
-                        match action {
-                            V4Action::SWAP_EXACT_IN(params) => {
-                                let path_keys = params.path;
-                                let from_token = params.currencyIn;
-                                let to_token = if path_keys.is_empty() {
-                                    continue;
+                && let Ok(decoded_actions_vec) = decode_action_data(input)
+            {
+                for action in decoded_actions_vec {
+                    match action {
+                        V4Action::SWAP_EXACT_IN(params) => {
+                            let path_keys = params.path;
+                            let from_token = params.currencyIn;
+                            let to_token = if path_keys.is_empty() {
+                                continue;
+                            } else {
+                                path_keys[path_keys.len() - 1].intermediateCurrency
+                            };
+                            from_asset = Some(AssetId {
+                                chain: *chain,
+                                token_id: if from_token == Address::ZERO {
+                                    None
                                 } else {
-                                    path_keys[path_keys.len() - 1].intermediateCurrency
-                                };
-                                from_asset = Some(AssetId {
-                                    chain: *chain,
-                                    token_id: if from_token == Address::ZERO {
-                                        None
-                                    } else {
-                                        Some(from_token.to_checksum(None))
-                                    },
-                                });
-                                to_asset = Some(AssetId {
-                                    chain: *chain,
-                                    token_id: if to_token == Address::ZERO { None } else { Some(to_token.to_checksum(None)) },
-                                });
-                                from_value = params.amountIn.to_string();
-                                to_value = if to_token == Address::ZERO {
-                                    // No logs for native transfer, so we use sweep min value here
-                                    sweep_value.clone()
-                                } else {
-                                    Self::transfer_value_from_receipt(from, &to_token.to_checksum(None), transaction_reciept)?
-                                };
-                            }
-                            _ => continue,
+                                    Some(from_token.to_checksum(None))
+                                },
+                            });
+                            to_asset = Some(AssetId {
+                                chain: *chain,
+                                token_id: if to_token == Address::ZERO { None } else { Some(to_token.to_checksum(None)) },
+                            });
+                            from_value = params.amountIn.to_string();
+                            to_value = if to_token == Address::ZERO {
+                                // No logs for native transfer, so we use sweep min value here
+                                sweep_value.clone()
+                            } else {
+                                Self::transfer_value_from_receipt(from, &to_token.to_checksum(None), transaction_reciept)?
+                            };
                         }
+                        _ => continue,
                     }
                 }
+            }
         }
 
         if let Some(from_asset) = from_asset
             && let Some(to_asset) = to_asset
-                && !from_value.is_empty() && !to_value.is_empty() {
-                    return Some(TransactionSwapMetadata {
-                        from_asset,
-                        to_asset,
-                        from_value,
-                        to_value,
-                        provider: Some(provider.to_string()),
-                    });
-                }
+            && !from_value.is_empty()
+            && !to_value.is_empty()
+        {
+            return Some(TransactionSwapMetadata {
+                from_asset,
+                to_asset,
+                from_value,
+                to_value,
+                provider: Some(provider.to_string()),
+            });
+        }
         None
     }
 }

@@ -2,19 +2,19 @@ use std::error::Error;
 
 #[cfg(feature = "rpc")]
 use gem_client::Client;
-#[cfg(feature = "rpc")]
-use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 use gem_jsonrpc::JsonRpcClient;
+#[cfg(feature = "rpc")]
+use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 #[cfg(feature = "rpc")]
 use num_bigint::BigInt;
 use primitives::chain::Chain;
 
-use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
-use crate::models::transaction::{SuiBroadcastTransaction, SuiTransaction};
 use crate::models::SuiCoinMetadata;
 #[cfg(feature = "rpc")]
 use crate::models::SuiObject;
+use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
+use crate::models::transaction::{SuiBroadcastTransaction, SuiTransaction};
 use crate::models::{Balance, Checkpoint, Digest, Digests, ResultData, TransactionBlocks};
 use primitives::transaction_load_metadata::SuiCoin;
 

@@ -1,6 +1,6 @@
 use crate::{
-    asset_id::AssetId, transaction_direction::TransactionDirection, transaction_state::TransactionState, transaction_type::TransactionType,
-    transaction_utxo::TransactionUtxoInput, AddressName, AssetAddress, Chain, TransactionSwapMetadata,
+    AddressName, AssetAddress, Chain, TransactionSwapMetadata, asset_id::AssetId, transaction_direction::TransactionDirection,
+    transaction_state::TransactionState, transaction_type::TransactionType, transaction_utxo::TransactionUtxoInput,
 };
 
 use chrono::{DateTime, Utc};

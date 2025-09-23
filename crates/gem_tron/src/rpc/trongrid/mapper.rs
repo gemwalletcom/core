@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use super::model::TronGridAccount;
 use crate::models::{Transaction, TransactionReceiptData};
 use crate::provider::transactions_mapper::map_transaction;
@@ -26,7 +28,7 @@ impl TronGridMapper {
                 trc20_map.into_iter().map(|(contract_address, balance)| {
                     AssetBalance::new(
                         AssetId::from(Self::get_chain(), Some(contract_address.clone())),
-                        balance.parse::<BigUint>().unwrap_or_default(),
+                        BigUint::from_str(balance.as_str()).unwrap_or_default(),
                     )
                 })
             })

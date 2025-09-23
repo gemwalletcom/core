@@ -6,7 +6,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use streamer::{run_consumer, ConsumerConfig, QueueName, StreamReader};
+use streamer::{ConsumerConfig, QueueName, StreamReader, run_consumer};
 
 use crate::fiat::fiat_webhook_consumer::FiatWebhookConsumer;
 

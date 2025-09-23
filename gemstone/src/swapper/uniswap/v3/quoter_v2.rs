@@ -1,4 +1,4 @@
-use alloy_primitives::{hex::decode as HexDecode, Bytes, U256};
+use alloy_primitives::{Bytes, U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
 use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},

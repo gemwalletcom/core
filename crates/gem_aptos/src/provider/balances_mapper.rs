@@ -38,8 +38,8 @@ pub fn map_token_balances(resources: &[Resource<ResourceData>], token_ids: Vec<S
 mod tests {
     use super::*;
     use crate::{
-        models::{CoinData, Resource, ResourceData},
         APTOS_NATIVE_COIN,
+        models::{CoinData, Resource, ResourceData},
     };
 
     #[test]

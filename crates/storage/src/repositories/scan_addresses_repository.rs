@@ -1,8 +1,8 @@
 use crate::DatabaseError;
 
+use crate::DatabaseClient;
 use crate::database::scan_addresses::ScanAddressesStore;
 use crate::models::{NewScanAddress, ScanAddress as StorageScanAddress, ScanAddressType};
-use crate::DatabaseClient;
 use primitives::{Chain, ScanAddress};
 
 pub trait ScanAddressesRepository {

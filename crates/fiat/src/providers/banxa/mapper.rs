@@ -2,10 +2,10 @@ use super::{
     client::BanxaClient,
     models::{Asset, FiatCurrency, Order},
 };
-use crate::model::{filter_token_id, FiatProviderAsset};
+use crate::model::{FiatProviderAsset, filter_token_id};
+use primitives::PaymentType;
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::PaymentType;
 use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {

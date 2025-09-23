@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::{
     network::AlienProvider,
-    swapper::{models::ApprovalType, SwapperApprovalData, SwapperError},
+    swapper::{SwapperApprovalData, SwapperError, models::ApprovalType},
     tron::client::TronClient,
 };
 

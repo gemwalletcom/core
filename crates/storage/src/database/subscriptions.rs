@@ -1,5 +1,5 @@
 use crate::schema::devices;
-use crate::{models::*, DatabaseClient};
+use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
 use primitives::Chain;
 

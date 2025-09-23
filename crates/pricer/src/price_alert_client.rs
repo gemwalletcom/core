@@ -2,8 +2,8 @@ use chrono::{Duration, Utc};
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{
-    Asset, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification, PushNotificationAsset,
-    PushNotificationTypes, DEFAULT_FIAT_CURRENCY,
+    Asset, DEFAULT_FIAT_CURRENCY, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification,
+    PushNotificationAsset, PushNotificationTypes,
 };
 use std::collections::HashSet;
 use std::error::Error;

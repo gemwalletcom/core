@@ -5,24 +5,24 @@ use std::sync::Arc;
 
 use super::{
     client::ProxyClient,
-    mayan::{map_mayan_chain_to_chain, MayanClientStatus, MayanExplorer},
+    mayan::{MayanClientStatus, MayanExplorer, map_mayan_chain_to_chain},
     symbiosis::model::SymbiosisTransactionData,
 };
 use crate::{
     config::swap_config::DEFAULT_SWAP_FEE_BPS,
     network::AlienProvider,
     swapper::{
+        FetchQuoteData, Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
+        SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
         approval::{evm::check_approval_erc20, tron::check_approval_tron},
         models::{ApprovalType, SwapperChainAsset},
         remote_models::SwapperProviderMode,
-        FetchQuoteData, Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-        SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
     },
     tron::client::TronClient,
 };
 use primitives::{
-    swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
     AssetId, Chain, ChainType,
+    swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
 pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
@@ -238,7 +238,7 @@ mod swap_integration_tests {
     use super::*;
     use crate::{
         network::alien_provider::NativeProvider,
-        swapper::{asset::SUI_USDC_TOKEN_ID, models::SwapperOptions, remote_models::SwapperQuoteAsset, SwapperMode},
+        swapper::{SwapperMode, asset::SUI_USDC_TOKEN_ID, models::SwapperOptions, remote_models::SwapperQuoteAsset},
     };
     use primitives::AssetId;
 

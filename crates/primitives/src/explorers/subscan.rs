@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, ACCOUNT_PATH};
+use crate::explorers::metadata::{ACCOUNT_PATH, Explorer, Metadata};
 
 pub struct SubScan;
 

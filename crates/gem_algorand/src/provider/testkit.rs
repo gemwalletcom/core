@@ -4,13 +4,16 @@ use crate::rpc::client::AlgorandClient;
 use crate::rpc::client_indexer::AlgorandClientIndexer;
 #[cfg(all(test, feature = "chain_integration_tests"))]
 use gem_client::ReqwestClient;
+#[cfg(all(test, feature = "chain_integration_tests"))]
+use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS: &str = "RXIOUIR5IGFZMIZ7CR7FJXDYY4JI7NZG5UCWCZZNWXUPFJRLG6K6X5ITXM";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub fn create_algorand_test_client() -> AlgorandClient<ReqwestClient> {
-    let reqwest_client = ReqwestClient::new("https://mainnet-api.algonode.cloud".to_string(), reqwest::Client::new());
+    let settings = get_test_settings();
+    let reqwest_client = ReqwestClient::new(settings.chains.algorand.url, reqwest::Client::new());
     AlgorandClient::new(reqwest_client)
 }
 

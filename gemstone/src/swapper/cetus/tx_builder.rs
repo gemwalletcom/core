@@ -1,11 +1,11 @@
 use crate::sui::rpc::CoinAsset;
-use std::error::Error;
-use gem_sui::{sui_clock_object_input, ObjectID, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID};
+use gem_sui::{ObjectID, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID, sui_clock_object_input};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
+use std::error::Error;
 use std::str::FromStr;
 
-use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder};
+use sui_transaction_builder::{Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder, unresolved::Input};
 use sui_types::{Argument, Identifier, ObjectId, TypeTag};
 
 use super::models::{CetusConfig, SwapParams};
@@ -34,7 +34,11 @@ pub struct BuildCoinResult {
 pub struct TransactionBuilder;
 
 impl TransactionBuilder {
-    pub fn build_zero_value_coin(all_coins: &[CoinAsset], ptb: &mut ProgrammableTransactionBuilder, coin_type: &str) -> Result<BuildCoinResult, Box<dyn Error + Send + Sync>> {
+    pub fn build_zero_value_coin(
+        all_coins: &[CoinAsset],
+        ptb: &mut ProgrammableTransactionBuilder,
+        coin_type: &str,
+    ) -> Result<BuildCoinResult, Box<dyn Error + Send + Sync>> {
         let function = Function::new(
             ObjectID::from(SUI_FRAMEWORK_PACKAGE_ID).addr(),
             Identifier::from_str(MODULE_COIN)?,
@@ -67,12 +71,7 @@ impl TransactionBuilder {
 
         let amount_total = CoinAssist::calculate_total_balance(&coin_assets);
         if amount_total < *amount {
-            return Err(format!(
-                "The amount({}) is Insufficient balance for {}, expect {}",
-                amount_total,
-                coin_type,
-                amount
-            ).into());
+            return Err(format!("The amount({}) is Insufficient balance for {}, expect {}", amount_total, coin_type, amount).into());
         }
 
         Self::build_one_coin(ptb, &coin_assets, amount, coin_type, fix_amount)
@@ -171,11 +170,7 @@ impl TransactionBuilder {
         let has_swap_partner = params.swap_partner.is_some();
 
         let function_name = if has_swap_partner {
-            if params.a2b {
-                SWAP_WITH_PARTNER_A2B
-            } else {
-                SWAP_WITH_PARTNER_B2A
-            }
+            if params.a2b { SWAP_WITH_PARTNER_A2B } else { SWAP_WITH_PARTNER_B2A }
         } else if params.a2b {
             SWAP_A2B
         } else {
@@ -229,7 +224,11 @@ impl TransactionBuilder {
         Ok(())
     }
 
-    pub fn build_swap_transaction(cetus_config: &CetusConfig, params: &SwapParams, all_coin_asset: &[CoinAsset]) -> Result<ProgrammableTransactionBuilder, Box<dyn Error + Send + Sync>> {
+    pub fn build_swap_transaction(
+        cetus_config: &CetusConfig,
+        params: &SwapParams,
+        all_coin_asset: &[CoinAsset],
+    ) -> Result<ProgrammableTransactionBuilder, Box<dyn Error + Send + Sync>> {
         let mut ptb = ProgrammableTransactionBuilder::new();
 
         // Calculate the input amounts based on direction and swap mode

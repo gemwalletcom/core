@@ -11,17 +11,14 @@ use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]
 fn build_test_client(chain: primitives::EVMChain, rpc_url: &str) -> crate::rpc::client::EthereumClient<gem_client::ReqwestClient> {
-    use crate::rpc::{alchemy::client::alchemy_url, ankr::AnkrClient, client::EthereumClient, AlchemyClient};
+    use crate::rpc::{AlchemyClient, alchemy::client::alchemy_url, ankr::AnkrClient, client::EthereumClient};
     use gem_client::ReqwestClient;
     use gem_jsonrpc::JsonRpcClient;
 
     let settings = get_test_settings();
     let rpc_client = JsonRpcClient::new_reqwest(rpc_url.to_string());
 
-    let alchemy_client = AlchemyClient::new(
-        ReqwestClient::new_test_client(alchemy_url(&settings.alchemy.key.secret)),
-        chain
-    );
+    let alchemy_client = AlchemyClient::new(ReqwestClient::new_test_client(alchemy_url(&settings.alchemy.key.secret)), chain);
 
     let ankr_client = AnkrClient::new(
         JsonRpcClient::new_reqwest(format!("https://rpc.ankr.com/multichain/{}", settings.ankr.key.secret)),

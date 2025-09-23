@@ -4,7 +4,7 @@ mod tests {
     use std::time::Duration;
 
     use primitives::Chain;
-    use security_provider::{providers::goplus::GoPlusProvider, providers::hashdit::HashDitProvider, AddressTarget, ScanProvider, TokenTarget};
+    use security_provider::{AddressTarget, ScanProvider, TokenTarget, providers::goplus::GoPlusProvider, providers::hashdit::HashDitProvider};
     use settings::Settings;
 
     use gem_client::ReqwestClient;

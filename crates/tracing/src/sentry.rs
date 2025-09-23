@@ -39,7 +39,7 @@ mod real_sentry {
         }
     }
 
-    pub use sentry::{capture_message, configure_scope, start_transaction, Level, TransactionContext, capture_error};
+    pub use sentry::{Level, TransactionContext, capture_error, capture_message, configure_scope, start_transaction};
 }
 
 #[cfg(not(feature = "sentry"))]

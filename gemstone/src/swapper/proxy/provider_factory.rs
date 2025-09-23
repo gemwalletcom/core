@@ -1,7 +1,7 @@
-use crate::swapper::{asset::*, models::SwapperChainAsset, SwapperProvider, SwapperProviderType};
+use crate::swapper::{SwapperProvider, SwapperProviderType, asset::*, models::SwapperChainAsset};
 use primitives::Chain;
 
-use super::provider::{ProxyProvider, PROVIDER_API_URL};
+use super::provider::{PROVIDER_API_URL, ProxyProvider};
 
 impl ProxyProvider {
     pub fn new_stonfi_v2() -> ProxyProvider {

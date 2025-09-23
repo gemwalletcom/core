@@ -32,11 +32,15 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
         let balance = self.get_stake_balance(&address).await?;
         Ok(Some(map_balance_staking(&balance, self.chain)?))
     }
+
+    async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod integration_tests {
-    use crate::provider::testkit::{create_hypercore_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{TEST_ADDRESS, create_hypercore_test_client};
     use chain_traits::ChainBalances;
     use num_bigint::BigUint;
 
@@ -75,6 +79,16 @@ mod integration_tests {
 
         assert!(balance.balance.staked >= BigUint::from(0u64));
         assert_eq!(balance.asset_id.chain, primitives::Chain::HyperCore);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_hypercore_get_balance_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_hypercore_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let assets = client.get_balance_assets(address).await?;
+
+        assert_eq!(assets.len(), 0);
         Ok(())
     }
 }

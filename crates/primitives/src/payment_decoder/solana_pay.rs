@@ -1,7 +1,7 @@
 use super::error::{PaymentDecoderError, Result};
 use std::collections::HashMap;
-use url::form_urlencoded;
 use url::Url;
+use url::form_urlencoded;
 pub const SOLANA_PAY_SCHEME: &str = "solana";
 
 #[derive(Debug, Clone)]

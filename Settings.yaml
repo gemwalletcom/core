@@ -154,7 +154,7 @@ chains:
   sonic:
     url: https://rpc.soniclabs.com
   algorand:
-    url: https://mainnet-idx.algonode.cloud
+    url: https://mainnet-api.algonode.cloud
   polkadot:
     url: https://polkadot-public-sidecar.parity-chains.parity.io
   cardano:

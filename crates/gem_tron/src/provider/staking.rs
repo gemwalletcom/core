@@ -120,7 +120,7 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod integration_tests {
     use super::*;
-    use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{TEST_ADDRESS, create_test_client};
 
     #[tokio::test]
     async fn test_get_staking_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

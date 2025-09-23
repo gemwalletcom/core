@@ -51,7 +51,7 @@ impl<C: Client + Clone> ChainTransactions for TronClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{TEST_ADDRESS, create_test_client};
     use chain_traits::ChainState;
 
     #[tokio::test]

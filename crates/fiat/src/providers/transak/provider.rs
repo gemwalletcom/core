@@ -4,9 +4,9 @@ use super::{
     models::{Data, WebhookPayload},
 };
 use crate::{
+    FiatProvider,
     model::{FiatMapping, FiatProviderAsset},
     providers::transak::mapper::map_asset_with_limits,
-    FiatProvider,
 };
 use async_trait::async_trait;
 use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
@@ -77,7 +77,7 @@ impl FiatProvider for TransakClient {
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 mod fiat_integration_tests {
     use crate::testkit::*;
-    use crate::{model::FiatMapping, FiatProvider};
+    use crate::{FiatProvider, model::FiatMapping};
     use primitives::FiatBuyQuote;
 
     #[tokio::test]

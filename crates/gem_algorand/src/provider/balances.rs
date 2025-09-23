@@ -1,12 +1,13 @@
 use async_trait::async_trait;
 use chain_traits::ChainBalances;
+use num_bigint::BigUint;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::AssetBalance;
+use primitives::{AssetBalance, AssetId};
 
 use super::balances_mapper::{map_balance_coin, map_balance_tokens};
-use crate::{rpc::client::AlgorandClient, AlgorandClientIndexer};
+use crate::{AlgorandClientIndexer, rpc::client::AlgorandClient};
 
 #[async_trait]
 impl<C: Client> ChainBalances for AlgorandClient<C> {
@@ -23,6 +24,10 @@ impl<C: Client> ChainBalances for AlgorandClient<C> {
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
     }
+
+    async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
 }
 
 #[async_trait]
@@ -32,7 +37,26 @@ impl<C: Client> ChainBalances for AlgorandClientIndexer<C> {
     }
 
     async fn get_balance_tokens(&self, _address: String, _token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        unimplemented!()
+        Ok(vec![])
+    }
+
+    async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let account = self.get_account(&address).await?;
+        let asset_balances = account
+            .assets
+            .into_iter()
+            .map(|asset| {
+                AssetBalance::new(
+                    AssetId {
+                        chain: self.get_chain(),
+                        token_id: Some(asset.asset_id.to_string()),
+                    },
+                    BigUint::from(asset.amount),
+                )
+            })
+            .collect();
+
+        Ok(asset_balances)
     }
 
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
@@ -71,6 +95,23 @@ mod chain_integration_tests {
             println!("Token balance: {:?}", balance);
             assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
         }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_algorand_get_balance_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_algorand_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let assets = client.get_balance_assets(address).await?;
+
+        assert!(assets.is_empty());
+
+        for asset in &assets {
+            assert_eq!(asset.asset_id.chain, primitives::Chain::Algorand);
+            assert!(asset.balance.available > num_bigint::BigUint::from(0u32));
+            assert!(asset.asset_id.token_id.is_some());
+        }
+
         Ok(())
     }
 }

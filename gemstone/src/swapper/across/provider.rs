@@ -1,8 +1,8 @@
 use super::{
+    DEFAULT_FILL_TIMEOUT,
     api::AcrossApi,
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
-    DEFAULT_FILL_TIMEOUT,
 };
 use crate::{
     config::swap_config::SwapReferralFee,
@@ -10,26 +10,26 @@ use crate::{
     ethereum::jsonrpc as eth_rpc,
     network::AlienProvider,
     swapper::{
+        Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
         across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
         approval::check_approval_erc20,
         asset::*,
         chainlink::ChainlinkPriceFeed,
         eth_address,
         models::*,
-        Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
     },
 };
 use alloy_primitives::{
-    hex::{decode as HexDecode, encode_prefixed as HexEncode},
     Address, Bytes, U256,
+    hex::{decode as HexDecode, encode_prefixed as HexEncode},
 };
 use alloy_sol_types::{SolCall, SolValue};
 use async_trait::async_trait;
 use gem_evm::{
     across::{
         contracts::{
-            multicall_handler,
             V3SpokePoolInterface::{self, V3RelayData},
+            multicall_handler,
         },
         deployment::AcrossDeployment,
         fees::{self, LpFeeCalculator, RateModel, RelayerFeeCalculator},
@@ -39,7 +39,7 @@ use gem_evm::{
     weth::WETH9,
 };
 use num_bigint::{BigInt, Sign};
-use primitives::{swap::SwapStatus, AssetId, Chain, EVMChain};
+use primitives::{AssetId, Chain, EVMChain, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]

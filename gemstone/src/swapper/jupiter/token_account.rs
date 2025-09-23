@@ -1,4 +1,4 @@
-use gem_solana::{pubkey::Pubkey, ASSOCIATED_TOKEN_ACCOUNT_PROGRAM};
+use gem_solana::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, pubkey::Pubkey};
 
 pub fn get_token_account(wallet: &str, token_mint: &str, token_program: &str) -> String {
     let owner = Pubkey::try_from(wallet).unwrap();

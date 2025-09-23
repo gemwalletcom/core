@@ -2,7 +2,7 @@ use crate::constants::{TRANSACTION_STATUS_EXECUTED, TRANSACTION_STATUS_EXECUTED_
 use crate::models::{rpc, transaction::BroadcastResult};
 use chrono::DateTime;
 use num_bigint::{BigInt, BigUint};
-use primitives::{chain::Chain, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
+use primitives::{Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate, chain::Chain};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(response: &BroadcastResult) -> Result<String, Box<dyn Error + Sync + Send>> {

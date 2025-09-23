@@ -1,5 +1,5 @@
 use crate::{network::JsonRpcResponse, swapper::SwapperError};
-use alloy_primitives::{hex::decode as HexDecode, Address, Bytes, U256};
+use alloy_primitives::{Address, Bytes, U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
 use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
@@ -54,7 +54,7 @@ mod tests {
     use crate::swapper::uniswap::v4::path::{build_pool_keys, build_quote_exact_params};
     use alloy_primitives::{address, hex::encode_prefixed as HexEncode};
     use alloy_sol_types::SolValue;
-    use gem_evm::uniswap::{path::get_base_pair, FeeTier};
+    use gem_evm::uniswap::{FeeTier, path::get_base_pair};
     use gem_hash::keccak::keccak256;
     use primitives::EVMChain;
 

@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
-use crate::database::parser_state::ParserStateStore;
 use crate::DatabaseClient;
+use crate::database::parser_state::ParserStateStore;
 
 pub trait ParserStateRepository {
     fn get_parser_state(&mut self, chain: &str) -> Result<crate::models::ParserState, DatabaseError>;

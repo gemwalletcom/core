@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use primitives::{chain::Chain, Transaction, TransactionState, TransactionType, TransactionUpdate};
+use primitives::{Transaction, TransactionState, TransactionType, TransactionUpdate, chain::Chain};
 
 use crate::constants::{TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH, TRANSACTION_TYPE_TRANSFER_KEEP_ALIVE};
 use crate::models::rpc::{Block, Extrinsic, ExtrinsicArguments};

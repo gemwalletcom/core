@@ -1,6 +1,7 @@
 use crate::{
-    network::{jsonrpc_client_with_chain, AlienProvider},
+    network::{AlienProvider, jsonrpc_client_with_chain},
     swapper::{
+        Swapper, SwapperApprovalData, SwapperError, SwapperQuoteData,
         approval::{check_approval_erc20, check_approval_permit2},
         eth_address,
         models::*,
@@ -9,9 +10,8 @@ use crate::{
             deadline::get_sig_deadline,
             fee_token::get_fee_token,
             quote_result::get_best_quote,
-            swap_route::{build_swap_route, RouteData},
+            swap_route::{RouteData, build_swap_route},
         },
-        Swapper, SwapperApprovalData, SwapperError, SwapperQuoteData,
     },
 };
 use gem_evm::{
@@ -20,11 +20,11 @@ use gem_evm::{
 };
 use primitives::{AssetId, Chain, EVMChain};
 
-use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, Bytes, U256};
+use alloy_primitives::{Address, Bytes, U256, hex::encode_prefixed as HexEncode};
 use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
-use super::{commands::build_commands, path::build_paths_with_routes, UniversalRouterProvider, DEFAULT_SWAP_GAS_LIMIT};
+use super::{DEFAULT_SWAP_GAS_LIMIT, UniversalRouterProvider, commands::build_commands, path::build_paths_with_routes};
 
 #[derive(Debug)]
 pub struct UniswapV3 {

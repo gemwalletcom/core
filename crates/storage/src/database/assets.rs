@@ -1,6 +1,6 @@
 use crate::schema::assets::dsl::*;
 
-use crate::{models::Asset, DatabaseClient};
+use crate::{DatabaseClient, models::Asset};
 use diesel::{prelude::*, upsert::excluded};
 
 #[derive(Debug, Clone)]

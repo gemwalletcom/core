@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
-use crate::database::nodes::NodesStore;
 use crate::DatabaseClient;
+use crate::database::nodes::NodesStore;
 use primitives::node::ChainNode;
 
 pub trait NodesRepository {

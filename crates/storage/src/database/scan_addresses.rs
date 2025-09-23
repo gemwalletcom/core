@@ -1,4 +1,4 @@
-use crate::{models::*, DatabaseClient};
+use crate::{DatabaseClient, models::*};
 use primitives::Chain;
 
 use diesel::prelude::*;

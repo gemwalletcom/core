@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, ADDRESS_PATH, TRANSACTION_PATH};
+use crate::explorers::metadata::{ADDRESS_PATH, Explorer, Metadata, TRANSACTION_PATH};
 
 pub struct TronScan;
 

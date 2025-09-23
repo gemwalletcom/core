@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
-use crate::database::link_types::LinkTypesStore;
 use crate::DatabaseClient;
+use crate::database::link_types::LinkTypesStore;
 
 pub trait LinkTypesRepository {
     fn add_link_types(&mut self, values: Vec<primitives::LinkType>) -> Result<usize, DatabaseError>;

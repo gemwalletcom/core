@@ -1,5 +1,5 @@
 use alloy_ens::namehash;
-use alloy_primitives::{hex, Address, Bytes};
+use alloy_primitives::{Address, Bytes, hex};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_client::ReqwestClient;

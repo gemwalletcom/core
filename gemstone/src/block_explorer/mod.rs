@@ -1,5 +1,5 @@
 use primitives::{
-    block_explorer::{get_block_explorer, BlockExplorer},
+    block_explorer::{BlockExplorer, get_block_explorer},
     chain::Chain,
     explorers::{ChainflipScan, MayanScan, RelayScan, RuneScan, SocketScan},
 };

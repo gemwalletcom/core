@@ -1,6 +1,6 @@
 use crate::{
-    network::{AlienProvider, AlienTarget},
     GemstoneError,
+    network::{AlienProvider, AlienTarget},
 };
 use serde::Deserialize;
 use std::sync::Arc;

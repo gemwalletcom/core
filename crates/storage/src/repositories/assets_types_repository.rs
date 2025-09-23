@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
-use crate::database::assets_types::AssetsTypesStore;
 use crate::DatabaseClient;
+use crate::database::assets_types::AssetsTypesStore;
 
 pub trait AssetsTypesRepository {
     fn add_assets_types(&mut self, values: Vec<primitives::AssetType>) -> Result<usize, DatabaseError>;

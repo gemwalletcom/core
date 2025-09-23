@@ -3,7 +3,7 @@ mod tests {
     use gem_evm::rpc::EthereumClient;
     use gem_jsonrpc::JsonRpcClient;
     use num_bigint::BigUint;
-    use primitives::{node_config::get_nodes_for_chain, Chain, EVMChain};
+    use primitives::{Chain, EVMChain, node_config::get_nodes_for_chain};
 
     #[tokio::test]
     async fn test_ethereum_client_get_latest_block() {
@@ -43,7 +43,10 @@ mod tests {
 
         let name_hex = result.unwrap();
 
-        assert_eq!(name_hex, "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000855534420436f696e000000000000000000000000000000000000000000000000")
+        assert_eq!(
+            name_hex,
+            "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000855534420436f696e000000000000000000000000000000000000000000000000"
+        )
     }
 
     #[tokio::test]

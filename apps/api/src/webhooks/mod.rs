@@ -1,5 +1,5 @@
 use crate::responders::{ApiError, ApiResponse};
-use rocket::{post, serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{State, post, serde::json::Json, tokio::sync::Mutex};
 use streamer::{QueueName, StreamProducer, SupportWebhookPayload};
 
 pub struct WebhooksClient {

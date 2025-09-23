@@ -20,9 +20,9 @@ pub mod support;
 pub mod tag;
 pub mod transactions;
 
-use diesel::pg::PgConnection;
 use diesel::Connection;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations};
+use diesel::pg::PgConnection;
+use diesel_migrations::{EmbeddedMigrations, embed_migrations};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
 use crate::{

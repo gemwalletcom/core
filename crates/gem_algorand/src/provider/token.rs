@@ -6,9 +6,9 @@ use gem_client::Client;
 use primitives::Asset;
 
 use crate::{
+    AlgorandClientIndexer,
     provider::token_mapper::{is_valid_token_id, map_asset},
     rpc::client::AlgorandClient,
-    AlgorandClientIndexer,
 };
 
 #[async_trait]

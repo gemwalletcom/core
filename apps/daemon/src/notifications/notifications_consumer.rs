@@ -2,7 +2,7 @@ use std::error::Error;
 
 use api_connector::PusherClient;
 use async_trait::async_trait;
-use streamer::{consumer::MessageConsumer, NotificationsPayload};
+use streamer::{NotificationsPayload, consumer::MessageConsumer};
 
 pub struct NotificationsConsumer {
     pub pusher: PusherClient,

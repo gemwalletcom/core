@@ -4,8 +4,8 @@ use async_trait::async_trait;
 use chain_traits::{ChainAddressStatus, ChainPerpetual};
 use gem_client::Client;
 use primitives::{
-    perpetual::{PerpetualData, PerpetualPositionsSummary},
     ChartCandleStick, ChartPeriod,
+    perpetual::{PerpetualData, PerpetualPositionsSummary},
 };
 
 use crate::{

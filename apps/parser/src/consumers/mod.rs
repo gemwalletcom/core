@@ -25,11 +25,11 @@ use streamer::{
 use tokio::sync::Mutex;
 
 use crate::{
+    Pusher,
     consumers::{
         fetch_assets_addresses_consumer::FetchAssetsAddressesConsumer, fetch_blocks_consumer::FetchBlocksConsumer,
         fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer, fetch_transactions_consumer::FetchTransactionsConsumer,
     },
-    Pusher,
 };
 
 pub async fn run_consumers(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {

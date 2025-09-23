@@ -7,7 +7,7 @@ edition = { workspace = true }
 default = []
 rpc = ["dep:number_formatter", "dep:chrono", "dep:async-trait", "dep:chain_traits", "dep:futures"]
 reqwest = ["gem_client/reqwest"]
-chain_integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -28,3 +28,4 @@ serde_serializers = { path = "../serde_serializers" }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 reqwest = { workspace = true }
+settings = { path = "../settings", features = ["testkit"] }

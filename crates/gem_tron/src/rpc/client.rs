@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
 use num_bigint::BigUint;
-use primitives::{asset_type::AssetType, chain::Chain, Asset, AssetId};
+use primitives::{Asset, AssetId, asset_type::AssetType, chain::Chain};
 use std::{error::Error, str::FromStr};
 
 use crate::models::{

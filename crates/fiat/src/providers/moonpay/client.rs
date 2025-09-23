@@ -1,5 +1,5 @@
 use crate::hmac_signature::generate_hmac_signature;
-use crate::model::{filter_token_id, FiatProviderAsset};
+use crate::model::{FiatProviderAsset, filter_token_id};
 
 use super::mapper::map_asset_chain;
 use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote, Transaction};

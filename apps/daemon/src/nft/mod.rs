@@ -9,7 +9,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use streamer::{run_consumer, ConsumerConfig, FetchNFTCollectionAssetPayload, FetchNFTCollectionPayload, QueueName, StreamReader};
+use streamer::{ConsumerConfig, FetchNFTCollectionAssetPayload, FetchNFTCollectionPayload, QueueName, StreamReader, run_consumer};
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let settings_arc = Arc::new(settings);

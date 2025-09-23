@@ -2,9 +2,9 @@
 mod tests {
     use gem_solana::{jsonrpc::SolanaRpc, models::blockhash::SolanaBlockhashResult};
     use gemstone::{
-        config::swap_config::{get_swap_config, SwapReferralFee, SwapReferralFees},
+        config::swap_config::{SwapReferralFee, SwapReferralFees, get_swap_config},
         network::{alien_provider::NativeProvider, jsonrpc_client_with_chain},
-        swapper::{across::Across, cetus::Cetus, models::*, uniswap::v4::UniswapV4, GemSwapper, *},
+        swapper::{GemSwapper, across::Across, cetus::Cetus, models::*, uniswap::v4::UniswapV4, *},
     };
     use primitives::{AssetId, Chain};
     use std::{collections::HashMap, sync::Arc, time::SystemTime};

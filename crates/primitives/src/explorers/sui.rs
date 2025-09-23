@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, ACCOUNT_PATH, COIN_PATH, TX_PATH, VALIDATORS_PATH, VALIDATOR_PATH};
+use crate::explorers::metadata::{ACCOUNT_PATH, COIN_PATH, Explorer, Metadata, TX_PATH, VALIDATOR_PATH, VALIDATORS_PATH};
 
 pub fn new_sui_scan() -> Box<dyn BlockExplorer> {
     Explorer::boxed(Metadata {

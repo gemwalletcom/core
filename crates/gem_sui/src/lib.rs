@@ -11,10 +11,10 @@ pub mod models;
 pub mod jsonrpc;
 pub mod operations;
 
-use std::error::Error;
 use models::Coin;
 pub use models::ObjectID;
 pub use operations::*;
+use std::error::Error;
 use sui_transaction_builder::unresolved::Input;
 
 pub const SUI_SYSTEM_ID: &str = "sui_system";

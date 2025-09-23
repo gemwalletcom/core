@@ -1,5 +1,5 @@
 use chain_primitives::format_token_id;
-use coingecko::{get_chain_for_coingecko_platform_id, COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo};
+use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_coingecko_platform_id};
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
@@ -157,9 +157,10 @@ impl AssetUpdater {
         let mut results = vec![];
 
         if let Some(value) = links.clone().twitter_screen_name
-            && !value.is_empty() {
-                results.push(AssetLink::new(&format!("https://x.com/{value}"), LinkType::X));
-            }
+            && !value.is_empty()
+        {
+            results.push(AssetLink::new(&format!("https://x.com/{value}"), LinkType::X));
+        }
 
         if let Some(value) = links
             .clone()
@@ -177,9 +178,10 @@ impl AssetUpdater {
         }
 
         if let Some(value) = links.clone().telegram_channel_identifier
-            && !value.is_empty() {
-                results.push(AssetLink::new(&format!("https://t.me/{value}"), LinkType::Telegram));
-            };
+            && !value.is_empty()
+        {
+            results.push(AssetLink::new(&format!("https://t.me/{value}"), LinkType::Telegram));
+        };
 
         results.push(AssetLink::new(
             &format!("https://www.coingecko.com/coins/{}", coin_info.id.to_lowercase()),

@@ -1,4 +1,4 @@
-use rand::{rng, Rng};
+use rand::{Rng, rng};
 use settings::Settings;
 use settings_chain::{ProviderConfig, ProviderFactory};
 use std::{
@@ -9,7 +9,7 @@ use std::{
 
 use async_trait::async_trait;
 use chain_traits::*;
-use primitives::{node::ChainNode, Chain, Node, Transaction};
+use primitives::{Chain, Node, Transaction, node::ChainNode};
 
 #[derive(Clone, Debug)]
 pub struct ParserProxyUrlConfig {

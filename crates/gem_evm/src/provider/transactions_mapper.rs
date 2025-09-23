@@ -3,11 +3,7 @@ use num_bigint::BigInt;
 use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 
 pub fn map_transaction_broadcast(data: &str) -> String {
-    if data.starts_with("0x") {
-        data.to_string()
-    } else {
-        format!("0x{}", data)
-    }
+    if data.starts_with("0x") { data.to_string() } else { format!("0x{}", data) }
 }
 
 pub fn map_transaction_status(receipt: &TransactionReciept) -> TransactionUpdate {

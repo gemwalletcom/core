@@ -4,7 +4,7 @@ use crate::responders::{ApiError, ApiResponse};
 pub use fiat::{FiatClient, FiatProviderFactory};
 use primitives::currency::Currency;
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
-use rocket::{get, post, serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 use streamer::FiatWebhook;
 
 // on ramp

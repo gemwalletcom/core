@@ -1,7 +1,7 @@
 use num_bigint::BigUint;
 use num_traits::Num;
 
-use serde::{de, Deserialize};
+use serde::{Deserialize, de};
 
 pub fn serialize_biguint<S>(value: &BigUint, serializer: S) -> Result<S::Ok, S::Error>
 where

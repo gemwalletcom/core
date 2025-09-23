@@ -1,7 +1,7 @@
 use crate::models::*;
 use std::error::Error;
 use std::str::FromStr;
-use sui_transaction_builder::{unresolved::Input, Serialized, TransactionBuilder};
+use sui_transaction_builder::{Serialized, TransactionBuilder, unresolved::Input};
 use sui_types::{Address, Argument};
 
 pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
@@ -80,8 +80,8 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
 
 #[cfg(test)]
 mod tests {
-    use crate::{tx::decode_transaction, SUI_COIN_TYPE};
-    use base64::{engine::general_purpose, Engine as _};
+    use crate::{SUI_COIN_TYPE, tx::decode_transaction};
+    use base64::{Engine as _, engine::general_purpose};
     use sui_types::Transaction;
 
     use super::*;

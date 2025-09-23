@@ -1,7 +1,7 @@
-use crate::swapper::{uniswap::v3::UniversalRouterProvider, SwapperProvider, SwapperProviderType};
+use crate::swapper::{SwapperProvider, SwapperProviderType, uniswap::v3::UniversalRouterProvider};
 use gem_evm::uniswap::{
-    deployment::v3::{get_uniswap_router_deployment_by_chain, V3Deployment},
     FeeTier,
+    deployment::v3::{V3Deployment, get_uniswap_router_deployment_by_chain},
 };
 use primitives::Chain;
 

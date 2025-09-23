@@ -13,7 +13,7 @@ mod transaction;
 mod version;
 
 use crate::model::DaemonService;
-use gem_tracing::{info_with_fields, SentryConfig, SentryTracing};
+use gem_tracing::{SentryConfig, SentryTracing, info_with_fields};
 use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;

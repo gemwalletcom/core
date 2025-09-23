@@ -1,4 +1,4 @@
-use alloy_primitives::{hex, Address, Bytes};
+use alloy_primitives::{Address, Bytes, hex};
 use gem_client::Client;
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use gem_jsonrpc::types::{JsonRpcError, JsonRpcResult};
@@ -16,8 +16,9 @@ use super::{
 use crate::models::fee::EthereumFeeHistory;
 #[cfg(feature = "rpc")]
 use crate::multicall3::{
-    deployment_by_chain, IMulticall3,
+    IMulticall3,
     IMulticall3::{Call3, Result as MulticallResult},
+    deployment_by_chain,
 };
 #[cfg(feature = "rpc")]
 use alloy_sol_types::SolCall;
@@ -74,7 +75,11 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(self.client.batch_call::<T>(calls).await?.into_iter().collect())
     }
 
-    pub async fn eth_call<T: DeserializeOwned + 'static>(&self, contract_address: &str, call_data: &str) -> Result<T, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn eth_call<T: DeserializeOwned + 'static>(
+        &self,
+        contract_address: &str,
+        call_data: &str,
+    ) -> Result<T, Box<dyn std::error::Error + Send + Sync>> {
         let to_address = Address::from_str(contract_address)?;
 
         let params = json!([

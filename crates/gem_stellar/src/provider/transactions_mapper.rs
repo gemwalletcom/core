@@ -2,7 +2,7 @@ use crate::constants::{TRANSACTION_TYPE_CREATE_ACCOUNT, TRANSACTION_TYPE_PAYMENT
 use crate::models::transaction::{Payment, StellarTransactionBroadcast, StellarTransactionStatus};
 use chrono::DateTime;
 use num_bigint::BigInt;
-use primitives::{chain::Chain, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
+use primitives::{Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate, chain::Chain};
 use std::error::Error;
 use url::form_urlencoded;
 

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, error::Error};
 
-use crate::{models::SuiObject, SUI_COIN_TYPE};
+use crate::{SUI_COIN_TYPE, models::SuiObject};
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
@@ -9,12 +9,12 @@ use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::{
-    transaction_load_metadata::SuiCoin, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
-    TransactionLoadMetadata, TransactionPreloadInput,
+    FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput, transaction_load_metadata::SuiCoin,
 };
 
 use crate::{
-    provider::preload_mapper::{calculate_fee_rates, map_transaction_data, GAS_BUDGET},
+    provider::preload_mapper::{GAS_BUDGET, calculate_fee_rates, map_transaction_data},
     rpc::client::SuiClient,
 };
 
@@ -97,7 +97,7 @@ impl<C: Client + Clone> SuiClient<C> {
 mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::*;
-    use base64::{engine::general_purpose, Engine};
+    use base64::{Engine, engine::general_purpose};
     use chain_traits::ChainTransactionLoad;
     use primitives::{Asset, Chain, FeePriority, StakeType, TransactionLoadInput};
 

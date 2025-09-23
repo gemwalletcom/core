@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use futures::future;
 use primitives::Chain;
 use tokio::sync::Mutex;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 
 use super::chain_client::ChainClient;
 use super::sync::{NodeStatusObservation, NodeSyncAnalyzer};

@@ -1,9 +1,9 @@
 use crate::models::{
+    EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
     balances::SolanaBalance,
     blockhash::SolanaBlockhashResult,
     prioritization_fee::SolanaPrioritizationFee,
     transaction::{BlockTransactions, SolanaTransaction},
-    EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
 };
 use chain_traits::ChainProvider;
 #[cfg(feature = "rpc")]

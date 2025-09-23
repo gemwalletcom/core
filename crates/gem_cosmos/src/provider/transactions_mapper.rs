@@ -1,4 +1,4 @@
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use chrono::DateTime;
 use primitives::{AssetId, Chain, StakeValidator, Transaction, TransactionState, TransactionType, TransactionUpdate};
 use sha2::{Digest, Sha256};
@@ -173,7 +173,10 @@ mod tests {
 
         let result = map_transaction_broadcast(&response);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "signature verification failed; please verify account number (1343971) and chain-id (cosmoshub-4): (unable to verify single signer signature): unauthorized");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "signature verification failed; please verify account number (1343971) and chain-id (cosmoshub-4): (unable to verify single signer signature): unauthorized"
+        );
     }
 
     #[test]

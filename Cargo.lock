@@ -2655,6 +2655,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "settings",
  "tokio",
 ]
 
@@ -2692,6 +2693,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_serializers",
+ "settings",
  "tokio",
 ]
 
@@ -2717,6 +2719,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "settings",
  "tokio",
 ]
 
@@ -2813,6 +2816,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "tokio",
 ]
 
@@ -2844,6 +2848,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "tokio",
 ]
 
@@ -2861,6 +2866,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "tokio",
 ]
 
@@ -2904,6 +2910,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
  "tokio",
  "url",
 ]

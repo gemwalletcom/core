@@ -1,6 +1,6 @@
 use crate::schema::assets_addresses::dsl::*;
 
-use crate::{models::asset_address::AssetAddress, DatabaseClient};
+use crate::{DatabaseClient, models::asset_address::AssetAddress};
 use chrono::DateTime;
 use diesel::prelude::*;
 use primitives::ChainAddress;

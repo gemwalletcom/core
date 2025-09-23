@@ -8,7 +8,7 @@ publish = false
 default = []
 rpc = ["dep:chain_traits", "dep:gem_client"]
 reqwest = ["gem_client/reqwest"]
-chain_integration_tests = ["rpc", "reqwest"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -25,3 +25,4 @@ serde_serializers = { path = "../serde_serializers" }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
+settings = { path = "../settings", features = ["testkit"] }

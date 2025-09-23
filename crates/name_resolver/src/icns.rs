@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, sync::LazyLock};

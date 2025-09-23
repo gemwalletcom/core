@@ -5,7 +5,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::AssetBalance;
 
-use crate::provider::balances_mapper::{map_balance_tokens, map_coin_balance};
+use crate::provider::balances_mapper::{map_balance_assets, map_balance_tokens, map_coin_balance};
 use crate::rpc::client::TonClient;
 
 #[async_trait]
@@ -22,6 +22,11 @@ impl<C: Client> ChainBalances for TonClient<C> {
 
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
+    }
+
+    async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let jetton_wallets = self.get_jetton_wallets(address).await?;
+        Ok(map_balance_assets(jetton_wallets))
     }
 }
 
@@ -55,6 +60,23 @@ mod chain_integration_tests {
 
             println!("Token balance: {:?}", balance);
             assert!(balance.balance.available > num_bigint::BigUint::from(0u32));
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ton_get_balance_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ton_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let assets = client.get_balance_assets(address).await?;
+
+        println!("Assets: {}", assets.len());
+
+        assert!(!assets.is_empty());
+
+        for asset in assets {
+            assert_eq!(asset.asset_id.chain, Chain::Ton);
+            assert!(asset.balance.available > num_bigint::BigUint::from(0u32));
         }
         Ok(())
     }

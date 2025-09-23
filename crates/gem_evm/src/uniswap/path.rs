@@ -1,4 +1,4 @@
-use alloy_primitives::{aliases::U24, Address, Bytes};
+use alloy_primitives::{Address, Bytes, aliases::U24};
 use std::fmt::Display;
 
 use super::FeeTier;
@@ -153,13 +153,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
     if !usdt.is_empty() {
         stables.push(usdt.parse().ok()?);
     }
-    let alternatives = {
-        if btc.is_empty() {
-            vec![]
-        } else {
-            vec![btc.parse().ok()?]
-        }
-    };
+    let alternatives = { if btc.is_empty() { vec![] } else { vec![btc.parse().ok()?] } };
 
     Some(BasePair { native, stables, alternatives })
 }
@@ -179,10 +173,11 @@ pub fn validate_pairs(token_pairs: &[TokenPair]) -> bool {
     let mut valid = true;
     while let Some(current_pair) = iter.next() {
         if let Some(next_pair) = iter.peek()
-            && current_pair.token_out != next_pair.token_in {
-                valid = false;
-                break;
-            }
+            && current_pair.token_out != next_pair.token_in
+        {
+            valid = false;
+            break;
+        }
     }
     valid
 }

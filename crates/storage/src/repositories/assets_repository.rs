@@ -2,7 +2,7 @@ use crate::DatabaseError;
 
 use crate::database::assets::AssetsStore;
 use crate::database::assets::{AssetFilter, AssetUpdate};
-use crate::{models::Asset, DatabaseClient};
+use crate::{DatabaseClient, models::Asset};
 use primitives::{Asset as PrimitiveAsset, AssetBasic};
 
 pub trait AssetsRepository {

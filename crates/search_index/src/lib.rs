@@ -1,7 +1,7 @@
 pub mod model;
 pub use model::*;
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::error::Error;
 
 use meilisearch_sdk::{client::*, documents::DocumentsQuery, task_info::TaskInfo};

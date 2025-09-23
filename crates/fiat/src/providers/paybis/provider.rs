@@ -1,7 +1,7 @@
 use crate::{
+    FiatProvider,
     error::FiatError,
     model::{FiatMapping, FiatProviderAsset},
-    FiatProvider,
 };
 use async_trait::async_trait;
 use std::error::Error;
@@ -76,7 +76,7 @@ impl FiatProvider for PaybisClient {
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 mod fiat_integration_tests {
     use crate::testkit::*;
-    use crate::{model::FiatMapping, FiatProvider};
+    use crate::{FiatProvider, model::FiatMapping};
     use primitives::currency::Currency;
     use primitives::{Chain, FiatBuyQuote};
     use streamer::FiatWebhook;

@@ -2,9 +2,9 @@ mod client;
 mod etherscan;
 mod gasflow;
 
-use std::error::Error;
 use clap::Parser;
-use prettytable::{format, Cell, Row, Table};
+use prettytable::{Cell, Row, Table, format};
+use std::error::Error;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::time::interval;
 
@@ -125,9 +125,10 @@ async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
                 entry.push(process_fee_data("Gemstone", &data));
             }
         } else if let Err(e) = gemstone_res
-            && args.debug {
-                eprintln!("gas-bench: Error fetching Gemstone data: {e:?}");
-            }
+            && args.debug
+        {
+            eprintln!("gas-bench: Error fetching Gemstone data: {e:?}");
+        }
 
         if let Ok(data) = etherscan_res {
             let fee_data = data.result.fee_data();
@@ -136,9 +137,10 @@ async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
                 entry.push(process_fee_data("Etherscan", &fee_data));
             }
         } else if let Err(e) = etherscan_res
-            && args.debug {
-                eprintln!("Error fetching Etherscan data: {e:?}");
-            }
+            && args.debug
+        {
+            eprintln!("Error fetching Etherscan data: {e:?}");
+        }
 
         if let Ok(data) = gasflow_res {
             let fee_data = data.fee_data();
@@ -147,9 +149,10 @@ async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
                 entry.push(process_fee_data("Gasflow", &fee_data));
             }
         } else if let Err(e) = gasflow_res
-            && args.debug {
-                eprintln!("Error fetching Gasflow data: {e:?}");
-            }
+            && args.debug
+        {
+            eprintln!("Error fetching Gasflow data: {e:?}");
+        }
 
         if args.debug {
             eprintln!("Debug: Aggregated block_data summary:");
@@ -186,32 +189,33 @@ async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
                 eprintln!("Debug: Attempting to print table for block: {current_block_to_print}");
             }
             if let Some(details_for_block) = block_data.get(&current_block_to_print)
-                && details_for_block.len() >= 2 {
-                    println!("\n--- Block: {current_block_to_print} ---");
-                    let mut table = Table::new();
-                    table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
-                    table.add_row(Row::new(vec![
-                        Cell::new("Source"),
-                        Cell::new("Base Fee (Gwei)"),
-                        Cell::new("Used Gas (%)"),
-                        Cell::new("Slow (Gwei)"),
-                        Cell::new("Normal (Gwei)"),
-                        Cell::new("Fast (Gwei)"),
-                    ]));
+                && details_for_block.len() >= 2
+            {
+                println!("\n--- Block: {current_block_to_print} ---");
+                let mut table = Table::new();
+                table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+                table.add_row(Row::new(vec![
+                    Cell::new("Source"),
+                    Cell::new("Base Fee (Gwei)"),
+                    Cell::new("Used Gas (%)"),
+                    Cell::new("Slow (Gwei)"),
+                    Cell::new("Normal (Gwei)"),
+                    Cell::new("Fast (Gwei)"),
+                ]));
 
-                    for detail in details_for_block {
-                        table.add_row(Row::new(vec![
-                            Cell::new(&detail.source_name),
-                            Cell::new(&detail.base_fee),
-                            Cell::new(&detail.gas_used_ratio.clone().unwrap_or_else(|| "N/A".to_string())),
-                            Cell::new(&detail.slow_fee),
-                            Cell::new(&detail.normal_fee),
-                            Cell::new(&detail.fast_fee),
-                        ]));
-                    }
-                    table.printstd();
-                    last_printed_block_opt = Some(current_block_to_print);
+                for detail in details_for_block {
+                    table.add_row(Row::new(vec![
+                        Cell::new(&detail.source_name),
+                        Cell::new(&detail.base_fee),
+                        Cell::new(&detail.gas_used_ratio.clone().unwrap_or_else(|| "N/A".to_string())),
+                        Cell::new(&detail.slow_fee),
+                        Cell::new(&detail.normal_fee),
+                        Cell::new(&detail.fast_fee),
+                    ]));
                 }
+                table.printstd();
+                last_printed_block_opt = Some(current_block_to_print);
+            }
         }
     }
     // Ok(()) // Loop is infinite, this is not reached

@@ -80,11 +80,7 @@ where
                         elapsed_ms = start.elapsed().as_millis().to_string()
                     );
                     std::thread::sleep(config.timeout_on_error);
-                    if config.skip_on_error {
-                        Ok(())
-                    } else {
-                        Err(e)
-                    }
+                    if config.skip_on_error { Ok(()) } else { Err(e) }
                 }
             }
         })

@@ -1,8 +1,8 @@
 use crate::{
-    network::{jsonrpc_client_with_chain, AlienProvider, JsonRpcClient, JsonRpcResult},
+    network::{AlienProvider, JsonRpcClient, JsonRpcResult, jsonrpc_client_with_chain},
     swapper::SwapperError,
 };
-use alloy_primitives::{hex::decode as HexDecode, Address};
+use alloy_primitives::{Address, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
 use gem_evm::{
     across::{contracts::AcrossConfigStore, deployment::ACROSS_CONFIG_STORE, fees},

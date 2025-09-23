@@ -1,4 +1,4 @@
-use crate::{models::*, DatabaseClient};
+use crate::{DatabaseClient, models::*};
 
 use diesel::prelude::*;
 use nft_asset::UpdateNftAssetImageUrl;

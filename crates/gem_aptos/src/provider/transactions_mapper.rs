@@ -1,5 +1,5 @@
-use crate::models::{Transaction, TransactionResponse};
 use crate::STAKE_DEPOSIT_EVENT;
+use crate::models::{Transaction, TransactionResponse};
 use chrono::DateTime;
 use num_bigint::{BigInt, BigUint};
 use primitives::{Chain, Transaction as PrimitivesTransaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};

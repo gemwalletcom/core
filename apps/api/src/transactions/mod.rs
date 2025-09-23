@@ -4,7 +4,7 @@ pub use client::TransactionsClient;
 use primitives::Transaction;
 use primitives::TransactionsFetchOption;
 use primitives::TransactionsResponse;
-use rocket::{get, tokio::sync::Mutex, State};
+use rocket::{State, get, tokio::sync::Mutex};
 
 #[get("/transactions/device/<device_id>?<wallet_index>&<asset_id>&<from_timestamp>")]
 pub async fn get_transactions_by_device_id_v1(

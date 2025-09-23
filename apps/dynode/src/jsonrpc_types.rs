@@ -95,15 +95,17 @@ impl JsonRpcRequest {
 impl RequestType {
     pub fn from_request(method: &str, path: String, body: Vec<u8>) -> Self {
         if method == "POST"
-            && let Ok(body_str) = std::str::from_utf8(&body) {
-                if let Ok(call) = serde_json::from_str::<JsonRpcCall>(body_str) {
-                    return RequestType::JsonRpc(JsonRpcRequest::Single(call));
-                }
-                if let Ok(calls) = serde_json::from_str::<Vec<JsonRpcCall>>(body_str)
-                    && !calls.is_empty() {
-                        return RequestType::JsonRpc(JsonRpcRequest::Batch(calls));
-                    }
+            && let Ok(body_str) = std::str::from_utf8(&body)
+        {
+            if let Ok(call) = serde_json::from_str::<JsonRpcCall>(body_str) {
+                return RequestType::JsonRpc(JsonRpcRequest::Single(call));
             }
+            if let Ok(calls) = serde_json::from_str::<Vec<JsonRpcCall>>(body_str)
+                && !calls.is_empty()
+            {
+                return RequestType::JsonRpc(JsonRpcRequest::Batch(calls));
+            }
+        }
         RequestType::Regular {
             path,
             method: method.to_string(),

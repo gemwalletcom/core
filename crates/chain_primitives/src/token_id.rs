@@ -33,9 +33,10 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         Chain::Tron => (token_id.len() == 34 && token_id.starts_with('T')).then_some(token_id),
         Chain::Xrp => {
             if let Some((_, addr)) = token_id.split_once('.')
-                && addr.starts_with('r') {
-                    return Some(addr.to_string());
-                }
+                && addr.starts_with('r')
+            {
+                return Some(addr.to_string());
+            }
             token_id.starts_with('r').then_some(token_id)
         }
         Chain::Algorand => token_id.parse::<i32>().ok().map(|token_id| token_id.to_string()),

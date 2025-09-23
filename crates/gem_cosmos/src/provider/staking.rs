@@ -4,7 +4,7 @@ use futures::try_join;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{chain_cosmos::CosmosChain, DelegationBase, DelegationValidator};
+use primitives::{DelegationBase, DelegationValidator, chain_cosmos::CosmosChain};
 
 use crate::{
     provider::staking_mapper::{calculate_network_apy_cosmos, calculate_network_apy_osmosis, map_staking_delegations, map_staking_validators},

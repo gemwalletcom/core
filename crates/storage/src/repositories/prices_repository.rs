@@ -1,9 +1,9 @@
 use crate::DatabaseError;
 use chrono::NaiveDateTime;
 
-use crate::database::prices::PricesStore;
-use crate::models::{price::PriceAssetData, Price, PriceAsset};
 use crate::DatabaseClient;
+use crate::database::prices::PricesStore;
+use crate::models::{Price, PriceAsset, price::PriceAssetData};
 
 pub trait PricesRepository {
     fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, DatabaseError>;

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use lapin::{options::*, publisher_confirm::Confirmation, types::FieldTable, BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind};
+use lapin::{BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind, options::*, publisher_confirm::Confirmation, types::FieldTable};
 
 use crate::{ExchangeName, QueueName};
 

@@ -1,6 +1,6 @@
-use std::error::Error;
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use bcs;
+use std::error::Error;
 use sui_transaction_builder::unresolved::Input;
 use sui_types::Transaction;
 

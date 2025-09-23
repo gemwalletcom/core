@@ -5,10 +5,10 @@ use std::error::Error;
 use std::time::Duration;
 
 use crate::{
+    FiatProvider, IPCheckClient,
     error::FiatError,
     ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
-    FiatProvider, IPCheckClient,
 };
 use futures::future::join_all;
 use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
@@ -211,13 +211,15 @@ impl FiatClient {
             for limit in limits {
                 if limit.currency == fiat_currency {
                     if let Some(min_amount) = limit.min_amount
-                        && amount < min_amount {
-                            return Err(FiatError::InsufficientAmount(amount, min_amount));
-                        }
+                        && amount < min_amount
+                    {
+                        return Err(FiatError::InsufficientAmount(amount, min_amount));
+                    }
                     if let Some(max_amount) = limit.max_amount
-                        && amount > max_amount {
-                            return Err(FiatError::ExcessiveAmount(amount, max_amount));
-                        }
+                        && amount > max_amount
+                    {
+                        return Err(FiatError::ExcessiveAmount(amount, max_amount));
+                    }
                     return Ok(());
                 }
             }
@@ -317,8 +319,8 @@ fn sort_by_fiat_amount(a: &FiatQuote, b: &FiatQuote) -> std::cmp::Ordering {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::fiat_assets::FiatAssetLimits;
     use primitives::FiatQuoteType;
+    use primitives::fiat_assets::FiatAssetLimits;
     use std::collections::HashMap;
 
     #[test]

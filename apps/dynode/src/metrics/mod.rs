@@ -1,10 +1,10 @@
 use crate::config::MetricsConfig;
-use prometheus_client::encoding::text::encode;
 use prometheus_client::encoding::EncodeLabelSet;
+use prometheus_client::encoding::text::encode;
 use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
-use prometheus_client::metrics::histogram::{exponential_buckets, Histogram};
+use prometheus_client::metrics::histogram::{Histogram, exponential_buckets};
 use prometheus_client::registry::Registry;
 use regex::Regex;
 use std::sync::Arc;
@@ -218,9 +218,10 @@ impl Metrics {
         for (category, patterns) in &self.config.user_agent_patterns.patterns {
             for pattern in patterns {
                 if let Ok(re) = Regex::new(pattern)
-                    && re.is_match(user_agent) {
-                        return category.clone();
-                    }
+                    && re.is_match(user_agent)
+                {
+                    return category.clone();
+                }
             }
         }
         "unknown".to_string()

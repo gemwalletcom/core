@@ -1,9 +1,9 @@
 use crate::DatabaseError;
 use chrono::NaiveDateTime;
 
+use crate::DatabaseClient;
 use crate::database::devices::DevicesStore;
 use crate::database::price_alerts::PriceAlertsStore;
-use crate::DatabaseClient;
 
 pub trait PriceAlertsRepository {
     fn get_price_alerts(

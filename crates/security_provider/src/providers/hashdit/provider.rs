@@ -1,9 +1,9 @@
 use crate::providers::hashdit::models::DetectResponse;
-use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
+use crate::{AddressTarget, ScanProvider, ScanResult, TokenTarget, mapper};
 use async_trait::async_trait;
 use gem_client::{Client, ClientError, ReqwestClient};
 use hmac::{Hmac, Mac};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::Sha256;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};

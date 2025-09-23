@@ -1,7 +1,7 @@
 use crate::responders::{ApiError, ApiResponse};
 use pricer::MarketsClient;
 use primitives::Markets;
-use rocket::{get, tokio::sync::Mutex, State};
+use rocket::{State, get, tokio::sync::Mutex};
 
 #[get("/markets")]
 pub async fn get_markets(client: &State<Mutex<MarketsClient>>) -> Result<ApiResponse<Markets>, ApiError> {

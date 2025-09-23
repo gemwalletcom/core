@@ -1,6 +1,6 @@
-use alloy_primitives::{hex, U256};
-use alloy_sol_types::sol;
+use alloy_primitives::{U256, hex};
 use alloy_sol_types::SolValue;
+use alloy_sol_types::sol;
 
 sol! {
     interface IERC20 {

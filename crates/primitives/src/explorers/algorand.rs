@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, ACCOUNT_PATH, TX_PATH};
+use crate::explorers::metadata::{ACCOUNT_PATH, Explorer, Metadata, TX_PATH};
 
 pub struct AlgorandAllo;
 

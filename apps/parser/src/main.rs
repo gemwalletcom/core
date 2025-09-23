@@ -10,7 +10,7 @@ pub mod consumers;
 pub mod parser_proxy;
 
 use gem_tracing::{SentryConfig, SentryTracing};
-use primitives::{node::NodeState, Chain};
+use primitives::{Chain, node::NodeState};
 use settings::Settings;
 use std::{str::FromStr, sync::Arc, time::Duration};
 use storage::DatabaseClient;

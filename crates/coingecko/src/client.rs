@@ -2,8 +2,8 @@ use crate::model::{
     Coin, CoinGeckoResponse, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending,
     TopGainersLosers,
 };
-use gem_client::{build_path_with_query, retry, Client, ReqwestClient};
-use primitives::{FiatRate, DEFAULT_FIAT_CURRENCY};
+use gem_client::{Client, ReqwestClient, build_path_with_query, retry};
+use primitives::{DEFAULT_FIAT_CURRENCY, FiatRate};
 use reqwest::header::{HeaderMap, HeaderValue};
 use std::error::Error;
 

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use streamer::{consumer::MessageConsumer, FetchNFTCollectionPayload};
+use streamer::{FetchNFTCollectionPayload, consumer::MessageConsumer};
 
 pub struct UpdateNftCollectionConsumer {}
 

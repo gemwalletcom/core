@@ -27,7 +27,7 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
             .iter()
             .filter_map(|token_id| {
                 balances.balances.iter().find(|balance| balance.denom == *token_id).and_then(|balance| {
-                    let amount = balance.amount.parse::<u128>().ok()?;
+                    let amount = balance.amount.parse::<num_bigint::BigUint>().ok()?;
                     let asset_id = AssetId {
                         chain: self.get_chain().as_chain(),
                         token_id: Some(token_id.clone()),
@@ -56,6 +56,10 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
 
         Ok(Some(balances_mapper::map_balance_staking(delegations, unbonding, rewards, chain, denom)))
     }
+
+    async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
@@ -75,6 +79,16 @@ mod chain_integration_tests {
         println!("Balance: {:?} {}", balance.balance.available, balance.asset_id);
 
         assert!(balance.balance.available > BigUint::from(0u64));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_cosmos_get_balance_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_cosmos_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let assets = client.get_balance_assets(address).await?;
+
+        assert_eq!(assets.len(), 0);
         Ok(())
     }
 }

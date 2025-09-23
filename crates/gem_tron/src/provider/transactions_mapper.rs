@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
-use primitives::{chain::Chain, AssetId, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
+use primitives::{AssetId, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate, chain::Chain};
 use std::error::Error;
 
 use crate::address::TronAddress;
@@ -33,9 +33,10 @@ pub fn map_transaction_broadcast(response: &TronTransactionBroadcast) -> Result<
 
 pub fn map_transaction_status(receipt: &TransactionReceiptData) -> TransactionUpdate {
     if let Some(receipt_result) = &receipt.receipt.result
-        && (receipt_result == RECEIPT_OUT_OF_ENERGY || receipt_result == RECEIPT_FAILED) {
-            return TransactionUpdate::new_state(TransactionState::Reverted);
-        }
+        && (receipt_result == RECEIPT_OUT_OF_ENERGY || receipt_result == RECEIPT_FAILED)
+    {
+        return TransactionUpdate::new_state(TransactionState::Reverted);
+    }
 
     if receipt.block_number > 0 {
         let mut changes = vec![];
@@ -82,15 +83,17 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
                 let to = TronAddress::from_hex(value.parameter.value.to_address.unwrap_or_default().as_str()).unwrap_or_default();
                 Some((TransactionType::Transfer, to, value.parameter.value.amount.unwrap_or_default().to_string()))
             }
-            FREEZE_BALANCE_V2_CONTRACT => {
-                Some((TransactionType::StakeDelegate, from.clone(), value.parameter.value.frozen_balance.unwrap_or_default().to_string()))
-            }
-            UNFREEZE_BALANCE_V2_CONTRACT => {
-                Some((TransactionType::StakeUndelegate, from.clone(), value.parameter.value.unfreeze_balance.unwrap_or_default().to_string()))
-            }
-            VOTE_WITNESS_CONTRACT => {
-                Some((TransactionType::StakeDelegate, from.clone(), "0".to_string()))
-            }
+            FREEZE_BALANCE_V2_CONTRACT => Some((
+                TransactionType::StakeDelegate,
+                from.clone(),
+                value.parameter.value.frozen_balance.unwrap_or_default().to_string(),
+            )),
+            UNFREEZE_BALANCE_V2_CONTRACT => Some((
+                TransactionType::StakeUndelegate,
+                from.clone(),
+                value.parameter.value.unfreeze_balance.unwrap_or_default().to_string(),
+            )),
+            VOTE_WITNESS_CONTRACT => Some((TransactionType::StakeDelegate, from.clone(), "0".to_string())),
             _ => None,
         } {
             let transaction = Transaction::new(

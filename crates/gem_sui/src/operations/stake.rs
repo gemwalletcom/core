@@ -1,10 +1,10 @@
 use crate::models::*;
 
-use crate::{sui_system_state_object_input, ObjectID, SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID};
+use crate::{ObjectID, SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID, sui_system_state_object_input};
 use std::error::Error;
 
 use std::str::FromStr;
-use sui_transaction_builder::{unresolved::Input, Function, Serialized, TransactionBuilder};
+use sui_transaction_builder::{Function, Serialized, TransactionBuilder, unresolved::Input};
 use sui_types::{Address, Argument, Identifier};
 
 pub static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
@@ -91,8 +91,8 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{tx::decode_transaction, SUI_COIN_TYPE};
-    use base64::{engine::general_purpose, Engine as _};
+    use crate::{SUI_COIN_TYPE, tx::decode_transaction};
+    use base64::{Engine as _, engine::general_purpose};
     use sui_types::Transaction;
 
     #[test]

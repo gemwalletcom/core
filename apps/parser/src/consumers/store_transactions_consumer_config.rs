@@ -20,10 +20,11 @@ impl StoreTransactionsConsumerConfig {
     pub fn is_transaction_sufficient_amount(&self, transaction: &Transaction, asset: Option<Asset>, price: Option<Price>, min_amount: f64) -> bool {
         if let Some(asset) = asset
             && transaction.transaction_type == TransactionType::Transfer
-                && let Some(amount) = BigNumberFormatter::value_as_f64(&transaction.value, asset.decimals as u32)
-                    && let Some(price) = price {
-                        return amount * price.price > min_amount;
-                    }
+            && let Some(amount) = BigNumberFormatter::value_as_f64(&transaction.value, asset.decimals as u32)
+            && let Some(price) = price
+        {
+            return amount * price.price > min_amount;
+        }
         true
     }
 }

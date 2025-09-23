@@ -5,7 +5,7 @@ use gem_evm::models::fee::EthereumFeeHistory;
 use gem_evm::{ether_conv::EtherConv, jsonrpc::EthereumRpc};
 use gemstone::network::{alien_provider::NativeProvider, jsonrpc_client_with_chain};
 use num_bigint::BigInt;
-use primitives::{fee::FeePriority, Chain, PriorityFeeValue};
+use primitives::{Chain, PriorityFeeValue, fee::FeePriority};
 use std::fmt::Display;
 use std::sync::Arc;
 
@@ -42,16 +42,18 @@ impl GemstoneClient {
         Self { native_provider }
     }
 
-    pub async fn fetch_base_priority_fees(&self, blocks: u64, reward_percentiles: Vec<u64>, min_priority_fee: u64) -> Result<GemstoneFeeData, Box<dyn Error + Send + Sync>> {
+    pub async fn fetch_base_priority_fees(
+        &self,
+        blocks: u64,
+        reward_percentiles: Vec<u64>,
+        min_priority_fee: u64,
+    ) -> Result<GemstoneFeeData, Box<dyn Error + Send + Sync>> {
         let client = jsonrpc_client_with_chain(self.native_provider.clone(), Chain::Ethereum);
         let call = EthereumRpc::FeeHistory { blocks, reward_percentiles };
 
         let fee_history_data: EthereumFeeHistory = client.request(call).await?;
 
-        let base_fee_for_next = fee_history_data
-            .base_fee_per_gas
-            .last()
-            .ok_or("Fee history missing base_fee_per_gas data")?;
+        let base_fee_for_next = fee_history_data.base_fee_per_gas.last().ok_or("Fee history missing base_fee_per_gas data")?;
 
         let service = FeeCalculator::new();
         let priorities = vec![FeePriority::Slow, FeePriority::Normal, FeePriority::Fast];

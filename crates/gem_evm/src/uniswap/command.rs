@@ -4,7 +4,7 @@ use super::{
 };
 use crate::permit2::IAllowanceTransfer;
 use alloy_primitives::{Address, Bytes, U256};
-use alloy_sol_types::{sol_data, SolCall, SolType};
+use alloy_sol_types::{SolCall, SolType, sol_data};
 
 pub const MSG_SENDER: &str = "0x0000000000000000000000000000000000000001";
 pub const ADDRESS_THIS: &str = "0x0000000000000000000000000000000000000002";
@@ -239,9 +239,9 @@ pub fn encode_commands(commands: &[UniversalRouterCommand], deadline: U256) -> V
 mod tests {
     use super::*;
     use alloy_primitives::{
+        Address, Bytes, U160, U256,
         aliases::U48,
         hex::{decode as HexDecode, encode_prefixed as HexEncode},
-        Address, Bytes, U160, U256,
     };
     use std::str::FromStr;
 

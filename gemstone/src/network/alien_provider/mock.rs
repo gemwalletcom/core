@@ -5,9 +5,9 @@ use std::{
 };
 
 use super::{
+    AlienError,
     provider::{AlienProvider, Data},
     target::AlienTarget,
-    AlienError,
 };
 use primitives::Chain;
 

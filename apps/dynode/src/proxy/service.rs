@@ -6,10 +6,10 @@ use crate::proxy::jsonrpc::JsonRpcHandler;
 use crate::proxy::request_builder::RequestBuilder;
 use crate::proxy::request_url::RequestUrl;
 use crate::proxy::response_builder::{ProxyResponse, ResponseBuilder};
-use gem_tracing::{info_with_fields, DurationMs};
+use gem_tracing::{DurationMs, info_with_fields};
 use primitives::Chain;
-use reqwest::header::{self, HeaderMap, HeaderName};
 use reqwest::Method;
+use reqwest::header::{self, HeaderMap, HeaderName};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
@@ -113,9 +113,10 @@ impl ProxyRequestService {
         }
 
         if let Some(key) = cache_key.as_ref()
-            && let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &path_with_query, &request_url, &metrics, now).await {
-                return result;
-            }
+            && let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &path_with_query, &request_url, &metrics, now).await
+        {
+            return result;
+        }
 
         if let RequestType::JsonRpc(rpc_request) = &request_type {
             return JsonRpcHandler::handle_request(
@@ -158,21 +159,22 @@ impl ProxyRequestService {
         );
 
         if status == 200
-            && let (Some(ttl), Some(key)) = (cache_ttl, cache_key.clone()) {
-                tokio::spawn(Self::store_cache(
-                    status,
-                    ttl,
-                    key,
-                    body_bytes,
-                    request_type.clone(),
-                    chain,
-                    host.clone(),
-                    method.clone(),
-                    path.clone(),
-                    cache.clone(),
-                    now,
-                ));
-            }
+            && let (Some(ttl), Some(key)) = (cache_ttl, cache_key.clone())
+        {
+            tokio::spawn(Self::store_cache(
+                status,
+                ttl,
+                key,
+                body_bytes,
+                request_type.clone(),
+                chain,
+                host.clone(),
+                method.clone(),
+                path.clone(),
+                cache.clone(),
+                now,
+            ));
+        }
 
         Ok(processed_response)
     }

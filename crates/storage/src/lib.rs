@@ -1,12 +1,12 @@
-use redis::{aio::MultiplexedConnection, AsyncCommands, RedisResult};
-use serde::{de::DeserializeOwned, Serialize};
+use redis::{AsyncCommands, RedisResult, aio::MultiplexedConnection};
+use serde::{Serialize, de::DeserializeOwned};
 use std::error::Error;
 
 pub mod database;
 pub mod error;
 pub use self::database::{
-    assets::{AssetFilter, AssetUpdate},
     DatabaseClient,
+    assets::{AssetFilter, AssetUpdate},
 };
 pub use self::error::DatabaseError;
 pub mod models;

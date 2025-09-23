@@ -1,4 +1,4 @@
-use serde::{de, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de};
 use serde_json::Value;
 
 pub fn serialize_u64<S>(value: &u64, serializer: S) -> Result<S::Ok, S::Error>

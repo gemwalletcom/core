@@ -1,8 +1,8 @@
-use super::{provider::Data, AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
-use primitives::{node_config::get_nodes_for_chain, Chain};
+use super::{AlienError, AlienHttpMethod, AlienProvider, AlienTarget, provider::Data};
+use primitives::{Chain, node_config::get_nodes_for_chain};
 
 use async_trait::async_trait;
-use futures::{future::try_join_all, TryFutureExt};
+use futures::{TryFutureExt, future::try_join_all};
 use reqwest::Client;
 
 #[derive(Debug)]

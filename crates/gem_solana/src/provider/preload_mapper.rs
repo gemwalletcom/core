@@ -22,7 +22,6 @@ pub fn calculate_priority_fee(input_type: &TransactionInputType, prioritization_
 
     let multiple_of = get_multiple_of(input_type);
 
-    
     if fees.is_empty() {
         BigInt::from(multiple_of)
     } else {

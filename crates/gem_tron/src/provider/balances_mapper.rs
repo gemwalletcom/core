@@ -1,8 +1,8 @@
 use num_bigint::BigUint;
 use num_traits::Num;
 use primitives::{
-    asset_balance::{Balance, BalanceMetadata},
     AssetBalance, AssetId, Chain,
+    asset_balance::{Balance, BalanceMetadata},
 };
 use std::error::Error;
 

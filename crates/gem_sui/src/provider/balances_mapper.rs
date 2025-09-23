@@ -1,5 +1,5 @@
-use crate::models::staking::SuiStakeDelegation;
 use crate::models::Balance as SuiBalance;
+use crate::models::staking::SuiStakeDelegation;
 use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL};
 use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Balance, Chain};

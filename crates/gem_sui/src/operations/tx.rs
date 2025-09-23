@@ -1,10 +1,10 @@
-use std::error::Error;
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use serde::de::DeserializeOwned;
-use sui_transaction_builder::{unresolved::Input, TransactionBuilder};
+use std::error::Error;
+use sui_transaction_builder::{TransactionBuilder, unresolved::Input};
 use sui_types::{Address, ObjectDigest, ObjectId, Transaction};
 
-use crate::{models::TxOutput, EMPTY_ADDRESS};
+use crate::{EMPTY_ADDRESS, models::TxOutput};
 
 pub fn decode_transaction<T: DeserializeOwned>(tx: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
     let bytes = general_purpose::STANDARD.decode(tx)?;

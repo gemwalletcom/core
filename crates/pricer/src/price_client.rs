@@ -2,8 +2,8 @@ use chrono::NaiveDateTime;
 use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, FiatRate};
 use std::error::Error;
 use storage::{
-    models::{Chart, Price, PriceAsset},
     DatabaseClient,
+    models::{Chart, Price, PriceAsset},
 };
 
 use cacher::CacherClient;

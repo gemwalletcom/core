@@ -5,7 +5,7 @@ use crate::{
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 pub fn map_balance_coin(account: Option<AccountInfo>, asset_id: AssetId, reserved_amount: u64) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let available = if let Some(account) = account {
@@ -20,26 +20,50 @@ pub fn map_balance_coin(account: Option<AccountInfo>, asset_id: AssetId, reserve
     ))
 }
 
-pub fn map_balance_tokens(objects: &AccountObjects, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
-    let mut balances = Vec::new();
-    for token_id in token_ids {
-        let asset_id = AssetId::from_token(chain, &token_id);
-        if let Some(object) = objects
-            .account_objects
-            .clone()
-            .unwrap_or_default()
-            .iter()
-            .find(|obj| obj.high_limit.issuer == token_id && obj.high_limit.currency.len() > 3)
-        {
-            let value = BigNumberFormatter::value_from_amount_biguint(&object.balance.value, XRP_DEFAULT_ASSET_DECIMALS).unwrap_or_default();
+fn account_objects_to_balances(objects: &AccountObjects, chain: Chain) -> Vec<AssetBalance> {
+    objects
+        .account_objects
+        .as_ref()
+        .unwrap_or(&Vec::new())
+        .iter()
+        .filter_map(|obj| {
+            if obj.high_limit.currency.len() <= 3 {
+                return None;
+            }
+
+            let value = BigNumberFormatter::value_from_amount_biguint(&obj.balance.value, XRP_DEFAULT_ASSET_DECIMALS).unwrap_or_default();
+            let is_active = value > BigUint::from(0u32);
+            let asset_id = AssetId::from_token(chain, &obj.high_limit.issuer);
             let balance = Balance::coin_balance(value);
-            balances.push(AssetBalance::new_with_active(asset_id, balance, true));
-        } else {
-            let balance = Balance::coin_balance(BigUint::from(0u32));
-            balances.push(AssetBalance::new_with_active(asset_id, balance, false));
-        }
-    }
-    balances
+
+            Some(AssetBalance::new_with_active(asset_id, balance, is_active))
+        })
+        .collect()
+}
+
+pub fn map_balance_tokens(objects: &AccountObjects, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
+    let available_balances: HashMap<String, AssetBalance> = account_objects_to_balances(objects, chain)
+        .into_iter()
+        .filter_map(|x| x.asset_id.token_id.clone().map(|token_id| (token_id, x)))
+        .collect();
+
+    token_ids
+        .into_iter()
+        .map(|token_id| {
+            available_balances.get(&token_id).cloned().unwrap_or_else(|| {
+                let asset_id = AssetId::from_token(chain, &token_id);
+                let balance = Balance::coin_balance(BigUint::from(0u32));
+                AssetBalance::new_with_active(asset_id, balance, false)
+            })
+        })
+        .collect()
+}
+
+pub fn map_balance_assets(objects: &AccountObjects, chain: Chain) -> Vec<AssetBalance> {
+    account_objects_to_balances(objects, chain)
+        .into_iter()
+        .filter(|x| x.balance.available > BigUint::from(0u32))
+        .collect()
 }
 
 #[cfg(test)]
@@ -106,5 +130,21 @@ mod tests {
         assert_eq!(balance.asset_id, AssetId::from_token(Chain::Xrp, "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"));
         assert_eq!(balance.balance.available, BigUint::from(171000000000000_u64));
         assert!(balance.is_active);
+    }
+
+    #[test]
+    fn test_map_balance_assets() {
+        let response: XRPResult<AccountObjects> = serde_json::from_str(include_str!("../testdata/accounts_objects_tokens.json")).unwrap();
+        let account_objects = response.result;
+
+        let result = map_balance_assets(&account_objects, Chain::Xrp);
+
+        assert!(!result.is_empty());
+        for balance in &result {
+            assert_eq!(balance.asset_id.chain, Chain::Xrp);
+            assert!(balance.asset_id.token_id.is_some());
+            assert!(balance.balance.available > BigUint::from(0u32));
+            assert!(balance.is_active);
+        }
     }
 }

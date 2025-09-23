@@ -2,7 +2,7 @@ use crate::network::{AlienError, AlienProvider, AlienTarget};
 use async_trait::async_trait;
 use gem_client::{Client, ClientError, ContentType};
 use primitives::Chain;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 #[derive(Debug, Clone)]

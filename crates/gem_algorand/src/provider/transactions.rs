@@ -6,7 +6,7 @@ use gem_client::Client;
 use primitives::{BroadcastOptions, Transaction, TransactionStateRequest, TransactionUpdate};
 
 use super::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
-use crate::{provider::transactions_mapper::map_transactions, rpc::client::AlgorandClient, AlgorandClientIndexer};
+use crate::{AlgorandClientIndexer, provider::transactions_mapper::map_transactions, rpc::client::AlgorandClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for AlgorandClient<C> {

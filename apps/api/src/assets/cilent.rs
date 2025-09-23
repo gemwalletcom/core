@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress};
-use search_index::{AssetDocument, SearchIndexClient, ASSETS_INDEX_NAME};
+use search_index::{ASSETS_INDEX_NAME, AssetDocument, SearchIndexClient};
 use storage::DatabaseClient;
 
 pub struct AssetsClient {

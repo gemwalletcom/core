@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
 use crate::metaplex::{
+    Key, TokenStandard,
     collection::{Collection, CollectionDetails},
     data::Data,
     uses::Uses,
-    Key, TokenStandard,
 };
-use crate::{pubkey::Pubkey, METAPLEX_PROGRAM};
+use crate::{METAPLEX_PROGRAM, pubkey::Pubkey};
 use borsh::{BorshDeserialize, BorshSerialize};
 
 #[derive(Clone, BorshDeserialize, BorshSerialize, Debug, PartialEq, Eq)]

@@ -1,6 +1,6 @@
 use super::{
-    model::{QuoteRequest, QuoteResponse},
     SwapTxResponse,
+    model::{QuoteRequest, QuoteResponse},
 };
 use crate::{
     network::{AlienProvider, AlienTarget},
@@ -28,9 +28,10 @@ impl ChainflipClient {
         let value: serde_json::Value = serde_json::from_slice(&response).map_err(SwapperError::from)?;
         // Check error message
         if value.is_object()
-            && let Some(message) = value["message"].as_str() {
-                return Err(SwapperError::ComputeQuoteError(message.to_string()));
-            }
+            && let Some(message) = value["message"].as_str()
+        {
+            return Err(SwapperError::ComputeQuoteError(message.to_string()));
+        }
         let quotes = serde_json::from_value(value).map_err(SwapperError::from)?;
         Ok(quotes)
     }

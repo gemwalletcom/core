@@ -1,11 +1,11 @@
 use primitives::{
+    PerpetualPosition, PerpetualType,
     chart::ChartCandleStick,
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
-    PerpetualPosition, PerpetualType,
 };
 
 use super::asset::GemAsset;
-use super::transaction::{GemPerpetualType};
+use super::transaction::GemPerpetualType;
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemPerpetualPositionsSummary {

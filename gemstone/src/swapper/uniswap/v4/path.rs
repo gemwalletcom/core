@@ -1,11 +1,11 @@
 use alloy_primitives::{Address, Bytes};
 use gem_evm::uniswap::{
+    FeeTier,
     contracts::v4::{IV4Quoter::QuoteExactParams, PathKey, PoolKey},
     path::TokenPair,
-    FeeTier,
 };
 
-use crate::swapper::{eth_address, uniswap::swap_route::RouteData, SwapperError, SwapperRoute};
+use crate::swapper::{SwapperError, SwapperRoute, eth_address, uniswap::swap_route::RouteData};
 
 // return (currency0, currency1)
 fn sort_addresses(token_in: &Address, token_out: &Address) -> (Address, Address) {

@@ -1,7 +1,7 @@
 use primitives::{
+    Asset, AssetId, AssetType, Chain,
     perpetual::{Perpetual, PerpetualData, PerpetualMetadata},
     perpetual_provider::PerpetualProvider,
-    Asset, AssetId, AssetType, Chain,
 };
 use serde::{Deserialize, Serialize};
 

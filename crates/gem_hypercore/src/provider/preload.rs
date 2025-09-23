@@ -5,8 +5,8 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    perpetual::PerpetualType, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
-    TransactionLoadMetadata, TransactionPreloadInput,
+    FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput, perpetual::PerpetualType,
 };
 
 use crate::provider::preload_cache::HyperCoreCache;

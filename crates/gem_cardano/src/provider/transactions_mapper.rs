@@ -1,14 +1,10 @@
 use crate::models::rpc::{Block, Transaction};
 use chrono::DateTime;
-use primitives::{chain::Chain, transaction_utxo::TransactionUtxoInput, TransactionState, TransactionType};
+use primitives::{TransactionState, TransactionType, chain::Chain, transaction_utxo::TransactionUtxoInput};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(hash: String) -> Result<String, Box<dyn Error + Sync + Send>> {
-    if hash.is_empty() {
-        Err("Empty transaction hash".into())
-    } else {
-        Ok(hash)
-    }
+    if hash.is_empty() { Err("Empty transaction hash".into()) } else { Ok(hash) }
 }
 
 pub fn map_transaction(chain: Chain, block: &Block, transaction: &Transaction) -> Option<primitives::Transaction> {

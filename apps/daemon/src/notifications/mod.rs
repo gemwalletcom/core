@@ -8,7 +8,7 @@ use std::time::Duration;
 use api_connector::PusherClient;
 use job_runner::run_job;
 use settings::Settings;
-use streamer::{run_consumer, ConsumerConfig, NotificationsPayload, QueueName, StreamReader};
+use streamer::{ConsumerConfig, NotificationsPayload, QueueName, StreamReader, run_consumer};
 
 mod notifications_consumer;
 

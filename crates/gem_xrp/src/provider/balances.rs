@@ -6,7 +6,7 @@ use gem_client::Client;
 use primitives::AssetBalance;
 
 use crate::{
-    provider::balances_mapper::{map_balance_coin, map_balance_tokens},
+    provider::balances_mapper::{map_balance_assets, map_balance_coin, map_balance_tokens},
     rpc::client::XRPClient,
 };
 
@@ -26,6 +26,11 @@ impl<C: Client> ChainBalances for XRPClient<C> {
 
     async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         Ok(None)
+    }
+
+    async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let objects = self.get_account_objects(&address).await?;
+        Ok(map_balance_assets(&objects, self.get_chain()))
     }
 }
 
@@ -48,7 +53,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_xrp_get_balance_coin_empty_account() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_xrp_test_client();
-        let balance = client.get_balance_coin("rPGZTtsiBXS8izwJcktUmxtzZSic1jbpLi".to_string()).await?;
+        let balance = client.get_balance_coin(TEST_ADDRESS_EMPTY.to_string()).await?;
         assert!(balance.balance.available == num_bigint::BigUint::from(0u32));
         Ok(())
     }
@@ -82,6 +87,22 @@ mod chain_integration_tests {
         for balance in &balances {
             assert_eq!(balance.asset_id.chain, Chain::Xrp);
             assert!(balance.balance.available == num_bigint::BigUint::from(0u32));
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_xrp_get_balance_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_xrp_test_client();
+        let address = TEST_ADDRESS.to_string();
+        let assets = client.get_balance_assets(address).await?;
+
+        println!("Assets: {}", assets.len());
+
+        assert!(!assets.is_empty());
+
+        for asset in assets {
+            assert_eq!(asset.asset_id.chain, Chain::Xrp);
         }
         Ok(())
     }

@@ -1,5 +1,5 @@
 use num_bigint::BigInt;
-use primitives::{chain_cosmos::CosmosChain, FeePriority, FeeRate, GasPriceType, NodeSyncStatus};
+use primitives::{FeePriority, FeeRate, GasPriceType, NodeSyncStatus, chain_cosmos::CosmosChain};
 use std::error::Error;
 
 pub fn calculate_fee_rates(chain: CosmosChain, base_fee: BigInt) -> Vec<FeeRate> {

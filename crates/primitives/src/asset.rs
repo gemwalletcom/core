@@ -3,7 +3,7 @@ use std::{collections::HashSet, error::Error};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{asset_id::AssetId, asset_type::AssetType, AssetBasic, AssetProperties, AssetScore, Chain};
+use crate::{AssetBasic, AssetProperties, AssetScore, Chain, asset_id::AssetId, asset_type::AssetType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]

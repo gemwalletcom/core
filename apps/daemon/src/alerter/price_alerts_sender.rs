@@ -1,5 +1,5 @@
-use pricer::price_alert_client::PriceAlertRules;
 use pricer::PriceAlertClient;
+use pricer::price_alert_client::PriceAlertRules;
 use settings::AlerterRules;
 use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 

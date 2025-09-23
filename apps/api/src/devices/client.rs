@@ -1,7 +1,7 @@
 use api_connector::PusherClient;
 use primitives::{Device, GorushNotification, PushNotification, PushNotificationTypes};
 use std::error::Error;
-use storage::{models::UpdateDevice, DatabaseClient, DatabaseError};
+use storage::{DatabaseClient, DatabaseError, models::UpdateDevice};
 
 pub struct DevicesClient {
     database: DatabaseClient,

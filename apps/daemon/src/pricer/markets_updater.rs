@@ -1,6 +1,6 @@
 use std::{error::Error, vec};
 
-use coingecko::{model::Global, CoinGeckoClient};
+use coingecko::{CoinGeckoClient, model::Global};
 use pricer::MarketsClient;
 use primitives::{AssetTag, Chain, MarketDominance, Markets};
 

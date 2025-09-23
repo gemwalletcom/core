@@ -1,15 +1,14 @@
-use super::{client::JupiterClient, model::*, PROGRAM_ADDRESS};
+use super::{PROGRAM_ADDRESS, client::JupiterClient, model::*};
 use crate::{
-    network::{jsonrpc_client_with_chain, JsonRpcResult},
+    network::{JsonRpcResult, jsonrpc_client_with_chain},
     swapper::{Swapper, *},
 };
 
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_solana::{
-    get_pubkey_by_str,
+    SolanaRpc, TOKEN_PROGRAM, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS, get_pubkey_by_str,
     models::{AccountData, ValueResult},
-    SolanaRpc, TOKEN_PROGRAM, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS,
 };
 use primitives::{AssetId, Chain};
 use std::collections::HashSet;
@@ -214,7 +213,7 @@ mod swap_integration_tests {
     use super::*;
     use crate::{
         network::alien_provider::NativeProvider,
-        swapper::{models::SwapperOptions, remote_models::SwapperQuoteAsset, SwapperMode},
+        swapper::{SwapperMode, models::SwapperOptions, remote_models::SwapperQuoteAsset},
     };
     use primitives::AssetId;
 

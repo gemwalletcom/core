@@ -1,8 +1,8 @@
 use crate::DatabaseError;
 
+use crate::DatabaseClient;
 use crate::database::transactions::TransactionsStore;
 use crate::models::{AddressChainIdResult, Transaction, TransactionAddresses, TransactionType};
-use crate::DatabaseClient;
 use primitives::TransactionsFetchOption;
 
 pub trait TransactionsRepository {

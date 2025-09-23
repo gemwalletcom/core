@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use crate::models::{Account, AssetDetails, TransactionBroadcast, TransactionStatus, TransactionsParams};
-use gem_client::{ContentType, CONTENT_TYPE};
+use gem_client::{CONTENT_TYPE, ContentType};
 
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};

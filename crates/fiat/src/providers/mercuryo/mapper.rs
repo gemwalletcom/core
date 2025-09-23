@@ -4,8 +4,8 @@ use super::models::{
     Asset, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction,
 };
 use crate::{model::FiatProviderAsset, providers::mercuryo::models::FiatPaymentMethod};
-use primitives::{currency::Currency, fiat_assets::FiatAssetLimits, PaymentType};
 use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::{PaymentType, currency::Currency, fiat_assets::FiatAssetLimits};
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
     match chain.as_str() {

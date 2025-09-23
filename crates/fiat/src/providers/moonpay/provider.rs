@@ -1,8 +1,8 @@
 use crate::{
+    FiatProvider,
     error::FiatError,
     model::{FiatMapping, FiatProviderAsset},
     providers::moonpay::models::{Data, WebhookOrderId},
-    FiatProvider,
 };
 use async_trait::async_trait;
 use std::error::Error;
@@ -86,7 +86,7 @@ impl FiatProvider for MoonPayClient {
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 mod fiat_integration_tests {
     use crate::testkit::*;
-    use crate::{model::FiatMapping, FiatProvider};
+    use crate::{FiatProvider, model::FiatMapping};
     use primitives::FiatBuyQuote;
 
     #[tokio::test]

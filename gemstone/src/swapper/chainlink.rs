@@ -6,13 +6,13 @@ use primitives::Chain;
 use std::sync::Arc;
 
 use crate::{
-    network::{jsonrpc_client_with_chain, AlienProvider, JsonRpcClient},
+    network::{AlienProvider, JsonRpcClient, jsonrpc_client_with_chain},
     swapper::SwapperError,
 };
 use gem_evm::{
     chainlink::contract::{AggregatorInterface, CHAINLINK_ETH_USD_FEED},
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    multicall3::{create_call3, decode_call3_return, IMulticall3},
+    multicall3::{IMulticall3, create_call3, decode_call3_return},
 };
 
 pub struct ChainlinkPriceFeed {

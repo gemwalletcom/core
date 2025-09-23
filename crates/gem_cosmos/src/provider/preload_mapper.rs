@@ -1,5 +1,5 @@
 use num_bigint::BigInt;
-use primitives::{chain_cosmos::CosmosChain, GasPriceType, StakeType, TransactionFee, TransactionInputType};
+use primitives::{GasPriceType, StakeType, TransactionFee, TransactionInputType, chain_cosmos::CosmosChain};
 
 fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
     match chain {

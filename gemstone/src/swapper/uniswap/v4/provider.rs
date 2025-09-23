@@ -1,10 +1,12 @@
-use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
+use alloy_primitives::{Address, U256, hex::encode_prefixed as HexEncode};
 use async_trait::async_trait;
 use std::{collections::HashSet, str::FromStr, sync::Arc, vec};
 
 use crate::{
-    network::{jsonrpc_client_with_chain, AlienProvider},
+    network::{AlienProvider, jsonrpc_client_with_chain},
     swapper::{
+        FetchQuoteData, Permit2ApprovalData, Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData,
+        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
         approval::{check_approval_erc20, check_approval_permit2},
         eth_address,
         slippage::apply_slippage_in_bp,
@@ -12,29 +14,27 @@ use crate::{
             deadline::get_sig_deadline,
             fee_token::get_fee_token,
             quote_result::get_best_quote,
-            swap_route::{build_swap_route, get_intermediaries, RouteData},
+            swap_route::{RouteData, build_swap_route, get_intermediaries},
         },
-        FetchQuoteData, Permit2ApprovalData, Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData,
-        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
     },
 };
 use gem_evm::{
     jsonrpc::EthereumRpc,
     uniswap::{
+        FeeTier,
         command::encode_commands,
         contracts::v4::IV4Quoter::QuoteExactParams,
         deployment::v4::get_uniswap_deployment_by_chain,
-        path::{get_base_pair, TokenPair},
-        FeeTier,
+        path::{TokenPair, get_base_pair},
     },
 };
 use primitives::{AssetId, Chain, EVMChain};
 
 use super::{
+    DEFAULT_SWAP_GAS_LIMIT,
     commands::build_commands,
     path::{build_pool_keys, build_quote_exact_params},
     quoter::{build_quote_exact_requests, build_quote_exact_single_request},
-    DEFAULT_SWAP_GAS_LIMIT,
 };
 
 #[derive(Debug)]

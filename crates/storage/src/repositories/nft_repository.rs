@@ -1,8 +1,8 @@
 use crate::DatabaseError;
 
-use crate::database::nft::NftStore;
-use crate::models::{nft_asset::UpdateNftAssetImageUrl, nft_collection::UpdateNftCollectionImageUrl, nft_link::NftLink, NftAsset, NftCollection, NftType};
 use crate::DatabaseClient;
+use crate::database::nft::NftStore;
+use crate::models::{NftAsset, NftCollection, NftType, nft_asset::UpdateNftAssetImageUrl, nft_collection::UpdateNftCollectionImageUrl, nft_link::NftLink};
 
 pub trait NftRepository {
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAsset>, DatabaseError>;

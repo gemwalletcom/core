@@ -1,27 +1,29 @@
-use alloy_primitives::{hex, U256};
+use alloy_primitives::{U256, hex};
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
 use std::{str::FromStr, sync::Arc};
 
 use super::{
-    broker::{model::*, BrokerClient},
+    ChainflipRouteData,
+    broker::{BrokerClient, model::*},
     capitalize::capitalize_first_letter,
     client::{ChainflipClient, QuoteRequest, QuoteResponse},
     price::{apply_slippage, price_to_hex_price},
     seed::generate_random_seed,
-    tx_builder, ChainflipRouteData,
+    tx_builder,
 };
 use crate::{
     config::swap_config::DEFAULT_CHAINFLIP_FEE_BPS,
     network::AlienProvider,
     swapper::{
+        FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
+        SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
         approval::check_approval_erc20,
         asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
-        slippage, FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
-        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
+        slippage,
     },
 };
-use primitives::{chain::Chain, swap::QuoteAsset, ChainType};
+use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 
 const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 

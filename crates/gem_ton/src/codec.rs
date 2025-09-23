@@ -1,6 +1,6 @@
 use crate::{BagOfCells, Cell, CellBuilder, TonAddress};
-use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
 
 /// Encode user address to tvm.Slice for get_wallet_address smart contract call
 pub fn encode_get_wallet_address_slice(address: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {

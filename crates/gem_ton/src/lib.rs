@@ -9,5 +9,5 @@ pub mod codec;
 pub mod constants;
 pub mod models;
 
-pub use tonlib_core::cell::{BagOfCells, Cell, CellBuilder};
 pub use tonlib_core::TonAddress;
+pub use tonlib_core::cell::{BagOfCells, Cell, CellBuilder};

@@ -5,7 +5,7 @@ use crate::{
         model::{Diff, Log, TransactionReciept, TransactionReplayTrace},
     },
 };
-use alloy_primitives::{hex, Address};
+use alloy_primitives::{Address, hex};
 use chain_primitives::{BalanceDiff, BalanceDiffMap};
 use num_bigint::{BigInt, BigUint};
 use num_traits::Num;

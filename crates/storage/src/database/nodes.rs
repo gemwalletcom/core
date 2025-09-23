@@ -1,4 +1,4 @@
-use crate::{models::*, DatabaseClient};
+use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
 
 pub(crate) trait NodesStore {

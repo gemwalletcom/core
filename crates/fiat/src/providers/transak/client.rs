@@ -1,5 +1,5 @@
 use super::models::{Asset, Country, Data, FiatCurrency, Response, TokenResponse, TransakOrderResponse, TransakQuote};
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD as BASE64, Engine as _};
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as BASE64};
 use number_formatter::BigNumberFormatter;
 use primitives::FiatBuyQuote;
 use primitives::{FiatProviderName, FiatQuote, FiatQuoteType};

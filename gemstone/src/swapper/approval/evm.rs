@@ -1,7 +1,7 @@
-use crate::network::{jsonrpc_client_with_chain, AlienProvider};
-use crate::swapper::{eth_address, models::ApprovalType, Permit2ApprovalData, SwapperApprovalData, SwapperError};
+use crate::network::{AlienProvider, jsonrpc_client_with_chain};
+use crate::swapper::{Permit2ApprovalData, SwapperApprovalData, SwapperError, eth_address, models::ApprovalType};
 
-use alloy_primitives::{hex::decode as HexDecode, Address, U256};
+use alloy_primitives::{Address, U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
 
 use gem_evm::{

@@ -1,18 +1,18 @@
 use std::sync::Arc;
 
-use alloy_primitives::{hex::decode as HexDecode, Address, U256};
+use alloy_primitives::{Address, U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
 use num_bigint::{BigInt, Sign};
 use primitives::Chain;
 
 use crate::{
-    network::{jsonrpc_client_with_chain, AlienProvider, JsonRpcClient},
+    network::{AlienProvider, JsonRpcClient, jsonrpc_client_with_chain},
     swapper::SwapperError,
 };
 use gem_evm::{
     across::{contracts::HubPoolInterface, deployment::ACROSS_HUBPOOL},
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    multicall3::{create_call3, decode_call3_return, IMulticall3},
+    multicall3::{IMulticall3, create_call3, decode_call3_return},
 };
 
 pub struct HubPoolClient {

@@ -1,7 +1,7 @@
 use crate::providers::goplus::models::{Response, SecurityAddress, SecurityToken};
-use crate::{mapper, AddressTarget, ScanProvider, ScanResult, TokenTarget};
+use crate::{AddressTarget, ScanProvider, ScanResult, TokenTarget, mapper};
 use async_trait::async_trait;
-use gem_client::{build_path_with_query, Client, ReqwestClient};
+use gem_client::{Client, ReqwestClient, build_path_with_query};
 use std::collections::HashMap;
 use std::result::Result;
 

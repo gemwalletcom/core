@@ -1,6 +1,6 @@
 use super::{
-    model::{ChainflipAsset, DcaParameters, DepositAddressResponse, RefundParameters},
     ChainflipEnvironment, ChainflipIngressEgress, VaultSwapExtras, VaultSwapResponse,
+    model::{ChainflipAsset, DcaParameters, DepositAddressResponse, RefundParameters},
 };
 use crate::{
     network::{AlienClient, AlienProvider, JsonRpcClient},

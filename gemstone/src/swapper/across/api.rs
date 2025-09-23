@@ -3,7 +3,7 @@ use crate::{
     network::{AlienProvider, AlienTarget},
     swapper::SwapperError,
 };
-use primitives::{swap::SwapStatus, Chain};
+use primitives::{Chain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 

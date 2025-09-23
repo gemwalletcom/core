@@ -1,6 +1,6 @@
 use crate::{
-    swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData},
     SwapProvider,
+    swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData},
 };
 
 impl SwapData {

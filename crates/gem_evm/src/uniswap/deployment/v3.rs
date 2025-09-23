@@ -1,4 +1,4 @@
-use super::{get_uniswap_permit2_by_chain, Deployment};
+use super::{Deployment, get_uniswap_permit2_by_chain};
 use primitives::Chain;
 
 pub struct V3Deployment {

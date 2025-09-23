@@ -29,7 +29,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde::{de::IntoDeserializer, Serialize};
+    use serde::{Serialize, de::IntoDeserializer};
 
     #[derive(Serialize, Deserialize)]
     struct TestOptionStruct {

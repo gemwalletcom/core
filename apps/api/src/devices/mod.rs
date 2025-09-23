@@ -2,7 +2,7 @@ pub mod client;
 use crate::responders::{ApiError, ApiResponse};
 pub use client::DevicesClient;
 use primitives::device::Device;
-use rocket::{delete, get, post, put, tokio::sync::Mutex, State};
+use rocket::{State, delete, get, post, put, tokio::sync::Mutex};
 
 #[post("/devices", format = "json", data = "<device>")]
 pub async fn add_device(device: rocket::serde::json::Json<Device>, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {

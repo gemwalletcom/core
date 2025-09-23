@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use pricer_dex::{pyth::client::PythClient, PriceChainProvider, PythProvider};
+    use pricer_dex::{PriceChainProvider, PythProvider, pyth::client::PythClient};
     use primitives::Chain;
 
     #[tokio::test]

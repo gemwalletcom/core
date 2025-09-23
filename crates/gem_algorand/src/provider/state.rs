@@ -4,7 +4,7 @@ use std::error::Error;
 
 use gem_client::Client;
 
-use crate::{rpc::client::AlgorandClient, AlgorandClientIndexer};
+use crate::{AlgorandClientIndexer, rpc::client::AlgorandClient};
 
 #[async_trait]
 impl<C: Client> ChainState for AlgorandClient<C> {

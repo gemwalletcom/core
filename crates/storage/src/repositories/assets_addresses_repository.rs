@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
 use crate::database::assets_addresses::AssetsAddressesStore;
-use crate::{models::asset_address::AssetAddress, DatabaseClient};
+use crate::{DatabaseClient, models::asset_address::AssetAddress};
 use primitives::{AssetAddress as PrimitiveAssetAddress, AssetId, ChainAddress};
 
 pub trait AssetsAddressesRepository {

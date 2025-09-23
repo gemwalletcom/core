@@ -1,5 +1,5 @@
 use alloy_primitives::{Address, U256};
-use alloy_sol_types::{sol, SolCall};
+use alloy_sol_types::{SolCall, sol};
 use std::{error::Error, str::FromStr};
 
 pub const HUB_READER_ADDRESS: &str = "0x830295c0abe7358f7e24bc38408095621474280b";
@@ -151,7 +151,12 @@ pub fn encode_undelegate_call(operator_address: &str, shares: &str) -> Result<Ve
     Ok(call.abi_encode())
 }
 
-pub fn encode_redelegate_call(src_validator: &str, dst_validator: &str, shares: &str, delegate_vote_power: bool) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+pub fn encode_redelegate_call(
+    src_validator: &str,
+    dst_validator: &str,
+    shares: &str,
+    delegate_vote_power: bool,
+) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
     let src_validator = Address::from_str(src_validator)?;
     let dst_validator = Address::from_str(dst_validator)?;
     let amount = U256::from_str(shares)?;
@@ -174,10 +179,7 @@ pub fn encode_claim_call(operator_address: &str, request_number: u64) -> Result<
 }
 
 pub fn encode_claim_batch_call(operator_addresses: Vec<String>, request_numbers: Vec<u64>) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    let operator_addresses = operator_addresses
-        .iter()
-        .map(|x| Address::from_str(x))
-        .collect::<Result<Vec<Address>, _>>()?;
+    let operator_addresses = operator_addresses.iter().map(|x| Address::from_str(x)).collect::<Result<Vec<Address>, _>>()?;
     let request_numbers = request_numbers.iter().map(|x| U256::from(*x)).collect::<Vec<U256>>();
     let call = IStakeHub::claimBatchCall {
         operatorAddresses: operator_addresses,
@@ -254,7 +256,10 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hex::encode(data), "59491871000000000000000000000000773760b0708a5cc369c346993a0c225d8e4043b1000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a0000000000000000000000000000000000000000000000001099f6cfbf3e61600000000000000000000000000000000000000000000000000000000000000000");
+        assert_eq!(
+            hex::encode(data),
+            "59491871000000000000000000000000773760b0708a5cc369c346993a0c225d8e4043b1000000000000000000000000343da7ff0446247ca47aa41e2a25c5bbb230ed0a0000000000000000000000000000000000000000000000001099f6cfbf3e61600000000000000000000000000000000000000000000000000000000000000000"
+        );
     }
 
     #[test]
@@ -269,6 +274,9 @@ mod tests {
     fn test_encode_claim_batch_call() {
         let data = encode_claim_batch_call(vec!["0xE5572297718e1943A92BfEde2E67A060439e8EFd".to_string()], vec![0]).unwrap();
 
-        assert_eq!(hex::encode(data), "d7c2dfc8000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000e5572297718e1943a92bfede2e67a060439e8efd00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000");
+        assert_eq!(
+            hex::encode(data),
+            "d7c2dfc8000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000e5572297718e1943a92bfede2e67a060439e8efd00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000"
+        );
     }
 }

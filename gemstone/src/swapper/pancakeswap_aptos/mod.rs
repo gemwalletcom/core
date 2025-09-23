@@ -10,8 +10,8 @@ use super::{
 use crate::network::AlienProvider;
 use async_trait::async_trait;
 use client::PancakeSwapAptosClient;
-use gem_aptos::{TransactionPayload, APTOS_NATIVE_COIN};
-use model::{RouteData, PANCAKE_SWAP_APTOS_ADDRESS};
+use gem_aptos::{APTOS_NATIVE_COIN, TransactionPayload};
+use model::{PANCAKE_SWAP_APTOS_ADDRESS, RouteData};
 use primitives::{AssetId, Chain};
 
 #[derive(Debug)]

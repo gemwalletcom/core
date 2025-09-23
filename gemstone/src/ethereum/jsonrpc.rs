@@ -1,11 +1,11 @@
-use alloy_primitives::{hex::decode as HexDecode, U256};
+use alloy_primitives::{U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::{
     debug_println,
-    network::{jsonrpc_client_with_chain, AlienProvider},
+    network::{AlienProvider, jsonrpc_client_with_chain},
     swapper::SwapperError,
 };
 

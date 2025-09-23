@@ -1,7 +1,7 @@
 use crate::constants::TRANSACTION_TYPE_PAY;
 use crate::models::{Transaction as AlgoTransaction, TransactionBroadcast, TransactionStatus};
 use chrono::DateTime;
-use primitives::{chain::Chain, Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
+use primitives::{Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate, chain::Chain};
 
 pub fn map_transaction_broadcast(result: &TransactionBroadcast) -> Result<String, String> {
     if let Some(message) = &result.message {

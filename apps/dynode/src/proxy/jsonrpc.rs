@@ -5,10 +5,10 @@ use crate::proxy::constants::JSON_CONTENT_TYPE;
 use crate::proxy::request_builder::RequestBuilder;
 use crate::proxy::request_url::RequestUrl;
 use crate::proxy::response_builder::ResponseBuilder;
-use gem_tracing::{info_with_fields, DurationMs};
+use gem_tracing::{DurationMs, info_with_fields};
 use primitives::Chain;
-use reqwest::header::HeaderMap;
 use reqwest::Method;
+use reqwest::header::HeaderMap;
 
 use crate::proxy::ProxyResponse;
 
@@ -153,23 +153,24 @@ impl JsonRpcHandler {
     ) {
         for (i, response) in responses.iter().enumerate() {
             if let (Some(call), JsonRpcResult::Success(success)) = (calls.get(i), response)
-                && let Some(ttl) = cache.should_cache_call(&chain, call) {
-                    let result_bytes = serde_json::to_string(&success.result).unwrap_or_default().into_bytes();
-                    let size_bytes = result_bytes.len();
-                    let cached = CachedResponse::new(result_bytes, 200, JSON_CONTENT_TYPE.to_string(), ttl);
-                    let cache_key = call.cache_key(host, path);
-                    cache.set(&chain, cache_key, cached, ttl).await;
+                && let Some(ttl) = cache.should_cache_call(&chain, call)
+            {
+                let result_bytes = serde_json::to_string(&success.result).unwrap_or_default().into_bytes();
+                let size_bytes = result_bytes.len();
+                let cached = CachedResponse::new(result_bytes, 200, JSON_CONTENT_TYPE.to_string(), ttl);
+                let cache_key = call.cache_key(host, path);
+                cache.set(&chain, cache_key, cached, ttl).await;
 
-                    info_with_fields!(
-                        "Cache SET",
-                        chain = chain.as_ref(),
-                        host = host,
-                        method = call.method.as_str(),
-                        ttl_seconds = ttl,
-                        size_bytes = size_bytes,
-                        latency = DurationMs(now.elapsed()),
-                    );
-                }
+                info_with_fields!(
+                    "Cache SET",
+                    chain = chain.as_ref(),
+                    host = host,
+                    method = call.method.as_str(),
+                    ttl_seconds = ttl,
+                    size_bytes = size_bytes,
+                    latency = DurationMs(now.elapsed()),
+                );
+            }
         }
     }
 

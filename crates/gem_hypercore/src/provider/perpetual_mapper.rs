@@ -91,7 +91,7 @@ mod tests {
             HypercorePosition, HypercorePositionType,
         },
     };
-    use primitives::{perpetual_provider::PerpetualProvider, PerpetualDirection, PerpetualMarginType};
+    use primitives::{PerpetualDirection, PerpetualMarginType, perpetual_provider::PerpetualProvider};
 
     #[test]
     fn test_map_positions_basic() {

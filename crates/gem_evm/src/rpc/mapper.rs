@@ -9,7 +9,7 @@ use crate::{
     registry::ContractRegistry,
     rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
-use primitives::{chain::Chain, transaction_metadata_types::TransactionNFTTransferMetadata, AssetId, NFTAssetId, TransactionType};
+use primitives::{AssetId, NFTAssetId, TransactionType, chain::Chain, transaction_metadata_types::TransactionNFTTransferMetadata};
 
 pub const INPUT_0X: &str = "0x";
 pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
@@ -30,7 +30,9 @@ impl EthereumMapper {
         traces: Option<Vec<TransactionReplayTrace>>,
     ) -> Vec<primitives::Transaction> {
         match traces {
-            Some(traces) => block.transactions.into_iter()
+            Some(traces) => block
+                .transactions
+                .into_iter()
                 .zip(transactions_reciepts.iter())
                 .zip(traces.iter())
                 .filter_map(|((transaction, receipt), trace)| {
@@ -91,10 +93,12 @@ impl EthereumMapper {
         }
 
         // Try to decode Uniswap V3 or V4 transaction
-        if transaction.to.is_some() && transaction.input.len() >= 8
-            && let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry) {
-                return Some(tx);
-            }
+        if transaction.to.is_some()
+            && transaction.input.len() >= 8
+            && let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry)
+        {
+            return Some(tx);
+        }
 
         // nft eip 721
 
@@ -103,29 +107,30 @@ impl EthereumMapper {
                 .logs
                 .last()
                 .is_some_and(|log| log.topics.len() == 4 && log.topics.first().is_some_and(|x| x == TRANSFER_TOPIC))
-            && let Some(log) = transaction_reciept.logs.last() {
-                let address = ethereum_address_from_topic(&log.topics[2])?;
-                let token_id = BigUint::from_str_radix(&log.topics[3].replace("0x", ""), 16).ok()?;
-                let contract_address = ethereum_address_checksum(&log.address).ok()?;
-                let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &contract_address, &token_id.to_string()));
+            && let Some(log) = transaction_reciept.logs.last()
+        {
+            let address = ethereum_address_from_topic(&log.topics[2])?;
+            let token_id = BigUint::from_str_radix(&log.topics[3].replace("0x", ""), 16).ok()?;
+            let contract_address = ethereum_address_checksum(&log.address).ok()?;
+            let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &contract_address, &token_id.to_string()));
 
-                let transaction = primitives::Transaction::new(
-                    hash,
-                    AssetId::from_chain(chain),
-                    from.clone(),
-                    address,
-                    None,
-                    TransactionType::TransferNFT,
-                    state,
-                    fee.to_string(),
-                    fee_asset_id,
-                    "0".to_string(),
-                    None,
-                    serde_json::to_value(metadata).ok(),
-                    created_at,
-                );
-                return Some(transaction);
-            }
+            let transaction = primitives::Transaction::new(
+                hash,
+                AssetId::from_chain(chain),
+                from.clone(),
+                address,
+                None,
+                TransactionType::TransferNFT,
+                state,
+                fee.to_string(),
+                fee_asset_id,
+                "0".to_string(),
+                None,
+                serde_json::to_value(metadata).ok(),
+                created_at,
+            );
+            return Some(transaction);
+        }
 
         // nft eip 1155
 
@@ -134,29 +139,30 @@ impl EthereumMapper {
                 .logs
                 .last()
                 .is_some_and(|log| log.topics.len() == 4 && log.topics.first().is_some_and(|x| x == TRANSFER_SINGLE))
-            && let Some(log) = transaction_reciept.logs.last() {
-                let to_address = ethereum_address_from_topic(&log.topics[3])?;
-                let token_id = BigUint::from_str_radix(&log.data.replace("0x", "")[0..64], 16).ok()?;
-                let contract_address = ethereum_address_checksum(&log.address).ok()?;
-                let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &contract_address, &token_id.to_string()));
+            && let Some(log) = transaction_reciept.logs.last()
+        {
+            let to_address = ethereum_address_from_topic(&log.topics[3])?;
+            let token_id = BigUint::from_str_radix(&log.data.replace("0x", "")[0..64], 16).ok()?;
+            let contract_address = ethereum_address_checksum(&log.address).ok()?;
+            let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &contract_address, &token_id.to_string()));
 
-                let transaction = primitives::Transaction::new(
-                    hash,
-                    AssetId::from_chain(chain),
-                    from.clone(),
-                    to_address,
-                    None,
-                    TransactionType::TransferNFT,
-                    state,
-                    fee.to_string(),
-                    fee_asset_id,
-                    "0".to_string(),
-                    None,
-                    serde_json::to_value(metadata).ok(),
-                    created_at,
-                );
-                return Some(transaction);
-            }
+            let transaction = primitives::Transaction::new(
+                hash,
+                AssetId::from_chain(chain),
+                from.clone(),
+                to_address,
+                None,
+                TransactionType::TransferNFT,
+                state,
+                fee.to_string(),
+                fee_asset_id,
+                "0".to_string(),
+                None,
+                serde_json::to_value(metadata).ok(),
+                created_at,
+            );
+            return Some(transaction);
+        }
 
         // erc20 transfer - check both direct transfer calls and smart contract calls that emit transfer events
         let transfer_log = transaction_reciept.logs.iter().find(|log| {

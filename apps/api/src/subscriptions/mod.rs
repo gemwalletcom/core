@@ -2,7 +2,7 @@ pub mod client;
 use crate::responders::{ApiError, ApiResponse};
 pub use client::SubscriptionsClient;
 use primitives::Subscription;
-use rocket::{delete, get, post, serde::json::Json, tokio::sync::Mutex, State};
+use rocket::{State, delete, get, post, serde::json::Json, tokio::sync::Mutex};
 
 #[get("/subscriptions/<device_id>")]
 pub async fn get_subscriptions(device_id: &str, client: &State<Mutex<SubscriptionsClient>>) -> Result<ApiResponse<Vec<Subscription>>, ApiError> {

@@ -3,15 +3,15 @@ use std::error::Error;
 use std::sync::Arc;
 
 use pricer::PriceClient;
-use primitives::{asset::AssetHashSetExt, AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
-use redis::aio::MultiplexedConnection;
+use primitives::{AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload, asset::AssetHashSetExt};
 use redis::PushInfo;
 use redis::PushKind;
+use redis::aio::MultiplexedConnection;
 use rocket::futures::SinkExt;
 use rocket::serde::json::serde_json;
 use rocket::tokio::sync::Mutex;
-use rocket_ws::stream::DuplexStream;
 use rocket_ws::Message;
+use rocket_ws::stream::DuplexStream;
 
 pub struct PriceObserverConfig {
     pub redis_url: String,

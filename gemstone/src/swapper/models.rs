@@ -1,5 +1,5 @@
 use super::permit2_data::Permit2Data;
-use crate::config::swap_config::{SwapReferralFees, DEFAULT_SLIPPAGE_BPS};
+use crate::config::swap_config::{DEFAULT_SLIPPAGE_BPS, SwapReferralFees};
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
 use std::str::FromStr;

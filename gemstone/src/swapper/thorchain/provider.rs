@@ -4,21 +4,21 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use alloy_primitives::{hex::encode_prefixed as HexEncode, Address, U256};
+use alloy_primitives::{Address, U256, hex::encode_prefixed as HexEncode};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_evm::thorchain::contracts::RouterInterface;
 use primitives::Chain;
 
 use super::{
-    asset::THORChainAsset, chain::THORChainName, client::ThorChainSwapClient, memo::ThorchainMemo, model::RouteData, ThorChain, DEFAULT_DEPOSIT_GAS_LIMIT,
-    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY,
+    DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName,
+    client::ThorChainSwapClient, memo::ThorchainMemo, model::RouteData,
 };
 use crate::{
     network::AlienProvider,
     swapper::{
-        approval::check_approval_erc20, asset::*, FetchQuoteData, Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProviderData,
-        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
+        FetchQuoteData, Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote,
+        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperSwapResult, approval::check_approval_erc20, asset::*,
     },
 };
 

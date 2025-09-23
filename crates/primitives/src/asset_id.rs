@@ -1,8 +1,8 @@
 use std::{collections::HashSet, fmt};
 
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 
-use crate::{chain::Chain, AssetSubtype};
+use crate::{AssetSubtype, chain::Chain};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AssetId {
@@ -61,12 +61,13 @@ impl AssetId {
                 return Some(AssetId { chain, token_id: None });
             }
         } else if split.len() >= 2
-            && let Ok(chain) = split[0].parse::<Chain>() {
-                return Some(AssetId {
-                    chain,
-                    token_id: Some(split[1..split.len()].join("_")),
-                });
-            }
+            && let Ok(chain) = split[0].parse::<Chain>()
+        {
+            return Some(AssetId {
+                chain,
+                token_id: Some(split[1..split.len()].join("_")),
+            });
+        }
         None
     }
 
@@ -97,11 +98,7 @@ impl AssetId {
     }
 
     pub fn token_subtype(&self) -> AssetSubtype {
-        if self.is_native() {
-            AssetSubtype::NATIVE
-        } else {
-            AssetSubtype::TOKEN
-        }
+        if self.is_native() { AssetSubtype::NATIVE } else { AssetSubtype::TOKEN }
     }
 }
 

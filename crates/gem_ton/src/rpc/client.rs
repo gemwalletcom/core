@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use primitives::{chain::Chain, Asset, AssetId, AssetType};
+use primitives::{Asset, AssetId, AssetType, chain::Chain};
 use serde_json;
 
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStaking, ChainTraits};

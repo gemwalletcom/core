@@ -49,8 +49,8 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::provider::testkit::{
-        create_arbitrum_test_client, create_ethereum_test_client, create_smartchain_test_client, TEST_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS,
-        TOKEN_DAI_ADDRESS, TOKEN_USDC_ADDRESS,
+        TEST_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS, TOKEN_DAI_ADDRESS, TOKEN_USDC_ADDRESS, create_arbitrum_test_client, create_ethereum_test_client,
+        create_smartchain_test_client,
     };
     use chain_traits::ChainBalances;
     use num_bigint::BigUint;

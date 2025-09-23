@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use search_index::{sanitize_index_primary_id, AssetDocument, DocumentId, SearchIndexClient, ASSETS_INDEX_NAME};
+use search_index::{ASSETS_INDEX_NAME, AssetDocument, DocumentId, SearchIndexClient, sanitize_index_primary_id};
 use storage::DatabaseClient;
 
 pub struct AssetsIndexUpdater {
@@ -20,12 +20,10 @@ impl AssetsIndexUpdater {
     pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let prices = self.database.prices().get_prices_assets_list()?;
         let assets_tags = self.database.tag().get_assets_tags()?;
-        let assets_tags_map: HashMap<String, Vec<String>> = assets_tags
-            .into_iter()
-            .fold(HashMap::new(), |mut acc, tag| {
-                acc.entry(tag.asset_id).or_default().push(tag.tag_id);
-                acc
-            });
+        let assets_tags_map: HashMap<String, Vec<String>> = assets_tags.into_iter().fold(HashMap::new(), |mut acc, tag| {
+            acc.entry(tag.asset_id).or_default().push(tag.tag_id);
+            acc
+        });
 
         let documents = prices
             .clone()

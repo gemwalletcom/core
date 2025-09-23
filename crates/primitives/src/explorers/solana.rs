@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use crate::explorers::metadata::{Explorer, Metadata, ACCOUNT_PATH, ADDRESS_PATH, TOKEN_PATH, TX_PATH};
+use crate::explorers::metadata::{ACCOUNT_PATH, ADDRESS_PATH, Explorer, Metadata, TOKEN_PATH, TX_PATH};
 
 pub fn new_solscan() -> Box<dyn BlockExplorer> {
     Explorer::boxed(Metadata {

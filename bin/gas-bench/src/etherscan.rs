@@ -1,11 +1,11 @@
 // https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=YourApiKeyToken
 
 use crate::client::GemstoneFeeData;
-use std::error::Error;
 use num_bigint::BigInt;
-use primitives::{fee::FeePriority, PriorityFeeValue};
+use primitives::{PriorityFeeValue, fee::FeePriority};
 use serde::Deserialize;
 use serde_serializers::deserialize_u64_from_str;
+use std::error::Error;
 
 const ETHERSCAN_API_URL: &str = "https://api.etherscan.io/api";
 

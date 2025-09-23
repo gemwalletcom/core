@@ -28,9 +28,10 @@ impl Domain {
         if let Some(index) = results.iter().position(|r| r.url == url) {
             let node = results[index].clone();
             if let Some(max_block_number) = Self::find_highest_block_number(results)
-                && node.block_number + self.get_block_delay(monitoring_config) >= max_block_number.block_number {
-                    return false;
-                }
+                && node.block_number + self.get_block_delay(monitoring_config) >= max_block_number.block_number
+            {
+                return false;
+            }
         }
         true
     }

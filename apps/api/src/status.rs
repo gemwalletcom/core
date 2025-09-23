@@ -1,4 +1,4 @@
-use rocket::{get, serde::json::Json, serde::Serialize};
+use rocket::{get, serde::Serialize, serde::json::Json};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[get("/")]

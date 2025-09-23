@@ -1,4 +1,4 @@
-use crate::{fiat_provider::FiatProvider, FiatQuoteType};
+use crate::{FiatQuoteType, fiat_provider::FiatProvider};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 

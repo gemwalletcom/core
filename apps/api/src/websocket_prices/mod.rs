@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use rocket::tokio::sync::Mutex;
 use rocket::State;
+use rocket::tokio::sync::Mutex;
 use rocket_ws::{Channel, WebSocket};
 
 mod client;

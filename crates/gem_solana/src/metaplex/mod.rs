@@ -5,7 +5,7 @@ mod uses;
 
 pub mod metadata;
 use crate::metaplex::metadata::Metadata;
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use borsh::{BorshDeserialize, BorshSerialize};
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Copy)]
@@ -46,7 +46,7 @@ pub fn decode_metadata(base64_str: &str) -> Result<Metadata, Box<dyn std::error:
 #[cfg(test)]
 mod tests {
     use crate::{
-        metaplex::{decode_metadata, metadata::Metadata, Key},
+        metaplex::{Key, decode_metadata, metadata::Metadata},
         pubkey::Pubkey,
     };
     use std::str::FromStr;

@@ -2,7 +2,7 @@ use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use sui_types::{Address, ObjectDigest, ObjectId};
 
-use gem_sui::jsonrpc::{DataObject, MoveObject, MoveObjectId, SuiData, I32};
+use gem_sui::jsonrpc::{DataObject, I32, MoveObject, MoveObjectId, SuiData};
 use serde_serializers::{deserialize_bigint_from_str as deserialize_bigint, serialize_bigint};
 
 #[allow(unused)]
@@ -83,8 +83,8 @@ mod tests {
     use super::*;
     use crate::network::JsonRpcResponse;
     use crate::sui::rpc::{
-        models::{InspectEvent, InspectResult},
         CoinAsset,
+        models::{InspectEvent, InspectResult},
     };
     use serde_json;
 

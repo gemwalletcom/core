@@ -2,7 +2,7 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use settings_chain::ChainProviders;
-use streamer::{consumer::MessageConsumer, FetchBlocksPayload, StreamProducer, StreamProducerQueue, TransactionsPayload};
+use streamer::{FetchBlocksPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
 pub struct FetchBlocksConsumer {
     pub providers: ChainProviders,

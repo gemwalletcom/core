@@ -59,7 +59,8 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
                         )
                         .await?;
                     let energy_used = BigInt::from_str(&estimated_energy).map_err(|err| -> Box<dyn Error + Send + Sync> { Box::new(err) })?;
-                    let (total_fee, chargeable_energy, energy_price) = calculate_transfer_token_fee_rate(&chain_parameters, &account_usage, energy_used.clone())?;
+                    let (total_fee, chargeable_energy, energy_price) =
+                        calculate_transfer_token_fee_rate(&chain_parameters, &account_usage, energy_used.clone())?;
                     let gas_price_type = GasPriceType::regular(energy_price);
 
                     TransactionFee::new_gas_price_type(gas_price_type, total_fee, chargeable_energy, HashMap::new())

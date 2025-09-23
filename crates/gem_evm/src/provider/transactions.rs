@@ -8,7 +8,7 @@ use primitives::{BroadcastOptions, NodeType, Transaction, TransactionStateReques
 
 use crate::{
     provider::transactions_mapper::{map_transaction_broadcast, map_transaction_status},
-    rpc::{client::EthereumClient, mapper::CONTRACT_REGISTRY, EthereumMapper},
+    rpc::{EthereumMapper, client::EthereumClient, mapper::CONTRACT_REGISTRY},
 };
 use gem_client::Client;
 use gem_jsonrpc::types::JsonRpcError;
@@ -112,7 +112,7 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::{create_ethereum_test_client, create_smartchain_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{TEST_ADDRESS, create_ethereum_test_client, create_smartchain_test_client};
     use chain_traits::{ChainBalances, ChainTransactions};
     use num_bigint::{BigInt, BigUint};
     use primitives::{TransactionChange, TransactionState, TransactionStateRequest};

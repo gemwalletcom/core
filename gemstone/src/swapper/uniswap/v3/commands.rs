@@ -1,5 +1,5 @@
-use crate::swapper::{eth_address, models::*, slippage::apply_slippage_in_bp, SwapperError, SwapperMode};
-use gem_evm::uniswap::command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth, ADDRESS_THIS};
+use crate::swapper::{SwapperError, SwapperMode, eth_address, models::*, slippage::apply_slippage_in_bp};
+use gem_evm::uniswap::command::{ADDRESS_THIS, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth};
 
 use alloy_primitives::{Address, Bytes, U256};
 use std::str::FromStr;
@@ -130,7 +130,7 @@ mod tests {
         swapper::permit2_data::*,
     };
     use alloy_primitives::aliases::U256;
-    use gem_evm::uniswap::{path::build_direct_pair, FeeTier};
+    use gem_evm::uniswap::{FeeTier, path::build_direct_pair};
     use primitives::{AssetId, Chain};
 
     #[test]

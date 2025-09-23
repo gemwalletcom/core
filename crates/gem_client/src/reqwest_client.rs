@@ -1,4 +1,4 @@
-use crate::{Client, ClientError, ContentType, CONTENT_TYPE, retry_policy};
+use crate::{retry_policy, Client, ClientError, ContentType, CONTENT_TYPE};
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{collections::HashMap, str::FromStr, time::Duration};

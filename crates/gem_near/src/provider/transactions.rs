@@ -19,9 +19,6 @@ impl<C: Client + Clone> ChainTransactions for NearClient<C> {
     }
 
     async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        // TODO: Implement NEAR block transaction fetching
-        // NEAR requires calling EXPERIMENTAL_chunk or similar RPC methods to get block transactions
-        // This would need additional RPC methods and transaction mapping logic
         Ok(vec![])
     }
 

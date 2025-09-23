@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
-use crate::swapper::{eth_address, slippage::apply_slippage_in_bp, SwapperError, SwapperMode, SwapperQuoteRequest, SwapperRoute};
+use crate::swapper::{SwapperError, SwapperMode, SwapperQuoteRequest, SwapperRoute, eth_address, slippage::apply_slippage_in_bp};
 use alloy_primitives::{Address, U256};
 use gem_evm::uniswap::{
     actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
-    command::{PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, ADDRESS_THIS},
+    command::{ADDRESS_THIS, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand},
     contracts::v4::{IV4Router::ExactInputParams, PathKey},
 };
 

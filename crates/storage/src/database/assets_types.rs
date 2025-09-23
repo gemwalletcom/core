@@ -1,6 +1,6 @@
 use crate::schema::assets_types::dsl::*;
 
-use crate::{models::AssetType, DatabaseClient};
+use crate::{DatabaseClient, models::AssetType};
 use diesel::prelude::*;
 
 pub(crate) trait AssetsTypesStore {

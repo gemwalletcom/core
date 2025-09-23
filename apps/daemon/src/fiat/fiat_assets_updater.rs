@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
-use fiat::{model::FiatProviderAsset, FiatProvider};
+use fiat::{FiatProvider, model::FiatProviderAsset};
 use gem_tracing::{error_with_fields, info_with_fields};
-use primitives::{currency::Currency, AssetTag, Diff, FiatProviderName};
+use primitives::{AssetTag, Diff, FiatProviderName, currency::Currency};
 use storage::{AssetFilter, AssetUpdate, AssetsRepository, DatabaseClient};
 
 pub struct FiatAssetsUpdater {
