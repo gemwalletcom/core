@@ -20,9 +20,8 @@ pub fn calculate_transfer_fee_rate(
         let activation_fee = get_chain_parameter_value(chain_parameters, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT)?;
         let bandwidth_fee = get_chain_parameter_value(chain_parameters, GET_CREATE_ACCOUNT_FEE)?;
 
-        let total_available_bandwidth = get_available_bandwidth(account_usage);
-        let has_sufficient_bandwidth = total_available_bandwidth >= DEFAULT_BANDWIDTH_BYTES;
-        let total_fee = if has_sufficient_bandwidth {
+        let available_bandwidth = get_available_bandwidth(account_usage);
+        let total_fee = if available_bandwidth >= DEFAULT_BANDWIDTH_BYTES {
             BigInt::from(activation_fee)
         } else {
             BigInt::from(activation_fee) + BigInt::from(bandwidth_fee)
@@ -42,11 +41,11 @@ pub fn calculate_transfer_token_fee_rate(
     let energy_price = BigInt::from(get_chain_parameter_value(chain_parameters, GET_ENERGY_FEE)?);
     let bandwidth_price = get_chain_parameter_value(chain_parameters, GET_TRANSACTION_FEE)?;
 
-    let chargeable_energy = calculate_chargeable_energy(account_usage, &energy_used);
-    let energy_fee_total = &chargeable_energy * &energy_price;
+    let energy = calculate_missing_energy(account_usage, &energy_used);
+    let energy_fee = &energy * &energy_price;
     let bandwidth_fee = calculate_fee_by_bandwidth(account_usage, DEFAULT_BANDWIDTH_BYTES, bandwidth_price);
 
-    Ok((energy_fee_total + bandwidth_fee, chargeable_energy, energy_price))
+    Ok(((energy_fee + bandwidth_fee), energy, energy_price))
 }
 
 pub fn calculate_stake_fee_rate(
@@ -65,8 +64,18 @@ fn get_available_bandwidth(account_usage: &TronAccountUsage) -> u64 {
 }
 
 fn calculate_fee_by_bandwidth(account_usage: &TronAccountUsage, required_bandwidth: u64, bandwidth_price: i64) -> BigInt {
-    let deficit = calculate_bandwidth_shortfall(account_usage, required_bandwidth);
-    BigInt::from(deficit) * BigInt::from(bandwidth_price)
+    let bandwidth = calculate_missing_bandwidth(account_usage, required_bandwidth);
+    BigInt::from(bandwidth) * BigInt::from(bandwidth_price)
+}
+
+fn calculate_missing_bandwidth(account_usage: &TronAccountUsage, required_bandwidth: u64) -> u64 {
+    let available_bandwidth = get_available_bandwidth(account_usage);
+    required_bandwidth.saturating_sub(available_bandwidth)
+}
+
+fn calculate_missing_energy(account_usage: &TronAccountUsage, energy_used: &BigInt) -> BigInt {
+    let available_energy = BigInt::from(account_usage.energy_limit.saturating_sub(account_usage.energy_used));
+    std::cmp::max(BigInt::from(0), energy_used - available_energy)
 }
 
 fn get_chain_parameter_value(parameters: &[ChainParameter], key: &str) -> Result<i64, Box<dyn Error + Send + Sync>> {
@@ -77,21 +86,11 @@ fn get_chain_parameter_value(parameters: &[ChainParameter], key: &str) -> Result
         .ok_or_else(|| format!("Missing chain parameter: {}", key).into())
 }
 
-fn calculate_bandwidth_shortfall(account_usage: &TronAccountUsage, required_bandwidth: u64) -> u64 {
-    let available_bandwidth = get_available_bandwidth(account_usage);
-    required_bandwidth.saturating_sub(available_bandwidth)
-}
-
-fn calculate_chargeable_energy(account_usage: &TronAccountUsage, energy_used: &BigInt) -> BigInt {
-    let available_energy = BigInt::from(account_usage.energy_limit.saturating_sub(account_usage.energy_used));
-    std::cmp::max(BigInt::from(0), energy_used - available_energy)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::delegation::DelegationValidator;
     use primitives::Chain;
+    use primitives::delegation::DelegationValidator;
 
     fn chain_parameter(key: &str, value: i64) -> ChainParameter {
         ChainParameter {
@@ -161,9 +160,9 @@ mod tests {
 
         let expected_bandwidth = BigInt::from(DEFAULT_BANDWIDTH_BYTES) * BigInt::from(1_000);
         let expected_energy_fee = BigInt::from(500) * BigInt::from(100);
-        let (total, chargeable_energy, energy_price) = calculate_transfer_token_fee_rate(&params, &account_usage, energy_used.clone()).unwrap();
+        let (total, missing_energy, energy_price) = calculate_transfer_token_fee_rate(&params, &account_usage, energy_used.clone()).unwrap();
 
-        assert_eq!(chargeable_energy, energy_used);
+        assert_eq!(missing_energy, energy_used);
         assert_eq!(energy_price, BigInt::from(100));
         assert_eq!(total, expected_bandwidth + expected_energy_fee);
     }
@@ -232,6 +231,6 @@ mod tests {
         account_usage.energy_used = 600;
 
         let energy_used = BigInt::from(800);
-        assert_eq!(calculate_chargeable_energy(&account_usage, &energy_used), BigInt::from(400));
+        assert_eq!(calculate_missing_energy(&account_usage, &energy_used), BigInt::from(400));
     }
 }
