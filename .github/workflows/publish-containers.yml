@@ -52,12 +52,8 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64
-          cache-from: |
-            type=gha,scope=core
-            type=registry,ref=${{ env.CORE_IMAGE }}:cache
-          cache-to: |
-            type=gha,scope=core,mode=max
-            type=registry,ref=${{ env.CORE_IMAGE }}:cache,mode=max
+          cache-from: type=gha,scope=core
+          cache-to: type=gha,scope=core,mode=max
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
@@ -93,12 +89,8 @@ jobs:
           file: ./dynode.Dockerfile
           push: true
           platforms: linux/amd64
-          cache-from: |
-            type=gha,scope=dynode
-            type=registry,ref=${{ env.DYNODE_IMAGE }}:cache
-          cache-to: |
-            type=gha,scope=dynode,mode=max
-            type=registry,ref=${{ env.DYNODE_IMAGE }}:cache,mode=max
+          cache-from: type=gha,scope=dynode
+          cache-to: type=gha,scope=dynode,mode=max
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
