@@ -3,9 +3,9 @@ FROM rust:1.89.0-bookworm AS builder
 WORKDIR /app
 
 # Copy source
-COPY --link . .
+COPY . .
 
-# Build with full caching using BuildKit cache mounts
+# Build with cache mounts - dependencies and source will be cached separately by Cargo
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-dynode \

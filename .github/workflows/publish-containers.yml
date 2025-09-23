@@ -19,6 +19,9 @@ permissions:
   contents: read
   packages: write
 
+env:
+  DOCKER_BUILDKIT: 1
+
 jobs:
   build-core:
     if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'core' }}
@@ -43,13 +46,18 @@ jobs:
           password: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
 
       - name: Build and push core image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
-          cache-from: type=gha,scope=core
-          cache-to: type=gha,scope=core,mode=max
+          platforms: linux/amd64
+          cache-from: |
+            type=gha,scope=core
+            type=registry,ref=${{ env.CORE_IMAGE }}:cache
+          cache-to: |
+            type=gha,scope=core,mode=max
+            type=registry,ref=${{ env.CORE_IMAGE }}:cache,mode=max
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
@@ -79,13 +87,18 @@ jobs:
           password: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
 
       - name: Build and push dynode image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./dynode.Dockerfile
           push: true
-          cache-from: type=gha,scope=dynode
-          cache-to: type=gha,scope=dynode,mode=max
+          platforms: linux/amd64
+          cache-from: |
+            type=gha,scope=dynode
+            type=registry,ref=${{ env.DYNODE_IMAGE }}:cache
+          cache-to: |
+            type=gha,scope=dynode,mode=max
+            type=registry,ref=${{ env.DYNODE_IMAGE }}:cache,mode=max
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
