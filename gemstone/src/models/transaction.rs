@@ -327,7 +327,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             } => GemTransactionLoadMetadata::Solana {
                 sender_token_address,
                 recipient_token_address,
-                token_program: token_program.map(|tp| tp.into()),
+                token_program,
                 block_hash,
             },
             TransactionLoadMetadata::Ton {
@@ -444,7 +444,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             } => TransactionLoadMetadata::Solana {
                 sender_token_address,
                 recipient_token_address,
-                token_program: token_program.map(|tp| tp.into()),
+                token_program,
                 block_hash,
             },
             GemTransactionLoadMetadata::Ton {
