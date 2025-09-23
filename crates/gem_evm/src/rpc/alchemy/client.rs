@@ -16,7 +16,7 @@ pub struct AlchemyClient<C: Client + Clone> {
 
 impl<C: Client + Clone> AlchemyClient<C> {
     const DISABLED_RPC_CHAINS: [EVMChain; 5] = [EVMChain::Mantle, EVMChain::Hyperliquid, EVMChain::OpBNB, EVMChain::Monad, EVMChain::Fantom];
-    const ENABLED_TRANSACTION_CHAINS: [EVMChain; 2] = [EVMChain::Ethereum, EVMChain::Base];
+    const ENABLED_TRANSACTION_CHAINS: [EVMChain; 3] = [EVMChain::Ethereum, EVMChain::Base, EVMChain::Manta];
 
     fn common_headers() -> std::collections::HashMap<String, String> {
         let mut headers = std::collections::HashMap::new();
