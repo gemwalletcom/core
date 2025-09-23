@@ -225,10 +225,11 @@ pub mod iso {
         iso_alpha_code: "COP",
         symbol: "$",
         name: "Colombian Peso",
-        &&cimal_places: 2,
+        decimal_places: 2,
     };
     pub const PEN: Currency = Currency {
-        i   symbol: "S/",
+        iso_alpha_code: "PEN",
+        symbol: "S/",
         name: "Peruvian Sol",
         decimal_places: 2,
     };
