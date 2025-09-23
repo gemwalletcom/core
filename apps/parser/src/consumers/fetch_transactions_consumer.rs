@@ -5,7 +5,7 @@ use cacher::CacherClient;
 use primitives::{Chain, Transaction};
 use settings_chain::ChainProviders;
 use storage::DatabaseClient;
-use streamer::{consumer::MessageConsumer, ChainAddressPayload, StreamProducer, StreamProducerQueue, TransactionsPayload};
+use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 use tokio::sync::Mutex;
 
 pub struct FetchTransactionsConsumer {
@@ -35,7 +35,9 @@ impl FetchTransactionsConsumer {
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, usize> for FetchTransactionsConsumer {
     async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        self.cacher.can_process_now(&format!("fetch_transactions:{}", payload.value.to_string()), 30 * 86400).await
+        self.cacher
+            .can_process_now(&format!("fetch_transactions:{}:{}", payload.value.chain, payload.value.address), 30 * 86400)
+            .await
     }
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let transactions = self

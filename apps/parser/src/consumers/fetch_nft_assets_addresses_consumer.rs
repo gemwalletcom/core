@@ -5,7 +5,7 @@ use ::nft::NFTClient;
 use async_trait::async_trait;
 use cacher::CacherClient;
 use storage::DatabaseClient;
-use streamer::{consumer::MessageConsumer, ChainAddressPayload, StreamProducer};
+use streamer::{ChainAddressPayload, StreamProducer, consumer::MessageConsumer};
 
 pub struct FetchNftAssetsAddressesConsumer {
     pub database: Arc<Mutex<DatabaseClient>>,
@@ -29,7 +29,10 @@ impl FetchNftAssetsAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchNftAssetsAddressesConsumer {
     async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now(&format!("fetch_nft_assets_addresses:{}", payload.value.to_string()), 30 * 86400)
+            .can_process_now(
+                &format!("fetch_nft_assets_addresses:{}:{}", payload.value.chain, payload.value.address),
+                30 * 86400,
+            )
             .await
     }
 

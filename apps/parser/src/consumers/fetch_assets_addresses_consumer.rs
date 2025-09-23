@@ -6,8 +6,8 @@ use tokio::sync::Mutex;
 use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
-use storage::{models::AssetAddress, DatabaseClient};
-use streamer::{consumer::MessageConsumer, ChainAddressPayload, StreamProducer, StreamProducerQueue};
+use storage::{DatabaseClient, models::AssetAddress};
+use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
 pub struct FetchAssetsAddressesConsumer {
     pub provider: ChainProviders,
@@ -104,7 +104,7 @@ impl FetchAssetsAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsumer {
     async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now(&format!("fetch_assets_addresses:{}", payload.value.to_string()), 30 * 86400)
+            .can_process_now(&format!("fetch_assets_addresses:{}:{}", payload.value.chain, payload.value.address), 30 * 86400)
             .await
     }
 
