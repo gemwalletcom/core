@@ -27,11 +27,10 @@ impl Domain {
     pub fn is_url_behind(&self, url: Url, results: Vec<NodeResult>, monitoring_config: &NodeMonitoringConfig) -> bool {
         if let Some(index) = results.iter().position(|r| r.url == url) {
             let node = results[index].clone();
-            if let Some(max_block_number) = Self::find_highest_block_number(results) {
-                if node.block_number + self.get_block_delay(monitoring_config) >= max_block_number.block_number {
+            if let Some(max_block_number) = Self::find_highest_block_number(results)
+                && node.block_number + self.get_block_delay(monitoring_config) >= max_block_number.block_number {
                     return false;
                 }
-            }
         }
         true
     }

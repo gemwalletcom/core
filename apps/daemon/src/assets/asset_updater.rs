@@ -156,11 +156,10 @@ impl AssetUpdater {
 
         let mut results = vec![];
 
-        if let Some(value) = links.clone().twitter_screen_name {
-            if !value.is_empty() {
+        if let Some(value) = links.clone().twitter_screen_name
+            && !value.is_empty() {
                 results.push(AssetLink::new(&format!("https://x.com/{value}"), LinkType::X));
             }
-        }
 
         if let Some(value) = links
             .clone()
@@ -177,11 +176,10 @@ impl AssetUpdater {
             }
         }
 
-        if let Some(value) = links.clone().telegram_channel_identifier {
-            if !value.is_empty() {
+        if let Some(value) = links.clone().telegram_channel_identifier
+            && !value.is_empty() {
                 results.push(AssetLink::new(&format!("https://t.me/{value}"), LinkType::Telegram));
-            }
-        };
+            };
 
         results.push(AssetLink::new(
             &format!("https://www.coingecko.com/coins/{}", coin_info.id.to_lowercase()),

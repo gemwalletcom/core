@@ -217,11 +217,10 @@ impl Metrics {
     fn categorize_user_agent(&self, user_agent: &str) -> String {
         for (category, patterns) in &self.config.user_agent_patterns.patterns {
             for pattern in patterns {
-                if let Ok(re) = Regex::new(pattern) {
-                    if re.is_match(user_agent) {
+                if let Ok(re) = Regex::new(pattern)
+                    && re.is_match(user_agent) {
                         return category.clone();
                     }
-                }
             }
         }
         "unknown".to_string()

@@ -1,4 +1,3 @@
-
 use rust_decimal::Decimal;
 use std::str::FromStr;
 
@@ -14,57 +13,282 @@ pub struct Currency {
 /// ISO 4217 currency definitions
 pub mod iso {
     use super::Currency;
-    pub const USD: Currency = Currency { iso_alpha_code: "USD", symbol: "$", name: "US Dollar", decimal_places: 2 };
-    pub const EUR: Currency = Currency { iso_alpha_code: "EUR", symbol: "€", name: "Euro", decimal_places: 2 };
-    pub const GBP: Currency = Currency { iso_alpha_code: "GBP", symbol: "£", name: "British Pound", decimal_places: 2 };
-    pub const JPY: Currency = Currency { iso_alpha_code: "JPY", symbol: "¥", name: "Japanese Yen", decimal_places: 0 };
-    pub const CNY: Currency = Currency { iso_alpha_code: "CNY", symbol: "¥", name: "Chinese Yuan", decimal_places: 2 };
-    pub const CAD: Currency = Currency { iso_alpha_code: "CAD", symbol: "$", name: "Canadian Dollar", decimal_places: 2 };
-    pub const AUD: Currency = Currency { iso_alpha_code: "AUD", symbol: "$", name: "Australian Dollar", decimal_places: 2 };
-    pub const CHF: Currency = Currency { iso_alpha_code: "CHF", symbol: "CHF", name: "Swiss Franc", decimal_places: 2 };
-    pub const KRW: Currency = Currency { iso_alpha_code: "KRW", symbol: "₩", name: "South Korean Won", decimal_places: 0 };
-    pub const INR: Currency = Currency { iso_alpha_code: "INR", symbol: "₹", name: "Indian Rupee", decimal_places: 2 };
+    pub const USD: Currency = Currency {
+        iso_alpha_code: "USD",
+        symbol: "$",
+        name: "US Dollar",
+        decimal_places: 2,
+    };
+    pub const EUR: Currency = Currency {
+        iso_alpha_code: "EUR",
+        symbol: "€",
+        name: "Euro",
+        decimal_places: 2,
+    };
+    pub const GBP: Currency = Currency {
+        iso_alpha_code: "GBP",
+        symbol: "£",
+        name: "British Pound",
+        decimal_places: 2,
+    };
+    pub const JPY: Currency = Currency {
+        iso_alpha_code: "JPY",
+        symbol: "¥",
+        name: "Japanese Yen",
+        decimal_places: 0,
+    };
+    pub const CNY: Currency = Currency {
+        iso_alpha_code: "CNY",
+        symbol: "¥",
+        name: "Chinese Yuan",
+        decimal_places: 2,
+    };
+    pub const CAD: Currency = Currency {
+        iso_alpha_code: "CAD",
+        symbol: "$",
+        name: "Canadian Dollar",
+        decimal_places: 2,
+    };
+    pub const AUD: Currency = Currency {
+        iso_alpha_code: "AUD",
+        symbol: "$",
+        name: "Australian Dollar",
+        decimal_places: 2,
+    };
+    pub const CHF: Currency = Currency {
+        iso_alpha_code: "CHF",
+        symbol: "CHF",
+        name: "Swiss Franc",
+        decimal_places: 2,
+    };
+    pub const KRW: Currency = Currency {
+        iso_alpha_code: "KRW",
+        symbol: "₩",
+        name: "South Korean Won",
+        decimal_places: 0,
+    };
+    pub const INR: Currency = Currency {
+        iso_alpha_code: "INR",
+        symbol: "₹",
+        name: "Indian Rupee",
+        decimal_places: 2,
+    };
 
-    pub const BRL: Currency = Currency { iso_alpha_code: "BRL", symbol: "R$", name: "Brazilian Real", decimal_places: 2 };
-    pub const RUB: Currency = Currency { iso_alpha_code: "RUB", symbol: "₽", name: "Russian Ruble", decimal_places: 2 };
-    pub const MXN: Currency = Currency { iso_alpha_code: "MXN", symbol: "$", name: "Mexican Peso", decimal_places: 2 };
-    pub const ZAR: Currency = Currency { iso_alpha_code: "ZAR", symbol: "R", name: "South African Rand", decimal_places: 2 };
-    pub const SGD: Currency = Currency { iso_alpha_code: "SGD", symbol: "$", name: "Singapore Dollar", decimal_places: 2 };
-    pub const HKD: Currency = Currency { iso_alpha_code: "HKD", symbol: "$", name: "Hong Kong Dollar", decimal_places: 2 };
-    pub const NOK: Currency = Currency { iso_alpha_code: "NOK", symbol: "kr", name: "Norwegian Krone", decimal_places: 2 };
-    pub const SEK: Currency = Currency { iso_alpha_code: "SEK", symbol: "kr", name: "Swedish Krona", decimal_places: 2 };
-    pub const DKK: Currency = Currency { iso_alpha_code: "DKK", symbol: "kr", name: "Danish Krone", decimal_places: 2 };
-    pub const PLN: Currency = Currency { iso_alpha_code: "PLN", symbol: "zł", name: "Polish Zloty", decimal_places: 2 };
+    pub const BRL: Currency = Currency {
+        iso_alpha_code: "BRL",
+        symbol: "R$",
+        name: "Brazilian Real",
+        decimal_places: 2,
+    };
+    pub const RUB: Currency = Currency {
+        iso_alpha_code: "RUB",
+        symbol: "₽",
+        name: "Russian Ruble",
+        decimal_places: 2,
+    };
+    pub const MXN: Currency = Currency {
+        iso_alpha_code: "MXN",
+        symbol: "$",
+        name: "Mexican Peso",
+        decimal_places: 2,
+    };
+    pub const ZAR: Currency = Currency {
+        iso_alpha_code: "ZAR",
+        symbol: "R",
+        name: "South African Rand",
+        decimal_places: 2,
+    };
+    pub const SGD: Currency = Currency {
+        iso_alpha_code: "SGD",
+        symbol: "$",
+        name: "Singapore Dollar",
+        decimal_places: 2,
+    };
+    pub const HKD: Currency = Currency {
+        iso_alpha_code: "HKD",
+        symbol: "$",
+        name: "Hong Kong Dollar",
+        decimal_places: 2,
+    };
+    pub const NOK: Currency = Currency {
+        iso_alpha_code: "NOK",
+        symbol: "kr",
+        name: "Norwegian Krone",
+        decimal_places: 2,
+    };
+    pub const SEK: Currency = Currency {
+        iso_alpha_code: "SEK",
+        symbol: "kr",
+        name: "Swedish Krona",
+        decimal_places: 2,
+    };
+    pub const DKK: Currency = Currency {
+        iso_alpha_code: "DKK",
+        symbol: "kr",
+        name: "Danish Krone",
+        decimal_places: 2,
+    };
+    pub const PLN: Currency = Currency {
+        iso_alpha_code: "PLN",
+        symbol: "zł",
+        name: "Polish Zloty",
+        decimal_places: 2,
+    };
 
-    pub const AED: Currency = Currency { iso_alpha_code: "AED", symbol: "د.إ", name: "UAE Dirham", decimal_places: 2 };
-    pub const SAR: Currency = Currency { iso_alpha_code: "SAR", symbol: "﷼", name: "Saudi Riyal", decimal_places: 2 };
-    pub const EGP: Currency = Currency { iso_alpha_code: "EGP", symbol: "£", name: "Egyptian Pound", decimal_places: 2 };
-    pub const ILS: Currency = Currency { iso_alpha_code: "ILS", symbol: "₪", name: "Israeli Shekel", decimal_places: 2 };
-    pub const TRY: Currency = Currency { iso_alpha_code: "TRY", symbol: "₺", name: "Turkish Lira", decimal_places: 2 };
+    pub const AED: Currency = Currency {
+        iso_alpha_code: "AED",
+        symbol: "د.إ",
+        name: "UAE Dirham",
+        decimal_places: 2,
+    };
+    pub const SAR: Currency = Currency {
+        iso_alpha_code: "SAR",
+        symbol: "﷼",
+        name: "Saudi Riyal",
+        decimal_places: 2,
+    };
+    pub const EGP: Currency = Currency {
+        iso_alpha_code: "EGP",
+        symbol: "£",
+        name: "Egyptian Pound",
+        decimal_places: 2,
+    };
+    pub const ILS: Currency = Currency {
+        iso_alpha_code: "ILS",
+        symbol: "₪",
+        name: "Israeli Shekel",
+        decimal_places: 2,
+    };
+    pub const TRY: Currency = Currency {
+        iso_alpha_code: "TRY",
+        symbol: "₺",
+        name: "Turkish Lira",
+        decimal_places: 2,
+    };
 
-    pub const THB: Currency = Currency { iso_alpha_code: "THB", symbol: "฿", name: "Thai Baht", decimal_places: 2 };
-    pub const MYR: Currency = Currency { iso_alpha_code: "MYR", symbol: "RM", name: "Malaysian Ringgit", decimal_places: 2 };
-    pub const IDR: Currency = Currency { iso_alpha_code: "IDR", symbol: "Rp", name: "Indonesian Rupiah", decimal_places: 2 };
-    pub const PHP: Currency = Currency { iso_alpha_code: "PHP", symbol: "₱", name: "Philippine Peso", decimal_places: 2 };
-    pub const VND: Currency = Currency { iso_alpha_code: "VND", symbol: "₫", name: "Vietnamese Dong", decimal_places: 0 };
-    pub const TWD: Currency = Currency { iso_alpha_code: "TWD", symbol: "$", name: "Taiwan Dollar", decimal_places: 2 };
-    pub const NZD: Currency = Currency { iso_alpha_code: "NZD", symbol: "$", name: "New Zealand Dollar", decimal_places: 2 };
+    pub const THB: Currency = Currency {
+        iso_alpha_code: "THB",
+        symbol: "฿",
+        name: "Thai Baht",
+        decimal_places: 2,
+    };
+    pub const MYR: Currency = Currency {
+        iso_alpha_code: "MYR",
+        symbol: "RM",
+        name: "Malaysian Ringgit",
+        decimal_places: 2,
+    };
+    pub const IDR: Currency = Currency {
+        iso_alpha_code: "IDR",
+        symbol: "Rp",
+        name: "Indonesian Rupiah",
+        decimal_places: 2,
+    };
+    pub const PHP: Currency = Currency {
+        iso_alpha_code: "PHP",
+        symbol: "₱",
+        name: "Philippine Peso",
+        decimal_places: 2,
+    };
+    pub const VND: Currency = Currency {
+        iso_alpha_code: "VND",
+        symbol: "₫",
+        name: "Vietnamese Dong",
+        decimal_places: 0,
+    };
+    pub const TWD: Currency = Currency {
+        iso_alpha_code: "TWD",
+        symbol: "$",
+        name: "Taiwan Dollar",
+        decimal_places: 2,
+    };
+    pub const NZD: Currency = Currency {
+        iso_alpha_code: "NZD",
+        symbol: "$",
+        name: "New Zealand Dollar",
+        decimal_places: 2,
+    };
 
-    pub const ARS: Currency = Currency { iso_alpha_code: "ARS", symbol: "$", name: "Argentine Peso", decimal_places: 2 };
-    pub const CLP: Currency = Currency { iso_alpha_code: "CLP", symbol: "$", name: "Chilean Peso", decimal_places: 0 };
-    pub const COP: Currency = Currency { iso_alpha_code: "COP", symbol: "$", name: "Colombian Peso", decimal_places: 2 };
-    pub const PEN: Currency = Currency { iso_alpha_code: "PEN", symbol: "S/", name: "Peruvian Sol", decimal_places: 2 };
+    pub const ARS: Currency = Currency {
+        iso_alpha_code: "ARS",
+        symbol: "$",
+        name: "Argentine Peso",
+        decimal_places: 2,
+    };
+    pub const CLP: Currency = Currency {
+        iso_alpha_code: "CLP",
+        symbol: "$",
+        name: "Chilean Peso",
+        decimal_places: 0,
+    };
+    pub const COP: Currency = Currency {
+        iso_alpha_code: "COP",
+        symbol: "$",
+        name: "Colombian Peso",
+        decimal_places: 2,
+    };
+    pub const PEN: Currency = Currency {
+        iso_alpha_code: "PEN",
+        symbol: "S/",
+        name: "Peruvian Sol",
+        decimal_places: 2,
+    };
 
-    pub const CZK: Currency = Currency { iso_alpha_code: "CZK", symbol: "Kč", name: "Czech Koruna", decimal_places: 2 };
-    pub const HUF: Currency = Currency { iso_alpha_code: "HUF", symbol: "Ft", name: "Hungarian Forint", decimal_places: 2 };
-    pub const RON: Currency = Currency { iso_alpha_code: "RON", symbol: "lei", name: "Romanian Leu", decimal_places: 2 };
-    pub const BGN: Currency = Currency { iso_alpha_code: "BGN", symbol: "лв", name: "Bulgarian Lev", decimal_places: 2 };
-    pub const HRK: Currency = Currency { iso_alpha_code: "HRK", symbol: "kn", name: "Croatian Kuna", decimal_places: 2 };
+    pub const CZK: Currency = Currency {
+        iso_alpha_code: "CZK",
+        symbol: "Kč",
+        name: "Czech Koruna",
+        decimal_places: 2,
+    };
+    pub const HUF: Currency = Currency {
+        iso_alpha_code: "HUF",
+        symbol: "Ft",
+        name: "Hungarian Forint",
+        decimal_places: 2,
+    };
+    pub const RON: Currency = Currency {
+        iso_alpha_code: "RON",
+        symbol: "lei",
+        name: "Romanian Leu",
+        decimal_places: 2,
+    };
+    pub const BGN: Currency = Currency {
+        iso_alpha_code: "BGN",
+        symbol: "лв",
+        name: "Bulgarian Lev",
+        decimal_places: 2,
+    };
+    pub const HRK: Currency = Currency {
+        iso_alpha_code: "HRK",
+        symbol: "kn",
+        name: "Croatian Kuna",
+        decimal_places: 2,
+    };
 
-    pub const ISK: Currency = Currency { iso_alpha_code: "ISK", symbol: "kr", name: "Icelandic Krona", decimal_places: 0 };
-    pub const UAH: Currency = Currency { iso_alpha_code: "UAH", symbol: "₴", name: "Ukrainian Hryvnia", decimal_places: 2 };
-    pub const BYN: Currency = Currency { iso_alpha_code: "BYN", symbol: "Br", name: "Belarusian Ruble", decimal_places: 2 };
-    pub const KZT: Currency = Currency { iso_alpha_code: "KZT", symbol: "₸", name: "Kazakhstani Tenge", decimal_places: 2 };
+    pub const ISK: Currency = Currency {
+        iso_alpha_code: "ISK",
+        symbol: "kr",
+        name: "Icelandic Krona",
+        decimal_places: 0,
+    };
+    pub const UAH: Currency = Currency {
+        iso_alpha_code: "UAH",
+        symbol: "₴",
+        name: "Ukrainian Hryvnia",
+        decimal_places: 2,
+    };
+    pub const BYN: Currency = Currency {
+        iso_alpha_code: "BYN",
+        symbol: "Br",
+        name: "Belarusian Ruble",
+        decimal_places: 2,
+    };
+    pub const KZT: Currency = Currency {
+        iso_alpha_code: "KZT",
+        symbol: "₸",
+        name: "Kazakhstani Tenge",
+        decimal_places: 2,
+    };
 
     pub fn find(code: &str) -> Option<Currency> {
         match code.to_uppercase().as_str() {
@@ -176,11 +400,7 @@ impl Formatter {
 
         let amount_str = Self::format_decimal(rounded, decimal_places, explicit_rounding);
 
-        let formatted_amount = add_thousands_separator(
-            &amount_str,
-            params.thousands_separator.unwrap_or(','),
-            params.decimal_separator.unwrap_or('.')
-        );
+        let formatted_amount = add_thousands_separator(&amount_str, params.thousands_separator.unwrap_or(','), params.decimal_separator.unwrap_or('.'));
 
         let symbol = params.symbol.unwrap_or(currency.symbol);
         format!("{}{}", symbol, formatted_amount)
@@ -224,11 +444,11 @@ fn add_thousands_separator(amount_str: &str, thousands_sep: char, decimal_sep: c
     }
 
     let mut result = format!("{}{}", sign, formatted_integer);
-    if let Some(decimal) = decimal_part {
-        if !decimal.is_empty() {
-            result.push(decimal_sep);
-            result.push_str(decimal);
-        }
+    if let Some(decimal) = decimal_part
+        && !decimal.is_empty()
+    {
+        result.push(decimal_sep);
+        result.push_str(decimal);
     }
 
     result

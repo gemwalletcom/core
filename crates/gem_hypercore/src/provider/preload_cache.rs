@@ -102,11 +102,10 @@ impl HyperCoreCache {
         let cache_key = self.cache_key(&agent_address, Self::AGENT_VALID_UNTIL_KEY);
         let current_time = Self::current_time()?;
 
-        if let Some(cached_valid_until) = self.preferences.get_i64(&cache_key)? {
-            if current_time < cached_valid_until {
+        if let Some(cached_valid_until) = self.preferences.get_i64(&cache_key)?
+            && current_time < cached_valid_until {
                 return Ok((false, agent_address, agent_private_key));
             }
-        }
 
         let agents = get_agents.await?;
 

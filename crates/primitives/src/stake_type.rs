@@ -27,6 +27,7 @@ pub enum Resource {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
 pub enum FreezeType {
     Freeze,
     Unfreeze,

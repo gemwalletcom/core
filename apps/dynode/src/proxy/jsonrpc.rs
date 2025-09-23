@@ -152,8 +152,8 @@ impl JsonRpcHandler {
         now: std::time::Instant,
     ) {
         for (i, response) in responses.iter().enumerate() {
-            if let (Some(call), JsonRpcResult::Success(success)) = (calls.get(i), response) {
-                if let Some(ttl) = cache.should_cache_call(&chain, call) {
+            if let (Some(call), JsonRpcResult::Success(success)) = (calls.get(i), response)
+                && let Some(ttl) = cache.should_cache_call(&chain, call) {
                     let result_bytes = serde_json::to_string(&success.result).unwrap_or_default().into_bytes();
                     let size_bytes = result_bytes.len();
                     let cached = CachedResponse::new(result_bytes, 200, JSON_CONTENT_TYPE.to_string(), ttl);
@@ -170,7 +170,6 @@ impl JsonRpcHandler {
                         latency = DurationMs(now.elapsed()),
                     );
                 }
-            }
         }
     }
 

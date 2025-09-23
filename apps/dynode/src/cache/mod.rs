@@ -157,11 +157,10 @@ impl CacheProvider for MemoryCache {
                     }
                 }
                 RequestType::JsonRpc(JsonRpcRequest::Single(call)) => {
-                    if let Some(rpc_method_name) = &rule.rpc_method {
-                        if call.method == *rpc_method_name {
+                    if let Some(rpc_method_name) = &rule.rpc_method
+                        && call.method == *rpc_method_name {
                             return Some(rule.ttl_seconds);
                         }
-                    }
                 }
                 RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => {
                     if rule.rpc_method.is_some() {
@@ -178,11 +177,10 @@ impl CacheProvider for MemoryCache {
         let rules = self.get_cache_rules(chain_type);
 
         for rule in rules {
-            if let Some(rpc_method_name) = &rule.rpc_method {
-                if call.method == *rpc_method_name {
+            if let Some(rpc_method_name) = &rule.rpc_method
+                && call.method == *rpc_method_name {
                     return Some(rule.ttl_seconds);
                 }
-            }
         }
 
         None

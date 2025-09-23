@@ -104,18 +104,21 @@ impl TransactionResponse {
             })
             .map(|x| {
                 let value = x.value.unwrap_or_default();
-                if let Ok(value) = general_purpose::STANDARD.decode(value.clone()).as_ref() {
-                    str::from_utf8(value).unwrap_or_default()
+                let decoded_value;
+                let str_value = if let Ok(decoded) = general_purpose::STANDARD.decode(value.clone()) {
+                    decoded_value = decoded;
+                    str::from_utf8(&decoded_value).unwrap_or_default()
                 } else {
                     &value
-                }
-                .split(',')
-                .filter(|x| x.contains(denom))
-                .collect::<Vec<&str>>()
-                .first()
-                .unwrap_or(&"0")
-                .to_string()
-                .replace(denom, "")
+                };
+                str_value
+                    .split(',')
+                    .filter(|x| x.contains(denom))
+                    .collect::<Vec<&str>>()
+                    .first()
+                    .unwrap_or(&"0")
+                    .to_string()
+                    .replace(denom, "")
             })
             .flat_map(|x| BigInt::from_str(&x).ok())
             .sum();

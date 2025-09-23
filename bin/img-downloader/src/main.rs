@@ -102,14 +102,13 @@ impl Downloader {
 
             let chain = chain.unwrap();
 
-            if let Some(denom) = chain.as_denom() {
-                if denom == address {
+            if let Some(denom) = chain.as_denom()
+                && denom == address {
                     if self.args.verbose {
                         println!("<== skip native denom: {denom}");
                     }
                     continue;
                 }
-            }
 
             let image_url: String = coin_info.image.large.clone();
             if let Some(address_folder) = chain_primitives::format_token_id(chain, address.clone()) {

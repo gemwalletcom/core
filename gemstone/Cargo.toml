@@ -1,5 +1,5 @@
 [package]
-edition = "2021"
+edition = { workspace = true }
 name = "gemstone"
 version = "0.31.1"
 
