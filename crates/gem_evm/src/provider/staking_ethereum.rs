@@ -4,7 +4,7 @@ use num_traits::Zero;
 use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
 
-use crate::everstake::{fetch_everstake_account_state, map_balance_to_delegation, map_withdraw_request_to_delegations, EVERSTAKE_POOL_ADDRESS};
+use crate::everstake::{EVERSTAKE_POOL_ADDRESS, fetch_everstake_account_state, map_balance_to_delegation, map_withdraw_request_to_delegations};
 use crate::rpc::client::EthereumClient;
 
 #[cfg(feature = "rpc")]
@@ -29,13 +29,14 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let mut delegations = Vec::new();
 
-        let active_balance = &state.autocompound_balance - &state.pending_deposited_balance;
+        let active_balance = state.autocompound_balance;
         if active_balance > BigInt::zero() {
             delegations.push(map_balance_to_delegation(&active_balance, DelegationState::Active));
         }
 
-        if state.pending_deposited_balance > BigInt::zero() {
-            delegations.push(map_balance_to_delegation(&state.pending_deposited_balance, DelegationState::Activating));
+        let pending_balance = state.pending_balance + state.pending_deposited_balance;
+        if pending_balance > BigInt::zero() {
+            delegations.push(map_balance_to_delegation(&pending_balance, DelegationState::Activating));
         }
 
         let mut withdraw_delegations = map_withdraw_request_to_delegations(&state.withdraw_request);
