@@ -3,13 +3,14 @@ pub const SYMBOL_SELECTOR: &str = "symbol()";
 pub const DECIMALS_SELECTOR: &str = "decimals()";
 pub const DEFAULT_OWNER_ADDRESS: &str = "T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb";
 
-// Fee calculation constants
-pub const BASE_FEE: i64 = 280_000;
+// Bandwidth estimate for TRON transactions
+pub const DEFAULT_BANDWIDTH_BYTES: u64 = 300;
 
 // Chain parameter keys
 pub const GET_ENERGY_FEE: &str = "getEnergyFee";
 pub const GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT: &str = "getCreateNewAccountFeeInSystemContract";
 pub const GET_CREATE_ACCOUNT_FEE: &str = "getCreateAccountFee";
+pub const GET_TRANSACTION_FEE: &str = "getTransactionFee";
 pub const GET_WITNESS_PAY_PER_BLOCK: &str = "getWitnessPayPerBlock";
 pub const GET_WITNESS_127_PAY_PER_BLOCK: &str = "getWitness127PayPerBlock";
 
