@@ -64,7 +64,7 @@ num-bigint.workspace = true
 num-traits.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
-solana-primitives = "0.2.0"
+solana-primitives = "0.2.1"
 bigdecimal.workspace = true
 rand.workspace = true
 

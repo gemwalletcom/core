@@ -89,4 +89,7 @@ outdated:
     @cargo install cargo-edit --quiet
     cargo upgrade -i --dry-run
 
+upgrade:
+    cargo upgrade -i
+
 mod gemstone
