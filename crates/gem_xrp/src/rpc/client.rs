@@ -22,13 +22,9 @@ impl<C: Client> XRPClient<C> {
         self.chain
     }
 
-    pub async fn get_account_info(&self, address: &str) -> Result<AccountInfo, Box<dyn Error + Send + Sync>> {
+    pub async fn get_account_info(&self, address: &str) -> Result<Option<AccountInfo>, Box<dyn Error + Send + Sync>> {
         let result = self.get_account_info_full(address).await?;
-        if let Some(account_data) = result.account_data {
-            Ok(account_data)
-        } else {
-            Err("Account not found".into())
-        }
+        Ok(result.account_data)
     }
 
     pub async fn get_account_info_full(&self, address: &str) -> Result<AccountInfoResult, Box<dyn Error + Send + Sync>> {
