@@ -1,5 +1,4 @@
 pub mod block_explorer;
-pub mod chain;
 pub mod config;
 pub mod ethereum;
 pub mod gateway;
