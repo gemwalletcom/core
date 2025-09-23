@@ -6,6 +6,7 @@ use gem_client::Client;
 use primitives::{BroadcastOptions, Transaction, TransactionStateRequest, TransactionUpdate};
 
 use crate::{
+    models::AccountResult,
     provider::transactions_mapper::{map_transaction_broadcast, map_transaction_status, map_transactions},
     rpc::client::StellarClient,
 };
@@ -24,11 +25,14 @@ impl<C: Client> ChainTransactions for StellarClient<C> {
 
     async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let payments = self.get_account_payments(address).await?;
-        Ok(map_transactions(self.get_chain(), payments))
+        match payments {
+            AccountResult::Found(payments) => Ok(map_transactions(self.get_chain(), payments._embedded.records)),
+            AccountResult::NotFound => Ok(Vec::new()),
+        }
     }
 
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let payments = self.get_block_payments_all(block as i64).await?;
+        let payments = self.get_block_payments_all(block).await?;
         Ok(map_transactions(self.get_chain(), payments))
     }
 }
@@ -36,7 +40,7 @@ impl<C: Client> ChainTransactions for StellarClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{create_test_client, TEST_ADDRESS};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_EMPTY_ADDRESS, create_test_client};
     use chain_traits::ChainState;
 
     #[tokio::test]
@@ -55,5 +59,17 @@ mod chain_integration_tests {
         let transactions = stellar_client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
+
+        assert!(!transactions.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_transactions_by_address_empty() {
+        let stellar_client = create_test_client();
+        let transactions = stellar_client.get_transactions_by_address(TEST_EMPTY_ADDRESS.to_string(), None).await.unwrap();
+
+        println!("Address: {}, transactions count: {}", TEST_EMPTY_ADDRESS, transactions.len());
+
+        assert!(transactions.is_empty());
     }
 }

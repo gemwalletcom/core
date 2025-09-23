@@ -19,6 +19,10 @@ impl AssetBalance {
         }
     }
 
+    pub fn new_zero_balance(asset_id: AssetId) -> Self {
+        Self::new(asset_id, BigUint::from(0u32))
+    }
+
     pub fn new_balance(asset_id: AssetId, balance: Balance) -> Self {
         Self {
             asset_id,

@@ -22,6 +22,14 @@ impl ProviderConfig {
         }
     }
 
+    pub fn ankr_url(&self) -> String {
+        format!("https://rpc.ankr.com/multichain/{}", self.ankr_key)
+    }
+
+    pub fn alchemy_url(&self) -> String {
+        format!("https://api.g.alchemy.com/data/v1/{}", self.alchemy_key)
+    }
+
     pub fn with_url(&self, url: &str) -> Self {
         Self {
             url: url.to_string(),

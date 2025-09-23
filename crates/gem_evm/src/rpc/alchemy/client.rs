@@ -1,10 +1,10 @@
 use std::error::Error;
 
 use crate::rpc::alchemy::{
-    model::{evm_chain_to_network, Data},
     TokenBalances, Transactions,
+    model::{Data, evm_chain_to_network},
 };
-use gem_client::{Client, ContentType, CONTENT_TYPE};
+use gem_client::{CONTENT_TYPE, Client, ContentType};
 use primitives::EVMChain;
 use serde_json::json;
 
@@ -12,10 +12,6 @@ use serde_json::json;
 pub struct AlchemyClient<C: Client + Clone> {
     pub chain: EVMChain,
     client: C,
-}
-
-pub fn alchemy_url(api_key: &str) -> String {
-    format!("https://api.g.alchemy.com/data/v1/{api_key}")
 }
 
 impl<C: Client + Clone> AlchemyClient<C> {

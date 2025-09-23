@@ -1,13 +1,14 @@
 use std::error::Error;
 
-use crate::models::account::{Account, StellarAccount};
+use crate::models::AccountResult;
+use crate::models::account::Account;
 use crate::models::common::{Embedded, StellarAsset, StellarEmbedded};
 use crate::models::fee::StellarFees;
 use crate::models::node::NodeStatus;
 use crate::models::transaction::{Payment, StellarTransactionBroadcast, StellarTransactionStatus};
 
 use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
-use gem_client::{Client, ContentType};
+use gem_client::{Client, ClientError, ContentType};
 use primitives::Chain;
 use std::collections::HashMap;
 
@@ -32,9 +33,6 @@ impl<C: Client> StellarClient<C> {
         Ok(self.client.get("/").await?)
     }
 
-    pub async fn get_stellar_account(&self, address: &str) -> Result<StellarAccount, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/accounts/{}", address)).await?)
-    }
 
     pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<StellarTransactionStatus, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/transactions/{}", transaction_id)).await?)
@@ -58,25 +56,40 @@ impl<C: Client> StellarClient<C> {
         Ok(self.client.get(&format!("/assets?asset_issuer={}&limit=200", issuer)).await?)
     }
 
-    pub async fn get_account(&self, account_id: String) -> Result<Account, Box<dyn Error + Send + Sync>> {
+    pub async fn get_account(&self, account_id: String) -> Result<AccountResult<Account>, Box<dyn Error + Send + Sync>> {
         let url = format!("/accounts/{}", account_id);
-        Ok(self.client.get(&url).await?)
+        match self.client.get::<Account>(&url).await {
+            Ok(account) => Ok(AccountResult::Found(account)),
+            Err(ClientError::Http { status: 404, .. }) => Ok(AccountResult::NotFound),
+            Err(e) => Err(Box::new(e)),
+        }
     }
 
-    pub async fn get_account_payments(&self, account_id: String) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
+    pub async fn account_exists(&self, address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        match self.client.get::<Account>(&format!("/accounts/{}", address)).await {
+            Ok(_) => Ok(true),
+            Err(ClientError::Http { status: 404, .. }) => Ok(false),
+            Err(e) => Err(Box::new(e)),
+        }
+    }
+
+    pub async fn get_account_payments(&self, account_id: String) -> Result<AccountResult<Embedded<Payment>>, Box<dyn Error + Send + Sync>> {
         let url = format!("/accounts/{}/payments?order=desc&limit=200&include_failed=true", account_id);
-        let result: Embedded<Payment> = self.client.get(&url).await?;
-        Ok(result._embedded.records)
+        match self.client.get::<Embedded<Payment>>(&url).await {
+            Ok(result) => Ok(AccountResult::Found(result)),
+            Err(ClientError::Http { status: 404, .. }) => Ok(AccountResult::NotFound),
+            Err(e) => Err(Box::new(e)),
+        }
     }
 
-    pub async fn get_block_payments(&self, block_number: i64, limit: usize, cursor: Option<String>) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_payments(&self, block_number: u64, limit: usize, cursor: Option<String>) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
         let cursor_param = cursor.unwrap_or_default();
         let url = format!("/ledgers/{}/payments?limit={}&include_failed=true&cursor={}", block_number, limit, cursor_param);
         let result: Embedded<Payment> = self.client.get(&url).await?;
         Ok(result._embedded.records)
     }
 
-    pub async fn get_block_payments_all(&self, block_number: i64) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_payments_all(&self, block_number: u64) -> Result<Vec<Payment>, Box<dyn Error + Send + Sync>> {
         let mut results: Vec<Payment> = Vec::new();
         let mut cursor: Option<String> = None;
         let limit: usize = 200;

@@ -5,7 +5,7 @@ use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use primitives::EVMChain;
 use serde_json::json;
 
-use crate::rpc::ankr::model::{ankr_chain, TokenBalances, Transactions};
+use crate::rpc::ankr::model::{TokenBalances, Transactions, ankr_chain};
 
 #[derive(Clone)]
 pub struct AnkrClient<C: Client + Clone> {

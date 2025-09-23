@@ -1,7 +1,7 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
-use gem_client::{retry_policy, ReqwestClient};
+use gem_client::{ReqwestClient, retry_policy};
 use gem_hypercore::rpc::client::HyperCoreClient;
 pub use provider_config::ProviderConfig;
 
@@ -12,7 +12,7 @@ use gem_aptos::rpc::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
-use gem_evm::rpc::{alchemy::client::alchemy_url, ankr::AnkrClient, AlchemyClient, EthereumClient};
+use gem_evm::rpc::{AlchemyClient, EthereumClient, ankr::AnkrClient};
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::PolkadotClient;
@@ -23,7 +23,7 @@ use gem_ton::rpc::TonClient;
 use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::XRPClient;
 
-use primitives::{chain_cosmos::CosmosChain, Chain, EVMChain, NodeType};
+use primitives::{Chain, EVMChain, NodeType, chain_cosmos::CosmosChain};
 use settings::{ChainURLType, Settings};
 
 pub struct ProviderFactory {}
@@ -62,7 +62,7 @@ impl ProviderFactory {
             .expect("Failed to build reqwest client");
 
         let chain = config.chain;
-        let url = config.url;
+        let url = config.url.clone();
         let gem_client = ReqwestClient::new(url.clone(), reqwest_client.clone());
 
         match chain {
@@ -96,12 +96,15 @@ impl ProviderFactory {
                 let chain = EVMChain::from_chain(chain).unwrap();
                 let rpc_client = JsonRpcClient::new(gem_client.clone());
                 let ethereum_client = EthereumClient::new(rpc_client.clone(), chain)
-                    .with_node_type(config.node_type)
+                    .with_node_type(config.clone().node_type)
                     .with_alchemy_client(AlchemyClient::new(
-                        ReqwestClient::new(alchemy_url(&config.alchemy_key), reqwest_client.clone()),
+                        ReqwestClient::new(config.clone().alchemy_url(), reqwest_client.clone()),
                         chain,
                     ))
-                    .with_ankr_client(AnkrClient::new(rpc_client, chain));
+                    .with_ankr_client(AnkrClient::new(
+                        JsonRpcClient::new(ReqwestClient::new(config.clone().ankr_url(), reqwest_client.clone())),
+                        chain,
+                    ));
                 Box::new(ethereum_client)
             }
             Chain::Cardano => Box::new(CardanoClient::new(gem_client)),

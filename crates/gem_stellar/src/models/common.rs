@@ -29,3 +29,9 @@ pub struct Embedded<T> {
 pub struct Records<T> {
     pub records: Vec<T>,
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum AccountResult<T> {
+    Found(T),
+    NotFound,
+}

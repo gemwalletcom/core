@@ -18,9 +18,21 @@ pub struct StellarBalance {
 
 // RPC models
 #[cfg(feature = "rpc")]
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub sequence: u64,
     pub balances: Vec<Balance>,
+}
+
+#[cfg(feature = "rpc")]
+impl Default for Account {
+    fn default() -> Self {
+        Self {
+            sequence: 0,
+            balances: Vec::new(),
+        }
+    }
 }
 
 #[cfg(feature = "rpc")]
@@ -28,5 +40,6 @@ pub struct Account {
 pub struct Balance {
     pub balance: String,
     pub asset_type: String,
+    pub asset_code: Option<String>,
     pub asset_issuer: Option<String>,
 }

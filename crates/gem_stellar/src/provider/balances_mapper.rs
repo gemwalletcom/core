@@ -1,11 +1,11 @@
 use crate::constants::STELLAR_DECIMALS;
-use crate::models::account::StellarAccount;
+use crate::models::account::Account;
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 use std::error::Error;
 
-pub fn map_native_balance(account: &StellarAccount) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+pub fn map_native_balance(account: &Account) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let chain = Chain::Stellar;
     let reserved_amount = chain.account_activation_fee().unwrap_or(0) as u64;
     let native_balance = account
@@ -31,7 +31,7 @@ pub fn map_native_balance(account: &StellarAccount) -> Result<AssetBalance, Box<
     ))
 }
 
-pub fn map_token_balances(account: &StellarAccount, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
+pub fn map_token_balances(account: &Account, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {
     token_ids
         .into_iter()
         .map(|token_id| {
@@ -54,7 +54,7 @@ pub fn map_token_balances(account: &StellarAccount, token_ids: Vec<String>, chai
         .collect()
 }
 
-pub fn map_all_balances(chain: Chain, account: StellarAccount) -> Vec<AssetBalance> {
+pub fn map_all_balances(chain: Chain, account: Account) -> Vec<AssetBalance> {
     let mut balances = Vec::new();
 
     for balance in account.balances {
@@ -86,7 +86,7 @@ pub fn map_all_balances(chain: Chain, account: StellarAccount) -> Vec<AssetBalan
     balances
 }
 
-pub fn map_token_balances_by_ids(chain: Chain, account: &StellarAccount, token_ids: &[String]) -> Vec<AssetBalance> {
+pub fn map_token_balances_by_ids(chain: Chain, account: &Account, token_ids: &[String]) -> Vec<AssetBalance> {
     let mut result = Vec::new();
     for token_id in token_ids {
         if let Some(balance) = account.balances.iter().find(|b| {
@@ -114,12 +114,12 @@ pub fn map_token_balances_by_ids(chain: Chain, account: &StellarAccount, token_i
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::account::StellarAccount;
+    use crate::models::account::Account;
     use serde_json;
 
     #[test]
     fn test_map_native_balance() {
-        let account: StellarAccount = serde_json::from_str(include_str!("../../testdata/balance.json")).unwrap();
+        let account: Account = serde_json::from_str(include_str!("../../testdata/balance.json")).unwrap();
         let chain = Chain::Stellar;
         let asset_id = AssetId::from_chain(chain);
 
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_map_native_balance_with_minimal_balance() {
-        let account: StellarAccount = serde_json::from_str(include_str!("../../testdata/balance_coin.json")).unwrap();
+        let account: Account = serde_json::from_str(include_str!("../../testdata/balance_coin.json")).unwrap();
         let chain = Chain::Stellar;
         let asset_id = AssetId::from_chain(chain);
 

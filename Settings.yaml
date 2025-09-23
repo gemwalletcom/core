@@ -92,7 +92,7 @@ chains:
   arbitrum:
     url: https://arb1.arbitrum.io/rpc
   base:
-    url: https://base-public.nodies.app
+    url: https://mainnet.base.org
   opbnb:
     url: https://opbnb-mainnet-rpc.bnbchain.org
   avalanchec:
