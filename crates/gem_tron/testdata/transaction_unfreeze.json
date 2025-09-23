@@ -1,0 +1,30 @@
+{
+    "ret": [
+        {
+            "contractRet": "SUCCESS"
+        }
+    ],
+    "signature": [
+        "5075936e4a22f143bcb9068880690df1da33b1da4e61c576ded47831fadeb95a3aaeff96067272eb655f9f20c5c390c530ecacaf5960168224c7db774119352b00"
+    ],
+    "txID": "b8440558a1c1563a6245469a6f2b7243f5dc9c7aa78e4225fd9877cac64f7ac5",
+    "raw_data": {
+        "contract": [
+            {
+                "parameter": {
+                    "value": {
+                        "owner_address": "412e1d447fa4169390cf5f5b3d12d380decfbfe20f",
+                        "unfreeze_balance": 100000000
+                    },
+                    "type_url": "type.googleapis.com/protocol.UnfreezeBalanceV2Contract"
+                },
+                "type": "UnfreezeBalanceV2Contract"
+            }
+        ],
+        "ref_block_bytes": "58d1",
+        "ref_block_hash": "4ee4a87f499c234d",
+        "expiration": 1758632982000,
+        "timestamp": 1758596982000
+    },
+    "raw_data_hex": "0a0258d122084ee4a87f499c234d40f0ebc6b597335a5a083712560a36747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e556e667265657a6542616c616e63655632436f6e7472616374121c0a15412e1d447fa4169390cf5f5b3d12d380decfbfe20f1080c2d72f70f0c9b1a49733"
+}

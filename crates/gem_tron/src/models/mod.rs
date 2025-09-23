@@ -71,6 +71,17 @@ pub struct ContractParameterValue {
     pub owner_address: Option<String>,
     pub to_address: Option<String>,
     pub contract_address: Option<String>,
+    pub data: Option<String>,
+    pub frozen_balance: Option<i64>,
+    pub unfreeze_balance: Option<i64>,
+    pub votes: Option<Vec<VoteInfo>>,
+    pub support: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct VoteInfo {
+    pub vote_address: String,
+    pub vote_count: i64,
 }
 
 pub type BlockTransactionsInfo = Vec<TransactionReceiptData>;

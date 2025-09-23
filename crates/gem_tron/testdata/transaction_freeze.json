@@ -1,0 +1,30 @@
+{
+    "ret": [
+        {
+            "contractRet": "SUCCESS"
+        }
+    ],
+    "signature": [
+        "10a8d39982ec6c1d8bd3003f1fb6e7646e2a7239641319ee5a9bb942ad9419871db911efd9eac43c758680206ccbd4afcd16e2ae0f85f5976985762bcc68a8e701"
+    ],
+    "txID": "d2a087872ba6b50d802e90a33e7bddaf179a92500652416348cce97558698298",
+    "raw_data": {
+        "contract": [
+            {
+                "parameter": {
+                    "value": {
+                        "frozen_balance": 100000000,
+                        "owner_address": "412e1d447fa4169390cf5f5b3d12d380decfbfe20f"
+                    },
+                    "type_url": "type.googleapis.com/protocol.FreezeBalanceV2Contract"
+                },
+                "type": "FreezeBalanceV2Contract"
+            }
+        ],
+        "ref_block_bytes": "4f97",
+        "ref_block_hash": "7e1c269b08f004b1",
+        "expiration": 1758625896000,
+        "timestamp": 1758589896000
+    },
+    "raw_data_hex": "0a024f9722087e1c269b08f004b140c0ac96b297335a58083612540a34747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e467265657a6542616c616e63655632436f6e7472616374121c0a15412e1d447fa4169390cf5f5b3d12d380decfbfe20f1080c2d72f70c08a81a19733"
+}
