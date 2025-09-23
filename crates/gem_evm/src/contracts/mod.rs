@@ -1,6 +1,5 @@
 pub mod erc1155;
 pub mod erc20;
-pub mod erc2612;
 pub mod erc721;
 
 pub use erc1155::IERC1155;

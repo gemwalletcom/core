@@ -3,6 +3,7 @@ use primitives::EVMChain;
 
 // https://www.multicall3.com/
 sol! {
+    #[derive(Debug)]
     interface IMulticall3 {
         struct Call {
           address target;

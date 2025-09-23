@@ -7,10 +7,11 @@ use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::{
-    fee::FeePriority, fee::GasPriceType, Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata,
+    Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
 };
 
 use crate::contracts::IERC20;
+use crate::everstake::{DEFAULT_ALLOWED_INTERCHANGE_NUM, EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS, EVERSTAKE_SOURCE, IAccounting, IPool};
 use crate::fee_calculator::FeeCalculator;
 use crate::models::fee::EthereumFeeHistory;
 
@@ -73,6 +74,7 @@ pub fn get_transaction_data(chain: EVMChain, input: &TransactionLoadInput) -> Re
         TransactionInputType::Generic(_, _, extra) => Ok(extra.data.clone().unwrap_or_default()),
         TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
             Chain::SmartChain => encode_stake_hub(stake_type, &BigInt::from_str_radix(&input.value, 10)?),
+            Chain::Ethereum => encode_everstake(stake_type, &BigInt::from_str_radix(&input.value, 10)?),
             _ => Err("Unsupported chain for staking".into()),
         },
         _ => Err("Unsupported transfer type".into()),
@@ -97,8 +99,13 @@ pub fn get_transaction_to(chain: EVMChain, input: &TransactionLoadInput) -> Resu
         }
         TransactionInputType::TokenApprove(_, approval) => Ok(approval.token.clone()),
         TransactionInputType::Generic(_, _, _) => Ok(input.destination_address.clone()),
-        TransactionInputType::Stake(_, _) => match chain.to_chain() {
+        TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
             Chain::SmartChain => Ok(STAKE_HUB_ADDRESS.to_string()),
+            Chain::Ethereum => match stake_type {
+                StakeType::Stake(_) | StakeType::Unstake(_) => Ok(EVERSTAKE_POOL_ADDRESS.to_string()),
+                StakeType::Withdraw(_) => Ok(EVERSTAKE_ACCOUNTING_ADDRESS.to_string()),
+                _ => Err("Unsupported stake type".into()),
+            },
             _ => Err("Unsupported chain for staking".into()),
         },
         _ => Err("Unsupported transfer type".into()),
@@ -129,6 +136,10 @@ pub fn get_transaction_value(chain: EVMChain, input: &TransactionLoadInput) -> R
             Chain::SmartChain => match stake_type {
                 StakeType::Stake(_) => Ok(value),
                 StakeType::Unstake(_) | StakeType::Redelegate(_) | StakeType::Withdraw(_) => Ok(BigInt::from(0)),
+                _ => Ok(BigInt::from(0)),
+            },
+            Chain::Ethereum => match stake_type {
+                StakeType::Stake(_) => Ok(value),
                 _ => Ok(BigInt::from(0)),
             },
             _ => Ok(BigInt::from(0)),
@@ -192,6 +203,31 @@ fn encode_erc20_approve(spender: &str) -> Result<Vec<u8>, Box<dyn Error + Send +
     Ok(call.abi_encode())
 }
 
+fn big_int_to_u256(value: &BigInt) -> Result<U256, Box<dyn Error + Send + Sync>> {
+    if value < &BigInt::from(0) {
+        return Err("Negative values are not supported".into());
+    }
+
+    U256::from_str(&value.to_string()).map_err(|e| e.to_string().into())
+}
+
+fn encode_everstake(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+    match stake_type {
+        StakeType::Stake(_) => Ok(IPool::stakeCall { source: EVERSTAKE_SOURCE }.abi_encode()),
+        StakeType::Unstake(_) => {
+            let value = big_int_to_u256(amount)?;
+            let call = IPool::unstakeCall {
+                value,
+                allowedInterchangeNum: DEFAULT_ALLOWED_INTERCHANGE_NUM,
+                source: EVERSTAKE_SOURCE,
+            };
+            Ok(call.abi_encode())
+        }
+        StakeType::Withdraw(_) => Ok(IAccounting::claimWithdrawRequestCall {}.abi_encode()),
+        _ => Err("Unsupported stake type for Everstake".into()),
+    }
+}
+
 fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
     match stake_type {
         StakeType::Stake(validator) => gem_bsc::stake_hub::encode_delegate_call(&validator.id, false).map_err(|e| e.to_string().into()),
@@ -224,7 +260,19 @@ fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::everstake::{EVERSTAKE_POOL_ADDRESS, IAccounting};
     use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
+
+    fn everstake_validator() -> DelegationValidator {
+        DelegationValidator {
+            chain: Chain::Ethereum,
+            id: EVERSTAKE_POOL_ADDRESS.to_string(),
+            name: "Everstake Pool".to_string(),
+            is_active: true,
+            commision: 10.0,
+            apr: 4.2,
+        }
+    }
 
     #[test]
     fn test_map_transaction_preload_with_hex_prefix() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -491,6 +539,76 @@ mod tests {
         // The first 4 bytes should be the function selector for claim
         let selector = &result[0..4];
         assert_eq!(hex::encode(selector), "aad3ec96");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_everstake_stake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let stake_type = StakeType::Stake(everstake_validator());
+        let amount = BigInt::from(1_000_000_000_000_000_000u64);
+
+        let result = encode_everstake(&stake_type, &amount)?;
+
+        let expected_hex = "3a29dbae0000000000000000000000000000000000000000000000000000000000000017";
+        assert_eq!(hex::encode(&result), expected_hex);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_everstake_unstake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let validator = everstake_validator();
+        let delegation = Delegation {
+            base: DelegationBase {
+                asset_id: primitives::AssetId::from_chain(Chain::Ethereum),
+                state: DelegationState::Active,
+                balance: BigInt::from(2_000_000_000_000_000_000u64),
+                shares: BigInt::from(0),
+                rewards: BigInt::from(0),
+                completion_date: None,
+                delegation_id: "eth-delegation".to_string(),
+                validator_id: EVERSTAKE_POOL_ADDRESS.to_string(),
+            },
+            validator: validator.clone(),
+            price: None,
+        };
+
+        let stake_type = StakeType::Unstake(delegation);
+        let amount = BigInt::from(500_000_000_000_000_000u64);
+
+        let result = encode_everstake(&stake_type, &amount)?;
+
+        let expected_hex = "76ec871c00000000000000000000000000000000000000000000000006f05b59d3b2000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000017";
+        assert_eq!(hex::encode(&result), expected_hex);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_everstake_withdraw() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let validator = everstake_validator();
+        let delegation = Delegation {
+            base: DelegationBase {
+                asset_id: primitives::AssetId::from_chain(Chain::Ethereum),
+                state: DelegationState::AwaitingWithdrawal,
+                balance: BigInt::from(750_000_000_000_000_000u64),
+                shares: BigInt::from(0),
+                rewards: BigInt::from(0),
+                completion_date: None,
+                delegation_id: "eth-withdraw".to_string(),
+                validator_id: EVERSTAKE_POOL_ADDRESS.to_string(),
+            },
+            validator,
+            price: None,
+        };
+
+        let stake_type = StakeType::Withdraw(delegation);
+        let result = encode_everstake(&stake_type, &BigInt::from(0))?;
+
+        let expected_hex = "33986ffa";
+        assert_eq!(hex::encode(&result), expected_hex);
+        assert_eq!(result, IAccounting::claimWithdrawRequestCall {}.abi_encode());
 
         Ok(())
     }

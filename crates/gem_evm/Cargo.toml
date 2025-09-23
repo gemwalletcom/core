@@ -7,7 +7,6 @@ edition = { workspace = true }
 default = []
 rpc = [
     "gem_jsonrpc/client",
-    "dep:chrono",
     "dep:async-trait",
     "dep:chain_traits",
 ]
@@ -34,7 +33,7 @@ num-traits = { workspace = true }
 bigdecimal = { workspace = true }
 
 # rpc feature
-chrono = { workspace = true, optional = true }
+chrono = { workspace = true }
 async-trait = { workspace = true, optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 
