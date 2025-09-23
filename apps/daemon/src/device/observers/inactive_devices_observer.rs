@@ -31,7 +31,7 @@ impl InactiveDevicesObserver {
             }
             if !self
                 .cacher
-                .can_process_now(INACTIVE_DEVICE_OBSERVER, &device.id.to_string(), INACTIVE_DEVICE_OBSERVER_TIMEOUT)
+                .can_process_now(&format!("{}:{}", INACTIVE_DEVICE_OBSERVER, device.id.to_string()), INACTIVE_DEVICE_OBSERVER_TIMEOUT)
                 .await?
             {
                 continue;

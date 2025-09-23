@@ -132,17 +132,9 @@ impl CacherClient {
         Ok(fresh_value)
     }
 
-    pub async fn can_process_now(&mut self, hash_key: &str, key: &str, timeout_seconds: u64) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    pub async fn can_process_now(&mut self, key: &str, ttl_seconds: u64) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-        let last_processed_time: u64 = self.get_or_set_hset(hash_key, key, || async { Ok(now) }).await?;
-        if last_processed_time == now {
-            return Ok(true);
-        }
-
-        if now > last_processed_time + timeout_seconds {
-            return self.set_hset(hash_key, key, &now).await;
-        }
-
-        Ok(false)
+        let last_processed: u64 = self.get_or_set_value(key, || async { Ok(now) }, Some(ttl_seconds)).await?;
+        Ok(last_processed == now)
     }
 }

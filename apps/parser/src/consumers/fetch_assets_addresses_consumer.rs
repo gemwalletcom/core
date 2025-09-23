@@ -104,7 +104,7 @@ impl FetchAssetsAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAssetsAddressesConsumer {
     async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now("fetch_assets_addresses", &payload.value.to_string(), 30 * 86400)
+            .can_process_now(&format!("fetch_assets_addresses:{}", payload.value.to_string()), 30 * 86400)
             .await
     }
 

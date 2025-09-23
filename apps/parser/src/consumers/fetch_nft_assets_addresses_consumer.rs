@@ -29,7 +29,7 @@ impl FetchNftAssetsAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchNftAssetsAddressesConsumer {
     async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now("fetch_nft_assets_addresses", &payload.value.to_string(), 30 * 86400)
+            .can_process_now(&format!("fetch_nft_assets_addresses:{}", payload.value.to_string()), 30 * 86400)
             .await
     }
 
