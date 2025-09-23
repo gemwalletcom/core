@@ -28,8 +28,8 @@ impl<C: Client> TonClient<C> {
             .await?)
     }
 
-    pub async fn get_transactions_by_address(&self, address: String, _limit: usize) -> Result<MessageTransactions, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v3/transactionsByMessage?msg_hash={}", address)).await?)
+    pub async fn get_transactions_by_address(&self, address: String, limit: usize) -> Result<MessageTransactions, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/api/v3/transactions?account={}&limit={}", address, limit)).await?)
     }
 
     pub async fn get_token_info(&self, token_id: String) -> Result<ApiResult<JettonInfo>, Box<dyn Error + Send + Sync>> {
