@@ -32,7 +32,7 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
                         chain: self.get_chain().as_chain(),
                         token_id: Some(token_id.clone()),
                     };
-                    Some(AssetBalance::new(asset_id, BigUint::from(amount)))
+                    Some(AssetBalance::new(asset_id, amount))
                 })
             })
             .collect();
