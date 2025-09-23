@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use super::UInt64;
 
-// Domain models
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BitcoinTransaction {
@@ -27,7 +26,6 @@ pub struct BitcoinUTXO {
     pub value: String,
 }
 
-// RPC models
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AddressDetails {

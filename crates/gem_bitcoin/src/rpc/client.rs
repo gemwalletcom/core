@@ -5,8 +5,8 @@ use crate::models::block::{BitcoinBlock, BitcoinNodeInfo, Block, Status};
 use crate::models::fee::BitcoinFeeResult;
 use crate::models::transaction::{AddressDetails, BitcoinTransactionBroacastResult, BitcoinUTXO, Transaction};
 use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainStaking, ChainToken, ChainTraits};
-use gem_client::{Client, ContentType, CONTENT_TYPE};
-use primitives::{chain::Chain, BitcoinChain};
+use gem_client::{CONTENT_TYPE, Client, ContentType};
+use primitives::{BitcoinChain, chain::Chain};
 use std::collections::HashMap;
 
 #[derive(Debug)]

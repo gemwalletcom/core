@@ -1,14 +1,10 @@
 use crate::models::transaction::Transaction;
 use chrono::{TimeZone, Utc};
-use primitives::{chain::Chain, transaction_utxo::TransactionUtxoInput, TransactionState, TransactionType};
+use primitives::{TransactionState, TransactionType, chain::Chain, transaction_utxo::TransactionUtxoInput};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(hash: String) -> Result<String, Box<dyn Error + Sync + Send>> {
-    if hash.is_empty() {
-        Err("Empty transaction hash".into())
-    } else {
-        Ok(hash)
-    }
+    if hash.is_empty() { Err("Empty transaction hash".into()) } else { Ok(hash) }
 }
 
 pub fn map_transactions(chain: Chain, transactions: Vec<Transaction>) -> Vec<primitives::Transaction> {
@@ -48,7 +44,7 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
         TransactionState::Confirmed,
         transaction.fees.clone(),
         chain.as_asset_id(),
-        "0".to_string(),
+        transaction.value.clone(),
         None,
         inputs.into(),
         outputs.into(),
@@ -57,4 +53,50 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
     );
 
     Some(transaction)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::transaction::{Input, Output};
+
+    #[test]
+    fn test_map_transaction() {
+        let transaction = Transaction {
+            txid: "abc123".to_string(),
+            value: "100000".to_string(),
+            value_in: "105000".to_string(),
+            fees: "5000".to_string(),
+            block_time: 1640995200,
+            block_height: 700000,
+            vin: vec![Input {
+                is_address: true,
+                addresses: Some(vec!["bc1qinput".to_string()]),
+                value: "105000".to_string(),
+                n: 0,
+                tx_id: Some("prev_tx".to_string()),
+                vout: Some(0),
+            }],
+            vout: vec![Output {
+                is_address: true,
+                addresses: Some(vec!["bc1qoutput".to_string()]),
+                value: "100000".to_string(),
+                n: 0,
+            }],
+        };
+
+        let result = map_transaction(Chain::Bitcoin, &transaction);
+
+        assert!(result.is_some());
+        let result = result.unwrap();
+        assert_eq!(result.hash, "abc123");
+        assert_eq!(result.value, "100000");
+        assert_eq!(result.fee, "5000");
+        assert_eq!(result.transaction_type, TransactionType::Transfer);
+        assert_eq!(result.state, TransactionState::Confirmed);
+        assert_eq!(result.utxo_inputs.len(), 1);
+        assert_eq!(result.utxo_outputs.len(), 1);
+        assert_eq!(result.utxo_inputs[0].address, "bc1qinput");
+        assert_eq!(result.utxo_outputs[0].address, "bc1qoutput");
+    }
 }
