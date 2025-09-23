@@ -274,7 +274,7 @@ impl GemGateway {
             .get_address_status(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(status.into_iter().map(|s| s.into()).collect())
+        Ok(status.into_iter().collect())
     }
 
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {

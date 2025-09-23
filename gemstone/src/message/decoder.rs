@@ -7,6 +7,8 @@ use super::{
 };
 use crate::GemstoneError;
 use gem_evm::eip712::eip712_hash_message;
+const SIGNATURE_LENGTH: usize = 65;
+const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
 
 #[derive(Debug, PartialEq, uniffi::Enum)]
 pub enum MessagePreview {
@@ -84,12 +86,12 @@ impl SignMessageDecoder {
     pub fn get_result(&self, data: &[u8]) -> String {
         match self.message.sign_type {
             SignDigestType::Eip191 => {
-                if data.len() < 65 {
+                if data.len() < SIGNATURE_LENGTH {
                     return hex::encode_prefixed(data);
                 }
                 let mut signature = data.to_vec();
-                if signature[64] == 0x00 {
-                    signature[64] += 27;
+                if signature[RECOVERY_ID_INDEX] < 1 {
+                    signature[RECOVERY_ID_INDEX] += 27;
                 }
                 hex::encode_prefixed(&signature)
             }

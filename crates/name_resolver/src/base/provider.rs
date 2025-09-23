@@ -61,7 +61,7 @@ impl NameClient for Basenames {
                     Ok(addr.to_checksum(None))
                 }
             }
-            Err(e) => Err(e.into()),
+            Err(e) => Err(e),
         }
     }
 

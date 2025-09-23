@@ -21,8 +21,18 @@ pub struct NodeMonitor {
 }
 
 impl NodeMonitor {
-    pub fn new(domains: HashMap<String, Domain>, nodes: Arc<Mutex<HashMap<String, NodeDomain>>>, metrics: Arc<Metrics>, monitoring_config: NodeMonitoringConfig) -> Self {
-        Self { domains, nodes, metrics, monitoring_config }
+    pub fn new(
+        domains: HashMap<String, Domain>,
+        nodes: Arc<Mutex<HashMap<String, NodeDomain>>>,
+        metrics: Arc<Metrics>,
+        monitoring_config: NodeMonitoringConfig,
+    ) -> Self {
+        Self {
+            domains,
+            nodes,
+            metrics,
+            monitoring_config,
+        }
     }
 
     pub async fn start_monitoring(&self) {
@@ -76,7 +86,7 @@ impl NodeMonitor {
         };
 
         let current_observation = Self::fetch_status(domain.chain, current_node.url.clone()).await;
-        NodeTelemetry::log_status_debug(domain, &[current_observation.clone()]);
+        NodeTelemetry::log_status_debug(domain, std::slice::from_ref(&current_observation));
 
         if NodeSyncAnalyzer::is_node_healthy(&current_observation) {
             NodeTelemetry::log_node_healthy(domain, &current_observation);
