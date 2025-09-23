@@ -7,19 +7,16 @@ use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 use std::error::Error;
 
-pub fn map_balance_coin(account: &AccountInfo, asset_id: AssetId, reserved_amount: u64) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-    let balance_str = &account.balance;
-    let balance: u64 = balance_str.parse().map_err(|_| "Invalid balance format")?;
-
-    let available = if balance > reserved_amount {
-        (balance - reserved_amount).to_string()
+pub fn map_balance_coin(account: Option<AccountInfo>, asset_id: AssetId, reserved_amount: u64) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+    let available = if let Some(account) = account {
+        account.balance.saturating_sub(reserved_amount)
     } else {
-        "0".to_string()
+        0
     };
 
     Ok(AssetBalance::new_balance(
         asset_id,
-        Balance::with_reserved(available.parse::<BigUint>().unwrap_or_default(), BigUint::from(reserved_amount)),
+        Balance::with_reserved(BigUint::from(available), BigUint::from(reserved_amount)),
     ))
 }
 
@@ -29,6 +26,8 @@ pub fn map_balance_tokens(objects: &AccountObjects, token_ids: Vec<String>, chai
         let asset_id = AssetId::from_token(chain, &token_id);
         if let Some(object) = objects
             .account_objects
+            .clone()
+            .unwrap_or_default()
             .iter()
             .find(|obj| obj.high_limit.issuer == token_id && obj.high_limit.currency.len() > 3)
         {
@@ -53,7 +52,7 @@ mod tests {
     #[test]
     fn test_map_native_balance() {
         let account = AccountInfo {
-            balance: "10000000".to_string(), // 10 XRP
+            balance: 10000000, // 10 XRP
             sequence: 100,
             owner_count: 2,
             account: None,
@@ -64,7 +63,7 @@ mod tests {
         let asset_id = AssetId::from_chain(Chain::Xrp);
         let reserved_amount = 1000000; // 1 XRP reserve
 
-        let result = map_balance_coin(&account, asset_id.clone(), reserved_amount).unwrap();
+        let result = map_balance_coin(Some(account), asset_id.clone(), reserved_amount).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
         assert_eq!(result.balance.available, BigUint::from(9000000_u64)); // 10 - 1 = 9 XRP
@@ -74,7 +73,7 @@ mod tests {
     #[test]
     fn test_map_native_balance_insufficient() {
         let account = AccountInfo {
-            balance: "500000".to_string(), // 0.5 XRP
+            balance: 500000, // 0.5 XRP
             sequence: 100,
             owner_count: 2,
             account: None,
@@ -85,7 +84,7 @@ mod tests {
         let asset_id = AssetId::from_chain(Chain::Xrp);
         let reserved_amount = 1000000; // 1 XRP reserve
 
-        let result = map_balance_coin(&account, asset_id.clone(), reserved_amount).unwrap();
+        let result = map_balance_coin(Some(account), asset_id.clone(), reserved_amount).unwrap();
 
         assert_eq!(result.asset_id, asset_id);
         assert_eq!(result.balance.available, BigUint::from(0u32)); // Insufficient balance
