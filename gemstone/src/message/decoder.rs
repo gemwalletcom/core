@@ -85,7 +85,7 @@ impl SignMessageDecoder {
 
     pub fn get_result(&self, data: &[u8]) -> String {
         match self.message.sign_type {
-            SignDigestType::Eip191 => {
+            SignDigestType::Eip191 | SignDigestType::Sign | SignDigestType::Eip712 => {
                 if data.len() < SIGNATURE_LENGTH {
                     return hex::encode_prefixed(data);
                 }
@@ -95,7 +95,6 @@ impl SignMessageDecoder {
                 }
                 hex::encode_prefixed(&signature)
             }
-            SignDigestType::Sign | SignDigestType::Eip712 => hex::encode_prefixed(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
     }
