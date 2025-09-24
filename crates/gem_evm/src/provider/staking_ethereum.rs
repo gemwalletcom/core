@@ -4,13 +4,15 @@ use num_traits::Zero;
 use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
 
-use crate::everstake::{EVERSTAKE_POOL_ADDRESS, fetch_everstake_account_state, map_balance_to_delegation, map_withdraw_request_to_delegations};
+use crate::everstake::{
+    EVERSTAKE_POOL_ADDRESS, fetch_everstake_account_state, fetch_everstake_staking_apy, map_balance_to_delegation, map_withdraw_request_to_delegations,
+};
 use crate::rpc::client::EthereumClient;
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_ethereum_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        Ok(Some(3.2))
+        fetch_everstake_staking_apy().await
     }
 
     pub async fn get_ethereum_validators(&self, apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {

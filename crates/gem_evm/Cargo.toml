@@ -9,8 +9,9 @@ rpc = [
     "gem_jsonrpc/client",
     "dep:async-trait",
     "dep:chain_traits",
+    "dep:reqwest",
 ]
-reqwest = ["gem_jsonrpc/reqwest", "gem_client/reqwest"]
+reqwest = ["gem_jsonrpc/reqwest", "gem_client/reqwest", "dep:reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
@@ -31,6 +32,7 @@ serde_json = { workspace = true }
 num-bigint = { workspace = true }
 num-traits = { workspace = true }
 bigdecimal = { workspace = true }
+reqwest = { workspace = true, features = ["json"], optional = true }
 
 # rpc feature
 chrono = { workspace = true }
@@ -41,7 +43,6 @@ chain_traits = { path = "../chain_traits", optional = true }
 primitives = { path = "../primitives", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 num-bigint = { workspace = true }
-reqwest = { workspace = true, features = ["json"] }
 settings = { path = "../settings", features = ["testkit"] }
 
 [[test]]
