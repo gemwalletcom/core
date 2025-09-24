@@ -155,6 +155,7 @@ chains:
     url: https://rpc.soniclabs.com
   algorand:
     url: https://mainnet-api.algonode.cloud
+    archive_url: https://mainnet-idx.algonode.cloud
   polkadot:
     url: https://polkadot-public-sidecar.parity-chains.parity.io
   cardano:
@@ -227,10 +228,6 @@ alerter:
   rules:
     price_increase_percent: 8.0
     price_decrease_percent: 10.0
-
-alchemy:
-  key:
-    secret: ""
 
 ankr:
   key:

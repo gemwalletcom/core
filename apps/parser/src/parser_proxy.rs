@@ -43,9 +43,11 @@ impl ParserProxy {
             nodes_map.entry(node.chain.clone()).or_default().push(node.node);
         });
 
-        let url_type = ProviderFactory::url(chain, settings);
+        let (url_type, archive_url_type) = ProviderFactory::url(chain, settings);
         let node_type = ProviderFactory::get_node_type(url_type.clone());
-        let url = url_type.get_url();
+
+        let url = url_type.get_url().unwrap_or_default();
+        let archive_url = archive_url_type.unwrap_or(url_type.clone()).get_archive_url().unwrap_or_default();
 
         let node_urls = nodes_map
             .clone()
@@ -63,8 +65,7 @@ impl ParserProxy {
             ProviderConfig::new(
                 chain,
                 &url,
-                node_type,
-                settings.alchemy.key.secret.as_str(),
+                &archive_url,
                 settings.ankr.key.secret.as_str(),
                 settings.trongrid.key.secret.as_str(),
             ),

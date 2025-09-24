@@ -6,7 +6,7 @@ use std::{
 
 use crate::{QueueName, StreamReader};
 use async_trait::async_trait;
-use gem_tracing::{error_with_fields, info_with_fields};
+use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
 use serde::Deserialize;
 use tokio;
 
@@ -67,7 +67,7 @@ where
                         "consumer result",
                         consumer = name,
                         result = format!("{:?}", result),
-                        elapsed_ms = start.elapsed().as_millis().to_string()
+                        elapsed = DurationMs(start.elapsed())
                     );
                     Ok(())
                 }
@@ -77,7 +77,7 @@ where
                         &*e,
                         consumer = name,
                         payload = payload.to_string(),
-                        elapsed_ms = start.elapsed().as_millis().to_string()
+                        elapsed = DurationMs(start.elapsed())
                     );
                     std::thread::sleep(config.timeout_on_error);
                     if config.skip_on_error { Ok(()) } else { Err(e) }

@@ -31,14 +31,13 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
     }
 
     async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        if let Some(alchemy_client) = &self.alchemy_client {
-            let balances = alchemy_client
+        if let Some(ankr_client) = &self.ankr_client {
+            let balances = ankr_client
                 .get_token_balances(address.as_str())
                 .await?
-                .data
-                .tokens
+                .assets
                 .into_iter()
-                .map(|token| (token.token_address, token.token_balance))
+                .filter_map(|asset| asset.contract_address.map(|addr| (addr, asset.balance_raw_integer)))
                 .collect();
             return Ok(map_assets_balances(balances, self.get_chain()));
         }

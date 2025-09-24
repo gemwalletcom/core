@@ -5,8 +5,10 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{BroadcastOptions, Transaction, TransactionStateRequest, TransactionUpdate};
 
-use super::transactions_mapper::{map_transaction_broadcast, map_transaction_status};
-use crate::{AlgorandClientIndexer, provider::transactions_mapper::map_transactions, rpc::client::AlgorandClient};
+use crate::{
+    provider::transactions_mapper::{map_transaction_broadcast, map_transaction_status, map_transactions},
+    rpc::client::AlgorandClient,
+};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for AlgorandClient<C> {
@@ -19,25 +21,14 @@ impl<C: Client> ChainTransactions for AlgorandClient<C> {
         let transaction = self.get_transaction_status(&request.id).await?;
         Ok(map_transaction_status(&transaction))
     }
-}
-
-#[async_trait]
-impl<C: Client> ChainTransactions for AlgorandClientIndexer<C> {
-    async fn transaction_broadcast(&self, _data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        unimplemented!()
-    }
-
-    async fn get_transaction_status(&self, _request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        unimplemented!()
-    }
 
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let transactions = self.get_block(block).await?;
-        Ok(map_transactions(transactions.transactions))
+        let block = self.indexer.get_block(block).await?;
+        Ok(map_transactions(block.transactions))
     }
 
     async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let transactions = self.get_account_transactions(&address).await?;
+        let transactions = self.indexer.get_account_transactions(&address).await?;
         Ok(map_transactions(transactions.transactions))
     }
 }
@@ -49,18 +40,21 @@ mod chain_integration_tests {
 
     #[tokio::test]
     async fn test_algorand_get_transactions_by_block() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_algorand_test_indexer_client();
+        let client = create_algorand_test_client();
         let latest_block = client.get_block_latest_number().await?;
         let transactions = client.get_transactions_by_block(latest_block - 1).await?;
         println!("Transactions in block {}: {}", latest_block - 1, transactions.len());
+
         Ok(())
     }
 
     #[tokio::test]
     async fn test_algorand_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_algorand_test_indexer_client();
+        let client = create_algorand_test_client();
         let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await?;
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
+
+        assert!(!transactions.is_empty());
         Ok(())
     }
 }

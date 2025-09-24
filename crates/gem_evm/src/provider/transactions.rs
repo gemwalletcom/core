@@ -72,8 +72,6 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
                 .into_iter()
                 .map(|tx| tx.hash)
                 .collect::<Vec<String>>()
-        } else if let Some(alchemy_client) = &self.alchemy_client {
-            alchemy_client.get_transactions_ids_by_address(address.as_str()).await?
         } else {
             vec![]
         };
@@ -90,8 +88,7 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
         }
 
         let traces = if self.node_type == NodeType::Archive {
-            let transaction_hashes: Vec<String> = block_data.transactions.iter().map(|tx| tx.hash.clone()).collect();
-            Some(self.trace_replay_transactions(&transaction_hashes).await?)
+            Some(self.trace_replay_block_transactions(block_i64).await?)
         } else {
             None
         };

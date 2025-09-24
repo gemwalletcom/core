@@ -1,6 +1,7 @@
 use crate::models::*;
 use crate::network::{AlienClient, AlienProvider, jsonrpc_client_with_chain};
 use chain_traits::ChainTraits;
+use gem_algorand::rpc::AlgorandClientIndexer;
 use gem_algorand::rpc::client::AlgorandClient;
 use gem_aptos::rpc::client::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
@@ -94,7 +95,10 @@ impl GemGateway {
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
             Chain::Sui => Ok(Arc::new(SuiClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             Chain::Xrp => Ok(Arc::new(XRPClient::new(alien_client))),
-            Chain::Algorand => Ok(Arc::new(AlgorandClient::new(alien_client))),
+            Chain::Algorand => Ok(Arc::new(AlgorandClient::new(
+                alien_client.clone(),
+                AlgorandClientIndexer::new(alien_client.clone()),
+            ))),
             Chain::Near => Ok(Arc::new(NearClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             Chain::Aptos => Ok(Arc::new(AptosClient::new(alien_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Sei | Chain::Noble => {

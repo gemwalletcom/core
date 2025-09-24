@@ -102,6 +102,9 @@ pub struct TransactionReplayTrace {
     pub output: String,
     #[serde(default)]
     pub state_diff: HashMap<String, StateChange>,
+    #[serde(default)]
+    pub trace: Vec<serde_json::Value>,
+    pub vm_trace: Option<serde_json::Value>,
     pub transaction_hash: String,
 }
 

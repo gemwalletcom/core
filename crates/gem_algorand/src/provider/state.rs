@@ -4,7 +4,7 @@ use std::error::Error;
 
 use gem_client::Client;
 
-use crate::{AlgorandClientIndexer, rpc::client::AlgorandClient};
+use crate::rpc::client::AlgorandClient;
 
 #[async_trait]
 impl<C: Client> ChainState for AlgorandClient<C> {
@@ -14,19 +14,6 @@ impl<C: Client> ChainState for AlgorandClient<C> {
 
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
         Ok(self.get_transactions_params().await?.last_round)
-    }
-}
-
-#[async_trait]
-impl<C: Client> ChainState for AlgorandClientIndexer<C> {
-    async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let headers = self.get_block_headers(1).await?;
-        let block = headers.blocks.first().ok_or("Failed to get block headers")?;
-        Ok(block.genesis_id.clone())
-    }
-
-    async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_block_headers(0).await?.current_round)
     }
 }
 

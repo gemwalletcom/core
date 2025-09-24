@@ -9,7 +9,6 @@ use std::any::TypeId;
 use std::str::FromStr;
 
 use super::{
-    alchemy::AlchemyClient,
     ankr::AnkrClient,
     model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace},
 };
@@ -33,7 +32,6 @@ pub struct EthereumClient<C: Client + Clone> {
     pub chain: EVMChain,
     pub client: GenericJsonRpcClient<C>,
     pub(crate) node_type: NodeType,
-    pub(crate) alchemy_client: Option<AlchemyClient<C>>,
     pub(crate) ankr_client: Option<AnkrClient<C>>,
 }
 
@@ -43,18 +41,12 @@ impl<C: Client + Clone> EthereumClient<C> {
             chain,
             client,
             node_type: NodeType::Default,
-            alchemy_client: None,
             ankr_client: None,
         }
     }
 
     pub fn with_node_type(mut self, node_type: NodeType) -> Self {
         self.node_type = node_type;
-        self
-    }
-
-    pub fn with_alchemy_client(mut self, alchemy_client: AlchemyClient<C>) -> Self {
-        self.alchemy_client = Some(alchemy_client);
         self
     }
 
@@ -185,7 +177,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn trace_replay_transactions(&self, tx_hash: &[String]) -> Result<Vec<TransactionReplayTrace>, JsonRpcError> {
         let calls: Vec<(String, serde_json::Value)> = tx_hash
             .iter()
-            .map(|hash| ("trace_replayTransaction".to_string(), json!([hash, json!("stateDiff")])))
+            .map(|hash| ("trace_replayTransaction".to_string(), json!([hash, json!(["stateDiff"])])))
             .collect();
         Ok(self.client.batch_call::<TransactionReplayTrace>(calls).await?.extract())
     }

@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::error::Error;
 
-use crate::models::{Account, AssetDetails, TransactionBroadcast, TransactionStatus, TransactionsParams};
+use crate::{
+    models::{Account, AssetDetails, Block, TransactionBroadcast, TransactionStatus, TransactionsParams},
+    rpc::AlgorandClientIndexer,
+};
 use gem_client::{CONTENT_TYPE, ContentType};
 
 #[cfg(feature = "rpc")]
@@ -15,13 +18,15 @@ use primitives::Chain;
 pub struct AlgorandClient<C: Client> {
     client: C,
     pub chain: Chain,
+    pub indexer: AlgorandClientIndexer<C>,
 }
 
 impl<C: Client> AlgorandClient<C> {
-    pub fn new(client: C) -> Self {
+    pub fn new(client: C, indexer: AlgorandClientIndexer<C>) -> Self {
         Self {
             client,
             chain: Chain::Algorand,
+            indexer,
         }
     }
 
@@ -39,6 +44,10 @@ impl<C: Client> AlgorandClient<C> {
 
     pub async fn get_transactions_params(&self) -> Result<TransactionsParams, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get("/v2/transactions/params").await?)
+    }
+
+    pub async fn get_block(&self, block_number: u64) -> Result<Block, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/v2/blocks/{}", block_number)).await?)
     }
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<TransactionBroadcast, Box<dyn Error + Send + Sync>> {

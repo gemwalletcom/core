@@ -32,7 +32,6 @@ pub struct Settings {
     pub alerter: Alerter,
     pub scan: Scan,
     pub nft: NFT,
-    pub alchemy: Alchemy,
     pub ankr: Ankr,
     pub trongrid: Trongrid,
     pub assets: Assets,
@@ -241,20 +240,27 @@ pub enum ChainURLType {
 }
 
 impl ChainURLType {
-    pub fn get_url(&self) -> String {
+    pub fn get_url(&self) -> Option<String> {
         match self {
-            ChainURLType::Default(url) => url.clone(),
-            ChainURLType::Archive(url) => url.clone(),
+            ChainURLType::Default(url) => Some(url.clone()),
+            ChainURLType::Archive(_) => None,
+        }
+    }
+
+    pub fn get_archive_url(&self) -> Option<String> {
+        match self {
+            ChainURLType::Default(_) => None,
+            ChainURLType::Archive(url) => Some(url.clone()),
         }
     }
 }
 
 impl Chain {
-    pub fn get_type(&self) -> ChainURLType {
+    pub fn get_type(&self) -> (ChainURLType, Option<ChainURLType>) {
         if let Some(url) = self.archive_url.clone() {
-            ChainURLType::Archive(url)
+            (ChainURLType::Default(self.url.clone()), Some(ChainURLType::Archive(url)))
         } else {
-            ChainURLType::Default(self.url.clone())
+            (ChainURLType::Default(self.url.clone()), None)
         }
     }
 }
@@ -342,12 +348,6 @@ pub struct NFT {
     pub opensea: OpenSea,
     pub magiceden: MagicEden,
     pub bucket: BucketConfiguration,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Alchemy {
-    pub key: KeySecret,
 }
 
 #[derive(Debug, Deserialize, Clone)]

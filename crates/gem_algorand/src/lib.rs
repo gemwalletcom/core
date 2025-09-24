@@ -9,5 +9,3 @@ pub mod models;
 
 #[cfg(feature = "rpc")]
 pub use rpc::client::AlgorandClient;
-#[cfg(feature = "rpc")]
-pub use rpc::client_indexer::AlgorandClientIndexer;

@@ -7,7 +7,7 @@ use gem_client::Client;
 use primitives::{AssetBalance, AssetId};
 
 use super::balances_mapper::{map_balance_coin, map_balance_tokens};
-use crate::{AlgorandClientIndexer, rpc::client::AlgorandClient};
+use crate::rpc::client::AlgorandClient;
 
 #[async_trait]
 impl<C: Client> ChainBalances for AlgorandClient<C> {
@@ -25,42 +25,15 @@ impl<C: Client> ChainBalances for AlgorandClient<C> {
         Ok(None)
     }
 
-    async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
-    }
-}
-
-#[async_trait]
-impl<C: Client> ChainBalances for AlgorandClientIndexer<C> {
-    async fn get_balance_coin(&self, _address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-        unimplemented!()
-    }
-
-    async fn get_balance_tokens(&self, _address: String, _token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![])
-    }
-
     async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let account = self.get_account(&address).await?;
-        let asset_balances = account
+        let asset_balances: Vec<AssetBalance> = account
             .assets
             .into_iter()
-            .map(|asset| {
-                AssetBalance::new(
-                    AssetId {
-                        chain: self.get_chain(),
-                        token_id: Some(asset.asset_id.to_string()),
-                    },
-                    BigUint::from(asset.amount),
-                )
-            })
+            .map(|asset| AssetBalance::new(AssetId::from(self.get_chain(), Some(asset.asset_id.to_string())), BigUint::from(asset.amount)))
             .collect();
 
         Ok(asset_balances)
-    }
-
-    async fn get_balance_staking(&self, _address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        unimplemented!()
     }
 }
 

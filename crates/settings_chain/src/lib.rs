@@ -1,18 +1,18 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
+use gem_algorand::{AlgorandClient, rpc::AlgorandClientIndexer};
 use gem_client::{ReqwestClient, retry_policy};
 use gem_hypercore::rpc::client::HyperCoreClient;
 pub use provider_config::ProviderConfig;
 
 use chain_traits::ChainTraits;
 
-use gem_algorand::AlgorandClientIndexer;
 use gem_aptos::rpc::AptosClient;
 use gem_bitcoin::rpc::client::BitcoinClient;
 use gem_cardano::rpc::CardanoClient;
 use gem_cosmos::rpc::client::CosmosClient;
-use gem_evm::rpc::{AlchemyClient, EthereumClient, ankr::AnkrClient};
+use gem_evm::rpc::{EthereumClient, ankr::AnkrClient};
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_near::rpc::client::NearClient;
 use gem_polkadot::rpc::PolkadotClient;
@@ -30,14 +30,13 @@ pub struct ProviderFactory {}
 
 impl ProviderFactory {
     pub fn new_from_settings(chain: Chain, settings: &Settings) -> Box<dyn ChainTraits> {
-        let url_type = Self::url(chain, settings);
-        let url = url_type.get_url();
-        let node_type = ProviderFactory::get_node_type(url_type.clone());
+        let (url_type, archive_url_type) = Self::url(chain, settings);
+        let url = url_type.get_url().unwrap_or_default();
+        let archive_url = archive_url_type.unwrap_or(url_type.clone()).get_url().unwrap_or_default();
         Self::new_provider(ProviderConfig::new(
             chain,
             &url,
-            node_type,
-            settings.alchemy.key.secret.as_str(),
+            &archive_url,
             settings.ankr.key.secret.as_str(),
             settings.trongrid.key.secret.as_str(),
         ))
@@ -63,7 +62,9 @@ impl ProviderFactory {
 
         let chain = config.chain;
         let url = config.url.clone();
+        let archive_url = config.archive_url.clone();
         let gem_client = ReqwestClient::new(url.clone(), reqwest_client.clone());
+        let gem_client_archive = ReqwestClient::new(archive_url.clone(), reqwest_client.clone());
 
         match chain {
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {
@@ -94,13 +95,15 @@ impl ProviderFactory {
             | Chain::Hyperliquid
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
-                let rpc_client = JsonRpcClient::new(gem_client.clone());
+                let node_type = config.clone().node_type();
+                let client = if node_type == NodeType::Archive {
+                    gem_client_archive.clone()
+                } else {
+                    gem_client.clone()
+                };
+                let rpc_client = JsonRpcClient::new(client.clone());
                 let ethereum_client = EthereumClient::new(rpc_client.clone(), chain)
-                    .with_node_type(config.clone().node_type)
-                    .with_alchemy_client(AlchemyClient::new(
-                        ReqwestClient::new(config.clone().alchemy_url(), reqwest_client.clone()),
-                        chain,
-                    ))
+                    .with_node_type(node_type)
                     .with_ankr_client(AnkrClient::new(
                         JsonRpcClient::new(ReqwestClient::new(config.clone().ankr_url(), reqwest_client.clone())),
                         chain,
@@ -115,7 +118,7 @@ impl ProviderFactory {
             Chain::Aptos => Box::new(AptosClient::new(gem_client.clone())),
             Chain::Sui => Box::new(SuiClient::new(JsonRpcClient::new(gem_client.clone()))),
             Chain::Xrp => Box::new(XRPClient::new(gem_client.clone())),
-            Chain::Algorand => Box::new(AlgorandClientIndexer::new(gem_client.clone())),
+            Chain::Algorand => Box::new(AlgorandClient::new(gem_client.clone(), AlgorandClientIndexer::new(gem_client_archive.clone()))),
             Chain::Stellar => Box::new(StellarClient::new(gem_client.clone())),
             Chain::Near => Box::new(NearClient::new(JsonRpcClient::new(gem_client.clone()))),
             Chain::Polkadot => Box::new(PolkadotClient::new(gem_client.clone())),
@@ -129,7 +132,7 @@ impl ProviderFactory {
         }
     }
 
-    pub fn url(chain: Chain, settings: &Settings) -> ChainURLType {
+    pub fn url(chain: Chain, settings: &Settings) -> (ChainURLType, Option<ChainURLType>) {
         match chain {
             Chain::Bitcoin => settings.chains.bitcoin.get_type(),
             Chain::BitcoinCash => settings.chains.bitcoincash.get_type(),
