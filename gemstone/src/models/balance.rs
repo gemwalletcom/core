@@ -1,5 +1,7 @@
 use primitives::{AssetBalance, AssetId, Balance, asset_balance::BalanceMetadata};
 
+pub type GemBalanceMetadata = BalanceMetadata;
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemAssetBalance {
     pub asset_id: AssetId,
@@ -20,7 +22,7 @@ pub struct GemBalance {
     pub metadata: Option<GemBalanceMetadata>,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[uniffi::remote(Record)]
 pub struct GemBalanceMetadata {
     pub energy_available: u64,
     pub energy_total: u64,
@@ -49,18 +51,7 @@ impl From<Balance> for GemBalance {
             rewards: value.rewards.to_string(),
             reserved: value.reserved.to_string(),
             withdrawable: value.withdrawable.to_string(),
-            metadata: value.metadata.map(|m| m.into()),
-        }
-    }
-}
-
-impl From<BalanceMetadata> for GemBalanceMetadata {
-    fn from(value: BalanceMetadata) -> Self {
-        Self {
-            energy_available: value.energy_available,
-            energy_total: value.energy_total,
-            bandwidth_available: value.bandwidth_available,
-            bandwidth_total: value.bandwidth_total,
+            metadata: value.metadata,
         }
     }
 }

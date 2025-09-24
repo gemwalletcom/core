@@ -349,10 +349,10 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 chain_id,
             },
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin {
-                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
+                utxos: utxos.into_iter().collect(),
             },
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano {
-                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
+                utxos: utxos.into_iter().collect(),
             },
             TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => GemTransactionLoadMetadata::Evm {
                 nonce,
@@ -466,10 +466,10 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 chain_id,
             },
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin {
-                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
+                utxos: utxos.into_iter().collect(),
             },
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano {
-                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
+                utxos: utxos.into_iter().collect(),
             },
             GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => TransactionLoadMetadata::Evm {
                 nonce,

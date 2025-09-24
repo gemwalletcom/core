@@ -1,16 +1,20 @@
 use primitives::{Asset, BroadcastOptions, FeeRate, GasPriceType, TransactionInputType, TransactionPreloadInput, UTXO};
 
-#[derive(Debug, Clone, uniffi::Record)]
+pub type GemBroadcastOptions = BroadcastOptions;
+pub type GemUTXO = UTXO;
+
+#[uniffi::remote(Record)]
 pub struct GemUTXO {
     pub transaction_id: String,
-    pub vout: u32,
+    pub vout: i32,
     pub value: String,
     pub address: String,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[uniffi::remote(Record)]
 pub struct GemBroadcastOptions {
     pub skip_preflight: bool,
+    pub from_address: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -40,28 +44,6 @@ pub struct GemTransactionPreloadInput {
     pub input_type: String,
     pub sender_address: String,
     pub destination_address: String,
-}
-
-impl From<UTXO> for GemUTXO {
-    fn from(utxo: UTXO) -> Self {
-        Self {
-            transaction_id: utxo.transaction_id,
-            vout: utxo.vout as u32,
-            value: utxo.value,
-            address: utxo.address,
-        }
-    }
-}
-
-impl From<GemUTXO> for UTXO {
-    fn from(utxo: GemUTXO) -> Self {
-        Self {
-            transaction_id: utxo.transaction_id,
-            vout: utxo.vout as i32,
-            value: utxo.value,
-            address: utxo.address,
-        }
-    }
 }
 
 impl From<GasPriceType> for GemGasPriceType {
@@ -122,22 +104,6 @@ impl From<GemTransactionPreloadInput> for TransactionPreloadInput {
             input_type: TransactionInputType::Transfer(asset),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
-        }
-    }
-}
-
-impl From<BroadcastOptions> for GemBroadcastOptions {
-    fn from(options: BroadcastOptions) -> Self {
-        Self {
-            skip_preflight: options.skip_preflight,
-        }
-    }
-}
-
-impl From<GemBroadcastOptions> for BroadcastOptions {
-    fn from(options: GemBroadcastOptions) -> Self {
-        Self {
-            skip_preflight: options.skip_preflight,
         }
     }
 }

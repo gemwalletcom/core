@@ -5,18 +5,19 @@ use crate::models::{
     order::HypercorePerpetualFill,
     position::HypercoreAssetPositions,
     referral::HypercoreReferral,
-    user::{HypercoreAgentSession, HypercoreUserFee, HypercoreUserRole},
+    user::{HypercoreAgentSession, HypercoreLedgerUpdate, HypercoreUserFee, HypercoreUserRole},
 };
 use chain_traits::ChainTraits;
 use gem_client::Client;
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::{Arc, Mutex},
+};
 
 use crate::config::HypercoreConfig;
 use primitives::{Chain, Preferences};
 use serde_json::json;
-use std::collections::HashMap;
-use std::error::Error;
-use std::sync::Mutex;
 
 #[derive(Debug)]
 pub struct InMemoryPreferences {
@@ -214,6 +215,20 @@ impl<C: Client> HyperCoreClient<C> {
             "user": user
         }))
         .await
+    }
+
+    pub async fn get_ledger_updates(&self, user: &str) -> Result<Vec<HypercoreLedgerUpdate>, Box<dyn Error + Send + Sync>> {
+        self.info(json!({
+            "type": "userNonFundingLedgerUpdates",
+            "user": user
+        }))
+        .await
+    }
+
+    pub async fn get_tx_hash_by_nonce(&self, user: &str, nonce: u64) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let updates = self.get_ledger_updates(user).await?;
+        let update = updates.iter().find(|update| update.time == nonce).ok_or("Nonce not found")?;
+        Ok(update.hash.clone())
     }
 }
 

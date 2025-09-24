@@ -26,7 +26,6 @@ pub struct Account {
 }
 
 #[cfg(feature = "rpc")]
-#[cfg(feature = "rpc")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Balance {
     pub balance: String,

@@ -218,7 +218,7 @@ impl GemGateway {
         let hash = self
             .provider(chain)
             .await?
-            .transaction_broadcast(data, options.into())
+            .transaction_broadcast(data, options)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(hash)
@@ -271,7 +271,7 @@ impl GemGateway {
             .get_utxos(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(utxos.into_iter().map(|u| u.into()).collect())
+        Ok(utxos)
     }
 
     pub async fn get_address_status(&self, chain: Chain, address: String) -> Result<Vec<GemAddressStatus>, GatewayError> {
@@ -281,7 +281,7 @@ impl GemGateway {
             .get_address_status(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(status.into_iter().collect())
+        Ok(status)
     }
 
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
