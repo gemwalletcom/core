@@ -40,20 +40,24 @@ impl<C: Client + Clone> AlchemyClient<C> {
                 data: TokenBalances { tokens: vec![] },
             });
         }
-        let chain = evm_chain_to_network(self.chain);
-        let payload = json!({
-            "addresses": [
-                {
-                    "address": address,
-                    "networks": [chain]
-                }
-            ],
-            "includeNativeTokens": false,
-        });
-        Ok(self
-            .client
-            .post("/assets/tokens/balances/by-address", &payload, Some(Self::common_headers()))
-            .await?)
+        if let Some(chain) = evm_chain_to_network(self.chain) {
+            let payload = json!({
+                    "addresses": [
+                        {
+                            "address": address,
+                            "networks": [chain]
+                    }
+                ],
+                "includeNativeTokens": false,
+            });
+            return Ok(self
+                .client
+                .post("/assets/tokens/balances/by-address", &payload, Some(Self::common_headers()))
+                .await?);
+        }
+        Ok(Data {
+            data: TokenBalances { tokens: vec![] },
+        })
     }
     // https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-transaction-history-by-address
     //TODO:
