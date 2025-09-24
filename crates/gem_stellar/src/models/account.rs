@@ -18,8 +18,7 @@ pub struct StellarBalance {
 
 // RPC models
 #[cfg(feature = "rpc")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Account {
     #[serde(deserialize_with = "deserialize_u64_from_str")]
     pub sequence: u64,
@@ -27,7 +26,6 @@ pub struct Account {
 }
 
 #[cfg(feature = "rpc")]
-
 #[cfg(feature = "rpc")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Balance {

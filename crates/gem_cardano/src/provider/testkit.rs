@@ -16,9 +16,6 @@ pub fn create_test_client() -> CardanoClient<ReqwestClient> {
     } else {
         settings.chains.cardano.url
     };
-    let reqwest_client = ReqwestClient::new(
-        url,
-        reqwest::Client::builder().timeout(std::time::Duration::from_secs(30)).build().unwrap(),
-    );
+    let reqwest_client = ReqwestClient::new(url, reqwest::Client::builder().timeout(std::time::Duration::from_secs(30)).build().unwrap());
     CardanoClient::new(reqwest_client)
 }

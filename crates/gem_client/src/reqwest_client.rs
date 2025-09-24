@@ -69,9 +69,23 @@ impl Client for ReqwestClient {
     where
         R: DeserializeOwned,
     {
-        let url = self.build_url(path);
-        let response = self.client.get(&url).send().await.map_err(Self::map_reqwest_error)?;
+        self.get_with_headers(path, None).await
+    }
 
+    async fn get_with_headers<R>(&self, path: &str, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned,
+    {
+        let url = self.build_url(path);
+        let mut request = self.client.get(&url);
+
+        if let Some(headers) = headers {
+            for (key, value) in headers {
+                request = request.header(&key, &value);
+            }
+        }
+
+        let response = request.send().await.map_err(Self::map_reqwest_error)?;
         self.send_request(response).await
     }
 

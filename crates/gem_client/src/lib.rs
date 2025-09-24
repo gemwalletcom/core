@@ -30,6 +30,13 @@ pub trait Client: Send + Sync + Debug {
     async fn get<R>(&self, path: &str) -> Result<R, ClientError>
     where
         R: DeserializeOwned;
+    async fn get_with_headers<R>(&self, path: &str, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned,
+    {
+        let _ = headers;
+        self.get(path).await
+    }
     async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,

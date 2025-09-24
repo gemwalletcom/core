@@ -121,7 +121,10 @@ impl ProviderFactory {
             Chain::Polkadot => Box::new(PolkadotClient::new(gem_client.clone())),
             Chain::Solana => Box::new(SolanaClient::new(JsonRpcClient::new(gem_client.clone()))),
             Chain::Ton => Box::new(TonClient::new(gem_client.clone())),
-            Chain::Tron => Box::new(TronClient::new(gem_client.clone(), TronGridClient::new(gem_client.clone()))),
+            Chain::Tron => Box::new(TronClient::new(
+                gem_client.clone(),
+                TronGridClient::new(gem_client.clone(), config.trongrid_key.clone()),
+            )),
             Chain::HyperCore => Box::new(HyperCoreClient::new(gem_client.clone())),
         }
     }

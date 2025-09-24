@@ -27,8 +27,24 @@ impl Client for AlienClient {
     where
         R: DeserializeOwned,
     {
+        self.get_with_headers(path, None).await
+    }
+
+    async fn get_with_headers<R>(&self, path: &str, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned,
+    {
         let url = self.build_url(path);
-        let target = AlienTarget::get(&url);
+        let target = if let Some(headers) = headers {
+            AlienTarget {
+                url,
+                method: crate::network::AlienHttpMethod::Get,
+                headers: Some(headers),
+                body: None,
+            }
+        } else {
+            AlienTarget::get(&url)
+        };
 
         let response_data = self
             .provider

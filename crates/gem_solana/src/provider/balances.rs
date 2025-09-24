@@ -39,13 +39,14 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
             .filter_map(|account| {
                 let token_info = &account.account.data.parsed.info;
                 if let (Some(token_amount), Some(mint)) = (&token_info.token_amount, &token_info.mint)
-                    && token_amount.amount > num_bigint::BigUint::from(0u32) {
-                        let asset_id = primitives::AssetId {
-                            chain: primitives::Chain::Solana,
-                            token_id: Some(mint.clone()),
-                        };
-                        return Some(primitives::AssetBalance::new(asset_id, token_amount.amount.clone()));
-                    }
+                    && token_amount.amount > num_bigint::BigUint::from(0u32)
+                {
+                    let asset_id = primitives::AssetId {
+                        chain: primitives::Chain::Solana,
+                        token_id: Some(mint.clone()),
+                    };
+                    return Some(primitives::AssetBalance::new(asset_id, token_amount.amount.clone()));
+                }
                 None
             })
             .collect();

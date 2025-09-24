@@ -41,7 +41,11 @@ impl<C: Client> ChainBalances for TronClient<C> {
 
     async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         let account = self.trongrid_client.get_accounts_by_address(&address).await?;
-        Ok(TronGridMapper::map_asset_balances(account.data.first().unwrap().clone()))
+        if let Some(account) = account.data.first() {
+            Ok(TronGridMapper::map_asset_balances(account.clone()))
+        } else {
+            Ok(vec![])
+        }
     }
 }
 
