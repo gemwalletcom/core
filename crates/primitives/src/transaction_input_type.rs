@@ -31,6 +31,18 @@ impl TransactionInputType {
             TransactionInputType::Perpetual(asset, _) => asset,
         }
     }
+
+    pub fn get_recipient_asset(&self) -> &Asset {
+        match self {
+            TransactionInputType::Transfer(asset) => asset,
+            TransactionInputType::Deposit(asset) => asset,
+            TransactionInputType::Swap(_, asset, _) => asset,
+            TransactionInputType::Stake(asset, _) => asset,
+            TransactionInputType::TokenApprove(asset, _) => asset,
+            TransactionInputType::Generic(asset, _, _) => asset,
+            TransactionInputType::Perpetual(asset, _) => asset,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

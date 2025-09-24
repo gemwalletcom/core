@@ -6,7 +6,7 @@ use crate::{constants::STATIC_BASE_FEE, models::prioritization_fee::SolanaPriori
 
 pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType, recipient_token_address: Option<String>) -> TransactionFee {
     let mut options = HashMap::new();
-    if input_type.get_asset().id.token_subtype() == AssetSubtype::TOKEN && recipient_token_address.is_none() {
+    if input_type.get_recipient_asset().id.token_subtype() == AssetSubtype::TOKEN && recipient_token_address.is_none() {
         options.insert(
             FeeOption::TokenAccountCreation,
             BigInt::from(input_type.get_asset().id.chain.token_activation_fee().unwrap_or(0)),
