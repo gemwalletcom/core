@@ -182,10 +182,7 @@ impl JsonRpcHandler {
             .map(|(i, call)| {
                 if let Some(Some(cache)) = cached.get(i) {
                     let result = serde_json::from_slice(&cache.body).unwrap_or_default();
-                    JsonRpcResult::Success(JsonRpcResponse {
-                        result,
-                        id: Some(call.id),
-                    })
+                    JsonRpcResult::Success(JsonRpcResponse { result, id: Some(call.id) })
                 } else if let Some(response) = upstream.get(upstream_idx) {
                     upstream_idx += 1;
                     response.clone()
