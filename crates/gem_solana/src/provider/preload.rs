@@ -4,11 +4,12 @@ use std::error::Error;
 
 use crate::provider::preload_mapper::{calculate_fee_rates, calculate_transaction_fee};
 use gem_client::Client;
+use primitives::AssetType;
 use primitives::{
     FeeRate, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
 };
 
-use crate::{get_token_program_id_by_address, rpc::client::SolanaClient};
+use crate::rpc::client::SolanaClient;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
@@ -27,13 +28,17 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
                 self.get_token_accounts_by_mint(&sender_address, token_id),
                 self.get_token_accounts_by_mint(&destination_address, token_id)
             )?;
-            let sender_token_account = sender_accounts.value.first().ok_or("Sender token address is empty")?;
-            let sender_token_address = sender_token_account.pubkey.clone();
-            let token_program = get_token_program_id_by_address(&sender_token_account.account.owner).ok();
+            let sender_token_account = sender_accounts.value.first();
+            let sender_token_address = sender_token_account.map(|account| account.pubkey.clone());
+            let token_program = match &recipient_asset.asset_type {
+                AssetType::SPL => Some(SolanaTokenProgramId::Token),
+                AssetType::SPL2022 => Some(SolanaTokenProgramId::Token2022),
+                _ => None,
+            };
             let recipient_token_address = recipient_accounts.value.first().map(|account| account.pubkey.clone());
 
             Ok(TransactionLoadMetadata::Solana {
-                sender_token_address: Some(sender_token_address),
+                sender_token_address,
                 recipient_token_address,
                 token_program,
                 block_hash: block_hash.value.blockhash,
