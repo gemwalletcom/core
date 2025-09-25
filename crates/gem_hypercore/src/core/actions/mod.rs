@@ -8,5 +8,4 @@ pub const MAINNET: &str = "Mainnet";
 pub const SIGNATURE_CHAIN_ID: &str = "0xa4b1";
 
 pub const HYPERCORE_SIGNATURE_CHAIN_ID: &str = "0x3e7";
-pub const HYPE_SYSTEM_ADDRESS: &str = "0x2222222222222222222222222222222222222222";
 pub const SLIPPAGE_BUFFER_PERCENT: f64 = 0.08;

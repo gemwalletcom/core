@@ -4,10 +4,7 @@ use std::{
 };
 
 use async_trait::async_trait;
-use gem_hypercore::core::{
-    actions::{HYPE_SYSTEM_ADDRESS, user::spot_send::SpotSend},
-    hypercore::transfer_to_hyper_evm_typed_data,
-};
+use gem_hypercore::core::{HYPE_SYSTEM_ADDRESS, HYPERCORE_HYPE_TOKEN, actions::user::spot_send::SpotSend, hypercore::transfer_to_hyper_evm_typed_data};
 use number_formatter::BigNumberFormatter;
 
 use primitives::Chain;
@@ -19,8 +16,6 @@ use crate::{
         SwapperQuoteRequest, SwapperRoute, asset::HYPERCORE_HYPE,
     },
 };
-
-const HYPERCORE_HYPE_TOKEN: &str = "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec";
 
 #[derive(Debug)]
 pub struct HyperCoreBridge {
