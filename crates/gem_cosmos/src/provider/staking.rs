@@ -119,7 +119,7 @@ mod chain_integration_tests {
         for validator in validators.iter().take(5) {
             assert!(!validator.id.is_empty());
             assert!(!validator.name.is_empty());
-            assert!(validator.commision >= 0.0 && validator.commision <= 100.0);
+            assert!(validator.commission >= 0.0 && validator.commission <= 100.0);
             if validator.is_active {
                 assert!(validator.apr >= 0.0);
             }

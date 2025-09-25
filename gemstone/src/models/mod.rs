@@ -1,6 +1,7 @@
 pub mod address;
 pub mod asset;
 pub mod balance;
+mod custom_types;
 pub mod gateway;
 pub mod nft;
 pub mod node;

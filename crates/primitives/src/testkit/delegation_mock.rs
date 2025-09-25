@@ -54,7 +54,7 @@ impl DelegationValidator {
             id: "validator1".to_string(),
             name: "Test Validator".to_string(),
             is_active: true,
-            commision: 0.05,
+            commission: 0.05,
             apr: 0.08,
         }
     }

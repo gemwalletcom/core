@@ -35,7 +35,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                 chain: Chain::SmartChain,
                 name: v.moniker,
                 is_active: !v.jailed,
-                commision: v.commission as f64 / 10000.0,
+                commission: v.commission as f64 / 10000.0,
                 apr: v.apy as f64 / 100.0,
             })
             .collect())

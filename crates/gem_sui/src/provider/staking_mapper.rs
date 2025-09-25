@@ -13,7 +13,7 @@ pub fn map_validators(validators: SuiValidators, default_apy: f64) -> Vec<Delega
             id: validator.address,
             name: String::new(),
             is_active: true,
-            commision: 0.0,
+            commission: 0.0,
             apr: default_apy,
         })
         .collect()

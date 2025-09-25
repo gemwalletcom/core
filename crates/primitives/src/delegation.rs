@@ -43,7 +43,7 @@ pub struct DelegationValidator {
     pub id: String,
     pub name: String,
     pub is_active: bool,
-    pub commision: f64,
+    pub commission: f64,
     pub apr: f64,
 }
 
