@@ -51,7 +51,7 @@ pub struct TransactionsResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionResponseTx {
     pub body: TransactionBody,
-    pub auth_info: AuthInfo,
+    pub auth_info: Option<AuthInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

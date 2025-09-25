@@ -48,10 +48,10 @@ pub fn map_transactions(chain: Chain, transactions: Vec<TransactionResponse>) ->
         .collect::<Vec<Transaction>>()
 }
 
-pub fn map_transaction(chain: Chain, body: TransactionBody, auth_info: AuthInfo, transaction: TransactionResponse) -> Option<Transaction> {
+pub fn map_transaction(chain: Chain, body: TransactionBody, auth_info: Option<AuthInfo>, transaction: TransactionResponse) -> Option<Transaction> {
     let hash = transaction.tx_response.txhash.clone();
     let default_denom = chain.as_denom()?;
-    let fee = auth_info.fee.amount.into_iter().filter(|x| x.denom == default_denom).collect::<Vec<_>>();
+    let fee = auth_info?.fee.amount.into_iter().filter(|x| x.denom == default_denom).collect::<Vec<_>>();
     let fee = fee.first()?.amount.clone();
     let memo = if body.memo.is_empty() { None } else { Some(body.memo.clone()) };
 
