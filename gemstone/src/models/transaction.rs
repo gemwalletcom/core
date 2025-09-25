@@ -13,6 +13,7 @@ use std::str::FromStr;
 pub type GemPerpetualDirection = PerpetualDirection;
 pub type GemFeeOption = FeeOption;
 pub type GemTransferDataOutputType = TransferDataOutputType;
+pub type GemApprovalData = ApprovalData;
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualDirection {
@@ -122,7 +123,7 @@ pub struct GemTransferDataExtra {
     pub output_type: GemTransferDataOutputType,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[uniffi::remote(Record)]
 pub struct GemApprovalData {
     pub token: String,
     pub spender: String,
@@ -443,16 +444,6 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 agent_address,
                 agent_private_key,
             },
-        }
-    }
-}
-
-impl From<ApprovalData> for GemApprovalData {
-    fn from(value: ApprovalData) -> Self {
-        GemApprovalData {
-            token: value.token,
-            spender: value.spender,
-            value: value.value,
         }
     }
 }
@@ -942,12 +933,8 @@ impl From<GemTransactionInputType> for TransactionInputType {
                 },
             ),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
-            GemTransactionInputType::TransferNft { asset, nft_asset } => {
-                TransactionInputType::TransferNft(asset.into(), nft_asset.into())
-            }
-            GemTransactionInputType::Account { asset, account_type } => {
-                TransactionInputType::Account(asset.into(), account_type.into())
-            }
+            GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset.into(), nft_asset.into()),
+            GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset.into(), account_type.into()),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset.into(), perpetual_type.into()),
         }
     }
