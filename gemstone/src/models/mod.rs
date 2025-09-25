@@ -1,21 +1,22 @@
 pub mod address;
 pub mod asset;
 pub mod balance;
+mod custom_types;
 pub mod gateway;
+pub mod nft;
 pub mod node;
 pub mod perpetual;
 pub mod stake;
 pub mod token;
 pub mod transaction;
-pub mod nft;
 
 pub use address::*;
 pub use asset::*;
 pub use balance::*;
 pub use gateway::*;
+pub use nft::*;
 pub use node::*;
 pub use perpetual::*;
 pub use stake::*;
 pub use token::*;
 pub use transaction::*;
-pub use nft::*;

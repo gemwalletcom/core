@@ -74,7 +74,7 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, ap
                 id: validator.operator_address,
                 name: validator.description.moniker,
                 is_active,
-                commision: commission_rate * 100.0,
+                commission: commission_rate * 100.0,
                 apr: validator_apr,
             }
         })
@@ -251,7 +251,7 @@ mod tests {
         assert_eq!(validator.id, "cosmosvaloper1q9p73lx07tjqc34vs8jrsu5pg3q4ha534uqv4w");
         assert_eq!(validator.name, "Unstake as we will shut down");
         assert!(validator.is_active);
-        assert_eq!(validator.commision, 5.0); // Commission in percentage
+        assert_eq!(validator.commission, 5.0); // Commission in percentage
         assert_eq!(validator.apr, 17.575);
 
         let validator2 = &result[1];

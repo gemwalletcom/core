@@ -20,7 +20,7 @@ pub fn map_staking_validators(witnesses: WitnessesList, apy: Option<f64>) -> Vec
                 id: TronAddress::from_hex(&witness.address)?,
                 name: String::new(),
                 is_active: witness.is_jobs.unwrap_or(false),
-                commision: 0.0,
+                commission: 0.0,
                 apr: default_apy,
             })
         })
@@ -31,7 +31,7 @@ pub fn map_staking_validators(witnesses: WitnessesList, apy: Option<f64>) -> Vec
         id: SYSTEM_UNSTAKING_VALIDATOR_ID.to_string(),
         name: SYSTEM_UNSTAKING_VALIDATOR_NAME.to_string(),
         is_active: true,
-        commision: 0.0,
+        commission: 0.0,
         apr: default_apy,
     });
 
@@ -73,7 +73,7 @@ mod tests {
         assert_eq!(validators[0].id, "TJApZYJwPKuQR7tL6FmvD6jDjbYpHESZGH");
         assert_eq!(validators[0].name, "");
         assert!(validators[0].is_active);
-        assert_eq!(validators[0].commision, 0.0);
+        assert_eq!(validators[0].commission, 0.0);
         assert_eq!(validators[0].apr, 4.2);
 
         assert_eq!(validators[1].id, "TEqyWRKCzREYC2bK2fc3j7pp8XjAa6tJK1");

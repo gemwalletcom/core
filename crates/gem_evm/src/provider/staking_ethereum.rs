@@ -30,7 +30,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             chain: Chain::Ethereum,
             name: "Everstake".to_string(),
             is_active: true,
-            commision: 0.1,
+            commission: 0.1,
             apr: apy,
         }])
     }

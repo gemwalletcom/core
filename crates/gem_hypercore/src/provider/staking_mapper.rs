@@ -13,7 +13,7 @@ pub fn map_staking_validators(validators: Vec<HypercoreValidator>, chain: Chain,
             id: x.validator_address(),
             name: x.name,
             is_active: x.is_active,
-            commision: x.commission,
+            commission: x.commission,
             apr: calculated_apy,
         })
         .collect()
@@ -60,7 +60,7 @@ mod tests {
         assert_eq!(result[0].id, "0x5aC99df645F3414876C816Caa18b2d234024b487");
         assert_eq!(result[0].chain, Chain::HyperCore);
         assert!(result[0].is_active);
-        assert_eq!(result[0].commision, 5.0);
+        assert_eq!(result[0].commission, 5.0);
         assert_eq!(result[0].apr, 15.0); // max_apr * 100
     }
 

@@ -276,7 +276,7 @@ mod tests {
             id: EVERSTAKE_POOL_ADDRESS.to_string(),
             name: "Everstake Pool".to_string(),
             is_active: true,
-            commision: 10.0,
+            commission: 10.0,
             apr: 4.2,
         }
     }
@@ -410,7 +410,7 @@ mod tests {
             id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
             name: "Test Validator".to_string(),
             is_active: true,
-            commision: 5.0,
+            commission: 5.0,
             apr: 10.0,
         };
 
@@ -446,7 +446,7 @@ mod tests {
                 id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
                 name: "Test Validator".to_string(),
                 is_active: true,
-                commision: 5.0,
+                commission: 5.0,
                 apr: 10.0,
             },
             price: None,
@@ -483,7 +483,7 @@ mod tests {
                 id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
                 name: "Source Validator".to_string(),
                 is_active: true,
-                commision: 5.0,
+                commission: 5.0,
                 apr: 10.0,
             },
             price: None,
@@ -494,7 +494,7 @@ mod tests {
             id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             name: "Target Validator".to_string(),
             is_active: true,
-            commision: 3.0,
+            commission: 3.0,
             apr: 12.0,
         };
 
@@ -531,7 +531,7 @@ mod tests {
                 id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
                 name: "Test Validator".to_string(),
                 is_active: true,
-                commision: 5.0,
+                commission: 5.0,
                 apr: 10.0,
             },
             price: None,
