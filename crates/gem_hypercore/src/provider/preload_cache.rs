@@ -1,6 +1,6 @@
 use crate::config::HypercoreConfig;
-use crate::models::referral::HypercoreReferral;
-use crate::models::user::{HypercoreAgentSession, HypercoreUserFee};
+use crate::models::referral::Referral;
+use crate::models::user::{AgentSession, UserFee};
 use primitives::{Preferences, PreferencesExt};
 use std::error::Error;
 use std::future::Future;
@@ -33,7 +33,7 @@ impl HyperCoreCache {
 
     pub async fn needs_referral_approval<F>(&self, address: &str, checker: F) -> Result<bool, Box<dyn Error + Send + Sync>>
     where
-        F: Future<Output = Result<HypercoreReferral, Box<dyn Error + Send + Sync>>>,
+        F: Future<Output = Result<Referral, Box<dyn Error + Send + Sync>>>,
     {
         let cache_key = self.cache_key(address, Self::REFERRAL_APPROVED_KEY);
 
@@ -73,7 +73,7 @@ impl HyperCoreCache {
 
     pub async fn get_user_fee_rate<F>(&self, address: &str, fetcher: F) -> Result<i64, Box<dyn Error + Send + Sync>>
     where
-        F: Future<Output = Result<HypercoreUserFee, Box<dyn Error + Send + Sync>>>,
+        F: Future<Output = Result<UserFee, Box<dyn Error + Send + Sync>>>,
     {
         let cache_key = self.cache_key(address, Self::USER_FEES_KEY);
 
@@ -95,7 +95,7 @@ impl HyperCoreCache {
         get_agents: F,
     ) -> Result<(bool, String, String), Box<dyn Error + Send + Sync>>
     where
-        F: Future<Output = Result<Vec<HypercoreAgentSession>, Box<dyn Error + Send + Sync>>>,
+        F: Future<Output = Result<Vec<AgentSession>, Box<dyn Error + Send + Sync>>>,
     {
         let agent = crate::agent::Agent::new(secure_preferences);
         let (agent_address, agent_private_key) = agent.get_or_create_credentials(sender_address)?;

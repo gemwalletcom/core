@@ -4,110 +4,110 @@ use crate::models::UInt64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreResponse {
+pub struct Response {
     pub status: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreErrorResponse {
+pub struct ErrorResponse {
     pub response: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreStatusErrorResponse {
+pub struct StatusErrorResponse {
     pub status: String,
     pub response: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreOrderResponse {
+pub struct OrderResponse {
     pub status: String,
-    pub response: Option<HypercoreOrderResponseData>,
+    pub response: Option<OrderResponseData>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreOrderResponseData {
-    pub data: Option<HypercoreOrderData>,
+pub struct OrderResponseData {
+    pub data: Option<OrderData>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreOrderData {
-    pub statuses: Option<Vec<HypercoreOrderStatus>>,
+pub struct OrderData {
+    pub statuses: Option<Vec<OrderStatus>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreOrderStatus {
-    pub filled: Option<HypercoreOrderFilled>,
-    pub resting: Option<HypercoreOrderResting>,
+pub struct OrderStatus {
+    pub filled: Option<OrderFilled>,
+    pub resting: Option<OrderResting>,
     pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreOrderFilled {
+pub struct OrderFilled {
     pub oid: UInt64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreOrderResting {
+pub struct OrderResting {
     pub oid: UInt64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum TransactionBroadcastResponse {
-    OrderResponse(HypercoreOrderResponse),
-    StatusErrorResponse(HypercoreStatusErrorResponse),
-    SimpleResponse(HypercoreResponse),
-    ErrorResponse(HypercoreErrorResponse),
+    OrderResponse(OrderResponse),
+    StatusErrorResponse(StatusErrorResponse),
+    SimpleResponse(Response),
+    ErrorResponse(ErrorResponse),
 }
 
 #[derive(Debug)]
-pub enum HyperCoreBroadcastResult {
+pub enum BroadcastResult {
     Success(String),
     Error(String),
 }
 
 impl TransactionBroadcastResponse {
-    pub fn into_result(self, data: String) -> HyperCoreBroadcastResult {
+    pub fn into_result(self, data: String) -> BroadcastResult {
         match self {
             TransactionBroadcastResponse::OrderResponse(order) => {
                 if order.status == "ok" {
                     if let Some(status) = order.response.and_then(|r| r.data).and_then(|d| d.statuses).and_then(|s| s.first().cloned()) {
                         if let Some(error) = status.error {
-                            return HyperCoreBroadcastResult::Error(error);
+                            return BroadcastResult::Error(error);
                         }
                         if let Some(filled) = status.filled {
-                            return HyperCoreBroadcastResult::Success(filled.oid.to_string());
+                            return BroadcastResult::Success(filled.oid.to_string());
                         }
                         if let Some(resting) = status.resting {
-                            return HyperCoreBroadcastResult::Success(resting.oid.to_string());
+                            return BroadcastResult::Success(resting.oid.to_string());
                         }
                     }
-                    HyperCoreBroadcastResult::Success(data)
+                    BroadcastResult::Success(data)
                 } else {
-                    HyperCoreBroadcastResult::Error("Order failed".to_string())
+                    BroadcastResult::Error("Order failed".to_string())
                 }
             }
             TransactionBroadcastResponse::StatusErrorResponse(status_error) => {
                 if status_error.status == "err" {
-                    HyperCoreBroadcastResult::Error(status_error.response)
+                    BroadcastResult::Error(status_error.response)
                 } else {
-                    HyperCoreBroadcastResult::Error(format!("Request failed with status: {}", status_error.status))
+                    BroadcastResult::Error(format!("Request failed with status: {}", status_error.status))
                 }
             }
             TransactionBroadcastResponse::SimpleResponse(simple) => match simple.status.as_str() {
-                "ok" => HyperCoreBroadcastResult::Success(data),
-                _ => HyperCoreBroadcastResult::Error("Request failed".to_string()),
+                "ok" => BroadcastResult::Success(data),
+                _ => BroadcastResult::Error("Request failed".to_string()),
             },
-            TransactionBroadcastResponse::ErrorResponse(error) => HyperCoreBroadcastResult::Error(error.response),
+            TransactionBroadcastResponse::ErrorResponse(error) => BroadcastResult::Error(error.response),
         }
     }
 }
@@ -120,7 +120,7 @@ mod tests {
     fn test_order_broadcast_error() {
         let json = include_str!("../../testdata/order_broadcast_error.json");
         let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
-        assert!(matches!(response.into_result("test".to_string()), HyperCoreBroadcastResult::Error(_)));
+        assert!(matches!(response.into_result("test".to_string()), BroadcastResult::Error(_)));
     }
 
     #[test]
@@ -128,7 +128,7 @@ mod tests {
         let json = include_str!("../../testdata/order_broadcast_filled.json");
         let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         match response.into_result("test".to_string()) {
-            HyperCoreBroadcastResult::Success(oid) => assert_eq!(oid, "134896397196"),
+            BroadcastResult::Success(oid) => assert_eq!(oid, "134896397196"),
             _ => panic!("Expected success"),
         }
     }
@@ -138,7 +138,7 @@ mod tests {
         let json = include_str!("../../testdata/order_broadcast_resting.json");
         let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
         match response.into_result("test".to_string()) {
-            HyperCoreBroadcastResult::Success(oid) => assert_eq!(oid, "789012"),
+            BroadcastResult::Success(oid) => assert_eq!(oid, "789012"),
             _ => panic!("Expected success"),
         }
     }
@@ -147,6 +147,6 @@ mod tests {
     fn test_order_broadcast_simple_error() {
         let json = include_str!("../../testdata/order_broadcast_simple_error.json");
         let response: TransactionBroadcastResponse = serde_json::from_str(json).unwrap();
-        assert!(matches!(response.into_result("test".to_string()), HyperCoreBroadcastResult::Error(_)));
+        assert!(matches!(response.into_result("test".to_string()), BroadcastResult::Error(_)));
     }
 }

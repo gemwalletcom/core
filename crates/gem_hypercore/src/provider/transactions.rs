@@ -7,12 +7,12 @@ use std::error::Error;
 
 use gem_client::Client;
 
-use crate::{models::action::HypercoreExchangeRequest, provider::transactions_mapper::map_transaction_broadcast, rpc::client::HyperCoreClient};
+use crate::{models::action::ExchangeRequest, provider::transactions_mapper::map_transaction_broadcast, rpc::client::HyperCoreClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for HyperCoreClient<C> {
     async fn transaction_broadcast(&self, data: String, options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let request: HypercoreExchangeRequest = serde_json::from_str(&data)?;
+        let request: ExchangeRequest = serde_json::from_str(&data)?;
         let response = self.exchange(serde_json::from_str(&data)?).await?;
         // spotSend is transfer on HyperCore
         if request.action.action_type == "spotSend" {

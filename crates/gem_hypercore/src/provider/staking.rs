@@ -5,13 +5,13 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{DelegationBase, DelegationValidator};
 
-use crate::{models::balance::HypercoreValidator, provider::staking_mapper, rpc::client::HyperCoreClient};
+use crate::{models::balance::Validator, provider::staking_mapper, rpc::client::HyperCoreClient};
 
 #[async_trait]
 impl<C: Client> ChainStaking for HyperCoreClient<C> {
     async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
         let validators = self.get_validators().await?;
-        let apy = HypercoreValidator::max_apr(validators);
+        let apy = Validator::max_apr(validators);
         Ok(Some(apy))
     }
 

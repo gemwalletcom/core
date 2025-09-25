@@ -2,17 +2,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreAssetPositions {
-    pub asset_positions: Vec<HypercoreAssetPosition>,
-    pub margin_summary: HypercoreMarginSummary,
-    pub cross_margin_summary: HypercoreMarginSummary,
+pub struct AssetPositions {
+    pub asset_positions: Vec<AssetPosition>,
+    pub margin_summary: MarginSummary,
+    pub cross_margin_summary: MarginSummary,
     pub cross_maintenance_margin_used: String,
     pub withdrawable: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreMarginSummary {
+pub struct MarginSummary {
     pub account_value: String,
     pub total_ntl_pos: String,
     pub total_raw_usd: String,
@@ -20,24 +20,24 @@ pub struct HypercoreMarginSummary {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HypercoreAssetPosition {
+pub struct AssetPosition {
     #[serde(rename = "type")]
-    pub position_type: HypercorePositionType,
-    pub position: HypercorePosition,
+    pub position_type: PositionType,
+    pub position: Position,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum HypercorePositionType {
+pub enum PositionType {
     OneWay,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercorePosition {
+pub struct Position {
     pub coin: String,
     pub szi: String,
-    pub leverage: HypercoreLeverage,
+    pub leverage: Leverage,
     pub entry_px: String,
     pub position_value: String,
     pub unrealized_pnl: String,
@@ -45,26 +45,26 @@ pub struct HypercorePosition {
     pub liquidation_px: Option<String>,
     pub margin_used: String,
     pub max_leverage: u32,
-    pub cum_funding: HypercoreCumulativeFunding,
+    pub cum_funding: CumulativeFunding,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HypercoreLeverage {
+pub struct Leverage {
     #[serde(rename = "type")]
-    pub leverage_type: HypercoreLeverageType,
+    pub leverage_type: LeverageType,
     pub value: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub enum HypercoreLeverageType {
+pub enum LeverageType {
     Cross,
     Isolated,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreCumulativeFunding {
+pub struct CumulativeFunding {
     pub all_time: String,
     pub since_open: String,
 }

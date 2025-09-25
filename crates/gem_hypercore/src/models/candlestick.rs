@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::models::UInt64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HypercoreCandlestick {
+pub struct Candlestick {
     pub t: UInt64, // Open time (timestamp in milliseconds)
     pub o: String, // Open price
     pub h: String, // High price
@@ -14,8 +14,8 @@ pub struct HypercoreCandlestick {
     pub v: String, // Volume
 }
 
-impl From<HypercoreCandlestick> for ChartCandleStick {
-    fn from(candlestick: HypercoreCandlestick) -> Self {
+impl From<Candlestick> for ChartCandleStick {
+    fn from(candlestick: Candlestick) -> Self {
         ChartCandleStick {
             date: DateTime::from_timestamp(candlestick.t as i64 / 1000, 0).unwrap_or(Utc::now()),
             open: candlestick.o.parse().unwrap_or(0.0),

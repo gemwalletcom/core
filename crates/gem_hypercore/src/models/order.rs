@@ -5,7 +5,7 @@ use crate::models::UInt64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreOrder {
+pub struct Order {
     pub coin: String,
     pub limit_px: String,
     pub sz: String,
@@ -18,7 +18,7 @@ pub struct HypercoreOrder {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercorePerpetualFill {
+pub struct PerpetualFill {
     pub coin: String,
     pub hash: String,
     pub oid: UInt64,

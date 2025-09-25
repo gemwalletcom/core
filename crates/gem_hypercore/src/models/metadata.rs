@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreAssetMetadata {
+pub struct AssetMetadata {
     pub funding: String,
     pub open_interest: String,
     pub prev_day_px: String,
@@ -22,7 +22,7 @@ pub struct HypercoreAssetMetadata {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreUniverseAsset {
+pub struct UniverseAsset {
     pub name: String,
     pub sz_decimals: i32,
     pub max_leverage: i32,
@@ -31,18 +31,18 @@ pub struct HypercoreUniverseAsset {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HypercoreUniverseResponse {
-    pub universe: Vec<HypercoreUniverseAsset>,
+    pub universe: Vec<UniverseAsset>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HypercoreMetadataResponse(pub HypercoreUniverseResponse, pub Vec<HypercoreAssetMetadata>);
+pub struct HypercoreMetadataResponse(pub HypercoreUniverseResponse, pub Vec<AssetMetadata>);
 
 impl HypercoreMetadataResponse {
     pub fn universe(&self) -> &HypercoreUniverseResponse {
         &self.0
     }
 
-    pub fn asset_metadata(&self) -> &Vec<HypercoreAssetMetadata> {
+    pub fn asset_metadata(&self) -> &Vec<AssetMetadata> {
         &self.1
     }
 }
@@ -122,19 +122,19 @@ mod tests {
     fn test_hypercore_metadata_to_perpetual_data() {
         let universe_response = HypercoreUniverseResponse {
             universe: vec![
-                HypercoreUniverseAsset {
+                UniverseAsset {
                     name: "BTC".to_string(),
                     sz_decimals: 5,
                     max_leverage: 100,
                     only_isolated: None,
                 },
-                HypercoreUniverseAsset {
+                UniverseAsset {
                     name: "ETH".to_string(),
                     sz_decimals: 4,
                     max_leverage: 50,
                     only_isolated: Some(false),
                 },
-                HypercoreUniverseAsset {
+                UniverseAsset {
                     name: "SOL".to_string(),
                     sz_decimals: 3,
                     max_leverage: 20,
@@ -144,7 +144,7 @@ mod tests {
         };
 
         let asset_metadata = vec![
-            HypercoreAssetMetadata {
+            AssetMetadata {
                 funding: "0.0001".to_string(),
                 open_interest: "12345.67".to_string(),
                 prev_day_px: "60000".to_string(),
@@ -156,7 +156,7 @@ mod tests {
                 impact_pxs: Some(vec!["61000".to_string(), "61250".to_string()]),
                 day_base_vlm: "500000".to_string(),
             },
-            HypercoreAssetMetadata {
+            AssetMetadata {
                 funding: "-0.0002".to_string(),
                 open_interest: "8765.43".to_string(),
                 prev_day_px: "3000".to_string(),
@@ -168,7 +168,7 @@ mod tests {
                 impact_pxs: None,
                 day_base_vlm: "400000".to_string(),
             },
-            HypercoreAssetMetadata {
+            AssetMetadata {
                 funding: "0.0003".to_string(),
                 open_interest: "5432.10".to_string(),
                 prev_day_px: "150".to_string(),
@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn test_price_calculation_with_missing_mid_px() {
         let universe_response = HypercoreUniverseResponse {
-            universe: vec![HypercoreUniverseAsset {
+            universe: vec![UniverseAsset {
                 name: "TEST".to_string(),
                 sz_decimals: 2,
                 max_leverage: 10,
@@ -243,7 +243,7 @@ mod tests {
             }],
         };
 
-        let asset_metadata = vec![HypercoreAssetMetadata {
+        let asset_metadata = vec![AssetMetadata {
             funding: "0.0001".to_string(),
             open_interest: "1000".to_string(),
             prev_day_px: "100".to_string(),
@@ -269,7 +269,7 @@ mod tests {
     #[test]
     fn test_price_change_calculation() {
         let universe_response = HypercoreUniverseResponse {
-            universe: vec![HypercoreUniverseAsset {
+            universe: vec![UniverseAsset {
                 name: "TEST".to_string(),
                 sz_decimals: 2,
                 max_leverage: 10,
@@ -286,7 +286,7 @@ mod tests {
         ];
 
         for (current, prev, expected) in test_cases {
-            let asset_metadata = vec![HypercoreAssetMetadata {
+            let asset_metadata = vec![AssetMetadata {
                 funding: "0".to_string(),
                 open_interest: "1000".to_string(),
                 prev_day_px: prev.to_string(),
@@ -309,7 +309,7 @@ mod tests {
     #[test]
     fn test_asset_id_subtoken_pattern() {
         let universe_response = HypercoreUniverseResponse {
-            universe: vec![HypercoreUniverseAsset {
+            universe: vec![UniverseAsset {
                 name: "BTC".to_string(),
                 sz_decimals: 5,
                 max_leverage: 100,
@@ -317,7 +317,7 @@ mod tests {
             }],
         };
 
-        let asset_metadata = vec![HypercoreAssetMetadata {
+        let asset_metadata = vec![AssetMetadata {
             funding: "0.0001".to_string(),
             open_interest: "1000".to_string(),
             prev_day_px: "60000".to_string(),
