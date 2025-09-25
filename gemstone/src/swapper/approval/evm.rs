@@ -1,5 +1,6 @@
+use crate::models::GemApprovalData;
 use crate::network::{AlienProvider, jsonrpc_client_with_chain};
-use crate::swapper::{Permit2ApprovalData, SwapperApprovalData, SwapperError, eth_address, models::ApprovalType};
+use crate::swapper::{Permit2ApprovalData, SwapperError, eth_address, models::ApprovalType};
 
 use alloy_primitives::{Address, U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
@@ -52,7 +53,7 @@ pub async fn check_approval_erc20(
 
     let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
     if allowance < amount {
-        return Ok(ApprovalType::Approve(SwapperApprovalData {
+        return Ok(ApprovalType::Approve(GemApprovalData {
             token: token.to_string(),
             spender: spender.to_string(),
             value: amount.to_string(),
@@ -125,7 +126,10 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::network::mock::{AlienProviderMock, MockFn};
+    use crate::{
+        models::GemApprovalData,
+        network::mock::{AlienProviderMock, MockFn},
+    };
     use std::time::Duration;
 
     #[tokio::test]
@@ -182,7 +186,7 @@ mod tests {
         assert_eq!(
             result,
             vec![
-                ApprovalType::Approve(SwapperApprovalData {
+                ApprovalType::Approve(GemApprovalData {
                     token: token.clone(),
                     spender: permit2_contract.clone(),
                     value: amount.to_string()

@@ -1,12 +1,13 @@
 use primitives::Chain;
 
+use crate::models::GemApprovalData;
+
 pub type SwapperProvider = primitives::SwapProvider;
 pub type SwapperProviderMode = primitives::swap::SwapProviderMode;
 pub type SwapperQuoteAsset = primitives::swap::QuoteAsset;
 pub type SwapperMode = primitives::swap::SwapMode;
 pub type SwapperSlippage = primitives::swap::Slippage;
 pub type SwapperSlippageMode = primitives::swap::SlippageMode;
-pub type SwapperApprovalData = primitives::swap::ApprovalData;
 pub type SwapperQuoteData = primitives::swap::SwapQuoteData;
 pub type SwapperSwapStatus = primitives::swap::SwapStatus;
 
@@ -15,7 +16,7 @@ pub struct SwapperQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
-    pub approval: Option<SwapperApprovalData>,
+    pub approval: Option<GemApprovalData>,
     pub gas_limit: Option<String>,
 }
 
@@ -39,13 +40,6 @@ pub enum SwapperProvider {
     Chainflip,
     CetusAggregator,
     Relay,
-}
-
-#[uniffi::remote(Record)]
-pub struct SwapperApprovalData {
-    pub token: String,
-    pub spender: String,
-    pub value: String,
 }
 
 #[uniffi::remote(Enum)]
