@@ -28,6 +28,12 @@ pub struct HypercoreUserFee {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HypercoreLedgerUpdate {
-    pub time: u64,
     pub hash: String,
+    pub delta: HypercoreLedgerDelta,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HypercoreLedgerDelta {
+    pub nonce: Option<u64>,
 }

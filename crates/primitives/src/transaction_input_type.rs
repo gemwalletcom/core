@@ -3,8 +3,8 @@ use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
 use crate::transaction_load_metadata::TransactionLoadMetadata;
 use crate::{
-    nft::NFTAsset, perpetual::AccountDataType, Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransferDataExtra,
-    WalletConnectionSessionAppMetadata,
+    Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransferDataExtra, WalletConnectionSessionAppMetadata, nft::NFTAsset,
+    perpetual::AccountDataType,
 };
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
