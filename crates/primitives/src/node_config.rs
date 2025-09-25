@@ -137,6 +137,7 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         Chain::Sonic => vec![Node::new("https://rpc.soniclabs.com", NodePriority::High)],
         Chain::Algorand => vec![Node::new("https://mainnet-api.algonode.cloud", NodePriority::High)],
         Chain::Polkadot => vec![Node::new("https://polkadot-public-sidecar.parity-chains.parity.io", NodePriority::High)],
+        Chain::Plasma => vec![Node::new("https://rpc.plasma.to", NodePriority::High)],
         Chain::Cardano => vec![],
         Chain::Abstract => vec![Node::new("https://api.mainnet.abs.xyz", NodePriority::High)],
         Chain::Berachain => vec![Node::new("https://rpc.berachain.com", NodePriority::High)],

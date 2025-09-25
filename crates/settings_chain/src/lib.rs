@@ -87,6 +87,7 @@ impl ProviderFactory {
             | Chain::Mantle
             | Chain::Celo
             | Chain::World
+            | Chain::Plasma
             | Chain::Sonic
             | Chain::Abstract
             | Chain::Berachain
@@ -169,6 +170,7 @@ impl ProviderFactory {
             Chain::Celo => settings.chains.celo.get_type(),
             Chain::Near => settings.chains.near.get_type(),
             Chain::World => settings.chains.world.get_type(),
+            Chain::Plasma => settings.chains.plasma.get_type(),
             Chain::Stellar => settings.chains.stellar.get_type(),
             Chain::Sonic => settings.chains.sonic.get_type(),
             Chain::Algorand => settings.chains.algorand.get_type(),

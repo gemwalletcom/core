@@ -19,6 +19,7 @@ pub enum EVMChain {
     Ethereum,
     SmartChain,
     Polygon,
+    Plasma,
     Arbitrum,
     Optimism,
     Base,
@@ -52,6 +53,7 @@ impl EVMChain {
             Self::Ethereum => 100_000_000,                                                        // https://etherscan.io/gastracker
             Self::SmartChain => 100_000_000,                                                      // https://bscscan.com/gastracker
             Self::Polygon => 30_000_000_000,                                                      // https://polygonscan.com/gastracker
+            Self::Plasma => 100_000,                                                              // plasma baseline
             Self::Arbitrum => 10_000_000, // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
             Self::Optimism => 1_000_000,  // https://optimistic.etherscan.io/chart/gasprice
             Self::Base => 5_000_000,      // https://basescan.org/chart/gasprice
@@ -81,6 +83,7 @@ impl EVMChain {
             | Self::AvalancheC
             | Self::Fantom
             | Self::Gnosis
+            | Self::Plasma
             | Self::Manta
             | Self::Blast
             | Self::Linea
@@ -140,7 +143,8 @@ impl EVMChain {
             Self::Linea => Some("0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f"),
             Self::Mantle => Some("0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"), // Wrapped Mantle (WMNT)
             Self::Manta => Some("0x0dc808adce2099a9f62aa87d9670745aba741746"),
-            Self::Monad => None, //TODO: Monad
+            Self::Plasma => Some("0x6100E367285b01F48D07953803A2d8dCA5D19873"), // Wrapped Plasma (WXPL)
+            Self::Monad => None,                                                //TODO: Monad
         }
     }
 
