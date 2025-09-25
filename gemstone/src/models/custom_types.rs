@@ -3,18 +3,21 @@ use std::str::FromStr;
 use chrono::{DateTime, Utc};
 use num_bigint::{BigInt, BigUint};
 
-uniffi::custom_type!(BigUint, String, {
-    remote,
-    lower: |value| value.to_string(),
-    try_lift: |s| BigUint::from_str(&s)
-        .map_err(|_| uniffi::deps::anyhow::Error::msg("Invalid BigUint")),
-});
+pub type GemBigInt = BigInt;
+pub type GemBigUint = BigUint;
 
-uniffi::custom_type!(BigInt, String, {
+uniffi::custom_type!(GemBigInt, String, {
     remote,
     lower: |value| value.to_string(),
     try_lift: |s| BigInt::from_str(&s)
         .map_err(|_| uniffi::deps::anyhow::Error::msg("Invalid BigInt")),
+});
+
+uniffi::custom_type!(GemBigUint, String, {
+    remote,
+    lower: |value| value.to_string(),
+    try_lift: |s| BigUint::from_str(&s)
+        .map_err(|_| uniffi::deps::anyhow::Error::msg("Invalid BigUint")),
 });
 
 pub type DateTimeUtc = DateTime<Utc>;

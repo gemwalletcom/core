@@ -1,4 +1,4 @@
-use num_bigint::BigUint;
+use crate::models::custom_types::GemBigUint;
 use primitives::{AssetBalance, AssetId, Balance, asset_balance::BalanceMetadata};
 
 pub type GemAssetBalance = AssetBalance;
@@ -14,14 +14,14 @@ pub struct GemAssetBalance {
 
 #[uniffi::remote(Record)]
 pub struct GemBalance {
-    pub available: BigUint,
-    pub frozen: BigUint,
-    pub locked: BigUint,
-    pub staked: BigUint,
-    pub pending: BigUint,
-    pub rewards: BigUint,
-    pub reserved: BigUint,
-    pub withdrawable: BigUint,
+    pub available: GemBigUint,
+    pub frozen: GemBigUint,
+    pub locked: GemBigUint,
+    pub staked: GemBigUint,
+    pub pending: GemBigUint,
+    pub rewards: GemBigUint,
+    pub reserved: GemBigUint,
+    pub withdrawable: GemBigUint,
     pub metadata: Option<GemBalanceMetadata>,
 }
 
