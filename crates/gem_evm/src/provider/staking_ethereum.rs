@@ -15,12 +15,12 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_ethereum_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
         #[cfg(feature = "reqwest")]
         {
-            return get_everstake_staking_apy().await;
+            get_everstake_staking_apy().await
         }
 
         #[cfg(not(feature = "reqwest"))]
         {
-            return Ok(None);
+            Ok(None)
         }
     }
 

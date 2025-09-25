@@ -477,7 +477,7 @@ impl From<SwapQuoteData> for GemSwapQuoteData {
             to: value.to,
             value: value.value,
             data: value.data,
-            approval: value.approval.map(|approval| approval.into()),
+            approval: value.approval,
             gas_limit: value.gas_limit,
         }
     }
@@ -694,7 +694,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             },
             TransactionInputType::TokenApprove(asset, approval_data) => GemTransactionInputType::TokenApprove {
                 asset: asset.into(),
-                approval_data: approval_data.into(),
+                approval_data,
             },
             TransactionInputType::Generic(asset, metadata, extra) => GemTransactionInputType::Generic {
                 asset: asset.into(),
@@ -703,7 +703,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             },
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft {
                 asset: asset.into(),
-                nft_asset: nft_asset.into(),
+                nft_asset,
             },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account {
                 asset: asset.into(),
@@ -933,7 +933,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
                 },
             ),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
-            GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset.into(), nft_asset.into()),
+            GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset.into(), nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset.into(), account_type.into()),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset.into(), perpetual_type.into()),
         }
