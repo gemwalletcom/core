@@ -4,15 +4,24 @@ use num_traits::Zero;
 use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
 
-use crate::everstake::{
-    EVERSTAKE_POOL_ADDRESS, fetch_everstake_account_state, fetch_everstake_staking_apy, map_balance_to_delegation, map_withdraw_request_to_delegations,
-};
+use crate::everstake::{EVERSTAKE_POOL_ADDRESS, map_balance_to_delegation, map_withdraw_request_to_delegations, state::get_everstake_account_state};
 use crate::rpc::client::EthereumClient;
+
+#[cfg(all(feature = "rpc", feature = "reqwest"))]
+use crate::everstake::stats::get_everstake_staking_apy;
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_ethereum_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        fetch_everstake_staking_apy().await
+        #[cfg(feature = "reqwest")]
+        {
+            return get_everstake_staking_apy().await;
+        }
+
+        #[cfg(not(feature = "reqwest"))]
+        {
+            return Ok(None);
+        }
     }
 
     pub async fn get_ethereum_validators(&self, apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
@@ -27,7 +36,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     pub async fn get_ethereum_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
-        let state = fetch_everstake_account_state(self, address).await?;
+        let state = get_everstake_account_state(self, address).await?;
 
         let mut delegations = Vec::new();
 

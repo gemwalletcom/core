@@ -1,3 +1,5 @@
+#![cfg(feature = "reqwest_provider")]
+
 #[cfg(test)]
 mod tests {
     use gem_solana::{jsonrpc::SolanaRpc, models::blockhash::SolanaBlockhashResult};

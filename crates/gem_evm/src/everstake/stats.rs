@@ -12,8 +12,8 @@ struct EverstakeStatsResponse {
     apr: f64,
 }
 
-#[cfg(feature = "rpc")]
-pub async fn fetch_everstake_staking_apy() -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+#[cfg(all(feature = "rpc", feature = "reqwest"))]
+pub async fn get_everstake_staking_apy() -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
     let client = ReqwestClient::new(EVERSTAKE_STATS_BASE_URL.to_string(), reqwest::Client::new());
     let stats: EverstakeStatsResponse = client.get(EVERSTAKE_STATS_PATH).await?;
 

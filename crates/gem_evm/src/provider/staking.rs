@@ -87,7 +87,8 @@ mod chain_integration_tests {
         let client = create_smartchain_test_client();
         let apy = client.get_staking_apy().await?.unwrap();
 
-        println!("SmartChain staking APY: {}%", apy);
+        println!("SmartChain APY: {}", apy);
+        assert!(apy > 0.1, "Max APY should be greater than 0.1%, got: {}", apy);
 
         Ok(())
     }
@@ -97,10 +98,8 @@ mod chain_integration_tests {
         let client = create_ethereum_test_client();
         let apy = client.get_staking_apy().await?.unwrap();
 
-        // Everstake APY should be around 3-6%
-        assert!(apy > 2.0 && apy < 10.0, "APY should be between 2% and 10%, got: {}", apy);
-        println!("Ethereum Everstake APY: {}%", apy);
-
+        assert!(apy > 2.0 && apy < 6.0, "APY should be between 2% and 6%, got: {}", apy);
+        println!("Ethereum APY: {}", apy);
         Ok(())
     }
 
