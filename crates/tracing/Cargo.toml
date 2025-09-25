@@ -4,7 +4,7 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-sentry = { version = "0.42.0", features = ["tracing"], optional = true }
+sentry = { version = "0.43.0", features = ["tracing"], optional = true }
 tracing = { version = "0.1.41" }
 tracing-subscriber = { version = "0.3.20" }
 
