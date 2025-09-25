@@ -1,5 +1,7 @@
-use primitives::nft::{NFTAsset, NFTAttribute, NFTImages, NFTResource, NFTType};
 use primitives::Chain;
+use primitives::nft::{NFTAsset, NFTAttribute, NFTImages, NFTResource, NFTType};
+
+pub type GemNFTAttribute = NFTAttribute;
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemNFTType {
@@ -62,45 +64,21 @@ pub struct GemNFTImages {
 
 impl From<NFTImages> for GemNFTImages {
     fn from(value: NFTImages) -> Self {
-        GemNFTImages {
-            preview: value.preview.into(),
-        }
+        GemNFTImages { preview: value.preview.into() }
     }
 }
 
 impl From<GemNFTImages> for NFTImages {
     fn from(value: GemNFTImages) -> Self {
-        NFTImages {
-            preview: value.preview.into(),
-        }
+        NFTImages { preview: value.preview.into() }
     }
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[uniffi::remote(Record)]
 pub struct GemNFTAttribute {
     pub name: String,
     pub value: String,
     pub percentage: Option<f64>,
-}
-
-impl From<NFTAttribute> for GemNFTAttribute {
-    fn from(value: NFTAttribute) -> Self {
-        GemNFTAttribute {
-            name: value.name,
-            value: value.value,
-            percentage: value.percentage,
-        }
-    }
-}
-
-impl From<GemNFTAttribute> for NFTAttribute {
-    fn from(value: GemNFTAttribute) -> Self {
-        NFTAttribute {
-            name: value.name,
-            value: value.value,
-            percentage: value.percentage,
-        }
-    }
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
