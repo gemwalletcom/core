@@ -1,7 +1,6 @@
 use crate::models::GemTransactionInputType;
 use primitives::{BroadcastOptions, FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
 
-pub type GemBroadcastOptions = BroadcastOptions;
 pub type GemUTXO = UTXO;
 
 #[uniffi::remote(Record)]
@@ -12,8 +11,10 @@ pub struct GemUTXO {
     pub address: String,
 }
 
+pub type GemBroadcastOptions = BroadcastOptions;
+
 #[uniffi::remote(Record)]
-pub struct GemBroadcastOptions {
+pub struct BroadcastOptions {
     pub skip_preflight: bool,
     pub from_address: Option<String>,
 }
