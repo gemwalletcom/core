@@ -159,9 +159,7 @@ pub fn map_transaction_data(
             let digest = hex::encode(&tx_output.hash);
             Ok(format!("{}_{}", data, digest))
         }
-        TransactionInputType::TransferNft(_, _)
-        | TransactionInputType::Account(_, _)
-        | _ => Err("Unsupported transaction type for Sui".into()),
+        _ => Err("Unsupported transaction type for Sui".into()),
     }
 }
 

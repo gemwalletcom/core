@@ -218,7 +218,7 @@ impl GemGateway {
         let hash = self
             .provider(chain)
             .await?
-            .transaction_broadcast(data, options.into())
+            .transaction_broadcast(data, options)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
         Ok(hash)
