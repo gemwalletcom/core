@@ -47,7 +47,9 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
         };
 
         let fee = match &input.input_type {
-            TransactionInputType::Transfer(asset) => match asset.id.token_subtype() {
+            TransactionInputType::Transfer(asset)
+            | TransactionInputType::TransferNft(asset, _)
+            | TransactionInputType::Account(asset, _) => match asset.id.token_subtype() {
                 AssetSubtype::NATIVE => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
                 AssetSubtype::TOKEN => {
                     let estimated_energy = self
@@ -83,7 +85,9 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
 impl<C: Client> TronClient<C> {
     async fn get_is_new_account_for_input_type(&self, address: &str, input_type: TransactionInputType) -> Result<bool, Box<dyn Error + Send + Sync>> {
         match input_type {
-            TransactionInputType::Transfer(asset) => match asset.id.token_subtype() {
+            TransactionInputType::Transfer(asset)
+            | TransactionInputType::TransferNft(asset, _)
+            | TransactionInputType::Account(asset, _) => match asset.id.token_subtype() {
                 AssetSubtype::NATIVE => Ok(self.is_new_account(address).await?),
                 AssetSubtype::TOKEN => Ok(false),
             },

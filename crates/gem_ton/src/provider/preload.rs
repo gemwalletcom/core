@@ -23,7 +23,9 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, recipient_token_a
     let mut options = HashMap::new();
 
     let fee = match &input.input_type {
-        TransactionInputType::Transfer(asset) => match asset.id.token_subtype() {
+        TransactionInputType::Transfer(asset)
+        | TransactionInputType::TransferNft(asset, _)
+        | TransactionInputType::Account(asset, _) => match asset.id.token_subtype() {
             AssetSubtype::NATIVE => base_fee.clone(),
             AssetSubtype::TOKEN => {
                 let jetton_fee = if recipient_token_address.is_some() {

@@ -16,7 +16,7 @@ pub struct EverstakeAccountState {
     pub withdraw_request: WithdrawRequest,
 }
 
-pub async fn fetch_everstake_account_state<C: Client + Clone>(
+pub async fn get_everstake_account_state<C: Client + Clone>(
     client: &EthereumClient<C>,
     address: &str,
 ) -> Result<EverstakeAccountState, Box<dyn Error + Sync + Send>> {

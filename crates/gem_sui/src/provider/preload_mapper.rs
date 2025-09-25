@@ -28,6 +28,8 @@ pub fn calculate_fee_rates(base_gas_price: BigInt) -> Vec<FeeRate> {
 fn get_gas_limit(input_type: &TransactionInputType) -> u64 {
     match input_type {
         TransactionInputType::Transfer(_)
+        | TransactionInputType::TransferNft(_, _)
+        | TransactionInputType::Account(_, _)
         | TransactionInputType::Deposit(_)
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)

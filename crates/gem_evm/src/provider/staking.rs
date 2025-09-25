@@ -83,18 +83,23 @@ mod chain_integration_tests {
     }
 
     #[tokio::test]
+    async fn test_smartchain_get_staking_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_smartchain_test_client();
+        let apy = client.get_staking_apy().await?.unwrap();
+
+        println!("SmartChain APY: {}", apy);
+        assert!(apy > 0.1, "Max APY should be greater than 0.1%, got: {}", apy);
+
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn test_ethereum_get_staking_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ethereum_test_client();
-        let apy = client.get_staking_apy().await?;
+        let apy = client.get_staking_apy().await?.unwrap();
 
-        assert!(apy.is_some());
-        let apy_value = apy.unwrap();
-
-        // Everstake APY should be around 3-6%
-        assert!(apy_value > 2.0 && apy_value < 10.0, "APY should be between 2% and 10%, got: {}", apy_value);
-
-        println!("Ethereum Everstake APY: {}%", apy_value);
-
+        assert!(apy > 2.0 && apy < 6.0, "APY should be between 2% and 6%, got: {}", apy);
+        println!("Ethereum APY: {}", apy);
         Ok(())
     }
 

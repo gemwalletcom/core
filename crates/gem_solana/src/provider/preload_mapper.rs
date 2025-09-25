@@ -6,7 +6,7 @@ use crate::{constants::STATIC_BASE_FEE, models::prioritization_fee::SolanaPriori
 
 pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType, recipient_token_address: Option<String>) -> TransactionFee {
     let mut options = HashMap::new();
-    if input_type.get_asset().id.token_subtype() == AssetSubtype::TOKEN && recipient_token_address.is_none() {
+    if input_type.get_recipient_asset().id.token_subtype() == AssetSubtype::TOKEN && recipient_token_address.is_none() {
         options.insert(
             FeeOption::TokenAccountCreation,
             BigInt::from(input_type.get_asset().id.chain.token_activation_fee().unwrap_or(0)),
@@ -35,6 +35,8 @@ fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
     match input_type {
         TransactionInputType::Transfer(_)
         | TransactionInputType::Deposit(_)
+        | TransactionInputType::TransferNft(_, _)
+        | TransactionInputType::Account(_, _)
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)
         | TransactionInputType::Perpetual(_, _) => BigInt::from(100_000),
@@ -47,6 +49,8 @@ fn get_multiple_of(input_type: &TransactionInputType) -> i64 {
     match input_type {
         TransactionInputType::Transfer(asset)
         | TransactionInputType::Deposit(asset)
+        | TransactionInputType::TransferNft(asset, _)
+        | TransactionInputType::Account(asset, _)
         | TransactionInputType::TokenApprove(asset, _)
         | TransactionInputType::Generic(asset, _, _)
         | TransactionInputType::Perpetual(asset, _) => match &asset.id.token_subtype() {

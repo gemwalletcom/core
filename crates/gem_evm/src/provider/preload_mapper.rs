@@ -7,7 +7,8 @@ use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::{
-    Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
+    Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
+    fee::GasPriceType,
 };
 
 use crate::contracts::IERC20;
@@ -63,6 +64,7 @@ pub fn get_transaction_data(chain: EVMChain, input: &TransactionLoadInput) -> Re
                 Ok(encode_erc20_transfer(&input.destination_address, &value)?)
             }
         }
+        TransactionInputType::TransferNft(_, _) => Err("Unsupported transfer type".into()),
         TransactionInputType::Swap(_, _, swap_data) => {
             if let Some(approval) = &swap_data.data.approval {
                 Ok(encode_erc20_approve(&approval.spender)?)
@@ -97,6 +99,7 @@ pub fn get_transaction_to(chain: EVMChain, input: &TransactionLoadInput) -> Resu
                 Ok(input.destination_address.clone())
             }
         }
+        TransactionInputType::TransferNft(_, _) => Err("Unsupported transfer type".into()),
         TransactionInputType::TokenApprove(_, approval) => Ok(approval.token.clone()),
         TransactionInputType::Generic(_, _, _) => Ok(input.destination_address.clone()),
         TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
@@ -130,6 +133,7 @@ pub fn get_transaction_value(chain: EVMChain, input: &TransactionLoadInput) -> R
                 BigInt::from_str_radix(&swap_data.data.value, 10).map_err(|e| e.to_string().into())
             }
         }
+        TransactionInputType::TransferNft(_, _) => Ok(BigInt::from(0)),
         TransactionInputType::TokenApprove(_, _) => Ok(BigInt::from(0)),
         TransactionInputType::Generic(_, _, _) => Ok(value),
         TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
@@ -158,7 +162,10 @@ pub fn calculate_gas_limit_with_increase(gas_limit: BigInt) -> BigInt {
 
 pub fn get_priority_fee_by_type(input_type: &TransactionInputType, is_max_value: bool, gas_price_type: &GasPriceType) -> BigInt {
     match input_type {
-        TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => {
+        TransactionInputType::Transfer(asset)
+        | TransactionInputType::Deposit(asset)
+        | TransactionInputType::TransferNft(asset, _)
+        | TransactionInputType::Account(asset, _) => {
             if asset.id.is_native() && is_max_value {
                 gas_price_type.gas_price()
             } else {

@@ -10,10 +10,11 @@ use super::{
 };
 use crate::{
     config::swap_config::DEFAULT_SWAP_FEE_BPS,
+    models::GemApprovalData,
     network::AlienProvider,
     swapper::{
-        FetchQuoteData, Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-        SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
+        FetchQuoteData, Swapper, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
+        SwapperRoute, SwapperSwapResult,
         approval::{evm::check_approval_erc20, tron::check_approval_tron},
         models::{ApprovalType, SwapperChainAsset},
         remote_models::SwapperProviderMode,
@@ -41,7 +42,7 @@ impl ProxyProvider {
         quote: &SwapperQuote,
         quote_data: &SwapQuoteData,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<(Option<SwapperApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
 
@@ -86,7 +87,7 @@ impl ProxyProvider {
         amount: U256,
         provider: Arc<dyn AlienProvider>,
         chain: &Chain,
-    ) -> Result<(Option<SwapperApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let approval = check_approval_erc20(wallet_address, token, spender, amount, provider, chain).await?;
         let gas_limit = if matches!(approval, ApprovalType::Approve(_)) {
             Some(DEFAULT_GAS_LIMIT.to_string())
@@ -104,7 +105,7 @@ impl ProxyProvider {
         default_fee_limit: Option<String>,
         quote: &SwapperQuote,
         provider: Arc<dyn AlienProvider>,
-    ) -> Result<(Option<SwapperApprovalData>, Option<String>), SwapperError> {
+    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
         let proxy_quote: ProxyQuote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let spender = proxy_quote.route_data["approveTo"]

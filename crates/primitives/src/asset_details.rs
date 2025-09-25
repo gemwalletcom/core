@@ -14,6 +14,8 @@ pub struct AssetFull {
     pub links: Vec<AssetLink>,
     #[typeshare(skip)]
     pub price: Option<Price>,
+    #[typeshare(skip)]
+    pub market: Option<AssetMarket>,
 }
 
 #[typeshare(swift = "Sendable")]

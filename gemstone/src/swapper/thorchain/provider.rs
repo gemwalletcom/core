@@ -15,10 +15,11 @@ use super::{
     client::ThorChainSwapClient, memo::ThorchainMemo, model::RouteData,
 };
 use crate::{
+    models::GemApprovalData,
     network::AlienProvider,
     swapper::{
-        FetchQuoteData, Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote,
-        SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperSwapResult, approval::check_approval_erc20, asset::*,
+        FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
+        SwapperQuoteRequest, SwapperRoute, SwapperSwapResult, approval::check_approval_erc20, asset::*,
     },
 };
 
@@ -143,7 +144,7 @@ impl Swapper for ThorChain {
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let value = quote.request.value.clone();
 
-        let approval: Option<SwapperApprovalData> = {
+        let approval: Option<GemApprovalData> = {
             if from_asset.use_evm_router() {
                 let from_amount: U256 = value.to_string().parse().map_err(SwapperError::from)?;
                 check_approval_erc20(

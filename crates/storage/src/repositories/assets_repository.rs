@@ -66,6 +66,7 @@ impl AssetsRepository for DatabaseClient {
 
         let asset = AssetsStore::get_asset(self, asset_id)?;
         let price = PricesStore::get_price(self, asset_id)?;
+        let market = price.as_ref().map(|x| x.as_market_primitive());
         let links = AssetsLinksStore::get_asset_links(self, asset_id)?
             .into_iter()
             .map(|x| x.as_primitive())
@@ -74,6 +75,7 @@ impl AssetsRepository for DatabaseClient {
 
         Ok(primitives::AssetFull {
             price: price.map(|x| x.as_primitive()),
+            market,
             asset: asset.as_primitive(),
             properties: asset.as_property_primitive(),
             score: asset.as_score_primitive(),

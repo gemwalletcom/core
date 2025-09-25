@@ -2,8 +2,9 @@ use alloy_primitives::U256;
 use std::sync::Arc;
 
 use crate::{
+    models::GemApprovalData,
     network::AlienProvider,
-    swapper::{SwapperApprovalData, SwapperError, models::ApprovalType},
+    swapper::{SwapperError, models::ApprovalType},
     tron::client::TronClient,
 };
 
@@ -17,7 +18,7 @@ pub async fn check_approval_tron(
     let client = TronClient::new(provider.clone());
     let allowance = client.get_token_allowance(owner_address, token_address, spender_address).await?;
     if allowance < amount {
-        return Ok(ApprovalType::Approve(SwapperApprovalData {
+        return Ok(ApprovalType::Approve(GemApprovalData {
             token: token_address.to_string(),
             spender: spender_address.to_string(),
             value: amount.to_string(),

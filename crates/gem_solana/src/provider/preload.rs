@@ -4,37 +4,43 @@ use std::error::Error;
 
 use crate::provider::preload_mapper::{calculate_fee_rates, calculate_transaction_fee};
 use gem_client::Client;
+use primitives::AssetType;
 use primitives::{
     FeeRate, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
 };
 
-use crate::{get_token_program_id_by_address, rpc::client::SolanaClient};
+use crate::rpc::client::SolanaClient;
 
 #[cfg(feature = "rpc")]
 #[async_trait]
 impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
-        let asset = input.input_type.get_asset();
-
         let (sender_address, destination_address) = match input.input_type {
-            TransactionInputType::Transfer(_) => (input.sender_address.clone(), input.destination_address.clone()),
+            TransactionInputType::Transfer(_) | TransactionInputType::TransferNft(_, _) => {
+                (input.sender_address.clone(), input.destination_address.clone())
+            }
             TransactionInputType::Swap(_, _, _) => (input.sender_address.clone(), input.sender_address.clone()),
             _ => (input.sender_address.clone(), input.destination_address.clone()),
         };
+        let recipient_asset = input.input_type.get_recipient_asset();
 
-        if let Some(token_id) = &asset.id.token_id {
+        if let Some(token_id) = &recipient_asset.id.token_id {
             let (block_hash, sender_accounts, recipient_accounts) = futures::try_join!(
                 self.get_latest_blockhash(),
                 self.get_token_accounts_by_mint(&sender_address, token_id),
                 self.get_token_accounts_by_mint(&destination_address, token_id)
             )?;
-            let sender_token_account = sender_accounts.value.first().ok_or("Sender token address is empty")?;
-            let sender_token_address = sender_token_account.pubkey.clone();
-            let token_program = get_token_program_id_by_address(&sender_token_account.account.owner).ok();
+            let sender_token_account = sender_accounts.value.first();
+            let sender_token_address = sender_token_account.map(|account| account.pubkey.clone());
+            let token_program = match &recipient_asset.asset_type {
+                AssetType::SPL => Some(SolanaTokenProgramId::Token),
+                AssetType::SPL2022 => Some(SolanaTokenProgramId::Token2022),
+                _ => None,
+            };
             let recipient_token_address = recipient_accounts.value.first().map(|account| account.pubkey.clone());
 
             Ok(TransactionLoadMetadata::Solana {
-                sender_token_address: Some(sender_token_address),
+                sender_token_address,
                 recipient_token_address,
                 token_program,
                 block_hash: block_hash.value.blockhash,
