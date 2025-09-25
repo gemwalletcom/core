@@ -1,11 +1,11 @@
-use crate::models::response::{HyperCoreBroadcastResult, TransactionBroadcastResponse};
+use crate::models::response::{BroadcastResult, TransactionBroadcastResponse};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(response: serde_json::Value, data: String) -> Result<String, Box<dyn Error + Sync + Send>> {
     let broadcast_response = serde_json::from_value::<TransactionBroadcastResponse>(response)?;
     match broadcast_response.into_result(data) {
-        HyperCoreBroadcastResult::Success(result) => Ok(result),
-        HyperCoreBroadcastResult::Error(error) => Err(error.into()),
+        BroadcastResult::Success(result) => Ok(result),
+        BroadcastResult::Error(error) => Err(error.into()),
     }
 }
 

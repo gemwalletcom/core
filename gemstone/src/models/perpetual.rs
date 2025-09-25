@@ -124,7 +124,7 @@ impl From<PerpetualData> for GemPerpetualData {
     fn from(data: PerpetualData) -> Self {
         Self {
             perpetual: data.perpetual.into(),
-            asset: data.asset.into(),
+            asset: data.asset,
             metadata: data.metadata.into(),
         }
     }
@@ -189,7 +189,7 @@ impl From<primitives::PerpetualConfirmData> for super::transaction::GemPerpetual
     fn from(value: primitives::PerpetualConfirmData) -> Self {
         super::transaction::GemPerpetualConfirmData {
             direction: value.direction,
-            asset: value.asset.into(),
+            asset: value.asset,
             asset_index: value.asset_index,
             price: value.price.to_string(),
             fiat_value: value.fiat_value,
@@ -202,7 +202,7 @@ impl From<super::transaction::GemPerpetualConfirmData> for primitives::Perpetual
     fn from(value: super::transaction::GemPerpetualConfirmData) -> Self {
         primitives::PerpetualConfirmData {
             direction: value.direction,
-            asset: value.asset.into(),
+            asset: value.asset,
             asset_index: value.asset_index,
             price: value.price.parse().unwrap_or_default(),
             fiat_value: value.fiat_value,

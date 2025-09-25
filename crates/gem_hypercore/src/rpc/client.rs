@@ -1,22 +1,23 @@
 use crate::models::{
-    balance::{HypercoreBalances, HypercoreDelegationBalance, HypercoreStakeBalance, HypercoreValidator},
-    candlestick::HypercoreCandlestick,
+    balance::{Balances, DelegationBalance, StakeBalance, Validator},
+    candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
-    order::HypercorePerpetualFill,
-    position::HypercoreAssetPositions,
-    referral::HypercoreReferral,
-    user::{HypercoreAgentSession, HypercoreUserFee, HypercoreUserRole},
+    order::PerpetualFill,
+    position::AssetPositions,
+    referral::Referral,
+    user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
 use gem_client::Client;
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::{Arc, Mutex},
+};
 
 use crate::config::HypercoreConfig;
 use primitives::{Chain, Preferences};
 use serde_json::json;
-use std::collections::HashMap;
-use std::error::Error;
-use std::sync::Mutex;
 
 #[derive(Debug)]
 pub struct InMemoryPreferences {
@@ -106,20 +107,20 @@ impl<C: Client> HyperCoreClient<C> {
         Ok(self.client.post("/exchange", &payload, None).await?)
     }
 
-    pub async fn get_validators(&self) -> Result<Vec<HypercoreValidator>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_validators(&self) -> Result<Vec<Validator>, Box<dyn Error + Send + Sync>> {
         self.info(json!({"type": "validatorSummaries"})).await
     }
 
-    pub async fn get_staking_delegations(&self, user: &str) -> Result<Vec<HypercoreDelegationBalance>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_staking_delegations(&self, user: &str) -> Result<Vec<DelegationBalance>, Box<dyn Error + Send + Sync>> {
         self.info(json!({"type": "delegations", "user": user})).await
     }
 
     pub async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
         let validators = self.get_validators().await?;
-        Ok(HypercoreValidator::max_apr(validators))
+        Ok(Validator::max_apr(validators))
     }
 
-    pub async fn get_spot_balances(&self, user: &str) -> Result<HypercoreBalances, Box<dyn Error + Send + Sync>> {
+    pub async fn get_spot_balances(&self, user: &str) -> Result<Balances, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "spotClearinghouseState",
             "user": user
@@ -127,7 +128,7 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_stake_balance(&self, user: &str) -> Result<HypercoreStakeBalance, Box<dyn Error + Send + Sync>> {
+    pub async fn get_stake_balance(&self, user: &str) -> Result<StakeBalance, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "delegatorSummary",
             "user": user
@@ -135,7 +136,7 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_user_fills_by_time(&self, user: &str, start_time: i64) -> Result<Vec<HypercorePerpetualFill>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_user_fills_by_time(&self, user: &str, start_time: i64) -> Result<Vec<PerpetualFill>, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "userFillsByTime",
             "user": user,
@@ -144,7 +145,7 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_clearinghouse_state(&self, user: &str) -> Result<HypercoreAssetPositions, Box<dyn Error + Send + Sync>> {
+    pub async fn get_clearinghouse_state(&self, user: &str) -> Result<AssetPositions, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "clearinghouseState",
             "user": user
@@ -156,13 +157,7 @@ impl<C: Client> HyperCoreClient<C> {
         self.info(json!({"type": "metaAndAssetCtxs"})).await
     }
 
-    pub async fn get_candlesticks(
-        &self,
-        coin: &str,
-        interval: &str,
-        start_time: i64,
-        end_time: i64,
-    ) -> Result<Vec<HypercoreCandlestick>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_candlesticks(&self, coin: &str, interval: &str, start_time: i64, end_time: i64) -> Result<Vec<Candlestick>, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "candleSnapshot",
             "req": {
@@ -175,7 +170,7 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_user_role(&self, user: &str) -> Result<HypercoreUserRole, Box<dyn Error + Send + Sync>> {
+    pub async fn get_user_role(&self, user: &str) -> Result<UserRole, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "userRole",
             "user": user
@@ -183,7 +178,7 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_referral(&self, user: &str) -> Result<HypercoreReferral, Box<dyn Error + Send + Sync>> {
+    pub async fn get_referral(&self, user: &str) -> Result<Referral, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "referral",
             "user": user
@@ -191,7 +186,7 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_extra_agents(&self, user: &str) -> Result<Vec<HypercoreAgentSession>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_extra_agents(&self, user: &str) -> Result<Vec<AgentSession>, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "extraAgents",
             "user": user
@@ -208,12 +203,26 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_user_fees(&self, user: &str) -> Result<HypercoreUserFee, Box<dyn Error + Send + Sync>> {
+    pub async fn get_user_fees(&self, user: &str) -> Result<UserFee, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "userFees",
             "user": user
         }))
         .await
+    }
+
+    pub async fn get_ledger_updates(&self, user: &str) -> Result<Vec<LedgerUpdate>, Box<dyn Error + Send + Sync>> {
+        self.info(json!({
+            "type": "userNonFundingLedgerUpdates",
+            "user": user
+        }))
+        .await
+    }
+
+    pub async fn get_tx_hash_by_nonce(&self, user: &str, nonce: u64) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let updates = self.get_ledger_updates(user).await?;
+        let update = updates.iter().find(|update| update.delta.nonce == Some(nonce)).ok_or("Nonce not found")?;
+        Ok(update.hash.clone())
     }
 }
 
@@ -222,5 +231,24 @@ impl<C: Client> ChainTraits for HyperCoreClient<C> {}
 impl<C: Client> chain_traits::ChainProvider for HyperCoreClient<C> {
     fn get_chain(&self) -> primitives::Chain {
         Chain::HyperCore
+    }
+}
+
+#[cfg(all(test, feature = "reqwest"))]
+mod tests {
+    use super::*;
+    use gem_client::ReqwestClient;
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_get_tx_hash_by_nonce() {
+        let url = "https://api.hyperliquid.xyz";
+        let client = HyperCoreClient::new(ReqwestClient::new(url.to_string(), reqwest::Client::new()));
+        let user = "0x1085c5f70f7f7591d97da281a64688385455c2bd";
+        let nonce = 1758781366692_u64;
+
+        let hash = client.get_tx_hash_by_nonce(user, nonce).await.unwrap();
+
+        assert_eq!(hash, "0x610840f41a814c016281042c3882980202c800d9b5846ad304d0ec46d98525ec");
     }
 }

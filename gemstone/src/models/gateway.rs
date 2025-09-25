@@ -1,10 +1,12 @@
 use crate::models::GemTransactionInputType;
 use primitives::{BroadcastOptions, FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
 
-#[derive(Debug, Clone, uniffi::Record)]
+pub type GemUTXO = UTXO;
+
+#[uniffi::remote(Record)]
 pub struct GemUTXO {
     pub transaction_id: String,
-    pub vout: u32,
+    pub vout: i32,
     pub value: String,
     pub address: String,
 }
@@ -43,28 +45,6 @@ pub struct GemTransactionPreloadInput {
     pub input_type: GemTransactionInputType,
     pub sender_address: String,
     pub destination_address: String,
-}
-
-impl From<UTXO> for GemUTXO {
-    fn from(utxo: UTXO) -> Self {
-        Self {
-            transaction_id: utxo.transaction_id,
-            vout: utxo.vout as u32,
-            value: utxo.value,
-            address: utxo.address,
-        }
-    }
-}
-
-impl From<GemUTXO> for UTXO {
-    fn from(utxo: GemUTXO) -> Self {
-        Self {
-            transaction_id: utxo.transaction_id,
-            vout: utxo.vout as i32,
-            value: utxo.value,
-            address: utxo.address,
-        }
-    }
 }
 
 impl From<GasPriceType> for GemGasPriceType {

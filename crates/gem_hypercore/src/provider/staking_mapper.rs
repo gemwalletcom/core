@@ -1,11 +1,11 @@
-use crate::models::balance::{HypercoreDelegationBalance, HypercoreValidator};
+use crate::models::balance::{DelegationBalance, Validator};
 use num_bigint::BigInt;
 use number_formatter::BigNumberFormatter;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::str::FromStr;
 
-pub fn map_staking_validators(validators: Vec<HypercoreValidator>, chain: Chain, apy: Option<f64>) -> Vec<DelegationValidator> {
-    let calculated_apy = apy.unwrap_or_else(|| HypercoreValidator::max_apr(validators.clone()));
+pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Option<f64>) -> Vec<DelegationValidator> {
+    let calculated_apy = apy.unwrap_or_else(|| Validator::max_apr(validators.clone()));
     validators
         .into_iter()
         .map(|x| DelegationValidator {
@@ -19,7 +19,7 @@ pub fn map_staking_validators(validators: Vec<HypercoreValidator>, chain: Chain,
         .collect()
 }
 
-pub fn map_staking_delegations(delegations: Vec<HypercoreDelegationBalance>, chain: Chain) -> Vec<DelegationBase> {
+pub fn map_staking_delegations(delegations: Vec<DelegationBalance>, chain: Chain) -> Vec<DelegationBase> {
     delegations
         .into_iter()
         .map(|x| DelegationBase {
@@ -41,17 +41,17 @@ pub fn map_staking_delegations(delegations: Vec<HypercoreDelegationBalance>, cha
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::balance::HypercoreValidatorStats;
+    use crate::models::balance::ValidatorStats;
     use primitives::{Chain, DelegationState};
 
     #[test]
     fn test_map_staking_validators() {
-        let validators = vec![HypercoreValidator {
+        let validators = vec![Validator {
             validator: "0x5ac99df645f3414876c816caa18b2d234024b487".to_string(),
             name: "Test Validator".to_string(),
             commission: 5.0,
             is_active: true,
-            stats: vec![("test".to_string(), HypercoreValidatorStats { predicted_apr: 0.15 })],
+            stats: vec![("test".to_string(), ValidatorStats { predicted_apr: 0.15 })],
         }];
 
         let result = map_staking_validators(validators, Chain::HyperCore, None);
@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn test_map_staking_validators_with_apy() {
-        let validators = vec![HypercoreValidator {
+        let validators = vec![Validator {
             validator: "0x5ac99df645f3414876c816caa18b2d234024b487".to_string(),
             name: "Test Validator".to_string(),
             commission: 5.0,
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_map_staking_delegations() {
-        let delegations: Vec<HypercoreDelegationBalance> = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
+        let delegations: Vec<DelegationBalance> = serde_json::from_str(include_str!("../../testdata/staking_delegations.json")).unwrap();
 
         let result = map_staking_delegations(delegations, Chain::HyperCore);
 
