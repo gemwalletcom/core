@@ -1,4 +1,5 @@
-use primitives::{Asset, BroadcastOptions, FeeRate, GasPriceType, TransactionInputType, TransactionPreloadInput, UTXO};
+use crate::models::GemTransactionInputType;
+use primitives::{BroadcastOptions, FeeRate, GasPriceType, TransactionPreloadInput, UTXO};
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemUTXO {
@@ -8,8 +9,10 @@ pub struct GemUTXO {
     pub address: String,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemBroadcastOptions {
+pub type GemBroadcastOptions = BroadcastOptions;
+
+#[uniffi::remote(Record)]
+pub struct BroadcastOptions {
     pub skip_preflight: bool,
 }
 
@@ -37,7 +40,7 @@ pub struct GemFeeRate {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionPreloadInput {
-    pub input_type: String,
+    pub input_type: GemTransactionInputType,
     pub sender_address: String,
     pub destination_address: String,
 }
@@ -99,15 +102,7 @@ impl From<FeeRate> for GemFeeRate {
 impl From<TransactionPreloadInput> for GemTransactionPreloadInput {
     fn from(input: TransactionPreloadInput) -> Self {
         Self {
-            input_type: match input.input_type {
-                TransactionInputType::Transfer(_) => "transfer".to_string(),
-                TransactionInputType::Deposit(_) => "deposit".to_string(),
-                TransactionInputType::Swap(_, _, _) => "swap".to_string(),
-                TransactionInputType::Stake(_, _) => "stake".to_string(),
-                TransactionInputType::TokenApprove(_, _) => "token_approve".to_string(),
-                TransactionInputType::Generic(_, _, _) => "generic".to_string(),
-                TransactionInputType::Perpetual(_, _) => "perpetual".to_string(),
-            },
+            input_type: input.input_type.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
         }
@@ -116,28 +111,10 @@ impl From<TransactionPreloadInput> for GemTransactionPreloadInput {
 
 impl From<GemTransactionPreloadInput> for TransactionPreloadInput {
     fn from(input: GemTransactionPreloadInput) -> Self {
-        use primitives::Chain;
-        let asset = Asset::from_chain(Chain::Ethereum);
         Self {
-            input_type: TransactionInputType::Transfer(asset),
+            input_type: input.input_type.into(),
             sender_address: input.sender_address,
             destination_address: input.destination_address,
-        }
-    }
-}
-
-impl From<BroadcastOptions> for GemBroadcastOptions {
-    fn from(options: BroadcastOptions) -> Self {
-        Self {
-            skip_preflight: options.skip_preflight,
-        }
-    }
-}
-
-impl From<GemBroadcastOptions> for BroadcastOptions {
-    fn from(options: GemBroadcastOptions) -> Self {
-        Self {
-            skip_preflight: options.skip_preflight,
         }
     }
 }

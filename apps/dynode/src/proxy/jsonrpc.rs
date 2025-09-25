@@ -182,7 +182,7 @@ impl JsonRpcHandler {
             .map(|(i, call)| {
                 if let Some(Some(cache)) = cached.get(i) {
                     let result = serde_json::from_slice(&cache.body).unwrap_or_default();
-                    JsonRpcResult::Success(JsonRpcResponse { result, id: call.id })
+                    JsonRpcResult::Success(JsonRpcResponse { result, id: Some(call.id) })
                 } else if let Some(response) = upstream.get(upstream_idx) {
                     upstream_idx += 1;
                     response.clone()
@@ -193,7 +193,7 @@ impl JsonRpcHandler {
                             message: "Internal error".to_string(),
                             data: Some(serde_json::json!({"reason": "No response received"})),
                         },
-                        id: call.id,
+                        id: Some(call.id),
                     })
                 }
             })
@@ -230,11 +230,14 @@ mod tests {
         let cached = CachedResponse::new(cached_body, 200, "application/json".into(), 60);
         let cached_vec = vec![Some(cached), None];
 
-        let upstream = vec![JsonRpcResult::Success(JsonRpcResponse { result: json!("0x456"), id: 2 })];
+        let upstream = vec![JsonRpcResult::Success(JsonRpcResponse {
+            result: json!("0x456"),
+            id: Some(2),
+        })];
 
         let out = JsonRpcHandler::build_responses(&calls, &cached_vec, &upstream, vec![1]);
 
-        assert!(matches!(&out[0], JsonRpcResult::Success(JsonRpcResponse { result, id }) if result == &json!("0x123") && *id == 1));
-        assert!(matches!(&out[1], JsonRpcResult::Success(JsonRpcResponse { result, id }) if result == &json!("0x456") && *id == 2));
+        assert!(matches!(&out[0], JsonRpcResult::Success(JsonRpcResponse { result, id, .. }) if result == &json!("0x123") && *id == Some(1)));
+        assert!(matches!(&out[1], JsonRpcResult::Success(JsonRpcResponse { result, id, .. }) if result == &json!("0x456") && *id == Some(2)));
     }
 }

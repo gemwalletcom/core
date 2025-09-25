@@ -3,10 +3,11 @@ use async_trait::async_trait;
 use std::{collections::HashSet, str::FromStr, sync::Arc, vec};
 
 use crate::{
+    models::GemApprovalData,
     network::{AlienProvider, jsonrpc_client_with_chain},
     swapper::{
-        FetchQuoteData, Permit2ApprovalData, Swapper, SwapperApprovalData, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData,
-        SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
+        FetchQuoteData, Permit2ApprovalData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
+        SwapperQuoteData, SwapperQuoteRequest,
         approval::{check_approval_erc20, check_approval_permit2},
         eth_address,
         slippage::apply_slippage_in_bp,
@@ -231,7 +232,7 @@ impl Swapper for UniswapV4 {
         let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;
-        let approval: Option<SwapperApprovalData> = if quote.request.from_asset.is_native() {
+        let approval: Option<GemApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
             // Check if need to approve permit2 contract

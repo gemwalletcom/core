@@ -8,9 +8,10 @@ use crate::{
     config::swap_config::SwapReferralFee,
     debug_println,
     ethereum::jsonrpc as eth_rpc,
+    models::GemApprovalData,
     network::AlienProvider,
     swapper::{
-        Swapper, SwapperApprovalData, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
+        Swapper, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
         across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
         approval::check_approval_erc20,
         asset::*,
@@ -461,7 +462,7 @@ impl Swapper for Across {
         let input_is_native = quote.request.from_asset.is_native();
         let value: &str = if input_is_native { &quote.from_value } else { "0" };
 
-        let approval: Option<SwapperApprovalData> = {
+        let approval: Option<GemApprovalData> = {
             if input_is_native {
                 None
             } else {

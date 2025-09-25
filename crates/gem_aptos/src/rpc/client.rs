@@ -92,7 +92,10 @@ impl<C: Client> AptosClient<C> {
         };
 
         match &input.input_type {
-            TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => {
+            TransactionInputType::Transfer(asset)
+            | TransactionInputType::Deposit(asset)
+            | TransactionInputType::TransferNft(asset, _)
+            | TransactionInputType::Account(asset, _) => {
                 let asset_type = if asset.id.token_id.is_none() {
                     AssetSubtype::NATIVE
                 } else {

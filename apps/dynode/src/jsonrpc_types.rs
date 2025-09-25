@@ -25,13 +25,15 @@ impl JsonRpcCall {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcResponse {
     pub result: Value,
-    pub id: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<u64>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcErrorResponse {
     pub error: JsonRpcError,
-    pub id: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<u64>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -49,7 +51,7 @@ pub enum JsonRpcResult {
 }
 
 impl JsonRpcResult {
-    pub fn id(&self) -> u64 {
+    pub fn id(&self) -> Option<u64> {
         match self {
             JsonRpcResult::Success(success) => success.id,
             JsonRpcResult::Error(error) => error.id,
@@ -270,7 +272,7 @@ mod tests {
     fn test_jsonrpc_result_id_extraction() {
         let success = JsonRpcResult::Success(JsonRpcResponse {
             result: json!({"test": "value"}),
-            id: 123,
+            id: Some(123),
         });
 
         let error = JsonRpcResult::Error(JsonRpcErrorResponse {
@@ -279,11 +281,11 @@ mod tests {
                 message: "Invalid params".to_string(),
                 data: None,
             },
-            id: 456,
+            id: Some(456),
         });
 
-        assert_eq!(success.id(), 123);
-        assert_eq!(error.id(), 456);
+        assert_eq!(success.id(), Some(123));
+        assert_eq!(error.id(), Some(456));
     }
 
     #[test]

@@ -1,16 +1,19 @@
 use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
+use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::{
-    FeeOption, GasPriceType, PerpetualDirection, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput,
-    TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra,
-    TransferDataOutputType, WalletConnectionSessionAppMetadata,
+    AccountDataType, FeeOption, GasPriceType, PerpetualDirection, StakeType, SwapProvider, TransactionChange, TransactionFee, TransactionInputType,
+    TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate,
+    TransferDataExtra, TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
+use std::str::FromStr;
 
 pub type GemPerpetualDirection = PerpetualDirection;
 pub type GemFeeOption = FeeOption;
 pub type GemTransferDataOutputType = TransferDataOutputType;
+pub type GemApprovalData = ApprovalData;
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualDirection {
@@ -27,6 +30,11 @@ pub enum FeeOption {
 pub enum TransferDataOutputType {
     EncodedTransaction,
     Signature,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemAccountDataType {
+    Activate,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -115,7 +123,7 @@ pub struct GemTransferDataExtra {
     pub output_type: GemTransferDataOutputType,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[uniffi::remote(Record)]
 pub struct GemApprovalData {
     pub token: String,
     pub spender: String,
@@ -196,6 +204,14 @@ pub enum GemTransactionInputType {
         asset: GemAsset,
         metadata: GemWalletConnectionSessionAppMetadata,
         extra: GemTransferDataExtra,
+    },
+    TransferNft {
+        asset: GemAsset,
+        nft_asset: GemNFTAsset,
+    },
+    Account {
+        asset: GemAsset,
+        account_type: GemAccountDataType,
     },
     Perpetual {
         asset: GemAsset,
@@ -432,6 +448,50 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
     }
 }
 
+impl From<SwapProviderData> for GemSwapProviderData {
+    fn from(value: SwapProviderData) -> Self {
+        GemSwapProviderData {
+            provider: value.provider.as_ref().to_string(),
+            name: value.name,
+            protocol_name: value.protocol_name,
+        }
+    }
+}
+
+impl From<SwapQuote> for GemSwapQuote {
+    fn from(value: SwapQuote) -> Self {
+        GemSwapQuote {
+            from_value: value.from_value,
+            to_value: value.to_value,
+            provider_data: value.provider_data.into(),
+            wallet_address: value.wallet_address,
+            slippage_bps: value.slippage_bps,
+            eta_in_seconds: value.eta_in_seconds,
+        }
+    }
+}
+
+impl From<SwapQuoteData> for GemSwapQuoteData {
+    fn from(value: SwapQuoteData) -> Self {
+        GemSwapQuoteData {
+            to: value.to,
+            value: value.value,
+            data: value.data,
+            approval: value.approval.map(|approval| approval.into()),
+            gas_limit: value.gas_limit,
+        }
+    }
+}
+
+impl From<SwapData> for GemSwapData {
+    fn from(value: SwapData) -> Self {
+        GemSwapData {
+            quote: value.quote.into(),
+            data: value.data.into(),
+        }
+    }
+}
+
 impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
     fn from(value: GemTransactionLoadMetadata) -> Self {
         match value {
@@ -618,6 +678,61 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
     }
 }
 
+impl From<TransactionInputType> for GemTransactionInputType {
+    fn from(value: TransactionInputType) -> Self {
+        match value {
+            TransactionInputType::Transfer(asset) => GemTransactionInputType::Transfer { asset: asset.into() },
+            TransactionInputType::Deposit(asset) => GemTransactionInputType::Deposit { asset: asset.into() },
+            TransactionInputType::Swap(from_asset, to_asset, swap_data) => GemTransactionInputType::Swap {
+                from_asset: from_asset.into(),
+                to_asset: to_asset.into(),
+                swap_data: swap_data.into(),
+            },
+            TransactionInputType::Stake(asset, stake_type) => GemTransactionInputType::Stake {
+                asset: asset.into(),
+                stake_type: stake_type.into(),
+            },
+            TransactionInputType::TokenApprove(asset, approval_data) => GemTransactionInputType::TokenApprove {
+                asset: asset.into(),
+                approval_data: approval_data.into(),
+            },
+            TransactionInputType::Generic(asset, metadata, extra) => GemTransactionInputType::Generic {
+                asset: asset.into(),
+                metadata: metadata.into(),
+                extra: extra.into(),
+            },
+            TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft {
+                asset: asset.into(),
+                nft_asset: nft_asset.into(),
+            },
+            TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account {
+                asset: asset.into(),
+                account_type: account_type.into(),
+            },
+            TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual {
+                asset: asset.into(),
+                perpetual_type: perpetual_type.into(),
+            },
+        }
+    }
+}
+
+impl From<AccountDataType> for GemAccountDataType {
+    fn from(value: AccountDataType) -> Self {
+        match value {
+            AccountDataType::Activate => GemAccountDataType::Activate,
+        }
+    }
+}
+
+impl From<GemAccountDataType> for AccountDataType {
+    fn from(value: GemAccountDataType) -> Self {
+        match value {
+            GemAccountDataType::Activate => AccountDataType::Activate,
+        }
+    }
+}
+
 impl From<GemStakeType> for StakeType {
     fn from(value: GemStakeType) -> Self {
         match value {
@@ -793,7 +908,6 @@ impl From<TransactionFee> for GemTransactionLoadFee {
 
 impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
-        use primitives::{swap::ApprovalData, swap::SwapData};
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
             GemTransactionInputType::Deposit { asset } => TransactionInputType::Deposit(asset.into()),
@@ -815,10 +929,12 @@ impl From<GemTransactionInputType> for TransactionInputType {
                 ApprovalData {
                     token: approval_data.token,
                     spender: approval_data.spender,
-                    value: approval_data.value.parse().unwrap_or_default(),
+                    value: approval_data.value,
                 },
             ),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
+            GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset.into(), nft_asset.into()),
+            GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset.into(), account_type.into()),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset.into(), perpetual_type.into()),
         }
     }
@@ -845,8 +961,8 @@ impl From<FreezeData> for GemFreezeData {
 impl From<GemSwapQuote> for primitives::swap::SwapQuote {
     fn from(value: GemSwapQuote) -> Self {
         primitives::swap::SwapQuote {
-            from_value: value.from_value.parse().unwrap_or_default(),
-            to_value: value.to_value.parse().unwrap_or_default(),
+            from_value: value.from_value,
+            to_value: value.to_value,
             provider_data: value.provider_data.into(),
             wallet_address: value.wallet_address,
             slippage_bps: value.slippage_bps,
@@ -858,7 +974,7 @@ impl From<GemSwapQuote> for primitives::swap::SwapQuote {
 impl From<GemSwapProviderData> for primitives::swap::SwapProviderData {
     fn from(value: GemSwapProviderData) -> Self {
         primitives::swap::SwapProviderData {
-            provider: primitives::SwapProvider::UniswapV3,
+            provider: SwapProvider::from_str(&value.provider).unwrap_or(SwapProvider::UniswapV3),
             name: value.name,
             protocol_name: value.protocol_name,
         }
@@ -869,14 +985,14 @@ impl From<GemSwapQuoteData> for primitives::swap::SwapQuoteData {
     fn from(value: GemSwapQuoteData) -> Self {
         primitives::swap::SwapQuoteData {
             to: value.to,
-            value: value.value.parse().unwrap_or_default(),
+            value: value.value,
             data: value.data,
             approval: value.approval.map(|a| primitives::swap::ApprovalData {
                 token: a.token,
                 spender: a.spender,
-                value: a.value.parse().unwrap_or_default(),
+                value: a.value,
             }),
-            gas_limit: value.gas_limit.map(|gl| gl.parse().unwrap_or_default()),
+            gas_limit: value.gas_limit,
         }
     }
 }

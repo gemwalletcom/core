@@ -39,7 +39,10 @@ impl<C: Client + Clone> OptimismGasOracle<C> {
         let extra_gas_limit = get_extra_fee_gas_limit(input)?;
 
         let adjusted_value = match &input.input_type {
-            TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => {
+            TransactionInputType::Transfer(asset)
+            | TransactionInputType::Deposit(asset)
+            | TransactionInputType::TransferNft(asset, _)
+            | TransactionInputType::Account(asset, _) => {
                 if asset.id.is_native() && input.is_max_value {
                     let parsed_value = BigInt::from_str_radix(&input.value, 10)?;
                     parsed_value - gas_limit * &input.gas_price.gas_price()
@@ -140,7 +143,10 @@ impl<C: Client + Clone> OptimismGasOracle<C> {
         encoded.extend_from_slice(&rlp_data);
 
         match &input.input_type {
-            TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => {
+            TransactionInputType::Transfer(asset)
+            | TransactionInputType::Deposit(asset)
+            | TransactionInputType::TransferNft(asset, _)
+            | TransactionInputType::Account(asset, _) => {
                 if asset.id.is_native() && encoded.len() > 3 {
                     encoded.remove(2);
                 }

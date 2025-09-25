@@ -7,6 +7,7 @@ pub mod perpetual;
 pub mod stake;
 pub mod token;
 pub mod transaction;
+pub mod nft;
 
 pub use address::*;
 pub use asset::*;
@@ -17,3 +18,4 @@ pub use perpetual::*;
 pub use stake::*;
 pub use token::*;
 pub use transaction::*;
+pub use nft::*;

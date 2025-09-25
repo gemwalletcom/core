@@ -1,5 +1,6 @@
 use super::permit2_data::Permit2Data;
 use crate::config::swap_config::{DEFAULT_SLIPPAGE_BPS, SwapReferralFees};
+use crate::models::GemApprovalData;
 use primitives::{AssetId, Chain};
 use std::fmt::Debug;
 use std::str::FromStr;
@@ -111,13 +112,13 @@ pub struct SwapperQuote {
 
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum ApprovalType {
-    Approve(SwapperApprovalData),
+    Approve(GemApprovalData),
     Permit2(Permit2ApprovalData),
     None,
 }
 
 impl ApprovalType {
-    pub fn approval_data(&self) -> Option<SwapperApprovalData> {
+    pub fn approval_data(&self) -> Option<GemApprovalData> {
         match self {
             Self::Approve(data) => Some(data.clone()),
             _ => None,
