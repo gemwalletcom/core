@@ -21,7 +21,6 @@ use crate::{
 };
 
 const HYPERCORE_HYPE_TOKEN: &str = "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec";
-const HYPERCORE_NATIVE_TRANSFER_GAS_LIMIT: &str = "21000";
 
 #[derive(Debug)]
 pub struct HyperCoreBridge {
@@ -79,7 +78,7 @@ impl Swapper for HyperCoreBridge {
                 let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_millis() as u64;
 
                 let spot_send = SpotSend::new(amount, HYPE_SYSTEM_ADDRESS.to_string(), timestamp, HYPERCORE_HYPE_TOKEN.to_string());
-                let typed_data = transfer_to_hyper_evm_typed_data(spot_send.clone());
+                let typed_data = transfer_to_hyper_evm_typed_data(spot_send);
 
                 Ok(SwapperQuoteData {
                     to: HYPE_SYSTEM_ADDRESS.to_string(),
