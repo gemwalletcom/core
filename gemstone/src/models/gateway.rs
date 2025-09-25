@@ -16,7 +16,6 @@ pub type GemBroadcastOptions = BroadcastOptions;
 #[uniffi::remote(Record)]
 pub struct BroadcastOptions {
     pub skip_preflight: bool,
-    pub from_address: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]

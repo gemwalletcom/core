@@ -171,7 +171,7 @@ impl GemGateway {
             .get_balance_coin(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(balance.into())
+        Ok(balance)
     }
 
     pub async fn get_balance_tokens(&self, chain: Chain, address: String, token_ids: Vec<String>) -> Result<Vec<GemAssetBalance>, GatewayError> {
@@ -181,7 +181,7 @@ impl GemGateway {
             .get_balance_tokens(address, token_ids)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(balance.into_iter().map(|b| b.into()).collect())
+        Ok(balance)
     }
 
     pub async fn get_balance_staking(&self, chain: Chain, address: String) -> Result<Option<GemAssetBalance>, GatewayError> {
@@ -191,7 +191,7 @@ impl GemGateway {
             .get_balance_staking(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(balance.map(|b| b.into()))
+        Ok(balance)
     }
 
     pub async fn get_staking_validators(&self, chain: Chain, apy: Option<f64>) -> Result<Vec<GemDelegationValidator>, GatewayError> {
@@ -201,7 +201,7 @@ impl GemGateway {
             .get_staking_validators(apy)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(validators.into_iter().map(|v| v.into()).collect())
+        Ok(validators)
     }
 
     pub async fn get_staking_delegations(&self, chain: Chain, address: String) -> Result<Vec<GemDelegationBase>, GatewayError> {
@@ -211,7 +211,7 @@ impl GemGateway {
             .get_staking_delegations(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(delegations.into_iter().map(|d| d.into()).collect())
+        Ok(delegations)
     }
 
     pub async fn transaction_broadcast(&self, chain: Chain, data: String, options: GemBroadcastOptions) -> Result<String, GatewayError> {
@@ -373,13 +373,11 @@ impl GemGateway {
     }
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<GemAsset, GatewayError> {
-        Ok(self
-            .provider(chain)
+        self.provider(chain)
             .await?
             .get_token_data(token_id)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?
-            .into())
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))
     }
 
     pub async fn get_is_token_address(&self, chain: Chain, token_id: String) -> Result<bool, GatewayError> {

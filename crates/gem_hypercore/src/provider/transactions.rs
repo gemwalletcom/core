@@ -11,17 +11,9 @@ use crate::{models::action::ExchangeRequest, provider::transactions_mapper::map_
 
 #[async_trait]
 impl<C: Client> ChainTransactions for HyperCoreClient<C> {
-    async fn transaction_broadcast(&self, data: String, options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let request: ExchangeRequest = serde_json::from_str(&data)?;
+    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
         let response = self.exchange(serde_json::from_str(&data)?).await?;
-        // spotSend is transfer on HyperCore
-        if request.action.action_type == "spotSend" {
-            let user = options.from_address.ok_or("Missing fromAddress")?;
-            let hash = self.get_tx_hash_by_nonce(&user, request.nonce).await?;
-            Ok(hash)
-        } else {
-            map_transaction_broadcast(response, data)
-        }
+        map_transaction_broadcast(response, data)
     }
 
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
@@ -31,10 +23,13 @@ impl<C: Client> ChainTransactions for HyperCoreClient<C> {
 
 impl<C: Client> HyperCoreClient<C> {
     pub async fn transaction_state(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        let oid = match request.id.parse::<u64>() {
-            Ok(id) => id,
-            Err(_) => return Ok(TransactionUpdate::new_state(TransactionState::Confirmed)), // return confirmed if not an order id
-        };
+        match request.id.parse::<u64>() {
+            Ok(id) => self.order_state(&request, id).await,
+            Err(_) => self.action_state(&request).await,
+        }
+    }
+
+    async fn order_state(&self, request: &TransactionStateRequest, oid: u64) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let start_time = (request.created_at - 5) * 1000;
         let fills = self.get_user_fills_by_time(&request.sender_address, start_time).await?;
         let matching_fill = fills.iter().find(|fill| fill.oid == oid);
@@ -47,7 +42,7 @@ impl<C: Client> HyperCoreClient<C> {
                 let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
                 update.changes = vec![
                     TransactionChange::HashChange {
-                        old: request.id,
+                        old: request.id.clone(),
                         new: fill.hash.clone(),
                     },
                     TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata { pnl, price })),
@@ -56,5 +51,19 @@ impl<C: Client> HyperCoreClient<C> {
             }
             None => Ok(TransactionUpdate::new_state(TransactionState::Pending)),
         }
+    }
+
+    async fn action_state(&self, request: &TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+        let original: ExchangeRequest = serde_json::from_str(&request.id)?;
+        let hash = self.get_tx_hash_by_nonce(&request.sender_address, original.nonce).await;
+
+        let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
+        if let Ok(hash) = hash {
+            update.changes = vec![TransactionChange::HashChange {
+                old: request.id.clone(),
+                new: hash,
+            }];
+        }
+        Ok(update)
     }
 }
