@@ -28,6 +28,8 @@ pub fn calculate_fee_rates(base_gas_price: BigInt) -> Vec<FeeRate> {
 fn get_gas_limit(input_type: &TransactionInputType) -> u64 {
     match input_type {
         TransactionInputType::Transfer(_)
+        | TransactionInputType::TransferNft(_, _)
+        | TransactionInputType::Account(_, _)
         | TransactionInputType::Deposit(_)
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)
@@ -157,7 +159,9 @@ pub fn map_transaction_data(
             let digest = hex::encode(&tx_output.hash);
             Ok(format!("{}_{}", data, digest))
         }
-        _ => Err("Unsupported transaction type for Sui".into()),
+        TransactionInputType::TransferNft(_, _)
+        | TransactionInputType::Account(_, _)
+        | _ => Err("Unsupported transaction type for Sui".into()),
     }
 }
 

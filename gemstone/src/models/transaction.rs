@@ -3,9 +3,9 @@ use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::{
-    FeeOption, GasPriceType, PerpetualDirection, StakeType, SwapProvider, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput,
-    TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra,
-    TransferDataOutputType, WalletConnectionSessionAppMetadata,
+    AccountDataType, FeeOption, GasPriceType, PerpetualDirection, StakeType, SwapProvider, TransactionChange, TransactionFee, TransactionInputType,
+    TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate,
+    TransferDataExtra, TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -29,6 +29,11 @@ pub enum FeeOption {
 pub enum TransferDataOutputType {
     EncodedTransaction,
     Signature,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemAccountDataType {
+    Activate,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -198,6 +203,14 @@ pub enum GemTransactionInputType {
         asset: GemAsset,
         metadata: GemWalletConnectionSessionAppMetadata,
         extra: GemTransferDataExtra,
+    },
+    TransferNft {
+        asset: GemAsset,
+        nft_asset: GemNFTAsset,
+    },
+    Account {
+        asset: GemAsset,
+        account_type: GemAccountDataType,
     },
     Perpetual {
         asset: GemAsset,
@@ -697,10 +710,34 @@ impl From<TransactionInputType> for GemTransactionInputType {
                 metadata: metadata.into(),
                 extra: extra.into(),
             },
+            TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft {
+                asset: asset.into(),
+                nft_asset: nft_asset.into(),
+            },
+            TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account {
+                asset: asset.into(),
+                account_type: account_type.into(),
+            },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual {
                 asset: asset.into(),
                 perpetual_type: perpetual_type.into(),
             },
+        }
+    }
+}
+
+impl From<AccountDataType> for GemAccountDataType {
+    fn from(value: AccountDataType) -> Self {
+        match value {
+            AccountDataType::Activate => GemAccountDataType::Activate,
+        }
+    }
+}
+
+impl From<GemAccountDataType> for AccountDataType {
+    fn from(value: GemAccountDataType) -> Self {
+        match value {
+            GemAccountDataType::Activate => AccountDataType::Activate,
         }
     }
 }
@@ -905,6 +942,12 @@ impl From<GemTransactionInputType> for TransactionInputType {
                 },
             ),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
+            GemTransactionInputType::TransferNft { asset, nft_asset } => {
+                TransactionInputType::TransferNft(asset.into(), nft_asset.into())
+            }
+            GemTransactionInputType::Account { asset, account_type } => {
+                TransactionInputType::Account(asset.into(), account_type.into())
+            }
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset.into(), perpetual_type.into()),
         }
     }

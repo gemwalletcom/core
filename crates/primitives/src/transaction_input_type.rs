@@ -2,7 +2,10 @@ use crate::stake_type::StakeType;
 use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
 use crate::transaction_load_metadata::TransactionLoadMetadata;
-use crate::{Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransferDataExtra, WalletConnectionSessionAppMetadata};
+use crate::{
+    nft::NFTAsset, perpetual::AccountDataType, Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransferDataExtra,
+    WalletConnectionSessionAppMetadata,
+};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -16,6 +19,8 @@ pub enum TransactionInputType {
     Stake(Asset, StakeType),
     TokenApprove(Asset, ApprovalData),
     Generic(Asset, WalletConnectionSessionAppMetadata, TransferDataExtra),
+    TransferNft(Asset, NFTAsset),
+    Account(Asset, AccountDataType),
     Perpetual(Asset, PerpetualType),
 }
 
@@ -28,6 +33,8 @@ impl TransactionInputType {
             TransactionInputType::Stake(asset, _) => asset,
             TransactionInputType::TokenApprove(asset, _) => asset,
             TransactionInputType::Generic(asset, _, _) => asset,
+            TransactionInputType::TransferNft(asset, _) => asset,
+            TransactionInputType::Account(asset, _) => asset,
             TransactionInputType::Perpetual(asset, _) => asset,
         }
     }
@@ -40,6 +47,8 @@ impl TransactionInputType {
             TransactionInputType::Stake(asset, _) => asset,
             TransactionInputType::TokenApprove(asset, _) => asset,
             TransactionInputType::Generic(asset, _, _) => asset,
+            TransactionInputType::TransferNft(asset, _) => asset,
+            TransactionInputType::Account(asset, _) => asset,
             TransactionInputType::Perpetual(asset, _) => asset,
         }
     }

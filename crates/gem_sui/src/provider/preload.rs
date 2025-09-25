@@ -88,6 +88,7 @@ impl<C: Client + Clone> SuiClient<C> {
                 _ => Err("Unsupported stake type for Sui".into()),
             },
             TransactionInputType::Swap(_, _, _) => Ok((Vec::new(), Vec::new(), Vec::new())),
+            TransactionInputType::TransferNft(_, _) | TransactionInputType::Account(_, _) => Err("Unsupported transaction type for Sui".into()),
             _ => Err("Unsupported transaction type for Sui".into()),
         }
     }
