@@ -116,7 +116,7 @@ mod tests {
             id: "validator".to_string(),
             name: "validator".to_string(),
             is_active: true,
-            commision: 0.0,
+            commission: 0.0,
             apr: 0.0,
         })
     }

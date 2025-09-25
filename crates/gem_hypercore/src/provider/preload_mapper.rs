@@ -1,5 +1,5 @@
-use crate::models::referral::HypercoreReferral;
-use crate::models::user::{HypercoreAgentSession, HypercoreUserFee};
+use crate::models::referral::Referral;
+use crate::models::user::{AgentSession, UserFee};
 use crate::provider::preload_cache::HyperCoreCache;
 use num_bigint::BigInt;
 use std::error::Error;
@@ -10,10 +10,10 @@ pub async fn get_approvals_and_credentials(
     cache: &HyperCoreCache,
     sender_address: &str,
     secure_preferences: Arc<dyn primitives::Preferences>,
-    get_agents: impl Future<Output = Result<Vec<HypercoreAgentSession>, Box<dyn Error + Send + Sync>>>,
-    get_referral: impl Future<Output = Result<HypercoreReferral, Box<dyn Error + Send + Sync>>>,
+    get_agents: impl Future<Output = Result<Vec<AgentSession>, Box<dyn Error + Send + Sync>>>,
+    get_referral: impl Future<Output = Result<Referral, Box<dyn Error + Send + Sync>>>,
     get_builder_fee: impl Future<Output = Result<u32, Box<dyn Error + Send + Sync>>>,
-    get_user_fees: impl Future<Output = Result<HypercoreUserFee, Box<dyn Error + Send + Sync>>>,
+    get_user_fees: impl Future<Output = Result<UserFee, Box<dyn Error + Send + Sync>>>,
 ) -> Result<(bool, bool, bool, i64, String, String), Box<dyn Error + Send + Sync>> {
     let ((agent_required, agent_address, agent_private_key), referral_required, builder_required, fee_rate) = futures::try_join!(
         cache.manage_agent(sender_address, secure_preferences.clone(), get_agents),

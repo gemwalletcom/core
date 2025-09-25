@@ -364,12 +364,8 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 sequence,
                 chain_id,
             },
-            TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin {
-                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
-            },
-            TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano {
-                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
-            },
+            TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin { utxos },
+            TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano { utxos },
             TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => GemTransactionLoadMetadata::Evm {
                 nonce,
                 chain_id,
@@ -525,12 +521,8 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 sequence,
                 chain_id,
             },
-            GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin {
-                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
-            },
-            GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano {
-                utxos: utxos.into_iter().map(|utxo| utxo.into()).collect(),
-            },
+            GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin { utxos },
+            GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano { utxos },
             GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => TransactionLoadMetadata::Evm {
                 nonce,
                 chain_id,
@@ -681,36 +673,33 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
 impl From<TransactionInputType> for GemTransactionInputType {
     fn from(value: TransactionInputType) -> Self {
         match value {
-            TransactionInputType::Transfer(asset) => GemTransactionInputType::Transfer { asset: asset.into() },
-            TransactionInputType::Deposit(asset) => GemTransactionInputType::Deposit { asset: asset.into() },
+            TransactionInputType::Transfer(asset) => GemTransactionInputType::Transfer { asset },
+            TransactionInputType::Deposit(asset) => GemTransactionInputType::Deposit { asset },
             TransactionInputType::Swap(from_asset, to_asset, swap_data) => GemTransactionInputType::Swap {
-                from_asset: from_asset.into(),
-                to_asset: to_asset.into(),
+                from_asset,
+                to_asset,
                 swap_data: swap_data.into(),
             },
             TransactionInputType::Stake(asset, stake_type) => GemTransactionInputType::Stake {
-                asset: asset.into(),
+                asset,
                 stake_type: stake_type.into(),
             },
-            TransactionInputType::TokenApprove(asset, approval_data) => GemTransactionInputType::TokenApprove {
-                asset: asset.into(),
-                approval_data,
-            },
+            TransactionInputType::TokenApprove(asset, approval_data) => GemTransactionInputType::TokenApprove { asset, approval_data },
             TransactionInputType::Generic(asset, metadata, extra) => GemTransactionInputType::Generic {
-                asset: asset.into(),
+                asset,
                 metadata: metadata.into(),
                 extra: extra.into(),
             },
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft {
-                asset: asset.into(),
+                asset,
                 nft_asset,
             },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account {
-                asset: asset.into(),
+                asset,
                 account_type: account_type.into(),
             },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual {
-                asset: asset.into(),
+                asset,
                 perpetual_type: perpetual_type.into(),
             },
         }
@@ -736,14 +725,14 @@ impl From<GemAccountDataType> for AccountDataType {
 impl From<GemStakeType> for StakeType {
     fn from(value: GemStakeType) -> Self {
         match value {
-            GemStakeType::Delegate { validator } => StakeType::Stake(validator.into()),
-            GemStakeType::Undelegate { delegation } => StakeType::Unstake(delegation.into()),
+            GemStakeType::Delegate { validator } => StakeType::Stake(validator),
+            GemStakeType::Undelegate { delegation } => StakeType::Unstake(delegation),
             GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(primitives::RedelegateData {
-                delegation: delegation.into(),
-                to_validator: to_validator.into(),
+                delegation,
+                to_validator,
             }),
-            GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().map(|v| v.into()).collect()),
-            GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation.into()),
+            GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().collect()),
+            GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation),
             GemStakeType::Freeze { freeze_data } => StakeType::Freeze(freeze_data.into()),
         }
     }
@@ -752,16 +741,14 @@ impl From<GemStakeType> for StakeType {
 impl From<StakeType> for GemStakeType {
     fn from(value: StakeType) -> Self {
         match value {
-            StakeType::Stake(validator) => GemStakeType::Delegate { validator: validator.into() },
-            StakeType::Unstake(delegation) => GemStakeType::Undelegate { delegation: delegation.into() },
+            StakeType::Stake(validator) => GemStakeType::Delegate { validator },
+            StakeType::Unstake(delegation) => GemStakeType::Undelegate { delegation },
             StakeType::Redelegate(data) => GemStakeType::Redelegate {
-                delegation: data.delegation.into(),
-                to_validator: data.to_validator.into(),
+                delegation: data.delegation,
+                to_validator: data.to_validator,
             },
-            StakeType::Rewards(validators) => GemStakeType::WithdrawRewards {
-                validators: validators.into_iter().map(|v| v.into()).collect(),
-            },
-            StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation: delegation.into() },
+            StakeType::Rewards(validators) => GemStakeType::WithdrawRewards { validators },
+            StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation },
             StakeType::Freeze(freeze_data) => GemStakeType::Freeze {
                 freeze_data: freeze_data.into(),
             },
@@ -909,33 +896,33 @@ impl From<TransactionFee> for GemTransactionLoadFee {
 impl From<GemTransactionInputType> for TransactionInputType {
     fn from(value: GemTransactionInputType) -> Self {
         match value {
-            GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset.into()),
-            GemTransactionInputType::Deposit { asset } => TransactionInputType::Deposit(asset.into()),
+            GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset),
+            GemTransactionInputType::Deposit { asset } => TransactionInputType::Deposit(asset),
             GemTransactionInputType::Swap {
                 from_asset,
                 to_asset,
                 swap_data,
             } => TransactionInputType::Swap(
-                from_asset.into(),
-                to_asset.into(),
+                from_asset,
+                to_asset,
                 SwapData {
                     quote: swap_data.quote.into(),
                     data: swap_data.data.into(),
                 },
             ),
-            GemTransactionInputType::Stake { asset, stake_type } => TransactionInputType::Stake(asset.into(), stake_type.into()),
+            GemTransactionInputType::Stake { asset, stake_type } => TransactionInputType::Stake(asset, stake_type.into()),
             GemTransactionInputType::TokenApprove { asset, approval_data } => TransactionInputType::TokenApprove(
-                asset.into(),
+                asset,
                 ApprovalData {
                     token: approval_data.token,
                     spender: approval_data.spender,
                     value: approval_data.value,
                 },
             ),
-            GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset.into(), metadata.into(), extra.into()),
-            GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset.into(), nft_asset),
-            GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset.into(), account_type.into()),
-            GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset.into(), perpetual_type.into()),
+            GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset, metadata.into(), extra.into()),
+            GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
+            GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type.into()),
+            GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type.into()),
         }
     }
 }

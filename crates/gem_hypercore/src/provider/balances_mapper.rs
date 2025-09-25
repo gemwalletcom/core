@@ -1,4 +1,4 @@
-use crate::models::balance::HypercoreStakeBalance;
+use crate::models::balance::StakeBalance;
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, Balance, Chain};
@@ -8,7 +8,7 @@ pub fn map_balance_coin(balance: String, chain: Chain) -> AssetBalance {
     AssetBalance::new(chain.as_asset_id(), balance.parse::<BigUint>().unwrap_or_default())
 }
 
-pub fn map_balance_staking(balance: &HypercoreStakeBalance, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+pub fn map_balance_staking(balance: &StakeBalance, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let available_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.delegated.to_string(), 18).unwrap_or_default();
     let pending_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal.to_string(), 18).unwrap_or_default();
 
@@ -21,7 +21,7 @@ pub fn map_balance_staking(balance: &HypercoreStakeBalance, chain: Chain) -> Res
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::balance::HypercoreStakeBalance;
+    use crate::models::balance::StakeBalance;
     use primitives::Chain;
 
     #[test]
@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_map_balance_staking() {
-        let stake_balance = HypercoreStakeBalance {
+        let stake_balance = StakeBalance {
             delegated: 1000000000000000000.0,
             undelegated: 0.0,
             total_pending_withdrawal: 100000000000000000.0,

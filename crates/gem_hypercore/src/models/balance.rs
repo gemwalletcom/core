@@ -4,7 +4,7 @@ use serde_serializers::deserialize_f64_from_str;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreBalance {
+pub struct Balance {
     pub coin: String,
     pub token: u32,
     pub total: String,
@@ -12,19 +12,19 @@ pub struct HypercoreBalance {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreBalances {
-    pub balances: Vec<HypercoreBalance>,
+pub struct Balances {
+    pub balances: Vec<Balance>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreTokens {
-    pub tokens: Vec<HypercoreToken>,
+pub struct Tokens {
+    pub tokens: Vec<Token>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreToken {
+pub struct Token {
     pub name: String,
     pub wei_decimals: i32,
     pub index: i32,
@@ -32,7 +32,7 @@ pub struct HypercoreToken {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreStakeBalance {
+pub struct StakeBalance {
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub delegated: f64,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
@@ -43,14 +43,14 @@ pub struct HypercoreStakeBalance {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreDelegationBalance {
+pub struct DelegationBalance {
     pub validator: String,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub amount: f64,
     pub locked_until_timestamp: u64,
 }
 
-impl HypercoreDelegationBalance {
+impl DelegationBalance {
     pub fn validator_address(&self) -> String {
         ethereum_address_checksum(&self.validator).unwrap_or(self.validator.clone())
     }
@@ -58,23 +58,23 @@ impl HypercoreDelegationBalance {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreValidator {
+pub struct Validator {
     pub validator: String,
     pub name: String,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub commission: f64,
     pub is_active: bool,
-    pub stats: Vec<(String, HypercoreValidatorStats)>,
+    pub stats: Vec<(String, ValidatorStats)>,
 }
 
-impl HypercoreValidator {
+impl Validator {
     pub fn validator_address(&self) -> String {
         ethereum_address_checksum(&self.validator).unwrap_or(self.validator.clone())
     }
 }
 
-impl HypercoreValidator {
-    pub fn max_apr(validators: Vec<HypercoreValidator>) -> f64 {
+impl Validator {
+    pub fn max_apr(validators: Vec<Validator>) -> f64 {
         validators
             .into_iter()
             .filter(|x| x.is_active)
@@ -86,7 +86,7 @@ impl HypercoreValidator {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HypercoreValidatorStats {
+pub struct ValidatorStats {
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub predicted_apr: f64,
 }

@@ -16,7 +16,7 @@ pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, net
                 id: validator.vote_pubkey,
                 name: String::new(),
                 is_active,
-                commision: validator.commission as f64,
+                commission: validator.commission as f64,
                 apr: validator_apr,
             }
         })
@@ -98,7 +98,7 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].id, "validator1");
-        assert_eq!(result[0].commision, 5.0);
+        assert_eq!(result[0].commission, 5.0);
         assert_eq!(result[0].apr, 7.6);
     }
 

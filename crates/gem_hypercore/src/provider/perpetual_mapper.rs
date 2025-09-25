@@ -1,7 +1,7 @@
 use crate::models::{
-    candlestick::HypercoreCandlestick,
+    candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
-    position::{HypercoreAssetPositions, HypercoreLeverageType, HypercorePosition},
+    position::{AssetPositions, LeverageType, Position},
 };
 use primitives::{
     chart::ChartCandleStick,
@@ -9,7 +9,7 @@ use primitives::{
     {AssetId, Chain, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualPosition, PerpetualProvider},
 };
 
-pub fn map_positions(positions: HypercoreAssetPositions, address: String) -> PerpetualPositionsSummary {
+pub fn map_positions(positions: AssetPositions, address: String) -> PerpetualPositionsSummary {
     let balance = map_perpetual_balance(&positions);
     let positions: Vec<PerpetualPosition> = positions
         .asset_positions
@@ -19,7 +19,7 @@ pub fn map_positions(positions: HypercoreAssetPositions, address: String) -> Per
     PerpetualPositionsSummary { positions, balance }
 }
 
-pub fn map_perpetual_balance(positions: &HypercoreAssetPositions) -> PerpetualBalance {
+pub fn map_perpetual_balance(positions: &AssetPositions) -> PerpetualBalance {
     let equity = positions.margin_summary.account_value.parse().unwrap_or(0.0);
     let margin_used = positions.cross_margin_summary.total_margin_used.parse().unwrap_or(0.0);
     let reserved = f64::min(f64::max(margin_used, 0.0), f64::max(equity, 0.0));
@@ -33,7 +33,7 @@ pub fn map_perpetual_balance(positions: &HypercoreAssetPositions) -> PerpetualBa
     }
 }
 
-pub fn map_position(position: HypercorePosition, address: String) -> PerpetualPosition {
+pub fn map_position(position: Position, address: String) -> PerpetualPosition {
     let size: f64 = position.szi.parse().unwrap_or(0.0);
     let direction = if size >= 0.0 { PerpetualDirection::Long } else { PerpetualDirection::Short };
 
@@ -61,8 +61,8 @@ pub fn map_position(position: HypercorePosition, address: String) -> PerpetualPo
         entry_price: Some(position.entry_px.parse().unwrap_or(0.0)),
         liquidation_price: position.liquidation_px.and_then(|p| p.parse().ok()),
         margin_type: match position.leverage.leverage_type {
-            HypercoreLeverageType::Cross => PerpetualMarginType::Cross,
-            HypercoreLeverageType::Isolated => PerpetualMarginType::Isolated,
+            LeverageType::Cross => PerpetualMarginType::Cross,
+            LeverageType::Isolated => PerpetualMarginType::Isolated,
         },
         direction,
         margin_amount: position.margin_used.parse().unwrap_or(0.0),
@@ -77,7 +77,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
     metadata.into()
 }
 
-pub fn map_candlesticks(candlesticks: Vec<HypercoreCandlestick>) -> Vec<ChartCandleStick> {
+pub fn map_candlesticks(candlesticks: Vec<Candlestick>) -> Vec<ChartCandleStick> {
     candlesticks.into_iter().map(|c| c.into()).collect()
 }
 
@@ -85,24 +85,21 @@ pub fn map_candlesticks(candlesticks: Vec<HypercoreCandlestick>) -> Vec<ChartCan
 mod tests {
     use super::*;
     use crate::models::{
-        metadata::{HypercoreAssetMetadata, HypercoreUniverseAsset, HypercoreUniverseResponse},
-        position::{
-            HypercoreAssetPosition, HypercoreAssetPositions, HypercoreCumulativeFunding, HypercoreLeverage, HypercoreLeverageType, HypercoreMarginSummary,
-            HypercorePosition, HypercorePositionType,
-        },
+        metadata::{AssetMetadata, HypercoreUniverseResponse, UniverseAsset},
+        position::{AssetPosition, AssetPositions, CumulativeFunding, Leverage, LeverageType, MarginSummary, Position, PositionType},
     };
     use primitives::{PerpetualDirection, PerpetualMarginType, perpetual_provider::PerpetualProvider};
 
     #[test]
     fn test_map_positions_basic() {
-        let positions = HypercoreAssetPositions {
-            asset_positions: vec![HypercoreAssetPosition {
-                position_type: HypercorePositionType::OneWay,
-                position: HypercorePosition {
+        let positions = AssetPositions {
+            asset_positions: vec![AssetPosition {
+                position_type: PositionType::OneWay,
+                position: Position {
                     coin: "BTC".to_string(),
                     szi: "1.5".to_string(),
-                    leverage: HypercoreLeverage {
-                        leverage_type: HypercoreLeverageType::Cross,
+                    leverage: Leverage {
+                        leverage_type: LeverageType::Cross,
                         value: 10,
                     },
                     entry_px: "50000".to_string(),
@@ -112,19 +109,19 @@ mod tests {
                     liquidation_px: Some("40000".to_string()),
                     margin_used: "7500".to_string(),
                     max_leverage: 20,
-                    cum_funding: HypercoreCumulativeFunding {
+                    cum_funding: CumulativeFunding {
                         all_time: "100".to_string(),
                         since_open: "50".to_string(),
                     },
                 },
             }],
-            margin_summary: HypercoreMarginSummary {
+            margin_summary: MarginSummary {
                 account_value: "100000".to_string(),
                 total_ntl_pos: "10000".to_string(),
                 total_raw_usd: "10000".to_string(),
                 total_margin_used: "5000".to_string(),
             },
-            cross_margin_summary: HypercoreMarginSummary {
+            cross_margin_summary: MarginSummary {
                 account_value: "100000".to_string(),
                 total_ntl_pos: "10000".to_string(),
                 total_raw_usd: "10000".to_string(),
@@ -153,7 +150,7 @@ mod tests {
     #[test]
     fn test_map_perpetuals_data() {
         let universe_response = HypercoreUniverseResponse {
-            universe: vec![HypercoreUniverseAsset {
+            universe: vec![UniverseAsset {
                 name: "ETH".to_string(),
                 sz_decimals: 4,
                 max_leverage: 50,
@@ -161,7 +158,7 @@ mod tests {
             }],
         };
 
-        let asset_metadata = vec![HypercoreAssetMetadata {
+        let asset_metadata = vec![AssetMetadata {
             funding: "0.0005".to_string(),
             open_interest: "2500.5".to_string(),
             prev_day_px: "2000".to_string(),
@@ -196,10 +193,10 @@ mod tests {
 
     #[test]
     fn test_map_candlesticks() {
-        use crate::models::candlestick::HypercoreCandlestick;
+        use crate::models::candlestick::Candlestick;
 
         let candlesticks = vec![
-            HypercoreCandlestick {
+            Candlestick {
                 t: 1640995200000u64, // 2022-01-01 00:00:00 UTC
                 o: "50000.0".to_string(),
                 h: "51000.0".to_string(),
@@ -207,7 +204,7 @@ mod tests {
                 c: "50500.0".to_string(),
                 v: "100.5".to_string(),
             },
-            HypercoreCandlestick {
+            Candlestick {
                 t: 1640998800000u64, // 2022-01-01 01:00:00 UTC
                 o: "50500.0".to_string(),
                 h: "52000.0".to_string(),
@@ -238,15 +235,15 @@ mod tests {
 
     #[test]
     fn test_map_hypercore_positions_to_perpetual_positions_summary() {
-        let positions = HypercoreAssetPositions {
+        let positions = AssetPositions {
             asset_positions: vec![
-                HypercoreAssetPosition {
-                    position_type: HypercorePositionType::OneWay,
-                    position: HypercorePosition {
+                AssetPosition {
+                    position_type: PositionType::OneWay,
+                    position: Position {
                         coin: "SOL".to_string(),
                         szi: "-10.0".to_string(),
-                        leverage: HypercoreLeverage {
-                            leverage_type: HypercoreLeverageType::Cross,
+                        leverage: Leverage {
+                            leverage_type: LeverageType::Cross,
                             value: 20,
                         },
                         entry_px: "195.39".to_string(),
@@ -256,19 +253,19 @@ mod tests {
                         liquidation_px: Some("558.9517436098".to_string()),
                         margin_used: "101.46".to_string(),
                         max_leverage: 20,
-                        cum_funding: HypercoreCumulativeFunding {
+                        cum_funding: CumulativeFunding {
                             all_time: "-1.3358".to_string(),
                             since_open: "-1.3".to_string(),
                         },
                     },
                 },
-                HypercoreAssetPosition {
-                    position_type: HypercorePositionType::OneWay,
-                    position: HypercorePosition {
+                AssetPosition {
+                    position_type: PositionType::OneWay,
+                    position: Position {
                         coin: "BTC".to_string(),
                         szi: "3.0".to_string(),
-                        leverage: HypercoreLeverage {
-                            leverage_type: HypercoreLeverageType::Isolated,
+                        leverage: Leverage {
+                            leverage_type: LeverageType::Isolated,
                             value: 10,
                         },
                         entry_px: "766.34".to_string(),
@@ -278,20 +275,20 @@ mod tests {
                         liquidation_px: None,
                         margin_used: "233.22".to_string(),
                         max_leverage: 10,
-                        cum_funding: HypercoreCumulativeFunding {
+                        cum_funding: CumulativeFunding {
                             all_time: "1.686397".to_string(),
                             since_open: "1.1".to_string(),
                         },
                     },
                 },
             ],
-            margin_summary: HypercoreMarginSummary {
+            margin_summary: MarginSummary {
                 account_value: "1000".to_string(),
                 total_ntl_pos: "100".to_string(),
                 total_raw_usd: "100".to_string(),
                 total_margin_used: "100".to_string(),
             },
-            cross_margin_summary: HypercoreMarginSummary {
+            cross_margin_summary: MarginSummary {
                 account_value: "1000".to_string(),
                 total_ntl_pos: "100".to_string(),
                 total_raw_usd: "100".to_string(),
@@ -328,11 +325,11 @@ mod tests {
 
     #[test]
     fn test_map_position_funding_sign_reversal() {
-        let position = HypercorePosition {
+        let position = Position {
             coin: "BTC".to_string(),
             szi: "3.0".to_string(), // Long position
-            leverage: HypercoreLeverage {
-                leverage_type: HypercoreLeverageType::Cross,
+            leverage: Leverage {
+                leverage_type: LeverageType::Cross,
                 value: 10,
             },
             entry_px: "100".to_string(),
@@ -342,7 +339,7 @@ mod tests {
             liquidation_px: None,
             margin_used: "30".to_string(),
             max_leverage: 10,
-            cum_funding: HypercoreCumulativeFunding {
+            cum_funding: CumulativeFunding {
                 all_time: "1.5".to_string(),
                 since_open: "1.5".to_string(),
             },
@@ -351,11 +348,11 @@ mod tests {
         let perpetual_position = map_position(position, "user123".to_string());
         assert_eq!(perpetual_position.funding, Some(-1.5)); // Long position reverses sign
 
-        let short_position = HypercorePosition {
+        let short_position = Position {
             coin: "ETH".to_string(),
             szi: "-5.0".to_string(), // Short position
-            leverage: HypercoreLeverage {
-                leverage_type: HypercoreLeverageType::Cross,
+            leverage: Leverage {
+                leverage_type: LeverageType::Cross,
                 value: 10,
             },
             entry_px: "100".to_string(),
@@ -365,7 +362,7 @@ mod tests {
             liquidation_px: None,
             margin_used: "50".to_string(),
             max_leverage: 10,
-            cum_funding: HypercoreCumulativeFunding {
+            cum_funding: CumulativeFunding {
                 all_time: "-1.5".to_string(),
                 since_open: "-1.5".to_string(),
             },
@@ -378,15 +375,15 @@ mod tests {
 
     #[test]
     fn test_map_perpetual_balance() {
-        let positions = HypercoreAssetPositions {
+        let positions = AssetPositions {
             asset_positions: vec![],
-            margin_summary: HypercoreMarginSummary {
+            margin_summary: MarginSummary {
                 account_value: "5000.50".to_string(),
                 total_ntl_pos: "100".to_string(),
                 total_raw_usd: "100".to_string(),
                 total_margin_used: "100".to_string(),
             },
-            cross_margin_summary: HypercoreMarginSummary {
+            cross_margin_summary: MarginSummary {
                 account_value: "1000".to_string(),
                 total_ntl_pos: "100".to_string(),
                 total_raw_usd: "100".to_string(),
@@ -405,15 +402,15 @@ mod tests {
 
     #[test]
     fn test_map_perpetual_balance_with_real_data() {
-        let positions = HypercoreAssetPositions {
+        let positions = AssetPositions {
             asset_positions: vec![],
-            margin_summary: HypercoreMarginSummary {
+            margin_summary: MarginSummary {
                 account_value: "706.364534".to_string(),
                 total_ntl_pos: "12013.47849".to_string(),
                 total_raw_usd: "2737.835324".to_string(),
                 total_margin_used: "926.155026".to_string(),
             },
-            cross_margin_summary: HypercoreMarginSummary {
+            cross_margin_summary: MarginSummary {
                 account_value: "706.364534".to_string(),
                 total_ntl_pos: "12013.47849".to_string(),
                 total_raw_usd: "2737.835324".to_string(),
@@ -432,11 +429,11 @@ mod tests {
 
     #[test]
     fn test_map_position_asset_id_uses_subtoken_pattern() {
-        let position = HypercorePosition {
+        let position = Position {
             coin: "BTC".to_string(),
             szi: "1.0".to_string(),
-            leverage: HypercoreLeverage {
-                leverage_type: HypercoreLeverageType::Cross,
+            leverage: Leverage {
+                leverage_type: LeverageType::Cross,
                 value: 10,
             },
             entry_px: "50000".to_string(),
@@ -446,7 +443,7 @@ mod tests {
             liquidation_px: None,
             margin_used: "5000".to_string(),
             max_leverage: 10,
-            cum_funding: HypercoreCumulativeFunding {
+            cum_funding: CumulativeFunding {
                 all_time: "0".to_string(),
                 since_open: "0".to_string(),
             },
