@@ -101,6 +101,7 @@ impl Asset {
             Chain::Sonic => chain.new_asset("Sonic".to_string(), "S".to_string(), 18, AssetType::NATIVE),
             Chain::Algorand => chain.new_asset("Algorand".to_string(), "ALGO".to_string(), 6, AssetType::NATIVE),
             Chain::Polkadot => chain.new_asset("Polkadot".to_string(), "DOT".to_string(), 10, AssetType::NATIVE),
+            Chain::Plasma => chain.new_asset("Plasma".to_string(), "XPL".to_string(), 18, AssetType::NATIVE),
             Chain::Cardano => chain.new_asset("Cardano".to_string(), "ADA".to_string(), 6, AssetType::NATIVE),
             Chain::Abstract => chain.new_asset("Abstract".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Berachain => chain.new_asset("Berachain".to_string(), "BERA".to_string(), 18, AssetType::NATIVE),

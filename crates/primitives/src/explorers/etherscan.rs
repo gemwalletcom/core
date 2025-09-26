@@ -10,6 +10,7 @@ impl EtherScan {
             EVMChain::Ethereum => Explorer::boxed(Metadata::with_token("Etherscan", "https://etherscan.io")),
             EVMChain::SmartChain => Explorer::boxed(Metadata::with_token("BscScan", "https://bscscan.com")),
             EVMChain::Polygon => Explorer::boxed(Metadata::with_token("PolygonScan", "https://polygonscan.com")),
+            EVMChain::Plasma => Explorer::boxed(Metadata::with_token("PlasmaScan", "https://plasmascan.to")),
             EVMChain::Arbitrum => Explorer::boxed(Metadata::with_token("ArbiScan", "https://arbiscan.io")),
             EVMChain::Optimism => Explorer::boxed(Metadata::with_token("Etherscan", "https://optimistic.etherscan.io")),
             EVMChain::Base => Explorer::boxed(Metadata::with_token("BaseScan", "https://basescan.org")),

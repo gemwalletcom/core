@@ -134,6 +134,7 @@ impl GemGateway {
             | Chain::Ink
             | Chain::Unichain
             | Chain::Hyperliquid
+            | Chain::Plasma
             | Chain::Monad => Ok(Arc::new(EthereumClient::new(
                 jsonrpc_client_with_chain(self.provider.clone(), chain),
                 EVMChain::from_chain(chain).unwrap(),
