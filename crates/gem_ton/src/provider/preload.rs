@@ -23,24 +23,24 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, recipient_token_a
     let mut options = HashMap::new();
 
     let fee = match &input.input_type {
-        TransactionInputType::Transfer(asset)
-        | TransactionInputType::TransferNft(asset, _)
-        | TransactionInputType::Account(asset, _) => match asset.id.token_subtype() {
-            AssetSubtype::NATIVE => base_fee.clone(),
-            AssetSubtype::TOKEN => {
-                let jetton_fee = if recipient_token_address.is_some() {
-                    if input.memo.is_some() {
-                        BigInt::from(JETTON_ACCOUNT_FEE_EXISTING_WITH_MEMO)
+        TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
+            match asset.id.token_subtype() {
+                AssetSubtype::NATIVE => base_fee.clone(),
+                AssetSubtype::TOKEN => {
+                    let jetton_fee = if recipient_token_address.is_some() {
+                        if input.memo.is_some() {
+                            BigInt::from(JETTON_ACCOUNT_FEE_EXISTING_WITH_MEMO)
+                        } else {
+                            BigInt::from(JETTON_ACCOUNT_FEE_EXISTING)
+                        }
                     } else {
-                        BigInt::from(JETTON_ACCOUNT_FEE_EXISTING)
-                    }
-                } else {
-                    BigInt::from(JETTON_ACCOUNT_CREATION)
-                };
-                options.insert(FeeOption::TokenAccountCreation, jetton_fee.clone());
-                base_fee
+                        BigInt::from(JETTON_ACCOUNT_CREATION)
+                    };
+                    options.insert(FeeOption::TokenAccountCreation, jetton_fee.clone());
+                    base_fee
+                }
             }
-        },
+        }
         TransactionInputType::Swap(_, _, _) => {
             options.insert(FeeOption::TokenAccountCreation, BigInt::from(JETTON_ACCOUNT_CREATION));
             base_fee

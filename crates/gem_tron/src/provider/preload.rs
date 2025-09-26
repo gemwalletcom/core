@@ -47,27 +47,27 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
         };
 
         let fee = match &input.input_type {
-            TransactionInputType::Transfer(asset)
-            | TransactionInputType::TransferNft(asset, _)
-            | TransactionInputType::Account(asset, _) => match asset.id.token_subtype() {
-                AssetSubtype::NATIVE => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
-                AssetSubtype::TOKEN => {
-                    let estimated_energy = self
-                        .estimate_trc20_transfer_gas(
-                            input.sender_address.clone(),
-                            asset.id.token_id.clone().unwrap(),
-                            format_address_parameter(&input.destination_address)?,
-                            input.value.clone(),
-                        )
-                        .await?;
-                    let energy_used = BigInt::from_str(&estimated_energy).map_err(|err| -> Box<dyn Error + Send + Sync> { Box::new(err) })?;
-                    let (total_fee, chargeable_energy, energy_price) =
-                        calculate_transfer_token_fee_rate(&chain_parameters, &account_usage, energy_used.clone())?;
-                    let gas_price_type = GasPriceType::regular(energy_price);
+            TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
+                match asset.id.token_subtype() {
+                    AssetSubtype::NATIVE => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
+                    AssetSubtype::TOKEN => {
+                        let estimated_energy = self
+                            .estimate_trc20_transfer_gas(
+                                input.sender_address.clone(),
+                                asset.id.token_id.clone().unwrap(),
+                                format_address_parameter(&input.destination_address)?,
+                                input.value.clone(),
+                            )
+                            .await?;
+                        let energy_used = BigInt::from_str(&estimated_energy).map_err(|err| -> Box<dyn Error + Send + Sync> { Box::new(err) })?;
+                        let (total_fee, chargeable_energy, energy_price) =
+                            calculate_transfer_token_fee_rate(&chain_parameters, &account_usage, energy_used.clone())?;
+                        let gas_price_type = GasPriceType::regular(energy_price);
 
-                    TransactionFee::new_gas_price_type(gas_price_type, total_fee, chargeable_energy, HashMap::new())
+                        TransactionFee::new_gas_price_type(gas_price_type, total_fee, chargeable_energy, HashMap::new())
+                    }
                 }
-            },
+            }
             TransactionInputType::Stake(_asset, stake_type) => {
                 TransactionFee::new_from_fee(calculate_stake_fee_rate(&chain_parameters, &account_usage, stake_type)?)
             }
@@ -85,12 +85,12 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
 impl<C: Client> TronClient<C> {
     async fn get_is_new_account_for_input_type(&self, address: &str, input_type: TransactionInputType) -> Result<bool, Box<dyn Error + Send + Sync>> {
         match input_type {
-            TransactionInputType::Transfer(asset)
-            | TransactionInputType::TransferNft(asset, _)
-            | TransactionInputType::Account(asset, _) => match asset.id.token_subtype() {
-                AssetSubtype::NATIVE => Ok(self.is_new_account(address).await?),
-                AssetSubtype::TOKEN => Ok(false),
-            },
+            TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
+                match asset.id.token_subtype() {
+                    AssetSubtype::NATIVE => Ok(self.is_new_account(address).await?),
+                    AssetSubtype::TOKEN => Ok(false),
+                }
+            }
             _ => Ok(false),
         }
     }

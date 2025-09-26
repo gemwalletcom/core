@@ -42,12 +42,19 @@ impl FetchAssetsAddressesConsumer {
             .clone()
             .into_iter()
             .filter(|x| x.balance.available == BigUint::ZERO)
-            .map(|x| AssetAddress::new(x.asset_id.chain.to_string(), x.asset_id.to_string(), address.clone()))
+            .map(|x| AssetAddress::new(x.asset_id.chain.to_string(), x.asset_id.to_string(), address.clone(), None))
             .collect::<Vec<_>>();
 
         let assets_addresses = assets
             .into_iter()
-            .map(|x| AssetAddress::new(chain.to_string(), x.asset_id.to_string(), address.clone()))
+            .map(|x| {
+                AssetAddress::new(
+                    chain.to_string(),
+                    x.asset_id.to_string(),
+                    address.clone(),
+                    Some(x.balance.available.to_string()),
+                )
+            })
             .collect::<Vec<_>>();
 
         let assets_ids = assets_addresses.iter().flat_map(|x| AssetId::new(&x.asset_id.clone())).collect::<Vec<_>>();

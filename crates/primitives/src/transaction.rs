@@ -297,15 +297,15 @@ impl Transaction {
             | TransactionType::TransferNFT
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone())],
+            | TransactionType::PerpetualClosePosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
             TransactionType::Swap => self
                 .metadata
                 .clone()
                 .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
                 .map(|metadata| {
                     vec![
-                        AssetAddress::new(metadata.from_asset.clone(), self.from.clone()),
-                        AssetAddress::new(metadata.to_asset.clone(), self.to.clone()),
+                        AssetAddress::new(metadata.from_asset.clone(), self.from.clone(), None),
+                        AssetAddress::new(metadata.to_asset.clone(), self.to.clone(), None),
                     ]
                 })
                 .unwrap_or_default(),

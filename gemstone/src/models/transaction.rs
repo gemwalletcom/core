@@ -690,10 +690,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
                 metadata: metadata.into(),
                 extra: extra.into(),
             },
-            TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft {
-                asset,
-                nft_asset,
-            },
+            TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account {
                 asset,
                 account_type: account_type.into(),
@@ -727,10 +724,7 @@ impl From<GemStakeType> for StakeType {
         match value {
             GemStakeType::Delegate { validator } => StakeType::Stake(validator),
             GemStakeType::Undelegate { delegation } => StakeType::Unstake(delegation),
-            GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(primitives::RedelegateData {
-                delegation,
-                to_validator,
-            }),
+            GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(primitives::RedelegateData { delegation, to_validator }),
             GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().collect()),
             GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation),
             GemStakeType::Freeze { freeze_data } => StakeType::Freeze(freeze_data.into()),
