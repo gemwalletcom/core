@@ -42,3 +42,4 @@ settings = { path = "../settings", features = ["testkit"], optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
+primitives = { path = "../primitives", features = ["testkit"], default-features = false }

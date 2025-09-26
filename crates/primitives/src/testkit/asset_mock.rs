@@ -19,6 +19,16 @@ impl Asset {
         )
     }
 
+    pub fn mock_ethereum_usdc() -> Self {
+        Asset::new(
+            AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+            "USD Coin".to_string(),
+            "USDC".to_string(),
+            6,
+            AssetType::ERC20,
+        )
+    }
+
     pub fn mock_eth() -> Self {
         Asset::from_chain(Chain::Ethereum)
     }
