@@ -47,6 +47,14 @@ struct WCSolanaTransaction {
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
+struct WCSolanaTransactions {
+    transactions: Vec<String>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
 struct WCSolanaSignMessage {
     message: String,
     pubkey: String,
