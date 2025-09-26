@@ -65,7 +65,6 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         | Chain::Linea
         | Chain::Manta
         | Chain::World
-        | Chain::Plasma
         | Chain::Abstract
         | Chain::Ink
         | Chain::Unichain => "ethereum",
@@ -100,5 +99,6 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Hyperliquid => "hyperliquid",
         Chain::HyperCore => "hyperliquid",
         Chain::Monad => "monad",
+        Chain::Plasma => "plasma",
     }
 }
