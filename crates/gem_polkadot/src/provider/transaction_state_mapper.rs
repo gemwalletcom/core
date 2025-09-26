@@ -6,16 +6,17 @@ pub fn map_transaction_status(blocks: Vec<Block>, transaction_id: &str, block_nu
     for block in blocks {
         for extrinsic in block.extrinsics {
             if extrinsic.hash == transaction_id {
-                let state = if extrinsic.success { TransactionState::Confirmed } else { TransactionState::Failed };
+                let state = if extrinsic.success {
+                    TransactionState::Confirmed
+                } else {
+                    TransactionState::Failed
+                };
                 return TransactionUpdate::new_state(state);
             }
         }
     }
 
-    TransactionUpdate::new(
-        TransactionState::Pending,
-        vec![TransactionChange::BlockNumber(block_number.to_string())],
-    )
+    TransactionUpdate::new(TransactionState::Pending, vec![TransactionChange::BlockNumber(block_number.to_string())])
 }
 
 #[cfg(test)]

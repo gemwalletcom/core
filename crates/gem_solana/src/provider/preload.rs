@@ -176,10 +176,7 @@ mod chain_integration_tests {
         let sender_token_address = result.get_sender_token_address()?;
         let recipient_token_address = result.get_recipient_token_address()?;
 
-        assert_eq!(
-            sender_token_address,
-            Some("HEeranxp3y7kVQKVSLdZW1rUmnbs7bAtUTMu8o88Jash".to_string())
-        );
+        assert_eq!(sender_token_address, Some("HEeranxp3y7kVQKVSLdZW1rUmnbs7bAtUTMu8o88Jash".to_string()));
         assert_eq!(recipient_token_address, sender_token_address);
 
         Ok(())

@@ -14,9 +14,9 @@ pub mod staking_mapper;
 pub mod state;
 pub mod testkit;
 pub mod token;
+pub mod transaction_state;
 pub mod transactions;
 pub mod transactions_mapper;
-pub mod transaction_state;
 
 use crate::rpc::client::HyperCoreClient;
 

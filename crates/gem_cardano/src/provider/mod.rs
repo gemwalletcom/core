@@ -6,9 +6,9 @@ pub mod state;
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub mod testkit;
 pub mod token;
+pub mod transaction_state;
 pub mod transactions;
 pub mod transactions_mapper;
-pub mod transaction_state;
 
 pub use transactions_mapper::map_transaction;
 

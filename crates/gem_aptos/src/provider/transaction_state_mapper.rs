@@ -3,7 +3,11 @@ use num_bigint::BigInt;
 use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 
 pub fn map_transaction_status(transaction: &Transaction) -> TransactionUpdate {
-    let state = if transaction.success { TransactionState::Confirmed } else { TransactionState::Failed };
+    let state = if transaction.success {
+        TransactionState::Confirmed
+    } else {
+        TransactionState::Failed
+    };
 
     let mut update = TransactionUpdate::new_state(state);
 

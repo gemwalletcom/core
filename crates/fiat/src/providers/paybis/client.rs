@@ -155,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_redirect_url_buy() {
-        let client = Client::new();
+        let client = Client::builder().no_proxy().build().expect("failed to build client");
         // Use a base64-encoded test secret key
         let base64_secret = "dGVzdF9zZWNyZXRfa2V5"; // "test_secret_key" in base64
         let paybis_client = PaybisClient::new(client, "test_api_key".to_string(), base64_secret.to_string());
@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn test_redirect_url_sell() {
-        let client = Client::new();
+        let client = Client::builder().no_proxy().build().expect("failed to build client");
         // Use a base64-encoded test secret key
         let base64_secret = "dGVzdF9zZWNyZXRfa2V5"; // "test_secret_key" in base64
         let paybis_client = PaybisClient::new(client, "test_api_key".to_string(), base64_secret.to_string());

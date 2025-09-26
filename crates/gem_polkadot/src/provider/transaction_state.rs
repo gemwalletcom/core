@@ -5,10 +5,7 @@ use std::error::Error;
 
 use gem_client::Client;
 
-use crate::{
-    provider::transaction_state_mapper::map_transaction_status,
-    rpc::client::PolkadotClient,
-};
+use crate::{provider::transaction_state_mapper::map_transaction_status, rpc::client::PolkadotClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactionState for PolkadotClient<C> {

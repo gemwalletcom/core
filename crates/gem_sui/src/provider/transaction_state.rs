@@ -6,10 +6,7 @@ use chain_traits::ChainTransactionState;
 use gem_client::Client;
 use primitives::{TransactionStateRequest, TransactionUpdate};
 
-use crate::{
-    provider::transaction_state_mapper::map_transaction_status,
-    rpc::client::SuiClient,
-};
+use crate::{provider::transaction_state_mapper::map_transaction_status, rpc::client::SuiClient};
 
 #[cfg(feature = "rpc")]
 #[async_trait]

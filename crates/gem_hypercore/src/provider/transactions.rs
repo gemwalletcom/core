@@ -13,5 +13,4 @@ impl<C: Client> ChainTransactions for HyperCoreClient<C> {
         let response = self.exchange(serde_json::from_str(&data)?).await?;
         map_transaction_broadcast(response, data)
     }
-
 }

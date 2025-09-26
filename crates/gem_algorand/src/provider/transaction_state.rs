@@ -5,10 +5,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::{TransactionStateRequest, TransactionUpdate};
 
-use crate::{
-    provider::transaction_state_mapper::map_transaction_status,
-    rpc::client::AlgorandClient,
-};
+use crate::{provider::transaction_state_mapper::map_transaction_status, rpc::client::AlgorandClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactionState for AlgorandClient<C> {
