@@ -7,7 +7,10 @@ pub mod testkit;
 pub mod token;
 pub mod transactions;
 pub mod transactions_mapper;
+pub mod transaction_state;
+pub mod transaction_state_mapper;
 
 // Re-export mappers for convenience
 pub use balances_mapper::*;
 pub use transactions_mapper::*;
+pub use transaction_state_mapper::*;

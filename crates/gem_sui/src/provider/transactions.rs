@@ -4,9 +4,9 @@ use async_trait::async_trait;
 use chain_traits::ChainTransactions;
 #[cfg(feature = "rpc")]
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction, TransactionStateRequest, TransactionUpdate};
+use primitives::{BroadcastOptions, Transaction};
 
-use crate::provider::transactions_mapper::{map_transaction, map_transaction_blocks, map_transaction_status};
+use crate::provider::transactions_mapper::{map_transaction, map_transaction_blocks};
 use crate::rpc::client::SuiClient;
 
 #[cfg(feature = "rpc")]
@@ -22,11 +22,6 @@ impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
         let signature = parts[1].to_string();
 
         Ok(self.broadcast(transaction_data, signature).await?.digest)
-    }
-
-    async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn std::error::Error + Sync + Send>> {
-        let transaction = self.get_transaction(request.id).await?;
-        Ok(map_transaction_status(transaction))
     }
 
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
@@ -48,7 +43,7 @@ impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::provider::testkit::*;
-    use chain_traits::{ChainState, ChainTransactions};
+    use chain_traits::{ChainState, ChainTransactionState, ChainTransactions};
     use primitives::{TransactionState, TransactionStateRequest};
 
     #[tokio::test]

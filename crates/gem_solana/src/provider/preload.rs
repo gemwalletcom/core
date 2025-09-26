@@ -80,7 +80,7 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, create_solana_test_client};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_EMPTY_ADDRESS, create_solana_test_client};
     use primitives::swap::SwapData;
     use primitives::{Asset, SwapProvider};
 
@@ -156,6 +156,31 @@ mod chain_integration_tests {
         } else {
             panic!("expected solana metadata");
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_solana_transaction_preload_swap_spl_to_spl_with_empty_destination() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_solana_test_client();
+        let swap_data = SwapData::mock_with_provider(SwapProvider::Jupiter);
+        let input = TransactionPreloadInput {
+            input_type: TransactionInputType::Swap(Asset::mock_spl_token(), Asset::mock_spl_token(), swap_data),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_EMPTY_ADDRESS.to_string(),
+        };
+
+        let result = client.get_transaction_preload(input).await?;
+
+        assert!(result.get_block_hash()?.len() == 44);
+        let sender_token_address = result.get_sender_token_address()?;
+        let recipient_token_address = result.get_recipient_token_address()?;
+
+        assert_eq!(
+            sender_token_address,
+            Some("HEeranxp3y7kVQKVSLdZW1rUmnbs7bAtUTMu8o88Jash".to_string())
+        );
+        assert_eq!(recipient_token_address, sender_token_address);
 
         Ok(())
     }

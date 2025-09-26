@@ -3,7 +3,7 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction, TransactionStateRequest, TransactionUpdate};
+use primitives::{BroadcastOptions, Transaction};
 
 use crate::provider::transactions_mapper::map_transaction;
 use crate::rpc::client::CardanoClient;
@@ -12,13 +12,6 @@ use crate::rpc::client::CardanoClient;
 impl<C: Client> ChainTransactions for CardanoClient<C> {
     async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
         self.broadcast_transaction(data).await
-    }
-
-    async fn get_transaction_status(&self, _request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionUpdate {
-            state: primitives::TransactionState::Confirmed,
-            changes: vec![],
-        })
     }
 
     async fn get_transactions_by_block(&self, block_number: u64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {

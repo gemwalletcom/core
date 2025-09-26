@@ -1,8 +1,8 @@
 use crate::STAKE_DEPOSIT_EVENT;
 use crate::models::{Transaction, TransactionResponse};
 use chrono::DateTime;
-use num_bigint::{BigInt, BigUint};
-use primitives::{Chain, Transaction as PrimitivesTransaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate};
+use num_bigint::BigUint;
+use primitives::{Chain, Transaction as PrimitivesTransaction, TransactionState, TransactionType};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(response: &TransactionResponse) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -11,23 +11,6 @@ pub fn map_transaction_broadcast(response: &TransactionResponse) -> Result<Strin
     }
 
     response.hash.clone().ok_or_else(|| "Transaction response missing hash".into())
-}
-
-pub fn map_transaction_status(transaction: &Transaction) -> TransactionUpdate {
-    let state = if transaction.success {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Failed
-    };
-
-    let mut update = TransactionUpdate::new_state(state);
-
-    if let (Some(gas_used), Some(gas_unit_price)) = (transaction.gas_used, transaction.gas_unit_price) {
-        let fee = gas_used * gas_unit_price;
-        update.changes.push(TransactionChange::NetworkFee(BigInt::from(fee)));
-    }
-
-    update
 }
 
 pub fn map_transactions(transactions: Vec<Transaction>) -> Vec<PrimitivesTransaction> {
@@ -123,49 +106,5 @@ mod tests {
             result.unwrap_err().to_string(),
             "Invalid transaction: Type: Validation Code: MAX_GAS_UNITS_BELOW_MIN_TRANSACTION_GAS_UNITS"
         );
-    }
-
-    #[test]
-    fn test_map_transaction_status_confirmed() {
-        use crate::Transaction;
-
-        let transaction = Transaction {
-            hash: Some("0xabc123".to_string()),
-            sender: Some("0x123".to_string()),
-            success: true,
-            gas_used: Some(100),
-            gas_unit_price: Some(1),
-            events: None,
-            transaction_type: Some("user_transaction".to_string()),
-            sequence_number: Some("1".to_string()),
-            timestamp: 1234567890,
-        };
-
-        let result = map_transaction_status(&transaction);
-        assert_eq!(result.state, TransactionState::Confirmed);
-        assert_eq!(result.changes, vec![TransactionChange::NetworkFee(BigInt::from(100u64))]);
-        // 100 * 1 = 100
-    }
-
-    #[test]
-    fn test_map_transaction_status_failed() {
-        use crate::Transaction;
-
-        let transaction = Transaction {
-            hash: Some("0xdef456".to_string()),
-            sender: Some("0x456".to_string()),
-            success: false,
-            gas_used: Some(50),
-            gas_unit_price: Some(1),
-            events: None,
-            transaction_type: Some("user_transaction".to_string()),
-            sequence_number: Some("2".to_string()),
-            timestamp: 1234567891,
-        };
-
-        let result = map_transaction_status(&transaction);
-        assert_eq!(result.state, TransactionState::Failed);
-        assert_eq!(result.changes, vec![TransactionChange::NetworkFee(BigInt::from(50u64))]);
-        // 50 * 1 = 50
     }
 }

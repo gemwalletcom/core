@@ -21,3 +21,5 @@ pub mod token_mapper;
 pub mod transaction_mapper;
 #[cfg(feature = "rpc")]
 pub mod transactions;
+#[cfg(feature = "rpc")]
+pub mod transaction_state;

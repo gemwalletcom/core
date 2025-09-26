@@ -1,25 +1,16 @@
 use crate::constants::FAILED_OPERATION_OPCODES;
-use crate::models::{BroadcastTransaction, HasMemo, MessageTransactions, TransactionMessage};
+use crate::models::{BroadcastTransaction, HasMemo, TransactionMessage};
 use chrono::DateTime;
-use primitives::{Transaction, TransactionChange, TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, chain::Chain};
+use primitives::{Transaction, TransactionState, TransactionType, chain::Chain};
 use std::error::Error;
 use tonlib_core::TonAddress;
-
-pub fn map_transaction_status(_request: TransactionStateRequest, transactions: MessageTransactions) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-    let transaction = transactions.transactions.first().ok_or("Transaction not found")?;
-    let state = map_transaction_state(transaction);
-
-    let fee = transaction.total_fees.clone();
-
-    Ok(TransactionUpdate::new(state, vec![TransactionChange::NetworkFee(fee.into())]))
-}
 
 pub fn map_transaction_broadcast(broadcast_result: BroadcastTransaction) -> Result<String, Box<dyn Error + Sync + Send>> {
     let hash_bytes = base64::prelude::Engine::decode(&base64::prelude::BASE64_STANDARD, &broadcast_result.hash)?;
     Ok(hex::encode(hash_bytes))
 }
 
-fn map_transaction_state(transaction: &TransactionMessage) -> TransactionState {
+pub(crate) fn map_transaction_state(transaction: &TransactionMessage) -> TransactionState {
     if let Some(description) = &transaction.description {
         if description.aborted {
             return TransactionState::Failed;
@@ -167,6 +158,7 @@ fn extract_memo<T: HasMemo>(message: &T) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::MessageTransactions;
 
     #[test]
     fn test_transaction_transfer_state_success() {

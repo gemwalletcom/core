@@ -7,6 +7,7 @@ pub mod state_mapper;
 pub mod testkit;
 pub mod transactions;
 pub mod transactions_mapper;
+pub mod transaction_state;
 
 pub use transactions_mapper::map_transaction;
 
