@@ -19,6 +19,14 @@ pub struct TronAccount {
     pub unfrozen_v2: Option<Vec<TronUnfrozen>>,
 }
 
+impl TronAccount {
+    pub fn is_staking(&self) -> bool {
+        self.frozen_v2.as_ref().unwrap_or(&vec![]).iter().filter(|x| x.amount > 0).count() > 0
+            || self.unfrozen_v2.as_ref().unwrap_or(&vec![]).iter().filter(|x| x.unfreeze_amount > 0).count() > 0
+            || self.votes.is_some()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TronAccountPermission {
     pub threshold: u64,
