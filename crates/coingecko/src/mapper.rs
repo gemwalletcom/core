@@ -47,6 +47,7 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "hyperliquid" => Some(Chain::Hyperliquid),
         "sonic" => Some(Chain::Sonic),
         "stellar" => Some(Chain::Stellar),
+        "plasma" => Some(Chain::Plasma),
         _ => None,
     }
 }
