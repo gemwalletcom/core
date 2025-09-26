@@ -32,12 +32,12 @@ impl Transaction {
     }
 
     pub fn from_primitive(transaction: primitives::Transaction) -> Self {
-        let utxo_inputs = if transaction.utxo_inputs.is_empty() {
+        let utxo_inputs = if transaction.utxo_inputs.clone().unwrap_or_default().is_empty() {
             None
         } else {
             serde_json::to_value(transaction.utxo_inputs.clone()).ok()
         };
-        let utxo_outputs = if transaction.clone().utxo_outputs.is_empty() {
+        let utxo_outputs = if transaction.utxo_outputs.clone().unwrap_or_default().is_empty() {
             None
         } else {
             serde_json::to_value(transaction.clone().utxo_outputs.clone()).ok()
@@ -108,8 +108,8 @@ impl Transaction {
             value: self.value.clone().unwrap_or("0".to_string()),
             memo: self.memo.clone(),
             direction,
-            utxo_inputs: inputs.unwrap_or_default(),
-            utxo_outputs: outputs.unwrap_or_default(),
+            utxo_inputs: inputs.unwrap_or_default().into(),
+            utxo_outputs: outputs.unwrap_or_default().into(),
             metadata: self.metadata.clone(),
             created_at: self.created_at.and_utc(),
         }
