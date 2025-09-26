@@ -5,7 +5,7 @@ use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, Swap
 use primitives::{
     AccountDataType, FeeOption, GasPriceType, PerpetualDirection, StakeType, SwapProvider, TransactionChange, TransactionFee, TransactionInputType,
     TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate,
-    TransferDataExtra, TransferDataOutputType, WalletConnectionSessionAppMetadata,
+    TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -13,6 +13,7 @@ use std::str::FromStr;
 pub type GemPerpetualDirection = PerpetualDirection;
 pub type GemFeeOption = FeeOption;
 pub type GemTransferDataOutputType = TransferDataOutputType;
+pub type GemTransferDataOutputAction = TransferDataOutputAction;
 pub type GemApprovalData = ApprovalData;
 
 #[uniffi::remote(Enum)]
@@ -30,6 +31,12 @@ pub enum FeeOption {
 pub enum TransferDataOutputType {
     EncodedTransaction,
     Signature,
+}
+
+#[uniffi::remote(Enum)]
+pub enum TransferDataOutputAction {
+    Sign,
+    Send,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -111,8 +118,6 @@ pub struct GemWalletConnectionSessionAppMetadata {
     pub description: String,
     pub url: String,
     pub icon: String,
-    pub redirect_native: Option<String>,
-    pub redirect_universal: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -121,6 +126,7 @@ pub struct GemTransferDataExtra {
     pub gas_price: Option<GemGasPriceType>,
     pub data: Option<Vec<u8>>,
     pub output_type: GemTransferDataOutputType,
+    pub output_action: GemTransferDataOutputAction,
 }
 
 #[uniffi::remote(Record)]
@@ -757,8 +763,6 @@ impl From<GemWalletConnectionSessionAppMetadata> for WalletConnectionSessionAppM
             description: value.description,
             url: value.url,
             icon: value.icon,
-            redirect_native: value.redirect_native,
-            redirect_universal: value.redirect_universal,
         }
     }
 }
@@ -788,8 +792,6 @@ impl From<WalletConnectionSessionAppMetadata> for GemWalletConnectionSessionAppM
             description: value.description,
             url: value.url,
             icon: value.icon,
-            redirect_native: value.redirect_native,
-            redirect_universal: value.redirect_universal,
         }
     }
 }
@@ -801,6 +803,7 @@ impl From<GemTransferDataExtra> for TransferDataExtra {
             gas_price: value.gas_price.map(|gp| gp.into()),
             data: value.data,
             output_type: value.output_type,
+            output_action: value.output_action,
         }
     }
 }
@@ -812,6 +815,7 @@ impl From<TransferDataExtra> for GemTransferDataExtra {
             gas_price: value.gas_price.map(|gp| gp.into()),
             data: value.data,
             output_type: value.output_type,
+            output_action: value.output_action,
         }
     }
 }
