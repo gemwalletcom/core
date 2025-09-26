@@ -4,6 +4,7 @@ CREATE TABLE assets_addresses
     chain          VARCHAR(32)  NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     asset_id       VARCHAR(256) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     address        VARCHAR(256) NOT NULL,
+    value          VARCHAR(256),
     updated_at     timestamp    NOT NULL default current_timestamp,
     created_at     timestamp    NOT NULL default current_timestamp,
     UNIQUE (asset_id, address)

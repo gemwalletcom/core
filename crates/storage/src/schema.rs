@@ -36,6 +36,8 @@ diesel::table! {
         asset_id -> Varchar,
         #[max_length = 256]
         address -> Varchar,
+        #[max_length = 256]
+        value -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

@@ -211,6 +211,7 @@ pub struct Chains {
     pub celo: Chain,
     pub near: Chain,
     pub world: Chain,
+    pub plasma: Chain,
     pub stellar: Chain,
     pub sonic: Chain,
     pub algorand: Chain,

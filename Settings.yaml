@@ -149,6 +149,8 @@ chains:
     url: https://blockbook.doge.zelcore.io
   world:
     url: https://worldchain-mainnet.gateway.tenderly.co
+  plasma:
+    url: https://rpc.plasma.to
   stellar:
     url: https://horizon.stellar.org
   sonic:

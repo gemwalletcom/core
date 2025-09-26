@@ -2,7 +2,9 @@ use crate::schema::assets_addresses::dsl::*;
 
 use crate::{DatabaseClient, models::asset_address::AssetAddress};
 use chrono::DateTime;
+use diesel::dsl::coalesce;
 use diesel::prelude::*;
+use diesel::upsert::excluded;
 use primitives::ChainAddress;
 
 pub(crate) trait AssetsAddressesStore {
@@ -24,7 +26,8 @@ impl AssetsAddressesStore for DatabaseClient {
         diesel::insert_into(assets_addresses)
             .values(&values)
             .on_conflict((asset_id, address))
-            .do_nothing()
+            .do_update()
+            .set(value.eq(coalesce(excluded(value), value)))
             .execute(&mut self.connection)
     }
 

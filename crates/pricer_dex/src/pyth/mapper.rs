@@ -41,6 +41,7 @@ pub fn price_account_for_chain(chain: Chain) -> &'static str {
         Chain::Stellar => "DMw1AaDmW9g8cCcB4KqCAdWiDNkyFJg7cQ6nhdHpMN6j",
         Chain::Algorand => "HqFyq1wh1xKvL7KDqqT7NJeSPdAqsDqnmBisUC2XdXAX",
         Chain::Polkadot => "EcV1X1gY2yb4KXxjVQtTHTbioum2gvmPnFk4zYAt7zne",
+        Chain::Plasma => "JBu1AL4obBcCMqKBBxhpWCNUt136ijcuMZLFvTP7iWdB",
         Chain::Cardano => "3pyn4svBbxJ9Wnn3RVeafyLWfzie6yC5eTig2S62v9SC",
         Chain::Berachain => "B72vp52SUipn1gaBadkBk5MSMjMqS8gSaNUz4jBkAm9E",
         Chain::Hyperliquid | Chain::HyperCore => "5UVhvt9NzyyVuVaePfkaEaHD6hoD9Dw7PFUCfRoMh8i6",

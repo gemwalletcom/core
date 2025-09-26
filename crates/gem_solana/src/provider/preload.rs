@@ -16,9 +16,7 @@ use crate::rpc::client::SolanaClient;
 impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         let (sender_address, destination_address) = match input.input_type {
-            TransactionInputType::Transfer(_) | TransactionInputType::TransferNft(_, _) => {
-                (input.sender_address.clone(), input.destination_address.clone())
-            }
+            TransactionInputType::Transfer(_) | TransactionInputType::TransferNft(_, _) => (input.sender_address.clone(), input.destination_address.clone()),
             TransactionInputType::Swap(_, _, _) => (input.sender_address.clone(), input.sender_address.clone()),
             _ => (input.sender_address.clone(), input.destination_address.clone()),
         };

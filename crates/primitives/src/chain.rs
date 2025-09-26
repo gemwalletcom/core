@@ -50,6 +50,7 @@ pub enum Chain {
     Sonic,
     Algorand,
     Polkadot,
+    Plasma,
     Cardano,
     Abstract,
     Berachain,
@@ -126,6 +127,7 @@ impl Chain {
             Self::Sonic => "146",
             Self::Algorand => "mainnet-v1.0",
             Self::Polkadot => "Polkadot",
+            Self::Plasma => "9745",
             Self::Cardano => "764824073", // magic number from genesis configuration
             Self::Abstract => "2741",
             Self::Berachain => "80094",
@@ -170,6 +172,7 @@ impl Chain {
             | Self::Unichain
             | Self::Hyperliquid
             | Self::HyperCore
+            | Self::Plasma
             | Self::Monad => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
@@ -218,6 +221,7 @@ impl Chain {
             | Self::Ink
             | Self::Unichain
             | Self::Hyperliquid
+            | Self::Plasma
             | Self::Monad => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
@@ -260,6 +264,7 @@ impl Chain {
             | Self::Unichain
             | Self::Hyperliquid
             | Self::HyperCore
+            | Self::Plasma
             | Self::Monad => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
@@ -359,7 +364,8 @@ impl Chain {
             | Self::Stellar
             | Self::Algorand
             | Self::Polkadot
-            | Self::Cardano => false,
+            | Self::Cardano
+            | Self::Plasma => false,
         }
     }
 
@@ -398,6 +404,7 @@ impl Chain {
             | Self::Optimism
             | Self::World
             | Self::Berachain
+            | Self::Plasma
             | Self::Thorchain => 2_000,
             Self::Polygon | Self::Tron => 3_000,
             Self::Algorand | Self::Xrp => 4_000,
@@ -451,6 +458,7 @@ impl Chain {
             | Self::World
             | Self::Stellar
             | Self::Sonic
+            | Self::Plasma
             | Self::Algorand
             | Self::Cardano => 30,
             Self::Noble => 20,
