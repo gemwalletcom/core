@@ -52,6 +52,27 @@ fn calculate_to_block(block_head_number: u64, from_block: u64) -> u64 {
     std::cmp::max(to_block, from_block + 1)
 }
 
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use super::*;
+    use crate::provider::testkit::create_polkadot_test_client;
+    use primitives::{TransactionState, TransactionStateRequest};
+
+    #[tokio::test]
+    async fn test_polkadot_get_transaction_status_failed() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_polkadot_test_client();
+        let request =
+            TransactionStateRequest::new_id("0x3a9dda661cbdfe12e15c623cd14abf3da64d4bcbe11c0c776def748713c2248b".to_string()).with_block_number(27_830_222);
+
+        let result = client.get_transaction_status(request).await?;
+
+        assert_eq!(result.state, TransactionState::Failed);
+        assert!(result.changes.is_empty());
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

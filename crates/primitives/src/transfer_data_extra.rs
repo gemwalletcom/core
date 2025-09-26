@@ -1,13 +1,7 @@
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
-use crate::GasPriceType;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TransferDataOutputType {
-    EncodedTransaction,
-    Signature,
-}
+use crate::{GasPriceType, TransferDataOutputAction, TransferDataOutputType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransferDataExtra {
@@ -15,6 +9,7 @@ pub struct TransferDataExtra {
     pub gas_price: Option<GasPriceType>,
     pub data: Option<Vec<u8>>,
     pub output_type: TransferDataOutputType,
+    pub output_action: TransferDataOutputAction,
 }
 
 impl Default for TransferDataExtra {
@@ -24,6 +19,7 @@ impl Default for TransferDataExtra {
             gas_price: None,
             data: None,
             output_type: TransferDataOutputType::EncodedTransaction,
+            output_action: TransferDataOutputAction::Send,
         }
     }
 }

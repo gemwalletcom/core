@@ -49,4 +49,9 @@ impl TransactionStateRequest {
             block_number: 0,
         }
     }
+
+    pub fn with_block_number(mut self, block_number: i64) -> Self {
+        self.block_number = block_number;
+        self
+    }
 }

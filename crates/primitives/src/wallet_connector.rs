@@ -85,8 +85,6 @@ pub struct WalletConnectionSessionAppMetadata {
     pub description: String,
     pub url: String,
     pub icon: String,
-    pub redirect_native: Option<String>,
-    pub redirect_universal: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
