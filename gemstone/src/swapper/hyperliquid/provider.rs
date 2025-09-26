@@ -78,7 +78,7 @@ impl Swapper for HyperCoreBridge {
                 Ok(SwapperQuoteData {
                     to: HYPE_SYSTEM_ADDRESS.to_string(),
                     value: quote.request.value.clone(),
-                    data: serde_json::to_string(&typed_data)?,
+                    data: typed_data,
                     approval: None,
                     gas_limit: None,
                 })

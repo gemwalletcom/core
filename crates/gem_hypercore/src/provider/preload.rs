@@ -21,7 +21,11 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         match &input.input_type {
-            TransactionInputType::Transfer(_) | TransactionInputType::TransferNft(_, _) | TransactionInputType::Account(_, _) => {
+            TransactionInputType::Transfer(_)
+            | TransactionInputType::TransferNft(_, _)
+            | TransactionInputType::Account(_, _)
+            | TransactionInputType::Swap(_, _, _)
+            | TransactionInputType::Stake(_, _) => {
                 // Only signature is required
                 Ok(TransactionLoadData {
                     fee: TransactionFee::new_from_fee(BigInt::from(0)),
