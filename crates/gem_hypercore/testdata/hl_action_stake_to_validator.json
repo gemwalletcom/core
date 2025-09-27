@@ -3,7 +3,7 @@
         "hyperliquidChain": "Mainnet",
         "isUndelegate": false,
         "nonce": 1755231522831,
-        "signatureChainId": "0x3e7",
+        "signatureChainId": "0xa4b1",
         "type": "tokenDelegate",
         "validator": "0x5ac99df645f3414876c816caa18b2d234024b487",
         "wei": 10000000

@@ -1,7 +1,7 @@
 use crate::core::actions::{MAINNET, SIGNATURE_CHAIN_ID};
 
 #[derive(Clone, serde::Serialize)]
-pub struct CDeposit {
+pub struct CWithdraw {
     #[serde(rename = "hyperliquidChain")]
     pub hyperliquid_chain: String,
     pub nonce: u64,
@@ -11,13 +11,13 @@ pub struct CDeposit {
     pub wei: u64,
 }
 
-impl CDeposit {
+impl CWithdraw {
     pub fn new(wei: u64, nonce: u64) -> Self {
         Self {
             hyperliquid_chain: MAINNET.to_string(),
             nonce,
             signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
-            r#type: "cDeposit".to_string(),
+            r#type: "cWithdraw".to_string(),
             wei,
         }
     }

@@ -348,6 +348,7 @@ impl Chain {
             | Self::Unichain
             | Self::Ink
             | Self::Hyperliquid
+            | Self::HyperCore
             | Self::Sui
             | Self::Monad
             | Self::Ton
@@ -364,7 +365,6 @@ impl Chain {
             | Self::Algorand
             | Self::Polkadot
             | Self::Cardano
-            | Self::HyperCore
             | Self::Plasma => false,
         }
     }

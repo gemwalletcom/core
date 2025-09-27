@@ -81,6 +81,11 @@ pub fn c_deposit_typed_data(c_deposit: CDeposit) -> String {
     eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:CDeposit", eip712::c_deposit_types())
 }
 
+pub fn c_withdraw_typed_data(c_withdraw: CWithdraw) -> String {
+    let action_value = serde_json::to_value(&c_withdraw).unwrap();
+    eip712::create_user_signed_eip712_json(&action_value, "HyperliquidTransaction:CWithdraw", eip712::c_deposit_types()) // same as c_deposit_types
+}
+
 // User signed payload
 pub fn token_delegate_typed_data(token_delegate: TokenDelegate) -> String {
     let action_value = serde_json::to_value(&token_delegate).unwrap();
@@ -353,6 +358,19 @@ mod tests {
         // Parse both generated and expected JSON for comparison
         let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
         let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_spot_to_stake_balance.json")).unwrap();
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_eip712_c_withdraw() {
+        let c_withdraw = CWithdraw::new(10000000, 1758983015647);
+
+        let eip712_json = c_withdraw_typed_data(c_withdraw);
+
+        // Parse both generated and expected JSON for comparison
+        let parsed: serde_json::Value = serde_json::from_str(&eip712_json).unwrap();
+        let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_c_withdraw.json")).unwrap();
 
         assert_eq!(parsed, expected);
     }

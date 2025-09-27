@@ -1,4 +1,4 @@
-use crate::core::actions::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
+use crate::core::actions::{MAINNET, SIGNATURE_CHAIN_ID};
 
 #[derive(Clone, serde::Serialize)]
 pub struct TokenDelegate {
@@ -22,7 +22,7 @@ impl TokenDelegate {
             is_undelegate,
             nonce,
             r#type: "tokenDelegate".to_string(),
-            signature_chain_id: HYPERCORE_SIGNATURE_CHAIN_ID.to_string(),
+            signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
             hyperliquid_chain: MAINNET.to_string(),
         }
     }

@@ -25,6 +25,7 @@ pub enum SwapProvider {
     Chainflip,
     CetusAggregator,
     Relay,
+    Hyperliquid,
 }
 
 impl SwapProvider {
@@ -53,6 +54,7 @@ impl SwapProvider {
             Self::Symbiosis => "Symbiosis",
             Self::Chainflip => "Chainflip",
             Self::Relay => "Relay",
+            Self::Hyperliquid => "Hyperliquid",
         }
     }
 
@@ -75,7 +77,8 @@ impl SwapProvider {
             | Self::Chainflip
             | Self::CetusAggregator
             | Self::Aerodrome
-            | Self::Relay => self.name(),
+            | Self::Relay
+            | Self::Hyperliquid => self.name(),
         }
     }
 }

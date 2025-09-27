@@ -50,7 +50,7 @@ impl StakeChain {
             Self::Sui => 1_000_000_000,                    // 1 SUI
             Self::SmartChain => 1_000_000_000_000_000_000, // 1 BNB
             Self::Tron => 1_000_000,                       // 1 TRX
-            Self::HyperCore => 1_000_000_000_000_000_000,  // 1 HLC
+            Self::HyperCore => 10000000000000000,          // 0.01 HYPE
         }
     }
 

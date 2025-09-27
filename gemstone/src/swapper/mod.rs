@@ -15,6 +15,7 @@ pub mod asset;
 pub mod cetus;
 pub mod chainflip;
 pub mod error;
+pub mod hyperliquid;
 pub mod jupiter;
 pub mod models;
 pub mod pancakeswap_aptos;
@@ -95,6 +96,7 @@ impl GemSwapper {
                 Box::new(thorchain::ThorChain::default()),
                 Box::new(jupiter::Jupiter::default()),
                 Box::new(across::Across::default()),
+                Box::new(hyperliquid::HyperCoreBridge::default()),
                 Box::new(uniswap::universal_router::new_oku()),
                 Box::new(uniswap::universal_router::new_wagmi()),
                 Box::new(uniswap::universal_router::new_reservoir()),
