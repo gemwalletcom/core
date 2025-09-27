@@ -2,14 +2,14 @@
     "domain": {
         "name": "HyperliquidSignTransaction",
         "version": "1",
-        "chainId": 999,
+        "chainId": 42161,
         "verifyingContract": "0x0000000000000000000000000000000000000000"
     },
     "message": {
         "type": "cDeposit",
         "wei": 10000000,
         "nonce": 1755231476741,
-        "signatureChainId": "0x3e7",
+        "signatureChainId": "0xa4b1",
         "hyperliquidChain": "Mainnet"
     },
     "primaryType": "HyperliquidTransaction:CDeposit",

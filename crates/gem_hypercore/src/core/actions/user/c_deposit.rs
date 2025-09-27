@@ -1,4 +1,4 @@
-use crate::core::actions::{HYPERCORE_SIGNATURE_CHAIN_ID, MAINNET};
+use crate::core::actions::{MAINNET, SIGNATURE_CHAIN_ID};
 
 #[derive(Clone, serde::Serialize)]
 pub struct CDeposit {
@@ -16,7 +16,7 @@ impl CDeposit {
         Self {
             hyperliquid_chain: MAINNET.to_string(),
             nonce,
-            signature_chain_id: HYPERCORE_SIGNATURE_CHAIN_ID.to_string(),
+            signature_chain_id: SIGNATURE_CHAIN_ID.to_string(),
             r#type: "cDeposit".to_string(),
             wei,
         }
