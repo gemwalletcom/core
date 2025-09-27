@@ -1,0 +1,16 @@
+{
+  "action": {
+    "hyperliquidChain": "Mainnet",
+    "nonce": 1758983015647,
+    "signatureChainId": "0xa4b1",
+    "type": "cWithdraw",
+    "wei": 10000000
+  },
+  "isFrontend": true,
+  "nonce": 1758983015647,
+  "signature": {
+    "r": "0xda78bc92a6eaf69b2bbdffc2ddea23f2830abfbd7feb00512ad07f7f2f5704ea",
+    "s": "0x06ae965ab100c18ba2987a213b871555ede908680eec570041fc80d5cb00fb0e",
+    "v": 28
+  }
+}

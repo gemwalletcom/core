@@ -126,8 +126,16 @@ impl HyperCoreModelFactory {
         hyper_make_transfer_to_staking(wei, nonce)
     }
 
+    pub fn make_withdraw_from_staking(&self, wei: u64, nonce: u64) -> HyperCWithdraw {
+        hyper_make_withdraw_from_staking(wei, nonce)
+    }
+
     pub fn serialize_c_deposit(&self, c_deposit: &HyperCDeposit) -> String {
         hyper_serialize_c_deposit(c_deposit)
+    }
+
+    pub fn serialize_c_withdraw(&self, c_withdraw: &HyperCWithdraw) -> String {
+        hyper_serialize_c_withdraw(c_withdraw)
     }
 
     pub fn make_delegate(&self, validator: String, wei: u64, nonce: u64) -> HyperTokenDelegate {
@@ -220,6 +228,10 @@ impl HyperCore {
 
     pub fn c_deposit_typed_data(&self, c_deposit: HyperCDeposit) -> String {
         hyper_core_c_deposit_typed_data(c_deposit)
+    }
+
+    pub fn c_withdraw_typed_data(&self, c_withdraw: HyperCWithdraw) -> String {
+        hyper_core_c_withdraw_typed_data(c_withdraw)
     }
 
     pub fn token_delegate_typed_data(&self, token_delegate: HyperTokenDelegate) -> String {

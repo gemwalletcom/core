@@ -1,0 +1,50 @@
+{
+  "domain": {
+    "name": "HyperliquidSignTransaction",
+    "version": "1",
+    "chainId": 42161,
+    "verifyingContract": "0x0000000000000000000000000000000000000000"
+  },
+  "message": {
+    "type": "cWithdraw",
+    "wei": 10000000,
+    "nonce": 1758983015647,
+    "signatureChainId": "0xa4b1",
+    "hyperliquidChain": "Mainnet"
+  },
+  "primaryType": "HyperliquidTransaction:CWithdraw",
+  "types": {
+    "EIP712Domain": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "name": "verifyingContract",
+        "type": "address"
+      }
+    ],
+    "HyperliquidTransaction:CWithdraw": [
+      {
+        "name": "hyperliquidChain",
+        "type": "string"
+      },
+      {
+        "name": "wei",
+        "type": "uint64"
+      },
+      {
+        "name": "nonce",
+        "type": "uint64"
+      }
+    ]
+  }
+}
