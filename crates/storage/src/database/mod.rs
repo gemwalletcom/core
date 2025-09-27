@@ -11,6 +11,7 @@ pub mod migrations;
 pub mod nft;
 pub mod nodes;
 pub mod parser_state;
+pub mod perpetuals;
 pub mod price_alerts;
 pub mod prices;
 pub mod releases;
@@ -27,8 +28,8 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 
 use crate::{
     AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DevicesRepository, FiatRepository,
-    LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PriceAlertsRepository, PricesRepository,
-    ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
+    LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository, PriceAlertsRepository,
+    PricesRepository, ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
 };
 
 pub struct DatabaseClient {
@@ -76,6 +77,10 @@ impl DatabaseClient {
     }
 
     pub fn migrations(&mut self) -> &mut dyn MigrationsRepository {
+        self
+    }
+
+    pub fn perpetuals(&mut self) -> &mut dyn PerpetualsRepository {
         self
     }
 

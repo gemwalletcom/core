@@ -20,6 +20,25 @@ pub struct Perpetual {
     pub leverage: Vec<u8>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PerpetualBasic {
+    pub asset_id: AssetId,
+    pub perpetual_id: String,
+    pub provider: PerpetualProvider,
+}
+
+impl Perpetual {
+    pub fn as_basic(&self) -> PerpetualBasic {
+        PerpetualBasic {
+            asset_id: self.asset_id.clone(),
+            perpetual_id: self.id.clone(),
+            provider: self.provider.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]

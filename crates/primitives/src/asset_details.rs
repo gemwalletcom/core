@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{Asset, AssetId, AssetMarket, AssetScore, LinkType, Price};
+use crate::{Asset, AssetId, AssetMarket, AssetScore, LinkType, Price, perpetual::PerpetualBasic};
 
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -12,6 +12,7 @@ pub struct AssetFull {
     pub score: AssetScore,
     pub tags: Vec<String>,
     pub links: Vec<AssetLink>,
+    pub perpetuals: Vec<PerpetualBasic>,
     #[typeshare(skip)]
     pub price: Option<Price>,
     #[typeshare(skip)]

@@ -1757,6 +1757,7 @@ dependencies = [
  "async-trait",
  "cacher",
  "chain_primitives",
+ "chain_traits",
  "chrono",
  "coingecko",
  "fiat",

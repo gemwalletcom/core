@@ -72,6 +72,8 @@ impl AssetsRepository for DatabaseClient {
             .map(|x| x.as_primitive())
             .collect();
         let tags = TagStore::get_assets_tags_for_asset(self, asset_id)?.into_iter().map(|x| x.tag_id).collect();
+        let perpetuals = self.perpetuals().get_perpetuals_for_asset(asset.id.as_str())?;
+        let perpetuals = perpetuals.into_iter().map(|x| x.as_basic()).collect();
 
         Ok(primitives::AssetFull {
             price: price.map(|x| x.as_primitive()),
@@ -81,6 +83,7 @@ impl AssetsRepository for DatabaseClient {
             score: asset.as_score_primitive(),
             links,
             tags,
+            perpetuals,
         })
     }
 

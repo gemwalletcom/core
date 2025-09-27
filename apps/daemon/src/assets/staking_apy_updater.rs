@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use gem_tracing::info_with_fields;
 use primitives::Chain;
 use settings_chain::ChainProviders;
 use storage::{AssetUpdate, AssetsRepository, DatabaseClient};
@@ -22,9 +23,9 @@ impl StakeApyUpdater {
                     let apy = (apy * 100.0).round() / 100.0;
                     self.database
                         .update_asset(chain.as_asset_id().to_string(), AssetUpdate::StakingApr(Some(apy)))?;
-                    println!("update_staking_apy chain: {chain} apy: {apy}");
+                    info_with_fields!("update_staking_apy chain", chain = chain.as_ref(), apy = apy);
                 }
-                Err(e) => eprintln!("update_staking_apy chain: {chain} error {e}"),
+                Err(e) => return Err(e),
             }
         }
         Ok(())

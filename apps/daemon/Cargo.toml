@@ -29,3 +29,4 @@ cacher = { path = "../../crates/cacher" }
 streamer = { path = "../../crates/streamer" }
 localizer = { path = "../../crates/localizer" }
 settings_chain = { path = "../../crates/settings_chain" }
+chain_traits = { path = "../../crates/chain_traits" }

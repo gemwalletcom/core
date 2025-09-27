@@ -160,7 +160,8 @@ pub use self::asset_address::AssetAddress;
 pub mod graphql;
 pub mod perpetual;
 pub use self::perpetual::{
-    AccountDataType, Perpetual, PerpetualBalance, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary, PerpetualType,
+    AccountDataType, Perpetual, PerpetualBalance, PerpetualBasic, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary,
+    PerpetualType,
 };
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;

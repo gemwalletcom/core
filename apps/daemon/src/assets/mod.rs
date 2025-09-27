@@ -1,11 +1,13 @@
 mod asset_rank_updater;
 mod asset_updater;
+mod perpetual_updater;
 mod staking_apy_updater;
 
 use asset_rank_updater::AssetRankUpdater;
 use asset_updater::AssetUpdater;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
+use perpetual_updater::PerpetualUpdater;
 use settings::Settings;
 use settings_chain::ChainProviders;
 use staking_apy_updater::StakeApyUpdater;
@@ -57,11 +59,20 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
+    let update_perpetuals = run_job("Update perpetuals", Duration::from_secs(3600), {
+        let settings = settings.clone();
+        move || {
+            let mut updater = PerpetualUpdater::new(&settings);
+            async move { updater.update_perpetuals().await }
+        }
+    });
+
     vec![
         Box::pin(update_assets),
         Box::pin(update_tranding_assets),
         Box::pin(update_recently_added_assets),
         Box::pin(update_suspicious_assets),
         Box::pin(update_staking_apy),
+        Box::pin(update_perpetuals),
     ]
 }

@@ -353,6 +353,41 @@ diesel::table! {
 }
 
 diesel::table! {
+    perpetuals (id) {
+        #[max_length = 128]
+        id -> Varchar,
+        #[max_length = 128]
+        name -> Varchar,
+        #[max_length = 32]
+        provider -> Varchar,
+        #[max_length = 256]
+        asset_id -> Nullable<Varchar>,
+        #[max_length = 128]
+        identifier -> Varchar,
+        price -> Float8,
+        price_percent_change_24h -> Float8,
+        open_interest -> Float8,
+        volume_24h -> Float8,
+        funding -> Float8,
+        leverage -> Array<Nullable<Int4>>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    perpetuals_assets (id) {
+        id -> Int4,
+        #[max_length = 128]
+        perpetual_id -> Varchar,
+        #[max_length = 256]
+        asset_id -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     price_alerts (id) {
         id -> Int4,
         #[max_length = 512]
@@ -571,6 +606,9 @@ diesel::joinable!(nft_collections_links -> link_types (link_type));
 diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
 diesel::joinable!(nodes -> chains (chain));
 diesel::joinable!(parser_state -> chains (chain));
+diesel::joinable!(perpetuals -> assets (asset_id));
+diesel::joinable!(perpetuals_assets -> assets (asset_id));
+diesel::joinable!(perpetuals_assets -> perpetuals (perpetual_id));
 diesel::joinable!(price_alerts -> assets (asset_id));
 diesel::joinable!(price_alerts -> devices (device_id));
 diesel::joinable!(price_alerts -> fiat_rates (currency));
@@ -611,6 +649,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     nft_types,
     nodes,
     parser_state,
+    perpetuals,
+    perpetuals_assets,
     price_alerts,
     prices,
     prices_assets,
