@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 use primitives::{
-    AssetId, Chain,
+    AssetId,
     perpetual::{Perpetual as PrimitivePerpetual, PerpetualBasic},
     perpetual_provider::PerpetualProvider,
 };
@@ -14,7 +14,7 @@ pub struct Perpetual {
     pub id: String,
     pub name: String,
     pub provider: String,
-    pub asset_id: Option<String>,
+    pub asset_id: String,
     pub identifier: String,
     pub price: f64,
     pub price_percent_change_24h: f64,
@@ -44,7 +44,7 @@ impl Perpetual {
             id: perpetual.id,
             name: perpetual.name,
             provider: perpetual.provider.as_ref().to_string(),
-            asset_id: Some(Chain::HyperCore.as_asset_id().to_string()),
+            asset_id: perpetual.asset_id.to_string(),
             identifier: perpetual.identifier,
             price: perpetual.price,
             price_percent_change_24h: perpetual.price_percent_change_24h,
@@ -57,13 +57,12 @@ impl Perpetual {
 
     pub fn as_primitive(&self) -> PrimitivePerpetual {
         let provider = PerpetualProvider::from_str(&self.provider).ok().unwrap();
-        let asset_id = self.asset_id();
 
         PrimitivePerpetual {
             id: self.id.clone(),
             name: self.name.clone(),
             provider,
-            asset_id,
+            asset_id: AssetId::new(&self.asset_id).unwrap(),
             identifier: self.identifier.clone(),
             price: self.price,
             price_percent_change_24h: self.price_percent_change_24h,
@@ -76,17 +75,9 @@ impl Perpetual {
 
     pub fn as_basic(&self) -> PerpetualBasic {
         PerpetualBasic {
-            asset_id: self.asset_id(),
+            asset_id: AssetId::new(&self.asset_id).unwrap(),
             perpetual_id: self.id.clone(),
             provider: PerpetualProvider::from_str(&self.provider).ok().unwrap(),
         }
-    }
-
-    fn asset_id(&self) -> AssetId {
-        self
-            .asset_id
-            .as_deref()
-            .and_then(AssetId::new)
-            .unwrap_or_else(|| Chain::HyperCore.as_asset_id())
     }
 }

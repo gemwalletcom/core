@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM rust:1.89.0-bookworm AS builder
+FROM rust:1.90.0-bookworm AS builder
 WORKDIR /app
 
 # Copy source
