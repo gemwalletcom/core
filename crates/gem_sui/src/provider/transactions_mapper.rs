@@ -3,7 +3,7 @@ use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL, SUI_STAKE_EVENT, SUI_UNSTAKE_EVEN
 use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::{TimeZone, Utc};
 use num_bigint::BigUint;
-use primitives::{AssetId, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType, TransactionUpdate, chain::Chain};
+use primitives::{AssetId, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType, chain::Chain};
 
 const CHAIN: Chain = Chain::Sui;
 
@@ -197,15 +197,6 @@ pub fn map_transaction_blocks(transaction_blocks: TransactionBlocks) -> Vec<Tran
     transaction_blocks.data.into_iter().flat_map(map_transaction).collect()
 }
 
-pub fn map_transaction_status(transaction: Digest) -> TransactionUpdate {
-    let state = match transaction.effects.status.status.as_str() {
-        "success" => TransactionState::Confirmed,
-        "failure" => TransactionState::Reverted,
-        _ => TransactionState::Pending,
-    };
-    TransactionUpdate::new_state(state)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,33 +206,5 @@ mod tests {
         let transaction_blocks = TransactionBlocks { data: vec![] };
         let transactions = map_transaction_blocks(transaction_blocks);
         assert_eq!(transactions.len(), 0);
-    }
-
-    #[test]
-    fn test_map_transaction_status() {
-        use crate::models::{Effect, GasObject, GasUsed, Owner, Status};
-        use num_bigint::BigUint;
-
-        let digest = Digest {
-            digest: "test".to_string(),
-            effects: Effect {
-                gas_used: GasUsed {
-                    computation_cost: BigUint::from(1000u32),
-                    storage_cost: BigUint::from(500u32),
-                    storage_rebate: BigUint::from(100u32),
-                    non_refundable_storage_fee: BigUint::from(0u32),
-                },
-                status: Status { status: "success".to_string() },
-                gas_object: GasObject {
-                    owner: Owner::String("0x123".to_string()),
-                },
-            },
-            balance_changes: None,
-            events: vec![],
-            timestamp_ms: 1234567890,
-        };
-
-        let update = map_transaction_status(digest);
-        assert_eq!(update.state, TransactionState::Confirmed);
     }
 }

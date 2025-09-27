@@ -94,9 +94,11 @@ mod tests {
         assert_eq!(result.fee, "5000");
         assert_eq!(result.transaction_type, TransactionType::Transfer);
         assert_eq!(result.state, TransactionState::Confirmed);
-        assert_eq!(result.utxo_inputs.len(), 1);
-        assert_eq!(result.utxo_outputs.len(), 1);
-        assert_eq!(result.utxo_inputs[0].address, "bc1qinput");
-        assert_eq!(result.utxo_outputs[0].address, "bc1qoutput");
+        let utxo_inputs = result.utxo_inputs.as_ref().expect("expected at least one input");
+        assert_eq!(utxo_inputs.len(), 1);
+        assert_eq!(utxo_inputs[0].address, "bc1qinput");
+        let utxo_outputs = result.utxo_outputs.as_ref().expect("expected at least one output");
+        assert_eq!(utxo_outputs.len(), 1);
+        assert_eq!(utxo_outputs[0].address, "bc1qoutput");
     }
 }

@@ -22,8 +22,14 @@ impl JsonRpcCall {
     }
 }
 
+fn default_jsonrpc_version() -> String {
+    "2.0".to_string()
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcResponse {
+    #[serde(default = "default_jsonrpc_version")]
+    pub jsonrpc: String,
     pub result: Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<u64>,
@@ -31,6 +37,8 @@ pub struct JsonRpcResponse {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcErrorResponse {
+    #[serde(default = "default_jsonrpc_version")]
+    pub jsonrpc: String,
     pub error: JsonRpcError,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<u64>,
@@ -271,11 +279,13 @@ mod tests {
     #[test]
     fn test_jsonrpc_result_id_extraction() {
         let success = JsonRpcResult::Success(JsonRpcResponse {
+            jsonrpc: "2.0".to_string(),
             result: json!({"test": "value"}),
             id: Some(123),
         });
 
         let error = JsonRpcResult::Error(JsonRpcErrorResponse {
+            jsonrpc: "2.0".to_string(),
             error: JsonRpcError {
                 code: -32602,
                 message: "Invalid params".to_string(),

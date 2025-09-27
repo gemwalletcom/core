@@ -14,6 +14,7 @@ pub trait ChainTraits:
     + ChainBalances
     + ChainStaking
     + ChainTransactions
+    + ChainTransactionState
     + ChainState
     + ChainAccount
     + ChainPerpetual
@@ -63,9 +64,6 @@ pub trait ChainTransactions: Send + Sync {
     async fn transaction_broadcast(&self, _data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support transaction broadcasting".into())
     }
-    async fn get_transaction_status(&self, _request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        Err("Chain does not support transaction status".into())
-    }
     async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
@@ -82,6 +80,13 @@ pub trait ChainTransactions: Send + Sync {
             }
         }
         Ok(all_transactions)
+    }
+}
+
+#[async_trait]
+pub trait ChainTransactionState: Send + Sync {
+    async fn get_transaction_status(&self, _request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support transaction status".into())
     }
 }
 

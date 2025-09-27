@@ -9,7 +9,7 @@ use std::{
 
 use async_trait::async_trait;
 use chain_traits::*;
-use primitives::{Chain, Node, Transaction, node::ChainNode};
+use primitives::{Chain, Node, Transaction, TransactionStateRequest, TransactionUpdate, node::ChainNode};
 
 #[derive(Clone, Debug)]
 pub struct ParserProxyUrlConfig {
@@ -123,6 +123,17 @@ impl ChainTransactions for ParserProxy {
         let provider_index = *self.provider_current_index.lock().unwrap();
         match self.providers[provider_index].get_transactions_by_block(block).await {
             Ok(txs) => Ok(txs),
+            Err(err) => Err(self.handle_error(err)),
+        }
+    }
+}
+
+#[async_trait]
+impl ChainTransactionState for ParserProxy {
+    async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
+        let provider_index = *self.provider_current_index.lock().unwrap();
+        match self.providers[provider_index].get_transaction_status(request).await {
+            Ok(status) => Ok(status),
             Err(err) => Err(self.handle_error(err)),
         }
     }

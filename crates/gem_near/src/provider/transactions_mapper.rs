@@ -1,8 +1,7 @@
-use crate::constants::{TRANSACTION_STATUS_EXECUTED, TRANSACTION_STATUS_EXECUTED_OPTIMISTIC, TRANSACTION_STATUS_FINAL};
+use crate::constants::TRANSACTION_STATUS_FINAL;
 use crate::models::{rpc, transaction::BroadcastResult};
 use chrono::DateTime;
-use num_bigint::{BigInt, BigUint};
-use primitives::{Transaction, TransactionChange, TransactionState, TransactionType, TransactionUpdate, chain::Chain};
+use primitives::{Transaction, TransactionState, TransactionType, chain::Chain};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(response: &BroadcastResult) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -10,19 +9,6 @@ pub fn map_transaction_broadcast(response: &BroadcastResult) -> Result<String, B
         TRANSACTION_STATUS_FINAL => Ok(response.transaction.hash.clone()),
         _ => Err(format!("Broadcast failed with status: {}", response.final_execution_status).into()),
     }
-}
-
-pub fn map_transaction_status(response: &BroadcastResult) -> TransactionUpdate {
-    let state = match response.final_execution_status.as_str() {
-        TRANSACTION_STATUS_FINAL | TRANSACTION_STATUS_EXECUTED | TRANSACTION_STATUS_EXECUTED_OPTIMISTIC => TransactionState::Confirmed,
-        _ => TransactionState::Failed,
-    };
-
-    let changes = vec![TransactionChange::NetworkFee(BigInt::from(
-        &response.transaction_outcome.outcome.tokens_burnt * BigUint::from(2u64),
-    ))];
-
-    TransactionUpdate { state, changes }
 }
 
 pub fn map_transaction(chain: Chain, header: rpc::BlockHeader, transaction: rpc::Transaction) -> Option<Transaction> {
@@ -104,44 +90,11 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_status_confirmed() {
-        let response = BroadcastResult {
-            final_execution_status: "FINAL".to_string(),
-            transaction: create_test_transaction(),
-            transaction_outcome: create_test_outcome("417494768750000000000"),
-        };
-
-        let result = map_transaction_status(&response);
-        assert_eq!(result.state, TransactionState::Confirmed);
-        assert_eq!(result.changes.len(), 1);
-        if let TransactionChange::NetworkFee(fee) = &result.changes[0] {
-            assert_eq!(fee, &"834989537500000000000".parse::<BigInt>().unwrap());
-            // 417494768750000000000 * 2
-        }
-    }
-
-    #[test]
-    fn test_map_transaction_status_failed() {
-        let response = BroadcastResult {
-            final_execution_status: "EXECUTION_FAILURE".to_string(),
-            transaction: create_test_transaction(),
-            transaction_outcome: create_test_outcome("0"),
-        };
-
-        let result = map_transaction_status(&response);
-        assert_eq!(result.state, TransactionState::Failed);
-    }
-
-    #[test]
     fn test_map_real_transaction_response() {
         let data = include_str!("../../testdata/successful_transaction.json");
         let response: JsonRpcResult<BroadcastResult> = serde_json::from_str(data).unwrap();
 
         let hash = map_transaction_broadcast(&response.result).unwrap();
         assert_eq!(hash, "5qSP5dRVr5KQ37Dd9CV2gi7KDuvtU4eFaRK7cDKREVL2");
-
-        let status_update = map_transaction_status(&response.result);
-        assert_eq!(status_update.state, TransactionState::Confirmed);
-        assert_eq!(status_update.changes.len(), 1);
     }
 }

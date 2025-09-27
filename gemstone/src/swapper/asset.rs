@@ -267,6 +267,9 @@ pub static HYPEREVM_USDC: LazyLock<Asset> =
     LazyLock::new(|| Asset::new(USDC_HYPEREVM_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
 pub static HYPEREVM_USDT: LazyLock<Asset> =
     LazyLock::new(|| Asset::new(USDT_HYPEREVM_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
+// Plasma
+pub static PLASMA_USDT: LazyLock<Asset> =
+    LazyLock::new(|| Asset::new(USDT_PLASMA_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
 // Solana
 pub static SOLANA_USDC: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(

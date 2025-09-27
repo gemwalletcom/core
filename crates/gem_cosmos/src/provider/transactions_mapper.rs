@@ -1,6 +1,6 @@
 use base64::{Engine as _, engine::general_purpose};
 use chrono::DateTime;
-use primitives::{AssetId, Chain, StakeValidator, Transaction, TransactionState, TransactionType, TransactionUpdate};
+use primitives::{AssetId, Chain, StakeValidator, Transaction, TransactionState, TransactionType};
 use sha2::{Digest, Sha256};
 use std::error::Error;
 
@@ -19,16 +19,6 @@ pub fn map_transaction_broadcast(response: &BroadcastResponse) -> Result<String,
     } else {
         Err("Unknown broadcast error".into())
     }
-}
-
-pub fn map_transaction_status(transaction: TransactionResponse) -> TransactionUpdate {
-    let state = if transaction.tx_response.code == 0 {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Reverted
-    };
-
-    TransactionUpdate::new_state(state)
 }
 
 pub fn map_transaction_decode(body: String) -> Option<String> {

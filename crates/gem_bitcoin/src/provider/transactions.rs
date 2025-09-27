@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use primitives::{BroadcastOptions, Transaction, TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{BroadcastOptions, Transaction};
 use std::error::Error;
 
 use gem_client::Client;
@@ -17,16 +17,6 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         }
 
         result.result.ok_or_else(|| "unknown hash".into())
-    }
-
-    async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        let transaction = self.get_transaction(&request.id).await?;
-        let status = if transaction.block_height > 0 {
-            TransactionState::Confirmed
-        } else {
-            TransactionState::Pending
-        };
-        Ok(TransactionUpdate::new_state(status))
     }
 
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
@@ -58,7 +48,7 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::provider::testkit::*;
-    use chain_traits::{ChainState, ChainTransactions};
+    use chain_traits::{ChainState, ChainTransactionState, ChainTransactions};
     use primitives::{TransactionState, TransactionStateRequest};
 
     #[tokio::test]

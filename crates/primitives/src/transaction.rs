@@ -39,6 +39,7 @@ pub struct Transaction {
     pub asset_id: AssetId,
     pub from: String,
     pub to: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub contract: Option<String>,
     #[serde(rename = "type")]
     pub transaction_type: TransactionType,
@@ -50,12 +51,16 @@ pub struct Transaction {
     #[serde(rename = "feeAssetId")]
     pub fee_asset_id: AssetId,
     pub value: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub memo: Option<String>,
     pub direction: TransactionDirection,
     #[serde(rename = "utxoInputs")]
-    pub utxo_inputs: Vec<TransactionUtxoInput>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub utxo_inputs: Option<Vec<TransactionUtxoInput>>,
     #[serde(rename = "utxoOutputs")]
-    pub utxo_outputs: Vec<TransactionUtxoInput>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub utxo_outputs: Option<Vec<TransactionUtxoInput>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
@@ -93,8 +98,8 @@ impl Transaction {
             value,
             memo,
             direction: TransactionDirection::SelfTransfer,
-            utxo_inputs: vec![],
-            utxo_outputs: vec![],
+            utxo_inputs: vec![].into(),
+            utxo_outputs: vec![].into(),
             metadata,
             created_at,
         }
@@ -130,8 +135,8 @@ impl Transaction {
             value,
             memo,
             direction: TransactionDirection::SelfTransfer,
-            utxo_inputs: utxo_inputs.unwrap_or_default(),
-            utxo_outputs: utxo_outputs.unwrap_or_default(),
+            utxo_inputs: utxo_inputs.unwrap_or_default().into(),
+            utxo_outputs: utxo_outputs.unwrap_or_default().into(),
             metadata,
             created_at,
         }
@@ -146,15 +151,15 @@ impl Transaction {
     }
 
     pub fn is_utxo_tx(&self) -> bool {
-        !self.utxo_inputs.is_empty() && !self.utxo_outputs.is_empty()
+        !self.utxo_inputs.clone().unwrap_or_default().is_empty() && !self.utxo_outputs.clone().unwrap_or_default().is_empty()
     }
 
     pub fn input_addresses(&self) -> Vec<String> {
-        self.utxo_inputs.iter().map(|x| x.address.clone()).collect()
+        self.utxo_inputs.clone().unwrap_or_default().iter().map(|x| x.address.clone()).collect()
     }
 
     pub fn output_addresses(&self) -> Vec<String> {
-        self.utxo_outputs.iter().map(|x| x.address.clone()).collect()
+        self.utxo_outputs.clone().unwrap_or_default().iter().map(|x| x.address.clone()).collect()
     }
 
     pub fn addresses(&self) -> Vec<String> {
@@ -202,7 +207,7 @@ impl Transaction {
         }
 
         // from is always picked from first
-        let from = self.utxo_inputs.first().unwrap().address.clone();
+        let from = self.utxo_inputs.clone().unwrap_or_default().first().unwrap().address.clone();
         let to: String;
         let value: String;
 
@@ -210,17 +215,24 @@ impl Transaction {
             TransactionDirection::Incoming => {
                 let addrs: Vec<String> = outputs_addresses.clone().into_iter().filter(|x| user_set.contains(x)).collect();
                 to = addrs.first().unwrap().clone();
-                value = Self::utxo_calculate_value(&self.utxo_outputs, addresses).to_string();
+                value = Self::utxo_calculate_value(&self.utxo_outputs.clone().unwrap_or_default(), addresses).to_string();
             }
             TransactionDirection::Outgoing => {
                 let filtered: Vec<String> = outputs_addresses.clone().into_iter().filter(|x| !user_set.contains(x)).collect();
                 to = filtered.first().unwrap().clone();
-                let vals: Vec<TransactionUtxoInput> = self.utxo_outputs.clone().into_iter().filter(|x| x.address == to).collect();
+                let vals: Vec<TransactionUtxoInput> = self
+                    .utxo_outputs
+                    .clone()
+                    .unwrap_or_default()
+                    .clone()
+                    .into_iter()
+                    .filter(|x| x.address == to)
+                    .collect();
                 value = vals.first().unwrap().value.clone();
             }
             TransactionDirection::SelfTransfer => {
-                to = self.utxo_outputs.first().unwrap().address.clone();
-                value = Self::utxo_calculate_value(&self.utxo_outputs, addresses).to_string()
+                to = self.utxo_outputs.clone().unwrap_or_default().first().unwrap().address.clone();
+                value = Self::utxo_calculate_value(&self.utxo_outputs.clone().unwrap_or_default(), addresses).to_string()
             }
         };
         Transaction {

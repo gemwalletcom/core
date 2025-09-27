@@ -1,12 +1,13 @@
 use num_bigint::BigInt;
-use primitives::{AssetSubtype, FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType};
+use primitives::{AssetSubtype, Chain, FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType};
 use std::collections::HashMap;
 
 use crate::{constants::STATIC_BASE_FEE, models::prioritization_fee::SolanaPrioritizationFee};
 
 pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType, recipient_token_address: Option<String>) -> TransactionFee {
     let mut options = HashMap::new();
-    if input_type.get_recipient_asset().id.token_subtype() == AssetSubtype::TOKEN && recipient_token_address.is_none() {
+    let recipient_asset = input_type.get_recipient_asset();
+    if recipient_asset.chain() == Chain::Solana && recipient_asset.id.token_subtype() == AssetSubtype::TOKEN && recipient_token_address.is_none() {
         options.insert(
             FeeOption::TokenAccountCreation,
             BigInt::from(input_type.get_asset().id.chain.token_activation_fee().unwrap_or(0)),
@@ -112,7 +113,7 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
+    use primitives::swap::SwapData;
     use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider};
 
     #[test]
@@ -165,27 +166,7 @@ mod tests {
                 decimals: 6,
                 asset_type: AssetType::SPL,
             },
-            SwapData {
-                quote: SwapQuote {
-                    from_value: "1000000000".to_string(),
-                    to_value: "1000000".to_string(),
-                    provider_data: SwapProviderData {
-                        provider: SwapProvider::Jupiter,
-                        name: "Jupiter".to_string(),
-                        protocol_name: "jupiter".to_string(),
-                    },
-                    wallet_address: "test".to_string(),
-                    slippage_bps: 50,
-                    eta_in_seconds: None,
-                },
-                data: SwapQuoteData {
-                    to: "test".to_string(),
-                    value: "0".to_string(),
-                    data: "0x".to_string(),
-                    approval: None,
-                    gas_limit: None,
-                },
-            },
+            SwapData::mock_with_provider(SwapProvider::Jupiter),
         );
 
         let fee = calculate_transaction_fee(&input_type, &gas_price_type, None);
@@ -196,6 +177,20 @@ mod tests {
         // fee = gas_price + priority_fee = 5000 + 30000 = 35000
         assert_eq!(fee.fee, BigInt::from(35_000u64));
         assert_eq!(fee.gas_limit, BigInt::from(420_000u64));
+    }
+
+    #[test]
+    fn test_calculate_transaction_fee_cross_chain_swap_without_token_creation() {
+        let gas_price_type = GasPriceType::eip1559(BigInt::from(5000u64), BigInt::from(15000u64));
+        let input_type = TransactionInputType::Swap(
+            Asset::mock_spl_token(),
+            Asset::mock_ethereum_usdc(),
+            SwapData::mock_with_provider(SwapProvider::Jupiter),
+        );
+
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, None);
+
+        assert!(fee.options.get(&FeeOption::TokenAccountCreation).is_none());
     }
 
     #[test]
@@ -348,27 +343,7 @@ mod tests {
                 decimals: 6,
                 asset_type: AssetType::SPL,
             },
-            SwapData {
-                quote: SwapQuote {
-                    from_value: "1000000000".to_string(),
-                    to_value: "1000000".to_string(),
-                    provider_data: SwapProviderData {
-                        provider: SwapProvider::Jupiter,
-                        name: "Jupiter".to_string(),
-                        protocol_name: "jupiter".to_string(),
-                    },
-                    wallet_address: "test".to_string(),
-                    slippage_bps: 50,
-                    eta_in_seconds: None,
-                },
-                data: SwapQuoteData {
-                    to: "test".to_string(),
-                    value: "0".to_string(),
-                    data: "0x".to_string(),
-                    approval: None,
-                    gas_limit: None,
-                },
-            },
+            SwapData::mock_with_provider(SwapProvider::Jupiter),
         );
 
         let rates = calculate_fee_rates(&input_type, &fees);

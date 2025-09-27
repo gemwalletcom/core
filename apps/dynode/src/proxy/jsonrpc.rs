@@ -182,12 +182,17 @@ impl JsonRpcHandler {
             .map(|(i, call)| {
                 if let Some(Some(cache)) = cached.get(i) {
                     let result = serde_json::from_slice(&cache.body).unwrap_or_default();
-                    JsonRpcResult::Success(JsonRpcResponse { result, id: Some(call.id) })
+                    JsonRpcResult::Success(JsonRpcResponse {
+                        jsonrpc: call.jsonrpc.clone(),
+                        result,
+                        id: Some(call.id),
+                    })
                 } else if let Some(response) = upstream.get(upstream_idx) {
                     upstream_idx += 1;
                     response.clone()
                 } else {
                     JsonRpcResult::Error(JsonRpcErrorResponse {
+                        jsonrpc: call.jsonrpc.clone(),
                         error: JsonRpcError {
                             code: -32603,
                             message: "Internal error".to_string(),
@@ -231,6 +236,7 @@ mod tests {
         let cached_vec = vec![Some(cached), None];
 
         let upstream = vec![JsonRpcResult::Success(JsonRpcResponse {
+            jsonrpc: "2.0".to_string(),
             result: json!("0x456"),
             id: Some(2),
         })];
