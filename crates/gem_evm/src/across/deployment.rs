@@ -3,7 +3,7 @@ use crate::ether_conv::EtherConv;
 use alloy_primitives::map::HashSet;
 use num_bigint::BigInt;
 use primitives::{AssetId, Chain, asset_constants::*};
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
 pub const ACROSS_CONFIG_STORE: &str = "0x3B03509645713718B78951126E0A6de6f10043f5";
 pub const ACROSS_HUBPOOL: &str = "0xc186fA914353c44b2E33eBE05f21846F1048bEda";
@@ -77,6 +77,10 @@ impl AcrossDeployment {
                 chain_id,
                 spoke_pool: "0x35E63eA3eb0fb7A3bc543C71FB66412e1F6B0E04",
             }),
+            Chain::Plasma => Some(Self {
+                chain_id,
+                spoke_pool: "0x50039fAEfebef707cFD94D6d462fE6D10B39207a",
+            }),
             _ => None,
         }
     }
@@ -89,8 +93,8 @@ impl AcrossDeployment {
             324 => "0x863859ef502F0Ee9676626ED5B418037252eFeb2".into(),
             // SmartChain
             56 => "0xAC537C12fE8f544D712d71ED4376a502EEa944d7".into(),
-            // HyperEvm
-            999 => "0x5E7840E06fAcCb6d1c3b5F5E0d1d3d07F2829bba".into(),
+            // HyperEvm | Plasma
+            999 | 9745 => "0x5E7840E06fAcCb6d1c3b5F5E0d1d3d07F2829bba".into(),
             _ => MULTICALL_HANDLER.into(),
         }
     }
@@ -119,6 +123,7 @@ impl AcrossDeployment {
             (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
             (Chain::Unichain, vec![WETH_UNICHAIN_ASSET_ID.into(), USDC_UNICHAIN_ASSET_ID.into()]),
             (Chain::SmartChain, vec![ETH_SMARTCHAIN_ASSET_ID.into()]),
+            (Chain::Plasma, vec![USDT_PLASMA_ASSET_ID.into()]),
         ])
     }
 
@@ -189,6 +194,7 @@ impl AcrossDeployment {
                     USDT_ZKSYNC_ASSET_ID.into(),
                     USDT_INK_ASSET_ID.into(),
                     USDT_HYPEREVM_ASSET_ID.into(),
+                    USDT_PLASMA_ASSET_ID.into(),
                 ]),
             },
             // USDT on BSC decimals are 18
