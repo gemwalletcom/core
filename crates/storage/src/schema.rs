@@ -361,7 +361,7 @@ diesel::table! {
         #[max_length = 32]
         provider -> Varchar,
         #[max_length = 256]
-        asset_id -> Nullable<Varchar>,
+        asset_id -> Varchar,
         #[max_length = 128]
         identifier -> Varchar,
         price -> Float8,
