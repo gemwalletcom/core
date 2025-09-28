@@ -164,9 +164,7 @@ impl CacheProvider for MemoryCache {
                     }
                 }
                 RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => {
-                    if rule.rpc_method.is_some() {
-                        return Some(rule.ttl_seconds);
-                    }
+                    return None;
                 }
             }
         }

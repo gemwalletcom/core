@@ -19,6 +19,11 @@ domains:
     chain: bitcoin
     urls:
       - url: https://blockb1ook.btc.zelcore.io
+  
+  - domain: optimism
+    chain: optimism
+    urls:
+      - url: https://mainnet.optimism.io
 
   - domain: bitcoin
     chain: bitcoin
