@@ -15,6 +15,11 @@ domains:
         #
       - url: https://rpc.ankr.com/eth
 
+  - domain: bitcoin.dynode.internal
+    chain: bitcoin
+    urls:
+      - url: https://blockb1ook.btc.zelcore.io
+
   - domain: bitcoin
     chain: bitcoin
     urls:

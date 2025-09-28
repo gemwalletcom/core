@@ -6,6 +6,21 @@ services:
       context: .
       dockerfile: Dockerfile
 
+  setup:
+    image: app
+    container_name: setup
+    environment:
+      REDIS_URL: redis://default:@redis:6379
+      POSTGRES_URL: postgres://username:password@postgres/api
+      MEILISEARCH_URL: http://meilisearch:7700
+      RABBITMQ_URL: amqp://username:password@rabbitmq:5672
+    command: ["sh", "-c", "/app/setup"]
+    depends_on:
+      - app_build
+      - redis
+      - postgres
+      - meilisearch
+      
   api:
     image: app
     container_name: api
@@ -15,38 +30,40 @@ services:
       BINARY: api
       REDIS_URL: redis://default:@redis:6379
       POSTGRES_URL: postgres://username:password@postgres/api
+      MEILISEARCH_URL: http://meilisearch:7700
+      RABBITMQ_URL: amqp://username:password@rabbitmq:5672
     ports:
       - 8000:8000
     restart: always
+    command: ["sh", "-c", "/app/api"]
     depends_on:
       - app_build
       - redis
       - postgres
   
   dynode:
-    image: app
     container_name: dynode
+    build:
+      context: .
+      dockerfile: dynode.Dockerfile
     environment:
-      ROCKET_ADDRESS: 0.0.0.0
-      ROCKET_PORT: 8001
+      ADDRESS: 0.0.0.0
+      PORT: 8002
     ports:
-      - 8001:8001
+      - 8002:8002
     restart: always
+    command: ["sh", "-c", "/app/dynode"]
     depends_on:
-      - app_build
       - redis
       - postgres
-
-  setup:
-    image: app
-    container_name: setup
-    environment:
-      REDIS_URL: redis://default:@redis:6379
-      POSTGRES_URL: postgres://username:password@postgres/api
-    depends_on:
-      - app_build
-      - redis
-      - postgres
+    volumes:
+      - ./apps/dynode/domains.yml:/app/domains.yml
+    networks:
+      default: {}
+      dynode_internal:
+        aliases:
+          - ethereum.dynode.internal
+          - bitcoin.dynode.internal
 
   daemon:
     image: app
@@ -54,21 +71,35 @@ services:
     environment:
       REDIS_URL: redis://default:@redis:6379
       POSTGRES_URL: postgres://username:password@postgres/api
+      MEILISEARCH_URL: http://meilisearch:7700
+      RABBITMQ_URL: amqp://username:password@rabbitmq:5672
+    command: ["sh", "-c", "/app/daemon search"]
     depends_on:
       - app_build
       - setup
       - redis
       - postgres
+    networks:
+      default: {}
+      dynode_internal: {}
 
   parser:
     image: app
     container_name: parser
     environment:
       POSTGRES_URL: postgres://username:password@postgres/api
+      RABBITMQ_URL: amqp://username:password@rabbitmq:5672
+      CHAINS_BITCOIN_URL: http://bitcoin.dynode.internal:8002
+    command: ["sh", "-c", "/app/parser bitcoin"]
     depends_on:
       - app_build
       - setup
       - postgres
+      - redis
+      - meilisearch
+    networks:
+      default: {}
+      dynode_internal: {}
 
   redis:
     image: redis:7.0-alpine
@@ -100,7 +131,7 @@ services:
       RABBITMQ_DEFAULT_PASS: password
 
   meilisearch:
-    image: getmeili/meilisearch:v1.15.0-rc.4
+    image: getmeili/meilisearch:v1.21.0
     container_name: meilisearch
     restart: always
     ports:
@@ -115,3 +146,6 @@ volumes:
   postgres:
 
   meilisearch:
+
+networks:
+  dynode_internal:

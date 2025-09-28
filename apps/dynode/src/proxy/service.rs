@@ -11,6 +11,7 @@ use primitives::Chain;
 use reqwest::Method;
 use reqwest::header::{self, HeaderMap, HeaderName};
 use std::collections::HashMap;
+use std::fmt::format;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -64,7 +65,8 @@ impl ProxyRequestService {
         let (domain, domain_config) = match (self.domains.get(&host), self.domain_configs.get(&host)) {
             (Some(domain), Some(config)) => (domain.clone(), config.clone()),
             _ => {
-                let response = ResponseBuilder::build_with_headers(b"domain not found".to_vec(), 404, "text/plain", HeaderMap::new())?;
+                let error = format!("domain not found for host: {}", host);
+                let response = ResponseBuilder::build_with_headers(error.as_bytes().to_vec(), 404, "text/plain", HeaderMap::new())?;
                 return Ok(response);
             }
         };

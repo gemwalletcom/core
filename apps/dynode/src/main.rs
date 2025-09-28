@@ -17,6 +17,7 @@ use rocket::response::{Responder, Response, content::RawText};
 use rocket::route::{Handler, Outcome, Route};
 use rocket::tokio::io::AsyncReadExt;
 use rocket::{Request, State};
+use url::Url;
 
 const BODY_READ_LIMIT_MB: u64 = 32;
 
@@ -79,7 +80,12 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
         }
     }
 
-    let host = headers.get("host").and_then(|h| h.to_str().ok()).ok_or(Status::BadRequest)?.to_string();
+    let host_header = headers
+        .get("host")
+        .and_then(|h| h.to_str().ok())
+        .ok_or(Status::BadRequest)?
+        .to_string();
+    let host = normalize_host(&host_header);
 
     let user_agent = headers.get("user-agent").and_then(|h| h.to_str().ok()).unwrap_or_default().to_string();
 
@@ -98,6 +104,14 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
             Err(Status::InternalServerError)
         }
     }
+}
+
+fn normalize_host(raw_host: &str) -> String {
+    let candidate = format!("http://{}", raw_host);
+    Url::parse(&candidate)
+        .ok()
+        .and_then(|url| url.host_str().map(str::to_string))
+        .unwrap_or_else(|| raw_host.to_string())
 }
 
 fn build_response(proxy: ProxyResponse) -> Response<'static> {
