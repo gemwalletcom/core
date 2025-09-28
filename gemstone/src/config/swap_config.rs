@@ -46,13 +46,20 @@ impl SwapReferralFees {
     }
 
     pub fn update_all_bps(&mut self, bps: u32) {
-        self.evm.update_bps(bps);
-        self.evm_bridge.update_bps(bps);
-        self.solana.update_bps(bps);
-        self.thorchain.update_bps(bps);
-        self.sui.update_bps(bps);
-        self.ton.update_bps(bps);
-        self.tron.update_bps(bps);
+        self.iter_mut().for_each(|fee| fee.update_bps(bps));
+    }
+
+    fn iter_mut(&mut self) -> impl Iterator<Item = &mut SwapReferralFee> {
+        [
+            &mut self.evm,
+            &mut self.evm_bridge,
+            &mut self.solana,
+            &mut self.thorchain,
+            &mut self.sui,
+            &mut self.ton,
+            &mut self.tron,
+        ]
+        .into_iter()
     }
 }
 
