@@ -31,7 +31,11 @@ pub struct NodeDomain {
 
 impl ProxyRequestService {
     pub fn new(domains: HashMap<String, NodeDomain>, domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache) -> Self {
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder()
+            .pool_idle_timeout(std::time::Duration::from_secs(30))
+            .pool_max_idle_per_host(10)
+            .build()
+            .unwrap();
         let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING]);
 
         Self {
@@ -109,9 +113,7 @@ impl ProxyRequestService {
         };
 
         let methods_for_metrics = request_type.get_methods_for_metrics();
-        for method_name in &methods_for_metrics {
-            metrics.add_proxy_request_by_method(&host, method_name);
-        }
+        metrics.add_proxy_request_batch(&host, &user_agent, &methods_for_metrics);
 
         if let Some(key) = cache_key.as_ref()
             && let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &path_with_query, &request_url, &metrics, now).await

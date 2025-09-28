@@ -36,7 +36,7 @@ impl NodeService {
     }
 
     pub async fn get_proxy_request(&self) -> ProxyRequestService {
-        let node_domains = self.get_node_domains().await;
+        let node_domains = self.nodes.read().await.clone();
         ProxyRequestService::new(
             node_domains,
             self.domains.clone(),
@@ -54,9 +54,6 @@ impl NodeService {
         map.insert(domain, node_domain);
     }
 
-    pub async fn get_node_domains(&self) -> HashMap<String, NodeDomain> {
-        (*self.nodes.read().await).clone()
-    }
 
     pub async fn start_monitoring(&self) {
         let monitor = NodeMonitor::new(
