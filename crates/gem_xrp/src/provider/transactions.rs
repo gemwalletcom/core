@@ -9,7 +9,7 @@ use crate::provider::transactions_mapper::{map_transaction_broadcast, map_transa
 use crate::rpc::client::XRPClient;
 
 #[async_trait]
-impl<C: Client> ChainTransactions for XRPClient<C> {
+impl<C: Client + Clone> ChainTransactions for XRPClient<C> {
     async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
         let result = self.broadcast_transaction(&data).await?;
         map_transaction_broadcast(&result)

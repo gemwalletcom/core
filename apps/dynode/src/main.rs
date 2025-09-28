@@ -80,11 +80,7 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
         }
     }
 
-    let host_header = headers
-        .get("host")
-        .and_then(|h| h.to_str().ok())
-        .ok_or(Status::BadRequest)?
-        .to_string();
+    let host_header = headers.get("host").and_then(|h| h.to_str().ok()).ok_or(Status::BadRequest)?.to_string();
     let host = normalize_host(&host_header);
 
     let user_agent = headers.get("user-agent").and_then(|h| h.to_str().ok()).unwrap_or_default().to_string();

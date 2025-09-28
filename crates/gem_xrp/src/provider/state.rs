@@ -8,7 +8,7 @@ use gem_client::Client;
 use primitives::NodeSyncStatus;
 
 #[async_trait]
-impl<C: Client> ChainState for XRPClient<C> {
+impl<C: Client + Clone> ChainState for XRPClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
         Ok("".to_string())
     }

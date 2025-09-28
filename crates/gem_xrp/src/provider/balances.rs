@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[async_trait]
-impl<C: Client> ChainBalances for XRPClient<C> {
+impl<C: Client + Clone> ChainBalances for XRPClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
         let account = self.get_account_info(&address).await?;
         let reserved_amount = self.get_chain().account_activation_fee().unwrap_or(0) as u64;

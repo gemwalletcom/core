@@ -118,7 +118,7 @@ impl ProviderFactory {
             }
             Chain::Aptos => Box::new(AptosClient::new(gem_client.clone())),
             Chain::Sui => Box::new(SuiClient::new(JsonRpcClient::new(gem_client.clone()))),
-            Chain::Xrp => Box::new(XRPClient::new(gem_client.clone())),
+            Chain::Xrp => Box::new(XRPClient::new(JsonRpcClient::new(gem_client.clone()))),
             Chain::Algorand => Box::new(AlgorandClient::new(gem_client.clone(), AlgorandClientIndexer::new(gem_client_archive.clone()))),
             Chain::Stellar => Box::new(StellarClient::new(gem_client.clone())),
             Chain::Near => Box::new(NearClient::new(JsonRpcClient::new(gem_client.clone()))),

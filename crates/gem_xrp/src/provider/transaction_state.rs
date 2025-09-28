@@ -8,7 +8,7 @@ use primitives::{TransactionStateRequest, TransactionUpdate};
 use crate::{provider::transaction_state_mapper::map_transaction_status, rpc::client::XRPClient};
 
 #[async_trait]
-impl<C: Client> ChainTransactionState for XRPClient<C> {
+impl<C: Client + Clone> ChainTransactionState for XRPClient<C> {
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let status = self.get_transaction_status(&request.id).await?;
         Ok(map_transaction_status(&status))

@@ -138,15 +138,15 @@ pub fn map_token_data(chain: Chain, account_objects: Vec<AccountObject>) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::rpc::{LedgerData, LedgerResult, TransactionBroadcast};
-    use num_bigint::BigUint;
+    use crate::models::rpc::{LedgerData, TransactionBroadcast};
+    use gem_jsonrpc::types::JsonRpcResult;
 
     #[test]
     fn test_map_transaction_broadcast_success() {
         let json_data = include_str!("../testdata/transaction_broadcast_success.json");
-        let response: LedgerResult<TransactionBroadcast> = serde_json::from_str(json_data).expect("Failed to parse JSON");
+        let broadcast = serde_json::from_str::<JsonRpcResult<TransactionBroadcast>>(json_data).unwrap().take().unwrap();
 
-        let result = map_transaction_broadcast(&response.result);
+        let result = map_transaction_broadcast(&broadcast);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "04F53F220DD1BCB7CCF279D66FFB986EA41383EFC9378CA1EBF1823D7C89264F");
     }
@@ -154,20 +154,20 @@ mod tests {
     #[test]
     fn test_map_transaction_broadcast_failed() {
         let json_data = include_str!("../testdata/transaction_broadcast_failed.json");
-        let response: LedgerResult<TransactionBroadcast> = serde_json::from_str(json_data).expect("Failed to parse JSON");
+        let broadcast = serde_json::from_str::<JsonRpcResult<TransactionBroadcast>>(json_data).unwrap().take().unwrap();
 
-        let result = map_transaction_broadcast(&response.result);
+        let result = map_transaction_broadcast(&broadcast);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "Transaction rejected: Ledger sequence too high.");
     }
 
     #[test]
     fn test_map_account_transactions() {
-        let test_data = {
-            let response: serde_json::Value = serde_json::from_str(include_str!("../testdata/account_transactions.json")).unwrap();
-            serde_json::from_str::<AccountLedger>(&response["result"].to_string()).unwrap()
-        };
-        let transactions = map_account_transactions(Chain::Xrp, test_data);
+        let ledger = serde_json::from_str::<JsonRpcResult<AccountLedger>>(include_str!("../testdata/account_transactions.json"))
+            .unwrap()
+            .take()
+            .unwrap();
+        let transactions = map_account_transactions(Chain::Xrp, ledger);
 
         let expected_tx = Transaction::new(
             "00778C36255A48E753E7CDD3B60243D551ACD4B6ABD6765E9011D28B7566FEAB".to_string(),
@@ -190,8 +190,11 @@ mod tests {
 
     #[test]
     fn test_map_transactions_by_block() {
-        let response: LedgerResult<LedgerData> = serde_json::from_str(include_str!("../testdata/transactions_by_block.json")).unwrap();
-        let transactions = map_transactions_by_block(response.result.ledger);
+        let ledger = serde_json::from_str::<JsonRpcResult<LedgerData>>(include_str!("../testdata/transactions_by_block.json"))
+            .unwrap()
+            .take()
+            .unwrap();
+        let transactions = map_transactions_by_block(ledger.ledger);
 
         assert!(!transactions.is_empty());
         for tx in transactions {
