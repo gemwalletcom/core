@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::cache::RequestCache;
 use crate::config::{CacheConfig, Domain, NodeMonitoringConfig};
@@ -11,7 +11,7 @@ use crate::proxy::{NodeDomain, ProxyRequestService};
 #[derive(Debug, Clone)]
 pub struct NodeService {
     pub domains: HashMap<String, Domain>,
-    pub nodes: Arc<Mutex<HashMap<String, NodeDomain>>>,
+    pub nodes: Arc<RwLock<HashMap<String, NodeDomain>>>,
     pub metrics: Arc<Metrics>,
     pub cache: RequestCache,
     pub monitoring_config: NodeMonitoringConfig,
@@ -28,7 +28,7 @@ impl NodeService {
 
         Self {
             domains,
-            nodes: Arc::new(Mutex::new(hash_map)),
+            nodes: Arc::new(RwLock::new(hash_map)),
             metrics: Arc::new(metrics),
             cache: RequestCache::new(cache_config),
             monitoring_config,
@@ -36,25 +36,26 @@ impl NodeService {
     }
 
     pub async fn get_proxy_request(&self) -> ProxyRequestService {
+        let node_domains = self.get_node_domains().await;
         ProxyRequestService::new(
-            self.get_node_domains().await,
+            node_domains,
             self.domains.clone(),
             self.metrics.as_ref().clone(),
             self.cache.clone(),
         )
     }
 
-    pub async fn get_node_domain(nodes: &Arc<Mutex<HashMap<String, NodeDomain>>>, domain: String) -> Option<NodeDomain> {
-        (nodes.lock().await).get(&domain).cloned()
+    pub async fn get_node_domain(nodes: &Arc<RwLock<HashMap<String, NodeDomain>>>, domain: String) -> Option<NodeDomain> {
+        (nodes.read().await).get(&domain).cloned()
     }
 
-    pub async fn update_node_domain(nodes: &Arc<Mutex<HashMap<String, NodeDomain>>>, domain: String, node_domain: NodeDomain) {
-        let mut map = nodes.lock().await;
+    pub async fn update_node_domain(nodes: &Arc<RwLock<HashMap<String, NodeDomain>>>, domain: String, node_domain: NodeDomain) {
+        let mut map = nodes.write().await;
         map.insert(domain, node_domain);
     }
 
     pub async fn get_node_domains(&self) -> HashMap<String, NodeDomain> {
-        (*self.nodes.lock().await).clone()
+        (*self.nodes.read().await).clone()
     }
 
     pub async fn start_monitoring(&self) {

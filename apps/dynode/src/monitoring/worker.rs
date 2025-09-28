@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use futures::future;
 use primitives::Chain;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tokio::time::{Duration, sleep};
 
 use super::chain_client::ChainClient;
@@ -15,7 +15,7 @@ use crate::proxy::NodeDomain;
 
 pub struct NodeMonitor {
     domains: HashMap<String, Domain>,
-    nodes: Arc<Mutex<HashMap<String, NodeDomain>>>,
+    nodes: Arc<RwLock<HashMap<String, NodeDomain>>>,
     metrics: Arc<Metrics>,
     monitoring_config: NodeMonitoringConfig,
 }
@@ -23,7 +23,7 @@ pub struct NodeMonitor {
 impl NodeMonitor {
     pub fn new(
         domains: HashMap<String, Domain>,
-        nodes: Arc<Mutex<HashMap<String, NodeDomain>>>,
+        nodes: Arc<RwLock<HashMap<String, NodeDomain>>>,
         metrics: Arc<Metrics>,
         monitoring_config: NodeMonitoringConfig,
     ) -> Self {
@@ -70,7 +70,7 @@ impl NodeMonitor {
 
     async fn evaluate_domain(
         domain: &Domain,
-        nodes: &Arc<Mutex<HashMap<String, NodeDomain>>>,
+        nodes: &Arc<RwLock<HashMap<String, NodeDomain>>>,
         metrics: &Arc<Metrics>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if domain.urls.len() <= 1 {

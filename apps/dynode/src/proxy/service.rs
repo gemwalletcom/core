@@ -11,7 +11,6 @@ use primitives::Chain;
 use reqwest::Method;
 use reqwest::header::{self, HeaderMap, HeaderName};
 use std::collections::HashMap;
-use std::fmt::format;
 use std::sync::Arc;
 use std::time::Instant;
 
