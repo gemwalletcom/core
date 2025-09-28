@@ -15,6 +15,7 @@ pub struct NodeService {
     pub metrics: Arc<Metrics>,
     pub cache: RequestCache,
     pub monitoring_config: NodeMonitoringConfig,
+    pub http_client: reqwest::Client,
 }
 
 impl NodeService {
@@ -26,12 +27,19 @@ impl NodeService {
             hash_map.insert(key, NodeDomain { url });
         }
 
+        let http_client = reqwest::Client::builder()
+            .pool_idle_timeout(std::time::Duration::from_secs(30))
+            .pool_max_idle_per_host(10)
+            .build()
+            .unwrap();
+
         Self {
             domains,
             nodes: Arc::new(RwLock::new(hash_map)),
             metrics: Arc::new(metrics),
             cache: RequestCache::new(cache_config),
             monitoring_config,
+            http_client,
         }
     }
 
@@ -42,6 +50,7 @@ impl NodeService {
             self.domains.clone(),
             self.metrics.as_ref().clone(),
             self.cache.clone(),
+            self.http_client.clone(),
         )
     }
 

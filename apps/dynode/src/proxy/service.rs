@@ -30,12 +30,7 @@ pub struct NodeDomain {
 }
 
 impl ProxyRequestService {
-    pub fn new(domains: HashMap<String, NodeDomain>, domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache) -> Self {
-        let client = reqwest::Client::builder()
-            .pool_idle_timeout(std::time::Duration::from_secs(30))
-            .pool_max_idle_per_host(10)
-            .build()
-            .unwrap();
+    pub fn new(domains: HashMap<String, NodeDomain>, domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache, client: reqwest::Client) -> Self {
         let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING]);
 
         Self {
@@ -60,26 +55,22 @@ impl ProxyRequestService {
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let now = Instant::now();
 
-        let metrics = self.metrics.clone();
-        let cache = self.cache.clone();
-        let client = self.client.clone();
-        let keep_headers = self.keep_headers.clone();
-
         let (domain, domain_config) = match (self.domains.get(&host), self.domain_configs.get(&host)) {
-            (Some(domain), Some(config)) => (domain.clone(), config.clone()),
+            (Some(domain), Some(config)) => (domain, config),
             _ => {
                 let error = format!("domain not found for host: {}", host);
-                let response = ResponseBuilder::build_with_headers(error.as_bytes().to_vec(), 404, "text/plain", HeaderMap::new())?;
-                return Ok(response);
+                return Ok(ResponseBuilder::build_with_headers(error.as_bytes().to_vec(), 404, "text/plain", HeaderMap::new())?);
             }
         };
 
         let chain = domain_config.chain;
-        let base_url = domain.url.clone();
-        let overrides = base_url.urls_override.clone().unwrap_or_default();
-        let request_url = RequestUrl::from_parts(base_url, overrides, &path_with_query);
+        let request_url = RequestUrl::from_parts(
+            domain.url.clone(),
+            domain.url.urls_override.clone().unwrap_or_default(),
+            &path_with_query
+        );
 
-        metrics.add_proxy_request(&host, &user_agent);
+        self.metrics.add_proxy_request(&host, &user_agent);
 
         let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
 
@@ -105,20 +96,16 @@ impl ProxyRequestService {
             }
         }
 
-        let cache_ttl = cache.should_cache_request(&chain, &request_type);
-        let cache_key = if cache_ttl.is_some() {
-            Some(request_type.cache_key(&host, &path_with_query))
-        } else {
-            None
-        };
+        let cache_ttl = self.cache.should_cache_request(&chain, &request_type);
+        let cache_key = cache_ttl.map(|_| request_type.cache_key(&host, &path_with_query));
 
         let methods_for_metrics = request_type.get_methods_for_metrics();
-        metrics.add_proxy_request_batch(&host, &user_agent, &methods_for_metrics);
+        self.metrics.add_proxy_request_batch(&host, &user_agent, &methods_for_metrics);
 
-        if let Some(key) = cache_key.as_ref()
-            && let Some(result) = Self::try_cache_hit(&cache, chain, key, &request_type, &host, &path_with_query, &request_url, &metrics, now).await
-        {
-            return result;
+        if let Some(key) = &cache_key {
+            if let Some(result) = Self::try_cache_hit(&self.cache, chain, key, &request_type, &host, &path_with_query, &request_url, &self.metrics, now).await {
+                return result;
+            }
         }
 
         if let RequestType::JsonRpc(rpc_request) = &request_type {
@@ -127,24 +114,24 @@ impl ProxyRequestService {
                 chain,
                 &host,
                 &path_with_query,
-                &cache,
-                &metrics,
+                &self.cache,
+                &self.metrics,
                 &request_url,
-                &client,
+                &self.client,
                 &method,
                 now,
             )
             .await;
         }
 
-        let response = Self::proxy_pass_get_data(method.clone(), headers, body, request_url.clone(), &client, &keep_headers).await?;
+        let response = Self::proxy_pass_get_data(method.clone(), headers, body, request_url.clone(), &self.client, &self.keep_headers).await?;
         let status = response.status().as_u16();
 
         let upstream_headers = ResponseBuilder::create_upstream_headers(request_url.url.host_str(), now.elapsed());
-        let (processed_response, body_bytes) = Self::proxy_pass_response(response, &keep_headers, upstream_headers).await?;
+        let (processed_response, body_bytes) = Self::proxy_pass_response(response, &self.keep_headers, upstream_headers).await?;
 
         for method_name in &methods_for_metrics {
-            metrics.add_proxy_response(
+            self.metrics.add_proxy_response(
                 &host,
                 &path_with_query,
                 method_name,
@@ -161,22 +148,22 @@ impl ProxyRequestService {
             latency = DurationMs(now.elapsed()),
         );
 
-        if status == 200
-            && let (Some(ttl), Some(key)) = (cache_ttl, cache_key.clone())
-        {
-            tokio::spawn(Self::store_cache(
-                status,
-                ttl,
-                key,
-                body_bytes,
-                request_type.clone(),
-                chain,
-                host.clone(),
-                method.clone(),
-                path.clone(),
-                cache.clone(),
-                now,
-            ));
+        if status == 200 {
+            if let (Some(ttl), Some(key)) = (cache_ttl, cache_key) {
+                tokio::spawn(Self::store_cache(
+                    status,
+                    ttl,
+                    key,
+                    body_bytes,
+                    request_type,
+                    chain,
+                    host,
+                    method,
+                    path,
+                    self.cache.clone(),
+                    now,
+                ));
+            }
         }
 
         Ok(processed_response)
