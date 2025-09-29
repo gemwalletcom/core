@@ -52,5 +52,5 @@ pub enum NodeState {
 pub enum NodeType {
     #[default]
     Default,
-    Archive,
+    Archival,
 }

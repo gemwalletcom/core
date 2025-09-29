@@ -43,11 +43,10 @@ impl ParserProxy {
             nodes_map.entry(node.chain.clone()).or_default().push(node.node);
         });
 
-        let (url_type, archive_url_type) = ProviderFactory::url(chain, settings);
-        let node_type = ProviderFactory::get_node_type(url_type.clone());
+        let chain_config = ProviderFactory::get_chain_config(chain, settings);
+        let node_type = ProviderFactory::get_node_type(chain_config.node.clone());
 
-        let url = url_type.get_url().unwrap_or_default();
-        let archive_url = archive_url_type.unwrap_or(url_type.clone()).get_archive_url().unwrap_or_default();
+        let url = &chain_config.url;
 
         let node_urls = nodes_map
             .clone()
@@ -62,13 +61,7 @@ impl ParserProxy {
         let node_urls = if node_urls.is_empty() { vec![url.clone()] } else { node_urls };
         let config = ParserProxyUrlConfig { urls: node_urls };
         ParserProxy::new(
-            ProviderConfig::new(
-                chain,
-                &url,
-                &archive_url,
-                settings.ankr.key.secret.as_str(),
-                settings.trongrid.key.secret.as_str(),
-            ),
+            ProviderConfig::new(chain, url, node_type, settings.ankr.key.secret.as_str(), settings.trongrid.key.secret.as_str()),
             config,
         )
     }

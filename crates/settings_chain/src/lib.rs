@@ -1,10 +1,14 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
-use gem_algorand::{AlgorandClient, rpc::AlgorandClientIndexer};
+use gem_algorand::{
+    AlgorandClient,
+    rpc::{AlgorandClientIndexer, client_indexer::ALGORAND_INDEXER_URL},
+};
 use gem_client::{ReqwestClient, retry_policy};
 use gem_hypercore::rpc::client::HyperCoreClient;
 pub use provider_config::ProviderConfig;
+pub use settings::ChainURLType;
 
 use chain_traits::ChainTraits;
 
@@ -24,19 +28,19 @@ use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::XRPClient;
 
 use primitives::{Chain, EVMChain, NodeType, chain_cosmos::CosmosChain};
-use settings::{ChainURLType, Settings};
+use settings::Settings;
 
 pub struct ProviderFactory {}
 
 impl ProviderFactory {
     pub fn new_from_settings(chain: Chain, settings: &Settings) -> Box<dyn ChainTraits> {
-        let (url_type, archive_url_type) = Self::url(chain, settings);
-        let url = url_type.get_url().unwrap_or_default();
-        let archive_url = archive_url_type.unwrap_or(url_type.clone()).get_url().unwrap_or_default();
+        let chain_config = Self::get_chain_config(chain, settings);
+        let node_type = Self::get_node_type(chain_config.node.clone());
+
         Self::new_provider(ProviderConfig::new(
             chain,
-            &url,
-            &archive_url,
+            &chain_config.url,
+            node_type,
             settings.ankr.key.secret.as_str(),
             settings.trongrid.key.secret.as_str(),
         ))
@@ -62,9 +66,8 @@ impl ProviderFactory {
 
         let chain = config.chain;
         let url = config.url.clone();
-        let archive_url = config.archive_url.clone();
+        let node_type = config.clone().node_type;
         let gem_client = ReqwestClient::new(url.clone(), reqwest_client.clone());
-        let gem_client_archive = ReqwestClient::new(archive_url.clone(), reqwest_client.clone());
 
         match chain {
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {
@@ -96,12 +99,7 @@ impl ProviderFactory {
             | Chain::Hyperliquid
             | Chain::Monad => {
                 let chain = EVMChain::from_chain(chain).unwrap();
-                let node_type = config.clone().node_type();
-                let client = if node_type == NodeType::Archive {
-                    gem_client_archive.clone()
-                } else {
-                    gem_client.clone()
-                };
+                let client = gem_client.clone();
                 let rpc_client = JsonRpcClient::new(client.clone());
                 let ethereum_client = EthereumClient::new(rpc_client.clone(), chain)
                     .with_node_type(node_type)
@@ -119,7 +117,10 @@ impl ProviderFactory {
             Chain::Aptos => Box::new(AptosClient::new(gem_client.clone())),
             Chain::Sui => Box::new(SuiClient::new(JsonRpcClient::new(gem_client.clone()))),
             Chain::Xrp => Box::new(XRPClient::new(JsonRpcClient::new(gem_client.clone()))),
-            Chain::Algorand => Box::new(AlgorandClient::new(gem_client.clone(), AlgorandClientIndexer::new(gem_client_archive.clone()))),
+            Chain::Algorand => {
+                let indexer_client = ReqwestClient::new(ALGORAND_INDEXER_URL.to_string(), reqwest_client.clone());
+                Box::new(AlgorandClient::new(gem_client.clone(), AlgorandClientIndexer::new(indexer_client)))
+            }
             Chain::Stellar => Box::new(StellarClient::new(gem_client.clone())),
             Chain::Near => Box::new(NearClient::new(JsonRpcClient::new(gem_client.clone()))),
             Chain::Polkadot => Box::new(PolkadotClient::new(gem_client.clone())),
@@ -133,63 +134,63 @@ impl ProviderFactory {
         }
     }
 
-    pub fn url(chain: Chain, settings: &Settings) -> (ChainURLType, Option<ChainURLType>) {
+    pub fn get_chain_config(chain: Chain, settings: &Settings) -> &settings::Chain {
         match chain {
-            Chain::Bitcoin => settings.chains.bitcoin.get_type(),
-            Chain::BitcoinCash => settings.chains.bitcoincash.get_type(),
-            Chain::Litecoin => settings.chains.litecoin.get_type(),
-            Chain::Ethereum => settings.chains.ethereum.get_type(),
-            Chain::SmartChain => settings.chains.smartchain.get_type(),
-            Chain::Solana => settings.chains.solana.get_type(),
-            Chain::Polygon => settings.chains.polygon.get_type(),
-            Chain::Thorchain => settings.chains.thorchain.get_type(),
-            Chain::Cosmos => settings.chains.cosmos.get_type(),
-            Chain::Osmosis => settings.chains.osmosis.get_type(),
-            Chain::Arbitrum => settings.chains.arbitrum.get_type(),
-            Chain::Ton => settings.chains.ton.get_type(),
-            Chain::Tron => settings.chains.tron.get_type(),
-            Chain::Doge => settings.chains.doge.get_type(),
-            Chain::Optimism => settings.chains.optimism.get_type(),
-            Chain::Aptos => settings.chains.aptos.get_type(),
-            Chain::Base => settings.chains.base.get_type(),
-            Chain::AvalancheC => settings.chains.avalanchec.get_type(),
-            Chain::Sui => settings.chains.sui.get_type(),
-            Chain::Xrp => settings.chains.xrp.get_type(),
-            Chain::OpBNB => settings.chains.opbnb.get_type(),
-            Chain::Fantom => settings.chains.fantom.get_type(),
-            Chain::Gnosis => settings.chains.gnosis.get_type(),
-            Chain::Celestia => settings.chains.celestia.get_type(),
-            Chain::Injective => settings.chains.injective.get_type(),
-            Chain::Sei => settings.chains.sei.get_type(),
-            Chain::Manta => settings.chains.manta.get_type(),
-            Chain::Blast => settings.chains.blast.get_type(),
-            Chain::Noble => settings.chains.noble.get_type(),
-            Chain::ZkSync => settings.chains.zksync.get_type(),
-            Chain::Linea => settings.chains.linea.get_type(),
-            Chain::Mantle => settings.chains.mantle.get_type(),
-            Chain::Celo => settings.chains.celo.get_type(),
-            Chain::Near => settings.chains.near.get_type(),
-            Chain::World => settings.chains.world.get_type(),
-            Chain::Plasma => settings.chains.plasma.get_type(),
-            Chain::Stellar => settings.chains.stellar.get_type(),
-            Chain::Sonic => settings.chains.sonic.get_type(),
-            Chain::Algorand => settings.chains.algorand.get_type(),
-            Chain::Polkadot => settings.chains.polkadot.get_type(),
-            Chain::Cardano => settings.chains.cardano.get_type(),
-            Chain::Abstract => settings.chains.abstract_chain.get_type(),
-            Chain::Berachain => settings.chains.berachain.get_type(),
-            Chain::Ink => settings.chains.ink.get_type(),
-            Chain::Unichain => settings.chains.unichain.get_type(),
-            Chain::Hyperliquid => settings.chains.hyperliquid.get_type(),
-            Chain::HyperCore => settings.chains.hypercore.get_type(),
-            Chain::Monad => settings.chains.monad.get_type(),
+            Chain::Bitcoin => &settings.chains.bitcoin,
+            Chain::BitcoinCash => &settings.chains.bitcoincash,
+            Chain::Litecoin => &settings.chains.litecoin,
+            Chain::Ethereum => &settings.chains.ethereum,
+            Chain::SmartChain => &settings.chains.smartchain,
+            Chain::Solana => &settings.chains.solana,
+            Chain::Polygon => &settings.chains.polygon,
+            Chain::Thorchain => &settings.chains.thorchain,
+            Chain::Cosmos => &settings.chains.cosmos,
+            Chain::Osmosis => &settings.chains.osmosis,
+            Chain::Arbitrum => &settings.chains.arbitrum,
+            Chain::Ton => &settings.chains.ton,
+            Chain::Tron => &settings.chains.tron,
+            Chain::Doge => &settings.chains.doge,
+            Chain::Optimism => &settings.chains.optimism,
+            Chain::Aptos => &settings.chains.aptos,
+            Chain::Base => &settings.chains.base,
+            Chain::AvalancheC => &settings.chains.avalanchec,
+            Chain::Sui => &settings.chains.sui,
+            Chain::Xrp => &settings.chains.xrp,
+            Chain::OpBNB => &settings.chains.opbnb,
+            Chain::Fantom => &settings.chains.fantom,
+            Chain::Gnosis => &settings.chains.gnosis,
+            Chain::Celestia => &settings.chains.celestia,
+            Chain::Injective => &settings.chains.injective,
+            Chain::Sei => &settings.chains.sei,
+            Chain::Manta => &settings.chains.manta,
+            Chain::Blast => &settings.chains.blast,
+            Chain::Noble => &settings.chains.noble,
+            Chain::ZkSync => &settings.chains.zksync,
+            Chain::Linea => &settings.chains.linea,
+            Chain::Mantle => &settings.chains.mantle,
+            Chain::Celo => &settings.chains.celo,
+            Chain::Near => &settings.chains.near,
+            Chain::World => &settings.chains.world,
+            Chain::Plasma => &settings.chains.plasma,
+            Chain::Stellar => &settings.chains.stellar,
+            Chain::Sonic => &settings.chains.sonic,
+            Chain::Algorand => &settings.chains.algorand,
+            Chain::Polkadot => &settings.chains.polkadot,
+            Chain::Cardano => &settings.chains.cardano,
+            Chain::Abstract => &settings.chains.abstract_chain,
+            Chain::Berachain => &settings.chains.berachain,
+            Chain::Ink => &settings.chains.ink,
+            Chain::Unichain => &settings.chains.unichain,
+            Chain::Hyperliquid => &settings.chains.hyperliquid,
+            Chain::HyperCore => &settings.chains.hypercore,
+            Chain::Monad => &settings.chains.monad,
         }
     }
 
-    pub fn get_node_type(url: ChainURLType) -> NodeType {
-        match url {
-            ChainURLType::Default(_) => NodeType::Default,
-            ChainURLType::Archive(_) => NodeType::Archive,
+    pub fn get_node_type(url_type: ChainURLType) -> NodeType {
+        match url_type {
+            ChainURLType::Default => NodeType::Default,
+            ChainURLType::Archival => NodeType::Archival,
         }
     }
 }

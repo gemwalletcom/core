@@ -1,5 +1,5 @@
-use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
 use reqwest::StatusCode;
+use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
 
 use super::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
 
