@@ -18,7 +18,16 @@ impl<C: Client> ChainTransactions for CosmosClient<C> {
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let response = self.get_block(block.to_string().as_str()).await?;
         let transaction_ids = response.block.data.txs.clone().into_iter().flat_map(map_transaction_decode).collect::<Vec<_>>();
-        let receipts = future::try_join_all(transaction_ids.into_iter().map(|x| self.get_transaction(x))).await?;
+
+        let receipts = future::try_join_all(
+            transaction_ids
+                .chunks(7)
+                .map(|chunk| async { future::try_join_all(chunk.iter().map(|x| self.get_transaction(x.clone()))).await }),
+        )
+        .await?
+        .into_iter()
+        .flatten()
+        .collect();
 
         Ok(map_transactions(self.get_chain().as_chain(), receipts))
     }
