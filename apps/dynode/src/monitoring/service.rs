@@ -63,7 +63,6 @@ impl NodeService {
         map.insert(domain, node_domain);
     }
 
-
     pub async fn start_monitoring(&self) {
         let monitor = NodeMonitor::new(
             self.domains.clone(),
@@ -73,5 +72,74 @@ impl NodeService {
         );
 
         monitor.start_monitoring().await;
+    }
+
+    pub async fn handle_request_with_fallback(
+        &self,
+        method: reqwest::Method,
+        headers: reqwest::header::HeaderMap,
+        body_vec: Vec<u8>,
+        path: String,
+        path_with_query: String,
+        host: String,
+        user_agent: String,
+    ) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let domain = self.domains.get(&host);
+
+        if domain.is_none() || domain.unwrap().urls.len() <= 1 {
+            let proxy_service = self.get_proxy_request().await;
+            return proxy_service
+                .handle_request(method, headers, body_vec, path, path_with_query, host, user_agent)
+                .await;
+        }
+
+        let domain = domain.unwrap();
+        let current_node = Self::get_node_domain(&self.nodes, host.clone()).await;
+
+        for url in &domain.urls {
+            if let Some(ref current) = current_node {
+                if url.url == current.url.url && url == domain.urls.first().unwrap() {
+                } else if url.url == current.url.url {
+                    continue;
+                }
+            }
+
+            Self::update_node_domain(&self.nodes, host.clone(), NodeDomain { url: url.clone() }).await;
+
+            let proxy_service = self.get_proxy_request().await;
+            match proxy_service
+                .handle_request(
+                    method.clone(),
+                    headers.clone(),
+                    body_vec.clone(),
+                    path.clone(),
+                    path_with_query.clone(),
+                    host.clone(),
+                    user_agent.clone(),
+                )
+                .await
+            {
+                Ok(response) => {
+                    if !Self::should_retry_with_fallback(response.status) {
+                        return Ok(response);
+                    }
+                    // Continue to next URL if this one returns 429/403
+                }
+                Err(_) => {
+                    // Continue to next URL on error
+                    continue;
+                }
+            }
+        }
+
+        if let Some(original_node) = current_node {
+            Self::update_node_domain(&self.nodes, host.clone(), original_node).await;
+        }
+
+        Err("All URLs failed".into())
+    }
+
+    fn should_retry_with_fallback(status: u16) -> bool {
+        matches!(status, 429 | 403)
     }
 }

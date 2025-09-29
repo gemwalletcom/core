@@ -3,8 +3,10 @@ domains:
     chain: ethereum
     #poll_interval_seconds: 10
     urls:
+      - url: https://cloudflare-eth.com
       - url: https://rpc.ankr.com/eth
       - url: https://eth.llamarpc.com
+      
         # headers:
         #   x-api-key: test
         # urls_override:
@@ -54,6 +56,7 @@ domains:
   - domain: ton
     chain: ton
     urls:
+      - url: https://toncenter.com
       - url: https://toncenter.com
 
   - domain: tron

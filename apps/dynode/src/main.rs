@@ -88,10 +88,8 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
     let path = request.uri().path().to_string();
     let path_with_query = request.uri().to_string();
 
-    let proxy_service = node_service.get_proxy_request().await;
-
-    match proxy_service
-        .handle_request(method, headers, body_vec, path, path_with_query, host, user_agent)
+    match node_service
+        .handle_request_with_fallback(method, headers, body_vec, path, path_with_query, host, user_agent)
         .await
     {
         Ok(proxy_response) => Ok(proxy_response),
