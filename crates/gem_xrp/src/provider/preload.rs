@@ -11,7 +11,7 @@ use primitives::{
 use crate::{provider::preload_mapper::map_transaction_preload, rpc::client::XRPClient};
 
 #[async_trait]
-impl<C: Client> ChainTransactionLoad for XRPClient<C> {
+impl<C: Client + Clone> ChainTransactionLoad for XRPClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Send + Sync>> {
         let result = self.get_account_info_full(&input.sender_address).await?;
         map_transaction_preload(result)

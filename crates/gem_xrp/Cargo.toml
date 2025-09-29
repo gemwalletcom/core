@@ -5,8 +5,8 @@ edition = { workspace = true }
 
 [features]
 default = []
-rpc = ["dep:chrono", "dep:serde_serializers", "dep:chain_traits", "dep:gem_client"]
-reqwest = ["gem_client/reqwest"]
+rpc = ["dep:chrono", "dep:serde_serializers", "dep:chain_traits", "dep:gem_client", "gem_jsonrpc/client"]
+reqwest = ["gem_client/reqwest", "gem_jsonrpc/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
@@ -20,6 +20,7 @@ num-bigint = { workspace = true }
 
 chain_traits = { path = "../chain_traits", optional = true }
 gem_client = { path = "../gem_client", optional = true }
+gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 chrono = { workspace = true, features = ["serde"], optional = true }
 serde_serializers = { path = "../serde_serializers", optional = true }

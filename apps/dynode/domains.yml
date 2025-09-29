@@ -3,17 +3,28 @@ domains:
     chain: ethereum
     #poll_interval_seconds: 10
     urls:
-      - url: https://rpc.ankr.com/eth
+      #- url: https://cloudflare-eth.com
+      #- url: https://rpc.ankr.com/eth
       - url: https://eth.llamarpc.com
+      
         # headers:
         #   x-api-key: test
-        # urls_override:
         #   "/":
         #     url: https://rpc.ankr.com/eth
         #headers:
         #  x-api-key: test2
         #
       - url: https://rpc.ankr.com/eth
+
+  - domain: bitcoin.dynode.internal
+    chain: bitcoin
+    urls:
+      - url: https://blockb1ook.btc.zelcore.io
+  
+  - domain: optimism
+    chain: optimism
+    urls:
+      - url: https://mainnet.optimism.io
 
   - domain: bitcoin
     chain: bitcoin
@@ -44,6 +55,7 @@ domains:
   - domain: ton
     chain: ton
     urls:
+      - url: https://toncenter.com
       - url: https://toncenter.com
 
   - domain: tron

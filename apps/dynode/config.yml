@@ -14,6 +14,10 @@ monitoring:
   poll_interval_seconds: 600
   block_delay: 100
 
+retry:
+  enabled: false
+  status_codes: [403, 429, 502, 503, 504]
+
 cache:
   max_memory_mb: 1024
   rules:

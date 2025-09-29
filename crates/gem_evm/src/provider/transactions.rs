@@ -31,7 +31,7 @@ async fn load_transactions_by_hashes<C: Client + Clone>(
         .collect::<Vec<String>>();
     let blocks = client.get_blocks(&block_ids, false).await?;
 
-    let traces = if node_type == NodeType::Archive {
+    let traces = if node_type == NodeType::Archival {
         Some(client.trace_replay_transactions(hashes).await?)
     } else {
         None
@@ -82,7 +82,7 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
             return Ok(vec![]);
         }
 
-        let traces = if self.node_type == NodeType::Archive {
+        let traces = if self.node_type == NodeType::Archival {
             Some(self.trace_replay_block_transactions(block_i64).await?)
         } else {
             None

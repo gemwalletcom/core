@@ -44,6 +44,20 @@ pub struct JsonRpcErrorResponse {
     pub id: Option<u64>,
 }
 
+impl JsonRpcErrorResponse {
+    pub fn new(message: &str, data: Option<Value>) -> Self {
+        Self {
+            jsonrpc: default_jsonrpc_version(),
+            error: JsonRpcError {
+                code: -32603,
+                message: message.to_string(),
+                data,
+            },
+            id: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcError {
     pub code: i32,
@@ -83,13 +97,8 @@ impl JsonRpcRequest {
     pub fn cache_key(&self, host: &str, path: &str) -> String {
         match self {
             Self::Single(call) => call.cache_key(host, path),
-            Self::Batch(calls) => {
-                let sorted_keys = {
-                    let mut keys: Vec<String> = calls.iter().map(|call| call.cache_key(host, path)).collect();
-                    keys.sort();
-                    keys
-                };
-                format!("batch:{}", sorted_keys.join(";"))
+            Self::Batch(_) => {
+                panic!("Batch requests do not support caching")
             }
         }
     }
@@ -136,10 +145,7 @@ impl RequestType {
     }
 
     pub fn content_type(&self) -> &'static str {
-        match self {
-            Self::JsonRpc(_) => "application/json",
-            Self::Regular { .. } => "application/json",
-        }
+        "application/json"
     }
 
     pub fn cache_key(&self, host: &str, path: &str) -> String {
@@ -239,28 +245,17 @@ mod tests {
     }
 
     #[test]
-    fn test_batch_cache_key_generation() {
-        let calls = vec![
-            JsonRpcCall {
-                jsonrpc: "2.0".to_string(),
-                method: "eth_blockNumber".to_string(),
-                params: json!([]),
-                id: 1,
-            },
-            JsonRpcCall {
-                jsonrpc: "2.0".to_string(),
-                method: "eth_getBalance".to_string(),
-                params: json!(["0x123", "latest"]),
-                id: 2,
-            },
-        ];
+    #[should_panic(expected = "Batch requests do not support caching")]
+    fn test_batch_cache_key_generation_panics() {
+        let calls = vec![JsonRpcCall {
+            jsonrpc: "2.0".to_string(),
+            method: "eth_blockNumber".to_string(),
+            params: json!([]),
+            id: 1,
+        }];
 
         let request = JsonRpcRequest::Batch(calls);
-        let key = request.cache_key("example.com", "/rpc");
-
-        assert!(key.starts_with("batch:"));
-        assert!(key.contains("eth_blockNumber"));
-        assert!(key.contains("eth_getBalance"));
+        let _ = request.cache_key("example.com", "/rpc");
     }
 
     #[test]

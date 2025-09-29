@@ -60,7 +60,6 @@ pub fn is_token_address(token_id: &str) -> bool {
 mod tests {
     use super::*;
     use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
-    use num_bigint::BigUint;
 
     #[test]
     fn test_encode_transaction_data_variants() {

@@ -6,9 +6,10 @@ use dynode::config::{MetricsConfig, NodeConfig};
 use dynode::metrics::Metrics;
 use dynode::monitoring::NodeService;
 use dynode::proxy::ProxyResponse;
+use dynode::proxy::proxy_request::ProxyRequest;
 use gem_tracing::{error_with_fields, info_with_fields};
 use reqwest::Method;
-use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
+use reqwest::header::{HOST, HeaderMap, HeaderName, HeaderValue, USER_AGENT};
 use rocket::config::Config;
 use rocket::data::{Data, ToByteUnit};
 use rocket::http::{Method as RocketMethod, Status};
@@ -17,6 +18,7 @@ use rocket::response::{Responder, Response, content::RawText};
 use rocket::route::{Handler, Outcome, Route};
 use rocket::tokio::io::AsyncReadExt;
 use rocket::{Request, State};
+use url::Url;
 
 const BODY_READ_LIMIT_MB: u64 = 32;
 
@@ -71,33 +73,36 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
 
     let mut headers = HeaderMap::new();
     for header in request.headers().iter() {
-        let name = HeaderName::from_bytes(header.name().as_str().as_bytes());
-        let value = HeaderValue::from_str(header.value());
+        let name = HeaderName::from_bytes(header.name().as_str().as_bytes()).map_err(|_| Status::BadRequest)?;
+        let value = HeaderValue::from_str(header.value()).map_err(|_| Status::BadRequest)?;
 
-        if let (Ok(name), Ok(value)) = (name, value) {
-            headers.append(name, value);
-        }
+        headers.append(name, value);
     }
 
-    let host = headers.get("host").and_then(|h| h.to_str().ok()).ok_or(Status::BadRequest)?.to_string();
-
-    let user_agent = headers.get("user-agent").and_then(|h| h.to_str().ok()).unwrap_or_default().to_string();
-
+    let host_header = headers.get(HOST).and_then(|h| h.to_str().ok()).ok_or(Status::BadRequest)?.to_string();
+    let user_agent = headers.get(USER_AGENT).and_then(|h| h.to_str().ok()).unwrap_or_default().to_string();
+    let host = normalize_host(&host_header);
     let path = request.uri().path().to_string();
     let path_with_query = request.uri().to_string();
+    let chain = node_service.get_chain_for_host(&host).ok_or(Status::BadRequest)?;
 
-    let proxy_service = node_service.get_proxy_request().await;
+    let proxy_request = ProxyRequest::new(method, headers, body_vec, path, path_with_query, host, user_agent, chain);
 
-    match proxy_service
-        .handle_request(method, headers, body_vec, path, path_with_query, host, user_agent)
-        .await
-    {
+    match node_service.handle_request(proxy_request).await {
         Ok(proxy_response) => Ok(proxy_response),
         Err(err) => {
             error_with_fields!("Proxy request failed", err.as_ref(),);
             Err(Status::InternalServerError)
         }
     }
+}
+
+fn normalize_host(raw_host: &str) -> String {
+    let candidate = format!("http://{}", raw_host);
+    Url::parse(&candidate)
+        .ok()
+        .and_then(|url| url.host_str().map(str::to_string))
+        .unwrap_or_else(|| raw_host.to_string())
 }
 
 fn build_response(proxy: ProxyResponse) -> Response<'static> {
@@ -138,7 +143,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         user_agent_patterns: config.metrics.user_agent_patterns.clone(),
     };
     let metrics = Metrics::new(metrics_config);
-    let node_service = NodeService::new(config.domains_map(), metrics.clone(), config.cache.clone(), config.monitoring.clone());
+    let node_service = NodeService::new(
+        config.domains_map(),
+        metrics.clone(),
+        config.cache.clone(),
+        config.monitoring.clone(),
+        config.retry.clone(),
+        config.request.clone(),
+    );
     let node_service_clone = node_service.clone();
 
     rocket::tokio::spawn(async move {

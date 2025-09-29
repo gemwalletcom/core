@@ -128,11 +128,11 @@ impl Metrics {
     pub fn add_proxy_request(&self, host: &str, user_agent: &str) {
         self.proxy_requests.get_or_create(&ProxyRequestLabels { host: host.to_string() }).inc();
 
-        let categorized_agent = self.categorize_user_agent(user_agent);
+        let user_agent = self.categorize_user_agent(user_agent);
         self.proxy_requests_by_user_agent
             .get_or_create(&ProxyRequestByAgentLabels {
                 host: host.to_string(),
-                user_agent: categorized_agent,
+                user_agent,
             })
             .inc();
     }
@@ -145,6 +145,28 @@ impl Metrics {
                 method,
             })
             .inc();
+    }
+
+    pub fn add_proxy_request_batch(&self, host: &str, user_agent: &str, methods: &[String]) {
+        self.proxy_requests.get_or_create(&ProxyRequestLabels { host: host.to_string() }).inc();
+
+        let user_agent = self.categorize_user_agent(user_agent);
+        self.proxy_requests_by_user_agent
+            .get_or_create(&ProxyRequestByAgentLabels {
+                host: host.to_string(),
+                user_agent,
+            })
+            .inc();
+
+        for method in methods {
+            let method = self.truncate_method(method);
+            self.proxy_requests_by_method
+                .get_or_create(&ProxyRequestByMethodLabels {
+                    host: host.to_string(),
+                    method,
+                })
+                .inc();
+        }
     }
 
     pub fn add_proxy_response(&self, host: &str, path: &str, method: &str, remote_host: &str, status: u16, latency: u128) {

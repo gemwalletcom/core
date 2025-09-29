@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -14,7 +15,7 @@ impl<T> ResponseResult<T> {
 
     pub fn error(error: String) -> Self {
         ResponseResult::Error(ResponseError {
-            error: ErrorDetail { message: error },
+            error: ErrorDetail { message: error, data: None },
         })
     }
 }
@@ -27,6 +28,8 @@ pub struct ResponseError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorDetail {
     pub message: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

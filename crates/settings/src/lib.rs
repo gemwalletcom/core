@@ -231,39 +231,15 @@ pub struct Chains {
 #[allow(unused)]
 pub struct Chain {
     pub url: String,
-    pub archive_url: Option<String>,
+    #[serde(default)]
+    pub node: ChainURLType,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Default)]
 pub enum ChainURLType {
-    Default(String),
-    Archive(String),
-}
-
-impl ChainURLType {
-    pub fn get_url(&self) -> Option<String> {
-        match self {
-            ChainURLType::Default(url) => Some(url.clone()),
-            ChainURLType::Archive(_) => None,
-        }
-    }
-
-    pub fn get_archive_url(&self) -> Option<String> {
-        match self {
-            ChainURLType::Default(_) => None,
-            ChainURLType::Archive(url) => Some(url.clone()),
-        }
-    }
-}
-
-impl Chain {
-    pub fn get_type(&self) -> (ChainURLType, Option<ChainURLType>) {
-        if let Some(url) = self.archive_url.clone() {
-            (ChainURLType::Default(self.url.clone()), Some(ChainURLType::Archive(url)))
-        } else {
-            (ChainURLType::Default(self.url.clone()), None)
-        }
-    }
+    #[default]
+    Default,
+    Archival,
 }
 
 #[derive(Debug, Deserialize, Clone)]

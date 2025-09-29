@@ -94,7 +94,7 @@ impl GemGateway {
             Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
             Chain::Sui => Ok(Arc::new(SuiClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
-            Chain::Xrp => Ok(Arc::new(XRPClient::new(alien_client))),
+            Chain::Xrp => Ok(Arc::new(XRPClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             Chain::Algorand => Ok(Arc::new(AlgorandClient::new(
                 alien_client.clone(),
                 AlgorandClientIndexer::new(alien_client.clone()),

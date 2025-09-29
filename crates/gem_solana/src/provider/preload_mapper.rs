@@ -190,7 +190,7 @@ mod tests {
 
         let fee = calculate_transaction_fee(&input_type, &gas_price_type, None);
 
-        assert!(fee.options.get(&FeeOption::TokenAccountCreation).is_none());
+        assert!(!fee.options.contains_key(&FeeOption::TokenAccountCreation));
     }
 
     #[test]

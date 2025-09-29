@@ -81,8 +81,8 @@ chains:
   solana:
     url: https://solana-rpc.publicnode.com
   ethereum:
-    url: https://ethereum-rpc.publicnode.com
-    archive_url: https://eth-pokt.nodies.app
+    url: https://eth-pokt.nodies.app
+    node: Archival
   smartchain:
     url: https://bsc-dataseed1.bnbchain.org
   polygon:
@@ -157,7 +157,6 @@ chains:
     url: https://rpc.soniclabs.com
   algorand:
     url: https://mainnet-api.algonode.cloud
-    archive_url: https://mainnet-idx.algonode.cloud
   polkadot:
     url: https://polkadot-public-sidecar.parity-chains.parity.io
   cardano:

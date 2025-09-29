@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use primitives::{Chain, NodeStatusState};
+use primitives::{Chain, NodeStatusState, NodeType};
 use settings_chain::{ProviderConfig, ProviderFactory};
 
 use super::sync::NodeStatusObservation;
@@ -13,7 +13,7 @@ pub struct ChainClient {
 
 impl ChainClient {
     pub fn new(chain: Chain, url: Url) -> Self {
-        let config = ProviderConfig::new(chain, &url.url, "", "", "");
+        let config = ProviderConfig::new(chain, &url.url, NodeType::Default, "", "");
         Self { config, url }
     }
 

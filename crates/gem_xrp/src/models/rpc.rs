@@ -4,16 +4,6 @@ use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_biguint_from_str, deserialize_u64_from_str};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LedgerResult<T> {
-    pub result: T,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LedgerError {
-    pub error: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LedgerCurrent {
     pub ledger_current_index: i64,
 }
