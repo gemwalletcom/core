@@ -45,7 +45,6 @@ impl Domain {
 pub struct Url {
     pub url: String,
     pub headers: Option<HashMap<String, String>>,
-    pub urls_override: Option<HashMap<String, Url>>,
 }
 
 impl Url {
@@ -74,7 +73,6 @@ mod tests {
         let url = Url {
             url: "https://alpha.example.test/status".to_string(),
             headers: None,
-            urls_override: None,
         };
         assert_eq!(url.host(), "alpha.example.test");
     }
@@ -84,7 +82,6 @@ mod tests {
         let url = Url {
             url: "http://127.0.0.1:8545".to_string(),
             headers: None,
-            urls_override: None,
         };
         assert_eq!(url.host(), "127.0.0.1");
     }
@@ -94,7 +91,6 @@ mod tests {
         let url = Url {
             url: "rpc.provider.local".to_string(),
             headers: None,
-            urls_override: None,
         };
         assert_eq!(url.host(), "rpc.provider.local");
     }
@@ -104,7 +100,6 @@ mod tests {
         let url = Url {
             url: "  https://example.com  ".to_string(),
             headers: None,
-            urls_override: None,
         };
         assert_eq!(url.host(), "example.com");
     }
@@ -114,7 +109,6 @@ mod tests {
         let url = Url {
             url: "wss://node.example.com:443/ws".to_string(),
             headers: None,
-            urls_override: None,
         };
         assert_eq!(url.host(), "node.example.com");
     }
@@ -123,7 +117,6 @@ mod tests {
         let url = Url {
             url: "https://fallback.example.com:8080/path".to_string(),
             headers: None,
-            urls_override: None,
         };
         assert_eq!(url.host(), "fallback.example.com");
     }

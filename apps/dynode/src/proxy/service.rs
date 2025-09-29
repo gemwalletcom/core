@@ -8,12 +8,10 @@ use crate::proxy::request_builder::RequestBuilder;
 use crate::proxy::request_url::RequestUrl;
 use crate::proxy::response_builder::{ProxyResponse, ResponseBuilder};
 use gem_tracing::{DurationMs, info_with_fields};
-use primitives::Chain;
 use reqwest::Method;
 use reqwest::header::{self, HeaderMap, HeaderName};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequestService {
@@ -50,22 +48,12 @@ impl ProxyRequestService {
         }
     }
 
-    pub async fn handle_request(
-        &self,
-        request: ProxyRequest,
-        domain_config: &Domain,
-        node_domain: &NodeDomain,
-    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let chain = domain_config.chain;
-        let request_url = RequestUrl::from_parts(
-            node_domain.url.clone(),
-            node_domain.url.urls_override.clone().unwrap_or_default(),
-            &request.path_with_query,
-        );
+    pub async fn handle_request(&self, request: ProxyRequest, node_domain: &NodeDomain) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let chain = request.chain;
+        let url = RequestUrl::from_parts(node_domain.url.clone(), &request.path_with_query);
+        let request_type = request.request_type();
 
         self.metrics.add_proxy_request(&request.host, &request.user_agent);
-
-        let request_type = request.request_type();
 
         match &request_type {
             RequestType::JsonRpc(_) => {
@@ -96,27 +84,27 @@ impl ProxyRequestService {
         self.metrics.add_proxy_request_batch(&request.host, &request.user_agent, &methods_for_metrics);
 
         if let Some(key) = &cache_key
-            && let Some(result) = Self::try_cache_hit(&self.cache, key, &request_type, &request, &request_url, &self.metrics).await
+            && let Some(result) = Self::try_cache_hit(&self.cache, key, &request, &url, &self.metrics).await
         {
             return result;
         }
 
         if let RequestType::JsonRpc(rpc_request) = &request_type {
-            return JsonRpcHandler::handle_request(rpc_request, &request, &self.cache, &self.metrics, &request_url, &self.client).await;
+            return JsonRpcHandler::handle_request(rpc_request, &request, &self.cache, &self.metrics, &url, &self.client).await;
         }
 
         let response = Self::proxy_pass_get_data(
             request.method.clone(),
             request.headers.clone(),
             request.body.clone(),
-            request_url.clone(),
+            url.clone(),
             &self.client,
             &self.keep_headers,
         )
         .await?;
         let status = response.status().as_u16();
 
-        let upstream_headers = ResponseBuilder::create_upstream_headers(request_url.url.host_str(), request.elapsed());
+        let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), request.elapsed());
         let (processed_response, body_bytes) = Self::proxy_pass_response(response, &self.keep_headers, upstream_headers).await?;
 
         for method_name in &methods_for_metrics {
@@ -124,7 +112,7 @@ impl ProxyRequestService {
                 &request.host,
                 &request.path_with_query,
                 method_name,
-                request_url.url.host_str().unwrap_or_default(),
+                url.url.host_str().unwrap_or_default(),
                 status,
                 request.elapsed().as_millis(),
             );
@@ -132,7 +120,7 @@ impl ProxyRequestService {
 
         info_with_fields!(
             "Proxy response",
-            host = request_url.url.host_str().unwrap_or_default(),
+            host = url.url.host_str().unwrap_or_default(),
             status = status,
             latency = DurationMs(request.elapsed()),
         );
@@ -140,18 +128,14 @@ impl ProxyRequestService {
         if status == 200
             && let (Some(ttl), Some(key)) = (cache_ttl, cache_key)
         {
+            let request_clone = request.clone();
             tokio::spawn(Self::store_cache(
                 status,
                 ttl,
                 key,
                 body_bytes,
-                request_type,
-                chain,
-                request.host,
-                request.method,
-                request.path,
+                request_clone,
                 self.cache.clone(),
-                request.request_start,
             ));
         }
 
@@ -161,12 +145,12 @@ impl ProxyRequestService {
     async fn try_cache_hit(
         cache: &RequestCache,
         cache_key: &str,
-        request_type: &RequestType,
         request: &ProxyRequest,
         url: &RequestUrl,
         metrics: &Metrics,
     ) -> Option<Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>>> {
         if let Some(cached) = cache.get(&request.chain, cache_key).await {
+            let request_type = request.request_type();
             let methods_for_metrics = request_type.get_methods_for_metrics();
             for method_name in &methods_for_metrics {
                 metrics.add_cache_hit(&request.host, method_name);
@@ -184,7 +168,7 @@ impl ProxyRequestService {
 
             let response = match request_type {
                 RequestType::JsonRpc(JsonRpcRequest::Single(original_call)) => {
-                    let data = cached.to_jsonrpc_response(original_call);
+                    let data = cached.to_jsonrpc_response(&original_call);
                     ResponseBuilder::build_with_headers(data, cached.status, &cached.content_type, upstream_headers)
                 }
                 RequestType::Regular { .. } => Ok(ResponseBuilder::build_cached_with_headers(cached.clone(), upstream_headers)),
@@ -204,6 +188,7 @@ impl ProxyRequestService {
 
             Some(response)
         } else {
+            let request_type = request.request_type();
             let methods_for_metrics = request_type.get_methods_for_metrics();
             for method_name in &methods_for_metrics {
                 metrics.add_cache_miss(&request.host, method_name);
@@ -217,14 +202,10 @@ impl ProxyRequestService {
         cache_ttl: u64,
         cache_key: String,
         body_bytes: Vec<u8>,
-        request_type: RequestType,
-        chain: Chain,
-        host: String,
-        method: Method,
-        path: String,
+        request: ProxyRequest,
         cache: RequestCache,
-        request_start: Instant,
     ) {
+        let request_type = request.request_type();
         let content_type = request_type.content_type().to_string();
         let body_size = body_bytes.len();
 
@@ -237,17 +218,17 @@ impl ProxyRequestService {
             RequestType::Regular { .. } => CachedResponse::new(body_bytes, status, content_type, cache_ttl),
         };
 
-        cache.set(&chain, cache_key, cached, cache_ttl).await;
+        cache.set(&request.chain, cache_key, cached, cache_ttl).await;
 
         info_with_fields!(
             "Cache SET",
-            chain = chain.as_ref(),
-            host = &host,
-            method = method.as_str(),
-            path = &path,
+            chain = request.chain.as_ref(),
+            host = &request.host,
+            method = request.method.as_str(),
+            path = &request.path,
             ttl_seconds = cache_ttl,
             size_bytes = body_size,
-            latency = DurationMs(request_start.elapsed()),
+            latency = DurationMs(request.elapsed()),
         );
     }
 

@@ -102,7 +102,7 @@ impl NodeService {
         if !self.retry_config.enabled || domain.urls.len() <= 1 {
             let proxy_service = self.get_proxy_request().await;
             let node_domain = NodeService::get_node_domain(&self.nodes, request.host.clone()).await.expect("Node domain should exist");
-            match proxy_service.handle_request(request.clone(), domain, &node_domain).await {
+            match proxy_service.handle_request(request.clone(), &node_domain).await {
                 Ok(response) if self.retry_config.status_codes.contains(&response.status) => {
                     return self.create_error_response(&request, &format!("Upstream error: {}", response.status));
                 }

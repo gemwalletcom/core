@@ -87,7 +87,6 @@ mod tests {
         Url {
             url: host.to_string(),
             headers: None,
-            urls_override: None,
         }
     }
 

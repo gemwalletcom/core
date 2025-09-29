@@ -61,7 +61,6 @@ mod tests {
         let mut url = Url {
             url: base.to_string(),
             headers: None,
-            urls_override: None,
         };
         if let Some((k, v)) = header_kv {
             url.headers = Some({
@@ -70,7 +69,7 @@ mod tests {
                 m
             });
         }
-        RequestUrl::from_parts(url, std::collections::HashMap::new(), path)
+        RequestUrl::from_parts(url, path)
     }
 
     #[test]

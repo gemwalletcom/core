@@ -81,25 +81,3 @@ fn map_transfer(chain: Chain, transaction: Extrinsic, method: String, to_address
         created_at,
     ))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::models::rpc::{Extrinsic, ExtrinsicArguments, ExtrinsicInfo, ExtrinsicMethod};
-
-    fn create_test_extrinsic(hash: &str, success: bool) -> Extrinsic {
-        Extrinsic {
-            hash: hash.to_string(),
-            method: ExtrinsicMethod {
-                pallet: "test".to_string(),
-                method: "test".to_string(),
-            },
-            info: ExtrinsicInfo {
-                partial_fee: Some("0".to_string()),
-            },
-            success,
-            args: ExtrinsicArguments::Other(serde_json::json!({})),
-            signature: None,
-        }
-    }
-}

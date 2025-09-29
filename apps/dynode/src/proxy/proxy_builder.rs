@@ -1,10 +1,10 @@
 use crate::config::{Domain, Url};
 
-#[cfg(test)]
-use crate::config::{MetricsConfig, CacheConfig};
-use crate::proxy::{ProxyRequestService, NodeDomain, proxy_request::ProxyRequest};
 use crate::cache::RequestCache;
+#[cfg(test)]
+use crate::config::MetricsConfig;
 use crate::metrics::Metrics;
+use crate::proxy::{NodeDomain, ProxyRequestService, proxy_request::ProxyRequest};
 use std::collections::HashMap;
 
 pub struct ProxyBuilder {
@@ -15,12 +15,7 @@ pub struct ProxyBuilder {
 }
 
 impl ProxyBuilder {
-    pub fn new(
-        domain_configs: HashMap<String, Domain>,
-        metrics: Metrics,
-        cache: RequestCache,
-        client: reqwest::Client,
-    ) -> Self {
+    pub fn new(domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache, client: reqwest::Client) -> Self {
         Self {
             domain_configs,
             metrics,
@@ -48,9 +43,8 @@ impl ProxyBuilder {
         url: &Url,
     ) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let proxy_service = self.create_for_url(&request.host, url);
-        let domain_config = self.domain_configs.get(&request.host).expect("Domain config should exist");
         let node_domain = crate::proxy::NodeDomain { url: url.clone() };
-        proxy_service.handle_request(request, domain_config, &node_domain).await
+        proxy_service.handle_request(request, &node_domain).await
     }
 }
 
@@ -64,7 +58,6 @@ mod tests {
         Url {
             url: url.to_string(),
             headers: None,
-            urls_override: None,
         }
     }
 
