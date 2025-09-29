@@ -16,9 +16,11 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
         let chain = self.get_chain().as_chain();
         let denom = chain.as_denom().ok_or("Chain does not have a denom")?;
 
-        let balance = balances.balances.iter().find(|balance| balance.denom == denom).ok_or("Balance not found")?;
-
-        Ok(AssetBalance::new(chain.as_asset_id(), balance.amount.parse::<BigUint>().unwrap_or_default()))
+        if let Some(balance) = balances.balances.iter().find(|balance| balance.denom == denom) {
+            Ok(AssetBalance::new(chain.as_asset_id(), balance.amount.parse::<BigUint>().unwrap_or_default()))
+        } else {
+            Ok(AssetBalance::new_zero_balance(chain.as_asset_id()))
+        }
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
@@ -26,13 +28,12 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
         let token_balances = token_ids
             .iter()
             .filter_map(|token_id| {
-                balances.balances.iter().find(|balance| balance.denom == *token_id).and_then(|balance| {
-                    let amount = balance.amount.parse::<num_bigint::BigUint>().ok()?;
+                balances.balances.iter().find(|balance| balance.denom == *token_id).map(|balance| {
                     let asset_id = AssetId {
                         chain: self.get_chain().as_chain(),
                         token_id: Some(token_id.clone()),
                     };
-                    Some(AssetBalance::new(asset_id, amount))
+                    AssetBalance::new(asset_id, balance.amount.parse::<BigUint>().unwrap_or_default())
                 })
             })
             .collect();
@@ -64,11 +65,9 @@ impl<C: Client> ChainBalances for CosmosClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::create_cosmos_test_client;
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_EMPTY_ADDRESS, create_cosmos_test_client};
     use chain_traits::ChainBalances;
     use num_bigint::BigUint;
-
-    const TEST_ADDRESS: &str = "cosmos1cvh8mpz04az0x7vht6h6ekksg8wd650r39ltwj";
 
     #[tokio::test]
     async fn test_cosmos_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -79,6 +78,18 @@ mod chain_integration_tests {
         println!("Balance: {:?} {}", balance.balance.available, balance.asset_id);
 
         assert!(balance.balance.available > BigUint::from(0u64));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_cosmos_get_balance_coin_empty_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_cosmos_test_client();
+        let address = TEST_EMPTY_ADDRESS.to_string();
+        let balance = client.get_balance_coin(address).await?;
+
+        println!("Balance: {:?} {}", balance.balance.available, balance.asset_id);
+
+        assert!(balance.balance.available == BigUint::from(0u64));
         Ok(())
     }
 
