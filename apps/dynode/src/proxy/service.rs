@@ -122,7 +122,8 @@ impl ProxyRequestService {
 
         info_with_fields!(
             "Proxy response",
-            host = url.url.host_str().unwrap_or_default(),
+            host = request.host,
+            remote_host = url.url.host_str().unwrap_or_default(),
             status = status,
             latency = DurationMs(request.elapsed()),
         );

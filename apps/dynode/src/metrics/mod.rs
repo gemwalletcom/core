@@ -87,7 +87,7 @@ impl Metrics {
         let cache_misses = Family::<CacheLabels, Counter>::default();
         let node_switches = Family::<NodeSwitchLabels, Counter>::default();
 
-        let mut registry = Registry::with_prefix("dynode");
+        let mut registry = Registry::with_prefix(&config.prefix);
         registry.register("proxy_requests", "Proxy requests by host", proxy_requests.clone());
         registry.register(
             "proxy_requests_by_user_agent_total",

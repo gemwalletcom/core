@@ -107,6 +107,7 @@ impl NodeConfig {
 pub struct MetricsSettings {
     pub port: u16,
     pub address: String,
+    pub prefix: String,
     #[serde(default)]
     pub user_agent_patterns: UserAgentPatterns,
 }

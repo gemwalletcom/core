@@ -15,8 +15,8 @@ impl ChainProviders {
         Self { providers }
     }
 
-    pub fn from_settings(settings: &Settings) -> Self {
-        Self::new(ProviderFactory::new_providers(settings))
+    pub fn from_settings(settings: &Settings, service_name: &str) -> Self {
+        Self::new(ProviderFactory::new_providers_with_user_agent(settings, service_name))
     }
 
     fn get_provider(&self, chain: Chain) -> Result<&dyn ChainTraits, Box<dyn Error + Send + Sync>> {

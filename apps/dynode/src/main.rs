@@ -2,7 +2,7 @@ use std::io::Cursor;
 use std::net::IpAddr;
 use std::str::FromStr;
 
-use dynode::config::{MetricsConfig, NodeConfig};
+use dynode::config::NodeConfig;
 use dynode::metrics::Metrics;
 use dynode::monitoring::NodeService;
 use dynode::proxy::ProxyResponse;
@@ -139,7 +139,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let node_address = IpAddr::from_str(config.address.as_str())?;
     let metrics_address = IpAddr::from_str(config.metrics.address.as_str())?;
 
-    let metrics_config = MetricsConfig {
+    let metrics_config = dynode::config::MetricsConfig {
+        prefix: config.metrics.prefix.clone(),
         user_agent_patterns: config.metrics.user_agent_patterns.clone(),
     };
     let metrics = Metrics::new(metrics_config);

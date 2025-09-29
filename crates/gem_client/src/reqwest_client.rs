@@ -1,5 +1,7 @@
 use crate::{retry_policy, Client, ClientError, ContentType, CONTENT_TYPE};
 use async_trait::async_trait;
+use reqwest::header::USER_AGENT;
+use reqwest::RequestBuilder;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{collections::HashMap, str::FromStr, time::Duration};
 
@@ -7,11 +9,24 @@ use std::{collections::HashMap, str::FromStr, time::Duration};
 pub struct ReqwestClient {
     base_url: String,
     client: reqwest::Client,
+    user_agent: Option<String>,
 }
 
 impl ReqwestClient {
     pub fn new(url: String, client: reqwest::Client) -> Self {
-        Self { base_url: url, client }
+        Self {
+            base_url: url,
+            client,
+            user_agent: None,
+        }
+    }
+
+    pub fn new_with_user_agent(url: String, client: reqwest::Client, user_agent: String) -> Self {
+        Self {
+            base_url: url,
+            client,
+            user_agent: Some(user_agent),
+        }
     }
 
     pub fn new_with_retry(url: String, timeout_secs: u64, max_retries: u32) -> Self {
@@ -20,15 +35,38 @@ impl ReqwestClient {
             .retry(retry_policy(url.clone(), max_retries))
             .build()
             .expect("Failed to build reqwest client with retry");
-        Self { base_url: url, client }
+        Self {
+            base_url: url,
+            client,
+            user_agent: None,
+        }
     }
 
     pub fn new_test_client(url: String) -> Self {
         Self::new_with_retry(url, 30, 3)
     }
 
+    pub fn with_user_agent(mut self, user_agent: String) -> Self {
+        self.user_agent = Some(user_agent);
+        self
+    }
+
     fn build_url(&self, path: &str) -> String {
         format!("{}{}", self.base_url.trim_end_matches('/'), path)
+    }
+
+    fn build_request(&self, request: RequestBuilder, headers: Option<HashMap<String, String>>) -> RequestBuilder {
+        let request = if let Some(ref user_agent) = self.user_agent {
+            request.header(USER_AGENT, user_agent)
+        } else {
+            request
+        };
+
+        if let Some(headers) = headers {
+            headers.into_iter().fold(request, |req, (key, value)| req.header(&key, &value))
+        } else {
+            request
+        }
     }
 
     async fn send_request<R>(&self, response: reqwest::Response) -> Result<R, ClientError>
@@ -77,13 +115,7 @@ impl Client for ReqwestClient {
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let mut request = self.client.get(&url);
-
-        if let Some(headers) = headers {
-            for (key, value) in headers {
-                request = request.header(&key, &value);
-            }
-        }
+        let request = self.build_request(self.client.get(&url), headers);
 
         let response = request.send().await.map_err(Self::map_reqwest_error)?;
         self.send_request(response).await
@@ -121,12 +153,7 @@ impl Client for ReqwestClient {
             _ => serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?,
         };
 
-        let mut request = self.client.post(&url).body(request_body);
-
-        // Add all headers
-        for (key, value) in headers {
-            request = request.header(&key, &value);
-        }
+        let request = self.build_request(self.client.post(&url).body(request_body), Some(headers));
 
         let response = request.send().await.map_err(Self::map_reqwest_error)?;
 

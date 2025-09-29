@@ -395,3 +395,10 @@ pub struct Sentry {
 
 #[cfg(feature = "testkit")]
 pub mod testkit;
+
+pub fn service_user_agent(service: &str, sub_service: Option<&str>) -> String {
+    match sub_service {
+        Some(sub) => format!("{}_{}", service, sub),
+        None => format!("{}", service),
+    }
+}

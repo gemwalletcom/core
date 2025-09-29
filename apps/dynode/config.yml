@@ -3,6 +3,7 @@ address: 0.0.0.0
 metrics:
   port: 4000
   address: 0.0.0.0
+  prefix: dynode
   user_agent_patterns:
     patterns:
       ios:

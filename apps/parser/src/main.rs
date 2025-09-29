@@ -1,17 +1,14 @@
 pub mod parser;
-use chain_traits::ChainProvider;
 pub use parser::Parser;
 pub mod parser_options;
 pub use parser_options::ParserOptions;
 pub mod pusher;
-use parser_proxy::ParserProxy;
 pub use pusher::Pusher;
 pub mod consumers;
-pub mod parser_proxy;
 
 use gem_tracing::{SentryConfig, SentryTracing};
-use primitives::{Chain, node::NodeState};
-use settings::Settings;
+use primitives::Chain;
+use settings::{Settings, service_user_agent};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use storage::DatabaseClient;
 use streamer::StreamProducer;
@@ -73,29 +70,20 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
         chains
     };
 
-    let nodes = database
-        .lock()
-        .await
-        .nodes()
-        .get_nodes()
-        .unwrap()
-        .into_iter()
-        .filter(|x| x.node.priority > 5 && x.node.status == NodeState::Active)
-        .collect::<Vec<_>>();
-
     println!("parser start chains: {chains:?}");
 
     let mut parsers = Vec::new();
     for chain in chains {
         let settings = settings.clone();
-        let proxy: ParserProxy = ParserProxy::new_from_nodes(&settings, chain, nodes.clone());
+        let user_agent = service_user_agent("parser", Some(chain.as_ref()));
+        let provider = settings_chain::ProviderFactory::new_from_settings_with_user_agent(chain, &settings, user_agent.as_str());
         let parser_options = ParserOptions {
             chain,
             timeout: settings.parser.timeout,
         };
 
         let parser = tokio::spawn(async move {
-            parser_start(settings.clone(), proxy, parser_options).await;
+            parser_start(settings.clone(), provider, parser_options).await;
         });
         parsers.push(parser);
     }
@@ -105,12 +93,12 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
     Ok(())
 }
 
-async fn parser_start(settings: Settings, proxy: ParserProxy, parser_options: ParserOptions) {
+async fn parser_start(settings: Settings, provider: Box<dyn chain_traits::ChainTraits>, parser_options: ParserOptions) {
     let database_client = DatabaseClient::new(settings.postgres.url.as_str());
-    let chain = proxy.get_chain();
+    let chain = provider.get_chain();
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, format!("parser_{chain}").as_str()).await.unwrap();
 
-    let mut parser = Parser::new(Box::new(proxy), stream_producer, database_client, parser_options.clone());
+    let mut parser = Parser::new(provider, stream_producer, database_client, parser_options.clone());
 
     loop {
         match parser.start().await {

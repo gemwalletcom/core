@@ -8,7 +8,7 @@ use asset_updater::AssetUpdater;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
 use perpetual_updater::PerpetualUpdater;
-use settings::Settings;
+use settings::{Settings, service_user_agent};
 use settings_chain::ChainProviders;
 use staking_apy_updater::StakeApyUpdater;
 use std::future::Future;
@@ -53,7 +53,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let update_staking_apy = run_job("Update staking APY", Duration::from_secs(86400), {
         let settings = settings.clone();
         move || {
-            let chain_providers = ChainProviders::from_settings(&settings);
+            let chain_providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
             let mut updater = StakeApyUpdater::new(chain_providers, &settings.postgres.url);
             async move { updater.update_staking_apy().await }
         }

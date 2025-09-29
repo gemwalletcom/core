@@ -34,23 +34,37 @@ pub struct ProviderFactory {}
 
 impl ProviderFactory {
     pub fn new_from_settings(chain: Chain, settings: &Settings) -> Box<dyn ChainTraits> {
+        Self::new_from_settings_with_user_agent(chain, settings, "")
+    }
+
+    pub fn new_from_settings_with_user_agent(chain: Chain, settings: &Settings, user_agent: &str) -> Box<dyn ChainTraits> {
         let chain_config = Self::get_chain_config(chain, settings);
         let node_type = Self::get_node_type(chain_config.node.clone());
 
-        Self::new_provider(ProviderConfig::new(
-            chain,
-            &chain_config.url,
-            node_type,
-            settings.ankr.key.secret.as_str(),
-            settings.trongrid.key.secret.as_str(),
-        ))
+        Self::new_provider(
+            ProviderConfig::new(
+                chain,
+                &chain_config.url,
+                node_type,
+                settings.ankr.key.secret.as_str(),
+                settings.trongrid.key.secret.as_str(),
+            ),
+            user_agent,
+        )
     }
 
     pub fn new_providers(settings: &Settings) -> Vec<Box<dyn ChainTraits>> {
         Chain::all().iter().map(|x| Self::new_from_settings(*x, &settings.clone())).collect()
     }
 
-    pub fn new_provider(config: ProviderConfig) -> Box<dyn ChainTraits> {
+    pub fn new_providers_with_user_agent(settings: &Settings, user_agent: &str) -> Vec<Box<dyn ChainTraits>> {
+        Chain::all()
+            .iter()
+            .map(|x| Self::new_from_settings_with_user_agent(*x, &settings.clone(), user_agent))
+            .collect()
+    }
+
+    pub fn new_provider(config: ProviderConfig, user_agent: &str) -> Box<dyn ChainTraits> {
         let host = config
             .url
             .parse::<url::Url>()
@@ -67,7 +81,7 @@ impl ProviderFactory {
         let chain = config.chain;
         let url = config.url.clone();
         let node_type = config.clone().node_type;
-        let gem_client = ReqwestClient::new(url.clone(), reqwest_client.clone());
+        let gem_client = ReqwestClient::new_with_user_agent(url.clone(), reqwest_client.clone(), user_agent.to_string());
 
         match chain {
             Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {

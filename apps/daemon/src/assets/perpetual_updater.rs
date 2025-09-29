@@ -2,7 +2,7 @@ use std::error::Error;
 
 use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::Chain;
-use settings::Settings;
+use settings::{Settings, service_user_agent};
 use settings_chain::ProviderFactory;
 use storage::{DatabaseClient, models::StoragePerpetual};
 
@@ -22,7 +22,7 @@ impl PerpetualUpdater {
     pub async fn update_perpetuals(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         let chains = [Chain::HyperCore];
         for chain in chains {
-            let provider = ProviderFactory::new_from_settings(chain, &self.settings);
+            let provider = ProviderFactory::new_from_settings_with_user_agent(chain, &self.settings, service_user_agent("daemon", "perpetual_updater"));
             let perpetuals = provider.get_perpetuals_data().await?;
 
             let values = perpetuals
