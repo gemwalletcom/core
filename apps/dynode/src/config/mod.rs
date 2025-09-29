@@ -33,6 +33,14 @@ impl NodeMonitoringConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct RetryConfig {
+    pub enabled: bool,
+    pub status_codes: Vec<u16>,
+}
+
+
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct NodeConfig {
     pub port: u16,
     pub address: String,
@@ -42,6 +50,7 @@ pub struct NodeConfig {
     pub cache: CacheConfig,
     #[serde(default)]
     pub monitoring: NodeMonitoringConfig,
+    pub retry: RetryConfig,
 }
 
 impl NodeConfig {

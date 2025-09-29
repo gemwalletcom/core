@@ -8,6 +8,14 @@ pub struct MetricsConfig {
     pub user_agent_patterns: UserAgentPatterns,
 }
 
+impl Default for MetricsConfig {
+    fn default() -> Self {
+        Self {
+            user_agent_patterns: UserAgentPatterns::default(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct UserAgentPatterns {
     #[serde(default)]

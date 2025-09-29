@@ -131,10 +131,7 @@ impl RequestType {
     }
 
     pub fn content_type(&self) -> &'static str {
-        match self {
-            Self::JsonRpc(_) => "application/json",
-            Self::Regular { .. } => "application/json",
-        }
+        "application/json"
     }
 
     pub fn cache_key(&self, host: &str, path: &str) -> String {
@@ -236,14 +233,12 @@ mod tests {
     #[test]
     #[should_panic(expected = "Batch requests do not support caching")]
     fn test_batch_cache_key_generation_panics() {
-        let calls = vec![
-            JsonRpcCall {
-                jsonrpc: "2.0".to_string(),
-                method: "eth_blockNumber".to_string(),
-                params: json!([]),
-                id: 1,
-            },
-        ];
+        let calls = vec![JsonRpcCall {
+            jsonrpc: "2.0".to_string(),
+            method: "eth_blockNumber".to_string(),
+            params: json!([]),
+            id: 1,
+        }];
 
         let request = JsonRpcRequest::Batch(calls);
         let _ = request.cache_key("example.com", "/rpc");

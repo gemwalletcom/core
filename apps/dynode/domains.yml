@@ -3,8 +3,8 @@ domains:
     chain: ethereum
     #poll_interval_seconds: 10
     urls:
-      - url: https://cloudflare-eth.com
-      - url: https://rpc.ankr.com/eth
+      #- url: https://cloudflare-eth.com
+      #- url: https://rpc.ankr.com/eth
       - url: https://eth.llamarpc.com
       
         # headers:

@@ -1,12 +1,15 @@
+use std::error::Error;
 use std::{collections::HashMap, sync::Arc};
 
 use tokio::sync::RwLock;
 
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, Domain, NodeMonitoringConfig};
+use crate::config::{CacheConfig, Domain, NodeMonitoringConfig, RetryConfig};
 use crate::metrics::Metrics;
 use crate::monitoring::NodeMonitor;
-use crate::proxy::{NodeDomain, ProxyRequestService};
+use crate::proxy::proxy_builder::ProxyBuilder;
+use crate::proxy::proxy_request::ProxyRequest;
+use crate::proxy::{NodeDomain, ProxyRequestService, ProxyResponse};
 
 #[derive(Debug, Clone)]
 pub struct NodeService {
@@ -15,11 +18,18 @@ pub struct NodeService {
     pub metrics: Arc<Metrics>,
     pub cache: RequestCache,
     pub monitoring_config: NodeMonitoringConfig,
+    pub retry_config: RetryConfig,
     pub http_client: reqwest::Client,
 }
 
 impl NodeService {
-    pub fn new(domains: HashMap<String, Domain>, metrics: Metrics, cache_config: CacheConfig, monitoring_config: NodeMonitoringConfig) -> Self {
+    pub fn new(
+        domains: HashMap<String, Domain>,
+        metrics: Metrics,
+        cache_config: CacheConfig,
+        monitoring_config: NodeMonitoringConfig,
+        retry_config: RetryConfig,
+    ) -> Self {
         let mut hash_map: HashMap<String, NodeDomain> = HashMap::new();
 
         for (key, domain) in domains.clone() {
@@ -39,6 +49,7 @@ impl NodeService {
             metrics: Arc::new(metrics),
             cache: RequestCache::new(cache_config),
             monitoring_config,
+            retry_config,
             http_client,
         }
     }
@@ -63,6 +74,10 @@ impl NodeService {
         map.insert(domain, node_domain);
     }
 
+    pub fn get_chain_for_host(&self, host: &str) -> Option<primitives::Chain> {
+        self.domains.get(host).map(|domain| domain.chain)
+    }
+
     pub async fn start_monitoring(&self) {
         let monitor = NodeMonitor::new(
             self.domains.clone(),
@@ -74,72 +89,37 @@ impl NodeService {
         monitor.start_monitoring().await;
     }
 
-    pub async fn handle_request_with_fallback(
-        &self,
-        method: reqwest::Method,
-        headers: reqwest::header::HeaderMap,
-        body_vec: Vec<u8>,
-        path: String,
-        path_with_query: String,
-        host: String,
-        user_agent: String,
-    ) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let domain = self.domains.get(&host);
+    pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+        let domain = self.domains.get(&request.host);
 
-        if domain.is_none() || domain.unwrap().urls.len() <= 1 {
+        if !self.retry_config.enabled && (domain.is_none() || domain.unwrap().urls.len() <= 1) {
             let proxy_service = self.get_proxy_request().await;
-            return proxy_service
-                .handle_request(method, headers, body_vec, path, path_with_query, host, user_agent)
-                .await;
+            return proxy_service.handle_request(request).await;
         }
 
-        let domain = domain.unwrap();
-        let current_node = Self::get_node_domain(&self.nodes, host.clone()).await;
+        let Some(domain) = self.domains.get(&request.host) else {
+            return Err("No domain found".into());
+        };
 
-        for url in &domain.urls {
-            if let Some(ref current) = current_node {
-                if url.url == current.url.url && url == domain.urls.first().unwrap() {
-                } else if url.url == current.url.url {
-                    continue;
-                }
-            }
+        let url_sequence = &domain.urls;
 
-            Self::update_node_domain(&self.nodes, host.clone(), NodeDomain { url: url.clone() }).await;
-
-            let proxy_service = self.get_proxy_request().await;
-            match proxy_service
-                .handle_request(
-                    method.clone(),
-                    headers.clone(),
-                    body_vec.clone(),
-                    path.clone(),
-                    path_with_query.clone(),
-                    host.clone(),
-                    user_agent.clone(),
-                )
-                .await
+        for url in url_sequence {
+            if let Ok(response) = self.create_proxy_builder().handle_request_with_url(request.clone(), url).await
+                && !self.retry_config.status_codes.contains(&response.status)
             {
-                Ok(response) => {
-                    if !Self::should_retry_with_fallback(response.status) {
-                        return Ok(response);
-                    }
-                    // Continue to next URL if this one returns 429/403
-                }
-                Err(_) => {
-                    // Continue to next URL on error
-                    continue;
-                }
+                return Ok(response);
             }
-        }
-
-        if let Some(original_node) = current_node {
-            Self::update_node_domain(&self.nodes, host.clone(), original_node).await;
         }
 
         Err("All URLs failed".into())
     }
 
-    fn should_retry_with_fallback(status: u16) -> bool {
-        matches!(status, 429 | 403)
+    fn create_proxy_builder(&self) -> ProxyBuilder {
+        ProxyBuilder::new(
+            self.domains.clone(),
+            self.metrics.as_ref().clone(),
+            self.cache.clone(),
+            self.http_client.clone(),
+        )
     }
 }

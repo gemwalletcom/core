@@ -88,9 +88,13 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
     let path = request.uri().path().to_string();
     let path_with_query = request.uri().to_string();
 
-    match node_service
-        .handle_request_with_fallback(method, headers, body_vec, path, path_with_query, host, user_agent)
-        .await
+    let chain = node_service.get_chain_for_host(&host).unwrap_or(primitives::Chain::Ethereum);
+
+    let proxy_request = dynode::proxy::proxy_request::ProxyRequest::new(
+        method, headers, body_vec, path, path_with_query, host, user_agent, chain,
+    );
+
+    match node_service.handle_request(proxy_request).await
     {
         Ok(proxy_response) => Ok(proxy_response),
         Err(err) => {
@@ -146,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         user_agent_patterns: config.metrics.user_agent_patterns.clone(),
     };
     let metrics = Metrics::new(metrics_config);
-    let node_service = NodeService::new(config.domains_map(), metrics.clone(), config.cache.clone(), config.monitoring.clone());
+    let node_service = NodeService::new(config.domains_map(), metrics.clone(), config.cache.clone(), config.monitoring.clone(), config.retry.clone());
     let node_service_clone = node_service.clone();
 
     rocket::tokio::spawn(async move {
