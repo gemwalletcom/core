@@ -7,7 +7,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use streamer::{ConsumerConfig, QueueName, StreamReader, run_consumer};
+use streamer::{ConsumerConfig, QueueName, StreamReader, StreamReaderConfig, run_consumer};
 use support_webhook_consumer::SupportWebhookConsumer;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
@@ -17,7 +17,12 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             let settings_clone = settings.clone();
             async move {
                 let consumer = SupportWebhookConsumer::new(&settings_clone).await.unwrap();
-                let stream_reader = StreamReader::new(&settings_clone.rabbitmq.url, "daemon_support_consumer").await.unwrap();
+                let config = StreamReaderConfig::new(
+                    settings_clone.rabbitmq.url.clone(),
+                    "daemon_support_consumer".to_string(),
+                    settings_clone.rabbitmq.prefetch,
+                );
+                let stream_reader = StreamReader::new(config).await.unwrap();
                 let _ = run_consumer(
                     "support_webhook_consumer",
                     stream_reader,

@@ -53,8 +53,6 @@ impl Default for RequestConfig {
     }
 }
 
-
-
 #[derive(Debug, Deserialize, Clone)]
 pub struct NodeConfig {
     pub port: u16,

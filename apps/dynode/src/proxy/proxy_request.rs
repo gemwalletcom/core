@@ -1,7 +1,7 @@
+use crate::jsonrpc_types::RequestType;
+use primitives::Chain;
 use reqwest::{Method, header::HeaderMap};
 use std::time::Instant;
-use primitives::Chain;
-use crate::jsonrpc_types::RequestType;
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequest {
@@ -47,7 +47,6 @@ impl ProxyRequest {
     pub fn request_type(&self) -> RequestType {
         RequestType::from_request(self.method.as_str(), self.path_with_query.clone(), self.body.clone())
     }
-
 }
 
 #[cfg(test)]

@@ -8,6 +8,7 @@ meilisearch:
   key: "test"
 rabbitmq:
   url: "amqp://username:password@localhost:5672"
+  prefetch: 50
 
 coingecko:
   key:

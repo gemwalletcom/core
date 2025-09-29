@@ -2,13 +2,11 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
-#[derive(Debug, Clone, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct MetricsConfig {
     #[serde(default)]
     pub user_agent_patterns: UserAgentPatterns,
 }
-
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct UserAgentPatterns {

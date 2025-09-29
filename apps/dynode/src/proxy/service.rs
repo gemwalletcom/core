@@ -9,11 +9,11 @@ use crate::proxy::request_url::RequestUrl;
 use crate::proxy::response_builder::{ProxyResponse, ResponseBuilder};
 use gem_tracing::{DurationMs, info_with_fields};
 use reqwest::Method;
+use reqwest::StatusCode;
 use reqwest::header::{self, HeaderMap, HeaderName};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use reqwest::StatusCode;
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequestService {
@@ -133,14 +133,7 @@ impl ProxyRequestService {
             let request_clone = request.clone();
             let cache_clone = self.cache.clone();
             tokio::spawn(async move {
-                if let Err(err) = Self::store_cache(
-                    status,
-                    ttl,
-                    key,
-                    body_bytes,
-                    request_clone,
-                    cache_clone,
-                ).await {
+                if let Err(err) = Self::store_cache(status, ttl, key, body_bytes, request_clone, cache_clone).await {
                     // Log cache storage error but don't fail the request
                     gem_tracing::error_with_fields!("Failed to store cache", err.as_ref(),);
                 }

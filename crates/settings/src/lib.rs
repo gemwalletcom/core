@@ -9,7 +9,7 @@ pub struct Settings {
     pub redis: Database,
     pub postgres: Database,
     pub meilisearch: MeiliSearch,
-    pub rabbitmq: Database,
+    pub rabbitmq: RabbitMQ,
 
     pub api: API,
     pub parser: Parser,
@@ -48,6 +48,13 @@ pub struct Fiat {
 #[allow(unused)]
 pub struct Database {
     pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct RabbitMQ {
+    pub url: String,
+    pub prefetch: u16,
 }
 
 #[derive(Debug, Deserialize, Clone)]

@@ -1,13 +1,13 @@
 use crate::config::{Domain, Url};
 
 use crate::cache::RequestCache;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 #[cfg(test)]
 use crate::config::MetricsConfig;
 use crate::metrics::Metrics;
 use crate::proxy::{NodeDomain, ProxyRequestService, proxy_request::ProxyRequest};
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 pub struct ProxyBuilder {
     domain_configs: HashMap<String, Domain>,

@@ -6,14 +6,28 @@ use serde::de::DeserializeOwned;
 
 use crate::QueueName;
 
+pub struct StreamReaderConfig {
+    pub url: String,
+    pub name: String,
+    pub prefetch: u16,
+}
+
+impl StreamReaderConfig {
+    pub fn new(url: String, name: String, prefetch: u16) -> Self {
+        Self { url, name, prefetch }
+    }
+}
+
 pub struct StreamReader {
     channel: Channel,
 }
 
 impl StreamReader {
-    pub async fn new(url: &str, connection_name: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
-        let connection = Connection::connect(url, ConnectionProperties::default().with_connection_name(connection_name.into())).await?;
+    pub async fn new(config: StreamReaderConfig) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        let connection = Connection::connect(&config.url, ConnectionProperties::default().with_connection_name(config.name.into())).await?;
         let channel = connection.create_channel().await?;
+
+        channel.basic_qos(config.prefetch, BasicQosOptions { global: false }).await?;
 
         Ok(Self { channel })
     }

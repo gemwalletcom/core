@@ -8,7 +8,7 @@ use std::time::Duration;
 use api_connector::PusherClient;
 use job_runner::run_job;
 use settings::Settings;
-use streamer::{ConsumerConfig, NotificationsPayload, QueueName, StreamReader, run_consumer};
+use streamer::{ConsumerConfig, NotificationsPayload, QueueName, StreamReader, StreamReaderConfig, run_consumer};
 
 mod notifications_consumer;
 
@@ -52,7 +52,8 @@ fn create_notification_job(settings: Settings, name: &'static str, log_prefix: &
         let queue = queue.clone();
 
         async move {
-            let stream_reader = StreamReader::new(&settings.rabbitmq.url, log_prefix).await.unwrap();
+            let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), log_prefix.to_string(), settings.rabbitmq.prefetch);
+            let stream_reader = StreamReader::new(config).await.unwrap();
             let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
             let consumer = NotificationsConsumer::new(pusher_client);
 

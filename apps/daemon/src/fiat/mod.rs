@@ -6,7 +6,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use streamer::{ConsumerConfig, QueueName, StreamReader, run_consumer};
+use streamer::{ConsumerConfig, QueueName, StreamReader, StreamReaderConfig, run_consumer};
 
 use crate::fiat::fiat_webhook_consumer::FiatWebhookConsumer;
 
@@ -65,7 +65,12 @@ pub async fn jobs_consumer(settings: Settings) -> Vec<Pin<Box<dyn Future<Output 
             let settings_clone = settings.clone();
             async move {
                 let consumer = FiatWebhookConsumer::new(&settings_clone.postgres.url, (*settings_clone).clone());
-                let stream_reader = StreamReader::new(&settings_clone.rabbitmq.url, "daemon_fiat_consumer").await.unwrap();
+                let config = StreamReaderConfig::new(
+                    settings_clone.rabbitmq.url.clone(),
+                    "daemon_fiat_consumer".to_string(),
+                    settings_clone.rabbitmq.prefetch,
+                );
+                let stream_reader = StreamReader::new(config).await.unwrap();
                 let _ = run_consumer(
                     "fiat_webhook_consumer",
                     stream_reader,

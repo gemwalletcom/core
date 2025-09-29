@@ -14,4 +14,4 @@ pub use primitives::AssetId;
 pub use queue::QueueName;
 pub use steam_producer_queue::StreamProducerQueue;
 pub use stream_producer::StreamProducer;
-pub use stream_reader::StreamReader;
+pub use stream_reader::{StreamReader, StreamReaderConfig};
