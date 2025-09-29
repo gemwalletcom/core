@@ -44,6 +44,20 @@ pub struct JsonRpcErrorResponse {
     pub id: Option<u64>,
 }
 
+impl JsonRpcErrorResponse {
+    pub fn new(message: &str, data: Option<Value>) -> Self {
+        Self {
+            jsonrpc: default_jsonrpc_version(),
+            error: JsonRpcError {
+                code: -32603,
+                message: message.to_string(),
+                data,
+            },
+            id: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcError {
     pub code: i32,

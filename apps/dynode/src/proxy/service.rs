@@ -50,19 +50,16 @@ impl ProxyRequestService {
         }
     }
 
-    pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let (domain, domain_config) = match (self.domains.get(&request.host), self.domain_configs.get(&request.host)) {
-            (Some(domain), Some(config)) => (domain, config),
-            _ => {
-                let error = format!("domain not found for host: {}", request.host);
-                return ResponseBuilder::build_with_headers(error.as_bytes().to_vec(), 404, "text/plain", HeaderMap::new());
-            }
-        };
-
+    pub async fn handle_request(
+        &self,
+        request: ProxyRequest,
+        domain_config: &Domain,
+        node_domain: &NodeDomain,
+    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let chain = domain_config.chain;
         let request_url = RequestUrl::from_parts(
-            domain.url.clone(),
-            domain.url.urls_override.clone().unwrap_or_default(),
+            node_domain.url.clone(),
+            node_domain.url.urls_override.clone().unwrap_or_default(),
             &request.path_with_query,
         );
 
@@ -105,15 +102,7 @@ impl ProxyRequestService {
         }
 
         if let RequestType::JsonRpc(rpc_request) = &request_type {
-            return JsonRpcHandler::handle_request(
-                rpc_request,
-                &request,
-                &self.cache,
-                &self.metrics,
-                &request_url,
-                &self.client,
-            )
-            .await;
+            return JsonRpcHandler::handle_request(rpc_request, &request, &self.cache, &self.metrics, &request_url, &self.client).await;
         }
 
         let response = Self::proxy_pass_get_data(

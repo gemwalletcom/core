@@ -5,11 +5,16 @@ use tokio::sync::RwLock;
 
 use crate::cache::RequestCache;
 use crate::config::{CacheConfig, Domain, NodeMonitoringConfig, RetryConfig};
+use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::monitoring::NodeMonitor;
+use crate::proxy::constants::JSON_CONTENT_TYPE;
 use crate::proxy::proxy_builder::ProxyBuilder;
 use crate::proxy::proxy_request::ProxyRequest;
+use crate::proxy::response_builder::ResponseBuilder;
 use crate::proxy::{NodeDomain, ProxyRequestService, ProxyResponse};
+use primitives::{ResponseError, response::ErrorDetail};
+use serde_json::json;
 
 #[derive(Debug, Clone)]
 pub struct NodeService {
@@ -90,20 +95,22 @@ impl NodeService {
     }
 
     pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
-        let domain = self.domains.get(&request.host);
-
-        if !self.retry_config.enabled && (domain.is_none() || domain.unwrap().urls.len() <= 1) {
-            let proxy_service = self.get_proxy_request().await;
-            return proxy_service.handle_request(request).await;
-        }
-
         let Some(domain) = self.domains.get(&request.host) else {
-            return Err("No domain found".into());
+            return self.create_error_response(&request, &format!("Domain {} not found", request.host));
         };
 
-        let url_sequence = &domain.urls;
+        if !self.retry_config.enabled || domain.urls.len() <= 1 {
+            let proxy_service = self.get_proxy_request().await;
+            let node_domain = NodeService::get_node_domain(&self.nodes, request.host.clone()).await.expect("Node domain should exist");
+            match proxy_service.handle_request(request.clone(), domain, &node_domain).await {
+                Ok(response) if self.retry_config.status_codes.contains(&response.status) => {
+                    return self.create_error_response(&request, &format!("Upstream error: {}", response.status));
+                }
+                result => return result,
+            }
+        }
 
-        for url in url_sequence {
+        for url in &domain.urls {
             if let Ok(response) = self.create_proxy_builder().handle_request_with_url(request.clone(), url).await
                 && !self.retry_config.status_codes.contains(&response.status)
             {
@@ -111,7 +118,25 @@ impl NodeService {
             }
         }
 
-        Err("All URLs failed".into())
+        self.create_error_response(&request, "All upstream URLs failed")
+    }
+
+    fn create_error_response(&self, request: &ProxyRequest, error_message: &str) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+        let upstream_headers = ResponseBuilder::create_upstream_headers(None, request.elapsed());
+
+        let response = match request.request_type() {
+            RequestType::JsonRpc(_) => serde_json::to_value(JsonRpcErrorResponse::new("Internal error", Some(json!(error_message))))?,
+            RequestType::Regular { .. } => serde_json::to_value(ResponseError {
+                error: ErrorDetail {
+                    message: error_message.to_string(),
+                    data: None,
+                },
+            })?,
+        };
+
+        let body = serde_json::to_vec(&response)?;
+
+        ResponseBuilder::build_with_headers(body, 500, JSON_CONTENT_TYPE, upstream_headers)
     }
 
     fn create_proxy_builder(&self) -> ProxyBuilder {

@@ -48,7 +48,9 @@ impl ProxyBuilder {
         url: &Url,
     ) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let proxy_service = self.create_for_url(&request.host, url);
-        proxy_service.handle_request(request).await
+        let domain_config = self.domain_configs.get(&request.host).expect("Domain config should exist");
+        let node_domain = crate::proxy::NodeDomain { url: url.clone() };
+        proxy_service.handle_request(request, domain_config, &node_domain).await
     }
 }
 
