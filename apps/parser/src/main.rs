@@ -75,8 +75,7 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
     let mut parsers = Vec::new();
     for chain in chains {
         let settings = settings.clone();
-        let user_agent = service_user_agent("parser", Some(chain.as_ref()));
-        let provider = settings_chain::ProviderFactory::new_from_settings_with_user_agent(chain, &settings, user_agent.as_str());
+        let provider = settings_chain::ProviderFactory::new_from_settings_with_user_agent(chain, &settings, &service_user_agent("parser", None));
         let parser_options = ParserOptions {
             chain,
             timeout: settings.parser.timeout,
