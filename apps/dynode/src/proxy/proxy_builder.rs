@@ -1,6 +1,8 @@
 use crate::config::{Domain, Url};
 
 use crate::cache::RequestCache;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 #[cfg(test)]
 use crate::config::MetricsConfig;
 use crate::metrics::Metrics;
@@ -29,7 +31,7 @@ impl ProxyBuilder {
         node_domains.insert(domain.to_string(), NodeDomain { url: url.clone() });
 
         ProxyRequestService::new(
-            node_domains,
+            Arc::new(RwLock::new(node_domains)),
             self.domain_configs.clone(),
             self.metrics.clone(),
             self.cache.clone(),
@@ -71,8 +73,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_simple_proxy_builder_creation() {
+    #[tokio::test]
+    async fn test_simple_proxy_builder_creation() {
         let mut domain_configs = HashMap::new();
         domain_configs.insert("test.com".to_string(), create_test_domain());
 
@@ -84,7 +86,8 @@ mod tests {
         let url = create_test_url("https://test-node.com");
         let proxy = builder.create_for_url("test.com", &url);
 
-        assert!(proxy.domains.contains_key("test.com"));
-        assert_eq!(proxy.domains.get("test.com").unwrap().url.url, "https://test-node.com");
+        let domains = proxy.domains.read().await;
+        assert!(domains.contains_key("test.com"));
+        assert_eq!(domains.get("test.com").unwrap().url.url, "https://test-node.com");
     }
 }

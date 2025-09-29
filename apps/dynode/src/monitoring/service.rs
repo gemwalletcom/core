@@ -1,10 +1,11 @@
 use std::error::Error;
 use std::{collections::HashMap, sync::Arc};
 
+use reqwest::StatusCode;
 use tokio::sync::RwLock;
 
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, Domain, NodeMonitoringConfig, RetryConfig};
+use crate::config::{CacheConfig, Domain, NodeMonitoringConfig, RequestConfig, RetryConfig};
 use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::monitoring::NodeMonitor;
@@ -24,6 +25,7 @@ pub struct NodeService {
     pub cache: RequestCache,
     pub monitoring_config: NodeMonitoringConfig,
     pub retry_config: RetryConfig,
+    pub request_config: RequestConfig,
     pub http_client: reqwest::Client,
 }
 
@@ -34,6 +36,7 @@ impl NodeService {
         cache_config: CacheConfig,
         monitoring_config: NodeMonitoringConfig,
         retry_config: RetryConfig,
+        request_config: RequestConfig,
     ) -> Self {
         let mut hash_map: HashMap<String, NodeDomain> = HashMap::new();
 
@@ -43,6 +46,8 @@ impl NodeService {
         }
 
         let http_client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(request_config.timeout_seconds))
+            .connect_timeout(std::time::Duration::from_secs(request_config.connect_timeout_seconds))
             .pool_idle_timeout(std::time::Duration::from_secs(30))
             .pool_max_idle_per_host(10)
             .build()
@@ -55,14 +60,14 @@ impl NodeService {
             cache: RequestCache::new(cache_config),
             monitoring_config,
             retry_config,
+            request_config,
             http_client,
         }
     }
 
     pub async fn get_proxy_request(&self) -> ProxyRequestService {
-        let node_domains = self.nodes.read().await.clone();
         ProxyRequestService::new(
-            node_domains,
+            Arc::clone(&self.nodes),
             self.domains.clone(),
             self.metrics.as_ref().clone(),
             self.cache.clone(),
@@ -96,15 +101,17 @@ impl NodeService {
 
     pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
         let Some(domain) = self.domains.get(&request.host) else {
-            return self.create_error_response(&request, &format!("Domain {} not found", request.host));
+            return self.create_error_response(&request, None, &format!("Domain {} not found", request.host));
         };
 
         if !self.retry_config.enabled || domain.urls.len() <= 1 {
             let proxy_service = self.get_proxy_request().await;
-            let node_domain = NodeService::get_node_domain(&self.nodes, request.host.clone()).await.expect("Node domain should exist");
+            let Some(node_domain) = NodeService::get_node_domain(&self.nodes, request.host.clone()).await else {
+                return self.create_error_response(&request, None, &format!("Node domain not found for host: {}", request.host));
+            };
             match proxy_service.handle_request(request.clone(), &node_domain).await {
                 Ok(response) if self.retry_config.status_codes.contains(&response.status) => {
-                    return self.create_error_response(&request, &format!("Upstream error: {}", response.status));
+                    return self.create_error_response(&request, Some(&node_domain.url.host()), &format!("Upstream error: {}", response.status));
                 }
                 result => return result,
             }
@@ -118,11 +125,11 @@ impl NodeService {
             }
         }
 
-        self.create_error_response(&request, "All upstream URLs failed")
+        self.create_error_response(&request, None, "All upstream URLs failed")
     }
 
-    fn create_error_response(&self, request: &ProxyRequest, error_message: &str) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
-        let upstream_headers = ResponseBuilder::create_upstream_headers(None, request.elapsed());
+    fn create_error_response(&self, request: &ProxyRequest, host: Option<&str>, error_message: &str) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+        let upstream_headers = ResponseBuilder::create_upstream_headers(host, request.elapsed());
 
         let response = match request.request_type() {
             RequestType::JsonRpc(_) => serde_json::to_value(JsonRpcErrorResponse::new("Internal error", Some(json!(error_message))))?,
@@ -136,7 +143,7 @@ impl NodeService {
 
         let body = serde_json::to_vec(&response)?;
 
-        ResponseBuilder::build_with_headers(body, 500, JSON_CONTENT_TYPE, upstream_headers)
+        ResponseBuilder::build_with_headers(body, StatusCode::INTERNAL_SERVER_ERROR.as_u16(), JSON_CONTENT_TYPE, upstream_headers)
     }
 
     fn create_proxy_builder(&self) -> ProxyBuilder {

@@ -1,4 +1,5 @@
 use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
+use reqwest::StatusCode;
 
 use super::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
 
@@ -79,6 +80,6 @@ impl ResponseBuilder {
         headers: HeaderMap,
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
-        Self::build_with_headers(response_body, 200, JSON_CONTENT_TYPE, headers)
+        Self::build_with_headers(response_body, StatusCode::OK.as_u16(), JSON_CONTENT_TYPE, headers)
     }
 }

@@ -3,6 +3,8 @@ use crate::jsonrpc_types::{JsonRpcCall, JsonRpcRequest, RequestType};
 use moka::Expiry;
 use moka::future::Cache;
 use primitives::Chain;
+#[cfg(test)]
+use reqwest::StatusCode;
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
@@ -227,7 +229,7 @@ mod tests {
         let cache = MemoryCache::new(config);
         let chain = Chain::Ethereum;
 
-        let response = CachedResponse::new(b"test".to_vec(), 200, "application/json".to_string(), 60);
+        let response = CachedResponse::new(b"test".to_vec(), StatusCode::OK.as_u16(), "application/json".to_string(), 60);
         cache.set(&chain, "test_key".to_string(), response.clone(), 60).await;
 
         let cached = cache.get(&chain, "test_key").await.unwrap();
@@ -251,7 +253,7 @@ mod tests {
     #[test]
     fn test_cache_expiry_without_ttl() {
         let expiry = CacheExpiry;
-        let response = CachedResponse::new(b"no-expire".to_vec(), 200, "application/json".to_string(), 0);
+        let response = CachedResponse::new(b"no-expire".to_vec(), StatusCode::OK.as_u16(), "application/json".to_string(), 0);
         let key = "no_expire_key".to_string();
 
         let expiry_duration = expiry.expire_after_create(&key, &response, Instant::now());

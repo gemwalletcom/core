@@ -12,10 +12,12 @@ use reqwest::Method;
 use reqwest::header::{self, HeaderMap, HeaderName};
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::sync::RwLock;
+use reqwest::StatusCode;
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequestService {
-    pub domains: HashMap<String, NodeDomain>,
+    pub domains: Arc<RwLock<HashMap<String, NodeDomain>>>,
     pub domain_configs: HashMap<String, Domain>,
     pub metrics: Metrics,
     pub cache: RequestCache,
@@ -30,7 +32,7 @@ pub struct NodeDomain {
 
 impl ProxyRequestService {
     pub fn new(
-        domains: HashMap<String, NodeDomain>,
+        domains: Arc<RwLock<HashMap<String, NodeDomain>>>,
         domain_configs: HashMap<String, Domain>,
         metrics: Metrics,
         cache: RequestCache,
@@ -125,18 +127,24 @@ impl ProxyRequestService {
             latency = DurationMs(request.elapsed()),
         );
 
-        if status == 200
+        if status == StatusCode::OK.as_u16()
             && let (Some(ttl), Some(key)) = (cache_ttl, cache_key)
         {
             let request_clone = request.clone();
-            tokio::spawn(Self::store_cache(
-                status,
-                ttl,
-                key,
-                body_bytes,
-                request_clone,
-                self.cache.clone(),
-            ));
+            let cache_clone = self.cache.clone();
+            tokio::spawn(async move {
+                if let Err(err) = Self::store_cache(
+                    status,
+                    ttl,
+                    key,
+                    body_bytes,
+                    request_clone,
+                    cache_clone,
+                ).await {
+                    // Log cache storage error but don't fail the request
+                    gem_tracing::error_with_fields!("Failed to store cache", err.as_ref(),);
+                }
+            });
         }
 
         Ok(processed_response)
@@ -204,14 +212,14 @@ impl ProxyRequestService {
         body_bytes: Vec<u8>,
         request: ProxyRequest,
         cache: RequestCache,
-    ) {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let request_type = request.request_type();
         let content_type = request_type.content_type().to_string();
         let body_size = body_bytes.len();
 
         let cached = match request_type {
             RequestType::JsonRpc(_) => {
-                let json_response = serde_json::from_slice::<JsonRpcResponse>(&body_bytes).expect("JSON-RPC response must be valid JSON");
+                let json_response = serde_json::from_slice::<JsonRpcResponse>(&body_bytes)?;
                 let result_bytes = serde_json::to_string(&json_response.result).unwrap_or_default().into_bytes();
                 CachedResponse::new(result_bytes, status, content_type.clone(), cache_ttl)
             }
@@ -230,6 +238,8 @@ impl ProxyRequestService {
             size_bytes = body_size,
             latency = DurationMs(request.elapsed()),
         );
+
+        Ok(())
     }
 
     async fn proxy_pass_response(
