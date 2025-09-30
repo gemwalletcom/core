@@ -107,7 +107,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
         .manage(Mutex::new(support_client))
-        .mount("/", routes![status::get_status])
+        .mount("/", routes![status::get_status, status::get_health])
         .mount(
             "/v1",
             routes![
