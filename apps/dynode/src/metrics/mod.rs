@@ -230,10 +230,40 @@ impl Metrics {
     }
 
     fn truncate_path(&self, path: &str) -> String {
-        path.split('/')
-            .map(|segment| if segment.len() > 20 { ":value".to_string() } else { segment.to_string() })
+        let (path_part, query_part) = path.split_once('?').map(|(p, q)| (p, Some(q))).unwrap_or((path, None));
+
+        let truncated_path = path_part
+            .split('/')
+            .map(|segment| {
+                if segment.is_empty() {
+                    segment.to_string()
+                } else if segment.chars().all(|c| c.is_ascii_digit()) {
+                    ":number".to_string()
+                } else if segment.len() > 20 {
+                    ":value".to_string()
+                } else {
+                    segment.to_string()
+                }
+            })
             .collect::<Vec<String>>()
-            .join("/")
+            .join("/");
+
+        if let Some(query) = query_part {
+            let truncated_query = query
+                .split('&')
+                .map(|param| {
+                    if let Some((key, _)) = param.split_once('=') {
+                        format!("{}=:v", key)
+                    } else {
+                        param.to_string()
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("&");
+            format!("{}?{}", truncated_path, truncated_query)
+        } else {
+            truncated_path
+        }
     }
 
     fn categorize_user_agent(&self, user_agent: &str) -> String {
@@ -247,5 +277,41 @@ impl Metrics {
             }
         }
         "unknown".to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{MetricsConfig, UserAgentPatterns};
+    use std::collections::HashMap;
+
+    fn create_test_metrics() -> Metrics {
+        let config = MetricsConfig {
+            prefix: "test".to_string(),
+            user_agent_patterns: UserAgentPatterns { patterns: HashMap::new() },
+        };
+        Metrics::new(config)
+    }
+
+    #[test]
+    fn test_truncate_path() {
+        let metrics = create_test_metrics();
+
+        let test_cases = vec![
+            ("/api/v1/verylongsegmentthatisgreaterthan20characters/data", "/api/v1/:value/data"),
+            ("/block/12345/transactions", "/block/:number/transactions"),
+            ("/block/12345/tx/67890", "/block/:number/tx/:number"),
+            ("/api/123456/verylongsegmentthatisgreaterthan20chars/data", "/api/:number/:value/data"),
+            ("/api/v1/data", "/api/v1/data"),
+            ("/api//data", "/api//data"),
+            ("/api/v2/block/5897744?page=1", "/api/v2/block/:number?page=:v"),
+            ("/api/v2/block/5897744?page=1&limit=10", "/api/v2/block/:number?page=:v&limit=:v"),
+        ];
+
+        for (input, expected) in test_cases {
+            let result = metrics.truncate_path(input);
+            assert_eq!(result, expected, "Failed for input: {}", input);
+        }
     }
 }

@@ -5,6 +5,7 @@ use crate::models::{
     order::PerpetualFill,
     position::AssetPositions,
     referral::Referral,
+    token::SpotMetadataResponse,
     user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
@@ -155,6 +156,10 @@ impl<C: Client> HyperCoreClient<C> {
 
     pub async fn get_metadata(&self) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
         self.info(json!({"type": "metaAndAssetCtxs"})).await
+    }
+
+    pub async fn get_spot_metadata(&self) -> Result<SpotMetadataResponse, Box<dyn Error + Send + Sync>> {
+        self.info(json!({"type": "spotMeta"})).await
     }
 
     pub async fn get_candlesticks(&self, coin: &str, interval: &str, start_time: i64, end_time: i64) -> Result<Vec<Candlestick>, Box<dyn Error + Send + Sync>> {
