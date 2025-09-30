@@ -27,8 +27,7 @@ pub fn map_balance_tokens(
             let symbol = parts.first()?;
             let token = spot_metadata.tokens.iter().find(|t| &t.name == symbol)?;
             let balance = spot_balances.balances.iter().find(|b| b.token == token.index as u32)?;
-            let full_token_id = AssetId::sub_token_id(&[token.name.clone(), token.token_id.clone(), token.index.to_string()]);
-            map_balance_token(balance.total.clone(), full_token_id, token.wei_decimals, chain).ok()
+            map_balance_token(balance.total.clone(), token_id.clone(), token.wei_decimals, chain).ok()
         })
         .collect()
 }
@@ -63,9 +62,7 @@ mod tests {
 
     #[test]
     fn test_map_balance_token() {
-        let balance = "56003537".to_string();
-        let token_id = "USDC::0".to_string();
-        let result = map_balance_token(balance, token_id, 8, Chain::HyperCore).unwrap();
+        let result = map_balance_token("56003537".to_string(), "USDC::0".to_string(), 8, Chain::HyperCore).unwrap();
 
         assert_eq!(result.balance.available, "5600353700000000".parse::<BigUint>().unwrap());
         assert_eq!(result.asset_id.chain, Chain::HyperCore);
