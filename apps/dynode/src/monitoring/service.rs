@@ -108,8 +108,8 @@ impl NodeService {
                 return self.create_error_response(&request, None, &format!("Node domain not found for host: {}", request.host));
             };
             match proxy_service.handle_request(request.clone(), &node_domain).await {
-                Ok(response) if self.retry_config.status_codes.contains(&response.status) => {
-                    return self.create_error_response(&request, Some(&node_domain.url.host()), &format!("Upstream error: {}", response.status));
+                Ok(response) if self.should_retry_response(&request, &response) => {
+                    return self.create_error_response(&request, Some(&node_domain.url.host()), &format!("Upstream status code: {}", response.status));
                 }
                 result => return result,
             }
@@ -117,13 +117,29 @@ impl NodeService {
 
         for url in &domain.urls {
             if let Ok(response) = self.create_proxy_builder().handle_request_with_url(request.clone(), url).await
-                && !self.retry_config.status_codes.contains(&response.status)
+                && !self.should_retry_response(&request, &response)
             {
                 return Ok(response);
             }
         }
 
         self.create_error_response(&request, None, "All upstream URLs failed")
+    }
+
+    fn should_retry_response(&self, request: &ProxyRequest, response: &ProxyResponse) -> bool {
+        if self.retry_config.status_codes.contains(&response.status) {
+            return true;
+        }
+
+        match request.request_type() {
+            RequestType::JsonRpc(_) if response.status == StatusCode::OK.as_u16() && !self.retry_config.error_messages.is_empty() => {
+                if let Ok(error_response) = serde_json::from_slice::<JsonRpcErrorResponse>(&response.body) {
+                    return self.retry_config.should_retry_on_error_message(&error_response.error.message);
+                }
+                false
+            }
+            _ => false,
+        }
     }
 
     fn create_error_response(&self, request: &ProxyRequest, host: Option<&str>, error_message: &str) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {

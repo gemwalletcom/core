@@ -36,6 +36,43 @@ impl NodeMonitoringConfig {
 pub struct RetryConfig {
     pub enabled: bool,
     pub status_codes: Vec<u16>,
+    pub error_messages: Vec<String>,
+}
+
+impl RetryConfig {
+    pub fn should_retry_on_error_message(&self, message: &str) -> bool {
+        self.error_messages.iter().any(|prefix| message.contains(prefix))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_should_retry_on_error_message() {
+        let config = RetryConfig {
+            enabled: true,
+            status_codes: vec![],
+            error_messages: vec!["daily request limit".to_string(), "rate limit".to_string()],
+        };
+
+        assert!(config.should_retry_on_error_message("daily request limit reached - upgrade your account"));
+        assert!(config.should_retry_on_error_message("rate limit exceeded"));
+        assert!(!config.should_retry_on_error_message("internal server error"));
+        assert!(!config.should_retry_on_error_message(""));
+    }
+
+    #[test]
+    fn test_should_retry_on_error_message_empty() {
+        let config = RetryConfig {
+            enabled: true,
+            status_codes: vec![],
+            error_messages: vec![],
+        };
+
+        assert!(!config.should_retry_on_error_message("daily request limit reached"));
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
