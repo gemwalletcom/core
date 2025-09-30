@@ -5,7 +5,7 @@ use num_bigint::BigUint;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{AssetBalance, AssetId, Chain};
+use primitives::{AssetBalance, AssetId, Chain, asset_balance::BalanceMetadata};
 
 use crate::{
     provider::balances_mapper::{format_address_parameter, map_coin_balance, map_staking_balance, map_token_balance},
@@ -43,11 +43,12 @@ impl<C: Client> ChainBalances for TronClient<C> {
             let (reward, usage) = futures::try_join!(self.get_reward(&address), self.get_account_usage(&address))?;
             Ok(Some(map_staking_balance(&account.clone(), &reward, &usage)?))
         } else {
-            Ok(Some(AssetBalance::new_staking(
+            Ok(Some(AssetBalance::new_staking_with_metadata(
                 AssetId::from_chain(Chain::Tron),
                 BigUint::from(0u32),
                 BigUint::from(0u32),
                 BigUint::from(0u32),
+                BalanceMetadata::default(),
             )))
         }
     }

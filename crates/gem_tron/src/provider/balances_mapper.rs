@@ -33,11 +33,7 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
                 _ => (bandwidth + frozen.amount, energy),
             })
     });
-
-    let vote_amount = account
-        .votes
-        .as_ref()
-        .map_or(0, |votes| votes.iter().map(|vote| vote.vote_count * 10_u64.pow(6)).sum());
+    let votes = account.votes.as_ref().map_or(0, |votes| votes.iter().map(|vote| vote.vote_count).sum());
 
     let pending_amount = account
         .unfrozen_v2
@@ -53,10 +49,11 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
     let bandwidth_available = usage.free_net_limit.saturating_sub(usage.free_net_used) + usage.net_limit.saturating_sub(usage.net_used);
 
     let metadata = BalanceMetadata {
-        energy_available,
-        energy_total,
-        bandwidth_available,
-        bandwidth_total,
+        votes: votes as u32,
+        energy_available: energy_available as u32,
+        energy_total: energy_total as u32,
+        bandwidth_available: bandwidth_available as u32,
+        bandwidth_total: bandwidth_total as u32,
     };
 
     Ok(AssetBalance::new_balance(
@@ -64,7 +61,7 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
         new_stake_balance(
             BigUint::from(bandwidth_frozen),
             BigUint::from(energy_frozen),
-            BigUint::from(vote_amount),
+            BigUint::from(0u32),
             BigUint::from(pending_amount),
             BigUint::from(rewards_amount),
             metadata,
@@ -284,9 +281,10 @@ mod tests {
         let balance = map_staking_balance(&account, &reward, &usage).unwrap();
 
         assert_eq!(balance.asset_id, AssetId::from_chain(Chain::Tron));
+        assert_eq!(balance.balance.metadata.unwrap().votes, 5000000);
         assert_eq!(balance.balance.frozen, BigUint::from(8000000_u64));
         assert_eq!(balance.balance.locked, BigUint::from(0_u64));
-        assert_eq!(balance.balance.staked, BigUint::from(5000000000000_u64));
+        assert_eq!(balance.balance.staked, BigUint::from(0_u64));
         assert_eq!(balance.balance.pending, BigUint::from(0_u64));
         assert_eq!(balance.balance.rewards, BigUint::from(50000_u64));
     }
@@ -328,6 +326,7 @@ mod tests {
     #[test]
     fn test_new_stake_balance() {
         let metadata = BalanceMetadata {
+            votes: 0,
             energy_available: 1000,
             energy_total: 2000,
             bandwidth_available: 500,

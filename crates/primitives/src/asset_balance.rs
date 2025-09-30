@@ -1,6 +1,7 @@
 use crate::AssetId;
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -65,13 +66,15 @@ pub struct Balance {
     pub metadata: Option<BalanceMetadata>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct BalanceMetadata {
-    pub energy_available: u64,
-    pub energy_total: u64,
-    pub bandwidth_available: u64,
-    pub bandwidth_total: u64,
+    pub votes: u32,
+    pub energy_available: u32,
+    pub energy_total: u32,
+    pub bandwidth_available: u32,
+    pub bandwidth_total: u32,
 }
 
 impl Balance {

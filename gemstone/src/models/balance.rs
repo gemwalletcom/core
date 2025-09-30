@@ -27,8 +27,9 @@ pub struct GemBalance {
 
 #[uniffi::remote(Record)]
 pub struct GemBalanceMetadata {
-    pub energy_available: u64,
-    pub energy_total: u64,
-    pub bandwidth_available: u64,
-    pub bandwidth_total: u64,
+    pub votes: u32,
+    pub energy_available: u32,
+    pub energy_total: u32,
+    pub bandwidth_available: u32,
+    pub bandwidth_total: u32,
 }
