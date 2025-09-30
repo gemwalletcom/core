@@ -65,6 +65,11 @@ async fn metrics_endpoint(metrics: &State<Metrics>) -> RawText<String> {
     RawText(metrics.get_metrics())
 }
 
+#[rocket::get("/health")]
+async fn health_endpoint() -> Status {
+    Status::Ok
+}
+
 async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, Status> {
     let limit = BODY_READ_LIMIT_MB.mebibytes();
     let mut stream = data.open(limit);
@@ -166,7 +171,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let proxy_server = rocket::custom(Config::figment().merge(("address", node_address)).merge(("port", config.port)))
         .manage(node_service)
-        .mount("/", proxy_routes());
+        .mount("/", proxy_routes())
+        .mount("/", rocket::routes![health_endpoint]);
 
     let metrics_server = rocket::custom(Config::figment().merge(("address", metrics_address)).merge(("port", config.metrics.port)))
         .manage(metrics)
