@@ -47,8 +47,8 @@ pub struct RequestConfig {
 impl Default for RequestConfig {
     fn default() -> Self {
         Self {
-            timeout_seconds: 30,
-            connect_timeout_seconds: 10,
+            timeout_seconds: 60,
+            connect_timeout_seconds: 15,
         }
     }
 }

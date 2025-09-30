@@ -54,7 +54,7 @@ serde_json = { version = "1.0.145", features = ["preserve_order"] }
 serde_urlencoded = { version = "0.7.1" }
 
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.12.23", features = ["json"] }
+reqwest = { version = "0.12.23", features = ["json", "gzip", "brotli", "deflate", "http2"] }
 
 url = { version = "2.5.7" }
 config = { version = "0.15.16", features = ["yaml"] }

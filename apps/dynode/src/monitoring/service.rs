@@ -45,11 +45,9 @@ impl NodeService {
             hash_map.insert(key, NodeDomain { url });
         }
 
-        let http_client = reqwest::Client::builder()
+        let http_client = gem_client::default_client_builder()
             .timeout(std::time::Duration::from_secs(request_config.timeout_seconds))
             .connect_timeout(std::time::Duration::from_secs(request_config.connect_timeout_seconds))
-            .pool_idle_timeout(std::time::Duration::from_secs(30))
-            .pool_max_idle_per_host(10)
             .build()
             .unwrap();
 

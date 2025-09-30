@@ -30,7 +30,7 @@ impl ReqwestClient {
     }
 
     pub fn new_with_retry(url: String, timeout_secs: u64, max_retries: u32) -> Self {
-        let client = reqwest::Client::builder()
+        let client = crate::client_config::default_client_builder()
             .timeout(Duration::from_secs(timeout_secs))
             .retry(retry_policy(url.clone(), max_retries))
             .build()

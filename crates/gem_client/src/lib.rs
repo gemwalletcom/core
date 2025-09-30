@@ -7,6 +7,9 @@ mod reqwest_client;
 #[cfg(feature = "reqwest")]
 pub mod retry;
 
+#[cfg(feature = "reqwest")]
+pub mod client_config;
+
 pub mod query;
 
 pub use content_type::{ContentType, CONTENT_TYPE};
@@ -18,6 +21,9 @@ pub use reqwest_client::ReqwestClient;
 
 #[cfg(feature = "reqwest")]
 pub use retry::{default_should_retry, retry, retry_policy};
+
+#[cfg(feature = "reqwest")]
+pub use client_config::default_client_builder;
 
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};

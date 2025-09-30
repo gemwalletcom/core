@@ -38,7 +38,7 @@ impl ProxyRequestService {
         cache: RequestCache,
         client: reqwest::Client,
     ) -> Self {
-        let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING]);
+        let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING, header::CONTENT_LENGTH]);
 
         Self {
             domains,
