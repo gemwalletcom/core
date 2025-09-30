@@ -1,27 +1,17 @@
-use sui_types::{Address, ObjectId};
+use sui_types::Address;
 
-pub struct ObjectID {
-    bytes: [u8; 32],
-}
+pub struct ObjectId(pub Address);
 
-impl ObjectID {
-    pub fn from(byte: u8) -> Self {
+impl From<u8> for ObjectId {
+    fn from(byte: u8) -> Self {
         let mut bytes = [0u8; 32];
         bytes[31] = byte;
-        Self { bytes }
-    }
-
-    pub fn addr(&self) -> Address {
-        Address::new(self.bytes)
-    }
-
-    pub fn id(&self) -> ObjectId {
-        ObjectId::new(self.bytes)
+        Self(Address::new(bytes))
     }
 }
 
-impl From<u8> for ObjectID {
-    fn from(byte: u8) -> Self {
-        ObjectID::from(byte)
+impl From<ObjectId> for Address {
+    fn from(val: ObjectId) -> Self {
+        val.0
     }
 }

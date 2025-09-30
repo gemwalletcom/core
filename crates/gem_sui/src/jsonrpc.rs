@@ -3,7 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use serde_serializers::{deserialize_u64_from_str, serialize_u64};
 use std::{fmt::Display, ops::Not};
-use sui_types::{ObjectDigest, ObjectId};
+use sui_types::{Address, Digest};
 
 pub enum SuiRpc {
     GetObject(String, Option<ObjectDataOptions>),
@@ -105,10 +105,10 @@ pub struct SuiData<T> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DataObject<T> {
-    pub object_id: ObjectId,
+    pub object_id: Address,
     #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]
     pub version: u64,
-    pub digest: ObjectDigest,
+    pub digest: Digest,
     pub owner: Option<Owner>,
     pub content: Option<T>,
 }

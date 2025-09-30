@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
-use sui_types::{Address, ObjectDigest, ObjectId};
+use sui_types::{Address, Digest};
 
 use gem_sui::jsonrpc::{DataObject, I32, MoveObject, MoveObjectId, SuiData};
 use serde_serializers::{deserialize_bigint_from_str as deserialize_bigint, serialize_bigint};
@@ -17,9 +17,9 @@ pub struct CalculatedSwapResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoutePoolData {
-    pub object_id: ObjectId,
+    pub object_id: Address,
     pub version: u64,
-    pub digest: ObjectDigest,
+    pub digest: Digest,
     pub coin_a: String,
     pub coin_b: String,
     pub initial_shared_version: u64,
@@ -68,13 +68,13 @@ pub struct SwapParams {
 pub struct CetusConfig {
     pub global_config: SharedObject,
     pub partner: Option<SharedObject>,
-    pub clmm_pool: ObjectId,
+    pub clmm_pool: Address,
     pub router: Address,
 }
 
 #[derive(Debug, Clone)]
 pub struct SharedObject {
-    pub id: ObjectId,
+    pub id: Address,
     pub shared_version: u64,
 }
 

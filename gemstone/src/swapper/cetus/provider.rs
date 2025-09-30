@@ -7,7 +7,7 @@ use num_bigint::BigInt;
 use num_traits::{FromBytes, ToBytes, ToPrimitive};
 use std::{str::FromStr, sync::Arc};
 use sui_transaction_builder::{Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder, unresolved::Input};
-use sui_types::{Address, Identifier, ObjectId, TypeTag};
+use sui_types::{Address, Identifier, TypeTag};
 
 use super::{
     CETUS_CLMM_PACKAGE_ID, CETUS_GLOBAL_CONFIG_ID, CETUS_GLOBAL_CONFIG_SHARED_VERSION, CETUS_MAINNET_PARTNER_ID, CETUS_PARTNER_SHARED_VERSION,
@@ -66,14 +66,14 @@ impl Cetus {
     pub fn get_clmm_config(&self) -> Result<CetusConfig, SwapperError> {
         Ok(CetusConfig {
             global_config: SharedObject {
-                id: ObjectId::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
+                id: Address::from_str(CETUS_GLOBAL_CONFIG_ID).unwrap(),
                 shared_version: CETUS_GLOBAL_CONFIG_SHARED_VERSION,
             },
             partner: Some(SharedObject {
-                id: ObjectId::from_str(CETUS_MAINNET_PARTNER_ID).unwrap(),
+                id: Address::from_str(CETUS_MAINNET_PARTNER_ID).unwrap(),
                 shared_version: CETUS_PARTNER_SHARED_VERSION,
             }),
-            clmm_pool: ObjectId::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
+            clmm_pool: Address::from_str(CETUS_CLMM_PACKAGE_ID).unwrap(),
             router: Address::from_str(CETUS_ROUTER_PACKAGE_ID).unwrap(),
         })
     }
@@ -339,7 +339,7 @@ mod tests {
         rpc::{CoinAsset, models::InspectGasUsed},
     };
     use gem_sui::tx::decode_transaction;
-    use sui_types::{ObjectDigest, Transaction, TransactionKind};
+    use sui_types::{Digest, Transaction, TransactionKind};
 
     #[test]
     fn test_build_swap_transaction() {
@@ -368,16 +368,16 @@ mod tests {
 
         let all_coins = vec![
             CoinAsset {
-                coin_object_id: ObjectId::from_str("0xf16c8050267480b521889587515e40d10db27bf526b516b8c38421e5fa2c43e2").unwrap(),
+                coin_object_id: Address::from_str("0xf16c8050267480b521889587515e40d10db27bf526b516b8c38421e5fa2c43e2").unwrap(),
                 coin_type: SUI_COIN_TYPE_FULL.into(),
-                digest: ObjectDigest::from_str("4Wr3NarWTJb2jpgtyE1siYxsB4EPtWuzCMCoYBQTXpkZ").unwrap(),
+                digest: Digest::from_str("4Wr3NarWTJb2jpgtyE1siYxsB4EPtWuzCMCoYBQTXpkZ").unwrap(),
                 balance: BigInt::from(1340089353u64),
                 version: 508024613,
             },
             CoinAsset {
-                coin_object_id: ObjectId::from_str("0xd8fd7990d0e74997ec0956be16336b9451cc29586ef224548d45e833ac926873").unwrap(),
+                coin_object_id: Address::from_str("0xd8fd7990d0e74997ec0956be16336b9451cc29586ef224548d45e833ac926873").unwrap(),
                 coin_type: SUI_COIN_TYPE_FULL.into(),
-                digest: ObjectDigest::from_str("4yuV6Hjfe1cHnNhiB7MTkhGHtLxSVhmJ7pUuFQbzPpp").unwrap(),
+                digest: Digest::from_str("4yuV6Hjfe1cHnNhiB7MTkhGHtLxSVhmJ7pUuFQbzPpp").unwrap(),
                 balance: BigInt::from(1011267243u64),
                 version: 508024613,
             },

@@ -40,29 +40,32 @@ where
 ///   If None, defaults to clearly transient errors (429, 502, 503, 504, throttling)
 ///
 /// # Example
-/// ```rust
+/// ```no_run
 /// use gem_client::retry::{retry, default_should_retry};
 ///
-/// // Retry on clearly transient errors (429, 502, 503, 504, throttling) - default behavior
-/// let result = retry(
-///     || async { api_client.get("/endpoint").await },
-///     3,
-///     None
-/// ).await;
+/// #[tokio::main]
+/// async fn main() {
+///     // Retry on clearly transient errors (429, 502, 503, 504, throttling) - default behavior
+///     let result = retry(
+///         || async { Ok::<(), String>(()) },
+///         3,
+///         None
+///     ).await;
 ///
-/// // Custom retry logic
-/// let result = retry(
-///     || async { api_client.get("/endpoint").await },
-///     3,
-///     Some(|error| error.to_string().contains("429"))
-/// ).await;
+///     // Custom retry logic
+///     let result = retry(
+///         || async { Ok::<(), String>(()) },
+///         3,
+///         Some(|error: &String| error.contains("429"))
+///     ).await;
 ///
-/// // Use explicit predefined function
-/// let result = retry(
-///     || async { api_client.get("/endpoint").await },
-///     3,
-///     Some(default_should_retry)
-/// ).await;
+///     // Use explicit predefined function
+///     let result = retry(
+///         || async { Ok::<(), String>(()) },
+///         3,
+///         Some(default_should_retry)
+///     ).await;
+/// }
 /// ```
 pub async fn retry<T, E, F, Fut, P>(operation: F, max_retries: u32, should_retry_fn: Option<P>) -> Result<T, E>
 where

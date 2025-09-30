@@ -7,7 +7,7 @@ pub mod transaction;
 
 pub use coin::*;
 pub use core::*;
-pub use object_id::*;
+pub use object_id::ObjectId;
 pub use staking::*;
 pub use transaction::*;
 

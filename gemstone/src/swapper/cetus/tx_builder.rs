@@ -1,12 +1,12 @@
 use crate::sui::rpc::CoinAsset;
-use gem_sui::{ObjectID, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID, sui_clock_object_input};
+use gem_sui::{ObjectId, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID, sui_clock_object_input};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use std::error::Error;
 use std::str::FromStr;
 
 use sui_transaction_builder::{Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder, unresolved::Input};
-use sui_types::{Argument, Identifier, ObjectId, TypeTag};
+use sui_types::{Address, Argument, Identifier, TypeTag};
 
 use super::models::{CetusConfig, SwapParams};
 
@@ -28,7 +28,7 @@ pub struct BuildCoinResult {
     pub remain_coins: Vec<CoinAsset>,
     pub is_mint_zero_coin: bool,
     pub target_coin_amount: String,
-    pub original_splited_coin: Option<ObjectId>,
+    pub original_splited_coin: Option<Address>,
 }
 
 pub struct TransactionBuilder;
@@ -40,7 +40,7 @@ impl TransactionBuilder {
         coin_type: &str,
     ) -> Result<BuildCoinResult, Box<dyn Error + Send + Sync>> {
         let function = Function::new(
-            ObjectID::from(SUI_FRAMEWORK_PACKAGE_ID).addr(),
+            ObjectId::from(SUI_FRAMEWORK_PACKAGE_ID).into(),
             Identifier::from_str(MODULE_COIN)?,
             Identifier::from_str(FUNCTION_ZERO)?,
             vec![TypeTag::from_str(coin_type)?],

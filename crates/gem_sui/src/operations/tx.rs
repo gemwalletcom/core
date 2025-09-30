@@ -2,7 +2,7 @@ use base64::{Engine as _, engine::general_purpose};
 use serde::de::DeserializeOwned;
 use std::error::Error;
 use sui_transaction_builder::{TransactionBuilder, unresolved::Input};
-use sui_types::{Address, ObjectDigest, ObjectId, Transaction};
+use sui_types::{Address, Digest, Transaction};
 
 use crate::{EMPTY_ADDRESS, models::TxOutput};
 
@@ -22,7 +22,7 @@ pub fn prefill_tx(ptb: TransactionBuilder) -> Transaction {
     ptb.set_sender(empty_address);
     ptb.set_gas_price(0);
     ptb.set_gas_budget(0);
-    ptb.add_gas_objects(vec![Input::owned(ObjectId::from(empty_address), 0, ObjectDigest::ZERO)]);
+    ptb.add_gas_objects(vec![Input::owned(empty_address, 0, Digest::ZERO)]);
     ptb.finish().unwrap()
 }
 
