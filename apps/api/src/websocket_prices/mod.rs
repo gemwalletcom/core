@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use rocket::State;
+use rocket::http::Status;
 use rocket::tokio::sync::Mutex;
 use rocket_ws::{Channel, WebSocket};
 
@@ -23,4 +24,9 @@ pub async fn ws_prices(ws: WebSocket, price_client: &State<Arc<Mutex<PriceClient
             Ok::<(), rocket_ws::result::Error>(())
         })
     })
+}
+
+#[rocket::get("/health")]
+pub fn ws_health() -> Status {
+    Status::Ok
 }

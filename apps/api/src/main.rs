@@ -178,7 +178,7 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
     rocket::build()
         .manage(Arc::new(Mutex::new(price_client)))
         .manage(Arc::new(Mutex::new(price_observer_config)))
-        .mount("/v1/ws", routes![websocket_prices::ws_prices])
+        .mount("/v1/ws", routes![websocket_prices::ws_prices, websocket_prices::ws_health])
 }
 
 #[tokio::main]
