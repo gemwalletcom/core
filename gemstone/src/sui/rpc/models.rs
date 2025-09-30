@@ -3,14 +3,14 @@ use serde::Deserialize;
 use serde_serializers::*;
 
 use sui_transaction_builder::unresolved::Input;
-use sui_types::{ObjectDigest, ObjectId};
+use sui_types::{Address, Digest};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinAsset {
-    pub coin_object_id: ObjectId,
+    pub coin_object_id: Address,
     pub coin_type: String,
-    pub digest: ObjectDigest,
+    pub digest: Digest,
     #[serde(deserialize_with = "deserialize_bigint_from_str", serialize_with = "serialize_bigint")]
     pub balance: BigInt,
     #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]

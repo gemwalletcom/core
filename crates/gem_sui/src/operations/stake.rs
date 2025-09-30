@@ -1,9 +1,6 @@
-use crate::models::*;
+use crate::{SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID, models::*, sui_system_state_object_input};
 
-use crate::{ObjectID, SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID, sui_system_state_object_input};
-use std::error::Error;
-
-use std::str::FromStr;
+use std::{error::Error, str::FromStr};
 use sui_transaction_builder::{Function, Serialized, TransactionBuilder, unresolved::Input};
 use sui_types::{Address, Argument, Identifier};
 
@@ -34,7 +31,7 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Er
 
     // move call request_add_stake
     let function = Function::new(
-        ObjectID::from(SUI_SYSTEM_PACKAGE_ID).addr(),
+        ObjectId::from(SUI_SYSTEM_PACKAGE_ID).into(),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_ADD_STAKE).unwrap(),
         vec![],
@@ -72,7 +69,7 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + 
         input.gas_coin.object.digest.parse().unwrap(),
     );
     let function = Function::new(
-        ObjectID::from(SUI_SYSTEM_PACKAGE_ID).addr(),
+        ObjectId::from(SUI_SYSTEM_PACKAGE_ID).into(),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_WITHDRAW_STAKE).unwrap(),
         vec![],
