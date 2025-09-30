@@ -27,10 +27,6 @@ pub fn new_wagmi() -> UniswapV3 {
     UniswapV3::new(Box::new(wagmi::WagmiUniversalRouter::default()))
 }
 
-pub fn new_reservoir() -> UniswapV3 {
-    UniswapV3::new(Box::new(reservoir::ReservoirUniversalRouter::default()))
-}
-
 pub fn new_uniswap_v4() -> UniswapV4 {
     UniswapV4::default()
 }
