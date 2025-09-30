@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     libpq-dev \
     postgresql \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binaries
