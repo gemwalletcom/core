@@ -4,7 +4,7 @@ use primitives::Chain;
 pub static DEFAULT_SLIPPAGE_BPS: u32 = 100;
 pub static DEFAULT_SWAP_FEE_BPS: u32 = 50;
 pub static DEFAULT_CHAINFLIP_FEE_BPS: u32 = 45;
-pub static DEFAULT_BRIDGE_FEE_BPS: u32 = 25;
+pub static DEFAULT_STABLE_SWAP_REFERRAL_BPS: u32 = 25;
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct SwapConfig {
@@ -44,6 +44,31 @@ impl SwapReferralFees {
             tron: SwapReferralFee::default(),
         }
     }
+
+    pub fn update_all_bps(&mut self, bps: u32) {
+        self.iter_mut().for_each(|fee| fee.update_bps(bps));
+    }
+
+    fn iter_mut(&mut self) -> impl Iterator<Item = &mut SwapReferralFee> {
+        [
+            &mut self.evm,
+            &mut self.evm_bridge,
+            &mut self.solana,
+            &mut self.thorchain,
+            &mut self.sui,
+            &mut self.ton,
+            &mut self.tron,
+        ]
+        .into_iter()
+    }
+}
+
+impl SwapReferralFee {
+    pub fn update_bps(&mut self, bps: u32) {
+        if !self.address.is_empty() || self.bps > 0 {
+            self.bps = bps;
+        }
+    }
 }
 
 pub fn get_swap_config() -> SwapConfig {
@@ -61,7 +86,7 @@ pub fn get_swap_config() -> SwapConfig {
             },
             evm_bridge: SwapReferralFee {
                 address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
-                bps: DEFAULT_BRIDGE_FEE_BPS,
+                bps: DEFAULT_STABLE_SWAP_REFERRAL_BPS,
             },
             solana: SwapReferralFee {
                 address: "5fmLrs2GuhfDP1B51ziV5Kd1xtAr9rw1jf3aQ4ihZ2gy".into(),
