@@ -10,6 +10,8 @@ pub struct SpotToken {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SpotMetadataResponse {
+pub struct SpotTokensResponse {
     pub tokens: Vec<SpotToken>,
 }
+
+pub type SpotMetadataResponse = (SpotTokensResponse, serde_json::Value);

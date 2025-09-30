@@ -12,6 +12,7 @@ impl<C: Client> ChainToken for HyperCoreClient<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
         let spot_metadata = self.get_spot_metadata().await?;
         let token = spot_metadata
+            .0
             .tokens
             .iter()
             .find(|t| t.name == token_id)
