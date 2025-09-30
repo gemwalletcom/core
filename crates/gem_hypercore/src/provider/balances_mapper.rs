@@ -25,7 +25,7 @@ pub fn map_balance_tokens(
         .filter_map(|token_id| {
             let parts = AssetId::decode_token_id(token_id);
             let symbol = parts.first()?;
-            let token = spot_metadata.0.tokens.iter().find(|t| &t.name == symbol)?;
+            let token = spot_metadata.token_data().tokens.iter().find(|t| &t.name == symbol)?;
             let balance = spot_balances.balances.iter().find(|b| b.token == token.index as u32)?;
             map_balance_token(balance.total.clone(), token_id.clone(), token.wei_decimals, chain).ok()
         })
@@ -47,7 +47,7 @@ mod tests {
     use super::*;
     use crate::models::{
         balance::{Balance, Balances, StakeBalance},
-        token::{SpotToken, SpotTokensResponse},
+        token::{SpotMetadataResponse, SpotToken, SpotTokensResponse},
     };
     use primitives::Chain;
 
@@ -79,7 +79,7 @@ mod tests {
             }],
         };
 
-        let spot_metadata = (
+        let spot_metadata = SpotMetadataResponse((
             SpotTokensResponse {
                 tokens: vec![SpotToken {
                     name: "USDC".to_string(),
@@ -89,7 +89,7 @@ mod tests {
                 }],
             },
             serde_json::json!({}),
-        );
+        ));
 
         let token_ids_by_symbol = vec!["USDC".to_string()];
         let results = map_balance_tokens(&spot_balances, &spot_metadata, &token_ids_by_symbol, Chain::HyperCore);

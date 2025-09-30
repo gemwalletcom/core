@@ -14,4 +14,12 @@ pub struct SpotTokensResponse {
     pub tokens: Vec<SpotToken>,
 }
 
-pub type SpotMetadataResponse = (SpotTokensResponse, serde_json::Value);
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct SpotMetadataResponse(pub (SpotTokensResponse, serde_json::Value));
+
+impl SpotMetadataResponse {
+    pub fn token_data(&self) -> &SpotTokensResponse {
+        &self.0.0
+    }
+}
