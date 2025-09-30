@@ -10,6 +10,16 @@ pub struct SpotToken {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SpotMetadataResponse {
+pub struct SpotTokensResponse {
     pub tokens: Vec<SpotToken>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct SpotMetadataResponse(pub (SpotTokensResponse, serde_json::Value));
+
+impl SpotMetadataResponse {
+    pub fn token_data(&self) -> &SpotTokensResponse {
+        &self.0.0
+    }
 }

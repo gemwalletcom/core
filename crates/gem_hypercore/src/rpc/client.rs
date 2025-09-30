@@ -159,7 +159,7 @@ impl<C: Client> HyperCoreClient<C> {
     }
 
     pub async fn get_spot_metadata(&self) -> Result<SpotMetadataResponse, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "spotMeta"})).await
+        self.info(json!({"type": "spotMetaAndAssetCtxs"})).await
     }
 
     pub async fn get_candlesticks(&self, coin: &str, interval: &str, start_time: i64, end_time: i64) -> Result<Vec<Candlestick>, Box<dyn Error + Send + Sync>> {
