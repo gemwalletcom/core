@@ -35,7 +35,6 @@ impl<C: Client> ChainTransactions for PolkadotClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use super::*;
     use crate::provider::testkit::create_polkadot_test_client;
     use chain_traits::ChainTransactionState;
     use primitives::{TransactionState, TransactionStateRequest};

@@ -119,7 +119,6 @@ impl GemSwapper {
                 Box::new(hyperliquid::HyperCoreBridge::default()),
                 Box::new(uniswap::universal_router::new_oku()),
                 Box::new(uniswap::universal_router::new_wagmi()),
-                Box::new(uniswap::universal_router::new_reservoir()),
                 Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
                 Box::new(ProxyProvider::new_stonfi_v2()),
                 Box::new(ProxyProvider::new_mayan()),
