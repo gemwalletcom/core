@@ -12,7 +12,6 @@ impl<C: Client> ChainToken for HyperCoreClient<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
         let spot_metadata = self.get_spot_metadata().await?;
         let token = spot_metadata
-            .token_data()
             .tokens
             .iter()
             .find(|t| t.name == token_id)
@@ -41,7 +40,6 @@ mod tests {
     use crate::provider::testkit::{USDC_TOKEN_ID, create_hypercore_test_client};
 
     #[tokio::test]
-    #[ignore]
     async fn test_get_token_data_usdc() {
         let client = create_hypercore_test_client();
 

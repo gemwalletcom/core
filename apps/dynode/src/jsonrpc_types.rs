@@ -150,7 +150,14 @@ impl RequestType {
 
     pub fn cache_key(&self, host: &str, path: &str) -> String {
         match self {
-            Self::Regular { path, method, .. } => format!("{}:{}:{}", host, method, path),
+            Self::Regular { path, method, body } => {
+                let mut key = format!("{}:{}:{}", host, method, path);
+                if let Ok(body_str) = std::str::from_utf8(body) {
+                    key.push(':');
+                    key.push_str(body_str);
+                }
+                key
+            }
             Self::JsonRpc(json_rpc) => json_rpc.cache_key(host, path),
         }
     }
@@ -316,6 +323,31 @@ mod tests {
             }
             _ => panic!("Expected batch request with duplicate IDs"),
         }
+    }
+
+    #[test]
+    fn test_regular_request_cache_key_with_different_bodies() {
+        let body1 = r#"{"type":"metaAndAssetCtxs"}"#.as_bytes().to_vec();
+        let body2 = r#"{"type":"spotMeta"}"#.as_bytes().to_vec();
+
+        let request1 = RequestType::Regular {
+            path: "/info".to_string(),
+            method: "POST".to_string(),
+            body: body1,
+        };
+
+        let request2 = RequestType::Regular {
+            path: "/info".to_string(),
+            method: "POST".to_string(),
+            body: body2,
+        };
+
+        let key1 = request1.cache_key("example.com", "/info");
+        let key2 = request2.cache_key("example.com", "/info");
+
+        assert_ne!(key1, key2, "Different request bodies should produce different cache keys");
+        assert!(key1.contains(r#"{"type":"metaAndAssetCtxs"}"#));
+        assert!(key2.contains(r#"{"type":"spotMeta"}"#));
     }
 
     #[test]

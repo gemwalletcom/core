@@ -1,4 +1,4 @@
-use crate::models::{balance::StakeBalance, token::SpotMetadataResponse};
+use crate::models::{balance::StakeBalance, token::SpotTokensResponse};
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
@@ -8,15 +8,15 @@ pub fn map_balance_coin(balance: String, chain: Chain) -> AssetBalance {
     AssetBalance::new(chain.as_asset_id(), balance.parse::<BigUint>().unwrap_or_default())
 }
 
-pub fn map_balance_token(balance: String, token_id: String, decimals: i32, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+pub fn map_balance_token(asset_id: AssetId, balance: String, decimals: i32) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let available = BigNumberFormatter::value_from_amount_biguint(&balance, decimals as u32)?;
-    let asset_id = AssetId::from(chain, Some(token_id));
+
     Ok(AssetBalance::new(asset_id, available))
 }
 
 pub fn map_balance_tokens(
     spot_balances: &crate::models::balance::Balances,
-    spot_metadata: &SpotMetadataResponse,
+    spot_metadata: &SpotTokensResponse,
     token_ids: &[String],
     chain: Chain,
 ) -> Vec<AssetBalance> {
@@ -25,9 +25,13 @@ pub fn map_balance_tokens(
         .filter_map(|token_id| {
             let parts = AssetId::decode_token_id(token_id);
             let symbol = parts.first()?;
-            let token = spot_metadata.token_data().tokens.iter().find(|t| &t.name == symbol)?;
-            let balance = spot_balances.balances.iter().find(|b| b.token == token.index as u32)?;
-            map_balance_token(balance.total.clone(), token_id.clone(), token.wei_decimals, chain).ok()
+            let token = spot_metadata.tokens.iter().find(|t| &t.name == symbol)?;
+            let asset_id = AssetId::from(chain, Some(token_id.clone()));
+            if let Some(balance) = spot_balances.balances.iter().find(|b| b.token == token.index as u32) {
+                map_balance_token(asset_id, balance.total.clone(), token.wei_decimals).ok()
+            } else {
+                Some(AssetBalance::new_zero_balance(asset_id))
+            }
         })
         .collect()
 }
@@ -47,7 +51,7 @@ mod tests {
     use super::*;
     use crate::models::{
         balance::{Balance, Balances, StakeBalance},
-        token::{SpotMetadataResponse, SpotToken, SpotTokensResponse},
+        token::{SpotToken, SpotTokensResponse},
     };
     use primitives::Chain;
 
@@ -62,7 +66,8 @@ mod tests {
 
     #[test]
     fn test_map_balance_token() {
-        let result = map_balance_token("56003537".to_string(), "USDC::0".to_string(), 8, Chain::HyperCore).unwrap();
+        let asset_id = AssetId::from(Chain::HyperCore, Some("USDC::0".to_string()));
+        let result = map_balance_token(asset_id, "56003537".to_string(), 8).unwrap();
 
         assert_eq!(result.balance.available, "5600353700000000".parse::<BigUint>().unwrap());
         assert_eq!(result.asset_id.chain, Chain::HyperCore);
@@ -79,17 +84,14 @@ mod tests {
             }],
         };
 
-        let spot_metadata = SpotMetadataResponse((
-            SpotTokensResponse {
-                tokens: vec![SpotToken {
-                    name: "USDC".to_string(),
-                    wei_decimals: 8,
-                    index: 0,
-                    token_id: "0x6d1e7cde53ba9467b783cb7c530ce054".to_string(),
-                }],
-            },
-            serde_json::json!({}),
-        ));
+        let spot_metadata = SpotTokensResponse {
+            tokens: vec![SpotToken {
+                name: "USDC".to_string(),
+                wei_decimals: 8,
+                index: 0,
+                token_id: "0x6d1e7cde53ba9467b783cb7c530ce054".to_string(),
+            }],
+        };
 
         let token_ids_by_symbol = vec!["USDC".to_string()];
         let results = map_balance_tokens(&spot_balances, &spot_metadata, &token_ids_by_symbol, Chain::HyperCore);
@@ -104,6 +106,27 @@ mod tests {
         assert_eq!(results_full.len(), 1);
         assert_eq!(results_full[0].asset_id.chain, Chain::HyperCore);
         assert_eq!(results_full[0].balance.available, "5600353700000000".parse::<BigUint>().unwrap());
+    }
+
+    #[test]
+    fn test_map_balance_tokens_missing_balance() {
+        let spot_balances = Balances { balances: vec![] };
+
+        let spot_metadata = SpotTokensResponse {
+            tokens: vec![SpotToken {
+                name: "USDC".to_string(),
+                wei_decimals: 8,
+                index: 0,
+                token_id: "0x6d1e7cde53ba9467b783cb7c530ce054".to_string(),
+            }],
+        };
+
+        let token_ids = vec!["USDC".to_string()];
+        let results = map_balance_tokens(&spot_balances, &spot_metadata, &token_ids, Chain::HyperCore);
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].asset_id.chain, Chain::HyperCore);
+        assert_eq!(results[0].balance.available, BigUint::from(0u64));
     }
 
     #[test]
