@@ -1,4 +1,4 @@
-use crate::{SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID, models::*, sui_system_state_object_input};
+use crate::{SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID, models::ObjectId, sui_system_state_object_input};
 
 use std::{error::Error, str::FromStr};
 use sui_transaction_builder::{Function, Serialized, TransactionBuilder, unresolved::Input};
