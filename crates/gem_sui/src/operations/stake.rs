@@ -1,4 +1,8 @@
-use crate::{SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID, models::ObjectId, sui_system_state_object_input};
+use crate::{
+    SUI_SYSTEM_ID, SUI_SYSTEM_PACKAGE_ID,
+    models::{ObjectId, StakeInput, TxOutput, UnstakeInput},
+    sui_system_state_object_input,
+};
 
 use std::{error::Error, str::FromStr};
 use sui_transaction_builder::{Function, Serialized, TransactionBuilder, unresolved::Input};
@@ -88,7 +92,11 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SUI_COIN_TYPE, tx::decode_transaction};
+    use crate::{
+        SUI_COIN_TYPE,
+        models::{Coin, Gas, Object},
+        tx::decode_transaction,
+    };
     use base64::{Engine as _, engine::general_purpose};
     use sui_types::Transaction;
 
