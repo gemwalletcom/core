@@ -1,7 +1,6 @@
 mod aerodrome;
 mod oku;
 mod pancakeswap;
-mod reservoir;
 mod uniswap_v3;
 mod wagmi;
 
