@@ -35,7 +35,7 @@ impl ConfigClient {
                 swap_assets: swap_assets_version,
             },
             swap: SwapConfig {
-                enabled_providers: SwapProvider::all(),
+                enabled_providers: SwapProvider::all().iter().map(|x| x.as_ref().to_string()).collect(),
             },
         };
         Ok(response)
