@@ -1,10 +1,10 @@
 use std::error::Error;
 
 use gem_tracing::{error_with_fields, info_with_fields};
-use primitives::Chain;
+use primitives::{Chain, asset_score::AssetRank};
 use settings::{Settings, service_user_agent};
 use settings_chain::ProviderFactory;
-use storage::{DatabaseClient, models::StoragePerpetual};
+use storage::{AssetUpdate, DatabaseClient, models::StoragePerpetual};
 
 pub struct PerpetualUpdater {
     settings: Settings,
@@ -23,16 +23,30 @@ impl PerpetualUpdater {
         let chains = [Chain::HyperCore];
         for chain in chains {
             let provider = ProviderFactory::new_from_settings_with_user_agent(chain, &self.settings, &service_user_agent("daemon", Some("perpetual_updater")));
-            let perpetuals = provider.get_perpetuals_data().await?;
+            let perpetuals_data = provider.get_perpetuals_data().await?;
 
-            let values = perpetuals
+            let assets = perpetuals_data.iter().map(|x| x.asset.clone()).collect::<Vec<_>>();
+            let asset_ids = assets.iter().map(|x| x.id.to_string()).collect::<Vec<_>>();
+            let perpetuals = perpetuals_data
                 .into_iter()
                 .map(|x| StoragePerpetual::from_primitive(x.perpetual))
                 .collect::<Vec<_>>();
 
-            match self.database.perpetuals().perpetuals_update(values.clone()) {
+            self.database.assets().upsert_assets(assets)?;
+            self.database.assets().update_assets(
+                asset_ids,
+                vec![
+                    AssetUpdate::Rank(AssetRank::Unknown.threshold()),
+                    AssetUpdate::IsEnabled(false),
+                    AssetUpdate::IsSwappable(false),
+                    AssetUpdate::IsBuyable(false),
+                    AssetUpdate::IsSellable(false),
+                ],
+            )?;
+
+            match self.database.perpetuals().perpetuals_update(perpetuals.clone()) {
                 Ok(_) => {
-                    info_with_fields!("Updated perpetuals for chain", chain = &chain.to_string(), values = values.len());
+                    info_with_fields!("Updated perpetuals for chain", chain = &chain.to_string(), values = perpetuals.len());
                 }
                 Err(e) => {
                     error_with_fields!("Failed to update perpetuals for chain", &e, chain = chain.as_ref());
