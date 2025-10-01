@@ -26,23 +26,14 @@ impl AssetRankUpdater {
 
     pub async fn update_suspicious_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let assets = self.database.assets().get_assets_all()?;
+        let asset_ids: Vec<String> = assets
+            .into_iter()
+            .filter(|x| is_suspicious(x.score.rank, &x.asset.name, &x.asset.symbol))
+            .map(|x| x.asset.id.to_string())
+            .collect();
 
-        let mut updated_count = 0;
-
-        for asset in assets {
-            let basic = asset.as_basic_primitive();
-
-            if is_suspicious(basic.score.rank, &basic.asset.name, &basic.asset.symbol) {
-                let asset_ids = vec![asset.id.to_string()];
-                let updates = vec![AssetUpdate::Rank(AssetRank::Fraudulent.threshold()), AssetUpdate::IsEnabled(false)];
-
-                if self.database.assets().update_assets(asset_ids, updates).is_ok() {
-                    updated_count += 1;
-                }
-            }
-        }
-
-        Ok(updated_count)
+        let updates = vec![AssetUpdate::Rank(AssetRank::Fraudulent.threshold()), AssetUpdate::IsEnabled(false)];
+        Ok(self.database.assets().update_assets(asset_ids, updates)?)
     }
 }
 

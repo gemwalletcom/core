@@ -54,7 +54,7 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
     }
 
     async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
-        let (account, reward, validators) = futures::try_join!(self.get_account(&address), self.get_reward(&address), self.get_staking_validators(Some(0.0)))?;
+        let (account, reward, validators) = futures::try_join!(self.get_account(&address), self.get_reward(&address), self.get_staking_validators(None))?;
 
         let mut delegations = Vec::new();
         let asset_id = Chain::Tron.as_asset_id();

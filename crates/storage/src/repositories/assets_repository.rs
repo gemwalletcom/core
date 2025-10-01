@@ -6,7 +6,7 @@ use crate::{DatabaseClient, models::Asset};
 use primitives::{Asset as PrimitiveAsset, AssetBasic};
 
 pub trait AssetsRepository {
-    fn get_assets_all(&mut self) -> Result<Vec<PrimitiveAsset>, DatabaseError>;
+    fn get_assets_all(&mut self) -> Result<Vec<AssetBasic>, DatabaseError>;
     fn add_assets(&mut self, values: Vec<AssetBasic>) -> Result<usize, DatabaseError>;
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, DatabaseError>;
     fn update_asset(&mut self, asset_id: String, update: AssetUpdate) -> Result<usize, DatabaseError>;
@@ -22,8 +22,8 @@ pub trait AssetsRepository {
 }
 
 impl AssetsRepository for DatabaseClient {
-    fn get_assets_all(&mut self) -> Result<Vec<PrimitiveAsset>, DatabaseError> {
-        Ok(AssetsStore::get_assets_all(self)?.into_iter().map(|x| x.as_primitive()).collect())
+    fn get_assets_all(&mut self) -> Result<Vec<AssetBasic>, DatabaseError> {
+        Ok(AssetsStore::get_assets_all(self)?.into_iter().map(|x| x.as_basic_primitive()).collect())
     }
 
     fn add_assets(&mut self, values: Vec<AssetBasic>) -> Result<usize, DatabaseError> {
