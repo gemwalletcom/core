@@ -48,35 +48,37 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
 
         let fee = match &input.input_type {
             TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
-                match asset.id.token_subtype() {
-                    AssetSubtype::NATIVE => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
-                    AssetSubtype::TOKEN => {
-                        let estimated_energy = self
-                            .estimate_trc20_transfer_gas(
-                                input.sender_address.clone(),
-                                asset.id.token_id.clone().unwrap(),
-                                format_address_parameter(&input.destination_address)?,
-                                input.value.clone(),
-                            )
-                            .await?;
-                        let energy_used = BigInt::from_str(&estimated_energy).map_err(|err| -> Box<dyn Error + Send + Sync> { Box::new(err) })?;
-                        let (total_fee, chargeable_energy, energy_price) =
-                            calculate_transfer_token_fee_rate(&chain_parameters, &account_usage, energy_used.clone())?;
-                        let gas_price_type = GasPriceType::regular(energy_price);
-
-                        TransactionFee::new_gas_price_type(gas_price_type, total_fee, chargeable_energy, HashMap::new())
+                match &asset.id.token_id {
+                    None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
+                    Some(token_id) => {
+                        self.estimate_token_transfer_fee(
+                            input.sender_address.clone(),
+                            input.destination_address.clone(),
+                            token_id.clone(),
+                            input.value.clone(),
+                            &chain_parameters,
+                            &account_usage,
+                        )
+                        .await?
                     }
                 }
             }
             TransactionInputType::Stake(_asset, stake_type) => {
                 TransactionFee::new_from_fee(calculate_stake_fee_rate(&chain_parameters, &account_usage, stake_type)?)
             }
-            TransactionInputType::Swap(from_asset, _swap_type, _swap_data) => match from_asset.id.token_subtype() {
-                AssetSubtype::NATIVE => {
-                    let fee = calculate_transfer_fee_rate(&chain_parameters, &account_usage, false)?;
-                    TransactionFee::new_from_fee(fee)
+            TransactionInputType::Swap(from_asset, _swap_type, _swap_data) => match &from_asset.id.token_id {
+                None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, false)?),
+                Some(token_id) => {
+                    self.estimate_token_transfer_fee(
+                        input.sender_address.clone(),
+                        input.destination_address.clone(),
+                        token_id.clone(),
+                        input.value.clone(),
+                        &chain_parameters,
+                        &account_usage,
+                    )
+                    .await?
                 }
-                AssetSubtype::TOKEN => return Err("No support for token swap".into()),
             },
             _ => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
         };
@@ -90,6 +92,25 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
 }
 
 impl<C: Client> TronClient<C> {
+    async fn estimate_token_transfer_fee(
+        &self,
+        sender_address: String,
+        destination_address: String,
+        token_id: String,
+        value: String,
+        chain_parameters: &[crate::models::ChainParameter],
+        account_usage: &crate::models::account::TronAccountUsage,
+    ) -> Result<TransactionFee, Box<dyn Error + Send + Sync>> {
+        let estimated_energy = self
+            .estimate_trc20_transfer_gas(sender_address, token_id, format_address_parameter(&destination_address)?, value)
+            .await?;
+        let (total_fee, _chargeable_energy, energy_price) =
+            calculate_transfer_token_fee_rate(chain_parameters, account_usage, BigInt::from_str(&estimated_energy)?)?;
+        let gas_price_type = GasPriceType::regular(energy_price);
+
+        Ok(TransactionFee::new_gas_price_type(gas_price_type, total_fee.clone(), total_fee, HashMap::new()))
+    }
+
     async fn get_is_new_account_for_input_type(&self, address: &str, input_type: TransactionInputType) -> Result<bool, Box<dyn Error + Send + Sync>> {
         match input_type {
             TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
@@ -133,5 +154,66 @@ impl<C: Client> TronClient<C> {
             }
             _ => Ok(HashMap::new()),
         }
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use super::*;
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_USDT_TOKEN_ID, create_test_client};
+    use chain_traits::ChainTransactionLoad;
+    use num_bigint::BigInt;
+    use primitives::{Asset, AssetId, AssetType, Chain};
+
+    #[tokio::test]
+    async fn test_get_transaction_load_transfer() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+        let asset = Asset::from_chain(Chain::Tron);
+
+        let input = TransactionLoadInput::mock_with_input_type(TransactionInputType::Transfer(asset));
+        let input = TransactionLoadInput {
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: "TGas3vJWx6R9wZEq66T3p7T5QAkXHRzh2q".to_string(),
+            ..input
+        };
+
+        let result = client.get_transaction_load(input).await?;
+
+        assert!(result.fee.fee > BigInt::from(0), "Transfer fee should be calculated");
+
+        if let TransactionLoadMetadata::Tron { block_number, .. } = result.metadata {
+            assert!(block_number > 0, "Block number should be positive");
+        } else {
+            panic!("Expected Tron metadata");
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_transaction_load_token_transfer() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+        let asset_id = AssetId::from(Chain::Tron, Some(TEST_USDT_TOKEN_ID.to_string()));
+        let asset = Asset::new(asset_id, "Tether USD".to_string(), "USDT".to_string(), 6, AssetType::TRC20);
+
+        let input = TransactionLoadInput::mock_with_input_type(TransactionInputType::Transfer(asset));
+        let input = TransactionLoadInput {
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: "TGas3vJWx6R9wZEq66T3p7T5QAkXHRzh2q".to_string(),
+            ..input
+        };
+
+        let result = client.get_transaction_load(input).await?;
+
+        assert!(result.fee.gas_limit > result.fee.fee, "Fee limit should be greater than estimated fee");
+        assert!(result.fee.gas_limit > BigInt::from(0), "Gas limit should be greater than 0");
+
+        if let TransactionLoadMetadata::Tron { block_number, .. } = result.metadata {
+            assert!(block_number > 0, "Block number should be positive");
+        } else {
+            panic!("Expected Tron metadata");
+        }
+
+        Ok(())
     }
 }

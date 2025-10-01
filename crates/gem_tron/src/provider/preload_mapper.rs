@@ -9,6 +9,8 @@ use crate::rpc::constants::{
 };
 use primitives::StakeType;
 
+const FEE_LIMIT_PERCENT_INCREASE: u32 = 25;
+
 pub fn calculate_transfer_fee_rate(
     chain_parameters: &[ChainParameter],
     account_usage: &TronAccountUsage,
@@ -45,7 +47,10 @@ pub fn calculate_transfer_token_fee_rate(
     let energy_fee = &energy * &energy_price;
     let bandwidth_fee = calculate_fee_by_bandwidth(account_usage, DEFAULT_BANDWIDTH_BYTES, bandwidth_price);
 
-    Ok(((energy_fee + bandwidth_fee), energy, energy_price))
+    let base_fee = energy_fee + bandwidth_fee;
+    let total_fee = base_fee * BigInt::from(100 + FEE_LIMIT_PERCENT_INCREASE) / BigInt::from(100);
+
+    Ok((total_fee, energy, energy_price))
 }
 
 pub fn calculate_stake_fee_rate(

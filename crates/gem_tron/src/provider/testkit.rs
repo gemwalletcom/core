@@ -9,6 +9,9 @@ use settings::testkit::get_test_settings;
 pub const TEST_ADDRESS: &str = "TFdTEn9dJuqh351y8fyJ3eMmghFsZNwakb";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
+pub const TEST_USDT_TOKEN_ID: &str = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
 pub fn create_test_client() -> TronClient<ReqwestClient> {
     use crate::rpc::trongrid::client::TronGridClient;
     let settings = get_test_settings();

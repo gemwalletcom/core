@@ -51,7 +51,7 @@ impl Swapper for ThorChain {
                 Chain::SmartChain => SwapperChainAsset::Assets(chain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone()]),
                 Chain::AvalancheC => SwapperChainAsset::Assets(chain, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
                 Chain::Base => SwapperChainAsset::Assets(chain, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone()]),
-                Chain::Tron => SwapperChainAsset::Assets(chain, vec![]), //Enable once live. vec![TRON_USDT.id.clone()]),
+                Chain::Tron => SwapperChainAsset::Assets(chain, vec![TRON_USDT.id.clone()]),
                 _ => SwapperChainAsset::Assets(chain, vec![]),
             })
             .collect()

@@ -4,7 +4,7 @@ use crate::swapper::asset::*;
 
 use super::chain::THORChainName;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct THORChainAsset {
     pub symbol: String,
     pub chain: THORChainName,
@@ -208,5 +208,21 @@ mod tests {
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:THOR.TCY:0x1234567890abcdef:0/1/0:g1:50".into())
         );
+    }
+
+    #[test]
+    fn test_tron_usdt_memo() {
+        let tron_destination = "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string();
+        let fee_address = "g1".to_string();
+        let bps = 50;
+
+        let tron_usdt_asset_id = &AssetId::from_token(Chain::Tron, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t").to_string();
+        let asset = THORChainAsset::from_asset_id(tron_usdt_asset_id);
+
+        assert!(asset.is_some(), "TRON USDT asset should be recognized");
+
+        let memo = asset.unwrap().get_memo(tron_destination.clone(), 0, 1, 0, fee_address.clone(), bps);
+
+        assert_eq!(memo, Some("=:TRON.USDT:TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb:0/1/0:g1:50".into()));
     }
 }
