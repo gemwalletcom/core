@@ -9,6 +9,14 @@ use primitives::{
     {AssetId, Chain, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualPosition, PerpetualProvider},
 };
 
+pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
+    AssetId::from(Chain::HyperCore, Some(AssetId::sub_token_id(&["perpetual".to_string(), coin.to_string()])))
+}
+
+pub fn create_perpetual_id(coin: &str) -> String {
+    format!("{}_{}", PerpetualProvider::Hypercore.as_ref(), coin)
+}
+
 pub fn map_positions(positions: AssetPositions, address: String) -> PerpetualPositionsSummary {
     let balance = map_perpetual_balance(&positions);
     let positions: Vec<PerpetualPosition> = positions
@@ -48,8 +56,8 @@ pub fn map_position(position: Position, address: String) -> PerpetualPosition {
             }
         }
     };
-    let perpetual_id = format!("{}_{}", PerpetualProvider::Hypercore.as_ref(), position.coin.clone());
-    let asset_id = AssetId::from(Chain::HyperCore, Some(AssetId::sub_token_id(&["perpetual".to_string(), position.coin.clone()])));
+    let perpetual_id = create_perpetual_id(&position.coin);
+    let asset_id = create_perpetual_asset_id(&position.coin);
 
     PerpetualPosition {
         id: format!("{}_{}", address, position.coin.clone()),
@@ -74,7 +82,67 @@ pub fn map_position(position: Position, address: String) -> PerpetualPosition {
 }
 
 pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<PerpetualData> {
-    metadata.into()
+    use primitives::{Asset, AssetType, perpetual::{Perpetual, PerpetualMetadata}};
+
+    let universe = metadata.universe();
+    let asset_metadata = metadata.asset_metadata();
+
+    universe
+        .universe
+        .iter()
+        .enumerate()
+        .map(|(index, universe_asset)| {
+            let metadata_item = asset_metadata.get(index);
+
+            let asset_id = create_perpetual_asset_id(&universe_asset.name);
+
+            let current_price = metadata_item
+                .and_then(|m| m.mid_px.as_ref().and_then(|mid| mid.parse().ok()).or_else(|| m.mark_px.parse().ok()))
+                .unwrap_or(0.0);
+
+            let prev_price = metadata_item.and_then(|m| m.prev_day_px.parse().ok()).unwrap_or(0.0);
+
+            let price_change_24h = if prev_price > 0.0 {
+                ((current_price - prev_price) / prev_price) * 100.0
+            } else {
+                0.0
+            };
+
+            let funding_rate = metadata_item.and_then(|m| m.funding.parse::<f64>().ok()).unwrap_or(0.0) * 100.0;
+
+            let open_interest_coins = metadata_item.and_then(|m| m.open_interest.parse::<f64>().ok()).unwrap_or(0.0);
+            let open_interest_usd = open_interest_coins * current_price;
+
+            let perpetual_id = create_perpetual_id(&universe_asset.name);
+            let perpetual = Perpetual {
+                id: perpetual_id,
+                name: universe_asset.name.clone(),
+                provider: PerpetualProvider::Hypercore,
+                asset_id: asset_id.clone(),
+                identifier: index.to_string(),
+                price: current_price,
+                price_percent_change_24h: price_change_24h,
+                open_interest: open_interest_usd,
+                volume_24h: metadata_item.and_then(|m| m.day_ntl_vlm.parse().ok()).unwrap_or(0.0),
+                funding: funding_rate,
+                leverage: vec![universe_asset.max_leverage as u8],
+            };
+
+            let asset = Asset {
+                id: asset_id,
+                chain: Chain::HyperCore,
+                token_id: Some(universe_asset.name.clone()),
+                name: universe_asset.name.clone(),
+                symbol: universe_asset.name.clone(),
+                decimals: universe_asset.sz_decimals,
+                asset_type: AssetType::PERPETUAL,
+            };
+
+            let metadata = PerpetualMetadata { is_pinned: false };
+
+            PerpetualData { perpetual, asset, metadata }
+        })
+        .collect()
 }
 
 pub fn map_candlesticks(candlesticks: Vec<Candlestick>) -> Vec<ChartCandleStick> {
