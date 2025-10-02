@@ -118,6 +118,7 @@ pub struct TransactionMeta {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Amount {
+    Null,
     Str(String),
     Amount(AmountCurrency),
 }
@@ -125,6 +126,7 @@ pub enum Amount {
 impl Amount {
     pub fn as_value_string(&self) -> Option<String> {
         match self {
+            Amount::Null => None,
             Amount::Str(amount) => Some(amount.clone()),
             Amount::Amount(amount) => BigNumberFormatter::value_from_amount(&amount.value, 15).ok(),
         }
@@ -132,8 +134,9 @@ impl Amount {
 
     pub fn token_id(&self) -> Option<String> {
         match self {
+            Amount::Null => None,
             Amount::Str(_) => None,
-            Amount::Amount(amount) => Some(amount.issuer.clone()),
+            Amount::Amount(amount) => amount.issuer.clone().or(amount.mpt_issuance_id.clone()),
         }
     }
 }
@@ -141,8 +144,9 @@ impl Amount {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AmountCurrency {
     pub value: String,
-    pub issuer: String,
-    pub currency: String,
+    pub issuer: Option<String>,
+    pub currency: Option<String>,
+    pub mpt_issuance_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

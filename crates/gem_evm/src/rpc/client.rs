@@ -93,12 +93,12 @@ impl<C: Client + Clone> EthereumClient<C> {
         }
     }
 
-    pub async fn get_block(&self, block_number: i64) -> Result<Block, JsonRpcError> {
+    pub async fn get_block(&self, block_number: u64) -> Result<Block, JsonRpcError> {
         let params = json!([format!("0x{:x}", block_number), true]);
         self.client.call("eth_getBlockByNumber", params).await
     }
 
-    pub async fn get_block_receipts(&self, block_number: i64) -> Result<Vec<TransactionReciept>, JsonRpcError> {
+    pub async fn get_block_receipts(&self, block_number: u64) -> Result<Vec<TransactionReciept>, JsonRpcError> {
         let params = json!([format!("0x{:x}", block_number)]);
         self.client.call("eth_getBlockReceipts", params).await
     }
@@ -169,7 +169,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         self.client.call("eth_getTransactionReceipt", params).await
     }
 
-    pub async fn trace_replay_block_transactions(&self, block_number: i64) -> Result<Vec<TransactionReplayTrace>, JsonRpcError> {
+    pub async fn trace_replay_block_transactions(&self, block_number: u64) -> Result<Vec<TransactionReplayTrace>, JsonRpcError> {
         let params = json!([format!("0x{:x}", block_number), json!(["stateDiff"])]);
         self.client.call("trace_replayBlockTransactions", params).await
     }

@@ -93,7 +93,7 @@ impl<C: Client + Clone> XRPClient<C> {
         Ok(self.client.call("account_objects", params).await?)
     }
 
-    pub async fn get_block_transactions(&self, block_number: i64) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_transactions(&self, block_number: u64) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
         let params = json!([
             {
                 "ledger_index": block_number,
