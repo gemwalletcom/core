@@ -222,6 +222,7 @@ pub fn hyper_core_update_leverage_typed_data(update_leverage: HyperUpdateLeverag
 pub fn hyper_core_withdrawal_request_typed_data(request: HyperWithdrawalRequest) -> String {
     hypercore::withdrawal_request_typed_data(request)
 }
+
 pub fn hyper_core_approve_agent_typed_data(agent: HyperApproveAgent) -> String {
     hypercore::approve_agent_typed_data(agent)
 }
@@ -289,16 +290,8 @@ pub fn hyper_make_market_with_tp_sl(
     actions::make_market_with_tp_sl(asset, is_buy, &price, &size, reduce_only, tp_trigger, sl_trigger, builder)
 }
 
-pub fn hyper_serialize_order(order: &HyperPlaceOrder) -> String {
-    serde_json::to_string(order).unwrap()
-}
-
 pub fn hyper_make_cancel_orders(orders: Vec<HyperCancelOrder>) -> HyperCancel {
     actions::Cancel::new(orders)
-}
-
-pub fn hyper_serialize_cancel_action(cancel_action: &HyperCancel) -> String {
-    serde_json::to_string(cancel_action).unwrap()
 }
 
 pub fn hyper_make_position_tp_sl(
@@ -320,16 +313,8 @@ pub fn hyper_make_set_referrer(referrer: String) -> HyperSetReferrer {
     actions::SetReferrer::new(referrer)
 }
 
-pub fn hyper_serialize_set_referrer(set_referrer: &HyperSetReferrer) -> String {
-    serde_json::to_string(set_referrer).unwrap()
-}
-
 pub fn hyper_make_update_leverage(asset: u32, is_cross: bool, leverage: u64) -> HyperUpdateLeverage {
     actions::UpdateLeverage::new(asset, is_cross, leverage)
-}
-
-pub fn hyper_serialize_update_leverage(update_leverage: &HyperUpdateLeverage) -> String {
-    serde_json::to_string(update_leverage).unwrap()
 }
 
 pub fn hyper_transfer_to_hyper_evm(amount: String, time: u64, token: String) -> HyperSpotSend {
@@ -340,16 +325,8 @@ pub fn hyper_send_spot_token_to_address(amount: String, destination: String, tim
     actions::SpotSend::new(amount, destination, time, token)
 }
 
-pub fn hyper_serialize_spot_send(spot_send: &HyperSpotSend) -> String {
-    serde_json::to_string(spot_send).unwrap()
-}
-
 pub fn hyper_send_perps_usd_to_address(amount: String, destination: String, time: u64) -> HyperUsdSend {
     actions::UsdSend::new(amount, destination, time)
-}
-
-pub fn hyper_serialize_usd_send(usd_send: &HyperUsdSend) -> String {
-    serde_json::to_string(usd_send).unwrap()
 }
 
 pub fn hyper_transfer_spot_to_perps(amount: String, nonce: u64) -> HyperUsdClassTransfer {
@@ -360,10 +337,6 @@ pub fn hyper_transfer_perps_to_spot(amount: String, nonce: u64) -> HyperUsdClass
     actions::UsdClassTransfer::new(amount, false, nonce)
 }
 
-pub fn hyper_serialize_usd_class_transfer(usd_class_transfer: &HyperUsdClassTransfer) -> String {
-    serde_json::to_string(usd_class_transfer).unwrap()
-}
-
 pub fn hyper_make_transfer_to_staking(wei: u64, nonce: u64) -> HyperCDeposit {
     actions::CDeposit::new(wei, nonce)
 }
@@ -372,24 +345,12 @@ pub fn hyper_make_withdraw_from_staking(wei: u64, nonce: u64) -> HyperCWithdraw 
     actions::CWithdraw::new(wei, nonce)
 }
 
-pub fn hyper_serialize_c_deposit(c_deposit: &HyperCDeposit) -> String {
-    serde_json::to_string(c_deposit).unwrap()
-}
-
-pub fn hyper_serialize_c_withdraw(c_withdraw: &HyperCWithdraw) -> String {
-    serde_json::to_string(c_withdraw).unwrap()
-}
-
 pub fn hyper_make_delegate(validator: String, wei: u64, nonce: u64) -> HyperTokenDelegate {
     actions::TokenDelegate::new(validator, wei, false, nonce)
 }
 
 pub fn hyper_make_undelegate(validator: String, wei: u64, nonce: u64) -> HyperTokenDelegate {
     actions::TokenDelegate::new(validator, wei, true, nonce)
-}
-
-pub fn hyper_serialize_token_delegate(token_delegate: &HyperTokenDelegate) -> String {
-    serde_json::to_string(token_delegate).unwrap()
 }
 
 pub fn hyper_build_signed_request(signature: String, action: String, timestamp: u64) -> String {

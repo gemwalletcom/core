@@ -157,7 +157,7 @@ let order = hyper_make_market_order(
 );
 
 // Serialize for API submission
-let action_json = hyper_serialize_order(&order);
+let action_json = serde_json::to_string(&order).unwrap();
 
 // Generate EIP-712 typed data for signing
 let nonce = get_timestamp_ms();
@@ -182,7 +182,7 @@ let typed_data = hyper_core_update_leverage_typed_data(update_leverage, nonce);
 
 ```rust
 let set_referrer = hyper_make_set_referrer("GEMWALLET".to_string());
-let action_json = hyper_serialize_set_referrer(&set_referrer);
+let action_json = serde_json::to_string(&set_referrer).unwrap();
 
 // For L1 signing
 let typed_data = hyper_core_set_referrer_typed_data(set_referrer, nonce);
