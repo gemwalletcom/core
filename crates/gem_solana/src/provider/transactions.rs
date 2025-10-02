@@ -7,18 +7,25 @@ use primitives::{BroadcastOptions, Transaction};
 
 use crate::{
     provider::transaction_mapper::{map_block_transactions, map_signatures_transactions},
-    rpc::client::SolanaClient,
+    rpc::{client::SolanaClient, constants::MISSING_BLOCKS_ERRORS},
 };
 
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
     async fn transaction_broadcast(&self, data: String, options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        self.send_transaction(data, Some(options.skip_preflight)).await
+        Ok(self.send_transaction(data, Some(options.skip_preflight)).await?)
     }
 
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let block_transactions = self.get_block_transactions(block).await?;
-        Ok(map_block_transactions(&block_transactions))
+        match self.get_block_transactions(block).await {
+            Ok(block_transactions) => Ok(map_block_transactions(&block_transactions)),
+            Err(error) => {
+                if MISSING_BLOCKS_ERRORS.contains(&error.code) {
+                    return Ok(vec![]);
+                }
+                Err(Box::new(error))
+            }
+        }
     }
 
     async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {

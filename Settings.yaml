@@ -97,7 +97,7 @@ chains:
   opbnb:
     url: https://opbnb-mainnet-rpc.bnbchain.org
   avalanchec:
-    url: https://api.avax.network/ext/bc/C/rpc
+    url: https://avax.leorpc.com/?api_key=e8ce8d949e8b46f794b287ba9b610470 #https://api.avax.network/ext/bc/C/rpc
   fantom:
     url: https://fantom.publicnode.com
   gnosis:

@@ -11,11 +11,11 @@ use crate::rpc::client::SolanaClient;
 #[async_trait]
 impl<C: Client + Clone> ChainState for SolanaClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
-        self.get_genesis_hash().await
+        Ok(self.get_genesis_hash().await?)
     }
 
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        self.get_slot().await
+        Ok(self.get_slot().await?)
     }
 
     async fn get_node_status(&self) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
