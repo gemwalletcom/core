@@ -1387,6 +1387,7 @@ name = "chain_traits"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "futures",
  "primitives",
 ]
 
