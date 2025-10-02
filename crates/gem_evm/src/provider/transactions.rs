@@ -73,28 +73,29 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
         Ok(load_transactions_by_hashes(self, self.node_type.clone(), &hashes).await?)
     }
 
-    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let (block_data, receipts) = futures::try_join!(self.get_block(block), self.get_block_receipts(block))?;
+    async fn get_transactions_by_block(&self, block_number: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let block = self.get_block(block_number).await?;
+        let receipts = self.get_block_receipts(block_number).await?;
 
-        if block_data.transactions.is_empty() {
+        if block.transactions.is_empty() {
             return Ok(vec![]);
         }
 
         let traces = if self.node_type == NodeType::Archival {
-            Some(self.trace_replay_block_transactions(block).await?)
+            Some(self.trace_replay_block_transactions(block_number).await?)
         } else {
             None
         };
 
         let chain = self.get_chain();
-        Ok(block_data
+        Ok(block
             .transactions
             .into_iter()
             .zip(receipts)
             .enumerate()
             .filter_map(|(index, (tx, receipt))| {
                 let trace = traces.as_ref().and_then(|entries| entries.get(index));
-                EthereumMapper::map_transaction(chain, &tx, &receipt, trace, &block_data.timestamp, Some(&CONTRACT_REGISTRY))
+                EthereumMapper::map_transaction(chain, &tx, &receipt, trace, &block.timestamp, Some(&CONTRACT_REGISTRY))
             })
             .collect())
     }
