@@ -5,7 +5,8 @@ use primitives::Chain;
 use std::sync::Arc;
 
 pub use alien_client::AlienClient;
-pub use alien_provider::{AlienError, AlienHttpMethod, AlienProvider, AlienTarget, mime, mock, target::X_CACHE_TTL};
+pub use alien_provider::{AlienError, AlienHttpMethod, AlienProvider, AlienSigner, AlienTarget, X_CACHE_TTL};
+pub use alien_provider::{mime, mock, target};
 pub use gem_jsonrpc::client::JsonRpcClient;
 pub use gem_jsonrpc::types::{JsonRpcError, JsonRpcRequest, JsonRpcResponse, JsonRpcResult, JsonRpcResults};
 

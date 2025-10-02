@@ -1,3 +1,4 @@
+pub mod alien;
 pub mod block_explorer;
 pub mod config;
 pub mod ethereum;
@@ -12,7 +13,7 @@ pub mod swapper;
 pub mod tron;
 pub mod wallet_connect;
 
-use network::AlienError;
+use alien::AlienError;
 
 uniffi::setup_scaffolding!("gemstone");
 static LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
