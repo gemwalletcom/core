@@ -17,6 +17,7 @@ gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
 gem_bsc = { path = "../gem_bsc" }
 
+futures = { workspace = true }
 hex = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["eip712-serde"] }

@@ -75,8 +75,7 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
 
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let block_i64 = block as i64;
-        let block_data = self.get_block(block_i64).await?;
-        let receipts = self.get_block_receipts(block_i64).await?;
+        let (block_data, receipts) = futures::try_join!(self.get_block(block_i64), self.get_block_receipts(block_i64))?;
 
         if block_data.transactions.is_empty() {
             return Ok(vec![]);

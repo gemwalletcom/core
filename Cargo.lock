@@ -2850,6 +2850,7 @@ dependencies = [
  "chain_primitives",
  "chain_traits",
  "chrono",
+ "futures",
  "gem_bsc",
  "gem_client",
  "gem_jsonrpc",
