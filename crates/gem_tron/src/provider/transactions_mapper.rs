@@ -76,15 +76,11 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
                 value.parameter.value.unfreeze_balance.unwrap_or_default().to_string(),
             )),
             VOTE_WITNESS_CONTRACT => {
-                let total_votes: i64 = value
-                    .parameter
-                    .value
-                    .votes
-                    .as_ref()
-                    .map(|votes| votes.iter().map(|v| v.vote_count).sum())
-                    .unwrap_or(0);
-                let amount = total_votes * 1_000_000;
-                Some((TransactionType::StakeDelegate, from.clone(), amount.to_string()))
+                let votes = value.parameter.value.votes.as_ref()?;
+                let vote = votes.first()?;
+                let to = TronAddress::from_hex(vote.vote_address.as_str()).unwrap_or_default();
+                let amount = vote.vote_count * 1_000_000;
+                Some((TransactionType::StakeDelegate, to, amount.to_string()))
             }
             _ => None,
         } {
@@ -222,7 +218,8 @@ mod tests {
         let tx = result.unwrap();
         assert_eq!(tx.transaction_type, TransactionType::StakeDelegate);
         assert_eq!(tx.value, "2125000000");
-        assert_eq!(tx.from, tx.to);
+        assert_eq!(tx.from, "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb");
+        assert_eq!(tx.to, "TJvaAeFb8Lykt9RQcVyyTFN2iDvGMuyD4M");
     }
 
     #[test]
