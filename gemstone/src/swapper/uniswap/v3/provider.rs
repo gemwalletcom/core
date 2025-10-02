@@ -30,11 +30,12 @@ use super::{DEFAULT_SWAP_GAS_LIMIT, UniversalRouterProvider, commands::build_com
 #[derive(Debug)]
 pub struct UniswapV3 {
     provider: Box<dyn UniversalRouterProvider>,
+    rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl UniswapV3 {
-    pub fn new(provider: Box<dyn UniversalRouterProvider>) -> Self {
-        Self { provider }
+    pub fn new(provider: Box<dyn UniversalRouterProvider>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self { provider, rpc_provider }
     }
 
     pub fn support_chain(&self, chain: &Chain) -> bool {
@@ -55,18 +56,11 @@ impl UniswapV3 {
         Ok((evm_chain, token_in, token_out, amount_in))
     }
 
-    async fn check_erc20_approval(
-        &self,
-        wallet_address: Address,
-        token: &str,
-        amount: U256,
-        chain: &Chain,
-        provider: Arc<dyn AlienProvider>,
-    ) -> Result<ApprovalType, SwapperError> {
+    async fn check_erc20_approval(&self, wallet_address: Address, token: &str, amount: U256, chain: &Chain) -> Result<ApprovalType, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         let spender = deployment.permit2.to_string();
         // Check token allowance, spender is permit2 or universal router
-        check_approval_erc20(wallet_address.to_string(), token.to_string(), spender, amount, provider, chain).await
+        check_approval_erc20(wallet_address.to_string(), token.to_string(), spender, amount, self.rpc_provider.clone(), chain).await
     }
 
     async fn check_permit2_approval(
@@ -75,7 +69,6 @@ impl UniswapV3 {
         token: &str,
         amount: U256,
         chain: &Chain,
-        provider: Arc<dyn AlienProvider>,
     ) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
 
@@ -85,7 +78,7 @@ impl UniswapV3 {
             token.to_string(),
             deployment.universal_router.to_string(),
             amount,
-            provider.clone(),
+            self.rpc_provider.clone(),
             chain,
         )
         .await?
@@ -107,7 +100,7 @@ impl Swapper for UniswapV3 {
             .collect()
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
         // Check deployment and weth contract
@@ -136,7 +129,7 @@ impl Swapper for UniswapV3 {
         //     [...],
         // ]
         let paths_array = super::path::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
-        let client = jsonrpc_client_with_chain(provider.clone(), from_chain);
+        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), from_chain);
         let requests: Vec<_> = paths_array
             .iter()
             .map(|paths| {
@@ -200,18 +193,18 @@ impl Swapper for UniswapV3 {
         })
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         if from_asset.is_native() {
             return Ok(None);
         }
         let wallet_address = eth_address::parse_str(&quote.request.wallet_address)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
-        self.check_permit2_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_asset.chain, provider)
+        self.check_permit2_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_asset.chain)
             .await
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let request = &quote.request;
         let from_chain = request.from_asset.chain();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
@@ -227,7 +220,7 @@ impl Swapper for UniswapV3 {
         let approval: Option<GemApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
-            self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_chain, provider)
+            self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_chain)
                 .await?
                 .approval_data()
         };

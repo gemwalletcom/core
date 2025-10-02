@@ -17,17 +17,17 @@ use primitives::{AssetId, Chain};
 #[derive(Debug)]
 pub struct PancakeSwapAptos {
     pub provider: SwapperProviderType,
-}
-
-impl Default for PancakeSwapAptos {
-    fn default() -> Self {
-        Self {
-            provider: SwapperProviderType::new(SwapperProvider::PancakeswapAptosV2),
-        }
-    }
+    rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl PancakeSwapAptos {
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            provider: SwapperProviderType::new(SwapperProvider::PancakeswapAptosV2),
+            rpc_provider,
+        }
+    }
+
     fn to_asset(&self, asset_id: AssetId) -> String {
         if let Some(token_id) = asset_id.token_id {
             return token_id;
@@ -61,9 +61,9 @@ impl Swapper for PancakeSwapAptos {
         vec![SwapperChainAsset::All(Chain::Aptos)]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
-        let endpoint: String = provider.get_endpoint(Chain::Aptos).unwrap();
-        let client = PancakeSwapAptosClient::new(provider);
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+        let endpoint: String = self.rpc_provider.get_endpoint(Chain::Aptos).unwrap();
+        let client = PancakeSwapAptosClient::new(self.rpc_provider.clone());
 
         let from_internal_asset = self.to_asset(request.from_asset.asset_id());
         let to_internal_asset = self.to_asset(request.to_asset.asset_id());
@@ -105,7 +105,7 @@ impl Swapper for PancakeSwapAptos {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: RouteData = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 

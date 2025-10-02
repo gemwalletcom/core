@@ -34,15 +34,11 @@ pub struct ProxyProvider {
     pub provider: SwapperProviderType,
     pub url: String,
     pub assets: Vec<SwapperChainAsset>,
+    pub(crate) rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl ProxyProvider {
-    pub async fn check_approval(
-        &self,
-        quote: &SwapperQuote,
-        quote_data: &SwapQuoteData,
-        provider: Arc<dyn AlienProvider>,
-    ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
+    pub async fn check_approval(&self, quote: &SwapperQuote, quote_data: &SwapQuoteData) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
 
@@ -57,7 +53,6 @@ impl ProxyProvider {
                         token,
                         quote_data.to.clone(),
                         U256::from_str(&quote.from_value).map_err(SwapperError::from)?,
-                        provider,
                         &from_asset.chain,
                     )
                     .await
@@ -65,15 +60,8 @@ impl ProxyProvider {
             }
             ChainType::Tron => {
                 let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-                self.check_tron_approval(
-                    &from_asset,
-                    request.wallet_address.clone(),
-                    amount,
-                    quote_data.gas_limit.clone(),
-                    quote,
-                    provider,
-                )
-                .await
+                self.check_tron_approval(&from_asset, request.wallet_address.clone(), amount, quote_data.gas_limit.clone(), quote)
+                    .await
             }
             _ => Ok((None, None)),
         }
@@ -85,10 +73,9 @@ impl ProxyProvider {
         token: String,
         spender: String,
         amount: U256,
-        provider: Arc<dyn AlienProvider>,
         chain: &Chain,
     ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
-        let approval = check_approval_erc20(wallet_address, token, spender, amount, provider, chain).await?;
+        let approval = check_approval_erc20(wallet_address, token, spender, amount, self.rpc_provider.clone(), chain).await?;
         let gas_limit = if matches!(approval, ApprovalType::Approve(_)) {
             Some(DEFAULT_GAS_LIMIT.to_string())
         } else {
@@ -104,7 +91,6 @@ impl ProxyProvider {
         amount: U256,
         default_fee_limit: Option<String>,
         quote: &SwapperQuote,
-        provider: Arc<dyn AlienProvider>,
     ) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
         let proxy_quote: ProxyQuote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
@@ -116,14 +102,14 @@ impl ProxyProvider {
             ApprovalType::None
         } else {
             let token = from_asset.token_id.clone().unwrap();
-            check_approval_tron(&wallet_address, &token, spender, amount, provider.clone()).await?
+            check_approval_tron(&wallet_address, &token, spender, amount, self.rpc_provider.clone()).await?
         };
 
         let fee_limit = if matches!(approval, ApprovalType::Approve(_)) {
             default_fee_limit
         } else {
             let tx_data: SymbiosisTransactionData = serde_json::from_value(proxy_quote.route_data["tx"].clone()).map_err(|_| SwapperError::InvalidRoute)?;
-            let client = TronClient::new(provider.clone());
+            let client = TronClient::new(self.rpc_provider.clone());
             let call_value = tx_data.value.unwrap_or_default();
             let energy = client
                 .estimate_energy(
@@ -151,8 +137,8 @@ impl Swapper for ProxyProvider {
         self.assets.clone()
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
-        let client = ProxyClient::new(provider);
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+        let client = ProxyClient::new(self.rpc_provider.clone());
         let quote_request = ProxyQuoteRequest {
             from_address: request.wallet_address.clone(),
             to_address: request.destination_address.clone(),
@@ -183,13 +169,13 @@ impl Swapper for ProxyProvider {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: ProxyQuote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let client = ProxyClient::new(provider.clone());
+        let client = ProxyClient::new(self.rpc_provider.clone());
 
         let data = client.get_quote_data(&self.url, route_data).await?;
-        let (approval, gas_limit) = self.check_approval(quote, &data, provider).await?;
+        let (approval, gas_limit) = self.check_approval(quote, &data).await?;
 
         Ok(SwapperQuoteData {
             to: data.to,
@@ -200,10 +186,10 @@ impl Swapper for ProxyProvider {
         })
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
         match self.provider.id {
             SwapperProvider::Mayan => {
-                let client = MayanExplorer::new(provider);
+                let client = MayanExplorer::new(self.rpc_provider.clone());
                 let result = client.get_transaction_status(transaction_hash).await?;
 
                 let swap_status = result.client_status.swap_status();
@@ -245,9 +231,8 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_mayan_provider_fetch_quote() -> Result<(), SwapperError> {
-        let provider = ProxyProvider::new_mayan();
-
-        let network_provider = Arc::new(NativeProvider::default());
+        let rpc_provider = Arc::new(NativeProvider::default());
+        let provider = ProxyProvider::new_mayan(rpc_provider);
 
         let options = SwapperOptions {
             slippage: 200.into(),
@@ -265,7 +250,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request, network_provider).await?;
+        let quote = provider.fetch_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -284,9 +269,8 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_cetus_provider_fetch_quote() -> Result<(), SwapperError> {
-        let provider = ProxyProvider::new_cetus_aggregator();
-
-        let network_provider = Arc::new(NativeProvider::default());
+        let rpc_provider = Arc::new(NativeProvider::default());
+        let provider = ProxyProvider::new_cetus_aggregator(rpc_provider);
 
         let options = SwapperOptions {
             slippage: 50.into(),
@@ -304,7 +288,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request, network_provider).await?;
+        let quote = provider.fetch_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);

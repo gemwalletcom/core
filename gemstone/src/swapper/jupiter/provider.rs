@@ -1,6 +1,6 @@
 use super::{PROGRAM_ADDRESS, client::JupiterClient, model::*};
 use crate::{
-    network::{JsonRpcResult, jsonrpc_client_with_chain},
+    network::{AlienProvider, JsonRpcResult, jsonrpc_client_with_chain},
     swapper::{Swapper, *},
 };
 
@@ -11,24 +11,24 @@ use gem_solana::{
     models::{AccountData, ValueResult},
 };
 use primitives::{AssetId, Chain};
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 #[derive(Debug)]
 pub struct Jupiter {
     pub provider: SwapperProviderType,
     pub fee_mints: HashSet<&'static str>,
-}
-
-impl Default for Jupiter {
-    fn default() -> Self {
-        Self {
-            provider: SwapperProviderType::new(SwapperProvider::Jupiter),
-            fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, USDS_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
-        }
-    }
+    rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl Jupiter {
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            provider: SwapperProviderType::new(SwapperProvider::Jupiter),
+            fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, USDS_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
+            rpc_provider,
+        }
+    }
+
     pub fn get_endpoint(&self) -> String {
         "https://lite-api.jup.ag".into()
     }
@@ -59,9 +59,9 @@ impl Jupiter {
         None
     }
 
-    pub async fn fetch_token_program(&self, mint: &str, provider: Arc<dyn AlienProvider>) -> Result<String, SwapperError> {
+    pub async fn fetch_token_program(&self, mint: &str) -> Result<String, SwapperError> {
         let rpc_call = SolanaRpc::GetAccountInfo(mint.to_string());
-        let client = jsonrpc_client_with_chain(provider.clone(), Chain::Solana);
+        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), Chain::Solana);
         let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> =
             client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
         let value = rpc_result.take()?;
@@ -72,20 +72,13 @@ impl Jupiter {
             .ok_or(SwapperError::NetworkError("fetch_token_program error".to_string()))
     }
 
-    pub async fn fetch_fee_account(
-        &self,
-        mode: &SwapperMode,
-        options: &SwapperOptions,
-        input_mint: &str,
-        output_mint: &str,
-        provider: Arc<dyn AlienProvider>,
-    ) -> Result<String, SwapperError> {
+    pub async fn fetch_fee_account(&self, mode: &SwapperMode, options: &SwapperOptions, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
         let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
         // if fee_mint is in preset, no need to fetch token program
         let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
             return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM).unwrap());
         } else {
-            self.fetch_token_program(&fee_mint, provider.clone()).await?
+            self.fetch_token_program(&fee_mint).await?
         };
 
         let mut fee_account = self.get_fee_token_account(options, &fee_mint, &token_program).unwrap_or_default();
@@ -95,7 +88,7 @@ impl Jupiter {
 
         // check fee token account exists, if not, set fee_account to empty string
         let rpc_call = SolanaRpc::GetAccountInfo(fee_account.clone());
-        let client = jsonrpc_client_with_chain(provider.clone(), Chain::Solana);
+        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), Chain::Solana);
         let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = client.call_with_cache(&rpc_call, None).await.map_err(SwapperError::from)?;
         if matches!(rpc_result, JsonRpcResult::Error(_)) || matches!(rpc_result, JsonRpcResult::Value(ref resp) if resp.result.value.is_none()) {
             fee_account = String::from("");
@@ -114,7 +107,7 @@ impl Swapper for Jupiter {
         vec![SwapperChainAsset::All(Chain::Solana)]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let input_mint = self.get_asset_address(&request.from_asset.id)?;
         let output_mint = self.get_asset_address(&request.to_asset.id)?;
         let swap_options = request.options.clone();
@@ -135,7 +128,7 @@ impl Swapper for Jupiter {
             auto_slippage,
             max_auto_slippage_bps: slippage_bps,
         };
-        let client = JupiterClient::new(self.get_endpoint(), provider.clone());
+        let client = JupiterClient::new(self.get_endpoint(), self.rpc_provider.clone());
         let swap_quote = client.get_swap_quote(quote_request).await?;
         let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
 
@@ -162,7 +155,7 @@ impl Swapper for Jupiter {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         if quote.data.routes.is_empty() {
             return Err(SwapperError::InvalidRoute);
         }
@@ -172,7 +165,7 @@ impl Swapper for Jupiter {
 
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let fee_account = self
-            .fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint, provider.clone())
+            .fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint)
             .await?;
 
         let dynamic_slippage = match quote.request.options.slippage.mode {
@@ -190,7 +183,7 @@ impl Swapper for Jupiter {
             dynamic_slippage,
         };
 
-        let client = JupiterClient::new(self.get_endpoint(), provider);
+        let client = JupiterClient::new(self.get_endpoint(), self.rpc_provider.clone());
         let quote_data = client.get_swap_quote_data(request).await?;
 
         if let Some(simulation_error) = quote_data.simulation_error {
@@ -219,8 +212,8 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_jupiter_provider_fetch_quote() -> Result<(), SwapperError> {
-        let provider = Jupiter::default();
-        let network_provider = Arc::new(NativeProvider::default());
+        let rpc_provider = Arc::new(NativeProvider::default());
+        let provider = Jupiter::new(rpc_provider);
 
         let options = SwapperOptions {
             slippage: 100.into(),
@@ -238,7 +231,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request, network_provider).await?;
+        let quote = provider.fetch_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);

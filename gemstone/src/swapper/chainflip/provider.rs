@@ -30,17 +30,17 @@ const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 #[derive(Debug)]
 pub struct ChainflipProvider {
     provider: SwapperProviderType,
-}
-
-impl Default for ChainflipProvider {
-    fn default() -> Self {
-        Self {
-            provider: SwapperProviderType::new(SwapperProvider::Chainflip),
-        }
-    }
+    rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl ChainflipProvider {
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            provider: SwapperProviderType::new(SwapperProvider::Chainflip),
+            rpc_provider,
+        }
+    }
+
     fn map_asset_id(asset: &QuoteAsset) -> ChainflipAsset {
         let asset_id = asset.asset_id();
         let chain_name = capitalize_first_letter(asset_id.chain.as_ref());
@@ -120,7 +120,7 @@ impl Swapper for ChainflipProvider {
         ]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         // Disable swap from BTC until Chainflip scan shows pending transactions
         if request.from_asset.chain().chain_type() == ChainType::Bitcoin {
             return Err(SwapperError::NoQuoteAvailable);
@@ -128,7 +128,7 @@ impl Swapper for ChainflipProvider {
 
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
-        let chainflip_client = ChainflipClient::new(provider.clone());
+        let chainflip_client = ChainflipClient::new(self.rpc_provider.clone());
 
         let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
 
@@ -171,9 +171,9 @@ impl Swapper for ChainflipProvider {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
-        let broker_client = BrokerClient::new(provider.clone());
+        let broker_client = BrokerClient::new(self.rpc_provider.clone());
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
         let destination_asset = Self::map_asset_id(&quote.request.to_asset);
 
@@ -249,7 +249,7 @@ impl Swapper for ChainflipProvider {
                         from_asset.token_id.unwrap(),
                         response.to.clone(),
                         U256::from_le_slice(&input_amount.to_bytes_le()),
-                        provider.clone(),
+                        self.rpc_provider.clone(),
                         &from_asset.chain,
                     )
                     .await?;
@@ -286,7 +286,7 @@ impl Swapper for ChainflipProvider {
                 Ok(swap_quote_data)
             }
             VaultSwapResponse::Solana(response) => {
-                let data = tx_builder::build_solana_tx(&quote.request.wallet_address, &response, provider.clone())
+                let data = tx_builder::build_solana_tx(&quote.request.wallet_address, &response, self.rpc_provider.clone())
                     .await
                     .map_err(SwapperError::TransactionError)?;
                 let swap_quote_data = SwapperQuoteData {
@@ -302,8 +302,8 @@ impl Swapper for ChainflipProvider {
         }
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
-        let chainflip_client = ChainflipClient::new(provider.clone());
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+        let chainflip_client = ChainflipClient::new(self.rpc_provider.clone());
         let status = chainflip_client.get_tx_status(transaction_hash).await?;
 
         let swap_status = status.swap_status();

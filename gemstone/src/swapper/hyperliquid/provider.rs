@@ -20,12 +20,14 @@ use crate::{
 #[derive(Debug)]
 pub struct HyperCoreBridge {
     provider: SwapperProviderType,
+    _rpc_provider: Arc<dyn AlienProvider>,
 }
 
-impl Default for HyperCoreBridge {
-    fn default() -> Self {
+impl HyperCoreBridge {
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Hyperliquid),
+            _rpc_provider: rpc_provider,
         }
     }
 }
@@ -43,7 +45,7 @@ impl Swapper for HyperCoreBridge {
         ]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, _provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let quote = SwapperQuote {
             from_value: request.value.clone(),
             to_value: request.value.clone(),
@@ -64,7 +66,7 @@ impl Swapper for HyperCoreBridge {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         match quote.request.from_asset.asset_id().chain {
             Chain::HyperCore => {
                 let decimals: i32 = quote.request.from_asset.decimals.try_into().unwrap();

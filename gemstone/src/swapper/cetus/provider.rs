@@ -41,19 +41,19 @@ use primitives::{AssetId, Chain};
 #[derive(Debug)]
 pub struct Cetus {
     provider: SwapperProviderType,
-}
-
-impl Default for Cetus {
-    fn default() -> Self {
-        Self {
-            provider: SwapperProviderType::new(SwapperProvider::Cetus),
-        }
-    }
+    rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl Cetus {
-    pub fn boxed() -> Box<dyn Swapper> {
-        Box::new(Self::default())
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            provider: SwapperProviderType::new(SwapperProvider::Cetus),
+            rpc_provider,
+        }
+    }
+
+    pub fn boxed(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
+        Box::new(Self::new(rpc_provider))
     }
 
     pub fn get_coin_address(asset_id: &AssetId) -> String {
@@ -78,8 +78,8 @@ impl Cetus {
         })
     }
 
-    async fn fetch_pools_by_coins(&self, coin_a: &str, coin_b: &str, provider: Arc<dyn AlienProvider>) -> Result<Vec<CetusPool>, SwapperError> {
-        let client = CetusClient::new(provider.clone());
+    async fn fetch_pools_by_coins(&self, coin_a: &str, coin_b: &str) -> Result<Vec<CetusPool>, SwapperError> {
+        let client = CetusClient::new(self.rpc_provider.clone());
         let pools = client
             .get_pool_by_token(coin_a, coin_b)
             .await?
@@ -156,12 +156,12 @@ impl Swapper for Cetus {
         vec![SwapperChainAsset::All(Chain::Sui)]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let from_coin = Self::get_coin_address(&request.from_asset.asset_id());
         let to_coin = Self::get_coin_address(&request.to_asset.asset_id());
         let amount_in = BigInt::from_str(&request.value).map_err(SwapperError::from)?;
 
-        let pools = self.fetch_pools_by_coins(&from_coin, &to_coin, provider.clone()).await?;
+        let pools = self.fetch_pools_by_coins(&from_coin, &to_coin).await?;
         if pools.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
@@ -173,7 +173,7 @@ impl Swapper for Cetus {
         let top_pools = sorted_pools.iter().take(2).collect::<Vec<_>>();
 
         // Create a single SuiClient that can be reused
-        let sui_client = Arc::new(SuiClient::new(provider.clone()));
+        let sui_client = Arc::new(SuiClient::new(self.rpc_provider.clone()));
 
         let rpc_call = SuiRpc::GetMultipleObjects(
             top_pools.iter().map(|pool| pool.address.to_string()).collect(),
@@ -261,7 +261,7 @@ impl Swapper for Cetus {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         // Validate quote data
         let route = &quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let sender_address = quote.request.wallet_address.parse().map_err(SwapperError::from)?;
@@ -270,7 +270,7 @@ impl Swapper for Cetus {
 
         let from_asset = &route.input;
         let from_coin = Self::get_coin_address(from_asset);
-        let sui_client = SuiClient::new(provider.clone());
+        let sui_client = SuiClient::new(self.rpc_provider.clone());
         let cetus_config = self.get_clmm_config()?;
 
         // Execute gas_price and coin_assets fetching in parallel
@@ -334,6 +334,7 @@ impl Swapper for Cetus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::network::alien_provider::NativeProvider;
     use crate::sui::{
         gas_budget,
         rpc::{CoinAsset, models::InspectGasUsed},
@@ -343,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_build_swap_transaction() {
-        let provider = Cetus::default();
+        let provider = Cetus::new(Arc::new(NativeProvider::default()));
         let cetus_config = provider.get_clmm_config().unwrap();
         let sender_address = Address::from_str("0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1").unwrap();
 

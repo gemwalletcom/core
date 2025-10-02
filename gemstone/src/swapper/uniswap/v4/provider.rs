@@ -41,19 +41,19 @@ use super::{
 #[derive(Debug)]
 pub struct UniswapV4 {
     pub provider: SwapperProviderType,
-}
-
-impl Default for UniswapV4 {
-    fn default() -> Self {
-        Self {
-            provider: SwapperProviderType::new(SwapperProvider::UniswapV4),
-        }
-    }
+    rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl UniswapV4 {
-    pub fn boxed() -> Box<dyn Swapper> {
-        Box::new(Self::default())
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            provider: SwapperProviderType::new(SwapperProvider::UniswapV4),
+            rpc_provider,
+        }
+    }
+
+    pub fn boxed(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
+        Box::new(Self::new(rpc_provider))
     }
 
     fn support_chain(&self, chain: &Chain) -> bool {
@@ -100,7 +100,7 @@ impl Swapper for UniswapV4 {
             .map(|x| SwapperChainAsset::All(*x))
             .collect()
     }
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
         // Check deployment and weth contract
@@ -130,7 +130,7 @@ impl Swapper for UniswapV4 {
             .iter()
             .map(|pool_key| build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
             .collect();
-        let client = jsonrpc_client_with_chain(provider.clone(), from_chain);
+        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), from_chain);
         let batch_call = client.batch_call_requests(calls);
         let mut requests = vec![batch_call];
 
@@ -198,7 +198,7 @@ impl Swapper for UniswapV4 {
         })
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         if from_asset.is_native() {
             return Ok(None);
@@ -212,7 +212,7 @@ impl Swapper for UniswapV4 {
             token_in.to_string(),
             v4_deployment.universal_router.to_string(),
             U256::from(amount_in),
-            provider.clone(),
+            self.rpc_provider.clone(),
             &from_asset.chain,
         )
         .await?
@@ -221,7 +221,7 @@ impl Swapper for UniswapV4 {
         Ok(permit2_data)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
@@ -241,7 +241,7 @@ impl Swapper for UniswapV4 {
                 token_in.to_string(),
                 deployment.permit2.to_string(),
                 U256::from(amount_in),
-                provider,
+                self.rpc_provider.clone(),
                 &from_asset.chain,
             )
             .await?

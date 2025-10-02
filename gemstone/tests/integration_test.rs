@@ -88,8 +88,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_across_quote() -> Result<(), SwapperError> {
-        let swap_provider = Across::boxed();
         let network_provider = Arc::new(NativeProvider::default());
+        let swap_provider = Across::boxed(network_provider.clone());
         let mut options = SwapperOptions {
             slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
@@ -114,16 +114,14 @@ mod tests {
         };
 
         let now = SystemTime::now();
-        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        let quote = swap_provider.fetch_quote(&request).await?;
         let elapsed = SystemTime::now().duration_since(now).unwrap();
 
         println!("<== elapsed: {:?}", elapsed);
         println!("<== quote: {:?}", quote);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-        let quote_data = swap_provider
-            .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
-            .await?;
+        let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
         println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
@@ -131,8 +129,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_v4_quoter() -> Result<(), SwapperError> {
-        let swap_provider = UniswapV4::boxed();
         let network_provider = Arc::new(NativeProvider::default());
+        let swap_provider = UniswapV4::boxed(network_provider.clone());
         let options = SwapperOptions {
             slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {
@@ -153,16 +151,14 @@ mod tests {
         };
 
         let now = SystemTime::now();
-        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        let quote = swap_provider.fetch_quote(&request).await?;
         let elapsed = SystemTime::now().duration_since(now).unwrap();
 
         println!("<== elapsed: {:?}", elapsed);
         println!("<== quote: {:?}", quote);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-        let quote_data = swap_provider
-            .fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::EstimateGas)
-            .await?;
+        let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
         println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
@@ -170,8 +166,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_cetus_swap() -> Result<(), Box<dyn std::error::Error>> {
-        let swap_provider = Cetus::boxed();
         let network_provider = Arc::new(NativeProvider::default());
+        let swap_provider = Cetus::boxed(network_provider.clone());
         let config = get_swap_config();
         let options = SwapperOptions {
             slippage: 50.into(),
@@ -193,10 +189,10 @@ mod tests {
             options,
         };
 
-        let quote = swap_provider.fetch_quote(&request, network_provider.clone()).await?;
+        let quote = swap_provider.fetch_quote(&request).await?;
         println!("{:?}", quote);
 
-        let quote_data = swap_provider.fetch_quote_data(&quote, network_provider.clone(), FetchQuoteData::None).await?;
+        let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
         println!("{:?}", quote_data);
 
         Ok(())

@@ -3,9 +3,8 @@ use super::{
     models::{FetchQuoteData, Permit2ApprovalData, SwapperChainAsset, SwapperProviderType, SwapperQuote, SwapperQuoteRequest, SwapperSwapResult},
     remote_models::{SwapperProviderMode, SwapperQuoteData},
 };
-use crate::network::AlienProvider;
 use async_trait::async_trait;
-use std::{fmt::Debug, sync::Arc};
+use std::fmt::Debug;
 
 use primitives::{Chain, swap::SwapStatus};
 
@@ -13,12 +12,12 @@ use primitives::{Chain, swap::SwapStatus};
 pub trait Swapper: Send + Sync + Debug {
     fn provider(&self) -> &SwapperProviderType;
     fn supported_assets(&self) -> Vec<SwapperChainAsset>;
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError>;
-    async fn fetch_permit2_for_quote(&self, _quote: &SwapperQuote, _provider: Arc<dyn AlienProvider>) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError>;
+    async fn fetch_permit2_for_quote(&self, _quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         Ok(None)
     }
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, _provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
         if self.provider().mode() == SwapperProviderMode::OnChain {
             Ok(self.get_onchain_swap_status(chain, transaction_hash))
         } else {

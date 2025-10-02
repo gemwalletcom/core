@@ -8,7 +8,9 @@ mod provider;
 use chain::THORChainName;
 use num_bigint::BigInt;
 use primitives::Chain;
-use std::str::FromStr;
+use std::{str::FromStr, sync::Arc};
+
+use crate::network::AlienProvider;
 
 use super::{SwapperProvider, SwapperProviderType};
 
@@ -23,17 +25,17 @@ const DEFAULT_DEPOSIT_GAS_LIMIT: u64 = 90_000;
 #[derive(Debug)]
 pub struct ThorChain {
     pub provider: SwapperProviderType,
-}
-
-impl Default for ThorChain {
-    fn default() -> Self {
-        Self {
-            provider: SwapperProviderType::new(SwapperProvider::Thorchain),
-        }
-    }
+    pub rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl ThorChain {
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            provider: SwapperProviderType::new(SwapperProvider::Thorchain),
+            rpc_provider,
+        }
+    }
+
     fn data(&self, chain: THORChainName, memo: String) -> String {
         if chain.is_evm_chain() {
             return hex::encode(memo.as_bytes());
@@ -67,10 +69,12 @@ impl ThorChain {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::network::alien_provider::NativeProvider;
+    use std::sync::Arc;
 
     #[test]
     fn test_data() {
-        let thorchain = ThorChain::default();
+        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
         let memo = "test".to_string();
 
         let result = thorchain.data(THORChainName::Ethereum, memo.clone());
@@ -82,7 +86,7 @@ mod tests {
 
     #[test]
     fn test_value_from() {
-        let thorchain = ThorChain::default();
+        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
 
         let value = "1000000000".to_string();
 
@@ -101,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_value_to() {
-        let thorchain = ThorChain::default();
+        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
 
         let value = "10000000".to_string();
 
@@ -120,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_get_eta_in_seconds() {
-        let thorchain = ThorChain::default();
+        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
 
         let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, None);
         assert_eq!(eta, 660);

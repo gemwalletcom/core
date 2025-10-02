@@ -1,6 +1,5 @@
 use std::{
     str::FromStr,
-    sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -16,7 +15,6 @@ use super::{
 };
 use crate::{
     models::GemApprovalData,
-    network::AlienProvider,
     swapper::{
         FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
         SwapperQuoteRequest, SwapperRoute, SwapperSwapResult, approval::check_approval_erc20, asset::*,
@@ -57,9 +55,9 @@ impl Swapper for ThorChain {
             .collect()
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
-        let endpoint = provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
-        let client = ThorChainSwapClient::new(provider.clone());
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+        let endpoint = self.rpc_provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
+        let client = ThorChainSwapClient::new(self.rpc_provider.clone());
 
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
@@ -126,7 +124,7 @@ impl Swapper for ThorChain {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
         let from_asset = THORChainAsset::from_asset_id(&quote.request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&quote.request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
@@ -153,7 +151,7 @@ impl Swapper for ThorChain {
                     from_asset.token_id.clone().unwrap(),
                     route_data.router_address.clone().unwrap(),
                     from_amount,
-                    provider.clone(),
+                    self.rpc_provider.clone(),
                     &from_asset.chain.chain(),
                 )
                 .await?
@@ -206,9 +204,9 @@ impl Swapper for ThorChain {
         Ok(data)
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
-        let endpoint = provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
-        let client = ThorChainSwapClient::new(provider);
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+        let endpoint = self.rpc_provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
+        let client = ThorChainSwapClient::new(self.rpc_provider.clone());
 
         let status = client.get_transaction_status(&endpoint, transaction_hash).await?;
 
@@ -243,15 +241,16 @@ impl Swapper for ThorChain {
 mod swap_integration_tests {
     use super::*;
     use crate::{network::alien_provider::NativeProvider, swapper::testkit::mock_quote};
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_thorchain_swap_trx_to_bnb() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let swapper = ThorChain::default();
         let provider = Arc::new(NativeProvider::default());
+        let swapper = ThorChain::new(provider.clone());
 
         let request = mock_quote(Chain::Tron.as_asset_id(), Chain::SmartChain.as_asset_id());
 
-        let quote = swapper.fetch_quote(&request, provider.clone()).await?;
+        let quote = swapper.fetch_quote(&request).await?;
 
         println!("quote: {:#?}", quote);
 

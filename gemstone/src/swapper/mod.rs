@@ -110,27 +110,26 @@ impl GemSwapper {
 impl GemSwapper {
     #[uniffi::constructor]
     pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
-        Self {
-            rpc_provider,
-            swappers: vec![
-                Box::new(uniswap::universal_router::new_uniswap_v3()),
-                Box::new(uniswap::universal_router::new_uniswap_v4()),
-                Box::new(uniswap::universal_router::new_pancakeswap()),
-                Box::new(thorchain::ThorChain::default()),
-                Box::new(jupiter::Jupiter::default()),
-                Box::new(across::Across::default()),
-                Box::new(hyperliquid::HyperCoreBridge::default()),
-                Box::new(uniswap::universal_router::new_oku()),
-                Box::new(uniswap::universal_router::new_wagmi()),
-                Box::new(pancakeswap_aptos::PancakeSwapAptos::default()),
-                Box::new(ProxyProvider::new_stonfi_v2()),
-                Box::new(ProxyProvider::new_mayan()),
-                Box::new(chainflip::ChainflipProvider::default()),
-                Box::new(ProxyProvider::new_cetus_aggregator()),
-                Box::new(ProxyProvider::new_relay()),
-                Box::new(uniswap::universal_router::new_aerodrome()),
-            ],
-        }
+        let swappers: Vec<Box<dyn Swapper>> = vec![
+            Box::new(uniswap::universal_router::new_uniswap_v3(rpc_provider.clone())),
+            Box::new(uniswap::universal_router::new_uniswap_v4(rpc_provider.clone())),
+            Box::new(uniswap::universal_router::new_pancakeswap(rpc_provider.clone())),
+            Box::new(thorchain::ThorChain::new(rpc_provider.clone())),
+            Box::new(jupiter::Jupiter::new(rpc_provider.clone())),
+            Box::new(across::Across::new(rpc_provider.clone())),
+            Box::new(hyperliquid::HyperCoreBridge::new(rpc_provider.clone())),
+            Box::new(uniswap::universal_router::new_oku(rpc_provider.clone())),
+            Box::new(uniswap::universal_router::new_wagmi(rpc_provider.clone())),
+            Box::new(pancakeswap_aptos::PancakeSwapAptos::new(rpc_provider.clone())),
+            Box::new(ProxyProvider::new_stonfi_v2(rpc_provider.clone())),
+            Box::new(ProxyProvider::new_mayan(rpc_provider.clone())),
+            Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
+            Box::new(ProxyProvider::new_cetus_aggregator(rpc_provider.clone())),
+            Box::new(ProxyProvider::new_relay(rpc_provider.clone())),
+            Box::new(uniswap::universal_router::new_aerodrome(rpc_provider.clone())),
+        ];
+
+        Self { rpc_provider, swappers }
     }
 
     pub fn supported_chains(&self) -> Vec<Chain> {
@@ -185,9 +184,7 @@ impl GemSwapper {
         }
 
         let request_for_quote = Self::transform_request(request);
-        let quotes_futures = providers
-            .into_iter()
-            .map(|x| x.fetch_quote(request_for_quote.as_ref(), self.rpc_provider.clone()));
+        let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request_for_quote.as_ref()));
 
         let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async {
             match &fut.await {
@@ -213,17 +210,17 @@ impl GemSwapper {
     pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let provider = self.get_swapper_by_provider(&provider).ok_or(SwapperError::NoAvailableProvider)?;
         let request_for_quote = Self::transform_request(&request);
-        provider.fetch_quote(request_for_quote.as_ref(), self.rpc_provider.clone()).await
+        provider.fetch_quote(request_for_quote.as_ref()).await
     }
 
     pub async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
-        provider.fetch_permit2_for_quote(quote, self.rpc_provider.clone()).await
+        provider.fetch_permit2_for_quote(quote).await
     }
 
     pub async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
-        let mut quote_data = provider.fetch_quote_data(quote, self.rpc_provider.clone(), data).await?;
+        let mut quote_data = provider.fetch_quote_data(quote, data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
             quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain(), gas_limit));
         }
@@ -232,7 +229,7 @@ impl GemSwapper {
 
     pub async fn get_swap_result(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
         let provider = self.get_swapper_by_provider(&swap_provider).ok_or(SwapperError::NoAvailableProvider)?;
-        provider.get_swap_result(chain, transaction_hash, self.rpc_provider.clone()).await
+        provider.get_swap_result(chain, transaction_hash).await
     }
 }
 
@@ -241,8 +238,9 @@ mod tests {
 
     use super::*;
     use crate::config::swap_config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, SwapReferralFee, SwapReferralFees};
+    use crate::network::alien_provider::NativeProvider;
     use primitives::asset_constants::USDT_ETH_ASSET_ID;
-    use std::{borrow::Cow, collections::BTreeSet, vec};
+    use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
 
     fn build_request(from_symbol: &str, to_symbol: &str, fee: Option<SwapReferralFees>) -> SwapperQuoteRequest {
         SwapperQuoteRequest {
@@ -292,11 +290,12 @@ mod tests {
 
     #[test]
     fn test_filter_by_supported_chains() {
+        let provider = Arc::new(NativeProvider::default());
         let swappers: Vec<Box<dyn Swapper>> = vec![
-            Box::new(uniswap::universal_router::new_uniswap_v3()),
-            Box::new(uniswap::universal_router::new_pancakeswap()),
-            Box::new(thorchain::ThorChain::default()),
-            Box::new(jupiter::Jupiter::default()),
+            Box::new(uniswap::universal_router::new_uniswap_v3(provider.clone())),
+            Box::new(uniswap::universal_router::new_pancakeswap(provider.clone())),
+            Box::new(thorchain::ThorChain::new(provider.clone())),
+            Box::new(jupiter::Jupiter::new(provider)),
         ];
 
         let from_chain = Chain::Ethereum;

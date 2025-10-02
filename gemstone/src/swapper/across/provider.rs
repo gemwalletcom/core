@@ -46,19 +46,19 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 #[derive(Debug)]
 pub struct Across {
     pub provider: SwapperProviderType,
-}
-
-impl Default for Across {
-    fn default() -> Self {
-        Self {
-            provider: SwapperProviderType::new(SwapperProvider::Across),
-        }
-    }
+    rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl Across {
-    pub fn boxed() -> Box<dyn Swapper> {
-        Box::new(Self::default())
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            provider: SwapperProviderType::new(SwapperProvider::Across),
+            rpc_provider,
+        }
+    }
+
+    pub fn boxed(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
+        Box::new(Self::new(rpc_provider))
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
@@ -174,7 +174,6 @@ impl Across {
         wallet_address: &Address,
         message: &[u8],
         deployment: &AcrossDeployment,
-        provider: Arc<dyn AlienProvider>,
         chain: Chain,
     ) -> Result<(U256, V3RelayData), SwapperError> {
         let chain_id: u32 = chain.network_id().parse().unwrap();
@@ -206,7 +205,7 @@ impl Across {
         }
         .abi_encode();
         let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
-        let gas_limit = eth_rpc::estimate_gas(provider, chain, tx).await;
+        let gas_limit = eth_rpc::estimate_gas(self.rpc_provider.clone(), chain, tx).await;
         Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
     }
 
@@ -282,7 +281,7 @@ impl Swapper for Across {
         ]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest, provider: Arc<dyn AlienProvider>) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         // does not support same chain swap
         if request.from_asset.chain() == request.to_asset.chain() {
             return Err(SwapperError::NotSupportedPair);
@@ -310,15 +309,15 @@ impl Swapper for Across {
         let asset_mainnet = asset_mapping.set.iter().find(|x| x.chain == Chain::Ethereum).unwrap();
         let mainnet_token = eth_address::normalize_weth_address(asset_mainnet, from_chain)?;
 
-        let hubpool_client = HubPoolClient::new(provider.clone(), Chain::Ethereum);
-        let config_client = ConfigStoreClient::new(provider.clone(), Chain::Ethereum);
+        let hubpool_client = HubPoolClient::new(self.rpc_provider.clone(), Chain::Ethereum);
+        let config_client = ConfigStoreClient::new(self.rpc_provider.clone(), Chain::Ethereum);
 
         let calls = vec![
             hubpool_client.paused_call3(),
             hubpool_client.sync_call3(&mainnet_token),
             hubpool_client.pooled_token_call3(&mainnet_token),
         ];
-        let results = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls).await?;
+        let results = eth_rpc::multicall3_call(self.rpc_provider.clone(), &hubpool_client.chain, calls).await?;
 
         // Check if protocol is paused
         let is_paused = hubpool_client.decoded_paused_call3(&results[0])?;
@@ -339,12 +338,12 @@ impl Swapper for Across {
             hubpool_client.get_current_time(),
         ];
 
-        let eth_price_feed = ChainlinkPriceFeed::new_eth_usd_feed(provider.clone());
+        let eth_price_feed = ChainlinkPriceFeed::new_eth_usd_feed(self.rpc_provider.clone());
         if !input_is_native {
             calls.push(eth_price_feed.latest_round_call3());
         }
 
-        let multicall_req = eth_rpc::multicall3_call(provider.clone(), &hubpool_client.chain, calls);
+        let multicall_req = eth_rpc::multicall3_call(self.rpc_provider.clone(), &hubpool_client.chain, calls);
 
         let batch_results = futures::join!(token_config_req, multicall_req);
         let token_config = batch_results.0?;
@@ -376,7 +375,7 @@ impl Swapper for Across {
         let (message, referral_fee) =
             self.message_for_multicall_handler(&remain_amount, &original_output_asset, &wallet_address, &output_token, &referral_config);
 
-        let gas_price_req = eth_rpc::fetch_gas_price(provider.clone(), request.to_asset.chain());
+        let gas_price_req = eth_rpc::fetch_gas_price(self.rpc_provider.clone(), request.to_asset.chain());
         let gas_limit_req = self.estimate_gas_limit(
             &from_amount,
             input_is_native,
@@ -385,7 +384,6 @@ impl Swapper for Across {
             &wallet_address,
             &message,
             &destination_deployment,
-            provider.clone(),
             request.to_asset.chain(),
         );
 
@@ -436,7 +434,7 @@ impl Swapper for Across {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, provider: Arc<dyn AlienProvider>, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_chain = quote.request.from_asset.chain();
         let deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain().network_id().parse().unwrap();
@@ -472,7 +470,7 @@ impl Swapper for Across {
                     v3_relay_data.inputToken.to_string(),
                     deployment.spoke_pool.into(),
                     v3_relay_data.inputAmount,
-                    provider.clone(),
+                    self.rpc_provider.clone(),
                     &from_chain,
                 )
                 .await?
@@ -486,7 +484,7 @@ impl Swapper for Across {
         if matches!(data, FetchQuoteData::EstimateGas) {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
             let tx = TransactionObject::new_call_to_value(&to, &hex_value, deposit_v3_call.clone());
-            let _gas_limit = eth_rpc::estimate_gas(provider, from_chain, tx).await?;
+            let _gas_limit = eth_rpc::estimate_gas(self.rpc_provider.clone(), from_chain, tx).await?;
             debug_println!("gas_limit: {:?}", _gas_limit);
             gas_limit = Some(_gas_limit.to_string());
         }
@@ -501,8 +499,8 @@ impl Swapper for Across {
 
         Ok(quote_data)
     }
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str, provider: Arc<dyn AlienProvider>) -> Result<SwapperSwapResult, SwapperError> {
-        let api = AcrossApi::new(provider.clone());
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+        let api = AcrossApi::new(self.rpc_provider.clone());
         let status = api.deposit_status(chain, transaction_hash).await?;
 
         let swap_status = status.swap_status();
