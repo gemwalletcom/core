@@ -169,7 +169,8 @@ mod tests {
 
         assert_eq!(missing_energy, energy_used);
         assert_eq!(energy_price, BigInt::from(100));
-        assert_eq!(total, expected_bandwidth + expected_energy_fee);
+        let expected_total = (expected_bandwidth + expected_energy_fee) * BigInt::from(100 + FEE_LIMIT_PERCENT_INCREASE) / BigInt::from(100);
+        assert_eq!(total, expected_total);
     }
 
     #[test]

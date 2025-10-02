@@ -4,6 +4,7 @@ pub mod remote_models;
 pub use remote_models::*;
 
 use crate::alien::{AlienError, AlienSigner};
+use serde::Serialize;
 use serde_json::{self, Value};
 use std::sync::Arc;
 
@@ -210,75 +211,81 @@ impl HyperCore {
     }
 
     pub fn sign_spot_send(&self, spot_send: HyperSpotSend, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&spot_send).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize spot send: {err}"),
-        })?;
-        let typed_data = hyper_core_send_spot_token_to_address_typed_data(spot_send.clone());
-        self.sign_action(typed_data, action, spot_send.time, private_key)
+        let timestamp = spot_send.time;
+        sign_serialized_action(
+            self,
+            spot_send,
+            timestamp,
+            private_key,
+            hyper_core_send_spot_token_to_address_typed_data,
+            "spot send",
+        )
     }
 
     pub fn sign_withdrawal_request(&self, request: HyperWithdrawalRequest, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&request).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize withdrawal request: {err}"),
-        })?;
-        let typed_data = hyper_core_withdrawal_request_typed_data(request.clone());
-        self.sign_action(typed_data, action, request.time, private_key)
+        let timestamp = request.time;
+        sign_serialized_action(
+            self,
+            request,
+            timestamp,
+            private_key,
+            hyper_core_withdrawal_request_typed_data,
+            "withdrawal request",
+        )
     }
 
     pub fn sign_approve_agent(&self, agent: HyperApproveAgent, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&agent).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize approve agent action: {err}"),
-        })?;
-        let typed_data = hyper_core_approve_agent_typed_data(agent.clone());
-        self.sign_action(typed_data, action, agent.nonce, private_key)
+        let timestamp = agent.nonce;
+        sign_serialized_action(self, agent, timestamp, private_key, hyper_core_approve_agent_typed_data, "approve agent")
     }
 
     pub fn sign_approve_builder_fee(&self, fee: HyperApproveBuilderFee, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&fee).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize approve builder fee action: {err}"),
-        })?;
-        let typed_data = hyper_core_approve_builder_fee_typed_data(fee.clone());
-        self.sign_action(typed_data, action, fee.nonce, private_key)
+        let timestamp = fee.nonce;
+        sign_serialized_action(
+            self,
+            fee,
+            timestamp,
+            private_key,
+            hyper_core_approve_builder_fee_typed_data,
+            "approve builder fee",
+        )
     }
 
     pub fn sign_set_referrer(&self, referrer: HyperSetReferrer, nonce: u64, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&referrer).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize set referrer action: {err}"),
-        })?;
-        let typed_data = hyper_core_set_referrer_typed_data(referrer.clone(), nonce);
-        self.sign_action(typed_data, action, nonce, private_key)
+        sign_serialized_action(
+            self,
+            referrer,
+            nonce,
+            private_key,
+            |value| hyper_core_set_referrer_typed_data(value, nonce),
+            "set referrer",
+        )
     }
 
     pub fn sign_c_deposit(&self, deposit: HyperCDeposit, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&deposit).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize deposit action: {err}"),
-        })?;
-        let typed_data = hyper_core_c_deposit_typed_data(deposit.clone());
-        self.sign_action(typed_data, action, deposit.nonce, private_key)
+        let timestamp = deposit.nonce;
+        sign_serialized_action(self, deposit, timestamp, private_key, hyper_core_c_deposit_typed_data, "c deposit")
     }
 
     pub fn sign_c_withdraw(&self, withdraw: HyperCWithdraw, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&withdraw).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize withdraw action: {err}"),
-        })?;
-        let typed_data = hyper_core_c_withdraw_typed_data(withdraw.clone());
-        self.sign_action(typed_data, action, withdraw.nonce, private_key)
+        let timestamp = withdraw.nonce;
+        sign_serialized_action(self, withdraw, timestamp, private_key, hyper_core_c_withdraw_typed_data, "c withdraw")
     }
 
     pub fn sign_token_delegate(&self, delegate: HyperTokenDelegate, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&delegate).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize token delegate action: {err}"),
-        })?;
-        let typed_data = hyper_core_token_delegate_typed_data(delegate.clone());
-        self.sign_action(typed_data, action, delegate.nonce, private_key)
+        let timestamp = delegate.nonce;
+        sign_serialized_action(self, delegate, timestamp, private_key, hyper_core_token_delegate_typed_data, "token delegate")
     }
 
     pub fn sign_place_order(&self, order: HyperPlaceOrder, nonce: u64, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let action = serde_json::to_string(&order).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize order action: {err}"),
-        })?;
-        let typed_data = hyper_core_place_order_typed_data(order.clone(), nonce);
-        self.sign_action(typed_data, action, nonce, private_key)
+        sign_serialized_action(
+            self,
+            order,
+            nonce,
+            private_key,
+            |value| hyper_core_place_order_typed_data(value, nonce),
+            "place order",
+        )
     }
 
     // EIP-712 typed data generation methods
@@ -339,18 +346,35 @@ impl HyperCore {
     }
 }
 
+fn sign_serialized_action<T, F>(
+    core: &HyperCore,
+    value: T,
+    timestamp: u64,
+    private_key: Vec<u8>,
+    typed_data_fn: F,
+    action_name: &'static str,
+) -> Result<String, AlienError>
+where
+    T: Serialize,
+    F: FnOnce(T) -> String,
+{
+    let action = serde_json::to_string(&value).map_err(|err| AlienError::SigningError {
+        msg: format!("Failed to serialize {action_name} action: {err}"),
+    })?;
+    let typed_data = typed_data_fn(value);
+    core.sign_action(typed_data, action, timestamp, private_key)
+}
+
 fn extract_timestamp(message: &Value) -> Result<u64, AlienError> {
     if let Some(time) = message.get("time") {
-        return parse_numeric_field(time, "time");
+        parse_numeric_field(time, "time")
+    } else if let Some(nonce) = message.get("nonce") {
+        parse_numeric_field(nonce, "nonce")
+    } else {
+        Err(AlienError::SigningError {
+            msg: "Typed data message missing time or nonce field".to_string(),
+        })
     }
-
-    if let Some(nonce) = message.get("nonce") {
-        return parse_numeric_field(nonce, "nonce");
-    }
-
-    Err(AlienError::SigningError {
-        msg: "Typed data message missing time or nonce field".to_string(),
-    })
 }
 
 fn parse_numeric_field(value: &Value, field: &str) -> Result<u64, AlienError> {
