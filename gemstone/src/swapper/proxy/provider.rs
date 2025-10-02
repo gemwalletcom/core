@@ -1,7 +1,6 @@
 use alloy_primitives::U256;
 use async_trait::async_trait;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
     client::ProxyClient,
@@ -11,16 +10,18 @@ use super::{
 use crate::{
     config::swap_config::DEFAULT_SWAP_FEE_BPS,
     models::GemApprovalData,
-    network::AlienProvider,
+    network::{AlienClient, AlienProvider},
     swapper::{
         FetchQuoteData, Swapper, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
         SwapperRoute, SwapperSwapResult,
         approval::{evm::check_approval_erc20, tron::check_approval_tron},
+        asset::*,
         models::{ApprovalType, SwapperChainAsset},
         remote_models::SwapperProviderMode,
     },
     tron::client::TronClient,
 };
+use gem_client::Client;
 use primitives::{
     AssetId, Chain, ChainType,
     swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
@@ -30,14 +31,29 @@ pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 500000;
 
 #[derive(Debug)]
-pub struct ProxyProvider {
+pub struct ProxyProvider<C>
+where
+    C: Client + Clone + Send + Sync + Debug + 'static,
+{
     pub provider: SwapperProviderType,
-    pub url: String,
     pub assets: Vec<SwapperChainAsset>,
+    client: ProxyClient<C>,
     pub(crate) rpc_provider: Arc<dyn AlienProvider>,
 }
 
-impl ProxyProvider {
+impl<C> ProxyProvider<C>
+where
+    C: Client + Clone + Send + Sync + Debug + 'static,
+{
+    fn new_with_client(provider: SwapperProvider, client: ProxyClient<C>, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self {
+            provider: SwapperProviderType::new(provider),
+            assets,
+            client,
+            rpc_provider,
+        }
+    }
+
     pub async fn check_approval(&self, quote: &SwapperQuote, quote_data: &SwapQuoteData) -> Result<(Option<GemApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
@@ -127,8 +143,95 @@ impl ProxyProvider {
     }
 }
 
+impl ProxyProvider<AlienClient> {
+    fn new_with_path(provider: SwapperProvider, path: &str, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        let base_url = format!("{PROVIDER_API_URL}/{path}");
+        let client = ProxyClient::new(AlienClient::new(base_url, rpc_provider.clone()));
+        Self::new_with_client(provider, client, assets, rpc_provider)
+    }
+
+    pub fn new_stonfi_v2(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self::new_with_path(SwapperProvider::StonfiV2, "stonfi_v2", vec![SwapperChainAsset::All(Chain::Ton)], rpc_provider)
+    }
+
+    pub fn new_symbiosis(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self::new_with_path(SwapperProvider::Symbiosis, "symbiosis", vec![SwapperChainAsset::All(Chain::Tron)], rpc_provider)
+    }
+
+    pub fn new_cetus_aggregator(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self::new_with_path(
+            SwapperProvider::CetusAggregator,
+            "cetus",
+            vec![SwapperChainAsset::All(Chain::Sui)],
+            rpc_provider,
+        )
+    }
+
+    pub fn new_mayan(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        let assets = vec![
+            SwapperChainAsset::Assets(
+                Chain::Ethereum,
+                vec![
+                    ETHEREUM_USDT.id.clone(),
+                    ETHEREUM_USDC.id.clone(),
+                    ETHEREUM_DAI.id.clone(),
+                    ETHEREUM_USDS.id.clone(),
+                    ETHEREUM_WBTC.id.clone(),
+                    ETHEREUM_WETH.id.clone(),
+                    ETHEREUM_STETH.id.clone(),
+                    ETHEREUM_CBBTC.id.clone(),
+                ],
+            ),
+            SwapperChainAsset::Assets(
+                Chain::Solana,
+                vec![
+                    SOLANA_USDC.id.clone(),
+                    SOLANA_USDT.id.clone(),
+                    SOLANA_USDS.id.clone(),
+                    SOLANA_CBBTC.id.clone(),
+                    SOLANA_WBTC.id.clone(),
+                    SOLANA_JITO_SOL.id.clone(),
+                ],
+            ),
+            SwapperChainAsset::Assets(Chain::Sui, vec![SUI_USDC.id.clone(), SUI_SBUSDT.id.clone(), SUI_WAL.id.clone()]),
+            SwapperChainAsset::Assets(
+                Chain::SmartChain,
+                vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone(), SMARTCHAIN_WBTC.id.clone()],
+            ),
+            SwapperChainAsset::Assets(
+                Chain::Base,
+                vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone(), BASE_WBTC.id.clone(), BASE_USDS.id.clone()],
+            ),
+            SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_USDC.id.clone(), POLYGON_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::AvalancheC, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone(), OPTIMISM_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Linea, vec![LINEA_USDC.id.clone(), LINEA_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_USDC.id.clone(), UNICHAIN_DAI.id.clone()]),
+        ];
+
+        Self::new_with_path(SwapperProvider::Mayan, "mayan", assets, rpc_provider)
+    }
+
+    pub fn new_relay(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self::new_with_path(
+            SwapperProvider::Relay,
+            "relay",
+            vec![
+                SwapperChainAsset::All(Chain::Hyperliquid),
+                SwapperChainAsset::All(Chain::Manta),
+                SwapperChainAsset::All(Chain::Berachain),
+            ],
+            rpc_provider,
+        )
+    }
+}
+
 #[async_trait]
-impl Swapper for ProxyProvider {
+impl<C> Swapper for ProxyProvider<C>
+where
+    C: Client + Clone + Send + Sync + Debug + 'static,
+{
     fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
@@ -138,7 +241,6 @@ impl Swapper for ProxyProvider {
     }
 
     async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
-        let client = ProxyClient::new(self.rpc_provider.clone());
         let quote_request = ProxyQuoteRequest {
             from_address: request.wallet_address.clone(),
             to_address: request.destination_address.clone(),
@@ -149,7 +251,7 @@ impl Swapper for ProxyProvider {
             slippage_bps: request.options.slippage.bps,
         };
 
-        let quote = client.get_quote(&self.url, quote_request.clone()).await?;
+        let quote = self.client.get_quote(quote_request.clone()).await?;
 
         Ok(SwapperQuote {
             from_value: request.value.clone(),
@@ -172,9 +274,8 @@ impl Swapper for ProxyProvider {
     async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: ProxyQuote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let client = ProxyClient::new(self.rpc_provider.clone());
 
-        let data = client.get_quote_data(&self.url, route_data).await?;
+        let data = self.client.get_quote_data(route_data).await?;
         let (approval, gas_limit) = self.check_approval(quote, &data).await?;
 
         Ok(SwapperQuoteData {

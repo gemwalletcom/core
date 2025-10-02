@@ -82,7 +82,10 @@ pub fn map_position(position: Position, address: String) -> PerpetualPosition {
 }
 
 pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<PerpetualData> {
-    use primitives::{Asset, AssetType, perpetual::{Perpetual, PerpetualMetadata}};
+    use primitives::{
+        Asset, AssetType,
+        perpetual::{Perpetual, PerpetualMetadata},
+    };
 
     let universe = metadata.universe();
     let asset_metadata = metadata.asset_metadata();

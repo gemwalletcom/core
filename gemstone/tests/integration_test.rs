@@ -5,7 +5,7 @@ mod tests {
     use gem_solana::{jsonrpc::SolanaRpc, models::blockhash::SolanaBlockhashResult};
     use gemstone::{
         config::swap_config::{SwapReferralFee, SwapReferralFees, get_swap_config},
-        network::{alien_provider::NativeProvider, jsonrpc_client_with_chain},
+        network::{AlienClient, alien_provider::NativeProvider, jsonrpc_client_with_chain},
         swapper::{GemSwapper, across::Across, cetus::Cetus, models::*, uniswap::v4::UniswapV4, *},
     };
     use primitives::{AssetId, Chain};
@@ -167,7 +167,7 @@ mod tests {
     #[tokio::test]
     async fn test_cetus_swap() -> Result<(), Box<dyn std::error::Error>> {
         let network_provider = Arc::new(NativeProvider::default());
-        let swap_provider = Cetus::boxed(network_provider.clone());
+        let swap_provider = Cetus::<AlienClient>::boxed(network_provider.clone());
         let config = get_swap_config();
         let options = SwapperOptions {
             slippage: 50.into(),

@@ -2,46 +2,50 @@ use super::{
     SwapTxResponse,
     model::{QuoteRequest, QuoteResponse},
 };
-use crate::{
-    network::{AlienProvider, AlienTarget},
-    swapper::SwapperError,
-};
-use std::sync::Arc;
+use crate::swapper::SwapperError;
+use gem_client::{Client, ClientError};
+use serde_json::Value;
+use serde_urlencoded;
+use std::fmt::Debug;
 
-const CHAINFLIP_API_URL: &str = "https://chainflip-swap.chainflip.io";
+const QUOTE_PATH: &str = "/v2/quote";
+const SWAP_PATH: &str = "/v2/swap";
 
-#[derive(Debug)]
-pub struct ChainflipClient {
-    provider: Arc<dyn AlienProvider>,
+#[derive(Clone, Debug)]
+pub struct ChainflipClient<C>
+where
+    C: Client + Clone + Debug,
+{
+    client: C,
 }
 
-impl ChainflipClient {
-    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
-        Self { provider }
+impl<C> ChainflipClient<C>
+where
+    C: Client + Clone + Debug,
+{
+    pub fn new(client: C) -> Self {
+        Self { client }
     }
 
     pub async fn get_quote(&self, request: &QuoteRequest) -> Result<Vec<QuoteResponse>, SwapperError> {
         let query = serde_urlencoded::to_string(request).map_err(SwapperError::from)?;
-        let url = format!("{CHAINFLIP_API_URL}/v2/quote?{query}");
-        let target = AlienTarget::get(&url);
-        let response = self.provider.request(target).await.map_err(SwapperError::from)?;
-        let value: serde_json::Value = serde_json::from_slice(&response).map_err(SwapperError::from)?;
-        // Check error message
-        if value.is_object()
-            && let Some(message) = value["message"].as_str()
-        {
+        let path = format!("{QUOTE_PATH}?{query}");
+        let value: Value = self.client.get(&path).await.map_err(map_client_error)?;
+
+        if let Some(message) = value.get("message").and_then(Value::as_str) {
             return Err(SwapperError::ComputeQuoteError(message.to_string()));
         }
+
         let quotes = serde_json::from_value(value).map_err(SwapperError::from)?;
         Ok(quotes)
     }
 
     pub async fn get_tx_status(&self, tx_hash: &str) -> Result<SwapTxResponse, SwapperError> {
-        let url = format!("{CHAINFLIP_API_URL}/v2/swap/{tx_hash}");
-        let target = AlienTarget::get(&url);
-        let response = self.provider.request(target).await.map_err(SwapperError::from)?;
-        let status = serde_json::from_slice(&response).map_err(SwapperError::from)?;
-
-        Ok(status)
+        let path = format!("{SWAP_PATH}/{tx_hash}");
+        self.client.get(&path).await.map_err(map_client_error)
     }
+}
+
+fn map_client_error(err: ClientError) -> SwapperError {
+    SwapperError::from(err)
 }

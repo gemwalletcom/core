@@ -1,36 +1,31 @@
 use super::model::*;
-use crate::network::{AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
-use serde_json;
-use std::{collections::HashMap, sync::Arc};
+use gem_client::{CONTENT_TYPE, Client, ClientError};
+use std::collections::HashMap;
 
-pub struct JupiterClient {
-    api_url: String,
-    provider: Arc<dyn AlienProvider>,
+#[derive(Clone, Debug)]
+pub struct JupiterClient<C>
+where
+    C: Client + Clone,
+{
+    client: C,
 }
 
-impl JupiterClient {
-    pub fn new(url: String, provider: Arc<dyn AlienProvider>) -> Self {
-        Self { api_url: url, provider }
+impl<C> JupiterClient<C>
+where
+    C: Client + Clone,
+{
+    pub fn new(client: C) -> Self {
+        Self { client }
     }
 
-    pub async fn get_swap_quote(&self, request: QuoteRequest) -> Result<QuoteResponse, AlienError> {
-        let query_string = serde_urlencoded::to_string(&request).map_err(|e| AlienError::RequestError { msg: e.to_string() })?;
-        let target = AlienTarget::get(&format!("{}/swap/v1/quote?{}", self.api_url, &query_string));
-        let response = self.provider.request(target).await?;
-        let quote_response: QuoteResponse = serde_json::from_slice(&response).map_err(|e| AlienError::ResponseError { msg: e.to_string() })?;
-        Ok(quote_response)
+    pub async fn get_swap_quote(&self, request: QuoteRequest) -> Result<QuoteResponse, ClientError> {
+        let query_string = serde_urlencoded::to_string(&request).map_err(|e| ClientError::Serialization(e.to_string()))?;
+        let path = format!("/swap/v1/quote?{}", query_string);
+        self.client.get(&path).await
     }
-    pub async fn get_swap_quote_data(&self, request: QuoteDataRequest) -> Result<QuoteDataResponse, AlienError> {
-        let headers = HashMap::from([("Content-Type".into(), "application/json".into())]);
-        let json = serde_json::to_string(&request).map_err(|e| AlienError::RequestError { msg: e.to_string() })?;
-        let target = AlienTarget {
-            url: format!("{}/swap/v1/swap", self.api_url),
-            method: AlienHttpMethod::Post,
-            headers: Some(headers),
-            body: Some(json.as_bytes().into()),
-        };
-        let response = self.provider.request(target).await?;
-        let quote_response: QuoteDataResponse = serde_json::from_slice(&response).map_err(|e| AlienError::ResponseError { msg: e.to_string() })?;
-        Ok(quote_response)
+
+    pub async fn get_swap_quote_data(&self, request: &QuoteDataRequest) -> Result<QuoteDataResponse, ClientError> {
+        let headers = HashMap::from([(CONTENT_TYPE.to_string(), "application/json".into())]);
+        self.client.post("/swap/v1/swap", request, Some(headers)).await
     }
 }

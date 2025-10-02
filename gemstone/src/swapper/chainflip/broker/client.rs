@@ -2,37 +2,40 @@ use super::{
     ChainflipEnvironment, ChainflipIngressEgress, VaultSwapExtras, VaultSwapResponse,
     model::{ChainflipAsset, DcaParameters, DepositAddressResponse, RefundParameters},
 };
-use crate::{
-    network::{AlienClient, AlienProvider, JsonRpcClient},
-    swapper::SwapperError,
-};
-use serde_json::json;
-use std::sync::Arc;
+use crate::swapper::SwapperError;
+use gem_client::Client;
+use gem_jsonrpc::client::JsonRpcClient;
+use serde_json::{Value, json};
+use std::fmt::Debug;
 
-const CHAINFLIP_BROKER_URL: &str = "https://chainflip-broker.io";
-const CHAINFLIP_BROKER_KEY: &str = "ed08651813cc4d4798bf9b953b5d33fb";
+const RPC_PATH: &str = "/rpc";
+const RPC_KEY: &str = "ed08651813cc4d4798bf9b953b5d33fb";
 
-#[derive(Debug)]
-pub struct BrokerClient {
-    client: JsonRpcClient<AlienClient>,
+#[derive(Clone, Debug)]
+pub struct BrokerClient<C>
+where
+    C: Client + Clone + Debug,
+{
+    client: JsonRpcClient<C>,
 }
 
-impl BrokerClient {
-    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
-        let endpoint = format!("{CHAINFLIP_BROKER_URL}/rpc/{CHAINFLIP_BROKER_KEY}");
-        let alien_client = AlienClient::new(endpoint, provider);
-        Self {
-            client: JsonRpcClient::new(alien_client),
-        }
+impl<C> BrokerClient<C>
+where
+    C: Client + Clone + Debug,
+{
+    pub fn new(client: JsonRpcClient<C>) -> Self {
+        Self { client }
     }
 
     pub async fn get_swap_limits(&self) -> Result<ChainflipIngressEgress, SwapperError> {
-        self.client
+        let result = self
+            .client
             .call_method_with_param("cf_environment", json!([]), Some(60 * 60 * 24 * 30))
             .await
-            .map_err(SwapperError::from)
-            .map(|x| x.take().map_err(SwapperError::from))?
-            .map(|x: ChainflipEnvironment| x.ingress_egress)
+            .map_err(SwapperError::from)?;
+
+        let env: ChainflipEnvironment = result.take().map_err(SwapperError::from)?;
+        Ok(env.ingress_egress)
     }
 
     pub async fn get_deposit_address(
@@ -50,18 +53,20 @@ impl BrokerClient {
             dst_asset,
             dst_address,
             broker_commission_bps,
-            null,      // channel_metadata
-            boost_fee, // boost_fee
-            [],        // affiliate_fees
+            Value::Null,
+            boost_fee,
+            Vec::<Value>::new(),
             refund_params,
             dca_params,
         ]);
 
-        self.client
+        let result = self
+            .client
             .call_method_with_param("broker_request_swap_deposit_address", params, None)
             .await
-            .map_err(SwapperError::from)
-            .map(|x| x.take().map_err(SwapperError::from))?
+            .map_err(SwapperError::from)?;
+
+        result.take().map_err(SwapperError::from)
     }
 
     pub async fn encode_vault_swap(
@@ -74,11 +79,11 @@ impl BrokerClient {
         extra_params: VaultSwapExtras,
         dca_params: Option<DcaParameters>,
     ) -> Result<VaultSwapResponse, SwapperError> {
-        let extra_params: serde_json::Value = match extra_params {
+        let extra_params_json = match extra_params {
             VaultSwapExtras::Evm(evm) => serde_json::to_value(evm).unwrap(),
             VaultSwapExtras::Bitcoin(btc) => serde_json::to_value(btc).unwrap(),
-            VaultSwapExtras::Solana(solana) => serde_json::to_value(solana).unwrap(),
-            VaultSwapExtras::None => serde_json::json!(null),
+            VaultSwapExtras::Solana(sol) => serde_json::to_value(sol).unwrap(),
+            VaultSwapExtras::None => Value::Null,
         };
 
         let params = json!([
@@ -86,16 +91,23 @@ impl BrokerClient {
             destination_asset,
             destination_address,
             broker_commission,
-            extra_params,
-            null,      // channel_metadata
-            boost_fee, // boost_fee
-            [],        // affiliate_fees
+            extra_params_json,
+            Value::Null,
+            boost_fee,
+            Vec::<Value>::new(),
             dca_params,
         ]);
-        self.client
+
+        let result = self
+            .client
             .call_method_with_param("broker_request_swap_parameter_encoding", params, None)
             .await
-            .map_err(SwapperError::from)
-            .map(|x| x.take().map_err(SwapperError::from))?
+            .map_err(SwapperError::from)?;
+
+        result.take().map_err(SwapperError::from)
     }
+}
+
+pub fn build_broker_path(base_url: &str) -> String {
+    format!("{base_url}{RPC_PATH}/{RPC_KEY}")
 }

@@ -1,4 +1,4 @@
-use crate::{config::swap_config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, debug_println, network::AlienProvider, swapper::proxy::provider::ProxyProvider};
+use crate::{config::swap_config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, debug_println, network::AlienProvider, swapper::proxy::provider_factory};
 
 use num_traits::ToPrimitive;
 use std::{borrow::Cow, fmt::Debug, sync::Arc};
@@ -117,15 +117,15 @@ impl GemSwapper {
             Box::new(thorchain::ThorChain::new(rpc_provider.clone())),
             Box::new(jupiter::Jupiter::new(rpc_provider.clone())),
             Box::new(across::Across::new(rpc_provider.clone())),
-            Box::new(hyperliquid::HyperCoreBridge::new(rpc_provider.clone())),
+            Box::new(hyperliquid::HyperCoreBridge::new()),
             Box::new(uniswap::universal_router::new_oku(rpc_provider.clone())),
             Box::new(uniswap::universal_router::new_wagmi(rpc_provider.clone())),
             Box::new(pancakeswap_aptos::PancakeSwapAptos::new(rpc_provider.clone())),
-            Box::new(ProxyProvider::new_stonfi_v2(rpc_provider.clone())),
-            Box::new(ProxyProvider::new_mayan(rpc_provider.clone())),
+            Box::new(provider_factory::new_stonfi_v2(rpc_provider.clone())),
+            Box::new(provider_factory::new_mayan(rpc_provider.clone())),
             Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
-            Box::new(ProxyProvider::new_cetus_aggregator(rpc_provider.clone())),
-            Box::new(ProxyProvider::new_relay(rpc_provider.clone())),
+            Box::new(provider_factory::new_cetus_aggregator(rpc_provider.clone())),
+            Box::new(provider_factory::new_relay(rpc_provider.clone())),
             Box::new(uniswap::universal_router::new_aerodrome(rpc_provider.clone())),
         ];
 

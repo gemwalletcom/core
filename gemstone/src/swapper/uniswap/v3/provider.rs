@@ -1,9 +1,10 @@
 use crate::{
     models::GemApprovalData,
-    network::{AlienProvider, jsonrpc_client_with_chain},
+    network::EvmRpcClientFactory,
     swapper::{
-        Swapper, SwapperError, SwapperQuoteData,
-        approval::{check_approval_erc20, check_approval_permit2},
+        FetchQuoteData, Permit2ApprovalData, Swapper, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
+        SwapperQuoteRequest, SwapperRoute,
+        approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
         eth_address,
         models::*,
         slippage::apply_slippage_in_bp,
@@ -15,27 +16,36 @@ use crate::{
         },
     },
 };
+use alloy_primitives::{Address, Bytes, U256, hex::encode_prefixed as HexEncode};
+use async_trait::async_trait;
+use gem_client::Client;
 use gem_evm::{
     jsonrpc::EthereumRpc,
     uniswap::{command::encode_commands, path::get_base_pair},
 };
+use gem_jsonrpc::client::JsonRpcClient;
 use primitives::{AssetId, Chain, EVMChain};
-
-use alloy_primitives::{Address, Bytes, U256, hex::encode_prefixed as HexEncode};
-use async_trait::async_trait;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{DEFAULT_SWAP_GAS_LIMIT, UniversalRouterProvider, commands::build_commands, path::build_paths_with_routes};
 
 #[derive(Debug)]
-pub struct UniswapV3 {
+pub struct UniswapV3<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     provider: Box<dyn UniversalRouterProvider>,
-    rpc_provider: Arc<dyn AlienProvider>,
+    rpc_factory: Arc<F>,
 }
 
-impl UniswapV3 {
-    pub fn new(provider: Box<dyn UniversalRouterProvider>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
-        Self { provider, rpc_provider }
+impl<C, F> UniswapV3<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    pub fn new(provider: Box<dyn UniversalRouterProvider>, rpc_factory: Arc<F>) -> Self {
+        Self { provider, rpc_factory }
     }
 
     pub fn support_chain(&self, chain: &Chain) -> bool {
@@ -56,15 +66,22 @@ impl UniswapV3 {
         Ok((evm_chain, token_in, token_out, amount_in))
     }
 
-    async fn check_erc20_approval(&self, wallet_address: Address, token: &str, amount: U256, chain: &Chain) -> Result<ApprovalType, SwapperError> {
+    async fn check_erc20_approval(
+        &self,
+        client: &JsonRpcClient<C>,
+        wallet_address: Address,
+        token: &str,
+        amount: U256,
+        chain: &Chain,
+    ) -> Result<ApprovalType, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         let spender = deployment.permit2.to_string();
-        // Check token allowance, spender is permit2 or universal router
-        check_approval_erc20(wallet_address.to_string(), token.to_string(), spender, amount, self.rpc_provider.clone(), chain).await
+        check_approval_erc20_with_client(wallet_address.to_string(), token.to_string(), spender, amount, client).await
     }
 
     async fn check_permit2_approval(
         &self,
+        client: &JsonRpcClient<C>,
         wallet_address: Address,
         token: &str,
         amount: U256,
@@ -72,14 +89,13 @@ impl UniswapV3 {
     ) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let deployment = self.provider.get_deployment_by_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
 
-        Ok(check_approval_permit2(
+        Ok(check_approval_permit2_with_client(
             deployment.permit2,
             wallet_address.to_string(),
             token.to_string(),
             deployment.universal_router.to_string(),
             amount,
-            self.rpc_provider.clone(),
-            chain,
+            client,
         )
         .await?
         .permit2_data())
@@ -87,7 +103,11 @@ impl UniswapV3 {
 }
 
 #[async_trait]
-impl Swapper for UniswapV3 {
+impl<C, F> Swapper for UniswapV3<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     fn provider(&self) -> &SwapperProviderType {
         self.provider.provider()
     }
@@ -103,10 +123,11 @@ impl Swapper for UniswapV3 {
     async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
-        // Check deployment and weth contract
         let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
+
+        let client = Arc::new(self.rpc_factory.client_for(from_chain).map_err(SwapperError::from)?);
 
         let fee_tiers = self.provider.get_tiers();
         let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
@@ -114,22 +135,13 @@ impl Swapper for UniswapV3 {
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
 
-        // If fees are taken from input token, we need to use remaining amount as quote amount
         let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
             apply_slippage_in_bp(&from_value, fee_bps)
         } else {
             from_value
         };
 
-        // Build paths for QuoterV2
-        // [
-        //     [direct_fee_tier1, ..., ..., ... ],
-        //     [weth_hop_fee_tier1, ..., ..., ... ],
-        //     [usdc_hop_fee_tier1, ..., ..., ... ],
-        //     [...],
-        // ]
         let paths_array = super::path::build_paths(&token_in, &token_out, &fee_tiers, &base_pair);
-        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), from_chain);
         let requests: Vec<_> = paths_array
             .iter()
             .map(|paths| {
@@ -137,22 +149,17 @@ impl Swapper for UniswapV3 {
                     .iter()
                     .map(|path| super::quoter_v2::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, quote_amount_in, &path.1))
                     .collect();
-
-                // Use the more convenient batch_call_requests method
-                client.batch_call_requests(calls)
+                client.clone().batch_call_requests(calls)
             })
             .collect();
 
-        // fire batch requests in parallel
         let batch_results = futures::future::join_all(requests).await;
 
         let quote_result = get_best_quote(&batch_results, super::quoter_v2::decode_quoter_response)?;
 
         let to_value = if fee_preference.is_input_token {
-            // fees are taken from input token
             quote_result.amount_out
         } else {
-            // fees are taken from output token
             apply_slippage_in_bp(&quote_result.amount_out, fee_bps)
         };
         let to_min_value = apply_slippage_in_bp(&to_value, request.options.slippage.bps);
@@ -161,14 +168,11 @@ impl Swapper for UniswapV3 {
         let batch_idx = quote_result.batch_idx;
         let gas_estimate = quote_result.gas_estimate;
 
-        // construct routes
         let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()] as u32;
         let asset_id_in = AssetId::from(from_chain, Some(token_in.to_checksum(None)));
         let asset_id_out = AssetId::from(to_chain, Some(token_out.to_checksum(None)));
         let asset_id_intermediary: Option<AssetId> = match batch_idx {
-            // direct route
             0 => None,
-            // 2 hop route with intermediary token
             _ => {
                 let first_token_out = &paths_array[batch_idx][0].0[0].token_out;
                 Some(AssetId::from(to_chain, Some(first_token_out.to_checksum(None))))
@@ -198,9 +202,13 @@ impl Swapper for UniswapV3 {
         if from_asset.is_native() {
             return Ok(None);
         }
+        let client = self
+            .rpc_factory
+            .client_for(from_asset.chain)
+            .map_err(SwapperError::from)?;
         let wallet_address = eth_address::parse_str(&quote.request.wallet_address)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
-        self.check_permit2_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_asset.chain)
+        self.check_permit2_approval(&client, wallet_address, &token_in.to_checksum(None), amount_in, &from_asset.chain)
             .await
     }
 
@@ -209,6 +217,11 @@ impl Swapper for UniswapV3 {
         let from_chain = request.from_asset.chain();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
+
+        let client = self
+            .rpc_factory
+            .client_for(from_chain)
+            .map_err(SwapperError::from)?;
 
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let to_amount = U256::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
@@ -220,7 +233,8 @@ impl Swapper for UniswapV3 {
         let approval: Option<GemApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
-            self.check_erc20_approval(wallet_address, &token_in.to_checksum(None), amount_in, &from_chain)
+            self
+                .check_erc20_approval(&client, wallet_address, &token_in.to_checksum(None), amount_in, &from_chain)
                 .await?
                 .approval_data()
         };

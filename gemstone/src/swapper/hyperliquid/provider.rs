@@ -1,7 +1,4 @@
-use std::{
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use async_trait::async_trait;
 use gem_hypercore::core::{HYPE_SYSTEM_ADDRESS, HYPERCORE_HYPE_TOKEN, actions::user::spot_send::SpotSend, hypercore::transfer_to_hyper_evm_typed_data};
@@ -9,25 +6,20 @@ use number_formatter::BigNumberFormatter;
 
 use primitives::Chain;
 
-use crate::{
-    network::AlienProvider,
-    swapper::{
-        FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-        SwapperQuoteRequest, SwapperRoute, asset::HYPERCORE_HYPE,
-    },
+use crate::swapper::{
+    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
+    SwapperQuoteRequest, SwapperRoute, asset::HYPERCORE_HYPE,
 };
 
 #[derive(Debug)]
 pub struct HyperCoreBridge {
     provider: SwapperProviderType,
-    _rpc_provider: Arc<dyn AlienProvider>,
 }
 
 impl HyperCoreBridge {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new() -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Hyperliquid),
-            _rpc_provider: rpc_provider,
         }
     }
 }

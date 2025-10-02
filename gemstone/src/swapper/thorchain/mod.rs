@@ -1,6 +1,7 @@
 mod asset;
 mod chain;
 mod client;
+mod default;
 mod memo;
 mod model;
 mod provider;
@@ -11,6 +12,7 @@ use primitives::Chain;
 use std::{str::FromStr, sync::Arc};
 
 use crate::network::AlienProvider;
+use gem_client::Client;
 
 use super::{SwapperProvider, SwapperProviderType};
 
@@ -23,16 +25,24 @@ const OUTBOUND_DELAY_SECONDS: u32 = 60;
 const DEFAULT_DEPOSIT_GAS_LIMIT: u64 = 90_000;
 
 #[derive(Debug)]
-pub struct ThorChain {
+pub struct ThorChain<C>
+where
+    C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
+{
     pub provider: SwapperProviderType,
     pub rpc_provider: Arc<dyn AlienProvider>,
+    pub(crate) swap_client: client::ThorChainSwapClient<C>,
 }
 
-impl ThorChain {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+impl<C> ThorChain<C>
+where
+    C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
+{
+    pub fn with_client(swap_client: client::ThorChainSwapClient<C>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Thorchain),
             rpc_provider,
+            swap_client,
         }
     }
 

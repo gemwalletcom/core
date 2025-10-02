@@ -1,10 +1,8 @@
-use crate::{
-    network::{AlienProvider, AlienTarget},
-    swapper::SwapperError,
-};
+use crate::swapper::SwapperError;
+use gem_client::{Client, ClientError};
 use primitives::swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData};
 use serde::Deserialize;
-use std::sync::Arc;
+use std::fmt::Debug;
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -13,36 +11,39 @@ enum ProxyResult<T> {
     Err { error: String },
 }
 
-#[derive(Debug)]
-pub struct ProxyClient {
-    provider: Arc<dyn AlienProvider>,
+#[derive(Clone, Debug)]
+pub struct ProxyClient<C>
+where
+    C: Client + Clone + Debug,
+{
+    client: C,
 }
 
-impl ProxyClient {
-    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
-        Self { provider }
+impl<C> ProxyClient<C>
+where
+    C: Client + Clone + Debug,
+{
+    pub fn new(client: C) -> Self {
+        Self { client }
     }
 
-    pub async fn get_quote(&self, endpoint: &str, request: ProxyQuoteRequest) -> Result<ProxyQuote, SwapperError> {
-        let url = format!("{endpoint}/quote");
-        let target = AlienTarget::post_json(&url, serde_json::json!(request));
-        let data = self.provider.request(target).await.map_err(SwapperError::from)?;
-
-        match serde_json::from_slice::<ProxyResult<ProxyQuote>>(&data).map_err(SwapperError::from)? {
+    pub async fn get_quote(&self, request: ProxyQuoteRequest) -> Result<ProxyQuote, SwapperError> {
+        let response: ProxyResult<ProxyQuote> = self.client.post("/quote", &request, None).await.map_err(map_client_error)?;
+        match response {
             ProxyResult::Ok(q) => Ok(q),
             ProxyResult::Err { error } => Err(SwapperError::ComputeQuoteError(error)),
         }
     }
 
-    pub async fn get_quote_data(&self, endpoint: &str, quote: ProxyQuote) -> Result<SwapQuoteData, SwapperError> {
-        let url = format!("{endpoint}/quote_data");
-        let target = AlienTarget::post_json(&url, serde_json::json!(quote));
-
-        let data = self.provider.request(target).await.map_err(SwapperError::from)?;
-
-        match serde_json::from_slice::<ProxyResult<SwapQuoteData>>(&data).map_err(SwapperError::from)? {
+    pub async fn get_quote_data(&self, quote: ProxyQuote) -> Result<SwapQuoteData, SwapperError> {
+        let response: ProxyResult<SwapQuoteData> = self.client.post("/quote_data", &quote, None).await.map_err(map_client_error)?;
+        match response {
             ProxyResult::Ok(qd) => Ok(qd),
             ProxyResult::Err { error } => Err(SwapperError::TransactionError(error)),
         }
     }
+}
+
+fn map_client_error(err: ClientError) -> SwapperError {
+    SwapperError::from(err)
 }

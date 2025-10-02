@@ -12,6 +12,7 @@ use crate::network::{AlienClient, AlienError, AlienProvider};
 use gem_jsonrpc::client::JsonRpcClient;
 use primitives::Chain;
 
+#[derive(Debug)]
 pub struct SuiClient {
     client: JsonRpcClient<AlienClient>,
 }

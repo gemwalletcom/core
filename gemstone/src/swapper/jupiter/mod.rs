@@ -1,4 +1,5 @@
 mod client;
+mod default;
 mod model;
 mod provider;
 mod token_account;

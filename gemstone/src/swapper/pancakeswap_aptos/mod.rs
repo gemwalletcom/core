@@ -1,30 +1,36 @@
-use std::sync::Arc;
-
 mod client;
+mod default;
 mod model;
 use super::{
     FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
     SwapperQuoteRequest, SwapperRoute,
 };
 
-use crate::network::AlienProvider;
 use async_trait::async_trait;
 use client::PancakeSwapAptosClient;
 use gem_aptos::{APTOS_NATIVE_COIN, TransactionPayload};
+use gem_client::Client;
 use model::{PANCAKE_SWAP_APTOS_ADDRESS, RouteData};
 use primitives::{AssetId, Chain};
+use std::fmt::Debug;
 
 #[derive(Debug)]
-pub struct PancakeSwapAptos {
+pub struct PancakeSwapAptos<C>
+where
+    C: Client + Clone + Debug,
+{
     pub provider: SwapperProviderType,
-    rpc_provider: Arc<dyn AlienProvider>,
+    client: PancakeSwapAptosClient<C>,
 }
 
-impl PancakeSwapAptos {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+impl<C> PancakeSwapAptos<C>
+where
+    C: Client + Clone + Debug,
+{
+    pub fn with_client(client: PancakeSwapAptosClient<C>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::PancakeswapAptosV2),
-            rpc_provider,
+            client,
         }
     }
 
@@ -52,7 +58,10 @@ impl PancakeSwapAptos {
 }
 
 #[async_trait]
-impl Swapper for PancakeSwapAptos {
+impl<C> Swapper for PancakeSwapAptos<C>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+{
     fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
@@ -62,16 +71,13 @@ impl Swapper for PancakeSwapAptos {
     }
 
     async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
-        let endpoint: String = self.rpc_provider.get_endpoint(Chain::Aptos).unwrap();
-        let client = PancakeSwapAptosClient::new(self.rpc_provider.clone());
-
         let from_internal_asset = self.to_asset(request.from_asset.asset_id());
         let to_internal_asset = self.to_asset(request.to_asset.asset_id());
         let fee_bps = 0; // TODO: implement fees
 
-        let quote_value = client
+        let quote_value = self
+            .client
             .get_quote(
-                endpoint.as_str(),
                 from_internal_asset.as_str(),
                 to_internal_asset.as_str(),
                 request.value.to_string().as_str(),

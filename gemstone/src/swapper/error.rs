@@ -1,4 +1,5 @@
 use crate::network::{AlienError, JsonRpcError};
+use gem_client::ClientError;
 use std::fmt::Debug;
 
 #[derive(Debug, uniffi::Error)]
@@ -55,6 +56,17 @@ impl From<AlienError> for SwapperError {
 impl From<JsonRpcError> for SwapperError {
     fn from(err: JsonRpcError) -> Self {
         Self::NetworkError(format!("JSON RPC error: {err}"))
+    }
+}
+
+impl From<ClientError> for SwapperError {
+    fn from(err: ClientError) -> Self {
+        match err {
+            ClientError::Network(msg) => Self::NetworkError(msg),
+            ClientError::Timeout => Self::NetworkError("Request timed out".into()),
+            ClientError::Http { status, body } => Self::NetworkError(format!("HTTP error: status {}, body: {}", status, body)),
+            ClientError::Serialization(msg) => Self::NetworkError(msg),
+        }
     }
 }
 

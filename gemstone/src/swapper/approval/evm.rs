@@ -1,6 +1,8 @@
 use crate::models::GemApprovalData;
 use crate::network::{AlienProvider, jsonrpc_client_with_chain};
 use crate::swapper::{Permit2ApprovalData, SwapperError, eth_address, models::ApprovalType};
+use gem_client::Client;
+use gem_jsonrpc::client::JsonRpcClient;
 
 use alloy_primitives::{Address, U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
@@ -34,20 +36,21 @@ pub enum CheckApprovalType {
     },
 }
 
-pub async fn check_approval_erc20(
+pub async fn check_approval_erc20_with_client<C>(
     owner: String,
     token: String,
     spender: String,
     amount: U256,
-    provider: Arc<dyn AlienProvider>,
-    chain: &Chain,
-) -> Result<ApprovalType, SwapperError> {
+    client: &JsonRpcClient<C>,
+) -> Result<ApprovalType, SwapperError>
+where
+    C: Client + Clone + std::fmt::Debug + Send + Sync + 'static,
+{
     let owner: Address = owner.as_str().parse().map_err(|_| SwapperError::InvalidAddress(owner))?;
     let spender: Address = spender.as_str().parse().map_err(|_| SwapperError::InvalidAddress(spender))?;
     let allowance_data = IERC20::allowanceCall { owner, spender }.abi_encode();
     let allowance_call = EthereumRpc::Call(TransactionObject::new_call(&token, allowance_data), BlockParameter::Latest);
 
-    let client = jsonrpc_client_with_chain(provider.clone(), *chain);
     let result: String = client.request(allowance_call).await.map_err(SwapperError::from)?;
     let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode allowance_call result".into()))?;
 
@@ -62,8 +65,7 @@ pub async fn check_approval_erc20(
     Ok(ApprovalType::None)
 }
 
-pub async fn check_approval_permit2(
-    permit2_contract: &str,
+pub async fn check_approval_erc20(
     owner: String,
     token: String,
     spender: String,
@@ -71,6 +73,21 @@ pub async fn check_approval_permit2(
     provider: Arc<dyn AlienProvider>,
     chain: &Chain,
 ) -> Result<ApprovalType, SwapperError> {
+    let client = jsonrpc_client_with_chain(provider.clone(), *chain);
+    check_approval_erc20_with_client(owner, token, spender, amount, &client).await
+}
+
+pub async fn check_approval_permit2_with_client<C>(
+    permit2_contract: &str,
+    owner: String,
+    token: String,
+    spender: String,
+    amount: U256,
+    client: &JsonRpcClient<C>,
+) -> Result<ApprovalType, SwapperError>
+where
+    C: Client + Clone + std::fmt::Debug + Send + Sync + 'static,
+{
     // Check permit2 allowance, spender is universal router
     let permit2_data = IAllowanceTransfer::allowanceCall {
         _0: eth_address::parse_str(&owner)?,
@@ -80,10 +97,7 @@ pub async fn check_approval_permit2(
     .abi_encode();
     let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
 
-    let result: String = jsonrpc_client_with_chain(provider.clone(), *chain)
-        .request(permit2_call)
-        .await
-        .map_err(SwapperError::from)?;
+    let result: String = client.request(permit2_call).await.map_err(SwapperError::from)?;
     let decoded = HexDecode(result).unwrap();
     let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
 
@@ -107,6 +121,19 @@ pub async fn check_approval_permit2(
     }
 
     Ok(ApprovalType::None)
+}
+
+pub async fn check_approval_permit2(
+    permit2_contract: &str,
+    owner: String,
+    token: String,
+    spender: String,
+    amount: U256,
+    provider: Arc<dyn AlienProvider>,
+    chain: &Chain,
+) -> Result<ApprovalType, SwapperError> {
+    let client = jsonrpc_client_with_chain(provider.clone(), *chain);
+    check_approval_permit2_with_client(permit2_contract, owner, token, spender, amount, &client).await
 }
 
 #[allow(unused)]

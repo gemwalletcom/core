@@ -1,36 +1,49 @@
 use super::{PROGRAM_ADDRESS, client::JupiterClient, model::*};
 use crate::{
-    network::{AlienProvider, JsonRpcResult, jsonrpc_client_with_chain},
+    network::JsonRpcResult,
     swapper::{Swapper, *},
 };
-
 use alloy_primitives::U256;
 use async_trait::async_trait;
+use gem_client::Client;
+use gem_jsonrpc::client::JsonRpcClient;
 use gem_solana::{
     SolanaRpc, TOKEN_PROGRAM, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS, get_pubkey_by_str,
     models::{AccountData, ValueResult},
 };
 use primitives::{AssetId, Chain};
-use std::{collections::HashSet, sync::Arc};
+use std::collections::HashSet;
+
+pub(crate) const JUPITER_API_URL: &str = "https://lite-api.jup.ag";
 
 #[derive(Debug)]
-pub struct Jupiter {
+pub struct Jupiter<C, R>
+where
+    C: Client + Clone + Send + Sync + 'static,
+    R: Client + Clone + Send + Sync + 'static,
+{
     pub provider: SwapperProviderType,
     pub fee_mints: HashSet<&'static str>,
-    rpc_provider: Arc<dyn AlienProvider>,
+    http_client: JupiterClient<C>,
+    rpc_client: JsonRpcClient<R>,
 }
 
-impl Jupiter {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+impl<C, R> Jupiter<C, R>
+where
+    C: Client + Clone + Send + Sync + 'static,
+    R: Client + Clone + Send + Sync + 'static,
+{
+    pub fn with_clients(http_client: JupiterClient<C>, rpc_client: JsonRpcClient<R>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Jupiter),
             fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, USDS_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
-            rpc_provider,
+            http_client,
+            rpc_client,
         }
     }
 
-    pub fn get_endpoint(&self) -> String {
-        "https://lite-api.jup.ag".into()
+    pub fn api_url() -> &'static str {
+        JUPITER_API_URL
     }
 
     pub fn get_asset_address(&self, asset_id: &str) -> Result<String, SwapperError> {
@@ -39,7 +52,7 @@ impl Jupiter {
             .ok_or(SwapperError::InvalidAddress(asset_id.to_string()))
     }
 
-    pub fn get_fee_mint(&self, mode: &SwapperMode, input: &str, output: &str) -> String {
+    fn get_fee_mint(&self, mode: &SwapperMode, input: &str, output: &str) -> String {
         match mode {
             SwapperMode::ExactIn => {
                 if self.fee_mints.contains(output) {
@@ -51,7 +64,7 @@ impl Jupiter {
         }
     }
 
-    pub fn get_fee_token_account(&self, options: &SwapperOptions, mint: &str, token_program: &str) -> Option<String> {
+    fn get_fee_token_account(&self, options: &SwapperOptions, mint: &str, token_program: &str) -> Option<String> {
         if let Some(fee) = &options.fee {
             let fee_account = super::token_account::get_token_account(&fee.solana.address, mint, token_program);
             return Some(fee_account);
@@ -59,11 +72,10 @@ impl Jupiter {
         None
     }
 
-    pub async fn fetch_token_program(&self, mint: &str) -> Result<String, SwapperError> {
+    async fn fetch_token_program(&self, mint: &str) -> Result<String, SwapperError> {
         let rpc_call = SolanaRpc::GetAccountInfo(mint.to_string());
-        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), Chain::Solana);
         let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> =
-            client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
+            self.rpc_client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
         let value = rpc_result.take()?;
 
         value
@@ -72,11 +84,11 @@ impl Jupiter {
             .ok_or(SwapperError::NetworkError("fetch_token_program error".to_string()))
     }
 
-    pub async fn fetch_fee_account(&self, mode: &SwapperMode, options: &SwapperOptions, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
+    async fn fetch_fee_account(&self, mode: &SwapperMode, options: &SwapperOptions, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
         let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
         // if fee_mint is in preset, no need to fetch token program
         let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
-            return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM).unwrap());
+            return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM).unwrap_or_default());
         } else {
             self.fetch_token_program(&fee_mint).await?
         };
@@ -88,8 +100,7 @@ impl Jupiter {
 
         // check fee token account exists, if not, set fee_account to empty string
         let rpc_call = SolanaRpc::GetAccountInfo(fee_account.clone());
-        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), Chain::Solana);
-        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = client.call_with_cache(&rpc_call, None).await.map_err(SwapperError::from)?;
+        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = self.rpc_client.call_with_cache(&rpc_call, None).await.map_err(SwapperError::from)?;
         if matches!(rpc_result, JsonRpcResult::Error(_)) || matches!(rpc_result, JsonRpcResult::Value(ref resp) if resp.result.value.is_none()) {
             fee_account = String::from("");
         }
@@ -98,7 +109,11 @@ impl Jupiter {
 }
 
 #[async_trait]
-impl Swapper for Jupiter {
+impl<C, R> Swapper for Jupiter<C, R>
+where
+    C: Client + Clone + Send + Sync + 'static,
+    R: Client + Clone + Send + Sync + 'static,
+{
     fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
@@ -128,8 +143,7 @@ impl Swapper for Jupiter {
             auto_slippage,
             max_auto_slippage_bps: slippage_bps,
         };
-        let client = JupiterClient::new(self.get_endpoint(), self.rpc_provider.clone());
-        let swap_quote = client.get_swap_quote(quote_request).await?;
+        let swap_quote = self.http_client.get_swap_quote(quote_request).await?;
         let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
 
         // Updated docs: https://dev.jup.ag/docs/api/swap-api/quote
@@ -183,8 +197,7 @@ impl Swapper for Jupiter {
             dynamic_slippage,
         };
 
-        let client = JupiterClient::new(self.get_endpoint(), self.rpc_provider.clone());
-        let quote_data = client.get_swap_quote_data(request).await?;
+        let quote_data = self.http_client.get_swap_quote_data(&request).await?;
 
         if let Some(simulation_error) = quote_data.simulation_error {
             return Err(SwapperError::TransactionError(simulation_error.error));

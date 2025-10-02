@@ -6,12 +6,13 @@ use std::{
 use alloy_primitives::{Address, U256, hex::encode_prefixed as HexEncode};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
+use gem_client::Client;
 use gem_evm::thorchain::contracts::RouterInterface;
 use primitives::Chain;
 
 use super::{
-    DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName,
-    client::ThorChainSwapClient, memo::ThorchainMemo, model::RouteData,
+    DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo,
+    model::RouteData,
 };
 use crate::{
     models::GemApprovalData,
@@ -24,7 +25,10 @@ use crate::{
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 
 #[async_trait]
-impl Swapper for ThorChain {
+impl<C> Swapper for ThorChain<C>
+where
+    C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
+{
     fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
@@ -56,9 +60,6 @@ impl Swapper for ThorChain {
     }
 
     async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
-        let endpoint = self.rpc_provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
-        let client = ThorChainSwapClient::new(self.rpc_provider.clone());
-
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
@@ -67,7 +68,7 @@ impl Swapper for ThorChain {
         // thorchain is not included in inbound addresses
         if from_asset.chain != THORChainName::Thorchain {
             // min fee validation
-            let inbound_addresses = client.get_inbound_addresses(endpoint.as_str()).await?;
+            let inbound_addresses = self.swap_client.get_inbound_addresses().await?;
             let from_inbound_address = &inbound_addresses
                 .iter()
                 .find(|address| address.chain == from_asset.chain.long_name())
@@ -84,9 +85,9 @@ impl Swapper for ThorChain {
 
         let fee = request.options.clone().fee.unwrap_or_default().thorchain;
 
-        let quote = client
+        let quote = self
+            .swap_client
             .get_quote(
-                endpoint.as_str(),
                 from_asset.clone(),
                 to_asset.clone(),
                 value.to_string(),
@@ -205,10 +206,7 @@ impl Swapper for ThorChain {
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
-        let endpoint = self.rpc_provider.get_endpoint(Chain::Thorchain).map_err(SwapperError::from)?;
-        let client = ThorChainSwapClient::new(self.rpc_provider.clone());
-
-        let status = client.get_transaction_status(&endpoint, transaction_hash).await?;
+        let status = self.swap_client.get_transaction_status(transaction_hash).await?;
 
         let swap_status = status.observed_tx.swap_status();
         let memo_parsed = ThorchainMemo::parse(&status.tx.memo);

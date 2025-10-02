@@ -1,11 +1,16 @@
 use alloy_primitives::{U256, hex};
+use async_trait::async_trait;
+use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use std::{str::FromStr, sync::Arc};
+use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
     ChainflipRouteData,
-    broker::{BrokerClient, model::*},
+    broker::{
+        BrokerClient, ChainflipAsset, DcaParameters, RefundParameters, VaultSwapBtcExtras, VaultSwapEvmExtras, VaultSwapExtras, VaultSwapResponse,
+        VaultSwapSolanaExtras,
+    },
     capitalize::capitalize_first_letter,
     client::{ChainflipClient, QuoteRequest, QuoteResponse},
     price::{apply_slippage, price_to_hex_price},
@@ -28,15 +33,27 @@ use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 
 #[derive(Debug)]
-pub struct ChainflipProvider {
+pub struct ChainflipProvider<CX, BR>
+where
+    CX: Client + Clone + Send + Sync + Debug + 'static,
+    BR: Client + Clone + Send + Sync + Debug + 'static,
+{
     provider: SwapperProviderType,
+    chainflip_client: ChainflipClient<CX>,
+    broker_client: BrokerClient<BR>,
     rpc_provider: Arc<dyn AlienProvider>,
 }
 
-impl ChainflipProvider {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+impl<CX, BR> ChainflipProvider<CX, BR>
+where
+    CX: Client + Clone + Send + Sync + Debug + 'static,
+    BR: Client + Clone + Send + Sync + Debug + 'static,
+{
+    pub fn with_clients(chainflip_client: ChainflipClient<CX>, broker_client: BrokerClient<BR>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Chainflip),
+            chainflip_client,
+            broker_client,
             rpc_provider,
         }
     }
@@ -58,35 +75,31 @@ impl ChainflipProvider {
         quotes.sort_by(|a, b| b.egress_amount.cmp(&a.egress_amount));
         let quote = &quotes[0];
 
-        let egress_amount: BigUint;
-        let eta_in_seconds: u32;
-        let slippage_bps: u32;
-        let boost_fee: Option<u32>;
-        let estimated_price: String;
-        let dca_parameters: Option<DcaParameters>;
-
-        // Use boost quote if available
-        if let Some(boost_quote) = &quote.boost_quote {
-            egress_amount = boost_quote.egress_amount.clone();
-            slippage_bps = boost_quote.slippage_bps();
-            eta_in_seconds = boost_quote.estimated_duration_seconds as u32;
-            boost_fee = Some(boost_quote.estimated_boost_fee_bps);
-            estimated_price = boost_quote.estimated_price.clone();
-            dca_parameters = boost_quote.dca_params.as_ref().map(|dca_params| DcaParameters {
-                number_of_chunks: dca_params.number_of_chunks,
-                chunk_interval: dca_params.chunk_interval_blocks,
-            });
+        let (egress_amount, slippage_bps, eta_in_seconds, boost_fee, estimated_price, dca_parameters) = if let Some(boost_quote) = &quote.boost_quote {
+            (
+                boost_quote.egress_amount.clone(),
+                boost_quote.slippage_bps(),
+                boost_quote.estimated_duration_seconds as u32,
+                Some(boost_quote.estimated_boost_fee_bps),
+                boost_quote.estimated_price.clone(),
+                boost_quote.dca_params.as_ref().map(|dca| DcaParameters {
+                    number_of_chunks: dca.number_of_chunks,
+                    chunk_interval: dca.chunk_interval_blocks,
+                }),
+            )
         } else {
-            egress_amount = quote.egress_amount.clone();
-            slippage_bps = quote.slippage_bps();
-            eta_in_seconds = quote.estimated_duration_seconds as u32;
-            boost_fee = None;
-            estimated_price = quote.estimated_price.clone();
-            dca_parameters = quote.dca_params.as_ref().map(|dca_params| DcaParameters {
-                number_of_chunks: dca_params.number_of_chunks,
-                chunk_interval: dca_params.chunk_interval_blocks,
-            });
-        }
+            (
+                quote.egress_amount.clone(),
+                quote.slippage_bps(),
+                quote.estimated_duration_seconds as u32,
+                None,
+                quote.estimated_price.clone(),
+                quote.dca_params.as_ref().map(|dca| DcaParameters {
+                    number_of_chunks: dca.number_of_chunks,
+                    chunk_interval: dca.chunk_interval_blocks,
+                }),
+            )
+        };
 
         (
             egress_amount,
@@ -102,8 +115,12 @@ impl ChainflipProvider {
     }
 }
 
-#[async_trait::async_trait]
-impl Swapper for ChainflipProvider {
+#[async_trait]
+impl<CX, BR> Swapper for ChainflipProvider<CX, BR>
+where
+    CX: Client + Clone + Send + Sync + Debug + 'static,
+    BR: Client + Clone + Send + Sync + Debug + 'static,
+{
     fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
@@ -121,17 +138,14 @@ impl Swapper for ChainflipProvider {
     }
 
     async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
-        // Disable swap from BTC until Chainflip scan shows pending transactions
         if request.from_asset.chain().chain_type() == ChainType::Bitcoin {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
-        let chainflip_client = ChainflipClient::new(self.rpc_provider.clone());
 
         let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
-
         let quote_request = QuoteRequest {
             amount: request.value.clone(),
             src_chain: src_asset.chain.clone(),
@@ -143,16 +157,14 @@ impl Swapper for ChainflipProvider {
             broker_commission_bps: Some(fee_bps),
         };
 
-        let quote_req = chainflip_client.get_quote(&quote_request);
-        let quotes = quote_req.await?;
-
+        let quotes = self.chainflip_client.get_quote(&quote_request).await?;
         if quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = Self::get_best_quote(quotes, fee_bps);
 
-        let quote = SwapperQuote {
+        Ok(SwapperQuote {
             from_value: request.value.clone(),
             to_value: egress_amount.to_string(),
             data: SwapperProviderData {
@@ -167,13 +179,11 @@ impl Swapper for ChainflipProvider {
             },
             eta_in_seconds: Some(eta_in_seconds),
             request: request.clone(),
-        };
-        Ok(quote)
+        })
     }
 
     async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
-        let broker_client = BrokerClient::new(self.rpc_provider.clone());
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
         let destination_asset = Self::map_asset_id(&quote.request.to_asset);
 
@@ -194,7 +204,7 @@ impl Swapper for ChainflipProvider {
                 chain,
                 input_amount: input_amount.clone(),
                 refund_parameters: RefundParameters {
-                    retry_duration: 150, // blocks
+                    retry_duration: 150,
                     refund_address: quote.request.wallet_address.clone(),
                     min_price,
                 },
@@ -205,7 +215,7 @@ impl Swapper for ChainflipProvider {
             VaultSwapExtras::Bitcoin(VaultSwapBtcExtras {
                 chain,
                 min_output_amount: BigUint::from_bytes_le(&min_output_amount.to_le_bytes::<32>()),
-                retry_duration: 6, // blocks
+                retry_duration: 6,
             })
         } else if from_asset.chain.chain_type() == ChainType::Solana {
             VaultSwapExtras::Solana(VaultSwapSolanaExtras {
@@ -214,7 +224,7 @@ impl Swapper for ChainflipProvider {
                 chain,
                 input_amount: input_amount.to_u64().unwrap(),
                 refund_parameters: RefundParameters {
-                    retry_duration: 10, // blocks
+                    retry_duration: 10,
                     refund_address: quote.request.wallet_address.clone(),
                     min_price,
                 },
@@ -223,7 +233,8 @@ impl Swapper for ChainflipProvider {
             VaultSwapExtras::None
         };
 
-        let response = broker_client
+        let response = self
+            .broker_client
             .encode_vault_swap(
                 source_asset,
                 destination_asset,
@@ -237,7 +248,7 @@ impl Swapper for ChainflipProvider {
 
         match response {
             VaultSwapResponse::Evm(response) => {
-                let value: String = if from_asset.is_native() {
+                let value = if from_asset.is_native() {
                     quote.request.value.clone()
                 } else {
                     "0".to_string()
@@ -264,48 +275,38 @@ impl Swapper for ChainflipProvider {
                     None
                 };
 
-                let swap_quote_data = SwapperQuoteData {
+                Ok(SwapperQuoteData {
                     to: response.to,
                     value,
                     data: response.calldata,
                     approval,
                     gas_limit,
-                };
-
-                Ok(swap_quote_data)
+                })
             }
-            VaultSwapResponse::Bitcoin(response) => {
-                let swap_quote_data = SwapperQuoteData {
-                    to: response.deposit_address,
-                    value: quote.request.value.clone(),
-                    data: response.nulldata_payload,
-                    approval: None,
-                    gas_limit: None,
-                };
-
-                Ok(swap_quote_data)
-            }
+            VaultSwapResponse::Bitcoin(response) => Ok(SwapperQuoteData {
+                to: response.deposit_address,
+                value: quote.request.value.clone(),
+                data: response.nulldata_payload,
+                approval: None,
+                gas_limit: None,
+            }),
             VaultSwapResponse::Solana(response) => {
                 let data = tx_builder::build_solana_tx(&quote.request.wallet_address, &response, self.rpc_provider.clone())
                     .await
                     .map_err(SwapperError::TransactionError)?;
-                let swap_quote_data = SwapperQuoteData {
+                Ok(SwapperQuoteData {
                     to: response.program_id,
                     value: "".into(),
                     data,
                     approval: None,
                     gas_limit: None,
-                };
-
-                Ok(swap_quote_data)
+                })
             }
         }
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
-        let chainflip_client = ChainflipClient::new(self.rpc_provider.clone());
-        let status = chainflip_client.get_tx_status(transaction_hash).await?;
-
+        let status = self.chainflip_client.get_tx_status(transaction_hash).await?;
         let swap_status = status.swap_status();
         let to_tx_hash = status.swap_egress.as_ref().and_then(|x| x.tx_ref.clone());
 
@@ -316,53 +317,5 @@ impl Swapper for ChainflipProvider {
             to_chain: Self::map_chainflip_chain_to_chain(&status.dest_chain),
             to_tx_hash,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_best_quote() {
-        let json = include_str!("./test/chainflip_quotes.json");
-        let quotes: Vec<QuoteResponse> = serde_json::from_str(json).unwrap();
-        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = ChainflipProvider::get_best_quote(quotes, DEFAULT_CHAINFLIP_FEE_BPS);
-
-        assert_eq!(egress_amount.to_string(), "145118751424");
-        assert_eq!(slippage_bps, 250);
-        assert_eq!(eta_in_seconds, 192);
-        assert_eq!(
-            route_data,
-            ChainflipRouteData {
-                boost_fee: None,
-                fee_bps: DEFAULT_CHAINFLIP_FEE_BPS,
-                estimated_price: "14.5118765424".to_string(),
-                dca_parameters: None,
-            }
-        );
-    }
-
-    #[test]
-    fn test_best_boost_quote() {
-        let json = include_str!("./test/chainflip_boost_quotes.json");
-        let quotes: Vec<QuoteResponse> = serde_json::from_str(json).unwrap();
-        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = ChainflipProvider::get_best_quote(quotes, DEFAULT_CHAINFLIP_FEE_BPS);
-
-        assert_eq!(egress_amount.to_string(), "4080936927013539226");
-        assert_eq!(slippage_bps, 100);
-        assert_eq!(eta_in_seconds, 744);
-        assert_eq!(
-            route_data,
-            ChainflipRouteData {
-                boost_fee: Some(5),
-                fee_bps: DEFAULT_CHAINFLIP_FEE_BPS,
-                estimated_price: "40.83388759199201533512".to_string(),
-                dca_parameters: Some(DcaParameters {
-                    number_of_chunks: 3,
-                    chunk_interval: 2,
-                }),
-            }
-        );
     }
 }

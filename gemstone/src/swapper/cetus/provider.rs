@@ -5,7 +5,7 @@ use bcs;
 use futures::join;
 use num_bigint::BigInt;
 use num_traits::{FromBytes, ToBytes, ToPrimitive};
-use std::{str::FromStr, sync::Arc};
+use std::{fmt::Debug, str::FromStr, sync::Arc};
 use sui_transaction_builder::{Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder, unresolved::Input};
 use sui_types::{Address, Identifier, TypeTag};
 
@@ -18,7 +18,6 @@ use super::{
 };
 use crate::{
     debug_println,
-    network::AlienProvider,
     sui::{
         gas_budget::GasBudgetCalculator,
         rpc::{
@@ -31,6 +30,7 @@ use crate::{
         SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, slippage::apply_slippage_in_bp,
     },
 };
+use gem_client::Client;
 use gem_sui::{
     EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
     jsonrpc::{ObjectDataOptions, SuiData, SuiRpc},
@@ -39,21 +39,25 @@ use gem_sui::{
 use primitives::{AssetId, Chain};
 
 #[derive(Debug)]
-pub struct Cetus {
+pub struct Cetus<C>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+{
     provider: SwapperProviderType,
-    rpc_provider: Arc<dyn AlienProvider>,
+    cetus_client: CetusClient<C>,
+    sui_client: Arc<SuiClient>,
 }
 
-impl Cetus {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+impl<C> Cetus<C>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+{
+    pub fn with_clients(cetus_client: CetusClient<C>, sui_client: Arc<SuiClient>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Cetus),
-            rpc_provider,
+            cetus_client,
+            sui_client,
         }
-    }
-
-    pub fn boxed(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
-        Box::new(Self::new(rpc_provider))
     }
 
     pub fn get_coin_address(asset_id: &AssetId) -> String {
@@ -79,13 +83,13 @@ impl Cetus {
     }
 
     async fn fetch_pools_by_coins(&self, coin_a: &str, coin_b: &str) -> Result<Vec<CetusPool>, SwapperError> {
-        let client = CetusClient::new(self.rpc_provider.clone());
-        let pools = client
+        let pools: Vec<CetusPool> = self
+            .cetus_client
             .get_pool_by_token(coin_a, coin_b)
             .await?
-            .iter()
-            .filter_map(|x| if x.object.is_pause { None } else { Some(x.clone()) })
-            .collect::<Vec<CetusPool>>();
+            .into_iter()
+            .filter(|x| !x.object.is_pause)
+            .collect();
 
         Ok(pools)
     }
@@ -147,7 +151,10 @@ impl Cetus {
 }
 
 #[async_trait]
-impl Swapper for Cetus {
+impl<C> Swapper for Cetus<C>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+{
     fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
@@ -172,8 +179,8 @@ impl Swapper for Cetus {
         sorted_pools.sort_by(|a, b| b.object.liquidity.cmp(&a.object.liquidity));
         let top_pools = sorted_pools.iter().take(2).collect::<Vec<_>>();
 
-        // Create a single SuiClient that can be reused
-        let sui_client = Arc::new(SuiClient::new(self.rpc_provider.clone()));
+        // Reuse the shared SuiClient instance
+        let sui_client = self.sui_client.clone();
 
         let rpc_call = SuiRpc::GetMultipleObjects(
             top_pools.iter().map(|pool| pool.address.to_string()).collect(),
@@ -270,7 +277,7 @@ impl Swapper for Cetus {
 
         let from_asset = &route.input;
         let from_coin = Self::get_coin_address(from_asset);
-        let sui_client = SuiClient::new(self.rpc_provider.clone());
+        let sui_client = self.sui_client.clone();
         let cetus_config = self.get_clmm_config()?;
 
         // Execute gas_price and coin_assets fetching in parallel
