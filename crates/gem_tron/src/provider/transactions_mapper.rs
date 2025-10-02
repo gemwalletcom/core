@@ -66,16 +66,26 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
                 Some((TransactionType::Transfer, to, value.parameter.value.amount.unwrap_or_default().to_string()))
             }
             FREEZE_BALANCE_V2_CONTRACT => Some((
-                TransactionType::StakeDelegate,
+                TransactionType::StakeFreeze,
                 from.clone(),
                 value.parameter.value.frozen_balance.unwrap_or_default().to_string(),
             )),
             UNFREEZE_BALANCE_V2_CONTRACT => Some((
-                TransactionType::StakeUndelegate,
+                TransactionType::StakeUnfreeze,
                 from.clone(),
                 value.parameter.value.unfreeze_balance.unwrap_or_default().to_string(),
             )),
-            VOTE_WITNESS_CONTRACT => Some((TransactionType::StakeDelegate, from.clone(), "0".to_string())),
+            VOTE_WITNESS_CONTRACT => {
+                let total_votes: i64 = value
+                    .parameter
+                    .value
+                    .votes
+                    .as_ref()
+                    .map(|votes| votes.iter().map(|v| v.vote_count).sum())
+                    .unwrap_or(0);
+                let amount = total_votes * 1_000_000;
+                Some((TransactionType::StakeDelegate, from.clone(), amount.to_string()))
+            }
             _ => None,
         } {
             let transaction = Transaction::new(
@@ -188,7 +198,7 @@ mod tests {
         let result = map_transaction(Chain::Tron, transaction, receipt);
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.transaction_type, TransactionType::StakeDelegate);
+        assert_eq!(tx.transaction_type, TransactionType::StakeFreeze);
         assert_eq!(tx.value, "100000000");
         assert_eq!(tx.from, tx.to);
     }
@@ -211,7 +221,7 @@ mod tests {
         assert!(result.is_some());
         let tx = result.unwrap();
         assert_eq!(tx.transaction_type, TransactionType::StakeDelegate);
-        assert_eq!(tx.value, "0");
+        assert_eq!(tx.value, "2125000000");
         assert_eq!(tx.from, tx.to);
     }
 
@@ -232,7 +242,7 @@ mod tests {
         let result = map_transaction(Chain::Tron, transaction, receipt);
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.transaction_type, TransactionType::StakeUndelegate);
+        assert_eq!(tx.transaction_type, TransactionType::StakeUnfreeze);
         assert_eq!(tx.value, "100000000");
         assert_eq!(tx.from, tx.to);
     }
