@@ -6,6 +6,7 @@ use std::{
 
 use crate::ParserOptions;
 use chain_traits::ChainTraits;
+use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
 use primitives::Chain;
 use storage::DatabaseClient;
 use streamer::{FetchBlocksPayload, QueueName, StreamProducer, TransactionsPayload};
@@ -60,12 +61,12 @@ impl Parser {
                             .set_parser_state_current_block(self.chain.as_ref(), latest_block_i64);
                     }
                     if next_current_block >= latest_block_i64 {
-                        println!(
-                            "parser ahead: {} current_block: {}, latest_block: {}, await_blocks: {}",
-                            self.chain.as_ref(),
-                            state.current_block,
-                            latest_block,
-                            state.await_blocks
+                        info_with_fields!(
+                            "parser ahead",
+                            chain = self.chain.as_ref(),
+                            current_block = state.current_block,
+                            latest_block = latest_block,
+                            await_blocks = state.await_blocks
                         );
 
                         tokio::time::sleep(Duration::from_millis(timeout)).await;
@@ -73,7 +74,7 @@ impl Parser {
                     }
                 }
                 Err(err) => {
-                    println!("parser latest_block chain: {}, error: {:?}", self.chain.as_ref(), err);
+                    error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
 
                     tokio::time::sleep(Duration::from_millis(timeout * 5)).await;
                     continue;
@@ -100,12 +101,12 @@ impl Parser {
                     self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
                     let _ = self.database.parser_state().set_parser_state_current_block(self.chain.as_ref(), end_block);
 
-                    println!(
-                        "parser block add to queue: {}, blocks: {:?} to go blocks: {} in: {:?}",
-                        self.chain.as_ref(),
-                        next_blocks,
-                        to_go_blocks,
-                        start.elapsed()
+                    info_with_fields!(
+                        "block add to queue",
+                        chain = self.chain.as_ref(),
+                        blocks = format!("{:?}", next_blocks),
+                        to_go_blocks = to_go_blocks,
+                        duration = DurationMs(start.elapsed())
                     );
                     continue;
                 }
@@ -114,17 +115,17 @@ impl Parser {
                     Ok(result) => {
                         let _ = self.database.parser_state().set_parser_state_current_block(self.chain.as_ref(), end_block);
 
-                        println!(
-                            "parser block complete: {}, blocks: {:?} transactions: {} to go blocks: {} in: {:?}",
-                            self.chain.as_ref(),
-                            next_blocks,
-                            result,
-                            to_go_blocks,
-                            start.elapsed()
+                        info_with_fields!(
+                            "block complete",
+                            chain = self.chain.as_ref(),
+                            blocks = format!("{:?}", next_blocks),
+                            transactions = result,
+                            to_go_blocks = to_go_blocks,
+                            duration = DurationMs(start.elapsed())
                         );
                     }
                     Err(err) => {
-                        println!("parser parse_block chain: blocks: {}, {:?}, error: {:?}", self.chain.as_ref(), next_blocks, err);
+                        error_with_fields!("parser parse_block", &*err, chain = self.chain.as_ref(), blocks = format!("{:?}", next_blocks));
 
                         tokio::time::sleep(Duration::from_millis(timeout)).await;
                         break;

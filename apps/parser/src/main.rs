@@ -6,7 +6,7 @@ pub mod pusher;
 pub use pusher::Pusher;
 pub mod consumers;
 
-use gem_tracing::{SentryConfig, SentryTracing};
+use gem_tracing::{SentryConfig, SentryTracing, error_with_fields, info_with_fields};
 use primitives::Chain;
 use settings::{Settings, service_user_agent};
 use std::{str::FromStr, sync::Arc, time::Duration};
@@ -50,7 +50,7 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    println!("parser init");
+    info_with_fields!("parser init", mode = "parser");
 
     let chains: Vec<Chain> = database
         .lock()
@@ -70,7 +70,7 @@ async fn run_parser_mode(settings: Settings, database: Arc<Mutex<DatabaseClient>
         chains
     };
 
-    println!("parser start chains: {chains:?}");
+    info_with_fields!("parser start chains", chains = format!("{:?}", chains));
 
     let mut parsers = Vec::new();
     for chain in chains {
@@ -102,13 +102,13 @@ async fn parser_start(settings: Settings, provider: Box<dyn chain_traits::ChainT
     loop {
         match parser.start().await {
             Ok(_) => {
-                println!("parser start complete, chain: {chain}")
+                info_with_fields!("parser start complete", chain = chain.as_ref())
             }
             Err(e) => {
-                println!("parser start error, chain: {chain}, error: {e:?}");
+                error_with_fields!("parser start error", &*e, chain = chain.as_ref());
             }
         }
         tokio::time::sleep(Duration::from_millis(parser_options.timeout)).await;
-        println!("parser restart timeout, chain: {chain}");
+        info_with_fields!("parser restart timeout", chain = chain.as_ref());
     }
 }
