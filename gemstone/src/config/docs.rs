@@ -29,6 +29,17 @@ pub enum DocsUrl {
     PerpetualsLiquidationPrice,
     PerpetualsOpenInterest,
     PerpetualsFundingPayments,
+    StakingSolana,
+    StakingSmartChain,
+    StakingCosmos,
+    StakingOsmosis,
+    StakingTron,
+    StakingSui,
+    StakingCelestia,
+    StakingInjective,
+    StakingSei,
+    StakingEthereum,
+    StakingHyperliquid,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -63,6 +74,17 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::PerpetualsLiquidationPrice => "/defi/perps/perps-terms/#what-is-a-perpetual-liquidation-price/",
         DocsUrl::PerpetualsOpenInterest => "/defi/perps/perps-terms/#what-is-a-perpetual-open-interest/",
         DocsUrl::PerpetualsFundingPayments => "/defi/perps/perps-terms/#what-is-perpetual-funding-payments/",
+        DocsUrl::StakingSolana => "/defi/stake-sol/",
+        DocsUrl::StakingSmartChain => "/defi/stake-bnb/",
+        DocsUrl::StakingCosmos => "/defi/stake-atom/",
+        DocsUrl::StakingOsmosis => "/defi/stake-osmo/",
+        DocsUrl::StakingTron => "/defi/stake-trx/",
+        DocsUrl::StakingSui => "/defi/stake-sui/",
+        DocsUrl::StakingCelestia => "/defi/stake-tia/",
+        DocsUrl::StakingInjective => "/defi/stake-inj/",
+        DocsUrl::StakingSei => "/defi/stake-sei/",
+        DocsUrl::StakingEthereum => "/defi/stake-eth/",
+        DocsUrl::StakingHyperliquid => "/defi/stake-hype/",
     };
     format!("{DOCS_URL}{path}")
 }
