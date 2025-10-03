@@ -351,10 +351,8 @@ where
 mod tests {
     use super::*;
     use crate::network::alien_provider::NativeProvider;
-    use crate::sui::{
-        gas_budget,
-        rpc::{CoinAsset, InspectGasUsed},
-    };
+    use crate::sui::gas_budget;
+    use gem_sui::models::{CoinAsset, InspectGasUsed};
     use gem_sui::tx::decode_transaction;
     use sui_types::{Digest, Transaction, TransactionKind};
 

@@ -1,5 +1,3 @@
-#![cfg(feature = "rpc")]
-
 use serde::Deserialize;
 use serde_serializers::deserialize_u64_from_str;
 

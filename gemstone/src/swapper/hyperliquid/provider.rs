@@ -24,6 +24,12 @@ impl HyperCoreBridge {
     }
 }
 
+impl Default for HyperCoreBridge {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl Swapper for HyperCoreBridge {
     fn provider(&self) -> &SwapperProviderType {

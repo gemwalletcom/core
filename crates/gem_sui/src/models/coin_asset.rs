@@ -1,5 +1,3 @@
-#![cfg(feature = "rpc")]
-
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_bigint_from_str, deserialize_u64_from_str, serialize_bigint, serialize_u64};
