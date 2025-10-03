@@ -1,9 +1,9 @@
 use crate::{
-    ethereum::jsonrpc as eth_rpc,
-    network::{AlienProvider, AlienTarget},
+    network::{AlienClient, AlienProvider, AlienTarget, jsonrpc_client_with_chain},
     swapper::SwapperError,
 };
-use primitives::{Chain, swap::SwapStatus};
+use gem_evm::rpc::client::EthereumClient as GemEthereumClient;
+use primitives::{Chain, EVMChain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -45,7 +45,10 @@ impl DepositStatus {
 
 impl AcrossApi {
     pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<DepositStatus, SwapperError> {
-        let receipt = eth_rpc::fetch_tx_receipt(self.provider.clone(), chain, tx_hash).await?;
+        let receipt = ethereum_client(self.provider.clone(), chain)?
+            .get_transaction_receipt(tx_hash)
+            .await
+            .map_err(SwapperError::from)?;
         if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 4 {
             return Err(SwapperError::NetworkError("invalid tx receipt".into()));
         }
@@ -57,4 +60,10 @@ impl AcrossApi {
 
         Ok(status)
     }
+}
+
+fn ethereum_client(provider: Arc<dyn AlienProvider>, chain: Chain) -> Result<GemEthereumClient<AlienClient>, SwapperError> {
+    let evm_chain = EVMChain::from_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
+    let client = jsonrpc_client_with_chain(provider, chain);
+    Ok(GemEthereumClient::new(client, evm_chain))
 }

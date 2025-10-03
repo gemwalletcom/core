@@ -1,35 +1,7 @@
-use num_bigint::BigInt;
+#![cfg(feature = "rpc")]
+
 use serde::Deserialize;
-use serde_serializers::*;
-
-use sui_transaction_builder::unresolved::Input;
-use sui_types::{Address, Digest};
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CoinAsset {
-    pub coin_object_id: Address,
-    pub coin_type: String,
-    pub digest: Digest,
-    #[serde(deserialize_with = "deserialize_bigint_from_str", serialize_with = "serialize_bigint")]
-    pub balance: BigInt,
-    #[serde(deserialize_with = "deserialize_u64_from_str", serialize_with = "serialize_u64")]
-    pub version: u64,
-}
-
-impl CoinAsset {
-    pub fn to_input(&self) -> Input {
-        Input::owned(self.coin_object_id, self.version, self.digest)
-    }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CoinResponse {
-    pub data: Vec<CoinAsset>,
-    pub next_cursor: Option<String>,
-    pub has_next_page: bool,
-}
+use serde_serializers::deserialize_u64_from_str;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]

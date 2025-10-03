@@ -76,7 +76,7 @@ where
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
     use super::*;
     use crate::network::alien_provider::NativeProvider;

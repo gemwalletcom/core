@@ -111,22 +111,22 @@ impl GemSwapper {
     #[uniffi::constructor]
     pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         let swappers: Vec<Box<dyn Swapper>> = vec![
-            Box::new(uniswap::universal_router::new_uniswap_v3(rpc_provider.clone())),
-            Box::new(uniswap::universal_router::new_uniswap_v4(rpc_provider.clone())),
-            Box::new(uniswap::universal_router::new_pancakeswap(rpc_provider.clone())),
+            uniswap::default::boxed_uniswap_v3(rpc_provider.clone()),
+            uniswap::default::boxed_uniswap_v4(rpc_provider.clone()),
+            uniswap::default::boxed_pancakeswap(rpc_provider.clone()),
             Box::new(thorchain::ThorChain::new(rpc_provider.clone())),
             Box::new(jupiter::Jupiter::new(rpc_provider.clone())),
             Box::new(across::Across::new(rpc_provider.clone())),
             Box::new(hyperliquid::HyperCoreBridge::new()),
-            Box::new(uniswap::universal_router::new_oku(rpc_provider.clone())),
-            Box::new(uniswap::universal_router::new_wagmi(rpc_provider.clone())),
+            uniswap::default::boxed_oku(rpc_provider.clone()),
+            uniswap::default::boxed_wagmi(rpc_provider.clone()),
             Box::new(pancakeswap_aptos::PancakeSwapAptos::new(rpc_provider.clone())),
             Box::new(provider_factory::new_stonfi_v2(rpc_provider.clone())),
             Box::new(provider_factory::new_mayan(rpc_provider.clone())),
             Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
             Box::new(provider_factory::new_cetus_aggregator(rpc_provider.clone())),
             Box::new(provider_factory::new_relay(rpc_provider.clone())),
-            Box::new(uniswap::universal_router::new_aerodrome(rpc_provider.clone())),
+            uniswap::default::boxed_aerodrome(rpc_provider.clone()),
         ];
 
         Self { rpc_provider, swappers }
@@ -233,12 +233,13 @@ impl GemSwapper {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
 
     use super::*;
     use crate::config::swap_config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, SwapReferralFee, SwapReferralFees};
     use crate::network::alien_provider::NativeProvider;
+    use crate::swapper::uniswap::default::{new_pancakeswap, new_uniswap_v3};
     use primitives::asset_constants::USDT_ETH_ASSET_ID;
     use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
 
@@ -292,8 +293,8 @@ mod tests {
     fn test_filter_by_supported_chains() {
         let provider = Arc::new(NativeProvider::default());
         let swappers: Vec<Box<dyn Swapper>> = vec![
-            Box::new(uniswap::universal_router::new_uniswap_v3(provider.clone())),
-            Box::new(uniswap::universal_router::new_pancakeswap(provider.clone())),
+            Box::new(new_uniswap_v3(provider.clone())),
+            Box::new(new_pancakeswap(provider.clone())),
             Box::new(thorchain::ThorChain::new(provider.clone())),
             Box::new(jupiter::Jupiter::new(provider)),
         ];

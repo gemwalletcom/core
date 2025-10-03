@@ -1,7 +1,7 @@
-use alloy_primitives::{Address, Bytes, hex};
+use alloy_primitives::{Address, Bytes, U256, hex};
 use gem_client::Client;
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
-use gem_jsonrpc::types::{JsonRpcError, JsonRpcResult};
+use gem_jsonrpc::types::{ERROR_INTERNAL_ERROR, JsonRpcError, JsonRpcResult};
 
 use serde::de::DeserializeOwned;
 use serde_json::json;
@@ -18,6 +18,10 @@ use crate::multicall3::{
     IMulticall3,
     IMulticall3::{Call3, Result as MulticallResult},
     deployment_by_chain,
+};
+use crate::{
+    jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
+    parse_u256,
 };
 #[cfg(feature = "rpc")]
 use alloy_sol_types::SolCall;
@@ -185,6 +189,22 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_eth_balance(&self, address: &str) -> Result<String, JsonRpcError> {
         let params = json!([address, "latest"]);
         self.client.call("eth_getBalance", params).await
+    }
+
+    pub async fn gas_price(&self) -> Result<U256, JsonRpcError> {
+        let value: String = self.client.request(EthereumRpc::GasPrice).await?;
+        parse_u256(&value).ok_or(JsonRpcError {
+            code: ERROR_INTERNAL_ERROR,
+            message: format!("Failed to parse gas price: {value}"),
+        })
+    }
+
+    pub async fn estimate_gas_transaction(&self, tx: TransactionObject) -> Result<U256, JsonRpcError> {
+        let value: String = self.client.request(EthereumRpc::EstimateGas(tx, BlockParameter::Latest)).await?;
+        parse_u256(&value).ok_or(JsonRpcError {
+            code: ERROR_INTERNAL_ERROR,
+            message: "Failed to parse gas limit".into(),
+        })
     }
 
     pub async fn get_chain_id(&self) -> Result<String, JsonRpcError> {

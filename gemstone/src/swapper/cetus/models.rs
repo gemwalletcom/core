@@ -78,13 +78,13 @@ pub struct SharedObject {
     pub shared_version: u64,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
     use super::*;
     use crate::network::JsonRpcResponse;
-    use crate::sui::rpc::{
-        CoinAsset,
-        models::{InspectEvent, InspectResult},
+    use gem_sui::{
+        jsonrpc::SuiData,
+        models::{CoinAsset, InspectEvent, InspectResult},
     };
     use serde_json;
 

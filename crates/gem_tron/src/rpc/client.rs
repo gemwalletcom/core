@@ -4,6 +4,7 @@ use num_bigint::BigUint;
 use primitives::{Asset, AssetId, asset_type::AssetType, chain::Chain};
 use std::{error::Error, str::FromStr};
 
+use crate::address::TronAddress;
 use crate::models::{
     Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData,
     TriggerConstantContractRequest, TriggerConstantContractResponse, TronTransactionBroadcast, WitnessesList,
@@ -13,8 +14,11 @@ use crate::models::{
 };
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
 use crate::rpc::trongrid::client::TronGridClient;
+use alloy_primitives::Address as AlloyAddress;
+use alloy_sol_types::SolCall;
 use gem_client::Client;
 use gem_evm::contracts::erc20::{decode_abi_string, decode_abi_uint8};
+use serde_json::Value;
 
 #[derive(Clone)]
 pub struct TronClient<C: Client> {
@@ -69,6 +73,8 @@ impl<C: Client> TronClient<C> {
             contract_address: contract_address.to_string(),
             function_selector: function_selector.to_string(),
             parameter: parameter.to_string(),
+            fee_limit: None,
+            call_value: None,
             visible: true,
         };
 
@@ -79,6 +85,70 @@ impl<C: Client> TronClient<C> {
         }
 
         Ok(response.constant_result[0].clone())
+    }
+
+    pub async fn get_token_allowance(&self, owner_address: &str, token_address: &str, spender_address: &str) -> Result<BigUint, Box<dyn Error + Send + Sync>> {
+        let owner_hex = TronAddress::to_hex(owner_address).ok_or("Invalid owner address")?;
+        let spender_hex = TronAddress::to_hex(spender_address).ok_or("Invalid spender address")?;
+
+        let owner_bytes = hex::decode(owner_hex)?;
+        let spender_bytes = hex::decode(spender_hex)?;
+
+        if owner_bytes.len() <= 1 || spender_bytes.len() <= 1 {
+            return Err("Invalid Tron address bytes".into());
+        }
+
+        let owner = AlloyAddress::from_slice(&owner_bytes[1..]);
+        let spender = AlloyAddress::from_slice(&spender_bytes[1..]);
+        let encoded = gem_evm::contracts::erc20::IERC20::allowanceCall { owner, spender }.abi_encode();
+        let parameter = hex::encode(&encoded[4..]);
+
+        let result = self
+            .trigger_constant_contract_with_owner(owner_address, token_address, "allowance(address,address)", &parameter)
+            .await?;
+        let allowance_bytes = hex::decode(result.trim_start_matches("0x"))?;
+        let allowance = BigUint::from_bytes_be(&allowance_bytes);
+        Ok(allowance)
+    }
+
+    pub async fn estimate_energy(
+        &self,
+        owner_address: &str,
+        contract_address: &str,
+        function_selector: &str,
+        parameter: &str,
+        fee_limit: u64,
+        call_value: u64,
+    ) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        let request_payload = TriggerConstantContractRequest {
+            owner_address: owner_address.to_string(),
+            contract_address: contract_address.to_string(),
+            function_selector: function_selector.to_string(),
+            parameter: parameter.to_string(),
+            fee_limit: Some(fee_limit),
+            call_value: Some(call_value),
+            visible: true,
+        };
+
+        let response: Value = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
+
+        if let Some(result_obj) = response.get("result") {
+            let is_success = result_obj.get("result").and_then(|value| value.as_bool()).unwrap_or(false);
+            if !is_success {
+                let code = result_obj.get("code").and_then(|v| v.as_str()).unwrap_or_default();
+                let message_hex = result_obj.get("message").and_then(|v| v.as_str()).unwrap_or_default();
+                let message = hex::decode(message_hex)
+                    .ok()
+                    .and_then(|bytes| String::from_utf8(bytes).ok())
+                    .unwrap_or_else(|| message_hex.to_string());
+                return Err(format!("Estimate energy failed. Code: {}, Message: {}", code, message).into());
+            }
+        }
+
+        let energy_used = response.get("energy_used").and_then(|value| value.as_u64()).unwrap_or_default();
+        let energy_penalty = response.get("energy_penalty").and_then(|value| value.as_u64()).unwrap_or_default();
+
+        Ok(energy_used + energy_penalty)
     }
 }
 
@@ -178,6 +248,8 @@ impl<C: Client> TronClient<C> {
             contract_address,
             function_selector: "transfer(address,uint256)".to_string(),
             parameter,
+            fee_limit: None,
+            call_value: None,
             visible: true,
         };
 

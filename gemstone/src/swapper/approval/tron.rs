@@ -1,11 +1,11 @@
 use alloy_primitives::U256;
+use num_bigint::BigUint;
 use std::sync::Arc;
 
 use crate::{
     models::GemApprovalData,
-    network::AlienProvider,
+    network::{AlienProvider, tron_client},
     swapper::{SwapperError, models::ApprovalType},
-    tron::client::TronClient,
 };
 
 pub async fn check_approval_tron(
@@ -15,9 +15,13 @@ pub async fn check_approval_tron(
     amount: U256,
     provider: Arc<dyn AlienProvider>,
 ) -> Result<ApprovalType, SwapperError> {
-    let client = TronClient::new(provider.clone());
-    let allowance = client.get_token_allowance(owner_address, token_address, spender_address).await?;
-    if allowance < amount {
+    let client = tron_client(provider.clone()).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+    let allowance = client
+        .get_token_allowance(owner_address, token_address, spender_address)
+        .await
+        .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+    let amount_big = BigUint::from_bytes_be(&amount.to_be_bytes::<32>());
+    if allowance < amount_big {
         return Ok(ApprovalType::Approve(GemApprovalData {
             token: token_address.to_string(),
             spender: spender_address.to_string(),

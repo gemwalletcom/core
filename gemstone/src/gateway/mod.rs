@@ -1,5 +1,5 @@
 use crate::models::*;
-use crate::network::{AlienClient, AlienProvider, jsonrpc_client_with_chain};
+use crate::network::{AlienClient, AlienProvider, jsonrpc_client_with_chain, tron_client};
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::AlgorandClientIndexer;
 use gem_algorand::rpc::client::AlgorandClient;
@@ -15,7 +15,6 @@ use gem_solana::rpc::client::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_sui::rpc::client::SuiClient;
 use gem_ton::rpc::client::TonClient;
-use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
@@ -105,10 +104,9 @@ impl GemGateway {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
             }
             Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
-            Chain::Tron => Ok(Arc::new(TronClient::new(
-                alien_client.clone(),
-                TronGridClient::new(alien_client.clone(), String::new()),
-            ))),
+            Chain::Tron => Ok(Arc::new(
+                tron_client(self.provider.clone()).map_err(|e| GatewayError::NetworkError(e.to_string()))?,
+            )),
             Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
             Chain::Solana => Ok(Arc::new(SolanaClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             Chain::Ethereum

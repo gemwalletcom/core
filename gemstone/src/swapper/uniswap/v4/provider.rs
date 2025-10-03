@@ -1,14 +1,14 @@
 use alloy_primitives::{Address, U256, hex::encode_prefixed as HexEncode};
 use async_trait::async_trait;
-use std::{collections::HashSet, str::FromStr, sync::Arc, vec};
+use std::{collections::HashSet, fmt, fmt::Debug, marker::PhantomData, str::FromStr, sync::Arc, vec};
 
 use crate::{
     models::GemApprovalData,
-    network::{AlienProvider, jsonrpc_client_with_chain},
+    network::EvmRpcClientFactory,
     swapper::{
         FetchQuoteData, Permit2ApprovalData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
         SwapperQuoteData, SwapperQuoteRequest,
-        approval::{check_approval_erc20, check_approval_permit2},
+        approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
         eth_address,
         slippage::apply_slippage_in_bp,
         uniswap::{
@@ -19,6 +19,8 @@ use crate::{
         },
     },
 };
+use futures::future::{BoxFuture, join_all};
+use gem_client::Client;
 use gem_evm::{
     jsonrpc::EthereumRpc,
     uniswap::{
@@ -38,22 +40,27 @@ use super::{
     quoter::{build_quote_exact_requests, build_quote_exact_single_request},
 };
 
-#[derive(Debug)]
-pub struct UniswapV4 {
+pub struct UniswapV4<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     pub provider: SwapperProviderType,
-    rpc_provider: Arc<dyn AlienProvider>,
+    rpc_factory: Arc<F>,
+    phantom: PhantomData<C>,
 }
 
-impl UniswapV4 {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+impl<C, F> UniswapV4<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    pub fn with_factory(rpc_factory: Arc<F>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::UniswapV4),
-            rpc_provider,
+            rpc_factory,
+            phantom: PhantomData,
         }
-    }
-
-    pub fn boxed(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
-        Box::new(Self::new(rpc_provider))
     }
 
     fn support_chain(&self, chain: &Chain) -> bool {
@@ -88,11 +95,26 @@ impl UniswapV4 {
     }
 }
 
+impl<C, F> fmt::Debug for UniswapV4<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UniswapV4").finish()
+    }
+}
+
 #[async_trait]
-impl Swapper for UniswapV4 {
+impl<C, F> Swapper for UniswapV4<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
+
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         Chain::all()
             .iter()
@@ -100,6 +122,7 @@ impl Swapper for UniswapV4 {
             .map(|x| SwapperChainAsset::All(*x))
             .collect()
     }
+
     async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
@@ -120,19 +143,15 @@ impl Swapper for UniswapV4 {
         };
 
         // Build PoolKeys for Quoter
-        // [
-        //     [direct_fee_tier1, ..., ..., ... ],
-        //     [weth_hop_fee_tier1, ..., ..., ... ],
-        //     [usdc_hop_fee_tier1, ..., ..., ... ],
-        // ]
         let pool_keys = build_pool_keys(&token_in, &token_out, &fee_tiers);
-        let calls: Vec<EthereumRpc> = pool_keys
+        let client = Arc::new(self.rpc_factory.client_for(from_chain).map_err(SwapperError::from)?);
+        let mut requests: Vec<BoxFuture<'static, _>> = Vec::new();
+        let initial_client = Arc::clone(&client);
+        let direct_calls: Vec<EthereumRpc> = pool_keys
             .iter()
             .map(|pool_key| build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
             .collect();
-        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), from_chain);
-        let batch_call = client.batch_call_requests(calls);
-        let mut requests = vec![batch_call];
+        requests.push(Box::pin(async move { initial_client.batch_call_requests(direct_calls).await }));
 
         let quote_exact_params: Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>>;
         if !Self::is_base_pair(&token_in, &token_out, &evm_chain) {
@@ -141,15 +160,15 @@ impl Swapper for UniswapV4 {
             build_quote_exact_requests(deployment.quoter, &quote_exact_params)
                 .iter()
                 .for_each(|call_array| {
-                    let batch_call = client.batch_call_requests(call_array.clone());
-                    requests.push(batch_call);
+                    let client = Arc::clone(&client);
+                    let calls = call_array.clone();
+                    requests.push(Box::pin(async move { client.batch_call_requests(calls).await }));
                 });
         } else {
             quote_exact_params = vec![];
         }
 
-        // fire batch requests in parallel
-        let batch_results = futures::future::join_all(requests).await;
+        let batch_results = join_all(requests).await;
 
         let quote_result = get_best_quote(&batch_results, super::quoter::decode_quoter_response)?;
 
@@ -161,7 +180,7 @@ impl Swapper for UniswapV4 {
             // fees are taken from input token
             quote_result.amount_out
         } else {
-            // fees are taken from output tokene
+            // fees are taken from output token
             apply_slippage_in_bp(&quote_result.amount_out, fee_bps)
         };
         let to_min_value = apply_slippage_in_bp(&to_value, request.options.slippage.bps);
@@ -206,14 +225,14 @@ impl Swapper for UniswapV4 {
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
         let v4_deployment = get_uniswap_deployment_by_chain(&from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
 
-        let permit2_data = check_approval_permit2(
+        let client = self.rpc_factory.client_for(from_asset.chain).map_err(SwapperError::from)?;
+        let permit2_data = check_approval_permit2_with_client(
             v4_deployment.permit2,
             quote.request.wallet_address.clone(),
             token_in.to_string(),
             v4_deployment.universal_router.to_string(),
             U256::from(amount_in),
-            self.rpc_provider.clone(),
-            &from_asset.chain,
+            &client,
         )
         .await?
         .permit2_data();
@@ -229,20 +248,19 @@ impl Swapper for UniswapV4 {
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let to_amount = u128::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
 
+        let client = self.rpc_factory.client_for(from_asset.chain).map_err(SwapperError::from)?;
         let permit = data.permit2_data().map(|data| data.into());
 
         let mut gas_limit: Option<String> = None;
         let approval: Option<GemApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
-            // Check if need to approve permit2 contract
-            check_approval_erc20(
+            check_approval_erc20_with_client(
                 request.wallet_address.clone(),
                 token_in.to_string(),
                 deployment.permit2.to_string(),
                 U256::from(amount_in),
-                self.rpc_provider.clone(),
-                &from_asset.chain,
+                &client,
             )
             .await?
             .approval_data()
@@ -283,9 +301,22 @@ impl Swapper for UniswapV4 {
 
 #[cfg(test)]
 mod tests {
-    use crate::swapper::{SwapperMode, SwapperOptions};
-
     use super::*;
+    use crate::{
+        network::{AlienClient, AlienError},
+        swapper::{SwapperMode, SwapperOptions},
+    };
+    use gem_jsonrpc::client::JsonRpcClient;
+
+    struct DummyFactory;
+
+    impl EvmRpcClientFactory<AlienClient> for DummyFactory {
+        fn client_for(&self, _chain: Chain) -> Result<JsonRpcClient<AlienClient>, AlienError> {
+            unimplemented!("dummy factory is used for type inference only")
+        }
+    }
+
+    type TestUniswapV4 = UniswapV4<AlienClient, DummyFactory>;
 
     #[test]
     fn test_is_base_pair() {
@@ -299,8 +330,8 @@ mod tests {
             options: SwapperOptions::default(),
         };
 
-        let (evm_chain, token_in, token_out, _) = UniswapV4::parse_request(&request).unwrap();
+        let (evm_chain, token_in, token_out, _) = TestUniswapV4::parse_request(&request).unwrap();
 
-        assert!(UniswapV4::is_base_pair(&token_in, &token_out, &evm_chain));
+        assert!(TestUniswapV4::is_base_pair(&token_in, &token_out, &evm_chain));
     }
 }

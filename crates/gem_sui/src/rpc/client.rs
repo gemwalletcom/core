@@ -1,6 +1,8 @@
 use std::error::Error;
 
 #[cfg(feature = "rpc")]
+use base64::{Engine as _, engine::general_purpose};
+#[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 use gem_jsonrpc::JsonRpcClient;
@@ -9,13 +11,22 @@ use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 #[cfg(feature = "rpc")]
 use num_bigint::BigInt;
 use primitives::chain::Chain;
+#[cfg(feature = "rpc")]
+use serde::de::DeserializeOwned;
+#[cfg(feature = "rpc")]
+use sui_types::Address;
 
 use crate::models::SuiCoinMetadata;
-#[cfg(feature = "rpc")]
-use crate::models::SuiObject;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
 use crate::models::transaction::{SuiBroadcastTransaction, SuiTransaction};
 use crate::models::{Balance, Checkpoint, Digest, Digests, ResultData, TransactionBlocks};
+#[cfg(feature = "rpc")]
+use crate::models::{CoinAsset, InspectResult, SuiObject};
+#[cfg(feature = "rpc")]
+use crate::{
+    SUI_COIN_TYPE, SUI_COIN_TYPE_FULL,
+    jsonrpc::{SuiData, SuiRpc},
+};
 use primitives::transaction_load_metadata::SuiCoin;
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
@@ -44,6 +55,25 @@ impl<C: Client + Clone> SuiClient<C> {
 
     pub fn get_client(&self) -> &GenericJsonRpcClient<C> {
         &self.client
+    }
+
+    pub async fn rpc_call<T: DeserializeOwned + Clone>(&self, rpc: SuiRpc) -> Result<T, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.request(rpc).await?)
+    }
+
+    pub async fn get_coin_assets(&self, owner: Address) -> Result<Vec<CoinAsset>, Box<dyn Error + Send + Sync>> {
+        let mut coins: SuiData<Vec<CoinAsset>> = self.rpc_call(SuiRpc::GetAllCoins { owner: owner.to_string() }).await?;
+        for coin in &mut coins.data {
+            if coin.coin_type == SUI_COIN_TYPE {
+                coin.coin_type = SUI_COIN_TYPE_FULL.into();
+            }
+        }
+        Ok(coins.data)
+    }
+
+    pub async fn inspect_transaction_block(&self, sender: &str, tx_data: &[u8]) -> Result<InspectResult, Box<dyn Error + Send + Sync>> {
+        let tx_bytes_base64 = general_purpose::STANDARD.encode(tx_data);
+        self.rpc_call(SuiRpc::InspectTransactionBlock(sender.to_string(), tx_bytes_base64)).await
     }
 
     pub async fn get_balance(&self, address: String) -> Result<Balance, Box<dyn Error + Send + Sync>> {

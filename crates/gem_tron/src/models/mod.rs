@@ -115,6 +115,10 @@ pub struct TriggerConstantContractRequest {
     pub contract_address: String,
     pub function_selector: String,
     pub parameter: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fee_limit: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub call_value: Option<u64>,
     pub visible: bool,
 }
 
@@ -124,6 +128,8 @@ pub struct TriggerConstantContractResponse {
     pub constant_result: Vec<String>,
     pub result: Option<TriggerContractResult>,
     pub energy_used: u64,
+    #[serde(default)]
+    pub energy_penalty: Option<u64>,
 }
 
 #[derive(Deserialize, Debug)]

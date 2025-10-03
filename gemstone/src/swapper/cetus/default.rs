@@ -3,8 +3,7 @@ use super::{
     provider::Cetus,
 };
 use crate::{
-    network::{AlienClient, AlienProvider},
-    sui::rpc::SuiClient,
+    network::{AlienClient, AlienProvider, SuiRpcClient},
     swapper::Swapper,
 };
 use std::sync::Arc;
@@ -12,7 +11,7 @@ use std::sync::Arc;
 impl Cetus<AlienClient> {
     pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         let http_client = CetusClient::new(AlienClient::new(CETUS_API_URL.into(), rpc_provider.clone()));
-        let sui_client = Arc::new(SuiClient::new(rpc_provider));
+        let sui_client = Arc::new(SuiRpcClient::new(rpc_provider.clone()).expect("Failed to create Sui RPC client"));
         Self::with_clients(http_client, sui_client)
     }
 }

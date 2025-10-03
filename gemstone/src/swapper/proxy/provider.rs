@@ -10,7 +10,7 @@ use super::{
 use crate::{
     config::swap_config::DEFAULT_SWAP_FEE_BPS,
     models::GemApprovalData,
-    network::{AlienClient, AlienProvider},
+    network::{AlienClient, AlienProvider, tron_client},
     swapper::{
         FetchQuoteData, Swapper, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
         SwapperRoute, SwapperSwapResult,
@@ -19,7 +19,6 @@ use crate::{
         models::{ApprovalType, SwapperChainAsset},
         remote_models::SwapperProviderMode,
     },
-    tron::client::TronClient,
 };
 use gem_client::Client;
 use primitives::{
@@ -125,8 +124,9 @@ where
             default_fee_limit
         } else {
             let tx_data: SymbiosisTransactionData = serde_json::from_value(proxy_quote.route_data["tx"].clone()).map_err(|_| SwapperError::InvalidRoute)?;
-            let client = TronClient::new(self.rpc_provider.clone());
+            let client = tron_client(self.rpc_provider.clone()).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
             let call_value = tx_data.value.unwrap_or_default();
+            let call_value_u64 = call_value.parse::<u64>().unwrap_or_default();
             let energy = client
                 .estimate_energy(
                     &wallet_address,
@@ -134,9 +134,10 @@ where
                     &tx_data.function_selector,
                     &tx_data.data,
                     tx_data.fee_limit.unwrap_or_default(),
-                    &call_value,
+                    call_value_u64,
                 )
-                .await?;
+                .await
+                .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
             Some(energy.to_string())
         };
         Ok((approval.approval_data(), fee_limit))

@@ -1,4 +1,4 @@
-use super::rpc::models::InspectGasUsed;
+use gem_sui::models::InspectGasUsed;
 use std::cmp::max;
 
 pub struct GasBudgetCalculator {}

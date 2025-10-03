@@ -18,13 +18,8 @@ use super::{
 };
 use crate::{
     debug_println,
-    sui::{
-        gas_budget::GasBudgetCalculator,
-        rpc::{
-            SuiClient,
-            models::{InspectEvent, InspectResult},
-        },
-    },
+    network::SuiRpcClient,
+    sui::gas_budget::GasBudgetCalculator,
     swapper::{
         FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
         SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, slippage::apply_slippage_in_bp,
@@ -34,25 +29,33 @@ use gem_client::Client;
 use gem_sui::{
     EMPTY_ADDRESS, SUI_COIN_TYPE_FULL,
     jsonrpc::{ObjectDataOptions, SuiData, SuiRpc},
-    models::TxOutput,
+    models::{InspectEvent, InspectResult, TxOutput},
 };
 use primitives::{AssetId, Chain};
 
-#[derive(Debug)]
 pub struct Cetus<C>
 where
     C: Client + Clone + Debug + Send + Sync + 'static,
 {
     provider: SwapperProviderType,
     cetus_client: CetusClient<C>,
-    sui_client: Arc<SuiClient>,
+    sui_client: Arc<SuiRpcClient>,
+}
+
+impl<C> std::fmt::Debug for Cetus<C>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Cetus").field("provider", &self.provider).finish()
+    }
 }
 
 impl<C> Cetus<C>
 where
     C: Client + Clone + Debug + Send + Sync + 'static,
 {
-    pub fn with_clients(cetus_client: CetusClient<C>, sui_client: Arc<SuiClient>) -> Self {
+    pub fn with_clients(cetus_client: CetusClient<C>, sui_client: Arc<SuiRpcClient>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Cetus),
             cetus_client,
@@ -101,10 +104,13 @@ where
         a2b: bool,
         buy_amount_in: bool,
         amount: BigInt,
-        client: Arc<SuiClient>,
+        client: Arc<SuiRpcClient>,
     ) -> Result<CalculatedSwapResult, Box<dyn std::error::Error + Send + Sync>> {
         let call = self.pre_swap_call(pool, pool_obj, a2b, buy_amount_in, amount)?;
-        let result: InspectResult = client.rpc_call(call).await?;
+        let result: InspectResult = client
+            .rpc_call(call)
+            .await
+            .map_err(|e| <Box<dyn std::error::Error + Send + Sync>>::from(e.to_string()))?;
         self.decode_swap_result(&result)
     }
 
@@ -187,7 +193,7 @@ where
             Some(ObjectDataOptions::default()),
         );
 
-        let pool_datas: Vec<CetusPoolType> = sui_client.rpc_call(rpc_call).await?;
+        let pool_datas: Vec<CetusPoolType> = sui_client.rpc_call(rpc_call).await.map_err(SwapperError::from)?;
 
         let pool_quotes = top_pools
             .into_iter()
@@ -313,7 +319,10 @@ where
         // Estimate gas_budget
         let tx_kind = tx.kind.clone();
         let tx_bytes = bcs::to_bytes(&tx_kind).map_err(|e| SwapperError::TransactionError(e.to_string()))?;
-        let inspect_result = sui_client.inspect_tx_block(&quote.request.wallet_address, &tx_bytes).await?;
+        let inspect_result = sui_client
+            .inspect_transaction_block(&quote.request.wallet_address, &tx_bytes)
+            .await
+            .map_err(SwapperError::from)?;
         let gas_budget = GasBudgetCalculator::gas_budget(&inspect_result.effects.gas_used);
 
         debug_println!("gas_budget: {:?}", gas_budget);
@@ -338,13 +347,13 @@ where
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
     use super::*;
     use crate::network::alien_provider::NativeProvider;
     use crate::sui::{
         gas_budget,
-        rpc::{CoinAsset, models::InspectGasUsed},
+        rpc::{CoinAsset, InspectGasUsed},
     };
     use gem_sui::tx::decode_transaction;
     use sui_types::{Digest, Transaction, TransactionKind};

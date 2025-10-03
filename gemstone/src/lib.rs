@@ -10,7 +10,6 @@ pub mod network;
 pub mod payment;
 pub mod sui;
 pub mod swapper;
-pub mod tron;
 pub mod wallet_connect;
 
 use alien::AlienError;
