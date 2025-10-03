@@ -21,3 +21,11 @@ impl ChainflipProvider<AlienClient, AlienClient> {
         Self::with_clients(chainflip_client, broker_client, rpc_provider)
     }
 }
+
+pub fn new_chainflip_provider(rpc_provider: Arc<dyn AlienProvider>) -> ChainflipProvider<AlienClient, AlienClient> {
+    ChainflipProvider::<AlienClient, AlienClient>::new(rpc_provider)
+}
+
+pub fn boxed_chainflip_provider(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn crate::swapper::Swapper> {
+    Box::new(ChainflipProvider::<AlienClient, AlienClient>::new(rpc_provider))
+}

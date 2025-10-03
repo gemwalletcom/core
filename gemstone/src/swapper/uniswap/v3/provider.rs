@@ -3,7 +3,7 @@ use crate::{
     network::EvmRpcClientFactory,
     swapper::{
         FetchQuoteData, Permit2ApprovalData, Swapper, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-        SwapperQuoteRequest, SwapperRoute,
+        SwapperQuoteRequest,
         approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
         eth_address,
         models::*,
@@ -25,11 +25,10 @@ use gem_evm::{
 };
 use gem_jsonrpc::client::JsonRpcClient;
 use primitives::{AssetId, Chain, EVMChain};
-use std::{fmt::Debug, str::FromStr, sync::Arc};
+use std::{fmt, fmt::Debug, marker::PhantomData, str::FromStr, sync::Arc};
 
 use super::{DEFAULT_SWAP_GAS_LIMIT, UniversalRouterProvider, commands::build_commands, path::build_paths_with_routes};
 
-#[derive(Debug)]
 pub struct UniswapV3<C, F>
 where
     C: Client + Clone + Debug + Send + Sync + 'static,
@@ -37,6 +36,19 @@ where
 {
     provider: Box<dyn UniversalRouterProvider>,
     rpc_factory: Arc<F>,
+    _phantom: PhantomData<C>,
+}
+
+impl<C, F> fmt::Debug for UniswapV3<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("UniswapV3")
+            .field("provider", self.provider.provider())
+            .finish()
+    }
 }
 
 impl<C, F> UniswapV3<C, F>
@@ -45,7 +57,15 @@ where
     F: EvmRpcClientFactory<C>,
 {
     pub fn new(provider: Box<dyn UniversalRouterProvider>, rpc_factory: Arc<F>) -> Self {
-        Self { provider, rpc_factory }
+        Self {
+            provider,
+            rpc_factory,
+            _phantom: PhantomData,
+        }
+    }
+
+    fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<C>, SwapperError> {
+        self.rpc_factory.client_for(chain).map_err(SwapperError::from)
     }
 
     pub fn support_chain(&self, chain: &Chain) -> bool {
@@ -127,7 +147,7 @@ where
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
-        let client = Arc::new(self.rpc_factory.client_for(from_chain).map_err(SwapperError::from)?);
+        let client = Arc::new(self.client_for(from_chain)?);
 
         let fee_tiers = self.provider.get_tiers();
         let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
@@ -149,7 +169,8 @@ where
                     .iter()
                     .map(|path| super::quoter_v2::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, quote_amount_in, &path.1))
                     .collect();
-                client.clone().batch_call_requests(calls)
+                let client = Arc::clone(&client);
+                async move { client.batch_call_requests(calls).await }
             })
             .collect();
 
@@ -202,10 +223,7 @@ where
         if from_asset.is_native() {
             return Ok(None);
         }
-        let client = self
-            .rpc_factory
-            .client_for(from_asset.chain)
-            .map_err(SwapperError::from)?;
+        let client = self.client_for(from_asset.chain)?;
         let wallet_address = eth_address::parse_str(&quote.request.wallet_address)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
         self.check_permit2_approval(&client, wallet_address, &token_in.to_checksum(None), amount_in, &from_asset.chain)
@@ -218,10 +236,7 @@ where
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
 
-        let client = self
-            .rpc_factory
-            .client_for(from_chain)
-            .map_err(SwapperError::from)?;
+        let client = self.client_for(from_chain)?;
 
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let to_amount = U256::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
@@ -233,8 +248,7 @@ where
         let approval: Option<GemApprovalData> = if quote.request.from_asset.is_native() {
             None
         } else {
-            self
-                .check_erc20_approval(&client, wallet_address, &token_in.to_checksum(None), amount_in, &from_chain)
+            self.check_erc20_approval(&client, wallet_address, &token_in.to_checksum(None), amount_in, &from_chain)
                 .await?
                 .approval_data()
         };

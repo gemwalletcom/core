@@ -22,3 +22,11 @@ impl Cetus<AlienClient> {
         Box::new(Self::new(rpc_provider))
     }
 }
+
+pub fn new_cetus(rpc_provider: Arc<dyn AlienProvider>) -> Cetus<AlienClient> {
+    Cetus::<AlienClient>::new(rpc_provider)
+}
+
+pub fn boxed_cetus(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
+    Cetus::<AlienClient>::boxed(rpc_provider)
+}

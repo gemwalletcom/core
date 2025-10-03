@@ -10,3 +10,11 @@ impl PancakeSwapAptos<AlienClient> {
         Self::with_client(client)
     }
 }
+
+pub fn new_pancakeswap_aptos(rpc_provider: Arc<dyn AlienProvider>) -> PancakeSwapAptos<AlienClient> {
+    PancakeSwapAptos::<AlienClient>::new(rpc_provider)
+}
+
+pub fn boxed_pancakeswap_aptos(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn crate::swapper::Swapper> {
+    Box::new(PancakeSwapAptos::<AlienClient>::new(rpc_provider))
+}

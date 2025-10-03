@@ -1,9 +1,10 @@
 use crate::{
-    network::{AlienProvider, JsonRpcClient, JsonRpcResult, jsonrpc_client_with_chain},
+    network::{EvmRpcClientFactory, JsonRpcResult},
     swapper::SwapperError,
 };
 use alloy_primitives::{Address, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
+use gem_client::Client;
 use gem_evm::{
     across::{contracts::AcrossConfigStore, deployment::ACROSS_CONFIG_STORE, fees},
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
@@ -11,7 +12,7 @@ use gem_evm::{
 };
 use primitives::Chain;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, marker::PhantomData, sync::Arc};
 
 const CONFIG_CACHE_TTL: u64 = 60 * 60 * 24;
 
@@ -45,16 +46,28 @@ pub struct TokenConfig {
     pub route_rate_model: HashMap<String, RateModel>,
 }
 
-pub struct ConfigStoreClient {
+pub struct ConfigStoreClient<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     pub contract: String,
-    pub client: JsonRpcClient<crate::network::AlienClient>,
+    rpc_factory: Arc<F>,
+    chain: Chain,
+    _phantom: PhantomData<C>,
 }
 
-impl ConfigStoreClient {
-    pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> ConfigStoreClient {
-        ConfigStoreClient {
+impl<C, F> ConfigStoreClient<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    pub fn new(rpc_factory: Arc<F>, chain: Chain) -> Self {
+        Self {
             contract: ACROSS_CONFIG_STORE.into(),
-            client: jsonrpc_client_with_chain(provider.clone(), chain),
+            rpc_factory,
+            chain,
+            _phantom: PhantomData,
         }
     }
 
@@ -77,9 +90,10 @@ impl ConfigStoreClient {
     }
 
     pub async fn fetch_config(&self, l1token: &Address) -> Result<TokenConfig, SwapperError> {
+        let client = self.rpc_factory.client_for(self.chain).map_err(SwapperError::from)?;
         let data = AcrossConfigStore::l1TokenConfigCall { l1Token: *l1token }.abi_encode();
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, data), BlockParameter::Latest);
-        let response: JsonRpcResult<String> = self.client.call_with_cache(&call, Some(CONFIG_CACHE_TTL)).await?;
+        let response: JsonRpcResult<String> = client.call_with_cache(&call, Some(CONFIG_CACHE_TTL)).await?;
         let result = response.take()?;
         let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
         let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;

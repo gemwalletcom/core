@@ -1,12 +1,13 @@
-use std::sync::Arc;
+use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
 use alloy_primitives::{Address, U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
+use gem_client::Client;
 use num_bigint::{BigInt, Sign};
 use primitives::Chain;
 
 use crate::{
-    network::{AlienProvider, JsonRpcClient, jsonrpc_client_with_chain},
+    network::{EvmRpcClientFactory},
     swapper::SwapperError,
 };
 use gem_evm::{
@@ -15,18 +16,28 @@ use gem_evm::{
     multicall3::{IMulticall3, create_call3, decode_call3_return},
 };
 
-pub struct HubPoolClient {
+pub struct HubPoolClient<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     pub contract: String,
-    pub client: JsonRpcClient<crate::network::AlienClient>,
+    rpc_factory: Arc<F>,
     pub chain: Chain,
+    _phantom: PhantomData<C>,
 }
 
-impl HubPoolClient {
-    pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> HubPoolClient {
-        HubPoolClient {
+impl<C, F> HubPoolClient<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    pub fn new(rpc_factory: Arc<F>, chain: Chain) -> Self {
+        Self {
             contract: ACROSS_HUBPOOL.into(),
-            client: jsonrpc_client_with_chain(provider.clone(), chain),
+            rpc_factory,
             chain,
+            _phantom: PhantomData,
         }
     }
 
@@ -103,7 +114,8 @@ impl HubPoolClient {
     pub async fn fetch_utilization(&self, pool_token: &Address, amount: U256) -> Result<BigInt, SwapperError> {
         let call3 = self.utilization_call3(pool_token, amount);
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, call3.callData.to_vec()), BlockParameter::Latest);
-        let result: String = self.client.request(call).await?;
+        let client = self.rpc_factory.client_for(self.chain).map_err(SwapperError::from)?;
+        let result: String = client.request(call).await?;
         let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
         let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;
         let result = BigInt::from_bytes_le(num_bigint::Sign::Plus, &value.to_le_bytes::<32>());

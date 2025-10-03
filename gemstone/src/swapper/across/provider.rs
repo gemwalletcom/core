@@ -9,7 +9,7 @@ use crate::{
     debug_println,
     ethereum::jsonrpc as eth_rpc,
     models::GemApprovalData,
-    network::AlienProvider,
+    network::{AlienClient, AlienEvmRpcFactory, AlienProvider, EvmRpcClientFactory},
     swapper::{
         Swapper, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
         across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
@@ -26,6 +26,7 @@ use alloy_primitives::{
 };
 use alloy_sol_types::{SolCall, SolValue};
 use async_trait::async_trait;
+use gem_client::Client;
 use gem_evm::{
     across::{
         contracts::{
@@ -39,26 +40,50 @@ use gem_evm::{
     jsonrpc::TransactionObject,
     weth::WETH9,
 };
+use gem_jsonrpc::client::JsonRpcClient;
 use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, EVMChain, swap::SwapStatus};
-use std::{fmt::Debug, str::FromStr, sync::Arc};
+use std::{fmt::{self, Debug}, marker::PhantomData, str::FromStr, sync::Arc};
 
-#[derive(Debug)]
-pub struct Across {
+pub struct Across<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     pub provider: SwapperProviderType,
     rpc_provider: Arc<dyn AlienProvider>,
+    rpc_factory: Arc<F>,
+    _phantom: PhantomData<C>,
 }
 
-impl Across {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+impl<C, F> fmt::Debug for Across<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Across")
+            .field("provider", &self.provider)
+            .finish()
+    }
+}
+
+impl<C, F> Across<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    pub fn with_factory(rpc_provider: Arc<dyn AlienProvider>, rpc_factory: Arc<F>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Across),
             rpc_provider,
+            rpc_factory,
+            _phantom: PhantomData,
         }
     }
 
-    pub fn boxed(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
-        Box::new(Self::new(rpc_provider))
+    fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<C>, SwapperError> {
+        self.rpc_factory.client_for(chain).map_err(SwapperError::from)
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
@@ -205,7 +230,8 @@ impl Across {
         }
         .abi_encode();
         let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
-        let gas_limit = eth_rpc::estimate_gas(self.rpc_provider.clone(), chain, tx).await;
+        let client = self.client_for(chain)?;
+        let gas_limit = eth_rpc::estimate_gas(&client, tx).await;
         Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
     }
 
@@ -247,8 +273,23 @@ impl Across {
     }
 }
 
+impl Across<AlienClient, AlienEvmRpcFactory> {
+    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        let factory = Arc::new(AlienEvmRpcFactory::new(rpc_provider.clone()));
+        Self::with_factory(rpc_provider, factory)
+    }
+
+    pub fn boxed(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
+        Box::new(Self::new(rpc_provider))
+    }
+}
+
 #[async_trait]
-impl Swapper for Across {
+impl<C, F> Swapper for Across<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     fn provider(&self) -> &SwapperProviderType {
         &self.provider
     }
@@ -309,15 +350,16 @@ impl Swapper for Across {
         let asset_mainnet = asset_mapping.set.iter().find(|x| x.chain == Chain::Ethereum).unwrap();
         let mainnet_token = eth_address::normalize_weth_address(asset_mainnet, from_chain)?;
 
-        let hubpool_client = HubPoolClient::new(self.rpc_provider.clone(), Chain::Ethereum);
-        let config_client = ConfigStoreClient::new(self.rpc_provider.clone(), Chain::Ethereum);
+        let hubpool_client = HubPoolClient::new(Arc::clone(&self.rpc_factory), Chain::Ethereum);
+        let config_client = ConfigStoreClient::new(Arc::clone(&self.rpc_factory), Chain::Ethereum);
 
         let calls = vec![
             hubpool_client.paused_call3(),
             hubpool_client.sync_call3(&mainnet_token),
             hubpool_client.pooled_token_call3(&mainnet_token),
         ];
-        let results = eth_rpc::multicall3_call(self.rpc_provider.clone(), &hubpool_client.chain, calls).await?;
+        let rpc_client = self.client_for(hubpool_client.chain)?;
+        let results = eth_rpc::multicall3_call(&rpc_client, &hubpool_client.chain, calls).await?;
 
         // Check if protocol is paused
         let is_paused = hubpool_client.decoded_paused_call3(&results[0])?;
@@ -343,7 +385,8 @@ impl Swapper for Across {
             calls.push(eth_price_feed.latest_round_call3());
         }
 
-        let multicall_req = eth_rpc::multicall3_call(self.rpc_provider.clone(), &hubpool_client.chain, calls);
+        let rpc_client_for_multicall = self.client_for(hubpool_client.chain)?;
+        let multicall_req = eth_rpc::multicall3_call(&rpc_client_for_multicall, &hubpool_client.chain, calls);
 
         let batch_results = futures::join!(token_config_req, multicall_req);
         let token_config = batch_results.0?;
@@ -375,7 +418,8 @@ impl Swapper for Across {
         let (message, referral_fee) =
             self.message_for_multicall_handler(&remain_amount, &original_output_asset, &wallet_address, &output_token, &referral_config);
 
-        let gas_price_req = eth_rpc::fetch_gas_price(self.rpc_provider.clone(), request.to_asset.chain());
+        let gas_price_client = self.client_for(request.to_asset.chain())?;
+        let gas_price_req = eth_rpc::fetch_gas_price(&gas_price_client);
         let gas_limit_req = self.estimate_gas_limit(
             &from_amount,
             input_is_native,
@@ -484,7 +528,8 @@ impl Swapper for Across {
         if matches!(data, FetchQuoteData::EstimateGas) {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
             let tx = TransactionObject::new_call_to_value(&to, &hex_value, deposit_v3_call.clone());
-            let _gas_limit = eth_rpc::estimate_gas(self.rpc_provider.clone(), from_chain, tx).await?;
+            let gas_client = self.client_for(from_chain)?;
+            let _gas_limit = eth_rpc::estimate_gas(&gas_client, tx).await?;
             debug_println!("gas_limit: {:?}", _gas_limit);
             gas_limit = Some(_gas_limit.to_string());
         }
@@ -500,7 +545,7 @@ impl Swapper for Across {
         Ok(quote_data)
     }
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
-        let api = AcrossApi::new(self.rpc_provider.clone());
+        let api = AcrossApi::new(self.rpc_provider.clone(), Arc::clone(&self.rpc_factory));
         let status = api.deposit_status(chain, transaction_hash).await?;
 
         let swap_status = status.swap_status();
@@ -529,6 +574,8 @@ mod tests {
     use gem_evm::multicall3::IMulticall3;
     use primitives::asset_constants::*;
 
+    type DefaultAcross = Across<AlienClient, AlienEvmRpcFactory>;
+
     #[test]
     fn test_is_supported_pair() {
         let weth_eth: AssetId = WETH_ETH_ASSET_ID.into();
@@ -539,12 +586,12 @@ mod tests {
         let usdc_eth: AssetId = USDC_ETH_ASSET_ID.into();
         let usdc_arb: AssetId = USDC_ARB_ASSET_ID.into();
 
-        assert!(Across::is_supported_pair(&weth_eth, &weth_op));
-        assert!(Across::is_supported_pair(&weth_op, &weth_arb));
-        assert!(Across::is_supported_pair(&usdc_eth, &usdc_arb));
-        assert!(Across::is_supported_pair(&weth_eth, &weth_bsc));
+        assert!(DefaultAcross::is_supported_pair(&weth_eth, &weth_op));
+        assert!(DefaultAcross::is_supported_pair(&weth_op, &weth_arb));
+        assert!(DefaultAcross::is_supported_pair(&usdc_eth, &usdc_arb));
+        assert!(DefaultAcross::is_supported_pair(&weth_eth, &weth_bsc));
 
-        assert!(!Across::is_supported_pair(&weth_eth, &usdc_eth));
+        assert!(!DefaultAcross::is_supported_pair(&weth_eth, &usdc_eth));
 
         // native asset
         let eth = AssetId::from(Chain::Ethereum, None);
@@ -552,10 +599,10 @@ mod tests {
         let arb = AssetId::from(Chain::Arbitrum, None);
         let linea = AssetId::from(Chain::Linea, None);
 
-        assert!(Across::is_supported_pair(&eth, &linea));
-        assert!(Across::is_supported_pair(&op, &eth));
-        assert!(Across::is_supported_pair(&arb, &eth));
-        assert!(Across::is_supported_pair(&op, &arb));
+        assert!(DefaultAcross::is_supported_pair(&eth, &linea));
+        assert!(DefaultAcross::is_supported_pair(&op, &eth));
+        assert!(DefaultAcross::is_supported_pair(&arb, &eth));
+        assert!(DefaultAcross::is_supported_pair(&op, &arb));
     }
 
     #[test]
@@ -570,7 +617,7 @@ mod tests {
         assert_eq!(price, BigInt::from(335398640362_u64));
 
         let gas_fee = U256::from(1861602902696880_u64);
-        let fee_in_token = Across::calculate_fee_in_token(&gas_fee, &price, 6);
+        let fee_in_token = DefaultAcross::calculate_fee_in_token(&gas_fee, &price, 6);
 
         assert_eq!(fee_in_token.to_string(), "6243790");
     }

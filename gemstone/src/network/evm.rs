@@ -11,7 +11,7 @@ where
     fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<C>, AlienError>;
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AlienEvmRpcFactory {
     provider: Arc<dyn AlienProvider>,
 }

@@ -1,23 +1,36 @@
 use crate::{
     ethereum::jsonrpc as eth_rpc,
-    network::{AlienProvider, AlienTarget},
+    network::{AlienProvider, AlienTarget, EvmRpcClientFactory},
     swapper::SwapperError,
 };
+use gem_client::Client;
 use primitives::{Chain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
 #[derive(Debug, Clone)]
-pub struct AcrossApi {
+pub struct AcrossApi<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     pub url: String,
     pub provider: Arc<dyn AlienProvider>,
+    rpc_factory: Arc<F>,
+    _phantom: PhantomData<C>,
 }
 
-impl AcrossApi {
-    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
+impl<C, F> AcrossApi<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
+    pub fn new(provider: Arc<dyn AlienProvider>, rpc_factory: Arc<F>) -> Self {
         Self {
             url: "https://app.across.to".into(),
             provider,
+            rpc_factory,
+            _phantom: PhantomData,
         }
     }
 }
@@ -43,9 +56,14 @@ impl DepositStatus {
     }
 }
 
-impl AcrossApi {
+impl<C, F> AcrossApi<C, F>
+where
+    C: Client + Clone + Debug + Send + Sync + 'static,
+    F: EvmRpcClientFactory<C>,
+{
     pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<DepositStatus, SwapperError> {
-        let receipt = eth_rpc::fetch_tx_receipt(self.provider.clone(), chain, tx_hash).await?;
+        let client = self.rpc_factory.client_for(chain).map_err(SwapperError::from)?;
+        let receipt = eth_rpc::fetch_tx_receipt(&client, tx_hash).await?;
         if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 4 {
             return Err(SwapperError::NetworkError("invalid tx receipt".into()));
         }

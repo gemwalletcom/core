@@ -1,5 +1,5 @@
 mod client;
-mod default;
+pub mod default;
 mod model;
 use super::{
     FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
