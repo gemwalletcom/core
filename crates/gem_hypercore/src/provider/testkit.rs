@@ -1,7 +1,10 @@
 #[cfg(all(test, feature = "chain_integration_tests"))]
-use crate::rpc::client::HyperCoreClient;
+use crate::rpc::client::{HyperCoreClient, InMemoryPreferences};
 #[cfg(all(test, feature = "chain_integration_tests"))]
 use gem_client::ReqwestClient;
+#[cfg(all(test, feature = "chain_integration_tests"))]
+use std::sync::Arc;
+
 #[cfg(all(test, feature = "chain_integration_tests"))]
 use settings::testkit::get_test_settings;
 
@@ -12,7 +15,10 @@ pub const USDC_TOKEN_ID: &str = "USDC::0x6d1e7cde53ba9467b783cb7c530ce054::0";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub fn create_hypercore_test_client() -> HyperCoreClient<ReqwestClient> {
+    let preferences = Arc::new(InMemoryPreferences::new());
+    let secure_preferences = Arc::new(InMemoryPreferences::new());
+
     let settings = get_test_settings();
     let reqwest_client = ReqwestClient::new(settings.chains.hypercore.url, reqwest::Client::new());
-    HyperCoreClient::new(reqwest_client)
+    HyperCoreClient::new_with_preferences(reqwest_client, preferences, secure_preferences)
 }
