@@ -30,34 +30,30 @@ pub fn map_balance_tokens(balances: Vec<SuiBalance>, token_ids: Vec<String>) -> 
         .collect()
 }
 
-pub fn map_balance_staking(delegations: Vec<SuiStakeDelegation>) -> Option<AssetBalance> {
+pub fn map_balance_staking(delegations: Vec<SuiStakeDelegation>) -> AssetBalance {
+    let asset_id = Chain::Sui.as_asset_id();
+
     if delegations.is_empty() {
-        return None;
+        return AssetBalance::new_balance(asset_id, Balance::stake_balance(BigUint::from(0u32), BigUint::from(0u32), None));
     }
 
     let staked = delegations
         .iter()
         .flat_map(|delegation| &delegation.stakes)
-        .map(|stake| &stake.principal + stake.estimated_reward.as_ref().unwrap_or(&num_bigint::BigInt::from(0)))
-        .sum::<num_bigint::BigInt>();
+        .map(|stake| &stake.principal + stake.estimated_reward.as_ref().unwrap_or(&BigUint::from(0u32)))
+        .sum::<BigUint>();
 
-    Some(AssetBalance::new_balance(
-        Chain::Sui.as_asset_id(),
-        Balance::stake_balance(BigUint::try_from(staked).unwrap_or_default(), BigUint::from(0u32), None),
-    ))
+    AssetBalance::new_balance(asset_id, Balance::stake_balance(staked, BigUint::from(0u32), None))
 }
 
 pub fn map_staking_balance(delegations: Vec<SuiStakeDelegation>) -> AssetBalance {
     let staked_total = delegations
         .iter()
         .flat_map(|delegation| &delegation.stakes)
-        .map(|stake| &stake.principal + stake.estimated_reward.as_ref().unwrap_or(&num_bigint::BigInt::from(0)))
-        .sum::<num_bigint::BigInt>();
+        .map(|stake| &stake.principal + stake.estimated_reward.as_ref().unwrap_or(&BigUint::from(0u32)))
+        .sum::<BigUint>();
 
-    AssetBalance::new_balance(
-        Chain::Sui.as_asset_id(),
-        Balance::stake_balance(BigUint::try_from(staked_total).unwrap_or_default(), BigUint::from(0u32), None),
-    )
+    AssetBalance::new_balance(Chain::Sui.as_asset_id(), Balance::stake_balance(staked_total, BigUint::from(0u32), None))
 }
 
 pub fn map_assets_balances(balances: Vec<SuiBalance>) -> Vec<AssetBalance> {
@@ -129,10 +125,8 @@ mod tests {
         let response: JsonRpcResult<Vec<SuiStakeDelegation>> = serde_json::from_str(include_str!("../../testdata/stakes.json")).unwrap();
         let delegations = response.result;
 
-        let result = map_balance_staking(delegations);
+        let balance = map_balance_staking(delegations);
 
-        assert!(result.is_some());
-        let balance = result.unwrap();
         assert_eq!(balance.asset_id.chain, Chain::Sui);
 
         // Total staked: sum of all principal + estimated_reward values
@@ -143,8 +137,10 @@ mod tests {
     #[test]
     fn test_map_balance_staking_empty() {
         let delegations: Vec<SuiStakeDelegation> = vec![];
-        let result = map_balance_staking(delegations);
+        let balance = map_balance_staking(delegations);
 
-        assert!(result.is_none());
+        assert_eq!(balance.asset_id.chain, Chain::Sui);
+        assert_eq!(balance.balance.staked, BigUint::from(0u32));
+        assert_eq!(balance.balance.available, BigUint::from(0u32));
     }
 }

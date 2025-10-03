@@ -1,5 +1,5 @@
 use gem_client::Client;
-use num_bigint::{BigInt, BigUint};
+use num_bigint::BigUint;
 use num_traits::Zero;
 use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
@@ -41,12 +41,12 @@ impl<C: Client + Clone> EthereumClient<C> {
         let mut delegations = Vec::new();
 
         let active_balance = state.deposited_balance;
-        if active_balance > BigInt::zero() {
+        if active_balance > BigUint::zero() {
             delegations.push(map_balance_to_delegation(&active_balance, DelegationState::Active));
         }
 
         let pending_balance = state.pending_balance + state.pending_deposited_balance;
-        if pending_balance > BigInt::zero() {
+        if pending_balance > BigUint::zero() {
             delegations.push(map_balance_to_delegation(&pending_balance, DelegationState::Activating));
         }
 
@@ -64,7 +64,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         let mut withdrawable = BigUint::zero();
 
         for delegation in delegations {
-            let balance = delegation.balance.to_biguint().unwrap_or_else(BigUint::zero);
+            let balance = delegation.balance;
             match delegation.state {
                 DelegationState::Active => staked += balance,
                 DelegationState::Activating | DelegationState::Deactivating | DelegationState::Undelegating => pending_total += balance,

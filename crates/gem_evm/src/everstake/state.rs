@@ -1,6 +1,6 @@
 use alloy_primitives::Address;
 use gem_client::Client;
-use num_bigint::{BigInt, Sign};
+use num_bigint::BigUint;
 use num_traits::Zero;
 use std::{error::Error, str::FromStr};
 
@@ -10,9 +10,9 @@ use crate::rpc::client::EthereumClient;
 use super::{EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting, WithdrawRequest};
 
 pub struct EverstakeAccountState {
-    pub deposited_balance: BigInt,
-    pub pending_balance: BigInt,
-    pub pending_deposited_balance: BigInt,
+    pub deposited_balance: BigUint,
+    pub pending_balance: BigUint,
+    pub pending_deposited_balance: BigUint,
     pub withdraw_request: WithdrawRequest,
 }
 
@@ -49,7 +49,7 @@ pub async fn get_everstake_account_state<C: Client + Clone>(
     })
 }
 
-fn decode_balance_result<T: alloy_sol_types::SolCall>(result: &IMulticall3::Result) -> BigInt
+fn decode_balance_result<T: alloy_sol_types::SolCall>(result: &IMulticall3::Result) -> BigUint
 where
     T::Return: Into<alloy_primitives::U256>,
 {
@@ -58,10 +58,10 @@ where
             .map(|value| {
                 let value: alloy_primitives::U256 = value.into();
                 let bytes = value.to_be_bytes::<32>();
-                BigInt::from_bytes_be(Sign::Plus, &bytes)
+                BigUint::from_bytes_be(&bytes)
             })
-            .unwrap_or(BigInt::zero())
+            .unwrap_or(BigUint::zero())
     } else {
-        BigInt::zero()
+        BigUint::zero()
     }
 }
