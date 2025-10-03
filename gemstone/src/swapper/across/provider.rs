@@ -7,7 +7,6 @@ use super::{
 use crate::{
     config::swap_config::SwapReferralFee,
     debug_println,
-    ethereum::jsonrpc as eth_rpc,
     models::GemApprovalData,
     network::{AlienClient, AlienEvmRpcFactory, AlienProvider, EvmRpcClientFactory},
     swapper::{
@@ -38,6 +37,7 @@ use gem_evm::{
     },
     contracts::erc20::IERC20,
     jsonrpc::TransactionObject,
+    rpc::client::EthereumClient,
     weth::WETH9,
 };
 use gem_jsonrpc::client::JsonRpcClient;
@@ -84,6 +84,12 @@ where
 
     fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<C>, SwapperError> {
         self.rpc_factory.client_for(chain).map_err(SwapperError::from)
+    }
+
+    fn ethereum_client(&self, chain: Chain) -> Result<EthereumClient<C>, SwapperError> {
+        let evm_chain = EVMChain::from_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
+        let client = self.client_for(chain)?;
+        Ok(EthereumClient::new(client, evm_chain))
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
@@ -230,9 +236,9 @@ where
         }
         .abi_encode();
         let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
-        let client = self.client_for(chain)?;
-        let gas_limit = eth_rpc::estimate_gas(&client, tx).await;
-        Ok((gas_limit.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
+        let eth_client = self.ethereum_client(chain)?;
+        let gas_limit = eth_client.estimate_gas_tx(tx).await;
+        Ok((gas_limit.unwrap_or_else(|_| U256::from(DEFAULT_FILL_GAS_LIMIT)), v3_relay_data))
     }
 
     pub fn update_v3_relay_data(
@@ -352,14 +358,18 @@ where
 
         let hubpool_client = HubPoolClient::new(Arc::clone(&self.rpc_factory), Chain::Ethereum);
         let config_client = ConfigStoreClient::new(Arc::clone(&self.rpc_factory), Chain::Ethereum);
+        let mainnet_eth_client = self.ethereum_client(hubpool_client.chain)?;
 
         let calls = vec![
             hubpool_client.paused_call3(),
             hubpool_client.sync_call3(&mainnet_token),
             hubpool_client.pooled_token_call3(&mainnet_token),
         ];
-        let rpc_client = self.client_for(hubpool_client.chain)?;
-        let results = eth_rpc::multicall3_call(&rpc_client, &hubpool_client.chain, calls).await?;
+        let results = mainnet_eth_client
+            .clone()
+            .multicall3(calls)
+            .await
+            .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
 
         // Check if protocol is paused
         let is_paused = hubpool_client.decoded_paused_call3(&results[0])?;
@@ -385,8 +395,13 @@ where
             calls.push(eth_price_feed.latest_round_call3());
         }
 
-        let rpc_client_for_multicall = self.client_for(hubpool_client.chain)?;
-        let multicall_req = eth_rpc::multicall3_call(&rpc_client_for_multicall, &hubpool_client.chain, calls);
+        let multicall_client = mainnet_eth_client.clone();
+        let multicall_req = async move {
+            multicall_client
+                .multicall3(calls)
+                .await
+                .map_err(|e| SwapperError::NetworkError(e.to_string()))
+        };
 
         let batch_results = futures::join!(token_config_req, multicall_req);
         let token_config = batch_results.0?;
@@ -418,8 +433,13 @@ where
         let (message, referral_fee) =
             self.message_for_multicall_handler(&remain_amount, &original_output_asset, &wallet_address, &output_token, &referral_config);
 
-        let gas_price_client = self.client_for(request.to_asset.chain())?;
-        let gas_price_req = eth_rpc::fetch_gas_price(&gas_price_client);
+        let gas_price_client = self.ethereum_client(request.to_asset.chain())?;
+        let gas_price_req = async {
+            gas_price_client
+                .gas_price()
+                .await
+                .map_err(|e| SwapperError::NetworkError(e.to_string()))
+        };
         let gas_limit_req = self.estimate_gas_limit(
             &from_amount,
             input_is_native,
@@ -528,8 +548,11 @@ where
         if matches!(data, FetchQuoteData::EstimateGas) {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
             let tx = TransactionObject::new_call_to_value(&to, &hex_value, deposit_v3_call.clone());
-            let gas_client = self.client_for(from_chain)?;
-            let _gas_limit = eth_rpc::estimate_gas(&gas_client, tx).await?;
+            let gas_client = self.ethereum_client(from_chain)?;
+            let _gas_limit = gas_client
+                .estimate_gas_tx(tx)
+                .await
+                .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
             debug_println!("gas_limit: {:?}", _gas_limit);
             gas_limit = Some(_gas_limit.to_string());
         }

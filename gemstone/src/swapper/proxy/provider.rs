@@ -19,9 +19,9 @@ use crate::{
         models::{ApprovalType, SwapperChainAsset},
         remote_models::SwapperProviderMode,
     },
-    tron::client::TronClient,
 };
 use gem_client::Client;
+use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use primitives::{
     AssetId, Chain, ChainType,
     swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
@@ -125,7 +125,10 @@ where
             default_fee_limit
         } else {
             let tx_data: SymbiosisTransactionData = serde_json::from_value(proxy_quote.route_data["tx"].clone()).map_err(|_| SwapperError::InvalidRoute)?;
-            let client = TronClient::new(self.rpc_provider.clone());
+            let endpoint = self.rpc_provider.get_endpoint(Chain::Tron).map_err(SwapperError::from)?;
+            let base_client = AlienClient::new(endpoint, self.rpc_provider.clone());
+            let trongrid_client = TronGridClient::new(base_client.clone(), String::new());
+            let client = TronClient::new(base_client, trongrid_client);
             let call_value = tx_data.value.unwrap_or_default();
             let energy = client
                 .estimate_energy(
@@ -136,7 +139,8 @@ where
                     tx_data.fee_limit.unwrap_or_default(),
                     &call_value,
                 )
-                .await?;
+                .await
+                .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
             Some(energy.to_string())
         };
         Ok((approval.approval_data(), fee_limit))

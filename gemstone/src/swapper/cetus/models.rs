@@ -82,10 +82,7 @@ pub struct SharedObject {
 mod tests {
     use super::*;
     use crate::network::JsonRpcResponse;
-    use crate::sui::rpc::{
-        CoinAsset,
-        models::{InspectEvent, InspectResult},
-    };
+    use gem_sui::rpc::{CoinAsset, InspectEvent, InspectResult};
     use serde_json;
 
     #[test]

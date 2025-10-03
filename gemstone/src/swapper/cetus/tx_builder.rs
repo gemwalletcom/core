@@ -1,4 +1,4 @@
-use crate::sui::rpc::CoinAsset;
+use gem_sui::rpc::CoinAsset;
 use gem_sui::{ObjectId, SUI_COIN_TYPE_FULL, SUI_FRAMEWORK_PACKAGE_ID, sui_clock_object_input};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;

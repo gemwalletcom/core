@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, Bytes, hex};
+use alloy_primitives::{Address, Bytes, U256, hex};
 use gem_client::Client;
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use gem_jsonrpc::types::{JsonRpcError, JsonRpcResult};
@@ -12,7 +12,7 @@ use super::{
     ankr::AnkrClient,
     model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace},
 };
-use crate::models::fee::EthereumFeeHistory;
+use crate::{jsonrpc::TransactionObject, models::fee::EthereumFeeHistory, parse_u256};
 #[cfg(feature = "rpc")]
 use crate::multicall3::{
     IMulticall3,
@@ -167,6 +167,17 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_transaction_receipt(&self, hash: &str) -> Result<TransactionReciept, JsonRpcError> {
         let params = json!([hash]);
         self.client.call("eth_getTransactionReceipt", params).await
+    }
+
+    pub async fn gas_price(&self) -> Result<U256, Box<dyn std::error::Error + Send + Sync>> {
+        let value: String = self.client.call("eth_gasPrice", json!([])).await?;
+        parse_u256(&value).ok_or_else(|| "invalid gas price".into())
+    }
+
+    pub async fn estimate_gas_tx(&self, tx: TransactionObject) -> Result<U256, Box<dyn std::error::Error + Send + Sync>> {
+        let params = json!([tx, "latest"]);
+        let value: String = self.client.call("eth_estimateGas", params).await?;
+        parse_u256(&value).ok_or_else(|| "invalid gas limit".into())
     }
 
     pub async fn trace_replay_block_transactions(&self, block_number: i64) -> Result<Vec<TransactionReplayTrace>, JsonRpcError> {

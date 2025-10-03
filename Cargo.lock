@@ -3053,6 +3053,8 @@ dependencies = [
 name = "gem_tron"
 version = "1.0.0"
 dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
  "async-trait",
  "bs58",
  "chain_traits",

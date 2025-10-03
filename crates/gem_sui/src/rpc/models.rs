@@ -1,7 +1,6 @@
 use num_bigint::BigInt;
 use serde::Deserialize;
 use serde_serializers::*;
-
 use sui_transaction_builder::unresolved::Input;
 use sui_types::{Address, Digest};
 
@@ -21,14 +20,6 @@ impl CoinAsset {
     pub fn to_input(&self) -> Input {
         Input::owned(self.coin_object_id, self.version, self.digest)
     }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CoinResponse {
-    pub data: Vec<CoinAsset>,
-    pub next_cursor: Option<String>,
-    pub has_next_page: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -63,4 +54,12 @@ pub struct InspectGasUsed {
     pub storage_cost: u64,
     #[serde(deserialize_with = "deserialize_u64_from_str")]
     pub storage_rebate: u64,
+}
+
+pub struct GasBudgetCalculator;
+
+impl GasBudgetCalculator {
+    pub fn gas_budget(gas_used: &InspectGasUsed) -> u64 {
+        gas_used.computation_cost + gas_used.storage_cost + gas_used.storage_rebate
+    }
 }

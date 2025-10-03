@@ -1,4 +1,7 @@
+use alloy_primitives::{Address as AlloyAddress, U256};
+use alloy_sol_types::SolCall;
 use async_trait::async_trait;
+use bs58;
 use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
 use num_bigint::BigUint;
 use primitives::{Asset, AssetId, asset_type::AssetType, chain::Chain};
@@ -25,6 +28,13 @@ pub struct TronClient<C: Client> {
 impl<C: Client> TronClient<C> {
     pub fn new(client: C, trongrid_client: TronGridClient<C>) -> Self {
         Self { client, trongrid_client }
+    }
+
+    async fn trigger_constant_contract_response_internal(
+        &self,
+        request: TriggerConstantContractRequest,
+    ) -> Result<TriggerConstantContractResponse, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.post("/wallet/triggerconstantcontract", &request, None).await?)
     }
 
     pub async fn get_block(&self) -> Result<Block, Box<dyn Error + Send + Sync>> {
@@ -70,15 +80,90 @@ impl<C: Client> TronClient<C> {
             function_selector: function_selector.to_string(),
             parameter: parameter.to_string(),
             visible: true,
+            fee_limit: None,
+            call_value: None,
         };
 
-        let response: TriggerConstantContractResponse = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
+        let response = self.trigger_constant_contract_response_internal(request_payload).await?;
+        Self::ensure_success(&response)?;
 
-        if response.constant_result.is_empty() {
-            return Err("Empty response from Tron contract call".into());
+        response
+            .constant_result
+            .first()
+            .cloned()
+            .ok_or_else(|| "Empty response from Tron contract call".into())
+    }
+
+    pub async fn get_token_allowance(
+        &self,
+        owner_address: &str,
+        token_address: &str,
+        spender_address: &str,
+    ) -> Result<U256, Box<dyn Error + Send + Sync>> {
+        let owner_bytes = bs58_to_bytes(owner_address)?;
+        let spender_bytes = bs58_to_bytes(spender_address)?;
+        let parameter = encode_allowance_parameters(&owner_bytes, &spender_bytes);
+        let request_payload = TriggerConstantContractRequest {
+            owner_address: owner_address.to_owned(),
+            contract_address: token_address.to_string(),
+            function_selector: "allowance(address,address)".to_string(),
+            parameter: hex::encode(parameter),
+            visible: true,
+            fee_limit: None,
+            call_value: None,
+        };
+
+        let response = self.trigger_constant_contract_response_internal(request_payload).await?;
+        Self::ensure_success(&response)?;
+
+        let constant = response
+            .constant_result
+            .first()
+            .ok_or_else(|| "Missing constant_result in Tron response".to_string())?;
+        Ok(U256::from_str_radix(constant, 16)?)
+    }
+
+    pub async fn estimate_energy(
+        &self,
+        owner_address: &str,
+        contract_address: &str,
+        function_selector: &str,
+        parameter: &str,
+        fee_limit: u64,
+        call_value: &str,
+    ) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        let request_payload = TriggerConstantContractRequest {
+            owner_address: owner_address.to_owned(),
+            contract_address: contract_address.to_string(),
+            function_selector: function_selector.to_string(),
+            parameter: parameter.to_string(),
+            visible: true,
+            fee_limit: Some(fee_limit),
+            call_value: Some(call_value.parse::<u64>().unwrap_or_default()),
+        };
+
+        let response = self.trigger_constant_contract_response_internal(request_payload).await?;
+        Self::ensure_success(&response)?;
+        Ok(response.energy_used + response.energy_penalty)
+    }
+
+    fn ensure_success(response: &TriggerConstantContractResponse) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if let Some(result) = &response.result {
+            if let Some(code) = &result.code {
+                let message = result.message.as_deref().unwrap_or_default();
+                let decoded = hex_to_utf8(message).unwrap_or_else(|| message.to_string());
+                return Err(format!("Tron contract error: code {}, message {}", code, decoded).into());
+            }
+
+            if let Some(message) = &result.message {
+                if !message.is_empty() {
+                    let decoded = hex_to_utf8(message).unwrap_or_else(|| message.clone());
+                    return Err(decoded.into());
+                }
+            }
         }
 
-        Ok(response.constant_result[0].clone())
+        Ok(())
     }
 }
 
@@ -179,9 +264,12 @@ impl<C: Client> TronClient<C> {
             function_selector: "transfer(address,uint256)".to_string(),
             parameter,
             visible: true,
+            fee_limit: None,
+            call_value: None,
         };
 
-        let response: TriggerConstantContractResponse = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
+        let response = self.trigger_constant_contract_response_internal(request_payload).await?;
+        Self::ensure_success(&response)?;
 
         Ok(response.energy_used.to_string())
     }
@@ -201,6 +289,28 @@ impl<C: Client + Clone> chain_traits::ChainProvider for TronClient<C> {
     fn get_chain(&self) -> primitives::Chain {
         Chain::Tron
     }
+}
+
+fn bs58_to_bytes(address: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+    bs58::decode(address)
+        .with_check(None)
+        .into_vec()
+        .map_err(|e| format!("Failed to decode address '{}': {e}", address).into())
+}
+
+fn encode_allowance_parameters(owner: &[u8], spender: &[u8]) -> Vec<u8> {
+    let owner_addr = AlloyAddress::from_slice(&owner[1..]);
+    let spender_addr = AlloyAddress::from_slice(&spender[1..]);
+    let parameter = gem_evm::contracts::erc20::IERC20::allowanceCall {
+        owner: owner_addr,
+        spender: spender_addr,
+    }
+    .abi_encode();
+    parameter[4..].to_vec()
+}
+
+fn hex_to_utf8(hex_str: &str) -> Option<String> {
+    hex::decode(hex_str).ok().and_then(|bytes| String::from_utf8(bytes).ok())
 }
 
 #[cfg(test)]

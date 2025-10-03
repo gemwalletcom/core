@@ -9,6 +9,8 @@ hex = { workspace = true }
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+alloy-primitives = { workspace = true, optional = true }
+alloy-sol-types = { workspace = true, optional = true }
 
 # RPC specific dependencies (optional)
 chrono = { workspace = true, features = ["serde"], optional = true }
@@ -31,6 +33,8 @@ rpc = [
     "dep:chain_traits",
     "dep:async-trait",
     "dep:futures",
+    "dep:alloy-primitives",
+    "dep:alloy-sol-types",
 ]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]

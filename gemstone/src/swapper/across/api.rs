@@ -1,10 +1,10 @@
 use crate::{
-    ethereum::jsonrpc as eth_rpc,
     network::{AlienProvider, AlienTarget, EvmRpcClientFactory},
     swapper::SwapperError,
 };
 use gem_client::Client;
-use primitives::{Chain, swap::SwapStatus};
+use gem_evm::rpc::{client::EthereumClient, model::TransactionReciept};
+use primitives::{Chain, EVMChain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
@@ -62,8 +62,13 @@ where
     F: EvmRpcClientFactory<C>,
 {
     pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<DepositStatus, SwapperError> {
+        let evm_chain = EVMChain::from_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
         let client = self.rpc_factory.client_for(chain).map_err(SwapperError::from)?;
-        let receipt = eth_rpc::fetch_tx_receipt(&client, tx_hash).await?;
+        let eth_client = EthereumClient::new(client, evm_chain);
+        let receipt: TransactionReciept = eth_client
+            .get_transaction_receipt(tx_hash)
+            .await
+            .map_err(SwapperError::from)?;
         if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 4 {
             return Err(SwapperError::NetworkError("invalid tx receipt".into()));
         }
