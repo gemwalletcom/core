@@ -3,9 +3,9 @@ use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::{
-    AccountDataType, FeeOption, GasPriceType, PerpetualDirection, StakeType, SwapProvider, TransactionChange, TransactionFee, TransactionInputType,
-    TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate,
-    TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, WalletConnectionSessionAppMetadata,
+    AccountDataType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualDirection, StakeType, SwapProvider, TransactionChange, TransactionFee,
+    TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest,
+    TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -77,10 +77,22 @@ pub struct GemTransactionStateRequest {
     pub block_number: i64,
 }
 
+pub type GemHyperliquidOrder = HyperliquidOrder;
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemStakeData {
     pub data: Option<String>,
     pub to: Option<String>,
+}
+
+#[uniffi::remote(Record)]
+pub struct GemHyperliquidOrder {
+    pub approve_agent_required: bool,
+    pub approve_referral_required: bool,
+    pub approve_builder_required: bool,
+    pub builder_fee_bps: u32,
+    pub agent_address: String,
+    pub agent_private_key: String,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -328,12 +340,7 @@ pub enum GemTransactionLoadMetadata {
         message_bytes: String,
     },
     Hyperliquid {
-        approve_agent_required: bool,
-        approve_referral_required: bool,
-        approve_builder_required: bool,
-        builder_fee_bps: u32,
-        agent_address: String,
-        agent_private_key: String,
+        order: Option<GemHyperliquidOrder>,
     },
 }
 
@@ -431,21 +438,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 votes,
             },
             TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
-            TransactionLoadMetadata::Hyperliquid {
-                approve_agent_required,
-                approve_referral_required,
-                approve_builder_required,
-                builder_fee_bps,
-                agent_address,
-                agent_private_key,
-            } => GemTransactionLoadMetadata::Hyperliquid {
-                approve_agent_required,
-                approve_referral_required,
-                approve_builder_required,
-                builder_fee_bps,
-                agent_address,
-                agent_private_key,
-            },
+            TransactionLoadMetadata::Hyperliquid { order } => GemTransactionLoadMetadata::Hyperliquid { order },
         }
     }
 }
@@ -588,21 +581,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 votes,
             },
             GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
-            GemTransactionLoadMetadata::Hyperliquid {
-                approve_agent_required,
-                approve_referral_required,
-                approve_builder_required,
-                builder_fee_bps,
-                agent_address,
-                agent_private_key,
-            } => TransactionLoadMetadata::Hyperliquid {
-                approve_agent_required,
-                approve_referral_required,
-                approve_builder_required,
-                builder_fee_bps,
-                agent_address,
-                agent_private_key,
-            },
+            GemTransactionLoadMetadata::Hyperliquid { order } => TransactionLoadMetadata::Hyperliquid { order },
         }
     }
 }

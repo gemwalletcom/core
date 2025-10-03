@@ -41,4 +41,3 @@ impl HypercoreMetadataResponse {
         &self.1
     }
 }
-

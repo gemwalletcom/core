@@ -6,6 +6,16 @@ use serde_serializers::deserialize_bigint_from_str;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HyperliquidOrder {
+    pub approve_agent_required: bool,
+    pub approve_referral_required: bool,
+    pub approve_builder_required: bool,
+    pub builder_fee_bps: u32,
+    pub agent_address: String,
+    pub agent_private_key: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuiCoin {
     pub coin_type: String,
@@ -88,12 +98,7 @@ pub enum TransactionLoadMetadata {
         message_bytes: String,
     },
     Hyperliquid {
-        approve_agent_required: bool,
-        approve_referral_required: bool,
-        approve_builder_required: bool,
-        builder_fee_bps: u32,
-        agent_address: String,
-        agent_private_key: String,
+        order: Option<HyperliquidOrder>,
     },
 }
 
