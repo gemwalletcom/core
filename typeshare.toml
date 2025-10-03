@@ -8,6 +8,7 @@ prefix = ''
 "Int32" = "Int"
 "Int64" = "Int64"
 "BigInt" = "String"
+"BigUint" = "String"
 "DateTime" = "Date"
 "Value" = "TransactionMetadata" # Fix later to be adjustable
 
@@ -21,6 +22,7 @@ prefix = ''
 "Data" = "ByteArray"
 "Value" = "String?"
 "BigInt" = "String"
+"BigUint" = "String"
 
 [typescript.type_mappings]
 "DateTime" = "Date"
