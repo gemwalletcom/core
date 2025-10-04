@@ -86,13 +86,28 @@ impl JsonRpcHandler {
             request.elapsed().as_millis(),
         );
 
-        info_with_fields!(
-            "Proxy response",
-            host = request.host,
-            remote_host = url.url.host_str().unwrap_or_default(),
-            status = response_status,
-            latency = DurationMs(request.elapsed()),
-        );
+        match &response {
+            JsonRpcResult::Success(_) => {
+                info_with_fields!(
+                    "Proxy response",
+                    host = request.host,
+                    remote_host = url.url.host_str().unwrap_or_default(),
+                    status = response_status,
+                    latency = DurationMs(request.elapsed()),
+                );
+            }
+            JsonRpcResult::Error(error_response) => {
+                info_with_fields!(
+                    "Proxy response",
+                    host = request.host,
+                    remote_host = url.url.host_str().unwrap_or_default(),
+                    status = response_status,
+                    latency = DurationMs(request.elapsed()),
+                    error_code = error_response.error.code,
+                    error_message = error_response.error.message.as_str(),
+                );
+            }
+        }
 
         let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), request.elapsed());
         Self::build_json_response(&response, upstream_headers, response_status)
