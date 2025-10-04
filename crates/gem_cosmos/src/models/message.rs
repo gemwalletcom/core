@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum Message {
-    #[serde(rename = "/cosmos.bank.v1beta1.MsgSend")]
+    #[serde(rename = "/cosmos.bank.v1beta1.MsgSend", alias = "/types.MsgSend")]
     MsgSend(MsgSend),
     #[serde(rename = "/cosmos.staking.v1beta1.MsgUndelegate")]
     MsgUndelegate(MsgUndelegate),
