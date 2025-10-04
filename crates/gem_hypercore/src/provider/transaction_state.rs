@@ -1,6 +1,9 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactionState;
-use primitives::{TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionUpdate};
+use primitives::{
+    PerpetualDirection, PerpetualProvider, TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionStateRequest,
+    TransactionUpdate,
+};
 use std::error::Error;
 
 use gem_client::Client;
@@ -31,14 +34,24 @@ impl<C: Client> HyperCoreClient<C> {
             Some(fill) => {
                 let pnl = fill.closed_pnl;
                 let price = fill.px;
+                let direction = match fill.dir.as_str() {
+                    "Open Short" | "Close Short" => PerpetualDirection::Short,
+                    "Open Long" | "Close Long" => PerpetualDirection::Long,
+                    _ => PerpetualDirection::Long,
+                };
 
                 let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
                 update.changes = vec![
+                    TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata {
+                        pnl,
+                        price,
+                        direction,
+                        provider: Some(PerpetualProvider::Hypercore),
+                    })),
                     TransactionChange::HashChange {
                         old: request.id.clone(),
                         new: fill.hash.clone(),
                     },
-                    TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata { pnl, price })),
                 ];
                 Ok(update)
             }

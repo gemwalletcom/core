@@ -6,6 +6,7 @@ mod model;
 mod nft;
 mod notifications;
 mod pricer;
+mod prices_dex;
 mod scan;
 mod search;
 mod support;
@@ -41,6 +42,7 @@ pub async fn main() {
     let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service {
         DaemonService::Alerter => alerter::jobs(settings.clone()).await,
         DaemonService::Pricer => pricer::jobs(settings.clone()).await,
+        DaemonService::PricesDex => prices_dex::jobs(settings.clone()).await,
         DaemonService::Fiat => fiat::jobs(settings.clone()).await,
         DaemonService::FiatConsumer => fiat::jobs_consumer(settings.clone()).await,
         DaemonService::Assets => assets::jobs(settings.clone()).await,

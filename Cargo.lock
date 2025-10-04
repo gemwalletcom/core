@@ -1827,6 +1827,7 @@ dependencies = [
  "localizer",
  "nft",
  "pricer",
+ "pricer_dex",
  "primitives",
  "reqwest",
  "search_index",
@@ -5027,9 +5028,12 @@ name = "pricer_dex"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "base64 0.22.1",
  "chrono",
  "primitives",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serde_serializers",
  "tokio",
 ]
 

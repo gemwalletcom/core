@@ -91,7 +91,7 @@ pub struct PerpetualMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct PerpetualConfirmData {
     pub direction: PerpetualDirection,
-    pub asset: Asset,
+    pub base_asset: Asset,
     pub asset_index: i32,
     pub price: String,
     pub fiat_value: f64,
@@ -107,6 +107,7 @@ pub enum AccountDataType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(tag = "type", content = "content")]
 pub enum PerpetualType {
     Open(PerpetualConfirmData),
     Close(PerpetualConfirmData),

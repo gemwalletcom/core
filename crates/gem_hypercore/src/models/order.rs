@@ -28,4 +28,5 @@ pub struct PerpetualFill {
     pub fee: f64,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub px: f64,
+    pub dir: String,
 }
