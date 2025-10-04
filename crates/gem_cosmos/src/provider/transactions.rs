@@ -23,7 +23,7 @@ impl<C: Client> ChainTransactions for CosmosClient<C> {
             .txs
             .clone()
             .into_iter()
-            .filter(|x| x.len() < 1024) // parse only transfer / stake transactions, ideally filter by type
+            .filter(|x| x.len() < 1024)
             .flat_map(map_transaction_decode)
             .collect::<Vec<_>>();
 

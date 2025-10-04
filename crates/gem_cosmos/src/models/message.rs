@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::constants;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum Message {
@@ -67,6 +69,12 @@ pub struct MsgBeginRedelegate {
 pub struct MsgWithdrawDelegatorReward {
     pub delegator_address: String,
     pub validator_address: String,
+}
+
+impl Message {
+    pub fn supported_types() -> &'static [&'static str] {
+        constants::SUPPORTED_MESSAGES
+    }
 }
 
 impl MsgSend {

@@ -165,4 +165,3 @@ impl From<ChartCandleStick> for GemChartCandleStick {
         }
     }
 }
-

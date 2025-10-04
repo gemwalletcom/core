@@ -25,7 +25,9 @@ pub fn map_transaction_broadcast(response: &BroadcastResponse) -> Result<String,
 
 pub fn map_transaction_decode(body: String) -> Option<String> {
     let bytes = general_purpose::STANDARD.decode(body.clone()).ok()?;
-    Some(get_hash(bytes))
+    let decoded_str = String::from_utf8_lossy(&bytes);
+    let has_supported_type = crate::constants::SUPPORTED_MESSAGES.iter().any(|msg_type| decoded_str.contains(msg_type));
+    if has_supported_type { Some(get_hash(bytes)) } else { None }
 }
 
 pub fn get_hash(bytes: Vec<u8>) -> String {
@@ -273,5 +275,22 @@ mod tests {
                 DateTime::parse_from_rfc3339("2025-06-21T20:51:28Z").unwrap().into(),
             )
         );
+    }
+
+    #[test]
+    fn test_decode_supported_transaction() {
+        let payload = "CtQBCo8BChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEm8KLWNvc21vczF6ODM1Y2p4Zno3MzU5NXd1bnF0bjNmbHg2dGdscnN5MDV5NjczdxItY29zbW9zMXo4MzVjanhmejczNTk1d3VucXRuM2ZseDZ0Z2xyc3kwNXk2NzN3Gg8KBXVhdG9tEgYxMDAwMDASQGFlY2IyY2UwZDU1YTg0NTVhNzc2YTMzOWU2ODY1MDE2NmE2YWE0NTVjMDVlZmRkZjQ5ZTAxMWI0MjAzYTI1YTASZwpRCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohAjhf6Rbk8v7+0NCc4zugr/adpy2yOQikY1pzi6L/SzH2EgQKAggBGOogEhIKDAoFdWF0b20SAzYxOBChxQcaQOl+CCMVx/uR1/yU0RvPKkUADK3LFwo+zsElulf0M34xP00FnS6/51y4FEgn/ewRJokkxy1mPwPvqmK2FBsFVdY=";
+        let result = map_transaction_decode(payload.to_string());
+
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), "F09F0730AB6C8C60FBD9252F3844184FF8D463ABE4978937AB7166149F5611FD");
+    }
+
+    #[test]
+    fn test_decode_unsupported_transaction() {
+        let payload = "CooBCocBCiYvc2VpcHJvdG9jb2wuc2VpY2hhaW4ub3JhY2xlLk1zZ0FnZ3JlZ2F0ZUV4Y2hhbmdlUmF0ZVZvdGVdCjQuMjk2ODI3NTE5ODU5MzYzNDIxdWF0b20sMTIwNjgyLjg1MDMyNTUwOTUyMzkwOTIwMnVidGMsNDQ4NS45NDM1MTE1ODEyOTMxMDg2NDZ1ZXRoLDAuMTcxNzU3NzgyMjY4Nzc3Mzg0dW9zbW8sMC4zMDA2MDc3OTA2MDkyMzExNjF1c2VpLDAuOTk5MjM1MTc2MDUxMDgxMDI4dXVzZGMsMS4wMDA0NzA5MTg5NzYyMDM0Njd1dXNkdBIqc2VpMTRxcmN3bXpwZHN6cTBnZWhmcTYzcmFybTdweHF3eG03eGFyY3hqGjFzZWl2YWxvcGVyMTh0cGRldDIya3B2c3d4YXlla3duNTVyeTByNWFjeDRrYWF1dXBrYg==";
+        let result = map_transaction_decode(payload.to_string());
+
+        assert!(result.is_none());
     }
 }

@@ -7,7 +7,7 @@ pub const MESSAGE_SEND_BETA: &str = "/cosmos.bank.v1beta1.MsgSend";
 pub const MESSAGE_REWARD_BETA: &str = "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward";
 pub const MESSAGE_SEND: &str = "/types.MsgSend"; // thorchain
 
-pub const MESSAGES: &[&str] = &[
+pub const SUPPORTED_MESSAGES: &[&str] = &[
     MESSAGE_SEND,
     MESSAGE_SEND_BETA,
     MESSAGE_DELEGATE,

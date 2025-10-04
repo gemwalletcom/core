@@ -3,8 +3,8 @@ use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType,
-    StakeType, SwapProvider, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
+    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
+    SwapProvider, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
     TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
     WalletConnectionSessionAppMetadata,
 };
