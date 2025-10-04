@@ -164,10 +164,10 @@ impl JsonRpcHandler {
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
 
-        let parsed_result: JsonRpcResult = serde_json::from_slice(&body_bytes)?;
+        let result: JsonRpcResult = serde_json::from_slice(&body_bytes)?;
 
         if status == StatusCode::OK.as_u16() {
-            if let (JsonRpcResult::Success(success), Some(ttl)) = (&parsed_result, cache.should_cache_call(&request.chain, call)) {
+            if let (JsonRpcResult::Success(success), Some(ttl)) = (&result, cache.should_cache_call(&request.chain, call)) {
                 let result_bytes = serde_json::to_string(&success.result).unwrap_or_default().into_bytes();
                 let size_bytes = result_bytes.len();
                 let cached = CachedResponse::new(result_bytes, StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), ttl);
@@ -185,19 +185,33 @@ impl JsonRpcHandler {
                 );
             }
         } else {
-            info_with_fields!(
-                "HTTP error response",
-                host = request.host.as_str(),
-                method = call.method.as_str(),
-                status = status,
-                latency = DurationMs(request.elapsed()),
-                body = std::str::from_utf8(&body_bytes).unwrap_or("<invalid utf8>"),
-            );
+            match &result {
+                JsonRpcResult::Error(error_response) => {
+                    info_with_fields!(
+                        "JSON RPC error response",
+                        host = request.host.as_str(),
+                        method = call.method.as_str(),
+                        remote_host = url.url.host_str().unwrap_or(""),
+                        status = status,
+                        latency = DurationMs(request.elapsed()),
+                        error_code = error_response.error.code,
+                        error_message = error_response.error.message.as_str()
+                    );
+                }
+                JsonRpcResult::Success(_) => {
+                    info_with_fields!(
+                        "JSON RPC success response",
+                        host = request.host.as_str(),
+                        method = call.method.as_str(),
+                        remote_host = url.url.host_str().unwrap_or(""),
+                        status = status,
+                        latency = DurationMs(request.elapsed())
+                    );
+                }
+            }
         }
 
-        let response_result = parsed_result;
-
-        Ok((response_result, status))
+        Ok((result, status))
     }
 
     async fn fetch_batch_responses(
