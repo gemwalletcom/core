@@ -80,7 +80,10 @@ impl ReqwestClient {
             .map_err(|e| ClientError::Network(format!("Failed to read response body: {e}")))?;
 
         if status.is_success() {
-            serde_json::from_slice(&body_bytes).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
+            serde_json::from_slice(&body_bytes).map_err(|e| {
+                let body_text = String::from_utf8_lossy(&body_bytes);
+                ClientError::Serialization(format!("Failed to deserialize response: {}. Response body: {}", e, body_text))
+            })
         } else {
             let body_text = String::from_utf8_lossy(&body_bytes).to_string();
             Err(ClientError::Http {
