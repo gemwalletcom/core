@@ -5,11 +5,10 @@ use std::str::FromStr;
 use dynode::config::NodeConfig;
 use dynode::metrics::Metrics;
 use dynode::monitoring::NodeService;
-use dynode::proxy::ProxyResponse;
-use dynode::proxy::proxy_request::ProxyRequest;
+use dynode::proxy::{ProxyRequestBuilder, ProxyResponse};
 use gem_tracing::{error_with_fields, info_with_fields};
 use reqwest::Method;
-use reqwest::header::{HOST, HeaderMap, HeaderName, HeaderValue, USER_AGENT};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use rocket::config::Config;
 use rocket::data::{Data, ToByteUnit};
 use rocket::http::{Method as RocketMethod, Status};
@@ -18,7 +17,6 @@ use rocket::response::{Responder, Response, content::RawText};
 use rocket::route::{Handler, Outcome, Route};
 use rocket::tokio::io::AsyncReadExt;
 use rocket::{Request, State};
-use url::Url;
 
 const BODY_READ_LIMIT_MB: u64 = 32;
 
@@ -71,43 +69,34 @@ async fn health_endpoint() -> Status {
 }
 
 async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, Status> {
+    let body = read_request_body(data).await?;
+    let headers = build_header_map(request)?;
+    let uri = request.uri().to_string();
+
+    let proxy_request = ProxyRequestBuilder::build(method, headers, body, uri, node_service)?;
+
+    node_service.handle_request(proxy_request).await.map_err(|err| {
+        error_with_fields!("Proxy request failed", err.as_ref(),);
+        Status::InternalServerError
+    })
+}
+
+async fn read_request_body(data: Data<'_>) -> Result<Vec<u8>, Status> {
     let limit = BODY_READ_LIMIT_MB.mebibytes();
     let mut stream = data.open(limit);
-    let mut body_vec = Vec::new();
-    stream.read_to_end(&mut body_vec).await.map_err(|_| Status::InternalServerError)?;
+    let mut body = Vec::new();
+    stream.read_to_end(&mut body).await.map_err(|_| Status::InternalServerError)?;
+    Ok(body)
+}
 
+fn build_header_map(request: &Request<'_>) -> Result<HeaderMap, Status> {
     let mut headers = HeaderMap::new();
     for header in request.headers().iter() {
         let name = HeaderName::from_bytes(header.name().as_str().as_bytes()).map_err(|_| Status::BadRequest)?;
         let value = HeaderValue::from_str(header.value()).map_err(|_| Status::BadRequest)?;
-
         headers.append(name, value);
     }
-
-    let host_header = headers.get(HOST).and_then(|h| h.to_str().ok()).ok_or(Status::BadRequest)?.to_string();
-    let user_agent = headers.get(USER_AGENT).and_then(|h| h.to_str().ok()).unwrap_or_default().to_string();
-    let host = normalize_host(&host_header);
-    let path = request.uri().path().to_string();
-    let path_with_query = request.uri().to_string();
-    let chain = node_service.get_chain_for_host(&host).ok_or(Status::BadRequest)?;
-
-    let proxy_request = ProxyRequest::new(method, headers, body_vec, path, path_with_query, host, user_agent, chain);
-
-    match node_service.handle_request(proxy_request).await {
-        Ok(proxy_response) => Ok(proxy_response),
-        Err(err) => {
-            error_with_fields!("Proxy request failed", err.as_ref(),);
-            Err(Status::InternalServerError)
-        }
-    }
-}
-
-fn normalize_host(raw_host: &str) -> String {
-    let candidate = format!("http://{}", raw_host);
-    Url::parse(&candidate)
-        .ok()
-        .and_then(|url| url.host_str().map(str::to_string))
-        .unwrap_or_else(|| raw_host.to_string())
+    Ok(headers)
 }
 
 fn build_response(proxy: ProxyResponse) -> Response<'static> {
