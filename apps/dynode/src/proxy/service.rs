@@ -61,6 +61,7 @@ impl ProxyRequestService {
             RequestType::JsonRpc(_) => {
                 info_with_fields!(
                     "Incoming request",
+                    chain = request.chain.as_ref(),
                     host = request.host.as_str(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
@@ -71,6 +72,7 @@ impl ProxyRequestService {
             RequestType::Regular { .. } => {
                 info_with_fields!(
                     "Incoming request",
+                    chain = request.chain.as_ref(),
                     host = request.host.as_str(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
@@ -122,6 +124,7 @@ impl ProxyRequestService {
 
         info_with_fields!(
             "Proxy response",
+            chain = request.chain.as_ref(),
             host = request.host,
             remote_host = url.url.host_str().unwrap_or_default(),
             status = status,

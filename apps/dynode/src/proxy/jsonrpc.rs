@@ -90,6 +90,7 @@ impl JsonRpcHandler {
             JsonRpcResult::Success(_) => {
                 info_with_fields!(
                     "Proxy response",
+                    chain = request.chain.as_ref(),
                     host = request.host,
                     remote_host = url.url.host_str().unwrap_or_default(),
                     status = response_status,
@@ -99,6 +100,7 @@ impl JsonRpcHandler {
             JsonRpcResult::Error(error_response) => {
                 info_with_fields!(
                     "Proxy response",
+                    chain = request.chain.as_ref(),
                     host = request.host,
                     remote_host = url.url.host_str().unwrap_or_default(),
                     status = response_status,
@@ -140,6 +142,7 @@ impl JsonRpcHandler {
 
         info_with_fields!(
             "Proxy response",
+            chain = request.chain.as_ref(),
             host = request.host,
             remote_host = url.url.host_str().unwrap_or_default(),
             status = response_status,
