@@ -192,6 +192,7 @@ impl JsonRpcHandler {
                 JsonRpcResult::Error(error_response) => {
                     info_with_fields!(
                         "JSON RPC error response",
+                        chain = request.chain.as_ref(),
                         host = request.host.as_str(),
                         method = call.method.as_str(),
                         remote_host = url.url.host_str().unwrap_or(""),
@@ -204,6 +205,7 @@ impl JsonRpcHandler {
                 JsonRpcResult::Success(_) => {
                     info_with_fields!(
                         "JSON RPC success response",
+                        chain = request.chain.as_ref(),
                         host = request.host.as_str(),
                         method = call.method.as_str(),
                         remote_host = url.url.host_str().unwrap_or(""),
