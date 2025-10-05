@@ -148,6 +148,8 @@ chains:
     url: https://blockbook.ltc.zelcore.io
   doge:
     url: https://blockbook.doge.zelcore.io
+  zcash:
+    url: https://blockbook.zec.zelcore.io
   world:
     url: https://worldchain-mainnet.gateway.tenderly.co
   plasma:

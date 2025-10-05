@@ -25,6 +25,7 @@ pub enum Chain {
     Ton,
     Tron,
     Doge,
+    Zcash,
     Optimism,
     Aptos,
     Base,
@@ -118,6 +119,7 @@ impl Chain {
             Self::Bitcoin | Self::BitcoinCash => "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
             Self::Litecoin => "12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2",
             Self::Doge => "1a91e3dace36e2be3bf030a65679fe821aa1d6ef92e7c9902eb318182c355691",
+            Self::Zcash => "00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce08",
             Self::Solana => "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
             Self::Ton => "F6OpKZKqvqeFp6CQmFomXNMfMj2EnaUSOXN+Mh+wVWk=",
             Self::Sui => "35834a8a", // https://docs.sui.io/sui-api-ref#sui_getchainidentifier
@@ -144,7 +146,7 @@ impl Chain {
     }
 
     pub fn is_utxo(&self) -> bool {
-        matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge | Self::Cardano)
+        matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge | Self::Zcash | Self::Cardano)
     }
 
     pub fn as_slip44(&self) -> i64 {
@@ -177,6 +179,7 @@ impl Chain {
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
             Self::Litecoin => 2,
+            Self::Zcash => 133,
             Self::SmartChain => 9006,
             Self::Solana => 501,
             Self::Thorchain => 931,
@@ -223,7 +226,7 @@ impl Chain {
             | Self::Hyperliquid
             | Self::Plasma
             | Self::Monad => ChainType::Ethereum,
-            Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin => ChainType::Bitcoin,
+            Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin | Self::Zcash => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
             Self::Ton => ChainType::Ton,
@@ -279,6 +282,7 @@ impl Chain {
             | Self::Cosmos
             | Self::Osmosis
             | Self::Doge
+            | Self::Zcash
             | Self::Xrp
             | Self::Celestia
             | Self::Injective
@@ -322,6 +326,7 @@ impl Chain {
             | Self::Bitcoin
             | Self::BitcoinCash
             | Self::Litecoin
+            | Self::Zcash
             | Self::SmartChain
             | Self::Cosmos
             | Self::Fantom
@@ -413,6 +418,7 @@ impl Chain {
             Self::Ethereum => 12_000,
             Self::Cardano => 20_000,
             Self::Doge => 60_000,
+            Self::Zcash => 75_000,
             Self::Litecoin => 120_000,
             Self::Bitcoin | Self::BitcoinCash => 600_000,
         }
@@ -447,6 +453,7 @@ impl Chain {
             | Self::Gnosis
             | Self::Thorchain
             | Self::Doge
+            | Self::Zcash
             | Self::AvalancheC
             | Self::Sei
             | Self::Litecoin

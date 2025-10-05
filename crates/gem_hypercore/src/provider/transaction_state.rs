@@ -28,35 +28,35 @@ impl<C: Client> HyperCoreClient<C> {
     async fn order_state(&self, request: &TransactionStateRequest, oid: u64) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let start_time = (request.created_at - 5) * 1000;
         let fills = self.get_user_fills_by_time(&request.sender_address, start_time).await?;
-        let matching_fill = fills.iter().find(|fill| fill.oid == oid);
+        let matching_fills: Vec<_> = fills.iter().filter(|fill| fill.oid == oid).collect();
 
-        match matching_fill {
-            Some(fill) => {
-                let pnl = fill.closed_pnl;
-                let price = fill.px;
-                let direction = match fill.dir.as_str() {
-                    "Open Short" | "Close Short" => PerpetualDirection::Short,
-                    "Open Long" | "Close Long" => PerpetualDirection::Long,
-                    _ => PerpetualDirection::Long,
-                };
-
-                let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
-                update.changes = vec![
-                    TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata {
-                        pnl,
-                        price,
-                        direction,
-                        provider: Some(PerpetualProvider::Hypercore),
-                    })),
-                    TransactionChange::HashChange {
-                        old: request.id.clone(),
-                        new: fill.hash.clone(),
-                    },
-                ];
-                Ok(update)
-            }
-            None => Ok(TransactionUpdate::new_state(TransactionState::Pending)),
+        if matching_fills.is_empty() {
+            return Ok(TransactionUpdate::new_state(TransactionState::Pending));
         }
+
+        let pnl = matching_fills.iter().map(|fill| fill.closed_pnl).sum();
+        let last_fill = matching_fills.last().unwrap();
+        let price = last_fill.px;
+        let direction = match last_fill.dir.as_str() {
+            "Open Short" | "Close Short" => PerpetualDirection::Short,
+            "Open Long" | "Close Long" => PerpetualDirection::Long,
+            _ => PerpetualDirection::Long,
+        };
+
+        let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
+        update.changes = vec![
+            TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata {
+                pnl,
+                price,
+                direction,
+                provider: Some(PerpetualProvider::Hypercore),
+            })),
+            TransactionChange::HashChange {
+                old: request.id.clone(),
+                new: last_fill.hash.clone(),
+            },
+        ];
+        Ok(update)
     }
 
     async fn action_state(&self, request: &TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {

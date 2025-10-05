@@ -61,6 +61,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Osmosis
         | Chain::Celestia
         | Chain::Doge
+        | Chain::Zcash
         | Chain::Aptos
         | Chain::Injective
         | Chain::Noble
