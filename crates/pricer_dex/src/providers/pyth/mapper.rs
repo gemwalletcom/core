@@ -29,6 +29,7 @@ pub fn price_feed_id_for_chain(chain: Chain) -> &'static str {
         Chain::Ton => "8963217838ab4cf5cadc172203c1f0b763fbaa45f346d8ee50ba994bbcac3026",
         Chain::Tron => "67aed5a24fdad045475e7195c98a98aea119c763f272d4523f5bac93a4f33c2b",
         Chain::Doge => "dcef50dd0a4cd2dcc17e45df1676dcb336a11a61c69df7a0299b0150c672d25c",
+        Chain::Zcash => "c729411df28869e6f04e1efff2f3cf654e93edd4a9c2bccd5e36c17fbec51653",
         Chain::Aptos => "03ae4db29ed4ae33d323568895aa00337e658e348b37509f5372ae51f0af00d5",
         Chain::AvalancheC => "93da3352f9f1d105fdfe4971cfa80e9dd777bfc5d0f683ebb6e1294b92137bb7",
         Chain::Sui => "23d7315113f5b1d3ba7a83604c44b94d79f4fd69af77f804fc7f920a6dc65744",
