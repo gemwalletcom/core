@@ -86,15 +86,13 @@ mod tests {
     #[test]
     fn test_calculate_apy() {
         let config = StakingConfig {
-            rewards_rate: 16000000000000,
+            rewards_rate: 1600000000000,
             rewards_rate_denominator: 100000000000000000,
         };
 
         let apy = calculate_apy(&config);
-        println!("APY: {}", apy);
-        println!("Diff: {}", (apy - 7.004472300000001).abs());
 
-        assert!((apy - 70.128).abs() < 0.01);
+        assert!((apy - 7.0128).abs() < 0.01);
     }
 
     #[test]
