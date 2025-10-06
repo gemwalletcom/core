@@ -157,9 +157,9 @@ mod integration_tests {
         let delegations = client.get_staking_delegations(TEST_ADDRESS.to_string()).await?;
         for delegation in &delegations {
             assert_eq!(delegation.asset_id.chain, Chain::Tron);
-            assert!(delegation.balance >= BigInt::from(0));
-            assert!(delegation.rewards >= BigInt::from(0));
-            assert!(delegation.shares >= BigInt::from(0));
+            assert!(delegation.balance >= BigUint::from(0u32));
+            assert!(delegation.rewards >= BigUint::from(0u32));
+            assert!(delegation.shares >= BigUint::from(0u32));
         }
         Ok(())
     }
