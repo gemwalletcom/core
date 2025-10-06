@@ -119,7 +119,7 @@ chains:
   sui:
     url: https://suins-rpc.mainnet.sui.io
   celestia:
-    url: https://celestia-rest.publicnode.com
+    url: https://celestia-api.polkachu.com
   injective:
     url: https://injective-rest.publicnode.com
   sei:
@@ -148,6 +148,8 @@ chains:
     url: https://blockbook.ltc.zelcore.io
   doge:
     url: https://blockbook.doge.zelcore.io
+  zcash:
+    url: https://blockbook.zec.zelcore.io
   world:
     url: https://worldchain-mainnet.gateway.tenderly.co
   plasma:

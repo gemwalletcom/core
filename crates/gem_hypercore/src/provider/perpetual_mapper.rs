@@ -4,9 +4,9 @@ use crate::models::{
     position::{AssetPositions, LeverageType, Position},
 };
 use primitives::{
+    Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualPosition, PerpetualProvider,
     chart::ChartCandleStick,
-    perpetual::{PerpetualData, PerpetualPositionsSummary},
-    {AssetId, Chain, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualPosition, PerpetualProvider},
+    perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
 
 pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
@@ -82,11 +82,6 @@ pub fn map_position(position: Position, address: String) -> PerpetualPosition {
 }
 
 pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<PerpetualData> {
-    use primitives::{
-        Asset, AssetType,
-        perpetual::{Perpetual, PerpetualMetadata},
-    };
-
     let universe = metadata.universe();
     let asset_metadata = metadata.asset_metadata();
 

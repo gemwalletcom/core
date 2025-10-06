@@ -205,6 +205,7 @@ pub struct Chains {
     pub bitcoincash: Chain,
     pub litecoin: Chain,
     pub doge: Chain,
+    pub zcash: Chain,
     pub fantom: Chain,
     pub gnosis: Chain,
     pub injective: Chain,

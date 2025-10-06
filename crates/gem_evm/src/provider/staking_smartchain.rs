@@ -6,7 +6,7 @@ use gem_bsc::stake_hub::{
     encode_undelegations_call, encode_validators_call,
 };
 use gem_client::Client;
-use num_bigint::{BigInt, BigUint};
+use num_bigint::BigUint;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::{error::Error, str::FromStr};
 
@@ -65,13 +65,8 @@ impl<C: Client + Clone> EthereumClient<C> {
         };
 
         for delegation in delegations {
-            if let Ok(balance_uint) = BigUint::from_str(&delegation.amount) {
-                let balance = BigInt::from(balance_uint);
-                let shares = if let Ok(shares_uint) = BigUint::from_str(&delegation.shares) {
-                    BigInt::from(shares_uint)
-                } else {
-                    BigInt::from(0u32)
-                };
+            if let Ok(balance) = BigUint::from_str(&delegation.amount) {
+                let shares = BigUint::from_str(&delegation.shares).unwrap_or_else(|_| BigUint::from(0u32));
 
                 result.push(DelegationBase {
                     asset_id: asset_id.clone(),
@@ -79,7 +74,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                     validator_id: delegation.validator_address,
                     balance,
                     shares,
-                    rewards: BigInt::from(0u32),
+                    rewards: BigUint::from(0u32),
                     completion_date: None,
                     state: DelegationState::Active,
                 });
@@ -87,13 +82,8 @@ impl<C: Client + Clone> EthereumClient<C> {
         }
 
         for undelegation in undelegations {
-            if let Ok(balance_uint) = BigUint::from_str(&undelegation.amount) {
-                let balance = BigInt::from(balance_uint);
-                let shares = if let Ok(shares_uint) = BigUint::from_str(&undelegation.shares) {
-                    BigInt::from(shares_uint)
-                } else {
-                    BigInt::from(0u32)
-                };
+            if let Ok(balance) = BigUint::from_str(&undelegation.amount) {
+                let shares = BigUint::from_str(&undelegation.shares).unwrap_or_else(|_| BigUint::from(0u32));
 
                 let completion_date = if let Ok(unlock_time) = undelegation.unlock_time.parse::<i64>() {
                     Some(DateTime::from_timestamp(unlock_time, 0).unwrap_or_default())
@@ -117,7 +107,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                     validator_id: undelegation.validator_address,
                     balance,
                     shares,
-                    rewards: BigInt::from(0u32),
+                    rewards: BigUint::from(0u32),
                     completion_date,
                     state,
                 });

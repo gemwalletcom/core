@@ -133,6 +133,14 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_token_approval_title", token = token, address = address)
     }
 
+    pub fn notification_freeze_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_freeze_title", value = value)
+    }
+
+    pub fn notification_unfreeze_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_unfreeze_title", value = value)
+    }
+
     pub fn notification_stake_title(&self, value: &str, validator: &str) -> String {
         if validator.len() < 12 {
             fl!(self.loader.as_ref(), "notification_stake_validator_title", value = value, validator = validator)
@@ -182,14 +190,6 @@ impl LanguageLocalizer {
 
     pub fn notification_claim_rewards_title(&self, value: &str) -> String {
         fl!(self.loader.as_ref(), "notification_claim_rewards_title", value = value)
-    }
-
-    pub fn notification_freeze_title(&self, value: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_freeze_title", value = value)
-    }
-
-    pub fn notification_unfreeze_title(&self, value: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_unfreeze_title", value = value)
     }
 
     pub fn notification_swap_title(&self, from_symbol: &str, to_symbol: &str) -> String {

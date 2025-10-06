@@ -78,6 +78,7 @@ impl Asset {
             Chain::Ton => chain.new_asset("TON".to_string(), "TON".to_string(), 9, AssetType::NATIVE),
             Chain::Tron => chain.new_asset("TRON".to_string(), "TRX".to_string(), 6, AssetType::NATIVE),
             Chain::Doge => chain.new_asset("Dogecoin".to_string(), "DOGE".to_string(), 8, AssetType::NATIVE),
+            Chain::Zcash => chain.new_asset("Zcash".to_string(), "ZEC".to_string(), 8, AssetType::NATIVE),
             Chain::Optimism => chain.new_asset("Optimism ETH".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Aptos => chain.new_asset("Aptos".to_string(), "APT".to_string(), 8, AssetType::NATIVE),
             Chain::Base => chain.new_asset("Base ETH".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),

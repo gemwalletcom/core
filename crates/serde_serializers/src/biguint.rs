@@ -25,6 +25,17 @@ where
     s.parse::<BigUint>().map_err(de::Error::custom)
 }
 
+pub fn deserialize_option_biguint_from_str<'de, D>(deserializer: D) -> Result<Option<BigUint>, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+    match s {
+        Some(str_val) => str_val.parse::<BigUint>().map(Some).map_err(de::Error::custom),
+        None => Ok(None),
+    }
+}
+
 pub fn deserialize_biguint_from_hex_str<'de, D>(deserializer: D) -> Result<BigUint, D::Error>
 where
     D: de::Deserializer<'de>,

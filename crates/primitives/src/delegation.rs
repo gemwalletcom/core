@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use num_bigint::BigInt;
+use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, Display, EnumString};
 use typeshare::typeshare;
@@ -21,9 +21,9 @@ pub struct Delegation {
 pub struct DelegationBase {
     pub asset_id: AssetId,
     pub state: DelegationState,
-    pub balance: BigInt,
-    pub shares: BigInt,
-    pub rewards: BigInt,
+    pub balance: BigUint,
+    pub shares: BigUint,
+    pub rewards: BigUint,
     pub completion_date: Option<DateTime<Utc>>,
     pub delegation_id: String,
     pub validator_id: String,

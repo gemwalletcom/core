@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 
 use reqwest::StatusCode;
@@ -9,6 +10,7 @@ use crate::config::{CacheConfig, Domain, NodeMonitoringConfig, RequestConfig, Re
 use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::monitoring::NodeMonitor;
+use crate::monitoring::domain_resolution::DomainResolution;
 use crate::proxy::constants::JSON_CONTENT_TYPE;
 use crate::proxy::proxy_builder::ProxyBuilder;
 use crate::proxy::proxy_request::ProxyRequest;
@@ -82,8 +84,13 @@ impl NodeService {
         map.insert(domain, node_domain);
     }
 
-    pub fn get_chain_for_host(&self, host: &str) -> Option<primitives::Chain> {
-        self.domains.get(host).map(|domain| domain.chain)
+    pub fn resolve_chain(&self, host: &str, path: &str) -> Option<DomainResolution> {
+        if let Some(domain) = self.domains.get(host) {
+            return Some(DomainResolution::Host(domain.chain));
+        }
+
+        let chain_from_path = path.trim_start_matches('/').split('/').next()?;
+        primitives::Chain::from_str(chain_from_path).ok().map(DomainResolution::Path)
     }
 
     pub async fn start_monitoring(&self) {
@@ -98,14 +105,19 @@ impl NodeService {
     }
 
     pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
-        let Some(domain) = self.domains.get(&request.host) else {
-            return self.create_error_response(&request, None, &format!("Domain {} not found", request.host));
+        let domain = self
+            .domains
+            .get(&request.host)
+            .or_else(|| self.domains.values().find(|d| d.chain == request.chain));
+
+        let Some(domain) = domain else {
+            return self.create_error_response(&request, None, &format!("Domain for chain {} not found", request.chain));
         };
 
         if !self.retry_config.enabled || domain.urls.len() <= 1 {
             let proxy_service = self.get_proxy_request().await;
-            let Some(node_domain) = NodeService::get_node_domain(&self.nodes, request.host.clone()).await else {
-                return self.create_error_response(&request, None, &format!("Node domain not found for host: {}", request.host));
+            let Some(node_domain) = NodeService::get_node_domain(&self.nodes, domain.domain.clone()).await else {
+                return self.create_error_response(&request, None, &format!("Node domain not found for domain: {}", domain.domain));
             };
             match proxy_service.handle_request(request.clone(), &node_domain).await {
                 Ok(response) if self.should_retry_response(&request, &response) => {

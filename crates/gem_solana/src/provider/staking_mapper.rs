@@ -1,6 +1,6 @@
 use crate::models::{EpochInfo, TokenAccountInfo, VoteAccount};
 use chrono::Utc;
-use num_bigint::BigInt;
+use num_bigint::BigUint;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
 pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, network_apy: f64) -> Vec<DelegationValidator> {
@@ -28,7 +28,7 @@ pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: Epo
         .into_iter()
         .filter_map(|account| {
             if let Some(stake_info) = &account.account.data.parsed.info.stake {
-                let balance = BigInt::from(account.account.lamports);
+                let balance = BigUint::from(account.account.lamports);
                 let validator_id = stake_info.delegation.voter.clone();
 
                 let activation_epoch = stake_info.delegation.activation_epoch;
@@ -62,13 +62,13 @@ pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: Epo
                     _ => None,
                 };
 
-                let rewards = BigInt::from(0);
+                let rewards = BigUint::from(0u32);
 
                 return Some(DelegationBase {
                     asset_id: asset_id.clone(),
                     state,
                     balance,
-                    shares: BigInt::from(0),
+                    shares: BigUint::from(0u32),
                     rewards,
                     completion_date,
                     delegation_id: account.pubkey.clone(),

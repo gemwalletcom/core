@@ -1,6 +1,6 @@
 use crate::models::staking::{Delegations, Rewards, StakingPoolResponse, UnbondingDelegations, Validator};
 use crate::models::{InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse};
-use num_bigint::BigInt;
+use num_bigint::BigUint;
 use std::str::FromStr;
 
 #[cfg(test)]
@@ -16,9 +16,9 @@ use std::collections::HashMap;
 
 const BOND_STATUS_BONDED: &str = "BOND_STATUS_BONDED";
 
-/// Convert string amounts to BigInt, handling parsing errors gracefully
-fn parse_to_bigint(value: &str) -> BigInt {
-    BigInt::from_str(value).unwrap_or_default()
+/// Convert string amounts to BigUint, handling parsing errors gracefully
+fn parse_to_biguint(value: &str) -> BigUint {
+    BigUint::from_str(value).unwrap_or_default()
 }
 
 pub fn calculate_network_apy_cosmos(inflation: InflationResponse, staking_pool: StakingPoolResponse) -> Option<f64> {
@@ -94,7 +94,7 @@ pub fn map_staking_delegations(
 
     let validators_map: HashMap<String, &Validator> = validators.iter().map(|validator| (validator.operator_address.clone(), validator)).collect();
 
-    let rewards_map: HashMap<String, BigInt> = rewards
+    let rewards_map: HashMap<String, BigUint> = rewards
         .rewards
         .iter()
         .map(|reward| {
@@ -104,9 +104,9 @@ pub fn map_staking_delegations(
                 .filter(|r| r.denom == denom)
                 .filter_map(|r| {
                     let integer_part = r.amount.split('.').next().unwrap_or("0");
-                    BigInt::from_str(integer_part).ok()
+                    BigUint::from_str(integer_part).ok()
                 })
-                .fold(BigInt::from(0), |acc, amount| acc + amount);
+                .fold(BigUint::from(0u32), |acc, amount| acc + amount);
             (reward.validator_address.clone(), total_reward)
         })
         .collect();
@@ -132,9 +132,9 @@ pub fn map_staking_delegations(
         Some(DelegationBase {
             asset_id: asset_id.clone(),
             state,
-            balance: parse_to_bigint(&delegation.balance.amount),
-            shares: BigInt::from(0),
-            rewards: parse_to_bigint(&rewards),
+            balance: parse_to_biguint(&delegation.balance.amount),
+            shares: BigUint::from(0u32),
+            rewards: parse_to_biguint(&rewards),
             completion_date: None,
             delegation_id: "".to_string(),
             validator_id: delegation.delegation.validator_address,
@@ -144,17 +144,17 @@ pub fn map_staking_delegations(
 
     for unbonding in unbonding_delegations.unbonding_responses {
         for entry in unbonding.entries {
-            let balance = parse_to_bigint(&entry.balance.to_string());
+            let balance = parse_to_biguint(&entry.balance.to_string());
             let rewards = rewards_map
                 .get(&unbonding.validator_address)
-                .map(|r| parse_to_bigint(&r.to_string()))
+                .map(|r| parse_to_biguint(&r.to_string()))
                 .unwrap_or_default();
 
             delegations.push(DelegationBase {
                 asset_id: asset_id.clone(),
                 state: DelegationState::Pending,
                 balance,
-                shares: BigInt::from(0),
+                shares: BigUint::from(0u32),
                 rewards,
                 completion_date: entry.completion_time.parse::<chrono::DateTime<chrono::Utc>>().ok(),
                 delegation_id: entry.creation_height,

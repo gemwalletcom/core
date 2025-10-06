@@ -33,11 +33,8 @@ impl<C: Client + Clone> ChainTransactions for TronClient<C> {
             return Ok(vec![]);
         }
 
-        let mut receipts = Vec::new();
-        for tx in &transactions {
-            let receipt = self.get_transaction_reciept(tx.tx_id.clone()).await?;
-            receipts.push(receipt);
-        }
+        let futures = transactions.iter().map(|tx| self.get_transaction_reciept(tx.tx_id.clone()));
+        let receipts = futures::future::try_join_all(futures).await?;
 
         Ok(map_transactions_by_address(transactions, receipts))
     }

@@ -16,7 +16,7 @@ impl<C: Client + Clone> ChainTransactions for XRPClient<C> {
     }
 
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let ledger = self.get_block_transactions(block as i64).await?;
+        let ledger = self.get_block_transactions(block).await?;
         Ok(map_transactions_by_block(ledger))
     }
 

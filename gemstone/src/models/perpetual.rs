@@ -1,11 +1,10 @@
 use primitives::{
-    PerpetualPosition, PerpetualType,
+    PerpetualPosition,
     chart::ChartCandleStick,
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
 
 use super::asset::GemAsset;
-use super::transaction::GemPerpetualType;
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemPerpetualPositionsSummary {
@@ -163,50 +162,6 @@ impl From<ChartCandleStick> for GemChartCandleStick {
             low: candlestick.low,
             close: candlestick.close,
             volume: candlestick.volume,
-        }
-    }
-}
-
-impl From<GemPerpetualType> for PerpetualType {
-    fn from(value: GemPerpetualType) -> Self {
-        match value {
-            GemPerpetualType::Open { data } => PerpetualType::Open(data.into()),
-            GemPerpetualType::Close { data } => PerpetualType::Close(data.into()),
-        }
-    }
-}
-
-impl From<PerpetualType> for GemPerpetualType {
-    fn from(value: PerpetualType) -> Self {
-        match value {
-            PerpetualType::Open(data) => GemPerpetualType::Open { data: data.into() },
-            PerpetualType::Close(data) => GemPerpetualType::Close { data: data.into() },
-        }
-    }
-}
-
-impl From<primitives::PerpetualConfirmData> for super::transaction::GemPerpetualConfirmData {
-    fn from(value: primitives::PerpetualConfirmData) -> Self {
-        super::transaction::GemPerpetualConfirmData {
-            direction: value.direction,
-            asset: value.asset,
-            asset_index: value.asset_index,
-            price: value.price.to_string(),
-            fiat_value: value.fiat_value,
-            size: value.size.to_string(),
-        }
-    }
-}
-
-impl From<super::transaction::GemPerpetualConfirmData> for primitives::PerpetualConfirmData {
-    fn from(value: super::transaction::GemPerpetualConfirmData) -> Self {
-        primitives::PerpetualConfirmData {
-            direction: value.direction,
-            asset: value.asset,
-            asset_index: value.asset_index,
-            price: value.price.parse().unwrap_or_default(),
-            fiat_value: value.fiat_value,
-            size: value.size.parse().unwrap_or_default(),
         }
     }
 }

@@ -19,6 +19,7 @@ storage = { path = "../../crates/storage" }
 api_connector = { path = "../../crates/api_connector" }
 coingecko = { path = "../../crates/coingecko" }
 pricer = { path = "../../crates/pricer" }
+pricer_dex = { path = "../../crates/pricer_dex" }
 primitives = { path = "../../crates/primitives" }
 fiat = { path = "../../crates/fiat" }
 nft = { path = "../../crates/nft" }

@@ -5,6 +5,7 @@ use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 pub enum DaemonService {
     Alerter,
     Pricer,
+    PricesDex,
     Fiat,
     FiatConsumer,
     Assets,

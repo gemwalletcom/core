@@ -23,7 +23,7 @@ impl<C: Client + Clone> ChainBalances for SuiClient<C> {
     }
 
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        Ok(map_balance_staking(self.get_stake_delegations(address).await?))
+        Ok(Some(map_balance_staking(self.get_stake_delegations(address).await?)))
     }
 
     async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
@@ -80,6 +80,16 @@ mod chain_integration_tests {
         );
 
         println!("Staking balance: {} SUI", staking_balance.balance.staked);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_sui_get_balance_staking_empty_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_sui_test_client();
+        let balance = client.get_balance_staking(TEST_ADDRESS_EMPTY.to_string()).await?;
+
+        assert!(balance.unwrap().balance.staked == num_bigint::BigUint::from(0u32));
+
         Ok(())
     }
 }

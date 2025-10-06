@@ -50,6 +50,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::BitcoinCash => vec![blockchair::new_bitcoin_cash()],
         Chain::Litecoin => vec![blockchair::new_litecoin()],
         Chain::Doge => vec![blockchair::new_doge()],
+        Chain::Zcash => vec![blockchair::new_zcash()],
 
         Chain::Ethereum => vec![EtherScan::boxed(EVMChain::Ethereum), blockchair::new_ethereum(), Blocksec::new_ethereum()],
         Chain::SmartChain => vec![EtherScan::boxed(EVMChain::SmartChain), blockchair::new_bnb(), Blocksec::new_bsc()],

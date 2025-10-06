@@ -11,7 +11,7 @@ use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainTraits
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 #[cfg(feature = "rpc")]
-use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
+use gem_jsonrpc::{client::JsonRpcClient as GenericJsonRpcClient, types::JsonRpcError};
 use primitives::Chain;
 use std::error::Error;
 
@@ -59,32 +59,32 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.chain
     }
 
-    pub async fn rpc_call<T>(&self, method: &str, params: serde_json::Value) -> Result<T, Box<dyn Error + Send + Sync>>
+    pub async fn rpc_call<T>(&self, method: &str, params: serde_json::Value) -> Result<T, JsonRpcError>
     where
         T: serde::de::DeserializeOwned,
     {
-        Ok(self.client.call(method, params).await?)
+        self.client.call(method, params).await
     }
 
-    pub async fn get_balance(&self, address: &str) -> Result<SolanaBalance, Box<dyn Error + Send + Sync>> {
+    pub async fn get_balance(&self, address: &str) -> Result<SolanaBalance, JsonRpcError> {
         self.rpc_call("getBalance", serde_json::json!([address])).await
     }
 
-    pub async fn get_token_accounts_by_owner(&self, owner: &str, program_id: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_token_accounts_by_owner(&self, owner: &str, program_id: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, JsonRpcError> {
         let params = token_accounts_by_owner_params(owner, program_id);
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
-    pub async fn get_epoch_info(&self) -> Result<EpochInfo, Box<dyn Error + Send + Sync>> {
+    pub async fn get_epoch_info(&self) -> Result<EpochInfo, JsonRpcError> {
         self.rpc_call("getEpochInfo", serde_json::json!([])).await
     }
 
-    pub async fn get_token_accounts_by_mint(&self, owner: &str, mint: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_token_accounts_by_mint(&self, owner: &str, mint: &str) -> Result<ValueResult<Vec<TokenAccountInfo>>, JsonRpcError> {
         let params = token_accounts_by_mint_params(owner, mint);
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
-    pub async fn get_transaction(&self, signature: &str) -> Result<SolanaTransaction, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transaction(&self, signature: &str) -> Result<SolanaTransaction, JsonRpcError> {
         let params = serde_json::json!([
             signature,
             {
@@ -94,19 +94,19 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getTransaction", params).await
     }
 
-    pub async fn get_genesis_hash(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
+    pub async fn get_genesis_hash(&self) -> Result<String, JsonRpcError> {
         self.rpc_call("getGenesisHash", serde_json::json!([])).await
     }
 
-    pub async fn get_slot(&self) -> Result<u64, Box<dyn Error + Send + Sync>> {
+    pub async fn get_slot(&self) -> Result<u64, JsonRpcError> {
         self.rpc_call("getSlot", serde_json::json!([])).await
     }
 
-    pub async fn get_latest_blockhash(&self) -> Result<SolanaBlockhashResult, Box<dyn Error + Send + Sync>> {
+    pub async fn get_latest_blockhash(&self) -> Result<SolanaBlockhashResult, JsonRpcError> {
         self.rpc_call("getLatestBlockhash", serde_json::json!([])).await
     }
 
-    pub async fn get_staking_balance(&self, address: &str) -> Result<Vec<TokenAccountInfo>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_staking_balance(&self, address: &str) -> Result<Vec<TokenAccountInfo>, JsonRpcError> {
         let stake_program_id = "Stake11111111111111111111111111111111111111";
         let params = serde_json::json!([
             stake_program_id,
@@ -127,7 +127,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         Ok(stake_accounts)
     }
 
-    pub async fn get_vote_accounts(&self) -> Result<VoteAccounts, Box<dyn Error + Send + Sync>> {
+    pub async fn get_vote_accounts(&self) -> Result<VoteAccounts, JsonRpcError> {
         let params = serde_json::json!([{
             "keepUnstakedDelinquents": true,
             "commitment": "finalized"
@@ -135,11 +135,11 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getVoteAccounts", params).await
     }
 
-    pub async fn get_inflation_rate(&self) -> Result<InflationRate, Box<dyn Error + Send + Sync>> {
+    pub async fn get_inflation_rate(&self) -> Result<InflationRate, JsonRpcError> {
         self.rpc_call("getInflationRate", serde_json::json!([])).await
     }
 
-    pub async fn send_transaction(&self, data: String, skip_preflight: Option<bool>) -> Result<String, Box<dyn Error + Send + Sync>> {
+    pub async fn send_transaction(&self, data: String, skip_preflight: Option<bool>) -> Result<String, JsonRpcError> {
         let mut params = serde_json::json!([
             data,
             {
@@ -160,11 +160,11 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("sendTransaction", params).await
     }
 
-    pub async fn get_recent_prioritization_fees(&self) -> Result<Vec<SolanaPrioritizationFee>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_recent_prioritization_fees(&self) -> Result<Vec<SolanaPrioritizationFee>, JsonRpcError> {
         self.rpc_call("getRecentPrioritizationFees", serde_json::json!([])).await
     }
 
-    pub async fn get_token_mint_info(&self, token_mint: &str) -> Result<ResultTokenInfo, Box<dyn Error + Send + Sync>> {
+    pub async fn get_token_mint_info(&self, token_mint: &str) -> Result<ResultTokenInfo, JsonRpcError> {
         self.rpc_call(
             "getAccountInfo",
             serde_json::json!([
@@ -209,7 +209,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         Ok(meta)
     }
 
-    pub async fn get_block_transactions(&self, slot: u64) -> Result<BlockTransactions, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_transactions(&self, slot: u64) -> Result<BlockTransactions, JsonRpcError> {
         let params = serde_json::json!([
             slot,
             {
@@ -222,7 +222,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getBlock", params).await
     }
 
-    pub async fn get_signatures_for_address(&self, address: &str, limit: usize) -> Result<Vec<Signature>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_signatures_for_address(&self, address: &str, limit: usize) -> Result<Vec<Signature>, JsonRpcError> {
         let params = serde_json::json!([
             address,
             {
@@ -233,7 +233,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getSignaturesForAddress", params).await
     }
 
-    pub async fn get_transactions(&self, signatures: Vec<String>) -> Result<Vec<crate::models::BlockTransaction>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transactions(&self, signatures: Vec<String>) -> Result<Vec<crate::models::BlockTransaction>, JsonRpcError> {
         let mut transactions = Vec::new();
 
         for signature in signatures {

@@ -1,5 +1,5 @@
 use crate::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator};
-use num_bigint::BigInt;
+use num_bigint::BigUint;
 
 impl Delegation {
     pub fn mock() -> Self {
@@ -24,9 +24,9 @@ impl DelegationBase {
         DelegationBase {
             asset_id: AssetId::from_chain(Chain::Sui),
             state: DelegationState::Active,
-            balance: BigInt::from(1000000000u64),
-            shares: BigInt::from(1000000000u64),
-            rewards: BigInt::from(0u64),
+            balance: BigUint::from(1000000000u64),
+            shares: BigUint::from(1000000000u64),
+            rewards: BigUint::from(0u64),
             completion_date: None,
             delegation_id: "0x1234567890abcdef1234567890abcdef12345678".to_string(),
             validator_id: "0x1234567890abcdef1234567890abcdef12345678".to_string(),
@@ -37,9 +37,9 @@ impl DelegationBase {
         DelegationBase {
             asset_id: AssetId::from_chain(Chain::Sui),
             state: DelegationState::Active,
-            balance: BigInt::from(1000000000u64),
-            shares: BigInt::from(1000000000u64),
-            rewards: BigInt::from(0u64),
+            balance: BigUint::from(1000000000u64),
+            shares: BigUint::from(1000000000u64),
+            rewards: BigUint::from(0u64),
             completion_date: None,
             delegation_id,
             validator_id: "0x1234567890abcdef1234567890abcdef12345678".to_string(),

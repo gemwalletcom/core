@@ -6,3 +6,4 @@ edition = { workspace = true }
 [dependencies]
 primitives = { path = "../primitives" }
 async-trait = { workspace = true }
+futures = { workspace = true }

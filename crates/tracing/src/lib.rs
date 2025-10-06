@@ -48,7 +48,7 @@ pub fn error_with_fields_impl<E: std::error::Error + ?Sized>(message: &str, erro
         if field_pairs.is_empty() {
             tracing::error!("{}: {}", message, error);
         } else {
-            tracing::error!("{}: {} {}", message, error, field_pairs.join(" "));
+            tracing::error!("{}: {} {}", message, field_pairs.join(" "), error);
         }
     });
 

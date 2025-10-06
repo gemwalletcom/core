@@ -239,13 +239,15 @@ fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
         StakeType::Stake(validator) => gem_bsc::stake_hub::encode_delegate_call(&validator.id, false).map_err(|e| e.to_string().into()),
         StakeType::Unstake(delegation) => {
             // Calculate shares based on amount and delegation balance/shares ratio
-            let amount_shares = amount * &delegation.base.shares / &delegation.base.balance;
+            let amount_uint = amount.magnitude().clone();
+            let amount_shares = amount_uint * &delegation.base.shares / &delegation.base.balance;
 
             gem_bsc::stake_hub::encode_undelegate_call(&delegation.validator.id, &amount_shares.to_string()).map_err(|e| e.to_string().into())
         }
         StakeType::Redelegate(redelegate_data) => {
             // Calculate shares based on amount and delegation balance/shares ratio
-            let amount_shares = amount * &redelegate_data.delegation.base.shares / &redelegate_data.delegation.base.balance;
+            let amount_uint = amount.magnitude().clone();
+            let amount_shares = amount_uint * &redelegate_data.delegation.base.shares / &redelegate_data.delegation.base.balance;
 
             gem_bsc::stake_hub::encode_redelegate_call(
                 &redelegate_data.delegation.validator.id,
@@ -267,6 +269,7 @@ fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
 mod tests {
     use super::*;
     use crate::everstake::{EVERSTAKE_POOL_ADDRESS, IAccounting};
+    use num_bigint::BigUint;
     use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
 
     fn everstake_validator() -> DelegationValidator {
@@ -433,9 +436,9 @@ mod tests {
             base: DelegationBase {
                 asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
                 state: DelegationState::Active,
-                balance: BigInt::from(2_000_000_000_000_000_000u64), // 2 BNB
-                shares: BigInt::from(1_900_000_000_000_000_000u64),  // Slightly less shares
-                rewards: BigInt::from(0),
+                balance: BigUint::from(2_000_000_000_000_000_000u64), // 2 BNB
+                shares: BigUint::from(1_900_000_000_000_000_000u64),  // Slightly less shares
+                rewards: BigUint::from(0u32),
                 completion_date: None,
                 delegation_id: "test".to_string(),
                 validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
@@ -470,9 +473,9 @@ mod tests {
             base: DelegationBase {
                 asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
                 state: DelegationState::Active,
-                balance: BigInt::from(2_000_000_000_000_000_000u64), // 2 BNB
-                shares: BigInt::from(1_900_000_000_000_000_000u64),  // Slightly less shares
-                rewards: BigInt::from(0),
+                balance: BigUint::from(2_000_000_000_000_000_000u64), // 2 BNB
+                shares: BigUint::from(1_900_000_000_000_000_000u64),  // Slightly less shares
+                rewards: BigUint::from(0u32),
                 completion_date: None,
                 delegation_id: "test".to_string(),
                 validator_id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
@@ -518,9 +521,9 @@ mod tests {
             base: DelegationBase {
                 asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
                 state: DelegationState::AwaitingWithdrawal,
-                balance: BigInt::from(1_000_000_000_000_000_000u64),
-                shares: BigInt::from(1_000_000_000_000_000_000u64),
-                rewards: BigInt::from(0),
+                balance: BigUint::from(1_000_000_000_000_000_000u64),
+                shares: BigUint::from(1_000_000_000_000_000_000u64),
+                rewards: BigUint::from(0u32),
                 completion_date: None,
                 delegation_id: "test".to_string(),
                 validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
@@ -569,9 +572,9 @@ mod tests {
             base: DelegationBase {
                 asset_id: primitives::AssetId::from_chain(Chain::Ethereum),
                 state: DelegationState::Active,
-                balance: BigInt::from(2_000_000_000_000_000_000u64),
-                shares: BigInt::from(0),
-                rewards: BigInt::from(0),
+                balance: BigUint::from(2_000_000_000_000_000_000u64),
+                shares: BigUint::from(0u32),
+                rewards: BigUint::from(0u32),
                 completion_date: None,
                 delegation_id: "eth-delegation".to_string(),
                 validator_id: EVERSTAKE_POOL_ADDRESS.to_string(),
@@ -598,9 +601,9 @@ mod tests {
             base: DelegationBase {
                 asset_id: primitives::AssetId::from_chain(Chain::Ethereum),
                 state: DelegationState::AwaitingWithdrawal,
-                balance: BigInt::from(750_000_000_000_000_000u64),
-                shares: BigInt::from(0),
-                rewards: BigInt::from(0),
+                balance: BigUint::from(750_000_000_000_000_000u64),
+                shares: BigUint::from(0u32),
+                rewards: BigUint::from(0u32),
                 completion_date: None,
                 delegation_id: "eth-withdraw".to_string(),
                 validator_id: EVERSTAKE_POOL_ADDRESS.to_string(),

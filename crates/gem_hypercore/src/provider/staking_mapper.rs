@@ -1,5 +1,5 @@
 use crate::models::balance::{DelegationBalance, Validator};
-use num_bigint::BigInt;
+use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::str::FromStr;
@@ -27,10 +27,10 @@ pub fn map_staking_delegations(delegations: Vec<DelegationBalance>, chain: Chain
             state: DelegationState::Active,
             balance: BigNumberFormatter::value_from_amount(&x.amount.to_string(), 18)
                 .ok()
-                .and_then(|s| BigInt::from_str(&s).ok())
+                .and_then(|s| BigUint::from_str(&s).ok())
                 .unwrap_or_default(),
-            shares: BigInt::from(0),
-            rewards: BigInt::from(0),
+            shares: BigUint::from(0u32),
+            rewards: BigUint::from(0u32),
             completion_date: None,
             delegation_id: x.validator_address(),
             validator_id: x.validator_address(),
@@ -93,8 +93,8 @@ mod tests {
         assert_eq!(delegation1.delegation_id, "0x5aC99df645F3414876C816Caa18b2d234024b487");
         assert_eq!(delegation1.balance.to_string(), "2719364933730000000000");
         assert!(matches!(delegation1.state, DelegationState::Active));
-        assert_eq!(delegation1.shares, num_bigint::BigInt::from(0));
-        assert_eq!(delegation1.rewards, num_bigint::BigInt::from(0));
+        assert_eq!(delegation1.shares, num_bigint::BigUint::from(0u32));
+        assert_eq!(delegation1.rewards, num_bigint::BigUint::from(0u32));
         assert!(delegation1.completion_date.is_none());
 
         let delegation2 = &result[1];
