@@ -1,4 +1,5 @@
 use primitives::StakeChain;
+use std::str::FromStr;
 
 #[derive(uniffi::Enum, Clone)]
 pub enum DocsUrl {
@@ -26,7 +27,7 @@ pub enum DocsUrl {
     WalletConnect,
     HowStoreSecretPhrase,
     NoQuotes,
-    Staking(StakeChain),
+    Staking(String),
     PerpetualsFundingRate,
     PerpetualsLiquidationPrice,
     PerpetualsOpenInterest,
@@ -60,7 +61,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::WalletConnect => "/guides/walletconnect/",
         DocsUrl::HowStoreSecretPhrase => "/faq/secure-recovery-phrase/#how-to-secure-my-secret-phrase/",
         DocsUrl::NoQuotes => "/troubleshoot/quote-error/",
-        DocsUrl::Staking(chain) => "defi/stake-" + get_stake_chain_path(chain),
+        DocsUrl::Staking(chain) => &format!("/defi/stake-{}/", get_stake_chain_path(StakeChain::from_str(&chain).unwrap())),
         DocsUrl::PerpetualsFundingRate => "/defi/perps/perps-terms/#what-is-perpetual-funding/",
         DocsUrl::PerpetualsLiquidationPrice => "/defi/perps/perps-terms/#what-is-a-perpetual-liquidation-price/",
         DocsUrl::PerpetualsOpenInterest => "/defi/perps/perps-terms/#what-is-a-perpetual-open-interest/",
