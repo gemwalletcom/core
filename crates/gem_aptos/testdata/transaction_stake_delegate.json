@@ -1,0 +1,142 @@
+{
+    "version": "3517584511",
+    "hash": "0x130cc74c1a768780ca062a97bc833a01dec85b2d315484869559b7cdee4d0e75",
+    "state_change_hash": "0xee4f23a789b44cb889197953b3b0ecf4c1484a15c4b3cb3109c3b7374b2a24a5",
+    "event_root_hash": "0x50b74a32cba7c1945532fbc056a14711125e89114547441f451a9dc3acd86bbd",
+    "state_checkpoint_hash": null,
+    "gas_used": "1424",
+    "success": true,
+    "vm_status": "Executed successfully",
+    "accumulator_root_hash": "0x3287ad224cc1364cd141333f4fdce3bb58c1dfe9a6e6ad2525f2090aeb345486",
+    "changes": [],
+    "sender": "0xc95615aa095c100b18eb6eaa0f0a0f30b9cd96685118a7cbc1a2328a91ca2eda",
+    "sequence_number": "8",
+    "max_gas_amount": "2848",
+    "gas_unit_price": "100",
+    "expiration_timestamp_secs": "1759780189",
+    "payload": {
+        "function": "0x1::delegation_pool::add_stake",
+        "type_arguments": [],
+        "arguments": [
+            "0xe5452230b8d5f4a664e33b8ad95354e50da64caaf003f11c0158391e96a4db2c",
+            "1100000000"
+        ],
+        "type": "entry_function_payload"
+    },
+    "signature": {
+        "public_key": "0x91905d75d9b4be7e859353fa8321ce1967fb522d2bd8a4780cfe3676c92bd696",
+        "signature": "0xd95c207655511c79d26bf51bfcfbeaf09214a1099c2b14e7300268fff6246e2da558159ee3c58a9f375db327dab08487bffaadab376f5c966c13c512ac45e20d",
+        "type": "ed25519_signature"
+    },
+    "replay_protection_nonce": null,
+    "events": [
+        {
+            "guid": {
+                "creation_number": "20",
+                "account_address": "0xe5452230b8d5f4a664e33b8ad95354e50da64caaf003f11c0158391e96a4db2c"
+            },
+            "sequence_number": "1778",
+            "type": "0x1::delegation_pool::DistributeCommissionEvent",
+            "data": {
+                "commission_active": "0",
+                "commission_pending_inactive": "0",
+                "operator": "0xa5f8b2eec1acee4f5a635b8046e30e1cc388a086717e0730ec903b7b4aca140d",
+                "pool_address": "0xe5452230b8d5f4a664e33b8ad95354e50da64caaf003f11c0158391e96a4db2c"
+            }
+        },
+        {
+            "guid": {
+                "creation_number": "0",
+                "account_address": "0x0"
+            },
+            "sequence_number": "0",
+            "type": "0x1::delegation_pool::DistributeCommission",
+            "data": {
+                "beneficiary": "0xa5f8b2eec1acee4f5a635b8046e30e1cc388a086717e0730ec903b7b4aca140d",
+                "commission_active": "0",
+                "commission_pending_inactive": "0",
+                "operator": "0xa5f8b2eec1acee4f5a635b8046e30e1cc388a086717e0730ec903b7b4aca140d",
+                "pool_address": "0xe5452230b8d5f4a664e33b8ad95354e50da64caaf003f11c0158391e96a4db2c"
+            }
+        },
+        {
+            "guid": {
+                "creation_number": "0",
+                "account_address": "0x0"
+            },
+            "sequence_number": "0",
+            "type": "0x1::fungible_asset::Withdraw",
+            "data": {
+                "amount": "1100000000",
+                "store": "0xa282afbc76d731ce5e78995a26d35e08a823aa918e6f96f95dd4a1d60291032a"
+            }
+        },
+        {
+            "guid": {
+                "creation_number": "0",
+                "account_address": "0x0"
+            },
+            "sequence_number": "0",
+            "type": "0x1::fungible_asset::Deposit",
+            "data": {
+                "amount": "1100000000",
+                "store": "0xb21de110fb278fdb319ee21291b34909cb8ab2617bdf98cfa64f1fb3adc1426d"
+            }
+        },
+        {
+            "guid": {
+                "creation_number": "0",
+                "account_address": "0x0"
+            },
+            "sequence_number": "0",
+            "type": "0x1::fungible_asset::Withdraw",
+            "data": {
+                "amount": "1100000000",
+                "store": "0xb21de110fb278fdb319ee21291b34909cb8ab2617bdf98cfa64f1fb3adc1426d"
+            }
+        },
+        {
+            "guid": {
+                "creation_number": "0",
+                "account_address": "0x0"
+            },
+            "sequence_number": "0",
+            "type": "0x1::stake::AddStake",
+            "data": {
+                "amount_added": "1100000000",
+                "pool_address": "0xe5452230b8d5f4a664e33b8ad95354e50da64caaf003f11c0158391e96a4db2c"
+            }
+        },
+        {
+            "guid": {
+                "creation_number": "0",
+                "account_address": "0x0"
+            },
+            "sequence_number": "0",
+            "type": "0x1::delegation_pool::AddStake",
+            "data": {
+                "add_stake_fee": "15606",
+                "amount_added": "1100000000",
+                "delegator_address": "0xc95615aa095c100b18eb6eaa0f0a0f30b9cd96685118a7cbc1a2328a91ca2eda",
+                "pool_address": "0xe5452230b8d5f4a664e33b8ad95354e50da64caaf003f11c0158391e96a4db2c"
+            }
+        },
+        {
+            "guid": {
+                "creation_number": "0",
+                "account_address": "0x0"
+            },
+            "sequence_number": "0",
+            "type": "0x1::transaction_fee::FeeStatement",
+            "data": {
+                "execution_gas_units": "24",
+                "io_gas_units": "30",
+                "storage_fee_octas": "137000",
+                "storage_fee_refund_octas": "0",
+                "total_charge_gas_units": "1424"
+            }
+        }
+    ],
+    "timestamp": "1759780099581734",
+    "type": "user_transaction"
+}
