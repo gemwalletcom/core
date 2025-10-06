@@ -48,6 +48,10 @@ pub enum TransactionLoadMetadata {
     Bitcoin {
         utxos: Vec<UTXO>,
     },
+    Zcash {
+        utxos: Vec<UTXO>,
+        branch_id: String,
+    },
     Cardano {
         utxos: Vec<UTXO>,
     },
@@ -149,6 +153,7 @@ impl TransactionLoadMetadata {
     pub fn get_utxos(&self) -> Result<Vec<crate::UTXO>, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Bitcoin { utxos } => Ok(utxos.clone()),
+            TransactionLoadMetadata::Zcash { utxos, .. } => Ok(utxos.clone()),
             TransactionLoadMetadata::Cardano { utxos } => Ok(utxos.clone()),
             _ => Err("UTXOs not available for this metadata type".into()),
         }

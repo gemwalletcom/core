@@ -30,6 +30,12 @@ pub struct BitcoinBlockbook {
 pub struct BitcoinBackend {
     pub blocks: Int,
     pub chain: Option<String>,
+    pub consensus: Option<Consensus>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Consensus {
+    pub chaintip: String,
 }
 
 // RPC models
