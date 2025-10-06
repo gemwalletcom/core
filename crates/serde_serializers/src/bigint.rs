@@ -1,5 +1,5 @@
 use num_bigint::BigInt;
-use serde::de;
+use serde::{Deserialize, de};
 
 pub fn serialize_bigint<S>(value: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -14,15 +14,35 @@ where
 {
     let s: String = de::Deserialize::deserialize(deserializer)?;
 
-    // Handle hex strings (0x prefixed)
     if let Some(hex_str) = s.strip_prefix("0x") {
         if hex_str.is_empty() {
             return Ok(BigInt::from(0));
         }
         BigInt::parse_bytes(hex_str.as_bytes(), 16).ok_or_else(|| de::Error::custom(format!("Invalid hex string: {s}")))
     } else {
-        // Handle regular decimal strings
         s.parse::<BigInt>().map_err(de::Error::custom)
+    }
+}
+
+pub fn deserialize_option_bigint_from_str<'de, D>(deserializer: D) -> Result<Option<BigInt>, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    let s: Option<String> = Option::deserialize(deserializer)?;
+    match s {
+        Some(str_val) => {
+            if let Some(hex_str) = str_val.strip_prefix("0x") {
+                if hex_str.is_empty() {
+                    return Ok(Some(BigInt::from(0)));
+                }
+                BigInt::parse_bytes(hex_str.as_bytes(), 16)
+                    .map(Some)
+                    .ok_or_else(|| de::Error::custom(format!("Invalid hex string: {str_val}")))
+            } else {
+                str_val.parse::<BigInt>().map(Some).map_err(de::Error::custom)
+            }
+        }
+        None => Ok(None),
     }
 }
 

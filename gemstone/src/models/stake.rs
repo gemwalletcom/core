@@ -1,4 +1,4 @@
-use crate::models::custom_types::{DateTimeUtc, GemBigInt};
+use crate::models::custom_types::{DateTimeUtc, GemBigUint};
 use primitives::stake_type::{FreezeType, Resource};
 use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, Price};
 
@@ -47,9 +47,9 @@ pub struct GemDelegationValidator {
 pub struct GemDelegationBase {
     pub asset_id: AssetId,
     pub state: GemDelegationState,
-    pub balance: GemBigInt,
-    pub shares: GemBigInt,
-    pub rewards: GemBigInt,
+    pub balance: GemBigUint,
+    pub shares: GemBigUint,
+    pub rewards: GemBigUint,
     pub completion_date: Option<DateTimeUtc>,
     pub delegation_id: String,
     pub validator_id: String,

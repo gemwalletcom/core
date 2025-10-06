@@ -5,8 +5,8 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput, perpetual::PerpetualType,
+    FeePriority, FeeRate, GasPriceType, HyperliquidOrder, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
+    TransactionLoadMetadata, TransactionPreloadInput, perpetual::PerpetualType,
 };
 
 use crate::provider::preload_cache::HyperCoreCache;
@@ -29,7 +29,7 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
                 // Only signature is required
                 Ok(TransactionLoadData {
                     fee: TransactionFee::new_from_fee(BigInt::from(0)),
-                    metadata: TransactionLoadMetadata::None,
+                    metadata: TransactionLoadMetadata::Hyperliquid { order: None },
                 })
             }
             TransactionInputType::Perpetual(_, perpetual_type) => {
@@ -53,14 +53,16 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
 
                 let fee_amount = calculate_fee_amount(fiat_value, fee_rate);
 
-                let metadata = TransactionLoadMetadata::Hyperliquid {
+                let order = Some(HyperliquidOrder {
                     approve_agent_required: agent_required,
                     approve_referral_required: referral_required,
                     approve_builder_required: builder_required,
                     builder_fee_bps: self.config.max_builder_fee_bps,
                     agent_address,
                     agent_private_key,
-                };
+                });
+
+                let metadata = TransactionLoadMetadata::Hyperliquid { order };
 
                 Ok(TransactionLoadData {
                     fee: TransactionFee::new_from_fee(fee_amount),
@@ -73,5 +75,23 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(1)))])
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod tests {
+    use super::*;
+    use crate::provider::testkit::create_hypercore_test_client;
+    use primitives::{Asset, Chain, TransactionLoadInput};
+
+    #[tokio::test]
+    async fn test_get_transaction_load_transfer() {
+        let client = create_hypercore_test_client();
+        let input = TransactionLoadInput::mock_with_input_type(TransactionInputType::Transfer(Asset::from_chain(Chain::HyperCore)));
+
+        let result = client.get_transaction_load(input).await.unwrap();
+
+        assert_eq!(result.fee.fee, BigInt::from(0));
+        assert!(matches!(result.metadata, TransactionLoadMetadata::Hyperliquid { order: None }));
     }
 }

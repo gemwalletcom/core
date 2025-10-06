@@ -3,23 +3,35 @@ use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::{
-    AccountDataType, FeeOption, GasPriceType, PerpetualDirection, StakeType, SwapProvider, TransactionChange, TransactionFee, TransactionInputType,
-    TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate,
-    TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
+    SwapProvider, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
+    TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
+    WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
 use std::str::FromStr;
 
 pub type GemPerpetualDirection = PerpetualDirection;
+pub type GemPerpetualProvider = PerpetualProvider;
+pub type GemPerpetualConfirmData = PerpetualConfirmData;
+pub type GemPerpetualType = PerpetualType;
 pub type GemFeeOption = FeeOption;
 pub type GemTransferDataOutputType = TransferDataOutputType;
 pub type GemTransferDataOutputAction = TransferDataOutputAction;
 pub type GemApprovalData = ApprovalData;
+pub type GemTransactionPerpetualMetadata = TransactionPerpetualMetadata;
+pub type GemTransactionMetadata = TransactionMetadata;
+pub type GemTransactionChange = TransactionChange;
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualDirection {
     Short,
     Long,
+}
+
+#[uniffi::remote(Enum)]
+pub enum PerpetualProvider {
+    Hypercore,
 }
 
 #[uniffi::remote(Enum)]
@@ -39,6 +51,27 @@ pub enum TransferDataOutputAction {
     Send,
 }
 
+#[uniffi::remote(Record)]
+pub struct TransactionPerpetualMetadata {
+    pub pnl: f64,
+    pub price: f64,
+    pub direction: PerpetualDirection,
+    pub provider: Option<PerpetualProvider>,
+}
+
+#[uniffi::remote(Enum)]
+pub enum TransactionMetadata {
+    Perpetual(TransactionPerpetualMetadata),
+}
+
+#[uniffi::remote(Enum)]
+pub enum TransactionChange {
+    HashChange { old: String, new: String },
+    Metadata(TransactionMetadata),
+    BlockNumber(String),
+    NetworkFee(BigInt),
+}
+
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemAccountDataType {
     Activate,
@@ -50,25 +83,6 @@ pub struct GemTransactionUpdate {
     pub changes: Vec<GemTransactionChange>,
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemTransactionChange {
-    HashChange { old: String, new: String },
-    Metadata(GemTransactionMetadata),
-    BlockNumber(String),
-    NetworkFee(String),
-}
-
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemTransactionMetadata {
-    Perpetual(GemTransactionPerpetualMetadata),
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemTransactionPerpetualMetadata {
-    pub pnl: f64,
-    pub price: f64,
-}
-
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionStateRequest {
     pub id: String,
@@ -77,10 +91,22 @@ pub struct GemTransactionStateRequest {
     pub block_number: i64,
 }
 
+pub type GemHyperliquidOrder = HyperliquidOrder;
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemStakeData {
     pub data: Option<String>,
     pub to: Option<String>,
+}
+
+#[uniffi::remote(Record)]
+pub struct GemHyperliquidOrder {
+    pub approve_agent_required: bool,
+    pub approve_referral_required: bool,
+    pub approve_builder_required: bool,
+    pub builder_fee_bps: u32,
+    pub agent_address: String,
+    pub agent_private_key: String,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -168,20 +194,20 @@ pub struct GemSwapProviderData {
     pub protocol_name: String,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemPerpetualConfirmData {
-    pub direction: GemPerpetualDirection,
-    pub asset: GemAsset,
+#[uniffi::remote(Record)]
+pub struct PerpetualConfirmData {
+    pub direction: PerpetualDirection,
+    pub base_asset: Asset,
     pub asset_index: i32,
     pub price: String,
     pub fiat_value: f64,
     pub size: String,
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemPerpetualType {
-    Open { data: GemPerpetualConfirmData },
-    Close { data: GemPerpetualConfirmData },
+#[uniffi::remote(Enum)]
+pub enum PerpetualType {
+    Open(PerpetualConfirmData),
+    Close(PerpetualConfirmData),
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -328,12 +354,7 @@ pub enum GemTransactionLoadMetadata {
         message_bytes: String,
     },
     Hyperliquid {
-        approve_agent_required: bool,
-        approve_referral_required: bool,
-        approve_builder_required: bool,
-        builder_fee_bps: u32,
-        agent_address: String,
-        agent_private_key: String,
+        order: Option<GemHyperliquidOrder>,
     },
 }
 
@@ -431,21 +452,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 votes,
             },
             TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
-            TransactionLoadMetadata::Hyperliquid {
-                approve_agent_required,
-                approve_referral_required,
-                approve_builder_required,
-                builder_fee_bps,
-                agent_address,
-                agent_private_key,
-            } => GemTransactionLoadMetadata::Hyperliquid {
-                approve_agent_required,
-                approve_referral_required,
-                approve_builder_required,
-                builder_fee_bps,
-                agent_address,
-                agent_private_key,
-            },
+            TransactionLoadMetadata::Hyperliquid { order } => GemTransactionLoadMetadata::Hyperliquid { order },
         }
     }
 }
@@ -588,21 +595,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 votes,
             },
             GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
-            GemTransactionLoadMetadata::Hyperliquid {
-                approve_agent_required,
-                approve_referral_required,
-                approve_builder_required,
-                builder_fee_bps,
-                agent_address,
-                agent_private_key,
-            } => TransactionLoadMetadata::Hyperliquid {
-                approve_agent_required,
-                approve_referral_required,
-                approve_builder_required,
-                builder_fee_bps,
-                agent_address,
-                agent_private_key,
-            },
+            GemTransactionLoadMetadata::Hyperliquid { order } => TransactionLoadMetadata::Hyperliquid { order },
         }
     }
 }
@@ -611,34 +604,6 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
 pub struct GemSuiCoin {
     pub coin_type: String,
     pub balance: String,
-}
-
-impl From<TransactionChange> for GemTransactionChange {
-    fn from(value: TransactionChange) -> Self {
-        match value {
-            TransactionChange::HashChange { old, new } => GemTransactionChange::HashChange { old, new },
-            TransactionChange::Metadata(metadata) => GemTransactionChange::Metadata(metadata.into()),
-            TransactionChange::BlockNumber(block_number) => GemTransactionChange::BlockNumber(block_number),
-            TransactionChange::NetworkFee(fee) => GemTransactionChange::NetworkFee(fee.to_string()),
-        }
-    }
-}
-
-impl From<TransactionMetadata> for GemTransactionMetadata {
-    fn from(value: TransactionMetadata) -> Self {
-        match value {
-            TransactionMetadata::Perpetual(perp) => GemTransactionMetadata::Perpetual(perp.into()),
-        }
-    }
-}
-
-impl From<TransactionPerpetualMetadata> for GemTransactionPerpetualMetadata {
-    fn from(value: TransactionPerpetualMetadata) -> Self {
-        GemTransactionPerpetualMetadata {
-            pnl: value.pnl,
-            price: value.price,
-        }
-    }
 }
 
 impl From<GemTransactionStateRequest> for TransactionStateRequest {
@@ -656,7 +621,7 @@ impl From<TransactionUpdate> for GemTransactionUpdate {
     fn from(value: TransactionUpdate) -> Self {
         GemTransactionUpdate {
             state: value.state.to_string(),
-            changes: value.changes.into_iter().map(|change| change.into()).collect(),
+            changes: value.changes,
         }
     }
 }

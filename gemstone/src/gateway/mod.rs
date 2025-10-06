@@ -88,7 +88,7 @@ impl GemGateway {
                 });
                 Ok(Arc::new(HyperCoreClient::new_with_preferences(alien_client, preferences, secure_preferences)))
             }
-            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge => {
+            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge | Chain::Zcash => {
                 Ok(Arc::new(BitcoinClient::new(alien_client, BitcoinChain::from_chain(chain).unwrap())))
             }
             Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),

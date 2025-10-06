@@ -14,6 +14,7 @@ pub enum BitcoinChain {
     BitcoinCash,
     Litecoin,
     Doge,
+    Zcash,
 }
 
 impl BitcoinChain {
@@ -26,6 +27,7 @@ impl BitcoinChain {
             BitcoinChain::BitcoinCash => Chain::BitcoinCash,
             BitcoinChain::Litecoin => Chain::Litecoin,
             BitcoinChain::Doge => Chain::Doge,
+            BitcoinChain::Zcash => Chain::Zcash,
         }
     }
 
@@ -35,6 +37,7 @@ impl BitcoinChain {
             BitcoinChain::BitcoinCash => 5,
             BitcoinChain::Litecoin => 5,
             BitcoinChain::Doge => 1000,
+            BitcoinChain::Zcash => 1,
         }
     }
 
@@ -44,6 +47,7 @@ impl BitcoinChain {
             BitcoinChain::BitcoinCash => BlocksFeePriority { slow: 6, normal: 3, fast: 1 },
             BitcoinChain::Litecoin => BlocksFeePriority { slow: 6, normal: 3, fast: 1 },
             BitcoinChain::Doge => BlocksFeePriority { slow: 8, normal: 4, fast: 2 },
+            BitcoinChain::Zcash => BlocksFeePriority { slow: 6, normal: 3, fast: 1 },
         }
     }
 }

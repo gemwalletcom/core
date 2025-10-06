@@ -8,6 +8,7 @@ static BLOCKCHAIR_FACTORY: LazyLock<MultiChainExplorer> = LazyLock::new(|| {
         .add_chain("bitcoin_cash", Metadata::blockchair("Blockchair", "https://blockchair.com/bitcoin-cash"))
         .add_chain("litecoin", Metadata::blockchair("Blockchair", "https://blockchair.com/litecoin"))
         .add_chain("dogecoin", Metadata::blockchair("Blockchair", "https://blockchair.com/dogecoin"))
+        .add_chain("zcash", Metadata::blockchair("Blockchair", "https://blockchair.com/zcash"))
         .add_chain("ethereum", Metadata::blockchair("Blockchair", "https://blockchair.com/ethereum"))
         .add_chain("base", Metadata::blockchair("Blockchair", "https://blockchair.com/base"))
         .add_chain("polygon", Metadata::blockchair("Blockchair", "https://blockchair.com/polygon"))
@@ -42,6 +43,10 @@ pub fn new_litecoin() -> Box<dyn BlockExplorer> {
 
 pub fn new_doge() -> Box<dyn BlockExplorer> {
     BLOCKCHAIR_FACTORY.for_chain("dogecoin").unwrap()
+}
+
+pub fn new_zcash() -> Box<dyn BlockExplorer> {
+    BLOCKCHAIR_FACTORY.for_chain("zcash").unwrap()
 }
 
 pub fn new_ethereum() -> Box<dyn BlockExplorer> {

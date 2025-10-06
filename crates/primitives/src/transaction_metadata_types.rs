@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, NFTAssetId};
+use crate::{AssetId, NFTAssetId, PerpetualDirection, PerpetualProvider};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable")]
@@ -9,6 +9,8 @@ use crate::{AssetId, NFTAssetId};
 pub struct TransactionPerpetualMetadata {
     pub pnl: f64,
     pub price: f64,
+    pub direction: PerpetualDirection,
+    pub provider: Option<PerpetualProvider>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

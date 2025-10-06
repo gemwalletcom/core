@@ -31,4 +31,5 @@ k256 = { workspace = true }
 reqwest = { workspace = true }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+primitives = { path = "../primitives", features = ["testkit"] }
 settings = { path = "../settings", features = ["testkit"] }

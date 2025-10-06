@@ -63,7 +63,7 @@ impl<C: Client + Clone> SolanaClient<C> {
     where
         T: serde::de::DeserializeOwned,
     {
-        Ok(self.client.call(method, params).await?)
+        self.client.call(method, params).await
     }
 
     pub async fn get_balance(&self, address: &str) -> Result<SolanaBalance, JsonRpcError> {

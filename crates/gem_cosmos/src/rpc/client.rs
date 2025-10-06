@@ -12,7 +12,7 @@ use gem_client::Client;
 use primitives::chain_cosmos::CosmosChain;
 
 pub struct CosmosClient<C: Client> {
-    chain: CosmosChain,
+    pub chain: CosmosChain,
     pub client: C,
 }
 

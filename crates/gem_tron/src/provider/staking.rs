@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainStaking;
 use chrono::{DateTime, Utc};
-use num_bigint::BigInt;
+use num_bigint::BigUint;
 use std::error::Error;
 
 use gem_client::Client;
@@ -75,9 +75,9 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
                     delegations.push(DelegationBase {
                         asset_id: asset_id.clone(),
                         state,
-                        balance: BigInt::from(amount),
-                        shares: BigInt::from(0),
-                        rewards: BigInt::from(0),
+                        balance: BigUint::from(amount),
+                        shares: BigUint::from(0u32),
+                        rewards: BigUint::from(0u32),
                         completion_date: Some(completion_date),
                         delegation_id: completion_date.timestamp().to_string(),
                         validator_id: SYSTEM_VALIDATOR_ID.to_string(),
@@ -102,9 +102,9 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
                     delegations.push(DelegationBase {
                         asset_id: asset_id.clone(),
                         state: DelegationState::Active,
-                        balance: BigInt::from(balance),
-                        shares: BigInt::from(vote.vote_count),
-                        rewards: BigInt::from(proportional_reward),
+                        balance: BigUint::from(balance),
+                        shares: BigUint::from(vote.vote_count),
+                        rewards: BigUint::from(proportional_reward),
                         completion_date: None,
                         delegation_id: format!("vote_{}", vote.vote_address),
                         validator_id: vote.vote_address,

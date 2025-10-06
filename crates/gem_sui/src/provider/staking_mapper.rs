@@ -1,7 +1,7 @@
 use crate::models::RpcSuiSystemState;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
 use chrono::{DateTime, Utc};
-use num_bigint::BigInt;
+use num_bigint::BigUint;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, StakeValidator};
 
 pub fn map_validators(validators: SuiValidators, default_apy: f64) -> Vec<DelegationValidator> {
@@ -37,8 +37,8 @@ pub fn map_delegations(delegations: Vec<SuiStakeDelegation>, system_state: SuiSy
                     asset_id: Chain::Sui.as_asset_id(),
                     state: map_stake_state(&stake.status),
                     balance: stake.principal,
-                    shares: BigInt::from(0),
-                    rewards: stake.estimated_reward.unwrap_or(BigInt::from(0)),
+                    shares: BigUint::from(0u32),
+                    rewards: stake.estimated_reward.unwrap_or(BigUint::from(0u32)),
                     completion_date,
                     delegation_id: stake.staked_sui_id.clone(),
                     validator_id: validator_address.clone(),
