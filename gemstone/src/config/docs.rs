@@ -1,3 +1,5 @@
+use primitives::StakeChain;
+
 #[derive(uniffi::Enum, Clone)]
 pub enum DocsUrl {
     Start,
@@ -24,22 +26,11 @@ pub enum DocsUrl {
     WalletConnect,
     HowStoreSecretPhrase,
     NoQuotes,
-    Staking,
+    Staking(StakeChain),
     PerpetualsFundingRate,
     PerpetualsLiquidationPrice,
     PerpetualsOpenInterest,
     PerpetualsFundingPayments,
-    StakingSolana,
-    StakingSmartChain,
-    StakingCosmos,
-    StakingOsmosis,
-    StakingTron,
-    StakingSui,
-    StakingCelestia,
-    StakingInjective,
-    StakingSei,
-    StakingEthereum,
-    StakingHyperliquid,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -69,24 +60,29 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::WalletConnect => "/guides/walletconnect/",
         DocsUrl::HowStoreSecretPhrase => "/faq/secure-recovery-phrase/#how-to-secure-my-secret-phrase/",
         DocsUrl::NoQuotes => "/troubleshoot/quote-error/",
-        DocsUrl::Staking => "/defi/stake/",
+        DocsUrl::Staking(chain) => "defi/stake-" + get_stake_chain_path(chain),
         DocsUrl::PerpetualsFundingRate => "/defi/perps/perps-terms/#what-is-perpetual-funding/",
         DocsUrl::PerpetualsLiquidationPrice => "/defi/perps/perps-terms/#what-is-a-perpetual-liquidation-price/",
         DocsUrl::PerpetualsOpenInterest => "/defi/perps/perps-terms/#what-is-a-perpetual-open-interest/",
         DocsUrl::PerpetualsFundingPayments => "/defi/perps/perps-terms/#what-is-perpetual-funding-payments/",
-        DocsUrl::StakingSolana => "/defi/stake-sol/",
-        DocsUrl::StakingSmartChain => "/defi/stake-bnb/",
-        DocsUrl::StakingCosmos => "/defi/stake-atom/",
-        DocsUrl::StakingOsmosis => "/defi/stake-osmo/",
-        DocsUrl::StakingTron => "/defi/stake-trx/",
-        DocsUrl::StakingSui => "/defi/stake-sui/",
-        DocsUrl::StakingCelestia => "/defi/stake-tia/",
-        DocsUrl::StakingInjective => "/defi/stake-inj/",
-        DocsUrl::StakingSei => "/defi/stake-sei/",
-        DocsUrl::StakingEthereum => "/defi/stake-eth/",
-        DocsUrl::StakingHyperliquid => "/defi/stake-hype/",
     };
     format!("{DOCS_URL}{path}")
+}
+
+fn get_stake_chain_path(chain: StakeChain) -> &'static str {
+    match chain {
+        StakeChain::Solana => "sol",
+        StakeChain::SmartChain => "bnb",
+        StakeChain::Cosmos => "atom",
+        StakeChain::Osmosis => "osmo",
+        StakeChain::Tron => "trx",
+        StakeChain::Sui => "sui",
+        StakeChain::Celestia => "tia",
+        StakeChain::Injective => "inj",
+        StakeChain::Sei => "sei",
+        StakeChain::Ethereum => "eth",
+        StakeChain::HyperCore => "hype",
+    }
 }
 
 #[cfg(test)]
@@ -95,9 +91,11 @@ mod tests {
 
     #[test]
     fn test_get_docs_url() {
-        assert_eq!(
-            get_docs_url(DocsUrl::WhatIsSecretPhrase),
-            "https://docs.gemwallet.com/faq/secret-recovery-phrase/"
-        );
+        assert_eq!(get_docs_url(DocsUrl::WhatIsSecretPhrase), "https://docs.gemwallet.com/faq/secret-recovery-phrase/");
+    }
+
+    #[test]
+    fn test_get_docs_url_staking() {
+        assert_eq!(get_docs_url(DocsUrl::Staking("solana".to_string())), "https://docs.gemwallet.com/defi/stake-sol/");
     }
 }
