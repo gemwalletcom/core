@@ -7,7 +7,8 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO,
+    BitcoinChain, FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput, UTXO,
 };
 
 use crate::provider::preload_mapper::map_transaction_preload;
@@ -28,13 +29,20 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        let priority = self.chain.get_blocks_fee_priority();
-        let (slow, normal, fast) = futures::try_join!(self.get_fee(priority.slow), self.get_fee(priority.normal), self.get_fee(priority.fast))?;
-        Ok(vec![
-            FeeRate::new(FeePriority::Slow, GasPriceType::regular(slow)),
-            FeeRate::new(FeePriority::Normal, GasPriceType::regular(normal)),
-            FeeRate::new(FeePriority::Fast, GasPriceType::regular(fast)),
-        ])
+        match self.chain {
+            BitcoinChain::Bitcoin | BitcoinChain::Litecoin | BitcoinChain::BitcoinCash | BitcoinChain::Doge => {
+                let priority = self.chain.get_blocks_fee_priority();
+                let (slow, normal, fast) = futures::try_join!(self.get_fee(priority.slow), self.get_fee(priority.normal), self.get_fee(priority.fast))?;
+                Ok(vec![
+                    FeeRate::new(FeePriority::Slow, GasPriceType::regular(slow)),
+                    FeeRate::new(FeePriority::Normal, GasPriceType::regular(normal)),
+                    FeeRate::new(FeePriority::Fast, GasPriceType::regular(fast)),
+                ])
+            }
+            BitcoinChain::Zcash => {
+                return Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(6_000).clone()))]);
+            }
+        }
     }
 
     async fn get_utxos(&self, address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
