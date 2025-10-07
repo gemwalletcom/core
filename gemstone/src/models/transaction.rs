@@ -672,10 +672,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
                 asset,
                 account_type: account_type.into(),
             },
-            TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual {
-                asset,
-                perpetual_type,
-            },
+            TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
         }
     }
 }

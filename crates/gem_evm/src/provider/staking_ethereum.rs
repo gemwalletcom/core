@@ -42,12 +42,12 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let active_balance = state.deposited_balance;
         if active_balance > BigUint::zero() {
-            delegations.push(map_balance_to_delegation(&active_balance, DelegationState::Active));
+            delegations.push(map_balance_to_delegation(&active_balance, &state.restaked_reward, DelegationState::Active));
         }
 
         let pending_balance = state.pending_balance + state.pending_deposited_balance;
         if pending_balance > BigUint::zero() {
-            delegations.push(map_balance_to_delegation(&pending_balance, DelegationState::Activating));
+            delegations.push(map_balance_to_delegation(&pending_balance, &BigUint::zero(), DelegationState::Activating));
         }
 
         let mut withdraw_delegations = map_withdraw_request_to_delegations(&state.withdraw_request);
@@ -59,22 +59,23 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_ethereum_staking_balance(&self, address: &str) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         let delegations = self.get_ethereum_delegations(address).await?;
 
-        let staked = delegations
-            .iter()
-            .filter(|d| d.state == DelegationState::Active)
-            .fold(BigUint::zero(), |acc, d| acc + &d.balance);
+        let mut staked = BigUint::zero();
+        let mut rewards = BigUint::zero();
+        let mut pending = BigUint::zero();
+        for delegation in &delegations {
+            match delegation.state {
+                DelegationState::Active => {
+                    staked += &delegation.balance;
+                    rewards += &delegation.rewards;
+                }
+                DelegationState::Activating | DelegationState::Deactivating | DelegationState::Undelegating | DelegationState::AwaitingWithdrawal => {
+                    pending += &delegation.balance;
+                }
+                _ => {}
+            }
+        }
 
-        let pending = delegations
-            .iter()
-            .filter(|d| {
-                d.state == DelegationState::Activating
-                    || d.state == DelegationState::Deactivating
-                    || d.state == DelegationState::Undelegating
-                    || d.state == DelegationState::AwaitingWithdrawal
-            })
-            .fold(BigUint::zero(), |acc, d| acc + &d.balance);
-
-        let balance = Balance::stake_balance(staked, pending, None);
+        let balance = Balance::stake_balance(staked, pending, Some(rewards));
 
         Ok(Some(AssetBalance::new_balance(AssetId::from_chain(Chain::Ethereum), balance)))
     }
@@ -95,8 +96,8 @@ mod tests {
         println!("Delegations for address: {}", address);
         for delegation in &delegations {
             println!(
-                "Delegation - Validator: {}, Balance: {}, State: {:?}",
-                delegation.validator_id, delegation.balance, delegation.state
+                "Delegation - Validator: {}, Balance: {}, Rewards: {}, State: {:?}",
+                delegation.validator_id, delegation.balance, delegation.rewards, delegation.state
             );
         }
 

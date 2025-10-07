@@ -13,6 +13,7 @@ sol! {
         function depositedBalanceOf(address account) view returns (uint256);
         function pendingBalanceOf(address account) view returns (uint256);
         function pendingDepositedBalanceOf(address account) view returns (uint256);
+        function restakedRewardOf(address account) view returns (uint256);
         function withdrawRequest(address staker) view returns (WithdrawRequest memory);
         function claimWithdrawRequest() external;
     }

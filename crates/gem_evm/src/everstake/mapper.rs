@@ -50,13 +50,13 @@ pub fn map_withdraw_request_to_delegations(withdraw_request: &WithdrawRequest) -
     delegations
 }
 
-pub fn map_balance_to_delegation(balance: &BigUint, state: DelegationState) -> DelegationBase {
+pub fn map_balance_to_delegation(balance: &BigUint, restaked_reward: &BigUint, state: DelegationState) -> DelegationBase {
     DelegationBase {
         asset_id: AssetId::from_chain(Chain::Ethereum),
         state,
         balance: balance.clone(),
         shares: BigUint::zero(),
-        rewards: BigUint::zero(),
+        rewards: restaked_reward.clone(),
         completion_date: None,
         delegation_id: delegation_id(EVERSTAKE_POOL_ADDRESS, state),
         validator_id: EVERSTAKE_POOL_ADDRESS.to_string(),
