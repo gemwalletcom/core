@@ -52,9 +52,11 @@ impl Event {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionPayload {
-    pub function: String,
+    pub function: Option<String>,
+    #[serde(default)]
     pub type_arguments: Vec<String>,
-    pub arguments: Vec<String>,
+    #[serde(default)]
+    pub arguments: Vec<serde_json::Value>,
     #[serde(rename = "type")]
     pub payload_type: String,
 }

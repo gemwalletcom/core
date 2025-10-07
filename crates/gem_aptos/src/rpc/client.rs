@@ -148,9 +148,12 @@ impl<C: Client> AptosClient<C> {
             gas_unit_price: gas_price.to_string(),
             max_gas_amount: max_gas_amount.to_string(),
             payload: TransactionPayload {
-                function: "0x1::aptos_account::transfer".to_string(),
+                function: Some("0x1::aptos_account::transfer".to_string()),
                 type_arguments: vec![],
-                arguments: vec![recipient.to_string(), value.to_string()],
+                arguments: vec![
+                    serde_json::Value::String(recipient.to_string()),
+                    serde_json::Value::String(value.to_string()),
+                ],
                 payload_type: "entry_function_payload".to_string(),
             },
             sender: sender.to_string(),
