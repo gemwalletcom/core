@@ -1,7 +1,7 @@
 use std::error::Error;
 
-use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, Perpetual};
-use search_index::{ASSETS_INDEX_NAME, AssetDocument, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
+use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, Perpetual};
+use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTS_INDEX_NAME, NFTDocument, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
 use storage::DatabaseClient;
 
 pub struct AssetsClient {
@@ -81,27 +81,36 @@ impl SearchClient {
         if !request.chains.is_empty() {
             filters.push(filter_array("asset.chain", request.chains.clone()));
         }
-        let filter = &filters.join(" AND ");
 
         let assets: Vec<AssetDocument> = self
             .client
-            .search(ASSETS_INDEX_NAME, &request.query, filter, [].as_ref(), request.limit, request.offset)
+            .search(ASSETS_INDEX_NAME, &request.query, &build_filter(filters), [].as_ref(), request.limit, request.offset)
             .await?;
 
         Ok(assets.into_iter().map(|x| AssetBasic::new(x.asset, x.properties, x.score)).collect())
     }
 
     pub async fn get_perpetuals_search(&self, request: &SearchRequest) -> Result<Vec<Perpetual>, Box<dyn Error + Send + Sync>> {
-        let filters: Vec<String> = vec![];
-        let filter = &filters.join(" AND ");
-
         let perpetuals: Vec<PerpetualDocument> = self
             .client
-            .search(PERPETUALS_INDEX_NAME, &request.query, filter, [].as_ref(), request.limit, request.offset)
+            .search(PERPETUALS_INDEX_NAME, &request.query, &build_filter(vec![]), [].as_ref(), request.limit, request.offset)
             .await?;
 
         Ok(perpetuals.into_iter().map(|x| x.perpetual).collect())
     }
+
+    pub async fn get_nfts_search(&self, request: &SearchRequest) -> Result<Vec<NFTCollection>, Box<dyn Error + Send + Sync>> {
+        let nfts: Vec<NFTDocument> = self
+            .client
+            .search(NFTS_INDEX_NAME, &request.query, &build_filter(vec![]), [].as_ref(), request.limit, request.offset)
+            .await?;
+
+        Ok(nfts.into_iter().map(|x| x.collection).collect())
+    }
+}
+
+fn build_filter(filters: Vec<String>) -> String {
+    filters.join(" AND ")
 }
 
 fn filter_array(field: &str, values: Vec<String>) -> String {
