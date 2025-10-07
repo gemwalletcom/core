@@ -7,9 +7,9 @@ use primitives::{DelegationBase, DelegationValidator};
 
 use super::staking_mapper;
 use crate::{
+    KNOWN_VALIDATOR_POOL,
     provider::staking_mapper::{calculate_apy, map_validators},
     rpc::client::AptosClient,
-    KNOWN_VALIDATOR_POOL,
 };
 
 #[async_trait]

@@ -1,8 +1,9 @@
 pub mod assets_addresses_consumer;
-pub mod fetch_assets_addresses_consumer;
 pub mod fetch_assets_consumer;
 pub mod fetch_blocks_consumer;
+pub mod fetch_coin_addresses_consumer;
 pub mod fetch_nft_assets_addresses_consumer;
+pub mod fetch_token_addresses_consumer;
 pub mod fetch_transactions_consumer;
 pub mod store_transactions_consumer;
 pub mod store_transactions_consumer_config;
@@ -27,8 +28,9 @@ use tokio::sync::Mutex;
 use crate::{
     Pusher,
     consumers::{
-        fetch_assets_addresses_consumer::FetchAssetsAddressesConsumer, fetch_blocks_consumer::FetchBlocksConsumer,
-        fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer, fetch_transactions_consumer::FetchTransactionsConsumer,
+        fetch_blocks_consumer::FetchBlocksConsumer, fetch_coin_addresses_consumer::FetchCoinAddressesConsumer,
+        fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer, fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
+        fetch_transactions_consumer::FetchTransactionsConsumer,
     },
 };
 use settings::service_user_agent;
@@ -37,7 +39,8 @@ pub async fn run_consumers(settings: Settings, database: Arc<Mutex<DatabaseClien
     tokio::spawn(run_consumer_fetch_assets(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_store_transactions(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_fetch_transactions(settings.clone(), database.clone()));
-    tokio::spawn(run_consumer_fetch_assets_mappings(settings.clone(), database.clone()));
+    tokio::spawn(run_consumer_fetch_token_addresses_mappings(settings.clone(), database.clone()));
+    tokio::spawn(run_consumer_fetch_coin_addresses_mappings(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_store_assets_mappings(settings.clone(), database.clone()));
     tokio::spawn(run_consumer_fetch_blocks(settings.clone()));
     tokio::spawn(run_consumer_fetch_nft_assets_mappings(settings.clone(), database.clone()));
@@ -128,17 +131,33 @@ pub async fn run_consumer_store_assets_mappings(settings: Settings, database: Ar
     .await
 }
 
-pub async fn run_consumer_fetch_assets_mappings(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let name = "fetch_assets_mappings";
+pub async fn run_consumer_fetch_token_addresses_mappings(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let name = "fetch_token_addresses_mappings";
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.to_string(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, name).await?;
     let cacher = CacherClient::new(&settings.redis.url);
-    let consumer = FetchAssetsAddressesConsumer::new(chain_providers(&settings, name), database.clone(), stream_producer, cacher);
-    streamer::run_consumer::<ChainAddressPayload, FetchAssetsAddressesConsumer, usize>(
+    let consumer = FetchTokenAddressesConsumer::new(chain_providers(&settings, name), database.clone(), stream_producer, cacher);
+    streamer::run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(
         name,
         stream_reader,
-        QueueName::FetchAssetsAddressesAssociations,
+        QueueName::FetchTokenAddressesAssociations,
+        consumer,
+        ConsumerConfig::default(),
+    )
+    .await
+}
+
+pub async fn run_consumer_fetch_coin_addresses_mappings(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let name = "fetch_coin_addresses_mappings";
+    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.to_string(), settings.rabbitmq.prefetch);
+    let stream_reader = StreamReader::new(config).await?;
+    let cacher = CacherClient::new(&settings.redis.url);
+    let consumer = FetchCoinAddressesConsumer::new(chain_providers(&settings, name), database.clone(), cacher);
+    streamer::run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, usize>(
+        name,
+        stream_reader,
+        QueueName::FetchCoinAddressesAssociations,
         consumer,
         ConsumerConfig::default(),
     )
