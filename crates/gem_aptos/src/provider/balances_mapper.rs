@@ -1,4 +1,4 @@
-use crate::models::{Resource, ResourceData};
+use crate::models::{DelegationPoolStake, Resource, ResourceData};
 use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 
@@ -32,6 +32,14 @@ pub fn map_token_balances(resources: &[Resource<ResourceData>], token_ids: Vec<S
             AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance(balance), true)
         })
         .collect()
+}
+
+pub fn map_balance_staking(stake: DelegationPoolStake, chain: Chain) -> AssetBalance {
+    let staked = stake.active;
+    let pending = &stake.pending + &stake.inactive;
+    let balance = Balance::stake_balance(staked, pending, None);
+
+    AssetBalance::new_balance(AssetId::from_chain(chain), balance)
 }
 
 #[cfg(test)]

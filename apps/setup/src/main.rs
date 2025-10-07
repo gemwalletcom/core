@@ -108,7 +108,8 @@ async fn main() {
         .bind_exchange(
             ExchangeName::NewAddresses.clone(),
             vec![
-                QueueName::FetchAssetsAddressesAssociations,
+                QueueName::FetchTokenAddressesAssociations,
+                QueueName::FetchCoinAddressesAssociations,
                 QueueName::FetchTransactions,
                 QueueName::FetchNftAssetsAddressesAssociations,
             ],

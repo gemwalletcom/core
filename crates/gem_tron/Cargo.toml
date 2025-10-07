@@ -37,7 +37,7 @@ rpc = [
     "dep:alloy-sol-types",
 ]
 reqwest = ["gem_client/reqwest"]
-chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
+chain_integration_tests = ["rpc", "reqwest", "primitives/testkit", "settings/testkit"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

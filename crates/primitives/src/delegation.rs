@@ -15,7 +15,7 @@ pub struct Delegation {
     pub price: Option<Price>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct DelegationBase {
@@ -47,7 +47,7 @@ pub struct DelegationValidator {
     pub apr: f64,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, Display, AsRefStr, EnumString)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Display, AsRefStr, EnumString, PartialEq)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]

@@ -20,11 +20,8 @@ impl<C: Client> ChainToken for AptosClient<C> {
         let address = parts[0];
         let resource_type = format!("0x1::coin::CoinInfo<{}>", token_id);
 
-        if let Some(resource) = self.get_account_resource::<CoinInfo>(address.to_string(), &resource_type).await? {
-            map_token_data(&resource, &token_id)
-        } else {
-            Err("Token not found".into())
-        }
+        let resource = self.get_account_resource::<CoinInfo>(address.to_string(), &resource_type).await?;
+        map_token_data(&resource, &token_id)
     }
 
     fn get_is_token_address(&self, token_id: &str) -> bool {
