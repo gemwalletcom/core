@@ -61,7 +61,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::WalletConnect => "/guides/walletconnect/",
         DocsUrl::HowStoreSecretPhrase => "/faq/secure-recovery-phrase/#how-to-secure-my-secret-phrase/",
         DocsUrl::NoQuotes => "/troubleshoot/quote-error/",
-        DocsUrl::Staking(stake_chain) => &format!("/defi/stake-{}/", Asset::from_chain(stake_chain.chain()).symbol.to_lowercase()),
+        DocsUrl::Staking(chain) => &format!("/defi/stake-{}/", Asset::from_chain(chain.chain()).symbol.to_lowercase()),
         DocsUrl::PerpetualsFundingRate => "/defi/perps/perps-terms/#what-is-perpetual-funding/",
         DocsUrl::PerpetualsLiquidationPrice => "/defi/perps/perps-terms/#what-is-a-perpetual-liquidation-price/",
         DocsUrl::PerpetualsOpenInterest => "/defi/perps/perps-terms/#what-is-a-perpetual-open-interest/",
