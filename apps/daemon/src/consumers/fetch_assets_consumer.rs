@@ -13,12 +13,6 @@ pub struct FetchAssetsConsumer {
     pub cacher: CacherClient,
 }
 
-impl FetchAssetsConsumer {
-    pub fn new(database: Arc<Mutex<DatabaseClient>>, providers: ChainProviders, cacher: CacherClient) -> Self {
-        Self { database, providers, cacher }
-    }
-}
-
 #[async_trait]
 impl MessageConsumer<FetchAssetsPayload, usize> for FetchAssetsConsumer {
     async fn should_process(&mut self, payload: FetchAssetsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {

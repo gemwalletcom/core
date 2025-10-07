@@ -8,7 +8,9 @@ use storage::DatabaseClient;
 use streamer::{ChainAddressPayload, StreamProducer, consumer::MessageConsumer};
 
 pub struct FetchNftAssetsAddressesConsumer {
+    #[allow(dead_code)]
     pub database: Arc<Mutex<DatabaseClient>>,
+    #[allow(dead_code)]
     pub stream_producer: StreamProducer,
     pub cacher: CacherClient,
     pub nft_client: Arc<Mutex<NFTClient>>,

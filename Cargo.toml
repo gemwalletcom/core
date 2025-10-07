@@ -13,7 +13,6 @@ members = [
     "apps/api",
     "apps/daemon",
     "apps/dynode",
-    "apps/parser",
 
     "bin/img-downloader",
     "bin/generate",

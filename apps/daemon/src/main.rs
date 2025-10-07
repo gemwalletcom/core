@@ -1,32 +1,26 @@
-mod alerter;
-mod assets;
-mod device;
-mod fiat;
+mod consumers;
 mod model;
-mod nft;
-mod notifications;
-mod pricer;
-mod prices_dex;
-mod scan;
-mod search;
-mod support;
-mod transaction;
-mod version;
+mod parser;
+mod pusher;
+mod setup;
+mod worker;
 
-use crate::model::DaemonService;
+use crate::model::{ConsumerService, DaemonService, WorkerService};
 use gem_tracing::{SentryConfig, SentryTracing, info_with_fields};
-use std::future::Future;
-use std::pin::Pin;
 use std::str::FromStr;
+use std::sync::Arc;
+use storage::DatabaseClient;
+use tokio::sync::Mutex;
 
 #[tokio::main]
 pub async fn main() {
-    let service_arg = std::env::args().nth(1).unwrap_or_default();
+    let args: Vec<String> = std::env::args().collect();
+    let service_arg = args.iter().skip(1).map(|s| s.as_str()).collect::<Vec<_>>().join(" ");
 
-    let service = DaemonService::from_str(service_arg.as_str()).unwrap_or_else(|_| {
+    let service = DaemonService::from_str(&service_arg).unwrap_or_else(|e| {
         panic!(
-            "Expected a valid service: {:?}",
-            DaemonService::all().iter().map(|x| x.as_ref()).collect::<Vec<_>>()
+            "{}\nUsage examples:\n  daemon parser\n  daemon parser ethereum\n  daemon consumer\n  daemon consumer fetch_transactions",
+            e
         );
     });
 
@@ -39,22 +33,53 @@ pub async fn main() {
 
     info_with_fields!("daemon start", service = service.as_ref());
 
-    let services: Vec<Pin<Box<dyn Future<Output = ()> + Send>>> = match service {
-        DaemonService::Alerter => alerter::jobs(settings.clone()).await,
-        DaemonService::Pricer => pricer::jobs(settings.clone()).await,
-        DaemonService::PricesDex => prices_dex::jobs(settings.clone()).await,
-        DaemonService::Fiat => fiat::jobs(settings.clone()).await,
-        DaemonService::FiatConsumer => fiat::jobs_consumer(settings.clone()).await,
-        DaemonService::Assets => assets::jobs(settings.clone()).await,
-        DaemonService::Version => version::jobs(settings.clone()).await,
-        DaemonService::Transaction => transaction::jobs(settings.clone()).await,
-        DaemonService::Device => device::jobs(settings.clone()).await,
-        DaemonService::Search => search::jobs(settings.clone()).await,
-        DaemonService::Nft => nft::jobs(settings.clone()).await,
-        DaemonService::Notifications => notifications::jobs(settings.clone()).await,
-        DaemonService::Scan => scan::jobs(settings.clone()).await,
-        DaemonService::ConsumerSupport => support::jobs(settings.clone()).await,
-    };
+    match service {
+        DaemonService::Setup => {
+            setup::run_setup(settings).await;
+        }
+        DaemonService::Worker(service) => {
+            run_worker_mode(settings, service).await;
+        }
+        DaemonService::Parser(chain) => {
+            parser::run(settings, chain).await.expect("Parser failed");
+        }
+        DaemonService::Consumer(service) => {
+            run_consumer_mode(settings, service).await.expect("Consumer failed");
+        }
+    }
+}
 
+async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
+    let services = match service {
+        WorkerService::Alerter => worker::alerter::jobs(settings).await,
+        WorkerService::Pricer => worker::pricer::jobs(settings).await,
+        WorkerService::PricesDex => worker::prices_dex::jobs(settings).await,
+        WorkerService::Fiat => worker::fiat::jobs(settings).await,
+        WorkerService::Assets => worker::assets::jobs(settings).await,
+        WorkerService::Version => worker::version::jobs(settings).await,
+        WorkerService::Transaction => worker::transaction::jobs(settings).await,
+        WorkerService::Device => worker::device::jobs(settings).await,
+        WorkerService::Search => worker::search::jobs(settings).await,
+        WorkerService::Nft => worker::nft::jobs(settings).await,
+        WorkerService::Notifications => worker::notifications::jobs(settings).await,
+        WorkerService::Scan => worker::scan::jobs(settings).await,
+    };
     let _ = futures::future::join_all(services).await;
+}
+
+async fn run_consumer_mode(settings: settings::Settings, service: ConsumerService) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let database = Arc::new(Mutex::new(DatabaseClient::new(&settings.postgres.url)));
+
+    match service {
+        ConsumerService::FetchTransactions => consumers::run_consumer_fetch_transactions(settings, database).await,
+        ConsumerService::StoreTransactions => consumers::run_consumer_store_transactions(settings, database).await,
+        ConsumerService::FetchBlocks => consumers::run_consumer_fetch_blocks(settings).await,
+        ConsumerService::FetchAssets => consumers::run_consumer_fetch_assets(settings, database).await,
+        ConsumerService::FetchTokenAddressesMappings => consumers::run_consumer_fetch_token_addresses_mappings(settings, database).await,
+        ConsumerService::FetchCoinAddressesMappings => consumers::run_consumer_fetch_coin_addresses_mappings(settings, database).await,
+        ConsumerService::StoreAssetsMappings => consumers::run_consumer_store_assets_mappings(settings, database).await,
+        ConsumerService::FetchNftAssetsMappings => consumers::run_consumer_fetch_nft_assets_mappings(settings, database).await,
+        ConsumerService::Support => consumers::run_consumer_support(settings, database).await,
+        ConsumerService::Fiat => consumers::run_consumer_fiat(settings, database).await,
+    }
 }

@@ -150,10 +150,7 @@ impl<C: Client> AptosClient<C> {
             payload: TransactionPayload {
                 function: Some("0x1::aptos_account::transfer".to_string()),
                 type_arguments: vec![],
-                arguments: vec![
-                    serde_json::Value::String(recipient.to_string()),
-                    serde_json::Value::String(value.to_string()),
-                ],
+                arguments: vec![serde_json::Value::String(recipient.to_string()), serde_json::Value::String(value.to_string())],
                 payload_type: "entry_function_payload".to_string(),
             },
             sender: sender.to_string(),

@@ -3,13 +3,13 @@ mod markets_updater;
 mod price_asset_updater;
 mod price_updater;
 
-use crate::pricer::{charts_updater::ChartsUpdater, price_updater::PriceUpdater};
 use cacher::CacherClient;
+use charts_updater::ChartsUpdater;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
 use markets_updater::MarketsUpdater;
 use price_asset_updater::PriceAssetUpdater;
-use price_updater::UpdatePrices;
+use price_updater::{PriceUpdater, UpdatePrices};
 use pricer::{MarketsClient, PriceClient};
 use settings::Settings;
 use std::future::Future;

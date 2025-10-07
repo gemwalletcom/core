@@ -37,13 +37,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
         };
 
         let to = if deposit_event.event_type == FUNGIBLE_ASSET_DEPOSIT_EVENT {
-            transaction
-                .payload
-                .as_ref()?
-                .arguments
-                .first()?
-                .as_str()?
-                .to_string()
+            transaction.payload.as_ref()?.arguments.first()?.as_str()?.to_string()
         } else {
             deposit_event.guid.account_address.clone()
         };

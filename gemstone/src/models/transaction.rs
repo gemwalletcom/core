@@ -634,7 +634,6 @@ impl From<GemTransactionStateRequest> for TransactionStateRequest {
     }
 }
 
-
 impl From<GemTransactionLoadInput> for TransactionLoadInput {
     fn from(value: GemTransactionLoadInput) -> Self {
         TransactionLoadInput {

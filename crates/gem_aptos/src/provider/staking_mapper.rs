@@ -57,11 +57,7 @@ fn calculate_withdrawal_completion_date(reconfig: &ReconfigurationState, staking
     DateTime::from_timestamp(completion_timestamp_secs, 0)
 }
 
-pub fn map_delegations(
-    stakes: Vec<(String, DelegationPoolStake)>,
-    reconfig: &ReconfigurationState,
-    staking_config: &StakingConfig,
-) -> Vec<DelegationBase> {
+pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &ReconfigurationState, staking_config: &StakingConfig) -> Vec<DelegationBase> {
     let asset_id = Chain::Aptos.as_asset_id();
     let pending_completion = calculate_pending_completion_date(reconfig);
     let withdrawal_completion = calculate_withdrawal_completion_date(reconfig, staking_config);

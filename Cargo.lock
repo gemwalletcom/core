@@ -1826,9 +1826,12 @@ dependencies = [
  "job_runner",
  "localizer",
  "nft",
+ "num-bigint",
+ "number_formatter",
  "pricer",
  "pricer_dex",
  "primitives",
+ "rand 0.9.2",
  "reqwest",
  "search_index",
  "serde",
@@ -4700,31 +4703,6 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "parser"
-version = "1.0.0"
-dependencies = [
- "api_connector",
- "async-trait",
- "cacher",
- "chain_traits",
- "chrono",
- "futures",
- "gem_tracing",
- "localizer",
- "nft",
- "num-bigint",
- "number_formatter",
- "primitives",
- "rand 0.9.2",
- "serde_json",
- "settings",
- "settings_chain",
- "storage",
- "streamer",
- "tokio",
 ]
 
 [[package]]

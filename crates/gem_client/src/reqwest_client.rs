@@ -81,16 +81,11 @@ impl ReqwestClient {
         let body = String::from_utf8_lossy(&body_bytes);
 
         if status.is_success() {
-            serde_json::from_slice(&body_bytes).map_err(|e| {
-                ClientError::Serialization(format!(
-                    "Failed to deserialize response: status {} {}",
-                    status, e
-                ))
-            })
+            serde_json::from_slice(&body_bytes).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: status {} {}", status, e)))
         } else {
             Err(ClientError::Http {
                 status: status.as_u16(),
-                body: body.to_string(),
+                len: body.len(),
             })
         }
     }

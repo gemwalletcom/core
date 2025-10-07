@@ -12,6 +12,8 @@ futures = { workspace = true }
 chrono = { workspace = true }
 strum = { workspace = true }
 async-trait = { workspace = true }
+rand = { workspace = true }
+num-bigint = { workspace = true }
 
 gem_tracing = { path = "../../crates/tracing", features = ["sentry"] }
 settings = { path = "../../crates/settings" }
@@ -31,3 +33,4 @@ streamer = { path = "../../crates/streamer" }
 localizer = { path = "../../crates/localizer" }
 settings_chain = { path = "../../crates/settings_chain" }
 chain_traits = { path = "../../crates/chain_traits" }
+number_formatter = { path = "../../crates/number_formatter" }

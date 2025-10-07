@@ -4,7 +4,7 @@ use std::fmt;
 pub enum ClientError {
     Network(String),
     Timeout,
-    Http { status: u16, body: String },
+    Http { status: u16, len: usize },
     Serialization(String),
 }
 
@@ -13,7 +13,7 @@ impl fmt::Display for ClientError {
         match self {
             Self::Network(msg) => write!(f, "Network error: {}", msg),
             Self::Timeout => write!(f, "Timeout error"),
-            Self::Http { status, body } => write!(f, "HTTP error: status {}, body: {}", status, body),
+            Self::Http { status, len } => write!(f, "HTTP error: status {}, body len: {}", status, len),
             Self::Serialization(msg) => write!(f, "Serialization error: {}", msg),
         }
     }

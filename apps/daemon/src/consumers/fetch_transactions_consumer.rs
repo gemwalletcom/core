@@ -9,6 +9,7 @@ use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, Transac
 use tokio::sync::Mutex;
 
 pub struct FetchTransactionsConsumer {
+    #[allow(dead_code)]
     pub database: Arc<Mutex<DatabaseClient>>,
     pub providers: ChainProviders,
     pub producer: StreamProducer,

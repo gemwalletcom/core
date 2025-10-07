@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::ParserOptions;
+use crate::parser::ParserOptions;
 use chain_traits::ChainTraits;
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
 use primitives::Chain;
@@ -17,11 +17,6 @@ pub struct Parser {
     stream_producer: StreamProducer,
     database: DatabaseClient,
     options: ParserOptions,
-}
-
-#[derive(Debug, Clone)]
-pub struct ParserBlocksResult {
-    pub transactions: usize,
 }
 
 impl Parser {
@@ -87,7 +82,7 @@ impl Parser {
                 let start_block = state.current_block + 1;
                 let end_block = cmp::min(start_block + state.parallel_blocks as i64 - 1, state.latest_block - state.await_blocks as i64);
                 let next_blocks: Vec<u64> = (start_block..=end_block).map(|b| b as u64).collect();
-                let to_go_blocks = state.latest_block - end_block - state.await_blocks as i64;
+                let remaining = state.latest_block - end_block - state.await_blocks as i64;
 
                 if next_blocks.is_empty() {
                     break;
@@ -95,7 +90,7 @@ impl Parser {
 
                 // queue blocks, continue parsing
                 if let Some(queue_behind_blocks) = state.queue_behind_blocks
-                    && to_go_blocks > queue_behind_blocks as i64
+                    && remaining > queue_behind_blocks as i64
                 {
                     let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
                     self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
@@ -105,7 +100,7 @@ impl Parser {
                         "block add to queue",
                         chain = self.chain.as_ref(),
                         blocks = format!("{:?}", next_blocks),
-                        to_go_blocks = to_go_blocks,
+                        remaining = remaining,
                         duration = DurationMs(start.elapsed())
                     );
                     continue;
@@ -120,7 +115,7 @@ impl Parser {
                             chain = self.chain.as_ref(),
                             blocks = format!("{:?}", next_blocks),
                             transactions = result,
-                            to_go_blocks = to_go_blocks,
+                            remaining = remaining,
                             duration = DurationMs(start.elapsed())
                         );
                     }
@@ -132,7 +127,7 @@ impl Parser {
                     }
                 }
                 // exit loop every n blocks to update latest block
-                if to_go_blocks % 100 == 0 {
+                if remaining % 50 == 0 {
                     break;
                 }
                 if state.timeout_between_blocks > 0 {
