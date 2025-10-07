@@ -3,7 +3,6 @@ pub mod assets;
 pub mod device;
 pub mod fiat;
 pub mod nft;
-pub mod notifications;
 pub mod pricer;
 pub mod prices_dex;
 pub mod scan;

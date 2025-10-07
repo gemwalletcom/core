@@ -61,7 +61,6 @@ async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
         WorkerService::Device => worker::device::jobs(settings).await,
         WorkerService::Search => worker::search::jobs(settings).await,
         WorkerService::Nft => worker::nft::jobs(settings).await,
-        WorkerService::Notifications => worker::notifications::jobs(settings).await,
         WorkerService::Scan => worker::scan::jobs(settings).await,
     };
     let _ = futures::future::join_all(services).await;
@@ -79,6 +78,7 @@ async fn run_consumer_mode(settings: settings::Settings, service: ConsumerServic
         ConsumerService::FetchCoinAddressesMappings => consumers::run_consumer_fetch_coin_addresses_mappings(settings, database).await,
         ConsumerService::StoreAssetsMappings => consumers::run_consumer_store_assets_mappings(settings, database).await,
         ConsumerService::FetchNftAssetsMappings => consumers::run_consumer_fetch_nft_assets_mappings(settings, database).await,
+        ConsumerService::Notifications => consumers::notifications::run(settings).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, database).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, database).await,
     }

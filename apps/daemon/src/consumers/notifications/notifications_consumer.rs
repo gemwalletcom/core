@@ -20,10 +20,6 @@ impl MessageConsumer<NotificationsPayload, usize> for NotificationsConsumer {
         Ok(true)
     }
     async fn process(&mut self, payload: NotificationsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let count = payload.notifications.len();
-        if count == 0 {
-            return Ok(0);
-        }
         Ok(self.pusher.push_notifications(payload.notifications).await?.counts as usize)
     }
 }

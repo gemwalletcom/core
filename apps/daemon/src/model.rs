@@ -13,6 +13,7 @@ pub enum ConsumerService {
     FetchCoinAddressesMappings,
     StoreAssetsMappings,
     FetchNftAssetsMappings,
+    Notifications,
     Support,
     Fiat,
 }
@@ -30,7 +31,6 @@ pub enum WorkerService {
     Device,
     Search,
     Nft,
-    Notifications,
     Scan,
 }
 

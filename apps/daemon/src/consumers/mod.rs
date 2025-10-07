@@ -7,6 +7,7 @@ pub mod fetch_token_addresses_consumer;
 pub mod fetch_transactions_consumer;
 pub mod store_transactions_consumer;
 pub mod store_transactions_consumer_config;
+pub mod notifications;
 pub mod support;
 use std::error::Error;
 use std::sync::Arc;
