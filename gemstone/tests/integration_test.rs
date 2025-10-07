@@ -6,7 +6,7 @@ mod tests {
     use gemstone::{
         config::swap_config::{SwapReferralFee, SwapReferralFees, get_swap_config},
         network::{AlienClient, alien_provider::NativeProvider, jsonrpc_client_with_chain},
-        swapper::{GemSwapper, across::Across, cetus::Cetus, models::*, uniswap::v4::UniswapV4, *},
+        swapper::{GemSwapper, across::Across, cetus::Cetus, models::*, uniswap, *},
     };
     use primitives::{AssetId, Chain};
     use std::{collections::HashMap, sync::Arc, time::SystemTime};
@@ -130,7 +130,7 @@ mod tests {
     #[tokio::test]
     async fn test_v4_quoter() -> Result<(), SwapperError> {
         let network_provider = Arc::new(NativeProvider::default());
-        let swap_provider = UniswapV4::boxed(network_provider.clone());
+        let swap_provider = uniswap::default::boxed_uniswap_v4(network_provider.clone());
         let options = SwapperOptions {
             slippage: 100.into(),
             fee: Some(SwapReferralFees::evm(SwapReferralFee {

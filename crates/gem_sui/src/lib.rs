@@ -8,6 +8,7 @@ pub mod provider;
 
 pub mod models;
 
+pub mod gas_budget;
 pub mod jsonrpc;
 pub mod operations;
 
