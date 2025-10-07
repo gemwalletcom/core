@@ -113,7 +113,7 @@ pub async fn run_consumer_store_assets_mappings(settings: Settings, database: Ar
     streamer::run_consumer::<AssetsAddressPayload, AssetsAddressesConsumer, usize>(
         NAME,
         stream_reader,
-        QueueName::AssetsAddressesAssociations,
+        QueueName::StoreAssetsAddressesAssociations,
         consumer,
         ConsumerConfig::default(),
     )
