@@ -21,16 +21,16 @@ pub enum QueueName {
     FetchNFTCollection,
     // Fetch and store nft collection assets
     FetchNFTCollectionAssets,
-    // Add assets/addresses association to address_assets table
-    AssetsAddressesAssociations,
+    // Store assets associations to address_assets table
+    StoreAssetsAssociations,
     // Fetch address token balances from providers and store to db
-    FetchTokenAddressesAssociations,
+    FetchTokenAssociations,
     // Fetch address coin balances from providers and store to db
-    FetchCoinAddressesAssociations,
+    FetchCoinAssociations,
     // Fetch address nft assets from providers and store to db
-    FetchNftAssetsAddressesAssociations,
-    // Fetch transactions from providers and store to db
-    FetchTransactions,
+    FetchNftAssociations,
+    // Fetch address transactions from providers and store to db
+    FetchAddressTransactions,
     // Process fiat order webhooks
     FiatOrderWebhooks,
     // Process support webhooks
@@ -54,11 +54,11 @@ impl fmt::Display for QueueName {
             QueueName::FetchBlocks => write!(f, "fetch_blocks"),
             QueueName::FetchNFTCollection => write!(f, "fetch_nft_collection"),
             QueueName::FetchNFTCollectionAssets => write!(f, "fetch_nft_collection_assets"),
-            QueueName::AssetsAddressesAssociations => write!(f, "assets_addresses_associations"),
-            QueueName::FetchTokenAddressesAssociations => write!(f, "fetch_token_addresses_associations"),
-            QueueName::FetchCoinAddressesAssociations => write!(f, "fetch_coin_addresses_associations"),
-            QueueName::FetchTransactions => write!(f, "fetch_transactions"),
-            QueueName::FetchNftAssetsAddressesAssociations => write!(f, "fetch_nft_assets_addresses_associations"),
+            QueueName::StoreAssetsAssociations => write!(f, "store_assets_associations"),
+            QueueName::FetchTokenAssociations => write!(f, "fetch_token_associations"),
+            QueueName::FetchCoinAssociations => write!(f, "fetch_coin_associations"),
+            QueueName::FetchAddressTransactions => write!(f, "fetch_address_transactions"),
+            QueueName::FetchNftAssociations => write!(f, "fetch_nft_associations"),
             QueueName::FiatOrderWebhooks => write!(f, "fiat_order_webhooks"),
             QueueName::SupportWebhooks => write!(f, "support_webhooks"),
             QueueName::NotificationsSupport => write!(f, "notifications_support"),

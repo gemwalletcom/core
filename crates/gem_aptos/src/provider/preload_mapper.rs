@@ -5,6 +5,7 @@ use std::error::Error;
 pub fn map_transaction_preload(account: &Account) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
     Ok(TransactionLoadMetadata::Aptos {
         sequence: account.sequence_number,
+        data: None,
     })
 }
 
@@ -19,7 +20,7 @@ mod tests {
 
         let result = map_transaction_preload(&account).unwrap();
         match result {
-            TransactionLoadMetadata::Aptos { sequence } => assert_eq!(sequence, 42),
+            TransactionLoadMetadata::Aptos { sequence, .. } => assert_eq!(sequence, 42),
             _ => panic!("Expected Aptos metadata"),
         }
     }

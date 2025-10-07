@@ -28,4 +28,14 @@ mod tests {
         assert_eq!(update.state, TransactionState::Confirmed);
         assert!(!update.changes.is_empty());
     }
+
+    #[test]
+    fn test_ton_transaction_jetton_transfer_reverted() {
+        let request = TransactionStateRequest::new_id("hash".to_string());
+        let transactions: MessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_transfer_jetton_error_2.json")).unwrap();
+
+        let update = map_transaction_status(request, transactions).unwrap();
+        assert_eq!(update.state, TransactionState::Reverted);
+        assert!(!update.changes.is_empty());
+    }
 }

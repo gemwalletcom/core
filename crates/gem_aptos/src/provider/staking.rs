@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainStaking;
+use futures::try_join;
 use std::error::Error;
 
 use gem_client::Client;
@@ -27,15 +28,19 @@ impl<C: Client> ChainStaking for AptosClient<C> {
     }
 
     async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
-        let delegation = self.get_delegation_for_pool(&address, KNOWN_VALIDATOR_POOL).await?;
-        Ok(staking_mapper::map_delegations(vec![delegation]))
+        let (delegation, reconfig, staking_config) = try_join!(
+            self.get_delegation_for_pool(&address, KNOWN_VALIDATOR_POOL),
+            self.get_reconfiguration_state(),
+            self.get_staking_config()
+        )?;
+        Ok(staking_mapper::map_delegations(vec![delegation], &reconfig, &staking_config))
     }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::create_aptos_test_client;
+    use crate::provider::testkit::{TEST_ADDRESS, create_aptos_test_client};
 
     #[tokio::test]
     async fn test_aptos_get_staking_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -62,6 +67,28 @@ mod chain_integration_tests {
         }
 
         println!("Found {} validators", validators.len());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_aptos_get_staking_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let delegations = client.get_staking_delegations(TEST_ADDRESS.to_string()).await?;
+
+        println!("Delegations: {:?}", delegations);
+
+        assert!(!delegations.is_empty(), "Expected at least one delegation");
+
+        for delegation in &delegations {
+            println!(
+                "State: {:?}, Balance: {}, Validator: {}",
+                delegation.state, delegation.balance, delegation.validator_id
+            );
+            if let Some(date) = delegation.completion_date {
+                println!("Completion date: {}", date);
+            }
+        }
 
         Ok(())
     }

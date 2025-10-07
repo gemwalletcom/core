@@ -47,7 +47,7 @@ pub(crate) fn map_transaction_state(transaction: &TransactionMessage) -> Transac
         && let Some(opcode) = &in_msg.opcode
         && FAILED_OPERATION_OPCODES.contains(&opcode.as_str())
     {
-        return TransactionState::Failed;
+        return TransactionState::Reverted;
     }
 
     TransactionState::Confirmed
@@ -191,7 +191,7 @@ mod tests {
         assert_eq!(transaction.hash, "ZEC9rE/pUvEHGAJVzDn/6QdWevOOR4sA2dN4BaTA8hQ=");
 
         let state = map_transaction_state(transaction);
-        assert_eq!(state, TransactionState::Failed);
+        assert_eq!(state, TransactionState::Reverted);
     }
 
     #[test]

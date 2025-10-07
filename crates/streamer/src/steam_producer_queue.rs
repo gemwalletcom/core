@@ -64,6 +64,6 @@ impl StreamProducerQueue for StreamProducer {
         if payload.is_empty() {
             return Ok(true);
         }
-        self.publish_batch(QueueName::AssetsAddressesAssociations, &payload).await
+        self.publish_batch(QueueName::StoreAssetsAssociations, &payload).await
     }
 }

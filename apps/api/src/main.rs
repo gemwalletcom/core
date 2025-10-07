@@ -21,12 +21,11 @@ mod transactions;
 mod webhooks;
 mod websocket_prices;
 
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use ::nft::{NFTClient, NFTProviderConfig};
 use api_connector::PusherClient;
-use assets::{AssetsClient, AssetsSearchClient};
+use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
@@ -76,7 +75,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let scan_client = ScanClient::new(postgres_url, security_providers).await;
     let assets_client = AssetsClient::new(postgres_url).await;
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
-    let assets_search_client = AssetsSearchClient::new(&search_index_client).await;
+    let search_client = SearchClient::new(&search_index_client).await;
     let swap_client = SwapClient::new(postgres_url).await;
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
@@ -95,7 +94,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(name_client))
         .manage(Mutex::new(devices_client))
         .manage(Mutex::new(assets_client))
-        .manage(Mutex::new(assets_search_client))
+        .manage(Mutex::new(search_client))
         .manage(Mutex::new(subscriptions_client))
         .manage(Mutex::new(transactions_client))
         .manage(Mutex::new(metrics_client))
@@ -133,6 +132,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 assets::add_asset,
                 assets::get_assets_search,
                 assets::get_assets_by_device_id,
+                assets::get_search,
                 subscriptions::add_subscriptions,
                 subscriptions::get_subscriptions,
                 subscriptions::delete_subscriptions,
@@ -196,10 +196,14 @@ async fn main() {
 
     println!("api start service: {}", service.as_ref());
 
-    let rocket_api = match service {
-        APIService::WebsocketPrices => rocket_ws_prices(settings.clone()).await,
-        APIService::Api => rocket_api(settings.clone()).await,
-    };
-
-    rocket_api.launch().await.expect("Failed to launch Rocket");
+    match service {
+        APIService::WebsocketPrices => {
+            let rocket_api = rocket_ws_prices(settings.clone()).await;
+            rocket_api.launch().await.expect("Failed to launch Rocket");
+        }
+        APIService::Api => {
+            let rocket_api = rocket_api(settings.clone()).await;
+            rocket_api.launch().await.expect("Failed to launch Rocket");
+        }
+    }
 }

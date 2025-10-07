@@ -40,6 +40,7 @@ mod tests {
             gas_used: Some(1000),
             gas_unit_price: Some(100),
             events: None,
+            payload: None,
             transaction_type: Some("user_transaction".to_string()),
             sequence_number: Some("1".to_string()),
             timestamp: 1234567890,
@@ -65,6 +66,7 @@ mod tests {
             gas_used: Some(500),
             gas_unit_price: Some(50),
             events: None,
+            payload: None,
             transaction_type: Some("user_transaction".to_string()),
             sequence_number: Some("1".to_string()),
             timestamp: 1234567890,
@@ -81,6 +83,8 @@ mod tests {
         let ledger = Ledger {
             chain_id: 1,
             block_height: 987654321,
+            epoch: 13156,
+            ledger_timestamp: 1759855099031447,
         };
         let mapped = map_node_status(&ledger).unwrap();
 

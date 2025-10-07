@@ -49,9 +49,9 @@ where
             _ => unimplemented!(),
         };
         TransactionPayload {
-            function: format!("{address}::router::{function}"),
+            function: Some(format!("{address}::router::{function}")),
             type_arguments: assets,
-            arguments: vec![from_value, to_value],
+            arguments: vec![serde_json::Value::String(from_value), serde_json::Value::String(to_value)],
             payload_type: "entry_function_payload".to_string(),
         }
     }
