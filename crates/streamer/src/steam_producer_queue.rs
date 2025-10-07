@@ -33,6 +33,7 @@ impl StreamProducerQueue for StreamProducer {
     }
 
     async fn publish_notifications_transactions(&self, payload: Vec<NotificationsPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let payload: Vec<NotificationsPayload> = payload.into_iter().filter(|p| !p.notifications.is_empty()).collect();
         if payload.is_empty() {
             return Ok(true);
         }
@@ -61,6 +62,7 @@ impl StreamProducerQueue for StreamProducer {
     }
 
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let payload: Vec<AssetsAddressPayload> = payload.into_iter().filter(|p| !p.values.is_empty()).collect();
         if payload.is_empty() {
             return Ok(true);
         }

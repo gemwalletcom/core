@@ -1,19 +1,19 @@
 use crate::codec::Codec;
 
-use gem_ton::TonAddress;
+use gem_ton::address::{Address, base64_to_hex_address};
 use std::error::Error;
 
 pub struct TonCodec {}
 
 impl Codec for TonCodec {
-    /// Decode both base64 and hex addresses
     fn decode(string: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-        let result = TonAddress::from_base64_url(string);
-        if let Ok(address) = result {
-            return Ok(address.hash_part.to_vec());
+        if let Ok(address) = Address::from_hex_str(string) {
+            return Ok(address.get_hash_part().to_vec());
         }
-        let address = TonAddress::from_hex_str(string)?;
-        Ok(address.hash_part.to_vec())
+
+        let hex = base64_to_hex_address(string.to_string())?;
+        let address = Address::from_hex_str(&hex)?;
+        Ok(address.get_hash_part().to_vec())
     }
 
     /// Encode to master chain base64 address
@@ -27,7 +27,7 @@ impl Codec for TonCodec {
                 bytes.as_slice().try_into()?
             }
         };
-        let address = TonAddress::new(0, hash_part.into());
+        let address = Address::new(0, hash_part);
         Ok(address.to_base64_url())
     }
 }
