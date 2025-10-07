@@ -6,7 +6,7 @@ pub mod reqwest_provider;
 pub mod signer;
 pub mod target;
 
-pub use client::AlienClient;
+pub use client::{AlienClient, new_alien_client};
 pub use error::AlienError;
 pub use provider::{AlienProvider, AlienProviderWrapper};
 pub use signer::AlienSigner;

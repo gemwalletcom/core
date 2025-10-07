@@ -1,9 +1,8 @@
 pub type AlienTarget = gem_swapper::Target;
 pub type AlienHttpMethod = gem_swapper::HttpMethod;
+pub use gem_client::X_CACHE_TTL;
 
 use std::collections::HashMap;
-
-pub const X_CACHE_TTL: &str = "x-cache-ttl";
 
 #[uniffi::remote(Record)]
 pub struct AlienTarget {

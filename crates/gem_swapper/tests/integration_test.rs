@@ -3,14 +3,14 @@
 #[cfg(test)]
 mod tests {
     use gem_solana::{jsonrpc::SolanaRpc, models::blockhash::SolanaBlockhashResult};
-    use primitives::{AssetId, Chain};
-    use std::{collections::HashMap, sync::Arc, time::SystemTime};
-    use swapper::{
-        FetchQuoteData, NativeProvider, RpcClient, SwapperError, SwapperMode, SwapperOptions, SwapperProvider, SwapperQuoteRequest,
+    use gem_swapper::{
+        FetchQuoteData, NativeProvider, Options, QuoteRequest, RpcClient, SwapperError, SwapperMode, SwapperProvider,
         client_factory::create_client_with_chain,
         config::{ReferralFee, ReferralFees, get_swap_config},
     };
-    use swapper::{across::Across, cetus::Cetus, gem_swapper::GemSwapper, uniswap};
+    use gem_swapper::{across::Across, cetus::Cetus, uniswap};
+    use primitives::{AssetId, Chain};
+    use std::{sync::Arc, time::SystemTime};
 
     #[tokio::test]
     async fn test_solana_json_rpc() -> Result<(), String> {
@@ -35,7 +35,7 @@ mod tests {
     async fn test_across_quote() -> Result<(), SwapperError> {
         let network_provider = Arc::new(NativeProvider::default());
         let swap_provider = Across::boxed(network_provider.clone());
-        let mut options = SwapperOptions {
+        let mut options = Options {
             slippage: 100.into(),
             fee: Some(ReferralFees::evm(ReferralFee {
                 bps: 25,
@@ -48,7 +48,7 @@ mod tests {
             address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
         };
 
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             from_asset: AssetId::from_chain(Chain::Optimism).into(),
             to_asset: AssetId::from_chain(Chain::Arbitrum).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
@@ -76,7 +76,7 @@ mod tests {
     async fn test_v4_quoter() -> Result<(), SwapperError> {
         let network_provider = Arc::new(NativeProvider::default());
         let swap_provider = uniswap::default::boxed_uniswap_v4(network_provider.clone());
-        let options = SwapperOptions {
+        let options = Options {
             slippage: 100.into(),
             fee: Some(ReferralFees::evm(ReferralFee {
                 bps: 25,
@@ -85,7 +85,7 @@ mod tests {
             preferred_providers: vec![SwapperProvider::UniswapV4],
         };
 
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             from_asset: AssetId::from_chain(Chain::Unichain).into(),
             to_asset: AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
@@ -114,13 +114,13 @@ mod tests {
         let network_provider = Arc::new(NativeProvider::default());
         let swap_provider = Cetus::<RpcClient>::boxed(network_provider.clone());
         let config = get_swap_config();
-        let options = SwapperOptions {
+        let options = Options {
             slippage: 50.into(),
             fee: Some(config.referral_fee),
             preferred_providers: vec![],
         };
 
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             from_asset: AssetId::from_chain(Chain::Sui).into(),
             to_asset: AssetId {
                 chain: Chain::Sui,

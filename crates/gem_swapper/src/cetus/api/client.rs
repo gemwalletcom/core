@@ -1,5 +1,5 @@
 use super::models::{CetusPool, Request, Response};
-use crate::{SwapperError, alien::target::X_CACHE_TTL};
+use crate::{SwapperError, alien::X_CACHE_TTL};
 use gem_client::{Client, ClientError};
 use std::collections::HashMap;
 

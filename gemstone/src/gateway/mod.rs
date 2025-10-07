@@ -1,4 +1,4 @@
-use crate::alien::{AlienClient, AlienProvider};
+use crate::alien::{AlienProvider, new_alien_client};
 use crate::models::*;
 use crate::network::{jsonrpc_client_with_chain, tron_client};
 use chain_traits::ChainTraits;
@@ -77,7 +77,7 @@ impl GemGateway {
     }
 
     pub async fn provider_with_url(&self, chain: Chain, url: String) -> Result<Arc<dyn ChainTraits>, GatewayError> {
-        let alien_client = AlienClient::new(url.clone(), self.provider.clone());
+        let alien_client = new_alien_client(url.clone(), self.provider.clone());
         match chain {
             Chain::HyperCore => {
                 let preferences = Arc::new(PreferencesWrapper {

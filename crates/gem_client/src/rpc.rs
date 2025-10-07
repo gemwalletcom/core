@@ -1,19 +1,96 @@
-use super::{AlienError, HttpMethod, RpcProvider, Target};
-
+use crate::{Client, ClientError, ContentType, Data};
 use async_trait::async_trait;
-use gem_client::{Client, ClientError, ContentType};
 use primitives::Chain;
 use serde::{Serialize, de::DeserializeOwned};
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use serde_json;
+use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
+
+pub const X_CACHE_TTL: &str = "x-cache-ttl";
 
 #[derive(Debug, Clone)]
-pub struct RpcClient {
-    base_url: String,
-    provider: Arc<dyn RpcProvider>,
+pub struct Target {
+    pub url: String,
+    pub method: HttpMethod,
+    pub headers: Option<HashMap<String, String>>,
+    pub body: Option<Vec<u8>>,
 }
 
-impl RpcClient {
-    pub fn new(base_url: String, provider: Arc<dyn RpcProvider>) -> Self {
+impl Target {
+    pub fn get(url: &str) -> Self {
+        Self {
+            url: url.into(),
+            method: HttpMethod::Get,
+            headers: None,
+            body: None,
+        }
+    }
+
+    pub fn post_json(url: &str, body: serde_json::Value) -> Self {
+        Self {
+            url: url.into(),
+            method: HttpMethod::Post,
+            headers: Some(HashMap::from([("Content-Type".into(), "application/json".into())])),
+            body: Some(serde_json::to_vec(&body).expect("Failed to serialize JSON body")),
+        }
+    }
+
+    pub fn set_cache_ttl(mut self, ttl: u64) -> Self {
+        if self.headers.is_none() {
+            self.headers = Some(HashMap::new());
+        }
+        if let Some(headers) = self.headers.as_mut() {
+            headers.insert(X_CACHE_TTL.into(), ttl.to_string());
+        }
+        self
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum HttpMethod {
+    Get,
+    Post,
+    Put,
+    Delete,
+    Head,
+    Options,
+    Patch,
+}
+
+impl From<HttpMethod> for String {
+    fn from(value: HttpMethod) -> Self {
+        match value {
+            HttpMethod::Get => "GET",
+            HttpMethod::Post => "POST",
+            HttpMethod::Put => "PUT",
+            HttpMethod::Delete => "DELETE",
+            HttpMethod::Head => "HEAD",
+            HttpMethod::Options => "OPTIONS",
+            HttpMethod::Patch => "PATCH",
+        }
+        .into()
+    }
+}
+
+#[async_trait]
+pub trait RpcProvider: Send + Sync + Debug {
+    type Error: std::error::Error + Send + Sync + 'static;
+
+    async fn request(&self, target: Target) -> Result<Data, Self::Error>;
+    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, Self::Error>;
+    fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error>;
+}
+
+#[derive(Debug, Clone)]
+pub struct RpcClient<E> {
+    base_url: String,
+    provider: Arc<dyn RpcProvider<Error = E>>,
+}
+
+impl<E> RpcClient<E>
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    pub fn new(base_url: String, provider: Arc<dyn RpcProvider<Error = E>>) -> Self {
         Self { base_url, provider }
     }
 
@@ -23,7 +100,10 @@ impl RpcClient {
 }
 
 #[async_trait]
-impl Client for RpcClient {
+impl<E> Client for RpcClient<E>
+where
+    E: std::error::Error + Send + Sync + 'static + std::fmt::Display,
+{
     async fn get<R>(&self, path: &str) -> Result<R, ClientError>
     where
         R: DeserializeOwned,
@@ -51,7 +131,7 @@ impl Client for RpcClient {
             .provider
             .request(target)
             .await
-            .map_err(|e| ClientError::Network(format!("Alien provider error: {e}")))?;
+            .map_err(|e| ClientError::Network(format!("RPC provider error: {e}")))?;
 
         serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
@@ -100,23 +180,28 @@ impl Client for RpcClient {
             .provider
             .request(target)
             .await
-            .map_err(|e| ClientError::Network(format!("Alien provider error: {e}")))?;
+            .map_err(|e| ClientError::Network(format!("RPC provider error: {e}")))?;
 
         serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
 }
 
 #[async_trait]
-impl RpcProvider for RpcClient {
-    async fn request(&self, target: Target) -> Result<Vec<u8>, AlienError> {
+impl<E> RpcProvider for RpcClient<E>
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    type Error = E;
+
+    async fn request(&self, target: Target) -> Result<Data, Self::Error> {
         self.provider.request(target).await
     }
 
-    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Vec<u8>>, AlienError> {
+    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, Self::Error> {
         self.provider.batch_request(targets).await
     }
 
-    fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
+    fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error> {
         self.provider.get_endpoint(chain)
     }
 }

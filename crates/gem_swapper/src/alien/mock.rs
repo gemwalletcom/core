@@ -4,11 +4,8 @@ use std::{
     time::Duration,
 };
 
-use super::{
-    AlienError,
-    provider::{Data, RpcProvider},
-    target::Target,
-};
+use super::{AlienError, Target};
+use gem_client::{Data, RpcProvider as GenericRpcProvider};
 use primitives::Chain;
 
 #[allow(unused)]
@@ -38,17 +35,19 @@ impl ProviderMock {
 }
 
 #[async_trait]
-impl RpcProvider for ProviderMock {
-    async fn request(&self, target: Target) -> Result<Data, AlienError> {
+impl GenericRpcProvider for ProviderMock {
+    type Error = AlienError;
+
+    async fn request(&self, target: Target) -> Result<Data, Self::Error> {
         let responses = self.batch_request(vec![target]).await;
         responses.map(|responses| responses.first().unwrap().clone())
     }
 
-    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, AlienError> {
+    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, Self::Error> {
         targets.iter().map(|target| Ok(self.response.0(target.clone()).into_bytes())).collect()
     }
 
-    fn get_endpoint(&self, _chain: Chain) -> Result<String, AlienError> {
+    fn get_endpoint(&self, _chain: Chain) -> Result<String, Self::Error> {
         Ok(String::from("http://localhost:8080"))
     }
 }

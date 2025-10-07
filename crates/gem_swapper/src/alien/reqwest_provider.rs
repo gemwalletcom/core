@@ -1,9 +1,10 @@
-use super::{AlienError, HttpMethod, RpcProvider, Target, provider::Data};
+use super::{AlienError, HttpMethod, Target};
 use primitives::{Chain, node_config::get_nodes_for_chain};
 
 use async_trait::async_trait;
 use futures::{TryFutureExt, future::try_join_all};
 use reqwest::Client;
+use gem_client::{Data, RpcProvider as GenericRpcProvider};
 
 #[derive(Debug)]
 pub struct NativeProvider {
@@ -32,18 +33,20 @@ impl Default for NativeProvider {
 }
 
 #[async_trait]
-impl RpcProvider for NativeProvider {
-    fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
+impl GenericRpcProvider for NativeProvider {
+    type Error = AlienError;
+
+    fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error> {
         let nodes = get_nodes_for_chain(chain);
         if nodes.is_empty() {
-            return Err(AlienError::ResponseError {
+            return Err(Self::Error::ResponseError {
                 msg: format!("not supported chain: {chain:?}"),
             });
         }
         Ok(nodes[0].url.clone())
     }
 
-    async fn request(&self, target: Target) -> Result<Data, AlienError> {
+    async fn request(&self, target: Target) -> Result<Data, Self::Error> {
         if self.debug {
             println!("==> request: url: {:?}, method: {:?}", target.url, target.method);
         }
@@ -74,13 +77,13 @@ impl RpcProvider for NativeProvider {
 
         let response = req
             .send()
-            .map_err(|e| AlienError::ResponseError {
+            .map_err(|e| Self::Error::ResponseError {
                 msg: format!("reqwest send error: {e:?}"),
             })
             .await?;
         let bytes = response
             .bytes()
-            .map_err(|e| AlienError::ResponseError {
+            .map_err(|e| Self::Error::ResponseError {
                 msg: format!("request error: {e:?}"),
             })
             .await?;
@@ -97,7 +100,7 @@ impl RpcProvider for NativeProvider {
         Ok(bytes.to_vec())
     }
 
-    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, AlienError> {
+    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, Self::Error> {
         let futures = targets.into_iter().map(|target| self.request(target));
         try_join_all(futures).await
     }

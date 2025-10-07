@@ -14,7 +14,7 @@ name = "gemstone"
 
 [features]
 default = []
-reqwest_provider = ["dep:reqwest"]
+reqwest_provider = ["dep:reqwest", "gem_swapper/reqwest_provider"]
 swap_integration_tests = ["reqwest_provider"]
 
 [dependencies]
