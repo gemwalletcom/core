@@ -19,7 +19,6 @@ gem_sui = { path = "../gem_sui", features = ["rpc"] }
 gem_aptos = { path = "../gem_aptos", features = ["rpc"] }
 gem_hash = { path = "../gem_hash" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
-anyhow = "1.0"
 gem_client = { path = "../gem_client" }
 gem_hypercore = { path = "../gem_hypercore" }
 gem_bitcoin = { path = "../gem_bitcoin", features = ["rpc"] }
@@ -30,7 +29,6 @@ gem_xrp = { path = "../gem_xrp", features = ["rpc"] }
 gem_near = { path = "../gem_near", features = ["rpc"] }
 gem_polkadot = { path = "../gem_polkadot", features = ["rpc"] }
 serde_serializers = { path = "../serde_serializers" }
-chain_traits = { path = "../chain_traits" }
 number_formatter = { path = "../number_formatter" }
 gem_macro = { path = "../gem_macro" }
 
@@ -41,7 +39,6 @@ sui-types = { workspace = true }
 sui-transaction-builder = { workspace = true }
 
 strum = { workspace = true }
-chrono = { workspace = true }
 
 base64.workspace = true
 serde.workspace = true

@@ -69,48 +69,49 @@ where
         Chain::from_str(&chainflip_chain.to_lowercase()).ok()
     }
 
-    fn get_best_quote(mut quotes: Vec<QuoteResponse>, fee_bps: u32) -> (BigUint, u32, u32, ChainflipRouteData) {
-        quotes.sort_by(|a, b| b.egress_amount.cmp(&a.egress_amount));
-        let quote = &quotes[0];
+}
 
-        let (egress_amount, slippage_bps, eta_in_seconds, boost_fee, estimated_price, dca_parameters) = if let Some(boost_quote) = &quote.boost_quote {
-            (
-                boost_quote.egress_amount.clone(),
-                boost_quote.slippage_bps(),
-                boost_quote.estimated_duration_seconds as u32,
-                Some(boost_quote.estimated_boost_fee_bps),
-                boost_quote.estimated_price.clone(),
-                boost_quote.dca_params.as_ref().map(|dca| DcaParameters {
-                    number_of_chunks: dca.number_of_chunks,
-                    chunk_interval: dca.chunk_interval_blocks,
-                }),
-            )
-        } else {
-            (
-                quote.egress_amount.clone(),
-                quote.slippage_bps(),
-                quote.estimated_duration_seconds as u32,
-                None,
-                quote.estimated_price.clone(),
-                quote.dca_params.as_ref().map(|dca| DcaParameters {
-                    number_of_chunks: dca.number_of_chunks,
-                    chunk_interval: dca.chunk_interval_blocks,
-                }),
-            )
-        };
+fn get_best_quote(mut quotes: Vec<QuoteResponse>, fee_bps: u32) -> (BigUint, u32, u32, ChainflipRouteData) {
+    quotes.sort_by(|a, b| b.egress_amount.cmp(&a.egress_amount));
+    let quote = &quotes[0];
 
+    let (egress_amount, slippage_bps, eta_in_seconds, boost_fee, estimated_price, dca_parameters) = if let Some(boost_quote) = &quote.boost_quote {
         (
-            egress_amount,
-            slippage_bps,
-            eta_in_seconds,
-            ChainflipRouteData {
-                boost_fee,
-                fee_bps,
-                estimated_price,
-                dca_parameters,
-            },
+            boost_quote.egress_amount.clone(),
+            boost_quote.slippage_bps(),
+            boost_quote.estimated_duration_seconds as u32,
+            Some(boost_quote.estimated_boost_fee_bps),
+            boost_quote.estimated_price.clone(),
+            boost_quote.dca_params.as_ref().map(|dca| DcaParameters {
+                number_of_chunks: dca.number_of_chunks,
+                chunk_interval: dca.chunk_interval_blocks,
+            }),
         )
-    }
+    } else {
+        (
+            quote.egress_amount.clone(),
+            quote.slippage_bps(),
+            quote.estimated_duration_seconds as u32,
+            None,
+            quote.estimated_price.clone(),
+            quote.dca_params.as_ref().map(|dca| DcaParameters {
+                number_of_chunks: dca.number_of_chunks,
+                chunk_interval: dca.chunk_interval_blocks,
+            }),
+        )
+    };
+
+    (
+        egress_amount,
+        slippage_bps,
+        eta_in_seconds,
+        ChainflipRouteData {
+            boost_fee,
+            fee_bps,
+            estimated_price,
+            dca_parameters,
+        },
+    )
 }
 
 #[async_trait]
@@ -160,7 +161,7 @@ where
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = Self::get_best_quote(quotes, fee_bps);
+        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, fee_bps);
 
         Ok(Quote {
             from_value: request.value.clone(),
@@ -315,5 +316,53 @@ where
             to_chain: Self::map_chainflip_chain_to_chain(&status.dest_chain),
             to_tx_hash,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_best_quote() {
+        let json = include_str!("./test/chainflip_quotes.json");
+        let quotes: Vec<QuoteResponse> = serde_json::from_str(json).unwrap();
+        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, DEFAULT_CHAINFLIP_FEE_BPS);
+
+        assert_eq!(egress_amount.to_string(), "145118751424");
+        assert_eq!(slippage_bps, 250);
+        assert_eq!(eta_in_seconds, 192);
+        assert_eq!(
+            route_data,
+            ChainflipRouteData {
+                boost_fee: None,
+                fee_bps: DEFAULT_CHAINFLIP_FEE_BPS,
+                estimated_price: "14.5118765424".to_string(),
+                dca_parameters: None,
+            }
+        );
+    }
+
+    #[test]
+    fn test_best_boost_quote() {
+        let json = include_str!("./test/chainflip_boost_quotes.json");
+        let quotes: Vec<QuoteResponse> = serde_json::from_str(json).unwrap();
+        let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, DEFAULT_CHAINFLIP_FEE_BPS);
+
+        assert_eq!(egress_amount.to_string(), "4080936927013539226");
+        assert_eq!(slippage_bps, 100);
+        assert_eq!(eta_in_seconds, 744);
+        assert_eq!(
+            route_data,
+            ChainflipRouteData {
+                boost_fee: Some(5),
+                fee_bps: DEFAULT_CHAINFLIP_FEE_BPS,
+                estimated_price: "40.83388759199201533512".to_string(),
+                dca_parameters: Some(DcaParameters {
+                    number_of_chunks: 3,
+                    chunk_interval: 2,
+                }),
+            }
+        );
     }
 }
