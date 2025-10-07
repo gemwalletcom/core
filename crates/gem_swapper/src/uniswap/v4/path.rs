@@ -5,7 +5,7 @@ use gem_evm::uniswap::{
     path::TokenPair,
 };
 
-use crate::{SwapperError, SwapperRoute, eth_address, uniswap::swap_route::RouteData};
+use crate::{SwapperError, Route, eth_address, uniswap::swap_route::RouteData};
 
 // return (currency0, currency1)
 fn sort_addresses(token_in: &Address, token_out: &Address) -> (Address, Address) {
@@ -87,10 +87,10 @@ pub fn build_quote_exact_params(
         .collect()
 }
 
-impl TryFrom<&SwapperRoute> for PathKey {
+impl TryFrom<&Route> for PathKey {
     type Error = SwapperError;
 
-    fn try_from(value: &SwapperRoute) -> Result<Self, Self::Error> {
+    fn try_from(value: &Route) -> Result<Self, Self::Error> {
         let token_id = value.output.token_id.as_ref().ok_or(SwapperError::InvalidAddress(value.output.to_string()))?;
         let currency = eth_address::parse_str(token_id)?;
 

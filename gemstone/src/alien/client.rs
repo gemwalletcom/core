@@ -1,4 +1,4 @@
-use crate::network::{AlienError, AlienProvider, AlienTarget};
+use super::{AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
 use async_trait::async_trait;
 use gem_client::{Client, ClientError, ContentType};
 use primitives::Chain;
@@ -38,7 +38,7 @@ impl Client for AlienClient {
         let target = if let Some(headers) = headers {
             AlienTarget {
                 url,
-                method: crate::network::AlienHttpMethod::Get,
+                method: AlienHttpMethod::Get,
                 headers: Some(headers),
                 body: None,
             }
@@ -90,7 +90,7 @@ impl Client for AlienClient {
 
         let target = AlienTarget {
             url,
-            method: crate::network::AlienHttpMethod::Post,
+            method: AlienHttpMethod::Post,
             headers: Some(request_headers),
             body: Some(data),
         };

@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{SwapperError, SwapperMode, SwapperQuoteRequest, SwapperRoute, eth_address, slippage::apply_slippage_in_bp};
+use crate::{QuoteRequest, Route, SwapperError, SwapperMode, eth_address, slippage::apply_slippage_in_bp};
 use alloy_primitives::{Address, U256};
 use gem_evm::uniswap::{
     actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
@@ -9,12 +9,12 @@ use gem_evm::uniswap::{
 };
 
 pub fn build_commands(
-    request: &SwapperQuoteRequest,
+    request: &QuoteRequest,
     token_in: &Address,
     token_out: &Address,
     amount_in: u128,
     quote_amount: u128,
-    swap_routes: &[SwapperRoute],
+    swap_routes: &[Route],
     permit: Option<Permit2Permit>,
     fee_token_is_input: bool,
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
@@ -98,7 +98,7 @@ fn build_v4_swap_command(
     token_out: &Address,
     amount_in: u128,
     amount_out_min: u128,
-    swap_routes: &[SwapperRoute],
+    swap_routes: &[Route],
     recipient: &Address,
 ) -> Result<UniversalRouterCommand, SwapperError> {
     if swap_routes.is_empty() {

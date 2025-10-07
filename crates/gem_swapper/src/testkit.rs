@@ -3,18 +3,18 @@ use crate::{
     config::{ReferralFee, ReferralFees},
 };
 
-use super::{SwapperMode, SwapperOptions, SwapperQuoteRequest};
+use super::{SwapperMode, Options, QuoteRequest};
 use primitives::AssetId;
 
-pub fn mock_quote(from_asset: AssetId, to_asset: AssetId) -> SwapperQuoteRequest {
-    SwapperQuoteRequest {
+pub fn mock_quote(from_asset: AssetId, to_asset: AssetId) -> QuoteRequest {
+    QuoteRequest {
         from_asset: from_asset.into(),
         to_asset: to_asset.into(),
         wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
         destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
         value: "1000000".into(),
         mode: SwapperMode::ExactIn,
-        options: SwapperOptions {
+        options: Options {
             slippage: SwapperSlippage {
                 mode: SwapperSlippageMode::Auto,
                 bps: 100,

@@ -52,24 +52,6 @@ public struct ViewModel: Sendable {
         print("<== getProviders:\n", swapper.getProviders())
     }
 
-    public func fetchSolanaPay(uri: String) async throws {
-        let wrapper = try paymentDecodeUrl(string: uri)
-        guard let url = wrapper.paymentLink else {
-            print("invalid url")
-            return
-        }
-        do {
-            let solanaPay = SolanaPay(provider: self.provider)
-            async let labelCall = solanaPay.getLabel(link: url)
-            async let txCall = solanaPay.postAccount(link: url, account: TEST_SOL_WALLET)
-
-            let (label, tx) = try await (labelCall, txCall)
-            print(label, tx)
-        } catch {
-            print(error)
-        }
-    }
-
     func dumpQuote(_ quote: SwapperQuote) {
         let route = quote.data.routes.first!
         print("<== fetchQuote:\n", quote.description)

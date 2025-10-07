@@ -1,5 +1,5 @@
 use crate::{
-    FetchQuoteData, Permit2ApprovalData, Swapper, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
+    FetchQuoteData, Permit2ApprovalData, Swapper, SwapperError, ProviderData, ProviderType, Quote, SwapperQuoteData, QuoteRequest,
     alien::{RpcClient, RpcProvider},
     approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
@@ -49,7 +49,7 @@ impl UniswapV3 {
         eth_address::normalize_weth_address(&asset_id, evm_chain)
     }
 
-    fn parse_request(request: &SwapperQuoteRequest) -> Result<(EVMChain, Address, Address, U256), SwapperError> {
+    fn parse_request(request: &QuoteRequest) -> Result<(EVMChain, Address, Address, U256), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::get_asset_address(&request.from_asset.id, evm_chain)?;
         let token_out = Self::get_asset_address(&request.to_asset.id, evm_chain)?;
@@ -102,7 +102,7 @@ impl fmt::Debug for UniswapV3 {
 
 #[async_trait]
 impl Swapper for UniswapV3 {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         self.provider.provider()
     }
 
@@ -114,7 +114,7 @@ impl Swapper for UniswapV3 {
             .collect()
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
         let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -179,10 +179,10 @@ impl Swapper for UniswapV3 {
         };
         let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &route_data, gas_estimate);
 
-        Ok(SwapperQuote {
+        Ok(Quote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider().clone(),
                 routes: routes.clone(),
                 slippage_bps: request.options.slippage.bps,
@@ -192,7 +192,7 @@ impl Swapper for UniswapV3 {
         })
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn fetch_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         if from_asset.is_native() {
             return Ok(None);
@@ -204,7 +204,7 @@ impl Swapper for UniswapV3 {
             .await
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let request = &quote.request;
         let from_chain = request.from_asset.chain();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;

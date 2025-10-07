@@ -15,8 +15,8 @@ use super::{
     model::RouteData,
 };
 use crate::{
-    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
-    SwapperRoute, SwapperSwapResult, approval::check_approval_erc20, asset::*,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData, Route,
+    SwapResult, approval::check_approval_erc20, asset::*,
 };
 
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -26,7 +26,7 @@ impl<C> Swapper for ThorChain<C>
 where
     C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
 {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -56,7 +56,7 @@ where
             .collect()
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
@@ -102,12 +102,12 @@ where
             inbound_address: quote.inbound_address.clone(),
         };
 
-        let quote = SwapperQuote {
+        let quote = Quote {
             from_value: request.clone().value,
             to_value: to_value.to_string(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider().clone(),
-                routes: vec![SwapperRoute {
+                routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
@@ -122,7 +122,7 @@ where
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
         let from_asset = THORChainAsset::from_asset_id(&quote.request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&quote.request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
@@ -202,7 +202,7 @@ where
         Ok(data)
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         let status = self.swap_client.get_transaction_status(transaction_hash).await?;
 
         let swap_status = status.observed_tx.swap_status();
@@ -222,7 +222,7 @@ where
             _ => (None, None),
         };
 
-        Ok(SwapperSwapResult {
+        Ok(SwapResult {
             status: swap_status,
             from_chain: chain,
             from_tx_hash: transaction_hash.to_string(),

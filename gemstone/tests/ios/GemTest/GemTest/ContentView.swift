@@ -72,15 +72,6 @@ struct ContentView: View {
             Button("Bridge Base USDC -> ETH") {
                 self.testQuote(quote: .baseUSDC2Eth)
             }
-            Text("Solana Pay:")
-            Button("Paste URI") {
-                guard let text = UIPasteboard.general.string else {
-                    return
-                }
-                Task {
-                    try await self.model.fetchSolanaPay(uri: text)
-                }
-            }
         }
         .padding()
         .onAppear {}

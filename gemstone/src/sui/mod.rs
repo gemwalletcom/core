@@ -1,4 +1,3 @@
-pub mod gas_budget;
 mod model;
 
 use crate::GemstoneError;

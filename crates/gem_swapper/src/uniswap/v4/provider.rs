@@ -3,8 +3,8 @@ use async_trait::async_trait;
 use std::{collections::HashSet, fmt, str::FromStr, sync::Arc, vec};
 
 use crate::{
-    FetchQuoteData, Permit2ApprovalData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
-    SwapperQuoteData, SwapperQuoteRequest,
+    FetchQuoteData, Permit2ApprovalData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, ProviderData, ProviderType, Quote,
+    SwapperQuoteData, QuoteRequest,
     alien::{RpcClient, RpcProvider},
     approval::evm::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
@@ -38,14 +38,14 @@ use super::{
 };
 
 pub struct UniswapV4 {
-    pub provider: SwapperProviderType,
+    pub provider: ProviderType,
     rpc_provider: Arc<dyn RpcProvider>,
 }
 
 impl UniswapV4 {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::UniswapV4),
+            provider: ProviderType::new(SwapperProvider::UniswapV4),
             rpc_provider,
         }
     }
@@ -78,7 +78,7 @@ impl UniswapV4 {
         }
     }
 
-    fn parse_request(request: &SwapperQuoteRequest) -> Result<(EVMChain, Address, Address, u128), SwapperError> {
+    fn parse_request(request: &QuoteRequest) -> Result<(EVMChain, Address, Address, u128), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::parse_asset_address(&request.from_asset.id, evm_chain)?;
         let token_out = Self::parse_asset_address(&request.to_asset.id, evm_chain)?;
@@ -96,7 +96,7 @@ impl fmt::Debug for UniswapV4 {
 
 #[async_trait]
 impl Swapper for UniswapV4 {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -108,7 +108,7 @@ impl Swapper for UniswapV4 {
             .collect()
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
         let deployment = get_uniswap_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -182,10 +182,10 @@ impl Swapper for UniswapV4 {
         };
         let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &route_data, gas_estimate);
 
-        Ok(SwapperQuote {
+        Ok(Quote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider().clone(),
                 routes: routes.clone(),
                 slippage_bps: request.options.slippage.bps,
@@ -195,7 +195,7 @@ impl Swapper for UniswapV4 {
         })
     }
 
-    async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn fetch_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         if from_asset.is_native() {
             return Ok(None);
@@ -218,7 +218,7 @@ impl Swapper for UniswapV4 {
         Ok(permit2_data)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
@@ -280,21 +280,21 @@ impl Swapper for UniswapV4 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SwapperMode, SwapperOptions, alien::mock::ProviderMock};
+    use crate::{SwapperMode, Options, alien::mock::ProviderMock};
     use std::sync::Arc;
 
     #[test]
     fn test_is_base_pair() {
         let provider = Arc::new(ProviderMock::new("{}".to_string()));
         let swapper = UniswapV4::new(provider);
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             from_asset: AssetId::from(Chain::SmartChain, Some("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string())).into(),
             to_asset: AssetId::from_chain(Chain::SmartChain).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "40000000000000000".into(), // 0.04 Cake
             mode: SwapperMode::ExactIn,
-            options: SwapperOptions::default(),
+            options: Options::default(),
         };
 
         let (evm_chain, token_in, token_out, _) = UniswapV4::parse_request(&request).unwrap();

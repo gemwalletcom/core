@@ -1,7 +1,7 @@
 use super::{
     SwapperProviderMode, SwapperQuoteData,
     error::SwapperError,
-    models::{FetchQuoteData, Permit2ApprovalData, SwapperChainAsset, SwapperProviderType, SwapperQuote, SwapperQuoteRequest, SwapperSwapResult},
+    models::{FetchQuoteData, Permit2ApprovalData, SwapperChainAsset, ProviderType, Quote, QuoteRequest, SwapResult},
 };
 use async_trait::async_trait;
 use std::fmt::Debug;
@@ -10,14 +10,14 @@ use primitives::{Chain, swap::SwapStatus};
 
 #[async_trait]
 pub trait Swapper: Send + Sync + Debug {
-    fn provider(&self) -> &SwapperProviderType;
+    fn provider(&self) -> &ProviderType;
     fn supported_assets(&self) -> Vec<SwapperChainAsset>;
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError>;
-    async fn fetch_permit2_for_quote(&self, _quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError>;
+    async fn fetch_permit2_for_quote(&self, _quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         Ok(None)
     }
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         if self.provider().mode() == SwapperProviderMode::OnChain {
             Ok(self.get_onchain_swap_status(chain, transaction_hash))
         } else {
@@ -26,8 +26,8 @@ pub trait Swapper: Send + Sync + Debug {
     }
 
     /// Default OnChain provider swap status implementation
-    fn get_onchain_swap_status(&self, chain: Chain, transaction_hash: &str) -> SwapperSwapResult {
-        SwapperSwapResult {
+    fn get_onchain_swap_status(&self, chain: Chain, transaction_hash: &str) -> SwapResult {
+        SwapResult {
             status: SwapStatus::Completed,
             from_chain: chain,
             from_tx_hash: transaction_hash.to_string(),

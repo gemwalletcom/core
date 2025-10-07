@@ -7,7 +7,7 @@ use primitives::{AssetId, Chain, swap::ApprovalData};
 use std::{fmt::Debug, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapProviderConfig(SwapperProviderType);
+pub struct SwapProviderConfig(ProviderType);
 
 impl SwapProviderConfig {
     pub fn id(&self) -> SwapperProvider {
@@ -17,26 +17,26 @@ impl SwapProviderConfig {
 
 impl SwapProviderConfig {
     pub fn new(id: SwapperProvider) -> Self {
-        Self(SwapperProviderType::new(id))
+        Self(ProviderType::new(id))
     }
     pub fn from_string(id: String) -> Self {
         let id = SwapperProvider::from_str(&id).unwrap();
-        Self(SwapperProviderType::new(id))
+        Self(ProviderType::new(id))
     }
-    pub fn inner(&self) -> SwapperProviderType {
+    pub fn inner(&self) -> ProviderType {
         self.0.clone()
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapperProviderType {
+pub struct ProviderType {
     pub id: SwapperProvider,
     pub name: String,
     pub protocol: String,
     pub protocol_id: String,
 }
 
-impl SwapperProviderType {
+impl ProviderType {
     pub fn new(id: SwapperProvider) -> Self {
         Self {
             id,
@@ -70,24 +70,24 @@ impl SwapperProviderType {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapperQuoteRequest {
+pub struct QuoteRequest {
     pub from_asset: SwapperQuoteAsset,
     pub to_asset: SwapperQuoteAsset,
     pub wallet_address: String,
     pub destination_address: String,
     pub value: String,
     pub mode: SwapperMode,
-    pub options: SwapperOptions,
+    pub options: Options,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapperOptions {
+pub struct Options {
     pub slippage: SwapperSlippage,
     pub fee: Option<ReferralFees>,
     pub preferred_providers: Vec<SwapperProvider>,
 }
 
-impl Default for SwapperOptions {
+impl Default for Options {
     fn default() -> Self {
         Self {
             slippage: DEFAULT_SLIPPAGE_BPS.into(),
@@ -98,11 +98,11 @@ impl Default for SwapperOptions {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapperQuote {
+pub struct Quote {
     pub from_value: String,
     pub to_value: String,
-    pub data: SwapperProviderData,
-    pub request: SwapperQuoteRequest,
+    pub data: ProviderData,
+    pub request: QuoteRequest,
     pub eta_in_seconds: Option<u32>,
 }
 
@@ -138,14 +138,14 @@ pub struct Permit2ApprovalData {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapperProviderData {
-    pub provider: SwapperProviderType,
+pub struct ProviderData {
+    pub provider: ProviderType,
     pub slippage_bps: u32,
-    pub routes: Vec<SwapperRoute>,
+    pub routes: Vec<Route>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapperRoute {
+pub struct Route {
     pub input: AssetId,
     pub output: AssetId,
     pub route_data: String,
@@ -184,13 +184,13 @@ impl SwapperChainAsset {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapperAssetList {
+pub struct AssetList {
     pub chains: Vec<Chain>,
     pub asset_ids: Vec<AssetId>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SwapperSwapResult {
+pub struct SwapResult {
     pub status: SwapperSwapStatus,
     pub from_chain: Chain,
     pub from_tx_hash: String,

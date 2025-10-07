@@ -14,7 +14,7 @@ use std::{str::FromStr, sync::Arc};
 use crate::alien::RpcProvider;
 use gem_client::Client;
 
-use super::{SwapperProvider, SwapperProviderType};
+use super::{SwapperProvider, ProviderType};
 
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
@@ -29,7 +29,7 @@ pub struct ThorChain<C>
 where
     C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
 {
-    pub provider: SwapperProviderType,
+    pub provider: ProviderType,
     pub rpc_provider: Arc<dyn RpcProvider>,
     pub(crate) swap_client: client::ThorChainSwapClient<C>,
 }
@@ -40,7 +40,7 @@ where
 {
     pub fn with_client(swap_client: client::ThorChainSwapClient<C>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::Thorchain),
+            provider: ProviderType::new(SwapperProvider::Thorchain),
             rpc_provider,
             swap_client,
         }

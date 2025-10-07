@@ -1,4 +1,4 @@
-use crate::SwapperRoute;
+use crate::Route;
 use alloy_primitives::Address;
 use gem_evm::uniswap::path::BasePair;
 use primitives::AssetId;
@@ -29,17 +29,17 @@ pub fn build_swap_route(
     token_out: &AssetId,
     route_data: &RouteData,
     gas_estimate: Option<String>,
-) -> Vec<SwapperRoute> {
+) -> Vec<Route> {
     let data = serde_json::to_string(route_data).unwrap();
     if let Some(intermediary) = intermediary {
         vec![
-            SwapperRoute {
+            Route {
                 input: token_in.clone(),
                 output: intermediary.clone(),
                 route_data: data.clone(),
                 gas_limit: gas_estimate.clone(),
             },
-            SwapperRoute {
+            Route {
                 input: intermediary.clone(),
                 output: token_out.clone(),
                 route_data: data,
@@ -47,7 +47,7 @@ pub fn build_swap_route(
             },
         ]
     } else {
-        vec![SwapperRoute {
+        vec![Route {
             input: token_in.clone(),
             output: token_out.clone(),
             route_data: data,

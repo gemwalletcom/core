@@ -1,7 +1,11 @@
-use super::{PROGRAM_ADDRESS, client::JupiterClient, model::*};
+use super::{
+    PROGRAM_ADDRESS,
+    client::JupiterClient,
+    model::{DynamicSlippage, QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
+};
 use crate::{
-    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperOptions, SwapperProvider, SwapperProviderData, SwapperProviderType,
-    SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, SwapperSlippageMode,
+    FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider,
+    SwapperQuoteData, SwapperSlippageMode,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -22,7 +26,7 @@ where
     C: Client + Clone + Send + Sync + 'static,
     R: Client + Clone + Send + Sync + 'static,
 {
-    pub provider: SwapperProviderType,
+    pub provider: ProviderType,
     pub fee_mints: HashSet<&'static str>,
     http_client: JupiterClient<C>,
     rpc_client: JsonRpcClient<R>,
@@ -35,7 +39,7 @@ where
 {
     pub fn with_clients(http_client: JupiterClient<C>, rpc_client: JsonRpcClient<R>) -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::Jupiter),
+            provider: ProviderType::new(SwapperProvider::Jupiter),
             fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, USDS_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
             http_client,
             rpc_client,
@@ -64,7 +68,7 @@ where
         }
     }
 
-    fn get_fee_token_account(&self, options: &SwapperOptions, mint: &str, token_program: &str) -> Option<String> {
+    fn get_fee_token_account(&self, options: &Options, mint: &str, token_program: &str) -> Option<String> {
         if let Some(fee) = &options.fee {
             let fee_account = super::token_account::get_token_account(&fee.solana.address, mint, token_program);
             return Some(fee_account);
@@ -84,7 +88,7 @@ where
             .ok_or(SwapperError::NetworkError("fetch_token_program error".to_string()))
     }
 
-    async fn fetch_fee_account(&self, mode: &SwapperMode, options: &SwapperOptions, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
+    async fn fetch_fee_account(&self, mode: &SwapperMode, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
         let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
         // if fee_mint is in preset, no need to fetch token program
         let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
@@ -114,7 +118,7 @@ where
     C: Client + Clone + Send + Sync + 'static,
     R: Client + Clone + Send + Sync + 'static,
 {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -122,7 +126,7 @@ where
         vec![SwapperChainAsset::All(Chain::Solana)]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let input_mint = self.get_asset_address(&request.from_asset.id)?;
         let output_mint = self.get_asset_address(&request.to_asset.id)?;
         let swap_options = request.options.clone();
@@ -134,7 +138,7 @@ where
             SwapperSlippageMode::Exact => false,
         };
 
-        let quote_request = QuoteRequest {
+        let quote_request = JupiterRequest {
             input_mint: input_mint.clone(),
             output_mint: output_mint.clone(),
             amount: request.value.clone(),
@@ -150,12 +154,12 @@ where
         // The value includes platform fees and DEX fees, excluding slippage.
         let out_amount: U256 = swap_quote.out_amount.parse().map_err(SwapperError::from)?;
 
-        let quote = SwapperQuote {
+        let quote = Quote {
             from_value: request.value.clone(),
             to_value: out_amount.to_string(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider().clone(),
-                routes: vec![SwapperRoute {
+                routes: vec![Route {
                     input: AssetId::from(Chain::Solana, Some(input_mint)),
                     output: AssetId::from(Chain::Solana, Some(output_mint)),
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
@@ -169,7 +173,7 @@ where
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         if quote.data.routes.is_empty() {
             return Err(SwapperError::InvalidRoute);
         }
@@ -217,7 +221,7 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::SwapperOptions};
+    use crate::{SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
     use primitives::AssetId;
     use std::sync::Arc;
 
@@ -226,13 +230,13 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = Jupiter::new(rpc_provider);
 
-        let options = SwapperOptions {
+        let options = Options {
             slippage: 100.into(),
             fee: None,
             preferred_providers: vec![],
         };
 
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
             to_asset: SwapperQuoteAsset::from(AssetId::from(Chain::Solana, Some(USDC_TOKEN_MINT.to_string()))),
             wallet_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),

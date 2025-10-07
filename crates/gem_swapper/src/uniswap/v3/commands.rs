@@ -5,7 +5,7 @@ use alloy_primitives::{Address, Bytes, U256};
 use std::str::FromStr;
 
 pub fn build_commands(
-    request: &SwapperQuoteRequest,
+    request: &QuoteRequest,
     token_in: &Address,
     token_out: &Address,
     amount_in: U256,
@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_build_commands_eth_to_token() {
-        let mut request = SwapperQuoteRequest {
+        let mut request = QuoteRequest {
             // ETH -> USDC
             from_asset: AssetId::from(Chain::Ethereum, None).into(),
             to_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())).into(),
@@ -143,7 +143,7 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000000000000".into(),
             mode: SwapperMode::ExactIn,
-            options: SwapperOptions::default(),
+            options: Options::default(),
         };
 
         let token_in = eth_address::parse_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2").unwrap();
@@ -159,7 +159,7 @@ mod tests {
         assert!(matches!(commands[0], UniversalRouterCommand::WRAP_ETH(_)));
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
 
-        let options = SwapperOptions {
+        let options = Options {
             slippage: 100.into(),
             fee: Some(ReferralFees::evm(ReferralFee {
                 bps: 25,
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_build_commands_usdc_to_usdt() {
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             // USDC -> USDT
             from_asset: AssetId::from(Chain::Optimism, Some("0x0b2c639c533813f4aa9d7837caf62653d097ff85".into())).into(),
             to_asset: AssetId::from(Chain::Optimism, Some("0x94b008aa00579c1307b0ef2c499ad98a8ce58e58".into())).into(),
@@ -189,7 +189,7 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "6500000".into(),
             mode: SwapperMode::ExactIn,
-            options: SwapperOptions::default(),
+            options: Options::default(),
         };
 
         let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
@@ -234,7 +234,7 @@ mod tests {
 
     #[test]
     fn test_build_commands_usdc_to_aave() {
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             // USDC -> AAVE
             from_asset: AssetId::from(Chain::Optimism, Some("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85".into())).into(),
             to_asset: AssetId::from(Chain::Optimism, Some("0x76fb31fb4af56892a25e32cfc43de717950c9278".into())).into(),
@@ -242,7 +242,7 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "5064985".into(),
             mode: SwapperMode::ExactIn,
-            options: SwapperOptions {
+            options: Options {
                 slippage: 100.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
                     bps: 25,
@@ -277,7 +277,7 @@ mod tests {
 
     #[test]
     fn test_build_commands_usdce_to_eth() {
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             // USDCE -> ETH
             from_asset: AssetId::from(Chain::Optimism, Some("0x7F5c764cBc14f9669B88837ca1490cCa17c31607".into())).into(),
             to_asset: AssetId::from(Chain::Ethereum, None).into(),
@@ -285,7 +285,7 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000".into(),
             mode: SwapperMode::ExactIn,
-            options: SwapperOptions {
+            options: Options {
                 slippage: 100.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
                     bps: 25,
@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn test_build_commands_eth_to_uni_with_input_fee() {
         // Replicate https://optimistic.etherscan.io/tx/0x18277deea3e273a7fb9abc985269dcdabe3d34c2b604fbd82dcd0a5a5204f72c
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             // ETH -> UNI
             from_asset: AssetId::from(Chain::Optimism, None).into(),
             to_asset: AssetId::from(Chain::Optimism, Some("0x6fd9d7ad17242c41f7131d257212c54a0e816691".into())).into(),
@@ -348,7 +348,7 @@ mod tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "1000000000000000".into(),
             mode: SwapperMode::ExactIn,
-            options: SwapperOptions {
+            options: Options {
                 slippage: 100.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
                     bps: 25,

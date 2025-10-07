@@ -2,7 +2,6 @@ mod alien;
 mod approval;
 mod chainlink;
 mod eth_address;
-mod permit2_data;
 mod swapper_trait;
 
 #[cfg(test)]
@@ -19,6 +18,7 @@ pub mod hyperliquid;
 pub mod jupiter;
 pub mod models;
 pub mod pancakeswap_aptos;
+pub mod permit2_data;
 pub mod proxy;
 pub mod slippage;
 pub mod swapper;
@@ -27,10 +27,10 @@ pub mod uniswap;
 
 #[cfg(feature = "reqwest_provider")]
 pub use alien::reqwest_provider::NativeProvider;
-pub use alien::{AlienError, RpcClient, RpcProvider, Target};
-pub use error::*;
+pub use alien::{AlienError, HttpMethod, RpcClient, RpcProvider, Target};
+pub use error::SwapperError;
 pub use models::*;
-pub use swapper_trait::*;
+pub(crate) use swapper_trait::Swapper;
 
 pub type SwapperProvider = primitives::SwapProvider;
 pub type SwapperProviderMode = primitives::swap::SwapProviderMode;

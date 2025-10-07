@@ -8,8 +8,8 @@ use super::{
     symbiosis::model::SymbiosisTransactionData,
 };
 use crate::{
-    FetchQuoteData, Swapper, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderMode, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-    SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode,
+    SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::{evm::check_approval_erc20, tron::check_approval_tron},
     asset::*,
@@ -31,7 +31,7 @@ pub struct ProxyProvider<C>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    pub provider: SwapperProviderType,
+    pub provider: ProviderType,
     pub assets: Vec<SwapperChainAsset>,
     client: ProxyClient<C>,
     pub(crate) rpc_provider: Arc<dyn RpcProvider>,
@@ -43,14 +43,14 @@ where
 {
     fn new_with_client(provider: SwapperProvider, client: ProxyClient<C>, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
-            provider: SwapperProviderType::new(provider),
+            provider: ProviderType::new(provider),
             assets,
             client,
             rpc_provider,
         }
     }
 
-    pub async fn check_approval(&self, quote: &SwapperQuote, quote_data: &SwapQuoteData) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
+    pub async fn check_approval(&self, quote: &Quote, quote_data: &SwapQuoteData) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
 
@@ -102,7 +102,7 @@ where
         wallet_address: String,
         amount: U256,
         default_fee_limit: Option<String>,
-        quote: &SwapperQuote,
+        quote: &Quote,
     ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
         let proxy_quote: ProxyQuote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
@@ -230,7 +230,7 @@ impl<C> Swapper for ProxyProvider<C>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -238,7 +238,7 @@ where
         self.assets.clone()
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let quote_request = ProxyQuoteRequest {
             from_address: request.wallet_address.clone(),
             to_address: request.destination_address.clone(),
@@ -251,12 +251,12 @@ where
 
         let quote = self.client.get_quote(quote_request.clone()).await?;
 
-        Ok(SwapperQuote {
+        Ok(Quote {
             from_value: request.value.clone(),
             to_value: quote.output_value.clone(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider().clone(),
-                routes: vec![SwapperRoute {
+                routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&quote).unwrap(),
@@ -269,7 +269,7 @@ where
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: ProxyQuote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
@@ -285,7 +285,7 @@ where
         })
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         match self.provider.id {
             SwapperProvider::Mayan => {
                 let client = MayanExplorer::new(self.rpc_provider.clone());
@@ -299,7 +299,7 @@ where
                     MayanClientStatus::Refunded | MayanClientStatus::InProgress => (dest_chain, None),
                 };
 
-                Ok(SwapperSwapResult {
+                Ok(SwapResult {
                     status: swap_status,
                     from_chain: chain,
                     from_tx_hash: transaction_hash.to_string(),
@@ -324,7 +324,7 @@ mod swap_integration_tests {
     use super::*;
     use crate::{
         alien::reqwest_provider::NativeProvider,
-        {SwapperMode, SwapperQuoteAsset, asset::SUI_USDC_TOKEN_ID, models::SwapperOptions},
+        {SwapperMode, SwapperQuoteAsset, asset::SUI_USDC_TOKEN_ID, models::Options},
     };
     use primitives::AssetId;
 
@@ -333,13 +333,13 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = ProxyProvider::new_mayan(rpc_provider);
 
-        let options = SwapperOptions {
+        let options = Options {
             slippage: 200.into(),
             fee: None,
             preferred_providers: vec![],
         };
 
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
             to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
@@ -371,13 +371,13 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = ProxyProvider::new_cetus_aggregator(rpc_provider);
 
-        let options = SwapperOptions {
+        let options = Options {
             slippage: 50.into(),
             fee: None,
             preferred_providers: vec![],
         };
 
-        let request = SwapperQuoteRequest {
+        let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Sui)),
             to_asset: SwapperQuoteAsset::from(AssetId::from(Chain::Sui, Some(SUI_USDC_TOKEN_ID.to_string()))),
             wallet_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".to_string(),

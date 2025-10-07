@@ -1,4 +1,4 @@
-use crate::{SwapperProvider, SwapperProviderType, uniswap::v3::UniversalRouterProvider};
+use crate::{SwapperProvider, ProviderType, uniswap::v3::UniversalRouterProvider};
 use gem_evm::uniswap::{
     FeeTier,
     deployment::v3::{V3Deployment, get_wagmi_router_deployment_by_chain},
@@ -7,19 +7,19 @@ use primitives::Chain;
 
 #[derive(Debug)]
 pub struct WagmiUniversalRouter {
-    pub provider: SwapperProviderType,
+    pub provider: ProviderType,
 }
 
 impl Default for WagmiUniversalRouter {
     fn default() -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::Wagmi),
+            provider: ProviderType::new(SwapperProvider::Wagmi),
         }
     }
 }
 
 impl UniversalRouterProvider for WagmiUniversalRouter {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 

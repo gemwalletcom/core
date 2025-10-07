@@ -7,19 +7,19 @@ use number_formatter::BigNumberFormatter;
 use primitives::Chain;
 
 use crate::{
-    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-    SwapperQuoteRequest, SwapperRoute, asset::HYPERCORE_HYPE,
+    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, ProviderData, ProviderType, Quote, SwapperQuoteData,
+    QuoteRequest, Route, asset::HYPERCORE_HYPE,
 };
 
 #[derive(Debug)]
 pub struct HyperCoreBridge {
-    provider: SwapperProviderType,
+    provider: ProviderType,
 }
 
 impl HyperCoreBridge {
     pub fn new() -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::Hyperliquid),
+            provider: ProviderType::new(SwapperProvider::Hyperliquid),
         }
     }
 }
@@ -32,7 +32,7 @@ impl Default for HyperCoreBridge {
 
 #[async_trait]
 impl Swapper for HyperCoreBridge {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -43,14 +43,14 @@ impl Swapper for HyperCoreBridge {
         ]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
-        let quote = SwapperQuote {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+        let quote = Quote {
             from_value: request.value.clone(),
             to_value: request.value.clone(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider.clone(),
                 slippage_bps: 0,
-                routes: vec![SwapperRoute {
+                routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: "".to_string(),
@@ -64,7 +64,7 @@ impl Swapper for HyperCoreBridge {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         match quote.request.from_asset.asset_id().chain {
             Chain::HyperCore => {
                 let decimals: i32 = quote.request.from_asset.decimals.try_into().unwrap();

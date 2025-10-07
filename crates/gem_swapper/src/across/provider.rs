@@ -5,7 +5,7 @@ use super::{
     hubpool::HubPoolClient,
 };
 use crate::{
-    Swapper, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
+    Swapper, SwapperError, SwapperProvider, SwapperQuoteData, SwapResult,
     across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
     alien::RpcProvider,
     approval::check_approval_erc20,
@@ -43,14 +43,14 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
 pub struct Across {
-    pub provider: SwapperProviderType,
+    pub provider: ProviderType,
     rpc_provider: Arc<dyn RpcProvider>,
 }
 
 impl Across {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::Across),
+            provider: ProviderType::new(SwapperProvider::Across),
             rpc_provider,
         }
     }
@@ -268,7 +268,7 @@ impl Across {
 
 #[async_trait]
 impl Swapper for Across {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -300,7 +300,7 @@ impl Swapper for Across {
         ]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         // does not support same chain swap
         if request.from_asset.chain() == request.to_asset.chain() {
             return Err(SwapperError::NotSupportedPair);
@@ -431,13 +431,13 @@ impl Swapper for Across {
         )?;
         let route_data = HexEncode(v3_relay_data.abi_encode());
 
-        Ok(SwapperQuote {
+        Ok(Quote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider().clone(),
                 slippage_bps: request.options.slippage.bps,
-                routes: vec![SwapperRoute {
+                routes: vec![Route {
                     input: input_asset.clone(),
                     output: output_asset.clone(),
                     route_data,
@@ -449,7 +449,7 @@ impl Swapper for Across {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_chain = quote.request.from_asset.chain();
         let deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain().network_id().parse().unwrap();
@@ -514,7 +514,7 @@ impl Swapper for Across {
 
         Ok(quote_data)
     }
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         let api = AcrossApi::new(self.rpc_provider.clone());
         let status = api.deposit_status(chain, transaction_hash).await?;
 
@@ -528,7 +528,7 @@ impl Swapper for Across {
             SwapStatus::Pending => (destination_chain, None),
         };
 
-        Ok(SwapperSwapResult {
+        Ok(SwapResult {
             status: swap_status,
             from_chain: chain,
             from_tx_hash: transaction_hash.to_string(),

@@ -75,7 +75,3 @@ uniffi = { workspace = true, features = ["build"] }
 
 [dev-dependencies]
 tokio.workspace = true
-
-[[test]]
-name = "integration_test"
-test = false

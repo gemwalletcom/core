@@ -17,8 +17,8 @@ use super::{
     tx_builder::TransactionBuilder,
 };
 use crate::{
-    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
-    SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, alien::RpcClient, slippage::apply_slippage_in_bp,
+    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, ProviderData, ProviderType, Quote,
+    SwapperQuoteData, QuoteRequest, Route, alien::RpcClient, slippage::apply_slippage_in_bp,
 };
 use gem_client::Client;
 use gem_macro::debug_println;
@@ -34,7 +34,7 @@ pub struct Cetus<C>
 where
     C: Client + Clone + Debug + Send + Sync + 'static,
 {
-    provider: SwapperProviderType,
+    provider: ProviderType,
     cetus_client: CetusClient<C>,
     sui_client: Arc<SuiClient<RpcClient>>,
 }
@@ -54,7 +54,7 @@ where
 {
     pub fn with_clients(cetus_client: CetusClient<C>, sui_client: Arc<SuiClient<RpcClient>>) -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::Cetus),
+            provider: ProviderType::new(SwapperProvider::Cetus),
             cetus_client,
             sui_client,
         }
@@ -155,7 +155,7 @@ impl<C> Swapper for Cetus<C>
 where
     C: Client + Clone + Debug + Send + Sync + 'static,
 {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -163,7 +163,7 @@ where
         vec![SwapperChainAsset::All(Chain::Sui)]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_coin = Self::get_coin_address(&request.from_asset.asset_id());
         let to_coin = Self::get_coin_address(&request.to_asset.asset_id());
         let amount_in = BigInt::from_str(&request.value).map_err(SwapperError::from)?;
@@ -253,13 +253,13 @@ where
             fee_rate: pool.fee.to_string(),
         };
 
-        Ok(SwapperQuote {
+        Ok(Quote {
             from_value: request.value.clone(),
             to_value: to_value.to_string(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
-                routes: vec![SwapperRoute {
+                routes: vec![Route {
                     input: AssetId::from(Chain::Sui, Some(from_coin.clone())),
                     output: AssetId::from(Chain::Sui, Some(to_coin.clone())),
                     route_data: serde_json::to_string(&route_data).unwrap(),
@@ -271,7 +271,7 @@ where
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         // Validate quote data
         let route = &quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let sender_address = quote.request.wallet_address.parse().map_err(SwapperError::from)?;

@@ -7,7 +7,6 @@ pub mod nft;
 pub mod node;
 pub mod perpetual;
 pub mod stake;
-pub mod swapper;
 pub mod token;
 pub mod transaction;
 

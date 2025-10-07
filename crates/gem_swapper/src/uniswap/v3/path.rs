@@ -5,7 +5,7 @@ use gem_evm::uniswap::{
 };
 
 use crate::{
-    SwapperError, SwapperRoute, eth_address,
+    SwapperError, Route, eth_address,
     uniswap::swap_route::{RouteData, get_intermediaries},
 };
 
@@ -38,7 +38,7 @@ pub fn build_paths(token_in: &Address, token_out: &Address, fee_tiers: &[FeeTier
     paths
 }
 
-pub fn build_paths_with_routes(routes: &[SwapperRoute]) -> Result<Bytes, SwapperError> {
+pub fn build_paths_with_routes(routes: &[Route]) -> Result<Bytes, SwapperError> {
     if routes.is_empty() {
         return Err(SwapperError::InvalidRoute);
     }

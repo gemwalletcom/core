@@ -2,8 +2,8 @@ mod client;
 mod default;
 mod model;
 use super::{
-    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-    SwapperQuoteRequest, SwapperRoute,
+    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, ProviderData, ProviderType, Quote, SwapperQuoteData,
+    QuoteRequest, Route,
 };
 
 use async_trait::async_trait;
@@ -19,7 +19,7 @@ pub struct PancakeSwapAptos<C>
 where
     C: Client + Clone + Debug,
 {
-    pub provider: SwapperProviderType,
+    pub provider: ProviderType,
     client: PancakeSwapAptosClient<C>,
 }
 
@@ -29,7 +29,7 @@ where
 {
     pub fn with_client(client: PancakeSwapAptosClient<C>) -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::PancakeswapAptosV2),
+            provider: ProviderType::new(SwapperProvider::PancakeswapAptosV2),
             client,
         }
     }
@@ -62,7 +62,7 @@ impl<C> Swapper for PancakeSwapAptos<C>
 where
     C: Client + Clone + Debug + Send + Sync + 'static,
 {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -70,7 +70,7 @@ where
         vec![SwapperChainAsset::All(Chain::Aptos)]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_internal_asset = self.to_asset(request.from_asset.asset_id());
         let to_internal_asset = self.to_asset(request.to_asset.asset_id());
         let fee_bps = 0; // TODO: implement fees
@@ -91,12 +91,12 @@ where
         };
         let route_data = serde_json::to_string(&route_data).unwrap();
 
-        let quote = SwapperQuote {
+        let quote = Quote {
             from_value: request.value.clone(),
             to_value: quote_value.clone(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider().clone(),
-                routes: vec![SwapperRoute {
+                routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data,
@@ -111,7 +111,7 @@ where
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let routes = quote.data.clone().routes;
         let route_data: RouteData = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 

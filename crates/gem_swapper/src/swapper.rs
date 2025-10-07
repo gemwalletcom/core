@@ -1,7 +1,7 @@
 use crate::{
-    FetchQuoteData, Permit2ApprovalData, Swapper, SwapperAssetList, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode, SwapperProviderType,
-    SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperSwapResult, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS,
-    hyperliquid, jupiter, pancakeswap_aptos, proxy::provider_factory, thorchain, uniswap,
+    FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, Swapper, AssetList, SwapperChainAsset, SwapperError, SwapperProvider,
+    SwapperProviderMode, SwapperQuoteData, SwapResult, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid,
+    jupiter, pancakeswap_aptos, proxy::provider_factory, thorchain, uniswap,
 };
 
 use gem_macro::debug_println;
@@ -58,7 +58,7 @@ impl GemSwapper {
         gas_limit
     }
 
-    fn transform_request<'a>(request: &'a SwapperQuoteRequest) -> Cow<'a, SwapperQuoteRequest> {
+    fn transform_request<'a>(request: &'a QuoteRequest) -> Cow<'a, QuoteRequest> {
         if !Self::is_stable_swap(request) || request.options.fee.is_none() {
             return Cow::Borrowed(request);
         }
@@ -71,7 +71,7 @@ impl GemSwapper {
         Cow::Owned(updated_request)
     }
 
-    fn is_stable_swap(request: &SwapperQuoteRequest) -> bool {
+    fn is_stable_swap(request: &QuoteRequest) -> bool {
         let from_symbol = request.from_asset.symbol.to_ascii_uppercase();
         let to_symbol = request.to_asset.symbol.to_ascii_uppercase();
 
@@ -112,7 +112,7 @@ impl GemSwapper {
             .collect()
     }
 
-    pub fn supported_chains_for_from_asset(&self, asset_id: &AssetId) -> SwapperAssetList {
+    pub fn supported_chains_for_from_asset(&self, asset_id: &AssetId) -> AssetList {
         let chains: Vec<Chain> = vec![asset_id.chain];
         let mut asset_ids: Vec<AssetId> = Vec::new();
 
@@ -128,14 +128,14 @@ impl GemSwapper {
                 }
             });
         }
-        SwapperAssetList { chains, asset_ids }
+        AssetList { chains, asset_ids }
     }
 
-    pub fn get_providers(&self) -> Vec<SwapperProviderType> {
+    pub fn get_providers(&self) -> Vec<ProviderType> {
         self.swappers.iter().map(|x| x.provider().clone()).collect()
     }
 
-    pub async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<Vec<SwapperQuote>, SwapperError> {
+    pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
         if request.from_asset.id == request.to_asset.id {
             return Err(SwapperError::NotSupportedPair);
         }
@@ -178,18 +178,18 @@ impl GemSwapper {
         Ok(quotes)
     }
 
-    pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: QuoteRequest) -> Result<Quote, SwapperError> {
         let provider = self.get_swapper_by_provider(&provider).ok_or(SwapperError::NoAvailableProvider)?;
         let request_for_quote = Self::transform_request(&request);
         provider.fetch_quote(request_for_quote.as_ref()).await
     }
 
-    pub async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    pub async fn fetch_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
         provider.fetch_permit2_for_quote(quote).await
     }
 
-    pub async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    pub async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
         let mut quote_data = provider.fetch_quote_data(quote, data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
@@ -198,7 +198,7 @@ impl GemSwapper {
         Ok(quote_data)
     }
 
-    pub async fn get_swap_result(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+    pub async fn get_swap_result(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         let provider = self.get_swapper_by_provider(&swap_provider).ok_or(SwapperError::NoAvailableProvider)?;
         provider.get_swap_result(chain, transaction_hash).await
     }
@@ -209,7 +209,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        SwapperMode, SwapperOptions, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
+        Options, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
         alien::reqwest_provider::NativeProvider,
         config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFee, ReferralFees},
         uniswap::default::{new_pancakeswap, new_uniswap_v3},
@@ -217,8 +217,8 @@ mod tests {
     use primitives::asset_constants::USDT_ETH_ASSET_ID;
     use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
 
-    fn build_request(from_symbol: &str, to_symbol: &str, fee: Option<ReferralFees>) -> SwapperQuoteRequest {
-        SwapperQuoteRequest {
+    fn build_request(from_symbol: &str, to_symbol: &str, fee: Option<ReferralFees>) -> QuoteRequest {
+        QuoteRequest {
             from_asset: SwapperQuoteAsset {
                 id: format!("{}_asset", from_symbol),
                 symbol: from_symbol.to_string(),
@@ -233,7 +233,7 @@ mod tests {
             destination_address: "0xwallet".into(),
             value: "1000000".into(),
             mode: SwapperMode::ExactIn,
-            options: SwapperOptions {
+            options: Options {
                 slippage: SwapperSlippage {
                     bps: 100,
                     mode: SwapperSlippageMode::Exact,
@@ -256,7 +256,7 @@ mod tests {
         // Cross chain swaps (same chain will be filtered out)
         let filtered = providers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(SwapperProviderType::new(**x).mode(), Chain::Ethereum, Chain::Optimism))
+            .filter(|x| GemSwapper::filter_by_provider_mode(ProviderType::new(**x).mode(), Chain::Ethereum, Chain::Optimism))
             .cloned()
             .collect::<Vec<_>>();
 

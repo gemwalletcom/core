@@ -12,14 +12,14 @@ use super::{
         VaultSwapSolanaExtras,
     },
     capitalize::capitalize_first_letter,
-    client::{ChainflipClient, QuoteRequest, QuoteResponse},
+    client::{ChainflipClient, QuoteRequest as ChainflipQuoteRequest, QuoteResponse},
     price::{apply_slippage, price_to_hex_price},
     seed::generate_random_seed,
     tx_builder,
 };
 use crate::{
-    FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
-    SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
+    SwapperQuoteData,
     alien::RpcProvider,
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
@@ -36,7 +36,7 @@ where
     CX: Client + Clone + Send + Sync + Debug + 'static,
     BR: Client + Clone + Send + Sync + Debug + 'static,
 {
-    provider: SwapperProviderType,
+    provider: ProviderType,
     chainflip_client: ChainflipClient<CX>,
     broker_client: BrokerClient<BR>,
     rpc_provider: Arc<dyn RpcProvider>,
@@ -49,7 +49,7 @@ where
 {
     pub fn with_clients(chainflip_client: ChainflipClient<CX>, broker_client: BrokerClient<BR>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
-            provider: SwapperProviderType::new(SwapperProvider::Chainflip),
+            provider: ProviderType::new(SwapperProvider::Chainflip),
             chainflip_client,
             broker_client,
             rpc_provider,
@@ -119,7 +119,7 @@ where
     CX: Client + Clone + Send + Sync + Debug + 'static,
     BR: Client + Clone + Send + Sync + Debug + 'static,
 {
-    fn provider(&self) -> &SwapperProviderType {
+    fn provider(&self) -> &ProviderType {
         &self.provider
     }
 
@@ -135,7 +135,7 @@ where
         ]
     }
 
-    async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         if request.from_asset.chain().chain_type() == ChainType::Bitcoin {
             return Err(SwapperError::NoQuoteAvailable);
         }
@@ -144,7 +144,7 @@ where
         let dest_asset = Self::map_asset_id(&request.to_asset);
 
         let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
-        let quote_request = QuoteRequest {
+        let quote_request = ChainflipQuoteRequest {
             amount: request.value.clone(),
             src_chain: src_asset.chain.clone(),
             src_asset: src_asset.asset.clone(),
@@ -162,13 +162,13 @@ where
 
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = Self::get_best_quote(quotes, fee_bps);
 
-        Ok(SwapperQuote {
+        Ok(Quote {
             from_value: request.value.clone(),
             to_value: egress_amount.to_string(),
-            data: SwapperProviderData {
+            data: ProviderData {
                 provider: self.provider.clone(),
                 slippage_bps,
-                routes: vec![SwapperRoute {
+                routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&route_data).unwrap(),
@@ -180,7 +180,7 @@ where
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &SwapperQuote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
         let destination_asset = Self::map_asset_id(&quote.request.to_asset);
@@ -303,12 +303,12 @@ where
         }
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         let status = self.chainflip_client.get_tx_status(transaction_hash).await?;
         let swap_status = status.swap_status();
         let to_tx_hash = status.swap_egress.as_ref().and_then(|x| x.tx_ref.clone());
 
-        Ok(SwapperSwapResult {
+        Ok(SwapResult {
             status: swap_status,
             from_chain: chain,
             from_tx_hash: transaction_hash.to_string(),
