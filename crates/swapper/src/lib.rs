@@ -3,7 +3,6 @@ mod approval;
 mod chainlink;
 mod eth_address;
 mod permit2_data;
-mod sui;
 mod swap_config;
 mod swapper_trait;
 mod tron;

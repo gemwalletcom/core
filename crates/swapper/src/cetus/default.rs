@@ -4,15 +4,16 @@ use super::{
 };
 use crate::{
     Swapper,
-    alien::{AlienClient, AlienProvider},
-    sui::SuiRpcClient,
+    alien::{AlienClient, AlienProvider, jsonrpc_client_with_chain},
 };
+use gem_sui::SuiClient;
+use primitives::Chain;
 use std::sync::Arc;
 
 impl Cetus<AlienClient> {
     pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
         let http_client = CetusClient::new(AlienClient::new(CETUS_API_URL.into(), rpc_provider.clone()));
-        let sui_client = Arc::new(SuiRpcClient::new(rpc_provider.clone()).expect("Failed to create Sui RPC client"));
+        let sui_client = Arc::new(SuiClient::new(jsonrpc_client_with_chain(rpc_provider.clone(), Chain::Sui)));
         Self::with_clients(http_client, sui_client)
     }
 }
