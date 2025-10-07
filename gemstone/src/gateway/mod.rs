@@ -232,7 +232,7 @@ impl GemGateway {
             .get_transaction_status(request.into())
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(status.into())
+        Ok(status)
     }
 
     pub async fn get_chain_id(&self, chain: Chain) -> Result<String, GatewayError> {
