@@ -1,4 +1,4 @@
-use super::{AlienError, AlienHttpMethod, AlienProvider, AlienTarget, provider::Data};
+use super::{AlienError, HttpMethod, RpcProvider, Target, provider::Data};
 use primitives::{Chain, node_config::get_nodes_for_chain};
 
 use async_trait::async_trait;
@@ -32,7 +32,7 @@ impl Default for NativeProvider {
 }
 
 #[async_trait]
-impl AlienProvider for NativeProvider {
+impl RpcProvider for NativeProvider {
     fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {
         let nodes = get_nodes_for_chain(chain);
         if nodes.is_empty() {
@@ -43,18 +43,18 @@ impl AlienProvider for NativeProvider {
         Ok(nodes[0].url.clone())
     }
 
-    async fn request(&self, target: AlienTarget) -> Result<Data, AlienError> {
+    async fn request(&self, target: Target) -> Result<Data, AlienError> {
         if self.debug {
             println!("==> request: url: {:?}, method: {:?}", target.url, target.method);
         }
         let mut req = match target.method {
-            AlienHttpMethod::Get => self.client.get(target.url),
-            AlienHttpMethod::Post => self.client.post(target.url),
-            AlienHttpMethod::Put => self.client.put(target.url),
-            AlienHttpMethod::Delete => self.client.delete(target.url),
-            AlienHttpMethod::Head => self.client.head(target.url),
-            AlienHttpMethod::Patch => self.client.patch(target.url),
-            AlienHttpMethod::Options => todo!(),
+            HttpMethod::Get => self.client.get(target.url),
+            HttpMethod::Post => self.client.post(target.url),
+            HttpMethod::Put => self.client.put(target.url),
+            HttpMethod::Delete => self.client.delete(target.url),
+            HttpMethod::Head => self.client.head(target.url),
+            HttpMethod::Patch => self.client.patch(target.url),
+            HttpMethod::Options => todo!(),
         };
         if let Some(headers) = target.headers {
             for (key, value) in headers.iter() {
@@ -97,7 +97,7 @@ impl AlienProvider for NativeProvider {
         Ok(bytes.to_vec())
     }
 
-    async fn batch_request(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
+    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, AlienError> {
         let futures = targets.into_iter().map(|target| self.request(target));
         try_join_all(futures).await
     }

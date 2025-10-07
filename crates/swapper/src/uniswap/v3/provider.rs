@@ -1,6 +1,6 @@
 use crate::{
     FetchQuoteData, Permit2ApprovalData, Swapper, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
-    alien::{AlienClient, AlienProvider},
+    alien::{RpcClient, RpcProvider},
     approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
     models::*,
@@ -26,11 +26,11 @@ use super::{DEFAULT_SWAP_GAS_LIMIT, UniversalRouterProvider, commands::build_com
 
 pub struct UniswapV3 {
     provider: Box<dyn UniversalRouterProvider>,
-    rpc_provider: Arc<dyn AlienProvider>,
+    rpc_provider: Arc<dyn RpcProvider>,
 }
 
 impl UniswapV3 {
-    pub fn new(provider: Box<dyn UniversalRouterProvider>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new(provider: Box<dyn UniversalRouterProvider>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self { provider, rpc_provider }
     }
 
@@ -38,9 +38,9 @@ impl UniswapV3 {
         self.provider.get_deployment_by_chain(chain).is_some()
     }
 
-    fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<AlienClient>, SwapperError> {
+    fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<RpcClient>, SwapperError> {
         let endpoint = self.rpc_provider.get_endpoint(chain).map_err(SwapperError::from)?;
-        let client = AlienClient::new(endpoint, self.rpc_provider.clone());
+        let client = RpcClient::new(endpoint, self.rpc_provider.clone());
         Ok(JsonRpcClient::new(client))
     }
 
@@ -60,7 +60,7 @@ impl UniswapV3 {
 
     async fn check_erc20_approval(
         &self,
-        client: &JsonRpcClient<AlienClient>,
+        client: &JsonRpcClient<RpcClient>,
         wallet_address: Address,
         token: &str,
         amount: U256,
@@ -73,7 +73,7 @@ impl UniswapV3 {
 
     async fn check_permit2_approval(
         &self,
-        client: &JsonRpcClient<AlienClient>,
+        client: &JsonRpcClient<RpcClient>,
         wallet_address: Address,
         token: &str,
         amount: U256,

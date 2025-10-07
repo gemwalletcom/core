@@ -1,6 +1,6 @@
 use crate::{
     SwapperError,
-    alien::{AlienProvider, AlienTarget},
+    alien::{RpcProvider, Target},
     client_factory::create_eth_client,
 };
 use primitives::{Chain, swap::SwapStatus};
@@ -10,11 +10,11 @@ use std::sync::Arc;
 #[derive(Debug, Clone)]
 pub struct AcrossApi {
     pub url: String,
-    pub provider: Arc<dyn AlienProvider>,
+    pub provider: Arc<dyn RpcProvider>,
 }
 
 impl AcrossApi {
-    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new(provider: Arc<dyn RpcProvider>) -> Self {
         Self {
             url: "https://app.across.to".into(),
             provider,
@@ -54,7 +54,7 @@ impl AcrossApi {
         }
         let deposit_id = receipt.logs[1].topics[3].clone();
         let url = format!("{}/deposit/status?originChainId={}&depositId={}", self.url, chain.network_id(), &deposit_id);
-        let target = AlienTarget::get(&url);
+        let target = Target::get(&url);
         let response = self.provider.request(target).await?;
         let status: DepositStatus = serde_json::from_slice(&response).map_err(SwapperError::from)?;
 

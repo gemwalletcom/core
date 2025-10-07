@@ -1,4 +1,4 @@
-use super::{AlienError, AlienHttpMethod, AlienProvider, AlienTarget};
+use super::{AlienError, HttpMethod, RpcProvider, Target};
 
 use async_trait::async_trait;
 use gem_client::{Client, ClientError, ContentType};
@@ -7,13 +7,13 @@ use serde::{Serialize, de::DeserializeOwned};
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 #[derive(Debug, Clone)]
-pub struct AlienClient {
+pub struct RpcClient {
     base_url: String,
-    provider: Arc<dyn AlienProvider>,
+    provider: Arc<dyn RpcProvider>,
 }
 
-impl AlienClient {
-    pub fn new(base_url: String, provider: Arc<dyn AlienProvider>) -> Self {
+impl RpcClient {
+    pub fn new(base_url: String, provider: Arc<dyn RpcProvider>) -> Self {
         Self { base_url, provider }
     }
 
@@ -23,7 +23,7 @@ impl AlienClient {
 }
 
 #[async_trait]
-impl Client for AlienClient {
+impl Client for RpcClient {
     async fn get<R>(&self, path: &str) -> Result<R, ClientError>
     where
         R: DeserializeOwned,
@@ -37,14 +37,14 @@ impl Client for AlienClient {
     {
         let url = self.build_url(path);
         let target = if let Some(headers) = headers {
-            AlienTarget {
+            Target {
                 url,
-                method: AlienHttpMethod::Get,
+                method: HttpMethod::Get,
                 headers: Some(headers),
                 body: None,
             }
         } else {
-            AlienTarget::get(&url)
+            Target::get(&url)
         };
 
         let response_data = self
@@ -89,9 +89,9 @@ impl Client for AlienClient {
             _ => serde_json::to_vec(body)?,
         };
 
-        let target = AlienTarget {
+        let target = Target {
             url,
-            method: AlienHttpMethod::Post,
+            method: HttpMethod::Post,
             headers: Some(request_headers),
             body: Some(data),
         };
@@ -107,12 +107,12 @@ impl Client for AlienClient {
 }
 
 #[async_trait]
-impl AlienProvider for AlienClient {
-    async fn request(&self, target: AlienTarget) -> Result<Vec<u8>, AlienError> {
+impl RpcProvider for RpcClient {
+    async fn request(&self, target: Target) -> Result<Vec<u8>, AlienError> {
         self.provider.request(target).await
     }
 
-    async fn batch_request(&self, targets: Vec<AlienTarget>) -> Result<Vec<Vec<u8>>, AlienError> {
+    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Vec<u8>>, AlienError> {
         self.provider.batch_request(targets).await
     }
 

@@ -1,5 +1,5 @@
 use super::broker::SolanaVaultSwapResponse;
-use crate::{alien::AlienProvider, client_factory::create_client_with_chain};
+use crate::{alien::RpcProvider, client_factory::create_client_with_chain};
 
 use alloy_primitives::hex;
 use base64::Engine;
@@ -9,7 +9,7 @@ use primitives::Chain;
 use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder};
 use std::{str::FromStr, sync::Arc};
 
-pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse, provider: Arc<dyn AlienProvider>) -> Result<String, String> {
+pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse, provider: Arc<dyn RpcProvider>) -> Result<String, String> {
     let fee_payer = Pubkey::from_str(fee_payer).map_err(|_| "Invalid fee payer".to_string())?;
     let program_id = Pubkey::from_str(response.program_id.as_str()).map_err(|_| "Invalid program ID".to_string())?;
     let data = hex::decode(response.data.as_str()).map_err(|_| "Invalid data".to_string())?;
@@ -45,7 +45,7 @@ pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse
 mod tests {
     use super::*;
     use crate::{
-        alien::mock::{AlienProviderMock, MockFn},
+        alien::mock::{MockFn, ProviderMock},
         chainflip::broker::SolanaVaultSwapResponse,
     };
     use gem_jsonrpc::types::JsonRpcResponse;
@@ -55,7 +55,7 @@ mod tests {
     async fn test_build_solana_tx_with_mocked_blockhash() -> Result<(), String> {
         let wallet_address = "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC";
         let blockhash_b58 = "BZcyEKqjBNG5bEY6i5ev6PfPTgDSB9LwovJE1hJfJoHF".to_string();
-        let mock = AlienProviderMock {
+        let mock = ProviderMock {
             response: MockFn(Box::new(move |_| {
                 serde_json::json!({
                     "jsonrpc": "2.0",

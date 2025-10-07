@@ -3,18 +3,18 @@ use std::{collections::HashMap, fmt::Debug};
 pub const X_CACHE_TTL: &str = "x-cache-ttl";
 
 #[derive(Debug, Clone)]
-pub struct AlienTarget {
+pub struct Target {
     pub url: String,
-    pub method: AlienHttpMethod,
+    pub method: HttpMethod,
     pub headers: Option<HashMap<String, String>>,
     pub body: Option<Vec<u8>>,
 }
 
-impl AlienTarget {
+impl Target {
     pub fn get(url: &str) -> Self {
         Self {
             url: url.into(),
-            method: AlienHttpMethod::Get,
+            method: HttpMethod::Get,
             headers: None,
             body: None,
         }
@@ -23,7 +23,7 @@ impl AlienTarget {
     pub fn post_json(url: &str, body: serde_json::Value) -> Self {
         Self {
             url: url.into(),
-            method: AlienHttpMethod::Post,
+            method: HttpMethod::Post,
             headers: Some(HashMap::from([("Content-Type".into(), "application/json".into())])),
             body: Some(serde_json::to_vec(&body).unwrap()),
         }
@@ -41,7 +41,7 @@ impl AlienTarget {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum AlienHttpMethod {
+pub enum HttpMethod {
     Get,
     Post,
     Put,
@@ -51,16 +51,16 @@ pub enum AlienHttpMethod {
     Patch,
 }
 
-impl From<AlienHttpMethod> for String {
-    fn from(value: AlienHttpMethod) -> Self {
+impl From<HttpMethod> for String {
+    fn from(value: HttpMethod) -> Self {
         match value {
-            AlienHttpMethod::Get => "GET",
-            AlienHttpMethod::Post => "POST",
-            AlienHttpMethod::Put => "PUT",
-            AlienHttpMethod::Delete => "DELETE",
-            AlienHttpMethod::Head => "HEAD",
-            AlienHttpMethod::Options => "OPTIONS",
-            AlienHttpMethod::Patch => "PATCH",
+            HttpMethod::Get => "GET",
+            HttpMethod::Post => "POST",
+            HttpMethod::Put => "PUT",
+            HttpMethod::Delete => "DELETE",
+            HttpMethod::Head => "HEAD",
+            HttpMethod::Options => "OPTIONS",
+            HttpMethod::Patch => "PATCH",
         }
         .into()
     }

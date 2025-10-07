@@ -1,6 +1,6 @@
 use crate::{
     SwapperError,
-    alien::{AlienClient, AlienProvider},
+    alien::{RpcClient, RpcProvider},
     client_factory::create_client_with_chain,
 };
 use alloy_primitives::{Address, hex::decode as HexDecode};
@@ -49,11 +49,11 @@ pub struct TokenConfig {
 
 pub struct ConfigStoreClient {
     pub contract: String,
-    pub client: JsonRpcClient<AlienClient>,
+    pub client: JsonRpcClient<RpcClient>,
 }
 
 impl ConfigStoreClient {
-    pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> ConfigStoreClient {
+    pub fn new(provider: Arc<dyn RpcProvider>, chain: Chain) -> ConfigStoreClient {
         ConfigStoreClient {
             contract: ACROSS_CONFIG_STORE.into(),
             client: create_client_with_chain(provider.clone(), chain),

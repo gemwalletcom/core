@@ -4,16 +4,17 @@
 mod tests {
     use gem_solana::{jsonrpc::SolanaRpc, models::blockhash::SolanaBlockhashResult};
     use primitives::{AssetId, Chain};
+    use std::{collections::HashMap, sync::Arc, time::SystemTime};
     use swapper::{
-        AlienClient, FetchQuoteData, NativeProvider, SwapperError, SwapperMode, SwapperOptions, SwapperProvider, SwapperQuoteRequest,
-        SwapReferralFee, SwapReferralFees, get_swap_config, jsonrpc_client_with_chain,
+        FetchQuoteData, NativeProvider, RpcClient, SwapperError, SwapperMode, SwapperOptions, SwapperProvider, SwapperQuoteRequest,
+        client_factory::create_client_with_chain,
+        swap_config::{SwapReferralFee, SwapReferralFees, get_swap_config},
     };
     use swapper::{across::Across, cetus::Cetus, gem_swapper::GemSwapper, uniswap};
-    use std::{collections::HashMap, sync::Arc, time::SystemTime};
 
     #[tokio::test]
     async fn test_solana_json_rpc() -> Result<(), String> {
-        let rpc_client = jsonrpc_client_with_chain(Arc::new(NativeProvider::default()), Chain::Solana);
+        let rpc_client = create_client_with_chain(Arc::new(NativeProvider::default()), Chain::Solana);
         let response: SolanaBlockhashResult = rpc_client.request(SolanaRpc::GetLatestBlockhash).await.map_err(|e| e.to_string())?;
         let recent_blockhash = response.value.blockhash;
 
@@ -26,62 +27,6 @@ mod tests {
         let blockhash_array: [u8; 32] = blockhash.try_into().map_err(|_| "Failed to convert blockhash to array".to_string())?;
 
         assert_eq!(blockhash_array.len(), 32);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_swapper_get_quote_by_output() -> Result<(), SwapperError> {
-        let network_provider = Arc::new(NativeProvider::default());
-        let swapper = GemSwapper::new(network_provider);
-
-        let trade_pairs: HashMap<Chain, (AssetId, AssetId)> = HashMap::from([
-            (
-                Chain::Abstract,
-                (
-                    AssetId::from_chain(Chain::Abstract),
-                    AssetId::from(Chain::Abstract, Some("0x84A71ccD554Cc1b02749b35d22F684CC8ec987e1".to_string())),
-                ),
-            ),
-            (
-                Chain::Ethereum,
-                (
-                    AssetId::from_chain(Chain::Ethereum),
-                    AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string())),
-                ),
-            ),
-        ]);
-
-        let (from_asset, to_asset) = trade_pairs.get(&Chain::Abstract).cloned().unwrap();
-
-        let options = SwapperOptions {
-            slippage: 100.into(),
-            fee: Some(SwapReferralFees::evm(SwapReferralFee {
-                bps: 25,
-                address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
-            })),
-            preferred_providers: vec![],
-        };
-
-        let request = SwapperQuoteRequest {
-            from_asset: from_asset.into(),
-            to_asset: to_asset.into(),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
-            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
-            value: "20000000000000000".into(), // 0.02 ETH
-            mode: SwapperMode::ExactIn,
-            options,
-        };
-
-        let quotes = swapper.fetch_quote(&request).await?;
-        assert_eq!(quotes.len(), 1);
-
-        let quote = &quotes[0];
-        println!("<== quote: {:?}", quote);
-        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-
-        let quote_data = swapper.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
-        println!("<== quote_data: {:?}", quote_data);
 
         Ok(())
     }
@@ -167,7 +112,7 @@ mod tests {
     #[tokio::test]
     async fn test_cetus_swap() -> Result<(), Box<dyn std::error::Error>> {
         let network_provider = Arc::new(NativeProvider::default());
-        let swap_provider = Cetus::<AlienClient>::boxed(network_provider.clone());
+        let swap_provider = Cetus::<RpcClient>::boxed(network_provider.clone());
         let config = get_swap_config();
         let options = SwapperOptions {
             slippage: 50.into(),

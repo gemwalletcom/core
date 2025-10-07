@@ -18,7 +18,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
-    SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, alien::AlienClient, slippage::apply_slippage_in_bp,
+    SwapperQuoteData, SwapperQuoteRequest, SwapperRoute, alien::RpcClient, slippage::apply_slippage_in_bp,
 };
 use gem_client::Client;
 use gem_macro::debug_println;
@@ -36,7 +36,7 @@ where
 {
     provider: SwapperProviderType,
     cetus_client: CetusClient<C>,
-    sui_client: Arc<SuiClient<AlienClient>>,
+    sui_client: Arc<SuiClient<RpcClient>>,
 }
 
 impl<C> std::fmt::Debug for Cetus<C>
@@ -52,7 +52,7 @@ impl<C> Cetus<C>
 where
     C: Client + Clone + Debug + Send + Sync + 'static,
 {
-    pub fn with_clients(cetus_client: CetusClient<C>, sui_client: Arc<SuiClient<AlienClient>>) -> Self {
+    pub fn with_clients(cetus_client: CetusClient<C>, sui_client: Arc<SuiClient<RpcClient>>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Cetus),
             cetus_client,
@@ -101,7 +101,7 @@ where
         a2b: bool,
         buy_amount_in: bool,
         amount: BigInt,
-        client: Arc<SuiClient<AlienClient>>,
+        client: Arc<SuiClient<RpcClient>>,
     ) -> Result<CalculatedSwapResult, Box<dyn std::error::Error + Send + Sync>> {
         let call = self.pre_swap_call(pool, pool_obj, a2b, buy_amount_in, amount)?;
         let result: InspectResult = client.rpc_call(call).await?;

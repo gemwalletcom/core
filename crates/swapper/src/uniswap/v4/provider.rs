@@ -5,7 +5,7 @@ use std::{collections::HashSet, fmt, str::FromStr, sync::Arc, vec};
 use crate::{
     FetchQuoteData, Permit2ApprovalData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote,
     SwapperQuoteData, SwapperQuoteRequest,
-    alien::{AlienClient, AlienProvider},
+    alien::{RpcClient, RpcProvider},
     approval::evm::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
     slippage::apply_slippage_in_bp,
@@ -39,11 +39,11 @@ use super::{
 
 pub struct UniswapV4 {
     pub provider: SwapperProviderType,
-    rpc_provider: Arc<dyn AlienProvider>,
+    rpc_provider: Arc<dyn RpcProvider>,
 }
 
 impl UniswapV4 {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::UniswapV4),
             rpc_provider,
@@ -58,9 +58,9 @@ impl UniswapV4 {
         vec![FeeTier::Hundred, FeeTier::FiveHundred, FeeTier::ThreeThousand, FeeTier::TenThousand]
     }
 
-    fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<AlienClient>, SwapperError> {
+    fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<RpcClient>, SwapperError> {
         let endpoint = self.rpc_provider.get_endpoint(chain).map_err(SwapperError::from)?;
-        let client = AlienClient::new(endpoint, self.rpc_provider.clone());
+        let client = RpcClient::new(endpoint, self.rpc_provider.clone());
         Ok(JsonRpcClient::new(client))
     }
 
@@ -280,12 +280,12 @@ impl Swapper for UniswapV4 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SwapperMode, SwapperOptions, alien::mock::AlienProviderMock};
+    use crate::{SwapperMode, SwapperOptions, alien::mock::ProviderMock};
     use std::sync::Arc;
 
     #[test]
     fn test_is_base_pair() {
-        let provider = Arc::new(AlienProviderMock::new("{}".to_string()));
+        let provider = Arc::new(ProviderMock::new("{}".to_string()));
         let swapper = UniswapV4::new(provider);
         let request = SwapperQuoteRequest {
             from_asset: AssetId::from(Chain::SmartChain, Some("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string())).into(),

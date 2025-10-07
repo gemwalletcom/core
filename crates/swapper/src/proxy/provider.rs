@@ -10,7 +10,7 @@ use super::{
 use crate::{
     FetchQuoteData, Swapper, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderMode, SwapperProviderType, SwapperQuote, SwapperQuoteData,
     SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
-    alien::{AlienClient, AlienProvider},
+    alien::{RpcClient, RpcProvider},
     approval::{evm::check_approval_erc20, tron::check_approval_tron},
     asset::*,
     client_factory::create_tron_client,
@@ -34,14 +34,14 @@ where
     pub provider: SwapperProviderType,
     pub assets: Vec<SwapperChainAsset>,
     client: ProxyClient<C>,
-    pub(crate) rpc_provider: Arc<dyn AlienProvider>,
+    pub(crate) rpc_provider: Arc<dyn RpcProvider>,
 }
 
 impl<C> ProxyProvider<C>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    fn new_with_client(provider: SwapperProvider, client: ProxyClient<C>, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    fn new_with_client(provider: SwapperProvider, client: ProxyClient<C>, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
             provider: SwapperProviderType::new(provider),
             assets,
@@ -141,22 +141,22 @@ where
     }
 }
 
-impl ProxyProvider<AlienClient> {
-    fn new_with_path(provider: SwapperProvider, path: &str, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+impl ProxyProvider<RpcClient> {
+    fn new_with_path(provider: SwapperProvider, path: &str, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
         let base_url = format!("{PROVIDER_API_URL}/{path}");
-        let client = ProxyClient::new(AlienClient::new(base_url, rpc_provider.clone()));
+        let client = ProxyClient::new(RpcClient::new(base_url, rpc_provider.clone()));
         Self::new_with_client(provider, client, assets, rpc_provider)
     }
 
-    pub fn new_stonfi_v2(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new_stonfi_v2(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self::new_with_path(SwapperProvider::StonfiV2, "stonfi_v2", vec![SwapperChainAsset::All(Chain::Ton)], rpc_provider)
     }
 
-    pub fn new_symbiosis(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new_symbiosis(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self::new_with_path(SwapperProvider::Symbiosis, "symbiosis", vec![SwapperChainAsset::All(Chain::Tron)], rpc_provider)
     }
 
-    pub fn new_cetus_aggregator(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self::new_with_path(
             SwapperProvider::CetusAggregator,
             "cetus",
@@ -165,7 +165,7 @@ impl ProxyProvider<AlienClient> {
         )
     }
 
-    pub fn new_mayan(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         let assets = vec![
             SwapperChainAsset::Assets(
                 Chain::Ethereum,
@@ -211,7 +211,7 @@ impl ProxyProvider<AlienClient> {
         Self::new_with_path(SwapperProvider::Mayan, "mayan", assets, rpc_provider)
     }
 
-    pub fn new_relay(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new_relay(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self::new_with_path(
             SwapperProvider::Relay,
             "relay",

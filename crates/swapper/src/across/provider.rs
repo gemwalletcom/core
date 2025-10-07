@@ -7,7 +7,7 @@ use super::{
 use crate::{
     Swapper, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
     across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
-    alien::AlienProvider,
+    alien::RpcProvider,
     approval::check_approval_erc20,
     asset::*,
     chainlink::ChainlinkPriceFeed,
@@ -44,18 +44,18 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 #[derive(Debug)]
 pub struct Across {
     pub provider: SwapperProviderType,
-    rpc_provider: Arc<dyn AlienProvider>,
+    rpc_provider: Arc<dyn RpcProvider>,
 }
 
 impl Across {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Across),
             rpc_provider,
         }
     }
 
-    pub fn boxed(rpc_provider: Arc<dyn AlienProvider>) -> Box<dyn Swapper> {
+    pub fn boxed(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn Swapper> {
         Box::new(Self::new(rpc_provider))
     }
 

@@ -6,13 +6,13 @@ use std::{
 
 use super::{
     AlienError,
-    provider::{AlienProvider, Data},
-    target::AlienTarget,
+    provider::{Data, RpcProvider},
+    target::Target,
 };
 use primitives::Chain;
 
 #[allow(unused)]
-pub struct MockFn(pub Box<dyn Fn(AlienTarget) -> String + Send + Sync>);
+pub struct MockFn(pub Box<dyn Fn(Target) -> String + Send + Sync>);
 
 impl fmt::Debug for MockFn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -22,13 +22,13 @@ impl fmt::Debug for MockFn {
 
 #[allow(unused)]
 #[derive(Debug)]
-pub struct AlienProviderMock {
+pub struct ProviderMock {
     pub response: MockFn,
     pub timeout: Duration,
 }
 
 #[allow(unused)]
-impl AlienProviderMock {
+impl ProviderMock {
     pub fn new(string: String) -> Self {
         Self {
             response: MockFn(Box::new(move |_| string.clone())),
@@ -38,13 +38,13 @@ impl AlienProviderMock {
 }
 
 #[async_trait]
-impl AlienProvider for AlienProviderMock {
-    async fn request(&self, target: AlienTarget) -> Result<Data, AlienError> {
+impl RpcProvider for ProviderMock {
+    async fn request(&self, target: Target) -> Result<Data, AlienError> {
         let responses = self.batch_request(vec![target]).await;
         responses.map(|responses| responses.first().unwrap().clone())
     }
 
-    async fn batch_request(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
+    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, AlienError> {
         targets.iter().map(|target| Ok(self.response.0(target.clone()).into_bytes())).collect()
     }
 

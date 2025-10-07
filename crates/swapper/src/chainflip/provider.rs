@@ -20,7 +20,7 @@ use super::{
 use crate::{
     FetchQuoteData, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData,
     SwapperQuoteRequest, SwapperRoute, SwapperSwapResult,
-    alien::AlienProvider,
+    alien::RpcProvider,
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
     slippage,
@@ -39,7 +39,7 @@ where
     provider: SwapperProviderType,
     chainflip_client: ChainflipClient<CX>,
     broker_client: BrokerClient<BR>,
-    rpc_provider: Arc<dyn AlienProvider>,
+    rpc_provider: Arc<dyn RpcProvider>,
 }
 
 impl<CX, BR> ChainflipProvider<CX, BR>
@@ -47,7 +47,7 @@ where
     CX: Client + Clone + Send + Sync + Debug + 'static,
     BR: Client + Clone + Send + Sync + Debug + 'static,
 {
-    pub fn with_clients(chainflip_client: ChainflipClient<CX>, broker_client: BrokerClient<BR>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn with_clients(chainflip_client: ChainflipClient<CX>, broker_client: BrokerClient<BR>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Chainflip),
             chainflip_client,

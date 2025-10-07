@@ -1,10 +1,7 @@
 use crate::{
-    across, chainflip, hyperliquid, jupiter, pancakeswap_aptos, thorchain, uniswap,
-    alien::AlienProvider,
-    proxy::provider_factory,
-    swap_config::DEFAULT_STABLE_SWAP_REFERRAL_BPS,
-    FetchQuoteData, Permit2ApprovalData, Swapper, SwapperAssetList, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperSwapResult,
+    FetchQuoteData, Permit2ApprovalData, Swapper, SwapperAssetList, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode, SwapperProviderType,
+    SwapperQuote, SwapperQuoteData, SwapperQuoteRequest, SwapperSwapResult, across, alien::RpcProvider, chainflip, hyperliquid, jupiter, pancakeswap_aptos,
+    proxy::provider_factory, swap_config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, thorchain, uniswap,
 };
 
 use gem_macro::debug_println;
@@ -14,7 +11,7 @@ use std::{borrow::Cow, collections::HashSet, fmt::Debug, sync::Arc};
 
 #[derive(Debug)]
 pub struct GemSwapper {
-    pub rpc_provider: Arc<dyn AlienProvider>,
+    pub rpc_provider: Arc<dyn RpcProvider>,
     pub swappers: Vec<Box<dyn Swapper>>,
 }
 
@@ -83,7 +80,7 @@ impl GemSwapper {
 }
 
 impl GemSwapper {
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         let swappers: Vec<Box<dyn Swapper>> = vec![
             uniswap::default::boxed_uniswap_v3(rpc_provider.clone()),
             uniswap::default::boxed_uniswap_v4(rpc_provider.clone()),
@@ -212,9 +209,9 @@ mod tests {
 
     use super::*;
     use crate::{
+        SwapperMode, SwapperOptions, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
         alien::reqwest_provider::NativeProvider,
         swap_config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, SwapReferralFee, SwapReferralFees},
-        SwapperMode, SwapperOptions, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
         uniswap::default::{new_pancakeswap, new_uniswap_v3},
     };
     use primitives::asset_constants::USDT_ETH_ASSET_ID;

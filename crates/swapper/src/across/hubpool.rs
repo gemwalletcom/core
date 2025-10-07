@@ -7,7 +7,7 @@ use primitives::Chain;
 
 use crate::{
     SwapperError,
-    alien::{AlienClient, AlienProvider},
+    alien::{RpcClient, RpcProvider},
     client_factory::create_client_with_chain,
 };
 use gem_evm::{
@@ -19,12 +19,12 @@ use gem_jsonrpc::JsonRpcClient;
 
 pub struct HubPoolClient {
     pub contract: String,
-    pub client: JsonRpcClient<AlienClient>,
+    pub client: JsonRpcClient<RpcClient>,
     pub chain: Chain,
 }
 
 impl HubPoolClient {
-    pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> HubPoolClient {
+    pub fn new(provider: Arc<dyn RpcProvider>, chain: Chain) -> HubPoolClient {
         HubPoolClient {
             contract: ACROSS_HUBPOOL.into(),
             client: create_client_with_chain(provider.clone(), chain),

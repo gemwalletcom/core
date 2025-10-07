@@ -1,6 +1,6 @@
 use crate::{
     SwapperError,
-    alien::AlienProvider,
+    alien::RpcProvider,
     client_factory::create_client_with_chain,
     eth_address,
     models::{ApprovalType, Permit2ApprovalData},
@@ -74,7 +74,7 @@ pub async fn check_approval_erc20(
     token: String,
     spender: String,
     amount: U256,
-    provider: Arc<dyn AlienProvider>,
+    provider: Arc<dyn RpcProvider>,
     chain: &Chain,
 ) -> Result<ApprovalType, SwapperError> {
     let client = create_client_with_chain(provider.clone(), *chain);
@@ -133,7 +133,7 @@ pub async fn check_approval_permit2(
     token: String,
     spender: String,
     amount: U256,
-    provider: Arc<dyn AlienProvider>,
+    provider: Arc<dyn RpcProvider>,
     chain: &Chain,
 ) -> Result<ApprovalType, SwapperError> {
     let client = create_client_with_chain(provider.clone(), *chain);
@@ -141,7 +141,7 @@ pub async fn check_approval_permit2(
 }
 
 #[allow(unused)]
-pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn AlienProvider>, chain: &Chain) -> Result<ApprovalType, SwapperError> {
+pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn RpcProvider>, chain: &Chain) -> Result<ApprovalType, SwapperError> {
     match check_type {
         CheckApprovalType::ERC20 { owner, token, spender, amount } => check_approval_erc20(owner, token, spender, amount, provider, chain).await,
         CheckApprovalType::Permit2 {
@@ -157,7 +157,7 @@ pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn Ali
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alien::mock::{AlienProviderMock, MockFn};
+    use crate::alien::mock::{MockFn, ProviderMock};
     use std::time::Duration;
 
     #[tokio::test]
@@ -172,7 +172,7 @@ mod tests {
         let chain: Chain = Chain::Optimism;
 
         let token_clone = token.clone();
-        let mock = AlienProviderMock {
+        let mock = ProviderMock {
             response: MockFn(Box::new(move |target| {
                 let body = target.body.unwrap();
                 let json = serde_json::from_slice::<serde_json::Value>(&body).unwrap();

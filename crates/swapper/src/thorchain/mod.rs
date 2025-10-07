@@ -11,7 +11,7 @@ use num_bigint::BigInt;
 use primitives::Chain;
 use std::{str::FromStr, sync::Arc};
 
-use crate::alien::AlienProvider;
+use crate::alien::RpcProvider;
 use gem_client::Client;
 
 use super::{SwapperProvider, SwapperProviderType};
@@ -30,7 +30,7 @@ where
     C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
 {
     pub provider: SwapperProviderType,
-    pub rpc_provider: Arc<dyn AlienProvider>,
+    pub rpc_provider: Arc<dyn RpcProvider>,
     pub(crate) swap_client: client::ThorChainSwapClient<C>,
 }
 
@@ -38,7 +38,7 @@ impl<C> ThorChain<C>
 where
     C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
 {
-    pub fn with_client(swap_client: client::ThorChainSwapClient<C>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+    pub fn with_client(swap_client: client::ThorChainSwapClient<C>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self {
             provider: SwapperProviderType::new(SwapperProvider::Thorchain),
             rpc_provider,
