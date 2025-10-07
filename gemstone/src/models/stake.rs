@@ -35,6 +35,7 @@ pub enum GemStakeChain {
     Sui,
     SmartChain,
     Tron,
+    Aptos,
     HyperCore,
 }
 

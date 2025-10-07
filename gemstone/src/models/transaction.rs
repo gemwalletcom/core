@@ -304,6 +304,10 @@ pub enum GemTransactionLoadMetadata {
     Bitcoin {
         utxos: Vec<GemUTXO>,
     },
+    Zcash {
+        utxos: Vec<GemUTXO>,
+        branch_id: String,
+    },
     Cardano {
         utxos: Vec<GemUTXO>,
     },
@@ -392,6 +396,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 chain_id,
             },
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin { utxos },
+            TransactionLoadMetadata::Zcash { utxos, branch_id } => GemTransactionLoadMetadata::Zcash { utxos, branch_id },
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano { utxos },
             TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => GemTransactionLoadMetadata::Evm {
                 nonce,
@@ -535,6 +540,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 chain_id,
             },
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin { utxos },
+            GemTransactionLoadMetadata::Zcash { utxos, branch_id } => TransactionLoadMetadata::Zcash { utxos, branch_id },
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano { utxos },
             GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => TransactionLoadMetadata::Evm {
                 nonce,

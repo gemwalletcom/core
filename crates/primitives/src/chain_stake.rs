@@ -20,6 +20,7 @@ pub enum StakeChain {
     Sui,
     SmartChain,
     Tron,
+    Aptos,
     HyperCore,
 }
 
@@ -37,6 +38,7 @@ impl StakeChain {
             Self::Sui => 86400,
             Self::Osmosis | Self::Tron => 1_209_600,
             Self::SmartChain => 604800,
+            Self::Aptos => 2_592_000, // 30 days
             Self::HyperCore => 604800,
         }
     }
@@ -50,6 +52,7 @@ impl StakeChain {
             Self::Sui => 1_000_000_000,                    // 1 SUI
             Self::SmartChain => 1_000_000_000_000_000_000, // 1 BNB
             Self::Tron => 1_000_000,                       // 1 TRX
+            Self::Aptos => 1_100_000_000,                  // 11 APT
             Self::HyperCore => 10000000000000000,          // 0.01 HYPE
         }
     }
@@ -57,9 +60,16 @@ impl StakeChain {
     /// Get if chain support ability to change amount on unstake
     pub fn get_change_amount_on_unstake(&self) -> bool {
         match self {
-            Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Ethereum | Self::SmartChain | Self::Tron | Self::HyperCore => {
-                true
-            }
+            Self::Cosmos
+            | Self::Osmosis
+            | Self::Injective
+            | Self::Sei
+            | Self::Celestia
+            | Self::Ethereum
+            | Self::SmartChain
+            | Self::Tron
+            | Self::Aptos
+            | Self::HyperCore => true,
             Self::Sui | Self::Solana => false,
         }
     }
@@ -68,13 +78,13 @@ impl StakeChain {
     pub fn get_can_redelegate(&self) -> bool {
         match self {
             Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::SmartChain | Self::Tron => true,
-            Self::Ethereum | Self::Sui | Self::Solana | Self::HyperCore => false,
+            Self::Ethereum | Self::Sui | Self::Solana | Self::Aptos | Self::HyperCore => false,
         }
     }
 
     pub fn get_can_withdraw(&self) -> bool {
         match self {
-            Self::Ethereum | Self::Solana | Self::Tron | Self::SmartChain => true,
+            Self::Ethereum | Self::Solana | Self::Tron | Self::SmartChain | Self::Aptos => true,
             Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Sui | Self::HyperCore => false,
         }
     }
@@ -82,7 +92,7 @@ impl StakeChain {
     pub fn get_can_claim_rewards(&self) -> bool {
         match self {
             Self::Cosmos | Self::Osmosis | Self::Injective | Self::Sei | Self::Celestia | Self::Tron => true,
-            Self::Ethereum | Self::SmartChain | Self::Sui | Self::Solana | Self::HyperCore => false,
+            Self::Ethereum | Self::SmartChain | Self::Sui | Self::Solana | Self::Aptos | Self::HyperCore => false,
         }
     }
 
@@ -98,6 +108,7 @@ impl StakeChain {
             Self::Sui => 100_000_000,                  // 0.1 SUI
             Self::SmartChain => 250_000_000_000_000,   // 0.00025 BNB
             Self::Tron => 10_000_000,                  // 10 TRX
+            Self::Aptos => 1_000_000,                  // 0.01 APT
             Self::HyperCore => 0,                      // 0 HLC (TODO: update value)
         }
     }

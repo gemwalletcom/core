@@ -41,7 +41,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
 mod chain_integration_tests {
     use crate::provider::testkit::{TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_smartchain_test_client};
     use chain_traits::ChainStaking;
-    use num_bigint::BigInt;
+    use num_bigint::BigUint;
     use primitives::{Chain, DelegationState};
 
     #[tokio::test]
@@ -141,7 +141,7 @@ mod chain_integration_tests {
                 DelegationState::Active | DelegationState::Activating | DelegationState::Deactivating | DelegationState::AwaitingWithdrawal
             ));
             // Balance should be a valid positive number
-            assert!(delegation.balance >= BigInt::from(0));
+            assert!(delegation.balance >= BigUint::from(0u32));
         }
 
         Ok(())

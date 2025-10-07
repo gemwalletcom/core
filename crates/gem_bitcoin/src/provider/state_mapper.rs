@@ -32,6 +32,7 @@ mod tests {
             backend: Some(BitcoinBackend {
                 blocks: 456,
                 chain: Some("main".to_string()),
+                consensus: None,
             }),
         };
 
@@ -53,6 +54,7 @@ mod tests {
             backend: Some(BitcoinBackend {
                 blocks: 2_000,
                 chain: Some("main".to_string()),
+                consensus: None,
             }),
         };
 

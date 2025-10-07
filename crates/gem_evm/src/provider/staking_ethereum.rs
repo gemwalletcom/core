@@ -59,35 +59,22 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_ethereum_staking_balance(&self, address: &str) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         let delegations = self.get_ethereum_delegations(address).await?;
 
-        let mut staked = BigUint::zero();
-        let mut pending_total = BigUint::zero();
-        let mut withdrawable = BigUint::zero();
+        let staked = delegations
+            .iter()
+            .filter(|d| d.state == DelegationState::Active)
+            .fold(BigUint::zero(), |acc, d| acc + &d.balance);
 
-        for delegation in delegations {
-            let balance = delegation.balance;
-            match delegation.state {
-                DelegationState::Active => staked += balance,
-                DelegationState::Activating | DelegationState::Deactivating | DelegationState::Undelegating => pending_total += balance,
-                DelegationState::AwaitingWithdrawal => withdrawable += balance,
-                _ => {}
-            }
-        }
+        let pending = delegations
+            .iter()
+            .filter(|d| {
+                d.state == DelegationState::Activating
+                    || d.state == DelegationState::Deactivating
+                    || d.state == DelegationState::Undelegating
+                    || d.state == DelegationState::AwaitingWithdrawal
+            })
+            .fold(BigUint::zero(), |acc, d| acc + &d.balance);
 
-        if staked.is_zero() && pending_total.is_zero() && withdrawable.is_zero() {
-            return Ok(None);
-        }
-
-        let balance = Balance {
-            available: BigUint::zero(),
-            frozen: BigUint::zero(),
-            locked: BigUint::zero(),
-            staked,
-            pending: pending_total,
-            rewards: BigUint::zero(),
-            reserved: BigUint::zero(),
-            withdrawable,
-            metadata: None,
-        };
+        let balance = Balance::stake_balance(staked, pending, None);
 
         Ok(Some(AssetBalance::new_balance(AssetId::from_chain(Chain::Ethereum), balance)))
     }
@@ -95,14 +82,14 @@ impl<C: Client + Clone> EthereumClient<C> {
 
 #[cfg(all(test, feature = "rpc"))]
 mod tests {
-    use crate::provider::testkit::create_ethereum_test_client;
+    use crate::provider::testkit::{TEST_ADDRESS, create_ethereum_test_client};
     use chain_traits::{ChainBalances, ChainStaking};
+    use num_bigint::BigUint;
 
     #[tokio::test]
-    #[ignore = "Skipped by default"]
     async fn test_ethereum_get_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ethereum_test_client();
-        let address = "0x4d292dce4f83758457c09905be9ad83cd4a05447".to_string();
+        let address = TEST_ADDRESS.to_string();
         let delegations = client.get_staking_delegations(address.clone()).await?;
 
         println!("Delegations for address: {}", address);
@@ -113,17 +100,20 @@ mod tests {
             );
         }
 
+        assert_eq!(delegations.len(), 1);
+
         Ok(())
     }
 
     #[tokio::test]
-    #[ignore = "Skipped by default"]
     async fn test_ethereum_get_staking_balance() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ethereum_test_client();
-        let address = "0x4d292dce4f83758457c09905be9ad83cd4a05447".to_string();
+        let address = TEST_ADDRESS.to_string();
         let balance = client.get_balance_staking(address).await?;
 
         println!("Ethereum staking balance: {:?}", balance);
+
+        assert!(balance.unwrap().balance.staked > BigUint::from(0u32));
 
         Ok(())
     }

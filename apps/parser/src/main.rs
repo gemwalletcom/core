@@ -38,8 +38,10 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         return consumers::run_consumer_fetch_blocks(settings.clone()).await;
     } else if mode == "consumer_fetch_assets" {
         return consumers::run_consumer_fetch_assets(settings.clone(), database.clone()).await;
-    } else if mode == "consumer_fetch_assets_mappings" {
-        return consumers::run_consumer_fetch_assets_mappings(settings.clone(), database.clone()).await;
+    } else if mode == "consumer_fetch_token_addresses_mappings" {
+        return consumers::run_consumer_fetch_token_addresses_mappings(settings.clone(), database.clone()).await;
+    } else if mode == "consumer_fetch_coin_addresses_mappings" {
+        return consumers::run_consumer_fetch_coin_addresses_mappings(settings.clone(), database.clone()).await;
     } else if mode == "consumer_store_assets_mappings" {
         return consumers::run_consumer_store_assets_mappings(settings.clone(), database.clone()).await;
     } else if mode == "consumer_fetch_nft_assets_mappings" {

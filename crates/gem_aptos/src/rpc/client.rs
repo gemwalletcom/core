@@ -1,12 +1,15 @@
 use std::error::Error;
+use std::str::FromStr;
 
 use gem_client::Client;
+use num_bigint::BigUint;
 use primitives::chain::Chain;
 use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::models::{
-    Account, Block, GasFee, Ledger, Resource, ResourceData, Transaction, TransactionPayload, TransactionResponse, TransactionSignature, TransactionSimulation,
+    Account, Block, DelegationPoolStake, GasFee, Ledger, Resource, ResourceData, StakingConfig, Transaction, TransactionPayload, TransactionResponse,
+    TransactionSignature, TransactionSimulation, ValidatorSet,
 };
 pub type AccountResource<T> = Resource<T>;
 
@@ -43,7 +46,7 @@ impl<C: Client> AptosClient<C> {
         &self,
         address: String,
         resource: &str,
-    ) -> Result<Option<AccountResource<T>>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<AccountResource<T>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v1/accounts/{}/resource/{}", address, resource)).await?)
     }
 
@@ -162,16 +165,65 @@ impl<C: Client> AptosClient<C> {
         let response: Vec<Transaction> = self.client.post("/v1/transactions/simulate", &simulation, None).await?;
         response.into_iter().next().ok_or_else(|| "No simulation result".into())
     }
+
+    pub async fn get_validator_set(&self) -> Result<ValidatorSet, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .get_account_resource::<ValidatorSet>("0x1".to_string(), "0x1::stake::ValidatorSet")
+            .await?
+            .data)
+    }
+
+    pub async fn get_staking_config(&self) -> Result<StakingConfig, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .get_account_resource::<StakingConfig>("0x1".to_string(), "0x1::staking_config::StakingConfig")
+            .await?
+            .data)
+    }
+
+    pub async fn get_delegation_pool_stake(&self, pool_address: &str, delegator_address: &str) -> Result<DelegationPoolStake, Box<dyn Error + Send + Sync>> {
+        let view_request = serde_json::json!({
+            "function": "0x1::delegation_pool::get_stake",
+            "type_arguments": [],
+            "arguments": [pool_address, delegator_address]
+        });
+
+        let (active, inactive, pending): (String, String, String) = self.client.post("/v1/view", &view_request, None).await?;
+
+        Ok(DelegationPoolStake {
+            active: BigUint::from_str(&active).unwrap_or_else(|_| BigUint::from(0u32)),
+            inactive: BigUint::from_str(&inactive).unwrap_or_else(|_| BigUint::from(0u32)),
+            pending: BigUint::from_str(&pending).unwrap_or_else(|_| BigUint::from(0u32)),
+        })
+    }
+
+    pub async fn get_delegation_for_pool(
+        &self,
+        delegator_address: &str,
+        pool_address: &str,
+    ) -> Result<(String, DelegationPoolStake), Box<dyn Error + Send + Sync>> {
+        let stake = self.get_delegation_pool_stake(pool_address, delegator_address).await?;
+        Ok((pool_address.to_string(), stake))
+    }
+
+    pub async fn get_operator_commission_percentage(&self, pool_address: &str) -> Result<f64, Box<dyn Error + Send + Sync>> {
+        let view_request = serde_json::json!({
+            "function": "0x1::delegation_pool::operator_commission_percentage",
+            "type_arguments": [],
+            "arguments": [pool_address]
+        });
+
+        let result: Vec<String> = self.client.post("/v1/view", &view_request, None).await?;
+        let commission_bps = result.first().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+
+        Ok(commission_bps as f64 / 100.0)
+    }
 }
 
 #[cfg(feature = "rpc")]
 mod chain_trait_impls {
     use super::*;
     use async_trait::async_trait;
-    use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStaking};
-
-    #[async_trait]
-    impl<C: Client> ChainStaking for AptosClient<C> {}
+    use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual};
 
     #[async_trait]
     impl<C: Client> ChainAccount for AptosClient<C> {}

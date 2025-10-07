@@ -23,8 +23,10 @@ pub enum QueueName {
     FetchNFTCollectionAssets,
     // Add assets/addresses association to address_assets table
     AssetsAddressesAssociations,
-    // Fetch address assets from providers and store to db
-    FetchAssetsAddressesAssociations,
+    // Fetch address token balances from providers and store to db
+    FetchTokenAddressesAssociations,
+    // Fetch address coin balances from providers and store to db
+    FetchCoinAddressesAssociations,
     // Fetch address nft assets from providers and store to db
     FetchNftAssetsAddressesAssociations,
     // Fetch transactions from providers and store to db
@@ -53,7 +55,8 @@ impl fmt::Display for QueueName {
             QueueName::FetchNFTCollection => write!(f, "fetch_nft_collection"),
             QueueName::FetchNFTCollectionAssets => write!(f, "fetch_nft_collection_assets"),
             QueueName::AssetsAddressesAssociations => write!(f, "assets_addresses_associations"),
-            QueueName::FetchAssetsAddressesAssociations => write!(f, "fetch_assets_addresses_associations"),
+            QueueName::FetchTokenAddressesAssociations => write!(f, "fetch_token_addresses_associations"),
+            QueueName::FetchCoinAddressesAssociations => write!(f, "fetch_coin_addresses_associations"),
             QueueName::FetchTransactions => write!(f, "fetch_transactions"),
             QueueName::FetchNftAssetsAddressesAssociations => write!(f, "fetch_nft_assets_addresses_associations"),
             QueueName::FiatOrderWebhooks => write!(f, "fiat_order_webhooks"),
