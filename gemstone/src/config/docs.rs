@@ -1,3 +1,6 @@
+use crate::models::GemStakeChain;
+use primitives::Asset;
+
 #[derive(uniffi::Enum, Clone)]
 pub enum DocsUrl {
     Start,
@@ -24,7 +27,7 @@ pub enum DocsUrl {
     WalletConnect,
     HowStoreSecretPhrase,
     NoQuotes,
-    Staking,
+    Staking(GemStakeChain),
     PerpetualsFundingRate,
     PerpetualsLiquidationPrice,
     PerpetualsOpenInterest,
@@ -58,7 +61,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::WalletConnect => "/guides/walletconnect/",
         DocsUrl::HowStoreSecretPhrase => "/faq/secure-recovery-phrase/#how-to-secure-my-secret-phrase/",
         DocsUrl::NoQuotes => "/troubleshoot/quote-error/",
-        DocsUrl::Staking => "/defi/stake/",
+        DocsUrl::Staking(chain) => &format!("/defi/stake-{}/", Asset::from_chain(chain.chain()).symbol.to_lowercase()),
         DocsUrl::PerpetualsFundingRate => "/defi/perps/perps-terms/#what-is-perpetual-funding/",
         DocsUrl::PerpetualsLiquidationPrice => "/defi/perps/perps-terms/#what-is-a-perpetual-liquidation-price/",
         DocsUrl::PerpetualsOpenInterest => "/defi/perps/perps-terms/#what-is-a-perpetual-open-interest/",
@@ -76,6 +79,15 @@ mod tests {
         assert_eq!(
             get_docs_url(DocsUrl::WhatIsSecretPhrase),
             "https://docs.gemwallet.com/faq/secret-recovery-phrase/"
+        );
+    }
+
+    #[test]
+    fn test_get_docs_url_staking() {
+        use primitives::StakeChain;
+        assert_eq!(
+            get_docs_url(DocsUrl::Staking(StakeChain::Solana)),
+            "https://docs.gemwallet.com/defi/stake-sol/"
         );
     }
 }
