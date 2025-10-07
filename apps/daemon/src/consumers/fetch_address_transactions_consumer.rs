@@ -8,7 +8,7 @@ use storage::DatabaseClient;
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 use tokio::sync::Mutex;
 
-pub struct FetchTransactionsConsumer {
+pub struct FetchAddressTransactionsConsumer {
     #[allow(dead_code)]
     pub database: Arc<Mutex<DatabaseClient>>,
     pub providers: ChainProviders,
@@ -16,7 +16,7 @@ pub struct FetchTransactionsConsumer {
     pub cacher: CacherClient,
 }
 
-impl FetchTransactionsConsumer {
+impl FetchAddressTransactionsConsumer {
     pub fn new(database: Arc<Mutex<DatabaseClient>>, providers: ChainProviders, producer: StreamProducer, cacher: CacherClient) -> Self {
         Self {
             database,
@@ -34,10 +34,13 @@ impl FetchTransactionsConsumer {
 }
 
 #[async_trait]
-impl MessageConsumer<ChainAddressPayload, usize> for FetchTransactionsConsumer {
+impl MessageConsumer<ChainAddressPayload, usize> for FetchAddressTransactionsConsumer {
     async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now(&format!("fetch_transactions:{}:{}", payload.value.chain, payload.value.address), 30 * 86400)
+            .can_process_now(
+                &format!("fetch_address_transactions:{}:{}", payload.value.chain, payload.value.address),
+                30 * 86400,
+            )
             .await
     }
     async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {

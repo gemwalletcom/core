@@ -5,14 +5,14 @@ use strum::{AsRefStr, EnumString};
 #[derive(Debug, Clone, AsRefStr, EnumString, PartialEq)]
 #[strum(serialize_all = "snake_case")]
 pub enum ConsumerService {
-    FetchTransactions,
+    FetchAddressTransactions,
     StoreTransactions,
     FetchBlocks,
     FetchAssets,
-    FetchTokenAddressesMappings,
-    FetchCoinAddressesMappings,
-    StoreAssetsMappings,
-    FetchNftAssetsMappings,
+    FetchTokenAssociations,
+    FetchCoinAssociations,
+    StoreAddressAssets,
+    FetchNftAssociations,
     Notifications,
     Support,
     Fiat,

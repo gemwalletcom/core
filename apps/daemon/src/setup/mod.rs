@@ -99,10 +99,10 @@ pub async fn run_setup(settings: Settings) {
         .bind_exchange(
             ExchangeName::NewAddresses.clone(),
             vec![
-                QueueName::FetchTokenAddressesAssociations,
-                QueueName::FetchCoinAddressesAssociations,
-                QueueName::FetchTransactions,
-                QueueName::FetchNftAssetsAddressesAssociations,
+                QueueName::FetchTokenAssociations,
+                QueueName::FetchCoinAssociations,
+                QueueName::FetchAddressTransactions,
+                QueueName::FetchNftAssociations,
             ],
         )
         .await;

@@ -70,14 +70,14 @@ async fn run_consumer_mode(settings: settings::Settings, service: ConsumerServic
     let database = Arc::new(Mutex::new(DatabaseClient::new(&settings.postgres.url)));
 
     match service {
-        ConsumerService::FetchTransactions => consumers::run_consumer_fetch_transactions(settings, database).await,
+        ConsumerService::FetchAddressTransactions => consumers::run_consumer_fetch_address_transactions(settings, database).await,
         ConsumerService::StoreTransactions => consumers::run_consumer_store_transactions(settings, database).await,
         ConsumerService::FetchBlocks => consumers::run_consumer_fetch_blocks(settings).await,
         ConsumerService::FetchAssets => consumers::run_consumer_fetch_assets(settings, database).await,
-        ConsumerService::FetchTokenAddressesMappings => consumers::run_consumer_fetch_token_addresses_mappings(settings, database).await,
-        ConsumerService::FetchCoinAddressesMappings => consumers::run_consumer_fetch_coin_addresses_mappings(settings, database).await,
-        ConsumerService::StoreAssetsMappings => consumers::run_consumer_store_assets_mappings(settings, database).await,
-        ConsumerService::FetchNftAssetsMappings => consumers::run_consumer_fetch_nft_assets_mappings(settings, database).await,
+        ConsumerService::FetchTokenAssociations => consumers::run_consumer_fetch_token_associations(settings, database).await,
+        ConsumerService::FetchCoinAssociations => consumers::run_consumer_fetch_coin_associations(settings, database).await,
+        ConsumerService::StoreAddressAssets => consumers::run_consumer_store_address_assets(settings, database).await,
+        ConsumerService::FetchNftAssociations => consumers::run_consumer_fetch_nft_associations(settings, database).await,
         ConsumerService::Notifications => consumers::notifications::run(settings).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, database).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, database).await,
