@@ -105,8 +105,8 @@ pub async fn run_consumer_fetch_blocks(settings: Settings) -> Result<(), Box<dyn
     streamer::run_consumer::<FetchBlocksPayload, FetchBlocksConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
 }
 
-pub async fn run_consumer_store_address_assets(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let queue = QueueName::StoreAddressAssets;
+pub async fn run_consumer_store_assets_associations(settings: Settings, database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let queue = QueueName::StoreAssetsAssociations;
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;

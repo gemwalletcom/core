@@ -11,7 +11,7 @@ pub enum ConsumerService {
     FetchAssets,
     FetchTokenAssociations,
     FetchCoinAssociations,
-    StoreAddressAssets,
+    StoreAssetsAssociations,
     FetchNftAssociations,
     Notifications,
     Support,
