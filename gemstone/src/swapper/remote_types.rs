@@ -1,12 +1,30 @@
-use primitives::{AssetId, Chain, swap::ApprovalData as GemApprovalData};
-
 use crate::config::swap_config::SwapReferralFees;
-
 pub use gem_swapper::{
     AssetList as SwapperAssetList, FetchQuoteData, Options as SwapperOptions, ProviderData as SwapperProviderData, ProviderType as SwapperProviderType,
     Quote as SwapperQuote, QuoteRequest as SwapperQuoteRequest, Route as SwapperRoute, SwapResult as SwapperSwapResult, SwapperMode, SwapperProvider,
     SwapperProviderMode, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage, SwapperSlippageMode, SwapperSwapStatus, permit2_data::Permit2Data,
 };
+use primitives::{AssetId, Chain, swap::ApprovalData as GemApprovalData};
+use std::str::FromStr;
+
+#[derive(Debug, Clone, PartialEq, uniffi::Object)]
+pub struct SwapProviderConfig(SwapperProviderType);
+
+#[uniffi::export]
+impl SwapProviderConfig {
+    #[uniffi::constructor]
+    pub fn new(id: SwapperProvider) -> Self {
+        Self(SwapperProviderType::new(id))
+    }
+    #[uniffi::constructor]
+    pub fn from_string(id: String) -> Self {
+        let id = SwapperProvider::from_str(&id).unwrap();
+        Self(SwapperProviderType::new(id))
+    }
+    pub fn inner(&self) -> SwapperProviderType {
+        self.0.clone()
+    }
+}
 
 #[uniffi::remote(Enum)]
 pub enum FetchQuoteData {

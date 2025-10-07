@@ -4,29 +4,7 @@ use crate::{
     config::{DEFAULT_SLIPPAGE_BPS, ReferralFees},
 };
 use primitives::{AssetId, Chain, swap::ApprovalData};
-use std::{fmt::Debug, str::FromStr};
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct SwapProviderConfig(ProviderType);
-
-impl SwapProviderConfig {
-    pub fn id(&self) -> SwapperProvider {
-        self.0.id
-    }
-}
-
-impl SwapProviderConfig {
-    pub fn new(id: SwapperProvider) -> Self {
-        Self(ProviderType::new(id))
-    }
-    pub fn from_string(id: String) -> Self {
-        let id = SwapperProvider::from_str(&id).unwrap();
-        Self(ProviderType::new(id))
-    }
-    pub fn inner(&self) -> ProviderType {
-        self.0.clone()
-    }
-}
+use std::fmt::Debug;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProviderType {
