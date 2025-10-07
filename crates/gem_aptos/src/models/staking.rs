@@ -21,7 +21,9 @@ pub struct DelegationPoolStake {
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub inactive: BigUint,
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
-    pub pending: BigUint,
+    pub pending_active: BigUint,
+    #[serde(deserialize_with = "deserialize_biguint_from_str")]
+    pub pending_inactive: BigUint,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,4 +32,14 @@ pub struct StakingConfig {
     pub rewards_rate: u64,
     #[serde(deserialize_with = "deserialize_u64_from_str")]
     pub rewards_rate_denominator: u64,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub recurring_lockup_duration_secs: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReconfigurationState {
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub epoch: u64,
+    #[serde(deserialize_with = "deserialize_u64_from_str")]
+    pub last_reconfiguration_time: u64,
 }

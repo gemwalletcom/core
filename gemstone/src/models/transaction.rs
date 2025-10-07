@@ -345,6 +345,7 @@ pub enum GemTransactionLoadMetadata {
     },
     Aptos {
         sequence: u64,
+        data: Option<String>,
     },
     Polkadot {
         sequence: u64,
@@ -431,7 +432,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 block_hash,
                 chain_id,
             },
-            TransactionLoadMetadata::Aptos { sequence } => GemTransactionLoadMetadata::Aptos { sequence },
+            TransactionLoadMetadata::Aptos { sequence, data } => GemTransactionLoadMetadata::Aptos { sequence, data },
             TransactionLoadMetadata::Polkadot {
                 sequence,
                 genesis_hash,
@@ -575,7 +576,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 block_hash,
                 chain_id,
             },
-            GemTransactionLoadMetadata::Aptos { sequence } => TransactionLoadMetadata::Aptos { sequence },
+            GemTransactionLoadMetadata::Aptos { sequence, data } => TransactionLoadMetadata::Aptos { sequence, data },
             GemTransactionLoadMetadata::Polkadot {
                 sequence,
                 genesis_hash,

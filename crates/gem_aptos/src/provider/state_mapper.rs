@@ -81,6 +81,8 @@ mod tests {
         let ledger = Ledger {
             chain_id: 1,
             block_height: 987654321,
+            epoch: 13156,
+            ledger_timestamp: 1759855099031447,
         };
         let mapped = map_node_status(&ledger).unwrap();
 

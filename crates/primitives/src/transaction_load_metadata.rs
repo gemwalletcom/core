@@ -79,6 +79,7 @@ pub enum TransactionLoadMetadata {
     },
     Aptos {
         sequence: u64,
+        data: Option<String>,
     },
     Polkadot {
         sequence: u64,
@@ -115,7 +116,7 @@ impl TransactionLoadMetadata {
             TransactionLoadMetadata::Stellar { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Xrp { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Algorand { sequence, .. } => Ok(*sequence),
-            TransactionLoadMetadata::Aptos { sequence } => Ok(*sequence),
+            TransactionLoadMetadata::Aptos { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Polkadot { sequence, .. } => Ok(*sequence),
             TransactionLoadMetadata::Evm { nonce, .. } => Ok(*nonce),
             _ => Err("Sequence not available for this metadata type".into()),

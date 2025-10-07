@@ -8,8 +8,8 @@ use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, Trans
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::models::{
-    Account, Block, DelegationPoolStake, GasFee, Ledger, Resource, ResourceData, StakingConfig, Transaction, TransactionPayload, TransactionResponse,
-    TransactionSignature, TransactionSimulation, ValidatorSet,
+    Account, Block, DelegationPoolStake, GasFee, Ledger, ReconfigurationState, Resource, ResourceData, StakingConfig, Transaction, TransactionPayload,
+    TransactionResponse, TransactionSignature, TransactionSimulation, ValidatorSet,
 };
 pub type AccountResource<T> = Resource<T>;
 
@@ -90,7 +90,7 @@ impl<C: Client> AptosClient<C> {
 
     pub async fn calculate_gas_limit(&self, input: &TransactionLoadInput) -> Result<u64, Box<dyn Error + Send + Sync>> {
         let sequence = match &input.metadata {
-            TransactionLoadMetadata::Aptos { sequence } => *sequence,
+            TransactionLoadMetadata::Aptos { sequence, .. } => *sequence,
             _ => return Err("Invalid metadata type for Aptos".into()),
         };
 
@@ -122,10 +122,10 @@ impl<C: Client> AptosClient<C> {
                     AssetSubtype::TOKEN => Ok(1500),
                 }
             }
-            TransactionInputType::Swap(_, _, _) => Ok(1500),
-            TransactionInputType::Stake(_, _) => Err("Aptos does not support staking".into()),
-            TransactionInputType::TokenApprove(_, _) => Ok(1500),
-            TransactionInputType::Generic(_, _, _) => Ok(1500),
+            TransactionInputType::Swap(_, _, _)
+            | TransactionInputType::Stake(_, _)
+            | TransactionInputType::TokenApprove(_, _)
+            | TransactionInputType::Generic(_, _, _) => Ok(1500),
             TransactionInputType::Perpetual(_, _) => unimplemented!(),
         }
     }
@@ -187,12 +187,13 @@ impl<C: Client> AptosClient<C> {
             "arguments": [pool_address, delegator_address]
         });
 
-        let (active, inactive, pending): (String, String, String) = self.client.post("/v1/view", &view_request, None).await?;
+        let (active, inactive, pending_inactive): (String, String, String) = self.client.post("/v1/view", &view_request, None).await?;
 
         Ok(DelegationPoolStake {
             active: BigUint::from_str(&active).unwrap_or_else(|_| BigUint::from(0u32)),
             inactive: BigUint::from_str(&inactive).unwrap_or_else(|_| BigUint::from(0u32)),
-            pending: BigUint::from_str(&pending).unwrap_or_else(|_| BigUint::from(0u32)),
+            pending_active: BigUint::from(0u32),
+            pending_inactive: BigUint::from_str(&pending_inactive).unwrap_or_else(|_| BigUint::from(0u32)),
         })
     }
 
@@ -216,6 +217,13 @@ impl<C: Client> AptosClient<C> {
         let commission_bps = result.first().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
 
         Ok(commission_bps as f64 / 100.0)
+    }
+
+    pub async fn get_reconfiguration_state(&self) -> Result<ReconfigurationState, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .get_account_resource::<ReconfigurationState>("0x1".to_string(), "0x1::reconfiguration::Configuration")
+            .await?
+            .data)
     }
 }
 

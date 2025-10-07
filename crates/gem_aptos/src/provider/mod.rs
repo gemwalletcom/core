@@ -6,6 +6,7 @@ use crate::rpc::client::AptosClient;
 
 pub mod balances;
 pub mod balances_mapper;
+pub mod payload_builder;
 pub mod preload;
 pub mod preload_mapper;
 pub mod staking;
