@@ -9,6 +9,7 @@ rpc = [
     "dep:async-trait",
     "dep:chrono",
     "dep:chain_traits",
+    "dep:chain_primitives",
     "dep:gem_client",
     "dep:futures"
 ]
@@ -26,6 +27,7 @@ num-bigint = { workspace = true }
 async-trait = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
+chain_primitives = { path = "../chain_primitives", optional = true }
 gem_client = { path = "../gem_client", optional = true }
 futures = { workspace = true, optional = true }
 
