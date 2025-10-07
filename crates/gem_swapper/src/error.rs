@@ -65,7 +65,7 @@ impl From<ClientError> for SwapperError {
         match err {
             ClientError::Network(msg) => Self::NetworkError(msg),
             ClientError::Timeout => Self::NetworkError("Request timed out".into()),
-            ClientError::Http { status, body } => Self::NetworkError(format!("HTTP error: status {}, body: {}", status, body)),
+            ClientError::Http { status, len } => Self::NetworkError(format!("HTTP error: status {}, body size: {}", status, len)),
             ClientError::Serialization(msg) => Self::NetworkError(msg),
         }
     }

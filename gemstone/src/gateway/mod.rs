@@ -1,6 +1,6 @@
 use crate::alien::{AlienProvider, new_alien_client};
 use crate::models::*;
-use crate::network::{jsonrpc_client_with_chain, tron_client};
+use crate::network::jsonrpc_client_with_chain;
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::AlgorandClientIndexer;
 use gem_algorand::rpc::client::AlgorandClient;
@@ -16,6 +16,7 @@ use gem_solana::rpc::client::SolanaClient;
 use gem_stellar::rpc::client::StellarClient;
 use gem_sui::rpc::client::SuiClient;
 use gem_ton::rpc::client::TonClient;
+use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
@@ -105,9 +106,10 @@ impl GemGateway {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
             }
             Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
-            Chain::Tron => Ok(Arc::new(
-                tron_client(self.provider.clone()).map_err(|e| GatewayError::NetworkError(e.to_string()))?,
-            )),
+            Chain::Tron => Ok(Arc::new(TronClient::new(
+                alien_client.clone(),
+                TronGridClient::new(alien_client.clone(), String::new()),
+            ))),
             Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
             Chain::Solana => Ok(Arc::new(SolanaClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
             Chain::Ethereum
@@ -225,13 +227,11 @@ impl GemGateway {
     }
 
     pub async fn get_transaction_status(&self, chain: Chain, request: GemTransactionStateRequest) -> Result<GemTransactionUpdate, GatewayError> {
-        let status = self
-            .provider(chain)
+        self.provider(chain)
             .await?
             .get_transaction_status(request.into())
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(status.into())
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))
     }
 
     pub async fn get_chain_id(&self, chain: Chain) -> Result<String, GatewayError> {
