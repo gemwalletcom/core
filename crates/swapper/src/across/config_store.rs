@@ -1,6 +1,7 @@
 use crate::{
     SwapperError,
-    alien::{AlienClient, AlienProvider, jsonrpc_client_with_chain},
+    alien::{AlienClient, AlienProvider},
+    client_factory::create_client_with_chain,
 };
 use alloy_primitives::{Address, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
@@ -9,10 +10,10 @@ use gem_evm::{
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::IMulticall3,
 };
+use gem_jsonrpc::{JsonRpcClient, types::JsonRpcResult};
 use primitives::Chain;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
-use gem_jsonrpc::{types::JsonRpcResult, JsonRpcClient};
 
 const CONFIG_CACHE_TTL: u64 = 60 * 60 * 24;
 
@@ -55,7 +56,7 @@ impl ConfigStoreClient {
     pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> ConfigStoreClient {
         ConfigStoreClient {
             contract: ACROSS_CONFIG_STORE.into(),
-            client: jsonrpc_client_with_chain(provider.clone(), chain),
+            client: create_client_with_chain(provider.clone(), chain),
         }
     }
 

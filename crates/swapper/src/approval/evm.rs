@@ -1,6 +1,7 @@
 use crate::{
     SwapperError,
-    alien::{AlienProvider, jsonrpc_client_with_chain},
+    alien::AlienProvider,
+    client_factory::create_client_with_chain,
     eth_address,
     models::{ApprovalType, Permit2ApprovalData},
 };
@@ -76,7 +77,7 @@ pub async fn check_approval_erc20(
     provider: Arc<dyn AlienProvider>,
     chain: &Chain,
 ) -> Result<ApprovalType, SwapperError> {
-    let client = jsonrpc_client_with_chain(provider.clone(), *chain);
+    let client = create_client_with_chain(provider.clone(), *chain);
     check_approval_erc20_with_client(owner, token, spender, amount, &client).await
 }
 
@@ -135,7 +136,7 @@ pub async fn check_approval_permit2(
     provider: Arc<dyn AlienProvider>,
     chain: &Chain,
 ) -> Result<ApprovalType, SwapperError> {
-    let client = jsonrpc_client_with_chain(provider.clone(), *chain);
+    let client = create_client_with_chain(provider.clone(), *chain);
     check_approval_permit2_with_client(permit2_contract, owner, token, spender, amount, &client).await
 }
 

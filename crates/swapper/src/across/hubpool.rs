@@ -7,7 +7,8 @@ use primitives::Chain;
 
 use crate::{
     SwapperError,
-    alien::{AlienClient, AlienProvider, jsonrpc_client_with_chain},
+    alien::{AlienClient, AlienProvider},
+    client_factory::create_client_with_chain,
 };
 use gem_evm::{
     across::{contracts::HubPoolInterface, deployment::ACROSS_HUBPOOL},
@@ -26,7 +27,7 @@ impl HubPoolClient {
     pub fn new(provider: Arc<dyn AlienProvider>, chain: Chain) -> HubPoolClient {
         HubPoolClient {
             contract: ACROSS_HUBPOOL.into(),
-            client: jsonrpc_client_with_chain(provider.clone(), chain),
+            client: create_client_with_chain(provider.clone(), chain),
             chain,
         }
     }

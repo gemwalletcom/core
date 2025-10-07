@@ -1,28 +1,20 @@
 use num_bigint::BigInt;
 use num_traits::FromBytes;
-use primitives::Chain;
-use std::sync::Arc;
 
-use crate::{
-    SwapperError,
-    alien::{AlienClient, AlienProvider, jsonrpc_client_with_chain},
-};
+use crate::SwapperError;
 use gem_evm::{
     chainlink::contract::{AggregatorInterface, CHAINLINK_ETH_USD_FEED},
     multicall3::{IMulticall3, create_call3, decode_call3_return},
 };
-use gem_jsonrpc::JsonRpcClient;
 
 pub struct ChainlinkPriceFeed {
     pub contract: String,
-    pub client: JsonRpcClient<AlienClient>,
 }
 
 impl ChainlinkPriceFeed {
-    pub fn new_eth_usd_feed(provider: Arc<dyn AlienProvider>) -> ChainlinkPriceFeed {
+    pub fn new_eth_usd_feed() -> ChainlinkPriceFeed {
         ChainlinkPriceFeed {
             contract: CHAINLINK_ETH_USD_FEED.into(),
-            client: jsonrpc_client_with_chain(provider, Chain::Ethereum),
         }
     }
 

@@ -1,4 +1,4 @@
-use crate::{SwapperError, alien::AlienProvider, models::ApprovalType, tron::tron_client};
+use crate::{SwapperError, alien::AlienProvider, client_factory::create_tron_client, models::ApprovalType};
 use alloy_primitives::U256;
 use num_bigint::BigUint;
 use primitives::swap::ApprovalData;
@@ -11,7 +11,7 @@ pub async fn check_approval_tron(
     amount: U256,
     provider: Arc<dyn AlienProvider>,
 ) -> Result<ApprovalType, SwapperError> {
-    let client = tron_client(provider.clone()).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+    let client = create_tron_client(provider.clone()).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
     let allowance = client
         .get_token_allowance(owner_address, token_address, spender_address)
         .await

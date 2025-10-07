@@ -11,6 +11,7 @@ use super::{
 };
 use primitives::Chain;
 
+#[allow(unused)]
 pub struct MockFn(pub Box<dyn Fn(AlienTarget) -> String + Send + Sync>);
 
 impl fmt::Debug for MockFn {
@@ -19,12 +20,14 @@ impl fmt::Debug for MockFn {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub struct AlienProviderMock {
     pub response: MockFn,
     pub timeout: Duration,
 }
 
+#[allow(unused)]
 impl AlienProviderMock {
     pub fn new(string: String) -> Self {
         Self {

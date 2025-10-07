@@ -1,5 +1,6 @@
 use super::broker::SolanaVaultSwapResponse;
-use crate::alien::{AlienProvider, jsonrpc_client_with_chain};
+use crate::{alien::AlienProvider, client_factory::create_client_with_chain};
+
 use alloy_primitives::hex;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
@@ -13,7 +14,7 @@ pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse
     let program_id = Pubkey::from_str(response.program_id.as_str()).map_err(|_| "Invalid program ID".to_string())?;
     let data = hex::decode(response.data.as_str()).map_err(|_| "Invalid data".to_string())?;
 
-    let rpc_client = jsonrpc_client_with_chain(provider, Chain::Solana);
+    let rpc_client = create_client_with_chain(provider, Chain::Solana);
     let blockhash_response: LatestBlockhash = rpc_client.request(SolanaRpc::GetLatestBlockhash).await.map_err(|e| e.to_string())?;
     let recent_blockhash = blockhash_response.value.blockhash;
     let blockhash = bs58::decode(recent_blockhash)

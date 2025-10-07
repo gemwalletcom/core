@@ -82,6 +82,7 @@ where
     serializer.serialize_str(&value.to_string())
 }
 
+#[allow(unused)]
 pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle, contract: &str) -> Result<String, SwapperError> {
     let chain_id = chain.network_id();
     let message = Permit2Message {

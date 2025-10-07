@@ -31,7 +31,7 @@ pub const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
 pub const FUNCTION_ERC20_SYMBOL: &str = "0x95d89b41";
 pub const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct EthereumClient<C: Client + Clone> {
     pub chain: EVMChain,
     pub client: GenericJsonRpcClient<C>,

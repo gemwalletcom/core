@@ -1,11 +1,12 @@
 mod alien;
 mod approval;
 mod chainlink;
+mod client_factory;
 mod eth_address;
 mod permit2_data;
+#[allow(unused)]
 mod swap_config;
 mod swapper_trait;
-mod tron;
 
 #[cfg(test)]
 pub mod testkit;
@@ -25,14 +26,12 @@ pub mod slippage;
 pub mod thorchain;
 pub mod uniswap;
 
-pub use alien::{AlienClient, AlienError, AlienProvider, AlienTarget, jsonrpc_client_with_chain};
 #[cfg(feature = "reqwest_provider")]
 pub use alien::reqwest_provider::NativeProvider;
+pub use alien::{AlienClient, AlienError, AlienProvider, AlienTarget};
 pub use error::*;
 pub use models::*;
 pub use swapper_trait::*;
-pub use swap_config::{get_default_slippage, get_swap_config, SwapConfig, SwapReferralFee, SwapReferralFees, DEFAULT_CHAINFLIP_FEE_BPS,
-    DEFAULT_SLIPPAGE_BPS, DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS};
 
 pub type SwapperProvider = primitives::SwapProvider;
 pub type SwapperProviderMode = primitives::swap::SwapProviderMode;

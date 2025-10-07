@@ -1,6 +1,6 @@
 use crate::{
     FetchQuoteData, Permit2ApprovalData, Swapper, SwapperError, SwapperProviderData, SwapperProviderType, SwapperQuote, SwapperQuoteData, SwapperQuoteRequest,
-    alien::factory::JsonRpcClientFactory,
+    alien::{AlienClient, AlienProvider},
     approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
     models::*,
@@ -14,42 +14,34 @@ use crate::{
 };
 use alloy_primitives::{Address, Bytes, U256, hex::encode_prefixed as HexEncode};
 use async_trait::async_trait;
-use gem_client::Client;
 use gem_evm::{
     jsonrpc::EthereumRpc,
     uniswap::{command::encode_commands, path::get_base_pair},
 };
 use gem_jsonrpc::client::JsonRpcClient;
 use primitives::{AssetId, Chain, EVMChain, swap::ApprovalData};
-use std::{fmt, fmt::Debug, marker::PhantomData, str::FromStr, sync::Arc};
+use std::{fmt, str::FromStr, sync::Arc};
 
 use super::{DEFAULT_SWAP_GAS_LIMIT, UniversalRouterProvider, commands::build_commands, path::build_paths_with_routes};
 
-pub struct UniswapV3<C, F>
-where
-    C: Client + Clone + Debug + Send + Sync + 'static,
-    F: JsonRpcClientFactory<C>,
-{
+pub struct UniswapV3 {
     provider: Box<dyn UniversalRouterProvider>,
-    rpc_factory: Arc<F>,
-    phantom: PhantomData<C>,
+    rpc_provider: Arc<dyn AlienProvider>,
 }
 
-impl<C, F> UniswapV3<C, F>
-where
-    C: Client + Clone + Debug + Send + Sync + 'static,
-    F: JsonRpcClientFactory<C>,
-{
-    pub fn new(provider: Box<dyn UniversalRouterProvider>, rpc_factory: Arc<F>) -> Self {
-        Self {
-            provider,
-            rpc_factory,
-            phantom: PhantomData,
-        }
+impl UniswapV3 {
+    pub fn new(provider: Box<dyn UniversalRouterProvider>, rpc_provider: Arc<dyn AlienProvider>) -> Self {
+        Self { provider, rpc_provider }
     }
 
     pub fn support_chain(&self, chain: &Chain) -> bool {
         self.provider.get_deployment_by_chain(chain).is_some()
+    }
+
+    fn client_for(&self, chain: Chain) -> Result<JsonRpcClient<AlienClient>, SwapperError> {
+        let endpoint = self.rpc_provider.get_endpoint(chain).map_err(SwapperError::from)?;
+        let client = AlienClient::new(endpoint, self.rpc_provider.clone());
+        Ok(JsonRpcClient::new(client))
     }
 
     fn get_asset_address(asset_id: &str, evm_chain: EVMChain) -> Result<Address, SwapperError> {
@@ -68,7 +60,7 @@ where
 
     async fn check_erc20_approval(
         &self,
-        client: &JsonRpcClient<C>,
+        client: &JsonRpcClient<AlienClient>,
         wallet_address: Address,
         token: &str,
         amount: U256,
@@ -81,7 +73,7 @@ where
 
     async fn check_permit2_approval(
         &self,
-        client: &JsonRpcClient<C>,
+        client: &JsonRpcClient<AlienClient>,
         wallet_address: Address,
         token: &str,
         amount: U256,
@@ -102,22 +94,14 @@ where
     }
 }
 
-impl<C, F> fmt::Debug for UniswapV3<C, F>
-where
-    C: Client + Clone + Debug + Send + Sync + 'static,
-    F: JsonRpcClientFactory<C>,
-{
+impl fmt::Debug for UniswapV3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("UniswapV3").finish()
     }
 }
 
 #[async_trait]
-impl<C, F> Swapper for UniswapV3<C, F>
-where
-    C: Client + Clone + Debug + Send + Sync + 'static,
-    F: JsonRpcClientFactory<C>,
-{
+impl Swapper for UniswapV3 {
     fn provider(&self) -> &SwapperProviderType {
         self.provider.provider()
     }
@@ -137,7 +121,7 @@ where
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
         _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
 
-        let client = self.rpc_factory.client_for(from_chain).map_err(SwapperError::from)?;
+        let client = Arc::new(self.client_for(from_chain)?);
 
         let fee_tiers = self.provider.get_tiers();
         let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
@@ -213,7 +197,7 @@ where
         if from_asset.is_native() {
             return Ok(None);
         }
-        let client = self.rpc_factory.client_for(from_asset.chain).map_err(SwapperError::from)?;
+        let client = self.client_for(from_asset.chain)?;
         let wallet_address = eth_address::parse_str(&quote.request.wallet_address)?;
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
         self.check_permit2_approval(&client, wallet_address, &token_in.to_checksum(None), amount_in, &from_asset.chain)
@@ -226,7 +210,7 @@ where
         let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
         let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
 
-        let client = self.rpc_factory.client_for(from_chain).map_err(SwapperError::from)?;
+        let client = self.client_for(from_chain)?;
 
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let to_amount = U256::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;

@@ -7,10 +7,11 @@ use super::{
 use crate::{
     Swapper, SwapperError, SwapperProvider, SwapperQuoteData, SwapperSwapResult,
     across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
-    alien::{AlienClient, AlienProvider, jsonrpc_client_with_chain},
+    alien::AlienProvider,
     approval::check_approval_erc20,
     asset::*,
     chainlink::ChainlinkPriceFeed,
+    client_factory::create_eth_client,
     eth_address,
     models::*,
     swap_config::SwapReferralFee,
@@ -33,13 +34,11 @@ use gem_evm::{
     contracts::erc20::IERC20,
     jsonrpc::TransactionObject,
     multicall3::IMulticall3,
-    rpc::client::EthereumClient as GemEthereumClient,
     weth::WETH9,
 };
 use gem_macro::debug_println;
 use num_bigint::{BigInt, Sign};
-use primitives::{AssetId, Chain, EVMChain, swap::SwapStatus};
-use primitives::swap::ApprovalData;
+use primitives::{AssetId, Chain, EVMChain, swap::ApprovalData, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
@@ -75,25 +74,25 @@ impl Across {
         rate_model.clone().into()
     }
 
-    fn ethereum_client(&self, chain: Chain) -> Result<GemEthereumClient<AlienClient>, SwapperError> {
-        let evm_chain = EVMChain::from_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-        let client = jsonrpc_client_with_chain(self.rpc_provider.clone(), chain);
-        Ok(GemEthereumClient::new(client, evm_chain))
-    }
-
     async fn gas_price(&self, chain: Chain) -> Result<U256, SwapperError> {
-        self.ethereum_client(chain)?.gas_price().await.map_err(SwapperError::from)
+        create_eth_client(self.rpc_provider.clone(), chain)?
+            .gas_price()
+            .await
+            .map_err(SwapperError::from)
     }
 
     async fn multicall3(&self, chain: Chain, calls: Vec<IMulticall3::Call3>) -> Result<Vec<IMulticall3::Result>, SwapperError> {
-        self.ethereum_client(chain)?
+        create_eth_client(self.rpc_provider.clone(), chain)?
             .multicall3(calls)
             .await
             .map_err(|e| SwapperError::NetworkError(e.to_string()))
     }
 
     async fn estimate_gas_transaction(&self, chain: Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
-        self.ethereum_client(chain)?.estimate_gas_transaction(tx).await.map_err(SwapperError::from)
+        create_eth_client(self.rpc_provider.clone(), chain)?
+            .estimate_gas_transaction(tx)
+            .await
+            .map_err(SwapperError::from)
     }
 
     /// Return (message, referral_fee)
@@ -358,7 +357,7 @@ impl Swapper for Across {
             hubpool_client.get_current_time(),
         ];
 
-        let eth_price_feed = ChainlinkPriceFeed::new_eth_usd_feed(self.rpc_provider.clone());
+        let eth_price_feed = ChainlinkPriceFeed::new_eth_usd_feed();
         if !input_is_native {
             calls.push(eth_price_feed.latest_round_call3());
         }

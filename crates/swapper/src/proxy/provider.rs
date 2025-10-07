@@ -13,9 +13,9 @@ use crate::{
     alien::{AlienClient, AlienProvider},
     approval::{evm::check_approval_erc20, tron::check_approval_tron},
     asset::*,
+    client_factory::create_tron_client,
     models::{ApprovalType, SwapperChainAsset},
     swap_config::DEFAULT_SWAP_FEE_BPS,
-    tron::tron_client,
 };
 use gem_client::Client;
 use primitives::{
@@ -121,7 +121,7 @@ where
             default_fee_limit
         } else {
             let tx_data: SymbiosisTransactionData = serde_json::from_value(proxy_quote.route_data["tx"].clone()).map_err(|_| SwapperError::InvalidRoute)?;
-            let client = tron_client(self.rpc_provider.clone()).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+            let client = create_tron_client(self.rpc_provider.clone()).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
             let call_value = tx_data.value.unwrap_or_default();
             let call_value_u64 = call_value.parse::<u64>().unwrap_or_default();
             let energy = client
