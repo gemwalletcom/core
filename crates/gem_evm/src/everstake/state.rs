@@ -14,6 +14,7 @@ pub struct EverstakeAccountState {
     pub pending_balance: BigUint,
     pub pending_deposited_balance: BigUint,
     pub withdraw_request: WithdrawRequest,
+    pub restaked_reward: BigUint,
 }
 
 pub async fn get_everstake_account_state<C: Client + Clone>(
@@ -28,6 +29,7 @@ pub async fn get_everstake_account_state<C: Client + Clone>(
         create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::pendingBalanceOfCall { account }),
         create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::pendingDepositedBalanceOfCall { account }),
         create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::withdrawRequestCall { staker }),
+        create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::restakedRewardOfCall { account }),
     ];
 
     let call_count = calls.len();
@@ -40,12 +42,14 @@ pub async fn get_everstake_account_state<C: Client + Clone>(
     let pending_balance = decode_balance_result::<IAccounting::pendingBalanceOfCall>(&multicall_results[1]);
     let pending_deposited_balance = decode_balance_result::<IAccounting::pendingDepositedBalanceOfCall>(&multicall_results[2]);
     let withdraw_request = decode_call3_return::<IAccounting::withdrawRequestCall>(&multicall_results[3])?;
+    let restaked_reward = decode_balance_result::<IAccounting::restakedRewardOfCall>(&multicall_results[4]);
 
     Ok(EverstakeAccountState {
         deposited_balance,
         pending_balance,
         pending_deposited_balance,
         withdraw_request,
+        restaked_reward,
     })
 }
 
