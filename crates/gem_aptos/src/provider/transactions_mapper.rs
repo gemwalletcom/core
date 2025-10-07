@@ -1,5 +1,5 @@
-use crate::STAKE_DEPOSIT_EVENT;
 use crate::models::{Transaction, TransactionResponse};
+use crate::{FUNGIBLE_ASSET_DEPOSIT_EVENT, STAKE_DEPOSIT_EVENT};
 use chrono::DateTime;
 use num_bigint::BigUint;
 use primitives::{Chain, Transaction as PrimitivesTransaction, TransactionState, TransactionType};
@@ -25,7 +25,9 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
     let events = transaction.clone().events.unwrap_or_default();
 
     if transaction.transaction_type.as_deref() == Some("user_transaction") && events.len() <= 4 {
-        let deposit_event = events.iter().find(|x| x.event_type == STAKE_DEPOSIT_EVENT)?;
+        let deposit_event = events
+            .iter()
+            .find(|x| x.event_type == STAKE_DEPOSIT_EVENT || x.event_type == FUNGIBLE_ASSET_DEPOSIT_EVENT)?;
 
         let asset_id = chain.as_asset_id();
         let state = if transaction.success {
@@ -33,7 +35,13 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
         } else {
             TransactionState::Failed
         };
-        let to = &deposit_event.guid.account_address;
+
+        let to = if deposit_event.event_type == FUNGIBLE_ASSET_DEPOSIT_EVENT {
+            transaction.payload.as_ref()?.arguments.first()?.clone()
+        } else {
+            deposit_event.guid.account_address.clone()
+        };
+
         let value = &deposit_event.get_amount()?;
         let gas_used = BigUint::from(transaction.gas_used.unwrap_or_default());
         let gas_unit_price = BigUint::from(transaction.gas_unit_price.unwrap_or_default());
@@ -44,7 +52,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
             transaction.hash.unwrap_or_default(),
             asset_id.clone(),
             transaction.sender.unwrap_or_default(),
-            to.clone(),
+            to,
             None,
             TransactionType::Transfer,
             state,
@@ -97,8 +105,7 @@ mod tests {
 
     #[test]
     fn test_map_transaction_broadcast_from_testdata() {
-        let json_data = include_str!("../../testdata/invalid_transaction_response.json");
-        let response: TransactionResponse = serde_json::from_str(json_data).unwrap();
+        let response: TransactionResponse = serde_json::from_str(include_str!("../../testdata/invalid_transaction_response.json")).unwrap();
 
         let result = map_transaction_broadcast(&response);
         assert!(result.is_err());
@@ -106,5 +113,21 @@ mod tests {
             result.unwrap_err().to_string(),
             "Invalid transaction: Type: Validation Code: MAX_GAS_UNITS_BELOW_MIN_TRANSACTION_GAS_UNITS"
         );
+    }
+
+    #[test]
+    fn test_map_transaction_near_intent_transfer() {
+        let transaction: Transaction = serde_json::from_str(include_str!("../../testdata/transaction_near_intent_transfer.json")).unwrap();
+
+        let result = map_transaction(transaction);
+
+        assert!(result.is_some());
+        let tx = result.unwrap();
+        assert_eq!(tx.hash, "0x6a43e0034486583a30cff449c03c4d882c641b351e392096272496168240de8e");
+        assert_eq!(tx.from, "0xd1a1c1804e91ba85a569c7f018bb7502d2f13d4742d2611953c9c14681af6446");
+        assert_eq!(tx.to, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
+        assert_eq!(tx.value, "2431838058");
+        assert_eq!(tx.state, TransactionState::Confirmed);
+        assert_eq!(tx.transaction_type, TransactionType::Transfer);
     }
 }
