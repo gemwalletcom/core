@@ -163,6 +163,8 @@ pub use self::perpetual::{
     AccountDataType, Perpetual, PerpetualBalance, PerpetualBasic, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary,
     PerpetualType,
 };
+pub mod search;
+pub use self::search::SearchResponse;
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;

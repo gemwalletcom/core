@@ -1,7 +1,8 @@
-pub mod model;
-pub use model::*;
+pub mod models;
+pub use models::*;
 
 use serde::{Serialize, de::DeserializeOwned};
+use std::collections::HashSet;
 use std::error::Error;
 
 use meilisearch_sdk::{client::*, documents::DocumentsQuery, task_info::TaskInfo};
@@ -58,6 +59,23 @@ impl SearchIndexClient {
         Ok(self.client.index(index).delete_all_documents().await?)
     }
 
+    pub async fn sync_documents<T: Serialize + Send + Sync + Clone>(
+        &self,
+        index: &str,
+        documents: Vec<T>,
+        get_id: fn(&T) -> String,
+    ) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.add_documents(index, documents.clone()).await?;
+
+        let db_documents_ids: HashSet<_> = documents.iter().map(get_id).collect();
+        let existing_documents_ids: HashSet<_> = self.get_documents_all::<DocumentId>(index).await?.into_iter().map(|x| x.id).collect();
+        let stale_ids: Vec<&str> = existing_documents_ids.difference(&db_documents_ids).map(|id| id.as_str()).collect();
+
+        self.delete_documents(index, stale_ids).await?;
+
+        Ok(documents.len())
+    }
+
     pub async fn set_filterable_attributes(&self, index: &str, attributes: Vec<&str>) -> Result<TaskInfo, Box<dyn Error + Send + Sync>> {
         Ok(self.client.index(index).set_filterable_attributes(attributes).await?)
     }
@@ -72,6 +90,17 @@ impl SearchIndexClient {
 
     pub async fn set_ranking_rules(&self, index: &str, attributes: Vec<&str>) -> Result<TaskInfo, Box<dyn Error + Send + Sync>> {
         Ok(self.client.index(index).set_ranking_rules(attributes).await?)
+    }
+
+    pub async fn setup(&self, configs: &[crate::IndexConfig], primary_key: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        for config in configs {
+            self.create_index(config.name, primary_key).await?;
+            self.set_filterable_attributes(config.name, config.filters.to_vec()).await?;
+            self.set_sortable_attributes(config.name, config.sorts.to_vec()).await?;
+            self.set_searchable_attributes(config.name, config.search_attributes.to_vec()).await?;
+            self.set_ranking_rules(config.name, config.ranking_rules.to_vec()).await?;
+        }
+        Ok(())
     }
 
     // search

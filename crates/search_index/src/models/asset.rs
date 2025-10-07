@@ -32,13 +32,6 @@ pub const ASSETS_RANKING_RULES: &[&str] = &[
 
 pub const ASSETS_SORTS: &[&str] = &["score.rank"];
 
-pub const INDEX_PRIMARY_KEY: &str = "id";
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DocumentId {
-    pub id: String,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AssetDocument {
     pub id: String,
@@ -47,11 +40,4 @@ pub struct AssetDocument {
     pub score: AssetScore,
     pub market: Option<AssetMarket>,
     pub tags: Option<Vec<String>>,
-}
-
-pub fn sanitize_index_primary_id(input: &str) -> String {
-    input
-        .chars() // Iterate over each character
-        .filter(|c| c.is_ascii_alphanumeric())
-        .collect() // Collect the result into a String
 }

@@ -7,7 +7,7 @@ pub use parser_options::ParserOptions;
 use chain_traits::ChainTraits;
 use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::Chain;
-use settings::{service_user_agent, Settings};
+use settings::{Settings, service_user_agent};
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;

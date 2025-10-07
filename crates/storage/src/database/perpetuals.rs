@@ -7,6 +7,8 @@ pub(crate) trait PerpetualsStore {
     fn perpetuals_update(&mut self, values: Vec<StoragePerpetual>) -> Result<usize, diesel::result::Error>;
 
     fn get_perpetuals_for_asset(&mut self, asset_id_value: &str) -> Result<Vec<StoragePerpetual>, diesel::result::Error>;
+
+    fn get_all_perpetuals(&mut self) -> Result<Vec<StoragePerpetual>, diesel::result::Error>;
 }
 
 impl PerpetualsStore for DatabaseClient {
@@ -38,5 +40,9 @@ impl PerpetualsStore for DatabaseClient {
             .filter(perpetuals_assets::asset_id.eq(asset_id_value))
             .select(StoragePerpetual::as_select())
             .load(&mut self.connection)
+    }
+
+    fn get_all_perpetuals(&mut self) -> Result<Vec<StoragePerpetual>, diesel::result::Error> {
+        perpetuals::table.select(StoragePerpetual::as_select()).load(&mut self.connection)
     }
 }

@@ -1,7 +1,7 @@
 use std::error::Error;
 
-use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress};
-use search_index::{ASSETS_INDEX_NAME, AssetDocument, SearchIndexClient};
+use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, Perpetual};
+use search_index::{ASSETS_INDEX_NAME, AssetDocument, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
 use storage::DatabaseClient;
 
 pub struct AssetsClient {
@@ -52,39 +52,55 @@ impl AssetsClient {
     }
 }
 
-pub struct AssetsSearchClient {
+pub struct SearchRequest {
+    pub query: String,
+    pub chains: Vec<String>,
+    pub tags: Vec<String>,
+    pub limit: usize,
+    pub offset: usize,
+}
+
+pub struct SearchClient {
     client: SearchIndexClient,
 }
 
-impl AssetsSearchClient {
+impl SearchClient {
     pub async fn new(client: &SearchIndexClient) -> Self {
         Self { client: client.clone() }
     }
 
-    pub async fn get_assets_search(
-        &mut self,
-        query: &str,
-        chains: Vec<String>,
-        tags: Vec<String>,
-        limit: usize,
-        offset: usize,
-    ) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_assets_search(&self, request: &SearchRequest) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error + Send + Sync>> {
         let mut filters = vec![];
         filters.push("score.rank > 0".to_string());
         //filters.push("properties.isEnabled = true".to_string()); // Does not work, why?
 
-        if !tags.is_empty() {
-            filters.push(filter_array("tags", tags));
+        if !request.tags.is_empty() {
+            filters.push(filter_array("tags", request.tags.clone()));
         }
 
-        if !chains.is_empty() {
-            filters.push(filter_array("asset.chain", chains));
+        if !request.chains.is_empty() {
+            filters.push(filter_array("asset.chain", request.chains.clone()));
         }
         let filter = &filters.join(" AND ");
 
-        let assets: Vec<AssetDocument> = self.client.search(ASSETS_INDEX_NAME, query, filter, [].as_ref(), limit, offset).await?;
+        let assets: Vec<AssetDocument> = self
+            .client
+            .search(ASSETS_INDEX_NAME, &request.query, filter, [].as_ref(), request.limit, request.offset)
+            .await?;
 
         Ok(assets.into_iter().map(|x| AssetBasic::new(x.asset, x.properties, x.score)).collect())
+    }
+
+    pub async fn get_perpetuals_search(&self, request: &SearchRequest) -> Result<Vec<Perpetual>, Box<dyn Error + Send + Sync>> {
+        let filters: Vec<String> = vec![];
+        let filter = &filters.join(" AND ");
+
+        let perpetuals: Vec<PerpetualDocument> = self
+            .client
+            .search(PERPETUALS_INDEX_NAME, &request.query, filter, [].as_ref(), request.limit, request.offset)
+            .await?;
+
+        Ok(perpetuals.into_iter().map(|x| x.perpetual).collect())
     }
 }
 

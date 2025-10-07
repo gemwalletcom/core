@@ -19,7 +19,7 @@ pub async fn main() {
 
     let service = DaemonService::from_str(&service_arg).unwrap_or_else(|e| {
         panic!(
-            "{}\nUsage examples:\n  daemon parser\n  daemon parser ethereum\n  daemon consumer\n  daemon consumer fetch_transactions",
+            "{}\nUsage examples: \n daemon parser \n daemon parser ethereum \n daemon worker alerter \n daemon consumer fetch_transactions",
             e
         );
     });

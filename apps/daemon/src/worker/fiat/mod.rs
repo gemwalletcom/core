@@ -54,4 +54,3 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         Box::pin(update_trending_fiat_assets_job),
     ]
 }
-

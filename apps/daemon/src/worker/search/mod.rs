@@ -1,7 +1,9 @@
 mod assets_index_updater;
+mod perpetuals_index_updater;
 
 use assets_index_updater::AssetsIndexUpdater;
 use job_runner::run_job;
+use perpetuals_index_updater::PerpetualsIndexUpdater;
 use search_index::SearchIndexClient;
 use settings::Settings;
 use std::future::Future;
@@ -22,5 +24,15 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    vec![Box::pin(assets_index_updater)]
+    let perpetuals_index_updater = run_job("Update perpetuals index", Duration::from_secs(settings.daemon.search.assets_update_interval), {
+        let settings = Arc::new(settings.clone());
+        let search_index_client = search_index_client.clone();
+
+        move || {
+            let mut updater = PerpetualsIndexUpdater::new(&settings.postgres.url, &search_index_client);
+            async move { updater.update().await }
+        }
+    });
+
+    vec![Box::pin(assets_index_updater), Box::pin(perpetuals_index_updater)]
 }

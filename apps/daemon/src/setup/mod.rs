@@ -1,6 +1,6 @@
 use gem_tracing::info_with_fields;
 use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
-use search_index::{ASSETS_FILTERS, ASSETS_INDEX_NAME, ASSETS_RANKING_RULES, ASSETS_SEARCH_ATTRIBUTES, ASSETS_SORTS, INDEX_PRIMARY_KEY, SearchIndexClient};
+use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::DatabaseClient;
 use streamer::{ExchangeName, QueueName, StreamProducer};
@@ -54,8 +54,6 @@ pub async fn run_setup(settings: Settings) {
 
     let _ = database_client.releases().add_releases(releases);
 
-    let search_indexes = vec![ASSETS_INDEX_NAME];
-
     info_with_fields!("setup", step = "nft types");
     let types = NFTType::all().into_iter().map(storage::models::NftType::from_primitive).collect::<Vec<_>>();
     let _ = database_client.nft().add_nft_types(types);
@@ -81,19 +79,14 @@ pub async fn run_setup(settings: Settings) {
     let assets_tags = AssetTag::all().into_iter().map(storage::models::Tag::from_primitive).collect::<Vec<_>>();
     let _ = database_client.tag().add_tags(assets_tags);
 
-    info_with_fields!("setup", step = "search index", indexes = format!("{:?}", search_indexes));
+    info_with_fields!(
+        "setup",
+        step = "search index",
+        indexes = format!("{:?}", INDEX_CONFIGS.iter().map(|c| c.name).collect::<Vec<_>>())
+    );
 
     let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
-
-    for index in search_indexes {
-        search_index_client.create_index(index, INDEX_PRIMARY_KEY).await.unwrap();
-    }
-    let _ = search_index_client.set_filterable_attributes(ASSETS_INDEX_NAME, ASSETS_FILTERS.to_vec()).await;
-    let _ = search_index_client.set_sortable_attributes(ASSETS_INDEX_NAME, ASSETS_SORTS.to_vec()).await;
-    let _ = search_index_client
-        .set_searchable_attributes(ASSETS_INDEX_NAME, ASSETS_SEARCH_ATTRIBUTES.to_vec())
-        .await;
-    let _ = search_index_client.set_ranking_rules(ASSETS_INDEX_NAME, ASSETS_RANKING_RULES.to_vec()).await;
+    search_index_client.setup(INDEX_CONFIGS, INDEX_PRIMARY_KEY).await.unwrap();
 
     info_with_fields!("setup", step = "queues");
 

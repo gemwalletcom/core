@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use search_index::{ASSETS_INDEX_NAME, AssetDocument, DocumentId, SearchIndexClient, sanitize_index_primary_id};
+use search_index::{ASSETS_INDEX_NAME, AssetDocument, SearchIndexClient, sanitize_index_primary_id};
 use storage::DatabaseClient;
 
 pub struct AssetsIndexUpdater {
@@ -26,7 +26,6 @@ impl AssetsIndexUpdater {
         });
 
         let documents = prices
-            .clone()
             .into_iter()
             .map(|x| AssetDocument {
                 id: sanitize_index_primary_id(x.asset.id.as_str()),
@@ -37,21 +36,7 @@ impl AssetsIndexUpdater {
                 tags: assets_tags_map.get(x.asset.id.as_str()).cloned(),
             })
             .collect::<Vec<_>>();
-        self.search_index.add_documents(ASSETS_INDEX_NAME, documents.clone()).await?;
 
-        // delete outdated documents
-        let db_documents_ids: HashSet<_> = documents.iter().map(|x| x.id.clone()).collect();
-        let existing_documents_ids: HashSet<_> = self
-            .search_index
-            .get_documents_all::<DocumentId>(ASSETS_INDEX_NAME)
-            .await?
-            .into_iter()
-            .map(|x| x.id.clone())
-            .collect();
-        let stale_ids: Vec<&str> = existing_documents_ids.difference(&db_documents_ids).map(|id| id.as_str()).collect();
-
-        self.search_index.delete_documents(ASSETS_INDEX_NAME, stale_ids).await?;
-
-        Ok(documents.len())
+        self.search_index.sync_documents(ASSETS_INDEX_NAME, documents, |doc| doc.id.clone()).await
     }
 }
