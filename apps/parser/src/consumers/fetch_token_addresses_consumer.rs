@@ -65,7 +65,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
         let missing_ids: Vec<_> = asset_ids.into_iter().filter(|id| !existing_ids.contains(id)).collect();
         let existing_addresses: Vec<_> = non_zero_addresses
             .into_iter()
-            .filter(|addr| AssetId::new(&addr.asset_id).map_or(false, |id| existing_ids.contains(&id)))
+            .filter(|addr| AssetId::new(&addr.asset_id).is_some_and(|id| existing_ids.contains(&id)))
             .collect();
 
         let _ = self
