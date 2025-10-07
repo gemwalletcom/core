@@ -323,7 +323,6 @@ impl Transaction {
                 .unwrap_or_default(),
         }
         .into_iter()
-        .filter(|x| x.asset_id.is_token())
         .collect()
     }
 }

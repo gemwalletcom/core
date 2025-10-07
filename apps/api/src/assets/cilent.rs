@@ -24,24 +24,15 @@ impl AssetsClient {
 
     #[allow(unused)]
     pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        self.database
-            .assets()
-            .get_asset(asset_id)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+        Ok(self.database.assets().get_asset(asset_id)?)
     }
 
     pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
-        self.database
-            .assets()
-            .get_assets_basic(asset_ids)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+        Ok(self.database.assets().get_assets_basic(asset_ids)?)
     }
 
     pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
-        self.database
-            .assets()
-            .get_asset_full(asset_id)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+        Ok(self.database.assets().get_asset_full(asset_id)?)
     }
 
     pub fn get_assets_by_device_id(
@@ -54,10 +45,10 @@ impl AssetsClient {
 
         let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
 
-        self.database
+        Ok(self
+            .database
             .assets_addresses()
-            .get_assets_by_addresses(chain_addresses, from_timestamp, true)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .get_assets_by_addresses(chain_addresses, from_timestamp, true)?)
     }
 }
 
