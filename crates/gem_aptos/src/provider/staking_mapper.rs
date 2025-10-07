@@ -46,15 +46,29 @@ fn map_delegation(
 const EPOCH_DURATION_SECS: u64 = 7200;
 
 fn calculate_pending_completion_date(reconfig: &ReconfigurationState) -> Option<DateTime<Utc>> {
-    let completion_timestamp_micros = reconfig.last_reconfiguration_time + (EPOCH_DURATION_SECS * 1_000_000);
-    let completion_timestamp_secs = (completion_timestamp_micros / 1_000_000) as i64;
-    DateTime::from_timestamp(completion_timestamp_secs, 0)
+    let now_micros = Utc::now().timestamp_micros() as u64;
+    let last_reconfig_micros = reconfig.last_reconfiguration_time;
+    let epoch_duration_micros = EPOCH_DURATION_SECS * 1_000_000;
+
+    let elapsed_micros = now_micros.saturating_sub(last_reconfig_micros);
+    let epochs_passed = elapsed_micros / epoch_duration_micros;
+    let next_epoch_micros = last_reconfig_micros + ((epochs_passed + 1) * epoch_duration_micros);
+
+    let next_epoch_secs = (next_epoch_micros / 1_000_000) as i64;
+    DateTime::from_timestamp(next_epoch_secs, 0)
 }
 
 fn calculate_withdrawal_completion_date(reconfig: &ReconfigurationState, staking_config: &StakingConfig) -> Option<DateTime<Utc>> {
-    let completion_timestamp_micros = reconfig.last_reconfiguration_time + (staking_config.recurring_lockup_duration_secs * 1_000_000);
-    let completion_timestamp_secs = (completion_timestamp_micros / 1_000_000) as i64;
-    DateTime::from_timestamp(completion_timestamp_secs, 0)
+    let now_micros = Utc::now().timestamp_micros() as u64;
+    let last_reconfig_micros = reconfig.last_reconfiguration_time;
+    let lockup_duration_micros = staking_config.recurring_lockup_duration_secs * 1_000_000;
+
+    let elapsed_micros = now_micros.saturating_sub(last_reconfig_micros);
+    let periods_passed = elapsed_micros / lockup_duration_micros;
+    let next_unlock_micros = last_reconfig_micros + ((periods_passed + 1) * lockup_duration_micros);
+
+    let next_unlock_secs = (next_unlock_micros / 1_000_000) as i64;
+    DateTime::from_timestamp(next_unlock_secs, 0)
 }
 
 pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &ReconfigurationState, staking_config: &StakingConfig) -> Vec<DelegationBase> {
@@ -87,7 +101,7 @@ pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &Re
                     DelegationState::Deactivating,
                     stake.pending_inactive,
                     &pool_address,
-                    pending_completion,
+                    withdrawal_completion,
                 ));
             }
 
