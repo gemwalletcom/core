@@ -17,7 +17,7 @@ chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 [dependencies]
 base64 = { workspace = true }
 hex = { workspace = true }
-tonlib-core = "0.26.1"
+crc = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }

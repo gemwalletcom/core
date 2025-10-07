@@ -1106,15 +1106,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bitstream-io"
-version = "4.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b348c85aeb6d0bb7dee47de5506b587d9c6c17856d1314eb4695ad751edc7231"
-dependencies = [
- "core2",
-]
-
-[[package]]
 name = "bitvec"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1666,15 +1657,6 @@ name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
-
-[[package]]
-name = "core2"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b49ba7ef1ad6107f8824dbe97de947cbaac53c44e7f9756a1fba0d37c1eec505"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "cpufeatures"
@@ -3031,6 +3013,7 @@ dependencies = [
  "base64 0.22.1",
  "chain_traits",
  "chrono",
+ "crc",
  "futures",
  "gem_client",
  "hex",
@@ -3042,7 +3025,6 @@ dependencies = [
  "serde_serializers",
  "settings",
  "tokio",
- "tonlib-core",
 ]
 
 [[package]]
@@ -4358,12 +4340,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nacl"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30aefc44d813c51b5e7952950e87c17f2e0e1a3274d63c8281a701e05323d548"
-
-[[package]]
 name = "name_resolver"
 version = "1.0.0"
 dependencies = [
@@ -4706,17 +4682,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "password-hash"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "346f04948ba92c43e8469c1ee6736c7563d71012b17d40745260fe106aac2166"
-dependencies = [
- "base64ct",
- "rand_core 0.6.4",
- "subtle",
-]
-
-[[package]]
 name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4736,8 +4701,6 @@ checksum = "f8ed6a7761f76e3b9f92dfb0a60a6a6477c61024b775147ff0973a02653abaf2"
 dependencies = [
  "digest 0.10.7",
  "hmac",
- "password-hash",
- "sha2",
 ]
 
 [[package]]
@@ -7152,29 +7115,6 @@ name = "toml_write"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
-
-[[package]]
-name = "tonlib-core"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "482280c643d2a46d9fe94b4aa27b6a2f2e6a3dd10afc61277b032d1976d0433e"
-dependencies = [
- "async-trait",
- "base64 0.22.1",
- "bitstream-io",
- "crc",
- "hex",
- "hmac",
- "lazy_static",
- "nacl",
- "num-bigint",
- "num-traits",
- "pbkdf2",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.16",
-]
 
 [[package]]
 name = "tower"
