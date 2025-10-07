@@ -46,6 +46,8 @@ pub async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         return consumers::run_consumer_store_assets_mappings(settings.clone(), database.clone()).await;
     } else if mode == "consumer_fetch_nft_assets_mappings" {
         return consumers::run_consumer_fetch_nft_assets_mappings(settings.clone(), database.clone()).await;
+    } else if mode.starts_with("consumer_") {
+        panic!("Unknown consumer mode: {}", mode);
     } else {
         return run_parser_mode(settings.clone(), database.clone()).await;
     }

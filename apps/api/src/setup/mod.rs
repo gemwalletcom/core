@@ -4,11 +4,8 @@ use settings::Settings;
 use storage::DatabaseClient;
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
-#[tokio::main]
-async fn main() {
+pub async fn run_setup(settings: Settings) {
     println!("setup init");
-
-    let settings = Settings::new().unwrap();
 
     let postgres_url = settings.postgres.url.as_str();
     let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);

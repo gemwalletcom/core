@@ -14,7 +14,6 @@ members = [
     "apps/daemon",
     "apps/dynode",
     "apps/parser",
-    "apps/setup",
 
     "bin/img-downloader",
     "bin/generate",

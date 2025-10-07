@@ -37,9 +37,10 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_ton_transaction_status_reverted() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ton_test_client();
-        let request = TransactionStateRequest::new_id("PF2o0flrhohsrneG5rCeMnX8JdmZo0Ytsr_P0aOZWA8=".to_string());
+        let request = TransactionStateRequest::new_id("0676f9e79a1e56c52394be74ffc75c6b2268aa0be094307ee651c23fff775952".to_string());
         let update = client.get_transaction_status(request).await?;
-        assert_eq!(update.state, TransactionState::Failed);
+
+        assert_eq!(update.state, TransactionState::Reverted);
 
         println!("Transaction update: {:?}", update);
 

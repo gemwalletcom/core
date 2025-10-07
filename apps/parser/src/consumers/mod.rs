@@ -154,7 +154,7 @@ pub async fn run_consumer_fetch_coin_addresses_mappings(settings: Settings, data
     let stream_reader = StreamReader::new(config).await?;
     let cacher = CacherClient::new(&settings.redis.url);
     let consumer = FetchCoinAddressesConsumer::new(chain_providers(&settings, name), database.clone(), cacher);
-    streamer::run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, usize>(
+    streamer::run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(
         name,
         stream_reader,
         QueueName::FetchCoinAddressesAssociations,

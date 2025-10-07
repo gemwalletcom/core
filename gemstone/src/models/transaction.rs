@@ -5,8 +5,8 @@ use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, Swap
 use primitives::{
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     SwapProvider, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
-    TransactionPerpetualMetadata, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
-    WalletConnectionSessionAppMetadata,
+    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
+    TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -21,7 +21,9 @@ pub type GemTransferDataOutputAction = TransferDataOutputAction;
 pub type GemApprovalData = ApprovalData;
 pub type GemTransactionPerpetualMetadata = TransactionPerpetualMetadata;
 pub type GemTransactionMetadata = TransactionMetadata;
+pub type GemTransactionState = TransactionState;
 pub type GemTransactionChange = TransactionChange;
+pub type GemTransactionUpdate = TransactionUpdate;
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualDirection {
@@ -65,6 +67,14 @@ pub enum TransactionMetadata {
 }
 
 #[uniffi::remote(Enum)]
+pub enum TransactionState {
+    Pending,
+    Confirmed,
+    Failed,
+    Reverted,
+}
+
+#[uniffi::remote(Enum)]
 pub enum TransactionChange {
     HashChange { old: String, new: String },
     Metadata(TransactionMetadata),
@@ -72,15 +82,15 @@ pub enum TransactionChange {
     NetworkFee(BigInt),
 }
 
+#[uniffi::remote(Record)]
+pub struct TransactionUpdate {
+    pub state: TransactionState,
+    pub changes: Vec<TransactionChange>,
+}
+
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemAccountDataType {
     Activate,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemTransactionUpdate {
-    pub state: String,
-    pub changes: Vec<GemTransactionChange>,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -623,14 +633,6 @@ impl From<GemTransactionStateRequest> for TransactionStateRequest {
     }
 }
 
-impl From<TransactionUpdate> for GemTransactionUpdate {
-    fn from(value: TransactionUpdate) -> Self {
-        GemTransactionUpdate {
-            state: value.state.to_string(),
-            changes: value.changes,
-        }
-    }
-}
 
 impl From<GemTransactionLoadInput> for TransactionLoadInput {
     fn from(value: GemTransactionLoadInput) -> Self {

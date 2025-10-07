@@ -21,18 +21,18 @@ impl FetchCoinAddressesConsumer {
 }
 
 #[async_trait]
-impl MessageConsumer<ChainAddressPayload, usize> for FetchCoinAddressesConsumer {
+impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer {
     async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
             .can_process_now(&format!("fetch_coin_addresses:{}:{}", payload.value.chain, payload.value.address), 7 * 86400)
             .await
     }
 
-    async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process(&mut self, payload: ChainAddressPayload) -> Result<String, Box<dyn Error + Send + Sync>> {
         let balance = self.provider.get_balance_coin(payload.value.chain, payload.value.address.clone()).await?;
 
         if balance.balance.available == BigUint::ZERO {
-            return Ok(0);
+            return Ok(balance.balance.available.to_string());
         }
 
         let asset_address = AssetAddress::new(
@@ -42,11 +42,13 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchCoinAddressesConsumer 
             Some(balance.balance.available.to_string()),
         );
 
-        Ok(self
+        let _ = self
             .database
             .lock()
             .await
             .assets_addresses()
-            .add_assets_addresses(vec![asset_address.as_primitive()])?)
+            .add_assets_addresses(vec![asset_address.as_primitive()])?;
+
+        Ok(balance.balance.available.to_string())
     }
 }

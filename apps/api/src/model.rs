@@ -5,4 +5,5 @@ use strum::{AsRefStr, EnumIter, EnumString};
 pub enum APIService {
     Api,
     WebsocketPrices,
+    Setup,
 }

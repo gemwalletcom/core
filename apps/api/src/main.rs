@@ -13,6 +13,7 @@ mod price_alerts;
 mod prices;
 mod responders;
 mod scan;
+mod setup;
 mod status;
 mod subscriptions;
 mod support;
@@ -196,10 +197,17 @@ async fn main() {
 
     println!("api start service: {}", service.as_ref());
 
-    let rocket_api = match service {
-        APIService::WebsocketPrices => rocket_ws_prices(settings.clone()).await,
-        APIService::Api => rocket_api(settings.clone()).await,
-    };
-
-    rocket_api.launch().await.expect("Failed to launch Rocket");
+    match service {
+        APIService::Setup => {
+            setup::run_setup(settings).await;
+        }
+        APIService::WebsocketPrices => {
+            let rocket_api = rocket_ws_prices(settings.clone()).await;
+            rocket_api.launch().await.expect("Failed to launch Rocket");
+        }
+        APIService::Api => {
+            let rocket_api = rocket_api(settings.clone()).await;
+            rocket_api.launch().await.expect("Failed to launch Rocket");
+        }
+    }
 }
