@@ -1,7 +1,13 @@
-use std::str::FromStr;
-
 use chrono::{DateTime, Utc};
 use num_bigint::{BigInt, BigUint};
+use primitives::AssetId;
+use std::str::FromStr;
+
+uniffi::custom_type!(AssetId, String, {
+    remote,
+    lower: |s| s.to_string(),
+    try_lift: |s| AssetId::new(&s).ok_or_else(|| uniffi::deps::anyhow::Error::msg("Invalid AssetId")),
+});
 
 pub type GemBigInt = BigInt;
 pub type GemBigUint = BigUint;

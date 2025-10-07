@@ -5,7 +5,7 @@ use primitives::{
 };
 use std::str::FromStr;
 
-use crate::swapper::SwapperProvider;
+use gem_swapper::SwapperProvider;
 
 #[derive(uniffi::Object)]
 pub struct Explorer {

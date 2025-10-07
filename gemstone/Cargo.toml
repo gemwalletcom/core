@@ -18,6 +18,7 @@ reqwest_provider = ["dep:reqwest"]
 swap_integration_tests = ["reqwest_provider"]
 
 [dependencies]
+gem_swapper = { path = "../crates/gem_swapper" }
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
 gem_solana = { path = "../crates/gem_solana", features = ["rpc"] }
