@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, Perpetual};
-use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTS_INDEX_NAME, NFTDocument, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
+use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTDocument, NFTS_INDEX_NAME, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
 use storage::DatabaseClient;
 
 pub struct AssetsClient {
@@ -84,7 +84,14 @@ impl SearchClient {
 
         let assets: Vec<AssetDocument> = self
             .client
-            .search(ASSETS_INDEX_NAME, &request.query, &build_filter(filters), [].as_ref(), request.limit, request.offset)
+            .search(
+                ASSETS_INDEX_NAME,
+                &request.query,
+                &build_filter(filters),
+                [].as_ref(),
+                request.limit,
+                request.offset,
+            )
             .await?;
 
         Ok(assets.into_iter().map(|x| AssetBasic::new(x.asset, x.properties, x.score)).collect())
@@ -93,7 +100,14 @@ impl SearchClient {
     pub async fn get_perpetuals_search(&self, request: &SearchRequest) -> Result<Vec<Perpetual>, Box<dyn Error + Send + Sync>> {
         let perpetuals: Vec<PerpetualDocument> = self
             .client
-            .search(PERPETUALS_INDEX_NAME, &request.query, &build_filter(vec![]), [].as_ref(), request.limit, request.offset)
+            .search(
+                PERPETUALS_INDEX_NAME,
+                &request.query,
+                &build_filter(vec![]),
+                [].as_ref(),
+                request.limit,
+                request.offset,
+            )
             .await?;
 
         Ok(perpetuals.into_iter().map(|x| x.perpetual).collect())
@@ -102,7 +116,14 @@ impl SearchClient {
     pub async fn get_nfts_search(&self, request: &SearchRequest) -> Result<Vec<NFTCollection>, Box<dyn Error + Send + Sync>> {
         let nfts: Vec<NFTDocument> = self
             .client
-            .search(NFTS_INDEX_NAME, &request.query, &build_filter(vec![]), [].as_ref(), request.limit, request.offset)
+            .search(
+                NFTS_INDEX_NAME,
+                &request.query,
+                &build_filter(vec![]),
+                [].as_ref(),
+                request.limit,
+                request.offset,
+            )
             .await?;
 
         Ok(nfts.into_iter().map(|x| x.collection).collect())

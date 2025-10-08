@@ -14,10 +14,11 @@ name = "gemstone"
 
 [features]
 default = []
-reqwest_provider = ["dep:reqwest"]
+reqwest_provider = ["dep:reqwest", "swapper/reqwest_provider"]
 swap_integration_tests = ["reqwest_provider"]
 
 [dependencies]
+swapper = { path = "../crates/swapper" }
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
 gem_solana = { path = "../crates/gem_solana", features = ["rpc"] }
@@ -28,7 +29,6 @@ gem_sui = { path = "../crates/gem_sui", features = ["rpc"] }
 gem_aptos = { path = "../crates/gem_aptos", features = ["rpc"] }
 gem_hash = { path = "../crates/gem_hash" }
 gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
-anyhow = "1.0"
 gem_client = { path = "../crates/gem_client" }
 gem_hypercore = { path = "../crates/gem_hypercore" }
 gem_bitcoin = { path = "../crates/gem_bitcoin", features = ["rpc"] }
@@ -40,41 +40,25 @@ gem_near = { path = "../crates/gem_near", features = ["rpc"] }
 gem_polkadot = { path = "../crates/gem_polkadot", features = ["rpc"] }
 serde_serializers = { path = "../crates/serde_serializers" }
 chain_traits = { path = "../crates/chain_traits" }
-number_formatter = { path = "../crates/number_formatter" }
 
 reqwest = { workspace = true, optional = true }
 
-bcs.workspace = true
-sui-types = { workspace = true }
-sui-transaction-builder = { workspace = true }
 # uniffi
 uniffi.workspace = true
 
-strum = { workspace = true }
 chrono = { workspace = true }
 
-base64.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-serde_urlencoded.workspace = true
 async-trait.workspace = true
 alloy-primitives.workspace = true
-alloy-sol-types.workspace = true
 hex.workspace = true
 num-bigint.workspace = true
-num-traits.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
-solana-primitives = "0.2.1"
-bigdecimal.workspace = true
-rand.workspace = true
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
 
 [dev-dependencies]
 tokio.workspace = true
-
-[[test]]
-name = "integration_test"
-test = false

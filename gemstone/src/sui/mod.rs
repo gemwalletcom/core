@@ -1,6 +1,4 @@
-pub mod gas_budget;
 mod model;
-pub mod rpc;
 
 use crate::GemstoneError;
 use gem_sui::models::{StakeInput, TokenTransferInput, TransferInput, UnstakeInput};

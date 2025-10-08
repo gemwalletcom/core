@@ -7,7 +7,7 @@ use serde_json::json;
 
 use crate::rpc::ankr::model::{TokenBalances, Transactions, ankr_chain};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AnkrClient<C: Client + Clone> {
     pub chain: EVMChain,
     rpc_client: GenericJsonRpcClient<C>,

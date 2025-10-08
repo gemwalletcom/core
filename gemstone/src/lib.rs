@@ -3,25 +3,19 @@ pub mod block_explorer;
 pub mod config;
 pub mod ethereum;
 pub mod gateway;
+pub mod gem_swapper;
 pub mod hyperliquid;
 pub mod message;
 pub mod models;
 pub mod network;
 pub mod payment;
 pub mod sui;
-pub mod swapper;
-pub mod tron;
 pub mod wallet_connect;
 
 use alien::AlienError;
 
 uniffi::setup_scaffolding!("gemstone");
 static LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-#[macro_export]
-macro_rules! debug_println {
-    ($($arg:tt)*) => (#[cfg(debug_assertions)] println!($($arg)*));
-}
 
 #[uniffi::export]
 pub fn lib_version() -> String {

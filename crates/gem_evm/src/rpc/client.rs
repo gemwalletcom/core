@@ -1,10 +1,12 @@
 use alloy_primitives::{Address, Bytes, hex};
 use gem_client::Client;
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
-use gem_jsonrpc::types::{JsonRpcError, JsonRpcResult};
+use gem_jsonrpc::types::{ERROR_INTERNAL_ERROR, JsonRpcError, JsonRpcResult};
 
+use num_bigint::{BigInt, Sign};
 use serde::de::DeserializeOwned;
 use serde_json::json;
+use serde_serializers::biguint_from_hex_str;
 use std::any::TypeId;
 use std::str::FromStr;
 
@@ -27,7 +29,7 @@ pub const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
 pub const FUNCTION_ERC20_SYMBOL: &str = "0x95d89b41";
 pub const FUNCTION_ERC20_DECIMALS: &str = "0x313ce567";
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct EthereumClient<C: Client + Clone> {
     pub chain: EVMChain,
     pub client: GenericJsonRpcClient<C>,
@@ -187,6 +189,15 @@ impl<C: Client + Clone> EthereumClient<C> {
         self.client.call("eth_getBalance", params).await
     }
 
+    pub async fn gas_price(&self) -> Result<BigInt, JsonRpcError> {
+        let value: String = self.client.call("eth_gasPrice", json!([])).await?;
+        let biguint = biguint_from_hex_str(&value).map_err(|_| JsonRpcError {
+            code: ERROR_INTERNAL_ERROR,
+            message: format!("Failed to parse gas price: {value}"),
+        })?;
+        Ok(BigInt::from_biguint(Sign::Plus, biguint))
+    }
+
     pub async fn get_chain_id(&self) -> Result<String, JsonRpcError> {
         self.client.call("eth_chainId", json!([])).await
     }
@@ -236,11 +247,14 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(self.client.batch_call::<String>(calls).await?.extract())
     }
 
-    pub async fn estimate_gas(&self, from: &str, to: &str, value: Option<&str>, data: Option<&str>) -> Result<String, JsonRpcError> {
+    pub async fn estimate_gas(&self, from: Option<&str>, to: &str, value: Option<&str>, data: Option<&str>) -> Result<String, JsonRpcError> {
         let mut params_obj = json!({
-            "from": from,
             "to": to
         });
+
+        if let Some(from) = from {
+            params_obj["from"] = json!(from);
+        }
 
         if let Some(value) = value {
             params_obj["value"] = json!(value);

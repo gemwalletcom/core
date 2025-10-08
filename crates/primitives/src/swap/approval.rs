@@ -31,7 +31,7 @@ pub struct SwapData {
     pub data: SwapQuoteData,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare]
 pub struct QuoteAsset {
     pub id: String,
@@ -86,7 +86,7 @@ pub struct SwapProviderData {
     pub protocol_name: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub enum SwapStatus {

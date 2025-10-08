@@ -1,7 +1,5 @@
 use crate::GemstoneError;
-use primitives::{DecodedLinkType, PaymentURLDecoder};
-
-pub mod solana_pay;
+use primitives::PaymentURLDecoder;
 
 #[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct PaymentWrapper {
@@ -10,19 +8,6 @@ pub struct PaymentWrapper {
     pub memo: Option<String>,
     pub asset_id: Option<String>,
     pub payment_link: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
-pub enum PaymentLinkType {
-    SolanaPay(String),
-}
-
-impl From<DecodedLinkType> for PaymentLinkType {
-    fn from(value: DecodedLinkType) -> Self {
-        match value {
-            DecodedLinkType::SolanaPay(link) => PaymentLinkType::SolanaPay(link),
-        }
-    }
 }
 
 /// Exports functions

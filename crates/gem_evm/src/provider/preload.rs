@@ -56,7 +56,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         let gas_estimate = {
             let estimate = self
                 .estimate_gas(
-                    &input.sender_address,
+                    Some(&input.sender_address),
                     &to,
                     Some(&bigint_to_hex_string(&value)),
                     Some(&bytes_to_hex_string(&data)),

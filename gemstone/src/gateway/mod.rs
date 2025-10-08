@@ -1,5 +1,6 @@
+use crate::alien::{AlienProvider, new_alien_client};
 use crate::models::*;
-use crate::network::{AlienClient, AlienProvider, jsonrpc_client_with_chain};
+use crate::network::jsonrpc_client_with_chain;
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::AlgorandClientIndexer;
 use gem_algorand::rpc::client::AlgorandClient;
@@ -77,7 +78,7 @@ impl GemGateway {
     }
 
     pub async fn provider_with_url(&self, chain: Chain, url: String) -> Result<Arc<dyn ChainTraits>, GatewayError> {
-        let alien_client = AlienClient::new(url.clone(), self.provider.clone());
+        let alien_client = new_alien_client(url.clone(), self.provider.clone());
         match chain {
             Chain::HyperCore => {
                 let preferences = Arc::new(PreferencesWrapper {
@@ -226,13 +227,11 @@ impl GemGateway {
     }
 
     pub async fn get_transaction_status(&self, chain: Chain, request: GemTransactionStateRequest) -> Result<GemTransactionUpdate, GatewayError> {
-        let status = self
-            .provider(chain)
+        self.provider(chain)
             .await?
             .get_transaction_status(request.into())
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(status)
+            .map_err(|e| GatewayError::NetworkError(e.to_string()))
     }
 
     pub async fn get_chain_id(&self, chain: Chain) -> Result<String, GatewayError> {

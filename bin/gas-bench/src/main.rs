@@ -13,7 +13,7 @@ use crate::{
     etherscan::EtherscanClient,
     gasflow::GasflowClient,
 };
-use gemstone::network::alien_provider::NativeProvider;
+use gemstone::alien::reqwest_provider::NativeProvider;
 use primitives::fee::FeePriority;
 
 #[derive(Debug, Clone)]

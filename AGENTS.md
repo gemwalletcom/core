@@ -20,7 +20,7 @@ Gem Wallet Core is a Rust-based cryptocurrency wallet backend engine supporting 
 
 ### Cross-Platform Library (`gemstone/`)
 Shared Rust library compiled to iOS Swift Package and Android AAR using UniFFI bindings. Contains blockchain RPC clients, swap integrations, payment URI decoding, and message signing.
- - Key module: `gemstone::swapper` — swapper module for on-device swap integrations
+- Key module: `gemstone::gem_swapper` — swapper module for on-device swap integrations
 
 ### Blockchain Support
 Individual `gem_*` crates for each blockchain with unified RPC client patterns:
