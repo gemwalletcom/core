@@ -49,11 +49,23 @@ impl AcrossApi {
             .get_transaction_receipt(tx_hash)
             .await
             .map_err(SwapperError::from)?;
-        if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 4 {
+
+        if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 3 {
             return Err(SwapperError::NetworkError("invalid tx receipt".into()));
         }
-        let deposit_id = receipt.logs[1].topics[3].clone();
-        let url = format!("{}/deposit/status?originChainId={}&depositId={}", self.url, chain.network_id(), &deposit_id);
+        // The deposit ID is in topics[2] (topics[0] is event signature, topics[1] is destination chain ID)
+        let deposit_id_hex = receipt.logs[1].topics[2].clone();
+
+        // Convert hex deposit ID to decimal string
+        let deposit_id = if let Some(stripped) = deposit_id_hex.strip_prefix("0x") {
+            u64::from_str_radix(stripped, 16)
+                .map_err(|e| SwapperError::NetworkError(format!("Failed to parse deposit ID: {}", e)))?
+                .to_string()
+        } else {
+            deposit_id_hex
+        };
+
+        let url = format!("{}/api/deposit/status?originChainId={}&depositId={}", self.url, chain.network_id(), &deposit_id);
         let target = Target::get(&url);
         let response = self.provider.request(target).await?;
         let status: DepositStatus = serde_json::from_slice(&response).map_err(SwapperError::from)?;

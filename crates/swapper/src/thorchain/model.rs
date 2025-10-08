@@ -28,7 +28,6 @@ pub struct QuoteFees {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
-    pub tx: TransactionTx,
     pub observed_tx: TransactionObserved,
 }
 
@@ -39,6 +38,7 @@ pub struct TransactionTx {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionObserved {
+    pub tx: TransactionTx,
     pub status: Option<String>,
     pub out_hashes: Option<Vec<String>>,
 }

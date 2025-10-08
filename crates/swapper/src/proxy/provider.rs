@@ -4,7 +4,7 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
     client::ProxyClient,
-    mayan::{MayanClientStatus, MayanExplorer, map_mayan_chain_to_chain},
+    mayan::{MayanClientStatus, MayanExplorer, wormhole_chain_id_to_chain},
     symbiosis::model::SymbiosisTransactionData,
 };
 use crate::{
@@ -292,7 +292,7 @@ where
                 let result = client.get_transaction_status(transaction_hash).await?;
 
                 let swap_status = result.client_status.swap_status();
-                let dest_chain = map_mayan_chain_to_chain(&result.dest_chain);
+                let dest_chain = result.dest_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
 
                 let (to_chain, to_tx_hash) = match result.client_status {
                     MayanClientStatus::Completed => (dest_chain, result.fulfill_tx_hash),
@@ -399,6 +399,31 @@ mod swap_integration_tests {
         assert_eq!(route.input, AssetId::from_chain(Chain::Sui));
         assert_eq!(route.output, AssetId::from(Chain::Sui, Some(SUI_USDC_TOKEN_ID.to_string())));
         assert!(!route.route_data.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "swap_integration_tests")]
+    async fn test_mayan_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use primitives::swap::SwapStatus;
+
+        let rpc_provider = Arc::new(NativeProvider::default());
+        let provider = ProxyProvider::new_mayan(rpc_provider);
+
+        // Real Mayan swap: ETH to SUI via CCTP
+        // Ethereum source tx: 0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876
+        let tx_hash = "0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876";
+        let chain = Chain::Ethereum;
+
+        let result = provider.get_swap_result(chain, tx_hash).await?;
+
+        println!("Mayan swap result: {:?}", result);
+        assert_eq!(result.from_chain, chain);
+        assert_eq!(result.from_tx_hash, tx_hash);
+        assert_eq!(result.status, SwapStatus::Completed);
+        assert_eq!(result.to_chain, Some(Chain::Sui));
+        assert_eq!(result.to_tx_hash, Some("GLs1TUZ6jQdWBBDHVBYFumaBMf6kVNcb2NxQnapXqJUL".to_string()));
 
         Ok(())
     }
