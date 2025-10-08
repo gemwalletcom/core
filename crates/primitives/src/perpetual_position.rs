@@ -27,7 +27,7 @@ pub enum PerpetualOrderType {
 pub struct PerpetualTriggerOrder {
     pub price: f64,
     pub order_type: PerpetualOrderType,
-    pub order_id: u64,
+    pub order_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

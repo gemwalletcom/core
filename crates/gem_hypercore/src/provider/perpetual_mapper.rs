@@ -168,7 +168,7 @@ pub fn map_tp_sl_from_orders(orders: &[OpenOrder], coin: &str) -> (Option<Perpet
                 Some(PerpetualTriggerOrder {
                     price,
                     order_type: determine_order_type(&order.order_type),
-                    order_id: order.oid,
+                    order_id: order.oid.to_string(),
                 }),
                 sl,
             ),
@@ -177,7 +177,7 @@ pub fn map_tp_sl_from_orders(orders: &[OpenOrder], coin: &str) -> (Option<Perpet
                 Some(PerpetualTriggerOrder {
                     price,
                     order_type: determine_order_type(&order.order_type),
-                    order_id: order.oid,
+                    order_id: order.oid.to_string(),
                 }),
             ),
             _ => (tp, sl),
@@ -586,12 +586,12 @@ mod tests {
         let tp = take_profit.unwrap();
         assert_eq!(tp.price, 55.0);
         assert_eq!(tp.order_type, PerpetualOrderType::Limit);
-        assert_eq!(tp.order_id, 191394991415);
+        assert_eq!(tp.order_id, "191394991415");
 
         assert!(stop_loss.is_some());
         let sl = stop_loss.unwrap();
         assert_eq!(sl.price, 35.0);
         assert_eq!(sl.order_type, PerpetualOrderType::Limit);
-        assert_eq!(sl.order_id, 191395165138);
+        assert_eq!(sl.order_id, "191395165138");
     }
 }

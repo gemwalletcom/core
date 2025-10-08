@@ -1,21 +1,25 @@
+use chrono::{DateTime, Utc};
 use primitives::{
-    AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
+    Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
     chart::ChartCandleStick,
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
-use chrono::{DateTime, Utc};
-
-use super::asset::GemAsset;
 
 pub type GemPerpetualMarginType = PerpetualMarginType;
+pub type GemPerpetualOrderType = PerpetualOrderType;
+pub type GemPerpetualPositionsSummary = PerpetualPositionsSummary;
+pub type GemPerpetualBalance = PerpetualBalance;
+pub type GemPerpetualPosition = PerpetualPosition;
+pub type GemPerpetual = Perpetual;
+pub type GemPerpetualMetadata = PerpetualMetadata;
+pub type GemChartCandleStick = ChartCandleStick;
+pub type GemPerpetualData = PerpetualData;
 
 #[uniffi::remote(Enum)]
 pub enum GemPerpetualMarginType {
     Cross,
     Isolated,
 }
-
-pub type GemPerpetualOrderType = PerpetualOrderType;
 
 #[uniffi::remote(Enum)]
 pub enum GemPerpetualOrderType {
@@ -29,10 +33,8 @@ pub type GemPerpetualTriggerOrder = PerpetualTriggerOrder;
 pub struct GemPerpetualTriggerOrder {
     pub price: f64,
     pub order_type: PerpetualOrderType,
-    pub order_id: u64,
+    pub order_id: String,
 }
-
-pub type GemPerpetualPositionsSummary = PerpetualPositionsSummary;
 
 #[uniffi::remote(Record)]
 pub struct GemPerpetualPositionsSummary {
@@ -40,16 +42,12 @@ pub struct GemPerpetualPositionsSummary {
     pub balance: PerpetualBalance,
 }
 
-pub type GemPerpetualBalance = PerpetualBalance;
-
 #[uniffi::remote(Record)]
 pub struct GemPerpetualBalance {
     pub available: f64,
     pub reserved: f64,
     pub withdrawable: f64,
 }
-
-pub type GemPerpetualPosition = PerpetualPosition;
 
 #[uniffi::remote(Record)]
 pub struct GemPerpetualPosition {
@@ -70,14 +68,12 @@ pub struct GemPerpetualPosition {
     pub funding: Option<f32>,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[uniffi::remote(Record)]
 pub struct GemPerpetualData {
-    pub perpetual: GemPerpetual,
-    pub asset: GemAsset,
-    pub metadata: GemPerpetualMetadata,
+    pub perpetual: Perpetual,
+    pub asset: Asset,
+    pub metadata: PerpetualMetadata,
 }
-
-pub type GemPerpetual = Perpetual;
 
 #[uniffi::remote(Record)]
 pub struct GemPerpetual {
@@ -94,14 +90,10 @@ pub struct GemPerpetual {
     pub leverage: Vec<u8>,
 }
 
-pub type GemPerpetualMetadata = PerpetualMetadata;
-
 #[uniffi::remote(Record)]
 pub struct GemPerpetualMetadata {
     pub is_pinned: bool,
 }
-
-pub type GemChartCandleStick = ChartCandleStick;
 
 #[uniffi::remote(Record)]
 pub struct GemChartCandleStick {
@@ -113,12 +105,3 @@ pub struct GemChartCandleStick {
     pub volume: f64,
 }
 
-impl From<PerpetualData> for GemPerpetualData {
-    fn from(data: PerpetualData) -> Self {
-        Self {
-            perpetual: data.perpetual,
-            asset: data.asset,
-            metadata: data.metadata,
-        }
-    }
-}
