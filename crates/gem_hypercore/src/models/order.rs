@@ -18,6 +18,17 @@ pub struct Order {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct OpenOrder {
+    pub coin: String,
+    pub oid: UInt64,
+    #[serde(deserialize_with = "serde_serializers::deserialize_option_f64_from_str")]
+    pub trigger_px: Option<f64>,
+    pub is_position_tpsl: bool,
+    pub order_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PerpetualFill {
     pub coin: String,
     pub hash: String,

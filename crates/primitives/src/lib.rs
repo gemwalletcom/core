@@ -168,7 +168,7 @@ pub use self::search::SearchResponse;
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;
-pub use self::perpetual_position::{PerpetualMarginType, PerpetualPosition, PriceTarget};
+pub use self::perpetual_position::{PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualTriggerOrder};
 pub mod chart;
 pub use self::chart::{ChartCandleStick, ChartDateValue};
 pub mod delegation;

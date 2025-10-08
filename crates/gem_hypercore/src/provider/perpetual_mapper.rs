@@ -1,10 +1,12 @@
 use crate::models::{
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
+    order::OpenOrder,
     position::{AssetPositions, LeverageType, Position},
 };
 use primitives::{
-    Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualPosition, PerpetualProvider,
+    Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition,
+    PerpetualProvider, PerpetualTriggerOrder,
     chart::ChartCandleStick,
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
@@ -17,12 +19,12 @@ pub fn create_perpetual_id(coin: &str) -> String {
     format!("{}_{}", PerpetualProvider::Hypercore.as_ref(), coin)
 }
 
-pub fn map_positions(positions: AssetPositions, address: String) -> PerpetualPositionsSummary {
+pub fn map_positions(positions: AssetPositions, address: String, orders: &[OpenOrder]) -> PerpetualPositionsSummary {
     let balance = map_perpetual_balance(&positions);
     let positions: Vec<PerpetualPosition> = positions
         .asset_positions
         .into_iter()
-        .map(|x| map_position(x.position, address.clone()))
+        .map(|x| map_position(x.position, address.clone(), orders))
         .collect();
     PerpetualPositionsSummary { positions, balance }
 }
@@ -41,7 +43,7 @@ pub fn map_perpetual_balance(positions: &AssetPositions) -> PerpetualBalance {
     }
 }
 
-pub fn map_position(position: Position, address: String) -> PerpetualPosition {
+pub fn map_position(position: Position, address: String, orders: &[OpenOrder]) -> PerpetualPosition {
     let size: f64 = position.szi.parse().unwrap_or(0.0);
     let direction = if size >= 0.0 { PerpetualDirection::Long } else { PerpetualDirection::Short };
 
@@ -59,6 +61,8 @@ pub fn map_position(position: Position, address: String) -> PerpetualPosition {
     let perpetual_id = create_perpetual_id(&position.coin);
     let asset_id = create_perpetual_asset_id(&position.coin);
 
+    let (take_profit, stop_loss) = map_tp_sl_from_orders(orders, &position.coin);
+
     PerpetualPosition {
         id: format!("{}_{}", address, position.coin.clone()),
         perpetual_id,
@@ -74,8 +78,8 @@ pub fn map_position(position: Position, address: String) -> PerpetualPosition {
         },
         direction,
         margin_amount: position.margin_used.parse().unwrap_or(0.0),
-        take_profit: None,
-        stop_loss: None,
+        take_profit,
+        stop_loss,
         pnl: position.unrealized_pnl.parse().unwrap_or(0.0),
         funding: funding_value,
     }
@@ -147,6 +151,39 @@ pub fn map_candlesticks(candlesticks: Vec<Candlestick>) -> Vec<ChartCandleStick>
     candlesticks.into_iter().map(|c| c.into()).collect()
 }
 
+fn determine_order_type(order_type_str: &str) -> PerpetualOrderType {
+    if order_type_str.to_lowercase().contains("market") {
+        PerpetualOrderType::Market
+    } else {
+        PerpetualOrderType::Limit
+    }
+}
+
+pub fn map_tp_sl_from_orders(orders: &[OpenOrder], coin: &str) -> (Option<PerpetualTriggerOrder>, Option<PerpetualTriggerOrder>) {
+    orders
+        .iter()
+        .filter(|o| o.is_position_tpsl && o.coin == coin)
+        .fold((None, None), |(tp, sl), order| match order.trigger_px {
+            Some(price) if order.order_type.to_lowercase().contains("take profit") => (
+                Some(PerpetualTriggerOrder {
+                    price,
+                    order_type: determine_order_type(&order.order_type),
+                    order_id: order.oid,
+                }),
+                sl,
+            ),
+            Some(price) if order.order_type.to_lowercase().contains("stop") => (
+                tp,
+                Some(PerpetualTriggerOrder {
+                    price,
+                    order_type: determine_order_type(&order.order_type),
+                    order_id: order.oid,
+                }),
+            ),
+            _ => (tp, sl),
+        })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -197,7 +234,7 @@ mod tests {
             withdrawable: "92000".to_string(),
         };
 
-        let result = map_positions(positions, "test_address".to_string());
+        let result = map_positions(positions, "test_address".to_string(), &[]);
 
         assert_eq!(result.positions.len(), 1);
         assert_eq!(result.positions[0].id, "test_address_BTC");
@@ -364,7 +401,7 @@ mod tests {
             withdrawable: "500".to_string(),
         };
 
-        let summary = map_positions(positions, "test_user".to_string());
+        let summary = map_positions(positions, "test_user".to_string(), &[]);
 
         assert_eq!(summary.positions.len(), 2);
 
@@ -411,7 +448,7 @@ mod tests {
             },
         };
 
-        let perpetual_position = map_position(position, "user123".to_string());
+        let perpetual_position = map_position(position, "user123".to_string(), &[]);
         assert_eq!(perpetual_position.funding, Some(-1.5)); // Long position reverses sign
 
         let short_position = Position {
@@ -434,7 +471,7 @@ mod tests {
             },
         };
 
-        let short_perpetual = map_position(short_position, "user123".to_string());
+        let short_perpetual = map_position(short_position, "user123".to_string(), &[]);
         assert_eq!(short_perpetual.size, 5.0); // Size is always positive (absolute value)
         assert_eq!(short_perpetual.funding, Some(1.5)); // Short position with negative funding
     }
@@ -459,7 +496,7 @@ mod tests {
             withdrawable: "2500.75".to_string(),
         };
 
-        let summary = map_positions(positions, "balance_test".to_string());
+        let summary = map_positions(positions, "balance_test".to_string(), &[]);
 
         assert_eq!(summary.balance.reserved, 1500.25);
         assert_eq!(summary.balance.available, 3500.25);
@@ -486,7 +523,7 @@ mod tests {
             withdrawable: "305.674569".to_string(),
         };
 
-        let summary = map_positions(positions, "real_data_test".to_string());
+        let summary = map_positions(positions, "real_data_test".to_string(), &[]);
 
         assert_eq!(summary.balance.reserved, 706.364534);
         assert_eq!(summary.balance.available, 0.0);
@@ -515,10 +552,46 @@ mod tests {
             },
         };
 
-        let perpetual_position = map_position(position, "address123".to_string());
+        let perpetual_position = map_position(position, "address123".to_string(), &[]);
 
         assert_eq!(perpetual_position.asset_id.chain, primitives::Chain::HyperCore);
         assert_eq!(perpetual_position.asset_id.token_id, Some("perpetual::BTC".to_string()));
         assert_eq!(perpetual_position.asset_id.to_string(), "hypercore_perpetual::BTC");
+    }
+
+    #[test]
+    fn test_map_tp_sl_from_orders() {
+        use crate::models::order::OpenOrder;
+
+        let orders = vec![
+            OpenOrder {
+                coin: "HYPE".to_string(),
+                oid: 191395165138,
+                trigger_px: Some(35.0),
+                is_position_tpsl: true,
+                order_type: "Stop Limit".to_string(),
+            },
+            OpenOrder {
+                coin: "HYPE".to_string(),
+                oid: 191394991415,
+                trigger_px: Some(55.0),
+                is_position_tpsl: true,
+                order_type: "Take Profit Limit".to_string(),
+            },
+        ];
+
+        let (take_profit, stop_loss) = map_tp_sl_from_orders(&orders, "HYPE");
+
+        assert!(take_profit.is_some());
+        let tp = take_profit.unwrap();
+        assert_eq!(tp.price, 55.0);
+        assert_eq!(tp.order_type, PerpetualOrderType::Limit);
+        assert_eq!(tp.order_id, 191394991415);
+
+        assert!(stop_loss.is_some());
+        let sl = stop_loss.unwrap();
+        assert_eq!(sl.price, 35.0);
+        assert_eq!(sl.order_type, PerpetualOrderType::Limit);
+        assert_eq!(sl.order_id, 191395165138);
     }
 }

@@ -13,11 +13,21 @@ pub enum PerpetualMarginType {
     Isolated,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, AsRefStr, EnumString)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum PerpetualOrderType {
+    Market,
+    Limit,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
-pub struct PriceTarget {
-    pub price: Option<f64>,
-    pub percentage: Option<f64>,
+pub struct PerpetualTriggerOrder {
+    pub price: f64,
+    pub order_type: PerpetualOrderType,
+    pub order_id: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -35,8 +45,8 @@ pub struct PerpetualPosition {
     pub margin_type: PerpetualMarginType,
     pub direction: PerpetualDirection,
     pub margin_amount: f64,
-    pub take_profit: Option<PriceTarget>,
-    pub stop_loss: Option<PriceTarget>,
+    pub take_profit: Option<PerpetualTriggerOrder>,
+    pub stop_loss: Option<PerpetualTriggerOrder>,
     pub pnl: f64,
     pub funding: Option<f32>,
 }

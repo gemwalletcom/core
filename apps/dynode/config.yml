@@ -42,10 +42,12 @@ cache:
     sui:
       - rpc_method: suix_getValidatorsApy
         ttl_seconds: 3600  # 1 hour
+      - rpc_method: suix_getLatestSuiSystemState
+        ttl_seconds: 60  # 1 minute
     cosmos:
       - path: /cosmos/staking/v1beta1/validators
         method: GET
-        ttl_seconds: 300  # 5 minutes
+        ttl_seconds: 86400  # 1 day
     bitcoin:
       - path: /api/v2/block/**
         method: GET

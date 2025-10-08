@@ -2,7 +2,7 @@ use crate::models::{
     balance::{Balances, DelegationBalance, StakeBalance, Validator},
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
-    order::PerpetualFill,
+    order::{OpenOrder, PerpetualFill},
     position::AssetPositions,
     referral::Referral,
     token::SpotTokensResponse,
@@ -228,6 +228,14 @@ impl<C: Client> HyperCoreClient<C> {
         let updates = self.get_ledger_updates(user).await?;
         let update = updates.iter().find(|update| update.delta.nonce == Some(nonce)).ok_or("Nonce not found")?;
         Ok(update.hash.clone())
+    }
+
+    pub async fn get_open_orders(&self, user: &str) -> Result<Vec<OpenOrder>, Box<dyn Error + Send + Sync>> {
+        self.info(json!({
+            "type": "frontendOpenOrders",
+            "user": user
+        }))
+        .await
     }
 }
 

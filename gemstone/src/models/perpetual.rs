@@ -12,7 +12,9 @@ pub struct GemPerpetualPositionsSummary {
     pub balance: GemPerpetualBalance,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+pub type GemPerpetualBalance = PerpetualBalance;
+
+#[uniffi::remote(Record)]
 pub struct GemPerpetualBalance {
     pub available: f64,
     pub reserved: f64,
@@ -58,7 +60,9 @@ pub struct GemPerpetual {
     pub leverage: Vec<u8>,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+pub type GemPerpetualMetadata = PerpetualMetadata;
+
+#[uniffi::remote(Record)]
 pub struct GemPerpetualMetadata {
     pub is_pinned: bool,
 }
@@ -78,16 +82,6 @@ impl From<PerpetualPositionsSummary> for GemPerpetualPositionsSummary {
         Self {
             positions: summary.positions.into_iter().map(|p| p.into()).collect(),
             balance: summary.balance.into(),
-        }
-    }
-}
-
-impl From<PerpetualBalance> for GemPerpetualBalance {
-    fn from(balance: PerpetualBalance) -> Self {
-        Self {
-            available: balance.available,
-            reserved: balance.reserved,
-            withdrawable: balance.withdrawable,
         }
     }
 }
@@ -144,12 +138,6 @@ impl From<Perpetual> for GemPerpetual {
             funding: perpetual.funding,
             leverage: perpetual.leverage,
         }
-    }
-}
-
-impl From<PerpetualMetadata> for GemPerpetualMetadata {
-    fn from(metadata: PerpetualMetadata) -> Self {
-        Self { is_pinned: metadata.is_pinned }
     }
 }
 

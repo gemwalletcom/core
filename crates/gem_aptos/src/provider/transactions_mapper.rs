@@ -1,5 +1,8 @@
 use crate::models::{Transaction, TransactionResponse};
-use crate::{APTOS_NATIVE_COIN, FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, STAKE_DEPOSIT_EVENT};
+use crate::{
+    APTOS_NATIVE_COIN, DELEGATION_POOL_ADD_STAKE_EVENT, DELEGATION_POOL_UNLOCK_STAKE_EVENT, FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT,
+    STAKE_DEPOSIT_EVENT,
+};
 use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::DateTime;
 use num_bigint::{BigInt, BigUint};
@@ -21,7 +24,15 @@ pub fn map_transactions(transactions: Vec<Transaction>) -> Vec<PrimitivesTransac
     transactions
 }
 
-fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Event>, chain: Chain) -> Option<PrimitivesTransaction> {
+struct TransactionMeta {
+    hash: String,
+    sender: String,
+    state: TransactionState,
+    fee: String,
+    created_at: DateTime<chrono::Utc>,
+}
+
+fn extract_meta(transaction: &Transaction) -> Option<TransactionMeta> {
     let hash = transaction.hash.clone().unwrap_or_default();
     let sender = transaction.sender.clone().unwrap_or_default();
     let state = if transaction.success {
@@ -31,8 +42,20 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Eve
     };
     let gas_used = BigUint::from(transaction.gas_used.unwrap_or_default());
     let gas_unit_price = BigUint::from(transaction.gas_unit_price.unwrap_or_default());
-    let fee = gas_used * gas_unit_price;
+    let fee = (gas_used * gas_unit_price).to_string();
     let created_at = DateTime::from_timestamp_micros(transaction.timestamp as i64)?;
+
+    Some(TransactionMeta {
+        hash,
+        sender,
+        state,
+        fee,
+        created_at,
+    })
+}
+
+fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Event>, chain: Chain) -> Option<PrimitivesTransaction> {
+    let meta = extract_meta(&transaction)?;
 
     let withdraw_event = events.iter().find(|e| e.event_type == FUNGIBLE_ASSET_WITHDRAW_EVENT)?;
     let deposit_event = events.iter().find(|e| e.event_type == FUNGIBLE_ASSET_DEPOSIT_EVENT)?;
@@ -79,30 +102,80 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Eve
     });
 
     let swap = SwapMapper::map_swap(&balance_diffs, &BigUint::from(0u8), &chain.as_asset_id(), provider)?;
+    let metadata = serde_json::to_value(&swap).ok();
+    let to = meta.sender.clone();
 
-    Some(PrimitivesTransaction::new(
-        hash,
+    Some(build_transaction(
+        meta,
         chain.as_asset_id(),
-        sender.clone(),
-        sender,
-        None,
+        to,
+        swap.from_value,
         TransactionType::Swap,
-        state,
-        fee.to_string(),
-        chain.as_asset_id(),
-        swap.from_value.clone(),
-        None,
-        serde_json::to_value(swap).ok(),
-        created_at,
+        metadata,
     ))
+}
+
+fn build_transaction(
+    meta: TransactionMeta,
+    asset_id: AssetId,
+    to: String,
+    value: String,
+    transaction_type: TransactionType,
+    metadata: Option<serde_json::Value>,
+) -> PrimitivesTransaction {
+    PrimitivesTransaction::new(
+        meta.hash,
+        asset_id.clone(),
+        meta.sender,
+        to,
+        None,
+        transaction_type,
+        meta.state,
+        meta.fee,
+        asset_id,
+        value,
+        None,
+        metadata,
+        meta.created_at,
+    )
 }
 
 pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction> {
     let chain = Chain::Aptos;
     let events = transaction.clone().events.unwrap_or_default();
+    let meta = extract_meta(&transaction)?;
+    let asset_id = chain.as_asset_id();
 
     if events.iter().any(|e| e.event_type.contains("Swap")) {
         return map_swap_transaction(transaction, events, chain);
+    }
+
+    for event in &events {
+        match event.event_type.as_str() {
+            DELEGATION_POOL_ADD_STAKE_EVENT => {
+                let data: crate::models::DelegationPoolAddStakeData = serde_json::from_value(event.data.clone()?).ok()?;
+                return Some(build_transaction(
+                    meta,
+                    asset_id,
+                    data.pool_address,
+                    data.amount_added,
+                    TransactionType::StakeDelegate,
+                    None,
+                ));
+            }
+            DELEGATION_POOL_UNLOCK_STAKE_EVENT => {
+                let data: crate::models::DelegationPoolUnlockStakeData = serde_json::from_value(event.data.clone()?).ok()?;
+                return Some(build_transaction(
+                    meta,
+                    asset_id,
+                    data.pool_address,
+                    data.amount_unlocked,
+                    TransactionType::StakeUndelegate,
+                    None,
+                ));
+            }
+            _ => continue,
+        }
     }
 
     if transaction.transaction_type.as_deref() == Some("user_transaction") && events.len() <= 4 {
@@ -110,41 +183,15 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
             .iter()
             .find(|x| x.event_type == STAKE_DEPOSIT_EVENT || x.event_type == FUNGIBLE_ASSET_DEPOSIT_EVENT)?;
 
-        let asset_id = chain.as_asset_id();
-        let state = if transaction.success {
-            TransactionState::Confirmed
-        } else {
-            TransactionState::Failed
-        };
-
         let to = if deposit_event.event_type == FUNGIBLE_ASSET_DEPOSIT_EVENT {
             transaction.payload.as_ref()?.arguments.first()?.as_str()?.to_string()
         } else {
             deposit_event.guid.account_address.clone()
         };
 
-        let value = &deposit_event.get_amount()?;
-        let gas_used = BigUint::from(transaction.gas_used.unwrap_or_default());
-        let gas_unit_price = BigUint::from(transaction.gas_unit_price.unwrap_or_default());
-        let fee = gas_used * gas_unit_price;
-        let created_at = DateTime::from_timestamp_micros(transaction.timestamp as i64)?;
+        let value = deposit_event.get_amount()?;
 
-        let transaction = PrimitivesTransaction::new(
-            transaction.hash.unwrap_or_default(),
-            asset_id.clone(),
-            transaction.sender.unwrap_or_default(),
-            to,
-            None,
-            TransactionType::Transfer,
-            state,
-            fee.to_string(),
-            asset_id,
-            value.clone(),
-            None,
-            None,
-            created_at,
-        );
-        return Some(transaction);
+        return Some(build_transaction(meta, asset_id, to, value, TransactionType::Transfer, None));
     }
     None
 }
@@ -237,5 +284,39 @@ mod tests {
         );
         assert_eq!(metadata.to_value, "117926015");
         assert_eq!(metadata.provider.unwrap(), "pancakeswap_aptos_v2");
+    }
+
+    #[test]
+    fn test_map_transaction_stake_delegate() {
+        let transaction: Transaction = serde_json::from_str(include_str!("../../testdata/transaction_stake_delegate.json")).unwrap();
+
+        let result = map_transaction(transaction);
+
+        assert!(result.is_some());
+        let tx = result.unwrap();
+        assert_eq!(tx.hash, "0x130cc74c1a768780ca062a97bc833a01dec85b2d315484869559b7cdee4d0e75");
+        assert_eq!(tx.from, "0xc95615aa095c100b18eb6eaa0f0a0f30b9cd96685118a7cbc1a2328a91ca2eda");
+        assert_eq!(tx.to, "0xe5452230b8d5f4a664e33b8ad95354e50da64caaf003f11c0158391e96a4db2c");
+        assert_eq!(tx.value, "1100000000");
+        assert_eq!(tx.state, TransactionState::Confirmed);
+        assert_eq!(tx.transaction_type, TransactionType::StakeDelegate);
+        assert_eq!(tx.fee, "142400");
+    }
+
+    #[test]
+    fn test_map_transaction_stake_undelegate() {
+        let transaction: Transaction = serde_json::from_str(include_str!("../../testdata/transaction_stake_undelegate.json")).unwrap();
+
+        let result = map_transaction(transaction);
+
+        assert!(result.is_some());
+        let tx = result.unwrap();
+        assert_eq!(tx.hash, "0xef6430bef0e8de7090b2c4bce210adb75d648be4614dcc37232b0d67f819b137");
+        assert_eq!(tx.from, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
+        assert_eq!(tx.to, "0xdb5247f859ce63dbe8940cf8773be722a60dcc594a8be9aca4b76abceb251b8e");
+        assert_eq!(tx.value, "1109984251");
+        assert_eq!(tx.state, TransactionState::Confirmed);
+        assert_eq!(tx.transaction_type, TransactionType::StakeUndelegate);
+        assert_eq!(tx.fee, "88400");
     }
 }

@@ -34,6 +34,18 @@ pub struct AmountData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DelegationPoolAddStakeData {
+    pub pool_address: String,
+    pub amount_added: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DelegationPoolUnlockStakeData {
+    pub pool_address: String,
+    pub amount_unlocked: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Guid {
     pub account_address: String,
 }

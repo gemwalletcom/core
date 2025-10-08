@@ -88,7 +88,9 @@ pub struct TransactionUpdate {
     pub changes: Vec<TransactionChange>,
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
+pub type GemAccountDataType = AccountDataType;
+
+#[uniffi::remote(Enum)]
 pub enum GemAccountDataType {
     Activate,
 }
@@ -103,7 +105,9 @@ pub struct GemTransactionStateRequest {
 
 pub type GemHyperliquidOrder = HyperliquidOrder;
 
-#[derive(Debug, Clone, uniffi::Record)]
+pub type GemStakeData = StakeData;
+
+#[uniffi::remote(Record)]
 pub struct GemStakeData {
     pub data: Option<String>,
     pub to: Option<String>,
@@ -148,7 +152,9 @@ pub struct GemFreezeData {
     pub resource: GemResource,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
+pub type GemWalletConnectionSessionAppMetadata = WalletConnectionSessionAppMetadata;
+
+#[uniffi::remote(Record)]
 pub struct GemWalletConnectionSessionAppMetadata {
     pub name: String,
     pub description: String,
@@ -679,22 +685,6 @@ impl From<TransactionInputType> for GemTransactionInputType {
     }
 }
 
-impl From<AccountDataType> for GemAccountDataType {
-    fn from(value: AccountDataType) -> Self {
-        match value {
-            AccountDataType::Activate => GemAccountDataType::Activate,
-        }
-    }
-}
-
-impl From<GemAccountDataType> for AccountDataType {
-    fn from(value: GemAccountDataType) -> Self {
-        match value {
-            GemAccountDataType::Activate => AccountDataType::Activate,
-        }
-    }
-}
-
 impl From<GemStakeType> for StakeType {
     fn from(value: GemStakeType) -> Self {
         match value {
@@ -722,46 +712,6 @@ impl From<StakeType> for GemStakeType {
             StakeType::Freeze(freeze_data) => GemStakeType::Freeze {
                 freeze_data: freeze_data.into(),
             },
-        }
-    }
-}
-
-impl From<GemWalletConnectionSessionAppMetadata> for WalletConnectionSessionAppMetadata {
-    fn from(value: GemWalletConnectionSessionAppMetadata) -> Self {
-        WalletConnectionSessionAppMetadata {
-            name: value.name,
-            description: value.description,
-            url: value.url,
-            icon: value.icon,
-        }
-    }
-}
-
-impl From<GemStakeData> for StakeData {
-    fn from(value: GemStakeData) -> Self {
-        StakeData {
-            data: value.data,
-            to: value.to,
-        }
-    }
-}
-
-impl From<StakeData> for GemStakeData {
-    fn from(value: StakeData) -> Self {
-        GemStakeData {
-            data: value.data,
-            to: value.to,
-        }
-    }
-}
-
-impl From<WalletConnectionSessionAppMetadata> for GemWalletConnectionSessionAppMetadata {
-    fn from(value: WalletConnectionSessionAppMetadata) -> Self {
-        GemWalletConnectionSessionAppMetadata {
-            name: value.name,
-            description: value.description,
-            url: value.url,
-            icon: value.icon,
         }
     }
 }

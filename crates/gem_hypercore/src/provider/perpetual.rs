@@ -2,6 +2,7 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use chain_traits::{ChainAddressStatus, ChainPerpetual};
+use futures::try_join;
 use gem_client::Client;
 use primitives::{
     ChartCandleStick, ChartPeriod,
@@ -16,8 +17,8 @@ use crate::{
 #[async_trait]
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
-        let positions = self.get_clearinghouse_state(&address).await?;
-        Ok(map_positions(positions, address))
+        let (positions, orders) = try_join!(self.get_clearinghouse_state(&address), self.get_open_orders(&address))?;
+        Ok(map_positions(positions, address, &orders))
     }
 
     async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {
