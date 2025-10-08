@@ -56,3 +56,9 @@ cache:
         ttl_seconds: 3600  # 1 hour
         params:
           type: metaAndAssetCtxs
+    aptos:
+      - path: /v1/view
+        method: POST
+        ttl_seconds: 3600  # 1 hour
+        params:
+          function: "0x1::delegation_pool::operator_commission_percentage"

@@ -126,6 +126,8 @@ impl ProxyRequestService {
             "Proxy response",
             chain = request.chain.as_ref(),
             host = request.host,
+            method = request.method.as_str(),
+            uri = request.path.as_str(),
             remote_host = url.url.host_str().unwrap_or_default(),
             status = status,
             latency = DurationMs(request.elapsed()),

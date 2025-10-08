@@ -265,7 +265,7 @@ mod tests {
         let mut config = create_test_config();
         if let Some(rules) = config.rules.get_mut("ethereum") {
             let mut params = HashMap::new();
-            params.insert("type".to_string(), "metaAndAssetCtxs".to_string());
+            params.insert("type".to_string(), serde_json::json!("metaAndAssetCtxs"));
 
             rules.push(CacheRule {
                 path: Some("/info".to_string()),
@@ -323,5 +323,61 @@ mod tests {
 
         let ttl = cache.should_cache_call(&chain, &call);
         assert_eq!(ttl, Some(60));
+    }
+
+    #[test]
+    fn test_should_cache_with_function_params() {
+        let mut config = create_test_config();
+        let mut aptos_rules = Vec::new();
+        let mut params = HashMap::new();
+        params.insert(
+            "function".to_string(),
+            serde_json::json!("0x1::delegation_pool::operator_commission_percentage"),
+        );
+
+        aptos_rules.push(CacheRule {
+            path: Some("/v1/view".to_string()),
+            method: Some("POST".to_string()),
+            rpc_method: None,
+            ttl_seconds: 3600,
+            params,
+        });
+
+        config.rules.insert("aptos".to_string(), aptos_rules);
+        let cache = MemoryCache::new(config);
+        let chain = Chain::Aptos;
+
+        let body1 = r#"{
+            "function": "0x1::delegation_pool::operator_commission_percentage",
+            "type_arguments": [],
+            "arguments": ["0xdb5247f859ce63dbe8940cf8773be722a60dcc594a8be9aca4b76abceb251b8e"]
+        }"#
+        .as_bytes()
+        .to_vec();
+
+        let ttl = cache.should_cache(&chain, "/v1/view", "POST", Some(body1.as_slice()));
+        assert_eq!(ttl, Some(3600));
+
+        let body2 = r#"{
+            "function": "0x1::delegation_pool::operator_commission_percentage",
+            "type_arguments": [],
+            "arguments": ["0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"]
+        }"#
+        .as_bytes()
+        .to_vec();
+
+        let ttl = cache.should_cache(&chain, "/v1/view", "POST", Some(body2.as_slice()));
+        assert_eq!(ttl, Some(3600));
+
+        let body3 = r#"{
+            "function": "0x1::other_module::other_function",
+            "type_arguments": [],
+            "arguments": ["0xdb5247f859ce63dbe8940cf8773be722a60dcc594a8be9aca4b76abceb251b8e"]
+        }"#
+        .as_bytes()
+        .to_vec();
+
+        let ttl = cache.should_cache(&chain, "/v1/view", "POST", Some(body3.as_slice()));
+        assert_eq!(ttl, None);
     }
 }

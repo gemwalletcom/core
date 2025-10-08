@@ -109,6 +109,13 @@ impl JsonRpcRequest {
             Self::Batch(calls) => calls.iter().collect(),
         }
     }
+
+    pub fn get_methods_list(&self) -> String {
+        match self {
+            Self::Single(call) => call.method.clone(),
+            Self::Batch(calls) => calls.iter().map(|c| c.method.as_str()).collect::<Vec<_>>().join(","),
+        }
+    }
 }
 
 impl RequestType {

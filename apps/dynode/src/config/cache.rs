@@ -18,7 +18,7 @@ pub struct CacheRule {
     pub rpc_method: Option<String>,
     pub ttl_seconds: u64,
     #[serde(default)]
-    pub params: HashMap<String, String>,
+    pub params: HashMap<String, Value>,
 }
 
 impl CacheRule {
@@ -39,12 +39,8 @@ impl CacheRule {
             return false;
         };
 
-        self.params.iter().all(|(key, expected)| {
-            object
-                .get(key)
-                .and_then(|value| value.as_str())
-                .map(|actual| actual == expected)
-                .unwrap_or(false)
-        })
+        self.params
+            .iter()
+            .all(|(key, expected)| object.get(key).map(|actual| actual == expected).unwrap_or(false))
     }
 }

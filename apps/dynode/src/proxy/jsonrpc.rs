@@ -25,7 +25,7 @@ impl JsonRpcHandler {
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         match rpc_request {
             JsonRpcRequest::Single(call) => Self::handle_single_request(call, request, cache, metrics, url, client).await,
-            JsonRpcRequest::Batch(calls) => Self::handle_batch_request(calls, request, metrics, url, client).await,
+            JsonRpcRequest::Batch(calls) => Self::handle_batch_request(rpc_request, calls, request, metrics, url, client).await,
         }
     }
 
@@ -92,6 +92,9 @@ impl JsonRpcHandler {
                     "Proxy response",
                     chain = request.chain.as_ref(),
                     host = request.host,
+                    method = request.method.as_str(),
+                    uri = request.path.as_str(),
+                    rpc_method = call.method.as_str(),
                     remote_host = url.url.host_str().unwrap_or_default(),
                     status = response_status,
                     latency = DurationMs(request.elapsed()),
@@ -102,6 +105,9 @@ impl JsonRpcHandler {
                     "Proxy response",
                     chain = request.chain.as_ref(),
                     host = request.host,
+                    method = request.method.as_str(),
+                    uri = request.path.as_str(),
+                    rpc_method = call.method.as_str(),
                     remote_host = url.url.host_str().unwrap_or_default(),
                     status = response_status,
                     latency = DurationMs(request.elapsed()),
@@ -116,6 +122,7 @@ impl JsonRpcHandler {
     }
 
     async fn handle_batch_request(
+        rpc_request: &JsonRpcRequest,
         calls: &[JsonRpcCall],
         request: &ProxyRequest,
         metrics: &Metrics,
@@ -140,10 +147,14 @@ impl JsonRpcHandler {
             );
         }
 
+        let rpc_methods = rpc_request.get_methods_list();
         info_with_fields!(
             "Proxy response",
             chain = request.chain.as_ref(),
             host = request.host,
+            method = request.method.as_str(),
+            uri = request.path.as_str(),
+            rpc_method = &rpc_methods,
             remote_host = url.url.host_str().unwrap_or_default(),
             status = response_status,
             latency = DurationMs(request.elapsed()),
