@@ -346,7 +346,7 @@ impl GemGateway {
             .get_positions(address)
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
-        Ok(positions.into())
+        Ok(positions)
     }
 
     pub async fn get_perpetuals_data(&self, chain: Chain) -> Result<Vec<GemPerpetualData>, GatewayError> {
@@ -357,7 +357,7 @@ impl GemGateway {
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
 
-        Ok(data.into_iter().map(|d| d.into()).collect())
+        Ok(data.into_iter().collect())
     }
 
     pub async fn get_candlesticks(&self, chain: Chain, symbol: String, period: String) -> Result<Vec<GemChartCandleStick>, GatewayError> {
@@ -369,7 +369,7 @@ impl GemGateway {
             .await
             .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
 
-        Ok(candlesticks.into_iter().map(|c| c.into()).collect())
+        Ok(candlesticks.into_iter().collect())
     }
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<GemAsset, GatewayError> {
