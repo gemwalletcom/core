@@ -1,8 +1,9 @@
 use super::permit2_data::Permit2Data;
 use crate::{
-    SwapperMode, SwapperProvider, SwapperProviderMode, SwapperQuoteAsset, SwapperSlippage, SwapperSwapStatus,
+    SwapperMode, SwapperProvider, SwapperProviderMode, SwapperQuoteAsset, SwapperSlippage,
     config::{DEFAULT_SLIPPAGE_BPS, ReferralFees},
 };
+pub use primitives::swap::SwapResult;
 use primitives::{AssetId, Chain, swap::ApprovalData};
 use std::fmt::Debug;
 
@@ -165,13 +166,4 @@ impl SwapperChainAsset {
 pub struct AssetList {
     pub chains: Vec<Chain>,
     pub asset_ids: Vec<AssetId>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct SwapResult {
-    pub status: SwapperSwapStatus,
-    pub from_chain: Chain,
-    pub from_tx_hash: String,
-    pub to_chain: Option<Chain>,
-    pub to_tx_hash: Option<String>,
 }

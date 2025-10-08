@@ -4,6 +4,8 @@ pub mod slippage;
 pub use approval::SwapQuoteData;
 pub use approval::*;
 pub use mode::*;
+pub mod result;
+pub use result::*;
 use serde::{Deserialize, Serialize};
 pub use slippage::*;
 use typeshare::typeshare;
