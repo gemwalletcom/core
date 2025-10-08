@@ -4,3 +4,8 @@ pub mod types;
 pub mod client;
 #[cfg(feature = "client")]
 pub use client::*;
+
+#[cfg(feature = "client")]
+pub mod rpc;
+#[cfg(feature = "client")]
+pub use rpc::{HttpMethod, RpcClient, RpcProvider, Target, X_CACHE_TTL};

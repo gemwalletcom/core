@@ -1,6 +1,6 @@
-pub type AlienTarget = gem_swapper::Target;
-pub type AlienHttpMethod = gem_swapper::HttpMethod;
-pub use gem_client::X_CACHE_TTL;
+pub type AlienTarget = swapper::Target;
+pub type AlienHttpMethod = swapper::HttpMethod;
+pub use gem_jsonrpc::X_CACHE_TTL;
 
 use std::collections::HashMap;
 

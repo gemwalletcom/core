@@ -1,10 +1,12 @@
-use alloy_primitives::{Address, Bytes, U256, hex};
+use alloy_primitives::{Address, Bytes, hex};
 use gem_client::Client;
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use gem_jsonrpc::types::{ERROR_INTERNAL_ERROR, JsonRpcError, JsonRpcResult};
 
+use num_bigint::{BigInt, Sign};
 use serde::de::DeserializeOwned;
 use serde_json::json;
+use serde_serializers::biguint_from_hex_str;
 use std::any::TypeId;
 use std::str::FromStr;
 
@@ -12,16 +14,13 @@ use super::{
     ankr::AnkrClient,
     model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace},
 };
+use crate::jsonrpc::TransactionObject;
 use crate::models::fee::EthereumFeeHistory;
 #[cfg(feature = "rpc")]
 use crate::multicall3::{
     IMulticall3,
     IMulticall3::{Call3, Result as MulticallResult},
     deployment_by_chain,
-};
-use crate::{
-    jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
-    parse_u256,
 };
 #[cfg(feature = "rpc")]
 use alloy_sol_types::SolCall;
@@ -191,20 +190,23 @@ impl<C: Client + Clone> EthereumClient<C> {
         self.client.call("eth_getBalance", params).await
     }
 
-    pub async fn gas_price(&self) -> Result<U256, JsonRpcError> {
-        let value: String = self.client.request(EthereumRpc::GasPrice).await?;
-        parse_u256(&value).ok_or(JsonRpcError {
+    pub async fn gas_price(&self) -> Result<BigInt, JsonRpcError> {
+        let value: String = self.client.call("eth_gasPrice", json!([])).await?;
+        let biguint = biguint_from_hex_str(&value).map_err(|_| JsonRpcError {
             code: ERROR_INTERNAL_ERROR,
             message: format!("Failed to parse gas price: {value}"),
-        })
+        })?;
+        Ok(BigInt::from_biguint(Sign::Plus, biguint))
     }
 
-    pub async fn estimate_gas_transaction(&self, tx: TransactionObject) -> Result<U256, JsonRpcError> {
-        let value: String = self.client.request(EthereumRpc::EstimateGas(tx, BlockParameter::Latest)).await?;
-        parse_u256(&value).ok_or(JsonRpcError {
+    pub async fn estimate_gas_transaction(&self, tx: TransactionObject) -> Result<BigInt, JsonRpcError> {
+        let params = json!([tx, "latest"]);
+        let value: String = self.client.call("eth_estimateGas", params).await?;
+        let biguint = biguint_from_hex_str(&value).map_err(|_| JsonRpcError {
             code: ERROR_INTERNAL_ERROR,
             message: "Failed to parse gas limit".into(),
-        })
+        })?;
+        Ok(BigInt::from_biguint(Sign::Plus, biguint))
     }
 
     pub async fn get_chain_id(&self) -> Result<String, JsonRpcError> {

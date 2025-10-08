@@ -1,4 +1,4 @@
-pub type AlienError = gem_swapper::AlienError;
+pub type AlienError = swapper::AlienError;
 
 #[uniffi::remote(Enum)]
 pub enum AlienError {

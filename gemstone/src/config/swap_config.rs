@@ -1,5 +1,5 @@
-use gem_swapper::{SwapperSlippage, config as swap_config};
 use primitives::Chain;
+use swapper::{SwapperSlippage, config as swap_config};
 
 pub use swap_config::get_swap_config;
 pub use swap_config::{Config as SwapConfig, ReferralFee as SwapReferralFee, ReferralFees as SwapReferralFees};

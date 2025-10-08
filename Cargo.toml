@@ -43,7 +43,7 @@ members = [
     "crates/number_formatter",
     "crates/pricer_dex",
     "crates/streamer",
-    "crates/gem_swapper",
+    "crates/swapper",
     "crates/tracing",
 ]
 

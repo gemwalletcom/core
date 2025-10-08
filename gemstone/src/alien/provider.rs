@@ -1,7 +1,7 @@
 use super::{AlienError, AlienTarget};
 
 use async_trait::async_trait;
-use gem_client::RpcProvider as GenericRpcProvider;
+use gem_jsonrpc::RpcProvider as GenericRpcProvider;
 use primitives::Chain;
 use std::{fmt::Debug, sync::Arc};
 

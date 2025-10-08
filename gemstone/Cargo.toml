@@ -14,11 +14,11 @@ name = "gemstone"
 
 [features]
 default = []
-reqwest_provider = ["dep:reqwest", "gem_swapper/reqwest_provider"]
+reqwest_provider = ["dep:reqwest", "swapper/reqwest_provider"]
 swap_integration_tests = ["reqwest_provider"]
 
 [dependencies]
-gem_swapper = { path = "../crates/gem_swapper" }
+swapper = { path = "../crates/swapper" }
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
 gem_solana = { path = "../crates/gem_solana", features = ["rpc"] }

@@ -4,8 +4,6 @@ mod types;
 #[cfg(feature = "reqwest")]
 mod reqwest_client;
 
-pub mod rpc;
-
 #[cfg(feature = "reqwest")]
 pub mod retry;
 
@@ -17,7 +15,6 @@ pub mod query;
 pub use content_type::{ContentType, CONTENT_TYPE};
 pub use query::build_path_with_query;
 pub use types::ClientError;
-pub use rpc::{HttpMethod, RpcClient, RpcProvider, Target, X_CACHE_TTL};
 
 #[cfg(feature = "reqwest")]
 pub use reqwest_client::ReqwestClient;

@@ -5,11 +5,6 @@ use std::time::Duration;
 #[cfg(feature = "reqwest")]
 use tokio::time::sleep;
 
-/// Create a retry policy for API requests that handles common HTTP error scenarios
-///
-/// NOTE: This uses reqwest's built-in retry mechanism which does NOT implement exponential backoff.
-/// It will retry immediately without delays, which may not be suitable for rate limiting scenarios.
-/// For rate limiting with proper backoff, use the `retry()` function instead.
 pub fn retry_policy<S>(host: S, max_retries: u32) -> retry::Builder
 where
     S: for<'a> PartialEq<&'a str> + Send + Sync + 'static,
@@ -27,46 +22,6 @@ where
     })
 }
 
-/// Retry policy with exponential backoff for rate limiting and transient errors
-///
-/// This function provides proper exponential backoff (2^attempt seconds) for handling
-/// HTTP errors and other transient failures. Uses async sleep when reqwest
-/// feature is enabled, otherwise falls back to blocking sleep.
-///
-/// # Arguments
-/// * `operation` - A closure that returns a Future to be retried
-/// * `max_retries` - Maximum number of retry attempts
-/// * `should_retry_fn` - Optional predicate function to determine if error should trigger retry
-///   If None, defaults to clearly transient errors (429, 502, 503, 504, throttling)
-///
-/// # Example
-/// ```no_run
-/// use gem_client::retry::{retry, default_should_retry};
-///
-/// #[tokio::main]
-/// async fn main() {
-///     // Retry on clearly transient errors (429, 502, 503, 504, throttling) - default behavior
-///     let result = retry(
-///         || async { Ok::<(), String>(()) },
-///         3,
-///         None
-///     ).await;
-///
-///     // Custom retry logic
-///     let result = retry(
-///         || async { Ok::<(), String>(()) },
-///         3,
-///         Some(|error: &String| error.contains("429"))
-///     ).await;
-///
-///     // Use explicit predefined function
-///     let result = retry(
-///         || async { Ok::<(), String>(()) },
-///         3,
-///         Some(default_should_retry)
-///     ).await;
-/// }
-/// ```
 pub async fn retry<T, E, F, Fut, P>(operation: F, max_retries: u32, should_retry_fn: Option<P>) -> Result<T, E>
 where
     F: Fn() -> Fut,

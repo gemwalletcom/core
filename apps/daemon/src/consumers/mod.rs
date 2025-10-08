@@ -146,7 +146,8 @@ pub async fn run_consumer_fetch_nft_associations(settings: Settings, database: A
     let nft_client = NFTClient::new(&settings.postgres.url, nft_config).await;
     let nft_client = Arc::new(Mutex::new(nft_client));
     let consumer = FetchNftAssetsAddressesConsumer::new(database.clone(), stream_producer, cacher, nft_client);
-    streamer::run_consumer::<ChainAddressPayload, FetchNftAssetsAddressesConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
+    streamer::run_consumer::<ChainAddressPayload, FetchNftAssetsAddressesConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default())
+        .await
 }
 
 pub async fn run_consumer_support(settings: Settings, _database: Arc<Mutex<DatabaseClient>>) -> Result<(), Box<dyn Error + Send + Sync>> {

@@ -1,7 +1,7 @@
-use super::provider::AlienProviderWrapper;
 use super::AlienProvider;
-use gem_swapper::{RpcClient, RpcProvider};
+use super::provider::AlienProviderWrapper;
 use std::sync::Arc;
+use swapper::{RpcClient, RpcProvider};
 
 pub type AlienClient = RpcClient;
 
