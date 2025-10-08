@@ -321,8 +321,6 @@ where
             .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
         let gas_budget = GasBudgetCalculator::gas_budget(&inspect_result.effects.gas_used);
 
-        tracing::debug!("gas_budget: {:?}", gas_budget);
-
         let coin_refs = all_coin_assets
             .iter()
             .filter(|x| x.coin_type == SUI_COIN_TYPE_FULL)

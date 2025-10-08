@@ -38,6 +38,7 @@ use gem_evm::{
 };
 use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, EVMChain, swap::ApprovalData, swap::SwapStatus};
+use serde_serializers::biguint_from_hex_str;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
@@ -95,8 +96,15 @@ impl Across {
     }
 
     async fn estimate_gas_transaction(&self, chain: Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
-        let gas_limit = create_eth_client(self.rpc_provider.clone(), chain)?.estimate_gas_transaction(tx).await?;
-        Self::bigint_to_u256(&gas_limit)
+        let client = create_eth_client(self.rpc_provider.clone(), chain)?;
+        let gas_hex = client
+            .estimate_gas(tx.from.as_deref(), &tx.to, tx.value.as_deref(), Some(tx.data.as_str()))
+            .await
+            .map_err(SwapperError::from)?;
+
+        let gas_biguint = biguint_from_hex_str(&gas_hex).map_err(|e| SwapperError::NetworkError(format!("Failed to parse gas estimate: {e}")))?;
+        let gas_bigint = BigInt::from_biguint(Sign::Plus, gas_biguint);
+        Self::bigint_to_u256(&gas_bigint)
     }
 
     /// Return (message, referral_fee)
@@ -380,13 +388,11 @@ impl Swapper for Across {
         let lpfee_calc = LpFeeCalculator::new(rate_model);
         let lpfee_percent = lpfee_calc.realized_lp_fee_pct(&util_before, &util_after, false);
         let lpfee = fees::multiply(from_amount, lpfee_percent, cost_config.decimals);
-        tracing::debug!("lpfee: {}", lpfee);
 
         // Calculate relayer fee
         let relayer_calc = RelayerFeeCalculator::default();
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
-        tracing::debug!("relayer_fee: {}", relayer_fee);
 
         let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
 
@@ -413,7 +419,6 @@ impl Swapper for Across {
             let eth_price = ChainlinkPriceFeed::decoded_answer(&multicall_results[3])?;
             gas_fee = Self::calculate_fee_in_token(&gas_fee, &eth_price, 6);
         }
-        tracing::debug!("gas_fee: {}", gas_fee);
 
         // Check if bridge amount is too small
         if remain_amount < gas_fee {
@@ -504,7 +509,6 @@ impl Swapper for Across {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
             let tx = TransactionObject::new_call_to_value(&to, &hex_value, deposit_v3_call.clone());
             let _gas_limit = self.estimate_gas_transaction(from_chain, tx).await?;
-            tracing::debug!("gas_limit: {:?}", _gas_limit);
             gas_limit = Some(_gas_limit.to_string());
         }
 

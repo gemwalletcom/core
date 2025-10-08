@@ -14,7 +14,6 @@ use super::{
     ankr::AnkrClient,
     model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace},
 };
-use crate::jsonrpc::TransactionObject;
 use crate::models::fee::EthereumFeeHistory;
 #[cfg(feature = "rpc")]
 use crate::multicall3::{
@@ -199,16 +198,6 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(BigInt::from_biguint(Sign::Plus, biguint))
     }
 
-    pub async fn estimate_gas_transaction(&self, tx: TransactionObject) -> Result<BigInt, JsonRpcError> {
-        let params = json!([tx, "latest"]);
-        let value: String = self.client.call("eth_estimateGas", params).await?;
-        let biguint = biguint_from_hex_str(&value).map_err(|_| JsonRpcError {
-            code: ERROR_INTERNAL_ERROR,
-            message: "Failed to parse gas limit".into(),
-        })?;
-        Ok(BigInt::from_biguint(Sign::Plus, biguint))
-    }
-
     pub async fn get_chain_id(&self) -> Result<String, JsonRpcError> {
         self.client.call("eth_chainId", json!([])).await
     }
@@ -258,11 +247,14 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(self.client.batch_call::<String>(calls).await?.extract())
     }
 
-    pub async fn estimate_gas(&self, from: &str, to: &str, value: Option<&str>, data: Option<&str>) -> Result<String, JsonRpcError> {
+    pub async fn estimate_gas(&self, from: Option<&str>, to: &str, value: Option<&str>, data: Option<&str>) -> Result<String, JsonRpcError> {
         let mut params_obj = json!({
-            "from": from,
             "to": to
         });
+
+        if let Some(from) = from {
+            params_obj["from"] = json!(from);
+        }
 
         if let Some(value) = value {
             params_obj["value"] = json!(value);
