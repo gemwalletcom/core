@@ -111,7 +111,7 @@ pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &Re
                     DelegationState::Deactivating,
                     stake.inactive,
                     &pool_address,
-                    next_epoch,
+                    withdrawal_completion,
                 ));
             }
 
@@ -213,7 +213,14 @@ mod tests {
 
     #[test]
     fn test_map_delegations_inactive() {
-        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 200, 0, 0))], &mock_reconfig(1000000), &mock_config());
+        let now_micros = Utc::now().timestamp_micros() as u64;
+        let recent_reconfig_micros = now_micros - (100_000 * 1_000_000);
+
+        let delegations = map_delegations(
+            vec![("pool".to_string(), mock_stake(0, 200, 0, 0))],
+            &mock_reconfig(recent_reconfig_micros),
+            &mock_config(),
+        );
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Deactivating);
