@@ -2728,6 +2728,7 @@ name = "gem_aptos"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "chain_primitives",
  "chain_traits",
  "chrono",
  "futures",
