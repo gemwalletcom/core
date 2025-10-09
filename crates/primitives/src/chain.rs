@@ -361,18 +361,12 @@ impl Chain {
             | Self::Berachain
             | Self::Plasma
             | Self::Tron
-            | Self::Stellar => true,
-        Self::Osmosis
-            | Self::Celestia
-            | Self::Injective
-            | Self::Sei
-            | Self::Noble
+            | Self::Stellar
             | Self::Near
-            | Self::Algorand
-            | Self::Polkadot
-            | Self::Cardano => false,
+            | Self::Cardano => true,
+            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot => false,
+        }
     }
-}
 
     pub fn is_stake_supported(&self) -> bool {
         StakeChain::from_str(self.as_ref()).is_ok()
