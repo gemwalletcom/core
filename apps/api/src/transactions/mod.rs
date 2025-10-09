@@ -39,6 +39,6 @@ pub async fn get_transactions_by_device_id_v2(
 }
 
 #[get("/transactions/<id>")]
-pub async fn get_transactions_by_id(id: &str, client: &State<Mutex<TransactionsClient>>) -> Result<ApiResponse<Vec<Transaction>>, ApiError> {
-    Ok(client.lock().await.get_transactions_by_id(id)?.into())
+pub async fn get_transaction_by_id(id: &str, client: &State<Mutex<TransactionsClient>>) -> Result<ApiResponse<Transaction>, ApiError> {
+    Ok(client.lock().await.get_transaction_by_id(id)?.into())
 }
