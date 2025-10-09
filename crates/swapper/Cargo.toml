@@ -44,6 +44,7 @@ serde.workspace = true
 serde_json.workspace = true
 serde_urlencoded.workspace = true
 async-trait.workspace = true
+chrono.workspace = true
 alloy-primitives.workspace = true
 alloy-sol-types.workspace = true
 hex.workspace = true

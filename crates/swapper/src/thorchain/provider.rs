@@ -235,7 +235,7 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{alien::reqwest_provider::NativeProvider, testkit::mock_quote};
+    use crate::{SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, testkit::mock_quote};
     use std::sync::Arc;
 
     #[tokio::test]
@@ -243,7 +243,9 @@ mod swap_integration_tests {
         let provider = Arc::new(NativeProvider::default());
         let swapper = ThorChain::new(provider.clone());
 
-        let request = mock_quote(Chain::Tron.as_asset_id(), Chain::SmartChain.as_asset_id());
+        let from_asset = SwapperQuoteAsset::from(Chain::Tron.as_asset_id());
+        let to_asset = SwapperQuoteAsset::from(Chain::SmartChain.as_asset_id());
+        let request = mock_quote(from_asset, to_asset);
 
         let quote = swapper.fetch_quote(&request).await?;
 

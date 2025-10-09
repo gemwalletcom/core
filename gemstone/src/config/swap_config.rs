@@ -22,6 +22,7 @@ pub struct SwapReferralFees {
     pub sui: SwapReferralFee,
     pub ton: SwapReferralFee,
     pub tron: SwapReferralFee,
+    pub near: SwapReferralFee,
 }
 
 #[uniffi::remote(Record)]

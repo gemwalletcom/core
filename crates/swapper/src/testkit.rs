@@ -1,15 +1,13 @@
-use crate::{
-    SwapperSlippage, SwapperSlippageMode,
-    config::{ReferralFee, ReferralFees},
-};
+use crate::{SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, config::get_swap_config};
 
 use super::{Options, QuoteRequest, SwapperMode};
-use primitives::AssetId;
 
-pub fn mock_quote(from_asset: AssetId, to_asset: AssetId) -> QuoteRequest {
+pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) -> QuoteRequest {
+    let config = get_swap_config();
+
     QuoteRequest {
-        from_asset: from_asset.into(),
-        to_asset: to_asset.into(),
+        from_asset,
+        to_asset,
         wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
         destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
         value: "1000000".into(),
@@ -17,38 +15,9 @@ pub fn mock_quote(from_asset: AssetId, to_asset: AssetId) -> QuoteRequest {
         options: Options {
             slippage: SwapperSlippage {
                 mode: SwapperSlippageMode::Auto,
-                bps: 100,
+                bps: 50,
             },
-            fee: Some(ReferralFees {
-                evm: ReferralFee {
-                    address: "g1".into(),
-                    bps: 100,
-                },
-                evm_bridge: ReferralFee {
-                    address: "g1".into(),
-                    bps: 100,
-                },
-                solana: ReferralFee {
-                    address: "g1".into(),
-                    bps: 100,
-                },
-                thorchain: ReferralFee {
-                    address: "g1".into(),
-                    bps: 100,
-                },
-                sui: ReferralFee {
-                    address: "g1".into(),
-                    bps: 100,
-                },
-                ton: ReferralFee {
-                    address: "g1".into(),
-                    bps: 100,
-                },
-                tron: ReferralFee {
-                    address: "g1".into(),
-                    bps: 100,
-                },
-            }),
+            fee: Some(config.referral_fee.clone()),
             preferred_providers: vec![],
         },
     }
