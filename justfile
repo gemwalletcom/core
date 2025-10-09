@@ -54,7 +54,7 @@ build-integration-tests:
     cargo test --no-run --test integration_test --package gem_evm --features rpc,reqwest
     cargo test --no-run --test integration_test --package security_provider
     cargo test --no-run --test integration_test --package name_resolver
-    cargo test --no-run --test integration_test --package swapper --features swap_integration_tests
+    cargo test --no-run --package swapper --features swap_integration_tests --all-targets
 
 format:
     cargo fmt -q --all
