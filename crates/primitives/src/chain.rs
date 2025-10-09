@@ -360,19 +360,19 @@ impl Chain {
             | Self::Xrp
             | Self::Berachain
             | Self::Plasma
-            | Self::Tron => true,
-            Self::Osmosis
+            | Self::Tron
+            | Self::Stellar => true,
+        Self::Osmosis
             | Self::Celestia
             | Self::Injective
             | Self::Sei
             | Self::Noble
             | Self::Near
-            | Self::Stellar
             | Self::Algorand
             | Self::Polkadot
             | Self::Cardano => false,
-        }
     }
+}
 
     pub fn is_stake_supported(&self) -> bool {
         StakeChain::from_str(self.as_ref()).is_ok()

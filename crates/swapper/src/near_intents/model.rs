@@ -7,14 +7,14 @@ pub const DEFAULT_WAIT_TIME_MS: u32 = 1_000;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NearIntentsAppFee {
+pub struct AppFee {
     pub recipient: String,
     pub fee: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NearIntentsQuoteRequest {
+pub struct QuoteRequest {
     pub origin_asset: String,
     pub destination_asset: String,
     pub amount: String,
@@ -25,7 +25,7 @@ pub struct NearIntentsQuoteRequest {
     #[serde(default = "default_slippage_tolerance")]
     pub slippage_tolerance: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub app_fees: Option<Vec<NearIntentsAppFee>>,
+    pub app_fees: Option<Vec<AppFee>>,
     #[serde(default = "default_deposit_type")]
     pub deposit_type: String,
     #[serde(default)]
@@ -40,6 +40,8 @@ pub struct NearIntentsQuoteRequest {
     pub quote_waiting_time_ms: u32,
     #[serde(default)]
     pub dry: bool,
+    #[serde(default)]
+    pub deposit_mode: DepositMode,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,18 +51,33 @@ pub enum SwapType {
     FlexInput,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NearIntentsQuoteResponse {
-    pub quote_request: NearIntentsQuoteRequest,
-    pub quote: NearIntentsQuote,
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DepositMode {
+    Simple,
+    Memo,
+}
+
+impl Default for DepositMode {
+    fn default() -> Self {
+        DepositMode::Simple
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NearIntentsQuote {
+pub struct QuoteResponse {
+    pub quote_request: QuoteRequest,
+    pub quote: Quote,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Quote {
     pub deposit_address: Option<String>,
     pub deposit_memo: Option<String>,
+    #[serde(default)]
+    pub deposit_mode: Option<DepositMode>,
     pub amount_in: String,
     pub amount_in_formatted: String,
     pub min_amount_in: String,
@@ -80,19 +97,19 @@ pub struct NearIntentsQuote {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NearIntentsExecutionStatus {
+pub struct ExecutionStatus {
     #[serde(default)]
-    pub quote_response: Option<NearIntentsQuoteResponse>,
+    pub quote_response: Option<QuoteResponse>,
     pub status: String,
     #[serde(default)]
     pub updated_at: String,
     #[serde(default)]
-    pub swap_details: Option<NearIntentsSwapDetails>,
+    pub swap_details: Option<SwapDetails>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct NearIntentsSwapDetails {
+pub struct SwapDetails {
     #[serde(default)]
     pub intent_hashes: Vec<String>,
     #[serde(default)]
@@ -108,9 +125,9 @@ pub struct NearIntentsSwapDetails {
     #[serde(default)]
     pub slippage: Option<u32>,
     #[serde(default)]
-    pub origin_chain_tx_hashes: Vec<NearIntentsTransactionDetails>,
+    pub origin_chain_tx_hashes: Vec<TransactionDetails>,
     #[serde(default)]
-    pub destination_chain_tx_hashes: Vec<NearIntentsTransactionDetails>,
+    pub destination_chain_tx_hashes: Vec<TransactionDetails>,
     #[serde(default)]
     pub refunded_amount: Option<String>,
     #[serde(default)]
@@ -119,7 +136,7 @@ pub struct NearIntentsSwapDetails {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NearIntentsTransactionDetails {
+pub struct TransactionDetails {
     pub hash: String,
     #[serde(default)]
     pub explorer_url: Option<String>,

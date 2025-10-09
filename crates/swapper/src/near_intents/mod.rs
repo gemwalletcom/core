@@ -7,4 +7,4 @@ pub use provider::NearIntents;
 
 pub(crate) use assets::{asset_id_from_near_intents, get_near_intents_asset_id, supported_assets};
 pub(crate) use client::NearIntentsClient;
-pub(crate) use model::{NearIntentsAppFee, NearIntentsExecutionStatus, NearIntentsQuoteRequest, NearIntentsQuoteResponse, SwapType};
+pub(crate) use model::{AppFee, DepositMode, ExecutionStatus, QuoteRequest, QuoteResponse, SwapType};

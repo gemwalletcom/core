@@ -1,10 +1,12 @@
 use super::{
-    NearIntentsAppFee, NearIntentsClient, NearIntentsExecutionStatus, NearIntentsQuoteRequest, NearIntentsQuoteResponse, SwapType, asset_id_from_near_intents,
-    get_near_intents_asset_id, model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION}, supported_assets,
+    AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, SwapType, asset_id_from_near_intents,
+    get_near_intents_asset_id,
+    model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
+    supported_assets,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
-    SwapperMode, SwapperProvider, SwapperQuoteData, SwapperSlippage, near_intents::client::DEFAULT_NEAR_INTENTS_BASE_URL,
+    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage, near_intents::client::DEFAULT_NEAR_INTENTS_BASE_URL,
 };
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
@@ -28,6 +30,10 @@ impl NearIntents<RpcClient> {
         let client = NearIntentsClient::new(RpcClient::new(DEFAULT_NEAR_INTENTS_BASE_URL.to_string(), rpc_provider), None);
         Self::with_internal_client(client)
     }
+
+    pub fn boxed(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn crate::swapper_trait::Swapper> {
+        Box::new(Self::new(rpc_provider))
+    }
 }
 
 impl<C> NearIntents<C>
@@ -46,7 +52,7 @@ where
         slippage.bps as f64 / 100.0
     }
 
-    fn build_app_fee(options: &QuoteRequest) -> Option<Vec<NearIntentsAppFee>> {
+    fn build_app_fee(options: &QuoteRequest) -> Option<Vec<AppFee>> {
         let fee = options.options.fee.as_ref()?;
 
         let referral = if !fee.near.address.is_empty() && fee.near.bps > 0 {
@@ -56,24 +62,25 @@ where
         };
 
         referral.map(|(address, bps)| {
-            vec![NearIntentsAppFee {
+            vec![AppFee {
                 recipient: address.clone(),
                 fee: bps,
             }]
         })
     }
 
-    fn build_quote_request(&self, request: &QuoteRequest, mode: SwapType, dry: bool) -> Result<NearIntentsQuoteRequest, SwapperError> {
+    fn build_quote_request(&self, request: &QuoteRequest, mode: SwapType, dry: bool) -> Result<NearQuoteRequest, SwapperError> {
         let origin_asset = get_near_intents_asset_id(&request.from_asset)?;
         let destination_asset = get_near_intents_asset_id(&request.to_asset)?;
         let amount = match mode {
             SwapType::ExactInput => request.value.clone(),
             SwapType::FlexInput => request.value.clone(),
         };
+        let deposit_mode = Self::resolve_deposit_mode(&request.from_asset);
 
         let deadline = (Utc::now() + Duration::minutes(DEFAULT_DEADLINE_MINUTES)).to_rfc3339();
 
-        Ok(NearIntentsQuoteRequest {
+        Ok(NearQuoteRequest {
             origin_asset,
             destination_asset,
             amount,
@@ -89,6 +96,7 @@ where
             deadline,
             quote_waiting_time_ms: DEFAULT_WAIT_TIME_MS,
             dry,
+            deposit_mode,
         })
     }
 
@@ -110,12 +118,19 @@ where
         }
     }
 
-    fn resolve_destination_chain(result: &NearIntentsExecutionStatus) -> Option<Chain> {
+    fn resolve_destination_chain(result: &ExecutionStatus) -> Option<Chain> {
         result
             .quote_response
             .as_ref()
             .and_then(|response| asset_id_from_near_intents(&response.quote_request.destination_asset))
             .map(|asset| asset.chain)
+    }
+
+    fn resolve_deposit_mode(asset: &SwapperQuoteAsset) -> DepositMode {
+        match asset.asset_id().chain {
+            Chain::Stellar => DepositMode::Memo,
+            _ => DepositMode::Simple,
+        }
     }
 }
 
@@ -165,16 +180,23 @@ where
 
     async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
-        let mut quote_request: NearIntentsQuoteRequest = serde_json::from_str(&route.route_data)?;
+        let mut quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
         quote_request.dry = false;
 
-        let response: NearIntentsQuoteResponse = self.client.fetch_quote(&quote_request).await?;
-        let deposit_address = response
-            .quote
+        let response: QuoteResponse = self.client.fetch_quote(&quote_request).await?;
+        let QuoteResponse { quote_request: _, quote } = response;
+
+        let deposit_address = quote
             .deposit_address
             .ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositAddress in Near Intents response".into()))?;
-        let amount_in = Self::parse_amount(&response.quote.amount_in, "amountIn")?;
-        let data = response.quote.deposit_memo.unwrap_or_default();
+        let amount_in = Self::parse_amount(&quote.amount_in, "amountIn")?;
+        let deposit_mode = quote.deposit_mode.unwrap_or_default();
+        let data = match deposit_mode {
+            DepositMode::Memo => quote
+                .deposit_memo
+                .ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositMemo for MEMO deposit mode".into()))?,
+            DepositMode::Simple => String::new(),
+        };
 
         Ok(SwapperQuoteData {
             to: deposit_address,
@@ -254,6 +276,46 @@ mod swap_integration_tests {
 
         let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
         assert!(!quote_data.to.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_near_intents_stellar_requires_memo() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
+        let provider = NearIntents::new(rpc_provider);
+
+        let options = Options {
+            slippage: SwapperSlippage {
+                bps: 100,
+                mode: SwapperSlippageMode::Exact,
+            },
+            fee: None,
+            preferred_providers: vec![],
+        };
+
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Stellar)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near)),
+            wallet_address: "GBZXN7PIRZGNMHGA3RSSOEV56YXG54FSNTJDGQI3GHDVBKSXRZ5B6KJT".to_string(),
+            destination_address: "test.near".to_string(),
+            value: "1000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options,
+        };
+
+        let quote = match provider.fetch_quote(&request).await {
+            Ok(quote) => quote,
+            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(error) => return Err(error),
+        };
+        let quote_data = match provider.fetch_quote_data(&quote, FetchQuoteData::None).await {
+            Ok(data) => data,
+            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(error) => return Err(error),
+        };
+
+        assert!(!quote_data.data.is_empty(), "expected deposit memo for Stellar swaps via Near Intents");
 
         Ok(())
     }

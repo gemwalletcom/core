@@ -2,7 +2,7 @@ use crate::SwapperError;
 use gem_client::{Client, ClientError};
 use std::{collections::HashMap, fmt::Debug};
 
-use super::model::{NearIntentsExecutionStatus, NearIntentsQuoteRequest, NearIntentsQuoteResponse};
+use super::model::{ExecutionStatus, QuoteRequest, QuoteResponse};
 
 pub const DEFAULT_NEAR_INTENTS_BASE_URL: &str = "https://1click.chaindefuser.com";
 
@@ -29,16 +29,16 @@ where
             .map(|token| HashMap::from([(String::from("Authorization"), format!("Bearer {token}"))]))
     }
 
-    pub async fn fetch_quote(&self, request: &NearIntentsQuoteRequest) -> Result<NearIntentsQuoteResponse, SwapperError> {
+    pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<QuoteResponse, SwapperError> {
         self.client.post("/v0/quote", request, self.build_headers()).await.map_err(SwapperError::from)
     }
 
-    pub async fn get_transaction_status(&self, deposit_address: &str) -> Result<NearIntentsExecutionStatus, SwapperError> {
+    pub async fn get_transaction_status(&self, deposit_address: &str) -> Result<ExecutionStatus, SwapperError> {
         let path = format!("/v0/status?depositAddress={deposit_address}");
 
-        match self.client.get_with_headers::<NearIntentsExecutionStatus>(&path, self.build_headers()).await {
+        match self.client.get_with_headers::<ExecutionStatus>(&path, self.build_headers()).await {
             Ok(result) => Ok(result),
-            Err(ClientError::Http { status: 404, .. }) => Ok(NearIntentsExecutionStatus {
+            Err(ClientError::Http { status: 404, .. }) => Ok(ExecutionStatus {
                 quote_response: None,
                 status: "UNKNOWN".into(),
                 updated_at: String::new(),
