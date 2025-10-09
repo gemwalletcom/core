@@ -45,6 +45,9 @@ pub const NEAR_INTENTS_CARDANO_NATIVE: &str = "nep141:cardano.omft.near";
 pub const NEAR_INTENTS_BERA_NATIVE: &str = "nep141:bera.omft.near";
 pub const NEAR_INTENTS_GNOSIS_NATIVE: &str = "nep141:gnosis.omft.near";
 pub const NEAR_INTENTS_GNOSIS_USDC: &str = "nep141:gnosis-0x2a22f9c3b484c3629090feed35f17ff8f88f76f0.omft.near";
+pub const NEAR_INTENTS_APT_NATIVE: &str = "nep141:aptos.omft.near";
+pub const NEAR_INTENTS_ZEC_NATIVE: &str = "nep141:zec.omft.near";
+pub const NEAR_INTENTS_STELLAR_NATIVE: &str = "nep245:v2_1.omni.hot.tg:1100_111bzQBB5v7AhLyPMDwS8uJgQV24KaAPXtwyVWu2KXbbfQU6NXRCz";
 
 type AssetsMap = HashMap<String, &'static str>;
 
@@ -148,6 +151,8 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
     map.insert(Chain::Xrp, HashMap::from([("xrp".to_string(), NEAR_INTENTS_XRP_NATIVE)]));
     map.insert(Chain::Cardano, HashMap::from([("cardano".to_string(), NEAR_INTENTS_CARDANO_NATIVE)]));
     map.insert(Chain::Berachain, HashMap::from([("berachain".to_string(), NEAR_INTENTS_BERA_NATIVE)]));
+    map.insert(Chain::Aptos, HashMap::from([("aptos".to_string(), NEAR_INTENTS_APT_NATIVE)]));
+    map.insert(Chain::Zcash, HashMap::from([("zcash".to_string(), NEAR_INTENTS_ZEC_NATIVE)]));
 
     map.insert(
         Chain::Gnosis,
@@ -156,6 +161,8 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
             (asset_key(USDC_GNOSIS_ASSET_ID), NEAR_INTENTS_GNOSIS_USDC),
         ]),
     );
+
+    map.insert(Chain::Stellar, HashMap::from([("stellar".to_string(), NEAR_INTENTS_STELLAR_NATIVE)]));
 
     map
 });
