@@ -364,4 +364,32 @@ mod tests {
             }
         );
     }
+
+    #[tokio::test]
+    #[cfg(feature = "swap_integration_tests")]
+    async fn test_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use crate::alien::reqwest_provider::NativeProvider;
+        use primitives::swap::SwapStatus;
+
+        let network_provider = Arc::new(NativeProvider::default());
+        let swap_provider = ChainflipProvider::new(network_provider.clone());
+
+        // Swap ID: 902663
+        let tx_hash = "3sbA7vTDa8tmuokNeQxWJBPpxG3A1Vw5rhDxSm63w7hW31bo2nbci8CfLr27JsbhcebLwcJcwqbL8UP5aVCMFLGb";
+        let chain = Chain::Solana;
+
+        let result = swap_provider.get_swap_result(chain, tx_hash).await?;
+
+        println!("Chainflip swap result: {:?}", result);
+        assert_eq!(result.from_chain, chain);
+        assert_eq!(result.from_tx_hash, tx_hash);
+        assert_eq!(result.status, SwapStatus::Completed);
+        assert_eq!(result.to_chain, Some(Chain::Ethereum));
+        assert_eq!(
+            result.to_tx_hash,
+            Some("0xc142acf0170a2efc7756d9c7c2d27474527ffc4fed6b6c535ca407ffed559dc1".to_string())
+        );
+
+        Ok(())
+    }
 }

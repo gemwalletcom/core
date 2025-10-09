@@ -206,7 +206,7 @@ where
         let status = self.swap_client.get_transaction_status(transaction_hash).await?;
 
         let swap_status = status.observed_tx.swap_status();
-        let memo_parsed = ThorchainMemo::parse(&status.tx.memo);
+        let memo_parsed = ThorchainMemo::parse(&status.observed_tx.tx.memo);
         let destination_chain = memo_parsed.as_ref().and_then(|m| m.destination_chain());
 
         // Extract the first non-zero destination transaction hash from out_hashes
@@ -253,6 +253,32 @@ mod swap_integration_tests {
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         assert!(quote.eta_in_seconds.is_some());
         assert!(!quote.data.routes.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use primitives::swap::SwapStatus;
+
+        let provider = Arc::new(NativeProvider::default());
+        let swapper = ThorChain::new(provider.clone());
+
+        // Dogecoin deposit tx: 324c16cf014cceca1b2e1c078417f736c9833197735b71a4e875bbb3b07b2fe4
+        let tx_hash = "324c16cf014cceca1b2e1c078417f736c9833197735b71a4e875bbb3b07b2fe4";
+        let chain = Chain::Doge;
+
+        let result = swapper.get_swap_result(chain, tx_hash).await?;
+
+        println!("THORChain swap result: {:?}", result);
+        assert_eq!(result.from_chain, chain);
+        assert_eq!(result.from_tx_hash, tx_hash);
+        assert_eq!(result.status, SwapStatus::Completed);
+        assert_eq!(result.to_chain, Some(Chain::Ethereum));
+        assert_eq!(
+            result.to_tx_hash,
+            Some("DC56C32556D2E518F67594B6A5F5BCB777484C0C3CF8940F5CA2E1B2DDC182E9".to_string())
+        );
 
         Ok(())
     }

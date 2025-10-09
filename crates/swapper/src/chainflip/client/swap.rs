@@ -9,7 +9,7 @@ use serde_urlencoded;
 use std::fmt::Debug;
 
 const QUOTE_PATH: &str = "/v2/quote";
-const SWAP_PATH: &str = "/v2/swap";
+const SWAP_PATH: &str = "/v2/swaps";
 
 #[derive(Clone, Debug)]
 pub struct ChainflipClient<C>
