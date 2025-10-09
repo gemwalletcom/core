@@ -47,7 +47,7 @@ impl NodeService {
             hash_map.insert(key, NodeDomain { url });
         }
 
-        let http_client = gem_client::default_client_builder()
+        let http_client = gem_client::builder()
             .timeout(std::time::Duration::from_secs(request_config.timeout_seconds))
             .connect_timeout(std::time::Duration::from_secs(request_config.connect_timeout_seconds))
             .build()

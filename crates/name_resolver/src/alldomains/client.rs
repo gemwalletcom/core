@@ -29,8 +29,9 @@ pub struct AllDomainsClient {
 
 impl AllDomainsClient {
     pub fn new(url: String) -> Self {
+        let reqwest_client = gem_client::builder().build().expect("Failed to build reqwest client");
         Self {
-            client: JsonRpcClient::new(ReqwestClient::new(url, reqwest::Client::new())),
+            client: JsonRpcClient::new(ReqwestClient::new(url, reqwest_client)),
         }
     }
 

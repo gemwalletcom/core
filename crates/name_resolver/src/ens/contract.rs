@@ -26,7 +26,8 @@ pub struct Contract {
 
 impl Contract {
     pub fn new(rpc_url: &str, registry_address_hex: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
-        let client = JsonRpcClient::new(ReqwestClient::new(rpc_url.to_string(), reqwest::Client::new()));
+        let reqwest_client = gem_client::builder().build().expect("Failed to build reqwest client");
+        let client = JsonRpcClient::new(ReqwestClient::new(rpc_url.to_string(), reqwest_client));
         let registry_address = Address::from_str(registry_address_hex)?;
         Ok(Self { registry_address, client })
     }

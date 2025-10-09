@@ -23,7 +23,7 @@ pub use reqwest_client::ReqwestClient;
 pub use retry::{default_should_retry, retry, retry_policy};
 
 #[cfg(feature = "reqwest")]
-pub use client_config::default_client_builder;
+pub use client_config::builder;
 
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Serialize};

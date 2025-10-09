@@ -25,9 +25,8 @@ impl CoinGeckoClient<ReqwestClient> {
         if !api_key.is_empty() {
             headers.insert(COINGECKO_API_HEADER_KEY, HeaderValue::from_str(api_key).unwrap());
         }
-        let client_builder = reqwest::Client::builder().default_headers(headers);
+        let reqwest_client = gem_client::builder().default_headers(headers).build().unwrap();
 
-        let reqwest_client = client_builder.build().unwrap();
         let client = ReqwestClient::new(url, reqwest_client);
         Self { client }
     }

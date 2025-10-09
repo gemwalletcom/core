@@ -125,7 +125,7 @@ impl<C: Client + Clone> JsonRpcClient<C> {
 impl JsonRpcClient<gem_client::ReqwestClient> {
     pub fn new_reqwest(url: String) -> Self {
         use gem_client::ReqwestClient;
-        let reqwest_client = reqwest::Client::builder().build().expect("Failed to build reqwest client");
+        let reqwest_client = gem_client::builder().build().expect("Failed to build reqwest client");
         let client = ReqwestClient::new(url, reqwest_client);
         Self { client }
     }

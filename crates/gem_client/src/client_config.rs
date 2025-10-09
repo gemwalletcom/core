@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-pub fn default_client_builder() -> reqwest::ClientBuilder {
+pub fn builder() -> reqwest::ClientBuilder {
     reqwest::Client::builder()
         .timeout(Duration::from_secs(60))
         .connect_timeout(Duration::from_secs(15))

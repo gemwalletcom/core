@@ -66,7 +66,7 @@ impl VersionClient {
 
     async fn get_github_apk_version(&mut self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://api.github.com/repos/gemwalletcom/gem-android/releases";
-        let client = reqwest::Client::builder().user_agent("").build()?;
+        let client = reqwest::Client::new();
         let response = client.get(url).send().await?.json::<Vec<GitHubRepository>>().await?;
         let results = response
             .into_iter()

@@ -22,7 +22,8 @@ pub struct Basenames {
 
 impl Basenames {
     pub fn new(provider_url: String) -> Self {
-        let client = JsonRpcClient::new(ReqwestClient::new(provider_url, reqwest::Client::new()));
+        let reqwest_client = gem_client::builder().build().expect("Failed to build reqwest client");
+        let client = JsonRpcClient::new(ReqwestClient::new(provider_url, reqwest_client));
         let resolver_address = Address::from_str(L2_RESOLVER_ADDRESS).expect("Invalid resolver address");
         Self {
             client,

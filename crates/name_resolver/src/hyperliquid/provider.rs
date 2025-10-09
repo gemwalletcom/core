@@ -25,7 +25,8 @@ pub struct Hyperliquid {
 
 impl Hyperliquid {
     pub fn new(provider_url: String) -> Self {
-        let client = JsonRpcClient::new(ReqwestClient::new(provider_url, reqwest::Client::new()));
+        let reqwest_client = gem_client::builder().build().expect("Failed to build reqwest client");
+        let client = JsonRpcClient::new(ReqwestClient::new(provider_url, reqwest_client));
         let router_address = Address::from_str(ROUTER_ADDRESS).expect("Invalid Router address");
         let hyperliquid_names_address = Address::from_str(HYPERLIQUID_NAMES_ADDRESS).expect("Invalid Hyperliquid names address");
         Self {

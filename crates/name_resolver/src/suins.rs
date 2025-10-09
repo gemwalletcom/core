@@ -13,7 +13,8 @@ pub struct SuinsClient {
 
 impl SuinsClient {
     pub fn new(api_url: String) -> Self {
-        let client = JsonRpcClient::new(ReqwestClient::new(api_url, reqwest::Client::new()));
+        let reqwest_client = gem_client::builder().build().expect("Failed to build reqwest client");
+        let client = JsonRpcClient::new(ReqwestClient::new(api_url, reqwest_client));
         Self { client }
     }
 }

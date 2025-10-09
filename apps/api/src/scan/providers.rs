@@ -8,7 +8,7 @@ pub struct ScanProviderFactory {}
 
 impl ScanProviderFactory {
     pub fn create_providers(settings: &Settings) -> Vec<Box<dyn ScanProvider + Send + Sync>> {
-        let client = reqwest::Client::builder()
+        let client = gem_client::builder()
             .timeout(std::time::Duration::from_millis(settings.scan.timeout_ms))
             .build()
             .unwrap();

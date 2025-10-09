@@ -73,7 +73,7 @@ impl ProviderFactory {
             .unwrap_or_default();
 
         let retry_policy_config = retry_policy(host, 3);
-        let reqwest_client = gem_client::default_client_builder()
+        let reqwest_client = gem_client::builder()
             .retry(retry_policy_config)
             .build()
             .expect("Failed to build reqwest client");
