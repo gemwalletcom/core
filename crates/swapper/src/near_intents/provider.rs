@@ -1,6 +1,6 @@
 use super::{
     NearIntentsAppFee, NearIntentsClient, NearIntentsExecutionStatus, NearIntentsQuoteRequest, NearIntentsQuoteResponse, SwapType, asset_id_from_near_intents,
-    get_near_intents_asset_id, supported_assets,
+    get_near_intents_asset_id, model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION}, supported_assets,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
@@ -11,10 +11,7 @@ use chrono::{Duration, Utc};
 use primitives::{Chain, swap::SwapStatus};
 use std::{fmt::Debug, sync::Arc};
 
-const DEPOSIT_TYPE_ORIGIN: &str = "ORIGIN_CHAIN";
-const RECIPIENT_TYPE_DESTINATION: &str = "DESTINATION_CHAIN";
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
-const DEFAULT_WAIT_TIME_MS: u32 = 1_000;
 
 #[derive(Debug)]
 pub struct NearIntents<C>
@@ -45,15 +42,15 @@ where
         }
     }
 
-    fn build_slippage(slippage: &SwapperSlippage) -> Option<f64> {
-        if slippage.bps == 0 { None } else { Some(slippage.bps as f64 / 100.0) }
+    fn build_slippage(slippage: &SwapperSlippage) -> f64 {
+        slippage.bps as f64 / 100.0
     }
 
     fn build_app_fee(options: &QuoteRequest) -> Option<Vec<NearIntentsAppFee>> {
         let fee = options.options.fee.as_ref()?;
 
-        let referral = if !fee.evm.address.is_empty() && fee.evm.bps > 0 {
-            Some((&fee.evm.address, fee.evm.bps))
+        let referral = if !fee.near.address.is_empty() && fee.near.bps > 0 {
+            Some((&fee.near.address, fee.near.bps))
         } else {
             None
         };
@@ -80,17 +77,18 @@ where
             origin_asset,
             destination_asset,
             amount,
+            referral: DEFAULT_REFERRAL.to_string(),
             recipient: request.destination_address.clone(),
             swap_type: mode,
             slippage_tolerance: Self::build_slippage(&request.options.slippage),
             app_fees: Self::build_app_fee(request),
-            deposit_type: Some(DEPOSIT_TYPE_ORIGIN.to_string()),
-            refund_to: Some(request.wallet_address.clone()),
-            refund_type: Some(DEPOSIT_TYPE_ORIGIN.to_string()),
-            recipient_type: Some(RECIPIENT_TYPE_DESTINATION.to_string()),
-            deadline: Some(deadline),
-            quote_waiting_time_ms: Some(DEFAULT_WAIT_TIME_MS),
-            dry: Some(dry),
+            deposit_type: DEPOSIT_TYPE_ORIGIN.to_string(),
+            refund_to: request.wallet_address.clone(),
+            refund_type: DEPOSIT_TYPE_ORIGIN.to_string(),
+            recipient_type: RECIPIENT_TYPE_DESTINATION.to_string(),
+            deadline,
+            quote_waiting_time_ms: DEFAULT_WAIT_TIME_MS,
+            dry,
         })
     }
 
@@ -168,7 +166,7 @@ where
     async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let mut quote_request: NearIntentsQuoteRequest = serde_json::from_str(&route.route_data)?;
-        quote_request.dry = Some(false);
+        quote_request.dry = false;
 
         let response: NearIntentsQuoteResponse = self.client.fetch_quote(&quote_request).await?;
         let deposit_address = response

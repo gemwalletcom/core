@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+pub const DEFAULT_REFERRAL: &str = "gemwallet";
+pub const DEPOSIT_TYPE_ORIGIN: &str = "ORIGIN_CHAIN";
+pub const RECIPIENT_TYPE_DESTINATION: &str = "DESTINATION_CHAIN";
+pub const DEFAULT_WAIT_TIME_MS: u32 = 1_000;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NearIntentsAppFee {
@@ -13,26 +18,28 @@ pub struct NearIntentsQuoteRequest {
     pub origin_asset: String,
     pub destination_asset: String,
     pub amount: String,
+    #[serde(default = "default_referral")]
+    pub referral: String,
     pub recipient: String,
     pub swap_type: SwapType,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub slippage_tolerance: Option<f64>,
+    #[serde(default = "default_slippage_tolerance")]
+    pub slippage_tolerance: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_fees: Option<Vec<NearIntentsAppFee>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deposit_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub refund_to: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub refund_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub recipient_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deadline: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub quote_waiting_time_ms: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dry: Option<bool>,
+    #[serde(default = "default_deposit_type")]
+    pub deposit_type: String,
+    #[serde(default)]
+    pub refund_to: String,
+    #[serde(default = "default_refund_type")]
+    pub refund_type: String,
+    #[serde(default = "default_recipient_type")]
+    pub recipient_type: String,
+    #[serde(default)]
+    pub deadline: String,
+    #[serde(default = "default_quote_waiting_time_ms")]
+    pub quote_waiting_time_ms: u32,
+    #[serde(default)]
+    pub dry: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -116,4 +123,28 @@ pub struct NearIntentsTransactionDetails {
     pub hash: String,
     #[serde(default)]
     pub explorer_url: Option<String>,
+}
+
+fn default_referral() -> String {
+    DEFAULT_REFERRAL.to_string()
+}
+
+fn default_deposit_type() -> String {
+    DEPOSIT_TYPE_ORIGIN.to_string()
+}
+
+fn default_refund_type() -> String {
+    DEPOSIT_TYPE_ORIGIN.to_string()
+}
+
+fn default_recipient_type() -> String {
+    RECIPIENT_TYPE_DESTINATION.to_string()
+}
+
+fn default_slippage_tolerance() -> f64 {
+    0.0
+}
+
+fn default_quote_waiting_time_ms() -> u32 {
+    DEFAULT_WAIT_TIME_MS
 }
