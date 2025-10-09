@@ -23,7 +23,7 @@ pub struct QuoteRequest {
     pub recipient: String,
     pub swap_type: SwapType,
     #[serde(default = "default_slippage_tolerance")]
-    pub slippage_tolerance: f64,
+    pub slippage_tolerance: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_fees: Option<Vec<AppFee>>,
     #[serde(default = "default_deposit_type")]
@@ -153,8 +153,8 @@ fn default_recipient_type() -> String {
     RECIPIENT_TYPE_DESTINATION.to_string()
 }
 
-fn default_slippage_tolerance() -> f64 {
-    0.0
+fn default_slippage_tolerance() -> u32 {
+    0
 }
 
 fn default_quote_waiting_time_ms() -> u32 {

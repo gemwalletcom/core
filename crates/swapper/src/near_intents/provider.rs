@@ -87,7 +87,7 @@ where
             referral: DEFAULT_REFERRAL.to_string(),
             recipient: request.destination_address.clone(),
             swap_type: mode,
-            slippage_tolerance: Self::build_slippage(&request.options.slippage),
+            slippage_tolerance: request.options.slippage.bps,
             app_fees: Self::build_app_fee(request),
             deposit_type: DEPOSIT_TYPE_ORIGIN.to_string(),
             refund_to: request.wallet_address.clone(),
