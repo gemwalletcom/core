@@ -598,34 +598,83 @@ mod tests {
         assert_eq!(fee_in_token.to_string(), "6243790");
     }
 
-    #[tokio::test]
-    #[cfg(feature = "swap_integration_tests")]
-    async fn test_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use crate::alien::reqwest_provider::NativeProvider;
+    #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+    mod swap_integration_tests {
+        use super::*;
+        use crate::{
+            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode,
+            config::{ReferralFee, ReferralFees},
+        };
+        use primitives::{AssetId, Chain, swap::SwapStatus};
+        use std::{sync::Arc, time::SystemTime};
 
-        let network_provider = Arc::new(NativeProvider::default());
-        let swap_provider = Across::new(network_provider.clone());
+        #[tokio::test]
+        async fn test_across_quote() -> Result<(), SwapperError> {
+            let network_provider = Arc::new(NativeProvider::default());
+            let swap_provider = Across::boxed(network_provider.clone());
+            let mut options = Options {
+                slippage: 100.into(),
+                fee: Some(ReferralFees::evm(ReferralFee {
+                    bps: 25,
+                    address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
+                })),
+                preferred_providers: vec![],
+            };
+            options.fee.as_mut().unwrap().evm_bridge = ReferralFee {
+                bps: 25,
+                address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
+            };
 
-        // https://uniscan.xyz/tx/0x9827ca4bdd5dea3a310cff3485f87463987cdc52118077dba34f86ee79456952
-        // IMPORTANT: This transaction may not be available on the default Unichain RPC endpoint
-        // (https://mainnet.unichain.org). It works on https://unichain-rpc.publicnode.com
-        // The transaction receipt contains:
-        // - Log 1, Topic 2: deposit ID (0x86f4 = 34548)
-        let tx_hash = "0x9827ca4bdd5dea3a310cff3485f87463987cdc52118077dba34f86ee79456952";
-        let chain = Chain::Unichain;
+            let request = QuoteRequest {
+                from_asset: AssetId::from_chain(Chain::Optimism).into(),
+                to_asset: AssetId::from_chain(Chain::Arbitrum).into(),
+                wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+                destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+                value: "20000000000000000".into(), // 0.02 ETH
+                mode: SwapperMode::ExactIn,
+                options,
+            };
 
-        let result = swap_provider.get_swap_result(chain, tx_hash).await?;
+            let now = SystemTime::now();
+            let quote = swap_provider.fetch_quote(&request).await?;
+            let elapsed = SystemTime::now().duration_since(now).unwrap();
 
-        println!("Across swap result: {:?}", result);
-        assert_eq!(result.from_chain, chain);
-        assert_eq!(result.from_tx_hash, tx_hash);
-        assert_eq!(result.status, SwapStatus::Completed);
-        assert_eq!(result.to_chain, Some(Chain::Linea));
-        assert_eq!(
-            result.to_tx_hash,
-            Some("0xcba653515ab00f5b3ebc16eb4d099e29611e1e59b3fd8f2800cf2302d175f9fe".to_string())
-        );
+            println!("<== elapsed: {:?}", elapsed);
+            println!("<== quote: {:?}", quote);
+            assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-        Ok(())
+            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+            println!("<== quote_data: {:?}", quote_data);
+
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn test_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+            let network_provider = Arc::new(NativeProvider::default());
+            let swap_provider = Across::new(network_provider.clone());
+
+            // https://uniscan.xyz/tx/0x9827ca4bdd5dea3a310cff3485f87463987cdc52118077dba34f86ee79456952
+            // IMPORTANT: This transaction may not be available on the default Unichain RPC endpoint
+            // (https://mainnet.unichain.org). It works on https://unichain-rpc.publicnode.com
+            // The transaction receipt contains:
+            // - Log 1, Topic 2: deposit ID (0x86f4 = 34548)
+            let tx_hash = "0x9827ca4bdd5dea3a310cff3485f87463987cdc52118077dba34f86ee79456952";
+            let chain = Chain::Unichain;
+
+            let result = swap_provider.get_swap_result(chain, tx_hash).await?;
+
+            println!("Across swap result: {:?}", result);
+            assert_eq!(result.from_chain, chain);
+            assert_eq!(result.from_tx_hash, tx_hash);
+            assert_eq!(result.status, SwapStatus::Completed);
+            assert_eq!(result.to_chain, Some(Chain::Linea));
+            assert_eq!(
+                result.to_tx_hash,
+                Some("0xcba653515ab00f5b3ebc16eb4d099e29611e1e59b3fd8f2800cf2302d175f9fe".to_string())
+            );
+
+            Ok(())
+        }
     }
 }

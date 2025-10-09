@@ -303,4 +303,52 @@ mod tests {
         // Ensure provider field is used to avoid warnings
         assert_eq!(swapper.provider.id, SwapperProvider::UniswapV4);
     }
+
+    #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+    mod swap_integration_tests {
+        use super::*;
+        use crate::{
+            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode, SwapperProvider, uniswap,
+            config::{ReferralFee, ReferralFees},
+        };
+        use primitives::{AssetId, Chain};
+        use std::{sync::Arc, time::SystemTime};
+
+        #[tokio::test]
+        async fn test_v4_quoter() -> Result<(), SwapperError> {
+            let network_provider = Arc::new(NativeProvider::default());
+            let swap_provider = uniswap::default::boxed_uniswap_v4(network_provider.clone());
+            let options = Options {
+                slippage: 100.into(),
+                fee: Some(ReferralFees::evm(ReferralFee {
+                    bps: 25,
+                    address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
+                })),
+                preferred_providers: vec![SwapperProvider::UniswapV4],
+            };
+
+            let request = QuoteRequest {
+                from_asset: AssetId::from_chain(Chain::Unichain).into(),
+                to_asset: AssetId::from(Chain::Unichain, Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string())).into(),
+                wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+                destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+                value: "10000000000000000".into(), // 0.01 ETH
+                mode: SwapperMode::ExactIn,
+                options,
+            };
+
+            let now = SystemTime::now();
+            let quote = swap_provider.fetch_quote(&request).await?;
+            let elapsed = SystemTime::now().duration_since(now).unwrap();
+
+            println!("<== elapsed: {:?}", elapsed);
+            println!("<== quote: {:?}", quote);
+            assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+            println!("<== quote_data: {:?}", quote_data);
+
+            Ok(())
+        }
+    }
 }

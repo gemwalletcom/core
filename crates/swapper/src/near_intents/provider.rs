@@ -1,12 +1,12 @@
 use super::{
-    AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, SwapType, asset_id_from_near_intents,
-    get_near_intents_asset_id,
+    AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult,
+    SwapType, asset_id_from_near_intents, get_near_intents_asset_id,
     model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
     supported_assets,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
-    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage, near_intents::client::DEFAULT_NEAR_INTENTS_BASE_URL,
+    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, near_intents::client::DEFAULT_NEAR_INTENTS_BASE_URL,
 };
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
@@ -46,10 +46,6 @@ where
             client,
             supported_assets: supported_assets(),
         }
-    }
-
-    fn build_slippage(slippage: &SwapperSlippage) -> f64 {
-        slippage.bps as f64 / 100.0
     }
 
     fn build_app_fee(options: &QuoteRequest) -> Option<Vec<AppFee>> {
@@ -132,6 +128,22 @@ where
             _ => DepositMode::Simple,
         }
     }
+
+    fn extract_quote(response: QuoteResponseResult) -> Result<QuoteResponse, SwapperError> {
+        match response {
+            QuoteResponseResult::Ok(quote) => Ok(*quote),
+            QuoteResponseResult::Err(error) => Err(map_quote_error(&error)),
+        }
+    }
+}
+
+fn map_quote_error(error: &QuoteResponseError) -> SwapperError {
+    let lower = error.message.to_ascii_lowercase();
+    if lower.contains("too low") {
+        SwapperError::InputAmountTooSmall
+    } else {
+        SwapperError::NetworkError(format!("Near Intents quote error: {}", error.message))
+    }
 }
 
 #[async_trait]
@@ -154,7 +166,7 @@ where
         };
 
         let quote_request = self.build_quote_request(request, mode, true)?;
-        let response = self.client.fetch_quote(&quote_request).await?;
+        let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
 
         let eta = response.quote.time_estimate;
@@ -183,7 +195,7 @@ where
         let mut quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
         quote_request.dry = false;
 
-        let response: QuoteResponse = self.client.fetch_quote(&quote_request).await?;
+        let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
         let QuoteResponse { quote_request: _, quote } = response;
 
         let deposit_address = quote
@@ -232,6 +244,31 @@ where
             to_chain,
             to_tx_hash,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::SwapperError;
+    use serde_json::json;
+
+    #[test]
+    fn decode_quote_response_error_message() {
+        let payload = json!({
+            "message": "Amount is too low for bridge, try at least 8516130",
+        });
+
+        let decoded: QuoteResponseResult =
+            serde_json::from_value(payload).expect("failed to decode error payload");
+
+        match decoded {
+            QuoteResponseResult::Err(err) => {
+                assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
+                assert!(matches!(map_quote_error(&err), SwapperError::InputAmountTooSmall));
+            }
+            QuoteResponseResult::Ok(_) => panic!("expected error variant"),
+        }
     }
 }
 

@@ -420,4 +420,49 @@ mod tests {
         assert_eq!(tx, expected_decoded);
         assert_eq!(hex::encode(tx_output.hash), "cf17205e4ad94f5c0e7869ba41524ca9813681aed298c763d5d8c34dd04e591f");
     }
+
+    #[cfg(feature = "swap_integration_tests")]
+    mod swap_integration_tests {
+        use super::*;
+        use crate::{
+            FetchQuoteData, NativeProvider, Options, QuoteRequest, RpcClient, SwapperMode, cetus::Cetus,
+            config::get_swap_config,
+        };
+        use primitives::{AssetId, Chain};
+        use std::sync::Arc;
+
+        #[tokio::test]
+        async fn test_cetus_swap() -> Result<(), Box<dyn std::error::Error>> {
+            let network_provider = Arc::new(NativeProvider::default());
+            let swap_provider = Cetus::<RpcClient>::boxed(network_provider.clone());
+            let config = get_swap_config();
+            let options = Options {
+                slippage: 50.into(),
+                fee: Some(config.referral_fee),
+                preferred_providers: vec![],
+            };
+
+            let request = QuoteRequest {
+                from_asset: AssetId::from_chain(Chain::Sui).into(),
+                to_asset: AssetId {
+                    chain: Chain::Sui,
+                    token_id: Some("0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC".into()),
+                }
+                .into(),
+                wallet_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
+                destination_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
+                value: "1500000000".into(), // 1.5 SUI
+                mode: SwapperMode::ExactIn,
+                options,
+            };
+
+            let quote = swap_provider.fetch_quote(&request).await?;
+            println!("{:?}", quote);
+
+            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+            println!("{:?}", quote_data);
+
+            Ok(())
+        }
+    }
 }

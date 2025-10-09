@@ -4,7 +4,8 @@ mod model;
 mod provider;
 
 pub use provider::NearIntents;
+pub use model::{QuoteResponse, QuoteResponseError, QuoteResponseResult};
 
 pub(crate) use assets::{asset_id_from_near_intents, get_near_intents_asset_id, supported_assets};
 pub(crate) use client::NearIntentsClient;
-pub(crate) use model::{AppFee, DepositMode, ExecutionStatus, QuoteRequest, QuoteResponse, SwapType};
+pub(crate) use model::{AppFee, DepositMode, ExecutionStatus, QuoteRequest, SwapType};

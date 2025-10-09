@@ -2,7 +2,7 @@ use crate::SwapperError;
 use gem_client::{Client, ClientError};
 use std::{collections::HashMap, fmt::Debug};
 
-use super::model::{ExecutionStatus, QuoteRequest, QuoteResponse};
+use super::model::{ExecutionStatus, QuoteRequest, QuoteResponseResult};
 
 pub const DEFAULT_NEAR_INTENTS_BASE_URL: &str = "https://1click.chaindefuser.com";
 
@@ -29,7 +29,7 @@ where
             .map(|token| HashMap::from([(String::from("Authorization"), format!("Bearer {token}"))]))
     }
 
-    pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<QuoteResponse, SwapperError> {
+    pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<QuoteResponseResult, SwapperError> {
         self.client.post("/v0/quote", request, self.build_headers()).await.map_err(SwapperError::from)
     }
 

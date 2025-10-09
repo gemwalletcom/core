@@ -67,6 +67,18 @@ pub struct QuoteResponse {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct QuoteResponseError {
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum QuoteResponseResult {
+    Ok(Box<QuoteResponse>),
+    Err(QuoteResponseError),
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Quote {
     pub deposit_address: Option<String>,

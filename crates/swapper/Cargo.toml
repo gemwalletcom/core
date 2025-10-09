@@ -59,7 +59,3 @@ tracing = "0.1.41"
 
 [dev-dependencies]
 tokio.workspace = true
-
-[[test]]
-name = "integration_test"
-test = false
