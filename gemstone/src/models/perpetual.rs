@@ -104,4 +104,3 @@ pub struct GemChartCandleStick {
     pub close: f64,
     pub volume: f64,
 }
-

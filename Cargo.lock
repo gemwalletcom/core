@@ -4964,6 +4964,7 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "gem_client",
  "primitives",
  "reqwest",
  "serde",

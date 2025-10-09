@@ -10,6 +10,7 @@ reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+gem_client = { path = "../gem_client" }
 primitives = { path = "../primitives" }
 serde_serializers = { path = "../serde_serializers" }
 
