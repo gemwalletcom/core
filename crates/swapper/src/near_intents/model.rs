@@ -94,12 +94,6 @@ pub struct Quote {
     pub deadline: Option<String>,
     pub time_when_inactive: Option<String>,
     pub time_estimate: u32,
-    #[serde(default)]
-    pub virtual_chain_recipient: Option<String>,
-    #[serde(default)]
-    pub virtual_chain_refund_recipient: Option<String>,
-    #[serde(default)]
-    pub custom_recipient_msg: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
