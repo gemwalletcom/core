@@ -30,7 +30,7 @@ impl NftStore for DatabaseClient {
 
     fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAsset, diesel::result::Error> {
         use crate::schema::nft_assets::dsl::*;
-        nft_assets.filter(id.eq(asset_id)).select(NftAsset::as_select()).first(&mut self.connection)
+        nft_assets.find(asset_id).select(NftAsset::as_select()).first(&mut self.connection)
     }
 
     fn add_nft_assets(&mut self, values: Vec<NftAsset>) -> Result<usize, diesel::result::Error> {
@@ -43,9 +43,7 @@ impl NftStore for DatabaseClient {
 
     fn update_nft_asset_image_url(&mut self, update: UpdateNftAssetImageUrl) -> Result<usize, diesel::result::Error> {
         use crate::schema::nft_assets::dsl::*;
-        diesel::update(nft_assets.filter(id.eq(update.id.clone())))
-            .set(update)
-            .execute(&mut self.connection)
+        diesel::update(nft_assets.find(update.id.clone())).set(update).execute(&mut self.connection)
     }
 
     // collections
@@ -57,7 +55,7 @@ impl NftStore for DatabaseClient {
     fn get_nft_collection(&mut self, collection_id: &str) -> Result<NftCollection, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
         nft_collections
-            .filter(id.eq(collection_id))
+            .find(collection_id)
             .select(NftCollection::as_select())
             .first(&mut self.connection)
     }
@@ -88,7 +86,7 @@ impl NftStore for DatabaseClient {
 
     fn update_nft_collection_image_url(&mut self, update: UpdateNftCollectionImageUrl) -> Result<usize, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
-        diesel::update(nft_collections.filter(id.eq(update.id.clone())))
+        diesel::update(nft_collections.find(update.id.clone()))
             .set(update)
             .execute(&mut self.connection)
     }

@@ -58,7 +58,7 @@ impl AssetsStore for DatabaseClient {
 
             for asset_id in asset_ids.into_iter() {
                 for update in &updates {
-                    let target = assets.filter(id.eq(&asset_id));
+                    let target = assets.find(&asset_id);
                     let updated = match update {
                         AssetUpdate::IsSwappable(value) => diesel::update(target).set(is_swappable.eq(*value)).execute(conn)?,
                         AssetUpdate::IsBuyable(value) => diesel::update(target).set(is_buyable.eq(*value)).execute(conn)?,
@@ -76,7 +76,7 @@ impl AssetsStore for DatabaseClient {
     }
 
     fn update_asset(&mut self, asset_id: String, update: AssetUpdate) -> Result<usize, diesel::result::Error> {
-        let target = assets.filter(id.eq(&asset_id));
+        let target = assets.find(&asset_id);
 
         match update {
             AssetUpdate::IsSwappable(value) => diesel::update(target).set(is_swappable.eq(value)).execute(&mut self.connection),
@@ -118,7 +118,7 @@ impl AssetsStore for DatabaseClient {
     }
 
     fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
-        assets.filter(id.eq(asset_id)).select(Asset::as_select()).first(&mut self.connection)
+        assets.find(asset_id).select(Asset::as_select()).first(&mut self.connection)
     }
 
     fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {

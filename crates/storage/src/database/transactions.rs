@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use diesel::upsert::excluded;
 
 pub(crate) trait TransactionsStore {
-    fn get_transaction_by_id(&mut self, _id: &str) -> Result<Transaction, diesel::result::Error>;
+    fn get_transaction_by_id(&mut self, transaction_id: &str) -> Result<Transaction, diesel::result::Error>;
     fn add_transactions(&mut self, transactions_values: Vec<Transaction>, addresses_values: Vec<TransactionAddresses>) -> Result<bool, diesel::result::Error>;
     fn get_transactions_by_device_id(
         &mut self,
@@ -22,9 +22,9 @@ pub(crate) trait TransactionsStore {
 }
 
 impl TransactionsStore for DatabaseClient {
-    fn get_transaction_by_id(&mut self, _id: &str) -> Result<Transaction, diesel::result::Error> {
+    fn get_transaction_by_id(&mut self, transaction_id: &str) -> Result<Transaction, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
-        transactions.filter(id.eq(_id)).select(Transaction::as_select()).first(&mut self.connection)
+        transactions.find(transaction_id).select(Transaction::as_select()).first(&mut self.connection)
     }
 
     fn add_transactions(&mut self, transactions_values: Vec<Transaction>, addresses_values: Vec<TransactionAddresses>) -> Result<bool, diesel::result::Error> {
