@@ -15,7 +15,7 @@ impl PythClient {
     }
 
     pub async fn get_asset_prices(&self, price_ids: Vec<String>) -> Result<Vec<Price>, Box<dyn std::error::Error + Send + Sync>> {
-        const CHUNK_SIZE: usize = 500;
+        const CHUNK_SIZE: usize = 5;
         let mut all_prices = Vec::new();
 
         for chunk in price_ids.chunks(CHUNK_SIZE) {

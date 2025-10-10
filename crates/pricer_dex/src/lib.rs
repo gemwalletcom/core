@@ -1,5 +1,6 @@
 pub mod providers;
 use async_trait::async_trait;
+pub use providers::jupiter::provider::JupiterProvider;
 pub use providers::pyth::provider::PythProvider;
 
 use std::{error::Error, sync::Arc};
