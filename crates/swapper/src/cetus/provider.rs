@@ -423,11 +423,7 @@ mod tests {
 
     #[cfg(feature = "swap_integration_tests")]
     mod swap_integration_tests {
-        use super::*;
-        use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, RpcClient, SwapperMode, cetus::Cetus,
-            config::get_swap_config,
-        };
+        use crate::{FetchQuoteData, NativeProvider, Options, QuoteRequest, RpcClient, SwapperMode, cetus::Cetus, config::get_swap_config};
         use primitives::{AssetId, Chain};
         use std::sync::Arc;
 

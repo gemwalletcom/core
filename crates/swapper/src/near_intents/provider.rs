@@ -8,10 +8,17 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
     SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, near_intents::client::DEFAULT_NEAR_INTENTS_BASE_URL,
 };
+use alloy_primitives::{
+    Address, U256,
+    hex::encode_prefixed,
+};
+use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
-use primitives::{Chain, swap::SwapStatus};
-use std::{fmt::Debug, sync::Arc};
+use gem_evm::contracts::erc20::IERC20;
+use gem_tron::address::TronAddress;
+use primitives::{Chain, ChainType, swap::SwapStatus};
+use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
 
@@ -129,6 +136,57 @@ where
         }
     }
 
+    fn build_deposit_data(
+        deposit_mode: DepositMode,
+        deposit_memo: Option<String>,
+        from_asset: &SwapperQuoteAsset,
+        deposit_address: &str,
+        amount_in: &str,
+    ) -> Result<String, SwapperError> {
+        match deposit_mode {
+            DepositMode::Memo => deposit_memo.ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositMemo for MEMO deposit mode".into())),
+            DepositMode::Simple => Self::build_simple_deposit_data(from_asset, deposit_address, amount_in),
+        }
+    }
+
+    fn build_simple_deposit_data(from_asset: &SwapperQuoteAsset, deposit_address: &str, amount_in: &str) -> Result<String, SwapperError> {
+        let asset_id = from_asset.asset_id();
+        if asset_id.is_token() {
+            match asset_id.chain.chain_type() {
+                ChainType::Ethereum => return Self::erc20_transfer_data(deposit_address, amount_in),
+                ChainType::Tron => return Self::trc20_transfer_data(deposit_address, amount_in),
+                _ => {}
+            }
+        }
+
+        Ok(String::new())
+    }
+
+    fn erc20_transfer_data(deposit_address: &str, amount_in: &str) -> Result<String, SwapperError> {
+        let to = Address::from_str(deposit_address)
+            .map_err(|_| SwapperError::ComputeQuoteError("Invalid depositAddress for ERC20 transfer".into()))?;
+        let value = Self::parse_transfer_amount(amount_in)?;
+
+        Ok(Self::encode_transfer_call(to, value))
+    }
+
+    fn trc20_transfer_data(deposit_address: &str, amount_in: &str) -> Result<String, SwapperError> {
+        let to = TronAddress::to_addr(deposit_address)
+            .ok_or_else(|| SwapperError::ComputeQuoteError("Invalid Tron deposit address".into()))?;
+        let value = Self::parse_transfer_amount(amount_in)?;
+
+        Ok(Self::encode_transfer_call(to, value))
+    }
+
+    fn parse_transfer_amount(amount_in: &str) -> Result<U256, SwapperError> {
+        U256::from_str(amount_in).map_err(|_| SwapperError::ComputeQuoteError("Invalid amount for token transfer".into()))
+    }
+
+    fn encode_transfer_call(to: Address, value: U256) -> String {
+        let call = IERC20::transferCall { to, value };
+        encode_prefixed(call.abi_encode())
+    }
+
     fn extract_quote(response: QuoteResponseResult) -> Result<QuoteResponse, SwapperError> {
         match response {
             QuoteResponseResult::Ok(quote) => Ok(*quote),
@@ -196,19 +254,20 @@ where
         quote_request.dry = false;
 
         let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
-        let QuoteResponse { quote_request: _, quote } = response;
+        let QuoteResponse { quote_request: _, quote: near_quote } = response;
 
-        let deposit_address = quote
+        let deposit_address = near_quote
             .deposit_address
             .ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositAddress in Near Intents response".into()))?;
-        let amount_in = Self::parse_amount(&quote.amount_in, "amountIn")?;
-        let deposit_mode = quote.deposit_mode.unwrap_or_default();
-        let data = match deposit_mode {
-            DepositMode::Memo => quote
-                .deposit_memo
-                .ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositMemo for MEMO deposit mode".into()))?,
-            DepositMode::Simple => String::new(),
-        };
+        let amount_in = Self::parse_amount(&near_quote.amount_in, "amountIn")?;
+        let deposit_mode = near_quote.deposit_mode.unwrap_or_default();
+        let data = Self::build_deposit_data(
+            deposit_mode,
+            near_quote.deposit_memo,
+            &quote.request.from_asset,
+            &deposit_address,
+            &amount_in,
+        )?;
 
         Ok(SwapperQuoteData {
             to: deposit_address,
