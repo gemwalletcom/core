@@ -6,7 +6,7 @@ use crate::models::{AddressChainIdResult, Transaction, TransactionAddresses, Tra
 use primitives::TransactionsFetchOption;
 
 pub trait TransactionsRepository {
-    fn get_transactions_by_id(&mut self, _id: &str) -> Result<Vec<Transaction>, DatabaseError>;
+    fn get_transaction_by_id(&mut self, _id: &str) -> Result<Transaction, DatabaseError>;
     fn add_transactions(&mut self, transactions_values: Vec<Transaction>, addresses_values: Vec<TransactionAddresses>) -> Result<bool, DatabaseError>;
     fn get_transactions_by_device_id(
         &mut self,
@@ -23,8 +23,8 @@ pub trait TransactionsRepository {
 }
 
 impl TransactionsRepository for DatabaseClient {
-    fn get_transactions_by_id(&mut self, _id: &str) -> Result<Vec<Transaction>, DatabaseError> {
-        Ok(TransactionsStore::get_transactions_by_id(self, _id)?)
+    fn get_transaction_by_id(&mut self, _id: &str) -> Result<Transaction, DatabaseError> {
+        Ok(TransactionsStore::get_transaction_by_id(self, _id)?)
     }
 
     fn add_transactions(&mut self, transactions_values: Vec<Transaction>, addresses_values: Vec<TransactionAddresses>) -> Result<bool, DatabaseError> {

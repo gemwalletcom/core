@@ -45,13 +45,7 @@ impl TransactionsClient {
         Ok(TransactionsResponse::new(transactions, address_names))
     }
 
-    pub fn get_transactions_by_id(&mut self, id: &str) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .database
-            .transactions()
-            .get_transactions_by_id(id)?
-            .into_iter()
-            .map(|x| x.as_primitive(vec![]))
-            .collect())
+    pub fn get_transaction_by_id(&mut self, id: &str) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.transactions().get_transaction_by_id(id)?.as_primitive(vec![]))
     }
 }
