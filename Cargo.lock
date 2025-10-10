@@ -2998,6 +2998,7 @@ dependencies = [
  "gem_jsonrpc",
  "hex",
  "num-bigint",
+ "num-traits",
  "primitives",
  "reqwest",
  "serde",

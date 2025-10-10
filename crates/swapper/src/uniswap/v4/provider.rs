@@ -308,8 +308,9 @@ mod tests {
     mod swap_integration_tests {
         use super::*;
         use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode, SwapperProvider, uniswap,
+            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode, SwapperProvider,
             config::{ReferralFee, ReferralFees},
+            uniswap,
         };
         use primitives::{AssetId, Chain};
         use std::{sync::Arc, time::SystemTime};

@@ -6,13 +6,14 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
-    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, near_intents::client::BASE_URL,
+    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::BASE_URL,
 };
 use alloy_primitives::{Address, U256, hex::encode_prefixed};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use gem_evm::contracts::erc20::IERC20;
+use gem_sui::{SuiClient, build_transfer_message_bytes};
 use gem_tron::address::TronAddress;
 use primitives::{Chain, ChainType, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
@@ -27,7 +28,6 @@ pub struct DepositData {
     pub data: String,
 }
 
-#[derive(Debug)]
 pub struct NearIntents<C>
 where
     C: gem_client::Client + Clone + Send + Sync + Debug + 'static,
@@ -35,12 +35,28 @@ where
     provider: ProviderType,
     client: NearIntentsClient<C>,
     supported_assets: Vec<SwapperChainAsset>,
+    sui_client: Arc<SuiClient<RpcClient>>,
+}
+
+impl<C> std::fmt::Debug for NearIntents<C>
+where
+    C: gem_client::Client + Clone + Send + Sync + Debug + 'static,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NearIntents")
+            .field("provider", &self.provider)
+            .field("client", &self.client)
+            .field("supported_assets", &self.supported_assets)
+            .field("sui_client", &"SuiClient::<RpcClient>")
+            .finish()
+    }
 }
 
 impl NearIntents<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let client = NearIntentsClient::new(RpcClient::new(BASE_URL.to_string(), rpc_provider), None);
-        Self::with_internal_client(client)
+        let client = NearIntentsClient::new(RpcClient::new(BASE_URL.to_string(), rpc_provider.clone()), None);
+        let sui_client = Arc::new(SuiClient::new(create_client_with_chain(rpc_provider.clone(), Chain::Sui)));
+        Self::with_client(client, sui_client)
     }
 
     pub fn boxed(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn crate::swapper_trait::Swapper> {
@@ -52,11 +68,12 @@ impl<C> NearIntents<C>
 where
     C: gem_client::Client + Clone + Send + Sync + Debug + 'static,
 {
-    pub fn with_internal_client(client: NearIntentsClient<C>) -> Self {
+    pub fn with_client(client: NearIntentsClient<C>, sui_client: Arc<SuiClient<RpcClient>>) -> Self {
         Self {
             provider: ProviderType::new(SwapperProvider::NearIntents),
             client,
             supported_assets: supported_assets(),
+            sui_client,
         }
     }
 
@@ -141,13 +158,19 @@ where
         }
     }
 
-    fn build_deposit_data(
+    async fn build_deposit_data(
+        &self,
         deposit_mode: DepositMode,
         deposit_memo: Option<String>,
         from_asset: &SwapperQuoteAsset,
+        wallet_address: &str,
         deposit_address: &str,
         amount_in: &str,
     ) -> Result<DepositData, SwapperError> {
+        if from_asset.asset_id().chain == Chain::Sui {
+            return self.build_sui_deposit_data(from_asset, wallet_address, deposit_address, amount_in).await;
+        }
+
         match deposit_mode {
             DepositMode::Memo => {
                 let memo = deposit_memo.ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositMemo for MEMO deposit mode".into()))?;
@@ -175,6 +198,34 @@ where
             to: deposit_address.to_string(),
             value: amount_in.to_string(),
             data: String::new(),
+        })
+    }
+
+    async fn build_sui_deposit_data(
+        &self,
+        from_asset: &SwapperQuoteAsset,
+        wallet_address: &str,
+        deposit_address: &str,
+        amount_in: &str,
+    ) -> Result<DepositData, SwapperError> {
+        let amount = amount_in
+            .parse::<u64>()
+            .map_err(|_| SwapperError::ComputeQuoteError("Invalid Sui amount provided for deposit".into()))?;
+
+        let message_bytes = build_transfer_message_bytes(
+            self.sui_client.as_ref(),
+            wallet_address,
+            deposit_address,
+            amount,
+            from_asset.asset_id().token_id.as_deref(),
+        )
+        .await
+        .map_err(|err| SwapperError::NetworkError(format!("Failed to build Sui deposit data: {err}")))?;
+
+        Ok(DepositData {
+            to: deposit_address.to_string(),
+            value: amount_in.to_string(),
+            data: message_bytes,
         })
     }
 
@@ -300,7 +351,18 @@ where
             .ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositAddress in Near Intents response".into()))?;
         let amount_in = Self::parse_amount(&near_quote.amount_in, "amountIn")?;
         let deposit_mode = near_quote.deposit_mode.unwrap_or_default();
-        let deposit_data = Self::build_deposit_data(deposit_mode, near_quote.deposit_memo, &quote.request.from_asset, &deposit_address, &amount_in)?;
+        let from_asset = &quote.request.from_asset;
+
+        let deposit_data = self
+            .build_deposit_data(
+                deposit_mode,
+                near_quote.deposit_memo,
+                from_asset,
+                &quote.request.wallet_address,
+                &deposit_address,
+                &amount_in,
+            )
+            .await?;
 
         Ok(SwapperQuoteData {
             to: deposit_data.to,

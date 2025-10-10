@@ -25,8 +25,8 @@ pub fn create_tron_client(provider: Arc<dyn RpcProvider>) -> Result<TronClient<R
 
 pub fn create_eth_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Result<EthereumClient<RpcClient>, SwapperError> {
     let evm_chain = EVMChain::from_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-   let client = create_client_with_chain(provider, chain);
-   Ok(EthereumClient::new(client, evm_chain))
+    let client = create_client_with_chain(provider, chain);
+    Ok(EthereumClient::new(client, evm_chain))
 }
 
 #[cfg(all(test, feature = "reqwest_provider", feature = "swap_integration_tests"))]

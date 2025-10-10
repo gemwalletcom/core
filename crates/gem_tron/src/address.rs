@@ -29,7 +29,6 @@ impl TronAddress {
             _ => None,
         }
     }
-
 }
 
 #[cfg(test)]
