@@ -84,9 +84,8 @@ impl PricesDexUpdater {
                 }
             };
 
-            if let (Some((pyth, pyth_change)), Some((jupiter, jupiter_change))) = (pyth_price, jupiter_price) {
+            if let (Some((pyth, _pyth_change)), Some((jupiter, _jupiter_change))) = (pyth_price, jupiter_price) {
                 let diff = jupiter - pyth;
-                let diff_pct = (diff / pyth) * 100.0;
                 info_with_fields!("sol", pyth = pyth, jupiter = jupiter, diff = diff);
             }
 

@@ -69,6 +69,7 @@ mod tests {
             chain: Chain::Ethereum,
             block_delay: None,
             poll_interval_seconds: None,
+            overrides: None,
             urls: vec![create_test_url("https://primary.com")],
         }
     }

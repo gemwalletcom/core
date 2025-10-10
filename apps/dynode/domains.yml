@@ -2,11 +2,13 @@ domains:
   - domain: ethereum
     chain: ethereum
     #poll_interval_seconds: 10
+    overrides:
+      - rpc_method: eth_chainId
+        url: https://public-eth.nownodes.io
     urls:
-      #- url: https://cloudflare-eth.com
       - url: https://rpc.ankr.com/eth
       - url: https://eth.llamarpc.com
-      
+
         # headers:
         #   x-api-key: test
         #   "/":
@@ -60,6 +62,9 @@ domains:
 
   - domain: tron
     chain: tron
+    overrides:
+      - path: /wallet/getchainparameters
+        url: https://api.frankfurt.trongrid.io
     urls:
       - url: https://api.trongrid.io
 

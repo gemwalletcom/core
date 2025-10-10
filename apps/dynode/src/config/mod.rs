@@ -4,12 +4,14 @@ use config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
 
 mod cache;
+mod domain;
 mod metrics;
-mod node;
+mod url;
 
 pub use cache::{CacheConfig, CacheRule};
+pub use domain::Domain;
 pub use metrics::{MetricsConfig, UserAgentPatterns};
-pub use node::{Domain, NodeResult, Url};
+pub use url::{NodeResult, Override, Url};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct NodeMonitoringConfig {
