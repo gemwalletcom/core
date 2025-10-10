@@ -25,7 +25,7 @@ impl PriceChainAssetsProvider for JupiterProvider {
             return Ok(vec![]);
         }
 
-        let token_addresses: Vec<String> = asset_ids.iter().filter_map(|id| map_asset_id_to_token(id)).collect();
+        let token_addresses: Vec<String> = asset_ids.iter().filter_map(map_asset_id_to_token).collect();
 
         if token_addresses.is_empty() {
             return Ok(vec![]);
