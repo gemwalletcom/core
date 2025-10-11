@@ -32,12 +32,12 @@ impl Domain {
             let rpc_matches = override_config
                 .rpc_method
                 .as_ref()
-                .map_or(true, |override_method| Some(override_method.as_str()) == rpc_method);
+                .is_none_or(|override_method| Some(override_method.as_str()) == rpc_method);
 
             let path_matches = override_config
                 .path
                 .as_ref()
-                .map_or(true, |override_path| Some(override_path.as_str()) == request_path);
+                .is_none_or(|override_path| Some(override_path.as_str()) == request_path);
 
             if rpc_matches && path_matches {
                 return Url {

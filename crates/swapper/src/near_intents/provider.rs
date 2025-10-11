@@ -1,6 +1,6 @@
 use super::{
     AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult,
-    SwapType, asset_id_from_near_intents, get_near_intents_asset_id,
+    SwapType, asset_id_from_near_intents, enabled_sending_chains, get_near_intents_asset_id,
     model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
     supported_assets,
 };
@@ -15,7 +15,7 @@ use chrono::{Duration, Utc};
 use gem_evm::contracts::erc20::IERC20;
 use gem_sui::{SuiClient, build_transfer_message_bytes};
 use gem_tron::address::TronAddress;
-use primitives::{Chain, ChainType, swap::SwapStatus};
+use primitives::{Chain, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
@@ -36,6 +36,7 @@ where
     client: NearIntentsClient<C>,
     supported_assets: Vec<SwapperChainAsset>,
     sui_client: Arc<SuiClient<RpcClient>>,
+    enabled_sending_chains: Vec<Chain>,
 }
 
 impl<C> std::fmt::Debug for NearIntents<C>
@@ -48,6 +49,7 @@ where
             .field("client", &self.client)
             .field("supported_assets", &self.supported_assets)
             .field("sui_client", &"SuiClient::<RpcClient>")
+            .field("enabled_sending_chains", &self.enabled_sending_chains)
             .finish()
     }
 }
@@ -74,6 +76,7 @@ where
             client,
             supported_assets: supported_assets(),
             sui_client,
+            enabled_sending_chains: enabled_sending_chains(),
         }
     }
 
@@ -309,6 +312,11 @@ where
             SwapperMode::ExactIn => SwapType::ExactInput,
             SwapperMode::ExactOut => return Err(SwapperError::NotImplemented),
         };
+
+        let from_chain = request.from_asset.asset_id().chain;
+        if !self.enabled_sending_chains.contains(&from_chain) {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
 
         let quote_request = self.build_quote_request(request, mode, true)?;
         let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;

@@ -3,8 +3,8 @@ use primitives::{
     AssetId, Chain,
     asset_constants::{
         USDC_ARB_ASSET_ID, USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID,
-        USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID,
-        USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID,
+        USDC_SOLANA_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID,
+        USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID,
     },
 };
 use std::{collections::HashMap, sync::LazyLock};
@@ -30,6 +30,7 @@ pub const NEAR_INTENTS_AVAX_NATIVE: &str = "nep245:v2_1.omni.hot.tg:43114_111111
 pub const NEAR_INTENTS_AVAX_USDC: &str = "nep245:v2_1.omni.hot.tg:43114_3atVJH3r5c4GqiSYmg9fECvjc47o";
 pub const NEAR_INTENTS_AVAX_USDT: &str = "nep245:v2_1.omni.hot.tg:43114_372BeH7ENZieCaabwkbWkBiTTgXp";
 pub const NEAR_INTENTS_BSC_NATIVE: &str = "nep245:v2_1.omni.hot.tg:56_11111111111111111111";
+#[allow(unused)]
 pub const NEAR_INTENTS_BSC_USDC: &str = "nep245:v2_1.omni.hot.tg:56_2w93GqMcEmQFDru84j3HZZWt557r";
 pub const NEAR_INTENTS_BSC_USDT: &str = "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g";
 pub const NEAR_INTENTS_POL_NATIVE: &str = "nep245:v2_1.omni.hot.tg:137_11111111111111111111";
@@ -47,6 +48,7 @@ pub const NEAR_INTENTS_GNOSIS_NATIVE: &str = "nep141:gnosis.omft.near";
 pub const NEAR_INTENTS_GNOSIS_USDC: &str = "nep141:gnosis-0x2a22f9c3b484c3629090feed35f17ff8f88f76f0.omft.near";
 pub const NEAR_INTENTS_APT_NATIVE: &str = "nep141:aptos.omft.near";
 pub const NEAR_INTENTS_ZEC_NATIVE: &str = "nep141:zec.omft.near";
+#[allow(unused)]
 pub const NEAR_INTENTS_STELLAR_NATIVE: &str = "nep245:v2_1.omni.hot.tg:1100_111bzQBB5v7AhLyPMDwS8uJgQV24KaAPXtwyVWu2KXbbfQU6NXRCz";
 
 type AssetsMap = HashMap<String, &'static str>;
@@ -117,7 +119,6 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
         Chain::SmartChain,
         HashMap::from([
             ("smartchain".to_string(), NEAR_INTENTS_BSC_NATIVE),
-            (asset_key(USDC_SMARTCHAIN_ASSET_ID), NEAR_INTENTS_BSC_USDC),
             (asset_key(USDT_SMARTCHAIN_ASSET_ID), NEAR_INTENTS_BSC_USDT),
         ]),
     );
@@ -161,8 +162,6 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
             (asset_key(USDC_GNOSIS_ASSET_ID), NEAR_INTENTS_GNOSIS_USDC),
         ]),
     );
-
-    map.insert(Chain::Stellar, HashMap::from([("stellar".to_string(), NEAR_INTENTS_STELLAR_NATIVE)]));
 
     map
 });
@@ -208,6 +207,11 @@ pub fn supported_assets() -> Vec<SwapperChainAsset> {
             SwapperChainAsset::Assets(*chain, asset_ids)
         })
         .collect()
+}
+
+pub fn enabled_sending_chains() -> Vec<Chain> {
+    // TODO: reivew other chains provider/preload for fee estimation before adding new chains
+    vec![Chain::Near, Chain::Ethereum, Chain::Sui, Chain::SmartChain, Chain::Doge]
 }
 
 #[cfg(test)]
