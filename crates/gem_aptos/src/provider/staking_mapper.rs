@@ -2,7 +2,10 @@ use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 
-use crate::models::{DelegationPoolStake, ReconfigurationState, StakingConfig, ValidatorInfo, ValidatorSet};
+use crate::models::{DelegationPoolStake, ReconfigurationState, ValidatorInfo, ValidatorSet};
+
+#[cfg(test)]
+use crate::models::StakingConfig;
 
 pub fn map_validators(validator_set: ValidatorSet, apy: f64, pool_address: &str, commission: f64) -> Vec<DelegationValidator> {
     validator_set
@@ -58,23 +61,10 @@ fn calculate_pending_completion_date(reconfig: &ReconfigurationState) -> Option<
     DateTime::from_timestamp(next_epoch_secs, 0)
 }
 
-fn calculate_withdrawal_completion_date(reconfig: &ReconfigurationState, staking_config: &StakingConfig) -> Option<DateTime<Utc>> {
-    let now_micros = Utc::now().timestamp_micros() as u64;
-    let last_reconfig_micros = reconfig.last_reconfiguration_time;
-    let lockup_duration_micros = staking_config.recurring_lockup_duration_secs * 1_000_000;
-
-    let elapsed_micros = now_micros.saturating_sub(last_reconfig_micros);
-    let periods_passed = elapsed_micros / lockup_duration_micros;
-    let next_unlock_micros = last_reconfig_micros + ((periods_passed + 1) * lockup_duration_micros);
-
-    let next_unlock_secs = (next_unlock_micros / 1_000_000) as i64;
-    DateTime::from_timestamp(next_unlock_secs, 0)
-}
-
-pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &ReconfigurationState, staking_config: &StakingConfig) -> Vec<DelegationBase> {
+pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &ReconfigurationState, lockup_secs: u64) -> Vec<DelegationBase> {
     let asset_id = Chain::Aptos.as_asset_id();
     let next_epoch = calculate_pending_completion_date(reconfig);
-    let withdrawal_completion = calculate_withdrawal_completion_date(reconfig, staking_config);
+    let withdrawal_completion = DateTime::from_timestamp(lockup_secs as i64, 0);
 
     stakes
         .into_iter()
@@ -151,12 +141,8 @@ mod tests {
         }
     }
 
-    fn mock_config() -> StakingConfig {
-        StakingConfig {
-            rewards_rate: 0,
-            rewards_rate_denominator: 1,
-            recurring_lockup_duration_secs: 1209600,
-        }
+    fn mock_lockup_secs() -> u64 {
+        1700000000
     }
 
     #[test]
@@ -183,7 +169,7 @@ mod tests {
 
     #[test]
     fn test_map_delegations_active() {
-        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(1000, 0, 0, 0))], &mock_reconfig(1000000), &mock_config());
+        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(1000, 0, 0, 0))], &mock_reconfig(1000000), mock_lockup_secs());
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Active);
@@ -193,7 +179,7 @@ mod tests {
 
     #[test]
     fn test_map_delegations_pending_active() {
-        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 0, 500, 0))], &mock_reconfig(1000000), &mock_config());
+        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 0, 500, 0))], &mock_reconfig(1000000), mock_lockup_secs());
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Activating);
@@ -203,7 +189,7 @@ mod tests {
 
     #[test]
     fn test_map_delegations_pending_inactive() {
-        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 0, 0, 300))], &mock_reconfig(1000000), &mock_config());
+        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 0, 0, 300))], &mock_reconfig(1000000), mock_lockup_secs());
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Deactivating);
@@ -219,7 +205,7 @@ mod tests {
         let delegations = map_delegations(
             vec![("pool".to_string(), mock_stake(0, 200, 0, 0))],
             &mock_reconfig(recent_reconfig_micros),
-            &mock_config(),
+            mock_lockup_secs(),
         );
 
         assert_eq!(delegations.len(), 1);
@@ -233,7 +219,7 @@ mod tests {
         let delegations = map_delegations(
             vec![("pool".to_string(), mock_stake(1000, 200, 500, 300))],
             &mock_reconfig(1000000),
-            &mock_config(),
+            mock_lockup_secs(),
         );
 
         assert_eq!(delegations.len(), 4);

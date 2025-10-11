@@ -21,19 +21,21 @@ impl<C: Client> ChainStaking for AptosClient<C> {
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        let validator_set = self.get_validator_set().await?;
-        let commission = self.get_operator_commission_percentage(KNOWN_VALIDATOR_POOL).await?;
+        let (validator_set, commission) = try_join!(
+            self.get_validator_set(),
+            self.get_operator_commission_percentage(KNOWN_VALIDATOR_POOL)
+        )?;
 
         Ok(map_validators(validator_set, apy.unwrap_or(0.0), KNOWN_VALIDATOR_POOL, commission))
     }
 
     async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
-        let (delegation, reconfig, staking_config) = try_join!(
+        let (delegation, reconfig, lockup_secs) = try_join!(
             self.get_delegation_for_pool(&address, KNOWN_VALIDATOR_POOL),
             self.get_reconfiguration_state(),
-            self.get_staking_config()
+            self.get_stake_lockup_secs(KNOWN_VALIDATOR_POOL)
         )?;
-        Ok(staking_mapper::map_delegations(vec![delegation], &reconfig, &staking_config))
+        Ok(staking_mapper::map_delegations(vec![delegation], &reconfig, lockup_secs))
     }
 }
 

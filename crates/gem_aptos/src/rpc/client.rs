@@ -225,6 +225,19 @@ impl<C: Client> AptosClient<C> {
             .await?
             .data)
     }
+
+    pub async fn get_stake_lockup_secs(&self, pool_address: &str) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        let view_request = serde_json::json!({
+            "function": "0x1::stake::get_lockup_secs",
+            "type_arguments": [],
+            "arguments": [pool_address]
+        });
+
+        let result: Vec<String> = self.client.post("/v1/view", &view_request, None).await?;
+        let lockup_secs = result.first().and_then(|s| s.parse::<u64>().ok()).ok_or("Failed to parse lockup_secs")?;
+
+        Ok(lockup_secs)
+    }
 }
 
 #[cfg(feature = "rpc")]
