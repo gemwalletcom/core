@@ -1,6 +1,6 @@
 use crate::SwapperError;
 use gem_aptos::models::Resource;
-use gem_client::{Client, ClientError};
+use gem_client::Client;
 use num_bigint::BigUint;
 use std::fmt::Debug;
 use std::str::FromStr;
@@ -29,7 +29,7 @@ where
         let resource = format!("{address}::swap::TokenPairReserve<{asset1}, {asset2}>");
         let path = format!("/v1/accounts/{address}/resource/{resource}");
 
-        let reserve: Resource<TokenPairReserve> = self.client.get(&path).await.map_err(map_client_error)?;
+        let reserve: Resource<TokenPairReserve> = self.client.get(&path).await.map_err(SwapperError::from)?;
 
         let reserve_x = BigUint::from_str(reserve.data.reserve_x.as_str()).unwrap_or_default();
         let reserve_y = BigUint::from_str(reserve.data.reserve_y.as_str()).unwrap_or_default();
@@ -55,8 +55,4 @@ fn calculate_swap_output(reserve_in: BigUint, reserve_out: BigUint, amount_in: B
 
 fn sort_assets<T: Ord + Clone>(asset1: T, asset2: T) -> (T, T) {
     if asset1 <= asset2 { (asset1, asset2) } else { (asset2, asset1) }
-}
-
-fn map_client_error(err: ClientError) -> SwapperError {
-    SwapperError::from(err)
 }

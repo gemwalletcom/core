@@ -1,6 +1,6 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperProviderMode, SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter,
+    SwapperProviderMode, SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents,
     pancakeswap_aptos, proxy::provider_factory, thorchain, uniswap,
 };
 use num_traits::ToPrimitive;
@@ -92,6 +92,7 @@ impl GemSwapper {
             Box::new(pancakeswap_aptos::PancakeSwapAptos::new(rpc_provider.clone())),
             Box::new(provider_factory::new_stonfi_v2(rpc_provider.clone())),
             Box::new(provider_factory::new_mayan(rpc_provider.clone())),
+            Box::new(near_intents::NearIntents::new(rpc_provider.clone())),
             Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
             Box::new(provider_factory::new_cetus_aggregator(rpc_provider.clone())),
             Box::new(provider_factory::new_relay(rpc_provider.clone())),
@@ -209,7 +210,7 @@ mod tests {
     use crate::{
         Options, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
         alien::reqwest_provider::NativeProvider,
-        config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFee, ReferralFees},
+        config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFees},
         uniswap::default::{new_pancakeswap, new_uniswap_v3},
     };
     use primitives::asset_constants::USDT_ETH_ASSET_ID;
@@ -351,40 +352,10 @@ mod tests {
     }
 
     #[test]
-    fn test_adjust_request_for_stable_swap_updates_referral_fees() {
-        let referral_fees = ReferralFees {
-            evm: ReferralFee {
-                address: "0xevm".into(),
-                bps: DEFAULT_SWAP_FEE_BPS,
-            },
-            evm_bridge: ReferralFee {
-                address: "0xbridge".into(),
-                bps: DEFAULT_SWAP_FEE_BPS,
-            },
-            solana: ReferralFee {
-                address: "SolanaReferral".into(),
-                bps: DEFAULT_SWAP_FEE_BPS,
-            },
-            thorchain: ReferralFee {
-                address: "ThorReferral".into(),
-                bps: DEFAULT_SWAP_FEE_BPS,
-            },
-            sui: ReferralFee {
-                address: "SuiReferral".into(),
-                bps: DEFAULT_SWAP_FEE_BPS,
-            },
-            ton: ReferralFee {
-                address: "TonReferral".into(),
-                bps: DEFAULT_SWAP_FEE_BPS,
-            },
-            tron: ReferralFee {
-                address: "TronReferral".into(),
-                bps: DEFAULT_SWAP_FEE_BPS,
-            },
-        };
+    fn test_stable_swap_adjusts_fees() {
+        use crate::config::get_swap_config;
 
-        let request = build_request("USDC", "USDT", Some(referral_fees.clone()));
-        assert_eq!(request.options.fee.as_ref().unwrap().evm.bps, DEFAULT_SWAP_FEE_BPS);
+        let request = build_request("USDC", "USDT", Some(get_swap_config().referral_fee));
 
         let adjusted_request = match GemSwapper::transform_request(&request) {
             Cow::Owned(req) => req,

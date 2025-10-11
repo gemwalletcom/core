@@ -125,6 +125,7 @@ pub enum SwapperProvider {
     Reservoir,
     Symbiosis,
     Chainflip,
+    NearIntents,
     CetusAggregator,
     Relay,
     Hyperliquid,

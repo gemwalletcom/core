@@ -1,6 +1,6 @@
 use super::models::{CetusPool, Request, Response};
 use crate::{SwapperError, alien::X_CACHE_TTL};
-use gem_client::{Client, ClientError};
+use gem_client::Client;
 use std::collections::HashMap;
 
 pub const CETUS_API_URL: &str = "https://api-sui.cetus.zone/v2";
@@ -33,7 +33,7 @@ where
         let path = format!("/sui/stats_pools?{query}");
         let headers = Some(HashMap::from([(X_CACHE_TTL.to_string(), POOL_CACHE_TTL.to_string())]));
 
-        let response: Response = self.client.get_with_headers(&path, headers).await.map_err(map_client_error)?;
+        let response: Response = self.client.get_with_headers(&path, headers).await.map_err(SwapperError::from)?;
 
         if response.code != 200 {
             return Err(SwapperError::NetworkError(format!("API error: {}", response.msg)));
@@ -41,8 +41,4 @@ where
 
         Ok(response.data.lp_list)
     }
-}
-
-fn map_client_error(err: ClientError) -> SwapperError {
-    SwapperError::from(err)
 }

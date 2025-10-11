@@ -1,3 +1,4 @@
+use alloy_primitives::Address;
 pub struct TronAddress {}
 
 impl TronAddress {
@@ -10,6 +11,23 @@ impl TronAddress {
     pub fn to_hex(address: &str) -> Option<String> {
         let decoded = bs58::decode(address).with_check(None).into_vec().ok()?;
         Some(hex::encode(decoded))
+    }
+
+    pub fn to_addr(address: &str) -> Option<Address> {
+        let decoded = bs58::decode(address).with_check(None).into_vec().ok()?;
+        match decoded.len() {
+            21 if decoded[0] == 0x41 => {
+                let mut addr = [0u8; 20];
+                addr.copy_from_slice(&decoded[1..21]);
+                Some(Address::from(addr))
+            }
+            20 => {
+                let mut addr = [0u8; 20];
+                addr.copy_from_slice(&decoded[..20]);
+                Some(Address::from(addr))
+            }
+            _ => None,
+        }
     }
 }
 
@@ -35,5 +53,11 @@ mod tests {
             TronAddress::to_hex("TEqyWRKCzREYC2bK2fc3j7pp8XjAa6tJK1"),
             Some("41357a7401a0f0c2d4a44a1881a0c622f15d986291".to_string())
         );
+    }
+
+    #[test]
+    fn test_to_addr_from_base58() {
+        let expected = Address::from_slice(&hex::decode("357a7401a0f0c2d4a44a1881a0c622f15d986291").unwrap());
+        assert_eq!(TronAddress::to_addr("TEqyWRKCzREYC2bK2fc3j7pp8XjAa6tJK1").unwrap(), expected);
     }
 }

@@ -44,6 +44,7 @@ serde.workspace = true
 serde_json.workspace = true
 serde_urlencoded.workspace = true
 async-trait.workspace = true
+chrono.workspace = true
 alloy-primitives.workspace = true
 alloy-sol-types.workspace = true
 hex.workspace = true
@@ -58,7 +59,3 @@ tracing = "0.1.41"
 
 [dev-dependencies]
 tokio.workspace = true
-
-[[test]]
-name = "integration_test"
-test = false

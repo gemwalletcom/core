@@ -23,6 +23,7 @@ pub enum SwapProvider {
     Reservoir,
     Symbiosis,
     Chainflip,
+    NearIntents,
     CetusAggregator,
     Relay,
     Hyperliquid,
@@ -53,6 +54,7 @@ impl SwapProvider {
             Self::Reservoir => "Reservoir",
             Self::Symbiosis => "Symbiosis",
             Self::Chainflip => "Chainflip",
+            Self::NearIntents => "NEAR Intents",
             Self::Relay => "Relay",
             Self::Hyperliquid => "Hyperliquid",
         }
@@ -75,6 +77,7 @@ impl SwapProvider {
             | Self::Reservoir
             | Self::Symbiosis
             | Self::Chainflip
+            | Self::NearIntents
             | Self::CetusAggregator
             | Self::Aerodrome
             | Self::Relay

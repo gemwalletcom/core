@@ -1,0 +1,579 @@
+use super::{
+    AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult,
+    SwapType, asset_id_from_near_intents, enabled_sending_chains, get_near_intents_asset_id,
+    model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
+    supported_assets,
+};
+use crate::{
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
+    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::BASE_URL,
+};
+use alloy_primitives::{Address, U256, hex::encode_prefixed};
+use alloy_sol_types::SolCall;
+use async_trait::async_trait;
+use chrono::{Duration, Utc};
+use gem_evm::contracts::erc20::IERC20;
+use gem_sui::{SuiClient, build_transfer_message_bytes};
+use gem_tron::address::TronAddress;
+use primitives::{Chain, ChainType, swap::SwapStatus};
+use std::{fmt::Debug, str::FromStr, sync::Arc};
+
+const DEFAULT_DEADLINE_MINUTES: i64 = 30;
+const ZERO_VALUE: &str = "0";
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DepositData {
+    pub to: String,
+    pub value: String,
+    pub data: String,
+}
+
+pub struct NearIntents<C>
+where
+    C: gem_client::Client + Clone + Send + Sync + Debug + 'static,
+{
+    provider: ProviderType,
+    client: NearIntentsClient<C>,
+    supported_assets: Vec<SwapperChainAsset>,
+    sui_client: Arc<SuiClient<RpcClient>>,
+    enabled_sending_chains: Vec<Chain>,
+}
+
+impl<C> std::fmt::Debug for NearIntents<C>
+where
+    C: gem_client::Client + Clone + Send + Sync + Debug + 'static,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NearIntents")
+            .field("provider", &self.provider)
+            .field("client", &self.client)
+            .field("supported_assets", &self.supported_assets)
+            .field("sui_client", &"SuiClient::<RpcClient>")
+            .field("enabled_sending_chains", &self.enabled_sending_chains)
+            .finish()
+    }
+}
+
+impl NearIntents<RpcClient> {
+    pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
+        let client = NearIntentsClient::new(RpcClient::new(BASE_URL.to_string(), rpc_provider.clone()), None);
+        let sui_client = Arc::new(SuiClient::new(create_client_with_chain(rpc_provider.clone(), Chain::Sui)));
+        Self::with_client(client, sui_client)
+    }
+
+    pub fn boxed(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn crate::swapper_trait::Swapper> {
+        Box::new(Self::new(rpc_provider))
+    }
+}
+
+impl<C> NearIntents<C>
+where
+    C: gem_client::Client + Clone + Send + Sync + Debug + 'static,
+{
+    pub fn with_client(client: NearIntentsClient<C>, sui_client: Arc<SuiClient<RpcClient>>) -> Self {
+        Self {
+            provider: ProviderType::new(SwapperProvider::NearIntents),
+            client,
+            supported_assets: supported_assets(),
+            sui_client,
+            enabled_sending_chains: enabled_sending_chains(),
+        }
+    }
+
+    fn build_app_fee(options: &QuoteRequest) -> Option<Vec<AppFee>> {
+        let fee = options.options.fee.as_ref()?;
+
+        let referral = if !fee.near.address.is_empty() && fee.near.bps > 0 {
+            Some((&fee.near.address, fee.near.bps))
+        } else {
+            None
+        };
+
+        referral.map(|(address, bps)| {
+            vec![AppFee {
+                recipient: address.clone(),
+                fee: bps,
+            }]
+        })
+    }
+
+    fn build_quote_request(&self, request: &QuoteRequest, mode: SwapType, dry: bool) -> Result<NearQuoteRequest, SwapperError> {
+        let origin_asset = get_near_intents_asset_id(&request.from_asset)?;
+        let destination_asset = get_near_intents_asset_id(&request.to_asset)?;
+        let amount = match mode {
+            SwapType::ExactInput => request.value.clone(),
+            SwapType::FlexInput => request.value.clone(),
+        };
+        let deposit_mode = Self::resolve_deposit_mode(&request.from_asset);
+
+        let deadline = (Utc::now() + Duration::minutes(DEFAULT_DEADLINE_MINUTES)).to_rfc3339();
+
+        Ok(NearQuoteRequest {
+            origin_asset,
+            destination_asset,
+            amount,
+            referral: DEFAULT_REFERRAL.to_string(),
+            recipient: request.destination_address.clone(),
+            swap_type: mode,
+            slippage_tolerance: request.options.slippage.bps,
+            app_fees: Self::build_app_fee(request),
+            deposit_type: DEPOSIT_TYPE_ORIGIN.to_string(),
+            refund_to: request.wallet_address.clone(),
+            refund_type: DEPOSIT_TYPE_ORIGIN.to_string(),
+            recipient_type: RECIPIENT_TYPE_DESTINATION.to_string(),
+            deadline,
+            quote_waiting_time_ms: DEFAULT_WAIT_TIME_MS,
+            dry,
+            deposit_mode,
+        })
+    }
+
+    fn parse_amount(value: &str, field: &str) -> Result<String, SwapperError> {
+        if value.is_empty() {
+            Err(SwapperError::ComputeQuoteError(format!("Missing {field} in Near Intents response")))
+        } else {
+            Ok(value.to_string())
+        }
+    }
+
+    fn map_transaction_status(status: &str) -> SwapStatus {
+        match status {
+            "SWAP_COMPLETED" | "SWAP_COMPLETED_TX" | "SUCCESS" => SwapStatus::Completed,
+            "REFUNDED" | "SWAP_REFUNDED" => SwapStatus::Refunded,
+            "SWAP_FAILED" | "FAILED" | "SWAP_LIQUIDITY_TIMEOUT" | "SWAP_RISK_FAILED" => SwapStatus::Failed,
+            "KNOWN_DEPOSIT_TX" | "PENDING_DEPOSIT" | "INCOMPLETE_DEPOSIT" | "PROCESSING" => SwapStatus::Pending,
+            _ => SwapStatus::Pending,
+        }
+    }
+
+    fn resolve_destination_chain(result: &ExecutionStatus) -> Option<Chain> {
+        result
+            .quote_response
+            .as_ref()
+            .and_then(|response| asset_id_from_near_intents(&response.quote_request.destination_asset))
+            .map(|asset| asset.chain)
+    }
+
+    fn resolve_deposit_mode(asset: &SwapperQuoteAsset) -> DepositMode {
+        match asset.asset_id().chain {
+            Chain::Stellar => DepositMode::Memo,
+            _ => DepositMode::Simple,
+        }
+    }
+
+    async fn build_deposit_data(
+        &self,
+        deposit_mode: DepositMode,
+        deposit_memo: Option<String>,
+        from_asset: &SwapperQuoteAsset,
+        wallet_address: &str,
+        deposit_address: &str,
+        amount_in: &str,
+    ) -> Result<DepositData, SwapperError> {
+        if from_asset.asset_id().chain == Chain::Sui {
+            return self.build_sui_deposit_data(from_asset, wallet_address, deposit_address, amount_in).await;
+        }
+
+        match deposit_mode {
+            DepositMode::Memo => {
+                let memo = deposit_memo.ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositMemo for MEMO deposit mode".into()))?;
+                Ok(DepositData {
+                    to: deposit_address.to_string(),
+                    value: amount_in.to_string(),
+                    data: memo,
+                })
+            }
+            DepositMode::Simple => Self::build_simple_deposit_data(from_asset, deposit_address, amount_in),
+        }
+    }
+
+    fn build_simple_deposit_data(from_asset: &SwapperQuoteAsset, deposit_address: &str, amount_in: &str) -> Result<DepositData, SwapperError> {
+        let asset_id = from_asset.asset_id();
+        if asset_id.is_token() {
+            match asset_id.chain.chain_type() {
+                ChainType::Ethereum => return Self::erc20_transfer_data(from_asset, deposit_address, amount_in),
+                ChainType::Tron => return Self::trc20_transfer_data(from_asset, deposit_address, amount_in),
+                _ => {}
+            }
+        }
+
+        Ok(DepositData {
+            to: deposit_address.to_string(),
+            value: amount_in.to_string(),
+            data: String::new(),
+        })
+    }
+
+    async fn build_sui_deposit_data(
+        &self,
+        from_asset: &SwapperQuoteAsset,
+        wallet_address: &str,
+        deposit_address: &str,
+        amount_in: &str,
+    ) -> Result<DepositData, SwapperError> {
+        let amount = amount_in
+            .parse::<u64>()
+            .map_err(|_| SwapperError::ComputeQuoteError("Invalid Sui amount provided for deposit".into()))?;
+
+        let message_bytes = build_transfer_message_bytes(
+            self.sui_client.as_ref(),
+            wallet_address,
+            deposit_address,
+            amount,
+            from_asset.asset_id().token_id.as_deref(),
+        )
+        .await
+        .map_err(|err| SwapperError::NetworkError(format!("Failed to build Sui deposit data: {err}")))?;
+
+        Ok(DepositData {
+            to: deposit_address.to_string(),
+            value: amount_in.to_string(),
+            data: message_bytes,
+        })
+    }
+
+    fn erc20_transfer_data(from_asset: &SwapperQuoteAsset, deposit_address: &str, amount_in: &str) -> Result<DepositData, SwapperError> {
+        let to_address = Address::from_str(deposit_address).map_err(|_| SwapperError::ComputeQuoteError("Invalid depositAddress for ERC20 transfer".into()))?;
+        let value = Self::parse_transfer_amount(amount_in)?;
+        let data = Self::encode_transfer_call(to_address, value);
+
+        let asset_id = from_asset.asset_id();
+        let token_contract = asset_id
+            .token_id
+            .as_ref()
+            .ok_or_else(|| SwapperError::ComputeQuoteError("Missing token contract for ERC20 transfer".into()))?;
+
+        Ok(DepositData {
+            to: token_contract.clone(),
+            value: ZERO_VALUE.to_string(),
+            data,
+        })
+    }
+
+    fn trc20_transfer_data(from_asset: &SwapperQuoteAsset, deposit_address: &str, amount_in: &str) -> Result<DepositData, SwapperError> {
+        let to_address = TronAddress::to_addr(deposit_address).ok_or_else(|| SwapperError::ComputeQuoteError("Invalid Tron deposit address".into()))?;
+        let value = Self::parse_transfer_amount(amount_in)?;
+        let data = Self::encode_transfer_call(to_address, value);
+
+        let asset_id = from_asset.asset_id();
+        let token_contract = asset_id
+            .token_id
+            .as_ref()
+            .ok_or_else(|| SwapperError::ComputeQuoteError("Missing token contract for TRC20 transfer".into()))?;
+
+        Ok(DepositData {
+            to: token_contract.clone(),
+            value: ZERO_VALUE.to_string(),
+            data,
+        })
+    }
+
+    fn parse_transfer_amount(amount_in: &str) -> Result<U256, SwapperError> {
+        U256::from_str(amount_in).map_err(|_| SwapperError::ComputeQuoteError("Invalid amount for token transfer".into()))
+    }
+
+    fn encode_transfer_call(to: Address, value: U256) -> String {
+        let call = IERC20::transferCall { to, value };
+        encode_prefixed(call.abi_encode())
+    }
+
+    fn extract_quote(response: QuoteResponseResult) -> Result<QuoteResponse, SwapperError> {
+        match response {
+            QuoteResponseResult::Ok(quote) => Ok(*quote),
+            QuoteResponseResult::Err(error) => Err(map_quote_error(&error)),
+        }
+    }
+}
+
+fn map_quote_error(error: &QuoteResponseError) -> SwapperError {
+    let lower = error.message.to_ascii_lowercase();
+    if lower.contains("too low") {
+        SwapperError::InputAmountTooSmall
+    } else {
+        SwapperError::NetworkError(format!("Near Intents quote error: {}", error.message))
+    }
+}
+
+#[async_trait]
+impl<C> Swapper for NearIntents<C>
+where
+    C: gem_client::Client + Clone + Send + Sync + Debug + 'static,
+{
+    fn provider(&self) -> &ProviderType {
+        &self.provider
+    }
+
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
+        self.supported_assets.clone()
+    }
+
+    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+        let mode = match request.mode {
+            SwapperMode::ExactIn => SwapType::ExactInput,
+            SwapperMode::ExactOut => return Err(SwapperError::NotImplemented),
+        };
+
+        let from_chain = request.from_asset.asset_id().chain;
+        if !self.enabled_sending_chains.contains(&from_chain) {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+
+        let quote_request = self.build_quote_request(request, mode, true)?;
+        let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
+        let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
+
+        let eta = response.quote.time_estimate;
+        let route_data = serde_json::to_string(&quote_request)?;
+
+        Ok(Quote {
+            from_value: request.value.clone(),
+            to_value: amount_out,
+            data: ProviderData {
+                provider: self.provider.clone(),
+                slippage_bps: request.options.slippage.bps,
+                routes: vec![Route {
+                    input: request.from_asset.asset_id(),
+                    output: request.to_asset.asset_id(),
+                    route_data,
+                    gas_limit: None,
+                }],
+            },
+            request: request.clone(),
+            eta_in_seconds: Some(eta),
+        })
+    }
+
+    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+        let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
+        let mut quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
+        quote_request.dry = false;
+
+        let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
+        let QuoteResponse {
+            quote_request: _,
+            quote: near_quote,
+        } = response;
+
+        let deposit_address = near_quote
+            .deposit_address
+            .ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositAddress in Near Intents response".into()))?;
+        let amount_in = Self::parse_amount(&near_quote.amount_in, "amountIn")?;
+        let deposit_mode = near_quote.deposit_mode.unwrap_or_default();
+        let from_asset = &quote.request.from_asset;
+
+        let deposit_data = self
+            .build_deposit_data(
+                deposit_mode,
+                near_quote.deposit_memo,
+                from_asset,
+                &quote.request.wallet_address,
+                &deposit_address,
+                &amount_in,
+            )
+            .await?;
+
+        Ok(SwapperQuoteData {
+            to: deposit_data.to,
+            value: deposit_data.value,
+            data: deposit_data.data,
+            approval: None,
+            gas_limit: None,
+        })
+    }
+
+    async fn get_swap_result(&self, chain: Chain, deposit_address: &str) -> Result<SwapResult, SwapperError> {
+        let status = self.client.get_transaction_status(deposit_address).await?;
+
+        let swap_status = Self::map_transaction_status(status.status.as_str());
+        let destination_chain = Self::resolve_destination_chain(&status);
+
+        let swap_details = status.swap_details.unwrap_or_default();
+
+        let to_tx_hash = match swap_status {
+            SwapStatus::Refunded => swap_details.origin_chain_tx_hashes.first().map(|entry| entry.hash.clone()),
+            _ => swap_details.destination_chain_tx_hashes.first().map(|entry| entry.hash.clone()),
+        };
+
+        let to_chain = match swap_status {
+            SwapStatus::Refunded => Some(chain),
+            _ => destination_chain,
+        };
+
+        Ok(SwapResult {
+            status: swap_status,
+            from_chain: chain,
+            from_tx_hash: deposit_address.to_string(),
+            to_chain,
+            to_tx_hash,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{SwapperError, SwapperQuoteAsset};
+    use primitives::{AssetId, Chain};
+    use serde_json::json;
+
+    #[test]
+    fn decode_quote_response_error_message() {
+        let payload = json!({
+            "message": "Amount is too low for bridge, try at least 8516130",
+        });
+
+        let decoded: QuoteResponseResult = serde_json::from_value(payload).expect("failed to decode error payload");
+
+        match decoded {
+            QuoteResponseResult::Err(err) => {
+                assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
+                assert!(matches!(map_quote_error(&err), SwapperError::InputAmountTooSmall));
+            }
+            QuoteResponseResult::Ok(_) => panic!("expected error variant"),
+        }
+    }
+
+    #[test]
+    fn build_deposit_data_eth_transfer() {
+        let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum));
+        let deposit_address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0";
+        let amount_in = "1000000000000000000";
+
+        let result = NearIntents::<RpcClient>::build_simple_deposit_data(&from_asset, deposit_address, amount_in).unwrap();
+
+        assert_eq!(result.to, deposit_address);
+        assert_eq!(result.value, amount_in);
+        assert_eq!(result.data, "");
+    }
+
+    #[test]
+    fn build_deposit_data_erc20_transfer() {
+        let from_asset = SwapperQuoteAsset::from(AssetId::new("ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap());
+        let deposit_address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0";
+        let amount_in = "1000000";
+
+        let result = NearIntents::<RpcClient>::build_simple_deposit_data(&from_asset, deposit_address, amount_in).unwrap();
+
+        assert_eq!(result.to, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
+        assert_eq!(result.value, "0");
+        assert!(!result.data.is_empty());
+        assert!(result.data.starts_with("0x"));
+    }
+
+    #[test]
+    fn build_deposit_data_trc20_transfer() {
+        let from_asset = SwapperQuoteAsset::from(AssetId::new("tron_tr7nhqarakt5gdshq28oqrerrc7jge8dx").unwrap());
+        let deposit_address = "TKHuVq1oKVruCGLvqVexFs6dawKv6fQgFs";
+        let amount_in = "1000000";
+
+        let result = NearIntents::<RpcClient>::build_simple_deposit_data(&from_asset, deposit_address, amount_in).unwrap();
+
+        assert_eq!(result.to, "tr7nhqarakt5gdshq28oqrerrc7jge8dx");
+        assert_eq!(result.value, "0");
+        assert!(!result.data.is_empty());
+        assert!(result.data.starts_with("0x"));
+    }
+}
+
+#[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+mod swap_integration_tests {
+    use super::*;
+    use crate::{
+        FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, models::Options,
+    };
+    use primitives::{AssetId, Chain, swap::SwapStatus};
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn test_near_intents_quote() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
+        let provider = NearIntents::new(rpc_provider);
+
+        use crate::config::get_swap_config;
+
+        let swap_config = get_swap_config();
+        let options = Options {
+            slippage: SwapperSlippage {
+                bps: 100,
+                mode: SwapperSlippageMode::Exact,
+            },
+            fee: Some(swap_config.referral_fee),
+            preferred_providers: vec![],
+        };
+
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::new("arbitrum_0xaf88d065e77c8cc2239327c5edb3a432268e5831").unwrap()),
+            to_asset: SwapperQuoteAsset::from(AssetId::new("solana_epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v").unwrap()),
+            wallet_address: "0x2527D02599Ba641c19FEa793cD0F167589a0f10D".to_string(),
+            destination_address: "13QkxhNMrTPxoCkRdYdJ65tFuwXPhL5gLS2Z5Nr6gjRK".to_string(),
+            value: "500000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options,
+        };
+
+        let quote = provider.fetch_quote(&request).await?;
+        assert!(!quote.to_value.is_empty());
+
+        let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        assert!(!quote_data.to.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_near_intents_stellar_requires_memo() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
+        let provider = NearIntents::new(rpc_provider);
+
+        let options = Options {
+            slippage: SwapperSlippage {
+                bps: 100,
+                mode: SwapperSlippageMode::Exact,
+            },
+            fee: None,
+            preferred_providers: vec![],
+        };
+
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Stellar)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near)),
+            wallet_address: "GBZXN7PIRZGNMHGA3RSSOEV56YXG54FSNTJDGQI3GHDVBKSXRZ5B6KJT".to_string(),
+            destination_address: "test.near".to_string(),
+            value: "1000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options,
+        };
+
+        let quote = match provider.fetch_quote(&request).await {
+            Ok(quote) => quote,
+            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(error) => return Err(error),
+        };
+        let quote_data = match provider.fetch_quote_data(&quote, FetchQuoteData::None).await {
+            Ok(data) => data,
+            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(error) => return Err(error),
+        };
+
+        assert!(!quote_data.data.is_empty(), "expected deposit memo for Stellar swaps via Near Intents");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_near_intents_status() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
+        let provider = NearIntents::new(rpc_provider);
+        let deposit_address = "18gB9wZz1Q4CzniurLye1KdUUqjWjo3ePr";
+
+        let swap_result = provider.get_swap_result(Chain::Bitcoin, deposit_address).await?;
+
+        if swap_result.status == SwapStatus::Completed {
+            assert_eq!(swap_result.to_chain, Some(Chain::Ethereum));
+        }
+
+        println!("swap_result: {swap_result:?}");
+
+        Ok(())
+    }
+}

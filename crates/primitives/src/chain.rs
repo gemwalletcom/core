@@ -360,17 +360,11 @@ impl Chain {
             | Self::Xrp
             | Self::Berachain
             | Self::Plasma
-            | Self::Tron => true,
-            Self::Osmosis
-            | Self::Celestia
-            | Self::Injective
-            | Self::Sei
-            | Self::Noble
-            | Self::Near
+            | Self::Tron
             | Self::Stellar
-            | Self::Algorand
-            | Self::Polkadot
-            | Self::Cardano => false,
+            | Self::Near
+            | Self::Cardano => true,
+            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot => false,
         }
     }
 
