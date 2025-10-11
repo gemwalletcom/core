@@ -99,7 +99,11 @@ impl TransactionsStore for DatabaseClient {
             query = query.filter(created_at.gt(datetime).or(updated_at.gt(datetime)));
         }
 
-        query.order(created_at.desc()).select(Transaction::as_select()).distinct().load(&mut self.connection)
+        query
+            .order(created_at.desc())
+            .select(Transaction::as_select())
+            .distinct()
+            .load(&mut self.connection)
     }
 
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResult>, diesel::result::Error> {

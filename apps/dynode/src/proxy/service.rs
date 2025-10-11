@@ -62,7 +62,12 @@ impl ProxyRequestService {
         let resolved_url = if let Some(domain_config) = self
             .domain_configs
             .get(&request.host)
-            .or_else(|| self.domain_configs.values().find(|d| d.chain == request.chain))
+            .or_else(|| {
+                self.domain_configs
+                    .values()
+                    .filter(|d| d.chain == request.chain)
+                    .min_by_key(|d| d.domain.len())
+            })
         {
             domain_config.resolve_url(&node_domain.url, rpc_method, Some(&request.path))
         } else {
@@ -292,7 +297,9 @@ impl ProxyRequestService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::Url;
     use crate::proxy::constants::JSON_CONTENT_TYPE;
+    use primitives::Chain;
     use reqwest::header;
 
     #[test]
@@ -311,5 +318,51 @@ mod tests {
             filtered.get(header::CONTENT_TYPE).unwrap(),
             &header::HeaderValue::from_static(JSON_CONTENT_TYPE)
         );
+    }
+
+    #[test]
+    fn test_domain_matching_prioritizes_exact_match_over_chain() {
+        let mut domain_configs = HashMap::new();
+
+        domain_configs.insert(
+            "bitcoin".to_string(),
+            Domain {
+                domain: "bitcoin".to_string(),
+                chain: Chain::Bitcoin,
+                block_delay: None,
+                poll_interval_seconds: None,
+                overrides: None,
+                urls: vec![Url {
+                    url: "https://bitcoin.example.com".to_string(),
+                    headers: None,
+                }],
+            },
+        );
+
+        domain_configs.insert(
+            "bitcoin.dynode.internal".to_string(),
+            Domain {
+                domain: "bitcoin.dynode.internal".to_string(),
+                chain: Chain::Bitcoin,
+                block_delay: None,
+                poll_interval_seconds: None,
+                overrides: None,
+                urls: vec![Url {
+                    url: "https://bitcoin-internal.example.com".to_string(),
+                    headers: None,
+                }],
+            },
+        );
+
+        let exact_match = domain_configs.get("bitcoin");
+        assert!(exact_match.is_some());
+        assert_eq!(exact_match.unwrap().domain, "bitcoin");
+
+        let chain_fallback = domain_configs
+            .values()
+            .filter(|d| d.chain == Chain::Bitcoin)
+            .min_by_key(|d| d.domain.len());
+        assert!(chain_fallback.is_some());
+        assert_eq!(chain_fallback.unwrap().domain, "bitcoin");
     }
 }

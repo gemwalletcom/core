@@ -169,7 +169,11 @@ mod tests {
 
     #[test]
     fn test_map_delegations_active() {
-        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(1000, 0, 0, 0))], &mock_reconfig(1000000), mock_lockup_secs());
+        let delegations = map_delegations(
+            vec![("pool".to_string(), mock_stake(1000, 0, 0, 0))],
+            &mock_reconfig(1000000),
+            mock_lockup_secs(),
+        );
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Active);
@@ -179,7 +183,11 @@ mod tests {
 
     #[test]
     fn test_map_delegations_pending_active() {
-        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 0, 500, 0))], &mock_reconfig(1000000), mock_lockup_secs());
+        let delegations = map_delegations(
+            vec![("pool".to_string(), mock_stake(0, 0, 500, 0))],
+            &mock_reconfig(1000000),
+            mock_lockup_secs(),
+        );
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Activating);
@@ -189,7 +197,11 @@ mod tests {
 
     #[test]
     fn test_map_delegations_pending_inactive() {
-        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 0, 0, 300))], &mock_reconfig(1000000), mock_lockup_secs());
+        let delegations = map_delegations(
+            vec![("pool".to_string(), mock_stake(0, 0, 0, 300))],
+            &mock_reconfig(1000000),
+            mock_lockup_secs(),
+        );
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Deactivating);

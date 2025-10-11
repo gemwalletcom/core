@@ -21,10 +21,7 @@ impl<C: Client> ChainStaking for AptosClient<C> {
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        let (validator_set, commission) = try_join!(
-            self.get_validator_set(),
-            self.get_operator_commission_percentage(KNOWN_VALIDATOR_POOL)
-        )?;
+        let (validator_set, commission) = try_join!(self.get_validator_set(), self.get_operator_commission_percentage(KNOWN_VALIDATOR_POOL))?;
 
         Ok(map_validators(validator_set, apy.unwrap_or(0.0), KNOWN_VALIDATOR_POOL, commission))
     }
