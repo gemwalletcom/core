@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, Device, Platform};
+use crate::{AssetId, Device, Platform, Transaction};
 
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -95,6 +95,7 @@ pub struct PushNotificationTransaction {
     pub wallet_index: i32,
     pub asset_id: String,
     pub transaction_id: String,
+    pub transaction: Transaction,
 }
 
 #[typeshare(swift = "Equatable, Sendable")]
