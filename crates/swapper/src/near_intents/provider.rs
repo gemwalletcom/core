@@ -15,7 +15,7 @@ use chrono::{Duration, Utc};
 use gem_evm::contracts::erc20::IERC20;
 use gem_sui::{SuiClient, build_transfer_message_bytes};
 use gem_tron::address::TronAddress;
-use primitives::{Chain, swap::SwapStatus};
+use primitives::{Chain, ChainType, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
