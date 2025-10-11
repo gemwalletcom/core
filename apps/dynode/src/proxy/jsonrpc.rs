@@ -164,6 +164,16 @@ impl JsonRpcHandler {
         Self::build_json_response(&responses, upstream_headers, response_status)
     }
 
+    async fn send_jsonrpc_request(
+        client: &reqwest::Client,
+        method: &Method,
+        url: &RequestUrl,
+        body: Vec<u8>,
+    ) -> Result<reqwest::Response, Box<dyn std::error::Error + Send + Sync>> {
+        let request = RequestBuilder::build_jsonrpc(url, method, body)?;
+        Ok(client.execute(request).await?)
+    }
+
     async fn fetch_single_response(
         call: &JsonRpcCall,
         request: &ProxyRequest,
@@ -172,9 +182,7 @@ impl JsonRpcHandler {
         client: &reqwest::Client,
     ) -> Result<(JsonRpcResult, u16), Box<dyn std::error::Error + Send + Sync>> {
         let body = serde_json::to_vec(&call)?;
-        let req = RequestBuilder::build_jsonrpc(url, &request.method, body)?;
-
-        let response = client.execute(req).await?;
+        let response = Self::send_jsonrpc_request(client, &request.method, url, body).await?;
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
 
@@ -237,9 +245,7 @@ impl JsonRpcHandler {
         method: &Method,
     ) -> Result<(serde_json::Value, u16), Box<dyn std::error::Error + Send + Sync>> {
         let body = serde_json::to_vec(&calls)?;
-        let req = RequestBuilder::build_jsonrpc(url, method, body)?;
-
-        let response = client.execute(req).await?;
+        let response = Self::send_jsonrpc_request(client, method, url, body).await?;
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
         let responses: serde_json::Value = serde_json::from_slice(&body_bytes)?;

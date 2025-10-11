@@ -15,9 +15,10 @@ use crate::proxy::constants::JSON_CONTENT_TYPE;
 use crate::proxy::proxy_builder::ProxyBuilder;
 use crate::proxy::proxy_request::ProxyRequest;
 use crate::proxy::response_builder::ResponseBuilder;
-use crate::proxy::{NodeDomain, ProxyRequestService, ProxyResponse};
+use crate::proxy::{NodeDomain, ProxyResponse};
 use primitives::{ResponseError, response::ErrorDetail};
 use serde_json::json;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct NodeService {
@@ -47,11 +48,7 @@ impl NodeService {
             hash_map.insert(key, NodeDomain { url });
         }
 
-        let http_client = gem_client::builder()
-            .timeout(std::time::Duration::from_secs(request_config.timeout_seconds))
-            .connect_timeout(std::time::Duration::from_secs(request_config.connect_timeout_seconds))
-            .build()
-            .unwrap();
+        let http_client = gem_client::builder().timeout(Duration::from_millis(request_config.timeout)).build().unwrap();
 
         Self {
             domains,
@@ -63,16 +60,6 @@ impl NodeService {
             request_config,
             http_client,
         }
-    }
-
-    pub async fn get_proxy_request(&self) -> ProxyRequestService {
-        ProxyRequestService::new(
-            Arc::clone(&self.nodes),
-            self.domains.clone(),
-            self.metrics.as_ref().clone(),
-            self.cache.clone(),
-            self.http_client.clone(),
-        )
     }
 
     pub async fn get_node_domain(nodes: &Arc<RwLock<HashMap<String, NodeDomain>>>, domain: String) -> Option<NodeDomain> {
@@ -114,12 +101,13 @@ impl NodeService {
             return self.create_error_response(&request, None, &format!("Domain for chain {} not found", request.chain));
         };
 
+        let proxy_builder = self.create_proxy_builder();
+
         if !self.retry_config.enabled || domain.urls.len() <= 1 {
-            let proxy_service = self.get_proxy_request().await;
             let Some(node_domain) = NodeService::get_node_domain(&self.nodes, domain.domain.clone()).await else {
                 return self.create_error_response(&request, None, &format!("Node domain not found for domain: {}", domain.domain));
             };
-            match proxy_service.handle_request(request.clone(), &node_domain).await {
+            match proxy_builder.handle_request_with_url(request.clone(), &node_domain.url).await {
                 Ok(response) if self.should_retry_response(&request, &response) => {
                     return self.create_error_response(&request, Some(&node_domain.url.host()), &format!("Upstream status code: {}", response.status));
                 }
@@ -128,7 +116,7 @@ impl NodeService {
         }
 
         for url in &domain.urls {
-            if let Ok(response) = self.create_proxy_builder().handle_request_with_url(request.clone(), url).await
+            if let Ok(response) = proxy_builder.handle_request_with_url(request.clone(), url).await
                 && !self.should_retry_response(&request, &response)
             {
                 return Ok(response);

@@ -292,12 +292,13 @@ impl ProxyRequestService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::proxy::constants::JSON_CONTENT_TYPE;
     use reqwest::header;
 
     #[test]
     fn test_persist_headers_filters_correctly() {
         let mut headers = HeaderMap::new();
-        headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static("application/json"));
+        headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(JSON_CONTENT_TYPE));
         headers.insert("x-keep", header::HeaderValue::from_static("1"));
         headers.insert("x-drop", header::HeaderValue::from_static("0"));
 
@@ -308,7 +309,7 @@ mod tests {
         assert_eq!(filtered.get("x-keep").unwrap(), &header::HeaderValue::from_static("1"));
         assert_eq!(
             filtered.get(header::CONTENT_TYPE).unwrap(),
-            &header::HeaderValue::from_static("application/json")
+            &header::HeaderValue::from_static(JSON_CONTENT_TYPE)
         );
     }
 }

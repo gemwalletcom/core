@@ -79,17 +79,7 @@ mod tests {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct RequestConfig {
-    pub timeout_seconds: u64,
-    pub connect_timeout_seconds: u64,
-}
-
-impl Default for RequestConfig {
-    fn default() -> Self {
-        Self {
-            timeout_seconds: 60,
-            connect_timeout_seconds: 15,
-        }
-    }
+    pub timeout: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -103,7 +93,6 @@ pub struct NodeConfig {
     #[serde(default)]
     pub monitoring: NodeMonitoringConfig,
     pub retry: RetryConfig,
-    #[serde(default)]
     pub request: RequestConfig,
 }
 

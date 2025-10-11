@@ -55,6 +55,7 @@ impl RequestBuilder {
 mod tests {
     use super::*;
     use crate::config::Url;
+    use crate::proxy::constants::JSON_CONTENT_TYPE;
     use reqwest::Method as HttpMethod;
 
     fn make_request_url(base: &str, path: &str, header_kv: Option<(&str, &str)>) -> RequestUrl {
@@ -81,10 +82,7 @@ mod tests {
         assert_eq!(req.url().to_string(), "https://example.com/rpc");
 
         let headers = req.headers();
-        assert_eq!(
-            headers.get(header::CONTENT_TYPE).unwrap(),
-            &header::HeaderValue::from_static("application/json")
-        );
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), &header::HeaderValue::from_static(JSON_CONTENT_TYPE));
         assert_eq!(headers.get("x-api-key").unwrap(), &header::HeaderValue::from_str("secret").unwrap());
     }
 
@@ -93,7 +91,7 @@ mod tests {
         let req_url = make_request_url("https://example.com", "/data", Some(("x-api-key", "k")));
 
         let mut orig_headers = HeaderMap::new();
-        orig_headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static("application/json"));
+        orig_headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(JSON_CONTENT_TYPE));
         orig_headers.insert("x-drop", header::HeaderValue::from_static("dropme"));
 
         let keep = [header::CONTENT_TYPE];
@@ -103,10 +101,7 @@ mod tests {
         assert_eq!(req.url().to_string(), "https://example.com/data");
         let headers = req.headers();
         assert!(headers.get("x-drop").is_none());
-        assert_eq!(
-            headers.get(header::CONTENT_TYPE).unwrap(),
-            &header::HeaderValue::from_static("application/json")
-        );
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), &header::HeaderValue::from_static(JSON_CONTENT_TYPE));
         assert_eq!(headers.get("x-api-key").unwrap(), &header::HeaderValue::from_static("k"));
     }
 }
