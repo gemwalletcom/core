@@ -137,7 +137,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 subscriptions::get_subscriptions,
                 subscriptions::delete_subscriptions,
                 transactions::get_transactions_by_device_id_v1,
-                transactions::get_transactions_by_id,
+                transactions::get_transaction_by_id,
                 chain::transaction::get_latest_block_number,
                 chain::transaction::get_block_transactions,
                 chain::transaction::get_block_transactions_finalize,

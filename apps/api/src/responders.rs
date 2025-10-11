@@ -1,6 +1,5 @@
 use cacher::CacheError;
 use primitives::ResponseResult;
-use primitives::response::ResponseResultNew;
 use rocket::response::{Responder, Response};
 use rocket::serde::json::Json;
 use rocket::{Request, http::Status};
@@ -85,20 +84,6 @@ impl<T> From<T> for ApiResponse<T> {
 }
 
 impl<'r, T: Serialize> Responder<'r, 'static> for ApiResponse<T> {
-    fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
-        Json(self.0).respond_to(request)
-    }
-}
-
-pub struct ApiResponseNew<T>(pub ResponseResultNew<T>);
-
-impl<T> From<T> for ApiResponseNew<T> {
-    fn from(data: T) -> Self {
-        ApiResponseNew(ResponseResultNew::new(data))
-    }
-}
-
-impl<'r, T: Serialize> Responder<'r, 'static> for ApiResponseNew<T> {
     fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
         Json(self.0).respond_to(request)
     }

@@ -52,8 +52,24 @@ impl ProxyRequestService {
 
     pub async fn handle_request(&self, request: ProxyRequest, node_domain: &NodeDomain) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let chain = request.chain;
-        let url = RequestUrl::from_parts(node_domain.url.clone(), &request.path_with_query);
         let request_type = request.request_type();
+
+        let rpc_method = match &request_type {
+            RequestType::JsonRpc(JsonRpcRequest::Single(call)) => Some(call.method.as_str()),
+            _ => None,
+        };
+
+        let resolved_url = if let Some(domain_config) = self
+            .domain_configs
+            .get(&request.host)
+            .or_else(|| self.domain_configs.values().find(|d| d.chain == request.chain))
+        {
+            domain_config.resolve_url(&node_domain.url, rpc_method, Some(&request.path))
+        } else {
+            node_domain.url.clone()
+        };
+
+        let url = RequestUrl::from_parts(resolved_url, &request.path_with_query);
 
         self.metrics.add_proxy_request(&request.host, &request.user_agent);
 

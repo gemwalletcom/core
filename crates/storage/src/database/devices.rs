@@ -28,7 +28,7 @@ impl DevicesStore for DatabaseClient {
 
     fn get_device_by_id(&mut self, _id: i32) -> Result<Device, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        devices.filter(id.eq(_id)).select(Device::as_select()).first(&mut self.connection)
+        devices.find(_id).select(Device::as_select()).first(&mut self.connection)
     }
 
     fn get_device(&mut self, _device_id: &str) -> Result<Device, diesel::result::Error> {

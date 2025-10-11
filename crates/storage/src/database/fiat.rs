@@ -130,7 +130,7 @@ impl FiatStore for DatabaseClient {
 
     fn get_fiat_rate(&mut self, currency: &str) -> Result<FiatRate, diesel::result::Error> {
         use crate::schema::fiat_rates::dsl::*;
-        fiat_rates.filter(id.eq(currency)).select(FiatRate::as_select()).first(&mut self.connection)
+        fiat_rates.find(currency).select(FiatRate::as_select()).first(&mut self.connection)
     }
 
     fn get_fiat_providers(&mut self) -> Result<Vec<FiatProvider>, diesel::result::Error> {
