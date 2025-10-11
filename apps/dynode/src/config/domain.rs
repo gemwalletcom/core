@@ -1,8 +1,8 @@
 use primitives::Chain;
 use serde::Deserialize;
 
-use super::NodeMonitoringConfig;
 use super::url::{NodeResult, Override, Url};
+use super::NodeMonitoringConfig;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Domain {

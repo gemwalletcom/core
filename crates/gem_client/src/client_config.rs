@@ -2,7 +2,7 @@ use std::time::Duration;
 
 pub fn builder() -> reqwest::ClientBuilder {
     reqwest::Client::builder()
-        .timeout(Duration::from_secs(60))
+        .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(15))
         .pool_idle_timeout(Duration::from_secs(90))
         .pool_max_idle_per_host(20)

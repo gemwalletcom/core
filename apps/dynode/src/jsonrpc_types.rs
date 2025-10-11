@@ -1,3 +1,4 @@
+use crate::proxy::constants::JSON_CONTENT_TYPE;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -152,7 +153,7 @@ impl RequestType {
     }
 
     pub fn content_type(&self) -> &'static str {
-        "application/json"
+        JSON_CONTENT_TYPE
     }
 
     pub fn cache_key(&self, host: &str, path: &str) -> String {
