@@ -112,17 +112,9 @@ pub struct ExecutionStatus {
 #[serde(rename_all = "camelCase")]
 pub struct SwapDetails {
     #[serde(default)]
-    pub intent_hashes: Vec<String>,
-    #[serde(default)]
-    pub near_tx_hashes: Vec<String>,
-    #[serde(default)]
     pub amount_in: Option<String>,
     #[serde(default)]
-    pub amount_in_formatted: Option<String>,
-    #[serde(default)]
     pub amount_out: Option<String>,
-    #[serde(default)]
-    pub amount_out_formatted: Option<String>,
     #[serde(default)]
     pub slippage: Option<u32>,
     #[serde(default)]
@@ -131,8 +123,6 @@ pub struct SwapDetails {
     pub destination_chain_tx_hashes: Vec<TransactionDetails>,
     #[serde(default)]
     pub refunded_amount: Option<String>,
-    #[serde(default)]
-    pub refunded_amount_formatted: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
