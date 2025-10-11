@@ -44,9 +44,10 @@ pub struct Transaction {
     #[serde(rename = "type")]
     pub transaction_type: TransactionType,
     pub state: TransactionState,
-    #[serde(rename = "blockNumber")]
-    pub block_number: String,
-    pub sequence: String,
+    #[serde(rename = "blockNumber", skip_serializing_if = "Option::is_none")]
+    pub block_number: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sequence: Option<String>,
     pub fee: String,
     #[serde(rename = "feeAssetId")]
     pub fee_asset_id: AssetId,
@@ -91,8 +92,8 @@ impl Transaction {
             contract,
             transaction_type,
             state,
-            block_number: "0".to_string(),
-            sequence: "0".to_string(),
+            block_number: None,
+            sequence: None,
             fee,
             fee_asset_id,
             value,
@@ -128,8 +129,8 @@ impl Transaction {
             contract: None,
             transaction_type,
             state,
-            block_number: "0".to_string(),
-            sequence: "0".to_string(),
+            block_number: None,
+            sequence: None,
             fee,
             fee_asset_id,
             value,
