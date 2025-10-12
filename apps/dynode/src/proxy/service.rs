@@ -18,7 +18,6 @@ use tokio::sync::RwLock;
 #[derive(Debug, Clone)]
 pub struct ProxyRequestService {
     pub domains: Arc<RwLock<HashMap<String, NodeDomain>>>,
-    pub domain_configs: HashMap<String, Domain>,
     pub metrics: Metrics,
     pub cache: RequestCache,
     pub client: reqwest::Client,
@@ -40,7 +39,6 @@ impl NodeDomain {
 impl ProxyRequestService {
     pub fn new(
         domains: Arc<RwLock<HashMap<String, NodeDomain>>>,
-        domain_configs: HashMap<String, Domain>,
         metrics: Metrics,
         cache: RequestCache,
         client: reqwest::Client,
@@ -49,7 +47,6 @@ impl ProxyRequestService {
 
         Self {
             domains,
-            domain_configs,
             metrics,
             cache,
             client,

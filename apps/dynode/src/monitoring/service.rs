@@ -166,12 +166,7 @@ impl NodeService {
     }
 
     fn create_proxy_builder(&self) -> ProxyBuilder {
-        ProxyBuilder::new(
-            self.domains.clone(),
-            self.metrics.as_ref().clone(),
-            self.cache.clone(),
-            self.http_client.clone(),
-        )
+        ProxyBuilder::new(self.metrics.as_ref().clone(), self.cache.clone(), self.http_client.clone())
     }
 }
 
