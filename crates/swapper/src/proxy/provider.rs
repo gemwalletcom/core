@@ -5,21 +5,19 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 use super::{
     client::ProxyClient,
     mayan::{MayanClientStatus, MayanExplorer, wormhole_chain_id_to_chain},
-    symbiosis::model::SymbiosisTransactionData,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode,
     SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
-    approval::{evm::check_approval_erc20, tron::check_approval_tron},
+    approval::evm::check_approval_erc20,
     asset::*,
-    client_factory::create_tron_client,
     config::DEFAULT_SWAP_FEE_BPS,
     models::{ApprovalType, SwapperChainAsset},
 };
 use gem_client::Client;
 use primitives::{
-    AssetId, Chain, ChainType,
+    Chain, ChainType,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
@@ -70,11 +68,7 @@ where
                     .await
                 }
             }
-            ChainType::Tron => {
-                let amount = U256::from_str(&quote.from_value).map_err(SwapperError::from)?;
-                self.check_tron_approval(&from_asset, request.wallet_address.clone(), amount, quote_data.gas_limit.clone(), quote)
-                    .await
-            }
+            ChainType::Tron => Ok((None, None)),
             _ => Ok((None, None)),
         }
     }
@@ -95,50 +89,6 @@ where
         };
         Ok((approval.approval_data(), gas_limit))
     }
-
-    async fn check_tron_approval(
-        &self,
-        from_asset: &AssetId,
-        wallet_address: String,
-        amount: U256,
-        default_fee_limit: Option<String>,
-        quote: &Quote,
-    ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
-        let route_data = quote.data.routes.first().map(|r| r.route_data.clone()).ok_or(SwapperError::InvalidRoute)?;
-        let proxy_quote: ProxyQuote = serde_json::from_str(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let spender = proxy_quote.route_data["approveTo"]
-            .as_str()
-            .ok_or(SwapperError::TransactionError("Failed to check approval without spender".to_string()))?;
-
-        let approval = if from_asset.is_native() {
-            ApprovalType::None
-        } else {
-            let token = from_asset.token_id.clone().unwrap();
-            check_approval_tron(&wallet_address, &token, spender, amount, self.rpc_provider.clone()).await?
-        };
-
-        let fee_limit = if matches!(approval, ApprovalType::Approve(_)) {
-            default_fee_limit
-        } else {
-            let tx_data: SymbiosisTransactionData = serde_json::from_value(proxy_quote.route_data["tx"].clone()).map_err(|_| SwapperError::InvalidRoute)?;
-            let client = create_tron_client(self.rpc_provider.clone()).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
-            let call_value = tx_data.value.unwrap_or_default();
-            let call_value_u64 = call_value.parse::<u64>().unwrap_or_default();
-            let energy = client
-                .estimate_energy(
-                    &wallet_address,
-                    &tx_data.to,
-                    &tx_data.function_selector,
-                    &tx_data.data,
-                    tx_data.fee_limit.unwrap_or_default(),
-                    call_value_u64,
-                )
-                .await
-                .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
-            Some(energy.to_string())
-        };
-        Ok((approval.approval_data(), fee_limit))
-    }
 }
 
 impl ProxyProvider<RpcClient> {
@@ -152,8 +102,8 @@ impl ProxyProvider<RpcClient> {
         Self::new_with_path(SwapperProvider::StonfiV2, "stonfi_v2", vec![SwapperChainAsset::All(Chain::Ton)], rpc_provider)
     }
 
-    pub fn new_symbiosis(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(SwapperProvider::Symbiosis, "symbiosis", vec![SwapperChainAsset::All(Chain::Tron)], rpc_provider)
+    pub fn new_orca(rpc_provider: Arc<dyn RpcProvider>) -> Self {
+        Self::new_with_path(SwapperProvider::Orca, "orca", vec![SwapperChainAsset::All(Chain::Solana)], rpc_provider)
     }
 
     pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> Self {

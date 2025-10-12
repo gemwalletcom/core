@@ -123,12 +123,12 @@ pub enum SwapperProvider {
     StonfiV2,
     Mayan,
     Reservoir,
-    Symbiosis,
     Chainflip,
     NearIntents,
     CetusAggregator,
     Relay,
     Hyperliquid,
+    Orca,
 }
 
 #[uniffi::remote(Enum)]

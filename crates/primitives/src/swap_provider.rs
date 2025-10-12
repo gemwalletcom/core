@@ -21,12 +21,12 @@ pub enum SwapProvider {
     StonfiV2,
     Mayan,
     Reservoir,
-    Symbiosis,
     Chainflip,
     NearIntents,
     CetusAggregator,
     Relay,
     Hyperliquid,
+    Orca,
 }
 
 impl SwapProvider {
@@ -52,11 +52,11 @@ impl SwapProvider {
             Self::StonfiV2 => "STON.fi",
             Self::Mayan => "Mayan",
             Self::Reservoir => "Reservoir",
-            Self::Symbiosis => "Symbiosis",
             Self::Chainflip => "Chainflip",
             Self::NearIntents => "NEAR Intents",
             Self::Relay => "Relay",
             Self::Hyperliquid => "Hyperliquid",
+            Self::Orca => "Orca",
         }
     }
 
@@ -75,13 +75,13 @@ impl SwapProvider {
             | Self::Cetus
             | Self::Mayan
             | Self::Reservoir
-            | Self::Symbiosis
             | Self::Chainflip
             | Self::NearIntents
             | Self::CetusAggregator
             | Self::Aerodrome
             | Self::Relay
-            | Self::Hyperliquid => self.name(),
+            | Self::Hyperliquid
+            | Self::Orca => self.name(),
         }
     }
 }

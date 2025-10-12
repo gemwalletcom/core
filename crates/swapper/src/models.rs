@@ -38,8 +38,8 @@ impl ProviderType {
             | SwapperProvider::CetusAggregator
             | SwapperProvider::StonfiV2
             | SwapperProvider::Reservoir
-            | SwapperProvider::Symbiosis
-            | SwapperProvider::Aerodrome => SwapperProviderMode::OnChain,
+            | SwapperProvider::Aerodrome
+            | SwapperProvider::Orca => SwapperProviderMode::OnChain,
             SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapperProviderMode::CrossChain,
             SwapperProvider::Thorchain => SwapperProviderMode::OmniChain(vec![Chain::Thorchain, Chain::Tron]),
             SwapperProvider::Relay => SwapperProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Manta, Chain::Berachain]),
