@@ -107,14 +107,7 @@ impl NodeMonitor {
 
         if let Some(best_candidate) = NodeSyncAnalyzer::select_best_node(&current_node.url, &fallback_statuses) {
             if best_candidate.url.url != current_node.url.url {
-                NodeService::update_node_domain(
-                    nodes,
-                    domain.domain.clone(),
-                    NodeDomain {
-                        url: best_candidate.url.clone(),
-                    },
-                )
-                .await;
+                NodeService::update_node_domain(nodes, domain.domain.clone(), NodeDomain::new(best_candidate.url.clone(), domain.clone())).await;
                 metrics.set_node_host_current(&domain.domain, &best_candidate.url.url);
                 metrics.add_node_switch(domain.chain.as_ref(), &current_node.url.url, &best_candidate.url.url);
 

@@ -1,5 +1,3 @@
-use crate::config::{Domain, Url};
-
 use crate::cache::RequestCache;
 #[cfg(test)]
 use crate::config::MetricsConfig;
@@ -9,44 +7,43 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+#[cfg(test)]
+use crate::config::{Domain, Url};
+
 pub struct ProxyBuilder {
-    domain_configs: HashMap<String, Domain>,
     metrics: Metrics,
     cache: RequestCache,
     client: reqwest::Client,
 }
 
 impl ProxyBuilder {
-    pub fn new(domain_configs: HashMap<String, Domain>, metrics: Metrics, cache: RequestCache, client: reqwest::Client) -> Self {
+    pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client) -> Self {
         Self {
-            domain_configs,
             metrics,
             cache,
             client,
         }
     }
 
-    pub fn create_for_url(&self, domain: &str, url: &Url) -> ProxyRequestService {
+    pub fn create_for_domain(&self, domain: &str, node_domain: &NodeDomain) -> ProxyRequestService {
         let mut node_domains = HashMap::new();
-        node_domains.insert(domain.to_string(), NodeDomain { url: url.clone() });
+        node_domains.insert(domain.to_string(), node_domain.clone());
 
         ProxyRequestService::new(
             Arc::new(RwLock::new(node_domains)),
-            self.domain_configs.clone(),
             self.metrics.clone(),
             self.cache.clone(),
             self.client.clone(),
         )
     }
 
-    pub async fn handle_request_with_url(
+    pub async fn handle_request(
         &self,
         request: ProxyRequest,
-        url: &Url,
+        node_domain: &NodeDomain,
     ) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let proxy_service = self.create_for_url(&request.host, url);
-        let node_domain = crate::proxy::NodeDomain { url: url.clone() };
-        proxy_service.handle_request(request, &node_domain).await
+        let proxy_service = self.create_for_domain(&request.host, node_domain);
+        proxy_service.handle_request(request, node_domain).await
     }
 }
 
@@ -76,16 +73,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_simple_proxy_builder_creation() {
-        let mut domain_configs = HashMap::new();
-        domain_configs.insert("test.com".to_string(), create_test_domain());
-
         let metrics = Metrics::new(MetricsConfig::default());
         let cache = RequestCache::new(CacheConfig::default());
         let client = reqwest::Client::new();
 
-        let builder = ProxyBuilder::new(domain_configs, metrics, cache, client);
+        let builder = ProxyBuilder::new(metrics, cache, client);
         let url = create_test_url("https://test-node.com");
-        let proxy = builder.create_for_url("test.com", &url);
+        let node_domain = NodeDomain::new(url, create_test_domain());
+        let proxy = builder.create_for_domain("test.com", &node_domain);
 
         let domains = proxy.domains.read().await;
         assert!(domains.contains_key("test.com"));
