@@ -129,6 +129,7 @@ pub enum SwapperProvider {
     CetusAggregator,
     Relay,
     Hyperliquid,
+    Orca,
 }
 
 #[uniffi::remote(Enum)]

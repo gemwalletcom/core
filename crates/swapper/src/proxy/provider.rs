@@ -17,7 +17,7 @@ use crate::{
 };
 use gem_client::Client;
 use primitives::{
-    AssetId, Chain, ChainType,
+    Chain, ChainType,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
@@ -68,9 +68,7 @@ where
                     .await
                 }
             }
-            ChainType::Tron => {
-                Ok((None, None))
-            }
+            ChainType::Tron => Ok((None, None)),
             _ => Ok((None, None)),
         }
     }
@@ -91,7 +89,6 @@ where
         };
         Ok((approval.approval_data(), gas_limit))
     }
-
 }
 
 impl ProxyProvider<RpcClient> {

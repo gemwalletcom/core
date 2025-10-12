@@ -27,6 +27,7 @@ pub enum SwapProvider {
     CetusAggregator,
     Relay,
     Hyperliquid,
+    Orca,
 }
 
 impl SwapProvider {
@@ -57,6 +58,7 @@ impl SwapProvider {
             Self::NearIntents => "NEAR Intents",
             Self::Relay => "Relay",
             Self::Hyperliquid => "Hyperliquid",
+            Self::Orca => "Orca",
         }
     }
 
@@ -81,7 +83,8 @@ impl SwapProvider {
             | Self::CetusAggregator
             | Self::Aerodrome
             | Self::Relay
-            | Self::Hyperliquid => self.name(),
+            | Self::Hyperliquid
+            | Self::Orca => self.name(),
         }
     }
 }

@@ -4,6 +4,7 @@ use num_bigint::BigUint;
 use primitives::swap::ApprovalData;
 use std::sync::Arc;
 
+#[allow(unused)]
 pub async fn check_approval_tron(
     owner_address: &str,
     token_address: &str,
