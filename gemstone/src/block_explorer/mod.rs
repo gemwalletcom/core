@@ -60,7 +60,6 @@ impl Explorer {
             | SwapperProvider::StonfiV2
             | SwapperProvider::Reservoir
             | SwapperProvider::Aerodrome
-            | SwapperProvider::Symbiosis
             | SwapperProvider::Hyperliquid
             | SwapperProvider::NearIntents
             | SwapperProvider::Orca => get_block_explorer(self.chain, explorer_name),

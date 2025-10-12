@@ -38,7 +38,6 @@ impl ProviderType {
             | SwapperProvider::CetusAggregator
             | SwapperProvider::StonfiV2
             | SwapperProvider::Reservoir
-            | SwapperProvider::Symbiosis
             | SwapperProvider::Aerodrome
             | SwapperProvider::Orca => SwapperProviderMode::OnChain,
             SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapperProviderMode::CrossChain,
