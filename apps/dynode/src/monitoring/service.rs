@@ -45,7 +45,7 @@ impl NodeService {
 
         for (key, domain) in domains.clone() {
             let url = domain.urls.first().unwrap().clone();
-            hash_map.insert(key, NodeDomain { url });
+            hash_map.insert(key, NodeDomain::new(url, domain.clone()));
         }
 
         let http_client = gem_client::builder().timeout(Duration::from_millis(request_config.timeout)).build().unwrap();
@@ -92,22 +92,14 @@ impl NodeService {
     }
 
     pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
-        let domain = self
-            .domains
-            .get(&request.host)
-            .or_else(|| self.domains.values().find(|d| d.chain == request.chain));
-
-        let Some(domain) = domain else {
-            return self.create_error_response(&request, None, &format!("Domain for chain {} not found", request.chain));
-        };
-
+        let domain = self.get_domain_for_request(&request)?;
         let proxy_builder = self.create_proxy_builder();
 
         if !self.retry_config.enabled || domain.urls.len() <= 1 {
             let Some(node_domain) = NodeService::get_node_domain(&self.nodes, domain.domain.clone()).await else {
                 return self.create_error_response(&request, None, &format!("Node domain not found for domain: {}", domain.domain));
             };
-            match proxy_builder.handle_request_with_url(request.clone(), &node_domain.url).await {
+            match proxy_builder.handle_request(request.clone(), &node_domain).await {
                 Ok(response) if self.should_retry_response(&request, &response) => {
                     return self.create_error_response(&request, Some(&node_domain.url.host()), &format!("Upstream status code: {}", response.status));
                 }
@@ -116,7 +108,8 @@ impl NodeService {
         }
 
         for url in &domain.urls {
-            if let Ok(response) = proxy_builder.handle_request_with_url(request.clone(), url).await
+            let node_domain = NodeDomain::new(url.clone(), domain.clone());
+            if let Ok(response) = proxy_builder.handle_request(request.clone(), &node_domain).await
                 && !self.should_retry_response(&request, &response)
             {
                 return Ok(response);
@@ -124,6 +117,18 @@ impl NodeService {
         }
 
         self.create_error_response(&request, None, "All upstream URLs failed")
+    }
+
+    pub(crate) fn get_domain_for_request(&self, request: &ProxyRequest) -> Result<&Domain, Box<dyn Error + Send + Sync>> {
+        self.domains
+            .get(&request.host)
+            .or_else(|| {
+                self.domains
+                    .values()
+                    .filter(|d| d.chain == request.chain)
+                    .max_by_key(|d| d.domain.len())
+            })
+            .ok_or_else(|| format!("Domain for chain {} not found", request.chain).into())
     }
 
     fn should_retry_response(&self, request: &ProxyRequest, response: &ProxyResponse) -> bool {
@@ -167,5 +172,96 @@ impl NodeService {
             self.cache.clone(),
             self.http_client.clone(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::{CacheConfig, MetricsConfig, Url};
+    use primitives::Chain;
+    use reqwest::{Method, header::HeaderMap};
+
+    fn create_service(domains: HashMap<String, Domain>) -> NodeService {
+        NodeService::new(
+            domains,
+            Metrics::new(MetricsConfig::default()),
+            CacheConfig::default(),
+            NodeMonitoringConfig::default(),
+            RetryConfig {
+                enabled: false,
+                status_codes: vec![],
+                error_messages: vec![],
+            },
+            RequestConfig { timeout: 30000 },
+        )
+    }
+
+    fn create_domain(domain: &str, chain: Chain, url: &str) -> Domain {
+        Domain {
+            domain: domain.to_string(),
+            chain,
+            block_delay: None,
+            poll_interval_seconds: None,
+            overrides: None,
+            urls: vec![Url {
+                url: url.to_string(),
+                headers: None,
+            }],
+        }
+    }
+
+    fn create_request(host: &str, chain: Chain) -> ProxyRequest {
+        ProxyRequest::new(Method::POST, HeaderMap::new(), vec![], "/".to_string(), "/".to_string(), host.to_string(), "test".to_string(), chain)
+    }
+
+    #[test]
+    fn test_get_domain_for_request_exact_match() {
+        let mut domains = HashMap::new();
+        domains.insert("bitcoin".to_string(), create_domain("bitcoin", Chain::Bitcoin, "https://bitcoin.example.com"));
+        let service = create_service(domains);
+        let request = create_request("bitcoin", Chain::Bitcoin);
+
+        let result = service.get_domain_for_request(&request);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().domain, "bitcoin");
+    }
+
+    #[test]
+    fn test_get_domain_for_request_chain_fallback_longest() {
+        let mut domains = HashMap::new();
+        domains.insert("bitcoin".to_string(), create_domain("bitcoin", Chain::Bitcoin, "https://bitcoin.example.com"));
+        domains.insert("bitcoin.internal".to_string(), create_domain("bitcoin.internal", Chain::Bitcoin, "https://bitcoin-internal.example.com"));
+        let service = create_service(domains);
+        let request = create_request("unknown", Chain::Bitcoin);
+
+        let result = service.get_domain_for_request(&request);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().domain, "bitcoin.internal");
+    }
+
+    #[test]
+    fn test_get_domain_for_request_not_found() {
+        let mut domains = HashMap::new();
+        domains.insert("bitcoin".to_string(), create_domain("bitcoin", Chain::Bitcoin, "https://bitcoin.example.com"));
+        let service = create_service(domains);
+        let request = create_request("unknown", Chain::Ethereum);
+
+        let result = service.get_domain_for_request(&request);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Domain for chain ethereum not found"));
+    }
+
+    #[test]
+    fn test_get_domain_for_request_exact_match_priority() {
+        let mut domains = HashMap::new();
+        domains.insert("bitcoin".to_string(), create_domain("bitcoin", Chain::Bitcoin, "https://bitcoin.example.com"));
+        domains.insert("bitcoin.internal".to_string(), create_domain("bitcoin.internal", Chain::Bitcoin, "https://bitcoin-internal.example.com"));
+        let service = create_service(domains);
+        let request = create_request("bitcoin", Chain::Bitcoin);
+
+        let result = service.get_domain_for_request(&request);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().domain, "bitcoin");
     }
 }

@@ -28,6 +28,13 @@ pub struct ProxyRequestService {
 #[derive(Debug, Clone)]
 pub struct NodeDomain {
     pub url: Url,
+    pub config: Domain,
+}
+
+impl NodeDomain {
+    pub fn new(url: Url, config: Domain) -> Self {
+        Self { url, config }
+    }
 }
 
 impl ProxyRequestService {
@@ -59,20 +66,7 @@ impl ProxyRequestService {
             _ => None,
         };
 
-        let resolved_url = if let Some(domain_config) = self
-            .domain_configs
-            .get(&request.host)
-            .or_else(|| {
-                self.domain_configs
-                    .values()
-                    .filter(|d| d.chain == request.chain)
-                    .min_by_key(|d| d.domain.len())
-            })
-        {
-            domain_config.resolve_url(&node_domain.url, rpc_method, Some(&request.path))
-        } else {
-            node_domain.url.clone()
-        };
+        let resolved_url = node_domain.config.resolve_url(&node_domain.url, rpc_method, Some(&request.path));
 
         let url = RequestUrl::from_parts(resolved_url, &request.path_with_query);
 
@@ -321,7 +315,7 @@ mod tests {
     }
 
     #[test]
-    fn test_domain_matching_prioritizes_exact_match_over_chain() {
+    fn test_domain_matching_prioritizes_exact_then_longest_chain() {
         let mut domain_configs = HashMap::new();
 
         domain_configs.insert(
@@ -354,15 +348,19 @@ mod tests {
             },
         );
 
-        let exact_match = domain_configs.get("bitcoin");
-        assert!(exact_match.is_some());
-        assert_eq!(exact_match.unwrap().domain, "bitcoin");
+        let exact_match1 = domain_configs.get("bitcoin");
+        assert!(exact_match1.is_some());
+        assert_eq!(exact_match1.unwrap().domain, "bitcoin");
+
+        let exact_match2 = domain_configs.get("bitcoin.dynode.internal");
+        assert!(exact_match2.is_some());
+        assert_eq!(exact_match2.unwrap().domain, "bitcoin.dynode.internal");
 
         let chain_fallback = domain_configs
             .values()
             .filter(|d| d.chain == Chain::Bitcoin)
-            .min_by_key(|d| d.domain.len());
+            .max_by_key(|d| d.domain.len());
         assert!(chain_fallback.is_some());
-        assert_eq!(chain_fallback.unwrap().domain, "bitcoin");
+        assert_eq!(chain_fallback.unwrap().domain, "bitcoin.dynode.internal");
     }
 }

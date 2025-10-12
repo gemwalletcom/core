@@ -28,7 +28,8 @@ impl ProxyBuilder {
 
     pub fn create_for_url(&self, domain: &str, url: &Url) -> ProxyRequestService {
         let mut node_domains = HashMap::new();
-        node_domains.insert(domain.to_string(), NodeDomain { url: url.clone() });
+        let config = self.domain_configs.get(domain).expect("Domain config not found").clone();
+        node_domains.insert(domain.to_string(), NodeDomain::new(url.clone(), config));
 
         ProxyRequestService::new(
             Arc::new(RwLock::new(node_domains)),
@@ -39,14 +40,13 @@ impl ProxyBuilder {
         )
     }
 
-    pub async fn handle_request_with_url(
+    pub async fn handle_request(
         &self,
         request: ProxyRequest,
-        url: &Url,
+        node_domain: &NodeDomain,
     ) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let proxy_service = self.create_for_url(&request.host, url);
-        let node_domain = crate::proxy::NodeDomain { url: url.clone() };
-        proxy_service.handle_request(request, &node_domain).await
+        let proxy_service = self.create_for_url(&request.host, &node_domain.url);
+        proxy_service.handle_request(request, node_domain).await
     }
 }
 
