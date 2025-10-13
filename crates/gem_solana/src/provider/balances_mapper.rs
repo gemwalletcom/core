@@ -2,6 +2,7 @@ use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Chain};
 
 use crate::models::balances::SolanaBalance;
+use crate::models::token_account::TokenAccountBalance;
 use crate::models::{TokenAccountInfo, ValueResult};
 
 pub fn map_coin_balance(balance: &SolanaBalance) -> AssetBalance {
@@ -59,6 +60,35 @@ pub fn map_balance_staking(stake_accounts: Vec<TokenAccountInfo>) -> Option<Asse
         BigUint::from(0u32),
         BigUint::from(0u32),
     ))
+}
+
+pub fn map_token_account_balances(balances: &[Option<TokenAccountBalance>], token_ids: &[String]) -> Vec<AssetBalance> {
+    balances
+        .iter()
+        .zip(token_ids)
+        .map(|(balance_opt, token_id)| {
+            balance_opt
+                .as_ref()
+                .map(|balance| AssetBalance::new(AssetId::from_token(Chain::Solana, token_id), balance.value.amount.clone()))
+                .unwrap_or_else(|| AssetBalance::new(AssetId::from_token(Chain::Solana, token_id), BigUint::from(0u32)))
+        })
+        .collect()
+}
+
+pub fn map_owned_token_accounts(token_accounts: &ValueResult<Vec<TokenAccountInfo>>) -> Vec<AssetBalance> {
+    token_accounts
+        .value
+        .iter()
+        .filter_map(|account| {
+            let token_info = &account.account.data.parsed.info;
+            if let (Some(token_amount), Some(mint)) = (&token_info.token_amount, &token_info.mint) {
+                if token_amount.amount > BigUint::from(0u32) {
+                    return Some(AssetBalance::new(AssetId::from_token(Chain::Solana, mint), token_amount.amount.clone()));
+                }
+            }
+            None
+        })
+        .collect()
 }
 
 #[cfg(test)]
