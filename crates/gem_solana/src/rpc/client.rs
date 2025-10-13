@@ -124,8 +124,7 @@ impl<C: Client + Clone> SolanaClient<C> {
             }
         ]);
 
-        let stake_accounts: Vec<TokenAccountInfo> = self.rpc_call("getProgramAccounts", params).await?;
-        Ok(stake_accounts)
+        Ok(self.rpc_call("getProgramAccounts", params).await?)
     }
 
     pub async fn get_vote_accounts(&self, keep_unstaked_delinquents: bool) -> Result<VoteAccounts, JsonRpcError> {
