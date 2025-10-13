@@ -13,6 +13,7 @@ pub mod cetus;
 pub mod chainflip;
 pub mod client_factory;
 pub mod config;
+pub mod dflow;
 pub mod error;
 pub mod hyperliquid;
 pub mod jupiter;

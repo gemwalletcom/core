@@ -12,7 +12,7 @@ pub mod client_config;
 
 pub mod query;
 
-pub use content_type::{ContentType, CONTENT_TYPE};
+pub use content_type::{ContentType, APPLICATION_JSON, CONTENT_TYPE};
 pub use query::build_path_with_query;
 pub use types::ClientError;
 

@@ -1,7 +1,7 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperProviderMode, SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents,
-    pancakeswap_aptos, proxy::provider_factory, thorchain, uniswap,
+    SwapperProviderMode, SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, dflow, hyperliquid, jupiter,
+    near_intents, pancakeswap_aptos, proxy::provider_factory, thorchain, uniswap,
 };
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
@@ -85,6 +85,7 @@ impl GemSwapper {
             uniswap::default::boxed_pancakeswap(rpc_provider.clone()),
             Box::new(thorchain::ThorChain::new(rpc_provider.clone())),
             Box::new(jupiter::Jupiter::new(rpc_provider.clone())),
+            Box::new(dflow::DFlow::new(rpc_provider.clone())),
             Box::new(across::Across::new(rpc_provider.clone())),
             Box::new(hyperliquid::HyperCoreBridge::new()),
             uniswap::default::boxed_oku(rpc_provider.clone()),

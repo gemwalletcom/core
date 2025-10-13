@@ -1,11 +1,11 @@
 use super::{
     PROGRAM_ADDRESS,
-    client::JupiterClient,
-    model::{DynamicSlippage, QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
+    client::DFlowClient,
+    model::{QuoteDataRequest, QuoteRequest as DFlowRequest, QuoteResponse},
 };
 use crate::{
     FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider,
-    SwapperQuoteData, SwapperSlippageMode,
+    SwapperQuoteData,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -19,28 +19,28 @@ use gem_solana::{
 use primitives::{AssetId, Chain};
 use std::collections::HashSet;
 
-pub(crate) const JUPITER_API_URL: &str = "https://lite-api.jup.ag";
+pub(crate) const DFLOW_API_URL: &str = "https://quote-api.dflow.net";
 
 #[derive(Debug)]
-pub struct Jupiter<C, R>
+pub struct DFlow<C, R>
 where
     C: Client + Clone + Send + Sync + 'static,
     R: Client + Clone + Send + Sync + 'static,
 {
     pub provider: ProviderType,
     pub fee_mints: HashSet<&'static str>,
-    http_client: JupiterClient<C>,
+    http_client: DFlowClient<C>,
     rpc_client: JsonRpcClient<R>,
 }
 
-impl<C, R> Jupiter<C, R>
+impl<C, R> DFlow<C, R>
 where
     C: Client + Clone + Send + Sync + 'static,
     R: Client + Clone + Send + Sync + 'static,
 {
-    pub fn with_clients(http_client: JupiterClient<C>, rpc_client: JsonRpcClient<R>) -> Self {
+    pub fn with_clients(http_client: DFlowClient<C>, rpc_client: JsonRpcClient<R>) -> Self {
         Self {
-            provider: ProviderType::new(SwapperProvider::Jupiter),
+            provider: ProviderType::new(SwapperProvider::DFlow),
             fee_mints: HashSet::from([USDC_TOKEN_MINT, USDT_TOKEN_MINT, USDS_TOKEN_MINT, WSOL_TOKEN_ADDRESS]),
             http_client,
             rpc_client,
@@ -48,7 +48,7 @@ where
     }
 
     pub fn api_url() -> &'static str {
-        JUPITER_API_URL
+        DFLOW_API_URL
     }
 
     pub fn get_asset_address(&self, asset_id: &str) -> Result<String, SwapperError> {
@@ -91,7 +91,6 @@ where
 
     async fn fetch_fee_account(&self, mode: &SwapperMode, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
         let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
-        // if fee_mint is in preset, no need to fetch token program
         let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
             return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM).unwrap_or_default());
         } else {
@@ -103,7 +102,6 @@ where
             return Ok(fee_account);
         }
 
-        // check fee token account exists, if not, set fee_account to empty string
         let rpc_call = SolanaRpc::GetAccountInfo(fee_account.clone());
         let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = self.rpc_client.call_with_cache(&rpc_call, None).await.map_err(SwapperError::from)?;
         if matches!(rpc_result, JsonRpcResult::Error(_)) || matches!(rpc_result, JsonRpcResult::Value(ref resp) if resp.result.value.is_none()) {
@@ -114,7 +112,7 @@ where
 }
 
 #[async_trait]
-impl<C, R> Swapper for Jupiter<C, R>
+impl<C, R> Swapper for DFlow<C, R>
 where
     C: Client + Clone + Send + Sync + 'static,
     R: Client + Clone + Send + Sync + 'static,
@@ -132,27 +130,18 @@ where
         let output_mint = self.get_asset_address(&request.to_asset.id)?;
         let swap_options = request.options.clone();
         let slippage_bps = swap_options.slippage.bps;
-        let platform_fee_bps = swap_options.fee.unwrap_or_default().solana.bps;
+        let platform_fee_bps = swap_options.fee.as_ref().map(|f| f.solana.bps);
 
-        let auto_slippage = match swap_options.slippage.mode {
-            SwapperSlippageMode::Auto => true,
-            SwapperSlippageMode::Exact => false,
-        };
-
-        let quote_request = JupiterRequest {
+        let quote_request = DFlowRequest {
             input_mint: input_mint.clone(),
             output_mint: output_mint.clone(),
             amount: request.value.clone(),
+            slippage_bps: Some(slippage_bps),
             platform_fee_bps,
-            slippage_bps,
-            auto_slippage,
-            max_auto_slippage_bps: slippage_bps,
         };
-        let swap_quote = self.http_client.get_swap_quote(quote_request).await?;
-        let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
 
-        // Updated docs: https://dev.jup.ag/docs/api/swap-api/quote
-        // The value includes platform fees and DEX fees, excluding slippage.
+        let swap_quote = self.http_client.get_swap_quote(quote_request).await?;
+
         let out_amount: U256 = swap_quote.out_amount.parse().map_err(SwapperError::from)?;
 
         let quote = Quote {
@@ -166,7 +155,7 @@ where
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
                     gas_limit: None,
                 }],
-                slippage_bps: computed_auto_slippage,
+                slippage_bps: swap_quote.slippage_bps,
             },
             request: request.clone(),
             eta_in_seconds: None,
@@ -182,24 +171,29 @@ where
         let input_mint = route.input.token_id.clone().unwrap();
         let output_mint = route.output.token_id.clone().unwrap();
 
-        let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let mut quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
+
+        // Add mode to platformFee if it exists
+        if let Some(ref mut platform_fee) = quote_response.platform_fee {
+            if platform_fee.mode.is_none() {
+                let mode = match quote.request.mode {
+                    SwapperMode::ExactIn => "ExactIn",
+                    SwapperMode::ExactOut => "ExactOut",
+                };
+                platform_fee.mode = Some(mode.to_string());
+            }
+        }
+
         let fee_account = self
             .fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint)
             .await?;
-
-        let dynamic_slippage = match quote.request.options.slippage.mode {
-            SwapperSlippageMode::Auto => Some(DynamicSlippage {
-                max_bps: quote.request.options.slippage.bps,
-            }),
-            SwapperSlippageMode::Exact => None,
-        };
 
         let request = QuoteDataRequest {
             user_public_key: quote.request.wallet_address.clone(),
             fee_account,
             quote_response,
-            prioritization_fee_lamports: 500_000,
-            dynamic_slippage,
+            compute_unit_price: None,
+            prioritization_fee_lamports: Some(500_000),
         };
 
         let quote_data = self.http_client.get_swap_quote_data(&request).await?;
@@ -219,10 +213,10 @@ where
     }
 }
 
-impl Jupiter<crate::alien::RpcClient, crate::alien::RpcClient> {
+impl DFlow<crate::alien::RpcClient, crate::alien::RpcClient> {
     pub fn new(provider: std::sync::Arc<dyn crate::alien::RpcProvider>) -> Self {
-        let http_client = super::client::JupiterClient::new(crate::alien::RpcClient::new(JUPITER_API_URL.into(), provider.clone()));
-        let rpc_client = create_solana_rpc_client(provider, "Jupiter");
+        let http_client = super::client::DFlowClient::new(crate::alien::RpcClient::new(DFLOW_API_URL.into(), provider.clone()));
+        let rpc_client = create_solana_rpc_client(provider, "DFlow");
         Self::with_clients(http_client, rpc_client)
     }
 }
@@ -258,9 +252,9 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_jupiter_provider_fetch_quote() -> Result<(), SwapperError> {
+    async fn test_dflow_provider_fetch_quote() -> Result<(), SwapperError> {
         let rpc_provider = Arc::new(NativeProvider::default());
-        let provider = Jupiter::new(rpc_provider);
+        let provider = DFlow::new(rpc_provider);
         let request = create_test_quote_request();
 
         let quote = provider.fetch_quote(&request).await?;
@@ -286,9 +280,9 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_jupiter_provider_fetch_quote_data() -> Result<(), SwapperError> {
+    async fn test_dflow_provider_fetch_quote_data() -> Result<(), SwapperError> {
         let rpc_provider = Arc::new(NativeProvider::default());
-        let provider = Jupiter::new(rpc_provider);
+        let provider = DFlow::new(rpc_provider);
         let request = create_test_quote_request();
 
         let quote = provider.fetch_quote(&request).await?;

@@ -14,6 +14,7 @@ pub enum SwapProvider {
     PancakeswapAptosV2,
     Thorchain,
     Jupiter,
+    DFlow,
     Across,
     Oku,
     Wagmi,
@@ -45,6 +46,7 @@ impl SwapProvider {
             Self::Aerodrome => "Aerodrome",
             Self::Thorchain => "THORChain",
             Self::Jupiter => "Jupiter",
+            Self::DFlow => "DFlow",
             Self::Across => "Across",
             Self::Oku => "Oku",
             Self::Wagmi => "Wagmi",
@@ -71,6 +73,7 @@ impl SwapProvider {
             Self::StonfiV2 => "STON.fi v2",
             Self::Thorchain
             | Self::Jupiter
+            | Self::DFlow
             | Self::Wagmi
             | Self::Cetus
             | Self::Mayan

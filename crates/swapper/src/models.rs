@@ -32,6 +32,7 @@ impl ProviderType {
             | SwapperProvider::PancakeswapV3
             | SwapperProvider::PancakeswapAptosV2
             | SwapperProvider::Jupiter
+            | SwapperProvider::DFlow
             | SwapperProvider::Oku
             | SwapperProvider::Wagmi
             | SwapperProvider::Cetus

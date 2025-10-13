@@ -116,6 +116,7 @@ pub enum SwapperProvider {
     PancakeswapAptosV2,
     Thorchain,
     Jupiter,
+    DFlow,
     Across,
     Oku,
     Wagmi,
