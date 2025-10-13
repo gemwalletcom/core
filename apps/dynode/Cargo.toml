@@ -18,6 +18,6 @@ gem_tracing = { path = "../../crates/tracing" }
 gem_client = { path = "../../crates/gem_client" }
 settings_chain = { path = "../../crates/settings_chain" }
 
-regex = { version = "1.11.2" }
+regex = { version = "1.12.1" }
 moka = { version = "0.12.11", features = ["future"] }
 url = { workspace = true }
