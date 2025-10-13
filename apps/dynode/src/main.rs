@@ -30,7 +30,7 @@ impl Handler for ProxyHandler {
         let node_service = match state_outcome {
             RequestOutcome::Success(state) => state,
             RequestOutcome::Error((status, _)) | RequestOutcome::Forward(status) => {
-                return Outcome::from(request, ErrorResponse::new(status, "Failed to access node service".to_string()))
+                return Outcome::from(request, ErrorResponse::new(status, "Failed to access node service".to_string()));
             }
         };
 
@@ -104,12 +104,10 @@ async fn read_request_body(data: Data<'_>) -> Result<Vec<u8>, ErrorResponse> {
 fn build_header_map(request: &Request<'_>) -> Result<HeaderMap, ErrorResponse> {
     let mut headers = HeaderMap::new();
     for header in request.headers().iter() {
-        let name = HeaderName::from_bytes(header.name().as_str().as_bytes()).map_err(|_| {
-            ErrorResponse::new(Status::BadRequest, format!("Invalid header name: {}", header.name()))
-        })?;
-        let value = HeaderValue::from_str(header.value()).map_err(|_| {
-            ErrorResponse::new(Status::BadRequest, format!("Invalid header value for {}", header.name()))
-        })?;
+        let name = HeaderName::from_bytes(header.name().as_str().as_bytes())
+            .map_err(|_| ErrorResponse::new(Status::BadRequest, format!("Invalid header name: {}", header.name())))?;
+        let value =
+            HeaderValue::from_str(header.value()).map_err(|_| ErrorResponse::new(Status::BadRequest, format!("Invalid header value for {}", header.name())))?;
         headers.append(name, value);
     }
     Ok(headers)

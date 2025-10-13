@@ -18,11 +18,7 @@ pub struct ProxyBuilder {
 
 impl ProxyBuilder {
     pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client) -> Self {
-        Self {
-            metrics,
-            cache,
-            client,
-        }
+        Self { metrics, cache, client }
     }
 
     pub fn create_for_domain(&self, domain: &str, node_domain: &NodeDomain) -> ProxyRequestService {

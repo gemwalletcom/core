@@ -37,12 +37,7 @@ impl NodeDomain {
 }
 
 impl ProxyRequestService {
-    pub fn new(
-        domains: Arc<RwLock<HashMap<String, NodeDomain>>>,
-        metrics: Metrics,
-        cache: RequestCache,
-        client: reqwest::Client,
-    ) -> Self {
+    pub fn new(domains: Arc<RwLock<HashMap<String, NodeDomain>>>, metrics: Metrics, cache: RequestCache, client: reqwest::Client) -> Self {
         let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING, header::CONTENT_LENGTH]);
 
         Self {
@@ -353,10 +348,7 @@ mod tests {
         assert!(exact_match2.is_some());
         assert_eq!(exact_match2.unwrap().domain, "bitcoin.dynode.internal");
 
-        let chain_fallback = domain_configs
-            .values()
-            .filter(|d| d.chain == Chain::Bitcoin)
-            .max_by_key(|d| d.domain.len());
+        let chain_fallback = domain_configs.values().filter(|d| d.chain == Chain::Bitcoin).max_by_key(|d| d.domain.len());
         assert!(chain_fallback.is_some());
         assert_eq!(chain_fallback.unwrap().domain, "bitcoin.dynode.internal");
     }

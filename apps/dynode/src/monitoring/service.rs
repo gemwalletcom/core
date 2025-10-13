@@ -122,12 +122,7 @@ impl NodeService {
     pub(crate) fn get_domain_for_request(&self, request: &ProxyRequest) -> Result<&Domain, Box<dyn Error + Send + Sync>> {
         self.domains
             .get(&request.host)
-            .or_else(|| {
-                self.domains
-                    .values()
-                    .filter(|d| d.chain == request.chain)
-                    .max_by_key(|d| d.domain.len())
-            })
+            .or_else(|| self.domains.values().filter(|d| d.chain == request.chain).max_by_key(|d| d.domain.len()))
             .ok_or_else(|| format!("Domain for chain {} not found", request.chain).into())
     }
 
@@ -207,7 +202,16 @@ mod tests {
     }
 
     fn create_request(host: &str, chain: Chain) -> ProxyRequest {
-        ProxyRequest::new(Method::POST, HeaderMap::new(), vec![], "/".to_string(), "/".to_string(), host.to_string(), "test".to_string(), chain)
+        ProxyRequest::new(
+            Method::POST,
+            HeaderMap::new(),
+            vec![],
+            "/".to_string(),
+            "/".to_string(),
+            host.to_string(),
+            "test".to_string(),
+            chain,
+        )
     }
 
     #[test]
@@ -226,7 +230,10 @@ mod tests {
     fn test_get_domain_for_request_chain_fallback_longest() {
         let mut domains = HashMap::new();
         domains.insert("bitcoin".to_string(), create_domain("bitcoin", Chain::Bitcoin, "https://bitcoin.example.com"));
-        domains.insert("bitcoin.internal".to_string(), create_domain("bitcoin.internal", Chain::Bitcoin, "https://bitcoin-internal.example.com"));
+        domains.insert(
+            "bitcoin.internal".to_string(),
+            create_domain("bitcoin.internal", Chain::Bitcoin, "https://bitcoin-internal.example.com"),
+        );
         let service = create_service(domains);
         let request = create_request("unknown", Chain::Bitcoin);
 
@@ -251,7 +258,10 @@ mod tests {
     fn test_get_domain_for_request_exact_match_priority() {
         let mut domains = HashMap::new();
         domains.insert("bitcoin".to_string(), create_domain("bitcoin", Chain::Bitcoin, "https://bitcoin.example.com"));
-        domains.insert("bitcoin.internal".to_string(), create_domain("bitcoin.internal", Chain::Bitcoin, "https://bitcoin-internal.example.com"));
+        domains.insert(
+            "bitcoin.internal".to_string(),
+            create_domain("bitcoin.internal", Chain::Bitcoin, "https://bitcoin-internal.example.com"),
+        );
         let service = create_service(domains);
         let request = create_request("bitcoin", Chain::Bitcoin);
 

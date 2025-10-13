@@ -1,9 +1,9 @@
 use std::io::Cursor;
 
 use crate::proxy::ProxyResponse;
+use rocket::Request;
 use rocket::http::{ContentType, Status};
 use rocket::response::{Responder, Response};
-use rocket::Request;
 use serde_json::json;
 
 pub struct ErrorResponse {
