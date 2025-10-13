@@ -1,3 +1,4 @@
+use crate::COMMITMENT_CONFIRMED;
 use crate::models::{
     EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
     balances::SolanaBalance,
@@ -227,7 +228,7 @@ impl<C: Client + Clone> SolanaClient<C> {
             address,
             {
                 "limit": limit,
-                "commitment": "confirmed"
+                "commitment": COMMITMENT_CONFIRMED
             }
         ]);
         self.rpc_call("getSignaturesForAddress", params).await

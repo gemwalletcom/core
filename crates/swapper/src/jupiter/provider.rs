@@ -14,6 +14,7 @@ use gem_jsonrpc::{client::JsonRpcClient, types::JsonRpcResult};
 use gem_solana::{
     SolanaRpc, TOKEN_PROGRAM, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS, get_pubkey_by_str,
     models::{AccountData, ValueResult},
+    token_account::get_token_account,
 };
 use primitives::{AssetId, Chain};
 use std::collections::HashSet;
@@ -70,7 +71,7 @@ where
 
     fn get_fee_token_account(&self, options: &Options, mint: &str, token_program: &str) -> Option<String> {
         if let Some(fee) = &options.fee {
-            let fee_account = super::token_account::get_token_account(&fee.solana.address, mint, token_program);
+            let fee_account = get_token_account(&fee.solana.address, mint, token_program);
             return Some(fee_account);
         }
         None

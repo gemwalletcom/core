@@ -1,4 +1,4 @@
-use gem_solana::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, pubkey::Pubkey};
+use crate::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, pubkey::Pubkey};
 
 pub fn get_token_account(wallet: &str, token_mint: &str, token_program: &str) -> String {
     let owner = Pubkey::try_from(wallet).unwrap();
@@ -13,10 +13,10 @@ pub fn get_token_account(wallet: &str, token_mint: &str, token_program: &str) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gem_solana::{PYUSD_TOKEN_MINT, TOKEN_PROGRAM, TOKEN_PROGRAM_2022, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS};
+    use crate::{PYUSD_TOKEN_MINT, TOKEN_PROGRAM, TOKEN_PROGRAM_2022, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS};
+
     #[test]
     fn test_get_token_account() {
-        // Define test cases as (wallet, token_mint, token_program, expected_token_account)
         let test_cases = [
             (
                 "CzVqG98YbFNiMREwgTswSML59CNrfobsNX4N9j6K8fbC",

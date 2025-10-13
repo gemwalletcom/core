@@ -7,7 +7,7 @@ use sha2::{Digest, Sha256};
 
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
-use gem_solana::pubkey::Pubkey;
+use gem_solana::{COMMITMENT_CONFIRMED, pubkey::Pubkey};
 use primitives::{chain::Chain, name::NameProvider};
 
 use crate::client::NameClient;
@@ -107,7 +107,10 @@ impl AllDomainsClient {
             .client
             .call(
                 "getAccountInfo",
-                vec![json!(name_account_key.to_string()), json!({"encoding": "base64", "commitment": "confirmed"})],
+                vec![
+                    json!(name_account_key.to_string()),
+                    json!({"encoding": "base64", "commitment": COMMITMENT_CONFIRMED}),
+                ],
             )
             .await?;
 

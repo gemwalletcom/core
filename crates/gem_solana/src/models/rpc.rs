@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::COMMITMENT_CONFIRMED;
+
 pub const ENCODING_BASE64: &str = "base64";
 pub const ENCODING_BASE58: &str = "base58";
 
@@ -14,8 +16,8 @@ pub struct Configuration {
 impl Configuration {
     pub fn new(filters: Vec<Filter>) -> Self {
         Self {
-            commitment: "confirmed",
-            encoding: "base64",
+            commitment: COMMITMENT_CONFIRMED,
+            encoding: ENCODING_BASE64,
             filters,
         }
     }
@@ -24,8 +26,8 @@ impl Configuration {
 impl Default for Configuration {
     fn default() -> Self {
         Self {
-            commitment: "confirmed",
-            encoding: "base64",
+            commitment: COMMITMENT_CONFIRMED,
+            encoding: ENCODING_BASE64,
             filters: vec![],
         }
     }
