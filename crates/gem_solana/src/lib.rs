@@ -33,6 +33,9 @@ pub const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 pub const COMPUTE_BUDGET_PROGRAM_ID: &str = "ComputeBudget111111111111111111111111111111";
 pub const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 
+// RPC
+pub const COMMITMENT_CONFIRMED: &str = "confirmed";
+
 use primitives::{AssetId, SolanaTokenProgramId};
 use pubkey::Pubkey;
 use std::str::FromStr;

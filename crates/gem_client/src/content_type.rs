@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
 pub const CONTENT_TYPE: &str = "Content-Type";
-const APPLICATION_JSON: &str = "application/json";
-const TEXT_PLAIN: &str = "text/plain";
-const APPLICATION_FORM_URL_ENCODED: &str = "application/x-www-form-urlencoded";
-const APPLICATION_X_BINARY: &str = "application/x-binary";
+pub const APPLICATION_JSON: &str = "application/json";
+pub const TEXT_PLAIN: &str = "text/plain";
+pub const APPLICATION_FORM_URL_ENCODED: &str = "application/x-www-form-urlencoded";
+pub const APPLICATION_X_BINARY: &str = "application/x-binary";
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ContentType {

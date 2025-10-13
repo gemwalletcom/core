@@ -1,11 +1,13 @@
 use async_trait::async_trait;
 use chain_traits::ChainBalances;
+use num_bigint::BigUint;
 use std::error::Error;
 
-use crate::provider::balances_mapper::{map_balance_staking, map_coin_balance, map_token_accounts};
+use crate::provider::balances_mapper::{map_balance_staking, map_coin_balance};
+use crate::pubkey::get_token_account;
 use crate::rpc::client::SolanaClient;
 use gem_client::Client;
-use primitives::AssetBalance;
+use primitives::{AssetBalance, AssetId, Chain};
 
 #[cfg(feature = "rpc")]
 #[async_trait]
@@ -16,11 +18,25 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let results = self.get_token_accounts(&address, &token_ids).await?;
-        let balances: Vec<AssetBalance> = results
+        let (ata_addresses, token_id_map): (Vec<String>, Vec<String>) = token_ids
             .iter()
-            .zip(&token_ids)
-            .flat_map(|(token_accounts, token_id)| map_token_accounts(token_accounts, token_id))
+            .map(|token_id| {
+                let ata = get_token_account(&address, token_id, crate::TOKEN_PROGRAM);
+                (ata, token_id.clone())
+            })
+            .unzip();
+
+        let balance_results = self.get_token_account_balances(&ata_addresses).await?;
+
+        let balances = balance_results
+            .iter()
+            .zip(&token_id_map)
+            .map(|(balance_opt, token_id)| {
+                balance_opt
+                    .as_ref()
+                    .map(|balance| AssetBalance::new(AssetId::from_token(Chain::Solana, token_id), balance.value.amount.clone()))
+                    .unwrap_or_else(|| AssetBalance::new(AssetId::from_token(Chain::Solana, token_id), BigUint::from(0u32)))
+            })
             .collect();
 
         Ok(balances)
@@ -82,6 +98,10 @@ mod chain_integration_tests {
         ];
 
         let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids.clone()).await?;
+
+        token_ids.iter().zip(balances.iter()).for_each(|(token_id, balance)| {
+            println!("Token ID: {}, Balance: {}", token_id, balance.balance.available);
+        });
 
         assert_eq!(balances.len(), token_ids.len());
         for (i, balance) in balances.iter().enumerate() {
