@@ -1,6 +1,5 @@
-use crate::COMMITMENT_CONFIRMED;
 use crate::models::{
-    EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountBalance, TokenAccountInfo, ValueResult, VoteAccounts,
+    EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
     balances::SolanaBalance,
     blockhash::SolanaBlockhashResult,
     prioritization_fee::SolanaPrioritizationFee,
@@ -131,7 +130,7 @@ impl<C: Client + Clone> SolanaClient<C> {
     pub async fn get_vote_accounts(&self) -> Result<VoteAccounts, JsonRpcError> {
         let params = serde_json::json!([{
             "keepUnstakedDelinquents": true,
-            "commitment": COMMITMENT_CONFIRMED
+            "commitment": "finalized"
         }]);
         self.rpc_call("getVoteAccounts", params).await
     }
@@ -228,7 +227,7 @@ impl<C: Client + Clone> SolanaClient<C> {
             address,
             {
                 "limit": limit,
-                "commitment": COMMITMENT_CONFIRMED
+                "commitment": "confirmed"
             }
         ]);
         self.rpc_call("getSignaturesForAddress", params).await
@@ -265,21 +264,6 @@ impl<C: Client + Clone> SolanaClient<C> {
             .collect();
 
         let results = self.get_client().batch_call(calls).await?.extract();
-        Ok(results)
-    }
-
-    pub async fn get_token_account_balances(&self, ata_addresses: &[String]) -> Result<Vec<Option<TokenAccountBalance>>, Box<dyn Error + Send + Sync>> {
-        let calls: Vec<(String, serde_json::Value)> = ata_addresses
-            .iter()
-            .map(|ata| {
-                (
-                    "getTokenAccountBalance".to_string(),
-                    serde_json::json!([ata, { "commitment": COMMITMENT_CONFIRMED }]),
-                )
-            })
-            .collect();
-
-        let results: Vec<Option<TokenAccountBalance>> = self.get_client().batch_call(calls).await?.extract();
         Ok(results)
     }
 }
