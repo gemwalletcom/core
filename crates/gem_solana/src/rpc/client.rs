@@ -128,10 +128,10 @@ impl<C: Client + Clone> SolanaClient<C> {
         Ok(stake_accounts)
     }
 
-    pub async fn get_vote_accounts(&self) -> Result<VoteAccounts, JsonRpcError> {
+    pub async fn get_vote_accounts(&self, keep_unstaked_delinquents: bool) -> Result<VoteAccounts, JsonRpcError> {
         let params = serde_json::json!([{
-            "keepUnstakedDelinquents": true,
-            "commitment": "finalized"
+            "commitment": COMMITMENT_CONFIRMED,
+            "keepUnstakedDelinquents": keep_unstaked_delinquents
         }]);
         self.rpc_call("getVoteAccounts", params).await
     }

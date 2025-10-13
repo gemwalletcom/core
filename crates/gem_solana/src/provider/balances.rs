@@ -79,6 +79,7 @@ mod chain_integration_tests {
         let token_ids = vec![
             "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // USDC
             "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB".to_string(), // USDT
+            "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo".to_string(), // PYUSD
         ];
 
         let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids.clone()).await?;
