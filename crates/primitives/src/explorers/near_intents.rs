@@ -1,5 +1,5 @@
 use crate::block_explorer::BlockExplorer;
-use super::NearBlocks;
+use super::near::NEAR_BLOCKS_BASE_URL;
 
 pub struct NearIntents;
 
@@ -21,6 +21,6 @@ impl BlockExplorer for NearIntents {
     }
 
     fn get_address_url(&self, address: &str) -> String {
-        NearBlocks::boxed().get_address_url(address)
+        format!("{NEAR_BLOCKS_BASE_URL}/address/{address}")
     }
 }
