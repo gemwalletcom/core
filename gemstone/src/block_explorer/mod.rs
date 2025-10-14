@@ -1,7 +1,7 @@
 use primitives::{
     block_explorer::{BlockExplorer, get_block_explorer},
     chain::Chain,
-    explorers::{ChainflipScan, MayanScan, RelayScan, RuneScan, SocketScan},
+    explorers::{ChainflipScan, MayanScan, NearIntents, RelayScan, RuneScan, SocketScan},
 };
 use std::str::FromStr;
 
@@ -47,6 +47,7 @@ impl Explorer {
             SwapperProvider::Thorchain => RuneScan::boxed(),
             SwapperProvider::Across => SocketScan::boxed(),
             SwapperProvider::Chainflip => ChainflipScan::boxed(),
+            SwapperProvider::NearIntents => NearIntents::boxed(),
             SwapperProvider::Relay => RelayScan::boxed(),
             SwapperProvider::UniswapV3
             | SwapperProvider::UniswapV4
@@ -61,7 +62,6 @@ impl Explorer {
             | SwapperProvider::Reservoir
             | SwapperProvider::Aerodrome
             | SwapperProvider::Hyperliquid
-            | SwapperProvider::NearIntents
             | SwapperProvider::Orca => get_block_explorer(self.chain, explorer_name),
         };
         Some(ExplorerURL::new(&explorer.name(), &explorer.get_tx_url(transaction_id)))
@@ -351,6 +351,21 @@ mod tests {
         assert_eq!(
             tx_url.url,
             "https://explorer.mayan.finance/tx/0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876"
+        );
+    }
+
+    #[test]
+    fn test_near_intents_swap_url() {
+        let explorer = Explorer::new(Chain::Near.as_ref());
+        let tx_hash = "aec8de30ed03c5e6f9d0dc90ae39d865f1b4f6f77c990f2ad16c93e873ea67de";
+        let url = explorer
+            .get_transaction_swap_url("Near", tx_hash, SwapperProvider::NearIntents.as_ref())
+            .expect("swap url");
+
+        assert_eq!(url.name, "NEAR Intents");
+        assert_eq!(
+            url.url,
+            "https://explorer.near-intents.org/transactions/aec8de30ed03c5e6f9d0dc90ae39d865f1b4f6f77c990f2ad16c93e873ea67de"
         );
     }
 }

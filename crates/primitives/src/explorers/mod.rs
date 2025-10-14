@@ -22,6 +22,8 @@ pub mod blockscout;
 pub use blockscout::BlockScout;
 pub mod near;
 pub use near::NearBlocks;
+pub mod near_intents;
+pub use near_intents::NearIntents;
 mod blocksec;
 pub use blocksec::Blocksec;
 mod algorand;
