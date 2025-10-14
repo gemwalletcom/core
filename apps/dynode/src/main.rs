@@ -78,7 +78,7 @@ async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, no
     let proxy_request = match ProxyRequestBuilder::build(method.clone(), headers, body, uri, node_service) {
         Ok(req) => req,
         Err(status) => {
-            let msg = format!("Failed to resolve domain or build request");
+            let msg = "Failed to resolve domain or build request".to_string();
             return Err(ErrorResponse::new(status, msg));
         }
     };

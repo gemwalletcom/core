@@ -124,7 +124,7 @@ impl<C: Client + Clone> SolanaClient<C> {
             }
         ]);
 
-        Ok(self.rpc_call("getProgramAccounts", params).await?)
+        self.rpc_call("getProgramAccounts", params).await
     }
 
     pub async fn get_vote_accounts(&self, keep_unstaked_delinquents: bool) -> Result<VoteAccounts, JsonRpcError> {
