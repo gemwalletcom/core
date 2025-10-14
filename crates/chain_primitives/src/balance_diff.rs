@@ -49,6 +49,7 @@ impl SwapMapper {
             to_asset: received_diff.asset_id.clone(),
             to_value: to_value.to_string(),
             provider,
+            swap_result: None,
         })
     }
 

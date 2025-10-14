@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, NFTAssetId, PerpetualDirection, PerpetualProvider};
+use crate::{AssetId, NFTAssetId, PerpetualDirection, PerpetualProvider, swap::SwapResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable")]
@@ -22,6 +22,8 @@ pub struct TransactionSwapMetadata {
     pub to_asset: AssetId,
     pub to_value: String,
     pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub swap_result: Option<SwapResult>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

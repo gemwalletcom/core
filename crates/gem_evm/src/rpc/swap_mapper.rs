@@ -250,6 +250,7 @@ impl SwapMapper {
                 from_value,
                 to_value,
                 provider: Some(provider.to_string()),
+                swap_result: None,
             });
         }
         None

@@ -162,6 +162,7 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
             to_asset: to_asset.clone(),
             to_value: to_value.clone().to_string(),
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
+            swap_result: None,
         };
 
         let transaction = Transaction::new(
@@ -205,6 +206,7 @@ mod tests {
             to_asset: Chain::Solana.as_asset_id(),
             to_value: "139512057".to_string(),
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
+            swap_result: None,
         };
 
         assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
@@ -222,6 +224,7 @@ mod tests {
             to_asset: AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
             to_value: "999932".to_string(),
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
+            swap_result: None,
         };
 
         assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
@@ -239,6 +242,7 @@ mod tests {
             to_asset: AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
             to_value: "1678930".to_string(),
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
+            swap_result: None,
         };
 
         assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
