@@ -13,10 +13,8 @@ pub type JupiterPriceResponse = HashMap<String, TokenPriceData>;
 pub struct TokenPriceData {
     #[serde(rename = "usdPrice")]
     pub usd_price: f64,
-    #[serde(rename = "blockId")]
-    pub block_id: u64,
-    pub decimals: u8,
     #[serde(rename = "priceChange24h")]
+    #[serde(default)]
     pub price_change_24h: f64,
 }
 
@@ -24,3 +22,10 @@ pub struct TokenPriceData {
 pub struct TopTokensResponse {
     pub tokens: Vec<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VerifiedToken {
+    pub id: String,
+}
+
+pub type VerifiedTokensResponse = Vec<VerifiedToken>;

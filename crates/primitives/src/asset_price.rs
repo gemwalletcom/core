@@ -14,6 +14,17 @@ pub struct AssetPrice {
     pub updated_at: DateTime<Utc>,
 }
 
+impl AssetPrice {
+    pub fn new(asset_id: AssetId, price: f64, price_change_percentage_24h: f64, updated_at: DateTime<Utc>) -> Self {
+        Self {
+            asset_id,
+            price,
+            price_change_percentage_24h,
+            updated_at,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]

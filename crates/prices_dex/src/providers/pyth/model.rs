@@ -22,3 +22,8 @@ pub struct PriceData {
     pub price: u64,
     pub expo: i32,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PriceFeed {
+    pub id: String,
+}

@@ -22,6 +22,8 @@ pub mod latency_type;
 pub use self::latency_type::{Latency, LatencyType};
 pub mod price;
 pub use self::price::{Price, PriceFull};
+pub mod price_feed;
+pub use self::price_feed::{PriceFeedId, PriceFeedProvider};
 pub mod asset;
 pub mod config;
 pub use self::config::{ConfigResponse, ConfigVersions, Release, SwapConfig};

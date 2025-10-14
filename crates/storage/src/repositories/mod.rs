@@ -12,6 +12,7 @@ pub mod nodes_repository;
 pub mod parser_state_repository;
 pub mod perpetuals_repository;
 pub mod price_alerts_repository;
+pub mod prices_dex_repository;
 pub mod prices_repository;
 pub mod releases_repository;
 pub mod scan_addresses_repository;

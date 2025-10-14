@@ -1,4 +1,6 @@
-use super::model::{HermesResponse, Price};
+use std::error::Error;
+
+use super::model::{HermesResponse, Price, PriceFeed};
 use reqwest::Client;
 
 pub struct PythClient {
@@ -14,7 +16,12 @@ impl PythClient {
         }
     }
 
-    pub async fn get_asset_prices(&self, price_ids: Vec<String>) -> Result<Vec<Price>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_price_feeds(&self) -> Result<Vec<PriceFeed>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/price_feeds", self.hermes_url);
+        Ok(self.client.get(&url).send().await?.json().await?)
+    }
+
+    pub async fn get_asset_prices(&self, price_ids: Vec<String>) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
         const CHUNK_SIZE: usize = 5;
         let mut all_prices = Vec::new();
 
@@ -44,7 +51,7 @@ impl PythClient {
         Ok(all_prices)
     }
 
-    pub async fn get_price(&self, price_id: &str) -> Result<Price, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_price(&self, price_id: &str) -> Result<Price, Box<dyn Error + Send + Sync>> {
         let prices = self.get_asset_prices(vec![price_id.to_string()]).await?;
         prices.into_iter().next().ok_or_else(|| "No price found".into())
     }
