@@ -40,6 +40,13 @@ paybis:
 pricer:
   timer: 60
   outdated: 604800
+prices:
+  pyth:
+    url: "https://hermes.pyth.network"
+    timer: 60
+  jupiter:
+    url: "https://lite-api.jup.ag"
+    timer: 60
 charter:
   timer: 60
 name:

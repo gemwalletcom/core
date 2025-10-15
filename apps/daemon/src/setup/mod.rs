@@ -1,4 +1,5 @@
 use gem_tracing::info_with_fields;
+use prices_dex::PriceFeedProvider;
 use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
@@ -78,6 +79,14 @@ pub async fn run_setup(settings: Settings) {
     info_with_fields!("setup", step = "assets tags");
     let assets_tags = AssetTag::all().into_iter().map(storage::models::Tag::from_primitive).collect::<Vec<_>>();
     let _ = database_client.tag().add_tags(assets_tags);
+
+    info_with_fields!("setup", step = "prices dex providers");
+    let providers = PriceFeedProvider::all()
+        .into_iter()
+        .enumerate()
+        .map(|(index, p)| storage::models::PriceDexProvider::new(p.as_ref().to_string(), index as i32))
+        .collect::<Vec<_>>();
+    let _ = database_client.prices_dex().add_prices_dex_providers(providers);
 
     info_with_fields!(
         "setup",

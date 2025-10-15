@@ -1811,7 +1811,7 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "pricer",
- "pricer_dex",
+ "prices_dex",
  "primitives",
  "rand 0.9.2",
  "reqwest",
@@ -4960,7 +4960,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pricer_dex"
+name = "prices_dex"
 version = "1.0.0"
 dependencies = [
  "async-trait",
@@ -4971,6 +4971,8 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_serializers",
+ "settings",
+ "strum",
  "tokio",
 ]
 

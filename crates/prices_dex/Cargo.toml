@@ -1,5 +1,5 @@
 [package]
-name = "pricer_dex"
+name = "prices_dex"
 version = { workspace = true }
 edition = { workspace = true }
 
@@ -9,6 +9,7 @@ chrono = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+strum = { workspace = true }
 
 gem_client = { path = "../gem_client" }
 primitives = { path = "../primitives" }
@@ -16,7 +17,8 @@ serde_serializers = { path = "../serde_serializers" }
 
 [dev-dependencies]
 tokio.workspace = true
+settings = { path = "../settings", features = ["testkit"] }
 
-[[test]]
-name = "integration_test"
-test = false
+[features]
+default = []
+price_integration_tests = []

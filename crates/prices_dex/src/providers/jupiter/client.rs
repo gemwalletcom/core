@@ -1,4 +1,4 @@
-use super::model::{JupiterPriceResponse, Price, TopTokensResponse};
+use super::model::{JupiterPriceResponse, Price, TopTokensResponse, VerifiedTokensResponse};
 use reqwest::Client;
 use std::error::Error;
 
@@ -23,8 +23,16 @@ impl JupiterClient {
         Ok(top_tokens.tokens)
     }
 
+    pub async fn get_verified_tokens(&self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/tokens/v2/tag", self.base_url);
+        let response = self.client.get(&url).query(&[("query", "verified")]).send().await?;
+
+        let verified_tokens: VerifiedTokensResponse = response.json().await?;
+        Ok(verified_tokens.into_iter().map(|token| token.id).collect())
+    }
+
     pub async fn get_asset_prices(&self, token_addresses: Vec<String>) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
-        const CHUNK_SIZE: usize = 100;
+        const CHUNK_SIZE: usize = 50;
         let mut all_prices = Vec::new();
 
         for chunk in token_addresses.chunks(CHUNK_SIZE) {

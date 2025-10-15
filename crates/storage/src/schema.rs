@@ -442,6 +442,41 @@ diesel::table! {
 }
 
 diesel::table! {
+    prices_dex (id) {
+        #[max_length = 256]
+        id -> Varchar,
+        #[max_length = 32]
+        provider -> Varchar,
+        price -> Float8,
+        last_updated_at -> Timestamp,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    prices_dex_assets (asset_id, price_feed_id) {
+        #[max_length = 256]
+        asset_id -> Varchar,
+        #[max_length = 256]
+        price_feed_id -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    prices_dex_providers (id) {
+        #[max_length = 32]
+        id -> Varchar,
+        enabled -> Bool,
+        priority -> Int4,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     releases (platform_store) {
         #[max_length = 32]
         platform_store -> Varchar,
@@ -614,6 +649,9 @@ diesel::joinable!(price_alerts -> devices (device_id));
 diesel::joinable!(price_alerts -> fiat_rates (currency));
 diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
+diesel::joinable!(prices_dex -> prices_dex_providers (provider));
+diesel::joinable!(prices_dex_assets -> assets (asset_id));
+diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
@@ -654,6 +692,9 @@ diesel::allow_tables_to_appear_in_same_query!(
     price_alerts,
     prices,
     prices_assets,
+    prices_dex,
+    prices_dex_assets,
+    prices_dex_providers,
     releases,
     scan_addresses,
     scan_addresses_types,

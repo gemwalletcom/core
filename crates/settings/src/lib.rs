@@ -23,6 +23,7 @@ pub struct Settings {
     pub paybis: Paybis,
 
     pub pricer: Pricer,
+    pub prices: Prices,
     pub coingecko: CoinGecko,
     pub charter: Charter,
     pub name: Name,
@@ -133,6 +134,20 @@ pub struct CoinGecko {
 pub struct Pricer {
     pub timer: u64,
     pub outdated: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Prices {
+    pub pyth: PriceProvider,
+    pub jupiter: PriceProvider,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct PriceProvider {
+    pub url: String,
+    pub timer: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
