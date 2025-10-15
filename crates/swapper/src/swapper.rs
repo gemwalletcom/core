@@ -15,7 +15,7 @@ pub struct GemSwapper {
 
 impl GemSwapper {
     // filter provider types that does not support cross chain / bridge swaps
-    fn filter_by_provider_mode(mode: SwapperProviderMode, from_chain: Chain, to_chain: Chain) -> bool {
+    fn filter_by_provider_mode(mode: &SwapperProviderMode, from_chain: Chain, to_chain: Chain) -> bool {
         match mode {
             SwapperProviderMode::OnChain => from_chain == to_chain,
             SwapperProviderMode::Bridge | SwapperProviderMode::CrossChain => from_chain != to_chain,
@@ -145,7 +145,7 @@ impl GemSwapper {
         let providers = self
             .swappers
             .iter()
-            .filter(|x| Self::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| Self::filter_by_provider_mode(&x.provider().mode, from_chain, to_chain))
             .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .filter(|x| Self::filter_by_preferred_providers(preferred_providers, &x.provider().id))
             .collect::<Vec<_>>();
@@ -256,7 +256,7 @@ mod tests {
         // Cross chain swaps (same chain will be filtered out)
         let filtered = providers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(ProviderType::new(**x).mode(), Chain::Ethereum, Chain::Optimism))
+            .filter(|x| GemSwapper::filter_by_provider_mode(&ProviderType::new(**x).mode, Chain::Ethereum, Chain::Optimism))
             .cloned()
             .collect::<Vec<_>>();
 
@@ -278,7 +278,7 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_mode(&x.provider().mode, from_chain, to_chain))
             .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .collect::<Vec<_>>();
 
@@ -289,7 +289,7 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_mode(&x.provider().mode, from_chain, to_chain))
             .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .collect::<Vec<_>>();
 
@@ -304,7 +304,7 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_mode(&x.provider().mode, from_chain, to_chain))
             .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .collect::<Vec<_>>();
 
@@ -316,7 +316,7 @@ mod tests {
 
         let filtered = swappers
             .iter()
-            .filter(|x| GemSwapper::filter_by_provider_mode(x.provider().mode(), from_chain, to_chain))
+            .filter(|x| GemSwapper::filter_by_provider_mode(&x.provider().mode, from_chain, to_chain))
             .filter(|x| GemSwapper::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .collect::<Vec<_>>();
 
