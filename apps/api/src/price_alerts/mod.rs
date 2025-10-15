@@ -3,9 +3,9 @@ pub use pricer::PriceAlertClient;
 use primitives::PriceAlerts;
 use rocket::{State, delete, get, post, serde::json::Json, tokio::sync::Mutex};
 
-#[get("/price_alerts/<device_id>")]
-pub async fn get_price_alerts(device_id: &str, client: &State<Mutex<PriceAlertClient>>) -> Result<ApiResponse<PriceAlerts>, ApiError> {
-    Ok(client.lock().await.get_price_alerts(device_id).await?.into())
+#[get("/price_alerts/<device_id>?<asset_id>")]
+pub async fn get_price_alerts(device_id: &str, asset_id: Option<&str>, client: &State<Mutex<PriceAlertClient>>) -> Result<ApiResponse<PriceAlerts>, ApiError> {
+    Ok(client.lock().await.get_price_alerts(device_id, asset_id).await?.into())
 }
 
 #[post("/price_alerts/<device_id>", format = "json", data = "<subscriptions>")]
