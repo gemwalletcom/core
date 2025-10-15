@@ -1,26 +1,37 @@
+pub const EVERSTAKE_API_BASE_URL: &str = "https://eth-api-b2c.everstake.one";
+pub const EVERSTAKE_STATS_PATH: &str = "/api/v1/stats";
+pub const EVERSTAKE_VALIDATORS_QUEUE_PATH: &str = "/api/v1/validators/queue";
+
+use super::{EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting, models::AccountState};
+use crate::multicall3::{IMulticall3, create_call3, decode_call3_return};
+
 use alloy_primitives::Address;
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::Zero;
 use std::{error::Error, str::FromStr};
 
-use crate::multicall3::{IMulticall3, create_call3, decode_call3_return};
+#[cfg(feature = "rpc")]
 use crate::rpc::client::EthereumClient;
+#[cfg(all(feature = "rpc", feature = "reqwest"))]
+use gem_client::ReqwestClient;
 
-use super::{EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting, WithdrawRequest};
-
-pub struct EverstakeAccountState {
-    pub deposited_balance: BigUint,
-    pub pending_balance: BigUint,
-    pub pending_deposited_balance: BigUint,
-    pub withdraw_request: WithdrawRequest,
-    pub restaked_reward: BigUint,
+#[cfg(all(feature = "rpc", feature = "reqwest"))]
+pub async fn get_everstake_validator_queue() -> Result<super::models::QueueStatsResponse, Box<dyn Error + Send + Sync>> {
+    let client = ReqwestClient::new(EVERSTAKE_API_BASE_URL.to_string(), reqwest::Client::new());
+    let response = client.get(EVERSTAKE_VALIDATORS_QUEUE_PATH).await?;
+    Ok(response)
 }
 
-pub async fn get_everstake_account_state<C: Client + Clone>(
-    client: &EthereumClient<C>,
-    address: &str,
-) -> Result<EverstakeAccountState, Box<dyn Error + Sync + Send>> {
+#[cfg(all(feature = "rpc", feature = "reqwest"))]
+pub async fn get_everstake_staking_apy() -> Result<Option<f64>, Box<dyn Error + Send + Sync>> {
+    let client = ReqwestClient::new(EVERSTAKE_API_BASE_URL.to_string(), reqwest::Client::new());
+    let response: super::models::StatsResponse = client.get(EVERSTAKE_STATS_PATH).await?;
+
+    Ok(Some(response.apr * 100.0))
+}
+
+pub async fn get_everstake_account_state<C: Client + Clone>(client: &EthereumClient<C>, address: &str) -> Result<AccountState, Box<dyn Error + Sync + Send>> {
     let account = Address::from_str(address).map_err(|e| Box::new(e) as Box<dyn Error + Sync + Send>)?;
     let staker = account;
 
@@ -44,7 +55,7 @@ pub async fn get_everstake_account_state<C: Client + Clone>(
     let withdraw_request = decode_call3_return::<IAccounting::withdrawRequestCall>(&multicall_results[3])?;
     let restaked_reward = decode_balance_result::<IAccounting::restakedRewardOfCall>(&multicall_results[4]);
 
-    Ok(EverstakeAccountState {
+    Ok(AccountState {
         deposited_balance,
         pending_balance,
         pending_deposited_balance,

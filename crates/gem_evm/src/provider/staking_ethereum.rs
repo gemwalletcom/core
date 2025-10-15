@@ -4,11 +4,11 @@ use num_traits::Zero;
 use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
 
-use crate::everstake::{EVERSTAKE_POOL_ADDRESS, map_balance_to_delegation, map_withdraw_request_to_delegations, state::get_everstake_account_state};
+use crate::everstake::{EVERSTAKE_POOL_ADDRESS, get_everstake_account_state, map_balance_to_delegation, map_withdraw_request_to_delegations};
 use crate::rpc::client::EthereumClient;
 
 #[cfg(all(feature = "rpc", feature = "reqwest"))]
-use crate::everstake::stats::get_everstake_staking_apy;
+use crate::everstake::client::get_everstake_staking_apy;
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
