@@ -80,3 +80,25 @@ where
         BigUint::zero()
     }
 }
+
+#[cfg(all(test, feature = "rpc", feature = "reqwest", feature = "chain_integration_tests"))]
+mod tests {
+    use crate::everstake::client::get_everstake_validator_queue;
+
+    #[tokio::test]
+    async fn test_validator_queue() -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
+        let state = get_everstake_validator_queue().await?;
+
+        assert!(state.validator_activation_time > 0);
+        assert!(state.validator_exit_time > 0);
+        assert!(state.validator_withdraw_time > 0);
+
+        let activation_days = (state.validator_activation_time + state.validator_adding_delay) as f64 / (24 * 60 * 60) as f64;
+        let withdraw_days = (state.validator_withdraw_time + state.validator_exit_time) as f64 / (24 * 60 * 60) as f64;
+
+        println!("Ethereum activation time: {activation_days:.2} days");
+        println!("Ethereum withdraw time: {withdraw_days:.2} days");
+
+        Ok(())
+    }
+}
