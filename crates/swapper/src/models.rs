@@ -1,10 +1,13 @@
 use super::permit2_data::Permit2Data;
 use crate::{
-    SwapperMode, SwapperProvider, SwapperProviderMode, SwapperQuoteAsset, SwapperSlippage,
+    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperSlippage,
     config::{DEFAULT_SLIPPAGE_BPS, ReferralFees},
 };
 pub use primitives::swap::SwapResult;
-use primitives::{AssetId, Chain, swap::ApprovalData};
+use primitives::{
+    AssetId, Chain,
+    swap::{ApprovalData, SwapProviderMode},
+};
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -13,6 +16,7 @@ pub struct ProviderType {
     pub name: String,
     pub protocol: String,
     pub protocol_id: String,
+    pub mode: SwapProviderMode,
 }
 
 impl ProviderType {
@@ -22,11 +26,12 @@ impl ProviderType {
             name: id.name().to_string(),
             protocol: id.protocol_name().to_string(),
             protocol_id: id.id().to_string(),
+            mode: ProviderType::mode(id),
         }
     }
 
-    pub fn mode(&self) -> SwapperProviderMode {
-        match self.id {
+    pub fn mode(id: SwapperProvider) -> SwapProviderMode {
+        match id {
             SwapperProvider::UniswapV3
             | SwapperProvider::UniswapV4
             | SwapperProvider::PancakeswapV3
@@ -39,11 +44,11 @@ impl ProviderType {
             | SwapperProvider::StonfiV2
             | SwapperProvider::Reservoir
             | SwapperProvider::Aerodrome
-            | SwapperProvider::Orca => SwapperProviderMode::OnChain,
-            SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapperProviderMode::CrossChain,
-            SwapperProvider::Thorchain => SwapperProviderMode::OmniChain(vec![Chain::Thorchain, Chain::Tron]),
-            SwapperProvider::Relay => SwapperProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Manta, Chain::Berachain]),
-            SwapperProvider::Across | SwapperProvider::Hyperliquid => SwapperProviderMode::Bridge,
+            | SwapperProvider::Orca => SwapProviderMode::OnChain,
+            SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapProviderMode::CrossChain,
+            SwapperProvider::Thorchain => SwapProviderMode::OmniChain(vec![Chain::Thorchain, Chain::Tron]),
+            SwapperProvider::Relay => SwapProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Manta, Chain::Berachain]),
+            SwapperProvider::Across | SwapperProvider::Hyperliquid => SwapProviderMode::Bridge,
         }
     }
 }

@@ -259,7 +259,7 @@ where
             }
             // For OnChain providers, use the default implementation
             _ => {
-                if self.provider.mode() == SwapperProviderMode::OnChain {
+                if self.provider.mode == SwapperProviderMode::OnChain {
                     Ok(self.get_onchain_swap_status(chain, transaction_hash))
                 } else {
                     Err(SwapperError::NotImplemented)
