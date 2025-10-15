@@ -12,12 +12,13 @@ pub struct QueueStatsResponse {
     pub validator_adding_delay: u64,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct StatsResponse {
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub apr: f64,
 }
 
+#[derive(Debug)]
 pub struct AccountState {
     pub deposited_balance: BigUint,
     pub pending_balance: BigUint,
