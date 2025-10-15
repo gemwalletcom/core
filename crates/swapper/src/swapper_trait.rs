@@ -18,7 +18,7 @@ pub trait Swapper: Send + Sync + Debug {
     }
     async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        if self.provider().mode() == SwapperProviderMode::OnChain {
+        if self.provider().mode == SwapperProviderMode::OnChain {
             Ok(self.get_onchain_swap_status(chain, transaction_hash))
         } else {
             Err(SwapperError::NotImplemented)
