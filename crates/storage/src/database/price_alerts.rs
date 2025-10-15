@@ -62,7 +62,9 @@ impl PriceAlertsStore for DatabaseClient {
         use crate::schema::price_alerts::dsl::*;
         diesel::insert_into(price_alerts)
             .values(values)
-            .on_conflict_do_nothing()
+            .on_conflict(identifier)
+            .do_update()
+            .set(last_notified_at.eq(Option::<NaiveDateTime>::None))
             .execute(&mut self.connection)
     }
 
