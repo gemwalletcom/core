@@ -1,9 +1,11 @@
+#[cfg(feature = "rpc")]
 pub mod client;
 pub mod constants;
 pub mod contracts;
 pub mod mapper;
 pub mod models;
 
+#[cfg(feature = "rpc")]
 pub use client::*;
 pub use constants::*;
 pub use contracts::*;
