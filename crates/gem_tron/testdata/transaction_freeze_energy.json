@@ -1,0 +1,31 @@
+{
+    "ret": [
+        {
+            "contractRet": "SUCCESS"
+        }
+    ],
+    "signature": [
+        "46c9ccf44a02419b722517f1776fbcc9a931958999a96de5e62e9768fd1461402755aa0a16e6b959284e6c35fdc4bde977f1b92e78a09d3ee56e0bdbcb8bdd0201"
+    ],
+    "txID": "3516238cd9d4e7c079beb8a7955f7287c3e394622900dae42e06a91dd71975c5",
+    "raw_data": {
+        "contract": [
+            {
+                "parameter": {
+                    "value": {
+                        "resource": "ENERGY",
+                        "frozen_balance": 10000000,
+                        "owner_address": "412e1d447fa4169390cf5f5b3d12d380decfbfe20f"
+                    },
+                    "type_url": "type.googleapis.com/protocol.FreezeBalanceV2Contract"
+                },
+                "type": "FreezeBalanceV2Contract"
+            }
+        ],
+        "ref_block_bytes": "4a2a",
+        "ref_block_hash": "dec35f1e70b1ca6f",
+        "expiration": 1760588376000,
+        "timestamp": 1760552376000
+    },
+    "raw_data_hex": "0a024a2a2208dec35f1e70b1ca6f40c0cffad99e335a5a083612560a34747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e467265657a6542616c616e63655632436f6e7472616374121e0a15412e1d447fa4169390cf5f5b3d12d380decfbfe20f1080ade204180170c0ade5c89e33"
+}
