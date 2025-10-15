@@ -116,8 +116,6 @@ pub struct SwapDetails {
     #[serde(default)]
     pub amount_out: Option<String>,
     #[serde(default)]
-    pub slippage: Option<u32>,
-    #[serde(default)]
     pub origin_chain_tx_hashes: Vec<TransactionDetails>,
     #[serde(default)]
     pub destination_chain_tx_hashes: Vec<TransactionDetails>,

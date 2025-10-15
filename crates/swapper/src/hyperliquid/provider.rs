@@ -4,7 +4,10 @@ use async_trait::async_trait;
 use gem_hypercore::core::{HYPE_SYSTEM_ADDRESS, HYPERCORE_HYPE_TOKEN, actions::user::spot_send::SpotSend, hypercore::transfer_to_hyper_evm_typed_data};
 use number_formatter::BigNumberFormatter;
 
-use primitives::Chain;
+use primitives::{
+    Chain,
+    swap::{SwapResult, SwapStatus},
+};
 
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
@@ -92,5 +95,17 @@ impl Swapper for HyperCoreBridge {
             }),
             _ => Err(SwapperError::NotSupportedChain),
         }
+    }
+
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+        let from_chain = chain;
+        let to_chain = if chain == Chain::HyperCore { Chain::Hyperliquid } else { Chain::HyperCore };
+        Ok(SwapResult {
+            status: SwapStatus::Completed,
+            from_chain,
+            from_tx_hash: transaction_hash.to_string(),
+            to_chain: Some(to_chain),
+            to_tx_hash: None,
+        })
     }
 }

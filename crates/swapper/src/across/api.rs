@@ -7,6 +7,8 @@ use primitives::{Chain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
+const FUNDS_DEPOSITED_TOPIC: &str = "0x32ed1a409ef04c7b0227189c3a103dc5ac10e775a15b785dcc510201f7c25ad3";
+
 #[derive(Debug, Clone)]
 pub struct AcrossApi {
     pub url: String,
@@ -50,11 +52,22 @@ impl AcrossApi {
             .await
             .map_err(SwapperError::from)?;
 
-        if receipt.logs.len() < 2 || receipt.logs[1].topics.len() < 3 {
-            return Err(SwapperError::NetworkError("invalid tx receipt".into()));
+        let deposit_log = receipt
+            .logs
+            .iter()
+            .find(|log| {
+                log.topics
+                    .first()
+                    .map(|topic| topic.eq_ignore_ascii_case(FUNDS_DEPOSITED_TOPIC))
+                    .unwrap_or(false)
+            })
+            .ok_or_else(|| SwapperError::NetworkError("FundsDeposited event not found".into()))?;
+
+        if deposit_log.topics.len() < 3 {
+            return Err(SwapperError::NetworkError("invalid FundsDeposited topics".into()));
         }
         // The deposit ID is in topics[2] (topics[0] is event signature, topics[1] is destination chain ID)
-        let deposit_id_hex = receipt.logs[1].topics[2].clone();
+        let deposit_id_hex = deposit_log.topics[2].clone();
 
         // Convert hex deposit ID to decimal string
         let deposit_id = if let Some(stripped) = deposit_id_hex.strip_prefix("0x") {
