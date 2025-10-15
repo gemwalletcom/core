@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use primitives::{Asset, AssetBalance, Chain, ChainAddress, Transaction};
+use primitives::{Asset, AssetBalance, Chain, ChainAddress, StakeLockTime, Transaction};
 use settings_chain::ChainProviders;
 
 pub struct ChainClient {
@@ -38,6 +38,10 @@ impl ChainClient {
 
     pub async fn get_staking_apy(&self, chain: Chain) -> Result<f64, Box<dyn Error + Send + Sync>> {
         self.providers.get_staking_apy(chain).await
+    }
+
+    pub async fn get_staking_lock_time(&self, chain: Chain) -> Result<StakeLockTime, Box<dyn Error + Send + Sync>> {
+        self.providers.get_staking_lock_time(chain).await
     }
 
     pub async fn get_block_transactions(

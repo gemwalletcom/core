@@ -26,9 +26,7 @@ impl PriceChainAssetsProvider for PythProvider {
         Ok(feeds
             .into_iter()
             .filter_map(|feed| {
-                asset_id_for_feed_id(&feed.id).map(|asset_id| {
-                    AssetPriceFeed::new(PriceFeedId::new(PriceFeedProvider::Pyth, feed.id.clone()), asset_id)
-                })
+                asset_id_for_feed_id(&feed.id).map(|asset_id| AssetPriceFeed::new(PriceFeedId::new(PriceFeedProvider::Pyth, feed.id.clone()), asset_id))
             })
             .collect())
     }
@@ -39,15 +37,13 @@ impl PriceChainAssetsProvider for PythProvider {
         let feed_id_set: HashSet<String> = feed_ids.iter().map(|f| f.feed_id.clone()).collect();
 
         let chains = Chain::all();
-        let chain_feed_map: HashMap<String, Vec<Chain>> = chains
-            .into_iter()
-            .fold(HashMap::new(), |mut acc, chain| {
-                let feed_id = price_feed_id_for_chain(chain).to_string();
-                if feed_id_set.contains(&feed_id) {
-                    acc.entry(feed_id).or_default().push(chain);
-                }
-                acc
-            });
+        let chain_feed_map: HashMap<String, Vec<Chain>> = chains.into_iter().fold(HashMap::new(), |mut acc, chain| {
+            let feed_id = price_feed_id_for_chain(chain).to_string();
+            if feed_id_set.contains(&feed_id) {
+                acc.entry(feed_id).or_default().push(chain);
+            }
+            acc
+        });
 
         let unique_ids: Vec<String> = chain_feed_map.keys().cloned().collect();
         if unique_ids.is_empty() {
@@ -64,10 +60,7 @@ impl PriceChainAssetsProvider for PythProvider {
             .flat_map(|(feed_id, chains)| {
                 let price = price_map.get(&feed_id).copied().unwrap_or(0.0);
                 chains.into_iter().map(move |chain| {
-                    let asset_price_feed = AssetPriceFeed::new(
-                        PriceFeedId::new(PriceFeedProvider::Pyth, feed_id.clone()),
-                        chain.as_asset_id(),
-                    );
+                    let asset_price_feed = AssetPriceFeed::new(PriceFeedId::new(PriceFeedProvider::Pyth, feed_id.clone()), chain.as_asset_id());
                     DexAssetPrice::new(chain.as_asset_id(), asset_price_feed, price, updated_at)
                 })
             })

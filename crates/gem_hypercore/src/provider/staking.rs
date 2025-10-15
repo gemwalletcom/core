@@ -3,7 +3,7 @@ use chain_traits::ChainStaking;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator};
+use primitives::{DelegationBase, DelegationValidator, StakeChain, StakeLockTime};
 
 use crate::{models::balance::Validator, provider::staking_mapper, rpc::client::HyperCoreClient};
 
@@ -13,6 +13,10 @@ impl<C: Client> ChainStaking for HyperCoreClient<C> {
         let validators = self.get_validators().await?;
         let apy = Validator::max_apr(validators);
         Ok(Some(apy))
+    }
+
+    async fn get_staking_lock_time(&self) -> Result<StakeLockTime, Box<dyn Error + Sync + Send>> {
+        Ok(StakeLockTime::new(StakeChain::HyperCore.get_lock_time(), None))
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Send + Sync>> {

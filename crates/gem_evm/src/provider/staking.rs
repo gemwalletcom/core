@@ -4,7 +4,7 @@ use std::error::Error;
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::ChainStaking;
-use primitives::{DelegationBase, DelegationValidator, EVMChain};
+use primitives::{DelegationBase, DelegationValidator, EVMChain, StakeChain, StakeLockTime};
 
 use crate::rpc::client::EthereumClient;
 use gem_client::Client;
@@ -17,6 +17,14 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
             EVMChain::SmartChain => self.get_smartchain_staking_apy().await,
             EVMChain::Ethereum => self.get_ethereum_staking_apy().await,
             _ => Ok(None),
+        }
+    }
+
+    async fn get_staking_lock_time(&self) -> Result<StakeLockTime, Box<dyn Error + Sync + Send>> {
+        match self.chain {
+            EVMChain::SmartChain => Ok(StakeLockTime::new(StakeChain::SmartChain.get_lock_time(), None)),
+            EVMChain::Ethereum => crate::everstake::get_everstake_lock_time().await,
+            _ => Ok(StakeLockTime::default()),
         }
     }
 
@@ -42,7 +50,7 @@ mod chain_integration_tests {
     use crate::provider::testkit::{TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_smartchain_test_client};
     use chain_traits::ChainStaking;
     use num_bigint::BigUint;
-    use primitives::{Chain, DelegationState};
+    use primitives::{Chain, DelegationState, StakeChain};
 
     #[tokio::test]
     async fn test_smartchain_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -117,6 +125,23 @@ mod chain_integration_tests {
             assert!(validator.is_active);
             assert_eq!(validator.apr, 4.2);
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_get_staking_lock_time() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+        let lock_time = client.get_staking_lock_time().await?;
+
+        println!(
+            "Everstake lock times - withdrawal: {}s, activation: {:?}",
+            lock_time.withdrawal, lock_time.activation
+        );
+
+        assert!(lock_time.withdrawal > StakeChain::Ethereum.get_lock_time());
+        let activation = lock_time.activation.expect("activation lock time should be present");
+        assert!(activation > 0);
 
         Ok(())
     }

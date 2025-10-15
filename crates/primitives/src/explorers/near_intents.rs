@@ -1,5 +1,5 @@
-use crate::block_explorer::BlockExplorer;
 use super::near::NEAR_BLOCKS_BASE_URL;
+use crate::block_explorer::BlockExplorer;
 
 pub struct NearIntents;
 

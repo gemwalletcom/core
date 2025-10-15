@@ -4,7 +4,7 @@ use futures::try_join;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator};
+use primitives::{DelegationBase, DelegationValidator, StakeChain, StakeLockTime};
 
 use super::staking_mapper;
 use crate::{
@@ -18,6 +18,10 @@ impl<C: Client> ChainStaking for AptosClient<C> {
     async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
         let staking_config = self.get_staking_config().await?;
         Ok(Some(calculate_apy(&staking_config)))
+    }
+
+    async fn get_staking_lock_time(&self) -> Result<StakeLockTime, Box<dyn Error + Sync + Send>> {
+        Ok(StakeLockTime::new(StakeChain::Aptos.get_lock_time(), None))
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {

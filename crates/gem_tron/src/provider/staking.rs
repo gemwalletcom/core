@@ -5,7 +5,7 @@ use num_bigint::BigUint;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator, StakeChain, StakeLockTime};
 
 use super::staking_mapper::map_staking_validators;
 use crate::rpc::client::TronClient;
@@ -46,6 +46,10 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
         let apy = (annual_rewards / total_staked_trx) * 100.0;
 
         Ok(Some(apy))
+    }
+
+    async fn get_staking_lock_time(&self) -> Result<StakeLockTime, Box<dyn Error + Sync + Send>> {
+        Ok(StakeLockTime::new(StakeChain::Tron.get_lock_time(), None))
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {

@@ -4,7 +4,7 @@ use futures::try_join;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator, chain_cosmos::CosmosChain};
+use primitives::{DelegationBase, DelegationValidator, StakeChain, StakeLockTime, chain_cosmos::CosmosChain};
 
 use crate::{
     provider::staking_mapper::{calculate_network_apy_cosmos, calculate_network_apy_osmosis, map_staking_delegations, map_staking_validators},
@@ -30,6 +30,19 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
             CosmosChain::Celestia => Ok(Some(10.55)),
             CosmosChain::Sei => Ok(Some(5.62)),
         }
+    }
+
+    async fn get_staking_lock_time(&self) -> Result<StakeLockTime, Box<dyn Error + Sync + Send>> {
+        let lock_time = match self.get_chain() {
+            CosmosChain::Cosmos => StakeLockTime::new(StakeChain::Cosmos.get_lock_time(), None),
+            CosmosChain::Injective => StakeLockTime::new(StakeChain::Injective.get_lock_time(), None),
+            CosmosChain::Osmosis => StakeLockTime::new(StakeChain::Osmosis.get_lock_time(), None),
+            CosmosChain::Celestia => StakeLockTime::new(StakeChain::Celestia.get_lock_time(), None),
+            CosmosChain::Sei => StakeLockTime::new(StakeChain::Sei.get_lock_time(), None),
+            CosmosChain::Noble | CosmosChain::Thorchain => StakeLockTime::default(),
+        };
+
+        Ok(lock_time)
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {

@@ -3,7 +3,9 @@ use chain_traits::ChainStaking;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator};
+use primitives::{DelegationBase, DelegationValidator, StakeChain, StakeLockTime};
+
+const SOLANA_ACTIVATION_LOCK_TIME: u64 = 259_200;
 
 use crate::{
     provider::staking_mapper::{map_staking_delegations, map_staking_validators},
@@ -14,6 +16,10 @@ use crate::{
 impl<C: Client + Clone> ChainStaking for SolanaClient<C> {
     async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
         Ok(Some(self.get_inflation_rate().await?.validator * 100.0))
+    }
+
+    async fn get_staking_lock_time(&self) -> Result<StakeLockTime, Box<dyn Error + Sync + Send>> {
+        Ok(StakeLockTime::new(StakeChain::Solana.get_lock_time(), Some(SOLANA_ACTIVATION_LOCK_TIME)))
     }
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {

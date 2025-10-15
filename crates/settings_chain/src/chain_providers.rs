@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use chain_traits::ChainTraits;
-use primitives::{Asset, AssetBalance, Chain, StakeValidator, Transaction};
+use primitives::{Asset, AssetBalance, Chain, StakeValidator, StakeLockTime, Transaction};
 use settings::Settings;
 
 use crate::ProviderFactory;
@@ -67,6 +67,10 @@ impl ChainProviders {
 
     pub async fn get_staking_apy(&self, chain: Chain) -> Result<f64, Box<dyn Error + Send + Sync>> {
         Ok(self.get_provider(chain)?.get_staking_apy().await?.unwrap_or(0.0))
+    }
+
+    pub async fn get_staking_lock_time(&self, chain: Chain) -> Result<StakeLockTime, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_staking_lock_time().await
     }
 
     pub async fn get_latest_block(&self, chain: Chain) -> Result<u64, Box<dyn Error + Send + Sync>> {

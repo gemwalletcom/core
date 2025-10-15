@@ -183,6 +183,8 @@ pub mod transaction_fee;
 pub use self::transaction_fee::{FeeOption, TransactionFee};
 pub mod stake_type;
 pub use self::stake_type::{RedelegateData, StakeData, StakeType};
+pub mod staking_lock_time;
+pub use self::staking_lock_time::StakeLockTime;
 pub mod transaction_load_metadata;
 pub use self::transaction_load_metadata::{HyperliquidOrder, TransactionLoadMetadata};
 pub mod transaction_input_type;
