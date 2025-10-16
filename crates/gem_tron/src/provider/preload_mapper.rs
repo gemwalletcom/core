@@ -9,7 +9,7 @@ use crate::rpc::constants::{
 };
 use primitives::StakeType;
 
-const FEE_LIMIT_PERCENT_INCREASE: u32 = 25;
+const FEE_LIMIT_PERCENT_INCREASE: u32 = 40;
 
 pub fn calculate_transfer_fee_rate(
     chain_parameters: &[ChainParameter],
