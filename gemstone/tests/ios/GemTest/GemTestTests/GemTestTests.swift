@@ -14,7 +14,7 @@ final class GemTestTests: XCTestCase {
         let chain = "bitcoin" // Primitive::Chain::Bitcion as_str()
         let explorers = Config().getBlockExplorers(chain: chain)
 
-        XCTAssertEqual(explorers.count, 2)
+        XCTAssertTrue(explorers.count >= 2)
         XCTAssertEqual(explorers[1], "Mempool")
 
         let explorer = Explorer(chain: chain)

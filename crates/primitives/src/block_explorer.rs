@@ -2,7 +2,7 @@ use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
     AlgorandAllo, BlockScout, Blocksec, Cardanocan, EtherScan, HyperliquidExplorer, MantleExplorer, NearBlocks, OkxExplorer, RouteScan, RuneScan, SubScan,
-    TonScan, TronScan, Viewblock, XrpScan, ZkSync, aptos, blockchair, mempool, mintscan, solana, stellar_expert, sui, ton,
+    TonScan, TronScan, Viewblock, XrpScan, ZkSync, aptos, blockchair, mempool, mintscan, solana, stellar_expert, sui, threexpl, ton,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -46,11 +46,11 @@ pub fn get_block_explorer(chain: Chain, name: &str) -> Box<dyn BlockExplorer> {
 
 pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
     match chain {
-        Chain::Bitcoin => vec![blockchair::new_bitcoin(), mempool::new()],
-        Chain::BitcoinCash => vec![blockchair::new_bitcoin_cash()],
-        Chain::Litecoin => vec![blockchair::new_litecoin()],
-        Chain::Doge => vec![blockchair::new_doge()],
-        Chain::Zcash => vec![blockchair::new_zcash()],
+        Chain::Bitcoin => vec![blockchair::new_bitcoin(), mempool::new(), threexpl::new_bitcoin()],
+        Chain::BitcoinCash => vec![blockchair::new_bitcoin_cash(), threexpl::new_bitcoin_cash()],
+        Chain::Litecoin => vec![blockchair::new_litecoin(), threexpl::new_litecoin()],
+        Chain::Doge => vec![blockchair::new_doge(), threexpl::new_doge()],
+        Chain::Zcash => vec![blockchair::new_zcash(), threexpl::new_zcash()],
 
         Chain::Ethereum => vec![EtherScan::boxed(EVMChain::Ethereum), blockchair::new_ethereum(), Blocksec::new_ethereum()],
         Chain::SmartChain => vec![EtherScan::boxed(EVMChain::SmartChain), blockchair::new_bnb(), Blocksec::new_bsc()],
