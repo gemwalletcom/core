@@ -211,7 +211,7 @@ pub fn supported_assets() -> Vec<SwapperChainAsset> {
 
 pub fn enabled_sending_chains() -> Vec<Chain> {
     // TODO: reivew other chains provider/preload for fee estimation before adding new chains
-    vec![Chain::Near, Chain::Ethereum, Chain::Sui, Chain::SmartChain, Chain::Doge]
+    vec![Chain::Near, Chain::Ethereum, Chain::Sui, Chain::SmartChain, Chain::Doge, Chain::Xrp]
 }
 
 #[cfg(test)]
