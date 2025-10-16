@@ -203,7 +203,7 @@ pub fn supported_assets() -> Vec<SwapperChainAsset> {
     NEAR_INTENTS_ASSETS
         .iter()
         .map(|(chain, assets)| {
-            let asset_ids = assets.keys().filter_map(|value| AssetId::new(value)).collect::<Vec<_>>();
+            let asset_ids = assets.keys().filter_map(|x| AssetId::new(x)).collect::<Vec<_>>();
             SwapperChainAsset::Assets(*chain, asset_ids)
         })
         .collect()
@@ -211,7 +211,15 @@ pub fn supported_assets() -> Vec<SwapperChainAsset> {
 
 pub fn enabled_sending_chains() -> Vec<Chain> {
     // TODO: reivew other chains provider/preload for fee estimation before adding new chains
-    vec![Chain::Near, Chain::Ethereum, Chain::Sui, Chain::SmartChain, Chain::Doge, Chain::Xrp]
+    vec![
+        Chain::Near,
+        Chain::Ethereum,
+        Chain::Sui,
+        Chain::SmartChain,
+        Chain::Doge,
+        Chain::Xrp,
+        Chain::Aptos,
+    ]
 }
 
 #[cfg(test)]
