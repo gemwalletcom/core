@@ -35,7 +35,7 @@ impl TransactionAddresses {
                 .map(|x| Self {
                     chain_id: transaction.asset_id.chain.as_ref().to_string(),
                     asset_id: transaction.asset_id.to_string(),
-                    transaction_id: transaction_id.clone(),
+                    transaction_id: transaction_id.to_string().clone(),
                     address: x,
                 })
                 .collect(),
@@ -47,13 +47,13 @@ impl TransactionAddresses {
                     Self {
                         chain_id: from_asset.chain.as_ref().to_string(),
                         asset_id: from_asset.to_string(),
-                        transaction_id: transaction_id.clone(),
+                        transaction_id: transaction_id.to_string().clone(),
                         address: transaction.from.clone(),
                     },
                     Self {
                         chain_id: to_asset.chain.as_ref().to_string(),
                         asset_id: to_asset.clone().to_string(),
-                        transaction_id: transaction_id.clone(),
+                        transaction_id: transaction_id.to_string().clone(),
                         address: transaction.clone().to,
                     },
                 ]

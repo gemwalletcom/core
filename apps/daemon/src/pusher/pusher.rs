@@ -152,7 +152,7 @@ impl Pusher {
 
         let notification_transaction = PushNotificationTransaction {
             wallet_index: subscription.wallet_index,
-            transaction_id: transaction.id.clone(),
+            transaction_id: transaction.id.to_string(),
             transaction: transaction.clone(),
             asset_id: transaction.asset_id.to_string(),
         };

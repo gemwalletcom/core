@@ -1,12 +1,12 @@
 pub mod aptos;
 pub mod blockchair;
-pub mod threexpl;
 pub mod etherscan;
 pub mod mempool;
 pub mod mintscan;
 pub mod solana;
 pub mod sui;
 pub mod thorchain;
+pub mod threexpl;
 pub mod ton;
 pub mod tronscan;
 pub mod xrpscan;

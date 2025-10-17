@@ -94,6 +94,7 @@ pub struct PushNotificationPayloadType {
 pub struct PushNotificationTransaction {
     pub wallet_index: i32,
     pub asset_id: String,
+    #[typeshare(skip)]
     pub transaction_id: String,
     pub transaction: Transaction,
 }

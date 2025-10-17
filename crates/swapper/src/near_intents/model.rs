@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 pub const DEFAULT_REFERRAL: &str = "gemwallet";
 pub const DEPOSIT_TYPE_ORIGIN: &str = "ORIGIN_CHAIN";
 pub const RECIPIENT_TYPE_DESTINATION: &str = "DESTINATION_CHAIN";
-pub const DEFAULT_WAIT_TIME_MS: u32 = 1_500;
+pub const DEFAULT_WAIT_TIME_MS: u32 = 2_500;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

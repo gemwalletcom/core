@@ -54,7 +54,6 @@ pub struct DelegationValidator {
 pub enum DelegationState {
     Active,
     Pending,
-    Undelegating,
     Inactive,
     Activating,
     Deactivating,

@@ -251,7 +251,7 @@ mod tests {
 
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.id, "aptos_0x6a43e0034486583a30cff449c03c4d882c641b351e392096272496168240de8e");
+        assert_eq!(tx.id.to_string(), "aptos_0x6a43e0034486583a30cff449c03c4d882c641b351e392096272496168240de8e");
         assert_eq!(tx.from, "0xd1a1c1804e91ba85a569c7f018bb7502d2f13d4742d2611953c9c14681af6446");
         assert_eq!(tx.to, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
         assert_eq!(tx.value, "2431838058");
@@ -267,7 +267,7 @@ mod tests {
 
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.id, "aptos_0x0a91279f5e94dd678c2a1655856270fc7635c9c98bdb0b923ab2d50ad656ad7b");
+        assert_eq!(tx.id.to_string(), "aptos_0x0a91279f5e94dd678c2a1655856270fc7635c9c98bdb0b923ab2d50ad656ad7b");
         assert_eq!(tx.from, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
         assert_eq!(tx.to, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
         assert_eq!(tx.state, TransactionState::Confirmed);
@@ -294,7 +294,7 @@ mod tests {
 
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.id, "aptos_0x130cc74c1a768780ca062a97bc833a01dec85b2d315484869559b7cdee4d0e75");
+        assert_eq!(tx.id.to_string(), "aptos_0x130cc74c1a768780ca062a97bc833a01dec85b2d315484869559b7cdee4d0e75");
         assert_eq!(tx.from, "0xc95615aa095c100b18eb6eaa0f0a0f30b9cd96685118a7cbc1a2328a91ca2eda");
         assert_eq!(tx.to, "0xe5452230b8d5f4a664e33b8ad95354e50da64caaf003f11c0158391e96a4db2c");
         assert_eq!(tx.value, "1100000000");
@@ -311,7 +311,7 @@ mod tests {
 
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.id, "aptos_0xef6430bef0e8de7090b2c4bce210adb75d648be4614dcc37232b0d67f819b137");
+        assert_eq!(tx.id.to_string(), "aptos_0xef6430bef0e8de7090b2c4bce210adb75d648be4614dcc37232b0d67f819b137");
         assert_eq!(tx.from, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
         assert_eq!(tx.to, "0xdb5247f859ce63dbe8940cf8773be722a60dcc594a8be9aca4b76abceb251b8e");
         assert_eq!(tx.value, "1109984251");
