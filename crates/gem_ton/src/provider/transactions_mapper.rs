@@ -268,7 +268,7 @@ mod tests {
         assert!(transactions.len() < 18);
 
         for transaction in &transactions {
-            assert!(!transaction.id.is_empty());
+            assert!(!transaction.id.hash.is_empty());
             assert!(!transaction.from.is_empty());
             assert!(!transaction.to.is_empty());
         }

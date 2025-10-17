@@ -56,7 +56,7 @@ impl Transaction {
         };
 
         Self {
-            id: transaction.id,
+            id: transaction.id.to_string(),
             chain: transaction.asset_id.chain.as_ref().to_string(),
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string(),
@@ -77,7 +77,6 @@ impl Transaction {
     pub fn as_primitive(&self, addresses: Vec<String>) -> primitives::Transaction {
         let transaction_id = TransactionId::from_str(&self.id.clone()).unwrap();
         let asset_id = AssetId::new(self.asset_id.clone().as_str()).unwrap();
-        let hash = transaction_id.hash.clone();
         let from = self.from_address.clone().unwrap_or_default();
         let to_address = self.to_address.clone().unwrap_or_default();
         let inputs: Option<Vec<TransactionUtxoInput>> = serde_json::from_value(self.utxo_inputs.clone().into()).ok();
@@ -93,8 +92,8 @@ impl Transaction {
         let transaction_type = primitives::TransactionType::from_str(self.kind.as_str()).ok().unwrap();
 
         primitives::Transaction {
-            id: transaction_id.to_string(),
-            hash: Some(hash.clone()),
+            id: transaction_id.clone(),
+            hash: transaction_id.hash.clone(),
             asset_id,
             from: from.clone(),
             to: to_address.clone(),

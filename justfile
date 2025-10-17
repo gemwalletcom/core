@@ -52,10 +52,11 @@ test-integration:
 
 build-integration-tests:
     @echo "Building all integration tests..."
-    cargo test --no-run --test integration_test --package gem_evm --features rpc,reqwest
-    cargo test --no-run --test integration_test --package security_provider
-    cargo test --no-run --test integration_test --package name_resolver
-    cargo test --no-run --package swapper --features swap_integration_tests --all-targets
+    cargo test --no-run --lib --all --features chain_integration_tests
+    cargo test --no-run --lib -p gemstone --features swap_integration_tests
+    cargo test --no-run --lib -p fiat --features fiat_integration_tests
+    cargo test --no-run --lib -p nft --features nft_integration_tests
+    cargo test --no-run --lib -p prices_dex
 
 format:
     cargo fmt -q --all

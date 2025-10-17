@@ -87,7 +87,7 @@ mod tests {
         assert!(result.is_some());
 
         let mapped_tx = result.unwrap();
-        assert_eq!(mapped_tx.id, "cardano_tx_hash");
+        assert_eq!(mapped_tx.id.to_string(), "cardano_tx_hash");
         assert_eq!(mapped_tx.fee, "100");
     }
 }
