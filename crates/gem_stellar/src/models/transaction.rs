@@ -6,6 +6,8 @@ pub struct StellarTransactionBroadcast {
     pub hash: Option<String>,
     #[serde(rename = "title")]
     pub error_message: Option<String>,
+    pub tx_status: String,
+    pub error_result_xdr: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -10,9 +10,13 @@ pub fn encode_transaction_data(data: &str) -> String {
 }
 
 pub fn map_transaction_broadcast(response: &StellarTransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
-    if let Some(hash) = &response.hash {
+    if let Some(hash) = &response.hash
+        && response.tx_status == "PENDING"
+    {
         Ok(hash.clone())
     } else if let Some(error) = &response.error_message {
+        Err(format!("Broadcast error: {}", error).into())
+    } else if let Some(error) = &response.error_result_xdr {
         Err(format!("Broadcast error: {}", error).into())
     } else {
         Err("Unknown broadcast error".into())
@@ -74,6 +78,8 @@ mod tests {
         let response = StellarTransactionBroadcast {
             hash: Some("test_hash_123".to_string()),
             error_message: None,
+            tx_status: "PENDING".to_string(),
+            error_result_xdr: None,
         };
 
         let result = map_transaction_broadcast(&response).unwrap();
@@ -88,6 +94,8 @@ mod tests {
         let result = map_transaction_broadcast(&StellarTransactionBroadcast {
             hash: Some(response.hash.clone()),
             error_message: None,
+            tx_status: "PENDING".to_string(),
+            error_result_xdr: None,
         });
 
         assert!(result.is_ok());

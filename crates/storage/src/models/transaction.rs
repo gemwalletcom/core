@@ -94,7 +94,7 @@ impl Transaction {
 
         primitives::Transaction {
             id: transaction_id.to_string(),
-            hash: hash.clone(),
+            hash: Some(hash.clone()),
             asset_id,
             from: from.clone(),
             to: to_address.clone(),
