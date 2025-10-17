@@ -93,12 +93,12 @@ impl<C: Client + Clone> EthereumClient<C> {
 
                 let state = if let Some(ref completion_date) = completion_date {
                     if *completion_date > Utc::now() {
-                        DelegationState::Undelegating
+                        DelegationState::Deactivating
                     } else {
                         DelegationState::AwaitingWithdrawal
                     }
                 } else {
-                    DelegationState::Undelegating
+                    DelegationState::Deactivating
                 };
 
                 result.push(DelegationBase {

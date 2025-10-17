@@ -68,7 +68,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                     staked += &delegation.balance;
                     rewards += &delegation.rewards;
                 }
-                DelegationState::Activating | DelegationState::Deactivating | DelegationState::Undelegating | DelegationState::AwaitingWithdrawal => {
+                DelegationState::Activating | DelegationState::Deactivating | DelegationState::AwaitingWithdrawal => {
                     pending += &delegation.balance;
                 }
                 _ => {}
