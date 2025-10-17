@@ -89,7 +89,7 @@ mod tests {
 
         assert!(result.is_some());
         let result = result.unwrap();
-        assert_eq!(result.hash, "abc123");
+        assert_eq!(result.id, "bitcoin_abc123");
         assert_eq!(result.value, "100000");
         assert_eq!(result.fee, "5000");
         assert_eq!(result.transaction_type, TransactionType::Transfer);

@@ -34,7 +34,8 @@ impl TransactionsResponse {
 #[typeshare(swift = "Sendable, Equatable")]
 pub struct Transaction {
     pub id: String,
-    pub hash: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hash: Option<String>,
     #[serde(rename = "assetId")]
     pub asset_id: AssetId,
     pub from: String,
@@ -85,15 +86,15 @@ impl Transaction {
     ) -> Self {
         Self {
             id: Self::id_from(asset_id.chain, hash.clone()),
-            hash,
+            hash: Some(hash),
             asset_id,
             from: from_address,
             to: to_address,
             contract,
             transaction_type,
             state,
-            block_number: None,
-            sequence: None,
+            block_number: Some("".to_string()),
+            sequence: Some("".to_string()),
             fee,
             fee_asset_id,
             value,
@@ -122,15 +123,15 @@ impl Transaction {
     ) -> Self {
         Self {
             id: Self::id_from(asset_id.chain, hash.clone()),
-            hash,
+            hash: Some(hash),
             asset_id,
             from: "".to_string(),
             to: "".to_string(),
             contract: None,
             transaction_type,
             state,
-            block_number: None,
-            sequence: None,
+            block_number: Some("".to_string()),
+            sequence: Some("".to_string()),
             fee,
             fee_asset_id,
             value,
@@ -237,7 +238,7 @@ impl Transaction {
             }
         };
         Transaction {
-            id: Self::id_from(self.asset_id.chain, self.hash.clone()),
+            id: self.id.clone(),
             hash: self.hash.clone(),
             asset_id: self.asset_id.clone(),
             from,
