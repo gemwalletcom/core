@@ -89,18 +89,6 @@ pub struct PerpetualMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
-pub struct PerpetualConfirmMetadata {
-    pub slippage: f64,
-    pub leverage: u8,
-    pub pnl: Option<f64>,
-    pub entry_price: Option<f64>,
-    pub market_price: f64,
-    pub margin_amount: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable, Hashable")]
-#[serde(rename_all = "camelCase")]
 pub struct PerpetualConfirmData {
     pub direction: PerpetualDirection,
     pub base_asset: Asset,
@@ -108,7 +96,12 @@ pub struct PerpetualConfirmData {
     pub price: String,
     pub fiat_value: f64,
     pub size: String,
-    pub metadata: PerpetualConfirmMetadata,
+    pub slippage: f64,
+    pub leverage: u8,
+    pub pnl: Option<f64>,
+    pub entry_price: Option<f64>,
+    pub market_price: f64,
+    pub margin_amount: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
