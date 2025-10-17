@@ -188,6 +188,10 @@ pub static NEAR_INTENTS_REVERSE_ASSETS: LazyLock<HashMap<&'static str, AssetId>>
     reverse
 });
 
+pub fn deposit_memo_chains() -> Vec<Chain> {
+    vec![Chain::Stellar]
+}
+
 pub fn get_near_intents_asset_id(asset: &SwapperQuoteAsset) -> Result<String, SwapperError> {
     let asset_id = asset.asset_id();
     let key = asset_id.to_string().to_lowercase();

@@ -1,6 +1,6 @@
 use super::{
     AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult,
-    SwapType, asset_id_from_near_intents, get_near_intents_asset_id,
+    SwapType, asset_id_from_near_intents, deposit_memo_chains, get_near_intents_asset_id,
     model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
     supported_assets,
 };
@@ -152,9 +152,10 @@ where
     }
 
     fn resolve_deposit_mode(asset: &SwapperQuoteAsset) -> DepositMode {
-        match asset.asset_id().chain {
-            Chain::Stellar => DepositMode::Memo,
-            _ => DepositMode::Simple,
+        if deposit_memo_chains().contains(&asset.asset_id().chain) {
+            DepositMode::Memo
+        } else {
+            DepositMode::Simple
         }
     }
 
@@ -338,6 +339,7 @@ where
     async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let mut quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
+        let request_deposit_mode = quote_request.deposit_mode.clone();
         quote_request.dry = false;
 
         let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
@@ -350,13 +352,26 @@ where
             .deposit_address
             .ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositAddress in Near Intents response".into()))?;
         let amount_in = Self::parse_amount(&near_quote.amount_in, "amountIn")?;
-        let deposit_mode = near_quote.deposit_mode.unwrap_or_default();
+        let deposit_mode = near_quote
+            .deposit_mode
+            .or_else(|| Some(request_deposit_mode.clone()))
+            .ok_or_else(|| SwapperError::ComputeQuoteError("Near Intents response missing deposit mode".into()))?;
         let from_asset = &quote.request.from_asset;
+
+        let memo_required = deposit_memo_chains().contains(&from_asset.asset_id().chain);
+        let deposit_memo = near_quote.deposit_memo.filter(|memo| !memo.is_empty());
+
+        if memo_required && deposit_mode != DepositMode::Memo {
+            return Err(SwapperError::ComputeQuoteError("Near Intents Stellar deposits require a memo".into()));
+        }
+        if memo_required && deposit_memo.is_none() {
+            return Err(SwapperError::ComputeQuoteError("Near Intents Stellar deposit missing memo".into()));
+        }
 
         let deposit_data = self
             .build_deposit_data(
                 deposit_mode,
-                near_quote.deposit_memo,
+                deposit_memo,
                 from_asset,
                 &quote.request.wallet_address,
                 &deposit_address,
