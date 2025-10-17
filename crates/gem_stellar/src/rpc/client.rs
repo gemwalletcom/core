@@ -48,7 +48,7 @@ impl<C: Client> StellarClient<C> {
             ContentType::ApplicationFormUrlEncoded.as_str().to_string(),
         )]));
 
-        Ok(self.client.post("/transactions", &body, headers).await?)
+        Ok(self.client.post("/transactions_async", &body, headers).await?)
     }
 
     pub async fn get_assets_by_issuer(&self, issuer: &str) -> Result<StellarEmbedded<StellarAsset>, Box<dyn Error + Send + Sync>> {
