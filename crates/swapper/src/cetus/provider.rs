@@ -335,6 +335,7 @@ where
             to: "".to_string(),
             value: "".to_string(),
             data: tx_output.base64_encoded(),
+            memo: None,
             approval: None,
             gas_limit: None,
         })

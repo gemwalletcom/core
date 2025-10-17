@@ -43,12 +43,13 @@ extension SwapperQuote: @retroactive CustomStringConvertible {
     }
 }
 
-extension SwapperQuoteData: @retroactive CustomStringConvertible {
+extension GemSwapQuoteData: @retroactive CustomStringConvertible {
     public var description: String {
         var json: [String: Any] = [
             "to": to,
             "value": value,
             "data": data,
+            "memo": memo ?? NSNull(),
             "approval": NSNull(),
             "gasLimit": gasLimit ?? NSNull(),
         ]

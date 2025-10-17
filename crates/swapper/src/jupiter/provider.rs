@@ -212,6 +212,7 @@ where
             to: PROGRAM_ADDRESS.to_string(),
             value: "".to_string(),
             data: quote_data.swap_transaction,
+            memo: None,
             approval: None,
             gas_limit: None,
         };

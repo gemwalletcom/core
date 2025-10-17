@@ -82,6 +82,7 @@ impl Swapper for HyperCoreBridge {
                     to: HYPE_SYSTEM_ADDRESS.to_string(),
                     value: quote.request.value.clone(),
                     data: typed_data,
+                    memo: None,
                     approval: None,
                     gas_limit: None,
                 })
@@ -90,6 +91,7 @@ impl Swapper for HyperCoreBridge {
                 to: HYPE_SYSTEM_ADDRESS.to_string(),
                 value: quote.request.value.clone(),
                 data: "0x".to_string(),
+                memo: None,
                 approval: None,
                 gas_limit: None,
             }),

@@ -516,6 +516,7 @@ impl Swapper for Across {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
+            memo: None,
             approval,
             gas_limit,
         };

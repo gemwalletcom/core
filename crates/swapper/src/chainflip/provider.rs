@@ -277,6 +277,7 @@ where
                     to: response.to,
                     value,
                     data: response.calldata,
+                    memo: None,
                     approval,
                     gas_limit,
                 })
@@ -285,6 +286,7 @@ where
                 to: response.deposit_address,
                 value: quote.request.value.clone(),
                 data: response.nulldata_payload,
+                memo: None,
                 approval: None,
                 gas_limit: None,
             }),
@@ -296,6 +298,7 @@ where
                     to: response.program_id,
                     value: "".into(),
                     data,
+                    memo: None,
                     approval: None,
                     gas_limit: None,
                 })

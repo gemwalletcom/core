@@ -1,11 +1,13 @@
 use crate::config::swap_config::SwapReferralFees;
-use primitives::{AssetId, Chain, swap::ApprovalData as GemApprovalData};
+use primitives::{AssetId, Chain};
 use std::str::FromStr;
 pub use swapper::{
     AssetList as SwapperAssetList, FetchQuoteData, Options as SwapperOptions, ProviderData as SwapperProviderData, ProviderType as SwapperProviderType,
     Quote as SwapperQuote, QuoteRequest as SwapperQuoteRequest, Route as SwapperRoute, SwapResult as SwapperSwapResult, SwapperMode, SwapperProvider,
-    SwapperProviderMode, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage, SwapperSlippageMode, SwapperSwapStatus, permit2_data::Permit2Data,
+    SwapperProviderMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, SwapperSwapStatus, permit2_data::Permit2Data,
 };
+
+pub use crate::models::transaction::GemSwapQuoteData;
 
 #[derive(Debug, Clone, PartialEq, uniffi::Object)]
 pub struct SwapProviderConfig(SwapperProviderType);
@@ -97,15 +99,6 @@ pub struct SwapperQuote {
     pub data: SwapperProviderData,
     pub request: SwapperQuoteRequest,
     pub eta_in_seconds: Option<u32>,
-}
-
-#[uniffi::remote(Record)]
-pub struct SwapperQuoteData {
-    pub to: String,
-    pub value: String,
-    pub data: String,
-    pub approval: Option<GemApprovalData>,
-    pub gas_limit: Option<String>,
 }
 
 #[uniffi::remote(Enum)]

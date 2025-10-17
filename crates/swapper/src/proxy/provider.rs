@@ -231,6 +231,7 @@ where
             to: data.to,
             value: data.value,
             data: data.data,
+            memo: None,
             approval,
             gas_limit,
         })

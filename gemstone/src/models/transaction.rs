@@ -199,6 +199,7 @@ pub struct GemSwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub memo: Option<String>,
     pub approval: Option<GemApprovalData>,
     pub gas_limit: Option<String>,
 }
@@ -504,6 +505,7 @@ impl From<SwapQuoteData> for GemSwapQuoteData {
             to: value.to,
             value: value.value,
             data: value.data,
+            memo: value.memo,
             approval: value.approval,
             gas_limit: value.gas_limit,
         }
@@ -881,6 +883,7 @@ impl From<GemSwapQuoteData> for primitives::swap::SwapQuoteData {
             to: value.to,
             value: value.value,
             data: value.data,
+            memo: value.memo,
             approval: value.approval.map(|a| primitives::swap::ApprovalData {
                 token: a.token,
                 spender: a.spender,

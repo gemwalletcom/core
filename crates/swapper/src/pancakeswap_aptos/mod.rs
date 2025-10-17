@@ -128,6 +128,7 @@ where
             to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             value: quote.from_value.clone(),
             data: serde_json::to_string(&payload).unwrap(),
+            memo: None,
             approval: None,
             gas_limit: None,
         };

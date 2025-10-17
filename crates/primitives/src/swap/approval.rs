@@ -19,6 +19,7 @@ pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub memo: Option<String>,
     pub approval: Option<ApprovalData>,
     pub gas_limit: Option<String>,
 }

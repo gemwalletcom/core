@@ -26,6 +26,7 @@ pub struct DepositData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub memo: Option<String>,
 }
 
 pub struct NearIntents<C>
@@ -178,7 +179,8 @@ where
                 Ok(DepositData {
                     to: deposit_address.to_string(),
                     value: amount_in.to_string(),
-                    data: memo,
+                    data: String::new(),
+                    memo: Some(memo),
                 })
             }
             DepositMode::Simple => Self::build_simple_deposit_data(from_asset, deposit_address, amount_in),
@@ -199,6 +201,7 @@ where
             to: deposit_address.to_string(),
             value: amount_in.to_string(),
             data: String::new(),
+            memo: None,
         })
     }
 
@@ -227,6 +230,7 @@ where
             to: deposit_address.to_string(),
             value: amount_in.to_string(),
             data: message_bytes,
+            memo: None,
         })
     }
 
@@ -245,6 +249,7 @@ where
             to: token_contract.clone(),
             value: ZERO_VALUE.to_string(),
             data,
+            memo: None,
         })
     }
 
@@ -263,6 +268,7 @@ where
             to: token_contract.clone(),
             value: ZERO_VALUE.to_string(),
             data,
+            memo: None,
         })
     }
 
@@ -354,7 +360,7 @@ where
         let amount_in = Self::parse_amount(&near_quote.amount_in, "amountIn")?;
         let deposit_mode = near_quote
             .deposit_mode
-            .or_else(|| Some(request_deposit_mode.clone()))
+            .or(Some(request_deposit_mode))
             .ok_or_else(|| SwapperError::ComputeQuoteError("Near Intents response missing deposit mode".into()))?;
         let from_asset = &quote.request.from_asset;
 
@@ -379,10 +385,13 @@ where
             )
             .await?;
 
+        let DepositData { to, value, data, memo } = deposit_data;
+
         Ok(SwapperQuoteData {
-            to: deposit_data.to,
-            value: deposit_data.value,
-            data: deposit_data.data,
+            to,
+            value,
+            data,
+            memo,
             approval: None,
             gas_limit: None,
         })
