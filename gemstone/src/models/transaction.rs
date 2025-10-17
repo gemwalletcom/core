@@ -164,6 +164,7 @@ pub struct GemWalletConnectionSessionAppMetadata {
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransferDataExtra {
+    pub to: String,
     pub gas_limit: Option<String>,
     pub gas_price: Option<GemGasPriceType>,
     pub data: Option<Vec<u8>>,
@@ -708,6 +709,7 @@ impl From<StakeType> for GemStakeType {
 impl From<GemTransferDataExtra> for TransferDataExtra {
     fn from(value: GemTransferDataExtra) -> Self {
         TransferDataExtra {
+            to: value.to,
             gas_limit: value.gas_limit.map(|s| s.parse().unwrap_or_default()),
             gas_price: value.gas_price.map(|gp| gp.into()),
             data: value.data,
@@ -720,6 +722,7 @@ impl From<GemTransferDataExtra> for TransferDataExtra {
 impl From<TransferDataExtra> for GemTransferDataExtra {
     fn from(value: TransferDataExtra) -> Self {
         GemTransferDataExtra {
+            to: value.to,
             gas_limit: value.gas_limit.map(|gl| gl.to_string()),
             gas_price: value.gas_price.map(|gp| gp.into()),
             data: value.data,
