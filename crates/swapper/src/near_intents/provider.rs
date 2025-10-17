@@ -36,7 +36,7 @@ where
     client: NearIntentsClient<C>,
     supported_assets: Vec<SwapperChainAsset>,
     sui_client: Arc<SuiClient<RpcClient>>,
-    enabled_sending_chains: Vec<Chain>,
+    enabled_sending_chains: Vec<ChainType>,
 }
 
 impl<C> std::fmt::Debug for NearIntents<C>
@@ -309,12 +309,12 @@ where
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let mode = match request.mode {
-            SwapperMode::ExactIn => SwapType::ExactInput,
+            SwapperMode::ExactIn => SwapType::FlexInput,
             SwapperMode::ExactOut => return Err(SwapperError::NotImplemented),
         };
 
         let from_chain = request.from_asset.asset_id().chain;
-        if !self.enabled_sending_chains.contains(&from_chain) {
+        if !self.enabled_sending_chains.contains(&from_chain.chain_type()) {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
