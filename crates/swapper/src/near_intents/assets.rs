@@ -1,6 +1,6 @@
 use crate::{SwapperError, SwapperQuoteAsset, models::SwapperChainAsset};
 use primitives::{
-    AssetId, Chain, ChainType,
+    AssetId, Chain,
     asset_constants::{
         USDC_ARB_ASSET_ID, USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID,
         USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID,
@@ -208,23 +208,6 @@ pub fn supported_assets() -> Vec<SwapperChainAsset> {
             SwapperChainAsset::Assets(*chain, asset_ids)
         })
         .collect()
-}
-
-pub fn enabled_sending_chains() -> Vec<ChainType> {
-    // TODO: review other chains' provider preload methods for fee estimation before adding new chains
-    vec![
-        ChainType::Near,
-        ChainType::Ethereum,
-        ChainType::Sui,
-        ChainType::Bitcoin,
-        ChainType::Aptos,
-        ChainType::Xrp,
-        ChainType::Stellar,
-        ChainType::Ton,
-        ChainType::Tron,
-        ChainType::Solana,
-        ChainType::Cardano,
-    ]
 }
 
 #[cfg(test)]
