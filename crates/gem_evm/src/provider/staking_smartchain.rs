@@ -85,11 +85,11 @@ impl<C: Client + Clone> EthereumClient<C> {
             if let Ok(balance) = BigUint::from_str(&undelegation.amount) {
                 let shares = BigUint::from_str(&undelegation.shares).unwrap_or_else(|_| BigUint::from(0u32));
 
-                let completion_date = if let Ok(unlock_time) = undelegation.unlock_time.parse::<i64>() {
-                    Some(DateTime::from_timestamp(unlock_time, 0).unwrap_or_default())
-                } else {
-                    None
-                };
+                let completion_date = undelegation
+                    .unlock_time
+                    .parse::<i64>()
+                    .ok()
+                    .and_then(|unlock_time| DateTime::from_timestamp(unlock_time, 0));
 
                 let state = if let Some(ref completion_date) = completion_date {
                     if *completion_date > Utc::now() {
@@ -170,5 +170,32 @@ impl<C: Client + Clone> EthereumClient<C> {
         } else {
             Err("Invalid response format for maxElectedValidators".into())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::DateTime;
+
+    #[test]
+    fn test_undelegation_completion_date_valid() {
+        let expected_timestamp = 1716417585i64;
+        let expected_date = DateTime::from_timestamp(expected_timestamp, 0).unwrap();
+
+        let completion_date = "1716417585"
+            .parse::<i64>()
+            .ok()
+            .and_then(|unlock_time| DateTime::from_timestamp(unlock_time, 0));
+
+        assert!(completion_date.is_some());
+        assert_eq!(completion_date.unwrap(), expected_date);
+        assert_eq!(completion_date.unwrap().timestamp(), expected_timestamp);
+    }
+
+    #[test]
+    fn test_undelegation_completion_date_invalid() {
+        let completion_date = "invalid".parse::<i64>().ok().and_then(|unlock_time| DateTime::from_timestamp(unlock_time, 0));
+
+        assert!(completion_date.is_none());
     }
 }

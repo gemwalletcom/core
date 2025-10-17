@@ -39,8 +39,3 @@ primitives = { path = "../primitives", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 num-bigint = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }
-
-[[test]]
-name = "integration_test"
-test = false
-required-features = ["rpc"]
