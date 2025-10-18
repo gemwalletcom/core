@@ -201,7 +201,7 @@ impl EthereumMapper {
         }
 
         // Try to decode BSC staking transaction
-        if let Some(tx) = StakingMapper::map_transaction(&chain, transaction, transaction_reciept, created_at) {
+        if let Some(tx) = StakingMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at) {
             return Some(tx);
         }
 
