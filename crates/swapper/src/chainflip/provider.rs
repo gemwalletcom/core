@@ -278,7 +278,6 @@ where
                     value,
                     data: response.calldata,
                     memo: None,
-                    recipient: None,
                     approval,
                     gas_limit,
                 })

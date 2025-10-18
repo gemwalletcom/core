@@ -38,7 +38,6 @@ pub struct GemSwapQuoteData {
     pub value: String,
     pub data: String,
     pub memo: Option<String>,
-    pub recipient: Option<String>,
     pub approval: Option<GemApprovalData>,
     pub gas_limit: Option<String>,
 }

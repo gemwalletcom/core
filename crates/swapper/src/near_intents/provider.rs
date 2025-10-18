@@ -8,18 +8,14 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
     SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::BASE_URL,
 };
-use alloy_primitives::{Address, U256, hex::encode_prefixed};
-use alloy_sol_types::SolCall;
+use alloy_primitives::U256;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
-use gem_evm::contracts::erc20::IERC20;
 use gem_sui::{SuiClient, build_transfer_message_bytes};
-use gem_tron::address::TronAddress;
-use primitives::{Chain, ChainType, swap::SwapStatus};
+use primitives::{Chain, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
-const ZERO_VALUE: &str = "0";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DepositData {
@@ -185,7 +181,6 @@ where
 
     async fn build_deposit_data(
         &self,
-        deposit_mode: DepositMode,
         deposit_memo: Option<String>,
         from_asset: &SwapperQuoteAsset,
         wallet_address: &str,
@@ -196,35 +191,11 @@ where
             return self.build_sui_deposit_data(from_asset, wallet_address, deposit_address, amount_in).await;
         }
 
-        match deposit_mode {
-            DepositMode::Memo => {
-                let memo = deposit_memo.ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositMemo for MEMO deposit mode".into()))?;
-                Ok(DepositData {
-                    to: deposit_address.to_string(),
-                    value: amount_in.to_string(),
-                    data: String::new(),
-                    memo: Some(memo),
-                })
-            }
-            DepositMode::Simple => Self::build_simple_deposit_data(from_asset, deposit_address, amount_in),
-        }
-    }
-
-    fn build_simple_deposit_data(from_asset: &SwapperQuoteAsset, deposit_address: &str, amount_in: &str) -> Result<DepositData, SwapperError> {
-        let asset_id = from_asset.asset_id();
-        if asset_id.is_token() {
-            match asset_id.chain.chain_type() {
-                ChainType::Ethereum => return Self::erc20_transfer_data(from_asset, deposit_address, amount_in),
-                ChainType::Tron => return Self::trc20_transfer_data(from_asset, deposit_address, amount_in),
-                _ => {}
-            }
-        }
-
         Ok(DepositData {
             to: deposit_address.to_string(),
             value: amount_in.to_string(),
             data: String::new(),
-            memo: None,
+            memo: deposit_memo,
         })
     }
 
@@ -255,53 +226,6 @@ where
             data: message_bytes,
             memo: None,
         })
-    }
-
-    fn erc20_transfer_data(from_asset: &SwapperQuoteAsset, deposit_address: &str, amount_in: &str) -> Result<DepositData, SwapperError> {
-        let to_address = Address::from_str(deposit_address).map_err(|_| SwapperError::ComputeQuoteError("Invalid depositAddress for ERC20 transfer".into()))?;
-        let value = Self::parse_transfer_amount(amount_in)?;
-        let data = Self::encode_transfer_call(to_address, value);
-
-        let asset_id = from_asset.asset_id();
-        let token_contract = asset_id
-            .token_id
-            .as_ref()
-            .ok_or_else(|| SwapperError::ComputeQuoteError("Missing token contract for ERC20 transfer".into()))?;
-
-        Ok(DepositData {
-            to: token_contract.clone(),
-            value: ZERO_VALUE.to_string(),
-            data,
-            memo: None,
-        })
-    }
-
-    fn trc20_transfer_data(from_asset: &SwapperQuoteAsset, deposit_address: &str, amount_in: &str) -> Result<DepositData, SwapperError> {
-        let to_address = TronAddress::to_addr(deposit_address).ok_or_else(|| SwapperError::ComputeQuoteError("Invalid Tron deposit address".into()))?;
-        let value = Self::parse_transfer_amount(amount_in)?;
-        let data = Self::encode_transfer_call(to_address, value);
-
-        let asset_id = from_asset.asset_id();
-        let token_contract = asset_id
-            .token_id
-            .as_ref()
-            .ok_or_else(|| SwapperError::ComputeQuoteError("Missing token contract for TRC20 transfer".into()))?;
-
-        Ok(DepositData {
-            to: token_contract.clone(),
-            value: ZERO_VALUE.to_string(),
-            data,
-            memo: None,
-        })
-    }
-
-    fn parse_transfer_amount(amount_in: &str) -> Result<U256, SwapperError> {
-        U256::from_str(amount_in).map_err(|_| SwapperError::ComputeQuoteError("Invalid amount for token transfer".into()))
-    }
-
-    fn encode_transfer_call(to: Address, value: U256) -> String {
-        let call = IERC20::transferCall { to, value };
-        encode_prefixed(call.abi_encode())
     }
 
     fn extract_quote(response: QuoteResponseResult) -> Result<QuoteResponse, SwapperError> {
@@ -398,25 +322,15 @@ where
             return Err(SwapperError::ComputeQuoteError("Near Intents Stellar deposit missing memo".into()));
         }
 
-        let deposit_data = self
-            .build_deposit_data(
-                deposit_mode,
-                deposit_memo,
-                from_asset,
-                &quote.request.wallet_address,
-                &deposit_address,
-                &amount_in,
-            )
+        let data = self
+            .build_deposit_data(deposit_memo, from_asset, &quote.request.wallet_address, &deposit_address, &amount_in)
             .await?;
 
-        let DepositData { to, value, data, memo } = deposit_data;
-
         Ok(SwapperQuoteData {
-            to,
-            value,
-            data,
-            memo,
-            recipient: Some(deposit_address.clone()),
+            to: data.to,
+            value: data.value,
+            data: data.data,
+            memo: data.memo,
             approval: None,
             gas_limit: None,
         })
@@ -520,47 +434,6 @@ mod tests {
             }
             QuoteResponseResult::Ok(_) => panic!("expected error variant"),
         }
-    }
-
-    #[test]
-    fn build_deposit_data_eth_transfer() {
-        let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum));
-        let deposit_address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0";
-        let amount_in = "1000000000000000000";
-
-        let result = NearIntents::<RpcClient>::build_simple_deposit_data(&from_asset, deposit_address, amount_in).unwrap();
-
-        assert_eq!(result.to, deposit_address);
-        assert_eq!(result.value, amount_in);
-        assert_eq!(result.data, "");
-    }
-
-    #[test]
-    fn build_deposit_data_erc20_transfer() {
-        let from_asset = SwapperQuoteAsset::from(AssetId::new("ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap());
-        let deposit_address = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0";
-        let amount_in = "1000000";
-
-        let result = NearIntents::<RpcClient>::build_simple_deposit_data(&from_asset, deposit_address, amount_in).unwrap();
-
-        assert_eq!(result.to, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
-        assert_eq!(result.value, "0");
-        assert!(!result.data.is_empty());
-        assert!(result.data.starts_with("0x"));
-    }
-
-    #[test]
-    fn build_deposit_data_trc20_transfer() {
-        let from_asset = SwapperQuoteAsset::from(AssetId::new("tron_tr7nhqarakt5gdshq28oqrerrc7jge8dx").unwrap());
-        let deposit_address = "TKHuVq1oKVruCGLvqVexFs6dawKv6fQgFs";
-        let amount_in = "1000000";
-
-        let result = NearIntents::<RpcClient>::build_simple_deposit_data(&from_asset, deposit_address, amount_in).unwrap();
-
-        assert_eq!(result.to, "tr7nhqarakt5gdshq28oqrerrc7jge8dx");
-        assert_eq!(result.value, "0");
-        assert!(!result.data.is_empty());
-        assert!(result.data.starts_with("0x"));
     }
 }
 

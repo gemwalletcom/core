@@ -257,7 +257,6 @@ impl Swapper for UniswapV3 {
             value,
             data: HexEncode(encoded),
             memo: None,
-            recipient: None,
             approval,
             gas_limit,
         })
