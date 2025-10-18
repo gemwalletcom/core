@@ -517,6 +517,7 @@ impl Swapper for Across {
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
             memo: None,
+            recipient: None,
             approval,
             gas_limit,
         };

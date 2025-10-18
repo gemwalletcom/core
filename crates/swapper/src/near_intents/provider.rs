@@ -416,6 +416,7 @@ where
             value,
             data,
             memo,
+            recipient: Some(deposit_address.clone()),
             approval: None,
             gas_limit: None,
         })

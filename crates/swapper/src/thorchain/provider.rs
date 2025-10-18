@@ -187,6 +187,7 @@ where
                 value: "0".to_string(),
                 data: HexEncode(call.clone()),
                 memo: None,
+                recipient: None,
                 approval,
                 gas_limit,
             }
@@ -196,6 +197,7 @@ where
                 value,
                 data: self.data(from_asset.chain, memo),
                 memo: None,
+                recipient: None,
                 approval,
                 gas_limit,
             }

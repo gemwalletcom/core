@@ -208,14 +208,7 @@ where
             return Err(SwapperError::TransactionError(simulation_error.error));
         }
 
-        let data = SwapperQuoteData {
-            to: PROGRAM_ADDRESS.to_string(),
-            value: "".to_string(),
-            data: quote_data.swap_transaction,
-            memo: None,
-            approval: None,
-            gas_limit: None,
-        };
+        let data = SwapperQuoteData::new(PROGRAM_ADDRESS.to_string(), "".to_string(), quote_data.swap_transaction);
         Ok(data)
     }
 }

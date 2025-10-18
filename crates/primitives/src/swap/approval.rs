@@ -20,8 +20,23 @@ pub struct SwapQuoteData {
     pub value: String,
     pub data: String,
     pub memo: Option<String>,
+    pub recipient: Option<String>,
     pub approval: Option<ApprovalData>,
     pub gas_limit: Option<String>,
+}
+
+impl SwapQuoteData {
+    pub fn new(to: String, value: String, data: String) -> Self {
+        Self {
+            to,
+            value,
+            data,
+            memo: None,
+            recipient: None,
+            approval: None,
+            gas_limit: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

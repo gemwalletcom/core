@@ -54,6 +54,7 @@ impl SwapQuoteData {
             value: "0".to_string(),
             data: "0x".to_string(),
             memo: None,
+            recipient: None,
             approval: None,
             gas_limit: Some("21000".to_string()),
         }
