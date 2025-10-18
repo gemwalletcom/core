@@ -19,6 +19,7 @@ pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) ->
             },
             fee: Some(config.referral_fee.clone()),
             preferred_providers: vec![],
+            use_max_amount: false,
         },
     }
 }

@@ -277,28 +277,22 @@ where
                     to: response.to,
                     value,
                     data: response.calldata,
+                    memo: None,
+                    recipient: None,
                     approval,
                     gas_limit,
                 })
             }
-            VaultSwapResponse::Bitcoin(response) => Ok(SwapperQuoteData {
-                to: response.deposit_address,
-                value: quote.request.value.clone(),
-                data: response.nulldata_payload,
-                approval: None,
-                gas_limit: None,
-            }),
+            VaultSwapResponse::Bitcoin(response) => Ok(SwapperQuoteData::new(
+                response.deposit_address,
+                quote.request.value.clone(),
+                response.nulldata_payload,
+            )),
             VaultSwapResponse::Solana(response) => {
                 let data = tx_builder::build_solana_tx(&quote.request.wallet_address, &response, self.rpc_provider.clone())
                     .await
                     .map_err(SwapperError::TransactionError)?;
-                Ok(SwapperQuoteData {
-                    to: response.program_id,
-                    value: "".into(),
-                    data,
-                    approval: None,
-                    gas_limit: None,
-                })
+                Ok(SwapperQuoteData::new(response.program_id, "".into(), data))
             }
         }
     }

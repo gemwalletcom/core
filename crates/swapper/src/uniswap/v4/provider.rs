@@ -271,6 +271,8 @@ impl Swapper for UniswapV4 {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),
+            memo: None,
+            recipient: None,
             approval,
             gas_limit,
         })
@@ -326,6 +328,7 @@ mod tests {
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
                 preferred_providers: vec![SwapperProvider::UniswapV4],
+                use_max_amount: false,
             };
 
             let request = QuoteRequest {

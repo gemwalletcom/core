@@ -516,6 +516,8 @@ impl Swapper for Across {
             to: deployment.spoke_pool.into(),
             value: value.to_string(),
             data: HexEncode(deposit_v3_call.clone()),
+            memo: None,
+            recipient: None,
             approval,
             gas_limit,
         };
@@ -619,6 +621,7 @@ mod tests {
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
                 preferred_providers: vec![],
+                use_max_amount: false,
             };
             options.fee.as_mut().unwrap().evm_bridge = ReferralFee {
                 bps: 25,

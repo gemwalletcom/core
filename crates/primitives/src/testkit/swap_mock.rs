@@ -25,9 +25,11 @@ impl SwapQuote {
             from_value: "1000000000".to_string(),
             to_value: "1000000".to_string(),
             provider_data: SwapProviderData::mock(),
-            wallet_address: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
+            from_address: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
+            to_address: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
             slippage_bps: 50,
             eta_in_seconds: Some(30),
+            use_max_amount: None,
         }
     }
 
@@ -36,9 +38,11 @@ impl SwapQuote {
             from_value: "1000000000".to_string(),
             to_value: "1000000".to_string(),
             provider_data: SwapProviderData::mock_with_provider(provider),
-            wallet_address: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
+            from_address: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
+            to_address: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
             slippage_bps: 50,
             eta_in_seconds: Some(30),
+            use_max_amount: None,
         }
     }
 }
@@ -49,6 +53,8 @@ impl SwapQuoteData {
             to: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
             value: "0".to_string(),
             data: "0x".to_string(),
+            memo: None,
+            recipient: None,
             approval: None,
             gas_limit: Some("21000".to_string()),
         }

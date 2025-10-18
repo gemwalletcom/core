@@ -256,6 +256,8 @@ impl Swapper for UniswapV3 {
             to: deployment.universal_router.into(),
             value,
             data: HexEncode(encoded),
+            memo: None,
+            recipient: None,
             approval,
             gas_limit,
         })

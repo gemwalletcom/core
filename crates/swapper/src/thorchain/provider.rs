@@ -186,6 +186,8 @@ where
                 to,
                 value: "0".to_string(),
                 data: HexEncode(call.clone()),
+                memo: None,
+                recipient: None,
                 approval,
                 gas_limit,
             }
@@ -194,6 +196,8 @@ where
                 to: route_data.inbound_address.unwrap_or_default(),
                 value,
                 data: self.data(from_asset.chain, memo),
+                memo: None,
+                recipient: None,
                 approval,
                 gas_limit,
             }

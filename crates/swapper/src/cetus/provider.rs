@@ -331,13 +331,7 @@ where
         let tx = ptb.finish().map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let tx_output = TxOutput::from_tx(&tx).unwrap();
 
-        Ok(SwapperQuoteData {
-            to: "".to_string(),
-            value: "".to_string(),
-            data: tx_output.base64_encoded(),
-            approval: None,
-            gas_limit: None,
-        })
+        Ok(SwapperQuoteData::new("".to_string(), "".to_string(), tx_output.base64_encoded()))
     }
 }
 
@@ -436,6 +430,7 @@ mod tests {
                 slippage: 50.into(),
                 fee: Some(config.referral_fee),
                 preferred_providers: vec![],
+                use_max_amount: false,
             };
 
             let request = QuoteRequest {

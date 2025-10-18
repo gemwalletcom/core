@@ -1,15 +1,14 @@
 use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
-use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 use primitives::{
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
-    SwapProvider, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
-    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
-    TransferDataOutputType, WalletConnectionSessionAppMetadata,
+    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
+    TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
+    WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
-use std::str::FromStr;
+use swap::{GemApprovalData, GemSwapData};
 
 pub type GemPerpetualDirection = PerpetualDirection;
 pub type GemPerpetualProvider = PerpetualProvider;
@@ -18,7 +17,6 @@ pub type GemPerpetualType = PerpetualType;
 pub type GemFeeOption = FeeOption;
 pub type GemTransferDataOutputType = TransferDataOutputType;
 pub type GemTransferDataOutputAction = TransferDataOutputAction;
-pub type GemApprovalData = ApprovalData;
 pub type GemTransactionPerpetualMetadata = TransactionPerpetualMetadata;
 pub type GemTransactionMetadata = TransactionMetadata;
 pub type GemTransactionState = TransactionState;
@@ -170,45 +168,6 @@ pub struct GemTransferDataExtra {
     pub data: Option<Vec<u8>>,
     pub output_type: GemTransferDataOutputType,
     pub output_action: GemTransferDataOutputAction,
-}
-
-#[uniffi::remote(Record)]
-pub struct GemApprovalData {
-    pub token: String,
-    pub spender: String,
-    pub value: String,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSwapData {
-    pub quote: GemSwapQuote,
-    pub data: GemSwapQuoteData,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSwapQuote {
-    pub from_value: String,
-    pub to_value: String,
-    pub provider_data: GemSwapProviderData,
-    pub wallet_address: String,
-    pub slippage_bps: u32,
-    pub eta_in_seconds: Option<u32>,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSwapQuoteData {
-    pub to: String,
-    pub value: String,
-    pub data: String,
-    pub approval: Option<GemApprovalData>,
-    pub gas_limit: Option<String>,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemSwapProviderData {
-    pub provider: String,
-    pub name: String,
-    pub protocol_name: String,
 }
 
 #[uniffi::remote(Record)]
@@ -476,50 +435,6 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
     }
 }
 
-impl From<SwapProviderData> for GemSwapProviderData {
-    fn from(value: SwapProviderData) -> Self {
-        GemSwapProviderData {
-            provider: value.provider.as_ref().to_string(),
-            name: value.name,
-            protocol_name: value.protocol_name,
-        }
-    }
-}
-
-impl From<SwapQuote> for GemSwapQuote {
-    fn from(value: SwapQuote) -> Self {
-        GemSwapQuote {
-            from_value: value.from_value,
-            to_value: value.to_value,
-            provider_data: value.provider_data.into(),
-            wallet_address: value.wallet_address,
-            slippage_bps: value.slippage_bps,
-            eta_in_seconds: value.eta_in_seconds,
-        }
-    }
-}
-
-impl From<SwapQuoteData> for GemSwapQuoteData {
-    fn from(value: SwapQuoteData) -> Self {
-        GemSwapQuoteData {
-            to: value.to,
-            value: value.value,
-            data: value.data,
-            approval: value.approval,
-            gas_limit: value.gas_limit,
-        }
-    }
-}
-
-impl From<SwapData> for GemSwapData {
-    fn from(value: SwapData) -> Self {
-        GemSwapData {
-            quote: value.quote.into(),
-            data: value.data.into(),
-        }
-    }
-}
-
 impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
     fn from(value: GemTransactionLoadMetadata) -> Self {
         match value {
@@ -656,7 +571,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::Swap(from_asset, to_asset, swap_data) => GemTransactionInputType::Swap {
                 from_asset,
                 to_asset,
-                swap_data: swap_data.into(),
+                swap_data,
             },
             TransactionInputType::Stake(asset, stake_type) => GemTransactionInputType::Stake {
                 asset,
@@ -815,15 +730,15 @@ impl From<GemTransactionInputType> for TransactionInputType {
             } => TransactionInputType::Swap(
                 from_asset,
                 to_asset,
-                SwapData {
-                    quote: swap_data.quote.into(),
-                    data: swap_data.data.into(),
+                GemSwapData {
+                    quote: swap_data.quote,
+                    data: swap_data.data,
                 },
             ),
             GemTransactionInputType::Stake { asset, stake_type } => TransactionInputType::Stake(asset, stake_type.into()),
             GemTransactionInputType::TokenApprove { asset, approval_data } => TransactionInputType::TokenApprove(
                 asset,
-                ApprovalData {
+                GemApprovalData {
                     token: approval_data.token,
                     spender: approval_data.spender,
                     value: approval_data.value,
@@ -851,45 +766,6 @@ impl From<FreezeData> for GemFreezeData {
         GemFreezeData {
             freeze_type: value.freeze_type,
             resource: value.resource,
-        }
-    }
-}
-
-impl From<GemSwapQuote> for primitives::swap::SwapQuote {
-    fn from(value: GemSwapQuote) -> Self {
-        primitives::swap::SwapQuote {
-            from_value: value.from_value,
-            to_value: value.to_value,
-            provider_data: value.provider_data.into(),
-            wallet_address: value.wallet_address,
-            slippage_bps: value.slippage_bps,
-            eta_in_seconds: value.eta_in_seconds,
-        }
-    }
-}
-
-impl From<GemSwapProviderData> for primitives::swap::SwapProviderData {
-    fn from(value: GemSwapProviderData) -> Self {
-        primitives::swap::SwapProviderData {
-            provider: SwapProvider::from_str(&value.provider).unwrap_or(SwapProvider::UniswapV3),
-            name: value.name,
-            protocol_name: value.protocol_name,
-        }
-    }
-}
-
-impl From<GemSwapQuoteData> for primitives::swap::SwapQuoteData {
-    fn from(value: GemSwapQuoteData) -> Self {
-        primitives::swap::SwapQuoteData {
-            to: value.to,
-            value: value.value,
-            data: value.data,
-            approval: value.approval.map(|a| primitives::swap::ApprovalData {
-                token: a.token,
-                spender: a.spender,
-                value: a.value,
-            }),
-            gas_limit: value.gas_limit,
         }
     }
 }

@@ -1,8 +1,8 @@
 use super::{
     AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult,
-    SwapType, asset_id_from_near_intents, enabled_sending_chains, get_near_intents_asset_id,
+    SwapType, asset_id_from_near_intents, deposit_memo_chains, get_near_intents_asset_id,
     model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
-    supported_assets,
+    reserved_tx_fees, supported_assets,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
@@ -26,6 +26,7 @@ pub struct DepositData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub memo: Option<String>,
 }
 
 pub struct NearIntents<C>
@@ -36,7 +37,6 @@ where
     client: NearIntentsClient<C>,
     supported_assets: Vec<SwapperChainAsset>,
     sui_client: Arc<SuiClient<RpcClient>>,
-    enabled_sending_chains: Vec<Chain>,
 }
 
 impl<C> std::fmt::Debug for NearIntents<C>
@@ -49,7 +49,6 @@ where
             .field("client", &self.client)
             .field("supported_assets", &self.supported_assets)
             .field("sui_client", &"SuiClient::<RpcClient>")
-            .field("enabled_sending_chains", &self.enabled_sending_chains)
             .finish()
     }
 }
@@ -76,8 +75,34 @@ where
             client,
             supported_assets: supported_assets(),
             sui_client,
-            enabled_sending_chains: enabled_sending_chains(),
         }
+    }
+    fn resolve_quote_amount(request: &QuoteRequest, mode: &SwapType) -> Result<String, SwapperError> {
+        let base_amount = match mode {
+            SwapType::ExactInput => request.value.clone(),
+            SwapType::FlexInput => request.value.clone(),
+        };
+
+        if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
+            return Ok(base_amount);
+        }
+
+        let Some(reserved_base_amount) = reserved_tx_fees(request.from_asset.chain()) else {
+            return Ok(base_amount);
+        };
+
+        let reserved_fee = Self::parse_u256(reserved_base_amount, "reservedFee")?;
+        let amount_u256 = Self::parse_u256(&base_amount, "amount")?;
+
+        if amount_u256 <= reserved_fee {
+            return Err(SwapperError::InputAmountTooSmall);
+        }
+
+        Ok((amount_u256 - reserved_fee).to_string())
+    }
+
+    fn parse_u256(value: &str, field: &str) -> Result<U256, SwapperError> {
+        U256::from_str(value).map_err(|_| SwapperError::ComputeQuoteError(format!("Invalid {field} value: {value}")))
     }
 
     fn build_app_fee(options: &QuoteRequest) -> Option<Vec<AppFee>> {
@@ -97,13 +122,9 @@ where
         })
     }
 
-    fn build_quote_request(&self, request: &QuoteRequest, mode: SwapType, dry: bool) -> Result<NearQuoteRequest, SwapperError> {
+    fn build_quote_request(&self, request: &QuoteRequest, mode: SwapType, amount: String, dry: bool) -> Result<NearQuoteRequest, SwapperError> {
         let origin_asset = get_near_intents_asset_id(&request.from_asset)?;
         let destination_asset = get_near_intents_asset_id(&request.to_asset)?;
-        let amount = match mode {
-            SwapType::ExactInput => request.value.clone(),
-            SwapType::FlexInput => request.value.clone(),
-        };
         let deposit_mode = Self::resolve_deposit_mode(&request.from_asset);
 
         let deadline = (Utc::now() + Duration::minutes(DEFAULT_DEADLINE_MINUTES)).to_rfc3339();
@@ -155,9 +176,10 @@ where
     }
 
     fn resolve_deposit_mode(asset: &SwapperQuoteAsset) -> DepositMode {
-        match asset.asset_id().chain {
-            Chain::Stellar => DepositMode::Memo,
-            _ => DepositMode::Simple,
+        if deposit_memo_chains().contains(&asset.asset_id().chain) {
+            DepositMode::Memo
+        } else {
+            DepositMode::Simple
         }
     }
 
@@ -180,7 +202,8 @@ where
                 Ok(DepositData {
                     to: deposit_address.to_string(),
                     value: amount_in.to_string(),
-                    data: memo,
+                    data: String::new(),
+                    memo: Some(memo),
                 })
             }
             DepositMode::Simple => Self::build_simple_deposit_data(from_asset, deposit_address, amount_in),
@@ -201,6 +224,7 @@ where
             to: deposit_address.to_string(),
             value: amount_in.to_string(),
             data: String::new(),
+            memo: None,
         })
     }
 
@@ -229,6 +253,7 @@ where
             to: deposit_address.to_string(),
             value: amount_in.to_string(),
             data: message_bytes,
+            memo: None,
         })
     }
 
@@ -247,6 +272,7 @@ where
             to: token_contract.clone(),
             value: ZERO_VALUE.to_string(),
             data,
+            memo: None,
         })
     }
 
@@ -265,6 +291,7 @@ where
             to: token_contract.clone(),
             value: ZERO_VALUE.to_string(),
             data,
+            memo: None,
         })
     }
 
@@ -309,16 +336,12 @@ where
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let mode = match request.mode {
-            SwapperMode::ExactIn => SwapType::ExactInput,
+            SwapperMode::ExactIn => SwapType::FlexInput,
             SwapperMode::ExactOut => return Err(SwapperError::NotImplemented),
         };
 
-        let from_chain = request.from_asset.asset_id().chain;
-        if !self.enabled_sending_chains.contains(&from_chain) {
-            return Err(SwapperError::NoQuoteAvailable);
-        }
-
-        let quote_request = self.build_quote_request(request, mode, true)?;
+        let amount = Self::resolve_quote_amount(request, &mode)?;
+        let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
         let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
 
@@ -326,7 +349,7 @@ where
         let route_data = serde_json::to_string(&quote_request)?;
 
         Ok(Quote {
-            from_value: request.value.clone(),
+            from_value: amount,
             to_value: amount_out,
             data: ProviderData {
                 provider: self.provider.clone(),
@@ -346,6 +369,7 @@ where
     async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let mut quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
+        let request_deposit_mode = quote_request.deposit_mode.clone();
         quote_request.dry = false;
 
         let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
@@ -358,13 +382,26 @@ where
             .deposit_address
             .ok_or_else(|| SwapperError::ComputeQuoteError("Missing depositAddress in Near Intents response".into()))?;
         let amount_in = Self::parse_amount(&near_quote.amount_in, "amountIn")?;
-        let deposit_mode = near_quote.deposit_mode.unwrap_or_default();
+        let deposit_mode = near_quote
+            .deposit_mode
+            .or(Some(request_deposit_mode))
+            .ok_or_else(|| SwapperError::ComputeQuoteError("Near Intents response missing deposit mode".into()))?;
         let from_asset = &quote.request.from_asset;
+
+        let memo_required = deposit_memo_chains().contains(&from_asset.asset_id().chain);
+        let deposit_memo = near_quote.deposit_memo.filter(|memo| !memo.is_empty());
+
+        if memo_required && deposit_mode != DepositMode::Memo {
+            return Err(SwapperError::ComputeQuoteError("Near Intents Stellar deposits require a memo".into()));
+        }
+        if memo_required && deposit_memo.is_none() {
+            return Err(SwapperError::ComputeQuoteError("Near Intents Stellar deposit missing memo".into()));
+        }
 
         let deposit_data = self
             .build_deposit_data(
                 deposit_mode,
-                near_quote.deposit_memo,
+                deposit_memo,
                 from_asset,
                 &quote.request.wallet_address,
                 &deposit_address,
@@ -372,10 +409,14 @@ where
             )
             .await?;
 
+        let DepositData { to, value, data, memo } = deposit_data;
+
         Ok(SwapperQuoteData {
-            to: deposit_data.to,
-            value: deposit_data.value,
-            data: deposit_data.data,
+            to,
+            value,
+            data,
+            memo,
+            recipient: Some(deposit_address.clone()),
             approval: None,
             gas_limit: None,
         })
@@ -412,9 +453,57 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SwapperError, SwapperQuoteAsset};
+    use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, models::Options};
     use primitives::{AssetId, Chain};
     use serde_json::json;
+
+    fn build_quote_request(amount: &str, use_max: bool, chain: Chain) -> QuoteRequest {
+        let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(chain));
+        let to_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near));
+
+        let mut options = Options::default();
+        options.use_max_amount = use_max;
+
+        QuoteRequest {
+            from_asset,
+            to_asset,
+            wallet_address: "wallet".into(),
+            destination_address: "dest".into(),
+            value: amount.into(),
+            mode: SwapperMode::ExactIn,
+            options,
+        }
+    }
+
+    #[test]
+    fn resolve_quote_amount_with_use_max_reserves_fee() {
+        let reserve = U256::from_str(reserved_tx_fees(Chain::Ethereum).unwrap()).unwrap();
+        let amount = (reserve + U256::from(500u64)).to_string();
+
+        let request = build_quote_request(&amount, true, Chain::Ethereum);
+        let result = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect("expected amount to resolve");
+
+        assert_eq!(result, (U256::from_str(&amount).unwrap() - reserve).to_string());
+    }
+
+    #[test]
+    fn resolve_quote_amount_without_use_max_keeps_amount() {
+        let amount = "123456";
+        let request = build_quote_request(amount, false, Chain::Ethereum);
+        let result = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect("expected amount to resolve");
+
+        assert_eq!(result, amount);
+    }
+
+    #[test]
+    fn resolve_quote_amount_rejects_when_under_reserved() {
+        let reserve = U256::from_str(reserved_tx_fees(Chain::Ethereum).unwrap()).unwrap();
+        let request = build_quote_request(&reserve.to_string(), true, Chain::Ethereum);
+
+        let err = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect_err("expected error");
+
+        assert!(matches!(err, SwapperError::InputAmountTooSmall));
+    }
 
     #[test]
     fn decode_quote_response_error_message() {
@@ -499,6 +588,7 @@ mod swap_integration_tests {
             },
             fee: Some(swap_config.referral_fee),
             preferred_providers: vec![],
+            use_max_amount: false,
         };
 
         let request = QuoteRequest {
@@ -525,14 +615,10 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
         let provider = NearIntents::new(rpc_provider);
 
-        let options = Options {
-            slippage: SwapperSlippage {
-                bps: 100,
-                mode: SwapperSlippageMode::Exact,
-            },
-            fee: None,
-            preferred_providers: vec![],
-        };
+        let options = Options::new_with_slippage(SwapperSlippage {
+            bps: 100,
+            mode: SwapperSlippageMode::Exact,
+        });
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Stellar)),

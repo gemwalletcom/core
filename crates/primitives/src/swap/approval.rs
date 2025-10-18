@@ -19,8 +19,24 @@ pub struct SwapQuoteData {
     pub to: String,
     pub value: String,
     pub data: String,
+    pub memo: Option<String>,
+    pub recipient: Option<String>,
     pub approval: Option<ApprovalData>,
     pub gas_limit: Option<String>,
+}
+
+impl SwapQuoteData {
+    pub fn new(to: String, value: String, data: String) -> Self {
+        Self {
+            to,
+            value,
+            data,
+            memo: None,
+            recipient: None,
+            approval: None,
+            gas_limit: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,12 +85,14 @@ impl From<AssetId> for QuoteAsset {
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuote {
+    pub from_address: String,
     pub from_value: String,
+    pub to_address: String,
     pub to_value: String,
     pub provider_data: SwapProviderData,
-    pub wallet_address: String,
     pub slippage_bps: u32,
     pub eta_in_seconds: Option<u32>,
+    pub use_max_amount: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
