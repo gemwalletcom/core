@@ -166,6 +166,7 @@ mod tests {
                 address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
             })),
             preferred_providers: vec![],
+            use_max_amount: false,
         };
         request.options = options;
 
@@ -249,6 +250,7 @@ mod tests {
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
                 })),
                 preferred_providers: vec![],
+                use_max_amount: false,
             },
         };
 
@@ -292,6 +294,7 @@ mod tests {
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
                 })),
                 preferred_providers: vec![],
+                use_max_amount: false,
             },
         };
 
@@ -355,6 +358,7 @@ mod tests {
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
                 })),
                 preferred_providers: vec![],
+                use_max_amount: false,
             },
         };
 

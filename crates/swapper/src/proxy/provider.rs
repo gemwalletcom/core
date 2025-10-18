@@ -285,11 +285,7 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = ProxyProvider::new_mayan(rpc_provider);
 
-        let options = Options {
-            slippage: 200.into(),
-            fee: None,
-            preferred_providers: vec![],
-        };
+        let options = Options::new_with_slippage(200.into());
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
@@ -323,11 +319,7 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = ProxyProvider::new_cetus_aggregator(rpc_provider);
 
-        let options = Options {
-            slippage: 50.into(),
-            fee: None,
-            preferred_providers: vec![],
-        };
+        let options = Options::new_with_slippage(50.into());
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Sui)),

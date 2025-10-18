@@ -7,7 +7,7 @@ pub use swapper::{
     SwapperProviderMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, SwapperSwapStatus, permit2_data::Permit2Data,
 };
 
-pub use crate::models::transaction::GemSwapQuoteData;
+pub use crate::models::swap::GemSwapQuoteData;
 
 #[derive(Debug, Clone, PartialEq, uniffi::Object)]
 pub struct SwapProviderConfig(SwapperProviderType);
@@ -64,6 +64,7 @@ pub struct SwapperOptions {
     pub slippage: SwapperSlippage,
     pub fee: Option<SwapReferralFees>,
     pub preferred_providers: Vec<SwapperProvider>,
+    pub use_max_amount: bool,
 }
 
 #[uniffi::remote(Record)]
@@ -164,4 +165,14 @@ pub enum SwapperSwapStatus {
     Completed,
     Failed,
     Refunded,
+}
+
+#[uniffi::export]
+fn swapper_provider_from_str(s: &str) -> Option<SwapperProvider> {
+    SwapperProvider::from_str(s).ok()
+}
+
+#[uniffi::export]
+fn swapper_provider_to_str(provider: SwapperProvider) -> String {
+    provider.as_ref().to_string()
 }

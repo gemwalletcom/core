@@ -232,11 +232,7 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = Jupiter::new(rpc_provider);
 
-        let options = Options {
-            slippage: 100.into(),
-            fee: None,
-            preferred_providers: vec![],
-        };
+        let options = Options::new_with_slippage(100.into());
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),

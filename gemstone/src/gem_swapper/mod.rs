@@ -50,8 +50,7 @@ impl GemSwapper {
     }
 
     pub async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
-        let quote_data = self.inner.fetch_quote_data(quote, data).await?;
-        Ok(quote_data.into())
+        self.inner.fetch_quote_data(quote, data).await
     }
 
     pub async fn get_swap_result(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {

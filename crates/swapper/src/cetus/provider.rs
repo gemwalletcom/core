@@ -437,6 +437,7 @@ mod tests {
                 slippage: 50.into(),
                 fee: Some(config.referral_fee),
                 preferred_providers: vec![],
+                use_max_amount: false,
             };
 
             let request = QuoteRequest {

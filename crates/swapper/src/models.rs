@@ -69,6 +69,16 @@ pub struct Options {
     pub slippage: SwapperSlippage,
     pub fee: Option<ReferralFees>,
     pub preferred_providers: Vec<SwapperProvider>,
+    pub use_max_amount: bool,
+}
+
+impl Options {
+    pub fn new_with_slippage(slippage: SwapperSlippage) -> Self {
+        Self {
+            slippage,
+            ..Default::default()
+        }
+    }
 }
 
 impl Default for Options {
@@ -77,6 +87,7 @@ impl Default for Options {
             slippage: DEFAULT_SLIPPAGE_BPS.into(),
             fee: None,
             preferred_providers: vec![],
+            use_max_amount: false,
         }
     }
 }
