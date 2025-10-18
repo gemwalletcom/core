@@ -4,7 +4,11 @@ use num_traits::Num;
 
 use crate::{
     address::{ethereum_address_checksum, ethereum_address_from_topic},
-    rpc::model::{Log, Transaction, TransactionReciept},
+    everstake::{EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS},
+    rpc::{
+        balance_differ::BalanceDiffer,
+        model::{Log, Transaction, TransactionReciept, TransactionReplayTrace},
+    },
 };
 use gem_bsc::stake_hub;
 use primitives::{AssetId, Chain, TransactionType};
@@ -14,6 +18,14 @@ const EVENT_BSC_UNDELEGATED: &str = "0x3aace7340547de7b9156593a7652dc07ee900cea3
 const EVENT_BSC_REDELEGATED: &str = "0xfdac6e81913996d95abcc289e90f2d8bd235487ce6fe6f821e7d21002a1915b4";
 const EVENT_BSC_CLAIMED: &str = "0xf7a40077ff7a04c7e61f6f26fb13774259ddf1b6bce9ecf26a8276cdd3992683";
 
+const EVENT_EVERSTAKE_STAKED: &str = "0x7d194e8dc0f902cdc51bde00649039561dbd0b01574d671bad333436fdac7692";
+const EVENT_EVERSTAKE_UNSTAKED: &str = "0x0750a71dce555de583ab0225a108df42b9402d22123d7cc9cd95793e43e7db0e";
+const EVENT_EVERSTAKE_WITHDRAWN: &str = "0x262159451c4018521811107ecbe27e3de7d95a70a4a534f733aa59bc4346f03e";
+
+fn ethereum_value_from_log_data(data: &str, start: usize, end: usize) -> Option<BigUint> {
+    data.trim_start_matches("0x").get(start..end).and_then(|s| BigUint::from_str_radix(s, 16).ok())
+}
+
 pub struct StakingMapper;
 
 impl StakingMapper {
@@ -21,6 +33,7 @@ impl StakingMapper {
         chain: &Chain,
         transaction: &Transaction,
         transaction_reciept: &TransactionReciept,
+        trace: Option<&TransactionReplayTrace>,
         created_at: DateTime<Utc>,
     ) -> Option<primitives::Transaction> {
         match chain {
@@ -29,6 +42,17 @@ impl StakingMapper {
                     return None;
                 }
                 Self::map_smartchain_staking_transaction(chain, transaction, transaction_reciept, created_at)
+            }
+            Chain::Ethereum => {
+                if transaction
+                    .to
+                    .as_ref()
+                    .is_some_and(|to| to.eq_ignore_ascii_case(EVERSTAKE_POOL_ADDRESS) || to.eq_ignore_ascii_case(EVERSTAKE_ACCOUNTING_ADDRESS))
+                {
+                    Self::map_ethereum_everstake_transaction(chain, transaction, transaction_reciept, trace, created_at)
+                } else {
+                    None
+                }
             }
             _ => None,
         }
@@ -74,11 +98,7 @@ impl StakingMapper {
         }
 
         let operator_address = ethereum_address_from_topic(&log.topics[1])?;
-        let value = log
-            .data
-            .trim_start_matches("0x")
-            .get(64..128)
-            .and_then(|s| BigUint::from_str_radix(s, 16).ok())?;
+        let value = ethereum_value_from_log_data(&log.data, 64, 128)?;
 
         Self::create_staking_transaction(
             chain,
@@ -104,11 +124,7 @@ impl StakingMapper {
 
         let operator_address = ethereum_address_from_topic(&log.topics[1])?;
         let _delegator = ethereum_address_from_topic(&log.topics[2])?;
-        let value = log
-            .data
-            .trim_start_matches("0x")
-            .get(64..128)
-            .and_then(|s| BigUint::from_str_radix(s, 16).ok())?;
+        let value = ethereum_value_from_log_data(&log.data, 64, 128)?;
 
         Self::create_staking_transaction(
             chain,
@@ -133,11 +149,7 @@ impl StakingMapper {
         }
 
         let dst_validator = ethereum_address_from_topic(&log.topics[2])?;
-        let value = log
-            .data
-            .trim_start_matches("0x")
-            .get(128..192)
-            .and_then(|s| BigUint::from_str_radix(s, 16).ok())?;
+        let value = ethereum_value_from_log_data(&log.data, 128, 192)?;
 
         Self::create_staking_transaction(
             chain,
@@ -163,7 +175,7 @@ impl StakingMapper {
 
         let operator_address = ethereum_address_from_topic(&log.topics[1])?;
         let _delegator = ethereum_address_from_topic(&log.topics[2])?;
-        let value = log.data.trim_start_matches("0x").get(..64).and_then(|s| BigUint::from_str_radix(s, 16).ok())?;
+        let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
 
         Self::create_staking_transaction(
             chain,
@@ -174,6 +186,67 @@ impl StakingMapper {
             &value.to_string(),
             created_at,
         )
+    }
+
+    fn map_ethereum_everstake_transaction(
+        chain: &Chain,
+        transaction: &Transaction,
+        transaction_reciept: &TransactionReciept,
+        trace: Option<&TransactionReplayTrace>,
+        created_at: DateTime<Utc>,
+    ) -> Option<primitives::Transaction> {
+        for log in &transaction_reciept.logs {
+            if log.topics.len() == 2 {
+                let topic = &log.topics[0];
+                let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
+
+                match topic.as_str() {
+                    EVENT_EVERSTAKE_STAKED => {
+                        return Self::create_staking_transaction(
+                            chain,
+                            transaction,
+                            transaction_reciept,
+                            EVERSTAKE_POOL_ADDRESS,
+                            TransactionType::StakeDelegate,
+                            &value.to_string(),
+                            created_at,
+                        );
+                    }
+                    EVENT_EVERSTAKE_UNSTAKED => {
+                        return Self::create_staking_transaction(
+                            chain,
+                            transaction,
+                            transaction_reciept,
+                            EVERSTAKE_POOL_ADDRESS,
+                            TransactionType::StakeUndelegate,
+                            &value.to_string(),
+                            created_at,
+                        );
+                    }
+                    EVENT_EVERSTAKE_WITHDRAWN => {
+                        let value = if let Some(trace) = trace {
+                            BalanceDiffer::new(*chain)
+                                .get_native_balance_change(trace, transaction_reciept, &transaction.from)
+                                .unwrap_or(value)
+                        } else {
+                            value
+                        };
+
+                        return Self::create_staking_transaction(
+                            chain,
+                            transaction,
+                            transaction_reciept,
+                            EVERSTAKE_POOL_ADDRESS,
+                            TransactionType::StakeWithdraw,
+                            &value.to_string(),
+                            created_at,
+                        );
+                    }
+                    _ => continue,
+                }
+            }
+        }
+        None
     }
 
     fn create_staking_transaction(
@@ -213,6 +286,7 @@ mod tests {
     use super::*;
     use crate::rpc::model::{Log, Transaction, TransactionReciept};
     use num_bigint::BigUint;
+    use primitives::testkit::json_rpc::load_json_rpc_result;
 
     fn create_test_receipt_with_log(log: Log) -> TransactionReciept {
         TransactionReciept {
@@ -226,8 +300,7 @@ mod tests {
     }
 
     #[test]
-    fn test_map_delegate_transaction() {
-        // https://bscscan.com/tx/0xd85c4496230adf8a7c0fc1e98713127fb31a0f8f72874acea443e2f615f3c1b6
+    fn test_smartchain_map_delegate_transaction() {
         let transaction = Transaction {
             hash: "0xd85c4496230adf8a7c0fc1e98713127fb31a0f8f72874acea443e2f615f3c1b6".to_string(),
             from: "0x51ed60604637989d19d29e43c5d94b098a0d1af7".to_string(),
@@ -250,7 +323,7 @@ mod tests {
         };
 
         let receipt = create_test_receipt_with_log(log);
-        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, DateTime::default());
+        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, None, DateTime::default());
 
         assert!(result.is_some());
         let transaction = result.unwrap();
@@ -288,7 +361,7 @@ mod tests {
         };
 
         let receipt = create_test_receipt_with_log(log);
-        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, DateTime::default());
+        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, None, DateTime::default());
 
         assert!(result.is_some());
         let transaction = result.unwrap();
@@ -326,7 +399,7 @@ mod tests {
         };
 
         let receipt = create_test_receipt_with_log(log);
-        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, DateTime::default());
+        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, None, DateTime::default());
 
         assert!(result.is_some());
         let transaction = result.unwrap();
@@ -363,7 +436,7 @@ mod tests {
         };
 
         let receipt = create_test_receipt_with_log(log);
-        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, DateTime::default());
+        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, None, DateTime::default());
 
         assert!(result.is_some());
         let transaction = result.unwrap();
@@ -400,7 +473,7 @@ mod tests {
         };
 
         let receipt = create_test_receipt_with_log(log);
-        let result = StakingMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, DateTime::default());
+        let result = StakingMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, None, DateTime::default());
 
         assert!(result.is_none());
     }
@@ -430,8 +503,60 @@ mod tests {
         };
 
         let receipt = create_test_receipt_with_log(log);
-        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, DateTime::default());
+        let result = StakingMapper::map_transaction(&Chain::SmartChain, &transaction, &receipt, None, DateTime::default());
 
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_ethereum_map_everstake_stake_transaction() {
+        let transaction = load_json_rpc_result(include_str!("../../testdata/transaction_stake_everstake.json"));
+        let receipt = load_json_rpc_result(include_str!("../../testdata/transaction_stake_everstake_reciept.json"));
+
+        let result = StakingMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, None, DateTime::default());
+
+        assert!(result.is_some());
+        let transaction = result.unwrap();
+
+        assert_eq!(transaction.transaction_type, TransactionType::StakeDelegate);
+        assert_eq!(transaction.from, "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC");
+        assert_eq!(transaction.to, "0xD523794C879D9eC028960a231F866758e405bE34");
+        assert_eq!(transaction.contract.unwrap(), "0xD523794C879D9eC028960a231F866758e405bE34");
+        assert_eq!(transaction.value, "34800000000000000000");
+    }
+
+    #[test]
+    fn test_ethereum_map_everstake_unstake_transaction() {
+        let transaction = load_json_rpc_result(include_str!("../../testdata/transaction_unstake_everstake.json"));
+        let receipt = load_json_rpc_result(include_str!("../../testdata/transaction_unstake_everstake_reciept.json"));
+
+        let result = StakingMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, None, DateTime::default());
+
+        assert!(result.is_some());
+        let transaction = result.unwrap();
+
+        assert_eq!(transaction.transaction_type, TransactionType::StakeUndelegate);
+        assert_eq!(transaction.from, "0x1085c5f70F7F7591D97da281A64688385455c2bD");
+        assert_eq!(transaction.to, "0xD523794C879D9eC028960a231F866758e405bE34");
+        assert_eq!(transaction.contract.unwrap(), "0xD523794C879D9eC028960a231F866758e405bE34");
+        assert_eq!(transaction.value, "50000000000000000");
+    }
+
+    #[test]
+    fn test_ethereum_map_everstake_withdraw_transaction() {
+        let transaction = load_json_rpc_result(include_str!("../../testdata/transaction_withdraw_everstake.json"));
+        let receipt = load_json_rpc_result(include_str!("../../testdata/transaction_withdraw_everstake_reciept.json"));
+        let trace = load_json_rpc_result(include_str!("../../testdata/transaction_withdraw_everstake_trace.json"));
+
+        let result = StakingMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, Some(&trace), DateTime::default());
+
+        assert!(result.is_some());
+        let transaction = result.unwrap();
+
+        assert_eq!(transaction.transaction_type, TransactionType::StakeWithdraw);
+        assert_eq!(transaction.from, "0x1085c5f70F7F7591D97da281A64688385455c2bD");
+        assert_eq!(transaction.to, "0xD523794C879D9eC028960a231F866758e405bE34");
+        assert_eq!(transaction.contract.unwrap(), "0x7a7f0b3c23C23a31cFcb0c44709be70d4D545c6e");
+        assert_eq!(transaction.value, "50000000000000000");
     }
 }

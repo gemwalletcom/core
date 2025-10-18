@@ -93,6 +93,21 @@ impl BalanceDiffer {
         map
     }
 
+    pub fn get_native_balance_change(&self, trace: &TransactionReplayTrace, receipt: &TransactionReciept, address: &str) -> Option<BigUint> {
+        let balance_diffs = self.calculate(trace, receipt);
+        let checksum_address = ethereum_address_checksum(address).ok()?;
+        let diffs = balance_diffs.get(&checksum_address)?;
+
+        for diff in diffs {
+            if diff.asset_id.token_id.is_none() && diff.diff > BigInt::from(0) {
+                let balance_change = diff.diff.to_biguint()?;
+                let gas_fee = receipt.get_fee();
+                return Some(balance_change + gas_fee);
+            }
+        }
+        None
+    }
+
     fn parse_log(&self, log: &Log) -> Option<TransferLog> {
         // Transfer(address,address,uint256)
         if log.topics.is_empty() || log.topics[0] != TRANSFER_TOPIC || log.topics.len() < 3 {
