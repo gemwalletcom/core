@@ -68,7 +68,7 @@ impl<C: Client> ChainTransactionLoad for TonClient<C> {
 
                 let (sender_jetton_wallets, recipient_jetton_wallets) = futures::try_join!(
                     self.get_jetton_wallets(input.sender_address.clone()),
-                    self.get_jetton_wallets(input.destination_address.clone()),
+                    self.get_jetton_wallets(input.destination_address.clone()), //TODO: different destination address for swaps
                 )?;
 
                 let sender_jetton_wallet_address = sender_jetton_wallets.jetton_wallets.iter().find(|wallet| wallet.jetton == jetton_token_id);

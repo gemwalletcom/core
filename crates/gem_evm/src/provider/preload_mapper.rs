@@ -95,12 +95,12 @@ pub fn get_transaction_to(chain: EVMChain, input: &TransactionLoadInput) -> Resu
             if let Some(approval) = &swap_data.data.approval {
                 Ok(approval.token.clone())
             } else {
-                Ok(input.destination_address.clone())
+                Ok(swap_data.data.to.clone())
             }
         }
         TransactionInputType::TransferNft(_, _) => Err("Unsupported transfer type".into()),
         TransactionInputType::TokenApprove(_, approval) => Ok(approval.token.clone()),
-        TransactionInputType::Generic(_, _, _) => Ok(input.destination_address.clone()),
+        TransactionInputType::Generic(_, _, extra) => Ok(extra.to.clone()),
         TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
             Chain::SmartChain => Ok(STAKE_HUB_ADDRESS.to_string()),
             Chain::Ethereum => match stake_type {
