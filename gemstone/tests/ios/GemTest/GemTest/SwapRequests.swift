@@ -5,7 +5,8 @@ import Gemstone
 let SWAP_OPTIONS = SwapperOptions(
     slippage: getDefaultSlippage(chain: "solana"),
     fee: Config().getSwapConfig().referralFee,
-    preferredProviders: []
+    preferredProviders: [],
+    useMaxAmount: false
 )
 
 let TEST_ETH_WALLET = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7"
