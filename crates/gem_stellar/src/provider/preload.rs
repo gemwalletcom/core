@@ -16,8 +16,8 @@ use crate::{models::AccountResult, rpc::client::StellarClient};
 impl<C: Client> ChainTransactionLoad for StellarClient<C> {
     async fn get_transaction_preload(&self, input: TransactionPreloadInput) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
         let destination_address = match input.input_type {
-            TransactionInputType::Swap(_, _, swap_data) => swap_data.data.to,
-            _ => input.destination_address,
+            TransactionInputType::Swap(_, _, swap_data) => swap_data.data.to.clone(),
+            _ => input.destination_address.clone(),
         };
         let (sender_account, destination_exists) = futures::join!(self.get_account(input.sender_address.clone()), self.account_exists(&destination_address));
         match sender_account? {

@@ -326,14 +326,7 @@ where
             .build_deposit_data(deposit_memo, from_asset, &quote.request.wallet_address, &deposit_address, &amount_in)
             .await?;
 
-        Ok(SwapperQuoteData {
-            to: data.to,
-            value: data.value,
-            data: data.data,
-            memo: data.memo,
-            approval: None,
-            gas_limit: None,
-        })
+        Ok(SwapperQuoteData::new_tranfer(data.to, data.value, data.memo))
     }
 
     async fn get_swap_result(&self, chain: Chain, deposit_address: &str) -> Result<SwapResult, SwapperError> {

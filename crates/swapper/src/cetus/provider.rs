@@ -331,7 +331,13 @@ where
         let tx = ptb.finish().map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let tx_output = TxOutput::from_tx(&tx).unwrap();
 
-        Ok(SwapperQuoteData::new("".to_string(), "".to_string(), tx_output.base64_encoded()))
+        Ok(SwapperQuoteData::new_contract(
+            "".to_string(),
+            "".to_string(),
+            tx_output.base64_encoded(),
+            None,
+            None,
+        ))
     }
 }
 

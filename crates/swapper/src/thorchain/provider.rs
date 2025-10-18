@@ -182,23 +182,15 @@ where
             }
             .abi_encode();
 
-            SwapperQuoteData {
-                to,
-                value: "0".to_string(),
-                data: HexEncode(call.clone()),
-                memo: None,
-                approval,
-                gas_limit,
-            }
+            SwapperQuoteData::new_contract(to, value, HexEncode(call.clone()), approval, gas_limit)
         } else {
-            SwapperQuoteData {
-                to: route_data.inbound_address.unwrap_or_default(),
+            SwapperQuoteData::new_contract(
+                route_data.inbound_address.unwrap_or_default(),
                 value,
-                data: self.data(from_asset.chain, memo),
-                memo: None,
+                self.data(from_asset.chain, memo),
                 approval,
                 gas_limit,
-            }
+            )
         };
 
         Ok(data)

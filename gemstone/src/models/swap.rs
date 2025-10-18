@@ -1,3 +1,4 @@
+use primitives::swap::SwapQuoteDataType;
 pub use primitives::swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData};
 pub use swapper::SwapperProvider;
 
@@ -6,12 +7,19 @@ pub type GemSwapData = SwapData;
 pub type GemSwapProviderData = SwapProviderData;
 pub type GemSwapQuote = SwapQuote;
 pub type GemSwapQuoteData = SwapQuoteData;
+pub type GemSwapQuoteDataType = SwapQuoteDataType;
 
 #[uniffi::remote(Record)]
 pub struct GemApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
+}
+
+#[uniffi::remote(Enum)]
+pub enum GemSwapQuoteDataType {
+    Contract,
+    Transfer,
 }
 
 #[uniffi::remote(Record)]
@@ -35,6 +43,7 @@ pub struct GemSwapQuote {
 #[uniffi::remote(Record)]
 pub struct GemSwapQuoteData {
     pub to: String,
+    pub data_type: GemSwapQuoteDataType,
     pub value: String,
     pub data: String,
     pub memo: Option<String>,

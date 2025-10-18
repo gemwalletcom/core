@@ -227,14 +227,7 @@ where
         let data = self.client.get_quote_data(route_data).await?;
         let (approval, gas_limit) = self.check_approval(quote, &data).await?;
 
-        Ok(SwapperQuoteData {
-            to: data.to,
-            value: data.value,
-            data: data.data,
-            memo: None,
-            approval,
-            gas_limit,
-        })
+        Ok(SwapperQuoteData::new_contract(data.to, data.value, data.data, approval, gas_limit))
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {

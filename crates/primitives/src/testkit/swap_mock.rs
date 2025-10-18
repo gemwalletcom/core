@@ -1,6 +1,6 @@
 use crate::{
     SwapProvider,
-    swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData},
+    swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteDataType},
 };
 
 impl SwapData {
@@ -50,6 +50,7 @@ impl SwapQuote {
 impl SwapQuoteData {
     pub fn mock() -> Self {
         SwapQuoteData {
+            data_type: SwapQuoteDataType::Contract,
             to: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
             value: "0".to_string(),
             data: "0x".to_string(),

@@ -124,11 +124,12 @@ where
             route_data.min_value.clone(),
         );
 
-        let data = SwapperQuoteData::new(
+        Ok(SwapperQuoteData::new_contract(
             PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
             quote.from_value.clone(),
             serde_json::to_string(&payload).unwrap(),
-        );
-        Ok(data)
+            None,
+            None,
+        ))
     }
 }

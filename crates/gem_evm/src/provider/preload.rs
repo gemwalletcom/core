@@ -2,8 +2,8 @@
 use super::preload_optimism::OptimismGasOracle;
 use crate::fee_calculator::{get_fee_history_blocks, get_reward_percentiles};
 use crate::provider::preload_mapper::{
-    bigint_to_hex_string, bytes_to_hex_string, calculate_gas_limit_with_increase, get_extra_fee_gas_limit, get_transaction_data, get_transaction_to,
-    get_transaction_value, map_transaction_fee_rates, map_transaction_preload,
+    bigint_to_hex_string, bytes_to_hex_string, calculate_gas_limit_with_increase, get_extra_fee_gas_limit, get_transaction_params, map_transaction_fee_rates,
+    map_transaction_preload,
 };
 use crate::rpc::client::EthereumClient;
 #[cfg(feature = "rpc")]
@@ -49,17 +49,15 @@ impl<C: Client + Clone> ChainTransactionLoad for EthereumClient<C> {
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn map_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        let data = get_transaction_data(self.chain, &input)?;
-        let to = get_transaction_to(self.chain, &input)?;
-        let value = get_transaction_value(self.chain, &input)?;
+        let params = get_transaction_params(self.chain, &input)?;
 
         let gas_estimate = {
             let estimate = self
                 .estimate_gas(
                     Some(&input.sender_address),
-                    &to,
-                    Some(&bigint_to_hex_string(&value)),
-                    Some(&bytes_to_hex_string(&data)),
+                    &params.to,
+                    Some(&bigint_to_hex_string(&params.value)),
+                    Some(&bytes_to_hex_string(&params.data)),
                 )
                 .await?;
             bigint_from_hex_str(&estimate)?
@@ -73,8 +71,8 @@ impl<C: Client + Clone> EthereumClient<C> {
                     nonce,
                     chain_id,
                     stake_data: Some(StakeData {
-                        data: if data.is_empty() { None } else { Some(hex::encode(&data)) },
-                        to: Some(to),
+                        data: if params.data.is_empty() { None } else { Some(hex::encode(&params.data)) },
+                        to: Some(params.to),
                     }),
                 },
                 _ => input.metadata,

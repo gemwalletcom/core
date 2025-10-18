@@ -208,8 +208,13 @@ where
             return Err(SwapperError::TransactionError(simulation_error.error));
         }
 
-        let data = SwapperQuoteData::new(PROGRAM_ADDRESS.to_string(), "".to_string(), quote_data.swap_transaction);
-        Ok(data)
+        Ok(SwapperQuoteData::new_contract(
+            PROGRAM_ADDRESS.to_string(),
+            "".to_string(),
+            quote_data.swap_transaction,
+            None,
+            None,
+        ))
     }
 }
 

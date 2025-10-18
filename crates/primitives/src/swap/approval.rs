@@ -14,9 +14,18 @@ pub struct ApprovalData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "lowercase")]
+pub enum SwapQuoteDataType {
+    Contract,
+    Transfer,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapQuoteData {
     pub to: String,
+    pub data_type: SwapQuoteDataType,
     pub value: String,
     pub data: String,
     pub memo: Option<String>,
@@ -25,12 +34,25 @@ pub struct SwapQuoteData {
 }
 
 impl SwapQuoteData {
-    pub fn new(to: String, value: String, data: String) -> Self {
+    pub fn new_contract(to: String, value: String, data: String, approval: Option<ApprovalData>, gas_limit: Option<String>) -> Self {
         Self {
             to,
+            data_type: SwapQuoteDataType::Contract,
             value,
             data,
             memo: None,
+            approval,
+            gas_limit,
+        }
+    }
+
+    pub fn new_tranfer(to: String, value: String, memo: Option<String>) -> Self {
+        Self {
+            to,
+            data_type: SwapQuoteDataType::Transfer,
+            value,
+            data: "".to_string(),
+            memo,
             approval: None,
             gas_limit: None,
         }
