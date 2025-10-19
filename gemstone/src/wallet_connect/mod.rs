@@ -9,11 +9,11 @@ pub fn get_namespace(chain: Chain) -> Option<String> {
         ChainType::Solana => Some(WalletConnectCAIP2::Solana.as_ref().to_string()),
         ChainType::Cosmos => Some(format!("{}:{}", WalletConnectCAIP2::Cosmos.as_ref(), chain.network_id())),
         ChainType::Algorand => Some(WalletConnectCAIP2::Algorand.as_ref().to_string()),
+        ChainType::Sui => Some(WalletConnectCAIP2::Sui.as_ref().to_string()),
         ChainType::Bitcoin
         | ChainType::Ton
         | ChainType::Tron
         | ChainType::Aptos
-        | ChainType::Sui
         | ChainType::Xrp
         | ChainType::Near
         | ChainType::Stellar
@@ -29,6 +29,7 @@ pub fn get_chain_type(namespace: String) -> Option<ChainType> {
         WalletConnectCAIP2::Solana => Some(ChainType::Solana),
         WalletConnectCAIP2::Cosmos => Some(ChainType::Cosmos),
         WalletConnectCAIP2::Algorand => Some(ChainType::Algorand),
+        WalletConnectCAIP2::Sui => Some(ChainType::Sui),
     }
 }
 
@@ -46,6 +47,7 @@ pub fn get_chain(namespace: String, reference: String) -> Option<Chain> {
         }
         WalletConnectCAIP2::Solana => Some(Chain::Solana),
         WalletConnectCAIP2::Algorand => Some(Chain::Algorand),
+        WalletConnectCAIP2::Sui => Some(Chain::Sui),
     }
 }
 
@@ -56,11 +58,11 @@ pub fn get_reference(chain: Chain) -> Option<String> {
         ChainType::Solana => Some(chain.network_id().chars().take(32).collect()),
         ChainType::Cosmos => get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id())),
         ChainType::Algorand => Some("wGHE2Pwdvd7S12BL5FaOP20EGYesN73k".to_string()),
+        ChainType::Sui => Some("mainnet".to_string()),
         ChainType::Bitcoin
         | ChainType::Ton
         | ChainType::Tron
         | ChainType::Aptos
-        | ChainType::Sui
         | ChainType::Xrp
         | ChainType::Near
         | ChainType::Stellar

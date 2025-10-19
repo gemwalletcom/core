@@ -35,3 +35,14 @@ pub enum WalletConnectSolanaMethods {
     #[serde(rename = "signAllTransactions")]
     sign_all_transactions,
 }
+
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "CaseIterable, Sendable")]
+pub enum WalletConnectSuiMethods {
+    #[serde(rename = "signPersonalMessage")]
+    sign_personal_message,
+    #[serde(rename = "signTransaction")]
+    sign_transaction,
+    #[serde(rename = "signAndExecuteTransaction")]
+    sign_and_execute_transaction,
+}

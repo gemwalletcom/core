@@ -49,6 +49,12 @@ pub enum WalletConnectionMethods {
     SolanaSignAndSendTransaction,
     #[serde(rename = "solana_signAllTransactions")]
     SolanaSignAllTransactions,
+    #[serde(rename = "sui_signPersonalMessage")]
+    SuiSignPersonalMessage,
+    #[serde(rename = "sui_signTransaction")]
+    SuiSignTransaction,
+    #[serde(rename = "sui_signAndExecuteTransaction")]
+    SuiSignAndExecuteTransaction,
 }
 
 #[derive(Debug, Serialize)]

@@ -15,6 +15,8 @@ pub enum WalletConnectCAIP2 {
     Cosmos,
     #[serde(rename = "algorand")]
     Algorand,
+    #[serde(rename = "sui")]
+    Sui,
 }
 
 #[allow(dead_code)]
@@ -65,5 +67,31 @@ struct WCSolanaSignMessage {
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 struct WCSolanaSignMessageResult {
+    signature: String,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+struct WCSuiTransaction {
+    transaction: String,
+    account: String,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+struct WCSuiSignMessage {
+    message: String,
+    account: String,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+struct WCSuiSignMessageResult {
     signature: String,
 }
