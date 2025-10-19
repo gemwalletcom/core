@@ -3117,6 +3117,7 @@ dependencies = [
  "gem_tron",
  "gem_xrp",
  "hex",
+ "k256",
  "num-bigint",
  "primitives",
  "reqwest",

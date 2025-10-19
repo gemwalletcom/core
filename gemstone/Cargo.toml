@@ -45,6 +45,7 @@ reqwest = { workspace = true, optional = true }
 sui-types = { workspace = true }
 base64 = { workspace = true }
 ed25519-dalek = { version = "2.1.1", default-features = false, features = ["std"] }
+k256 = { workspace = true }
 
 # uniffi
 uniffi.workspace = true

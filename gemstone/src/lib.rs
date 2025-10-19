@@ -8,6 +8,7 @@ pub mod hyperliquid;
 pub mod message;
 pub mod models;
 pub mod network;
+pub mod signer;
 pub mod payment;
 pub mod sui;
 pub mod wallet_connect;
