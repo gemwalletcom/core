@@ -79,3 +79,46 @@ pub enum GemSignatureAlgorithm {
     Ed25519,
     Secp256k1,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base64::Engine as _;
+    use base64::engine::general_purpose::STANDARD;
+    use ed25519_dalek::{Signature, SigningKey, Verifier};
+
+    #[test]
+    fn teset_sui_sign_personal_message() {
+        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").expect("valid hex");
+        let message = b"Hello, world!".to_vec();
+
+        let signer = GemstoneSigner::new();
+        let signature_base64 = signer
+            .sign_sui_personal_message(message.clone(), private_key.clone())
+            .expect("signing succeeds");
+
+        let signature_bytes = STANDARD.decode(&signature_base64).expect("valid base64");
+        assert_eq!(signature_bytes.len(), 97, "signature layout length");
+        assert_eq!(signature_bytes[0], 0x00, "expected Ed25519 flag prefix");
+
+        let signature = &signature_bytes[1..65];
+        let public_key_bytes = &signature_bytes[65..];
+
+        let key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = private_key.clone().try_into().expect("32 byte secret key");
+        let signing_key = SigningKey::from_bytes(&key_bytes);
+        assert_eq!(public_key_bytes, signing_key.verifying_key().as_bytes(), "public key suffix matches secret key");
+
+        let personal_message = PersonalMessage(Cow::Borrowed(message.as_slice()));
+        let digest = personal_message.signing_digest();
+        let signature = Signature::from_bytes(signature.try_into().expect("64 byte signature"));
+
+        signing_key
+            .verifying_key()
+            .verify(digest.as_ref(), &signature)
+            .expect("signature verifies against digest");
+
+        let expected_base64 =
+            "ALmKZNcvdmYgYloqKMAq7eSw5neV1mSEKfZProHEh8Ddw+6aJvLpuViFqZCHqwKdCqtzN8a+7jIDQSxbvmt04QDTaUUhl8KlZIHl4tPovwPeI0n2emMVGVaCIgjCM0re4g==";
+        assert_eq!(signature_base64, expected_base64);
+    }
+}
