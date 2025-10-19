@@ -21,7 +21,7 @@ use primitives::{
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
-pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
+pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swap/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 750_000;
 
 #[derive(Debug)]
