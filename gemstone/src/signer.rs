@@ -21,8 +21,12 @@ impl GemstoneSigner {
     }
 
     pub fn sign_sui_digest(&self, digest: Vec<u8>, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        let signature = sign_ed25519(&digest, &private_key)?;
-        assemble_sui_signature(signature.to_vec(), private_key)
+        let signing_key = ed25519_signing_key(&private_key)?;
+        let signature = signing_key.sign(digest.as_slice());
+        let signature_bytes = signature.to_bytes();
+        let public_key_bytes = signing_key.verifying_key().to_bytes();
+
+        assemble_sui_signature(&signature_bytes, &public_key_bytes)
     }
 
     pub fn sign_digest(&self, algorithm: GemSignatureAlgorithm, digest: Vec<u8>, private_key: Vec<u8>) -> Result<Vec<u8>, GemstoneError> {
@@ -34,26 +38,22 @@ impl GemstoneSigner {
 }
 
 fn sign_ed25519(digest: &[u8], private_key: &[u8]) -> Result<ed25519_dalek::Signature, GemstoneError> {
-    let key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = private_key.try_into().map_err(|_| GemstoneError::from("Invalid Ed25519 private key length"))?;
-
-    let signing_key = SigningKey::from_bytes(&key_bytes);
+    let signing_key = ed25519_signing_key(private_key)?;
     Ok(signing_key.sign(digest))
 }
 
-fn assemble_sui_signature(signature: Vec<u8>, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-    let key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = private_key
-        .as_slice()
-        .try_into()
-        .map_err(|_| GemstoneError::from("Invalid Ed25519 private key length"))?;
+fn ed25519_signing_key(private_key: &[u8]) -> Result<SigningKey, GemstoneError> {
+    let key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = private_key.try_into().map_err(|_| GemstoneError::from("Invalid Ed25519 private key length"))?;
+    Ok(SigningKey::from_bytes(&key_bytes))
+}
 
-    let signing_key = SigningKey::from_bytes(&key_bytes);
-    let public_key = signing_key.verifying_key().to_bytes();
-
+fn assemble_sui_signature(signature: &[u8], public_key: &[u8]) -> Result<String, GemstoneError> {
     let signature_bytes: [u8; Ed25519Signature::LENGTH] = signature
-        .as_slice()
         .try_into()
         .map_err(|_| GemstoneError::from(format!("Expected {} byte ed25519 signature, got {}", Ed25519Signature::LENGTH, signature.len())))?;
-    let public_key_bytes: [u8; Ed25519PublicKey::LENGTH] = public_key.as_slice().try_into().expect("derived Ed25519 public key must be 32 bytes");
+    let public_key_bytes: [u8; Ed25519PublicKey::LENGTH] = public_key
+        .try_into()
+        .map_err(|_| GemstoneError::from(format!("Expected {} byte ed25519 public key, got {}", Ed25519PublicKey::LENGTH, public_key.len())))?;
 
     let sui_signature = SimpleSignature::Ed25519 {
         signature: Ed25519Signature::new(signature_bytes),
@@ -88,7 +88,7 @@ mod tests {
     use ed25519_dalek::{Signature, SigningKey, Verifier};
 
     #[test]
-    fn teset_sui_sign_personal_message() {
+    fn test_sui_sign_personal_message() {
         let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").expect("valid hex");
         let message = b"Hello, world!".to_vec();
 
