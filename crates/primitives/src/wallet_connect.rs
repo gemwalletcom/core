@@ -76,7 +76,7 @@ struct WCSolanaSignMessageResult {
 #[serde(rename_all = "camelCase")]
 struct WCSuiTransaction {
     transaction: String,
-    account: String,
+    address: String,
 }
 
 #[allow(dead_code)]
@@ -94,4 +94,21 @@ struct WCSuiSignMessage {
 #[serde(rename_all = "camelCase")]
 struct WCSuiSignMessageResult {
     signature: String,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+struct WCSuiSignTransactionResult {
+    signature: String,
+    transaction_bytes: String,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+struct WCSuiSignAndExecuteTransactionResult {
+    digest: String,
 }
