@@ -1,9 +1,9 @@
 use alloy_primitives::{eip191_hash_message, hex};
-use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::Engine;
 use bs58;
 use std::borrow::Cow;
-use sui_types::PersonalMessage;
+use sui_types::{Ed25519PublicKey, Ed25519Signature, PersonalMessage};
 
 use super::{
     eip712::GemEIP712Message,
@@ -14,6 +14,7 @@ use gem_evm::eip712::eip712_hash_message;
 const SIGNATURE_LENGTH: usize = 65;
 const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
 const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
+const SUI_PERSONAL_SIGNATURE_LEN: usize = 1 + Ed25519Signature::LENGTH + Ed25519PublicKey::LENGTH;
 
 #[derive(Debug, PartialEq, uniffi::Enum)]
 pub enum MessagePreview {
@@ -107,7 +108,7 @@ impl SignMessageDecoder {
             SignDigestType::Sign => hex::encode_prefixed(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
             SignDigestType::SuiPersonalMessage => {
-                if data.len() == 97 {
+                if data.len() == SUI_PERSONAL_SIGNATURE_LEN {
                     BASE64.encode(data)
                 } else {
                     hex::encode_prefixed(data)
