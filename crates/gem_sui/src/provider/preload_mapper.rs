@@ -159,6 +159,14 @@ pub fn map_transaction_data(
             let digest = hex::encode(&tx_output.hash);
             Ok(format!("{}_{}", data, digest))
         }
+        TransactionInputType::Generic(_, _, extra) => {
+            let raw_data = extra.data.ok_or("Missing transaction data for Sui generic input")?;
+            let encoded = String::from_utf8(raw_data).map_err(|_| "Invalid UTF-8 data for Sui generic input")?;
+            let tx_output = validate_and_hash(&encoded)?;
+            let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
+            let digest = hex::encode(&tx_output.hash);
+            Ok(format!("{}_{}", data, digest))
+        }
         _ => Err("Unsupported transaction type for Sui".into()),
     }
 }

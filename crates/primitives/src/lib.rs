@@ -158,7 +158,9 @@ pub mod node_config;
 pub mod transaction_id;
 pub use self::transaction_id::TransactionId;
 pub mod asset_address;
+pub mod signing;
 pub use self::asset_address::AssetAddress;
+pub use self::signing::SigningAlgorithm;
 pub mod graphql;
 pub mod perpetual;
 pub use self::perpetual::{
