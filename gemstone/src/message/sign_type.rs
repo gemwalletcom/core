@@ -4,6 +4,7 @@ pub enum SignDigestType {
     Eip191,
     Eip712,
     Base58,
+    SuiPersonalMessage,
 }
 
 #[derive(Debug, uniffi::Record)]

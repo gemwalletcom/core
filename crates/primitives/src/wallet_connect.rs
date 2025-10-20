@@ -95,3 +95,20 @@ struct WCSuiSignMessage {
 struct WCSuiSignMessageResult {
     signature: String,
 }
+
+#[allow(dead_code)]
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+struct WCSuiSignTransactionResult {
+    signature: String,
+    transaction_bytes: String,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Serialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+struct WCSuiSignAndExecuteTransactionResult {
+    digest: String,
+}
