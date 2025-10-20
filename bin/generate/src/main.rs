@@ -92,15 +92,13 @@ fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorTy
         let file_path = directory_paths_capitalized.pop().unwrap();
 
         let file_name_original = directory_paths.last().unwrap_or(&"");
-        if ignored_files.contains(file_name_original) {
-            let allow_mod_for_swap = matches!(generator_type, GeneratorType::TypeScript)
-                && *file_name_original == "mod.rs"
-                && directory_paths.len() >= 2
-                && directory_paths[directory_paths.len() - 2] == "swap";
+        let allow_mod_for_swap = matches!(generator_type, GeneratorType::TypeScript)
+            && *file_name_original == "mod.rs"
+            && directory_paths.len() >= 2
+            && directory_paths[directory_paths.len() - 2] == "swap";
 
-            if !allow_mod_for_swap {
-                continue;
-            }
+        if ignored_files.contains(file_name_original) && !allow_mod_for_swap {
+            continue;
         }
 
         let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
