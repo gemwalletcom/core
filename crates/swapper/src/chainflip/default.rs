@@ -7,8 +7,8 @@ use crate::alien::{RpcClient, RpcProvider};
 use gem_jsonrpc::client::JsonRpcClient;
 use std::sync::Arc;
 
-const CHAINFLIP_API_URL: &str = "https://chainflip-swap.chainflip.io";
-const CHAINFLIP_BROKER_URL: &str = "https://chainflip-broker.io";
+const CHAINFLIP_API_URL: &str = "https://api.gemwallet.com/swap/chainflip-swap";
+const CHAINFLIP_BROKER_URL: &str = "https://api.gemwallet.com/swap/chainflip-broker";
 
 impl ChainflipProvider<RpcClient, RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {

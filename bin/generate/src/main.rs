@@ -2,6 +2,7 @@ use primitives::Platform;
 
 use std::{
     fs::{self, DirEntry},
+    path::Path,
     process::Command,
     vec,
 };
@@ -10,6 +11,15 @@ static ANDROID_PACKAGE_PREFIX: &str = "com.wallet.core";
 static LANGUAGE_SWIFT: &str = "swift";
 static LANGUAGE_KOTLIN: &str = "kotlin";
 static LANG_KOTLIN_ETX: &str = "kt";
+static LANGUAGE_TYPESCRIPT: &str = "typescript";
+static LANG_TYPESCRIPT_EXT: &str = "ts";
+
+#[derive(Clone, Copy)]
+enum GeneratorType {
+    Swift,
+    Kotlin,
+    TypeScript,
+}
 
 fn main() {
     let folders = vec!["crates/primitives"];
@@ -17,7 +27,12 @@ fn main() {
     let platform_str = std::env::args().nth(1).expect("no platform specified");
     let platform_directory_path = std::env::args().nth(2).expect("no path specified");
 
-    let platform = Platform::new(platform_str.as_str()).unwrap();
+    let generator_type = match platform_str.as_str() {
+        "web" => GeneratorType::TypeScript,
+        "ios" => GeneratorType::Swift,
+        "android" => GeneratorType::Kotlin,
+        other => panic!("unsupported generator target: {other}"),
+    };
 
     let mut ignored_files: Vec<&'static str> = [
         "lib.rs",
@@ -37,16 +52,17 @@ fn main() {
         "slippage.rs",
     ]
     .to_vec();
-    ignored_files.append(&mut ignored_files_by_platform(platform.clone()));
+    let mut platform_ignored = ignored_files_by_generator(&generator_type);
+    ignored_files.append(&mut platform_ignored);
 
     for folder in folders {
         let src_path = format!("{folder}/src");
         let paths = get_paths(folder, src_path);
-        process_paths(paths, folder, &platform, &platform_directory_path, &ignored_files);
+        process_paths(paths, folder, &generator_type, &platform_directory_path, &ignored_files);
     }
 }
 
-fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platform_directory_path: &str, ignored_files: &[&str]) {
+fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorType, platform_directory_path: &str, ignored_files: &[&str]) {
     for path in paths {
         // Example path:
         // ./crates/primitives/src/utxo.rs
@@ -75,46 +91,54 @@ fn process_paths(paths: Vec<String>, _folder: &str, platform: &Platform, platfor
 
         let file_path = directory_paths_capitalized.pop().unwrap();
 
-        if ignored_files.contains(directory_paths.last().unwrap_or(&"")) {
+        let file_name_original = directory_paths.last().unwrap_or(&"");
+        let allow_mod_for_swap = matches!(generator_type, GeneratorType::TypeScript)
+            && *file_name_original == "mod.rs"
+            && directory_paths.len() >= 2
+            && directory_paths[directory_paths.len() - 2] == "swap";
+
+        if ignored_files.contains(file_name_original) && !allow_mod_for_swap {
             continue;
         }
 
-        let ios_new_file_name = file_name(&file_path, LANGUAGE_SWIFT);
-        let ios_new_path = format!("{}/{}", directory_paths_capitalized.join("/"), ios_new_file_name);
-
-        let kt_new_file_name = file_name(&file_path, LANG_KOTLIN_ETX);
-        let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
-        let kt_new_path = format!("{}/{}", directory_paths_lowercased.join("/"), kt_new_file_name);
-
         let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
 
-        let ios_output_path = output_path(Platform::IOS, platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
-        let android_output_path = output_path(Platform::Android, platform_directory_path, module_name, kt_new_path.clone());
-
-        let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
-        let directory_package = directory_paths_lowercased.join(".");
-        let android_package_name = format!(
-            "{}.{}{}",
-            ANDROID_PACKAGE_PREFIX,
-            module_name,
-            if directory_package.is_empty() {
-                String::new()
-            } else {
-                format!(".{directory_package}")
+        match generator_type {
+            GeneratorType::Swift => {
+                let ios_new_file_name = file_name(&file_path, LANGUAGE_SWIFT);
+                let ios_new_path = format!("{}/{}", directory_paths_capitalized.join("/"), ios_new_file_name);
+                let ios_output_path = output_path(Platform::IOS, platform_directory_path, str_capitlize(module_name).as_str(), ios_new_path);
+                generate_files(LANGUAGE_SWIFT, input_path.as_str(), ios_output_path.as_str(), None);
             }
-        );
-
-        match platform {
-            Platform::IOS => {
-                generate_files(LANGUAGE_SWIFT, input_path.as_str(), ios_output_path.as_str(), "");
-            }
-            Platform::Android => {
+            GeneratorType::Kotlin => {
+                let kt_new_file_name = file_name(&file_path, LANG_KOTLIN_ETX);
+                let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
+                let kt_new_path = format!("{}/{}", directory_paths_lowercased.join("/"), kt_new_file_name);
+                let android_output_path = output_path(Platform::Android, platform_directory_path, module_name, kt_new_path.clone());
+                let directory_package = directory_paths_lowercased.join(".");
+                let android_package_name = format!(
+                    "{}.{}{}",
+                    ANDROID_PACKAGE_PREFIX,
+                    module_name,
+                    if directory_package.is_empty() {
+                        String::new()
+                    } else {
+                        format!(".{directory_package}")
+                    }
+                );
                 generate_files(
                     LANGUAGE_KOTLIN,
                     input_path.as_str(),
                     android_output_path.as_str(),
-                    android_package_name.as_str(),
+                    Some(android_package_name.as_str()),
                 );
+            }
+            GeneratorType::TypeScript => {
+                let ts_new_file_name = file_name(&file_path, LANG_TYPESCRIPT_EXT);
+                let directory_paths_lowercased: Vec<String> = directory_paths_capitalized.iter().map(|x| x.to_lowercase()).collect();
+                let ts_new_path = format!("{}/{}", directory_paths_lowercased.join("/"), ts_new_file_name);
+                let web_output_path = output_path_web(platform_directory_path, module_name, ts_new_path);
+                generate_files(LANGUAGE_TYPESCRIPT, input_path.as_str(), web_output_path.as_str(), None);
             }
         }
     }
@@ -127,6 +151,10 @@ fn output_path(platform: Platform, directory: &str, module_name: &str, path: Str
     }
 }
 
+fn output_path_web(directory: &str, module_name: &str, path: String) -> String {
+    format!("{directory}/{module_name}/{path}")
+}
+
 fn file_name(name: &str, file_extension: &str) -> String {
     let split: Vec<&str> = name.split('.').collect();
     let new_split: Vec<&str> = split[0].split('_').collect();
@@ -134,14 +162,22 @@ fn file_name(name: &str, file_extension: &str) -> String {
     format!("{new_name}.{file_extension}")
 }
 
-fn generate_files(language: &str, input_path: &str, output_path: &str, package_name: &str) {
-    Command::new("typeshare")
+fn generate_files(language: &str, input_path: &str, output_path: &str, package_name: Option<&str>) {
+    if let Some(parent) = Path::new(output_path).parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
+
+    let mut command = Command::new("typeshare");
+    command
         .arg(input_path)
         .arg(format!("--lang={language}"))
-        .arg(format!("--output-file={output_path}"))
-        .arg(format!("--java-package={package_name}"))
-        .output()
-        .unwrap();
+        .arg(format!("--output-file={output_path}"));
+
+    if let Some(package_name) = package_name {
+        command.arg(format!("--java-package={package_name}"));
+    }
+
+    command.output().unwrap();
 }
 
 fn get_paths(_folder: &str, path: String) -> Vec<String> {
@@ -168,10 +204,11 @@ fn get_paths(_folder: &str, path: String) -> Vec<String> {
 }
 
 //TODO: Pass from the command
-fn ignored_files_by_platform(platform: Platform) -> Vec<&'static str> {
-    match platform {
-        Platform::IOS => vec![""],
-        Platform::Android => vec!["asset_data.rs"],
+fn ignored_files_by_generator(generator_type: &GeneratorType) -> Vec<&'static str> {
+    match generator_type {
+        GeneratorType::Swift => vec![""],
+        GeneratorType::Kotlin => vec!["asset_data.rs"],
+        GeneratorType::TypeScript => vec!["transaction_input_type.rs"],
     }
 }
 

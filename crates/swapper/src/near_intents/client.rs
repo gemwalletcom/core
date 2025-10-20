@@ -4,7 +4,7 @@ use std::{collections::HashMap, fmt::Debug};
 
 use super::model::{ExecutionStatus, QuoteRequest, QuoteResponseResult};
 
-pub const BASE_URL: &str = "https://api.gemwallet.com/near-intents/1click";
+pub const BASE_URL: &str = "https://api.gemwallet.com/swap/near-intents/1click";
 
 #[derive(Clone, Debug)]
 pub struct NearIntentsClient<C>
