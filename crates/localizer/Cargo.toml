@@ -6,4 +6,4 @@ edition = { workspace = true }
 [dependencies]
 i18n-embed = { version = "0.16.0", features = ["fluent-system", "autoreload"] }
 i18n-embed-fl = { version = "0.10.0" }
-rust-embed = { version = "8.7.2" }
+rust-embed = { version = "8.8.0" }
