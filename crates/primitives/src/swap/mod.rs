@@ -12,7 +12,6 @@ use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-#[serde(rename_all = "camelCase")]
 pub struct ProxyQuote {
     pub quote: ProxyQuoteRequest,
     pub output_value: String,
@@ -23,7 +22,6 @@ pub struct ProxyQuote {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare]
-#[serde(rename_all = "camelCase")]
 pub struct ProxyQuoteRequest {
     pub from_address: String,
     pub to_address: String,
@@ -32,4 +30,5 @@ pub struct ProxyQuoteRequest {
     pub from_value: String,
     pub referral_bps: u32,
     pub slippage_bps: u32,
+    pub use_max_amount: bool,
 }
