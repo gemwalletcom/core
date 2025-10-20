@@ -3096,7 +3096,6 @@ dependencies = [
  "bs58",
  "chain_traits",
  "chrono",
- "ed25519-dalek",
  "futures",
  "gem_algorand",
  "gem_aptos",
@@ -3117,13 +3116,13 @@ dependencies = [
  "gem_tron",
  "gem_xrp",
  "hex",
- "k256",
  "num-bigint",
  "primitives",
  "reqwest",
  "serde",
  "serde_json",
  "serde_serializers",
+ "signer",
  "sui-sdk-types",
  "swapper",
  "tokio",
@@ -6454,6 +6453,17 @@ checksum = "77549399552de45a898a580c1b41d445bf730df867cc44e6c0233bbc4b8329de"
 dependencies = [
  "digest 0.10.7",
  "rand_core 0.6.4",
+]
+
+[[package]]
+name = "signer"
+version = "1.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "ed25519-dalek",
+ "hex",
+ "k256",
+ "sui-sdk-types",
 ]
 
 [[package]]

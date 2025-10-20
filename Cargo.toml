@@ -34,6 +34,7 @@ members = [
 
     "crates/security_*",
     "crates/gem_*",
+    "crates/signer",
 
     "crates/localizer",
     "crates/job_runner",
