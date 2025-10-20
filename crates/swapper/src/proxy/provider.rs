@@ -198,6 +198,7 @@ where
             from_value: request.value.clone(),
             referral_bps: DEFAULT_SWAP_FEE_BPS,
             slippage_bps: request.options.slippage.bps,
+            use_max_amount: request.options.use_max_amount,
         };
 
         let quote = self.client.get_quote(quote_request.clone()).await?;
