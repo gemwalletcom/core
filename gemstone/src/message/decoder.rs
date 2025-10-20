@@ -1,11 +1,16 @@
 use alloy_primitives::{eip191_hash_message, hex};
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
+use std::borrow::Cow;
+use sui_types::PersonalMessage;
 
 use super::{
     eip712::GemEIP712Message,
     sign_type::{SignDigestType, SignMessage},
 };
 use crate::GemstoneError;
+use ::signer::SUI_PERSONAL_MESSAGE_SIGNATURE_LEN;
 use gem_evm::eip712::eip712_hash_message;
 const SIGNATURE_LENGTH: usize = 65;
 const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
@@ -31,7 +36,7 @@ impl SignMessageDecoder {
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 => {
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::SuiPersonalMessage => {
                 let utf8_str = String::from_utf8(self.message.data.clone());
                 let preview = utf8_str.unwrap_or(hex::encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
@@ -53,7 +58,7 @@ impl SignMessageDecoder {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 => match self.preview() {
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonalMessage => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
@@ -81,6 +86,10 @@ impl SignMessageDecoder {
                 }
                 Vec::new()
             }
+            SignDigestType::SuiPersonalMessage => {
+                let message = PersonalMessage(Cow::Borrowed(self.message.data.as_slice()));
+                message.signing_digest().to_vec()
+            }
         }
     }
 
@@ -98,6 +107,13 @@ impl SignMessageDecoder {
             }
             SignDigestType::Sign => hex::encode_prefixed(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
+            SignDigestType::SuiPersonalMessage => {
+                if data.len() == SUI_PERSONAL_MESSAGE_SIGNATURE_LEN {
+                    BASE64.encode(data)
+                } else {
+                    hex::encode_prefixed(data)
+                }
+            }
         }
     }
 }
@@ -198,6 +214,28 @@ mod tests {
 
         sig[64] = 28;
         assert!(decoder.get_result(&sig).ends_with("1c"));
+    }
+
+    #[test]
+    fn test_sui_personal_message_hash() {
+        let data = b"Hello, world!".to_vec();
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::SuiPersonalMessage,
+            data: data.clone(),
+        });
+
+        let hash = decoder.hash();
+        assert_eq!(hex::encode(hash), "b3a82fa7909fb9c9add005616e4024f8bc85a484a5623d44762db301cb2ad2d3");
+
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::SuiPersonalMessage,
+            data,
+        });
+        let mut signature = vec![0u8; 97];
+        signature[0] = 0;
+        signature[96] = 1;
+        let expected = BASE64.encode(&signature);
+        assert_eq!(decoder.get_result(&signature), expected);
     }
 
     #[test]

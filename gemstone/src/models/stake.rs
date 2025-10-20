@@ -43,7 +43,6 @@ pub enum GemStakeChain {
 pub enum GemDelegationState {
     Active,
     Pending,
-    Undelegating,
     Inactive,
     Activating,
     Deactivating,

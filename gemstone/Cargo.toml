@@ -40,8 +40,11 @@ gem_near = { path = "../crates/gem_near", features = ["rpc"] }
 gem_polkadot = { path = "../crates/gem_polkadot", features = ["rpc"] }
 serde_serializers = { path = "../crates/serde_serializers" }
 chain_traits = { path = "../crates/chain_traits" }
+signer = { path = "../crates/signer" }
 
 reqwest = { workspace = true, optional = true }
+sui-types = { workspace = true }
+base64 = { workspace = true }
 
 # uniffi
 uniffi.workspace = true

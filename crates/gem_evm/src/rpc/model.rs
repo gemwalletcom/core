@@ -99,13 +99,8 @@ pub struct Log {
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionReplayTrace {
-    pub output: String,
     #[serde(default)]
     pub state_diff: HashMap<String, StateChange>,
-    #[serde(default)]
-    pub trace: Vec<serde_json::Value>,
-    pub vm_trace: Option<serde_json::Value>,
-    pub transaction_hash: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -150,18 +145,14 @@ pub struct FromTo<T> {
 
 #[cfg(test)]
 mod tests {
-    use gem_jsonrpc::types::JsonRpcResponse;
+    use primitives::testkit::json_rpc::load_json_rpc_result;
 
     use super::*;
 
     #[test]
     fn test_decode_trace_replay_transaction() {
-        let json_str = include_str!("../../testdata/trace_replay_tx_trace.json");
-        let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TransactionReplayTrace>>(json_str).unwrap().result;
+        let trace_replay_transaction = load_json_rpc_result::<TransactionReplayTrace>(include_str!("../../testdata/trace_replay_tx_trace.json"));
 
-        assert_eq!(
-            trace_replay_transaction.output,
-            "0x00000000000000000000000000000000000000000000000002442b58bef3a87300000000000000000000000000000000000000000000002a48acab6204b00000"
-        );
+        assert!(trace_replay_transaction.state_diff.len() > 1);
     }
 }

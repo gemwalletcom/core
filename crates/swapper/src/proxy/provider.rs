@@ -21,7 +21,7 @@ use primitives::{
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
-pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swapper";
+pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swap/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 750_000;
 
 #[derive(Debug)]
@@ -198,6 +198,7 @@ where
             from_value: request.value.clone(),
             referral_bps: DEFAULT_SWAP_FEE_BPS,
             slippage_bps: request.options.slippage.bps,
+            use_max_amount: request.options.use_max_amount,
         };
 
         let quote = self.client.get_quote(quote_request.clone()).await?;
@@ -227,13 +228,7 @@ where
         let data = self.client.get_quote_data(route_data).await?;
         let (approval, gas_limit) = self.check_approval(quote, &data).await?;
 
-        Ok(SwapperQuoteData {
-            to: data.to,
-            value: data.value,
-            data: data.data,
-            approval,
-            gas_limit,
-        })
+        Ok(SwapperQuoteData::new_contract(data.to, data.value, data.data, approval, gas_limit))
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
@@ -284,11 +279,7 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = ProxyProvider::new_mayan(rpc_provider);
 
-        let options = Options {
-            slippage: 200.into(),
-            fee: None,
-            preferred_providers: vec![],
-        };
+        let options = Options::new_with_slippage(200.into());
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
@@ -322,11 +313,7 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = ProxyProvider::new_cetus_aggregator(rpc_provider);
 
-        let options = Options {
-            slippage: 50.into(),
-            fee: None,
-            preferred_providers: vec![],
-        };
+        let options = Options::new_with_slippage(50.into());
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Sui)),

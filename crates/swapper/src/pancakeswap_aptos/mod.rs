@@ -124,13 +124,12 @@ where
             route_data.min_value.clone(),
         );
 
-        let data = SwapperQuoteData {
-            to: PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
-            value: quote.from_value.clone(),
-            data: serde_json::to_string(&payload).unwrap(),
-            approval: None,
-            gas_limit: None,
-        };
-        Ok(data)
+        Ok(SwapperQuoteData::new_contract(
+            PANCAKE_SWAP_APTOS_ADDRESS.to_string(),
+            quote.from_value.clone(),
+            serde_json::to_string(&payload).unwrap(),
+            None,
+            None,
+        ))
     }
 }

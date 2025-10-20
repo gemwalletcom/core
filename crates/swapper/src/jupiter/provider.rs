@@ -208,14 +208,13 @@ where
             return Err(SwapperError::TransactionError(simulation_error.error));
         }
 
-        let data = SwapperQuoteData {
-            to: PROGRAM_ADDRESS.to_string(),
-            value: "".to_string(),
-            data: quote_data.swap_transaction,
-            approval: None,
-            gas_limit: None,
-        };
-        Ok(data)
+        Ok(SwapperQuoteData::new_contract(
+            PROGRAM_ADDRESS.to_string(),
+            "".to_string(),
+            quote_data.swap_transaction,
+            None,
+            None,
+        ))
     }
 }
 
@@ -231,11 +230,7 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = Jupiter::new(rpc_provider);
 
-        let options = Options {
-            slippage: 100.into(),
-            fee: None,
-            preferred_providers: vec![],
-        };
+        let options = Options::new_with_slippage(100.into());
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),

@@ -188,6 +188,10 @@ pub static NEAR_INTENTS_REVERSE_ASSETS: LazyLock<HashMap<&'static str, AssetId>>
     reverse
 });
 
+pub fn deposit_memo_chains() -> Vec<Chain> {
+    vec![Chain::Stellar]
+}
+
 pub fn get_near_intents_asset_id(asset: &SwapperQuoteAsset) -> Result<String, SwapperError> {
     let asset_id = asset.asset_id();
     let key = asset_id.to_string().to_lowercase();
@@ -208,19 +212,6 @@ pub fn supported_assets() -> Vec<SwapperChainAsset> {
             SwapperChainAsset::Assets(*chain, asset_ids)
         })
         .collect()
-}
-
-pub fn enabled_sending_chains() -> Vec<Chain> {
-    // TODO: review other chains' provider preload methods for fee estimation before adding new chains
-    vec![
-        Chain::Near,
-        Chain::Ethereum,
-        Chain::Sui,
-        Chain::SmartChain,
-        Chain::Doge,
-        Chain::Xrp,
-        Chain::Aptos,
-    ]
 }
 
 #[cfg(test)]

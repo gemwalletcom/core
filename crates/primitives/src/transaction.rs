@@ -1,5 +1,5 @@
 use crate::{
-    AddressName, AssetAddress, Chain, TransactionSwapMetadata, asset_id::AssetId, transaction_direction::TransactionDirection,
+    AddressName, AssetAddress, Chain, TransactionId, TransactionSwapMetadata, asset_id::AssetId, transaction_direction::TransactionDirection,
     transaction_state::TransactionState, transaction_type::TransactionType, transaction_utxo::TransactionUtxoInput,
 };
 
@@ -33,9 +33,9 @@ impl TransactionsResponse {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable, Equatable")]
 pub struct Transaction {
-    pub id: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub hash: Option<String>,
+    pub id: TransactionId,
+    #[typeshare(skip)]
+    pub hash: String,
     #[serde(rename = "assetId")]
     pub asset_id: AssetId,
     pub from: String,
@@ -85,8 +85,8 @@ impl Transaction {
         created_at: DateTime<Utc>,
     ) -> Self {
         Self {
-            id: Self::id_from(asset_id.chain, hash.clone()),
-            hash: Some(hash),
+            id: TransactionId::new(asset_id.chain, hash.clone()),
+            hash,
             asset_id,
             from: from_address,
             to: to_address,
@@ -122,8 +122,8 @@ impl Transaction {
         created_at: DateTime<Utc>,
     ) -> Self {
         Self {
-            id: Self::id_from(asset_id.chain, hash.clone()),
-            hash: Some(hash),
+            id: TransactionId::new(asset_id.chain, hash.clone()),
+            hash,
             asset_id,
             from: "".to_string(),
             to: "".to_string(),

@@ -267,13 +267,13 @@ impl Swapper for UniswapV4 {
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
 
-        Ok(SwapperQuoteData {
-            to: deployment.universal_router.into(),
+        Ok(SwapperQuoteData::new_contract(
+            deployment.universal_router.into(),
             value,
-            data: HexEncode(encoded),
+            HexEncode(encoded),
             approval,
             gas_limit,
-        })
+        ))
     }
 }
 
@@ -326,6 +326,7 @@ mod tests {
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
                 preferred_providers: vec![SwapperProvider::UniswapV4],
+                use_max_amount: false,
             };
 
             let request = QuoteRequest {

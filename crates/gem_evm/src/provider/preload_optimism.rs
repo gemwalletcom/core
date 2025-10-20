@@ -12,7 +12,7 @@ use crate::rpc::client::EthereumClient;
 use gem_client::Client;
 use primitives::GasPriceType;
 
-use super::preload_mapper::{bytes_to_hex_string, get_extra_fee_gas_limit, get_transaction_data, get_transaction_to, get_transaction_value};
+use super::preload_mapper::{bytes_to_hex_string, get_extra_fee_gas_limit, get_transaction_params};
 
 const OPTIMISM_GAS_ORACLE_CONTRACT: &str = "0x420000000000000000000000000000000000000F";
 
@@ -29,9 +29,7 @@ impl<C: Client + Clone> OptimismGasOracle<C> {
     }
 
     pub async fn calculate_fee(&self, input: &TransactionLoadInput, gas_limit: &BigInt) -> Result<TransactionFee, Box<dyn Error + Send + Sync>> {
-        let data = get_transaction_data(self.chain, input)?;
-        let to = get_transaction_to(self.chain, input)?;
-        let value = get_transaction_value(self.chain, input)?;
+        let params = get_transaction_params(self.chain, input)?;
 
         let nonce = input.metadata.get_sequence()?;
         let chain_id = input.metadata.get_chain_id()?.parse::<u64>()?;
@@ -47,10 +45,10 @@ impl<C: Client + Clone> OptimismGasOracle<C> {
                     let parsed_value = BigInt::from_str_radix(&input.value, 10)?;
                     parsed_value - gas_limit * &input.gas_price.gas_price()
                 } else {
-                    value
+                    params.value
                 }
             }
-            _ => value,
+            _ => params.value,
         };
 
         let encoded = self.encode_transaction_for_l1_fee(
@@ -58,8 +56,8 @@ impl<C: Client + Clone> OptimismGasOracle<C> {
             &input.gas_price.gas_price(),
             &input.gas_price.priority_fee(),
             nonce,
-            Some(&data),
-            &to,
+            Some(&params.data),
+            &params.to,
             chain_id,
             Some(&adjusted_value),
             input,

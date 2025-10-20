@@ -30,4 +30,5 @@ pub struct ProxyQuoteRequest {
     pub from_value: String,
     pub referral_bps: u32,
     pub slippage_bps: u32,
+    pub use_max_amount: bool,
 }

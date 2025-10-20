@@ -252,12 +252,12 @@ impl Swapper for UniswapV3 {
         let wrap_input_eth = request.from_asset.is_native();
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
 
-        Ok(SwapperQuoteData {
-            to: deployment.universal_router.into(),
+        Ok(SwapperQuoteData::new_contract(
+            deployment.universal_router.into(),
             value,
-            data: HexEncode(encoded),
+            HexEncode(encoded),
             approval,
             gas_limit,
-        })
+        ))
     }
 }

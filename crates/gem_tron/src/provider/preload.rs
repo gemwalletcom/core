@@ -66,12 +66,12 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
             TransactionInputType::Stake(_asset, stake_type) => {
                 TransactionFee::new_from_fee(calculate_stake_fee_rate(&chain_parameters, &account_usage, stake_type)?)
             }
-            TransactionInputType::Swap(from_asset, _swap_type, _swap_data) => match &from_asset.id.token_id {
-                None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, false)?),
+            TransactionInputType::Swap(from_asset, _, swap_data) => match &from_asset.id.token_id {
+                None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
                 Some(token_id) => {
                     self.estimate_token_transfer_fee(
                         input.sender_address.clone(),
-                        input.destination_address.clone(),
+                        swap_data.data.to.clone(),
                         token_id.clone(),
                         input.value.clone(),
                         &chain_parameters,
@@ -113,12 +113,13 @@ impl<C: Client> TronClient<C> {
 
     async fn get_is_new_account_for_input_type(&self, address: &str, input_type: TransactionInputType) -> Result<bool, Box<dyn Error + Send + Sync>> {
         match input_type {
-            TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
-                match asset.id.token_subtype() {
-                    AssetSubtype::NATIVE => Ok(self.is_new_account(address).await?),
-                    AssetSubtype::TOKEN => Ok(false),
-                }
-            }
+            TransactionInputType::Transfer(asset)
+            | TransactionInputType::TransferNft(asset, _)
+            | TransactionInputType::Account(asset, _)
+            | TransactionInputType::Swap(asset, _, _) => match asset.id.token_subtype() {
+                AssetSubtype::NATIVE => Ok(self.is_new_account(address).await?),
+                AssetSubtype::TOKEN => Ok(false),
+            },
             _ => Ok(false),
         }
     }

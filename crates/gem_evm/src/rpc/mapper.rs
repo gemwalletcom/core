@@ -201,7 +201,7 @@ impl EthereumMapper {
         }
 
         // Try to decode BSC staking transaction
-        if let Some(tx) = StakingMapper::map_transaction(&chain, transaction, transaction_reciept, created_at) {
+        if let Some(tx) = StakingMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at) {
             return Some(tx);
         }
 
@@ -424,7 +424,7 @@ mod tests {
         assert_eq!(tx.from, "0x8D25Fb438C6efCD08679ffA82766869B50E24608");
         assert_eq!(tx.to, "0x0700572b54ccA24Dad0eD4Cdad2c3d3ab6dB652a");
         assert_eq!(tx.value, "2739900000000000000");
-        assert_eq!(tx.id, "ethereum_0x0c0626172dbba6984a2e95b3abf1caba39cf11d3c9bc99d7de9ac814671c0cb1".to_string());
+        assert_eq!(tx.id.to_string(), "ethereum_0x0c0626172dbba6984a2e95b3abf1caba39cf11d3c9bc99d7de9ac814671c0cb1");
     }
 
     #[test]

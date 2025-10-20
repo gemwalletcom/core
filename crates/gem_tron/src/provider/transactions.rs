@@ -64,8 +64,8 @@ mod chain_integration_tests {
         assert!(!transactions.is_empty());
 
         if let Some(transaction) = transactions.first() {
-            println!("First transaction ID: {}", transaction.id);
-            assert!(!transaction.id.is_empty());
+            println!("First transaction ID: {}", transaction.id.hash);
+            assert!(!transaction.id.hash.is_empty());
         }
     }
 

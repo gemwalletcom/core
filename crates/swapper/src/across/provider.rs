@@ -512,15 +512,13 @@ impl Swapper for Across {
             gas_limit = Some(_gas_limit.to_string());
         }
 
-        let quote_data = SwapperQuoteData {
-            to: deployment.spoke_pool.into(),
-            value: value.to_string(),
-            data: HexEncode(deposit_v3_call.clone()),
+        Ok(SwapperQuoteData::new_contract(
+            deployment.spoke_pool.into(),
+            value.to_string(),
+            HexEncode(deposit_v3_call.clone()),
             approval,
             gas_limit,
-        };
-
-        Ok(quote_data)
+        ))
     }
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         let api = AcrossApi::new(self.rpc_provider.clone());
@@ -619,6 +617,7 @@ mod tests {
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
                 preferred_providers: vec![],
+                use_max_amount: false,
             };
             options.fee.as_mut().unwrap().evm_bridge = ReferralFee {
                 bps: 25,

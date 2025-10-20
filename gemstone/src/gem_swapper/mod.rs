@@ -49,7 +49,7 @@ impl GemSwapper {
         self.inner.fetch_permit2_for_quote(quote).await
     }
 
-    pub async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    pub async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
         self.inner.fetch_quote_data(quote, data).await
     }
 

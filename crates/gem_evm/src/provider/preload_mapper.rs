@@ -6,8 +6,9 @@ use alloy_sol_types::SolCall;
 use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
 use num_traits::Num;
+use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
 };
 
 use crate::contracts::IERC20;
@@ -17,6 +18,18 @@ use crate::models::fee::EthereumFeeHistory;
 
 const GAS_LIMIT_PERCENT_INCREASE: u32 = 50;
 const GAS_LIMIT_21000: u64 = 21000;
+
+pub struct TransactionParams {
+    pub to: String,
+    pub data: Vec<u8>,
+    pub value: BigInt,
+}
+
+impl TransactionParams {
+    pub fn new(to: String, data: Vec<u8>, value: BigInt) -> Self {
+        Self { to, data, value }
+    }
+}
 
 pub fn bigint_to_hex_string(value: &BigInt) -> String {
     format!("0x{:x}", value)
@@ -53,101 +66,85 @@ pub fn map_transaction_fee_rates(chain: EVMChain, fee_history: &EthereumFeeHisto
         .collect())
 }
 
-pub fn get_transaction_data(chain: EVMChain, input: &TransactionLoadInput) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    match &input.input_type {
-        TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => {
-            if asset.id.is_native() {
-                Ok(vec![])
-            } else {
-                let value = BigInt::from_str_radix(&input.value, 10)?;
-                Ok(encode_erc20_transfer(&input.destination_address, &value)?)
-            }
-        }
-        TransactionInputType::TransferNft(_, _) => Err("Unsupported transfer type".into()),
-        TransactionInputType::Swap(_, _, swap_data) => {
-            if let Some(approval) = &swap_data.data.approval {
-                Ok(encode_erc20_approve(&approval.spender)?)
-            } else {
-                Ok(alloy_primitives::hex::decode(&swap_data.data.data)?)
-            }
-        }
-        TransactionInputType::TokenApprove(_, approval) => Ok(encode_erc20_approve(&approval.spender)?),
-        TransactionInputType::Generic(_, _, extra) => Ok(extra.data.clone().unwrap_or_default()),
-        TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
-            Chain::SmartChain => encode_stake_hub(stake_type, &BigInt::from_str_radix(&input.value, 10)?),
-            Chain::Ethereum => encode_everstake(stake_type, &BigInt::from_str_radix(&input.value, 10)?),
-            _ => Err("Unsupported chain for staking".into()),
-        },
-        _ => Err("Unsupported transfer type".into()),
-    }
-}
-
-pub fn get_transaction_to(chain: EVMChain, input: &TransactionLoadInput) -> Result<String, Box<dyn Error + Send + Sync>> {
-    match &input.input_type {
-        TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => {
-            if asset.id.is_native() {
-                Ok(input.destination_address.clone())
-            } else {
-                Ok(asset.token_id.as_ref().ok_or("Missing token ID")?.clone())
-            }
-        }
-        TransactionInputType::Swap(_, _, swap_data) => {
-            if let Some(approval) = &swap_data.data.approval {
-                Ok(approval.token.clone())
-            } else {
-                Ok(input.destination_address.clone())
-            }
-        }
-        TransactionInputType::TransferNft(_, _) => Err("Unsupported transfer type".into()),
-        TransactionInputType::TokenApprove(_, approval) => Ok(approval.token.clone()),
-        TransactionInputType::Generic(_, _, _) => Ok(input.destination_address.clone()),
-        TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
-            Chain::SmartChain => Ok(STAKE_HUB_ADDRESS.to_string()),
-            Chain::Ethereum => match stake_type {
-                StakeType::Stake(_) | StakeType::Unstake(_) => Ok(EVERSTAKE_POOL_ADDRESS.to_string()),
-                StakeType::Withdraw(_) => Ok(EVERSTAKE_ACCOUNTING_ADDRESS.to_string()),
-                _ => Err("Unsupported stake type".into()),
-            },
-            _ => Err("Unsupported chain for staking".into()),
-        },
-        _ => Err("Unsupported transfer type".into()),
-    }
-}
-
-pub fn get_transaction_value(chain: EVMChain, input: &TransactionLoadInput) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
+pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> Result<TransactionParams, Box<dyn Error + Send + Sync>> {
     let value = BigInt::from_str_radix(&input.value, 10)?;
 
     match &input.input_type {
-        TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => {
-            if asset.id.is_native() {
-                Ok(value)
-            } else {
-                Ok(BigInt::from(0))
+        TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => match asset.id.token_subtype() {
+            AssetSubtype::NATIVE => Ok(TransactionParams::new(input.destination_address.clone(), vec![], value)),
+            AssetSubtype::TOKEN => {
+                let to = asset.token_id.as_ref().ok_or("Missing token ID")?.clone();
+                let value = BigInt::from_str_radix(&input.value, 10)?;
+                let data = encode_erc20_transfer(&input.destination_address, &value)?;
+                Ok(TransactionParams::new(to, data, BigInt::from(0)))
             }
-        }
-        TransactionInputType::Swap(_, _, swap_data) => {
-            if swap_data.data.approval.is_some() {
-                Ok(BigInt::from(0))
-            } else {
-                BigInt::from_str_radix(&swap_data.data.value, 10).map_err(|e| e.to_string().into())
-            }
-        }
-        TransactionInputType::TransferNft(_, _) => Ok(BigInt::from(0)),
-        TransactionInputType::TokenApprove(_, _) => Ok(BigInt::from(0)),
-        TransactionInputType::Generic(_, _, _) => Ok(value),
-        TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
-            Chain::SmartChain => match stake_type {
-                StakeType::Stake(_) => Ok(value),
-                StakeType::Unstake(_) | StakeType::Redelegate(_) | StakeType::Withdraw(_) => Ok(BigInt::from(0)),
-                _ => Ok(BigInt::from(0)),
-            },
-            Chain::Ethereum => match stake_type {
-                StakeType::Stake(_) => Ok(value),
-                _ => Ok(BigInt::from(0)),
-            },
-            _ => Ok(BigInt::from(0)),
         },
-        _ => Ok(BigInt::from(0)),
+        TransactionInputType::TransferNft(_, _) => Err("Unsupported transfer type".into()),
+        TransactionInputType::Swap(from_asset, _, swap_data) => {
+            if let Some(approval) = &swap_data.data.approval {
+                Ok(TransactionParams::new(
+                    approval.token.clone(),
+                    encode_erc20_approve(&approval.spender)?,
+                    BigInt::from(0),
+                ))
+            } else {
+                match from_asset.id.token_subtype() {
+                    AssetSubtype::NATIVE => Ok(TransactionParams::new(
+                        swap_data.data.to.clone(),
+                        alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                        BigInt::from_str_radix(&swap_data.data.value, 10)?,
+                    )),
+                    AssetSubtype::TOKEN => match swap_data.data.data_type {
+                        SwapQuoteDataType::Contract => Ok(TransactionParams::new(
+                            swap_data.data.to.clone(),
+                            alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                            BigInt::from_str_radix(&swap_data.data.value, 10)?,
+                        )),
+                        SwapQuoteDataType::Transfer => {
+                            let to = from_asset.token_id.clone().ok_or("Missing token ID")?.clone();
+                            let data = encode_erc20_transfer(&swap_data.data.to.clone(), &BigInt::from_str_radix(&input.value, 10)?)?;
+                            Ok(TransactionParams::new(to, data, BigInt::ZERO))
+                        }
+                    },
+                }
+            }
+        }
+        TransactionInputType::TokenApprove(_, approval) => Ok(TransactionParams::new(
+            approval.token.clone(),
+            encode_erc20_approve(&approval.spender)?,
+            BigInt::from(0),
+        )),
+        TransactionInputType::Generic(_, _, extra) => Ok(TransactionParams::new(
+            extra.to.clone(),
+            extra.data.clone().unwrap_or_default(),
+            BigInt::from_str_radix(&input.value, 10)?,
+        )),
+        TransactionInputType::Stake(_, stake_type) => match chain.to_chain() {
+            Chain::SmartChain => {
+                let data = encode_stake_hub(stake_type, &BigInt::from_str_radix(&input.value, 10)?)?;
+                let value = match stake_type {
+                    StakeType::Stake(_) => value,
+                    StakeType::Unstake(_) | StakeType::Redelegate(_) | StakeType::Withdraw(_) => BigInt::from(0),
+                    _ => BigInt::from(0),
+                };
+                Ok(TransactionParams::new(STAKE_HUB_ADDRESS.to_string(), data, value))
+            }
+            Chain::Ethereum => {
+                let to = match stake_type {
+                    StakeType::Stake(_) | StakeType::Unstake(_) => EVERSTAKE_POOL_ADDRESS.to_string(),
+                    StakeType::Withdraw(_) => EVERSTAKE_ACCOUNTING_ADDRESS.to_string(),
+                    _ => return Err("Unsupported stake type".into()),
+                };
+                let data = encode_everstake(stake_type, &BigInt::from_str_radix(&input.value, 10)?)?;
+                let value = match stake_type {
+                    StakeType::Stake(_) => value,
+                    _ => BigInt::from(0),
+                };
+                Ok(TransactionParams::new(to, data, value))
+            }
+            _ => Err("Unsupported chain for staking".into()),
+        },
+        _ => Err("Unsupported transfer type".into()),
     }
 }
 

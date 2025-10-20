@@ -9,9 +9,11 @@ pub mod message;
 pub mod models;
 pub mod network;
 pub mod payment;
+pub mod signer;
 pub mod sui;
 pub mod wallet_connect;
 
+use ::signer::SignerError;
 use alien::AlienError;
 
 uniffi::setup_scaffolding!("gemstone");
@@ -70,6 +72,12 @@ impl From<primitives::payment_decoder::PaymentDecoderError> for GemstoneError {
 
 impl From<AlienError> for GemstoneError {
     fn from(error: AlienError) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<SignerError> for GemstoneError {
+    fn from(error: SignerError) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }

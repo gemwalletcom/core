@@ -273,32 +273,20 @@ where
                     None
                 };
 
-                Ok(SwapperQuoteData {
-                    to: response.to,
-                    value,
-                    data: response.calldata,
-                    approval,
-                    gas_limit,
-                })
+                Ok(SwapperQuoteData::new_contract(response.to, value, response.calldata, approval, gas_limit))
             }
-            VaultSwapResponse::Bitcoin(response) => Ok(SwapperQuoteData {
-                to: response.deposit_address,
-                value: quote.request.value.clone(),
-                data: response.nulldata_payload,
-                approval: None,
-                gas_limit: None,
-            }),
+            VaultSwapResponse::Bitcoin(response) => Ok(SwapperQuoteData::new_contract(
+                response.deposit_address,
+                quote.request.value.clone(),
+                response.nulldata_payload,
+                None,
+                None,
+            )),
             VaultSwapResponse::Solana(response) => {
                 let data = tx_builder::build_solana_tx(&quote.request.wallet_address, &response, self.rpc_provider.clone())
                     .await
                     .map_err(SwapperError::TransactionError)?;
-                Ok(SwapperQuoteData {
-                    to: response.program_id,
-                    value: "".into(),
-                    data,
-                    approval: None,
-                    gas_limit: None,
-                })
+                Ok(SwapperQuoteData::new_contract(response.program_id, "".into(), data, None, None))
             }
         }
     }

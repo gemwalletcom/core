@@ -5,6 +5,7 @@ use crate::{GasPriceType, TransferDataOutputAction, TransferDataOutputType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransferDataExtra {
+    pub to: String,
     pub gas_limit: Option<BigInt>,
     pub gas_price: Option<GasPriceType>,
     pub data: Option<Vec<u8>>,
@@ -15,6 +16,7 @@ pub struct TransferDataExtra {
 impl Default for TransferDataExtra {
     fn default() -> Self {
         Self {
+            to: "".to_string(),
             gas_limit: None,
             gas_price: None,
             data: None,

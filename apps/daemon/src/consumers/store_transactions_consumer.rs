@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error, sync::Arc};
 
 use async_trait::async_trait;
-use primitives::{AssetIdVecExt, Transaction};
+use primitives::{AssetIdVecExt, Transaction, TransactionId};
 use storage::{DatabaseClient, models};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 use tokio::sync::Mutex;
@@ -29,7 +29,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
         let subscriptions = self.database.lock().await.subscriptions().get_subscriptions(chain, addresses)?;
 
-        let mut transactions_map: HashMap<String, Transaction> = HashMap::new();
+        let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
         let mut fetch_assets_payload: Vec<AssetId> = Vec::new();
         let mut notifications_payload: Vec<NotificationsPayload> = Vec::new();
         let mut address_assets_payload: Vec<AssetsAddressPayload> = Vec::new();
@@ -114,7 +114,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 }
 
 impl StoreTransactionsConsumer {
-    async fn store_transactions(&mut self, transactions: HashMap<String, Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn store_transactions(&mut self, transactions: HashMap<TransactionId, Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let transactions_asset_ids: Vec<String> = transactions.values().flat_map(|x| x.asset_ids().ids()).collect();
         let enabled_asset_ids: HashSet<String> = self
             .database

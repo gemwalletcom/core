@@ -1,5 +1,7 @@
 // lib.rs
 
+pub type UInt64 = u64;
+
 pub mod chain;
 pub use self::chain::Chain;
 pub mod chain_stake;
