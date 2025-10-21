@@ -368,8 +368,10 @@ mod tests {
         let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(chain));
         let to_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near));
 
-        let mut options = Options::default();
-        options.use_max_amount = use_max;
+        let options = Options {
+            use_max_amount: use_max,
+            ..Default::default()
+        };
 
         QuoteRequest {
             from_asset,

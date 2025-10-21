@@ -1,0 +1,11 @@
+[package]
+name = "signer"
+version = "1.0.0"
+edition = { workspace = true }
+
+[dependencies]
+ed25519-dalek = { version = "2.1.1", default-features = false, features = ["std"] }
+k256 = { workspace = true }
+sui-types = { workspace = true, features = ["hash"] }
+base64 = { workspace = true }
+hex = { workspace = true }

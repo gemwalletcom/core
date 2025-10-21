@@ -29,3 +29,4 @@ serde_serializers = { path = "../serde_serializers" }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }
+primitives = { path = "../primitives", features = ["testkit"] }
