@@ -1,11 +1,11 @@
 use std::error::Error;
 
-use crate::models::AccountResult;
 use crate::models::account::Account;
 use crate::models::common::{Embedded, StellarAsset, StellarEmbedded};
 use crate::models::fee::StellarFees;
 use crate::models::node::NodeStatus;
 use crate::models::transaction::{Payment, StellarTransactionBroadcast, StellarTransactionStatus};
+use crate::models::{AccountEmpty, AccountResult};
 
 use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
 use gem_client::{Client, ClientError, ContentType};
@@ -64,10 +64,10 @@ impl<C: Client> StellarClient<C> {
     }
 
     pub async fn account_exists(&self, address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        match self.get_account(address.to_string()).await {
-            Ok(AccountResult::Found(_)) => Ok(true),
-            Ok(AccountResult::NotFound) => Ok(false),
-            Err(e) => Err(e),
+        match self.client.get::<AccountEmpty>(&format!("/accounts/{}", address)).await {
+            Ok(account) => Ok(account.id.is_some()),
+            Err(ClientError::Http { status: 404, .. }) => Ok(false),
+            Err(e) => Err(Box::new(e)),
         }
     }
 

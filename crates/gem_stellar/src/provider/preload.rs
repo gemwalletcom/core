@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
 use futures;
+use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
@@ -32,11 +33,7 @@ impl<C: Client> ChainTransactionLoad for StellarClient<C> {
         let fee = if input.metadata.get_is_destination_address_exist()? {
             input.default_fee()
         } else {
-            TransactionFee::new_from_fee_with_option(
-                input.gas_price.gas_price(),
-                FeeOption::TokenAccountCreation,
-                self.chain.account_activation_fee().unwrap_or(0).into(),
-            )
+            TransactionFee::new_from_fee_with_option(input.gas_price.gas_price(), FeeOption::TokenAccountCreation, BigInt::ZERO)
         };
 
         Ok(TransactionLoadData { fee, metadata: input.metadata })
@@ -150,11 +147,11 @@ mod chain_integration_tests {
 
         let load_data = client.get_transaction_load(load_input).await?;
 
-        assert!(load_data.fee.fee > num_bigint::BigInt::from(0));
+        assert!(load_data.fee.fee == num_bigint::BigInt::from(100));
         assert!(load_data.fee.options.contains_key(&primitives::FeeOption::TokenAccountCreation));
         assert_eq!(
             load_data.fee.options.get(&primitives::FeeOption::TokenAccountCreation),
-            Some(&num_bigint::BigInt::from(10_000_000))
+            Some(&num_bigint::BigInt::from(0))
         );
         assert!(load_data.metadata.get_sequence()? > 0);
 

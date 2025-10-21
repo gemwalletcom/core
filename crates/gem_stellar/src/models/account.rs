@@ -9,6 +9,11 @@ pub struct Account {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AccountEmpty {
+    pub id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Balance {
     pub balance: String,
     pub asset_type: String,
