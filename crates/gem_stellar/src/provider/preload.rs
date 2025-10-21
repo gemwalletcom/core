@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
 use futures;
-use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
@@ -33,7 +32,11 @@ impl<C: Client> ChainTransactionLoad for StellarClient<C> {
         let fee = if input.metadata.get_is_destination_address_exist()? {
             input.default_fee()
         } else {
-            TransactionFee::new_from_fee_with_option(input.gas_price.gas_price(), FeeOption::TokenAccountCreation, BigInt::from(0))
+            TransactionFee::new_from_fee_with_option(
+                input.gas_price.gas_price(),
+                FeeOption::TokenAccountCreation,
+                self.chain.account_activation_fee().unwrap_or(0).into(),
+            )
         };
 
         Ok(TransactionLoadData { fee, metadata: input.metadata })
@@ -52,31 +55,108 @@ impl<C: Client> ChainTransactionLoad for StellarClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, create_test_client};
-    use primitives::{AssetType, Chain, TransactionInputType, TransactionPreloadInput};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_EMPTY_ADDRESS, create_test_client};
+    use primitives::{Asset, Chain, TransactionInputType, TransactionPreloadInput};
 
     #[tokio::test]
     async fn test_stellar_get_transaction_preload() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
 
         let input = TransactionPreloadInput {
-            input_type: TransactionInputType::Transfer(Chain::Stellar.new_asset("Stellar".to_string(), "XLM".to_string(), 7, AssetType::NATIVE)),
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Stellar)),
             sender_address: TEST_ADDRESS.to_string(),
             destination_address: TEST_ADDRESS.to_string(),
         };
 
         let metadata = client.get_transaction_preload(input).await?;
 
-        if let TransactionLoadMetadata::Stellar {
-            sequence,
-            is_destination_address_exist,
-        } = metadata
-        {
-            assert!(sequence > 0, "Sequence should be greater than 0 for existing account");
-            assert!(is_destination_address_exist, "Destination address should exist");
-        } else {
-            panic!("Expected Stellar metadata");
-        }
+        assert!(metadata.get_sequence()? > 0);
+        assert!(metadata.get_is_destination_address_exist()?);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_stellar_get_transaction_preload_empty_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+
+        let input = TransactionPreloadInput {
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Stellar)),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_EMPTY_ADDRESS.to_string(),
+        };
+
+        let metadata = client.get_transaction_preload(input).await?;
+
+        assert!(metadata.get_sequence()? > 0);
+        assert!(!metadata.get_is_destination_address_exist()?);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_stellar_get_transaction_load() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+
+        let preload_input = TransactionPreloadInput {
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Stellar)),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
+        };
+
+        let metadata = client.get_transaction_preload(preload_input).await?;
+
+        let load_input = TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Stellar)),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_ADDRESS.to_string(),
+            value: "1000000".to_string(),
+            gas_price: primitives::GasPriceType::regular(100),
+            memo: None,
+            is_max_value: false,
+            metadata,
+        };
+
+        let load_data = client.get_transaction_load(load_input).await?;
+
+        assert!(load_data.fee.fee > num_bigint::BigInt::from(0));
+        assert!(load_data.metadata.get_sequence()? > 0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_stellar_get_transaction_load_empty_destination() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_test_client();
+
+        let preload_input = TransactionPreloadInput {
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Stellar)),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_EMPTY_ADDRESS.to_string(),
+        };
+
+        let metadata = client.get_transaction_preload(preload_input).await?;
+
+        let load_input = TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Stellar)),
+            sender_address: TEST_ADDRESS.to_string(),
+            destination_address: TEST_EMPTY_ADDRESS.to_string(),
+            value: "1000000".to_string(),
+            gas_price: primitives::GasPriceType::regular(100),
+            memo: None,
+            is_max_value: false,
+            metadata,
+        };
+
+        let load_data = client.get_transaction_load(load_input).await?;
+
+        assert!(load_data.fee.fee > num_bigint::BigInt::from(0));
+        assert!(load_data.fee.options.contains_key(&primitives::FeeOption::TokenAccountCreation));
+        assert_eq!(
+            load_data.fee.options.get(&primitives::FeeOption::TokenAccountCreation),
+            Some(&num_bigint::BigInt::from(10_000_000))
+        );
+        assert!(load_data.metadata.get_sequence()? > 0);
 
         Ok(())
     }
