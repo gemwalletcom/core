@@ -107,8 +107,36 @@ pub enum AccountDataType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct CancelOrderData {
+    pub asset_index: i32,
+    pub order_id: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(tag = "type", content = "content")]
+pub enum PerpetualModifyType {
+    Tp { direction: PerpetualDirection, price: String, size: String },
+    Sl { direction: PerpetualDirection, price: String, size: String },
+    Tpsl { direction: PerpetualDirection, take_profit: String, stop_loss: String, size: String },
+    Cancel { orders: Vec<CancelOrderData> },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PerpetualModifyConfirmData {
+    pub base_asset: Asset,
+    pub asset_index: i32,
+    pub modify_type: PerpetualModifyType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(tag = "type", content = "content")]
 pub enum PerpetualType {
     Open(PerpetualConfirmData),
     Close(PerpetualConfirmData),
+    Modify(PerpetualModifyConfirmData),
 }

@@ -221,9 +221,9 @@ pub fn make_position_tp_sl(
         let sl_execution_price = calculate_execution_price(&sl_trigger_px, false); // Position orders: subtract slippage
         orders.push(make_trigger_order(
             asset,
-            is_buy,
+            !is_buy,
             &sl_execution_price,
-            size,
+            size, // Note: "0" means apply to entire position
             true,
             sl_trigger_px,
             TpslType::StopLoss,
@@ -234,9 +234,9 @@ pub fn make_position_tp_sl(
         let tp_execution_price = calculate_execution_price(&tp_trigger_px, false); // Position orders: subtract slippage
         orders.push(make_trigger_order(
             asset,
-            is_buy,
+            !is_buy,
             &tp_execution_price,
-            size,
+            size, // Note: "0" means apply to entire position
             true,
             tp_trigger_px,
             TpslType::TakeProfit,

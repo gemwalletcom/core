@@ -50,8 +50,8 @@ impl HyperCoreModelFactory {
         asset: u32,
         is_buy: bool,
         size: String,
-        tp_trigger: String,
-        sl_trigger: String,
+        tp_trigger: Option<String>,
+        sl_trigger: Option<String>,
         builder: Option<HyperBuilder>,
     ) -> HyperPlaceOrder {
         hyper_make_position_tp_sl(asset, is_buy, size, tp_trigger, sl_trigger, builder)
@@ -288,9 +288,24 @@ impl HyperCore {
         )
     }
 
+    pub fn sign_cancel_order(&self, cancel: HyperCancel, nonce: u64, private_key: Vec<u8>) -> Result<String, AlienError> {
+        sign_serialized_action(
+            self,
+            cancel,
+            nonce,
+            private_key,
+            |value| hyper_core_cancel_order_typed_data(value, nonce),
+            "cancel order",
+        )
+    }
+
     // EIP-712 typed data generation methods
     pub fn place_order_typed_data(&self, order: HyperPlaceOrder, nonce: u64) -> String {
         hyper_core_place_order_typed_data(order, nonce)
+    }
+
+    pub fn cancel_order_typed_data(&self, cancel: HyperCancel, nonce: u64) -> String {
+        hyper_core_cancel_order_typed_data(cancel, nonce)
     }
 
     pub fn set_referrer_typed_data(&self, referrer: HyperSetReferrer, nonce: u64) -> String {

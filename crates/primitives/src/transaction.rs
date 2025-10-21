@@ -286,7 +286,8 @@ impl Transaction {
             | TransactionType::TransferNFT
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition => vec![self.asset_id.clone()],
+            | TransactionType::PerpetualClosePosition
+            | TransactionType::PerpetualModify => vec![self.asset_id.clone()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
@@ -311,7 +312,8 @@ impl Transaction {
             | TransactionType::TransferNFT
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
+            | TransactionType::PerpetualClosePosition
+            | TransactionType::PerpetualModify => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
             TransactionType::Swap => self
                 .metadata
                 .clone()

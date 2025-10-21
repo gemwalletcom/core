@@ -213,6 +213,10 @@ pub fn hyper_core_place_order_typed_data(order: HyperPlaceOrder, nonce: u64) -> 
     hypercore::place_order_typed_data(order, nonce)
 }
 
+pub fn hyper_core_cancel_order_typed_data(cancel: HyperCancel, nonce: u64) -> String {
+    hypercore::cancel_order_typed_data(cancel, nonce)
+}
+
 pub fn hyper_core_set_referrer_typed_data(referrer: HyperSetReferrer, nonce: u64) -> String {
     hypercore::set_referrer_typed_data(referrer, nonce)
 }
@@ -298,11 +302,11 @@ pub fn hyper_make_position_tp_sl(
     asset: u32,
     is_buy: bool,
     size: String,
-    tp_trigger: String,
-    sl_trigger: String,
+    tp_trigger: Option<String>,
+    sl_trigger: Option<String>,
     builder: Option<HyperBuilder>,
 ) -> HyperPlaceOrder {
-    actions::make_position_tp_sl(asset, is_buy, &size, Some(tp_trigger), Some(sl_trigger), builder)
+    actions::make_position_tp_sl(asset, is_buy, &size, tp_trigger, sl_trigger, builder)
 }
 
 pub fn hyper_make_withdraw(amount: String, address: String, time: u64) -> HyperWithdrawalRequest {
