@@ -1,16 +1,14 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
 use futures;
-use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput,
+    FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
 };
 
-use crate::{models::AccountResult, rpc::client::StellarClient};
+use crate::{models::AccountResult, provider::preload_mapper::map_transaction_load, rpc::client::StellarClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactionLoad for StellarClient<C> {
@@ -30,13 +28,7 @@ impl<C: Client> ChainTransactionLoad for StellarClient<C> {
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        let fee = if input.metadata.get_is_destination_address_exist()? {
-            input.default_fee()
-        } else {
-            TransactionFee::new_from_fee_with_option(input.gas_price.gas_price(), FeeOption::TokenAccountCreation, BigInt::ZERO)
-        };
-
-        Ok(TransactionLoadData { fee, metadata: input.metadata })
+        map_transaction_load(input)
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
@@ -138,7 +130,7 @@ mod chain_integration_tests {
             input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Stellar)),
             sender_address: TEST_ADDRESS.to_string(),
             destination_address: TEST_EMPTY_ADDRESS.to_string(),
-            value: "1000000".to_string(),
+            value: "15000000".to_string(),
             gas_price: primitives::GasPriceType::regular(100),
             memo: None,
             is_max_value: false,
@@ -147,12 +139,7 @@ mod chain_integration_tests {
 
         let load_data = client.get_transaction_load(load_input).await?;
 
-        assert!(load_data.fee.fee == num_bigint::BigInt::from(100));
-        assert!(load_data.fee.options.contains_key(&primitives::FeeOption::TokenAccountCreation));
-        assert_eq!(
-            load_data.fee.options.get(&primitives::FeeOption::TokenAccountCreation),
-            Some(&num_bigint::BigInt::from(0))
-        );
+        assert_eq!(load_data.fee.fee, num_bigint::BigInt::from(100));
         assert!(load_data.metadata.get_sequence()? > 0);
 
         Ok(())
