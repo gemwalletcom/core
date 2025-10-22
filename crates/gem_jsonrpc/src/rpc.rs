@@ -3,7 +3,13 @@ use gem_client::{Client, ClientError, ContentType};
 use primitives::Chain;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json;
-use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fmt::{Debug, Display},
+    str::FromStr,
+    sync::Arc,
+};
 
 pub const X_CACHE_TTL: &str = "x-cache-ttl";
 
@@ -13,7 +19,7 @@ pub struct RpcResponse {
     pub data: Vec<u8>,
 }
 
-pub trait RpcClientError: std::error::Error + Send + Sync + 'static + std::fmt::Display + Sized {
+pub trait RpcClientError: Error + Send + Sync + 'static + Display + Sized {
     fn into_client_error(self) -> ClientError {
         ClientError::Network(format!("RPC provider error: {}", self))
     }

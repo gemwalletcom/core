@@ -40,7 +40,7 @@ impl GenericRpcProvider for ProviderMock {
 
     async fn request(&self, target: Target) -> Result<RpcResponse, Self::Error> {
         Ok(RpcResponse {
-            status: None,
+            status: Some(200),
             data: (self.response.0)(target).into_bytes(),
         })
     }
