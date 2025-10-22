@@ -287,7 +287,7 @@ impl HyperCore {
         )
     }
 
-    pub fn sign_cancel_order(&self, cancel: HyperCancel, nonce: u64, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_cancel_order(&self, cancel: HyperCancel, nonce: u64, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         sign_serialized_action(
             self,
             cancel,
