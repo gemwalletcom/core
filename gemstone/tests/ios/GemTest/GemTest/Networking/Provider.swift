@@ -36,46 +36,23 @@ extension NativeProvider: AlienProvider {
         return url.absoluteString
     }
 
-    public func request(target: Gemstone.AlienTarget) async throws -> Data {
-        let results = try await self.batchRequest(targets: [target])
-        guard
-            results.count == 1
-        else {
-            throw AlienError.ResponseError(msg: "invalid response: \(target)")
+    public func request(target: Gemstone.AlienTarget) async throws -> Gemstone.AlienResponse {
+        print("==> handle request: \(target)")
+
+        if let data = await self.cache.get(key: target) {
+            print("<== cached response size: \(data.count)")
+            return Gemstone.AlienResponse(status: nil, data: data)
         }
-        return results[0]
-    }
 
-    public func batchRequest(targets: [AlienTarget]) async throws -> [Data] {
-        return try await withThrowingTaskGroup(of: Data.self) { group in
-            var results = [Data]()
+        let (data, response) = try await self.session.data(for: target.asRequest())
+        let status = (response as? HTTPURLResponse)?.statusCode
 
-            for target in targets {
-                group.addTask {
-                    print("==> handle request: \(target)")
-                    if let data = await self.cache.get(key: target) {
-                        print("<== cached response size: \(data.count)")
-                        return data
-                    }
+        print("<== response size: \(data.count)")
 
-                    let (data, response) = try await self.session.data(for: target.asRequest())
-                    if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
-                        throw AlienError.Http(status: UInt16(httpResponse.statusCode), len: UInt64(data.count))
-                    }
-                    print("<== response size: \(data.count)")
-
-                    // save cache
-                    if let ttl = target.headers?["x-cache-ttl"] {
-                        await self.cache.set(value: data, forKey: target, ttl: TimeInterval(ttl))
-                    }
-                    return data
-                }
-            }
-            for try await result in group {
-                results.append(result)
-            }
-
-            return results
+        if let ttl = target.headers?["x-cache-ttl"] {
+            await self.cache.set(value: data, forKey: target, ttl: TimeInterval(ttl))
         }
+
+        return Gemstone.AlienResponse(status: status.map(UInt16.init), data: data)
     }
 }

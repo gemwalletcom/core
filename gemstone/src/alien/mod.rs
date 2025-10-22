@@ -10,4 +10,4 @@ pub use client::{AlienClient, new_alien_client};
 pub use error::AlienError;
 pub use provider::{AlienProvider, AlienProviderWrapper};
 pub use signer::AlienSigner;
-pub use target::{AlienHttpMethod, AlienTarget, X_CACHE_TTL};
+pub use target::{AlienHttpMethod, AlienResponse, AlienTarget, X_CACHE_TTL};

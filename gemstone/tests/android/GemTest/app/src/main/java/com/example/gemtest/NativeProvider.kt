@@ -20,29 +20,25 @@ class NativeProvider: AlienProvider {
         return "http://localhost:8080"
     }
 
-    override suspend fun request(targets: List<AlienTarget>): List<ByteArray> {
-        val results = mutableListOf<ByteArray>()
-        for (target in targets) {
-            val parsedUrl = parseUrl(target.url) ?: throw Exception("Invalid url: ${target.url}")
-            val response = client.request {
-                method = HttpMethod(target.method)
-                url {
-                    protocolOrNull = parsedUrl.protocol
-                    host = parsedUrl.host
-                    path(parsedUrl.encodedPath)
-                    parameters.appendAll(parsedUrl.parameters)
-                }
-                headers {
-                    for ((key, value) in target.headers ?: HashMap<String, String>()) {
-                        append(key, value)
-                    }
-                }
-                setBody(
-                    target.body ?: ""
-                )
-            }
-            results.add(response.body())
+    override suspend fun request(target: AlienTarget): AlienResponse {
+        val parsedUrl = try {
+            Url(target.url)
+        } catch (e: Throwable) {
+            throw AlienError.RequestError("invalid url: ${target.url}")
         }
-        return results
+
+        val response = client.request {
+            method = HttpMethod(target.method)
+            url.takeFrom(parsedUrl)
+            headers {
+                target.headers?.forEach { (key, value) -> append(key, value) }
+            }
+            target.body?.let { setBody(it) }
+        }
+
+        val bytes: ByteArray = response.body()
+        val status = response.status.value
+
+        return AlienResponse(status.toUShort(), bytes)
     }
 }

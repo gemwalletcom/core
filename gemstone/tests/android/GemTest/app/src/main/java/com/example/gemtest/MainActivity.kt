@@ -13,7 +13,7 @@ import com.example.gemtest.ui.theme.GemTestTheme
 import kotlinx.coroutines.runBlocking
 import uniffi.gemstone.*
 
-val Warp = AlienProviderWarp(NativeProvider())
+private val nativeProvider = NativeProvider()
 
 class MainActivity : ComponentActivity() {
 
@@ -64,8 +64,8 @@ fun fetchData() {
             ),
             body = null
         )
-        val data = Warp.teleport(listOf(target))
-        println(String(data[0]))
+        val response = nativeProvider.request(target)
+        println("status: ${response.status}, body: ${String(response.data)}")
     }
 }
 

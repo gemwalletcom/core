@@ -1,12 +1,11 @@
 use gem_client::ClientError;
 use gem_jsonrpc::RpcClientError;
-use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub enum AlienError {
     RequestError { msg: String },
     ResponseError { msg: String },
-    Http { status: u16, len: u64 },
+    Http { status: u16, len: u32 },
 }
 
 impl AlienError {
@@ -19,7 +18,10 @@ impl AlienError {
     }
 
     pub fn http_error(status: u16, len: usize) -> Self {
-        Self::Http { status, len: len as u64 }
+        Self::Http {
+            status,
+            len: len.min(u32::MAX as usize) as u32,
+        }
     }
 }
 
@@ -40,10 +42,7 @@ impl RpcClientError for AlienError {
         match self {
             Self::RequestError { msg } => ClientError::Network(format!("Alien request error: {msg}")),
             Self::ResponseError { msg } => ClientError::Network(format!("Alien response error: {msg}")),
-            Self::Http { status, len } => {
-                let len = usize::try_from(len).unwrap_or(usize::MAX);
-                ClientError::Http { status, len }
-            }
+            Self::Http { status, len } => ClientError::Http { status, len: len as usize },
         }
     }
 }

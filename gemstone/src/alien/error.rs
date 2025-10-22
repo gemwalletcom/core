@@ -4,5 +4,5 @@ pub type AlienError = swapper::AlienError;
 pub enum AlienError {
     RequestError { msg: String },
     ResponseError { msg: String },
-    Http { status: u16, len: u64 },
+    Http { status: u16, len: u32 },
 }

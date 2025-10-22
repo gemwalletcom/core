@@ -5,8 +5,7 @@ use std::{
 };
 
 use super::{AlienError, Target};
-use gem_client::Data;
-use gem_jsonrpc::RpcProvider as GenericRpcProvider;
+use gem_jsonrpc::{RpcProvider as GenericRpcProvider, RpcResponse};
 use primitives::Chain;
 
 #[allow(unused)]
@@ -39,13 +38,11 @@ impl ProviderMock {
 impl GenericRpcProvider for ProviderMock {
     type Error = AlienError;
 
-    async fn request(&self, target: Target) -> Result<Data, Self::Error> {
-        let responses = self.batch_request(vec![target]).await;
-        responses.map(|responses| responses.first().unwrap().clone())
-    }
-
-    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, Self::Error> {
-        targets.iter().map(|target| Ok(self.response.0(target.clone()).into_bytes())).collect()
+    async fn request(&self, target: Target) -> Result<RpcResponse, Self::Error> {
+        Ok(RpcResponse {
+            status: None,
+            data: (self.response.0)(target).into_bytes(),
+        })
     }
 
     fn get_endpoint(&self, _chain: Chain) -> Result<String, Self::Error> {

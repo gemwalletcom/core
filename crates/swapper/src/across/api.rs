@@ -81,7 +81,7 @@ impl AcrossApi {
         let url = format!("{}/api/deposit/status?originChainId={}&depositId={}", self.url, chain.network_id(), &deposit_id);
         let target = Target::get(&url);
         let response = self.provider.request(target).await?;
-        let status: DepositStatus = serde_json::from_slice(&response).map_err(SwapperError::from)?;
+        let status: DepositStatus = serde_json::from_slice(&response.data).map_err(SwapperError::from)?;
 
         Ok(status)
     }

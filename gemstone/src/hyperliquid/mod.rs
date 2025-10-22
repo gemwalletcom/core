@@ -4,6 +4,7 @@ pub mod remote_models;
 pub use remote_models::*;
 
 use crate::{GemstoneError, alien::AlienSigner};
+use gem_hypercore::models::timestamp::TimestampField;
 use serde::Serialize;
 use serde_json::{self, Value};
 use std::sync::Arc;
@@ -194,16 +195,16 @@ impl HyperCore {
     }
 
     pub fn sign_typed_action(&self, typed_data_json: String, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        let typed_data: Value =
-            serde_json::from_str(&typed_data_json).map_err(|err| GemstoneError::from(format!("Invalid typed data JSON: {err}")))?;
+        let typed_data: Value = serde_json::from_str(&typed_data_json).map_err(|err| GemstoneError::from(format!("Invalid typed data JSON: {err}")))?;
 
         let message = typed_data
             .get("message")
             .ok_or_else(|| GemstoneError::from("Typed data missing message field"))?;
 
-        let timestamp = extract_timestamp(message)?;
-        let action = serde_json::to_string(message)
-            .map_err(|err| GemstoneError::from(format!("Failed to serialize action payload: {err}")))?;
+        let timestamp = serde_json::from_value::<TimestampField>(message.clone())
+            .map_err(|err| GemstoneError::from(format!("Failed to parse time or nonce: {err}")))?
+            .value;
+        let action = serde_json::to_string(message).map_err(|err| GemstoneError::from(format!("Failed to serialize action payload: {err}")))?;
 
         self.sign_action(typed_data_json, action, timestamp, private_key)
     }
@@ -356,32 +357,7 @@ where
     T: Serialize,
     F: FnOnce(T) -> String,
 {
-    let action = serde_json::to_string(&value)
-        .map_err(|err| GemstoneError::from(format!("Failed to serialize {action_name} action: {err}")))?;
+    let action = serde_json::to_string(&value).map_err(|err| GemstoneError::from(format!("Failed to serialize {action_name} action: {err}")))?;
     let typed_data = typed_data_fn(value);
     core.sign_action(typed_data, action, timestamp, private_key)
-}
-
-fn extract_timestamp(message: &Value) -> Result<u64, GemstoneError> {
-    if let Some(time) = message.get("time") {
-        parse_numeric_field(time, "time")
-    } else if let Some(nonce) = message.get("nonce") {
-        parse_numeric_field(nonce, "nonce")
-    } else {
-        Err(GemstoneError::from("Typed data message missing time or nonce field"))
-    }
-}
-
-fn parse_numeric_field(value: &Value, field: &str) -> Result<u64, GemstoneError> {
-    match value {
-        Value::Number(number) => number
-            .as_u64()
-            .ok_or_else(|| GemstoneError::from(format!("Typed data message.{field} is not a positive integer"))),
-        Value::String(s) => s
-            .parse::<u64>()
-            .map_err(|err| GemstoneError::from(format!("Typed data message.{field} is not a valid u64: {err}"))),
-        _ => Err(GemstoneError::from(format!(
-            "Typed data message.{field} must be a string or number"
-        ))),
-    }
 }
