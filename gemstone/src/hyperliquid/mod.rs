@@ -3,7 +3,7 @@ pub mod remote_models;
 // Re-export the types from remote_models
 pub use remote_models::*;
 
-use crate::alien::{AlienError, AlienSigner};
+use crate::{GemstoneError, alien::AlienSigner};
 use serde::Serialize;
 use serde_json::{self, Value};
 use std::sync::Arc;
@@ -188,29 +188,27 @@ impl HyperCore {
         Self { signer }
     }
 
-    fn sign_action(&self, typed_data: String, action: String, timestamp: u64, private_key: Vec<u8>) -> Result<String, AlienError> {
+    fn sign_action(&self, typed_data: String, action: String, timestamp: u64, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let signature = self.signer.sign_eip712(typed_data, private_key)?;
         Ok(hyper_build_signed_request(signature, action, timestamp))
     }
 
-    pub fn sign_typed_action(&self, typed_data_json: String, private_key: Vec<u8>) -> Result<String, AlienError> {
-        let typed_data: Value = serde_json::from_str(&typed_data_json).map_err(|err| AlienError::SigningError {
-            msg: format!("Invalid typed data JSON: {err}"),
-        })?;
+    pub fn sign_typed_action(&self, typed_data_json: String, private_key: Vec<u8>) -> Result<String, GemstoneError> {
+        let typed_data: Value =
+            serde_json::from_str(&typed_data_json).map_err(|err| GemstoneError::from(format!("Invalid typed data JSON: {err}")))?;
 
-        let message = typed_data.get("message").ok_or_else(|| AlienError::SigningError {
-            msg: "Typed data missing message field".to_string(),
-        })?;
+        let message = typed_data
+            .get("message")
+            .ok_or_else(|| GemstoneError::from("Typed data missing message field"))?;
 
         let timestamp = extract_timestamp(message)?;
-        let action = serde_json::to_string(message).map_err(|err| AlienError::SigningError {
-            msg: format!("Failed to serialize action payload: {err}"),
-        })?;
+        let action = serde_json::to_string(message)
+            .map_err(|err| GemstoneError::from(format!("Failed to serialize action payload: {err}")))?;
 
         self.sign_action(typed_data_json, action, timestamp, private_key)
     }
 
-    pub fn sign_spot_send(&self, spot_send: HyperSpotSend, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_spot_send(&self, spot_send: HyperSpotSend, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let timestamp = spot_send.time;
         sign_serialized_action(
             self,
@@ -222,7 +220,7 @@ impl HyperCore {
         )
     }
 
-    pub fn sign_withdrawal_request(&self, request: HyperWithdrawalRequest, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_withdrawal_request(&self, request: HyperWithdrawalRequest, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let timestamp = request.time;
         sign_serialized_action(
             self,
@@ -234,12 +232,12 @@ impl HyperCore {
         )
     }
 
-    pub fn sign_approve_agent(&self, agent: HyperApproveAgent, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_approve_agent(&self, agent: HyperApproveAgent, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let timestamp = agent.nonce;
         sign_serialized_action(self, agent, timestamp, private_key, hyper_core_approve_agent_typed_data, "approve agent")
     }
 
-    pub fn sign_approve_builder_fee(&self, fee: HyperApproveBuilderFee, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_approve_builder_fee(&self, fee: HyperApproveBuilderFee, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let timestamp = fee.nonce;
         sign_serialized_action(
             self,
@@ -251,7 +249,7 @@ impl HyperCore {
         )
     }
 
-    pub fn sign_set_referrer(&self, referrer: HyperSetReferrer, nonce: u64, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_set_referrer(&self, referrer: HyperSetReferrer, nonce: u64, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         sign_serialized_action(
             self,
             referrer,
@@ -262,22 +260,22 @@ impl HyperCore {
         )
     }
 
-    pub fn sign_c_deposit(&self, deposit: HyperCDeposit, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_c_deposit(&self, deposit: HyperCDeposit, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let timestamp = deposit.nonce;
         sign_serialized_action(self, deposit, timestamp, private_key, hyper_core_c_deposit_typed_data, "c deposit")
     }
 
-    pub fn sign_c_withdraw(&self, withdraw: HyperCWithdraw, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_c_withdraw(&self, withdraw: HyperCWithdraw, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let timestamp = withdraw.nonce;
         sign_serialized_action(self, withdraw, timestamp, private_key, hyper_core_c_withdraw_typed_data, "c withdraw")
     }
 
-    pub fn sign_token_delegate(&self, delegate: HyperTokenDelegate, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_token_delegate(&self, delegate: HyperTokenDelegate, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let timestamp = delegate.nonce;
         sign_serialized_action(self, delegate, timestamp, private_key, hyper_core_token_delegate_typed_data, "token delegate")
     }
 
-    pub fn sign_place_order(&self, order: HyperPlaceOrder, nonce: u64, private_key: Vec<u8>) -> Result<String, AlienError> {
+    pub fn sign_place_order(&self, order: HyperPlaceOrder, nonce: u64, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         sign_serialized_action(
             self,
             order,
@@ -353,40 +351,37 @@ fn sign_serialized_action<T, F>(
     private_key: Vec<u8>,
     typed_data_fn: F,
     action_name: &'static str,
-) -> Result<String, AlienError>
+) -> Result<String, GemstoneError>
 where
     T: Serialize,
     F: FnOnce(T) -> String,
 {
-    let action = serde_json::to_string(&value).map_err(|err| AlienError::SigningError {
-        msg: format!("Failed to serialize {action_name} action: {err}"),
-    })?;
+    let action = serde_json::to_string(&value)
+        .map_err(|err| GemstoneError::from(format!("Failed to serialize {action_name} action: {err}")))?;
     let typed_data = typed_data_fn(value);
     core.sign_action(typed_data, action, timestamp, private_key)
 }
 
-fn extract_timestamp(message: &Value) -> Result<u64, AlienError> {
+fn extract_timestamp(message: &Value) -> Result<u64, GemstoneError> {
     if let Some(time) = message.get("time") {
         parse_numeric_field(time, "time")
     } else if let Some(nonce) = message.get("nonce") {
         parse_numeric_field(nonce, "nonce")
     } else {
-        Err(AlienError::SigningError {
-            msg: "Typed data message missing time or nonce field".to_string(),
-        })
+        Err(GemstoneError::from("Typed data message missing time or nonce field"))
     }
 }
 
-fn parse_numeric_field(value: &Value, field: &str) -> Result<u64, AlienError> {
+fn parse_numeric_field(value: &Value, field: &str) -> Result<u64, GemstoneError> {
     match value {
-        Value::Number(number) => number.as_u64().ok_or_else(|| AlienError::SigningError {
-            msg: format!("Typed data message.{field} is not a positive integer"),
-        }),
-        Value::String(s) => s.parse::<u64>().map_err(|err| AlienError::SigningError {
-            msg: format!("Typed data message.{field} is not a valid u64: {err}"),
-        }),
-        _ => Err(AlienError::SigningError {
-            msg: format!("Typed data message.{field} must be a string or number"),
-        }),
+        Value::Number(number) => number
+            .as_u64()
+            .ok_or_else(|| GemstoneError::from(format!("Typed data message.{field} is not a positive integer"))),
+        Value::String(s) => s
+            .parse::<u64>()
+            .map_err(|err| GemstoneError::from(format!("Typed data message.{field} is not a valid u64: {err}"))),
+        _ => Err(GemstoneError::from(format!(
+            "Typed data message.{field} must be a string or number"
+        ))),
     }
 }

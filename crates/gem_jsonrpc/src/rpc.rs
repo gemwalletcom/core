@@ -7,6 +7,12 @@ use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
 
 pub const X_CACHE_TTL: &str = "x-cache-ttl";
 
+pub trait RpcClientError: std::error::Error + Send + Sync + 'static + std::fmt::Display + Sized {
+    fn into_client_error(self) -> ClientError {
+        ClientError::Network(format!("RPC provider error: {}", self))
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Target {
     pub url: String,
@@ -88,7 +94,7 @@ pub struct RpcClient<E> {
 
 impl<E> RpcClient<E>
 where
-    E: std::error::Error + Send + Sync + 'static,
+    E: RpcClientError,
 {
     pub fn new(base_url: String, provider: Arc<dyn RpcProvider<Error = E>>) -> Self {
         Self { base_url, provider }
@@ -102,7 +108,7 @@ where
 #[async_trait]
 impl<E> Client for RpcClient<E>
 where
-    E: std::error::Error + Send + Sync + 'static + std::fmt::Display,
+    E: RpcClientError,
 {
     async fn get<R>(&self, path: &str) -> Result<R, ClientError>
     where
@@ -127,11 +133,7 @@ where
             Target::get(&url)
         };
 
-        let response_data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|e| ClientError::Network(format!("RPC provider error: {e}")))?;
+        let response_data = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
 
         serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
@@ -176,11 +178,7 @@ where
             body: Some(data),
         };
 
-        let response_data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|e| ClientError::Network(format!("RPC provider error: {e}")))?;
+        let response_data = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
 
         serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
@@ -189,7 +187,7 @@ where
 #[async_trait]
 impl<E> RpcProvider for RpcClient<E>
 where
-    E: std::error::Error + Send + Sync + 'static,
+    E: RpcClientError,
 {
     type Error = E;
 

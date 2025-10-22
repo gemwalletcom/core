@@ -40,9 +40,7 @@ impl GenericRpcProvider for NativeProvider {
     fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error> {
         let nodes = get_nodes_for_chain(chain);
         if nodes.is_empty() {
-            return Err(Self::Error::ResponseError {
-                msg: format!("not supported chain: {chain:?}"),
-            });
+            return Err(Self::Error::response_error(format!("not supported chain: {chain:?}")));
         }
         Ok(nodes[0].url.clone())
     }
@@ -78,15 +76,12 @@ impl GenericRpcProvider for NativeProvider {
 
         let response = req
             .send()
-            .map_err(|e| Self::Error::ResponseError {
-                msg: format!("reqwest send error: {e:?}"),
-            })
+            .map_err(|e| Self::Error::response_error(format!("reqwest send error: {e:?}")))
             .await?;
+        let status = response.status();
         let bytes = response
             .bytes()
-            .map_err(|e| Self::Error::ResponseError {
-                msg: format!("request error: {e:?}"),
-            })
+            .map_err(|e| Self::Error::response_error(format!("request error: {e:?}")))
             .await?;
         if self.debug {
             println!("<== response body size: {:?}", bytes.len());
@@ -97,6 +92,9 @@ impl GenericRpcProvider for NativeProvider {
             } else {
                 println!("=== body: {:?}", String::from_utf8(bytes.to_vec()).unwrap());
             }
+        }
+        if !status.is_success() {
+            return Err(Self::Error::http_error(status.as_u16(), bytes.len()));
         }
         Ok(bytes.to_vec())
     }
