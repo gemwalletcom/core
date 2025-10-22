@@ -59,7 +59,7 @@ extension NativeProvider: AlienProvider {
                     }
 
                     let (data, response) = try await self.session.data(for: target.asRequest())
-                    if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                    if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
                         throw AlienError.Http(status: UInt16(httpResponse.statusCode), len: UInt64(data.count))
                     }
                     print("<== response size: \(data.count)")

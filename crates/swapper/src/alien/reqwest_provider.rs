@@ -76,12 +76,12 @@ impl GenericRpcProvider for NativeProvider {
 
         let response = req
             .send()
-            .map_err(|e| Self::Error::response_error(format!("reqwest send error: {e:?}")))
+            .map_err(|e| Self::Error::response_error(format!("reqwest send error: {e}")))
             .await?;
         let status = response.status();
         let bytes = response
             .bytes()
-            .map_err(|e| Self::Error::response_error(format!("request error: {e:?}")))
+            .map_err(|e| Self::Error::response_error(format!("request error: {e}")))
             .await?;
         if self.debug {
             println!("<== response body size: {:?}", bytes.len());
