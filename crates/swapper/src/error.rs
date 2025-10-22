@@ -49,7 +49,7 @@ impl From<AlienError> for SwapperError {
         match err {
             AlienError::RequestError { msg } => Self::NetworkError(format!("Alien request error: {msg}")),
             AlienError::ResponseError { msg } => Self::NetworkError(format!("Alien response error: {msg}")),
-            AlienError::SigningError { msg } => Self::NetworkError(format!("Alien signing error: {msg}")),
+            AlienError::Http { status, len } => Self::NetworkError(format!("Alien HTTP error: status {}, body size: {}", status, len)),
         }
     }
 }

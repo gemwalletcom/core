@@ -1,11 +1,29 @@
 use async_trait::async_trait;
-use gem_client::{Client, ClientError, ContentType, Data};
+use gem_client::{Client, ClientError, ContentType};
 use primitives::Chain;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json;
-use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fmt::{Debug, Display},
+    str::FromStr,
+    sync::Arc,
+};
 
 pub const X_CACHE_TTL: &str = "x-cache-ttl";
+
+#[derive(Debug, Clone)]
+pub struct RpcResponse {
+    pub status: Option<u16>,
+    pub data: Vec<u8>,
+}
+
+pub trait RpcClientError: Error + Send + Sync + 'static + Display + Sized {
+    fn into_client_error(self) -> ClientError {
+        ClientError::Network(format!("RPC provider error: {}", self))
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Target {
@@ -75,8 +93,7 @@ impl From<HttpMethod> for String {
 pub trait RpcProvider: Send + Sync + Debug {
     type Error: std::error::Error + Send + Sync + 'static;
 
-    async fn request(&self, target: Target) -> Result<Data, Self::Error>;
-    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, Self::Error>;
+    async fn request(&self, target: Target) -> Result<RpcResponse, Self::Error>;
     fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error>;
 }
 
@@ -88,7 +105,7 @@ pub struct RpcClient<E> {
 
 impl<E> RpcClient<E>
 where
-    E: std::error::Error + Send + Sync + 'static,
+    E: RpcClientError,
 {
     pub fn new(base_url: String, provider: Arc<dyn RpcProvider<Error = E>>) -> Self {
         Self { base_url, provider }
@@ -102,7 +119,7 @@ where
 #[async_trait]
 impl<E> Client for RpcClient<E>
 where
-    E: std::error::Error + Send + Sync + 'static + std::fmt::Display,
+    E: RpcClientError,
 {
     async fn get<R>(&self, path: &str) -> Result<R, ClientError>
     where
@@ -127,13 +144,9 @@ where
             Target::get(&url)
         };
 
-        let response_data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|e| ClientError::Network(format!("RPC provider error: {e}")))?;
+        let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
 
-        serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
+        serde_json::from_slice(&response.data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
 
     async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
@@ -176,29 +189,21 @@ where
             body: Some(data),
         };
 
-        let response_data = self
-            .provider
-            .request(target)
-            .await
-            .map_err(|e| ClientError::Network(format!("RPC provider error: {e}")))?;
+        let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
 
-        serde_json::from_slice(&response_data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
+        serde_json::from_slice(&response.data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
 }
 
 #[async_trait]
 impl<E> RpcProvider for RpcClient<E>
 where
-    E: std::error::Error + Send + Sync + 'static,
+    E: RpcClientError,
 {
     type Error = E;
 
-    async fn request(&self, target: Target) -> Result<Data, Self::Error> {
+    async fn request(&self, target: Target) -> Result<RpcResponse, Self::Error> {
         self.provider.request(target).await
-    }
-
-    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, Self::Error> {
-        self.provider.batch_request(targets).await
     }
 
     fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error> {

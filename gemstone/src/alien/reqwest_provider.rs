@@ -1,18 +1,14 @@
-use super::{AlienError, AlienProvider, AlienTarget, provider::Data};
+use super::{AlienError, AlienProvider, AlienTarget};
 use async_trait::async_trait;
-use gem_jsonrpc::RpcProvider as GenericRpcProvider;
+use gem_jsonrpc::{RpcProvider as GenericRpcProvider, RpcResponse};
 use primitives::Chain;
 
 pub use swapper::NativeProvider;
 
 #[async_trait]
 impl AlienProvider for NativeProvider {
-    async fn request(&self, target: AlienTarget) -> Result<Data, AlienError> {
+    async fn request(&self, target: AlienTarget) -> Result<RpcResponse, AlienError> {
         <Self as GenericRpcProvider>::request(self, target).await
-    }
-
-    async fn batch_request(&self, targets: Vec<AlienTarget>) -> Result<Vec<Data>, AlienError> {
-        <Self as GenericRpcProvider>::batch_request(self, targets).await
     }
 
     fn get_endpoint(&self, chain: Chain) -> Result<String, AlienError> {

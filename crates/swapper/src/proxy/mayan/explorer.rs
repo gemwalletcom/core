@@ -18,7 +18,7 @@ impl MayanExplorer {
         let url = format!("https://explorer-api.mayan.finance/v3/swap/trx/{tx_hash}");
         let target = Target::get(&url);
         let response = self.provider.request(target).await?;
-        let result: MayanTransactionResult = serde_json::from_slice(&response).map_err(SwapperError::from)?;
+        let result: MayanTransactionResult = serde_json::from_slice(&response.data).map_err(SwapperError::from)?;
 
         Ok(result)
     }
