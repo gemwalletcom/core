@@ -1,12 +1,12 @@
 use num_bigint::BigInt;
-use primitives::{FeeOption, TransactionLoadData, TransactionLoadInput};
+use primitives::{FeeOption, TransactionFee, TransactionLoadData, TransactionLoadInput};
 use std::error::Error;
 
 pub fn map_transaction_load(input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Send + Sync>> {
     let fee = if input.metadata.get_is_destination_address_exist()? {
         input.default_fee()
     } else {
-        primitives::TransactionFee::new_from_fee_with_option(input.gas_price.gas_price(), FeeOption::TokenAccountCreation, BigInt::ZERO)
+        TransactionFee::new_from_fee_with_option(input.gas_price.gas_price(), FeeOption::TokenAccountCreation, BigInt::ZERO)
     };
 
     Ok(TransactionLoadData { fee, metadata: input.metadata })
