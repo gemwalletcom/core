@@ -1,4 +1,4 @@
-use crate::{Asset, AssetId, PerpetualPosition, PerpetualProvider};
+use crate::{Asset, AssetId, PerpetualPosition, PerpetualProvider, UInt64};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -110,7 +110,7 @@ pub enum AccountDataType {
 #[serde(rename_all = "camelCase")]
 pub struct CancelOrderData {
     pub asset_index: i32,
-    pub order_id: u64,
+    pub order_id: UInt64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
