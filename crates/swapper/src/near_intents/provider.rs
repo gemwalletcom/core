@@ -1,6 +1,6 @@
 use super::{
     AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult,
-    SwapType, asset_id_from_near_intents, deposit_memo_chains, get_near_intents_asset_id,
+    SwapType, asset_id_from_near_intents, auto_quote_time_chains, deposit_memo_chains, get_near_intents_asset_id,
     model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
     reserved_tx_fees, supported_assets,
 };
@@ -122,6 +122,9 @@ where
         let origin_asset = get_near_intents_asset_id(&request.from_asset)?;
         let destination_asset = get_near_intents_asset_id(&request.to_asset)?;
         let deposit_mode = Self::resolve_deposit_mode(&request.from_asset);
+        let from_chain = request.from_asset.asset_id().chain;
+        let to_chain = request.to_asset.asset_id().chain;
+        let quote_waiting_time_ms = Self::resolve_quote_waiting_time(from_chain, to_chain);
 
         let deadline = (Utc::now() + Duration::minutes(DEFAULT_DEADLINE_MINUTES)).to_rfc3339();
 
@@ -139,7 +142,7 @@ where
             refund_type: DEPOSIT_TYPE_ORIGIN.to_string(),
             recipient_type: RECIPIENT_TYPE_DESTINATION.to_string(),
             deadline,
-            quote_waiting_time_ms: DEFAULT_WAIT_TIME_MS,
+            quote_waiting_time_ms,
             dry,
             deposit_mode,
         })
@@ -176,6 +179,14 @@ where
             DepositMode::Memo
         } else {
             DepositMode::Simple
+        }
+    }
+
+    fn resolve_quote_waiting_time(from_chain: Chain, to_chain: Chain) -> u32 {
+        if auto_quote_time_chains().contains(&from_chain) || auto_quote_time_chains().contains(&to_chain) {
+            0
+        } else {
+            DEFAULT_WAIT_TIME_MS
         }
     }
 

@@ -76,7 +76,8 @@ struct WCSolanaSignMessageResult {
 #[serde(rename_all = "camelCase")]
 struct WCSuiTransaction {
     transaction: String,
-    account: String,
+    account: Option<String>,
+    address: Option<String>,
 }
 
 #[allow(dead_code)]
