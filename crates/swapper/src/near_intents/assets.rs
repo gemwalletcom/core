@@ -10,6 +10,8 @@ use primitives::{
 use std::{collections::HashMap, sync::LazyLock};
 
 pub const NEAR_INTENTS_WRAP_NEAR: &str = "nep141:wrap.near";
+// pub const NEAR_INTENTS_NEAR_USDC: &str = "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
+// pub const NEAR_INTENTS_NEAR_USDT: &str = "nep141:usdt.tether-token.near";
 pub const NEAR_INTENTS_ETH_NATIVE: &str = "nep141:eth.omft.near";
 pub const NEAR_INTENTS_ETH_USDC: &str = "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near";
 pub const NEAR_INTENTS_ETH_USDT: &str = "nep141:eth-0xdac17f958d2ee523a2206206994597c13d831ec7.omft.near";
@@ -187,10 +189,6 @@ pub static NEAR_INTENTS_REVERSE_ASSETS: LazyLock<HashMap<&'static str, AssetId>>
     }
     reverse
 });
-
-pub fn deposit_memo_chains() -> Vec<Chain> {
-    vec![Chain::Stellar]
-}
 
 pub fn get_near_intents_asset_id(asset: &SwapperQuoteAsset) -> Result<String, SwapperError> {
     let asset_id = asset.asset_id();
