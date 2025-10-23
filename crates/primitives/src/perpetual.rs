@@ -117,9 +117,14 @@ pub struct CancelOrderData {
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(tag = "type", content = "content")]
 pub enum PerpetualModifyType {
-    Tp { direction: PerpetualDirection, price: String, size: String },
-    Sl { direction: PerpetualDirection, price: String, size: String },
-    Tpsl { direction: PerpetualDirection, take_profit: String, stop_loss: String, size: String },
+      Tpsl {
+        direction: PerpetualDirection,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        take_profit: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        stop_loss: Option<String>,
+        size: String,
+    },
     Cancel { orders: Vec<CancelOrderData> },
 }
 

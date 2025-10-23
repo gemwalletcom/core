@@ -189,9 +189,7 @@ pub struct CancelOrderData {
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualModifyType {
-    Tp { direction: PerpetualDirection, price: String, size: String },
-    Sl { direction: PerpetualDirection, price: String, size: String },
-    Tpsl { direction: PerpetualDirection, take_profit: String, stop_loss: String, size: String },
+    Tpsl { direction: PerpetualDirection, take_profit: Option<String>, stop_loss: Option<String>, size: String },
     Cancel { orders: Vec<CancelOrderData> },
 }
 
