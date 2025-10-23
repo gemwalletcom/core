@@ -2,14 +2,16 @@ use crate::{SwapperError, SwapperQuoteAsset, models::SwapperChainAsset};
 use primitives::{
     AssetId, Chain,
     asset_constants::{
-        USDC_ARB_ASSET_ID, USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID,
-        USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID,
-        USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID,
+        USDC_ARB_ASSET_ID, USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_NEAR_ASSET_ID, USDC_OP_ASSET_ID,
+        USDC_POLYGON_ASSET_ID, USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_NEAR_ASSET_ID,
+        USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID,
     },
 };
 use std::{collections::HashMap, sync::LazyLock};
 
 pub const NEAR_INTENTS_WRAP_NEAR: &str = "nep141:wrap.near";
+pub const NEAR_INTENTS_NEAR_USDC: &str = "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
+pub const NEAR_INTENTS_NEAR_USDT: &str = "nep141:usdt.tether-token.near";
 pub const NEAR_INTENTS_ETH_NATIVE: &str = "nep141:eth.omft.near";
 pub const NEAR_INTENTS_ETH_USDC: &str = "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near";
 pub const NEAR_INTENTS_ETH_USDT: &str = "nep141:eth-0xdac17f958d2ee523a2206206994597c13d831ec7.omft.near";
@@ -54,7 +56,14 @@ type AssetsMap = HashMap<String, &'static str>;
 pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::new(|| {
     let mut map: HashMap<Chain, AssetsMap> = HashMap::new();
 
-    map.insert(Chain::Near, HashMap::from([("near".to_string(), NEAR_INTENTS_WRAP_NEAR)]));
+    map.insert(
+        Chain::Near,
+        HashMap::from([
+            ("near".to_string(), NEAR_INTENTS_WRAP_NEAR),
+            (asset_key(USDC_NEAR_ASSET_ID), NEAR_INTENTS_NEAR_USDC),
+            (asset_key(USDT_NEAR_ASSET_ID), NEAR_INTENTS_NEAR_USDT),
+        ]),
+    );
 
     map.insert(
         Chain::Ethereum,
@@ -187,10 +196,6 @@ pub static NEAR_INTENTS_REVERSE_ASSETS: LazyLock<HashMap<&'static str, AssetId>>
     }
     reverse
 });
-
-pub fn deposit_memo_chains() -> Vec<Chain> {
-    vec![Chain::Stellar]
-}
 
 pub fn get_near_intents_asset_id(asset: &SwapperQuoteAsset) -> Result<String, SwapperError> {
     let asset_id = asset.asset_id();
