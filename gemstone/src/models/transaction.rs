@@ -2,7 +2,7 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
-    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyType},
+    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyType, TPSLOrderData},
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
     TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
@@ -187,10 +187,18 @@ pub struct CancelOrderData {
     pub order_id: u64,
 }
 
+#[uniffi::remote(Record)]
+pub struct TPSLOrderData {
+    pub direction: PerpetualDirection,
+    pub take_profit: Option<String>,
+    pub stop_loss: Option<String>,
+    pub size: String,
+}
+
 #[uniffi::remote(Enum)]
 pub enum PerpetualModifyType {
-    Tpsl { direction: PerpetualDirection, take_profit: Option<String>, stop_loss: Option<String>, size: String },
-    Cancel { orders: Vec<CancelOrderData> },
+    Tpsl(TPSLOrderData),
+    Cancel(Vec<CancelOrderData>),
 }
 
 #[uniffi::remote(Record)]

@@ -115,17 +115,22 @@ pub struct CancelOrderData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct TPSLOrderData {
+    pub direction: PerpetualDirection,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub take_profit: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stop_loss: Option<String>,
+    pub size: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(tag = "type", content = "content")]
 pub enum PerpetualModifyType {
-      Tpsl {
-        direction: PerpetualDirection,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        take_profit: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        stop_loss: Option<String>,
-        size: String,
-    },
-    Cancel { orders: Vec<CancelOrderData> },
+    Tpsl(TPSLOrderData),
+    Cancel(Vec<CancelOrderData>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
