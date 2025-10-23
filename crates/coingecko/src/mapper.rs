@@ -71,7 +71,7 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         | Chain::Unichain => "ethereum",
         Chain::SmartChain | Chain::OpBNB => "binancecoin",
         Chain::Solana => "solana",
-        Chain::Polygon => "matic-network",
+        Chain::Polygon => "pol-ex-matic",
         Chain::Thorchain => "thorchain",
         Chain::Cosmos => "cosmos",
         Chain::Osmosis => "osmosis",
