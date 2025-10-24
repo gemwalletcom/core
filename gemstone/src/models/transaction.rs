@@ -178,6 +178,12 @@ pub struct PerpetualConfirmData {
     pub price: String,
     pub fiat_value: f64,
     pub size: String,
+    pub slippage: f64,
+    pub leverage: u8,
+    pub pnl: Option<f64>,
+    pub entry_price: Option<f64>,
+    pub market_price: f64,
+    pub margin_amount: f64,
 }
 
 #[uniffi::remote(Enum)]
