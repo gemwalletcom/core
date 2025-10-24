@@ -6,7 +6,6 @@ mod memo;
 mod model;
 mod provider;
 
-use chain::THORChainName;
 use num_bigint::BigInt;
 use primitives::Chain;
 use std::{str::FromStr, sync::Arc};
@@ -46,13 +45,6 @@ where
         }
     }
 
-    fn data(&self, chain: THORChainName, memo: String) -> String {
-        if chain.is_evm_chain() {
-            return hex::encode(memo.as_bytes());
-        }
-        memo
-    }
-
     fn value_from(&self, value: String, decimals: i32) -> BigInt {
         let decimals = decimals - 8;
         if decimals > 0 {
@@ -81,18 +73,6 @@ mod tests {
     use super::*;
     use crate::alien::reqwest_provider::NativeProvider;
     use std::sync::Arc;
-
-    #[test]
-    fn test_data() {
-        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
-        let memo = "test".to_string();
-
-        let result = thorchain.data(THORChainName::Ethereum, memo.clone());
-        assert_eq!(result, hex::encode(memo.as_bytes()));
-
-        let result = thorchain.data(THORChainName::Bitcoin, memo.clone());
-        assert_eq!(result, memo);
-    }
 
     #[test]
     fn test_value_from() {

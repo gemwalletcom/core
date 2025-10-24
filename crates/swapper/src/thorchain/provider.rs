@@ -184,7 +184,7 @@ where
 
             SwapperQuoteData::new_contract(to, value, HexEncode(call.clone()), approval, gas_limit)
         } else {
-            SwapperQuoteData::new_tranfer(route_data.inbound_address.unwrap_or_default(), value, Some(self.data(from_asset.chain, memo)))
+            SwapperQuoteData::new_tranfer(route_data.inbound_address.unwrap_or_default(), value, Some(memo))
         };
 
         Ok(data)
