@@ -192,7 +192,6 @@ impl<C: Client> AptosClient<C> {
         Ok(DelegationPoolStake {
             active: BigUint::from_str(&active).unwrap_or_else(|_| BigUint::from(0u32)),
             inactive: BigUint::from_str(&inactive).unwrap_or_else(|_| BigUint::from(0u32)),
-            pending_active: BigUint::from(0u32),
             pending_inactive: BigUint::from_str(&pending_inactive).unwrap_or_else(|_| BigUint::from(0u32)),
         })
     }

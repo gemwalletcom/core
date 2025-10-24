@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 
-use crate::models::{DelegationPoolStake, ReconfigurationState, ValidatorInfo, ValidatorSet};
+use crate::models::{DelegationPoolStake, ValidatorInfo, ValidatorSet};
 
 #[cfg(test)]
 use crate::models::StakingConfig;
@@ -46,24 +46,8 @@ fn map_delegation(
     }
 }
 
-const EPOCH_DURATION_SECS: u64 = 7200;
-
-fn calculate_pending_completion_date(reconfig: &ReconfigurationState) -> Option<DateTime<Utc>> {
-    let now_micros = Utc::now().timestamp_micros() as u64;
-    let last_reconfig_micros = reconfig.last_reconfiguration_time;
-    let epoch_duration_micros = EPOCH_DURATION_SECS * 1_000_000;
-
-    let elapsed_micros = now_micros.saturating_sub(last_reconfig_micros);
-    let epochs_passed = elapsed_micros / epoch_duration_micros;
-    let next_epoch_micros = last_reconfig_micros + ((epochs_passed + 1) * epoch_duration_micros);
-
-    let next_epoch_secs = (next_epoch_micros / 1_000_000) as i64;
-    DateTime::from_timestamp(next_epoch_secs, 0)
-}
-
-pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &ReconfigurationState, lockup_secs: u64) -> Vec<DelegationBase> {
+pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, lockup_secs: u64) -> Vec<DelegationBase> {
     let asset_id = Chain::Aptos.as_asset_id();
-    let next_epoch = calculate_pending_completion_date(reconfig);
     let withdrawal_completion = DateTime::from_timestamp(lockup_secs as i64, 0);
 
     stakes
@@ -73,16 +57,6 @@ pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &Re
 
             if stake.active > BigUint::from(0u32) {
                 delegations.push(map_delegation(&asset_id, DelegationState::Active, stake.active, &pool_address, None));
-            }
-
-            if stake.pending_active > BigUint::from(0u32) {
-                delegations.push(map_delegation(
-                    &asset_id,
-                    DelegationState::Activating,
-                    stake.pending_active,
-                    &pool_address,
-                    next_epoch,
-                ));
             }
 
             if stake.pending_inactive > BigUint::from(0u32) {
@@ -98,10 +72,10 @@ pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, reconfig: &Re
             if stake.inactive > BigUint::from(0u32) {
                 delegations.push(map_delegation(
                     &asset_id,
-                    DelegationState::Deactivating,
+                    DelegationState::AwaitingWithdrawal,
                     stake.inactive,
                     &pool_address,
-                    withdrawal_completion,
+                    None,
                 ));
             }
 
@@ -125,19 +99,11 @@ pub fn calculate_apy(staking_config: &crate::models::StakingConfig) -> f64 {
 mod tests {
     use super::*;
 
-    fn mock_stake(active: u32, inactive: u32, pending_active: u32, pending_inactive: u32) -> DelegationPoolStake {
+    fn mock_stake(active: u32, inactive: u32, pending_inactive: u32) -> DelegationPoolStake {
         DelegationPoolStake {
             active: BigUint::from(active),
             inactive: BigUint::from(inactive),
-            pending_active: BigUint::from(pending_active),
             pending_inactive: BigUint::from(pending_inactive),
-        }
-    }
-
-    fn mock_reconfig(last_reconfiguration_time: u64) -> ReconfigurationState {
-        ReconfigurationState {
-            epoch: 100,
-            last_reconfiguration_time,
         }
     }
 
@@ -169,11 +135,7 @@ mod tests {
 
     #[test]
     fn test_map_delegations_active() {
-        let delegations = map_delegations(
-            vec![("pool".to_string(), mock_stake(1000, 0, 0, 0))],
-            &mock_reconfig(1000000),
-            mock_lockup_secs(),
-        );
+        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(1000, 0, 0))], mock_lockup_secs());
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Active);
@@ -182,26 +144,8 @@ mod tests {
     }
 
     #[test]
-    fn test_map_delegations_pending_active() {
-        let delegations = map_delegations(
-            vec![("pool".to_string(), mock_stake(0, 0, 500, 0))],
-            &mock_reconfig(1000000),
-            mock_lockup_secs(),
-        );
-
-        assert_eq!(delegations.len(), 1);
-        assert_eq!(delegations[0].state, DelegationState::Activating);
-        assert_eq!(delegations[0].balance, BigUint::from(500u32));
-        assert!(delegations[0].completion_date.is_some());
-    }
-
-    #[test]
     fn test_map_delegations_pending_inactive() {
-        let delegations = map_delegations(
-            vec![("pool".to_string(), mock_stake(0, 0, 0, 300))],
-            &mock_reconfig(1000000),
-            mock_lockup_secs(),
-        );
+        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 0, 300))], mock_lockup_secs());
 
         assert_eq!(delegations.len(), 1);
         assert_eq!(delegations[0].state, DelegationState::Deactivating);
@@ -211,29 +155,18 @@ mod tests {
 
     #[test]
     fn test_map_delegations_inactive() {
-        let now_micros = Utc::now().timestamp_micros() as u64;
-        let recent_reconfig_micros = now_micros - (100_000 * 1_000_000);
-
-        let delegations = map_delegations(
-            vec![("pool".to_string(), mock_stake(0, 200, 0, 0))],
-            &mock_reconfig(recent_reconfig_micros),
-            mock_lockup_secs(),
-        );
+        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(0, 200, 0))], mock_lockup_secs());
 
         assert_eq!(delegations.len(), 1);
-        assert_eq!(delegations[0].state, DelegationState::Deactivating);
+        assert_eq!(delegations[0].state, DelegationState::AwaitingWithdrawal);
         assert_eq!(delegations[0].balance, BigUint::from(200u32));
-        assert!(delegations[0].completion_date.is_some());
+        assert!(delegations[0].completion_date.is_none());
     }
 
     #[test]
     fn test_map_delegations_multiple_states() {
-        let delegations = map_delegations(
-            vec![("pool".to_string(), mock_stake(1000, 200, 500, 300))],
-            &mock_reconfig(1000000),
-            mock_lockup_secs(),
-        );
+        let delegations = map_delegations(vec![("pool".to_string(), mock_stake(1000, 200, 300))], mock_lockup_secs());
 
-        assert_eq!(delegations.len(), 4);
+        assert_eq!(delegations.len(), 3);
     }
 }
