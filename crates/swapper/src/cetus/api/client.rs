@@ -3,8 +3,8 @@ use crate::{SwapperError, alien::X_CACHE_TTL};
 use gem_client::Client;
 use std::collections::HashMap;
 
-pub const CETUS_API_URL: &str = "https://api-sui.cetus.zone/v2";
-const POOL_CACHE_TTL: u64 = 60 * 5; // 5 minutes
+pub const CETUS_API_URL: &str = "https://api.gemwallet.com/swap/cetus";
+const POOL_CACHE_TTL: u64 = 60 * 60; // 1 hour
 
 #[derive(Clone, Debug)]
 pub struct CetusClient<C>
@@ -32,13 +32,7 @@ where
         let query = serde_urlencoded::to_string(&request).unwrap();
         let path = format!("/sui/stats_pools?{query}");
         let headers = Some(HashMap::from([(X_CACHE_TTL.to_string(), POOL_CACHE_TTL.to_string())]));
-
         let response: Response = self.client.get_with_headers(&path, headers).await.map_err(SwapperError::from)?;
-
-        if response.code != 200 {
-            return Err(SwapperError::NetworkError(format!("API error: {}", response.msg)));
-        }
-
         Ok(response.data.lp_list)
     }
 }

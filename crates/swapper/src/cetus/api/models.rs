@@ -12,8 +12,6 @@ pub struct Request {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Response {
-    pub code: u16,
-    pub msg: String,
     pub data: ResponseData,
 }
 
