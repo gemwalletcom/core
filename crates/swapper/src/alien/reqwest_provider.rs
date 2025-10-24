@@ -2,9 +2,8 @@ use super::{AlienError, HttpMethod, Target};
 use primitives::{Chain, node_config::get_nodes_for_chain};
 
 use async_trait::async_trait;
-use futures::{TryFutureExt, future::try_join_all};
-use gem_client::Data;
-use gem_jsonrpc::RpcProvider as GenericRpcProvider;
+use futures::TryFutureExt;
+use gem_jsonrpc::{RpcProvider as GenericRpcProvider, RpcResponse};
 use reqwest::Client;
 
 #[derive(Debug)]
@@ -40,14 +39,12 @@ impl GenericRpcProvider for NativeProvider {
     fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error> {
         let nodes = get_nodes_for_chain(chain);
         if nodes.is_empty() {
-            return Err(Self::Error::ResponseError {
-                msg: format!("not supported chain: {chain:?}"),
-            });
+            return Err(Self::Error::response_error(format!("not supported chain: {chain:?}")));
         }
         Ok(nodes[0].url.clone())
     }
 
-    async fn request(&self, target: Target) -> Result<Data, Self::Error> {
+    async fn request(&self, target: Target) -> Result<RpcResponse, Self::Error> {
         if self.debug {
             println!("==> request: url: {:?}, method: {:?}", target.url, target.method);
         }
@@ -76,18 +73,9 @@ impl GenericRpcProvider for NativeProvider {
             req = req.body(body);
         }
 
-        let response = req
-            .send()
-            .map_err(|e| Self::Error::ResponseError {
-                msg: format!("reqwest send error: {e:?}"),
-            })
-            .await?;
-        let bytes = response
-            .bytes()
-            .map_err(|e| Self::Error::ResponseError {
-                msg: format!("request error: {e:?}"),
-            })
-            .await?;
+        let response = req.send().map_err(|e| Self::Error::response_error(format!("reqwest send error: {e}"))).await?;
+        let status = response.status();
+        let bytes = response.bytes().map_err(|e| Self::Error::response_error(format!("request error: {e}"))).await?;
         if self.debug {
             println!("<== response body size: {:?}", bytes.len());
         }
@@ -98,11 +86,12 @@ impl GenericRpcProvider for NativeProvider {
                 println!("=== body: {:?}", String::from_utf8(bytes.to_vec()).unwrap());
             }
         }
-        Ok(bytes.to_vec())
-    }
-
-    async fn batch_request(&self, targets: Vec<Target>) -> Result<Vec<Data>, Self::Error> {
-        let futures = targets.into_iter().map(|target| self.request(target));
-        try_join_all(futures).await
+        if !status.is_success() {
+            return Err(Self::Error::http_error(status.as_u16(), bytes.len()));
+        }
+        Ok(RpcResponse {
+            status: Some(status.as_u16()),
+            data: bytes.to_vec(),
+        })
     }
 }

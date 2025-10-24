@@ -6,6 +6,7 @@ pub mod order;
 pub mod position;
 pub mod referral;
 pub mod response;
+pub mod timestamp;
 pub mod token;
 pub mod user;
 

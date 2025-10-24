@@ -49,7 +49,7 @@ impl TransactionFee {
 
     pub fn new_from_fee_with_option(fee: BigInt, option: FeeOption, option_value: BigInt) -> Self {
         Self {
-            fee: fee.clone(),
+            fee: fee.clone() + option_value.clone(),
             gas_price_type: GasPriceType::regular(fee.clone()),
             gas_limit: BigInt::from(0),
             options: HashMap::from([(option, option_value)]),
@@ -119,5 +119,18 @@ mod tests {
             HashMap::new(),
         );
         assert_eq!(fee.gas_price_type.priority_fee(), BigInt::from(10));
+    }
+
+    #[test]
+    fn test_new_from_fee_with_option() {
+        let base_fee = BigInt::from(10000);
+        let option_value = BigInt::from(2500);
+
+        let fee = TransactionFee::new_from_fee_with_option(base_fee.clone(), FeeOption::TokenAccountCreation, option_value.clone());
+
+        assert_eq!(fee.fee, BigInt::from(12500)); // 10000 + 2500
+        assert_eq!(fee.gas_price_type.gas_price(), base_fee);
+        assert_eq!(fee.gas_limit, BigInt::from(0));
+        assert_eq!(fee.options.get(&FeeOption::TokenAccountCreation), Some(&option_value));
     }
 }
