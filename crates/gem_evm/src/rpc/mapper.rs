@@ -13,9 +13,11 @@ use primitives::{AssetId, NFTAssetId, TransactionType, chain::Chain, transaction
 
 pub const INPUT_0X: &str = "0x";
 pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
+pub const FUNCTION_ERC20_APPROVE: &str = "0x095ea7b3";
 pub const FUNCTION_EIP721_TRANSFER: &str = "0x23b872dd"; // transferFrom(address from, address to, uint256 tokenId)
 pub const FUNCTION_EIP1155_TRANSFER: &str = "0xf242432a"; // safeTransferFrom(address from, address to, uint256 tokenId, uint256 amount, bytes data)
 pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+pub const APPROVAL_TOPIC: &str = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925";
 pub const TRANSFER_SINGLE: &str = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62";
 pub const TRANSFER_GAS_LIMIT: u64 = 21000;
 
@@ -164,6 +166,35 @@ impl EthereumMapper {
             return Some(transaction);
         }
 
+        // erc20 approve
+        if transaction.input.starts_with(FUNCTION_ERC20_APPROVE)
+            && transaction_reciept
+                .logs
+                .last()
+                .is_some_and(|log| log.topics.len() == 3 && log.topics.first().is_some_and(|x| x == APPROVAL_TOPIC))
+            && let Some(log) = transaction_reciept.logs.last()
+        {
+            let to_address = ethereum_address_from_topic(&log.topics[2])?;
+            let value = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
+            let token_id = ethereum_address_checksum(&log.address).ok()?;
+
+            return Some(primitives::Transaction::new(
+                hash,
+                AssetId::from_token(chain, &token_id),
+                from.clone(),
+                to_address,
+                None,
+                TransactionType::TokenApproval,
+                state,
+                fee.to_string(),
+                fee_asset_id,
+                value.to_string(),
+                None,
+                None,
+                created_at,
+            ));
+        }
+
         // erc20 transfer - check both direct transfer calls and smart contract calls that emit transfer events
         let transfer_log = transaction_reciept.logs.iter().find(|log| {
             // ERC20 transfers have exactly 3 topics (event signature, from, to)
@@ -173,7 +204,7 @@ impl EthereumMapper {
         if let Some(log) = transfer_log {
             let from_address_in_log = ethereum_address_from_topic(log.topics.get(1)?)?;
             let to_address_in_log = ethereum_address_from_topic(log.topics.get(2)?)?;
-            let amount = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
+            let value = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
             let token_id = ethereum_address_checksum(&log.address).ok()?;
 
             // Check if this is a relevant ERC20 transfer
@@ -192,7 +223,7 @@ impl EthereumMapper {
                     state,
                     fee.to_string(),
                     fee_asset_id,
-                    amount.to_string(),
+                    value.to_string(),
                     None,
                     None,
                     created_at,
@@ -249,7 +280,7 @@ mod tests {
     use super::*;
     use crate::rpc::model::{Log, Transaction, TransactionReciept};
     use num_bigint::BigUint;
-    use primitives::{Chain, JsonRpcResult};
+    use primitives::{Chain, JsonRpcResult, testkit::json_rpc::load_json_rpc_result};
 
     #[test]
     fn test_map_smart_contract_call() {
@@ -425,6 +456,23 @@ mod tests {
         assert_eq!(tx.to, "0x0700572b54ccA24Dad0eD4Cdad2c3d3ab6dB652a");
         assert_eq!(tx.value, "2739900000000000000");
         assert_eq!(tx.id.to_string(), "ethereum_0x0c0626172dbba6984a2e95b3abf1caba39cf11d3c9bc99d7de9ac814671c0cb1");
+    }
+
+    #[test]
+    fn test_erc20_approve() {
+        let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/approve.json"));
+        let receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/approve_receipt.json"));
+
+        let result = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
+
+        assert_eq!(result.transaction_type, TransactionType::TokenApproval);
+        assert_eq!(
+            result.asset_id,
+            AssetId::from_token(Chain::Ethereum, "0x6B175474E89094C44Da98b954EedeAC495271d0F")
+        );
+        assert_eq!(result.from, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4");
+        assert_eq!(result.to, "0x000000000022D473030F116dDEE9F6B43aC78BA3");
+        assert_eq!(result.value, "115792089237316195423570985008687907853269984665640564039457584007913129639935");
     }
 
     #[test]
