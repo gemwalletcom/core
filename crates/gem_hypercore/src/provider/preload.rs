@@ -38,6 +38,7 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
                 let fiat_value = match perpetual_type {
                     PerpetualType::Open(data) => data.fiat_value,
                     PerpetualType::Close(data) => data.fiat_value,
+                    PerpetualType::Modify(_) => 0.0,
                 };
 
                 let (agent_required, referral_required, builder_required, fee_rate, agent_address, agent_private_key) = get_approvals_and_credentials(

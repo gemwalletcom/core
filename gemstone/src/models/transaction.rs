@@ -2,6 +2,7 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
+    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyType, TPSLOrderData},
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
     TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
@@ -186,10 +187,38 @@ pub struct PerpetualConfirmData {
     pub margin_amount: f64,
 }
 
+#[uniffi::remote(Record)]
+pub struct CancelOrderData {
+    pub asset_index: i32,
+    pub order_id: u64,
+}
+
+#[uniffi::remote(Record)]
+pub struct TPSLOrderData {
+    pub direction: PerpetualDirection,
+    pub take_profit: Option<String>,
+    pub stop_loss: Option<String>,
+    pub size: String,
+}
+
+#[uniffi::remote(Enum)]
+pub enum PerpetualModifyType {
+    Tpsl(TPSLOrderData),
+    Cancel(Vec<CancelOrderData>),
+}
+
+#[uniffi::remote(Record)]
+pub struct PerpetualModifyConfirmData {
+    pub base_asset: Asset,
+    pub asset_index: i32,
+    pub modify_type: PerpetualModifyType,
+}
+
 #[uniffi::remote(Enum)]
 pub enum PerpetualType {
     Open(PerpetualConfirmData),
     Close(PerpetualConfirmData),
+    Modify(PerpetualModifyConfirmData),
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
