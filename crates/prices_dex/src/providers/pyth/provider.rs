@@ -70,8 +70,9 @@ impl PriceChainAssetsProvider for PythProvider {
 
 #[cfg(all(test, feature = "price_integration_tests"))]
 mod tests {
+    use super::super::mapper::price_feed_id_for_chain;
     use super::super::testkit::create_pyth_test_provider;
-    use crate::{PriceChainAssetsProvider, PriceFeedProvider};
+    use crate::{PriceChainAssetsProvider, PriceFeedId, PriceFeedProvider};
     use primitives::Chain;
 
     #[tokio::test]
@@ -98,8 +99,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_pyth_get_assets_prices() {
-        use super::mapper::price_feed_id_for_chain;
-
         let provider = create_pyth_test_provider();
         let feed_ids = Chain::all()
             .iter()

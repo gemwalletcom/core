@@ -85,6 +85,12 @@ mod tests {
 
         assert!(result.is_ok());
         let supported = result.unwrap();
-        assert!(supported.is_empty());
+        assert!(!supported.is_empty());
+
+        for feed in &supported {
+            assert_eq!(feed.price_feed_id.provider, PriceFeedProvider::Jupiter);
+            assert!(!feed.price_feed_id.feed_id.is_empty());
+            assert!(feed.get_id().starts_with("jupiter_"));
+        }
     }
 }
