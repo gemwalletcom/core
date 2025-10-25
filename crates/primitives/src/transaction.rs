@@ -286,45 +286,145 @@ impl Transaction {
             | TransactionType::TransferNFT
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition => vec![self.asset_id.clone()],
+            | TransactionType::PerpetualClosePosition => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
-                .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
-                .map(|metadata| vec![metadata.from_asset, metadata.to_asset])
-                .unwrap_or_default(),
-        }
-    }
-
-    pub fn assets_addresses(&self) -> Vec<AssetAddress> {
-        match self.transaction_type {
-            TransactionType::Transfer
-            | TransactionType::TokenApproval
-            | TransactionType::StakeDelegate
-            | TransactionType::StakeUndelegate
-            | TransactionType::StakeRewards
-            | TransactionType::StakeRedelegate
-            | TransactionType::StakeWithdraw
-            | TransactionType::StakeFreeze
-            | TransactionType::StakeUnfreeze
-            | TransactionType::AssetActivation
-            | TransactionType::TransferNFT
-            | TransactionType::SmartContractCall
-            | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
-            TransactionType::Swap => self
-                .metadata
-                .clone()
-                .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
-                .map(|metadata| {
-                    vec![
-                        AssetAddress::new(metadata.from_asset.clone(), self.from.clone(), None),
-                        AssetAddress::new(metadata.to_asset.clone(), self.to.clone(), None),
-                    ]
-                })
+                .and_then(|x| serde_json::from_value::<TransactionSwapMetadata>(x).ok())
+                .map(|x| vec![x.from_asset, x.to_asset, self.fee_asset_id.clone()])
                 .unwrap_or_default(),
         }
         .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
         .collect()
+    }
+
+    pub fn assets_addresses(&self) -> Vec<AssetAddress> {
+        [
+            match self.transaction_type {
+                TransactionType::Transfer
+                | TransactionType::TokenApproval
+                | TransactionType::StakeDelegate
+                | TransactionType::StakeUndelegate
+                | TransactionType::StakeRewards
+                | TransactionType::StakeRedelegate
+                | TransactionType::StakeWithdraw
+                | TransactionType::StakeFreeze
+                | TransactionType::StakeUnfreeze
+                | TransactionType::AssetActivation
+                | TransactionType::TransferNFT
+                | TransactionType::SmartContractCall
+                | TransactionType::PerpetualOpenPosition
+                | TransactionType::PerpetualClosePosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
+                TransactionType::Swap => self
+                    .metadata
+                    .clone()
+                    .and_then(|x| serde_json::from_value::<TransactionSwapMetadata>(x).ok())
+                    .map(|x| {
+                        vec![
+                            AssetAddress::new(x.from_asset.clone(), self.from.clone(), None),
+                            AssetAddress::new(x.to_asset.clone(), self.to.clone(), None),
+                        ]
+                    })
+                    .unwrap_or_default(),
+            },
+            vec![AssetAddress::new(self.fee_asset_id.clone(), self.from.clone(), None)],
+        ]
+        .concat()
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Asset;
+
+    #[test]
+    fn test_asset_ids_transfer() {
+        assert_eq!(Transaction::mock().asset_ids().len(), 1);
+
+        let transaction = Transaction {
+            asset_id: Asset::mock_ethereum_usdc().id,
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.asset_ids().len(), 2);
+    }
+
+    #[test]
+    fn test_asset_ids_swap() {
+        let transaction = Transaction {
+            transaction_type: TransactionType::Swap,
+            metadata: Some(
+                serde_json::to_value(TransactionSwapMetadata {
+                    from_asset: Asset::mock_eth().id,
+                    from_value: "1".to_string(),
+                    to_asset: Asset::mock_eth().id,
+                    to_value: "1".to_string(),
+                    provider: None,
+                })
+                .unwrap(),
+            ),
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.asset_ids().len(), 1);
+
+        let transaction = Transaction {
+            transaction_type: TransactionType::Swap,
+            metadata: Some(
+                serde_json::to_value(TransactionSwapMetadata {
+                    from_asset: Asset::mock_ethereum_usdc().id,
+                    from_value: "1".to_string(),
+                    to_asset: Asset::mock_erc20().id,
+                    to_value: "1".to_string(),
+                    provider: None,
+                })
+                .unwrap(),
+            ),
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.asset_ids().len(), 3);
+    }
+
+    #[test]
+    fn test_assets_addresses_transfer() {
+        assert_eq!(Transaction::mock().assets_addresses().len(), 2);
+
+        let transaction = Transaction {
+            asset_id: Asset::mock_ethereum_usdc().id,
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.assets_addresses().len(), 2);
+        assert!(
+            transaction
+                .assets_addresses()
+                .iter()
+                .any(|a| a.asset_id == Asset::mock_eth().id && a.address == "0xfrom")
+        );
+    }
+
+    #[test]
+    fn test_assets_addresses_swap() {
+        let transaction = Transaction {
+            transaction_type: TransactionType::Swap,
+            from: "0xsame".to_string(),
+            to: "0xsame".to_string(),
+            metadata: Some(
+                serde_json::to_value(TransactionSwapMetadata {
+                    from_asset: Asset::mock_ethereum_usdc().id,
+                    from_value: "1".to_string(),
+                    to_asset: Asset::mock_erc20().id,
+                    to_value: "1".to_string(),
+                    provider: None,
+                })
+                .unwrap(),
+            ),
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.assets_addresses().len(), 3);
     }
 }
