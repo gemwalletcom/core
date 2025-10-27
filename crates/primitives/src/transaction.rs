@@ -302,34 +302,40 @@ impl Transaction {
     }
 
     pub fn assets_addresses(&self) -> Vec<AssetAddress> {
-        match self.transaction_type {
-            TransactionType::Transfer
-            | TransactionType::TokenApproval
-            | TransactionType::StakeDelegate
-            | TransactionType::StakeUndelegate
-            | TransactionType::StakeRewards
-            | TransactionType::StakeRedelegate
-            | TransactionType::StakeWithdraw
-            | TransactionType::StakeFreeze
-            | TransactionType::StakeUnfreeze
-            | TransactionType::AssetActivation
-            | TransactionType::TransferNFT
-            | TransactionType::SmartContractCall
-            | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition
-            | TransactionType::PerpetualModify => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
-            TransactionType::Swap => self
-                .metadata
-                .clone()
-                .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
-                .map(|metadata| {
-                    vec![
-                        AssetAddress::new(metadata.from_asset.clone(), self.from.clone(), None),
-                        AssetAddress::new(metadata.to_asset.clone(), self.to.clone(), None),
-                    ]
-                })
-                .unwrap_or_default(),
-        }
+        [
+            match self.transaction_type {
+                TransactionType::Transfer
+                | TransactionType::TokenApproval
+                | TransactionType::StakeDelegate
+                | TransactionType::StakeUndelegate
+                | TransactionType::StakeRewards
+                | TransactionType::StakeRedelegate
+                | TransactionType::StakeWithdraw
+                | TransactionType::StakeFreeze
+                | TransactionType::StakeUnfreeze
+                | TransactionType::AssetActivation
+                | TransactionType::TransferNFT
+                | TransactionType::SmartContractCall
+                | TransactionType::PerpetualOpenPosition
+                | TransactionType::PerpetualClosePosition
+                | TransactionType::PerpetualModify => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
+                TransactionType::Swap => self
+                    .metadata
+                    .clone()
+                    .and_then(|x| serde_json::from_value::<TransactionSwapMetadata>(x).ok())
+                    .map(|x| {
+                        vec![
+                            AssetAddress::new(x.from_asset.clone(), self.from.clone(), None),
+                            AssetAddress::new(x.to_asset.clone(), self.to.clone(), None),
+                        ]
+                    })
+                    .unwrap_or_default(),
+            },
+            vec![AssetAddress::new(self.fee_asset_id.clone(), self.from.clone(), None)],
+        ]
+        .concat()
+        .into_iter()
+        .collect::<HashSet<_>>()
         .into_iter()
         .collect()
     }
