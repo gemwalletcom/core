@@ -1,5 +1,6 @@
 use std::{
     str::FromStr,
+    sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -15,11 +16,19 @@ use super::{
     model::RouteData,
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, asset::*,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
+    SwapperQuoteData, approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
 };
 
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000000000000000000000000000";
+
+impl ThorChain<RpcClient> {
+    pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
+        let endpoint = rpc_provider.get_endpoint(Chain::Thorchain).expect("Failed to get Thorchain endpoint");
+        let swap_client = ThorChainSwapClient::new(RpcClient::new(endpoint, rpc_provider.clone()));
+        Self::with_client(swap_client, rpc_provider)
+    }
+}
 
 #[async_trait]
 impl<C> Swapper for ThorChain<C>
@@ -96,10 +105,10 @@ where
             .await?;
 
         let to_value = self.value_to(quote.expected_amount_out, to_asset.decimals as i32);
-
+        let inbound_address = RouteData::get_inbound_address(&from_asset, quote.inbound_address.clone())?;
         let route_data = RouteData {
             router_address: quote.router.clone(),
-            inbound_address: quote.inbound_address.clone(),
+            inbound_address,
         };
 
         let quote = Quote {
@@ -167,7 +176,7 @@ where
         let data = if from_asset.use_evm_router() {
             // only used for swapping from ERC20 tokens
             let to = route_data.router_address.clone().unwrap();
-            let inbound_address = Address::from_str(&route_data.inbound_address.unwrap_or_default()).unwrap();
+            let inbound_address = Address::from_str(&route_data.inbound_address).unwrap();
             let token_address = Address::from_str(&quote.request.from_asset.asset_id().token_id.clone().unwrap()).unwrap();
             let amount = U256::from_str(&value).unwrap();
             let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 86400; // + 1 day
@@ -184,7 +193,7 @@ where
 
             SwapperQuoteData::new_contract(to, value, HexEncode(call.clone()), approval, gas_limit)
         } else {
-            SwapperQuoteData::new_tranfer(route_data.inbound_address.unwrap_or_default(), value, Some(memo))
+            SwapperQuoteData::new_tranfer(route_data.inbound_address, value, Some(memo))
         };
 
         Ok(data)
@@ -227,7 +236,7 @@ mod swap_integration_tests {
     use std::sync::Arc;
 
     #[tokio::test]
-    async fn test_thorchain_swap_trx_to_bnb() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_thorchain_quote_trx_to_bnb() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let provider = Arc::new(NativeProvider::default());
         let swapper = ThorChain::new(provider.clone());
 
@@ -237,7 +246,25 @@ mod swap_integration_tests {
 
         let quote = swapper.fetch_quote(&request).await?;
 
-        println!("quote: {:#?}", quote);
+        assert_eq!(quote.from_value, request.value);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        assert!(quote.eta_in_seconds.is_some());
+        assert!(!quote.data.routes.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_thorchain_quote_rune_to_cosmos() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let provider = Arc::new(NativeProvider::default());
+        let swapper = ThorChain::new(provider.clone());
+
+        let from_asset = SwapperQuoteAsset::from(Chain::Thorchain.as_asset_id());
+        let to_asset = SwapperQuoteAsset::from(Chain::Cosmos.as_asset_id());
+        let mut request = mock_quote(from_asset, to_asset);
+        request.value = "100000000".to_string();
+
+        let quote = swapper.fetch_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
