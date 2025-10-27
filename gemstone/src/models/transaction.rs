@@ -211,7 +211,7 @@ pub enum PerpetualModifyType {
 pub struct PerpetualModifyConfirmData {
     pub base_asset: Asset,
     pub asset_index: i32,
-    pub modify_type: PerpetualModifyType,
+    pub modify_types: Vec<PerpetualModifyType>,
 }
 
 #[uniffi::remote(Enum)]
