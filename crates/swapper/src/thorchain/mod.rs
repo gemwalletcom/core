@@ -1,7 +1,7 @@
 mod asset;
 mod chain;
 mod client;
-mod default;
+mod constants;
 mod memo;
 mod model;
 mod provider;
