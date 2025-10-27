@@ -8,10 +8,11 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, FeeRate, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
+    fee::GasPriceType,
 };
 
-use crate::contracts::IERC20;
+use crate::contracts::{IERC20, IERC721, IERC1155};
 use crate::everstake::{DEFAULT_ALLOWED_INTERCHANGE_NUM, EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS, EVERSTAKE_SOURCE, IAccounting, IPool};
 use crate::fee_calculator::FeeCalculator;
 use crate::models::fee::EthereumFeeHistory;
@@ -79,7 +80,15 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 Ok(TransactionParams::new(to, data, BigInt::from(0)))
             }
         },
-        TransactionInputType::TransferNft(_, _) => Err("Unsupported transfer type".into()),
+        TransactionInputType::TransferNft(_, nft_asset) => {
+            let contract_address = nft_asset.contract_address.as_ref().ok_or("Missing contract address")?;
+            let data = match nft_asset.token_type {
+                NFTType::ERC721 => encode_erc721_transfer(&input.sender_address, &input.destination_address, &nft_asset.token_id)?,
+                NFTType::ERC1155 => encode_erc1155_transfer(&input.sender_address, &input.destination_address, &nft_asset.token_id)?,
+                _ => return Err("Unsupported NFT type for EVM".into()),
+            };
+            Ok(TransactionParams::new(contract_address.clone(), data, BigInt::from(0)))
+        }
         TransactionInputType::Swap(from_asset, _, swap_data) => {
             if let Some(approval) = &swap_data.data.approval {
                 Ok(TransactionParams::new(
@@ -190,20 +199,39 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
 }
 
 fn encode_erc20_transfer(to: &str, amount: &BigInt) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    let to_address = Address::from_str(to)?;
-    let value = U256::from_str(&amount.to_string())?;
-    let call = IERC20::transferCall { to: to_address, value };
-    Ok(call.abi_encode())
+    Ok(IERC20::transferCall {
+        to: Address::from_str(to)?,
+        value: U256::from_str(&amount.to_string())?,
+    }
+    .abi_encode())
 }
 
 fn encode_erc20_approve(spender: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    let spender_address = Address::from_str(spender)?;
-    let max_value = U256::MAX;
-    let call = IERC20::approveCall {
-        spender: spender_address,
-        value: max_value,
-    };
-    Ok(call.abi_encode())
+    Ok(IERC20::approveCall {
+        spender: Address::from_str(spender)?,
+        value: U256::MAX,
+    }
+    .abi_encode())
+}
+
+fn encode_erc721_transfer(from: &str, to: &str, token_id: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+    Ok(IERC721::safeTransferFromCall {
+        from: Address::from_str(from)?,
+        to: Address::from_str(to)?,
+        tokenId: U256::from_str(token_id)?,
+    }
+    .abi_encode())
+}
+
+fn encode_erc1155_transfer(from: &str, to: &str, token_id: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+    Ok(IERC1155::safeTransferFromCall {
+        from: Address::from_str(from)?,
+        to: Address::from_str(to)?,
+        id: U256::from_str(token_id)?,
+        amount: U256::from(1),
+        data: vec![].into(),
+    }
+    .abi_encode())
 }
 
 fn big_int_to_u256(value: &BigInt) -> Result<U256, Box<dyn Error + Send + Sync>> {
@@ -219,12 +247,12 @@ fn encode_everstake(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
         StakeType::Stake(_) => Ok(IPool::stakeCall { source: EVERSTAKE_SOURCE }.abi_encode()),
         StakeType::Unstake(_) => {
             let value = big_int_to_u256(amount)?;
-            let call = IPool::unstakeCall {
+            Ok(IPool::unstakeCall {
                 value,
                 allowedInterchangeNum: DEFAULT_ALLOWED_INTERCHANGE_NUM,
                 source: EVERSTAKE_SOURCE,
-            };
-            Ok(call.abi_encode())
+            }
+            .abi_encode())
         }
         StakeType::Withdraw(_) => Ok(IAccounting::claimWithdrawRequestCall {}.abi_encode()),
         _ => Err("Unsupported stake type for Everstake".into()),
@@ -615,6 +643,36 @@ mod tests {
         let expected_hex = "33986ffa";
         assert_eq!(hex::encode(&result), expected_hex);
         assert_eq!(result, IAccounting::claimWithdrawRequestCall {}.abi_encode());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_erc721_transfer() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let from = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0";
+        let to = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";
+        let token_id = "1234";
+
+        let result = encode_erc721_transfer(from, to, token_id)?;
+
+        assert!(!result.is_empty());
+        let selector = &result[0..4];
+        assert_eq!(hex::encode(selector), "42842e0e");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_encode_erc1155_transfer() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let from = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0";
+        let to = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";
+        let token_id = "5678";
+
+        let result = encode_erc1155_transfer(from, to, token_id)?;
+
+        assert!(!result.is_empty());
+        let selector = &result[0..4];
+        assert_eq!(hex::encode(selector), "f242432a");
 
         Ok(())
     }

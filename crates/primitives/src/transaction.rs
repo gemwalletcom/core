@@ -287,14 +287,18 @@ impl Transaction {
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
             | TransactionType::PerpetualClosePosition
-            | TransactionType::PerpetualModify => vec![self.asset_id.clone()],
+            | TransactionType::PerpetualModify => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
-                .and_then(|metadata| serde_json::from_value::<TransactionSwapMetadata>(metadata).ok())
-                .map(|metadata| vec![metadata.from_asset, metadata.to_asset])
+                .and_then(|x| serde_json::from_value::<TransactionSwapMetadata>(x).ok())
+                .map(|x| vec![x.from_asset, x.to_asset, self.fee_asset_id.clone()])
                 .unwrap_or_default(),
         }
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect()
     }
 
     pub fn assets_addresses(&self) -> Vec<AssetAddress> {
@@ -328,5 +332,95 @@ impl Transaction {
         }
         .into_iter()
         .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Asset;
+
+    #[test]
+    fn test_asset_ids_transfer() {
+        assert_eq!(Transaction::mock().asset_ids().len(), 1);
+
+        let transaction = Transaction {
+            asset_id: Asset::mock_ethereum_usdc().id,
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.asset_ids().len(), 2);
+    }
+
+    #[test]
+    fn test_asset_ids_swap() {
+        let transaction = Transaction {
+            transaction_type: TransactionType::Swap,
+            metadata: Some(
+                serde_json::to_value(TransactionSwapMetadata {
+                    from_asset: Asset::mock_eth().id,
+                    from_value: "1".to_string(),
+                    to_asset: Asset::mock_eth().id,
+                    to_value: "1".to_string(),
+                    provider: None,
+                })
+                .unwrap(),
+            ),
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.asset_ids().len(), 1);
+
+        let transaction = Transaction {
+            transaction_type: TransactionType::Swap,
+            metadata: Some(
+                serde_json::to_value(TransactionSwapMetadata {
+                    from_asset: Asset::mock_ethereum_usdc().id,
+                    from_value: "1".to_string(),
+                    to_asset: Asset::mock_erc20().id,
+                    to_value: "1".to_string(),
+                    provider: None,
+                })
+                .unwrap(),
+            ),
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.asset_ids().len(), 3);
+    }
+
+    #[test]
+    fn test_assets_addresses_transfer() {
+        assert_eq!(Transaction::mock().assets_addresses().len(), 2);
+
+        let transaction = Transaction {
+            asset_id: Asset::mock_ethereum_usdc().id,
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.assets_addresses().len(), 2);
+        assert!(
+            transaction
+                .assets_addresses()
+                .iter()
+                .any(|a| a.asset_id == Asset::mock_eth().id && a.address == "0xfrom")
+        );
+    }
+
+    #[test]
+    fn test_assets_addresses_swap() {
+        let transaction = Transaction {
+            transaction_type: TransactionType::Swap,
+            from: "0xsame".to_string(),
+            to: "0xsame".to_string(),
+            metadata: Some(
+                serde_json::to_value(TransactionSwapMetadata {
+                    from_asset: Asset::mock_ethereum_usdc().id,
+                    from_value: "1".to_string(),
+                    to_asset: Asset::mock_erc20().id,
+                    to_value: "1".to_string(),
+                    provider: None,
+                })
+                .unwrap(),
+            ),
+            ..Transaction::mock()
+        };
+        assert_eq!(transaction.assets_addresses().len(), 3);
     }
 }

@@ -21,8 +21,6 @@ pub struct DelegationPoolStake {
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub inactive: BigUint,
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
-    pub pending_active: BigUint,
-    #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub pending_inactive: BigUint,
 }
 

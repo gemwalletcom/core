@@ -14,11 +14,11 @@ strum = { workspace = true }
 gem_client = { path = "../gem_client" }
 primitives = { path = "../primitives" }
 serde_serializers = { path = "../serde_serializers" }
+settings = { path = "../settings", features = ["testkit"], optional = true }
 
 [dev-dependencies]
 tokio.workspace = true
-settings = { path = "../settings", features = ["testkit"] }
 
 [features]
 default = []
-price_integration_tests = []
+price_integration_tests = ["settings"]
