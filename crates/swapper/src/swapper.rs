@@ -89,6 +89,7 @@ impl GemSwapper {
             Box::new(hyperliquid::HyperCoreBridge::new()),
             uniswap::default::boxed_oku(rpc_provider.clone()),
             uniswap::default::boxed_wagmi(rpc_provider.clone()),
+            uniswap::default::boxed_hyperswap(rpc_provider.clone()),
             Box::new(pancakeswap_aptos::PancakeSwapAptos::new(rpc_provider.clone())),
             Box::new(provider_factory::new_stonfi_v2(rpc_provider.clone())),
             Box::new(provider_factory::new_mayan(rpc_provider.clone())),

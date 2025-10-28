@@ -114,6 +114,7 @@ pub enum SwapperProvider {
     Across,
     Oku,
     Wagmi,
+    Hyperswap,
     Cetus,
     StonfiV2,
     Mayan,

@@ -119,6 +119,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Manta => "0xb73603c5d87fa094b7314c74ace2e64d165016fb",
         EVMChain::Linea => "0x176211869cA2b568f2A7D4EE941E073a821EE1ff",
         EVMChain::Ink => "0xF1815bd50389c46847f0Bda824eC8da914045D14",
+        EVMChain::Hyperliquid => "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
         EVMChain::OpBNB | EVMChain::Plasma => "",
         _ => panic!("USDC is not configured for this chain"),
     };
@@ -143,7 +144,8 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::OpBNB => "0x9e5AAC1Ba1a2e6aEd6b32689DFcF62A509Ca96f3",
         EVMChain::Ink => "0x0200C29006150606B650577BBE7B6248F58470c1",
         EVMChain::Plasma => "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb", // USDT0
-        EVMChain::Blast | EVMChain::World => "",                          // None
+        EVMChain::Hyperliquid => "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb",
+        EVMChain::Blast | EVMChain::World => "", // None
         _ => panic!("USDT is not configured for this chain"),
     };
 

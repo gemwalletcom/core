@@ -39,6 +39,7 @@ impl ProviderType {
             | SwapperProvider::Jupiter
             | SwapperProvider::Oku
             | SwapperProvider::Wagmi
+            | SwapperProvider::Hyperswap
             | SwapperProvider::Cetus
             | SwapperProvider::CetusAggregator
             | SwapperProvider::StonfiV2
