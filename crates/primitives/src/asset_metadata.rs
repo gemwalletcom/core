@@ -2,6 +2,8 @@
 struct AssetMetaData {
     #[serde(rename = "isEnabled")]
     is_enabled: bool,
+    #[serde(rename = "isBalanceEnabled")]
+    is_balance_enabled: bool,
     #[serde(rename = "isBuyEnabled")]
     is_buy_enabled: bool,
     #[serde(rename = "isSellEnabled")]
