@@ -26,8 +26,8 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let (spot_balances, spot_metadata) = try_join!(self.get_spot_balances(&address), self.get_spot_metadata())?;
-        Ok(map_balance_tokens(&spot_balances, &spot_metadata, &token_ids, self.chain))
+        let (spot_balances, spot_meta) = try_join!(self.get_spot_balances(&address), self.get_spot_meta())?;
+        Ok(map_balance_tokens(&spot_balances, spot_meta.tokens(), &token_ids, self.chain))
     }
 
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {

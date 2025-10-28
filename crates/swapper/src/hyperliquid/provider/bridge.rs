@@ -11,7 +11,7 @@ use primitives::{
 
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    asset::HYPERCORE_HYPE,
+    asset::{HYPERCORE_HYPE, HYPEREVM_HYPE},
 };
 
 #[derive(Debug)]
@@ -42,7 +42,7 @@ impl Swapper for HyperCoreBridge {
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![
             SwapperChainAsset::Assets(Chain::HyperCore, vec![HYPERCORE_HYPE.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPERCORE_HYPE.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_HYPE.id.clone()]),
         ]
     }
 

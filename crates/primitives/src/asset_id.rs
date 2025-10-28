@@ -106,6 +106,20 @@ impl AssetId {
     pub fn token_subtype(&self) -> AssetSubtype {
         if self.is_native() { AssetSubtype::NATIVE } else { AssetSubtype::TOKEN }
     }
+
+    pub fn token_components(&self) -> Option<(String, Option<String>, Option<i32>)> {
+        let token_id = self.token_id.as_ref()?;
+        let parts = AssetId::decode_token_id(token_id);
+        if parts.is_empty() {
+            return None;
+        }
+
+        let symbol = parts[0].clone();
+        let contract = parts.get(1).and_then(|value| (!value.is_empty()).then(|| value.clone()));
+        let index = parts.get(2).and_then(|value| value.parse::<i32>().ok());
+
+        Some((symbol, contract, index))
+    }
 }
 
 pub trait AssetIdVecExt {
