@@ -32,6 +32,7 @@ pub struct Order {
     pub is_buy: bool,
     #[serde(rename = "p")]
     pub price: String,
+    /// Use "0" to apply to entire position (for position TP/SL orders)
     #[serde(rename = "s")]
     pub size: String,
     #[serde(rename = "r")]
@@ -223,7 +224,7 @@ pub fn make_position_tp_sl(
             asset,
             !is_buy,
             &sl_execution_price,
-            size, // Note: "0" means apply to entire position
+            size,
             true,
             sl_trigger_px,
             TpslType::StopLoss,
@@ -236,7 +237,7 @@ pub fn make_position_tp_sl(
             asset,
             !is_buy,
             &tp_execution_price,
-            size, // Note: "0" means apply to entire position
+            size,
             true,
             tp_trigger_px,
             TpslType::TakeProfit,
