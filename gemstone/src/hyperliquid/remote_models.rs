@@ -1,5 +1,6 @@
 use alloy_primitives::hex;
 use gem_hypercore::core::{HYPE_SYSTEM_ADDRESS, actions, hypercore};
+use primitives::TpslType;
 
 // Order types
 pub type HyperPlaceOrder = actions::PlaceOrder;
@@ -8,7 +9,7 @@ pub type HyperOrderType = actions::OrderType;
 pub type HyperLimitOrder = actions::LimitOrder;
 pub type HyperTrigger = actions::Trigger;
 pub type HyperTimeInForce = actions::TimeInForce;
-pub type HyperTpslType = actions::TpslType;
+pub type HyperTpslType = TpslType;
 pub type HyperGrouping = actions::Grouping;
 pub type HyperBuilder = actions::Builder;
 
