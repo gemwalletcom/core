@@ -118,3 +118,9 @@ impl From<num_bigint::ParseBigIntError> for SwapperError {
         Self::InvalidAmount(err.to_string())
     }
 }
+
+impl From<number_formatter::NumberFormatterError> for SwapperError {
+    fn from(err: number_formatter::NumberFormatterError) -> Self {
+        Self::InvalidAmount(err.to_string())
+    }
+}

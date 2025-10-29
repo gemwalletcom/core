@@ -6,6 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 reqwest = ["gem_client/reqwest"]
+signer = []
 chain_integration_tests = ["reqwest", "settings/testkit"]
 
 [dependencies]

@@ -96,6 +96,23 @@ impl AssetId {
         token_id.split(TOKEN_ID_SEPARATOR).map(|s| s.to_string()).collect()
     }
 
+    pub fn split_token_id(token_id: &str, separator: char) -> Vec<String> {
+        token_id.split(separator).map(|s| s.to_string()).collect()
+    }
+
+    pub fn get_token_id(&self) -> Result<&String, crate::SignerError> {
+        self.token_id.as_ref().ok_or_else(|| crate::SignerError::InvalidInput("Token ID required".to_string()))
+    }
+
+    pub fn split_token_parts(&self, separator: char) -> Result<(String, String), crate::SignerError> {
+        let token_id = self.get_token_id()?;
+        let parts: Vec<&str> = token_id.split(separator).collect();
+        if parts.len() < 2 {
+            return Err(crate::SignerError::InvalidInput(format!("Invalid token ID format: {}", token_id)));
+        }
+        Ok((parts[0].to_string(), parts[1].to_string()))
+    }
+
     pub fn is_native(&self) -> bool {
         self.token_id.is_none()
     }

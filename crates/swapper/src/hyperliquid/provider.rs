@@ -72,7 +72,7 @@ impl Swapper for HyperCoreBridge {
             Chain::HyperCore => {
                 let decimals: i32 = quote.request.from_asset.decimals.try_into().unwrap();
                 let amount =
-                    BigNumberFormatter::value(&quote.request.value, decimals).ok_or(SwapperError::TransactionError("Parsing amount error".to_string()))?;
+                    BigNumberFormatter::value(&quote.request.value, decimals)?;
                 let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_millis() as u64;
 
                 let spot_send = SpotSend::new(amount, HYPE_SYSTEM_ADDRESS.to_string(), timestamp, HYPERCORE_HYPE_TOKEN.to_string());
