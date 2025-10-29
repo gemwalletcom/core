@@ -107,7 +107,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                         SwapQuoteDataType::Contract => Ok(TransactionParams::new(
                             swap_data.data.to.clone(),
                             alloy_primitives::hex::decode(swap_data.data.data.clone())?,
-                            BigInt::from_str_radix(&swap_data.data.value, 10)?,
+                            BigInt::ZERO,
                         )),
                         SwapQuoteDataType::Transfer => {
                             let to = from_asset.token_id.clone().ok_or("Missing token ID")?.clone();
