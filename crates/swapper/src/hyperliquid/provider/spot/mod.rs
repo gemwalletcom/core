@@ -33,6 +33,7 @@ use simulator::{simulate_buy, simulate_sell};
 const SPOT_META_TTL: Duration = Duration::from_secs(30);
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
+const MAX_DECIMAL_SCALE: u32 = 6;
 
 #[derive(Debug)]
 pub struct HyperCoreSpot {
@@ -136,9 +137,8 @@ impl HyperCoreSpot {
         BigDecimal::from_str(&human).map_err(|_| SwapperError::InvalidAmount("invalid amount".to_string()))
     }
 
-    fn decimal_to_amount_string(value: &BigDecimal, decimals: i32) -> Result<String, SwapperError> {
-        let human = value.normalized().to_string();
-        BigNumberFormatter::value_from_amount(&human, decimals as u32).map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))
+    fn format_decimal(value: &BigDecimal) -> String {
+        BigNumberFormatter::decimal_to_string(value, MAX_DECIMAL_SCALE)
     }
 }
 
@@ -182,20 +182,29 @@ impl Swapper for HyperCoreSpot {
             SpotSide::Buy => simulate_buy(&amount_in, &orderbook.levels[1])?,
         };
 
-        let to_value = Self::decimal_to_amount_string(&output_amount, to_token.wei_decimals)?;
+        let decimals_u32: u32 = to_token
+            .wei_decimals
+            .try_into()
+            .map_err(|_| SwapperError::InvalidAmount("invalid amount precision".to_string()))?;
+
+        let output_amount_str = Self::format_decimal(&output_amount);
+        let to_value = BigNumberFormatter::value_from_amount(&output_amount_str, decimals_u32)
+            .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?;
+
+        let amount_in_str = Self::format_decimal(&amount_in);
+        let avg_price_str = Self::format_decimal(&avg_price);
+
+        let (size_str, quote_amount_str) = match side {
+            SpotSide::Sell => (amount_in_str.clone(), output_amount_str.clone()),
+            SpotSide::Buy => (output_amount_str.clone(), amount_in_str.clone()),
+        };
 
         let route_data = SpotRouteData {
             market_index: market.index,
             side: side.clone(),
-            size: match side {
-                SpotSide::Sell => amount_in.normalized().to_string(),
-                SpotSide::Buy => output_amount.normalized().to_string(),
-            },
-            price: avg_price.normalized().to_string(),
-            quote_amount: match side {
-                SpotSide::Sell => output_amount.normalized().to_string(),
-                SpotSide::Buy => amount_in.normalized().to_string(),
-            },
+            size: size_str,
+            price: avg_price_str,
+            quote_amount: quote_amount_str,
         };
 
         let quote = Quote {

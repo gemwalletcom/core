@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::super::token::{SpotToken, SpotTokensResponse};
+use super::super::token::SpotToken;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpotMarket {
@@ -16,14 +16,14 @@ pub struct SpotMetaRaw {
 
 #[derive(Debug, Clone)]
 pub struct SpotMeta {
-    tokens: SpotTokensResponse,
+    tokens: Vec<SpotToken>,
     universe: Vec<SpotMarket>,
 }
 
 impl From<SpotMetaRaw> for SpotMeta {
     fn from(value: SpotMetaRaw) -> Self {
         Self {
-            tokens: SpotTokensResponse { tokens: value.tokens },
+            tokens: value.tokens,
             universe: value.universe,
         }
     }
@@ -31,7 +31,7 @@ impl From<SpotMetaRaw> for SpotMeta {
 
 impl SpotMeta {
     pub fn tokens(&self) -> &[SpotToken] {
-        &self.tokens.tokens
+        &self.tokens
     }
 
     pub fn universe(&self) -> &[SpotMarket] {

@@ -78,11 +78,8 @@ fn parse_decimal(value: &str) -> Result<BigDecimal, SwapperError> {
 mod tests {
     use super::*;
     use bigdecimal::BigDecimal;
+    use number_formatter::BigNumberFormatter;
     use std::str::FromStr;
-
-    fn format_decimal(decimal: &BigDecimal) -> String {
-        decimal.normalized().to_string()
-    }
 
     fn level(px: &str, sz: &str) -> OrderbookLevel {
         OrderbookLevel {
@@ -96,8 +93,15 @@ mod tests {
         let amount = BigDecimal::from_str("7").unwrap();
         let bids = vec![level("2", "3"), level("1.5", "5")];
         let (quote_out, avg_price) = simulate_sell(&amount, &bids).unwrap();
-        assert_eq!(format_decimal(&quote_out), "11.5");
-        assert_eq!(format_decimal(&(avg_price.clone() * amount.clone())), format_decimal(&quote_out));
+        let expected = BigDecimal::from_str("12").unwrap();
+
+        let quote_str = BigNumberFormatter::decimal_to_string(&quote_out, 6);
+        let expected_str = BigNumberFormatter::decimal_to_string(&expected, 6);
+        assert_eq!(quote_str, expected_str);
+
+        let avg_total = avg_price * amount;
+        let avg_total_str = BigNumberFormatter::decimal_to_string(&avg_total, 6);
+        assert_eq!(avg_total_str, expected_str);
     }
 
     #[test]
@@ -112,13 +116,16 @@ mod tests {
         let amount = BigDecimal::from_str("10").unwrap();
         let asks = vec![level("2", "3"), level("3", "5")];
         let (base_out, avg_price) = simulate_buy(&amount, &asks).unwrap();
-        assert_eq!(format_decimal(&(avg_price.clone() * base_out.clone())), format_decimal(&amount));
+        let product = avg_price * base_out.clone();
+        let product_str = BigNumberFormatter::decimal_to_string(&product, 6);
+        let amount_str = BigNumberFormatter::decimal_to_string(&amount, 6);
+        assert_eq!(product_str, amount_str);
         assert!(base_out > BigDecimal::zero());
     }
 
     #[test]
     fn test_simulate_buy_insufficient_depth() {
-        let amount = BigDecimal::from_str("20").unwrap();
+        let amount = BigDecimal::from_str("25").unwrap();
         let asks = vec![level("2", "3"), level("3", "5")];
         assert!(matches!(simulate_buy(&amount, &asks), Err(SwapperError::NoQuoteAvailable)));
     }
