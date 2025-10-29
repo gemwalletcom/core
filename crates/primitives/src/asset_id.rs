@@ -101,7 +101,9 @@ impl AssetId {
     }
 
     pub fn get_token_id(&self) -> Result<&String, crate::SignerError> {
-        self.token_id.as_ref().ok_or_else(|| crate::SignerError::InvalidInput("Token ID required".to_string()))
+        self.token_id
+            .as_ref()
+            .ok_or_else(|| crate::SignerError::InvalidInput("Token ID required".to_string()))
     }
 
     pub fn split_token_parts(&self, separator: char) -> Result<(String, String), crate::SignerError> {
