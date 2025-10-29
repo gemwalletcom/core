@@ -1,19 +1,13 @@
-use std::{
-    str::FromStr,
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::sync::Arc;
 
-use alloy_primitives::{Address, U256};
-use alloy_sol_types::SolCall;
+use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use gem_evm::thorchain::contracts::RouterInterface;
 use primitives::{Chain, swap::ApprovalData};
 
 use super::{
-    DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo,
-    model::RouteData, quote_data_mapper,
+    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData,
+    quote_data_mapper,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
@@ -161,41 +155,14 @@ where
                 None
             }
         };
-        let gas_limit = if approval.is_some() {
-            Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string())
-        } else {
-            None
-        };
-
-        let router_address = route_data.router_address.clone().unwrap_or_default();
-        let call_data = if from_asset.use_evm_router() {
-            let inbound_address = Address::from_str(&route_data.inbound_address).unwrap();
-            let token_address = Address::from_str(&quote.request.from_asset.asset_id().token_id.clone().unwrap()).unwrap();
-            let amount = U256::from_str(&value).unwrap();
-            let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 86400; // + 1 day
-            let expiry = U256::from_str(timestamp.to_string().as_str()).unwrap();
-
-            RouterInterface::depositWithExpiryCall {
-                inbound_address,
-                token_address,
-                amount,
-                memo: memo.clone(),
-                expiry,
-            }
-            .abi_encode()
-        } else {
-            vec![]
-        };
 
         let data = quote_data_mapper::map_quote_data(
             &from_asset,
-            router_address,
-            call_data,
-            route_data.inbound_address.clone(),
+            &route_data,
+            quote.request.from_asset.asset_id().token_id.clone(),
             value,
             memo,
             approval,
-            gas_limit,
         );
 
         Ok(data)
