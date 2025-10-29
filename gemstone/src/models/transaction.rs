@@ -5,7 +5,7 @@ use primitives::{
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyType, TPSLOrderData},
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
+    TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64,
     WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
@@ -212,8 +212,8 @@ pub struct PerpetualModifyConfirmData {
     pub base_asset: Asset,
     pub asset_index: i32,
     pub modify_types: Vec<PerpetualModifyType>,
-    pub take_profit_order_id: Option<u64>,
-    pub stop_loss_order_id: Option<u64>,
+    pub take_profit_order_id: Option<UInt64>,
+    pub stop_loss_order_id: Option<UInt64>,
 }
 
 #[uniffi::remote(Enum)]
