@@ -146,6 +146,10 @@ pub struct PerpetualModifyConfirmData {
     pub base_asset: Asset,
     pub asset_index: i32,
     pub modify_types: Vec<PerpetualModifyType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub take_profit_order_id: Option<UInt64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stop_loss_order_id: Option<UInt64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -212,6 +212,8 @@ pub struct PerpetualModifyConfirmData {
     pub base_asset: Asset,
     pub asset_index: i32,
     pub modify_types: Vec<PerpetualModifyType>,
+    pub take_profit_order_id: Option<u64>,
+    pub stop_loss_order_id: Option<u64>,
 }
 
 #[uniffi::remote(Enum)]
