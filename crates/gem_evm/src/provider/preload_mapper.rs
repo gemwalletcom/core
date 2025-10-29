@@ -6,7 +6,7 @@ use alloy_sol_types::SolCall;
 use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
 use num_traits::Num;
-use primitives::swap::{self, SwapQuoteDataType};
+use primitives::swap::SwapQuoteDataType;
 use primitives::{
     AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
     fee::GasPriceType,

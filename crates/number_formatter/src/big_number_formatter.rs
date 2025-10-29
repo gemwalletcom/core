@@ -98,7 +98,7 @@ mod tests {
 
         // Test case 5: Invalid input
         let result = BigNumberFormatter::value("abc", 2);
-        assert_eq!(result, None);
+        assert!(result.is_err());
 
         // Test case 6: Output return small value
         let result = BigNumberFormatter::value("1640000000000000", 18).unwrap();

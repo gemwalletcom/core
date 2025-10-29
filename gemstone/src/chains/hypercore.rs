@@ -75,10 +75,10 @@ impl ChainSigner for GemSigner {
             GemStakeType::Delegate { validator } => {
                 let wei = BigNumberFormatter::value_as_u64(&input.value, 10)?;
 
-                let deposit_request = self.factory.make_transfer_to_staking(wei, nonce_incrementer.next());
+                let deposit_request = self.factory.make_transfer_to_staking(wei, nonce_incrementer.next_value());
                 let deposit_action = self.hyper_core.sign_c_deposit(deposit_request, private_key.clone())?;
 
-                let delegate_request = self.factory.make_delegate(validator.id.clone(), wei, nonce_incrementer.next());
+                let delegate_request = self.factory.make_delegate(validator.id.clone(), wei, nonce_incrementer.next_value());
                 let delegate_action = self.hyper_core.sign_token_delegate(delegate_request, private_key)?;
                 Ok(vec![deposit_action, delegate_action])
             }
@@ -88,7 +88,7 @@ impl ChainSigner for GemSigner {
                 let undelegate_request = self.factory.make_undelegate(delegation.validator.id.clone(), wei, nonce_incrementer.current());
                 let undelegate_action = self.hyper_core.sign_token_delegate(undelegate_request, private_key.clone())?;
 
-                let withdraw_request = self.factory.make_withdraw_from_staking(wei, nonce_incrementer.next());
+                let withdraw_request = self.factory.make_withdraw_from_staking(wei, nonce_incrementer.next_value());
                 let withdraw_action = self.hyper_core.sign_c_withdraw(withdraw_request, private_key)?;
                 Ok(vec![undelegate_action, withdraw_action])
             }
@@ -121,18 +121,18 @@ impl ChainSigner for GemSigner {
         let mut transactions = Vec::new();
 
         if order.approve_referral_required {
-            transactions.push(self.sign_set_referer(&private_key, REFERRAL_CODE, timestamp_incrementer.next())?);
+            transactions.push(self.sign_set_referer(&private_key, REFERRAL_CODE, timestamp_incrementer.next_value())?);
         }
 
         if order.approve_agent_required {
-            transactions.push(self.sign_approve_agent(&order.agent_address, &private_key, timestamp_incrementer.next())?);
+            transactions.push(self.sign_approve_agent(&order.agent_address, &private_key, timestamp_incrementer.next_value())?);
         }
 
         if order.approve_builder_required {
-            transactions.push(self.sign_approve_builder_address(&private_key, BUILDER_ADDRESS, order.builder_fee_bps, timestamp_incrementer.next())?);
+            transactions.push(self.sign_approve_builder_address(&private_key, BUILDER_ADDRESS, order.builder_fee_bps, timestamp_incrementer.next_value())?);
         }
 
-        transactions.push(self.sign_market_message(&perpetual_type, &agent_key, builder, timestamp_incrementer.next())?);
+        transactions.push(self.sign_market_message(perpetual_type, &agent_key, builder, timestamp_incrementer.next_value())?);
 
         Ok(transactions)
     }
