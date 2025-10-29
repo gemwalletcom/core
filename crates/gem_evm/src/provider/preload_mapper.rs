@@ -6,7 +6,7 @@ use alloy_sol_types::SolCall;
 use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
 use num_traits::Num;
-use primitives::swap::SwapQuoteDataType;
+use primitives::swap::{self, SwapQuoteDataType};
 use primitives::{
     AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
     fee::GasPriceType,
@@ -72,11 +72,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
 
     match &input.input_type {
         TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => match asset.id.token_subtype() {
-            AssetSubtype::NATIVE => Ok(TransactionParams::new(
-                input.destination_address.clone(),
-                input.memo.clone().unwrap_or_default().into_bytes(),
-                value,
-            )),
+            AssetSubtype::NATIVE => Ok(TransactionParams::new(input.destination_address.clone(), vec![], value)),
             AssetSubtype::TOKEN => {
                 let to = asset.token_id.as_ref().ok_or("Missing token ID")?.clone();
                 let value = BigInt::from_str_radix(&input.value, 10)?;
@@ -104,7 +100,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 match from_asset.id.token_subtype() {
                     AssetSubtype::NATIVE => Ok(TransactionParams::new(
                         swap_data.data.to.clone(),
-                        alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                        swap_data.data.memo.clone().unwrap_or_default().into_bytes(),
                         BigInt::from_str_radix(&swap_data.data.value, 10)?,
                     )),
                     AssetSubtype::TOKEN => match swap_data.data.data_type {
