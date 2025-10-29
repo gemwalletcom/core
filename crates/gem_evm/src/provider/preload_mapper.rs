@@ -72,7 +72,11 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
 
     match &input.input_type {
         TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) => match asset.id.token_subtype() {
-            AssetSubtype::NATIVE => Ok(TransactionParams::new(input.destination_address.clone(), vec![], value)),
+            AssetSubtype::NATIVE => Ok(TransactionParams::new(
+                input.destination_address.clone(),
+                input.memo.clone().unwrap_or_default().into_bytes(),
+                value,
+            )),
             AssetSubtype::TOKEN => {
                 let to = asset.token_id.as_ref().ok_or("Missing token ID")?.clone();
                 let value = BigInt::from_str_radix(&input.value, 10)?;
