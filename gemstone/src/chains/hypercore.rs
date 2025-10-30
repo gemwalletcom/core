@@ -132,7 +132,7 @@ impl ChainSigner for GemSigner {
             transactions.push(self.sign_approve_builder_address(&private_key, BUILDER_ADDRESS, order.builder_fee_bps, timestamp_incrementer.next_val())?);
         }
 
-        transactions.push(self.sign_market_message(&perpetual_type, &agent_key, builder, timestamp_incrementer.next_val())?);
+        transactions.push(self.sign_market_message(perpetual_type, &agent_key, builder, timestamp_incrementer.next_val())?);
 
         Ok(transactions)
     }
@@ -181,6 +181,8 @@ impl GemSigner {
     ) -> Result<String, GemstoneError> {
         let (data, is_open) = match perpetual_type {
             GemPerpetualType::Open(data) => (data, true),
+            GemPerpetualType::Increase(data) => (data, true),
+            GemPerpetualType::Reduce(reduce_data) => (&reduce_data.data, true),
             GemPerpetualType::Close(data) => (data, false),
         };
 

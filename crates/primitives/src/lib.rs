@@ -165,7 +165,7 @@ pub mod graphql;
 pub mod perpetual;
 pub use self::perpetual::{
     AccountDataType, Perpetual, PerpetualBalance, PerpetualBasic, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary,
-    PerpetualType,
+    PerpetualReduceData, PerpetualType,
 };
 pub mod search;
 pub use self::search::SearchResponse;
