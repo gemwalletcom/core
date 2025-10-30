@@ -181,6 +181,8 @@ impl GemSigner {
     ) -> Result<String, GemstoneError> {
         let (data, is_open) = match perpetual_type {
             GemPerpetualType::Open(data) => (data, true),
+            GemPerpetualType::Increase(data) => (data, true),
+            GemPerpetualType::Reduce(reduce_data) => (&reduce_data.data, true),
             GemPerpetualType::Close(data) => (data, false),
         };
 
