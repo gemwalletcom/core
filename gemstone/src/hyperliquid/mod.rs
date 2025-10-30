@@ -3,11 +3,11 @@ pub mod remote_models;
 // Re-export the types from remote_models
 pub use remote_models::*;
 
-use crate::{GemstoneError, alien::AlienSigner};
+use crate::GemstoneError;
 use gem_hypercore::models::timestamp::TimestampField;
 use serde::Serialize;
 use serde_json::{self, Value};
-use std::sync::Arc;
+use signer::Signer;
 
 #[derive(uniffi::Object)]
 pub struct HyperCoreModelFactory;
@@ -178,19 +178,17 @@ impl Default for HyperCoreModelFactory {
 }
 
 #[derive(uniffi::Object)]
-pub struct HyperCore {
-    signer: Arc<dyn AlienSigner>,
-}
+pub struct HyperCore;
 
 #[uniffi::export]
 impl HyperCore {
     #[uniffi::constructor]
-    pub fn new(signer: Arc<dyn AlienSigner>) -> Self {
-        Self { signer }
+    pub fn new() -> Self {
+        Self
     }
 
     fn sign_action(&self, typed_data: String, action: String, timestamp: u64, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        let signature = self.signer.sign_eip712(typed_data, private_key)?;
+        let signature = Signer::sign_eip712(&typed_data, &private_key)?;
         Ok(hyper_build_signed_request(signature, action, timestamp))
     }
 

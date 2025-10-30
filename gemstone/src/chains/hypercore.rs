@@ -1,6 +1,5 @@
 use crate::{
     GemstoneError,
-    alien::AlienSigner,
     hyperliquid::{HyperCore, HyperCoreModelFactory},
     models::transaction::{GemPerpetualType, GemStakeType, GemTransactionLoadInput, GemTransactionLoadMetadata},
 };
@@ -38,9 +37,9 @@ pub struct GemSigner {
 #[uniffi::export]
 impl GemSigner {
     #[uniffi::constructor]
-    pub fn new(signer: Arc<dyn AlienSigner>) -> Self {
+    pub fn new() -> Self {
         Self {
-            hyper_core: Arc::new(HyperCore::new(signer)),
+            hyper_core: Arc::new(HyperCore::new()),
             factory: Arc::new(HyperCoreModelFactory::new()),
         }
     }
