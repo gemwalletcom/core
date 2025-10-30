@@ -6,7 +6,6 @@ pub mod crypto_signer;
 pub mod ethereum;
 pub mod gateway;
 pub mod gem_swapper;
-pub mod hyperliquid;
 pub mod message;
 pub mod models;
 pub mod network;

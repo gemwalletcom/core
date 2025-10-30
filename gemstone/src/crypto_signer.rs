@@ -2,10 +2,10 @@ use crate::GemstoneError;
 use ::signer::{SignatureScheme as GemSignatureScheme, Signer};
 
 #[derive(Default, uniffi::Object)]
-pub struct GemstoneSigner;
+pub struct CryptoSigner;
 
 #[uniffi::export]
-impl GemstoneSigner {
+impl CryptoSigner {
     #[uniffi::constructor]
     pub fn new() -> Self {
         Self
