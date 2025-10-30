@@ -30,7 +30,7 @@ install-postgres:
 
 install-diesel:
     @echo Install Diesel
-    cargo install diesel_cli --no-default-features --features postgres --version 2.2.4 --force
+    cargo install diesel_cli --no-default-features --features postgres --version 2.3.3 --force
 
 test-workspace:
     cargo test --all-features --lib --workspace --quiet
