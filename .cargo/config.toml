@@ -1,0 +1,3 @@
+# Apple Silicon Macs (Homebrew in /opt/homebrew)
+[target.aarch64-apple-darwin]
+rustflags = ["-L", "/opt/homebrew/opt/libpq/lib"]
