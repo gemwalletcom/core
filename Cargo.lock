@@ -6460,13 +6460,12 @@ dependencies = [
 name = "signer"
 version = "1.0.0"
 dependencies = [
+ "alloy-primitives",
  "base64 0.22.1",
  "ed25519-dalek",
  "gem_hash",
  "hex",
  "k256",
- "num-bigint",
- "num-traits",
  "serde",
  "serde_json",
  "sui-sdk-types",

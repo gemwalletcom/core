@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 
 use super::data::{TypeField, TypedData};
 use super::parse::{
-    ADDR_LENGTH, adjust_signed_value, base_type_name, decode_hex_string, left_pad, parse_array_type, parse_fixed_bytes_size, parse_int_value,
+    ADDR_LENGTH, MAX_WORD_BYTES, adjust_signed_value, base_type_name, decode_hex_string, left_pad, parse_array_type, parse_fixed_bytes_size, parse_int_value,
     parse_numeric_bits, parse_uint_value, right_pad,
 };
 
@@ -64,14 +64,14 @@ fn encode_value(r#type: &str, value: Option<&Value>, types: &std::collections::H
 
         match value {
             Some(Value::Array(items)) => {
-                if let Some(len) = expected_len {
-                    if items.len() != len {
-                        return Err(SignerError::new(format!(
-                            "Expected array of length {len} for type '{ty}', got {}",
-                            items.len(),
-                            ty = r#type
-                        )));
-                    }
+                if let Some(len) = expected_len
+                    && items.len() != len
+                {
+                    return Err(SignerError::new(format!(
+                        "Expected array of length {len} for type '{ty}', got {}",
+                        items.len(),
+                        ty = r#type
+                    )));
                 }
 
                 for item in items {
@@ -80,13 +80,13 @@ fn encode_value(r#type: &str, value: Option<&Value>, types: &std::collections::H
                 }
             }
             Some(Value::Null) | None => {
-                if let Some(len) = expected_len {
-                    if len != 0 {
-                        return Err(SignerError::new(format!(
-                            "Expected array of length {len} for type '{ty}', but value was null",
-                            ty = r#type
-                        )));
-                    }
+                if let Some(len) = expected_len
+                    && len != 0
+                {
+                    return Err(SignerError::new(format!(
+                        "Expected array of length {len} for type '{ty}', but value was null",
+                        ty = r#type
+                    )));
                 }
             }
             Some(other) => {
@@ -176,20 +176,20 @@ fn encode_uint(type_name: &str, value: Option<&Value>) -> Result<[u8; 32], Signe
     let bits = parse_numeric_bits(type_name, "uint")?;
     let number = parse_uint_value(value)?;
 
-    if number.bits() > bits as u64 {
+    if number.bit_len() > bits {
         return Err(SignerError::new(format!(
             "Value out of range for type '{type_name}' ({bits}-bit unsigned integer)"
         )));
     }
 
-    Ok(left_pad(&number.to_bytes_be()))
+    Ok(number.to_be_bytes::<MAX_WORD_BYTES>())
 }
 
 fn encode_int(type_name: &str, value: Option<&Value>) -> Result<[u8; 32], SignerError> {
     let bits = parse_numeric_bits(type_name, "int")?;
     let number = parse_int_value(value)?;
     let unsigned = adjust_signed_value(number, bits)?;
-    Ok(left_pad(&unsigned.to_bytes_be()))
+    Ok(unsigned.to_be_bytes::<MAX_WORD_BYTES>())
 }
 
 fn encode_fixed_bytes(type_name: &str, value: Option<&Value>) -> Result<[u8; 32], SignerError> {
@@ -228,7 +228,7 @@ fn encode_type(primary_type: &str, types: &std::collections::HashMap<String, Vec
 
     let mut parts = Vec::with_capacity(deps.len() + 1);
     parts.push(primary_type.to_string());
-    parts.extend(deps.into_iter());
+    parts.extend(deps);
 
     let mut encoded = String::new();
     for type_name in parts {

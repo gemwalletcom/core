@@ -1,3 +1,5 @@
+use alloy_primitives::{BigIntConversionError, ParseSignedError, ruint};
+
 #[derive(Debug)]
 pub struct SignerError {
     pub(crate) message: String,
@@ -26,5 +28,29 @@ impl From<&str> for SignerError {
 impl From<String> for SignerError {
     fn from(value: String) -> Self {
         SignerError::new(value)
+    }
+}
+
+impl From<hex::FromHexError> for SignerError {
+    fn from(error: hex::FromHexError) -> Self {
+        SignerError::new(format!("Invalid hex string: {error}"))
+    }
+}
+
+impl From<ParseSignedError> for SignerError {
+    fn from(error: ParseSignedError) -> Self {
+        SignerError::new(format!("Invalid signed integer: {error}"))
+    }
+}
+
+impl From<ruint::ParseError> for SignerError {
+    fn from(error: ruint::ParseError) -> Self {
+        SignerError::new(format!("Invalid integer: {error}"))
+    }
+}
+
+impl From<BigIntConversionError> for SignerError {
+    fn from(error: BigIntConversionError) -> Self {
+        SignerError::new(format!("Integer conversion failed: {error}"))
     }
 }

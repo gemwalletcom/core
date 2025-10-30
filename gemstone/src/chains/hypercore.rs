@@ -1,12 +1,14 @@
 use crate::{
     GemstoneError,
-    hyperliquid::{HyperCore, HyperCoreModelFactory},
+    hyperliquid::{
+        hyper_core_sign_approve_agent, hyper_core_sign_approve_builder_fee, hyper_core_sign_c_deposit, hyper_core_sign_c_withdraw, hyper_core_sign_place_order,
+        hyper_core_sign_set_referrer, hyper_core_sign_spot_send, hyper_core_sign_token_delegate, hyper_core_sign_typed_action,
+    },
     models::transaction::{GemPerpetualType, GemStakeType, GemTransactionLoadInput, GemTransactionLoadMetadata},
 };
-use gem_hypercore::core::actions::Builder;
+use gem_hypercore::core::actions::{ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, SetReferrer, SpotSend, TokenDelegate, make_market_order};
 use number_formatter::BigNumberFormatter;
 use primitives::{NumberIncrementer, PerpetualDirection, SignerError};
-use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[uniffi::export(with_foreign)]
@@ -28,20 +30,14 @@ const REFERRAL_CODE: &str = "GEMWALLET";
 const BUILDER_ADDRESS: &str = "0x0d9dab1a248f63b0a48965ba8435e4de7497a3dc";
 const NATIVE_SPOT_TOKEN: &str = "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec";
 
-#[derive(uniffi::Object)]
-pub struct GemSigner {
-    hyper_core: Arc<HyperCore>,
-    factory: Arc<HyperCoreModelFactory>,
-}
+#[derive(uniffi::Object, Default)]
+pub struct GemSigner;
 
 #[uniffi::export]
 impl GemSigner {
     #[uniffi::constructor]
     pub fn new() -> Self {
-        Self {
-            hyper_core: Arc::new(HyperCore::new()),
-            factory: Arc::new(HyperCoreModelFactory::new()),
-        }
+        Self
     }
 }
 
@@ -62,7 +58,7 @@ impl ChainSigner for GemSigner {
 
     fn sign_swap(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
         let swap_data = input.input_type.swap_data()?;
-        let signature = self.hyper_core.sign_typed_action(swap_data.data.data.clone(), private_key)?;
+        let signature = hyper_core_sign_typed_action(swap_data.data.data.clone(), private_key)?;
         Ok(vec![signature])
     }
 
@@ -74,21 +70,21 @@ impl ChainSigner for GemSigner {
             GemStakeType::Delegate { validator } => {
                 let wei = BigNumberFormatter::value_as_u64(&input.value, 10)?;
 
-                let deposit_request = self.factory.make_transfer_to_staking(wei, nonce_incrementer.next());
-                let deposit_action = self.hyper_core.sign_c_deposit(deposit_request, private_key.clone())?;
+                let deposit_request = CDeposit::new(wei, nonce_incrementer.next());
+                let deposit_action = hyper_core_sign_c_deposit(deposit_request, private_key.clone())?;
 
-                let delegate_request = self.factory.make_delegate(validator.id.clone(), wei, nonce_incrementer.next());
-                let delegate_action = self.hyper_core.sign_token_delegate(delegate_request, private_key)?;
+                let delegate_request = TokenDelegate::new(validator.id.clone(), wei, false, nonce_incrementer.next());
+                let delegate_action = hyper_core_sign_token_delegate(delegate_request, private_key)?;
                 Ok(vec![deposit_action, delegate_action])
             }
             GemStakeType::Undelegate { delegation } => {
                 let wei = BigNumberFormatter::value_as_u64(&delegation.base.balance.to_string(), 10)?;
 
-                let undelegate_request = self.factory.make_undelegate(delegation.validator.id.clone(), wei, nonce_incrementer.current());
-                let undelegate_action = self.hyper_core.sign_token_delegate(undelegate_request, private_key.clone())?;
+                let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.current());
+                let undelegate_action = hyper_core_sign_token_delegate(undelegate_request, private_key.clone())?;
 
-                let withdraw_request = self.factory.make_withdraw_from_staking(wei, nonce_incrementer.next());
-                let withdraw_action = self.hyper_core.sign_c_withdraw(withdraw_request, private_key)?;
+                let withdraw_request = CWithdraw::new(wei, nonce_incrementer.next());
+                let withdraw_action = hyper_core_sign_c_withdraw(withdraw_request, private_key)?;
                 Ok(vec![undelegate_action, withdraw_action])
             }
             _ => Err(SignerError::UnsupportedOperation("Stake type not supported".to_string()).into()),
@@ -131,7 +127,7 @@ impl ChainSigner for GemSigner {
             transactions.push(self.sign_approve_builder_address(&private_key, BUILDER_ADDRESS, order.builder_fee_bps, timestamp_incrementer.next())?);
         }
 
-        transactions.push(self.sign_market_message(&perpetual_type, &agent_key, builder, timestamp_incrementer.next())?);
+        transactions.push(self.sign_market_message(perpetual_type, &agent_key, builder, timestamp_incrementer.next())?);
 
         Ok(transactions)
     }
@@ -148,27 +144,25 @@ impl ChainSigner for GemSigner {
 impl GemSigner {
     pub fn sign_approve_agent(&self, agent_address: &str, private_key: &[u8], timestamp: u64) -> Result<String, GemstoneError> {
         let agent_name = format!("{}{}", AGENT_NAME_PREFIX, &agent_address[agent_address.len() - 6..]);
-        let agent = self.factory.make_approve_agent(agent_name, agent_address.to_string(), timestamp);
-        self.hyper_core.sign_approve_agent(agent, private_key.to_vec())
+        let agent = ApproveAgent::new(agent_address.to_string(), agent_name, timestamp);
+        hyper_core_sign_approve_agent(agent, private_key.to_vec())
     }
 
     fn sign_approve_builder_address(&self, agent_key: &[u8], builder_address: &str, rate_bps: u32, timestamp: u64) -> Result<String, GemstoneError> {
         let max_fee_rate = Self::fee_rate(rate_bps);
-        let request = self.factory.make_approve_builder(max_fee_rate, builder_address.to_string(), timestamp);
-        self.hyper_core.sign_approve_builder_fee(request, agent_key.to_vec())
+        let request = ApproveBuilderFee::new(max_fee_rate, builder_address.to_string(), timestamp);
+        hyper_core_sign_approve_builder_fee(request, agent_key.to_vec())
     }
 
     fn sign_set_referer(&self, agent_key: &[u8], code: &str, timestamp: u64) -> Result<String, GemstoneError> {
-        let referer = self.factory.make_set_referrer(code.to_string());
-        self.hyper_core.sign_set_referrer(referer, timestamp, agent_key.to_vec())
+        let referer = SetReferrer::new(code.to_string());
+        hyper_core_sign_set_referrer(referer, timestamp, agent_key.to_vec())
     }
 
     fn sign_spot_send(&self, amount: &str, destination: &str, token: &str, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let timestamp = Self::get_timestamp_ms();
-        let spot_send = self
-            .factory
-            .send_spot_token_to_address(amount.to_string(), destination.to_lowercase(), timestamp, token.to_string());
-        self.hyper_core.sign_spot_send(spot_send, private_key)
+        let spot_send = SpotSend::new(amount.to_string(), destination.to_string(), timestamp, token.to_string());
+        hyper_core_sign_spot_send(spot_send, private_key)
     }
 
     fn sign_market_message(
@@ -195,11 +189,9 @@ impl GemSigner {
             }
         };
 
-        let order = self
-            .factory
-            .make_market_order(data.asset_index as u32, is_buy, data.price.clone(), data.size.clone(), !is_open, builder);
+        let order = make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder);
 
-        self.hyper_core.sign_place_order(order, timestamp, agent_key.to_vec())
+        hyper_core_sign_place_order(order, timestamp, agent_key.to_vec())
     }
 
     fn fee_rate(tenths_bps: u32) -> String {

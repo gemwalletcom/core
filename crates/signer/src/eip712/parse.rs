@@ -1,7 +1,7 @@
 use crate::SignerError;
-use num_bigint::{BigInt, BigUint, Sign};
-use num_traits::{One, Signed, Zero};
+use alloy_primitives::{I256, U256};
 use serde_json::Value;
+use std::str::FromStr;
 
 pub const MAX_WORD_BYTES: usize = 32;
 pub const ADDR_LENGTH: usize = 20;
@@ -31,7 +31,7 @@ pub fn parse_numeric_bits(type_name: &str, prefix: &str) -> Result<usize, Signer
     let bits = bits_part
         .parse::<usize>()
         .map_err(|_| SignerError::new(format!("Invalid bit size for type '{type_name}'")))?;
-    if bits == 0 || bits > 256 || bits % 8 != 0 {
+    if bits == 0 || bits > MAX_WORD_BYTES * 8 || bits % 8 != 0 {
         return Err(SignerError::new(format!("Unsupported bit size for type '{type_name}'")));
     }
     Ok(bits)
@@ -52,60 +52,44 @@ pub fn parse_fixed_bytes_size(type_name: &str) -> Result<usize, SignerError> {
     Ok(size)
 }
 
-pub fn parse_uint_value(value: Option<&Value>) -> Result<BigUint, SignerError> {
+pub fn parse_uint_value(value: Option<&Value>) -> Result<U256, SignerError> {
     match value {
-        Some(Value::String(s)) => parse_biguint_from_string(s),
+        Some(Value::String(s)) => U256::from_str(s).map_err(SignerError::from),
         Some(Value::Number(num)) => {
             if let Some(u) = num.as_u64() {
-                Ok(BigUint::from(u))
-            } else {
-                Err(SignerError::new("Negative numeric value provided for unsigned integer"))
+                return Ok(U256::from(u));
             }
+
+            if let Some(i) = num.as_i64() {
+                if i >= 0 {
+                    return Ok(U256::from(i as u64));
+                }
+                return Err(SignerError::new("Negative numeric value provided for unsigned integer"));
+            }
+
+            Err(SignerError::new("Unsupported numeric value for unsigned integer"))
         }
-        Some(Value::Null) | None => Ok(BigUint::zero()),
+        Some(Value::Null) | None => Ok(U256::ZERO),
         Some(other) => Err(SignerError::new(format!("Expected integer value, got {}", other))),
     }
 }
 
-pub fn parse_int_value(value: Option<&Value>) -> Result<BigInt, SignerError> {
+pub fn parse_int_value(value: Option<&Value>) -> Result<I256, SignerError> {
     match value {
-        Some(Value::String(s)) => parse_bigint_from_string(s),
+        Some(Value::String(s)) => I256::from_str(s).map_err(SignerError::from),
         Some(Value::Number(num)) => {
             if let Some(i) = num.as_i64() {
-                Ok(BigInt::from(i))
-            } else if let Some(u) = num.as_u64() {
-                Ok(BigInt::from(u))
-            } else {
-                Err(SignerError::new("Unsupported numeric value for signed integer"))
+                return I256::try_from(i as i128).map_err(SignerError::from);
             }
+
+            if let Some(u) = num.as_u64() {
+                return Ok(I256::from_raw(U256::from(u)));
+            }
+
+            Err(SignerError::new("Unsupported numeric value for signed integer"))
         }
-        Some(Value::Null) | None => Ok(BigInt::zero()),
+        Some(Value::Null) | None => Ok(I256::ZERO),
         Some(other) => Err(SignerError::new(format!("Expected integer value, got {}", other))),
-    }
-}
-
-pub fn parse_biguint_from_string(value: &str) -> Result<BigUint, SignerError> {
-    let trimmed = value.trim();
-    if trimmed.starts_with("0x") || trimmed.starts_with("0X") {
-        BigUint::parse_bytes(trimmed.trim_start_matches("0x").trim_start_matches("0X").as_bytes(), 16)
-            .ok_or_else(|| SignerError::new(format!("Invalid hex string '{value}'")))
-    } else {
-        BigUint::parse_bytes(trimmed.as_bytes(), 10).ok_or_else(|| SignerError::new(format!("Invalid decimal string '{value}'")))
-    }
-}
-
-pub fn parse_bigint_from_string(value: &str) -> Result<BigInt, SignerError> {
-    let trimmed = value.trim();
-    if trimmed.starts_with("-0x") || trimmed.starts_with("-0X") {
-        let magnitude = trimmed.trim_start_matches("-0x").trim_start_matches("-0X");
-        let uint = BigUint::parse_bytes(magnitude.as_bytes(), 16).ok_or_else(|| SignerError::new(format!("Invalid hex string '{value}'")))?;
-        Ok(BigInt::from_biguint(Sign::Minus, uint))
-    } else if trimmed.starts_with("0x") || trimmed.starts_with("0X") {
-        let uint = BigUint::parse_bytes(trimmed.trim_start_matches("0x").trim_start_matches("0X").as_bytes(), 16)
-            .ok_or_else(|| SignerError::new(format!("Invalid hex string '{value}'")))?;
-        Ok(BigInt::from_biguint(Sign::Plus, uint))
-    } else {
-        BigInt::parse_bytes(trimmed.as_bytes(), 10).ok_or_else(|| SignerError::new(format!("Invalid decimal string '{value}'")))
     }
 }
 
@@ -125,19 +109,30 @@ pub fn right_pad(bytes: &[u8]) -> [u8; MAX_WORD_BYTES] {
 
 pub fn decode_hex_string(value: &str) -> Result<Vec<u8>, SignerError> {
     let stripped = value.trim_start_matches("0x").trim_start_matches("0X").replace('_', "");
-    if stripped.len() % 2 != 0 {
+    if !stripped.len().is_multiple_of(2) {
         return Err(SignerError::new(format!("Hex string has odd length: '{value}'")));
     }
-    hex::decode(&stripped).map_err(|err| SignerError::new(format!("Invalid hex string '{value}': {err}")))
+    hex::decode(&stripped).map_err(SignerError::from)
 }
 
-pub fn adjust_signed_value(number: BigInt, bits: usize) -> Result<BigUint, SignerError> {
-    let bound = BigInt::one() << (bits as u32 - 1);
-    if number >= bound.clone() || number < -bound.clone() {
+pub fn adjust_signed_value(number: I256, bits: usize) -> Result<U256, SignerError> {
+    if bits == 0 || bits > MAX_WORD_BYTES * 8 {
+        return Err(SignerError::new(format!("Unsupported bit size {bits} for signed integer")));
+    }
+
+    if number.bits() > bits as u32 {
         return Err(SignerError::new(format!("Value out of range for signed integer with {bits} bits")));
     }
 
-    let modulus = BigInt::one() << bits as u32;
-    let adjusted = if number.is_negative() { modulus + number } else { number };
-    adjusted.to_biguint().ok_or_else(|| SignerError::new("Failed to encode signed integer"))
+    if bits == MAX_WORD_BYTES * 8 {
+        return Ok(number.into_raw());
+    }
+
+    if number.is_negative() {
+        let abs = number.unsigned_abs();
+        let modulus = U256::from(1u64) << bits;
+        modulus.checked_sub(abs).ok_or_else(|| SignerError::new("Failed to encode signed integer"))
+    } else {
+        Ok(number.unsigned_abs())
+    }
 }

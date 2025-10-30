@@ -1,5 +1,5 @@
 use alloy_primitives::hex;
-use gem_hypercore::core::{HYPE_SYSTEM_ADDRESS, actions, hypercore};
+use gem_hypercore::core::actions;
 
 // Order types
 pub type HyperPlaceOrder = actions::PlaceOrder;
@@ -209,60 +209,6 @@ pub struct HyperWithdrawalRequest {
     pub r#type: String,
 }
 
-pub fn hyper_core_place_order_typed_data(order: HyperPlaceOrder, nonce: u64) -> String {
-    hypercore::place_order_typed_data(order, nonce)
-}
-
-pub fn hyper_core_set_referrer_typed_data(referrer: HyperSetReferrer, nonce: u64) -> String {
-    hypercore::set_referrer_typed_data(referrer, nonce)
-}
-pub fn hyper_core_update_leverage_typed_data(update_leverage: HyperUpdateLeverage, nonce: u64) -> String {
-    hypercore::update_leverage_typed_data(update_leverage, nonce)
-}
-pub fn hyper_core_withdrawal_request_typed_data(request: HyperWithdrawalRequest) -> String {
-    hypercore::withdrawal_request_typed_data(request)
-}
-
-pub fn hyper_core_approve_agent_typed_data(agent: HyperApproveAgent) -> String {
-    hypercore::approve_agent_typed_data(agent)
-}
-
-pub fn hyper_core_approve_builder_fee_typed_data(fee: HyperApproveBuilderFee) -> String {
-    hypercore::approve_builder_fee_typed_data(fee)
-}
-
-pub fn hyper_core_transfer_to_hyper_evm_typed_data(spot_send: HyperSpotSend) -> String {
-    hypercore::transfer_to_hyper_evm_typed_data(spot_send)
-}
-
-pub fn hyper_core_send_spot_token_to_address_typed_data(spot_send: HyperSpotSend) -> String {
-    hypercore::send_spot_token_to_address_typed_data(spot_send)
-}
-
-pub fn hyper_core_send_perps_usd_to_address_typed_data(usd_send: HyperUsdSend) -> String {
-    hypercore::send_perps_usd_to_address_typed_data(usd_send)
-}
-
-pub fn hyper_core_transfer_spot_to_perps_typed_data(usd_class_transfer: HyperUsdClassTransfer) -> String {
-    hypercore::transfer_spot_to_perps_typed_data(usd_class_transfer)
-}
-
-pub fn hyper_core_transfer_perps_to_spot_typed_data(usd_class_transfer: HyperUsdClassTransfer) -> String {
-    hypercore::transfer_perps_to_spot_typed_data(usd_class_transfer)
-}
-
-pub fn hyper_core_c_deposit_typed_data(c_deposit: HyperCDeposit) -> String {
-    hypercore::c_deposit_typed_data(c_deposit)
-}
-
-pub fn hyper_core_c_withdraw_typed_data(c_withdraw: HyperCWithdraw) -> String {
-    hypercore::c_withdraw_typed_data(c_withdraw)
-}
-
-pub fn hyper_core_token_delegate_typed_data(token_delegate: HyperTokenDelegate) -> String {
-    hypercore::token_delegate_typed_data(token_delegate)
-}
-
 // Model factory functions
 
 pub fn hyper_make_approve_agent(name: String, address: String, nonce: u64) -> HyperApproveAgent {
@@ -288,69 +234,6 @@ pub fn hyper_make_market_with_tp_sl(
     builder: Option<HyperBuilder>,
 ) -> HyperPlaceOrder {
     actions::make_market_with_tp_sl(asset, is_buy, &price, &size, reduce_only, tp_trigger, sl_trigger, builder)
-}
-
-pub fn hyper_make_cancel_orders(orders: Vec<HyperCancelOrder>) -> HyperCancel {
-    actions::Cancel::new(orders)
-}
-
-pub fn hyper_make_position_tp_sl(
-    asset: u32,
-    is_buy: bool,
-    size: String,
-    tp_trigger: String,
-    sl_trigger: String,
-    builder: Option<HyperBuilder>,
-) -> HyperPlaceOrder {
-    actions::make_position_tp_sl(asset, is_buy, &size, Some(tp_trigger), Some(sl_trigger), builder)
-}
-
-pub fn hyper_make_withdraw(amount: String, address: String, time: u64) -> HyperWithdrawalRequest {
-    actions::WithdrawalRequest::new(amount, time, address)
-}
-
-pub fn hyper_make_set_referrer(referrer: String) -> HyperSetReferrer {
-    actions::SetReferrer::new(referrer)
-}
-
-pub fn hyper_make_update_leverage(asset: u32, is_cross: bool, leverage: u64) -> HyperUpdateLeverage {
-    actions::UpdateLeverage::new(asset, is_cross, leverage)
-}
-
-pub fn hyper_transfer_to_hyper_evm(amount: String, time: u64, token: String) -> HyperSpotSend {
-    actions::SpotSend::new(amount, HYPE_SYSTEM_ADDRESS.to_string(), time, token)
-}
-
-pub fn hyper_send_spot_token_to_address(amount: String, destination: String, time: u64, token: String) -> HyperSpotSend {
-    actions::SpotSend::new(amount, destination, time, token)
-}
-
-pub fn hyper_send_perps_usd_to_address(amount: String, destination: String, time: u64) -> HyperUsdSend {
-    actions::UsdSend::new(amount, destination, time)
-}
-
-pub fn hyper_transfer_spot_to_perps(amount: String, nonce: u64) -> HyperUsdClassTransfer {
-    actions::UsdClassTransfer::new(amount, true, nonce)
-}
-
-pub fn hyper_transfer_perps_to_spot(amount: String, nonce: u64) -> HyperUsdClassTransfer {
-    actions::UsdClassTransfer::new(amount, false, nonce)
-}
-
-pub fn hyper_make_transfer_to_staking(wei: u64, nonce: u64) -> HyperCDeposit {
-    actions::CDeposit::new(wei, nonce)
-}
-
-pub fn hyper_make_withdraw_from_staking(wei: u64, nonce: u64) -> HyperCWithdraw {
-    actions::CWithdraw::new(wei, nonce)
-}
-
-pub fn hyper_make_delegate(validator: String, wei: u64, nonce: u64) -> HyperTokenDelegate {
-    actions::TokenDelegate::new(validator, wei, false, nonce)
-}
-
-pub fn hyper_make_undelegate(validator: String, wei: u64, nonce: u64) -> HyperTokenDelegate {
-    actions::TokenDelegate::new(validator, wei, true, nonce)
 }
 
 pub fn hyper_build_signed_request(signature: String, action: String, timestamp: u64) -> String {
