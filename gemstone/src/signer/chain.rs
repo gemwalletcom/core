@@ -1,5 +1,6 @@
 use crate::{GemstoneError, models::transaction::GemTransactionLoadInput};
 use gem_hypercore::signer::HyperCoreSigner;
+use gem_sui::signer::SuiChainSigner;
 use primitives::{Chain, ChainSigner, SignerError, TransactionLoadInput};
 
 #[derive(uniffi::Object)]
@@ -8,18 +9,13 @@ pub struct GemChainSigner {
     signer: Box<dyn ChainSigner>,
 }
 
-impl Default for GemChainSigner {
-    fn default() -> Self {
-        Self::new(Chain::HyperCore)
-    }
-}
-
 #[uniffi::export]
 impl GemChainSigner {
     #[uniffi::constructor]
     pub fn new(chain: Chain) -> Self {
-        let signer = match chain {
-            Chain::HyperCore => Box::new(HyperCoreSigner::new()) as Box<dyn ChainSigner>,
+        let signer: Box<dyn ChainSigner> = match chain {
+            Chain::HyperCore => Box::new(HyperCoreSigner),
+            Chain::Sui => Box::new(SuiChainSigner),
             _ => todo!("Signer not implemented for chain {:?}", chain),
         };
 

@@ -29,10 +29,6 @@ type SignerResult<T> = Result<T, SignerError>;
 pub struct HyperCoreSigner;
 
 impl HyperCoreSigner {
-    pub fn new() -> Self {
-        Self
-    }
-
     fn sign_transfer_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<String> {
         let asset = input.input_type.get_asset();
         let amount = BigNumberFormatter::value(&input.value, asset.decimals).map_err(|err| SignerError::InvalidInput(err.to_string()))?;

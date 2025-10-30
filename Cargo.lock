@@ -3006,6 +3006,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "sui-sdk-types",
  "sui-transaction-builder",
  "tokio",

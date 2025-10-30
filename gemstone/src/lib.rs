@@ -1,8 +1,6 @@
 pub mod alien;
 pub mod block_explorer;
-pub mod chains;
 pub mod config;
-pub mod crypto_signer;
 pub mod ethereum;
 pub mod gateway;
 pub mod gem_swapper;
@@ -10,6 +8,7 @@ pub mod message;
 pub mod models;
 pub mod network;
 pub mod payment;
+pub mod signer;
 pub mod wallet_connect;
 
 use alien::AlienError;
