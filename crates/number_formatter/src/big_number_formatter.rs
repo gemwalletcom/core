@@ -2,23 +2,54 @@ use bigdecimal::{BigDecimal, ToPrimitive};
 use num_bigint::{BigInt, BigUint};
 use std::str::FromStr;
 
+#[derive(Debug, Clone)]
+pub enum NumberFormatterError {
+    InvalidNumber(String),
+    ConversionError(String),
+}
+
+impl std::fmt::Display for NumberFormatterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidNumber(msg) => write!(f, "Invalid number: {}", msg),
+            Self::ConversionError(msg) => write!(f, "Conversion error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for NumberFormatterError {}
+
+impl From<NumberFormatterError> for String {
+    fn from(error: NumberFormatterError) -> Self {
+        error.to_string()
+    }
+}
+
 pub struct BigNumberFormatter {}
 
 impl BigNumberFormatter {
-    pub fn big_decimal_value(value: &str, decimals: u32) -> Option<BigDecimal> {
-        let mut decimal = BigDecimal::from_str(value).ok()?;
+    pub fn big_decimal_value(value: &str, decimals: u32) -> Result<BigDecimal, NumberFormatterError> {
+        let mut decimal = BigDecimal::from_str(value).map_err(|e| NumberFormatterError::InvalidNumber(e.to_string()))?;
         let exp = BigInt::from(10).pow(decimals);
         decimal = decimal / BigDecimal::from(exp);
-        Some(decimal)
+        Ok(decimal)
     }
 
-    pub fn value_as_f64(value: &str, decimals: u32) -> Option<f64> {
-        Self::big_decimal_value(value, decimals)?.to_f64()
+    pub fn value_as_f64(value: &str, decimals: u32) -> Result<f64, NumberFormatterError> {
+        Self::big_decimal_value(value, decimals)?
+            .to_f64()
+            .ok_or_else(|| NumberFormatterError::ConversionError("Cannot convert to f64".to_string()))
     }
 
-    pub fn value(value: &str, decimals: i32) -> Option<String> {
+    pub fn value_as_u64(value: &str, decimals: u32) -> Result<u64, NumberFormatterError> {
+        Self::big_decimal_value(value, decimals)?
+            .to_u64()
+            .ok_or_else(|| NumberFormatterError::ConversionError("Cannot convert to u64".to_string()))
+    }
+
+    pub fn value(value: &str, decimals: i32) -> Result<String, NumberFormatterError> {
         let decimal = Self::big_decimal_value(value, decimals as u32)?;
-        Some(decimal.to_string())
+        Ok(decimal.to_string())
     }
 
     pub fn value_from_amount(amount: &str, decimals: u32) -> Result<String, String> {
@@ -65,9 +96,8 @@ mod tests {
         let result = BigNumberFormatter::value("115792089237316195423570985008687907853269984665640564039457000000000000000000", 18).unwrap();
         assert_eq!(result, "115792089237316195423570985008687907853269984665640564039457");
 
-        // Test case 5: Invalid input
         let result = BigNumberFormatter::value("abc", 2);
-        assert_eq!(result, None);
+        assert!(result.is_err());
 
         // Test case 6: Output return small value
         let result = BigNumberFormatter::value("1640000000000000", 18).unwrap();

@@ -264,6 +264,43 @@ pub enum GemTransactionInputType {
     },
 }
 
+impl GemTransactionInputType {
+    pub fn asset(&self) -> &GemAsset {
+        match self {
+            Self::Transfer { asset }
+            | Self::Deposit { asset }
+            | Self::Stake { asset, .. }
+            | Self::TokenApprove { asset, .. }
+            | Self::Generic { asset, .. }
+            | Self::TransferNft { asset, .. }
+            | Self::Account { asset, .. }
+            | Self::Perpetual { asset, .. } => asset,
+            Self::Swap { from_asset, .. } => from_asset,
+        }
+    }
+
+    pub fn swap_data(&self) -> Result<&GemSwapData, String> {
+        match self {
+            Self::Swap { swap_data, .. } => Ok(swap_data),
+            _ => Err("Expected Swap".to_string()),
+        }
+    }
+
+    pub fn stake_type(&self) -> Result<&GemStakeType, String> {
+        match self {
+            Self::Stake { stake_type, .. } => Ok(stake_type),
+            _ => Err("Expected Stake".to_string()),
+        }
+    }
+
+    pub fn perpetual_type(&self) -> Result<&GemPerpetualType, String> {
+        match self {
+            Self::Perpetual { perpetual_type, .. } => Ok(perpetual_type),
+            _ => Err("Expected Perpetual".to_string()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemTransactionLoadInput {
     pub input_type: GemTransactionInputType,
