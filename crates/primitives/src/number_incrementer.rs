@@ -7,7 +7,7 @@ impl NumberIncrementer {
         Self { value: initial_value }
     }
 
-    pub fn next(&mut self) -> u64 {
+    pub fn next_val(&mut self) -> u64 {
         let current = self.value;
         self.value = self.value.wrapping_add(1);
         current
@@ -27,8 +27,8 @@ mod tests {
         let mut incrementer = NumberIncrementer::new(10);
 
         assert_eq!(incrementer.current(), 10);
-        assert_eq!(incrementer.next(), 10);
-        assert_eq!(incrementer.next(), 11);
+        assert_eq!(incrementer.next_val(), 10);
+        assert_eq!(incrementer.next_val(), 11);
         assert_eq!(incrementer.current(), 12);
     }
 }
