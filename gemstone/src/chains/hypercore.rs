@@ -132,7 +132,7 @@ impl ChainSigner for GemSigner {
             transactions.push(self.sign_approve_builder_address(&private_key, BUILDER_ADDRESS, order.builder_fee_bps, timestamp_incrementer.next_val())?);
         }
 
-        transactions.push(self.sign_market_message(&perpetual_type, &agent_key, builder, timestamp_incrementer.next_val())?);
+        transactions.push(self.sign_market_message(perpetual_type, &agent_key, builder, timestamp_incrementer.next_val())?);
 
         Ok(transactions)
     }

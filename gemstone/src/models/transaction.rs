@@ -13,30 +13,7 @@ use swap::{GemApprovalData, GemSwapData};
 pub type GemPerpetualDirection = PerpetualDirection;
 pub type GemPerpetualProvider = PerpetualProvider;
 pub type GemPerpetualConfirmData = PerpetualConfirmData;
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemPerpetualReduceData {
-    pub data: GemPerpetualConfirmData,
-    pub position_direction: GemPerpetualDirection,
-}
-
-impl From<PerpetualReduceData> for GemPerpetualReduceData {
-    fn from(value: PerpetualReduceData) -> Self {
-        GemPerpetualReduceData {
-            data: value.data,
-            position_direction: value.position_direction,
-        }
-    }
-}
-
-impl From<GemPerpetualReduceData> for PerpetualReduceData {
-    fn from(value: GemPerpetualReduceData) -> Self {
-        PerpetualReduceData {
-            data: value.data,
-            position_direction: value.position_direction,
-        }
-    }
-}
+pub type GemPerpetualReduceData = PerpetualReduceData;
 pub type GemFeeOption = FeeOption;
 pub type GemTransferDataOutputType = TransferDataOutputType;
 pub type GemTransferDataOutputAction = TransferDataOutputAction;
@@ -209,34 +186,20 @@ pub struct PerpetualConfirmData {
     pub margin_amount: f64,
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemPerpetualType {
-    Open(GemPerpetualConfirmData),
-    Close(GemPerpetualConfirmData),
-    Increase(GemPerpetualConfirmData),
-    Reduce(GemPerpetualReduceData),
+#[uniffi::remote(Record)]
+pub struct PerpetualReduceData {
+    pub data: PerpetualConfirmData,
+    pub position_direction: PerpetualDirection,
 }
 
-impl From<PerpetualType> for GemPerpetualType {
-    fn from(value: PerpetualType) -> Self {
-        match value {
-            PerpetualType::Open(data) => GemPerpetualType::Open(data),
-            PerpetualType::Close(data) => GemPerpetualType::Close(data),
-            PerpetualType::Increase(data) => GemPerpetualType::Increase(data),
-            PerpetualType::Reduce(data) => GemPerpetualType::Reduce(data.into()),
-        }
-    }
-}
+pub type GemPerpetualType = PerpetualType;
 
-impl From<GemPerpetualType> for PerpetualType {
-    fn from(value: GemPerpetualType) -> Self {
-        match value {
-            GemPerpetualType::Open(data) => PerpetualType::Open(data),
-            GemPerpetualType::Close(data) => PerpetualType::Close(data),
-            GemPerpetualType::Increase(data) => PerpetualType::Increase(data),
-            GemPerpetualType::Reduce(data) => PerpetualType::Reduce(data.into()),
-        }
-    }
+#[uniffi::remote(Enum)]
+pub enum PerpetualType {
+    Open(PerpetualConfirmData),
+    Close(PerpetualConfirmData),
+    Increase(PerpetualConfirmData),
+    Reduce(PerpetualReduceData),
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -677,7 +640,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual {
                 asset,
-                perpetual_type: perpetual_type.into(),
+                perpetual_type,
             },
         }
     }
@@ -840,7 +803,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset, metadata, extra.into()),
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
-            GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type.into()),
+            GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
         }
     }
 }
