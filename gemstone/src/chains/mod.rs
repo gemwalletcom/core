@@ -1,77 +1,84 @@
 use crate::{GemstoneError, models::transaction::GemTransactionLoadInput};
-use gem_hypercore::signer::HypercoreSigner;
-use primitives::{Chain, SignerError, TransactionLoadInput};
-
-type ChainSignResult<T> = Result<T, SignerError>;
+use gem_hypercore::signer::HyperCoreSigner;
+use primitives::{Chain, ChainSigner, SignerError, TransactionLoadInput};
 
 #[derive(uniffi::Object)]
 pub struct GemChainSigner {
     chain: Chain,
-    hypercore: HypercoreSigner,
+    signer: Box<dyn ChainSigner>,
+}
+
+impl Default for GemChainSigner {
+    fn default() -> Self {
+        Self::new(Chain::HyperCore)
+    }
 }
 
 #[uniffi::export]
 impl GemChainSigner {
     #[uniffi::constructor]
     pub fn new(chain: Chain) -> Self {
-        Self {
-            chain,
-            hypercore: HypercoreSigner::new(),
-        }
+        let signer = match chain {
+            Chain::HyperCore => Box::new(HyperCoreSigner::new()) as Box<dyn ChainSigner>,
+            _ => todo!("Signer not implemented for chain {:?}", chain),
+        };
+
+        Self { chain, signer }
     }
 
     pub fn sign_transfer(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.route(input, private_key, "transfer", HypercoreSigner::sign_transfer)
+        self.dispatch(input, private_key, "transfer", |signer, tx, key| signer.sign_transfer(tx, key))
     }
 
     pub fn sign_token_transfer(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.route(input, private_key, "token transfer", HypercoreSigner::sign_token_transfer)
+        self.dispatch(input, private_key, "token transfer", |signer, tx, key| signer.sign_token_transfer(tx, key))
     }
 
     pub fn sign_nft_transfer(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.route(input, private_key, "nft transfer", HypercoreSigner::sign_nft_transfer)
+        self.dispatch(input, private_key, "nft transfer", |signer, tx, key| signer.sign_nft_transfer(tx, key))
     }
 
     pub fn sign_swap(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
-        self.route(input, private_key, "swap", HypercoreSigner::sign_swap)
+        self.dispatch(input, private_key, "swap", |signer, tx, key| signer.sign_swap(tx, key))
     }
 
     pub fn sign_token_approval(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.route(input, private_key, "token approval", HypercoreSigner::sign_token_approval)
+        self.dispatch(input, private_key, "token approval", |signer, tx, key| signer.sign_token_approval(tx, key))
     }
 
     pub fn sign_stake(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
-        self.route(input, private_key, "stake", HypercoreSigner::sign_stake)
+        self.dispatch(input, private_key, "stake", |signer, tx, key| signer.sign_stake(tx, key))
     }
 
     pub fn sign_account_action(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.route(input, private_key, "account action", HypercoreSigner::sign_account_action)
+        self.dispatch(input, private_key, "account action", |signer, tx, key| signer.sign_account_action(tx, key))
     }
 
     pub fn sign_perpetual(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
-        self.route(input, private_key, "perpetual", HypercoreSigner::sign_perpetual)
+        self.dispatch(input, private_key, "perpetual", |signer, tx, key| signer.sign_perpetual(tx, key))
     }
 
     pub fn sign_withdrawal(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.route(input, private_key, "withdrawal", HypercoreSigner::sign_withdrawal)
+        self.dispatch(input, private_key, "withdrawal", |signer, tx, key| signer.sign_withdrawal(tx, key))
     }
 
     pub fn sign_data(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.route(input, private_key, "data", HypercoreSigner::sign_data)
+        self.dispatch(input, private_key, "data", |signer, tx, key| signer.sign_data(tx, key))
     }
 }
 
 impl GemChainSigner {
-    fn route<T, F>(&self, input: GemTransactionLoadInput, private_key: Vec<u8>, action: &'static str, f: F) -> Result<T, GemstoneError>
+    fn dispatch<T, F>(&self, input: GemTransactionLoadInput, private_key: Vec<u8>, action: &'static str, method: F) -> Result<T, GemstoneError>
     where
-        F: Fn(&HypercoreSigner, &TransactionLoadInput, &[u8]) -> ChainSignResult<T>,
+        F: Fn(&dyn ChainSigner, &TransactionLoadInput, &[u8]) -> Result<T, SignerError>,
     {
         let tx_input: TransactionLoadInput = input.into();
         let key = private_key;
-        match self.chain {
-            Chain::HyperCore => f(&self.hypercore, &tx_input, key.as_slice()).map_err(GemstoneError::from),
-            _ => Err(unsupported_error(self.chain, action)),
-        }
+
+        method(self.signer.as_ref(), &tx_input, key.as_slice()).map_err(|err| match err {
+            SignerError::UnsupportedOperation(_) => unsupported_error(self.chain, action),
+            other => GemstoneError::from(other),
+        })
     }
 }
 

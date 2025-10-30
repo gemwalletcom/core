@@ -6,12 +6,14 @@ use std::str::FromStr;
 pub const MAX_WORD_BYTES: usize = 32;
 pub const ADDR_LENGTH: usize = 20;
 
-pub fn parse_array_type(r#type: &str) -> Option<(String, Option<usize>)> {
-    let start = r#type.find('[')?;
-    let end = r#type[start..].find(']')? + start;
-    let length_str = &r#type[start + 1..end];
-    let remainder = &r#type[end + 1..];
-    let element_type = format!("{}{}", &r#type[..start], remainder);
+pub fn parse_array_type(type_name: &str) -> Option<(String, Option<usize>)> {
+    if !type_name.ends_with(']') {
+        return None;
+    }
+
+    let start = type_name.rfind('[')?;
+    let length_str = &type_name[start + 1..type_name.len() - 1];
+    let element_type = type_name[..start].to_string();
 
     let length = if length_str.is_empty() { None } else { Some(length_str.parse().ok()?) };
 
@@ -30,9 +32,9 @@ pub fn parse_numeric_bits(type_name: &str, prefix: &str) -> Result<usize, Signer
 
     let bits = bits_part
         .parse::<usize>()
-        .map_err(|_| SignerError::new(format!("Invalid bit size for type '{type_name}'")))?;
+        .map_err(|_| SignerError::invalid_input(format!("Invalid bit size for type '{type_name}'")))?;
     if bits == 0 || bits > MAX_WORD_BYTES * 8 || bits % 8 != 0 {
-        return Err(SignerError::new(format!("Unsupported bit size for type '{type_name}'")));
+        return SignerError::invalid_input_err(format!("Unsupported bit size for type '{type_name}'"));
     }
     Ok(bits)
 }
@@ -40,14 +42,14 @@ pub fn parse_numeric_bits(type_name: &str, prefix: &str) -> Result<usize, Signer
 pub fn parse_fixed_bytes_size(type_name: &str) -> Result<usize, SignerError> {
     let size_part = &type_name["bytes".len()..];
     if size_part.is_empty() {
-        return Err(SignerError::new(format!("Invalid fixed bytes type '{type_name}'")));
+        return SignerError::invalid_input_err(format!("Invalid fixed bytes type '{type_name}'"));
     }
 
     let size = size_part
         .parse::<usize>()
-        .map_err(|_| SignerError::new(format!("Invalid length for {type_name}")))?;
+        .map_err(|_| SignerError::invalid_input(format!("Invalid length for {type_name}")))?;
     if size == 0 || size > MAX_WORD_BYTES {
-        return Err(SignerError::new(format!("Unsupported length for {type_name}")));
+        return SignerError::invalid_input_err(format!("Unsupported length for {type_name}"));
     }
     Ok(size)
 }
@@ -64,13 +66,13 @@ pub fn parse_uint_value(value: Option<&Value>) -> Result<U256, SignerError> {
                 if i >= 0 {
                     return Ok(U256::from(i as u64));
                 }
-                return Err(SignerError::new("Negative numeric value provided for unsigned integer"));
+                return SignerError::invalid_input_err("Negative numeric value provided for unsigned integer");
             }
 
-            Err(SignerError::new("Unsupported numeric value for unsigned integer"))
+            Err(SignerError::invalid_input("Unsupported numeric value for unsigned integer"))
         }
         Some(Value::Null) | None => Ok(U256::ZERO),
-        Some(other) => Err(SignerError::new(format!("Expected integer value, got {}", other))),
+        Some(other) => Err(SignerError::invalid_input(format!("Expected integer value, got {}", other))),
     }
 }
 
@@ -86,10 +88,10 @@ pub fn parse_int_value(value: Option<&Value>) -> Result<I256, SignerError> {
                 return Ok(I256::from_raw(U256::from(u)));
             }
 
-            Err(SignerError::new("Unsupported numeric value for signed integer"))
+            Err(SignerError::invalid_input("Unsupported numeric value for signed integer"))
         }
         Some(Value::Null) | None => Ok(I256::ZERO),
-        Some(other) => Err(SignerError::new(format!("Expected integer value, got {}", other))),
+        Some(other) => Err(SignerError::invalid_input(format!("Expected integer value, got {}", other))),
     }
 }
 
@@ -107,21 +109,13 @@ pub fn right_pad(bytes: &[u8]) -> [u8; MAX_WORD_BYTES] {
     out
 }
 
-pub fn decode_hex_string(value: &str) -> Result<Vec<u8>, SignerError> {
-    let stripped = value.trim_start_matches("0x").trim_start_matches("0X").replace('_', "");
-    if !stripped.len().is_multiple_of(2) {
-        return Err(SignerError::new(format!("Hex string has odd length: '{value}'")));
-    }
-    hex::decode(&stripped).map_err(SignerError::from)
-}
-
 pub fn adjust_signed_value(number: I256, bits: usize) -> Result<U256, SignerError> {
     if bits == 0 || bits > MAX_WORD_BYTES * 8 {
-        return Err(SignerError::new(format!("Unsupported bit size {bits} for signed integer")));
+        return SignerError::invalid_input_err(format!("Unsupported bit size {bits} for signed integer"));
     }
 
     if number.bits() > bits as u32 {
-        return Err(SignerError::new(format!("Value out of range for signed integer with {bits} bits")));
+        return SignerError::invalid_input_err(format!("Value out of range for signed integer with {bits} bits"));
     }
 
     if bits == MAX_WORD_BYTES * 8 {
@@ -131,7 +125,9 @@ pub fn adjust_signed_value(number: I256, bits: usize) -> Result<U256, SignerErro
     if number.is_negative() {
         let abs = number.unsigned_abs();
         let modulus = U256::from(1u64) << bits;
-        modulus.checked_sub(abs).ok_or_else(|| SignerError::new("Failed to encode signed integer"))
+        modulus
+            .checked_sub(abs)
+            .ok_or_else(|| SignerError::invalid_input("Failed to encode signed integer"))
     } else {
         Ok(number.unsigned_abs())
     }
