@@ -4,9 +4,9 @@ use crate::{
     hyperliquid::{HyperCore, HyperCoreModelFactory},
     models::transaction::{GemPerpetualType, GemStakeType, GemTransactionLoadInput, GemTransactionLoadMetadata},
 };
-use gem_hypercore::core::actions::Builder;
+use gem_hypercore::core::actions::{Builder, CancelOrder};
 use number_formatter::BigNumberFormatter;
-use primitives::{NumberIncrementer, PerpetualDirection, SignerError};
+use primitives::{NumberIncrementer, PerpetualDirection, PerpetualModifyType, SignerError};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -132,7 +132,7 @@ impl ChainSigner for GemSigner {
             transactions.push(self.sign_approve_builder_address(&private_key, BUILDER_ADDRESS, order.builder_fee_bps, timestamp_incrementer.next_val())?);
         }
 
-        transactions.push(self.sign_market_message(&perpetual_type, &agent_key, builder, timestamp_incrementer.next_val())?);
+        transactions.extend(self.sign_market_message(&perpetual_type, &agent_key, builder, &mut timestamp_incrementer)?);
 
         Ok(transactions)
     }
@@ -177,30 +177,50 @@ impl GemSigner {
         perpetual_type: &GemPerpetualType,
         agent_key: &[u8],
         builder: Option<Builder>,
-        timestamp: u64,
-    ) -> Result<String, GemstoneError> {
-        let (data, is_open) = match perpetual_type {
-            GemPerpetualType::Open(data) => (data, true),
-            GemPerpetualType::Close(data) => (data, false),
-        };
-
-        let is_buy = if is_open {
-            match data.direction {
-                PerpetualDirection::Long => true,
-                PerpetualDirection::Short => false,
+        timestamp_incrementer: &mut NumberIncrementer,
+    ) -> Result<Vec<String>, GemstoneError> {
+        match perpetual_type {
+            GemPerpetualType::Open(data) | GemPerpetualType::Close(data) => {
+                let is_open = matches!(perpetual_type, GemPerpetualType::Open(_));
+                let is_buy = if is_open {
+                    matches!(data.direction, PerpetualDirection::Long)
+                } else {
+                    matches!(data.direction, PerpetualDirection::Short)
+                };
+                let order = self
+                    .factory
+                    .make_market_order(data.asset_index as u32, is_buy, data.price.clone(), data.size.clone(), !is_open, builder);
+                Ok(vec![self.hyper_core.sign_place_order(
+                    order,
+                    timestamp_incrementer.next_val(),
+                    agent_key.to_vec(),
+                )?])
             }
-        } else {
-            match data.direction {
-                PerpetualDirection::Long => false,
-                PerpetualDirection::Short => true,
-            }
-        };
-
-        let order = self
-            .factory
-            .make_market_order(data.asset_index as u32, is_buy, data.price.clone(), data.size.clone(), !is_open, builder);
-
-        self.hyper_core.sign_place_order(order, timestamp, agent_key.to_vec())
+            GemPerpetualType::Modify(data) => data
+                .modify_types
+                .iter()
+                .map(|modify_type| match modify_type {
+                    PerpetualModifyType::Tpsl(tpsl_data) => {
+                        let is_buy = matches!(tpsl_data.direction, PerpetualDirection::Long);
+                        let order = self.factory.make_position_tp_sl(
+                            data.asset_index as u32,
+                            is_buy,
+                            tpsl_data.size.clone(),
+                            tpsl_data.take_profit.clone(),
+                            tpsl_data.stop_loss.clone(),
+                            builder.clone(),
+                        );
+                        self.hyper_core.sign_place_order(order, timestamp_incrementer.next_val(), agent_key.to_vec())
+                    }
+                    PerpetualModifyType::Cancel(orders) => {
+                        let cancel = self
+                            .factory
+                            .make_cancel_orders(orders.iter().map(|o| CancelOrder::new(o.asset_index as u32, o.order_id)).collect());
+                        self.hyper_core.sign_cancel_order(cancel, timestamp_incrementer.next_val(), agent_key.to_vec())
+                    }
+                })
+                .collect(),
+        }
     }
 
     fn fee_rate(tenths_bps: u32) -> String {
