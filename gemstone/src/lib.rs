@@ -4,16 +4,13 @@ pub mod config;
 pub mod ethereum;
 pub mod gateway;
 pub mod gem_swapper;
-pub mod hyperliquid;
 pub mod message;
 pub mod models;
 pub mod network;
 pub mod payment;
 pub mod signer;
-pub mod sui;
 pub mod wallet_connect;
 
-use ::signer::SignerError;
 use alien::AlienError;
 
 uniffi::setup_scaffolding!("gemstone");
@@ -52,6 +49,12 @@ impl From<&str> for GemstoneError {
     }
 }
 
+impl From<number_formatter::NumberFormatterError> for GemstoneError {
+    fn from(error: number_formatter::NumberFormatterError) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
 impl From<String> for GemstoneError {
     fn from(error: String) -> Self {
         Self::AnyError { msg: error }
@@ -76,8 +79,14 @@ impl From<AlienError> for GemstoneError {
     }
 }
 
-impl From<SignerError> for GemstoneError {
-    fn from(error: SignerError) -> Self {
+impl From<primitives::SignerError> for GemstoneError {
+    fn from(error: primitives::SignerError) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<::signer::SignerError> for GemstoneError {
+    fn from(error: ::signer::SignerError) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }

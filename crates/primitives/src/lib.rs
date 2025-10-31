@@ -165,7 +165,7 @@ pub mod graphql;
 pub mod perpetual;
 pub use self::perpetual::{
     AccountDataType, Perpetual, PerpetualBalance, PerpetualBasic, PerpetualConfirmData, PerpetualDirection, PerpetualPositionData, PerpetualPositionsSummary,
-    PerpetualType,
+    PerpetualReduceData, PerpetualType,
 };
 pub mod search;
 pub use self::search::SearchResponse;
@@ -197,6 +197,13 @@ pub mod broadcast_options;
 pub use self::broadcast_options::BroadcastOptions;
 pub mod secure_preferences;
 pub use self::secure_preferences::{Preferences, PreferencesExt, SecurePreferences};
+
+pub mod signer_error;
+pub use self::signer_error::SignerError;
+pub mod number_incrementer;
+pub use self::number_incrementer::NumberIncrementer;
+pub mod chain_signer;
+pub use self::chain_signer::ChainSigner;
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

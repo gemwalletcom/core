@@ -5,6 +5,7 @@ mod constants;
 mod memo;
 mod model;
 mod provider;
+mod quote_data_mapper;
 
 use num_bigint::BigInt;
 use primitives::Chain;

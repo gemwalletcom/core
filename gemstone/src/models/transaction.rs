@@ -2,10 +2,10 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
-    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
-    WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualReduceData,
+    PerpetualType, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
+    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
+    TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
 use std::collections::HashMap;
 use swap::{GemApprovalData, GemSwapData};
@@ -13,7 +13,7 @@ use swap::{GemApprovalData, GemSwapData};
 pub type GemPerpetualDirection = PerpetualDirection;
 pub type GemPerpetualProvider = PerpetualProvider;
 pub type GemPerpetualConfirmData = PerpetualConfirmData;
-pub type GemPerpetualType = PerpetualType;
+pub type GemPerpetualReduceData = PerpetualReduceData;
 pub type GemFeeOption = FeeOption;
 pub type GemTransferDataOutputType = TransferDataOutputType;
 pub type GemTransferDataOutputAction = TransferDataOutputAction;
@@ -186,10 +186,20 @@ pub struct PerpetualConfirmData {
     pub margin_amount: f64,
 }
 
+#[uniffi::remote(Record)]
+pub struct PerpetualReduceData {
+    pub data: PerpetualConfirmData,
+    pub position_direction: PerpetualDirection,
+}
+
+pub type GemPerpetualType = PerpetualType;
+
 #[uniffi::remote(Enum)]
 pub enum PerpetualType {
     Open(PerpetualConfirmData),
     Close(PerpetualConfirmData),
+    Increase(PerpetualConfirmData),
+    Reduce(PerpetualReduceData),
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -231,6 +241,43 @@ pub enum GemTransactionInputType {
         asset: GemAsset,
         perpetual_type: GemPerpetualType,
     },
+}
+
+impl GemTransactionInputType {
+    pub fn asset(&self) -> &GemAsset {
+        match self {
+            Self::Transfer { asset }
+            | Self::Deposit { asset }
+            | Self::Stake { asset, .. }
+            | Self::TokenApprove { asset, .. }
+            | Self::Generic { asset, .. }
+            | Self::TransferNft { asset, .. }
+            | Self::Account { asset, .. }
+            | Self::Perpetual { asset, .. } => asset,
+            Self::Swap { from_asset, .. } => from_asset,
+        }
+    }
+
+    pub fn swap_data(&self) -> Result<&GemSwapData, String> {
+        match self {
+            Self::Swap { swap_data, .. } => Ok(swap_data),
+            _ => Err("Expected Swap".to_string()),
+        }
+    }
+
+    pub fn stake_type(&self) -> Result<&GemStakeType, String> {
+        match self {
+            Self::Stake { stake_type, .. } => Ok(stake_type),
+            _ => Err("Expected Stake".to_string()),
+        }
+    }
+
+    pub fn perpetual_type(&self) -> Result<&GemPerpetualType, String> {
+        match self {
+            Self::Perpetual { perpetual_type, .. } => Ok(perpetual_type),
+            _ => Err("Expected Perpetual".to_string()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -591,7 +638,10 @@ impl From<TransactionInputType> for GemTransactionInputType {
             },
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
-            TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
+            TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual {
+                asset,
+                perpetual_type,
+            },
         }
     }
 }

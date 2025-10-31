@@ -1,19 +1,13 @@
-use std::{
-    str::FromStr,
-    sync::Arc,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::sync::Arc;
 
-use alloy_primitives::{Address, U256, hex::encode_prefixed as HexEncode};
-use alloy_sol_types::SolCall;
+use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use gem_evm::thorchain::contracts::RouterInterface;
 use primitives::{Chain, swap::ApprovalData};
 
 use super::{
-    DEFAULT_DEPOSIT_GAS_LIMIT, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo,
-    model::RouteData,
+    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData,
+    quote_data_mapper,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
@@ -71,9 +65,7 @@ where
 
         let value = self.value_from(request.clone().value, from_asset.decimals as i32);
 
-        // thorchain is not included in inbound addresses
         if from_asset.chain != THORChainName::Thorchain {
-            // min fee validation
             let inbound_addresses = self.swap_client.get_inbound_addresses().await?;
             let from_inbound_address = &inbound_addresses
                 .iter()
@@ -83,10 +75,6 @@ where
             if from_inbound_address.dust_threshold > value {
                 return Err(SwapperError::InputAmountTooSmall);
             }
-
-            // if (from_inbound_address.outbound_fee.clone() * from_inbound_address.gas_rate.clone()) > value {
-            //     return Err(SwapperError::InputAmountTooSmall);
-            // }
         }
 
         let fee = request.options.clone().fee.unwrap_or_default().thorchain;
@@ -167,34 +155,15 @@ where
                 None
             }
         };
-        let gas_limit = if approval.is_some() {
-            Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string())
-        } else {
-            None
-        };
 
-        let data = if from_asset.use_evm_router() {
-            // only used for swapping from ERC20 tokens
-            let to = route_data.router_address.clone().unwrap();
-            let inbound_address = Address::from_str(&route_data.inbound_address).unwrap();
-            let token_address = Address::from_str(&quote.request.from_asset.asset_id().token_id.clone().unwrap()).unwrap();
-            let amount = U256::from_str(&value).unwrap();
-            let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 86400; // + 1 day
-            let expiry = U256::from_str(timestamp.to_string().as_str()).unwrap();
-
-            let call = RouterInterface::depositWithExpiryCall {
-                inbound_address,
-                token_address,
-                amount,
-                memo,
-                expiry,
-            }
-            .abi_encode();
-
-            SwapperQuoteData::new_contract(to, value, HexEncode(call.clone()), approval, gas_limit)
-        } else {
-            SwapperQuoteData::new_tranfer(route_data.inbound_address, value, Some(memo))
-        };
+        let data = quote_data_mapper::map_quote_data(
+            &from_asset,
+            &route_data,
+            quote.request.from_asset.asset_id().token_id.clone(),
+            value,
+            memo,
+            approval,
+        );
 
         Ok(data)
     }
@@ -206,7 +175,6 @@ where
         let memo_parsed = ThorchainMemo::parse(&status.observed_tx.tx.memo);
         let destination_chain = memo_parsed.as_ref().and_then(|m| m.destination_chain());
 
-        // Extract the first non-zero destination transaction hash from out_hashes
         let destination_tx_hash = if let Some(out_hashes) = &status.observed_tx.out_hashes {
             out_hashes.iter().find(|hash| *hash != ZERO_HASH && !hash.is_empty()).cloned()
         } else {

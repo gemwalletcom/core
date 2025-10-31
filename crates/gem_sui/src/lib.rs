@@ -17,6 +17,9 @@ pub mod gas_budget;
 pub mod jsonrpc;
 pub mod operations;
 
+#[cfg(feature = "signer")]
+pub mod signer;
+
 use models::Coin;
 pub use models::ObjectId;
 pub use operations::*;
