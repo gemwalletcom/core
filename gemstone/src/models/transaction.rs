@@ -2,11 +2,11 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
-    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyType, TPSLOrderData},
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
     TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64,
     WalletConnectionSessionAppMetadata,
+    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
 use swap::{GemApprovalData, GemSwapData};
@@ -14,7 +14,7 @@ use swap::{GemApprovalData, GemSwapData};
 pub type GemPerpetualDirection = PerpetualDirection;
 pub type GemPerpetualProvider = PerpetualProvider;
 pub type GemPerpetualConfirmData = PerpetualConfirmData;
-pub type GemPerpetualType = PerpetualType;
+pub type GemPerpetualReduceData = PerpetualReduceData;
 pub type GemFeeOption = FeeOption;
 pub type GemTransferDataOutputType = TransferDataOutputType;
 pub type GemTransferDataOutputAction = TransferDataOutputAction;
@@ -215,12 +215,21 @@ pub struct PerpetualModifyConfirmData {
     pub take_profit_order_id: Option<UInt64>,
     pub stop_loss_order_id: Option<UInt64>,
 }
+#[uniffi::remote(Record)]
+pub struct PerpetualReduceData {
+    pub data: PerpetualConfirmData,
+    pub position_direction: PerpetualDirection,
+}
+
+pub type GemPerpetualType = PerpetualType;
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualType {
     Open(PerpetualConfirmData),
     Close(PerpetualConfirmData),
     Modify(PerpetualModifyConfirmData),
+    Increase(PerpetualConfirmData),
+    Reduce(PerpetualReduceData),
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]

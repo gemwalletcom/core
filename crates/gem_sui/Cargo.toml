@@ -11,6 +11,7 @@ rpc = [
     "dep:gem_client",
     "dep:chain_traits",
 ]
+signer = ["dep:signer"]
 reqwest = ["gem_jsonrpc/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
@@ -30,6 +31,7 @@ num-traits = { workspace = true }
 
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 futures = { workspace = true }
+signer = { path = "../signer", optional = true }
 
 # Optional dependencies for rpc feature
 num-bigint = { workspace = true, features = ["serde"] }

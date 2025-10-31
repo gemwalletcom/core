@@ -37,6 +37,8 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
 
                 let fiat_value = match perpetual_type {
                     PerpetualType::Open(data) => data.fiat_value,
+                    PerpetualType::Increase(data) => data.fiat_value,
+                    PerpetualType::Reduce(reduce_data) => reduce_data.data.fiat_value,
                     PerpetualType::Close(data) => data.fiat_value,
                     PerpetualType::Modify(_) => 0.0,
                 };

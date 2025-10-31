@@ -154,9 +154,19 @@ pub struct PerpetualModifyConfirmData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PerpetualReduceData {
+    pub data: PerpetualConfirmData,
+    pub position_direction: PerpetualDirection,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(tag = "type", content = "content")]
 pub enum PerpetualType {
     Open(PerpetualConfirmData),
     Close(PerpetualConfirmData),
     Modify(PerpetualModifyConfirmData),
+    Increase(PerpetualConfirmData),
+    Reduce(PerpetualReduceData),
 }
