@@ -27,6 +27,7 @@ number_formatter = { path = "../number_formatter" }
 primitives = { path = "../primitives" }
 chain_traits = { path = "../chain_traits" }
 k256 = { workspace = true }
+signer = { path = "../signer" }
 
 [dev-dependencies]
 reqwest = { workspace = true }

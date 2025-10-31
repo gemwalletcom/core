@@ -1,7 +1,10 @@
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_serializers::{deserialize_biguint_from_str, deserialize_u64_from_str};
+use serde_serializers::deserialize_biguint_from_str;
+
+#[cfg(feature = "rpc")]
+use serde_serializers::deserialize_u64_from_str;
 
 #[cfg(feature = "rpc")]
 use super::account::GasObject;

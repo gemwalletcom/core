@@ -2882,6 +2882,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
 ]
 
@@ -3005,6 +3006,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "sui-sdk-types",
  "sui-transaction-builder",
  "tokio",
@@ -6460,10 +6462,14 @@ dependencies = [
 name = "signer"
 version = "1.0.0"
 dependencies = [
+ "alloy-primitives",
  "base64 0.22.1",
  "ed25519-dalek",
+ "gem_hash",
  "hex",
  "k256",
+ "serde",
+ "serde_json",
  "sui-sdk-types",
 ]
 
