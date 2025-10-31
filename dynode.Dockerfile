@@ -1,18 +1,20 @@
 # syntax=docker/dockerfile:1
-FROM rust:1.90.0-bookworm AS builder
+FROM rust:1.90.0-bookworm AS chef
+RUN cargo install cargo-chef
 WORKDIR /app
 
-# Copy source
+FROM chef AS planner
 COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Build with cache mounts - dependencies and source will be cached separately by Cargo
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
-    --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-dynode \
-    cargo build --release --package dynode
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - this layer will be cached
+RUN cargo chef cook --release --recipe-path recipe.json --package dynode
 
-# Copy binary from cache to layer
-RUN --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-dynode \
+# Copy source and build application
+COPY . .
+RUN cargo build --release --package dynode && \
     mkdir -p /output && \
     cp /app/target/release/dynode /output/
 
