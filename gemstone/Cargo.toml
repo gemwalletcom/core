@@ -25,7 +25,7 @@ gem_solana = { path = "../crates/gem_solana", features = ["rpc"] }
 gem_ton = { path = "../crates/gem_ton", features = ["rpc"] }
 gem_tron = { path = "../crates/gem_tron", features = ["rpc"] }
 gem_evm = { path = "../crates/gem_evm", features = ["rpc"] }
-gem_sui = { path = "../crates/gem_sui", features = ["rpc"] }
+gem_sui = { path = "../crates/gem_sui", features = ["rpc", "signer"] }
 gem_aptos = { path = "../crates/gem_aptos", features = ["rpc"] }
 gem_hash = { path = "../crates/gem_hash" }
 gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
