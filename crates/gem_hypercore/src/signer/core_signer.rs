@@ -157,16 +157,16 @@ impl HyperCoreSigner {
     }
 
     fn sign_market_message(&self, perpetual_type: &PerpetualType, agent_key: &[u8], builder: Option<Builder>, timestamp: u64) -> SignerResult<String> {
-        let (data, is_open, position_direction) = match perpetual_type {
-            PerpetualType::Open(data) | PerpetualType::Increase(data) => (data, true, data.direction.clone()),
-            PerpetualType::Close(data) => (data, false, data.direction.clone()),
-            PerpetualType::Reduce(reduce_data) => (&reduce_data.data, false, reduce_data.position_direction.clone()),
+        let (data, is_open) = match perpetual_type {
+            PerpetualType::Open(data) | PerpetualType::Increase(data) => (data, true),
+            PerpetualType::Close(data) => (data, false),
+            PerpetualType::Reduce(reduce_data) => (&reduce_data.data, false),
         };
 
         let is_buy = if is_open {
-            matches!(position_direction, PerpetualDirection::Long)
+            matches!(data.direction, PerpetualDirection::Long)
         } else {
-            matches!(position_direction, PerpetualDirection::Short)
+            matches!(data.direction, PerpetualDirection::Short)
         };
 
         let order = make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder);
