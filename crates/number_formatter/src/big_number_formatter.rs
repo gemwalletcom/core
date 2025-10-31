@@ -74,9 +74,7 @@ impl BigNumberFormatter {
     }
 
     pub fn decimal_to_string(value: &BigDecimal, max_scale: u32) -> String {
-        let normalized = value.normalized();
-        let rounded = normalized.round(max_scale as i64);
-        rounded.normalized().to_string()
+        value.round(max_scale as i64).normalized().to_string()
     }
 }
 

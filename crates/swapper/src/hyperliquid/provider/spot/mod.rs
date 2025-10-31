@@ -1,5 +1,4 @@
 use std::{
-    str::FromStr,
     sync::{Arc, Mutex},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -132,11 +131,6 @@ impl HyperCoreSpot {
             .ok_or(SwapperError::NotSupportedPair)
     }
 
-    fn amount_to_decimal(value: &str, decimals: i32) -> Result<BigDecimal, SwapperError> {
-        let human = BigNumberFormatter::value(value, decimals).ok_or_else(|| SwapperError::InvalidAmount("invalid amount".to_string()))?;
-        BigDecimal::from_str(&human).map_err(|_| SwapperError::InvalidAmount("invalid amount".to_string()))
-    }
-
     fn format_decimal(value: &BigDecimal) -> String {
         BigNumberFormatter::decimal_to_string(value, MAX_DECIMAL_SCALE)
     }
@@ -160,7 +154,7 @@ impl Swapper for HyperCoreSpot {
         let from_token = self.resolve_token(&meta, &request.from_asset)?;
         let to_token = self.resolve_token(&meta, &request.to_asset)?;
 
-        let amount_in = Self::amount_to_decimal(&request.value, from_token.wei_decimals)?;
+        let amount_in = BigNumberFormatter::big_decimal_value(&request.value, from_token.wei_decimals as u32)?;
         if amount_in <= BigDecimal::zero() {
             return Err(SwapperError::InvalidAmount("amount must be greater than zero".to_string()));
         }
@@ -191,19 +185,19 @@ impl Swapper for HyperCoreSpot {
         let to_value = BigNumberFormatter::value_from_amount(&output_amount_str, decimals_u32)
             .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?;
 
-        let amount_in_str = Self::format_decimal(&amount_in);
-        let avg_price_str = Self::format_decimal(&avg_price);
+        let formatted_amount = Self::format_decimal(&amount_in);
+        let avg_price = Self::format_decimal(&avg_price);
 
         let (size_str, quote_amount_str) = match side {
-            SpotSide::Sell => (amount_in_str.clone(), output_amount_str.clone()),
-            SpotSide::Buy => (output_amount_str.clone(), amount_in_str.clone()),
+            SpotSide::Sell => (formatted_amount.clone(), output_amount_str.clone()),
+            SpotSide::Buy => (output_amount_str.clone(), formatted_amount.clone()),
         };
 
         let route_data = SpotRouteData {
             market_index: market.index,
             side: side.clone(),
             size: size_str,
-            price: avg_price_str,
+            price: avg_price,
             quote_amount: quote_amount_str,
         };
 
