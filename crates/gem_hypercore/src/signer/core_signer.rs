@@ -2,8 +2,8 @@ use ::signer::Signer;
 use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualDirection, PerpetualType, SignerError, TransactionInputType, TransactionLoadInput,
-    TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
+    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualType, SignerError, TransactionInputType,
+    TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -99,7 +99,7 @@ impl HyperCoreSigner {
             transactions.push(self.sign_approve_builder_address(private_key, BUILDER_ADDRESS, order.builder_fee_bps, timestamp_incrementer.next_val())?);
         }
 
-        transactions.push(self.sign_market_message(perpetual_type, agent_key.as_slice(), builder, timestamp_incrementer.next_val())?);
+        transactions.push(self.sign_market_message(perpetual_type, agent_key.as_slice(), builder.as_ref(), timestamp_incrementer.next_val())?);
 
         Ok(transactions)
     }
@@ -156,21 +156,30 @@ impl HyperCoreSigner {
         self.sign_serialized_action(delegate, timestamp, private_key, token_delegate_typed_data, "token delegate")
     }
 
-    fn sign_market_message(&self, perpetual_type: &PerpetualType, agent_key: &[u8], builder: Option<Builder>, timestamp: u64) -> SignerResult<String> {
-        let (data, is_open) = match perpetual_type {
-            PerpetualType::Open(data) | PerpetualType::Increase(data) => (data, true),
-            PerpetualType::Close(data) => (data, false),
-            PerpetualType::Reduce(reduce_data) => (&reduce_data.data, false),
+    fn sign_market_message(&self, perpetual_type: &PerpetualType, agent_key: &[u8], builder: Option<&Builder>, timestamp: u64) -> SignerResult<String> {
+        let order = Self::place_order_from_perpetual_type(perpetual_type, builder)?;
+        self.sign_place_order(order, timestamp, agent_key)
+    }
+
+    fn place_order_from_perpetual_type(perpetual_type: &PerpetualType, builder: Option<&Builder>) -> SignerResult<PlaceOrder> {
+        let order = match perpetual_type {
+            PerpetualType::Open(data) | PerpetualType::Increase(data) => Self::market_order_from_confirm_data(data, true, builder),
+            PerpetualType::Close(data) => Self::market_order_from_confirm_data(data, false, builder),
+            PerpetualType::Reduce(reduce_data) => Self::market_order_from_confirm_data(&reduce_data.data, false, builder),
+            PerpetualType::Modify(_) => return Err(SignerError::UnsupportedOperation("Perpetual modify not supported".to_string())),
         };
 
+        Ok(order)
+    }
+
+    fn market_order_from_confirm_data(data: &PerpetualConfirmData, is_open: bool, builder: Option<&Builder>) -> PlaceOrder {
         let is_buy = if is_open {
             matches!(data.direction, PerpetualDirection::Long)
         } else {
             matches!(data.direction, PerpetualDirection::Short)
         };
 
-        let order = make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder);
-        self.sign_place_order(order, timestamp, agent_key)
+        make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder.cloned())
     }
 
     fn sign_place_order(&self, order: PlaceOrder, nonce: u64, private_key: &[u8]) -> SignerResult<String> {
@@ -310,4 +319,94 @@ fn get_builder(builder: &str, fee: i32) -> Result<Builder, SignerError> {
 
 fn fee_rate(tenths_bps: u32) -> String {
     format!("{}%", (tenths_bps as f64) * 0.001)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use primitives::{Asset, Chain, PerpetualModifyConfirmData, PerpetualReduceData};
+
+    fn sample_confirm_data(direction: PerpetualDirection, asset_index: i32) -> PerpetualConfirmData {
+        PerpetualConfirmData {
+            direction,
+            base_asset: Asset::from_chain(Chain::HyperCore),
+            asset_index,
+            price: "123.45".to_string(),
+            fiat_value: 100.0,
+            size: "2.5".to_string(),
+            slippage: 0.01,
+            leverage: 5,
+            pnl: None,
+            entry_price: None,
+            market_price: 123.45,
+            margin_amount: 50.0,
+        }
+    }
+
+    fn sample_modify_data() -> PerpetualModifyConfirmData {
+        PerpetualModifyConfirmData {
+            base_asset: Asset::from_chain(Chain::HyperCore),
+            asset_index: 7,
+            modify_types: Vec::new(),
+            take_profit_order_id: None,
+            stop_loss_order_id: None,
+        }
+    }
+
+    #[test]
+    fn place_order_from_open_long_uses_builder_and_sets_buy() {
+        let data = sample_confirm_data(PerpetualDirection::Long, 11);
+        let builder = Builder {
+            builder_address: "0xdeadbeef".to_string(),
+            fee: 25,
+        };
+
+        let order =
+            HyperCoreSigner::place_order_from_perpetual_type(&PerpetualType::Open(data.clone()), Some(&builder)).expect("order should build");
+
+        assert_eq!(order.orders.len(), 1);
+        let market_order = &order.orders[0];
+        assert!(market_order.is_buy);
+        assert!(!market_order.reduce_only);
+        assert_eq!(market_order.asset, data.asset_index as u32);
+        assert_eq!(market_order.size, data.size);
+
+        let cloned_builder = order.builder.expect("builder should be propagated");
+        assert_eq!(cloned_builder.builder_address, builder.builder_address);
+        assert_eq!(cloned_builder.fee, builder.fee);
+    }
+
+    #[test]
+    fn place_order_from_close_short_sets_reduce_only_buy() {
+        let data = sample_confirm_data(PerpetualDirection::Short, 5);
+
+        let order =
+            HyperCoreSigner::place_order_from_perpetual_type(&PerpetualType::Close(data.clone()), None).expect("order should build for close");
+
+        let market_order = &order.orders[0];
+        assert!(market_order.is_buy);
+        assert!(market_order.reduce_only);
+    }
+
+    #[test]
+    fn place_order_from_reduce_long_sells_and_reduces_only() {
+        let data = sample_confirm_data(PerpetualDirection::Long, 9);
+        let reduce = PerpetualType::Reduce(PerpetualReduceData {
+            data: data.clone(),
+            position_direction: PerpetualDirection::Long,
+        });
+
+        let order = HyperCoreSigner::place_order_from_perpetual_type(&reduce, None).expect("order should build for reduce");
+
+        let market_order = &order.orders[0];
+        assert!(!market_order.is_buy);
+        assert!(market_order.reduce_only);
+    }
+
+    #[test]
+    fn place_order_from_modify_returns_error() {
+        let modify = PerpetualType::Modify(sample_modify_data());
+        let result = HyperCoreSigner::place_order_from_perpetual_type(&modify, None);
+        assert!(matches!(result, Err(SignerError::UnsupportedOperation(_))));
+    }
 }

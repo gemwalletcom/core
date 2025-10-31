@@ -1,4 +1,5 @@
 use crate::core::actions::SLIPPAGE_BUFFER_PERCENT;
+use primitives::TpslType;
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
@@ -32,6 +33,7 @@ pub struct Order {
     pub is_buy: bool,
     #[serde(rename = "p")]
     pub price: String,
+    /// Use "0" to apply to entire position (for position TP/SL orders)
     #[serde(rename = "s")]
     pub size: String,
     #[serde(rename = "r")]
@@ -79,14 +81,6 @@ pub enum TimeInForce {
     GoodTillCancel,
     #[serde(rename = "FrontendMarket")]
     FrontendMarket,
-}
-
-#[derive(Clone, serde::Serialize)]
-pub enum TpslType {
-    #[serde(rename = "tp")]
-    TakeProfit,
-    #[serde(rename = "sl")]
-    StopLoss,
 }
 
 #[derive(Clone, serde::Serialize, Debug, PartialEq)]
@@ -221,7 +215,7 @@ pub fn make_position_tp_sl(
         let sl_execution_price = calculate_execution_price(&sl_trigger_px, false); // Position orders: subtract slippage
         orders.push(make_trigger_order(
             asset,
-            is_buy,
+            !is_buy,
             &sl_execution_price,
             size,
             true,
@@ -234,7 +228,7 @@ pub fn make_position_tp_sl(
         let tp_execution_price = calculate_execution_price(&tp_trigger_px, false); // Position orders: subtract slippage
         orders.push(make_trigger_order(
             asset,
-            is_buy,
+            !is_buy,
             &tp_execution_price,
             size,
             true,

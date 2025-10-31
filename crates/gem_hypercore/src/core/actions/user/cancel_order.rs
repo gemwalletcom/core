@@ -3,15 +3,15 @@
 
 #[derive(Clone, serde::Serialize)]
 pub struct Cancel {
-    pub cancels: Vec<CancelOrder>,
     pub r#type: String,
+    pub cancels: Vec<CancelOrder>,
 }
 
 impl Cancel {
     pub fn new(cancels: Vec<CancelOrder>) -> Self {
         Self {
-            cancels,
             r#type: "cancel".to_string(),
+            cancels,
         }
     }
 }

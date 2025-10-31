@@ -36,6 +36,12 @@ pub fn update_leverage_typed_data(update_leverage: UpdateLeverage, nonce: u64) -
     l1_action_typed_data(action_value, nonce)
 }
 
+// L1 payload
+pub fn cancel_order_typed_data(cancel: Cancel, nonce: u64) -> String {
+    let action_value = serde_json::to_value(&cancel).unwrap();
+    l1_action_typed_data(action_value, nonce)
+}
+
 // User signed payload
 pub fn withdrawal_request_typed_data(request: WithdrawalRequest) -> String {
     let action_value = serde_json::to_value(&request).unwrap();
@@ -386,5 +392,16 @@ mod tests {
         let expected: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_eip712_stake_to_validator.json")).unwrap();
 
         assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_action_cancel_orders() {
+        let cancel = Cancel::new(vec![CancelOrder::new(0, 133614972850), CancelOrder::new(7, 133610221604)]);
+        let generated_action: serde_json::Value = serde_json::to_value(&cancel).unwrap();
+
+        let test_data: serde_json::Value = serde_json::from_str(include_str!("../../testdata/hl_action_cancel_orders.json")).unwrap();
+        let expected_action = &test_data["action"];
+
+        assert_eq!(generated_action, *expected_action);
     }
 }
