@@ -10,11 +10,16 @@ RUN cargo chef prepare --recipe-path recipe.json
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
 # Build dependencies - this layer will be cached
-RUN cargo chef cook --release --recipe-path recipe.json --package dynode
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    cargo chef cook --release --recipe-path recipe.json --package dynode
 
 # Copy source and build application
 COPY . .
-RUN cargo build --release --package dynode && \
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/app/target \
+    cargo build --release --package dynode && \
     mkdir -p /output && \
     cp /app/target/release/dynode /output/
 
