@@ -19,7 +19,6 @@ RUN cargo build --release --bin api --bin daemon && \
     cp /app/target/release/api /output/ && \
     cp /app/target/release/daemon /output/
 
-# We do not need the Rust toolchain to run the binary!
 FROM debian:bookworm AS runtime
 WORKDIR /app
 
