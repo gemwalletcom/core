@@ -1,37 +1,38 @@
 # syntax=docker/dockerfile:1
-FROM lukemathwalker/cargo-chef:latest-rust-1.91.0-bookworm AS chef
+FROM rust:1.90.0-bookworm AS builder
 WORKDIR /app
 
-FROM chef AS planner
+# Copy source
 COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
 
-FROM chef AS builder
+# Build with cache mounts - dependencies and source will be cached separately by Cargo
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-core \
+    cargo build --release --bin api --bin daemon
 
-# Install build dependencies for diesel (PostgreSQL)
-RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev && rm -rf /var/lib/apt/lists/*
-
-COPY --from=planner /app/recipe.json recipe.json
-# Build dependencies - this layer will be cached
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    cargo chef cook --release --recipe-path recipe.json --bin api --bin daemon
-
-# Copy source and build application
-COPY . .
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/app/target \
-    cargo build --release --bin api --bin daemon && \
+# Copy binaries from cache to layer
+RUN --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-core \
     mkdir -p /output && \
-    cp target/release/api target/release/daemon /output/
+    cp /app/target/release/api /output/ && \
+    cp /app/target/release/daemon /output/
 
-FROM debian:bookworm-slim AS runtime
+# We do not need the Rust toolchain to run the binary!
+FROM debian:bookworm AS runtime
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libpq5 openssl curl && rm -rf /var/lib/apt/lists/*
+# Install dependencies first for better caching
+RUN apt-get update && apt-get install -y \
+    openssl \
+    ca-certificates \
+    libpq-dev \
+    postgresql \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /output/api /output/daemon /app/
+# Copy binaries
+COPY --from=builder /output/api /app/
+COPY --from=builder /output/daemon /app/
 COPY --from=builder /app/Settings.yaml /app/
 
 CMD ["sh", "-c", "/app/${BINARY}"]
