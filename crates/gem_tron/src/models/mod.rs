@@ -20,7 +20,6 @@ pub struct Block {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BlockTransactions {
     pub block_header: BlockHeader,
-    #[serde(default)]
     pub transactions: Vec<Transaction>,
 }
 
