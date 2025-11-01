@@ -10,9 +10,9 @@ use crate::rpc::client::HyperCoreClient;
 #[async_trait]
 impl<C: Client> ChainToken for HyperCoreClient<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
-        let spot_metadata = self.get_spot_metadata().await?;
-        let token = spot_metadata
-            .tokens
+        let spot_meta = self.get_spot_meta().await?;
+        let token = spot_meta
+            .tokens()
             .iter()
             .find(|t| t.name == token_id)
             .ok_or(format!("Token not found with symbol: {}", token_id))?;

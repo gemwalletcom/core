@@ -86,7 +86,7 @@ impl GemSwapper {
             Box::new(thorchain::ThorChain::new(rpc_provider.clone())),
             Box::new(jupiter::Jupiter::new(rpc_provider.clone())),
             Box::new(across::Across::new(rpc_provider.clone())),
-            Box::new(hyperliquid::HyperCoreBridge::new()),
+            Box::new(hyperliquid::Hyperliquid::new(rpc_provider.clone())),
             uniswap::default::boxed_oku(rpc_provider.clone()),
             uniswap::default::boxed_wagmi(rpc_provider.clone()),
             Box::new(pancakeswap_aptos::PancakeSwapAptos::new(rpc_provider.clone())),

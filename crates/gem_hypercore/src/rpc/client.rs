@@ -5,7 +5,7 @@ use crate::models::{
     order::{OpenOrder, PerpetualFill},
     position::AssetPositions,
     referral::Referral,
-    token::SpotTokensResponse,
+    spot::{OrderbookResponse, SpotMeta, SpotMetaRaw},
     user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
@@ -158,8 +158,15 @@ impl<C: Client> HyperCoreClient<C> {
         self.info(json!({"type": "metaAndAssetCtxs"})).await
     }
 
-    pub async fn get_spot_metadata(&self) -> Result<SpotTokensResponse, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "spotMeta"})).await
+    pub async fn get_spot_meta(&self) -> Result<SpotMeta, Box<dyn Error + Send + Sync>> {
+        let response = self.info(json!({ "type": "spotMeta" })).await?;
+        let raw: SpotMetaRaw = serde_json::from_value(response)?;
+        Ok(raw.into())
+    }
+
+    pub async fn get_spot_orderbook(&self, coin: &str) -> Result<OrderbookResponse, Box<dyn Error + Send + Sync>> {
+        let response = self.info(json!({ "type": "l2Book", "coin": coin })).await?;
+        Ok(serde_json::from_value(response)?)
     }
 
     pub async fn get_candlesticks(&self, coin: &str, interval: &str, start_time: i64, end_time: i64) -> Result<Vec<Candlestick>, Box<dyn Error + Send + Sync>> {

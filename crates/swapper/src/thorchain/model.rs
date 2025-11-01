@@ -98,10 +98,10 @@ mod tests {
     #[test]
     fn test_get_inbound_address_other_chain() {
         let from_asset = THORChainAsset::from_asset_id("ethereum").unwrap();
-        let quote_address = Some("0x1234567890abcdef".to_string());
-        let result = RouteData::get_inbound_address(&from_asset, quote_address.clone());
+        let quote_address = "0x1234567890abcdef".to_string();
+        let result = RouteData::get_inbound_address(&from_asset, Some(quote_address.clone()));
 
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), quote_address.unwrap());
+        assert_eq!(result.unwrap(), quote_address);
     }
 }
