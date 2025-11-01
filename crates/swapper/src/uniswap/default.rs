@@ -22,6 +22,10 @@ pub fn new_wagmi(rpc_provider: Arc<dyn RpcProvider>) -> UniswapV3 {
     universal_router::new_wagmi(rpc_provider)
 }
 
+pub fn new_hyperswap(rpc_provider: Arc<dyn RpcProvider>) -> UniswapV3 {
+    universal_router::new_hyperswap(rpc_provider)
+}
+
 pub fn new_uniswap_v4(rpc_provider: Arc<dyn RpcProvider>) -> UniswapV4 {
     universal_router::new_uniswap_v4(rpc_provider)
 }
@@ -44,6 +48,10 @@ pub fn boxed_oku(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn Swapper> {
 
 pub fn boxed_wagmi(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn Swapper> {
     Box::new(new_wagmi(rpc_provider))
+}
+
+pub fn boxed_hyperswap(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn Swapper> {
+    Box::new(new_hyperswap(rpc_provider))
 }
 
 pub fn boxed_uniswap_v4(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn Swapper> {

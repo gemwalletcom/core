@@ -140,6 +140,19 @@ pub fn get_oku_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
     }
 }
 
+pub fn get_hyperswap_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
+    // https://docs.hyperswap.exchange/hyperswap/contracts/or-hyper-evm/v3
+    let permit2 = get_uniswap_permit2_by_chain(chain)?;
+    match chain {
+        Chain::Hyperliquid => Some(V3Deployment {
+            quoter_v2: "0x03A918028f22D9E1473B7959C927AD7425A45C7C",
+            universal_router: "0xefAbEB7A19bB848b359e5dd5a63b1a634AAfD229",
+            permit2,
+        }),
+        _ => None,
+    }
+}
+
 pub fn get_wagmi_router_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
     // https://docs.wagmi.com/wagmi/contracts#sonic
     match chain {

@@ -22,6 +22,7 @@ pub fn get_uniswap_permit2_by_chain(chain: &Chain) -> Option<&'static str> {
         | Chain::Blast
         | Chain::World
         | Chain::Unichain
+        | Chain::Hyperliquid
         | Chain::Ink => Some("0x000000000022D473030F116dDEE9F6B43aC78BA3"),
         Chain::ZkSync | Chain::Abstract => Some("0x0000000000225e31d15943971f47ad3022f714fa"),
         _ => None,
@@ -49,6 +50,11 @@ pub fn get_provider_by_chain_contract(chain: &Chain, contract: &str) -> Option<S
         && deployment.universal_router.to_lowercase() == contract
     {
         return Some(SwapProvider::Oku.id().to_string());
+    }
+    if let Some(deployment) = v3::get_hyperswap_deployment_by_chain(chain)
+        && deployment.universal_router.to_lowercase() == contract
+    {
+        return Some(SwapProvider::Hyperswap.id().to_string());
     }
     if let Some(deployment) = v3::get_wagmi_router_deployment_by_chain(chain)
         && deployment.universal_router.to_lowercase() == contract
