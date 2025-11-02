@@ -13,6 +13,7 @@ use gem_hypercore::{
     },
     rpc::client::HyperCoreClient,
 };
+use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::Chain;
 
@@ -97,7 +98,7 @@ impl HyperCoreSpot {
         let asset_id = asset.asset_id();
         let components = asset_id.token_components().or_else(|| {
             if asset_id == HYPERCORE_HYPE.id {
-                Some(("HYPE".to_string(), None, None))
+                HYPERCORE_SPOT_HYPE.id.token_components()
             } else {
                 None
             }
@@ -154,7 +155,7 @@ impl Swapper for HyperCoreSpot {
         let from_token = self.resolve_token(&meta, &request.from_asset)?;
         let to_token = self.resolve_token(&meta, &request.to_asset)?;
 
-        let amount_in = BigNumberFormatter::big_decimal_value(&request.value, from_token.wei_decimals as u32)?;
+        let amount_in = BigNumberFormatter::big_decimal_value(&request.value, request.from_asset.decimals)?;
         if amount_in <= BigDecimal::zero() {
             return Err(SwapperError::InvalidAmount("amount must be greater than zero".to_string()));
         }
@@ -176,14 +177,16 @@ impl Swapper for HyperCoreSpot {
             SpotSide::Buy => simulate_buy(&amount_in, &orderbook.levels[1])?,
         };
 
-        let decimals_u32: u32 = to_token
+        let token_decimals: u32 = to_token
             .wei_decimals
             .try_into()
             .map_err(|_| SwapperError::InvalidAmount("invalid amount precision".to_string()))?;
 
         let output_amount_str = Self::format_decimal(&output_amount);
-        let to_value = BigNumberFormatter::value_from_amount(&output_amount_str, decimals_u32)
+        let token_units = BigNumberFormatter::value_from_amount_biguint(&output_amount_str, token_decimals)
             .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?;
+        let scaled_units = scale_units(token_units, token_decimals, request.to_asset.decimals)?;
+        let to_value = scaled_units.to_string();
 
         let formatted_amount = Self::format_decimal(&amount_in);
         let avg_price = Self::format_decimal(&avg_price);
@@ -251,8 +254,54 @@ impl Swapper for HyperCoreSpot {
     }
 }
 
-#[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+fn scale_units(value: BigUint, from_decimals: u32, to_decimals: u32) -> Result<BigUint, SwapperError> {
+    if from_decimals == to_decimals {
+        return Ok(value);
+    }
+
+    if to_decimals > from_decimals {
+        let diff = to_decimals - from_decimals;
+        let factor = BigUint::from(10u32).pow(diff);
+        Ok(value * factor)
+    } else {
+        let diff = from_decimals - to_decimals;
+        let factor = BigUint::from(10u32).pow(diff);
+        let remainder = &value % &factor;
+        if remainder != BigUint::from(0u32) {
+            return Err(SwapperError::InvalidAmount("amount precision loss".to_string()));
+        }
+        Ok(value / factor)
+    }
+}
+
+#[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scale_units_up() {
+        let base = BigUint::from(123u32);
+        let scaled = scale_units(base.clone(), 8, 18).unwrap();
+        let expected = BigUint::from(10u32).pow(10) * base;
+        assert_eq!(scaled, expected);
+    }
+
+    #[test]
+    fn test_scale_units_down() {
+        let value = BigUint::from(123u32) * BigUint::from(10u32).pow(10);
+        let scaled = scale_units(value.clone(), 18, 8).unwrap();
+        assert_eq!(scaled, BigUint::from(123u32));
+    }
+
+    #[test]
+    fn test_scale_units_down_rejects_remainder() {
+        let err = scale_units(BigUint::from(5u32), 3, 1).unwrap_err();
+        assert!(matches!(err, SwapperError::InvalidAmount(_)));
+    }
+}
+
+#[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+mod integration_tests {
     use super::*;
     use crate::{FetchQuoteData, SwapperProvider, SwapperQuoteAsset, testkit::mock_quote};
     use number_formatter::BigNumberFormatter;

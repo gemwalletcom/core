@@ -2,8 +2,8 @@ use ::signer::Signer;
 use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualDirection, PerpetualType, SignerError, TransactionInputType, TransactionLoadInput,
-    TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
+    Asset, Chain, ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualDirection, PerpetualType, SignerError, SwapProvider, TransactionInputType,
+    TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -11,28 +11,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::core::{
     actions::{
-        ApproveAgent,
-        ApproveBuilderFee,
-        Builder,
-        CDeposit,
-        CWithdraw,
-        PlaceOrder,
-        SetReferrer,
-        SpotSend,
-        TokenDelegate,
-        WithdrawalRequest,
-        make_market_order,
+        ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, PlaceOrder, SetReferrer, SpotSend, TokenDelegate, WithdrawalRequest, make_market_order,
     },
     hypercore::{
-        approve_agent_typed_data,
-        approve_builder_fee_typed_data,
-        c_deposit_typed_data,
-        c_withdraw_typed_data,
-        place_order_typed_data,
-        send_spot_token_to_address_typed_data,
-        set_referrer_typed_data,
-        token_delegate_typed_data,
-        withdrawal_request_typed_data,
+        approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, place_order_typed_data,
+        send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
     },
 };
 use crate::models::timestamp::TimestampField;
@@ -63,6 +46,16 @@ impl HyperCoreSigner {
 
     fn sign_swap_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
         let swap_data = extract_swap_data(&input.input_type)?;
+
+        if let TransactionInputType::Swap(from_asset, to_asset, _) = &input.input_type
+            && is_spot_swap(from_asset, to_asset, swap_data)
+        {
+            let nonce = Self::timestamp_ms();
+            let (typed_data, action) = prepare_place_order(&swap_data.data.data, nonce)?;
+            let signature = self.sign_action(&typed_data, &action, nonce, private_key)?;
+            return Ok(vec![signature]);
+        }
+
         let signature = self.sign_typed_action(&swap_data.data.data, private_key)?;
         Ok(vec![signature])
     }
@@ -278,8 +271,7 @@ impl ChainSigner for HyperCoreSigner {
 
     fn sign_withdrawal(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
         let asset = input.input_type.get_asset();
-        let amount = BigNumberFormatter::value(&input.value, asset.decimals)
-            .map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+        let amount = BigNumberFormatter::value(&input.value, asset.decimals).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
         let timestamp = Self::timestamp_ms();
 
         let withdrawal_request = WithdrawalRequest::new(amount, timestamp, input.destination_address.clone());
@@ -297,6 +289,18 @@ fn extract_swap_data(input_type: &TransactionInputType) -> Result<&SwapData, Sig
     } else {
         Err(SignerError::InvalidInput("Expected Swap input".to_string()))
     }
+}
+
+fn is_bridge(from_asset: &Asset, to_asset: &Asset) -> bool {
+    (from_asset.chain == Chain::HyperCore && to_asset.chain == Chain::Hyperliquid)
+        || (from_asset.chain == Chain::Hyperliquid && to_asset.chain == Chain::HyperCore)
+}
+
+fn is_spot_swap(from_asset: &Asset, to_asset: &Asset, swap_data: &SwapData) -> bool {
+    from_asset.chain == Chain::HyperCore
+        && to_asset.chain == Chain::HyperCore
+        && !is_bridge(from_asset, to_asset)
+        && swap_data.quote.provider_data.provider == SwapProvider::Hyperliquid
 }
 
 fn extract_stake_type(input_type: &TransactionInputType) -> Result<&StakeType, SignerError> {
@@ -335,4 +339,25 @@ fn get_builder(builder: &str, fee: i32) -> Result<Builder, SignerError> {
 
 fn fee_rate(tenths_bps: u32) -> String {
     format!("{}%", (tenths_bps as f64) * 0.001)
+}
+
+fn prepare_place_order(typed_data_json: &str, nonce: u64) -> Result<(String, String), SignerError> {
+    let mut typed_value: Value = serde_json::from_str(typed_data_json)?;
+
+    let message_value = typed_value
+        .get_mut("message")
+        .ok_or_else(|| SignerError::InvalidInput("Typed data missing message field".to_string()))?;
+
+    let action_value = match message_value {
+        Value::Object(message_obj) => {
+            message_obj.insert("nonce".to_string(), Value::from(nonce));
+            Value::Object(message_obj.clone())
+        }
+        _ => return Err(SignerError::InvalidInput("Typed data message must be an object".to_string())),
+    };
+
+    let typed_string = serde_json::to_string(&typed_value)?;
+    let action_string = serde_json::to_string(&action_value)?;
+
+    Ok((typed_string, action_string))
 }
