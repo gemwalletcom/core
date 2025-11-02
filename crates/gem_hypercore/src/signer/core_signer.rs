@@ -50,9 +50,10 @@ impl HyperCoreSigner {
         if let TransactionInputType::Swap(from_asset, to_asset, _) = &input.input_type
             && is_spot_swap(from_asset, to_asset, swap_data)
         {
+            let order: PlaceOrder = serde_json::from_str(&swap_data.data.data)
+                .map_err(|err| SignerError::InvalidInput(format!("Invalid HyperCore order payload: {err}")))?;
             let nonce = Self::timestamp_ms();
-            let (typed_data, action) = prepare_place_order(&swap_data.data.data, nonce)?;
-            let signature = self.sign_action(&typed_data, &action, nonce, private_key)?;
+            let signature = self.sign_place_order(order, nonce, private_key)?;
             return Ok(vec![signature]);
         }
 
@@ -339,25 +340,4 @@ fn get_builder(builder: &str, fee: i32) -> Result<Builder, SignerError> {
 
 fn fee_rate(tenths_bps: u32) -> String {
     format!("{}%", (tenths_bps as f64) * 0.001)
-}
-
-fn prepare_place_order(typed_data_json: &str, nonce: u64) -> Result<(String, String), SignerError> {
-    let mut typed_value: Value = serde_json::from_str(typed_data_json)?;
-
-    let message_value = typed_value
-        .get_mut("message")
-        .ok_or_else(|| SignerError::InvalidInput("Typed data missing message field".to_string()))?;
-
-    let action_value = match message_value {
-        Value::Object(message_obj) => {
-            message_obj.insert("nonce".to_string(), Value::from(nonce));
-            Value::Object(message_obj.clone())
-        }
-        _ => return Err(SignerError::InvalidInput("Typed data message must be an object".to_string())),
-    };
-
-    let typed_string = serde_json::to_string(&typed_value)?;
-    let action_string = serde_json::to_string(&action_value)?;
-
-    Ok((typed_string, action_string))
 }

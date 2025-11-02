@@ -1,8 +1,9 @@
 use crate::core::actions::SLIPPAGE_BUFFER_PERCENT;
+use serde::{Deserialize, Serialize};
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PlaceOrder {
     pub r#type: String,
     pub orders: Vec<Order>,
@@ -24,7 +25,7 @@ impl PlaceOrder {
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Order {
     #[serde(rename = "a")]
     pub asset: u32,
@@ -42,14 +43,14 @@ pub struct Order {
     pub client_order_id: Option<String>,
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum OrderType {
     Limit { limit: LimitOrder },
     Trigger { trigger: Trigger },
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct LimitOrder {
     pub tif: TimeInForce,
 }
@@ -60,7 +61,7 @@ impl LimitOrder {
     }
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Trigger {
     #[serde(rename = "isMarket")]
     pub is_market: bool,
@@ -69,7 +70,7 @@ pub struct Trigger {
     pub tpsl: TpslType,
 }
 
-#[derive(Clone, serde::Serialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum TimeInForce {
     #[serde(rename = "Alo")]
     AddLiquidityOnly,
@@ -81,7 +82,7 @@ pub enum TimeInForce {
     FrontendMarket,
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum TpslType {
     #[serde(rename = "tp")]
     TakeProfit,
@@ -89,7 +90,7 @@ pub enum TpslType {
     StopLoss,
 }
 
-#[derive(Clone, serde::Serialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum Grouping {
     Na,
@@ -97,7 +98,7 @@ pub enum Grouping {
     PositionTpsl,
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Builder {
     #[serde(rename = "b")]
     pub builder_address: String,

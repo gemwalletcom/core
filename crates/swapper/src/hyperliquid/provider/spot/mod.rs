@@ -1,12 +1,12 @@
 use std::{
     sync::{Arc, Mutex},
-    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant},
 };
 
 use async_trait::async_trait;
 use bigdecimal::{BigDecimal, Zero};
 use gem_hypercore::{
-    core::{actions::agent::order::make_market_order, hypercore::place_order_typed_data},
+    core::actions::agent::order::{make_market_order, PlaceOrder},
     models::{
         spot::{OrderbookResponse, SpotMarket, SpotMeta},
         token::SpotToken,
@@ -24,16 +24,25 @@ use crate::{
     asset::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_USDC},
 };
 
-mod models;
 mod simulator;
-
-use models::{SpotRouteData, SpotSide};
 use simulator::{simulate_buy, simulate_sell};
 
 const SPOT_META_TTL: Duration = Duration::from_secs(30);
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
 const MAX_DECIMAL_SCALE: u32 = 6;
+
+#[derive(Debug, Clone, Copy)]
+enum SpotSide {
+    Buy,
+    Sell,
+}
+
+impl SpotSide {
+    fn is_buy(self) -> bool {
+        matches!(self, SpotSide::Buy)
+    }
+}
 
 #[derive(Debug)]
 pub struct HyperCoreSpot {
@@ -191,17 +200,9 @@ impl Swapper for HyperCoreSpot {
         let formatted_amount = Self::format_decimal(&amount_in);
         let avg_price = Self::format_decimal(&avg_price);
 
-        let (size_str, quote_amount_str) = match side {
-            SpotSide::Sell => (formatted_amount.clone(), output_amount_str.clone()),
-            SpotSide::Buy => (output_amount_str.clone(), formatted_amount.clone()),
-        };
-
-        let route_data = SpotRouteData {
-            market_index: market.index,
-            side: side.clone(),
-            size: size_str,
-            price: avg_price,
-            quote_amount: quote_amount_str,
+        let size_str = match side {
+            SpotSide::Sell => formatted_amount.clone(),
+            SpotSide::Buy => output_amount_str.clone(),
         };
 
         let quote = Quote {
@@ -213,7 +214,15 @@ impl Swapper for HyperCoreSpot {
                 routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
-                    route_data: serde_json::to_string(&route_data).map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
+                    route_data: serde_json::to_string(&make_market_order(
+                        market.index,
+                        side.is_buy(),
+                        &avg_price,
+                        &size_str,
+                        false,
+                        None,
+                    ))
+                    .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
                     gas_limit: None,
                 }],
             },
@@ -226,28 +235,13 @@ impl Swapper for HyperCoreSpot {
 
     async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
-        let route_data: SpotRouteData = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-
-        let order = make_market_order(
-            route_data.market_index,
-            route_data.side.is_buy(),
-            &route_data.price,
-            &route_data.size,
-            false,
-            None,
-        );
-
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|_| SwapperError::TransactionError("time went backwards".to_string()))?
-            .as_millis() as u64;
-
-        let typed_data = place_order_typed_data(order, nonce);
+        let order: PlaceOrder = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let order_json = serde_json::to_string(&order).map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?;
 
         Ok(SwapperQuoteData::new_contract(
             "".to_string(),
             quote.request.value.clone(),
-            typed_data,
+            order_json,
             None,
             None,
         ))
@@ -334,7 +328,12 @@ mod integration_tests {
         let quote = spot.fetch_quote(&quote_request).await.unwrap();
         println!("HyperCoreSpot quote: {:?}", quote);
 
+        let order: PlaceOrder = serde_json::from_str(&quote.data.routes[0].route_data).unwrap();
+        assert_eq!(order.r#type, "order");
+
         let quote_data = spot.fetch_quote_data(&quote, FetchQuoteData::None).await.unwrap();
+        let payload_order: PlaceOrder = serde_json::from_str(&quote_data.data).unwrap();
+        assert_eq!(payload_order.orders.len(), order.orders.len());
 
         assert_eq!(quote.data.provider.id, SwapperProvider::Hyperliquid);
         assert!(!quote.to_value.is_empty());
