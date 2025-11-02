@@ -31,6 +31,7 @@ const SPOT_META_TTL: Duration = Duration::from_secs(30);
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
 const MAX_DECIMAL_SCALE: u32 = 6;
+const SPOT_ASSET_OFFSET: u32 = 10_000;
 
 #[derive(Debug, Clone, Copy)]
 enum SpotSide {
@@ -205,6 +206,8 @@ impl Swapper for HyperCoreSpot {
             SpotSide::Buy => output_amount_str.clone(),
         };
 
+        let asset_index = spot_asset_index(market.index);
+
         let quote = Quote {
             from_value: request.value.clone(),
             to_value,
@@ -215,7 +218,7 @@ impl Swapper for HyperCoreSpot {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&make_market_order(
-                        market.index,
+                        asset_index,
                         side.is_buy(),
                         &avg_price,
                         &size_str,
@@ -268,6 +271,10 @@ fn scale_units(value: BigUint, from_decimals: u32, to_decimals: u32) -> Result<B
     }
 }
 
+fn spot_asset_index(market_index: u32) -> u32 {
+    SPOT_ASSET_OFFSET + market_index
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -291,6 +298,12 @@ mod tests {
     fn test_scale_units_down_rejects_remainder() {
         let err = scale_units(BigUint::from(5u32), 3, 1).unwrap_err();
         assert!(matches!(err, SwapperError::InvalidAmount(_)));
+    }
+
+    #[test]
+    fn test_spot_asset_index_offset() {
+        assert_eq!(spot_asset_index(0), SPOT_ASSET_OFFSET);
+        assert_eq!(spot_asset_index(107), SPOT_ASSET_OFFSET + 107);
     }
 }
 
@@ -330,6 +343,8 @@ mod integration_tests {
 
         let order: PlaceOrder = serde_json::from_str(&quote.data.routes[0].route_data).unwrap();
         assert_eq!(order.r#type, "order");
+        assert!(order.orders[0].asset >= SPOT_ASSET_OFFSET);
+        assert!(order.orders[0].asset - SPOT_ASSET_OFFSET < SPOT_ASSET_OFFSET);
 
         let quote_data = spot.fetch_quote_data(&quote, FetchQuoteData::None).await.unwrap();
         let payload_order: PlaceOrder = serde_json::from_str(&quote_data.data).unwrap();
