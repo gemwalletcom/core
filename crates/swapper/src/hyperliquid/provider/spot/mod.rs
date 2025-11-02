@@ -13,7 +13,7 @@ use gem_hypercore::{
     },
     rpc::client::HyperCoreClient,
 };
-use num_bigint::BigUint;
+use num_bigint::{BigInt, BigUint, ToBigInt};
 use number_formatter::BigNumberFormatter;
 use primitives::Chain;
 
@@ -31,6 +31,8 @@ const SPOT_META_TTL: Duration = Duration::from_secs(30);
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
 const MAX_DECIMAL_SCALE: u32 = 6;
+// HyperLiquid spot assets use `10000 + spotMeta.universe[index]`.
+// Doc: https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint#asset
 const SPOT_ASSET_OFFSET: u32 = 10_000;
 
 #[derive(Debug, Clone, Copy)]
@@ -198,13 +200,13 @@ impl Swapper for HyperCoreSpot {
         let scaled_units = scale_units(token_units, token_decimals, request.to_asset.decimals)?;
         let to_value = scaled_units.to_string();
 
-        let formatted_amount = Self::format_decimal(&amount_in);
         let avg_price = Self::format_decimal(&avg_price);
 
-        let size_str = match side {
-            SpotSide::Sell => formatted_amount.clone(),
-            SpotSide::Buy => output_amount_str.clone(),
-        };
+    let size_value = match side {
+        SpotSide::Sell => amount_in.clone(),
+        SpotSide::Buy => output_amount.clone(),
+    };
+    let size_str = format_order_size(&size_value);
 
         let asset_index = spot_asset_index(market.index);
 
@@ -271,6 +273,24 @@ fn scale_units(value: BigUint, from_decimals: u32, to_decimals: u32) -> Result<B
     }
 }
 
+fn format_order_size(amount: &BigDecimal) -> String {
+    let scale = 2i64;
+    let multiplier = BigInt::from(10).pow(scale as u32);
+    let scaled = amount * BigDecimal::from(multiplier.clone());
+    let truncated_int = scaled
+        .with_scale(0)
+        .to_bigint()
+        .unwrap_or_else(|| BigInt::from(0));
+
+    let fractional = scaled - BigDecimal::from_bigint(truncated_int.clone(), 0);
+    let mut floored_int = truncated_int;
+    if amount < &BigDecimal::from(0) && !fractional.is_zero() {
+        floored_int -= BigInt::from(1);
+    }
+
+    BigDecimal::from_bigint(floored_int, scale).with_scale(scale).to_string()
+}
+
 fn spot_asset_index(market_index: u32) -> u32 {
     SPOT_ASSET_OFFSET + market_index
 }
@@ -278,6 +298,7 @@ fn spot_asset_index(market_index: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn test_scale_units_up() {
@@ -298,6 +319,21 @@ mod tests {
     fn test_scale_units_down_rejects_remainder() {
         let err = scale_units(BigUint::from(5u32), 3, 1).unwrap_err();
         assert!(matches!(err, SwapperError::InvalidAmount(_)));
+    }
+
+    #[test]
+    fn test_format_order_size_floors() {
+        let value = BigDecimal::from_str("0.131").unwrap();
+        assert_eq!(format_order_size(&value), "0.13");
+
+        let value = BigDecimal::from_str("0.189834").unwrap();
+        assert_eq!(format_order_size(&value), "0.18");
+
+        let value = BigDecimal::from_str("0.10").unwrap();
+        assert_eq!(format_order_size(&value), "0.10");
+
+        let value = BigDecimal::from_str("-0.131").unwrap();
+        assert_eq!(format_order_size(&value), "-0.14");
     }
 
     #[test]
@@ -345,10 +381,17 @@ mod integration_tests {
         assert_eq!(order.r#type, "order");
         assert!(order.orders[0].asset >= SPOT_ASSET_OFFSET);
         assert!(order.orders[0].asset - SPOT_ASSET_OFFSET < SPOT_ASSET_OFFSET);
+        let expected_size = format_order_size(
+            &BigDecimal::from_str(&BigNumberFormatter::value(&quote.from_value, quote.request.from_asset.decimals as i32).unwrap()).unwrap(),
+        );
+        assert_eq!(order.orders[0].size, expected_size);
+        assert_eq!(order.orders[0].size.split('.').nth(1).unwrap().len(), 2);
 
         let quote_data = spot.fetch_quote_data(&quote, FetchQuoteData::None).await.unwrap();
         let payload_order: PlaceOrder = serde_json::from_str(&quote_data.data).unwrap();
         assert_eq!(payload_order.orders.len(), order.orders.len());
+
+        assert_eq!(payload_order.orders[0].size, order.orders[0].size);
 
         assert_eq!(quote.data.provider.id, SwapperProvider::Hyperliquid);
         assert!(!quote.to_value.is_empty());
