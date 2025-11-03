@@ -9,6 +9,9 @@ use tokio::sync::Mutex;
 
 use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
 
+const MIN_TRANSACTION_AMOUNT_USD: f64 = 0.01;
+const TRANSACTION_BATCH_SIZE: usize = 100;
+
 pub struct StoreTransactionsConsumer {
     pub database: Arc<Mutex<DatabaseClient>>,
     pub stream_producer: StreamProducer,
@@ -24,71 +27,83 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
     async fn process(&mut self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
         let transactions = payload.transactions;
-
         let is_notify_devices = !payload.blocks.is_empty();
-        let addresses = transactions.clone().into_iter().flat_map(|x| x.addresses()).collect();
+
+        let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
         let subscriptions = self.database.lock().await.subscriptions().get_subscriptions(chain, addresses)?;
+
+        let subscription_addresses: HashSet<_> = subscriptions.iter().map(|s| &s.subscription.address).collect();
+
+        let asset_ids: Vec<AssetId> = transactions
+            .iter()
+            .filter(|x| x.addresses().iter().any(|addr| subscription_addresses.contains(addr)))
+            .flat_map(|x| x.asset_ids())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+
+        let (existing_assets, missing_assets_ids) = self.get_existing_and_missing_assets(asset_ids).await?;
+        let existing_assets_map: HashMap<AssetId, primitives::AssetPriceMetadata> =
+            existing_assets.into_iter().map(|asset| (asset.asset.asset.id.clone(), asset)).collect();
 
         let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
         let mut fetch_assets_payload: Vec<AssetId> = Vec::new();
         let mut notifications_payload: Vec<NotificationsPayload> = Vec::new();
         let mut address_assets_payload: Vec<AssetsAddressPayload> = Vec::new();
 
-        for subscription in subscriptions {
-            for transaction in transactions.clone() {
-                if transaction.addresses().contains(&subscription.subscription.address) {
-                    let assets_ids = transaction.asset_ids();
-                    let (existing_assets, missing_assets_ids) = self.get_existing_and_missing_assets(assets_ids.clone()).await?;
-                    fetch_assets_payload.extend_from_slice(&missing_assets_ids);
+        if !missing_assets_ids.is_empty() {
+            fetch_assets_payload.extend(missing_assets_ids);
+        }
 
-                    if !missing_assets_ids.is_empty() {
-                        continue;
-                    }
+        for subscription in &subscriptions {
+            for transaction in &transactions {
+                if !transaction.addresses().contains(&subscription.subscription.address) {
+                    continue;
+                }
 
-                    transactions_map.insert(transaction.clone().id.clone(), transaction.clone());
+                let transaction_asset_ids = transaction.asset_ids();
 
-                    let asset_price = existing_assets
+                if transaction_asset_ids.iter().any(|id| !existing_assets_map.contains_key(id)) {
+                    continue;
+                }
+
+                let Some(asset_price) = existing_assets_map.get(&transaction.asset_id) else {
+                    continue;
+                };
+
+                let assets_addresses = transaction
+                    .assets_addresses_with_fee()
+                    .into_iter()
+                    .filter(|x| existing_assets_map.contains_key(&x.asset_id) && subscription.subscription.address == x.address)
+                    .collect::<Vec<_>>();
+
+                address_assets_payload.push(AssetsAddressPayload::new(assets_addresses));
+
+                if self
+                    .config
+                    .is_transaction_insufficient_amount(transaction, &asset_price.asset.asset, asset_price.price, MIN_TRANSACTION_AMOUNT_USD)
+                {
+                    continue;
+                }
+
+                transactions_map.insert(transaction.id.clone(), transaction.clone());
+
+                let is_outdated = self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain);
+                let should_notify = !is_outdated && is_notify_devices;
+
+                if should_notify {
+                    let assets: Vec<primitives::Asset> = transaction_asset_ids
                         .iter()
-                        .find(|a| a.asset.asset.id == transaction.asset_id)
-                        .cloned()
-                        .expect("Asset must exist - already validated in missing_assets_ids check");
+                        .filter_map(|id| existing_assets_map.get(id))
+                        .map(|asset_price| asset_price.asset.asset.clone())
+                        .collect();
 
-                    if !self
-                        .config
-                        .is_transaction_sufficient_amount(&transaction, &asset_price.asset.asset, asset_price.price, 0.01)
+                    if let Ok(notifications) = self
+                        .pusher
+                        .get_messages(subscription.device.clone(), transaction.clone(), subscription.subscription.clone(), assets)
+                        .await
                     {
-                        println!("insufficient amount, transaction: {}", transaction.id.clone(),);
-
-                        transactions_map.remove(&transaction.id.clone());
-                    } else if self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain) {
-                        println!("outdated transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
-                    } else if payload.blocks.is_empty() {
-                        println!("empty blocks, transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
-                    } else if assets_ids.ids_set() == assets_ids.ids_set() && is_notify_devices {
-                        // important check is_notify_devices to avoid notifing users about transactions that are not parsed in the block
-                        let assets: Vec<primitives::Asset> = existing_assets.iter().map(|x| x.asset.asset.clone()).collect();
-                        if let Ok(notifications) = self
-                            .pusher
-                            .get_messages(
-                                subscription.device.clone(),
-                                transaction.clone(),
-                                subscription.subscription.clone(),
-                                assets.clone(),
-                            )
-                            .await
-                        {
-                            notifications_payload.push(NotificationsPayload::new(notifications));
-                        }
-                    }
-
-                    let assets_addresses = transaction
-                        .assets_addresses_with_fee()
-                        .into_iter()
-                        .filter(|x| existing_assets.iter().any(|a| a.asset.asset.id == x.asset_id) && subscription.subscription.address == x.address)
-                        .collect::<Vec<_>>();
-
-                    if !assets_addresses.is_empty() {
-                        address_assets_payload.push(AssetsAddressPayload::new(assets_addresses.clone()));
+                        notifications_payload.push(NotificationsPayload::new(notifications));
                     }
                 }
             }
@@ -121,28 +136,18 @@ impl StoreTransactionsConsumer {
         if transactions.is_empty() {
             return Ok(0);
         }
-        let transaction_chunks = transactions.chunks(100);
 
-        for chunk in transaction_chunks {
-            let transactions_to_store = chunk
-                .to_vec()
-                .clone()
-                .into_iter()
-                .map(models::Transaction::from_primitive)
-                .collect::<Vec<models::Transaction>>();
+        for chunk in transactions.chunks(TRANSACTION_BATCH_SIZE) {
+            let transactions_to_store: Vec<models::Transaction> = chunk.iter().map(|tx| models::Transaction::from_primitive(tx.clone())).collect();
 
-            let transaction_addresses_to_store = chunk
-                .to_vec()
-                .clone()
+            let transaction_addresses_to_store: Vec<models::TransactionAddresses> = chunk
+                .iter()
+                .flat_map(|tx| models::TransactionAddresses::from_primitive(tx.clone()))
+                .collect::<HashSet<_>>()
                 .into_iter()
-                .flat_map(models::TransactionAddresses::from_primitive)
-                .collect::<HashSet<models::TransactionAddresses>>()
-                .into_iter()
-                .collect::<Vec<models::TransactionAddresses>>();
+                .collect();
 
             if transactions_to_store.is_empty() || transaction_addresses_to_store.is_empty() {
-                // If a chunk results in no data to store, skip to the next chunk.
-                // The overall count of primitive_transactions will still be returned.
                 continue;
             }
 
@@ -150,7 +155,7 @@ impl StoreTransactionsConsumer {
                 .lock()
                 .await
                 .transactions()
-                .add_transactions(transactions_to_store.clone(), transaction_addresses_to_store.clone())?;
+                .add_transactions(transactions_to_store, transaction_addresses_to_store)?;
         }
 
         Ok(transactions.len())
