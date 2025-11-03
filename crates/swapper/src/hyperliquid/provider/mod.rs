@@ -1,5 +1,5 @@
 pub mod bridge;
-mod hyperliquid;
+pub mod hyperliquid;
 pub mod spot;
 
 pub use bridge::HyperCoreBridge;
