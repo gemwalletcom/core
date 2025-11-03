@@ -303,10 +303,11 @@ impl Transaction {
     pub fn assets_addresses(&self) -> Vec<AssetAddress> {
         [
             match self.transaction_type {
-                TransactionType::Transfer | TransactionType::TransferNFT => vec![
-                    AssetAddress::new(self.asset_id.clone(), self.from.clone(), None),
-                    AssetAddress::new(self.asset_id.clone(), self.to.clone(), None),
-                ],
+                TransactionType::Transfer | TransactionType::TransferNFT => self
+                    .addresses()
+                    .into_iter()
+                    .map(|x| AssetAddress::new(self.asset_id.clone(), x, None))
+                    .collect(),
                 TransactionType::TokenApproval
                 | TransactionType::StakeDelegate
                 | TransactionType::StakeUndelegate
