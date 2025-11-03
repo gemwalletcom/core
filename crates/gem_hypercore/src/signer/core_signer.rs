@@ -2,23 +2,24 @@ use ::signer::Signer;
 use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    Asset, Chain, ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualDirection, PerpetualType, SignerError, SwapProvider, TransactionInputType,
-    TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
+    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualDirection, PerpetualType, SignerError, TransactionInputType, TransactionLoadInput,
+    TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::core::{
-    actions::{
+use crate::{
+    core::actions::{
         ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, PlaceOrder, SetReferrer, SpotSend, TokenDelegate, WithdrawalRequest, make_market_order,
     },
-    hypercore::{
+    core::hypercore::{
         approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, place_order_typed_data,
         send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
     },
+    is_spot_swap,
+    models::timestamp::TimestampField,
 };
-use crate::models::timestamp::TimestampField;
 
 const AGENT_NAME_PREFIX: &str = "gemwallet_";
 const REFERRAL_CODE: &str = "GEMWALLET";
@@ -48,7 +49,7 @@ impl HyperCoreSigner {
         let swap_data = extract_swap_data(&input.input_type)?;
 
         if let TransactionInputType::Swap(from_asset, to_asset, _) = &input.input_type
-            && is_spot_swap(from_asset, to_asset, swap_data)
+            && is_spot_swap(from_asset.chain(), to_asset.chain())
         {
             let order: PlaceOrder = serde_json::from_str(&swap_data.data.data)?;
             let nonce = Self::timestamp_ms();
@@ -289,18 +290,6 @@ fn extract_swap_data(input_type: &TransactionInputType) -> Result<&SwapData, Sig
     } else {
         Err(SignerError::InvalidInput("Expected Swap input".to_string()))
     }
-}
-
-fn is_bridge(from_asset: &Asset, to_asset: &Asset) -> bool {
-    (from_asset.chain == Chain::HyperCore && to_asset.chain == Chain::Hyperliquid)
-        || (from_asset.chain == Chain::Hyperliquid && to_asset.chain == Chain::HyperCore)
-}
-
-fn is_spot_swap(from_asset: &Asset, to_asset: &Asset, swap_data: &SwapData) -> bool {
-    from_asset.chain == Chain::HyperCore
-        && to_asset.chain == Chain::HyperCore
-        && !is_bridge(from_asset, to_asset)
-        && swap_data.quote.provider_data.provider == SwapProvider::Hyperliquid
 }
 
 fn extract_stake_type(input_type: &TransactionInputType) -> Result<&StakeType, SignerError> {

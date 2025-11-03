@@ -7,7 +7,7 @@ use crate::{
     alien::RpcProvider,
     asset::{HYPERCORE_HYPE, HYPEREVM_HYPE},
 };
-use primitives::Chain;
+use gem_hypercore::is_spot_swap;
 
 use super::{bridge::HyperCoreBridge, spot::HyperCoreSpot};
 
@@ -28,11 +28,9 @@ impl Hyperliquid {
     }
 
     fn is_spot_request(request: &QuoteRequest) -> bool {
-        request.from_asset.chain() == Chain::HyperCore && request.to_asset.chain() == Chain::HyperCore
-    }
-
-    fn is_spot_quote(quote: &Quote) -> bool {
-        Self::is_spot_request(&quote.request)
+        let from_chain = request.from_asset.chain();
+        let to_chain = request.to_asset.chain();
+        is_spot_swap(from_chain, to_chain)
     }
 
     fn is_bridge_request(request: &QuoteRequest) -> bool {
@@ -72,7 +70,7 @@ impl Swapper for Hyperliquid {
     }
 
     async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
-        if Self::is_spot_quote(quote) {
+        if Self::is_spot_request(&quote.request) {
             return self.spot.fetch_quote_data(quote, data).await;
         }
 
