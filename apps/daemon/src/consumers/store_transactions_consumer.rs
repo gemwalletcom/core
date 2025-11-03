@@ -37,38 +37,26 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         for subscription in subscriptions {
             for transaction in transactions.clone() {
                 if transaction.addresses().contains(&subscription.subscription.address) {
-                    transactions_map.insert(transaction.clone().id.clone(), transaction.clone());
-
-                    let transaction = transaction.finalize(vec![subscription.subscription.address.clone()]).clone();
-
                     let assets_ids = transaction.asset_ids();
-                    let (existing_assets, missing_assets_ids) = {
-                        let existing_assets = self
-                            .database
-                            .lock()
-                            .await
-                            .assets()
-                            .get_assets(assets_ids.ids().clone())?
-                            .into_iter()
-                            .collect::<Vec<_>>();
-
-                        let missing_assets_ids = assets_ids
-                            .clone()
-                            .into_iter()
-                            .filter(|asset_id| !existing_assets.iter().any(|a| &a.id == asset_id))
-                            .collect::<Vec<_>>();
-                        (existing_assets, missing_assets_ids)
-                    };
-                    let asset = existing_assets.first();
-                    let price = if let Some(asset) = asset {
-                        self.database.lock().await.prices().get_price(&asset.id.to_string())?.map(|x| x.as_primitive())
-                    } else {
-                        None
-                    };
-
+                    let (existing_assets, missing_assets_ids) = self.get_existing_and_missing_assets(assets_ids.clone()).await?;
                     fetch_assets_payload.extend_from_slice(&missing_assets_ids);
 
-                    if !self.config.is_transaction_sufficient_amount(&transaction, asset.cloned(), price, 0.01) {
+                    if !missing_assets_ids.is_empty() {
+                        continue;
+                    }
+
+                    transactions_map.insert(transaction.clone().id.clone(), transaction.clone());
+
+                    let asset_price = existing_assets
+                        .iter()
+                        .find(|a| a.asset.asset.id == transaction.asset_id)
+                        .cloned()
+                        .expect("Asset must exist - already validated in missing_assets_ids check");
+
+                    if !self
+                        .config
+                        .is_transaction_sufficient_amount(&transaction, &asset_price.asset.asset, asset_price.price, 0.01)
+                    {
                         println!("insufficient amount, transaction: {}", transaction.id.clone(),);
 
                         transactions_map.remove(&transaction.id.clone());
@@ -78,13 +66,14 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                         println!("empty blocks, transaction: {}, created_at: {}", transaction.id.clone(), transaction.created_at);
                     } else if assets_ids.ids_set() == assets_ids.ids_set() && is_notify_devices {
                         // important check is_notify_devices to avoid notifing users about transactions that are not parsed in the block
+                        let assets: Vec<primitives::Asset> = existing_assets.iter().map(|x| x.asset.asset.clone()).collect();
                         if let Ok(notifications) = self
                             .pusher
                             .get_messages(
                                 subscription.device.clone(),
                                 transaction.clone(),
                                 subscription.subscription.clone(),
-                                existing_assets.clone(),
+                                assets.clone(),
                             )
                             .await
                         {
@@ -95,7 +84,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                     let assets_addresses = transaction
                         .assets_addresses_with_fee()
                         .into_iter()
-                        .filter(|x| existing_assets.iter().any(|a| a.id == x.asset_id) && subscription.subscription.address == x.address)
+                        .filter(|x| existing_assets.iter().any(|a| a.asset.asset.id == x.asset_id) && subscription.subscription.address == x.address)
                         .collect::<Vec<_>>();
 
                     if !assets_addresses.is_empty() {
@@ -105,7 +94,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             }
         }
 
-        let transactions_count = self.store_transactions(transactions_map.clone()).await?;
+        let transactions_count = self.store_transactions(transactions_map.into_values().collect()).await?;
         let _ = self.stream_producer.publish_fetch_assets(fetch_assets_payload).await;
         let _ = self.stream_producer.publish_notifications_transactions(notifications_payload).await;
         let _ = self.stream_producer.publish_store_assets_addresses_associations(address_assets_payload).await;
@@ -114,12 +103,24 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 }
 
 impl StoreTransactionsConsumer {
-    async fn store_transactions(&mut self, transactions: HashMap<TransactionId, Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn get_existing_and_missing_assets(
+        &mut self,
+        assets_ids: Vec<AssetId>,
+    ) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
+        let assets_with_prices = self.database.lock().await.assets().get_assets_with_prices(assets_ids.ids().clone())?;
+
+        let missing_assets_ids = assets_ids
+            .into_iter()
+            .filter(|asset_id| !assets_with_prices.iter().any(|a| &a.asset.asset.id == asset_id))
+            .collect::<Vec<_>>();
+
+        Ok((assets_with_prices, missing_assets_ids))
+    }
+
+    async fn store_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         if transactions.is_empty() {
             return Ok(0);
         }
-
-        let transactions = transactions.into_values().collect::<Vec<Transaction>>();
         let transaction_chunks = transactions.chunks(100);
 
         for chunk in transaction_chunks {
