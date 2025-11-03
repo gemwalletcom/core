@@ -303,8 +303,11 @@ impl Transaction {
     pub fn assets_addresses(&self) -> Vec<AssetAddress> {
         [
             match self.transaction_type {
-                TransactionType::Transfer
-                | TransactionType::TokenApproval
+                TransactionType::Transfer | TransactionType::TransferNFT => vec![
+                    AssetAddress::new(self.asset_id.clone(), self.from.clone(), None),
+                    AssetAddress::new(self.asset_id.clone(), self.to.clone(), None),
+                ],
+                TransactionType::TokenApproval
                 | TransactionType::StakeDelegate
                 | TransactionType::StakeUndelegate
                 | TransactionType::StakeRewards
@@ -313,7 +316,6 @@ impl Transaction {
                 | TransactionType::StakeFreeze
                 | TransactionType::StakeUnfreeze
                 | TransactionType::AssetActivation
-                | TransactionType::TransferNFT
                 | TransactionType::SmartContractCall
                 | TransactionType::PerpetualOpenPosition
                 | TransactionType::PerpetualClosePosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
@@ -398,12 +400,24 @@ mod tests {
             asset_id: Asset::mock_ethereum_usdc().id,
             ..Transaction::mock()
         };
-        assert_eq!(transaction.assets_addresses().len(), 2);
+        assert_eq!(transaction.assets_addresses().len(), 3);
         assert!(
             transaction
                 .assets_addresses()
                 .iter()
                 .any(|a| a.asset_id == Asset::mock_eth().id && a.address == "0xfrom")
+        );
+        assert!(
+            transaction
+                .assets_addresses()
+                .iter()
+                .any(|a| a.asset_id == Asset::mock_ethereum_usdc().id && a.address == "0xfrom")
+        );
+        assert!(
+            transaction
+                .assets_addresses()
+                .iter()
+                .any(|a| a.asset_id == Asset::mock_ethereum_usdc().id && a.address == "0xto")
         );
     }
 
