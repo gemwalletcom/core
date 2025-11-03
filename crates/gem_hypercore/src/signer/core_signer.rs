@@ -11,28 +11,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::core::{
     actions::{
-        ApproveAgent,
-        ApproveBuilderFee,
-        Builder,
-        CDeposit,
-        CWithdraw,
-        PlaceOrder,
-        SetReferrer,
-        SpotSend,
-        TokenDelegate,
-        WithdrawalRequest,
-        make_market_order,
+        ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, PlaceOrder, SetReferrer, SpotSend, TokenDelegate, WithdrawalRequest, make_market_order,
     },
     hypercore::{
-        approve_agent_typed_data,
-        approve_builder_fee_typed_data,
-        c_deposit_typed_data,
-        c_withdraw_typed_data,
-        place_order_typed_data,
-        send_spot_token_to_address_typed_data,
-        set_referrer_typed_data,
-        token_delegate_typed_data,
-        withdrawal_request_typed_data,
+        approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, place_order_typed_data,
+        send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
     },
 };
 use crate::models::timestamp::TimestampField;
@@ -278,8 +261,7 @@ impl ChainSigner for HyperCoreSigner {
 
     fn sign_withdrawal(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
         let asset = input.input_type.get_asset();
-        let amount = BigNumberFormatter::value(&input.value, asset.decimals)
-            .map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+        let amount = BigNumberFormatter::value(&input.value, asset.decimals).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
         let timestamp = Self::timestamp_ms();
 
         let withdrawal_request = WithdrawalRequest::new(amount, timestamp, input.destination_address.clone());

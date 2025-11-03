@@ -115,13 +115,17 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
 impl StoreTransactionsConsumer {
     async fn store_transactions(&mut self, transactions: HashMap<TransactionId, Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let transactions_asset_ids: Vec<String> = transactions.values().flat_map(|x| x.asset_ids().ids()).collect();
+        if transactions.is_empty() {
+            return Ok(0);
+        }
+
+        let transactions_asset_ids: HashSet<String> = transactions.values().flat_map(|x| x.asset_ids().ids()).collect();
         let enabled_asset_ids: HashSet<String> = self
             .database
             .lock()
             .await
             .assets()
-            .get_assets_basic(transactions_asset_ids)?
+            .get_assets_basic(transactions_asset_ids.into_iter().collect())?
             .into_iter()
             .filter(|x| x.properties.is_enabled)
             .map(|x| x.asset.id.to_string())
@@ -147,6 +151,8 @@ impl StoreTransactionsConsumer {
                 .clone()
                 .into_iter()
                 .flat_map(models::TransactionAddresses::from_primitive)
+                .collect::<HashSet<models::TransactionAddresses>>()
+                .into_iter()
                 .collect::<Vec<models::TransactionAddresses>>();
 
             if transactions_to_store.is_empty() || transaction_addresses_to_store.is_empty() {
