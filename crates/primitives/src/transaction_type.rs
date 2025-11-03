@@ -6,7 +6,9 @@ use typeshare::typeshare;
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
+#[derive(Default)]
 pub enum TransactionType {
+    #[default]
     Transfer,
     TransferNFT,
     Swap,
@@ -23,12 +25,6 @@ pub enum TransactionType {
     PerpetualOpenPosition,
     PerpetualClosePosition,
     PerpetualModify,
-}
-
-impl Default for TransactionType {
-    fn default() -> Self {
-        Self::Transfer
-    }
 }
 
 impl TransactionType {

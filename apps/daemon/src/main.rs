@@ -37,6 +37,9 @@ pub async fn main() {
         DaemonService::Setup => {
             setup::run_setup(settings).await;
         }
+        DaemonService::SetupDev => {
+            setup::run_setup_dev(settings).await;
+        }
         DaemonService::Worker(service) => {
             run_worker_mode(settings, service).await;
         }

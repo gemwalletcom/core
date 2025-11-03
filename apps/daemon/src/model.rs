@@ -38,6 +38,7 @@ pub enum WorkerService {
 #[strum(serialize_all = "snake_case")]
 pub enum DaemonService {
     Setup,
+    SetupDev,
     #[strum(serialize = "worker")]
     Worker(WorkerService),
     #[strum(serialize = "parser")]
@@ -48,6 +49,7 @@ pub enum DaemonService {
 
 impl DaemonService {
     const SETUP: &'static str = "setup";
+    const SETUP_DEV: &'static str = "setup_dev";
     const WORKER: &'static str = "worker";
     const PARSER: &'static str = "parser";
     const CONSUMER: &'static str = "consumer";
@@ -62,6 +64,7 @@ impl FromStr for DaemonService {
 
         match name {
             Self::SETUP => Ok(DaemonService::Setup),
+            Self::SETUP_DEV => Ok(DaemonService::SetupDev),
             Self::WORKER => {
                 let worker_str = parts.get(1).ok_or_else(|| "Worker service must be specified".to_string())?;
                 let worker = WorkerService::from_str(worker_str).map_err(|_| format!("Invalid worker: {}", worker_str))?;
