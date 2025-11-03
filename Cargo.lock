@@ -2872,7 +2872,6 @@ dependencies = [
  "gem_client",
  "gem_evm",
  "gem_hash",
- "gem_jsonrpc",
  "k256",
  "num-bigint",
  "number_formatter",

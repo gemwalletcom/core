@@ -17,7 +17,7 @@ use std::{
 };
 
 use crate::config::HypercoreConfig;
-use gem_jsonrpc::X_CACHE_TTL;
+use gem_client::X_CACHE_TTL;
 use primitives::{Chain, Preferences};
 use serde_json::json;
 
