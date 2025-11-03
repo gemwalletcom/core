@@ -368,7 +368,7 @@ fn fee_rate(tenths_bps: u32) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{Asset, Chain, PerpetualModifyConfirmData, PerpetualReduceData};
+    use primitives::{Asset, Chain};
 
     fn sample_confirm_data(direction: PerpetualDirection, asset_index: i32) -> PerpetualConfirmData {
         PerpetualConfirmData {
@@ -387,25 +387,15 @@ mod tests {
         }
     }
 
-    fn sample_modify_data() -> PerpetualModifyConfirmData {
-        PerpetualModifyConfirmData {
-            base_asset: Asset::from_chain(Chain::HyperCore),
-            asset_index: 7,
-            modify_types: Vec::new(),
-            take_profit_order_id: None,
-            stop_loss_order_id: None,
-        }
-    }
-
     #[test]
-    fn place_order_from_open_long_uses_builder_and_sets_buy() {
+    fn market_order_from_open_long_sets_buy() {
         let data = sample_confirm_data(PerpetualDirection::Long, 11);
         let builder = Builder {
             builder_address: "0xdeadbeef".to_string(),
             fee: 25,
         };
 
-        let order = HyperCoreSigner::place_order_from_perpetual_type(&PerpetualType::Open(data.clone()), Some(&builder)).expect("order should build");
+        let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, Some(&builder));
 
         assert_eq!(order.orders.len(), 1);
         let market_order = &order.orders[0];
@@ -420,9 +410,9 @@ mod tests {
     }
 
     #[test]
-    fn place_order_from_close_short_sets_reduce_only_buy() {
+    fn market_order_from_close_short_sets_sell_and_reduce_only() {
         let data = sample_confirm_data(PerpetualDirection::Short, 5);
-        let order = HyperCoreSigner::place_order_from_perpetual_type(&PerpetualType::Close(data.clone()), None).expect("order should build for close");
+        let order = HyperCoreSigner::market_order_from_confirm_data(&data, false, None);
 
         let market_order = &order.orders[0];
         assert!(market_order.is_buy);
@@ -430,27 +420,12 @@ mod tests {
     }
 
     #[test]
-    fn place_order_from_reduce_long_sells_and_reduces_only() {
-        let data = sample_confirm_data(PerpetualDirection::Long, 9);
-        let reduce = PerpetualType::Reduce(PerpetualReduceData {
-            data: data.clone(),
-            position_direction: PerpetualDirection::Long,
-        });
-
-        let order = HyperCoreSigner::place_order_from_perpetual_type(&reduce, None).expect("order should build for reduce");
+    fn market_order_from_open_short_sets_sell() {
+        let data = sample_confirm_data(PerpetualDirection::Short, 9);
+        let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, None);
 
         let market_order = &order.orders[0];
         assert!(!market_order.is_buy);
-        assert!(market_order.reduce_only);
-    }
-
-    #[test]
-    fn place_order_from_modify_returns_error() {
-        let modify = PerpetualType::Modify(sample_modify_data());
-        let result = HyperCoreSigner::place_order_from_perpetual_type(&modify, None);
-
-        let Err(SignerError::UnsupportedOperation(_)) = result else {
-            panic!("Expected UnsupportedOperation error, got: {:?}", result);
-        };
+        assert!(!market_order.reduce_only);
     }
 }
