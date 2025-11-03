@@ -50,8 +50,7 @@ impl HyperCoreSigner {
         if let TransactionInputType::Swap(from_asset, to_asset, _) = &input.input_type
             && is_spot_swap(from_asset, to_asset, swap_data)
         {
-            let order: PlaceOrder =
-                serde_json::from_str(&swap_data.data.data).map_err(|err| SignerError::InvalidInput(format!("Invalid HyperCore order payload: {err}")))?;
+            let order: PlaceOrder = serde_json::from_str(&swap_data.data.data)?;
             let nonce = Self::timestamp_ms();
             let signature = self.sign_place_order(order, nonce, private_key)?;
             return Ok(vec![signature]);

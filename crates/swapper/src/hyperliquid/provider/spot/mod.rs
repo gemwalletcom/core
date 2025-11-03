@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::{Duration, Instant},
-};
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use bigdecimal::{BigDecimal, Zero};
@@ -29,7 +26,6 @@ use crate::{
 mod simulator;
 use simulator::{SimulationResult, simulate_buy, simulate_sell};
 
-const SPOT_META_TTL: Duration = Duration::from_secs(30);
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
 const MAX_DECIMAL_SCALE: u32 = 6;
@@ -54,13 +50,6 @@ pub struct HyperCoreSpot {
     provider: ProviderType,
     rpc_provider: Arc<dyn RpcProvider>,
     client: Mutex<Option<Arc<HyperCoreClient<RpcClient>>>>,
-    spot_meta_cache: Mutex<Option<SpotMetaCache>>,
-}
-
-#[derive(Debug, Clone)]
-struct SpotMetaCache {
-    meta: SpotMeta,
-    fetched_at: Instant,
 }
 
 impl HyperCoreSpot {
@@ -69,7 +58,6 @@ impl HyperCoreSpot {
             provider: ProviderType::new(SwapperProvider::Hyperliquid),
             rpc_provider,
             client: Mutex::new(None),
-            spot_meta_cache: Mutex::new(None),
         }
     }
 
@@ -85,22 +73,8 @@ impl HyperCoreSpot {
     }
 
     async fn load_spot_meta(&self) -> Result<SpotMeta, SwapperError> {
-        if let Some(cache) = self.spot_meta_cache.lock().unwrap().as_ref()
-            && cache.fetched_at.elapsed() < SPOT_META_TTL
-        {
-            return Ok(cache.meta.clone());
-        }
-
         let client = self.client()?;
-        let meta = client.get_spot_meta().await.map_err(|err| SwapperError::NetworkError(err.to_string()))?;
-
-        let mut cache = self.spot_meta_cache.lock().unwrap();
-        *cache = Some(SpotMetaCache {
-            meta: meta.clone(),
-            fetched_at: Instant::now(),
-        });
-
-        Ok(meta)
+        client.get_spot_meta().await.map_err(|err| SwapperError::NetworkError(err.to_string()))
     }
 
     async fn load_orderbook(&self, coin: &str) -> Result<OrderbookResponse, SwapperError> {

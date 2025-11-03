@@ -11,6 +11,29 @@ fn direction_from_dir(dir: &str) -> Option<PerpetualDirection> {
     }
 }
 
+fn append_perpetual_metadata(
+    update: &mut TransactionUpdate,
+    matching_fills: &[&PerpetualFill],
+    last_fill: &PerpetualFill,
+) -> bool {
+    if let Some(direction) = direction_from_dir(&last_fill.dir) {
+        let pnl: f64 = matching_fills.iter().map(|fill| fill.closed_pnl).sum();
+        update
+            .changes
+            .push(TransactionChange::Metadata(TransactionMetadata::Perpetual(
+                TransactionPerpetualMetadata {
+                    pnl,
+                    price: last_fill.px,
+                    direction,
+                    provider: Some(PerpetualProvider::Hypercore),
+                },
+            )));
+        return true;
+    }
+
+    false
+}
+
 pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_id: String) -> TransactionUpdate {
     let matching_fills: Vec<_> = fills.iter().filter(|fill| fill.oid == oid).collect();
 
@@ -22,17 +45,7 @@ pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_
 
     let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
 
-    if let Some(direction) = direction_from_dir(&last_fill.dir) {
-        let pnl: f64 = matching_fills.iter().map(|fill| fill.closed_pnl).sum();
-        update
-            .changes
-            .push(TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata {
-                pnl,
-                price: last_fill.px,
-                direction,
-                provider: Some(PerpetualProvider::Hypercore),
-            })));
-    }
+    append_perpetual_metadata(&mut update, &matching_fills, last_fill);
 
     if !last_fill.hash.is_empty() && last_fill.hash != request_id {
         update.changes.push(TransactionChange::HashChange {
@@ -111,6 +124,45 @@ mod tests {
         let update = map_transaction_state_order(fills, 123, "123".to_string());
 
         assert_eq!(update.state, TransactionState::Confirmed);
+        assert!(update.changes.is_empty());
+    }
+
+    #[test]
+    fn test_append_perpetual_metadata_pushes_change() {
+        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_multiple.json")).unwrap();
+        let oid = 187530505765u64;
+        let matching: Vec<_> = fills.iter().filter(|fill| fill.oid == oid).collect();
+        let last_fill = matching.last().copied().unwrap();
+
+        let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
+
+        let added = append_perpetual_metadata(&mut update, &matching, last_fill);
+
+        assert!(added);
+        assert!(update.changes.iter().any(|change| matches!(
+            change,
+            TransactionChange::Metadata(TransactionMetadata::Perpetual(_))
+        )));
+    }
+
+    #[test]
+    fn test_append_perpetual_metadata_returns_false_for_unknown_direction() {
+        let fill = PerpetualFill {
+            coin: "HYPE".to_string(),
+            hash: String::new(),
+            oid: 123,
+            closed_pnl: 0.0,
+            fee: 0.0,
+            px: 42.0,
+            dir: "Unsupported".to_string(),
+        };
+
+        let matching = vec![&fill];
+        let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
+
+        let added = append_perpetual_metadata(&mut update, &matching, &fill);
+
+        assert!(!added);
         assert!(update.changes.is_empty());
     }
 }
