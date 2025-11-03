@@ -89,6 +89,7 @@ mod tests {
             wei_decimals: 8,
             index: 0,
             token_id: "0x6d1e7cde53ba9467b783cb7c530ce054".to_string(),
+            sz_decimals: 2,
         }];
 
         let token_ids_by_symbol = vec!["USDC".to_string()];
@@ -115,6 +116,7 @@ mod tests {
             wei_decimals: 8,
             index: 0,
             token_id: "0x6d1e7cde53ba9467b783cb7c530ce054".to_string(),
+            sz_decimals: 2,
         }];
 
         let token_ids = vec!["USDC".to_string()];

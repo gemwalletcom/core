@@ -3,6 +3,14 @@ use primitives::{
     PerpetualDirection, PerpetualProvider, TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionUpdate,
 };
 
+fn direction_from_dir(dir: &str) -> Option<PerpetualDirection> {
+    match dir {
+        "Open Short" | "Close Short" => Some(PerpetualDirection::Short),
+        "Open Long" | "Close Long" => Some(PerpetualDirection::Long),
+        _ => None,
+    }
+}
+
 pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_id: String) -> TransactionUpdate {
     let matching_fills: Vec<_> = fills.iter().filter(|fill| fill.oid == oid).collect();
 
@@ -10,28 +18,29 @@ pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_
         return TransactionUpdate::new_state(TransactionState::Pending);
     }
 
-    let pnl: f64 = matching_fills.iter().map(|fill| fill.closed_pnl).sum();
     let last_fill = matching_fills.last().unwrap();
-    let price = last_fill.px;
-    let direction = match last_fill.dir.as_str() {
-        "Open Short" | "Close Short" => PerpetualDirection::Short,
-        "Open Long" | "Close Long" => PerpetualDirection::Long,
-        _ => PerpetualDirection::Long,
-    };
 
     let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
-    update.changes = vec![
-        TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata {
-            pnl,
-            price,
-            direction,
-            provider: Some(PerpetualProvider::Hypercore),
-        })),
-        TransactionChange::HashChange {
+
+    if let Some(direction) = direction_from_dir(&last_fill.dir) {
+        let pnl: f64 = matching_fills.iter().map(|fill| fill.closed_pnl).sum();
+        update
+            .changes
+            .push(TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata {
+                pnl,
+                price: last_fill.px,
+                direction,
+                provider: Some(PerpetualProvider::Hypercore),
+            })));
+    }
+
+    if !last_fill.hash.is_empty() && last_fill.hash != request_id {
+        update.changes.push(TransactionChange::HashChange {
             old: request_id,
             new: last_fill.hash.clone(),
-        },
-    ];
+        });
+    }
+
     update
 }
 
@@ -84,6 +93,24 @@ mod tests {
         let update = map_transaction_state_order(fills, 999999999u64, "999999999".to_string());
 
         assert_eq!(update.state, TransactionState::Pending);
+        assert!(update.changes.is_empty());
+    }
+
+    #[test]
+    fn test_map_transaction_state_order_non_perpetual_fill() {
+        let fills = vec![PerpetualFill {
+            coin: "HYPE".to_string(),
+            hash: String::new(),
+            oid: 123,
+            closed_pnl: 0.0,
+            fee: 0.0,
+            px: 42.0,
+            dir: String::new(),
+        }];
+
+        let update = map_transaction_state_order(fills, 123, "123".to_string());
+
+        assert_eq!(update.state, TransactionState::Confirmed);
         assert!(update.changes.is_empty());
     }
 }

@@ -6,16 +6,18 @@ use std::{
 use async_trait::async_trait;
 use bigdecimal::{BigDecimal, Zero};
 use gem_hypercore::{
-    core::actions::agent::order::{make_market_order, PlaceOrder},
+    core::actions::agent::order::{PlaceOrder, make_market_order},
     models::{
         spot::{OrderbookResponse, SpotMarket, SpotMeta},
         token::SpotToken,
     },
     rpc::client::HyperCoreClient,
 };
-use num_bigint::{BigInt, BigUint, ToBigInt};
+use num_bigint::BigUint;
+use num_traits::ToPrimitive;
 use number_formatter::BigNumberFormatter;
 use primitives::Chain;
+use std::str::FromStr;
 
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset,
@@ -25,7 +27,7 @@ use crate::{
 };
 
 mod simulator;
-use simulator::{simulate_buy, simulate_sell};
+use simulator::{SimulationResult, simulate_buy, simulate_sell};
 
 const SPOT_META_TTL: Duration = Duration::from_secs(30);
 const PAIR_BASE_SYMBOL: &str = "HYPE";
@@ -145,7 +147,11 @@ impl HyperCoreSpot {
     }
 
     fn format_decimal(value: &BigDecimal) -> String {
-        BigNumberFormatter::decimal_to_string(value, MAX_DECIMAL_SCALE)
+        Self::format_decimal_with_scale(value, MAX_DECIMAL_SCALE)
+    }
+
+    fn format_decimal_with_scale(value: &BigDecimal, scale: u32) -> String {
+        BigNumberFormatter::decimal_to_string(value, scale)
     }
 }
 
@@ -184,7 +190,10 @@ impl Swapper for HyperCoreSpot {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let (output_amount, avg_price) = match side {
+        let SimulationResult {
+            amount_out: output_amount,
+            limit_price: base_limit_price,
+        } = match side {
             SpotSide::Sell => simulate_sell(&amount_in, &orderbook.levels[0])?,
             SpotSide::Buy => simulate_buy(&amount_in, &orderbook.levels[1])?,
         };
@@ -200,13 +209,15 @@ impl Swapper for HyperCoreSpot {
         let scaled_units = scale_units(token_units, token_decimals, request.to_asset.decimals)?;
         let to_value = scaled_units.to_string();
 
-        let avg_price = Self::format_decimal(&avg_price);
+        let price_decimals = 8u32.saturating_sub(base_token.sz_decimals);
+        let limit_price = apply_slippage(&base_limit_price, side, request.options.slippage.bps, price_decimals)?;
+        let limit_price = Self::format_decimal_with_scale(&limit_price, price_decimals);
 
-    let size_value = match side {
-        SpotSide::Sell => amount_in.clone(),
-        SpotSide::Buy => output_amount.clone(),
-    };
-    let size_str = format_order_size(&size_value);
+        let size_value = match side {
+            SpotSide::Sell => amount_in.clone(),
+            SpotSide::Buy => output_amount.clone(),
+        };
+        let size_str = format_order_size(&size_value, base_token.sz_decimals)?;
 
         let asset_index = spot_asset_index(market.index);
 
@@ -219,15 +230,8 @@ impl Swapper for HyperCoreSpot {
                 routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
-                    route_data: serde_json::to_string(&make_market_order(
-                        asset_index,
-                        side.is_buy(),
-                        &avg_price,
-                        &size_str,
-                        false,
-                        None,
-                    ))
-                    .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
+                    route_data: serde_json::to_string(&make_market_order(asset_index, side.is_buy(), &limit_price, &size_str, false, None))
+                        .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
                     gas_limit: None,
                 }],
             },
@@ -273,31 +277,73 @@ fn scale_units(value: BigUint, from_decimals: u32, to_decimals: u32) -> Result<B
     }
 }
 
-fn format_order_size(amount: &BigDecimal) -> String {
-    let scale = 2i64;
-    let multiplier = BigInt::from(10).pow(scale as u32);
-    let scaled = amount * BigDecimal::from(multiplier.clone());
-    let truncated_int = scaled
-        .with_scale(0)
-        .to_bigint()
-        .unwrap_or_else(|| BigInt::from(0));
-
-    let fractional = scaled - BigDecimal::from_bigint(truncated_int.clone(), 0);
-    let mut floored_int = truncated_int;
-    if amount < &BigDecimal::from(0) && !fractional.is_zero() {
-        floored_int -= BigInt::from(1);
-    }
-
-    BigDecimal::from_bigint(floored_int, scale).with_scale(scale).to_string()
+fn format_order_size(amount: &BigDecimal, decimals: u32) -> Result<String, SwapperError> {
+    let value = amount
+        .to_f64()
+        .ok_or_else(|| SwapperError::InvalidAmount("failed to convert amount".to_string()))?;
+    let rounded = round_to_decimals(value, decimals);
+    let formatted = if decimals == 0 {
+        format!("{rounded:.0}")
+    } else {
+        format!("{rounded:.decimals$}", decimals = decimals as usize)
+    };
+    let big_decimal = BigDecimal::from_str(&formatted).map_err(|_| SwapperError::InvalidAmount("failed to format size".to_string()))?;
+    Ok(BigNumberFormatter::decimal_to_string(&big_decimal, decimals))
 }
 
 fn spot_asset_index(market_index: u32) -> u32 {
     SPOT_ASSET_OFFSET + market_index
 }
 
+fn apply_slippage(limit_price: &BigDecimal, side: SpotSide, slippage_bps: u32, price_decimals: u32) -> Result<BigDecimal, SwapperError> {
+    if limit_price <= &BigDecimal::zero() {
+        return Err(SwapperError::InvalidAmount("invalid limit price".to_string()));
+    }
+
+    let limit_price_f64 = limit_price
+        .to_f64()
+        .ok_or_else(|| SwapperError::InvalidAmount("failed to convert price".to_string()))?;
+
+    let slippage_fraction = slippage_bps as f64 / 10_000.0;
+    let multiplier = if side.is_buy() { 1.0 + slippage_fraction } else { 1.0 - slippage_fraction };
+
+    if multiplier <= 0.0 {
+        return Err(SwapperError::InvalidAmount("slippage multiplier not positive".to_string()));
+    }
+
+    let adjusted = limit_price_f64 * multiplier;
+    let rounded = round_to_significant_and_decimal(adjusted, 5, price_decimals);
+
+    let formatted = if price_decimals == 0 {
+        format!("{rounded:.0}")
+    } else {
+        format!("{rounded:.price_decimals$}", price_decimals = price_decimals as usize)
+    };
+
+    BigDecimal::from_str(&formatted).map_err(|_| SwapperError::InvalidAmount("failed to format limit price".to_string()))
+}
+
+fn round_to_decimals(value: f64, decimals: u32) -> f64 {
+    let factor = 10f64.powi(decimals as i32);
+    (value * factor).round() / factor
+}
+
+fn round_to_significant_and_decimal(value: f64, sig_figs: u32, max_decimals: u32) -> f64 {
+    if value == 0.0 {
+        return 0.0;
+    }
+
+    let abs_value = value.abs();
+    let magnitude = abs_value.log10().floor() as i32;
+    let scale = 10f64.powi(sig_figs as i32 - magnitude - 1);
+    let rounded = (abs_value * scale).round() / scale;
+    round_to_decimals(rounded.copysign(value), max_decimals)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use number_formatter::BigNumberFormatter;
     use std::str::FromStr;
 
     #[test]
@@ -322,24 +368,51 @@ mod tests {
     }
 
     #[test]
-    fn test_format_order_size_floors() {
+    fn test_format_order_size_rounds() {
         let value = BigDecimal::from_str("0.131").unwrap();
-        assert_eq!(format_order_size(&value), "0.13");
+        assert_eq!(format_order_size(&value, 2).unwrap(), "0.13");
 
         let value = BigDecimal::from_str("0.189834").unwrap();
-        assert_eq!(format_order_size(&value), "0.18");
+        assert_eq!(format_order_size(&value, 2).unwrap(), "0.19");
 
         let value = BigDecimal::from_str("0.10").unwrap();
-        assert_eq!(format_order_size(&value), "0.10");
+        assert_eq!(format_order_size(&value, 2).unwrap(), "0.1");
 
         let value = BigDecimal::from_str("-0.131").unwrap();
-        assert_eq!(format_order_size(&value), "-0.14");
+        assert_eq!(format_order_size(&value, 2).unwrap(), "-0.13");
     }
 
     #[test]
     fn test_spot_asset_index_offset() {
         assert_eq!(spot_asset_index(0), SPOT_ASSET_OFFSET);
         assert_eq!(spot_asset_index(107), SPOT_ASSET_OFFSET + 107);
+    }
+
+    #[test]
+    fn test_apply_slippage_buy_increases_price() {
+        let price = BigDecimal::from_str("100").unwrap();
+        let adjusted = apply_slippage(&price, SpotSide::Buy, 1000, 2).unwrap();
+        assert_eq!(BigNumberFormatter::decimal_to_string(&adjusted, 2), "110");
+    }
+
+    #[test]
+    fn test_apply_slippage_sell_decreases_price() {
+        let price = BigDecimal::from_str("100").unwrap();
+        let adjusted = apply_slippage(&price, SpotSide::Sell, 500, 2).unwrap();
+        assert_eq!(BigNumberFormatter::decimal_to_string(&adjusted, 2), "95");
+    }
+
+    #[test]
+    fn test_apply_slippage_zero_returns_same_price() {
+        let price = BigDecimal::from_str("42.123456").unwrap();
+        let adjusted = apply_slippage(&price, SpotSide::Sell, 0, 4).unwrap();
+        assert_eq!(BigNumberFormatter::decimal_to_string(&adjusted, 4), "42.123");
+    }
+
+    #[test]
+    fn test_apply_slippage_invalid_when_multiplier_non_positive() {
+        let price = BigDecimal::from_str("10").unwrap();
+        assert!(apply_slippage(&price, SpotSide::Sell, 10001, 2).is_err());
     }
 }
 
@@ -350,6 +423,8 @@ mod integration_tests {
     use number_formatter::BigNumberFormatter;
     use primitives::swap::SwapQuoteDataType;
     use std::str::FromStr;
+
+    const HYPE_SIZE_DECIMALS: u32 = 2;
 
     fn native_provider() -> Arc<crate::NativeProvider> {
         Arc::new(crate::NativeProvider::new())
@@ -383,9 +458,11 @@ mod integration_tests {
         assert!(order.orders[0].asset - SPOT_ASSET_OFFSET < SPOT_ASSET_OFFSET);
         let expected_size = format_order_size(
             &BigDecimal::from_str(&BigNumberFormatter::value(&quote.from_value, quote.request.from_asset.decimals as i32).unwrap()).unwrap(),
-        );
+            HYPE_SIZE_DECIMALS,
+        )
+        .unwrap();
         assert_eq!(order.orders[0].size, expected_size);
-        assert_eq!(order.orders[0].size.split('.').nth(1).unwrap().len(), 2);
+        assert_eq!(order.orders[0].size.split('.').nth(1).unwrap().len(), HYPE_SIZE_DECIMALS as usize);
 
         let quote_data = spot.fetch_quote_data(&quote, FetchQuoteData::None).await.unwrap();
         let payload_order: PlaceOrder = serde_json::from_str(&quote_data.data).unwrap();

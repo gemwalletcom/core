@@ -17,8 +17,11 @@ use std::{
 };
 
 use crate::config::HypercoreConfig;
+use gem_jsonrpc::X_CACHE_TTL;
 use primitives::{Chain, Preferences};
 use serde_json::json;
+
+const SPOT_META_CACHE_TTL_SECS: u64 = 3600;
 
 #[derive(Debug)]
 pub struct InMemoryPreferences {
@@ -159,7 +162,8 @@ impl<C: Client> HyperCoreClient<C> {
     }
 
     pub async fn get_spot_meta(&self) -> Result<SpotMeta, Box<dyn Error + Send + Sync>> {
-        let response = self.info(json!({ "type": "spotMeta" })).await?;
+        let headers = HashMap::from([(String::from(X_CACHE_TTL), SPOT_META_CACHE_TTL_SECS.to_string())]);
+        let response = self.client.post("/info", &json!({ "type": "spotMeta" }), Some(headers)).await?;
         let raw: SpotMetaRaw = serde_json::from_value(response)?;
         Ok(raw.into())
     }

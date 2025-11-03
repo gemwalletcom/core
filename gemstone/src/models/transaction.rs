@@ -638,10 +638,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             },
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
-            TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual {
-                asset,
-                perpetual_type,
-            },
+            TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
         }
     }
 }
