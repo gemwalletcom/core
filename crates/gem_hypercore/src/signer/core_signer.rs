@@ -381,28 +381,10 @@ fn fee_rate(tenths_bps: u32) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{Asset, Chain};
-
-    fn sample_confirm_data(direction: PerpetualDirection, asset_index: i32) -> PerpetualConfirmData {
-        PerpetualConfirmData {
-            direction,
-            base_asset: Asset::from_chain(Chain::HyperCore),
-            asset_index,
-            price: "123.45".to_string(),
-            fiat_value: 100.0,
-            size: "2.5".to_string(),
-            slippage: 0.01,
-            leverage: 5,
-            pnl: None,
-            entry_price: None,
-            market_price: 123.45,
-            margin_amount: 50.0,
-        }
-    }
 
     #[test]
     fn market_order_from_open_long_sets_buy() {
-        let data = sample_confirm_data(PerpetualDirection::Long, 11);
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Long, 11);
         let builder = Builder {
             builder_address: "0xdeadbeef".to_string(),
             fee: 25,
@@ -424,7 +406,7 @@ mod tests {
 
     #[test]
     fn market_order_from_close_short_sets_sell_and_reduce_only() {
-        let data = sample_confirm_data(PerpetualDirection::Short, 5);
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 5);
         let order = HyperCoreSigner::market_order_from_confirm_data(&data, false, None);
 
         let market_order = &order.orders[0];
@@ -434,7 +416,7 @@ mod tests {
 
     #[test]
     fn market_order_from_open_short_sets_sell() {
-        let data = sample_confirm_data(PerpetualDirection::Short, 9);
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 9);
         let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, None);
 
         let market_order = &order.orders[0];
