@@ -24,6 +24,7 @@ pub enum TransactionType {
     SmartContractCall,
     PerpetualOpenPosition,
     PerpetualClosePosition,
+    PerpetualModifyPosition,
 }
 
 impl TransactionType {

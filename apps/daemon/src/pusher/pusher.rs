@@ -106,7 +106,6 @@ impl Pusher {
                     )),
                 })
             }
-            TransactionType::AssetActivation => todo!(),
             TransactionType::PerpetualOpenPosition => {
                 let _is_sent = transaction.is_sent(subscription.address.clone());
                 let value = self.get_value(amount, asset.symbol.clone());
@@ -121,6 +120,7 @@ impl Pusher {
                 let message = format!("Closed perpetual position for {value} at {to_address}");
                 Ok(Message { title, message: Some(message) })
             }
+            TransactionType::AssetActivation | TransactionType::PerpetualModifyPosition => todo!(),
             TransactionType::StakeFreeze => Ok(Message {
                 title: localizer.notification_freeze_title(self.get_value(amount, asset.symbol.clone()).as_str()),
                 message: None,

@@ -40,6 +40,7 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
                     PerpetualType::Increase(data) => data.fiat_value,
                     PerpetualType::Reduce(reduce_data) => reduce_data.data.fiat_value,
                     PerpetualType::Close(data) => data.fiat_value,
+                    PerpetualType::Modify(_) => 0.0,
                 };
 
                 let (agent_required, referral_required, builder_required, fee_rate, agent_address, agent_private_key) = get_approvals_and_credentials(

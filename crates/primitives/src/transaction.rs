@@ -286,7 +286,8 @@ impl Transaction {
             | TransactionType::TransferNFT
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
+            | TransactionType::PerpetualClosePosition
+            | TransactionType::PerpetualModifyPosition => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
@@ -320,7 +321,8 @@ impl Transaction {
             | TransactionType::AssetActivation
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
-            | TransactionType::PerpetualClosePosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
+            | TransactionType::PerpetualClosePosition
+            | TransactionType::PerpetualModifyPosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
             TransactionType::Swap => self
                 .metadata
                 .clone()
@@ -336,12 +338,15 @@ impl Transaction {
     }
 
     pub fn assets_addresses_with_fee(&self) -> Vec<AssetAddress> {
-        [self.assets_addresses(), vec![AssetAddress::new(self.fee_asset_id.clone(), self.from.clone(), None)]]
-            .concat()
-            .into_iter()
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect()
+        [
+            self.assets_addresses(),
+            vec![AssetAddress::new(self.fee_asset_id.clone(), self.from.clone(), None)],
+        ]
+        .concat()
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect()
     }
 }
 
