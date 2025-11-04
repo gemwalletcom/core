@@ -6,3 +6,4 @@ target
 .vscode/settings.json
 gemstone/src/.build
 .claude/
+*.code-workspace

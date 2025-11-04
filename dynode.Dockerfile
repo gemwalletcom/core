@@ -2,19 +2,13 @@
 FROM rust:1.90.0-bookworm AS builder
 WORKDIR /app
 
-# Copy source
 COPY . .
 
-# Build with cache mounts - dependencies and source will be cached separately by Cargo
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
     --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-dynode \
-    cargo build --release --package dynode
-
-# Copy binary from cache to layer
-RUN --mount=type=cache,target=/app/target,sharing=locked,id=rust-target-dynode \
-    mkdir -p /output && \
-    cp /app/target/release/dynode /output/
+    cargo build --release --package dynode && \
+    cp /app/target/release/dynode /app/dynode
 
 FROM debian:bookworm AS runtime
 WORKDIR /app
@@ -25,8 +19,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /output/dynode /app/
-
+COPY --from=builder /app/dynode /app/
 COPY --from=builder /app/apps/dynode/config.yml /app/
 COPY --from=builder /app/apps/dynode/domains.yml /app/
 

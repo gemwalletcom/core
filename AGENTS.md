@@ -8,41 +8,79 @@ This document orients coding agents to the repo structure, development workflow,
 
 ## Project Overview
 
-Gem Wallet Core is a Rust-based cryptocurrency wallet backend engine supporting 35+ blockchain networks. It is a Cargo workspace with 40+ crates covering transaction processing, asset management, DeFi integrations, and cross-platform mobile support.
+Gem Wallet Core is a Rust-based cryptocurrency wallet backend engine supporting 35+ blockchain networks. It is a Cargo workspace with 50+ crates covering transaction processing, asset management, DeFi integrations, swap operations, and cross-platform mobile support.
 
 ## Repository Layout
 
 ### Applications (`apps/`)
 - **API Server** (`apps/api/`): REST API with WebSocket price streaming
 - **Daemon** (`apps/daemon/`): Background services for asset updates, push notifications, transaction indexing
-- **Parser** (`apps/parser/`): Multi-chain transaction parsing with message queue integration
-- **Setup** (`apps/setup/`): Database initialization
+- **Dynode** (`apps/dynode/`): Dynamic blockchain node proxy with caching, monitoring, and metrics
 
 ### Cross-Platform Library (`gemstone/`)
-Shared Rust library compiled to iOS Swift Package and Android AAR using UniFFI bindings. Contains blockchain RPC clients, swap integrations, payment URI decoding, and message signing.
-- Key module: `gemstone::gem_swapper` — swapper module for on-device swap integrations
+Shared Rust library compiled to iOS Swift Package and Android AAR using UniFFI bindings. Contains blockchain RPC clients, swap integrations, payment URI decoding, and message signing. Uses the separate `swapper` and `signer` crates for swap and signing operations.
+- Uses `swapper` crate via `gemstone::gem_swapper` module for on-device swap integrations
+- Uses `signer` crate for cryptographic signing operations across multiple blockchain types
+- **Always use UniFFI remote types for external models** - See [UniFFI Remote and External Types](https://mozilla.github.io/uniffi-rs/latest/types/remote_ext_types.html) for proper integration patterns
 
 ### Blockchain Support
 Individual `gem_*` crates for each blockchain with unified RPC client patterns:
-- Bitcoin family: Bitcoin, Bitcoin Cash, Litecoin, Dogecoin
-- Ethereum & L2s: Ethereum, Polygon, Arbitrum, Optimism, Base, zkSync, Linea
-- Alternative L1s: Solana, Sui, TON, Aptos, NEAR, Stellar, Algorand
-- Cosmos ecosystem: Cosmos Hub, Osmosis, Celestia, Injective, Sei, Noble
+- **Bitcoin family** (`gem_bitcoin`): Bitcoin, Bitcoin Cash, Litecoin, Dogecoin
+- **EVM chains** (`gem_evm`, `gem_bsc`): Ethereum, Polygon, Arbitrum, Optimism, Base, zkSync, Linea, BSC
+- **Alternative L1s**: Solana (`gem_solana`), Sui (`gem_sui`), TON (`gem_ton`), Aptos (`gem_aptos`), NEAR (`gem_near`), Stellar (`gem_stellar`), Algorand (`gem_algorand`), Tron (`gem_tron`), XRP (`gem_xrp`), Cardano (`gem_cardano`), Polkadot (`gem_polkadot`)
+- **Cosmos ecosystem** (`gem_cosmos`): Cosmos Hub, Osmosis, Celestia, Injective, Sei, Noble
 
-### Core Services (selected crates)
+### Utility Binaries (`bin/`)
+- **uniffi-bindgen** (`bin/uniffi-bindgen/`): UniFFI bindings generator for iOS and Android
+- **generate** (`bin/generate/`): Code generation utilities
+- **gas-bench** (`bin/gas-bench/`): Gas benchmarking tool for blockchain operations
+- **img-downloader** (`bin/img-downloader/`): Image asset downloader utility
+
+### Core Services & Infrastructure Crates
+
+#### Blockchain Infrastructure
+- `gem_client/`: Client trait abstraction used across services; implementations: `ReqwestClient` (backend) and `AlienProvider` (mobile)
+- `gem_jsonrpc/`: Internal JSON-RPC client library (replaces external alloy dependencies)
+- `gem_hash/`: Hashing utilities for blockchain operations
+- `chain_primitives/`: Primitive types specific to blockchain operations
+- `chain_traits/`: Common traits for blockchain implementations
+
+#### Cross-Chain Operations
+- `swapper/`: Standalone swap/exchange integration crate supporting DEX and CEX swaps across multiple chains
+- `signer/`: Cryptographic signing operations for transactions across multiple blockchain types
+
+#### Data & Storage
 - `primitives/`: Central types and models shared across the system
 - `storage/`: Database models, migrations, and data access layer using Diesel ORM
-- `name_resolver/`: ENS, SNS, and other naming service integrations
-- `gem_evm/`: EVM blockchain support with unified RPC client patterns
-- `gem_jsonrpc/`: Internal JSON-RPC client library (replaces external alloy dependencies)
-- `gem_client/`: Client trait abstraction used across services; implementations: `ReqwestClient` (backend) and `AlienProvider` (mobile)
-- `serde_serializers/`: Custom Serde serializers/deserializers used across crates
-- `security_provider/`: Security provider abstractions and utilities
-- `gem_hypercore/`: Perpetuals (perps) support via Hyperliquid integration
-- `fiat/`: Integration with fiat providers (MoonPay, Transak, Mercuryo, Banxa)
-- `nft/`: NFT marketplace integrations (OpenSea, Magic Eden, NFTScan)
-- `pricer/`: Asset pricing from CoinGecko and DEX sources
+- `cacher/`: Caching layer for improved performance
+
+#### Pricing & Market Data
+- `pricer/`: Asset pricing aggregation and management
+- `prices_dex/`: DEX-specific price feeds and calculations
+- `coingecko/`: CoinGecko API integration for market data
+
+#### NFT & Digital Assets
+- `nft/`: NFT data models and business logic
+- `nft_client/`: NFT marketplace API clients
+- `nft_provider/`: NFT data provider integrations (OpenSea, Magic Eden, NFTScan)
+
+#### Integrations & Services
+- `fiat/`: Fiat on-ramp/off-ramp providers (MoonPay, Transak, Mercuryo, Banxa)
+- `name_resolver/`: Blockchain naming service integrations (ENS, SNS, etc.)
+- `security_provider/`: Security and fraud detection provider integrations
+- `api_connector/`: Backend API connector utilities
+- `gem_hypercore/`: Perpetuals (perps) trading support via Hyperliquid integration
+
+#### Utilities & Support
 - `localizer/`: i18n support for 20+ languages using Fluent
+- `serde_serializers/`: Custom Serde serializers/deserializers used across crates
+- `number_formatter/`: Number and currency formatting utilities
+- `job_runner/`: Background job execution framework
+- `search_index/`: Search indexing and query capabilities
+- `streamer/`: Real-time data streaming utilities
+- `tracing/`: Logging and tracing infrastructure
+- `settings/`: Configuration management
+- `settings_chain/`: Chain-specific configuration settings
 
 ## Technology Stack
 
@@ -86,6 +124,26 @@ All commands use the `just` task runner. Run from the workspace root unless spec
 - `just gemstone install-ios-targets`: Install iOS Rust targets (run in `gemstone/`)
 - `just gemstone install-android-targets`: Install Android Rust targets and `cargo-ndk` (run in `gemstone/`)
 - Note: Mobile builds require UniFFI bindings generation and platform-specific compilation
+
+### Generating Bindings (After Core Code Changes)
+**IMPORTANT**: When you modify code in `gemstone/`, `swapper/`, `signer/`, or any crate that affects the mobile API, you MUST regenerate the platform bindings.
+
+#### Swift Bindings (iOS)
+- `just gemstone bindgen-swift`: Generate Swift bindings only (run in `gemstone/`)
+- `just gemstone build-ios`: Full iOS build including Swift binding generation (run in `gemstone/`)
+- Generated files location: `gemstone/generated/swift/` and copied to `gemstone/target/spm/`
+
+#### Kotlin Bindings (Android)
+- `just gemstone bindgen-kotlin`: Generate Kotlin bindings only (run in `gemstone/`)
+- `just gemstone build-android`: Full Android build including Kotlin binding generation (run in `gemstone/`)
+- Generated files location: `gemstone/generated/kotlin/` and copied to `gemstone/android/gemstone/src/main/java/uniffi/`
+
+#### When to Regenerate Bindings
+1. After adding/modifying public functions in `gemstone/src/lib.rs`
+2. After changing any UniFFI-exposed types or interfaces
+3. After modifying `swapper/` or `signer/` crates that are exposed via gemstone
+4. Before committing changes that affect the mobile API surface
+5. When UniFFI schema or configuration changes
 
 ### Utilities
 - `just localize`: Update localization files
@@ -192,6 +250,7 @@ Direct repository access methods available on `DatabaseClient` include:
 ### RPC Client Patterns
 - Use `gem_jsonrpc::JsonRpcClient` for blockchain RPC interactions
 - Prefer `alloy_primitives::hex::encode_prefixed()` for hex encoding with `0x` prefix
+- **Always use `alloy_primitives::hex::decode()` for hex decoding** - it handles `0x` prefix automatically
 - Use `alloy_primitives::Address::to_string()` instead of manual formatting
 - RPC calls expect hex strings directly; avoid double encoding
 - Use `JsonRpcClient::batch_call()` for batch operations

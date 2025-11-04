@@ -34,6 +34,12 @@ impl AssetBasic {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct AssetPriceMetadata {
+    pub asset: AssetBasic,
+    pub price: Option<Price>,
+}
+
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
