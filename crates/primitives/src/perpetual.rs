@@ -134,7 +134,7 @@ pub struct TPSLOrderData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(tag = "type", content = "content")]
-pub enum PerpetualModifyType {
+pub enum PerpetualModifyPositionType {
     Tpsl(TPSLOrderData),
     Cancel(Vec<CancelOrderData>),
 }
@@ -145,7 +145,7 @@ pub enum PerpetualModifyType {
 pub struct PerpetualModifyConfirmData {
     pub base_asset: Asset,
     pub asset_index: i32,
-    pub modify_types: Vec<PerpetualModifyType>,
+    pub modify_types: Vec<PerpetualModifyPositionType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub take_profit_order_id: Option<UInt64>,
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -2,7 +2,7 @@ use ::signer::Signer;
 use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyType, PerpetualType,
+    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualType,
     SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
@@ -188,11 +188,11 @@ impl HyperCoreSigner {
             .modify_types
             .iter()
             .map(|modify_type| match modify_type {
-                PerpetualModifyType::Cancel(orders) => {
+                PerpetualModifyPositionType::Cancel(orders) => {
                     let cancels = orders.iter().map(|o| CancelOrder::new(o.asset_index as u32, o.order_id)).collect();
                     self.sign_cancel_order(Cancel::new(cancels), timestamp_incrementer.next_val(), agent_key)
                 }
-                PerpetualModifyType::Tpsl(tpsl) => {
+                PerpetualModifyPositionType::Tpsl(tpsl) => {
                     let order = make_position_tp_sl(
                         modify_data.asset_index as u32,
                         tpsl.direction == PerpetualDirection::Long,

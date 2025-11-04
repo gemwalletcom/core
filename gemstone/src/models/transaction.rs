@@ -6,7 +6,7 @@ use primitives::{
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
     TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64,
     WalletConnectionSessionAppMetadata,
-    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyType, PerpetualReduceData, TPSLOrderData},
+    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
 use swap::{GemApprovalData, GemSwapData};
@@ -202,7 +202,7 @@ pub struct TPSLOrderData {
 }
 
 #[uniffi::remote(Enum)]
-pub enum PerpetualModifyType {
+pub enum PerpetualModifyPositionType {
     Tpsl(TPSLOrderData),
     Cancel(Vec<CancelOrderData>),
 }
@@ -211,7 +211,7 @@ pub enum PerpetualModifyType {
 pub struct PerpetualModifyConfirmData {
     pub base_asset: Asset,
     pub asset_index: i32,
-    pub modify_types: Vec<PerpetualModifyType>,
+    pub modify_types: Vec<PerpetualModifyPositionType>,
     pub take_profit_order_id: Option<UInt64>,
     pub stop_loss_order_id: Option<UInt64>,
 }
