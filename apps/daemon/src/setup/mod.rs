@@ -1,9 +1,12 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
-use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, TransactionType};
+use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, Subscription, TransactionType};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
-use storage::DatabaseClient;
+use storage::{
+    DatabaseClient,
+    models::{FiatRate, UpdateDevice},
+};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 pub async fn run_setup(settings: Settings) {
@@ -117,4 +120,58 @@ pub async fn run_setup(settings: Settings) {
         .await;
 
     info_with_fields!("setup", step = "complete");
+}
+
+pub async fn run_setup_dev(settings: Settings) {
+    info_with_fields!("setup_dev", step = "init");
+
+    let postgres_url = settings.postgres.url.as_str();
+    let mut database_client: DatabaseClient = DatabaseClient::new(postgres_url);
+
+    info_with_fields!("setup_dev", step = "add currency");
+
+    let fiat_rate = FiatRate {
+        id: "USD".to_string(),
+        name: "US Dollar".to_string(),
+        rate: 1.0,
+    };
+
+    let _ = database_client.set_fiat_rates(vec![fiat_rate.clone()]).expect("Failed to add currency");
+    info_with_fields!("setup_dev", step = "currency added", currency = "USD");
+
+    info_with_fields!("setup_dev", step = "add device");
+
+    let device = UpdateDevice {
+        device_id: "test".to_string(),
+        platform: "ios".to_string(),
+        platform_store: Some("apple".to_string()),
+        token: "test_token".to_string(),
+        locale: "en".to_string(),
+        currency: fiat_rate.name.clone(),
+        is_push_enabled: true,
+        is_price_alerts_enabled: true,
+        version: "1.0.0".to_string(),
+        subscriptions_version: 1,
+        os: Some("iOS 18".to_string()),
+        model: Some("iPhone 16".to_string()),
+    };
+
+    let _ = database_client.add_device(device).expect("Failed to add device");
+    info_with_fields!("setup_dev", step = "device added", device_id = "test");
+
+    info_with_fields!("setup_dev", step = "add subscription");
+
+    let subscription = Subscription {
+        wallet_index: 1,
+        chain: Chain::Ethereum,
+        address: "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string(),
+    };
+
+    let result = database_client
+        .subscriptions()
+        .add_subscriptions(vec![subscription], "test")
+        .expect("Failed to add subscription");
+    info_with_fields!("setup_dev", step = "subscription added", count = result);
+
+    info_with_fields!("setup_dev", step = "complete");
 }
