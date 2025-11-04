@@ -58,7 +58,7 @@ export DY_LIB_NAME := if os() == "macos" { "libgemstone.dylib" } else { "libgems
 
 export BUILD_MODE_ENV := env_var_or_default("BUILD_MODE", "debug")
 export BUILD_MODE_TARGET := if BUILD_MODE_ENV == "release" { "release" } else { "debug" }
-export BUILD_FLAG := if BUILD_MODE_ENV == "release" { "--release" } else { "" }
+export BUILD_FLAG := if BUILD_MODE_TARGET == "release" { "--release" } else { "" }
 
 export TARGET_DIR := "../target"
 export GEN_SWIFT_FOLDER := "generated/swift"
