@@ -5,7 +5,7 @@ impl PerpetualConfirmData {
         Self {
             direction,
             base_asset: Asset::from_chain(Chain::HyperCore),
-            asset_index,
+            asset_index: asset_index as i32,
             price: "123.45".to_string(),
             fiat_value: 100.0,
             size: "2.5".to_string(),
