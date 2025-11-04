@@ -43,7 +43,7 @@ pub use self::asset_price::{AssetMarket, AssetPrice, AssetPrices, AssetPricesReq
 pub mod asset_price_info;
 pub use self::asset_price_info::AssetPriceInfo;
 pub mod asset_details;
-pub use self::asset_details::{AssetBasic, AssetFull, AssetLink, AssetMarketPrice, AssetProperties};
+pub use self::asset_details::{AssetBasic, AssetFull, AssetLink, AssetMarketPrice, AssetPriceMetadata, AssetProperties};
 pub mod asset_constants;
 pub mod asset_order;
 pub use self::asset_order::AssetOrder;
