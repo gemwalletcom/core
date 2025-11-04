@@ -16,6 +16,8 @@ pub struct Wallet {
     pub is_pinned: bool,
     #[serde(rename = "imageUrl")]
     pub image_url: Option<String>,
+    #[serde(rename = "isCreated")]
+    pub is_created: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
