@@ -53,7 +53,7 @@ impl StakeChain {
             Self::SmartChain => 1_000_000_000_000_000_000, // 1 BNB
             Self::Tron => 1_000_000,                       // 1 TRX
             Self::Aptos => 1_100_000_000,                  // 11 APT
-            Self::HyperCore => 10000000000000000,          // 0.01 HYPE
+            Self::HyperCore => 1_000_000,                  // 0.01 HYPE
         }
     }
 

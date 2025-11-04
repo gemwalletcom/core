@@ -5,7 +5,7 @@ use std::error::Error;
 
 use gem_client::Client;
 use number_formatter::BigNumberFormatter;
-use primitives::AssetBalance;
+use primitives::{Asset, AssetBalance};
 
 use super::balances_mapper::{map_balance_coin, map_balance_staking, map_balance_tokens};
 use crate::rpc::client::HyperCoreClient;
@@ -21,7 +21,8 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
             .find(|x| x.token == 150)
             .ok_or("not found")?
             .total;
-        let available: String = BigNumberFormatter::value_from_amount(&total, 18)?;
+        let native_decimals = Asset::from_chain(self.chain).decimals as u32;
+        let available: String = BigNumberFormatter::value_from_amount(&total, native_decimals)?;
         Ok(map_balance_coin(available, self.chain))
     }
 

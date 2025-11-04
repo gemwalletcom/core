@@ -109,7 +109,7 @@ impl Asset {
             Chain::Ink => chain.new_asset("Ink ETH".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Unichain => chain.new_asset("Unichain ETH".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Hyperliquid => chain.new_asset("HyperEVM".to_string(), "HYPE".to_string(), 18, AssetType::NATIVE),
-            Chain::HyperCore => chain.new_asset("Hyperliquid".to_string(), "HYPE".to_string(), 18, AssetType::NATIVE),
+            Chain::HyperCore => chain.new_asset("Hyperliquid".to_string(), "HYPE".to_string(), 8, AssetType::NATIVE),
             Chain::Monad => chain.new_asset("Monad Testnet".to_string(), "MON".to_string(), 18, AssetType::NATIVE),
         }
     }

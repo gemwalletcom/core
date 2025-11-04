@@ -1,7 +1,7 @@
 use crate::models::{balance::StakeBalance, token::SpotToken};
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
-use primitives::{AssetBalance, AssetId, Balance, Chain};
+use primitives::{Asset, AssetBalance, AssetId, Balance, Chain};
 use std::error::Error;
 
 pub fn map_balance_coin(balance: String, chain: Chain) -> AssetBalance {
@@ -37,8 +37,11 @@ pub fn map_balance_tokens(
 }
 
 pub fn map_balance_staking(balance: &StakeBalance, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-    let available_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.delegated.to_string(), 18).unwrap_or_default();
-    let pending_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal.to_string(), 18).unwrap_or_default();
+    let native_decimals = Asset::from_chain(chain).decimals as u32;
+    let available_biguint =
+        BigNumberFormatter::value_from_amount_biguint(&balance.delegated.to_string(), native_decimals).unwrap_or_default();
+    let pending_biguint =
+        BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal.to_string(), native_decimals).unwrap_or_default();
 
     Ok(AssetBalance::new_balance(
         chain.as_asset_id(),
@@ -130,13 +133,13 @@ mod tests {
     #[test]
     fn test_map_balance_staking() {
         let stake_balance = StakeBalance {
-            delegated: 1000000000000000000.0,
+            delegated: 100.0,
             undelegated: 0.0,
-            total_pending_withdrawal: 100000000000000000.0,
+            total_pending_withdrawal: 10.0,
         };
-        let result = map_balance_staking(&stake_balance, Chain::SmartChain).unwrap();
+        let result = map_balance_staking(&stake_balance, Chain::HyperCore).unwrap();
 
-        assert_eq!(result.balance.staked, "1000000000000000000000000000000000000".parse::<BigUint>().unwrap());
-        assert_eq!(result.balance.pending, "100000000000000000000000000000000000".parse::<BigUint>().unwrap());
+        assert_eq!(result.balance.staked, BigUint::from(10_000_000_000u64));
+        assert_eq!(result.balance.pending, BigUint::from(1_000_000_000u64));
     }
 }

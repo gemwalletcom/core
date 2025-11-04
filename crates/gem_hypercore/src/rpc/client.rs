@@ -9,7 +9,7 @@ use crate::models::{
     user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
-use gem_client::Client;
+use gem_client::{Client, ContentType, CONTENT_TYPE};
 use std::{
     collections::HashMap,
     error::Error,
@@ -162,7 +162,10 @@ impl<C: Client> HyperCoreClient<C> {
     }
 
     pub async fn get_spot_meta(&self) -> Result<SpotMeta, Box<dyn Error + Send + Sync>> {
-        let headers = HashMap::from([(String::from(X_CACHE_TTL), SPOT_META_CACHE_TTL_SECS.to_string())]);
+        let headers = HashMap::from([
+            (String::from(CONTENT_TYPE), ContentType::ApplicationJson.as_str().to_string()),
+            (String::from(X_CACHE_TTL), SPOT_META_CACHE_TTL_SECS.to_string()),
+        ]);
         let response = self.client.post("/info", &json!({ "type": "spotMeta" }), Some(headers)).await?;
         let raw: SpotMetaRaw = serde_json::from_value(response)?;
         Ok(raw.into())
