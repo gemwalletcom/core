@@ -14,3 +14,9 @@ impl std::fmt::Display for SignerError {
 }
 
 impl std::error::Error for SignerError {}
+
+impl From<serde_json::Error> for SignerError {
+    fn from(error: serde_json::Error) -> Self {
+        SignerError::InvalidInput(error.to_string())
+    }
+}

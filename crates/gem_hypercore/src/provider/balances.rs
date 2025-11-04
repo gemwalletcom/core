@@ -5,7 +5,7 @@ use std::error::Error;
 
 use gem_client::Client;
 use number_formatter::BigNumberFormatter;
-use primitives::AssetBalance;
+use primitives::{Asset, AssetBalance};
 
 use super::balances_mapper::{map_balance_coin, map_balance_staking, map_balance_tokens};
 use crate::rpc::client::HyperCoreClient;
@@ -21,13 +21,14 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
             .find(|x| x.token == 150)
             .ok_or("not found")?
             .total;
-        let available: String = BigNumberFormatter::value_from_amount(&total, 18)?;
+        let native_decimals = Asset::from_chain(self.chain).decimals as u32;
+        let available: String = BigNumberFormatter::value_from_amount(&total, native_decimals)?;
         Ok(map_balance_coin(available, self.chain))
     }
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let (spot_balances, spot_metadata) = try_join!(self.get_spot_balances(&address), self.get_spot_metadata())?;
-        Ok(map_balance_tokens(&spot_balances, &spot_metadata, &token_ids, self.chain))
+        let (spot_balances, spot_meta) = try_join!(self.get_spot_balances(&address), self.get_spot_meta())?;
+        Ok(map_balance_tokens(&spot_balances, spot_meta.tokens(), &token_ids, self.chain))
     }
 
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
