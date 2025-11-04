@@ -56,8 +56,9 @@ export FW_NAME := "Gemstone"
 export STATIC_LIB_NAME := "lib" + LIB_NAME + ".a"
 export DY_LIB_NAME := if os() == "macos" { "libgemstone.dylib" } else { "libgemstone.so" }
 
-export BUILD_MODE_TARGET := if env_var_or_default("BUILD_MODE", "") == "" { "debug" } else { env_var("BUILD_MODE") }
-export BUILD_MODE := env_var_or_default("BUILD_MODE", "")
+export BUILD_MODE_ENV := env_var_or_default("BUILD_MODE", "debug")
+export BUILD_MODE_TARGET := if BUILD_MODE_ENV == "release" { "release" } else { "debug" }
+export BUILD_FLAG := if BUILD_MODE_TARGET == "release" { "--release" } else { "" }
 
 export TARGET_DIR := "../target"
 export GEN_SWIFT_FOLDER := "generated/swift"
@@ -76,16 +77,16 @@ build-targets:
     #!/usr/bin/env bash
     echo "Host: ${HOST_ARCH}, iOS deployment target ${DEPLOYMENT_TARGET}, BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
     if [ ${HOST_ARCH} == "x86_64" ]; then \
-        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target x86_64-apple-ios --${BUILD_MODE}
+        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target x86_64-apple-ios ${BUILD_FLAG}; \
     else \
-        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --target aarch64-apple-darwin --${BUILD_MODE}
+        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --target aarch64-apple-darwin ${BUILD_FLAG}; \
     fi
 
 bindgen-swift:
     #!/usr/bin/env bash
     echo "Bindgen swift $STATIC_LIB_NAME"
     mkdir -p ${GEN_SWIFT_FOLDER}
-    cargo build --${BUILD_MODE}
+    cargo build ${BUILD_FLAG}
     cargo run -p uniffi-bindgen generate --library --language swift --crate ${LIB_NAME} ${TARGET_DIR}/${BUILD_MODE_TARGET}/${DY_LIB_NAME} -o ${GEN_SWIFT_FOLDER}
 
 assemble-frameworks:
@@ -131,7 +132,7 @@ bindgen-kotlin:
     rm -rf ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}/uniffi
     mkdir -p ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}
     cargo ndk-env
-    cargo build --${BUILD_MODE}
+    cargo build ${BUILD_FLAG}
     cargo run -p uniffi-bindgen generate --library --language kotlin --crate ${LIB_NAME} ${TARGET_DIR}/${BUILD_MODE_TARGET}/${DY_LIB_NAME} -o ${GEN_KOTLIN_FOLDER}
     cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi ${ANDROID_MODULE_FOLDER}
 
