@@ -1,6 +1,13 @@
 use crate::core::actions::SLIPPAGE_BUFFER_PERCENT;
-use primitives::TpslType;
 use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
+pub enum TpslType {
+    #[serde(rename = "tp")]
+    TakeProfit,
+    #[serde(rename = "sl")]
+    StopLoss,
+}
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
