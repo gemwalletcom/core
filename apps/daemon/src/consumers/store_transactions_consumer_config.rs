@@ -17,15 +17,14 @@ impl StoreTransactionsConsumerConfig {
         }
     }
 
-    pub fn is_transaction_sufficient_amount(&self, transaction: &Transaction, asset: Option<Asset>, price: Option<Price>, min_amount: f64) -> bool {
-        if let Some(asset) = asset
-            && transaction.transaction_type == TransactionType::Transfer
+    pub fn is_transaction_insufficient_amount(&self, transaction: &Transaction, asset: &Asset, price: Option<Price>, min_amount: f64) -> bool {
+        if transaction.transaction_type == TransactionType::Transfer
             && let Ok(amount) = BigNumberFormatter::value_as_f64(&transaction.value, asset.decimals as u32)
             && let Some(price) = price
         {
-            return amount * price.price > min_amount;
+            return amount * price.price <= min_amount;
         }
-        true
+        false
     }
 }
 
@@ -49,14 +48,14 @@ mod tests {
     }
 
     #[test]
-    fn test_is_transaction_sufficient_amount() {
+    fn test_is_transaction_insufficient_amount() {
         use chrono::Utc;
         use primitives::AssetId;
 
         let options = StoreTransactionsConsumerConfig::default();
 
-        let token_asset = Some(Asset::mock_erc20());
-        let native_asset = Some(Asset::mock_btc());
+        let token_asset = Asset::mock_erc20();
+        let native_asset = Asset::mock_btc();
 
         let price_high = Some(Price::new(1.0, 0.0, Utc::now()));
         let price_low = Some(Price::new(0.005, 0.0, Utc::now()));
@@ -74,17 +73,16 @@ mod tests {
         );
 
         let test_cases = vec![
-            (transaction_transfer.clone(), token_asset.clone(), price_high, 0.01, true),
-            (transaction_transfer.clone(), token_asset.clone(), price_low, 0.01, false),
-            (transaction_transfer.clone(), token_asset.clone(), price_high, 0.5, false),
-            (transaction_transfer.clone(), native_asset.clone(), price_low, 0.01, false),
-            (transaction_transfer.clone(), None, price_high, 0.01, true),
-            (transaction_transfer.clone(), token_asset.clone(), None, 0.01, true),
-            (transaction_swap.clone(), token_asset.clone(), price_low, 0.01, true),
+            (transaction_transfer.clone(), &token_asset, price_high, 0.01, false),
+            (transaction_transfer.clone(), &token_asset, price_low, 0.01, true),
+            (transaction_transfer.clone(), &token_asset, price_high, 0.5, true),
+            (transaction_transfer.clone(), &native_asset, price_low, 0.01, true),
+            (transaction_transfer.clone(), &token_asset, None, 0.01, false),
+            (transaction_swap.clone(), &token_asset, price_low, 0.01, false),
         ];
 
         for (transaction, asset, price, min_amount, expected) in test_cases {
-            assert_eq!(options.is_transaction_sufficient_amount(&transaction, asset, price, min_amount), expected);
+            assert_eq!(options.is_transaction_insufficient_amount(&transaction, asset, price, min_amount), expected);
         }
     }
 }

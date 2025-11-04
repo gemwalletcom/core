@@ -3,7 +3,7 @@ use crate::DatabaseError;
 use crate::database::assets::AssetsStore;
 use crate::database::assets::{AssetFilter, AssetUpdate};
 use crate::{DatabaseClient, models::Asset};
-use primitives::{Asset as PrimitiveAsset, AssetBasic};
+use primitives::{Asset as PrimitiveAsset, AssetBasic, AssetPriceMetadata};
 
 pub trait AssetsRepository {
     fn get_assets_all(&mut self) -> Result<Vec<AssetBasic>, DatabaseError>;
@@ -16,6 +16,7 @@ pub trait AssetsRepository {
     fn get_asset_full(&mut self, asset_id: &str) -> Result<primitives::AssetFull, DatabaseError>;
     fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<PrimitiveAsset>, DatabaseError>;
     fn get_assets_basic(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, DatabaseError>;
+    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceMetadata>, DatabaseError>;
     fn get_swap_assets(&mut self) -> Result<Vec<String>, DatabaseError>;
     fn get_swap_assets_version(&mut self) -> Result<i32, DatabaseError>;
     fn add_chains(&mut self, values: Vec<String>) -> Result<usize, DatabaseError>;
@@ -93,6 +94,16 @@ impl AssetsRepository for DatabaseClient {
 
     fn get_assets_basic(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, DatabaseError> {
         Ok(AssetsStore::get_assets(self, asset_ids)?.into_iter().map(|x| x.as_basic_primitive()).collect())
+    }
+
+    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceMetadata>, DatabaseError> {
+        Ok(AssetsStore::get_assets_with_prices(self, asset_ids)?
+            .into_iter()
+            .map(|(asset, price)| AssetPriceMetadata {
+                asset: asset.as_basic_primitive(),
+                price: price.map(|p| p.as_primitive()),
+            })
+            .collect())
     }
 
     fn get_swap_assets(&mut self) -> Result<Vec<String>, DatabaseError> {
