@@ -4,7 +4,8 @@ pub mod mock;
 pub mod reqwest_provider;
 
 pub use error::AlienError;
-pub use gem_jsonrpc::{HttpMethod, RpcClient as GenericRpcClient, RpcProvider as GenericRpcProvider, Target, X_CACHE_TTL};
+pub use gem_client::X_CACHE_TTL;
+pub use gem_jsonrpc::{HttpMethod, RpcClient as GenericRpcClient, RpcProvider as GenericRpcProvider, Target};
 
 pub type RpcClient = GenericRpcClient<AlienError>;
 

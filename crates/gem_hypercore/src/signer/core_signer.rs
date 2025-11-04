@@ -9,17 +9,20 @@ use serde::Serialize;
 use serde_json::{self, Value};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::core::{
-    actions::{
-        ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, Cancel, CancelOrder, PlaceOrder, SetReferrer, SpotSend, TokenDelegate,
-        WithdrawalRequest, make_market_order, make_position_tp_sl,
+use crate::{
+    core::{
+        actions::{
+            ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, Cancel, CancelOrder, PlaceOrder, SetReferrer, SpotSend, TokenDelegate,
+            WithdrawalRequest, make_market_order, make_position_tp_sl,
+        },
+        hypercore::{
+            approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data, place_order_typed_data,
+            send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
+        },
     },
-    hypercore::{
-        approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data, place_order_typed_data,
-        send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
-    },
+    is_spot_swap,
+    models::timestamp::TimestampField,
 };
-use crate::models::timestamp::TimestampField;
 
 const AGENT_NAME_PREFIX: &str = "gemwallet_";
 const REFERRAL_CODE: &str = "GEMWALLET";
@@ -47,6 +50,16 @@ impl HyperCoreSigner {
 
     fn sign_swap_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
         let swap_data = extract_swap_data(&input.input_type)?;
+
+        if let TransactionInputType::Swap(from_asset, to_asset, _) = &input.input_type
+            && is_spot_swap(from_asset.chain(), to_asset.chain())
+        {
+            let order: PlaceOrder = serde_json::from_str(&swap_data.data.data)?;
+            let nonce = Self::timestamp_ms();
+            let signature = self.sign_place_order(order, nonce, private_key)?;
+            return Ok(vec![signature]);
+        }
+
         let signature = self.sign_typed_action(&swap_data.data.data, private_key)?;
         Ok(vec![signature])
     }

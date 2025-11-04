@@ -170,6 +170,7 @@ Follow the existing code style patterns unless explicitly asked to change.
 - Functions/variables: `snake_case`
 - Structs/enums: `PascalCase`
 - Constants: `SCREAMING_SNAKE_CASE`
+- Helper names: inside a module stick to concise names that rely on scope rather than repeating crate/module prefixes (e.g., prefer `is_spot_swap` over `is_hypercore_spot_swap` in `core_signer.rs`).
 
 ### Imports
 1. Standard library imports first
@@ -184,6 +185,7 @@ IMPORTANT: Always import models and types at the top of the file. Never use inli
 - Implement `From` traits for error conversion
 - Use consistent `Result<T, Error>` return types
 - Propagate errors with the `?` operator
+- Add smart `From` conversions (e.g., `From<serde_json::Error> for SignerError`) so callers can prefer `?` over manual `map_err`.
 
 ### Database Patterns
 - Separate database models from domain primitives

@@ -5,11 +5,11 @@ use crate::models::{
     order::{OpenOrder, PerpetualFill},
     position::AssetPositions,
     referral::Referral,
-    token::SpotTokensResponse,
+    spot::{OrderbookResponse, SpotMeta, SpotMetaRaw},
     user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
-use gem_client::Client;
+use gem_client::{Client, ContentType, CONTENT_TYPE};
 use std::{
     collections::HashMap,
     error::Error,
@@ -17,8 +17,11 @@ use std::{
 };
 
 use crate::config::HypercoreConfig;
+use gem_client::X_CACHE_TTL;
 use primitives::{Chain, Preferences};
 use serde_json::json;
+
+const SPOT_META_CACHE_TTL_SECS: u64 = 3600;
 
 #[derive(Debug)]
 pub struct InMemoryPreferences {
@@ -158,8 +161,19 @@ impl<C: Client> HyperCoreClient<C> {
         self.info(json!({"type": "metaAndAssetCtxs"})).await
     }
 
-    pub async fn get_spot_metadata(&self) -> Result<SpotTokensResponse, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "spotMeta"})).await
+    pub async fn get_spot_meta(&self) -> Result<SpotMeta, Box<dyn Error + Send + Sync>> {
+        let headers = HashMap::from([
+            (String::from(CONTENT_TYPE), ContentType::ApplicationJson.as_str().to_string()),
+            (String::from(X_CACHE_TTL), SPOT_META_CACHE_TTL_SECS.to_string()),
+        ]);
+        let response = self.client.post("/info", &json!({ "type": "spotMeta" }), Some(headers)).await?;
+        let raw: SpotMetaRaw = serde_json::from_value(response)?;
+        Ok(raw.into())
+    }
+
+    pub async fn get_spot_orderbook(&self, coin: &str) -> Result<OrderbookResponse, Box<dyn Error + Send + Sync>> {
+        let response = self.info(json!({ "type": "l2Book", "coin": coin })).await?;
+        Ok(serde_json::from_value(response)?)
     }
 
     pub async fn get_candlesticks(&self, coin: &str, interval: &str, start_time: i64, end_time: i64) -> Result<Vec<Candlestick>, Box<dyn Error + Send + Sync>> {

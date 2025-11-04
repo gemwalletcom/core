@@ -72,11 +72,17 @@ impl BigNumberFormatter {
         let scaled_string = scaled_value.with_scale(0).to_string();
         scaled_string.parse::<BigUint>().map_err(|_| "Cannot convert to BigUint".to_string())
     }
+
+    pub fn decimal_to_string(value: &BigDecimal, max_scale: u32) -> String {
+        value.round(max_scale as i64).normalized().to_string()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bigdecimal::BigDecimal;
+    use std::str::FromStr;
 
     #[test]
     fn test_value() {
@@ -120,6 +126,21 @@ mod tests {
         let result = BigNumberFormatter::value_from_amount("invalid", 3);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Invalid decimal number");
+    }
+
+    #[test]
+    fn test_decimal_to_string() {
+        let decimal = BigDecimal::from_str("1.123456789").unwrap();
+        assert_eq!(BigNumberFormatter::decimal_to_string(&decimal, 6), "1.123457");
+
+        let decimal = BigDecimal::from_str("0.000001234").unwrap();
+        assert_eq!(BigNumberFormatter::decimal_to_string(&decimal, 6), "0.000001");
+
+        let decimal = BigDecimal::from_str("2.5").unwrap();
+        assert_eq!(BigNumberFormatter::decimal_to_string(&decimal, 6), "2.5");
+
+        let decimal = BigDecimal::from_str("10").unwrap();
+        assert_eq!(BigNumberFormatter::decimal_to_string(&decimal, 6), "10");
     }
 
     #[test]

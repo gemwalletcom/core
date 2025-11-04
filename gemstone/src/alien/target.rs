@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
+pub use gem_client::X_CACHE_TTL;
 pub use gem_jsonrpc::RpcResponse as AlienResponse;
-pub use gem_jsonrpc::X_CACHE_TTL;
 pub type AlienTarget = swapper::Target;
 pub type AlienHttpMethod = swapper::HttpMethod;
 
