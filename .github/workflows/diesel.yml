@@ -47,10 +47,12 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.8
 
       - name: Install just
-        run: sudo apt install just
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just
       
       - name: Install diesel
-        run: just --unstable install-diesel
+        run: just install-diesel
 
       - name: Run migration
         run: |

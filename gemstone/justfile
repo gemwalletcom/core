@@ -70,6 +70,7 @@ export FW_FFI_NAME := FW_NAME + "FFI"
 export FW_FFI_FILE := FW_FFI_NAME + ".framework"
 export XC_FW_FFI_NAME := FW_FFI_NAME + ".xcframework"
 export DEPLOYMENT_TARGET := env_var_or_default("IPHONEOS_DEPLOYMENT_TARGET", "17.0")
+export LIB_OUTPUT_PATH := TARGET_DIR + "/" + BUILD_MODE_TARGET + "/" + DY_LIB_NAME
 build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
 
 build-targets:
@@ -89,12 +90,11 @@ bindgen-swift:
         export RUSTFLAGS="${RUSTFLAGS:-} -C strip=none"; \
     fi
     cargo build ${BUILD_FLAG}
-    LIB_PATH=$(find "${TARGET_DIR}" -type f -name "${DY_LIB_NAME}" -path "*/${BUILD_MODE_TARGET}/${DY_LIB_NAME}" | head -n 1); \
-    if [ -z "${LIB_PATH}" ]; then \
-        echo "Failed to locate ${DY_LIB_NAME} in ${TARGET_DIR} (mode ${BUILD_MODE_TARGET})"; \
+    if [ ! -f "${LIB_OUTPUT_PATH}" ]; then \
+        echo "Failed to locate ${DY_LIB_NAME} at ${LIB_OUTPUT_PATH} (mode ${BUILD_MODE_TARGET})"; \
         exit 1; \
     fi; \
-    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language swift --crate ${LIB_NAME} "${LIB_PATH}" -o ${GEN_SWIFT_FOLDER}
+    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language swift --crate ${LIB_NAME} -o ${GEN_SWIFT_FOLDER} "${LIB_OUTPUT_PATH}"
 
 assemble-frameworks:
     #!/usr/bin/env bash
@@ -143,12 +143,11 @@ bindgen-kotlin:
         export RUSTFLAGS="${RUSTFLAGS:-} -C strip=none"; \
     fi
     cargo build ${BUILD_FLAG}
-    LIB_PATH=$(find "${TARGET_DIR}" -type f -name "${DY_LIB_NAME}" -path "*/${BUILD_MODE_TARGET}/${DY_LIB_NAME}" | head -n 1); \
-    if [ -z "${LIB_PATH}" ]; then \
-        echo "Failed to locate ${DY_LIB_NAME} in ${TARGET_DIR} (mode ${BUILD_MODE_TARGET})"; \
+    if [ ! -f "${LIB_OUTPUT_PATH}" ]; then \
+        echo "Failed to locate ${DY_LIB_NAME} at ${LIB_OUTPUT_PATH} (mode ${BUILD_MODE_TARGET})"; \
         exit 1; \
     fi; \
-    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language kotlin --crate ${LIB_NAME} "${LIB_PATH}" -o ${GEN_KOTLIN_FOLDER}
+    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language kotlin --crate ${LIB_NAME} --no-format -o ${GEN_KOTLIN_FOLDER} "${LIB_OUTPUT_PATH}"
     cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi ${ANDROID_MODULE_FOLDER}
 
 build-android: bindgen-kotlin
