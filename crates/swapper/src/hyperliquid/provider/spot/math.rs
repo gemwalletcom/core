@@ -1,11 +1,10 @@
 use std::str::FromStr;
 
+pub(super) use super::super::math::scale_units;
+use crate::SwapperError;
 use bigdecimal::{BigDecimal, Zero};
-use num_bigint::BigUint;
 use num_traits::ToPrimitive;
 use number_formatter::BigNumberFormatter;
-
-use crate::SwapperError;
 
 pub(super) const SPOT_ASSET_OFFSET: u32 = 10_000;
 const MAX_DECIMAL_SCALE: u32 = 6;
@@ -28,27 +27,6 @@ pub(super) fn format_decimal(value: &BigDecimal) -> String {
 
 pub(super) fn format_decimal_with_scale(value: &BigDecimal, scale: u32) -> String {
     BigNumberFormatter::decimal_to_string(value, scale)
-}
-
-pub(super) fn scale_units(value: BigUint, from_decimals: u32, to_decimals: u32) -> Result<BigUint, SwapperError> {
-    if from_decimals == to_decimals {
-        return Ok(value);
-    }
-
-    if to_decimals > from_decimals {
-        let diff = to_decimals - from_decimals;
-        let factor = BigUint::from(10u32).pow(diff);
-        return Ok(value * factor);
-    }
-
-    let diff = from_decimals - to_decimals;
-    let factor = BigUint::from(10u32).pow(diff);
-    let remainder = &value % &factor;
-    if remainder != BigUint::zero() {
-        return Err(SwapperError::InvalidAmount("amount precision loss".to_string()));
-    }
-
-    Ok(value / factor)
 }
 
 pub(super) fn format_order_size(amount: &BigDecimal, decimals: u32) -> Result<String, SwapperError> {
@@ -120,27 +98,6 @@ mod tests {
     use bigdecimal::BigDecimal;
     use number_formatter::BigNumberFormatter;
     use std::str::FromStr;
-
-    #[test]
-    fn test_scale_units_up() {
-        let base = BigUint::from(123u32);
-        let scaled = scale_units(base.clone(), 8, 18).unwrap();
-        let expected = BigUint::from(10u32).pow(10) * base;
-        assert_eq!(scaled, expected);
-    }
-
-    #[test]
-    fn test_scale_units_down() {
-        let value = BigUint::from(123u32) * BigUint::from(10u32).pow(10);
-        let scaled = scale_units(value.clone(), 18, 8).unwrap();
-        assert_eq!(scaled, BigUint::from(123u32));
-    }
-
-    #[test]
-    fn test_scale_units_down_rejects_remainder() {
-        let err = scale_units(BigUint::from(5u32), 3, 1).unwrap_err();
-        assert!(matches!(err, SwapperError::InvalidAmount(_)));
-    }
 
     #[test]
     fn test_format_order_size_rounds() {
