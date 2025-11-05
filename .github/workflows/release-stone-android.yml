@@ -60,11 +60,14 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.8
 
       - name: Install just
-        run: sudo apt install just
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just
 
       - name: Build Android Bindings
         run: |
-          just --unstable install-android-targets && just --unstable bindgen-kotlin
+          just --unstable install-android-targets
+          just --unstable bindgen-kotlin
         working-directory: gemstone
 
       - name: Publish to Github Packages
