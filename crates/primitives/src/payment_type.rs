@@ -6,16 +6,12 @@ use typeshare::typeshare;
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString, PartialEq, Eq, EnumIter)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
+#[derive(Default)]
 pub enum PaymentType {
+    #[default]
     Card, // debit / credit card
     GooglePay,
     ApplePay,
-}
-
-impl Default for PaymentType {
-    fn default() -> Self {
-        Self::Card
-    }
 }
 
 impl PaymentType {

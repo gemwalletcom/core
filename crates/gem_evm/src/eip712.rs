@@ -1,8 +1,8 @@
-use alloy_dyn_abi::TypedData;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_serializers::deserialize_u64_from_str_or_int;
 use std::collections::HashMap;
+use signer::hash_eip712;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EIP712Domain {
@@ -74,11 +74,8 @@ pub fn eip712_domain_types() -> Vec<EIP712Type> {
 }
 
 pub fn eip712_hash_message(value: Value) -> Result<Vec<u8>, String> {
-    let typed_data: TypedData = serde_json::from_value(value).map_err(|e| format!("Invalid EIP712 JSON: parse error: {e}"))?;
-    let typed_hash = typed_data
-        .eip712_signing_hash()
-        .map_err(|e| format!("Invalid EIP712 JSON: signing hash error: {e}"))?;
-    Ok(typed_hash.to_vec())
+    let json = serde_json::to_string(&value).map_err(|e| format!("Invalid EIP712 JSON: serialize error: {e}"))?;
+    hash_eip712(&json).map(|digest| digest.to_vec()).map_err(|e| e.to_string())
 }
 
 pub fn parse_eip712_json(value: &Value) -> Result<EIP712Message, String> {
