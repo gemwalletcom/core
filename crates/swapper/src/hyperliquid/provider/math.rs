@@ -1,29 +1,29 @@
-use std::str::FromStr;
+use std::{cmp::Ordering, str::FromStr};
 
 use num_bigint::BigUint;
+use num_integer::Integer;
 use num_traits::Zero;
 
 use crate::SwapperError;
 
 pub fn scale_units(value: BigUint, from_decimals: u32, to_decimals: u32) -> Result<BigUint, SwapperError> {
-    if from_decimals == to_decimals {
-        return Ok(value);
+    match from_decimals.cmp(&to_decimals) {
+        Ordering::Equal => Ok(value),
+        Ordering::Less => {
+            let diff = to_decimals - from_decimals;
+            let factor = BigUint::from(10u32).pow(diff);
+            Ok(value * factor)
+        }
+        Ordering::Greater => {
+            let diff = from_decimals - to_decimals;
+            let factor = BigUint::from(10u32).pow(diff);
+            let (quotient, remainder) = value.div_rem(&factor);
+            if !remainder.is_zero() {
+                return Err(SwapperError::InvalidAmount("amount precision loss".to_string()));
+            }
+            Ok(quotient)
+        }
     }
-
-    if from_decimals < to_decimals {
-        let diff = to_decimals - from_decimals;
-        let factor = BigUint::from(10u32).pow(diff);
-        return Ok(value * factor);
-    }
-
-    let diff = from_decimals - to_decimals;
-    let factor = BigUint::from(10u32).pow(diff);
-    let remainder = &value % &factor;
-    if !remainder.is_zero() {
-        return Err(SwapperError::InvalidAmount("amount precision loss".to_string()));
-    }
-
-    Ok(value / factor)
 }
 
 pub fn scale_quote_value(value: &str, from_decimals: u32, to_decimals: u32) -> Result<String, SwapperError> {
