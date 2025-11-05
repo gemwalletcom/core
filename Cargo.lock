@@ -6742,6 +6742,7 @@ dependencies = [
  "gem_xrp",
  "hex",
  "num-bigint",
+ "num-integer",
  "num-traits",
  "number_formatter",
  "primitives",
