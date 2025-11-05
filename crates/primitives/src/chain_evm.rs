@@ -144,7 +144,7 @@ impl EVMChain {
             Self::Mantle => Some("0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"), // Wrapped Mantle (WMNT)
             Self::Manta => Some("0x0dc808adce2099a9f62aa87d9670745aba741746"),
             Self::Plasma => Some("0x6100E367285b01F48D07953803A2d8dCA5D19873"), // Wrapped Plasma (WXPL)
-            Self::Monad => None,                                                //TODO: Monad
+            Self::Monad => Some("0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A"),
         }
     }
 

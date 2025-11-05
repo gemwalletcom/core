@@ -184,7 +184,7 @@ chains:
   hypercore:
     url: https://api.hyperliquid.xyz
   monad:
-    url: https://testnet-rpc.monad.xyz #TODO: Monad
+    url: https://rpc.monad.xyz
 
 swap:
   jupiter:
