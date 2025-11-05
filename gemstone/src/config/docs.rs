@@ -32,6 +32,7 @@ pub enum DocsUrl {
     PerpetualsLiquidationPrice,
     PerpetualsOpenInterest,
     PerpetualsFundingPayments,
+    PerpetualsAutoclose,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -63,9 +64,10 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::NoQuotes => "/troubleshoot/quote-error/",
         DocsUrl::Staking(chain) => &format!("/defi/stake-{}/", Asset::from_chain(chain.chain()).symbol.to_lowercase()),
         DocsUrl::PerpetualsFundingRate => "/defi/perps/perps-terms/#what-is-perpetual-funding/",
-        DocsUrl::PerpetualsLiquidationPrice => "/defi/perps/perps-terms/#what-is-a-perpetual-liquidation-price/",
-        DocsUrl::PerpetualsOpenInterest => "/defi/perps/perps-terms/#what-is-a-perpetual-open-interest/",
-        DocsUrl::PerpetualsFundingPayments => "/defi/perps/perps-terms/#what-is-perpetual-funding-payments/",
+        DocsUrl::PerpetualsLiquidationPrice => "/defi/perps/liquidation-price/",
+        DocsUrl::PerpetualsOpenInterest => "/defi/perps/open-interest/",
+        DocsUrl::PerpetualsFundingPayments => "/defi/perps/funding-payment/",
+        DocsUrl::PerpetualsAutoclose => "/defi/perps/auto-close/",
     };
     format!("{DOCS_URL}{path}")
 }
