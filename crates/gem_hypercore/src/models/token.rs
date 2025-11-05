@@ -7,6 +7,7 @@ pub struct SpotToken {
     pub wei_decimals: i32,
     pub index: i32,
     pub token_id: String,
+    pub sz_decimals: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

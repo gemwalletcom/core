@@ -11,8 +11,10 @@ use primitives::{
 
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    asset::HYPERCORE_HYPE,
+    asset::{HYPERCORE_HYPE, HYPEREVM_HYPE},
 };
+
+use super::math::scale_quote_value;
 
 #[derive(Debug)]
 pub struct HyperCoreBridge {
@@ -42,14 +44,16 @@ impl Swapper for HyperCoreBridge {
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![
             SwapperChainAsset::Assets(Chain::HyperCore, vec![HYPERCORE_HYPE.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPERCORE_HYPE.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_HYPE.id.clone()]),
         ]
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+        let to_value = scale_quote_value(&request.value, request.from_asset.decimals, request.to_asset.decimals)?;
+
         let quote = Quote {
             from_value: request.value.clone(),
-            to_value: request.value.clone(),
+            to_value,
             data: ProviderData {
                 provider: self.provider.clone(),
                 slippage_bps: 0,

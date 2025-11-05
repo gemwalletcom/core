@@ -1,8 +1,17 @@
 use crate::core::actions::SLIPPAGE_BUFFER_PERCENT;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
+pub enum TpslType {
+    #[serde(rename = "tp")]
+    TakeProfit,
+    #[serde(rename = "sl")]
+    StopLoss,
+}
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PlaceOrder {
     pub r#type: String,
     pub orders: Vec<Order>,
@@ -24,7 +33,7 @@ impl PlaceOrder {
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Order {
     #[serde(rename = "a")]
     pub asset: u32,
@@ -32,6 +41,7 @@ pub struct Order {
     pub is_buy: bool,
     #[serde(rename = "p")]
     pub price: String,
+    /// Use "0" to apply to entire position (for position TP/SL orders)
     #[serde(rename = "s")]
     pub size: String,
     #[serde(rename = "r")]
@@ -42,14 +52,14 @@ pub struct Order {
     pub client_order_id: Option<String>,
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum OrderType {
     Limit { limit: LimitOrder },
     Trigger { trigger: Trigger },
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct LimitOrder {
     pub tif: TimeInForce,
 }
@@ -60,7 +70,7 @@ impl LimitOrder {
     }
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Trigger {
     #[serde(rename = "isMarket")]
     pub is_market: bool,
@@ -69,7 +79,7 @@ pub struct Trigger {
     pub tpsl: TpslType,
 }
 
-#[derive(Clone, serde::Serialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum TimeInForce {
     #[serde(rename = "Alo")]
     AddLiquidityOnly,
@@ -81,15 +91,7 @@ pub enum TimeInForce {
     FrontendMarket,
 }
 
-#[derive(Clone, serde::Serialize)]
-pub enum TpslType {
-    #[serde(rename = "tp")]
-    TakeProfit,
-    #[serde(rename = "sl")]
-    StopLoss,
-}
-
-#[derive(Clone, serde::Serialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum Grouping {
     Na,
@@ -97,7 +99,7 @@ pub enum Grouping {
     PositionTpsl,
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Builder {
     #[serde(rename = "b")]
     pub builder_address: String,
@@ -105,6 +107,7 @@ pub struct Builder {
     pub fee: u32, // tenths of a basis point , 10 means 1bp
 }
 
+// https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size
 fn calculate_execution_price(trigger_px: &str, add_slippage: bool) -> String {
     let trigger: f64 = trigger_px.parse().unwrap_or(0.0);
     let execution_price = if add_slippage {
@@ -112,8 +115,18 @@ fn calculate_execution_price(trigger_px: &str, add_slippage: bool) -> String {
     } else {
         trigger * (1.0 - SLIPPAGE_BUFFER_PERCENT)
     };
-    format!("{execution_price:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
+
+    // Round to 5 significant figures (max allowed by Hyperliquid)
+    if execution_price != 0.0 && execution_price.is_finite() {
+        let magnitude = execution_price.abs().log10().floor();
+        let scale = 10_f64.powf(4.0 - magnitude);
+        let rounded = (execution_price * scale).round() / scale;
+        format!("{rounded:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
+    } else {
+        format!("{execution_price:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
+    }
 }
+
 pub fn make_market_order_type() -> OrderType {
     OrderType::Limit {
         limit: LimitOrder::new(TimeInForce::FrontendMarket),
@@ -221,7 +234,7 @@ pub fn make_position_tp_sl(
         let sl_execution_price = calculate_execution_price(&sl_trigger_px, false); // Position orders: subtract slippage
         orders.push(make_trigger_order(
             asset,
-            is_buy,
+            !is_buy,
             &sl_execution_price,
             size,
             true,
@@ -234,7 +247,7 @@ pub fn make_position_tp_sl(
         let tp_execution_price = calculate_execution_price(&tp_trigger_px, false); // Position orders: subtract slippage
         orders.push(make_trigger_order(
             asset,
-            is_buy,
+            !is_buy,
             &tp_execution_price,
             size,
             true,
@@ -244,4 +257,40 @@ pub fn make_position_tp_sl(
     }
 
     PlaceOrder::new(orders, Grouping::PositionTpsl, builder)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_execution_price_rounds_to_5_sig_figs() {
+        let result = calculate_execution_price("156.66", false);
+        assert_eq!(result, "144.13");
+
+        let result = calculate_execution_price("100", true);
+        assert_eq!(result, "108");
+
+        let result = calculate_execution_price("1234.56", false);
+        assert_eq!(result, "1135.8");
+    }
+
+    #[test]
+    fn test_calculate_execution_price_handles_small_values() {
+        let result = calculate_execution_price("0.12345", true);
+        let parsed: f64 = result.parse().unwrap();
+        assert!(parsed > 0.0 && parsed < 1.0);
+    }
+
+    #[test]
+    fn test_calculate_execution_price_handles_zero() {
+        let result = calculate_execution_price("0", false);
+        assert_eq!(result, "0");
+    }
+
+    #[test]
+    fn test_calculate_execution_price_trims_trailing_zeros() {
+        let result = calculate_execution_price("100", false);
+        assert!(!result.ends_with(".0"));
+    }
 }

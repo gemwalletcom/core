@@ -360,7 +360,7 @@ mod tests {
 
     #[test]
     fn test_batch_positional_mapping() {
-        let calls = vec![
+        let calls = [
             JsonRpcCall {
                 jsonrpc: "2.0".to_string(),
                 method: "method_a".to_string(),

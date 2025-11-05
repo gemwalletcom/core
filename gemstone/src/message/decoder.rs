@@ -10,8 +10,7 @@ use super::{
     sign_type::{SignDigestType, SignMessage},
 };
 use crate::GemstoneError;
-use ::signer::SUI_PERSONAL_MESSAGE_SIGNATURE_LEN;
-use gem_evm::eip712::eip712_hash_message;
+use ::signer::{SUI_PERSONAL_MESSAGE_SIGNATURE_LEN, hash_eip712};
 const SIGNATURE_LENGTH: usize = 65;
 const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
 const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
@@ -73,13 +72,10 @@ impl SignMessageDecoder {
         match self.message.sign_type {
             SignDigestType::Sign => self.message.data.clone(),
             SignDigestType::Eip191 => eip191_hash_message(&self.message.data).to_vec(),
-            SignDigestType::Eip712 => {
-                if let Ok(value) = serde_json::from_slice(&self.message.data) {
-                    eip712_hash_message(value).unwrap_or_default()
-                } else {
-                    Vec::new()
-                }
-            }
+            SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
+                Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
+                Err(_) => Vec::new(),
+            },
             SignDigestType::Base58 => {
                 if let Ok(decoded) = bs58::decode(&self.message.data).into_vec() {
                     return decoded;
@@ -284,10 +280,9 @@ mod tests {
     #[test]
     fn test_eip712_hash() {
         let json_str = include_str!("./test/eip712_seaport.json");
-        let json = serde_json::json!(json_str);
-        let hash = eip712_hash_message(json).unwrap();
+        let hash = hash_eip712(json_str).unwrap();
 
-        assert_eq!(hex::encode(&hash), "0b8aa9f3712df0034bc29fe5b24dd88cfdba02c7f499856ab24632e2969709a8",);
+        assert_eq!(hex::encode(hash), "0b8aa9f3712df0034bc29fe5b24dd88cfdba02c7f499856ab24632e2969709a8",);
 
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip712,
@@ -347,6 +342,18 @@ mod tests {
                 }],
             })
         );
+    }
+
+    #[test]
+    fn test_eip712_hyperliquid_approve_agent_hash() {
+        let json_str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json"));
+        let decoder = SignMessageDecoder::new(SignMessage {
+            sign_type: SignDigestType::Eip712,
+            data: json_str.as_bytes().to_vec(),
+        });
+
+        let digest = decoder.hash();
+        assert_eq!(hex::encode(digest), "480af9fd3cdc70c2f8a521388be13620d16a0f643d9cffdfbb65cd019cc27537");
     }
 
     #[test]

@@ -9,3 +9,5 @@ CREATE TABLE prices_assets (
 );
 
 SELECT diesel_manage_updated_at('prices_assets');
+
+CREATE INDEX prices_assets_price_id_idx ON prices_assets (price_id);

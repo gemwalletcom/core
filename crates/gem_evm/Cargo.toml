@@ -16,6 +16,7 @@ serde_serializers = { path = "../serde_serializers" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
 gem_bsc = { path = "../gem_bsc" }
+signer = { path = "../signer" }
 
 hex = { workspace = true }
 alloy-primitives = { workspace = true }

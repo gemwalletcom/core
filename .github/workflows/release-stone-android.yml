@@ -14,12 +14,14 @@ env:
   CARGO_TERM_COLOR: always
   SCCACHE_GHA_ENABLED: "true"
   RUSTC_WRAPPER: "sccache"
+  BUILD_MODE: "release"
 
 jobs:
   publish_gpr:
     runs-on: ubuntu-latest
     env:
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.1.13356709
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.1.13356709
     steps:
       - name: Set version tag
         run: |
@@ -59,11 +61,14 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.8
 
       - name: Install just
-        run: sudo apt install just
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just
 
       - name: Build Android Bindings
         run: |
-          just --unstable install-android-targets && just --unstable bindgen-kotlin
+          just --unstable install-android-targets
+          just --unstable bindgen-kotlin
         working-directory: gemstone
 
       - name: Publish to Github Packages

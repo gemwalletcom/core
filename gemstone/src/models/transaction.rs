@@ -2,10 +2,11 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualReduceData,
-    PerpetualType, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
-    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
-    TransferDataOutputType, WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
+    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
+    TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64,
+    WalletConnectionSessionAppMetadata,
+    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
 use swap::{GemApprovalData, GemSwapData};
@@ -187,6 +188,34 @@ pub struct PerpetualConfirmData {
 }
 
 #[uniffi::remote(Record)]
+pub struct CancelOrderData {
+    pub asset_index: i32,
+    pub order_id: u64,
+}
+
+#[uniffi::remote(Record)]
+pub struct TPSLOrderData {
+    pub direction: PerpetualDirection,
+    pub take_profit: Option<String>,
+    pub stop_loss: Option<String>,
+    pub size: String,
+}
+
+#[uniffi::remote(Enum)]
+pub enum PerpetualModifyPositionType {
+    Tpsl(TPSLOrderData),
+    Cancel(Vec<CancelOrderData>),
+}
+
+#[uniffi::remote(Record)]
+pub struct PerpetualModifyConfirmData {
+    pub base_asset: Asset,
+    pub asset_index: i32,
+    pub modify_types: Vec<PerpetualModifyPositionType>,
+    pub take_profit_order_id: Option<UInt64>,
+    pub stop_loss_order_id: Option<UInt64>,
+}
+#[uniffi::remote(Record)]
 pub struct PerpetualReduceData {
     pub data: PerpetualConfirmData,
     pub position_direction: PerpetualDirection,
@@ -198,6 +227,7 @@ pub type GemPerpetualType = PerpetualType;
 pub enum PerpetualType {
     Open(PerpetualConfirmData),
     Close(PerpetualConfirmData),
+    Modify(PerpetualModifyConfirmData),
     Increase(PerpetualConfirmData),
     Reduce(PerpetualReduceData),
 }

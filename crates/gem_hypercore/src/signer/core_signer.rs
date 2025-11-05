@@ -2,23 +2,27 @@ use ::signer::Signer;
 use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualDirection, PerpetualType, SignerError, TransactionInputType, TransactionLoadInput,
-    TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
+    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualType,
+    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::core::{
-    actions::{
-        ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, PlaceOrder, SetReferrer, SpotSend, TokenDelegate, WithdrawalRequest, make_market_order,
+use crate::{
+    core::{
+        actions::{
+            ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, Cancel, CancelOrder, PlaceOrder, SetReferrer, SpotSend, TokenDelegate,
+            WithdrawalRequest, make_market_order, make_position_tp_sl,
+        },
+        hypercore::{
+            approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data, place_order_typed_data,
+            send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
+        },
     },
-    hypercore::{
-        approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, place_order_typed_data,
-        send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
-    },
+    is_spot_swap,
+    models::timestamp::TimestampField,
 };
-use crate::models::timestamp::TimestampField;
 
 const AGENT_NAME_PREFIX: &str = "gemwallet_";
 const REFERRAL_CODE: &str = "GEMWALLET";
@@ -46,6 +50,16 @@ impl HyperCoreSigner {
 
     fn sign_swap_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
         let swap_data = extract_swap_data(&input.input_type)?;
+
+        if let TransactionInputType::Swap(from_asset, to_asset, _) = &input.input_type
+            && is_spot_swap(from_asset.chain(), to_asset.chain())
+        {
+            let order: PlaceOrder = serde_json::from_str(&swap_data.data.data)?;
+            let nonce = Self::timestamp_ms();
+            let signature = self.sign_place_order(order, nonce, private_key)?;
+            return Ok(vec![signature]);
+        }
+
         let signature = self.sign_typed_action(&swap_data.data.data, private_key)?;
         Ok(vec![signature])
     }
@@ -101,7 +115,7 @@ impl HyperCoreSigner {
             transactions.push(self.sign_approve_builder_address(private_key, BUILDER_ADDRESS, order.builder_fee_bps, timestamp_incrementer.next_val())?);
         }
 
-        transactions.push(self.sign_market_message(perpetual_type, agent_key.as_slice(), builder, timestamp_incrementer.next_val())?);
+        transactions.extend(self.sign_market_message(perpetual_type, agent_key.as_slice(), builder.as_ref(), &mut timestamp_incrementer)?);
 
         Ok(transactions)
     }
@@ -158,25 +172,70 @@ impl HyperCoreSigner {
         self.sign_serialized_action(delegate, timestamp, private_key, token_delegate_typed_data, "token delegate")
     }
 
-    fn sign_market_message(&self, perpetual_type: &PerpetualType, agent_key: &[u8], builder: Option<Builder>, timestamp: u64) -> SignerResult<String> {
+    fn sign_market_message(
+        &self,
+        perpetual_type: &PerpetualType,
+        agent_key: &[u8],
+        builder: Option<&Builder>,
+        timestamp_incrementer: &mut NumberIncrementer,
+    ) -> SignerResult<Vec<String>> {
         let (data, is_open) = match perpetual_type {
+            PerpetualType::Modify(modify_data) => return self.sign_modify_orders(modify_data, agent_key, builder, timestamp_incrementer),
             PerpetualType::Open(data) | PerpetualType::Increase(data) => (data, true),
             PerpetualType::Close(data) => (data, false),
             PerpetualType::Reduce(reduce_data) => (&reduce_data.data, false),
         };
 
+        let order = Self::market_order_from_confirm_data(data, is_open, builder);
+        Ok(vec![self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)?])
+    }
+
+    fn sign_modify_orders(
+        &self,
+        modify_data: &PerpetualModifyConfirmData,
+        agent_key: &[u8],
+        builder: Option<&Builder>,
+        timestamp_incrementer: &mut NumberIncrementer,
+    ) -> SignerResult<Vec<String>> {
+        modify_data
+            .modify_types
+            .iter()
+            .map(|modify_type| match modify_type {
+                PerpetualModifyPositionType::Cancel(orders) => {
+                    let cancels = orders.iter().map(|o| CancelOrder::new(o.asset_index as u32, o.order_id)).collect();
+                    self.sign_cancel_order(Cancel::new(cancels), timestamp_incrementer.next_val(), agent_key)
+                }
+                PerpetualModifyPositionType::Tpsl(tpsl) => {
+                    let order = make_position_tp_sl(
+                        modify_data.asset_index as u32,
+                        tpsl.direction == PerpetualDirection::Long,
+                        &tpsl.size,
+                        tpsl.take_profit.clone(),
+                        tpsl.stop_loss.clone(),
+                        builder.cloned(),
+                    );
+                    self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)
+                }
+            })
+            .collect()
+    }
+
+    fn market_order_from_confirm_data(data: &PerpetualConfirmData, is_open: bool, builder: Option<&Builder>) -> PlaceOrder {
         let is_buy = if is_open {
-            matches!(data.direction, PerpetualDirection::Long)
+            data.direction == PerpetualDirection::Long
         } else {
-            matches!(data.direction, PerpetualDirection::Short)
+            data.direction == PerpetualDirection::Short
         };
 
-        let order = make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder);
-        self.sign_place_order(order, timestamp, agent_key)
+        make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder.cloned())
     }
 
     fn sign_place_order(&self, order: PlaceOrder, nonce: u64, private_key: &[u8]) -> SignerResult<String> {
         self.sign_serialized_action(order, nonce, private_key, |value| place_order_typed_data(value, nonce), "place order")
+    }
+
+    fn sign_cancel_order(&self, cancel: Cancel, nonce: u64, private_key: &[u8]) -> SignerResult<String> {
+        self.sign_serialized_action(cancel, nonce, private_key, |value| cancel_order_typed_data(value, nonce), "cancel order")
     }
 
     fn sign_action(&self, typed_data: &str, action: &str, timestamp: u64, private_key: &[u8]) -> SignerResult<String> {
@@ -317,4 +376,51 @@ fn get_builder(builder: &str, fee: i32) -> Result<Builder, SignerError> {
 
 fn fee_rate(tenths_bps: u32) -> String {
     format!("{}%", (tenths_bps as f64) * 0.001)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn market_order_from_open_long_sets_buy() {
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Long, 11);
+        let builder = Builder {
+            builder_address: "0xdeadbeef".to_string(),
+            fee: 25,
+        };
+
+        let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, Some(&builder));
+
+        assert_eq!(order.orders.len(), 1);
+        let market_order = &order.orders[0];
+        assert!(market_order.is_buy);
+        assert!(!market_order.reduce_only);
+        assert_eq!(market_order.asset, data.asset_index as u32);
+        assert_eq!(market_order.size, data.size);
+
+        let cloned_builder = order.builder.expect("builder should be propagated");
+        assert_eq!(cloned_builder.builder_address, builder.builder_address);
+        assert_eq!(cloned_builder.fee, builder.fee);
+    }
+
+    #[test]
+    fn market_order_from_close_short_sets_sell_and_reduce_only() {
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 5);
+        let order = HyperCoreSigner::market_order_from_confirm_data(&data, false, None);
+
+        let market_order = &order.orders[0];
+        assert!(market_order.is_buy);
+        assert!(market_order.reduce_only);
+    }
+
+    #[test]
+    fn market_order_from_open_short_sets_sell() {
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 9);
+        let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, None);
+
+        let market_order = &order.orders[0];
+        assert!(!market_order.is_buy);
+        assert!(!market_order.reduce_only);
+    }
 }
