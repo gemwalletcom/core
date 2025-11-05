@@ -19,3 +19,5 @@ CREATE TABLE prices (
 );
 
 SELECT diesel_manage_updated_at('prices');
+
+CREATE INDEX prices_market_cap_idx ON prices (market_cap DESC);
