@@ -3,6 +3,14 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "lowercase")]
+pub enum WalletSource {
+    Create,
+    Import,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub struct Wallet {
     pub id: String,
@@ -16,6 +24,7 @@ pub struct Wallet {
     pub is_pinned: bool,
     #[serde(rename = "imageUrl")]
     pub image_url: Option<String>,
+    pub source: WalletSource,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
