@@ -33,11 +33,11 @@ jobs:
           sudo apt-get install -y just
 
       - name: Run tests
-        run: just test-all
+        run: just --unstable test-all
 
       - name: Build all integration tests only
         run: |
-          just build-integration-tests
+          just --unstable build-integration-tests
 
       - name: Check gemstone dependencies
         run: |

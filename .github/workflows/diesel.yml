@@ -52,7 +52,7 @@ jobs:
           sudo apt-get install -y just
       
       - name: Install diesel
-        run: just install-diesel
+        run: just --unstable install-diesel
 
       - name: Run migration
         run: |

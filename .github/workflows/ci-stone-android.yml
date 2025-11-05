@@ -62,5 +62,5 @@ jobs:
           BUILD_MODE: release
         run: |
           df -h
-          just install-android-targets
-          just build-android
+          just --unstable install-android-targets
+          just --unstable build-android
