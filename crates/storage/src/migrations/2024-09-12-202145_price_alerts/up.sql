@@ -17,3 +17,5 @@ CREATE TABLE IF NOT EXISTS price_alerts (
 );
 
 SELECT diesel_manage_updated_at('price_alerts');
+
+CREATE INDEX price_alerts_asset_id_idx ON price_alerts (asset_id);
