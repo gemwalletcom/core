@@ -70,6 +70,7 @@ export FW_FFI_NAME := FW_NAME + "FFI"
 export FW_FFI_FILE := FW_FFI_NAME + ".framework"
 export XC_FW_FFI_NAME := FW_FFI_NAME + ".xcframework"
 export DEPLOYMENT_TARGET := env_var_or_default("IPHONEOS_DEPLOYMENT_TARGET", "17.0")
+export LIB_OUTPUT_PATH := TARGET_DIR + "/" + BUILD_MODE_TARGET + "/" + DY_LIB_NAME
 
 build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
 
@@ -87,7 +88,7 @@ bindgen-swift:
     echo "Bindgen swift $STATIC_LIB_NAME"
     mkdir -p ${GEN_SWIFT_FOLDER}
     cargo build ${BUILD_FLAG}
-    cargo run -p uniffi-bindgen generate --library --language swift --crate ${LIB_NAME} ${TARGET_DIR}/${BUILD_MODE_TARGET}/${DY_LIB_NAME} -o ${GEN_SWIFT_FOLDER}
+    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language swift --crate ${LIB_NAME} "${LIB_OUTPUT_PATH}" -o ${GEN_SWIFT_FOLDER}
 
 assemble-frameworks:
     #!/usr/bin/env bash
@@ -133,7 +134,7 @@ bindgen-kotlin:
     mkdir -p ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}
     cargo ndk-env
     cargo build ${BUILD_FLAG}
-    cargo run -p uniffi-bindgen generate --library --language kotlin --crate ${LIB_NAME} ${TARGET_DIR}/${BUILD_MODE_TARGET}/${DY_LIB_NAME} -o ${GEN_KOTLIN_FOLDER}
+    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language kotlin --crate ${LIB_NAME} "${LIB_OUTPUT_PATH}" -o ${GEN_KOTLIN_FOLDER}
     cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi ${ANDROID_MODULE_FOLDER}
 
 build-android: bindgen-kotlin
