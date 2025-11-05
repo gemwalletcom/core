@@ -50,12 +50,16 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.8
 
       - name: Install just
-        run: sudo apt install just
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y just
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
 
       - name: Build Android Bindings
+        env:
+          BUILD_MODE: release
         run: |
           df -h
           just --unstable install-android-targets

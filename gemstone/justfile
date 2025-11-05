@@ -70,8 +70,6 @@ export FW_FFI_NAME := FW_NAME + "FFI"
 export FW_FFI_FILE := FW_FFI_NAME + ".framework"
 export XC_FW_FFI_NAME := FW_FFI_NAME + ".xcframework"
 export DEPLOYMENT_TARGET := env_var_or_default("IPHONEOS_DEPLOYMENT_TARGET", "17.0")
-export LIB_OUTPUT_PATH := TARGET_DIR + "/" + BUILD_MODE_TARGET + "/" + DY_LIB_NAME
-
 build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
 
 build-targets:
@@ -87,8 +85,16 @@ bindgen-swift:
     #!/usr/bin/env bash
     echo "Bindgen swift $STATIC_LIB_NAME"
     mkdir -p ${GEN_SWIFT_FOLDER}
+    if [ "${BUILD_MODE_TARGET}" == "release" ]; then \
+        export RUSTFLAGS="${RUSTFLAGS:-} -C strip=none"; \
+    fi
     cargo build ${BUILD_FLAG}
-    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language swift --crate ${LIB_NAME} "${LIB_OUTPUT_PATH}" -o ${GEN_SWIFT_FOLDER}
+    LIB_PATH=$(find "${TARGET_DIR}" -type f -name "${DY_LIB_NAME}" -path "*/${BUILD_MODE_TARGET}/${DY_LIB_NAME}" | head -n 1); \
+    if [ -z "${LIB_PATH}" ]; then \
+        echo "Failed to locate ${DY_LIB_NAME} in ${TARGET_DIR} (mode ${BUILD_MODE_TARGET})"; \
+        exit 1; \
+    fi; \
+    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language swift --crate ${LIB_NAME} "${LIB_PATH}" -o ${GEN_SWIFT_FOLDER}
 
 assemble-frameworks:
     #!/usr/bin/env bash
@@ -133,8 +139,16 @@ bindgen-kotlin:
     rm -rf ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}/uniffi
     mkdir -p ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}
     cargo ndk-env
+    if [ "${BUILD_MODE_TARGET}" == "release" ]; then \
+        export RUSTFLAGS="${RUSTFLAGS:-} -C strip=none"; \
+    fi
     cargo build ${BUILD_FLAG}
-    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language kotlin --crate ${LIB_NAME} "${LIB_OUTPUT_PATH}" -o ${GEN_KOTLIN_FOLDER}
+    LIB_PATH=$(find "${TARGET_DIR}" -type f -name "${DY_LIB_NAME}" -path "*/${BUILD_MODE_TARGET}/${DY_LIB_NAME}" | head -n 1); \
+    if [ -z "${LIB_PATH}" ]; then \
+        echo "Failed to locate ${DY_LIB_NAME} in ${TARGET_DIR} (mode ${BUILD_MODE_TARGET})"; \
+        exit 1; \
+    fi; \
+    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language kotlin --crate ${LIB_NAME} "${LIB_PATH}" -o ${GEN_KOTLIN_FOLDER}
     cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi ${ANDROID_MODULE_FOLDER}
 
 build-android: bindgen-kotlin
