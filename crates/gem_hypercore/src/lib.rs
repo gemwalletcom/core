@@ -8,6 +8,9 @@ pub mod rpc;
 #[cfg(feature = "signer")]
 pub mod signer;
 
+#[cfg(any(test, feature = "testkit"))]
+pub mod testkit;
+
 use primitives::Chain;
 
 pub fn is_bridge_swap(from_chain: Chain, to_chain: Chain) -> bool {

@@ -107,54 +107,6 @@ pub struct Builder {
     pub fee: u32, // tenths of a basis point , 10 means 1bp
 }
 
-// https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size
-fn calculate_execution_price(trigger_px: &str, add_slippage: bool) -> String {
-    let trigger: f64 = trigger_px.parse().unwrap_or(0.0);
-    let execution_price = if add_slippage {
-        trigger * (1.0 + SLIPPAGE_BUFFER_PERCENT)
-    } else {
-        trigger * (1.0 - SLIPPAGE_BUFFER_PERCENT)
-    };
-
-    // Round to 5 significant figures (max allowed by Hyperliquid)
-    if execution_price != 0.0 && execution_price.is_finite() {
-        let magnitude = execution_price.abs().log10().floor();
-        let scale = 10_f64.powf(4.0 - magnitude);
-        let rounded = (execution_price * scale).round() / scale;
-        format!("{rounded:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
-    } else {
-        format!("{execution_price:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
-    }
-}
-
-pub fn make_market_order_type() -> OrderType {
-    OrderType::Limit {
-        limit: LimitOrder::new(TimeInForce::FrontendMarket),
-    }
-}
-
-pub fn make_market_trigger_order_type(trigger_px: String, tpsl: TpslType) -> OrderType {
-    OrderType::Trigger {
-        trigger: Trigger {
-            is_market: true,
-            trigger_px,
-            tpsl,
-        },
-    }
-}
-
-pub fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, trigger_px: String, tpsl: TpslType) -> Order {
-    Order {
-        asset,
-        is_buy,
-        price: price.to_string(),
-        size: size.to_string(),
-        reduce_only,
-        order_type: make_market_trigger_order_type(trigger_px, tpsl),
-        client_order_id: None,
-    }
-}
-
 pub fn make_market_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, builder: Option<Builder>) -> PlaceOrder {
     PlaceOrder::new(
         vec![Order {
@@ -170,6 +122,10 @@ pub fn make_market_order(asset: u32, is_buy: bool, price: &str, size: &str, redu
         builder,
     )
 }
+
+// Market orders: add slippage
+// Position orders: subtract slippage
+// TP/SL orders are always reduce_only=true
 
 pub fn make_market_with_tp_sl(
     asset: u32,
@@ -191,30 +147,12 @@ pub fn make_market_with_tp_sl(
         client_order_id: None,
     }];
 
-    if let Some(sl_trigger_px) = sl_trigger {
-        let sl_execution_price = calculate_execution_price(&sl_trigger_px, true); // Market orders: add slippage
-        orders.push(make_trigger_order(
-            asset,
-            !is_buy,
-            &sl_execution_price,
-            size,
-            true, // TP/SL orders are always reduce_only=true
-            sl_trigger_px,
-            TpslType::StopLoss,
-        ));
+    if let Some(sl_trigger) = sl_trigger {
+        orders.push(make_tpsl_order(asset, is_buy, size, sl_trigger, TpslType::StopLoss, true));
     }
 
-    if let Some(tp_trigger_px) = tp_trigger {
-        let tp_execution_price = calculate_execution_price(&tp_trigger_px, true); // Market orders: add slippage
-        orders.push(make_trigger_order(
-            asset,
-            !is_buy,
-            &tp_execution_price,
-            size,
-            true, // TP/SL orders are always reduce_only=true
-            tp_trigger_px,
-            TpslType::TakeProfit,
-        ));
+    if let Some(tp_trigger) = tp_trigger {
+        orders.push(make_tpsl_order(asset, is_buy, size, tp_trigger, TpslType::TakeProfit, true));
     }
 
     PlaceOrder::new(orders, Grouping::NormalTpsl, builder)
@@ -230,33 +168,68 @@ pub fn make_position_tp_sl(
 ) -> PlaceOrder {
     let mut orders = Vec::new();
 
-    if let Some(sl_trigger_px) = sl_trigger {
-        let sl_execution_price = calculate_execution_price(&sl_trigger_px, false); // Position orders: subtract slippage
-        orders.push(make_trigger_order(
-            asset,
-            !is_buy,
-            &sl_execution_price,
-            size,
-            true,
-            sl_trigger_px,
-            TpslType::StopLoss,
-        ));
+    if let Some(sl_trigger) = sl_trigger {
+        orders.push(make_tpsl_order(asset, is_buy, size, sl_trigger, TpslType::StopLoss, false));
     }
 
-    if let Some(tp_trigger_px) = tp_trigger {
-        let tp_execution_price = calculate_execution_price(&tp_trigger_px, false); // Position orders: subtract slippage
-        orders.push(make_trigger_order(
-            asset,
-            !is_buy,
-            &tp_execution_price,
-            size,
-            true,
-            tp_trigger_px,
-            TpslType::TakeProfit,
-        ));
+    if let Some(tp_trigger) = tp_trigger {
+        orders.push(make_tpsl_order(asset, is_buy, size, tp_trigger, TpslType::TakeProfit, false));
     }
 
     PlaceOrder::new(orders, Grouping::PositionTpsl, builder)
+}
+
+fn calculate_execution_price(trigger_px: &str, add_slippage: bool) -> String {
+    let trigger: f64 = trigger_px.parse().unwrap_or(0.0);
+    let execution_price = if add_slippage {
+        trigger * (1.0 + SLIPPAGE_BUFFER_PERCENT)
+    } else {
+        trigger * (1.0 - SLIPPAGE_BUFFER_PERCENT)
+    };
+
+    // Round to 5 significant figures (max allowed by Hyperliquid)
+    // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size
+    if execution_price != 0.0 && execution_price.is_finite() {
+        let magnitude = execution_price.abs().log10().floor();
+        let scale = 10_f64.powf(4.0 - magnitude);
+        let rounded = (execution_price * scale).round() / scale;
+        format!("{rounded:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
+    } else {
+        format!("{execution_price:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
+    }
+}
+
+fn make_market_order_type() -> OrderType {
+    OrderType::Limit {
+        limit: LimitOrder::new(TimeInForce::FrontendMarket),
+    }
+}
+
+fn make_trigger_order_type(trigger_px: String, tpsl: TpslType) -> OrderType {
+    OrderType::Trigger {
+        trigger: Trigger {
+            is_market: true,
+            trigger_px,
+            tpsl,
+        },
+    }
+}
+
+fn make_tpsl_order(asset: u32, is_buy: bool, size: &str, trigger: String, tpsl_type: TpslType, add_slippage: bool) -> Order {
+    let price = calculate_execution_price(&trigger, add_slippage);
+    make_trigger_order(asset, !is_buy, &price, size, true, trigger, tpsl_type)
+}
+
+fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, trigger_px: String, tpsl: TpslType) -> Order {
+    Order {
+        asset,
+        is_buy,
+        price: price.to_string(),
+        size: size.to_string(),
+        reduce_only,
+        order_type: make_trigger_order_type(trigger_px, tpsl),
+        client_order_id: None,
+    }
 }
 
 #[cfg(test)]
@@ -292,5 +265,36 @@ mod tests {
     fn test_calculate_execution_price_trims_trailing_zeros() {
         let result = calculate_execution_price("100", false);
         assert!(!result.ends_with(".0"));
+    }
+
+    #[test]
+    fn test_make_market_with_tp_sl_market_orders() {
+        let result = make_market_with_tp_sl(1, true, "100", "1.0", false, Some("110".to_string()), Some("95".to_string()), None);
+
+        assert_eq!(result.orders.len(), 3);
+        assert_eq!(result.grouping, Grouping::NormalTpsl);
+        assert_eq!(result.orders[2].price, "118.8");
+        assert_eq!(result.orders[1].price, "102.6");
+    }
+
+    #[test]
+    fn test_make_position_tp_sl_market_orders() {
+        let result = make_position_tp_sl(1, true, "1.0", Some("110".to_string()), Some("95".to_string()), None);
+
+        assert_eq!(result.orders.len(), 2);
+        assert_eq!(result.grouping, Grouping::PositionTpsl);
+        assert_eq!(result.orders[1].price, "101.2");
+        assert_eq!(result.orders[0].price, "87.4");
+    }
+
+    #[test]
+    fn test_make_market_with_tp_sl_short_position() {
+        let result = make_market_with_tp_sl(1, false, "100", "2.5", false, Some("90".to_string()), Some("105".to_string()), None);
+
+        assert_eq!(result.orders.len(), 3);
+        assert!(!result.orders[0].is_buy);
+        assert_eq!(result.orders[0].size, "2.5");
+        assert_eq!(result.orders[2].price, "97.2");
+        assert_eq!(result.orders[1].price, "113.4");
     }
 }

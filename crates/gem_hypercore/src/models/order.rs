@@ -23,6 +23,8 @@ pub struct OpenOrder {
     pub oid: UInt64,
     #[serde(deserialize_with = "serde_serializers::deserialize_option_f64_from_str")]
     pub trigger_px: Option<f64>,
+    #[serde(deserialize_with = "serde_serializers::deserialize_option_f64_from_str")]
+    pub limit_px: Option<f64>,
     pub is_position_tpsl: bool,
     pub order_type: String,
 }

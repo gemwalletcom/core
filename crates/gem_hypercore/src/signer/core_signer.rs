@@ -2,8 +2,8 @@ use ::signer::Signer;
 use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualType,
-    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
+    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType,
+    PerpetualType, SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -16,8 +16,8 @@ use crate::{
             WithdrawalRequest, make_market_order, make_position_tp_sl,
         },
         hypercore::{
-            approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data, place_order_typed_data,
-            send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
+            approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data,
+            place_order_typed_data, send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
         },
     },
     is_spot_swap,
