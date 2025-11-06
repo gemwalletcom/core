@@ -211,8 +211,6 @@ impl HyperCoreSigner {
                         tpsl.direction == PerpetualDirection::Long,
                         &tpsl.size,
                         tpsl.take_profit.clone(),
-                        tpsl.take_profit.clone(),
-                        tpsl.stop_loss.clone(),
                         tpsl.stop_loss.clone(),
                         builder.cloned(),
                     );

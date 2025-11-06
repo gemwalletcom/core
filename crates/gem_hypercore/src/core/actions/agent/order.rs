@@ -134,9 +134,7 @@ pub fn make_market_with_tp_sl(
     size: &str,
     reduce_only: bool,
     tp_trigger: Option<String>,
-    tp_limit: Option<String>,
     sl_trigger: Option<String>,
-    sl_limit: Option<String>,
     builder: Option<Builder>,
 ) -> PlaceOrder {
     let mut orders = vec![Order {
@@ -150,11 +148,11 @@ pub fn make_market_with_tp_sl(
     }];
 
     if let Some(sl_trigger) = sl_trigger {
-        orders.push(make_tpsl_order(asset, is_buy, size, sl_trigger, sl_limit, TpslType::StopLoss, true));
+        orders.push(make_tpsl_order(asset, is_buy, size, sl_trigger, TpslType::StopLoss, true));
     }
 
     if let Some(tp_trigger) = tp_trigger {
-        orders.push(make_tpsl_order(asset, is_buy, size, tp_trigger, tp_limit, TpslType::TakeProfit, true));
+        orders.push(make_tpsl_order(asset, is_buy, size, tp_trigger, TpslType::TakeProfit, true));
     }
 
     PlaceOrder::new(orders, Grouping::NormalTpsl, builder)
@@ -165,19 +163,17 @@ pub fn make_position_tp_sl(
     is_buy: bool,
     size: &str,
     tp_trigger: Option<String>,
-    tp_limit: Option<String>,
     sl_trigger: Option<String>,
-    sl_limit: Option<String>,
     builder: Option<Builder>,
 ) -> PlaceOrder {
     let mut orders = Vec::new();
 
     if let Some(sl_trigger) = sl_trigger {
-        orders.push(make_tpsl_order(asset, is_buy, size, sl_trigger, sl_limit, TpslType::StopLoss, false));
+        orders.push(make_tpsl_order(asset, is_buy, size, sl_trigger, TpslType::StopLoss, false));
     }
 
     if let Some(tp_trigger) = tp_trigger {
-        orders.push(make_tpsl_order(asset, is_buy, size, tp_trigger, tp_limit, TpslType::TakeProfit, false));
+        orders.push(make_tpsl_order(asset, is_buy, size, tp_trigger, TpslType::TakeProfit, false));
     }
 
     PlaceOrder::new(orders, Grouping::PositionTpsl, builder)
@@ -209,27 +205,29 @@ fn make_market_order_type() -> OrderType {
     }
 }
 
-fn make_trigger_order_type(trigger_px: String, tpsl: TpslType, is_market: bool) -> OrderType {
+fn make_trigger_order_type(trigger_px: String, tpsl: TpslType) -> OrderType {
     OrderType::Trigger {
-        trigger: Trigger { is_market, trigger_px, tpsl },
+        trigger: Trigger {
+            is_market: true,
+            trigger_px,
+            tpsl,
+        },
     }
 }
 
-fn make_tpsl_order(asset: u32, is_buy: bool, size: &str, trigger: String, limit: Option<String>, tpsl_type: TpslType, add_slippage: bool) -> Order {
-    let is_market = limit.is_none();
-    let price = limit.unwrap_or_else(|| calculate_execution_price(&trigger, add_slippage));
-
-    make_trigger_order(asset, !is_buy, &price, size, true, trigger, tpsl_type, is_market)
+fn make_tpsl_order(asset: u32, is_buy: bool, size: &str, trigger: String, tpsl_type: TpslType, add_slippage: bool) -> Order {
+    let price = calculate_execution_price(&trigger, add_slippage);
+    make_trigger_order(asset, !is_buy, &price, size, true, trigger, tpsl_type)
 }
 
-fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, trigger_px: String, tpsl: TpslType, is_market: bool) -> Order {
+fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, trigger_px: String, tpsl: TpslType) -> Order {
     Order {
         asset,
         is_buy,
         price: price.to_string(),
         size: size.to_string(),
         reduce_only,
-        order_type: make_trigger_order_type(trigger_px, tpsl, is_market),
+        order_type: make_trigger_order_type(trigger_px, tpsl),
         client_order_id: None,
     }
 }
@@ -270,83 +268,33 @@ mod tests {
     }
 
     #[test]
-    fn test_make_market_with_tp_sl_limit_orders() {
-        let result = make_market_with_tp_sl(
-            1,
-            true,
-            "100",
-            "1.0",
-            false,
-            Some("110".to_string()),
-            Some("110.5".to_string()),
-            Some("95".to_string()),
-            Some("94.5".to_string()),
-            None,
-        );
+    fn test_make_market_with_tp_sl_market_orders() {
+        let result = make_market_with_tp_sl(1, true, "100", "1.0", false, Some("110".to_string()), Some("95".to_string()), None);
 
         assert_eq!(result.orders.len(), 3);
         assert_eq!(result.grouping, Grouping::NormalTpsl);
-        assert_eq!(result.orders[2].price, "110.5");
-        assert!(!result.orders[2].is_buy);
-        assert_eq!(result.orders[1].price, "94.5");
-    }
-
-    #[test]
-    fn test_make_market_with_tp_sl_market_orders() {
-        let result = make_market_with_tp_sl(1, true, "100", "1.0", false, Some("110".to_string()), None, Some("95".to_string()), None, None);
-
-        assert_eq!(result.orders.len(), 3);
         assert_eq!(result.orders[2].price, "118.8");
         assert_eq!(result.orders[1].price, "102.6");
     }
 
     #[test]
-    fn test_make_position_tp_sl_limit_orders() {
-        let result = make_position_tp_sl(
-            1,
-            true,
-            "1.0",
-            Some("110".to_string()),
-            Some("110.5".to_string()),
-            Some("95".to_string()),
-            Some("94.5".to_string()),
-            None,
-        );
+    fn test_make_position_tp_sl_market_orders() {
+        let result = make_position_tp_sl(1, true, "1.0", Some("110".to_string()), Some("95".to_string()), None);
 
         assert_eq!(result.orders.len(), 2);
         assert_eq!(result.grouping, Grouping::PositionTpsl);
-        assert_eq!(result.orders[1].price, "110.5");
-        assert_eq!(result.orders[0].price, "94.5");
-    }
-
-    #[test]
-    fn test_make_position_tp_sl_market_orders() {
-        let result = make_position_tp_sl(1, true, "1.0", Some("110".to_string()), None, Some("95".to_string()), None, None);
-
-        assert_eq!(result.orders.len(), 2);
         assert_eq!(result.orders[1].price, "101.2");
         assert_eq!(result.orders[0].price, "87.4");
     }
 
     #[test]
-    fn test_make_market_with_mixed_tp_sl() {
-        let result = make_market_with_tp_sl(
-            1,
-            false,
-            "100",
-            "2.5",
-            false,
-            Some("90".to_string()),
-            Some("89.5".to_string()),
-            Some("105".to_string()),
-            None,
-            None,
-        );
+    fn test_make_market_with_tp_sl_short_position() {
+        let result = make_market_with_tp_sl(1, false, "100", "2.5", false, Some("90".to_string()), Some("105".to_string()), None);
 
         assert_eq!(result.orders.len(), 3);
         assert!(!result.orders[0].is_buy);
         assert_eq!(result.orders[0].size, "2.5");
-        assert_eq!(result.orders[2].price, "89.5");
+        assert_eq!(result.orders[2].price, "97.2");
         assert_eq!(result.orders[1].price, "113.4");
     }
 }
