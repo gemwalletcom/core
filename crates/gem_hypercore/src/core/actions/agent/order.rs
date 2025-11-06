@@ -149,34 +149,12 @@ pub fn make_market_with_tp_sl(
         client_order_id: None,
     }];
 
-    if let Some(sl_trigger_px) = sl_trigger {
-        let is_market = sl_limit.is_none();
-        let price = sl_limit.unwrap_or_else(|| calculate_execution_price(&sl_trigger_px, true));
-        orders.push(make_trigger_order(
-            asset,
-            !is_buy,
-            &price,
-            size,
-            true,
-            sl_trigger_px,
-            TpslType::StopLoss,
-            is_market,
-        ));
+    if let Some(sl_trigger) = sl_trigger {
+        orders.push(make_tpsl_order(asset, is_buy, size, sl_trigger, sl_limit, TpslType::StopLoss, true));
     }
 
-    if let Some(tp_trigger_px) = tp_trigger {
-        let is_market = tp_limit.is_none();
-        let price = tp_limit.unwrap_or_else(|| calculate_execution_price(&tp_trigger_px, true));
-        orders.push(make_trigger_order(
-            asset,
-            !is_buy,
-            &price,
-            size,
-            true,
-            tp_trigger_px,
-            TpslType::TakeProfit,
-            is_market,
-        ));
+    if let Some(tp_trigger) = tp_trigger {
+        orders.push(make_tpsl_order(asset, is_buy, size, tp_trigger, tp_limit, TpslType::TakeProfit, true));
     }
 
     PlaceOrder::new(orders, Grouping::NormalTpsl, builder)
@@ -194,34 +172,12 @@ pub fn make_position_tp_sl(
 ) -> PlaceOrder {
     let mut orders = Vec::new();
 
-    if let Some(sl_trigger_px) = sl_trigger {
-        let is_market = sl_limit.is_none();
-        let price = sl_limit.unwrap_or_else(|| calculate_execution_price(&sl_trigger_px, false));
-        orders.push(make_trigger_order(
-            asset,
-            !is_buy,
-            &price,
-            size,
-            true,
-            sl_trigger_px,
-            TpslType::StopLoss,
-            is_market,
-        ));
+    if let Some(sl_trigger) = sl_trigger {
+        orders.push(make_tpsl_order(asset, is_buy, size, sl_trigger, sl_limit, TpslType::StopLoss, false));
     }
 
-    if let Some(tp_trigger_px) = tp_trigger {
-        let is_market = tp_limit.is_none();
-        let price = tp_limit.unwrap_or_else(|| calculate_execution_price(&tp_trigger_px, false));
-        orders.push(make_trigger_order(
-            asset,
-            !is_buy,
-            &price,
-            size,
-            true,
-            tp_trigger_px,
-            TpslType::TakeProfit,
-            is_market,
-        ));
+    if let Some(tp_trigger) = tp_trigger {
+        orders.push(make_tpsl_order(asset, is_buy, size, tp_trigger, tp_limit, TpslType::TakeProfit, false));
     }
 
     PlaceOrder::new(orders, Grouping::PositionTpsl, builder)
@@ -248,7 +204,7 @@ fn calculate_execution_price(trigger_px: &str, add_slippage: bool) -> String {
 }
 
 fn make_market_order_type() -> OrderType {
-OrderType::Limit {
+    OrderType::Limit {
         limit: LimitOrder::new(TimeInForce::FrontendMarket),
     }
 }
@@ -257,6 +213,13 @@ fn make_trigger_order_type(trigger_px: String, tpsl: TpslType, is_market: bool) 
     OrderType::Trigger {
         trigger: Trigger { is_market, trigger_px, tpsl },
     }
+}
+
+fn make_tpsl_order(asset: u32, is_buy: bool, size: &str, trigger: String, limit: Option<String>, tpsl_type: TpslType, add_slippage: bool) -> Order {
+    let is_market = limit.is_none();
+    let price = limit.unwrap_or_else(|| calculate_execution_price(&trigger, add_slippage));
+
+    make_trigger_order(asset, !is_buy, &price, size, true, trigger, tpsl_type, is_market)
 }
 
 fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, trigger_px: String, tpsl: TpslType, is_market: bool) -> Order {
