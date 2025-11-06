@@ -3,17 +3,11 @@ use crate::explorers::metadata::{ACCOUNT_PATH, Explorer, Metadata};
 
 pub struct SubScan;
 
-macro_rules! subscan_url {
-    ($chain:expr) => {
-        concat!("https://", $chain, ".subscan.io")
-    };
-}
-
 impl SubScan {
     pub fn new_polkadot() -> Box<dyn BlockExplorer> {
         Explorer::boxed(Metadata {
             name: "SubScan",
-            base_url: subscan_url!("polkadot"),
+            base_url: "https://assethub-polkadot.subscan.io",
             tx_path: "/extrinsic",
             address_path: ACCOUNT_PATH,
             token_path: None,
