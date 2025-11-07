@@ -140,11 +140,12 @@ where
 
         let approval: Option<ApprovalData> = {
             if from_asset.use_evm_router() {
+                let router_address = route_data.router_address.clone().ok_or(SwapperError::InvalidRoute)?;
                 let from_amount: U256 = value.to_string().parse().map_err(SwapperError::from)?;
                 check_approval_erc20(
                     quote.request.wallet_address.clone(),
                     from_asset.token_id.clone().unwrap(),
-                    route_data.router_address.clone().unwrap(),
+                    router_address,
                     from_amount,
                     self.rpc_provider.clone(),
                     &from_asset.chain.chain(),

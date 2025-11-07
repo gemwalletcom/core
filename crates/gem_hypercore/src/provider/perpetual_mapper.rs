@@ -560,38 +560,46 @@ mod tests {
     }
 
     #[test]
-    fn test_map_tp_sl_from_orders() {
-        use crate::models::order::OpenOrder;
+    fn test_map_tp_sl_from_orders_limit() {
+        use crate::testkit::*;
 
         let orders = vec![
-            OpenOrder {
-                coin: "HYPE".to_string(),
-                oid: 191395165138,
-                trigger_px: Some(35.0),
-                is_position_tpsl: true,
-                order_type: "Stop Limit".to_string(),
-            },
-            OpenOrder {
-                coin: "HYPE".to_string(),
-                oid: 191394991415,
-                trigger_px: Some(55.0),
-                is_position_tpsl: true,
-                order_type: "Take Profit Limit".to_string(),
-            },
+            OpenOrder::mock("HYPE", 191395165138, "Stop Limit", 35.0, Some(33.5)),
+            OpenOrder::mock("HYPE", 191394991415, "Take Profit Limit", 55.0, Some(56.0)),
         ];
 
         let (take_profit, stop_loss) = map_tp_sl_from_orders(&orders, "HYPE");
 
-        assert!(take_profit.is_some());
         let tp = take_profit.unwrap();
         assert_eq!(tp.price, 55.0);
         assert_eq!(tp.order_type, PerpetualOrderType::Limit);
         assert_eq!(tp.order_id, "191394991415");
 
-        assert!(stop_loss.is_some());
         let sl = stop_loss.unwrap();
         assert_eq!(sl.price, 35.0);
         assert_eq!(sl.order_type, PerpetualOrderType::Limit);
         assert_eq!(sl.order_id, "191395165138");
+    }
+
+    #[test]
+    fn test_map_tp_sl_from_orders_market() {
+        use crate::testkit::*;
+
+        let orders = vec![
+            OpenOrder::mock("BTC", 123456789, "Stop Market", 40000.0, None),
+            OpenOrder::mock("BTC", 987654321, "Take Profit Market", 60000.0, None),
+        ];
+
+        let (take_profit, stop_loss) = map_tp_sl_from_orders(&orders, "BTC");
+
+        let tp = take_profit.unwrap();
+        assert_eq!(tp.price, 60000.0);
+        assert_eq!(tp.order_type, PerpetualOrderType::Market);
+        assert_eq!(tp.order_id, "987654321");
+
+        let sl = stop_loss.unwrap();
+        assert_eq!(sl.price, 40000.0);
+        assert_eq!(sl.order_type, PerpetualOrderType::Market);
+        assert_eq!(sl.order_id, "123456789");
     }
 }

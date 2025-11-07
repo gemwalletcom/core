@@ -128,7 +128,7 @@ impl Chain {
             Self::Stellar => "Public Global Stellar Network ; September 2015",
             Self::Sonic => "146",
             Self::Algorand => "mainnet-v1.0",
-            Self::Polkadot => "Polkadot",
+            Self::Polkadot => "Polkadot Asset Hub",
             Self::Plasma => "9745",
             Self::Cardano => "764824073", // magic number from genesis configuration
             Self::Abstract => "2741",

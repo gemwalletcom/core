@@ -102,7 +102,8 @@ where
     let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
 
     let result: String = client.request(permit2_call).await.map_err(SwapperError::from)?;
-    let decoded = HexDecode(result).unwrap();
+    let decoded = HexDecode(result)
+        .map_err(|_| SwapperError::ABIError("failed to decode permit2 allowance result".into()))?;
     let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
 
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
