@@ -168,7 +168,7 @@ chains:
   algorand:
     url: https://mainnet-api.algonode.cloud
   polkadot:
-    url: https://polkadot-public-sidecar.parity-chains.parity.io
+    url: https://polkadot-asset-hub-public-sidecar.parity-chains.parity.io
   cardano:
     url: ""
   abstract:
