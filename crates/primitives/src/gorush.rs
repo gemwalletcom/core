@@ -1,4 +1,4 @@
-use crate::{Device, Platform, PushNotification};
+use crate::{Device, PushNotification};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -14,23 +14,11 @@ pub struct GorushNotification {
     pub message: String,
     pub topic: Option<String>,
     pub data: PushNotification,
-    #[serde(skip)]
-    pub device_id: Option<String>,
+    #[serde(skip_serializing)]
+    pub device_id: String,
 }
 
 impl GorushNotification {
-    pub fn new(tokens: Vec<String>, platform: Platform, title: String, message: String, data: PushNotification) -> Self {
-        Self {
-            tokens,
-            platform: platform.as_i32(),
-            title,
-            message,
-            topic: None,
-            data,
-            device_id: None,
-        }
-    }
-
     pub fn from_device(device: Device, title: String, message: String, data: PushNotification) -> Self {
         Self {
             tokens: vec![device.token.clone()],
@@ -39,7 +27,7 @@ impl GorushNotification {
             message,
             topic: None,
             data,
-            device_id: Some(device.id),
+            device_id: device.id,
         }
     }
 

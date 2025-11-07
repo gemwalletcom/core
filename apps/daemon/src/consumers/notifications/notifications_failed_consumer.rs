@@ -25,7 +25,7 @@ impl MessageConsumer<NotificationsFailedPayload, usize> for NotificationsFailedC
             .failures
             .iter()
             .filter(|f| f.error.is_device_invalid())
-            .filter_map(|f| f.notification.device_id.clone())
+            .map(|f| f.notification.device_id.clone())
             .collect();
 
         if device_ids.is_empty() {
