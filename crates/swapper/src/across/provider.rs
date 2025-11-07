@@ -39,6 +39,7 @@ use gem_evm::{
 use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, EVMChain, swap::ApprovalData, swap::SwapStatus};
 use serde_serializers::biguint_from_hex_str;
+use tracing::debug;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
@@ -69,12 +70,23 @@ impl Across {
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
-        let from = eth_address::normalize_weth_asset(from_asset).unwrap();
-        let to = eth_address::normalize_weth_asset(to_asset).unwrap();
+        let Some(from) = eth_address::normalize_weth_asset(from_asset) else {
+            return false;
+        };
+        let Some(to) = eth_address::normalize_weth_asset(to_asset) else {
+            return false;
+        };
 
-        AcrossDeployment::asset_mappings()
+        let supported = AcrossDeployment::asset_mappings()
             .into_iter()
-            .any(|x| x.set.contains(&from) && x.set.contains(&to))
+            .any(|x| x.set.contains(&from) && x.set.contains(&to));
+        debug!(
+            ?from,
+            ?to,
+            supported,
+            "Across is_supported_pair evaluated"
+        );
+        supported
     }
 
     pub fn get_rate_model(from_asset: &AssetId, to_asset: &AssetId, token_config: &TokenConfig) -> RateModel {

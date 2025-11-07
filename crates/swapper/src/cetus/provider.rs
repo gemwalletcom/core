@@ -192,13 +192,17 @@ where
             .into_iter()
             .zip(pool_datas)
             .map(|(pool, pool_data)| {
+                let shared_version = pool_data
+                    .data
+                    .initial_shared_version()
+                    .ok_or_else(|| SwapperError::ComputeQuoteError("Missing shared object version for pool".into()))?;
                 let shared_object = SharedObject {
                     id: pool_data.data.object_id,
-                    shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
+                    shared_version,
                 };
-                (pool, pool_data, shared_object, pool.coin_a_address == from_coin)
+                Ok((pool, pool_data, shared_object, pool.coin_a_address == from_coin))
             })
-            .collect::<Vec<_>>();
+            .collect::<Result<Vec<_>, SwapperError>>()?;
 
         if pool_quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
@@ -239,13 +243,14 @@ where
         let to_value = U256::from_le_slice(swap_result.amount_out.to_le_bytes().as_slice());
 
         // Prepare route data
+        let initial_shared_version = pool_data.data.initial_shared_version().ok_or(SwapperError::InvalidRoute)?;
         let route_data = RoutePoolData {
             object_id: pool_data.data.object_id,
             version: pool_data.data.version,
             digest: pool_data.data.digest,
             coin_a: pool.coin_a_address.clone(),
             coin_b: pool.coin_b_address.clone(),
-            initial_shared_version: pool_data.data.initial_shared_version().expect("Initial shared version should be available"),
+            initial_shared_version,
             fee_rate: pool.fee.to_string(),
         };
 
