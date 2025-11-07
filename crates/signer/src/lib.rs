@@ -14,6 +14,7 @@ use crate::sui::assemble_signature;
 use ed25519_dalek::Signer as DalekSigner;
 use std::borrow::Cow;
 use sui_types::PersonalMessage;
+use zeroize::Zeroizing;
 
 #[derive(Debug, Default)]
 pub struct Signer;
@@ -26,12 +27,14 @@ pub enum SignatureScheme {
 
 impl Signer {
     pub fn sign_sui_personal_message(message: Vec<u8>, private_key: Vec<u8>) -> Result<String, SignerError> {
+        let private_key = Zeroizing::new(private_key);
         let personal_message = PersonalMessage(Cow::Owned(message));
         let digest = personal_message.signing_digest();
-        Self::sign_sui_digest(digest.to_vec(), private_key)
+        Self::sign_sui_digest(digest.to_vec(), private_key.to_vec())
     }
 
     pub fn sign_sui_digest(digest: Vec<u8>, private_key: Vec<u8>) -> Result<String, SignerError> {
+        let private_key = Zeroizing::new(private_key);
         let signing_key = signing_key_from_bytes(&private_key)?;
         let signature = signing_key.sign(digest.as_slice());
         let signature_bytes = signature.to_bytes();
@@ -41,6 +44,7 @@ impl Signer {
     }
 
     pub fn sign_digest(scheme: SignatureScheme, digest: Vec<u8>, private_key: Vec<u8>) -> Result<Vec<u8>, SignerError> {
+        let private_key = Zeroizing::new(private_key);
         match scheme {
             SignatureScheme::Ed25519 => Ok(sign_ed25519_digest(&digest, &private_key)?.to_bytes().to_vec()),
             SignatureScheme::Secp256k1 => sign_secp256k1_digest(&digest, &private_key),
@@ -49,7 +53,8 @@ impl Signer {
 
     pub fn sign_eip712(typed_data_json: &str, private_key: &[u8]) -> Result<String, SignerError> {
         let digest = eip712::hash_typed_data(typed_data_json)?;
-        let signature = Self::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec())?;
+        let private_key_vec = Zeroizing::new(private_key.to_vec());
+        let signature = Self::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key_vec.to_vec())?;
         Ok(hex::encode(signature))
     }
 }
