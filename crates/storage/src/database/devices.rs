@@ -1,4 +1,4 @@
-use crate::database::subscriptions::{SubscriptionDeleteFilter, SubscriptionsStore};
+use crate::database::subscriptions::SubscriptionsStore;
 use crate::{DatabaseClient, models::*};
 use chrono::{Duration, NaiveDateTime, Utc};
 use diesel::{prelude::*, upsert::excluded};
@@ -89,7 +89,7 @@ impl DevicesStore for DatabaseClient {
         use crate::schema::devices::dsl::*;
         let cutoff_date = Utc::now() - Duration::days(days);
         let device_ids: Vec<i32> = devices.filter(updated_at.lt(cutoff_date.naive_utc())).select(id).load(&mut self.connection)?;
-        SubscriptionsStore::delete_subscriptions(self, SubscriptionDeleteFilter::DeviceIds(device_ids))
+        SubscriptionsStore::delete_subscriptions_for_device_ids(self, device_ids)
     }
 
     fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<Device>, diesel::result::Error> {

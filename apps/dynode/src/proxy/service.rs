@@ -62,7 +62,7 @@ impl ProxyRequestService {
 
         let url = RequestUrl::from_parts(resolved_url, &request.path_with_query);
 
-        self.metrics.add_proxy_request(&request.host, &request.user_agent);
+        self.metrics.add_proxy_request(request.chain.as_ref(), &request.user_agent);
 
         match &request_type {
             RequestType::JsonRpc(_) => {
@@ -92,7 +92,7 @@ impl ProxyRequestService {
         let cache_key = cache_ttl.map(|_| request_type.cache_key(&request.host, &request.path_with_query));
 
         let methods_for_metrics = request_type.get_methods_for_metrics();
-        self.metrics.add_proxy_request_batch(&request.host, &request.user_agent, &methods_for_metrics);
+        self.metrics.add_proxy_request_batch(request.chain.as_ref(), &request.user_agent, &methods_for_metrics);
 
         if let Some(key) = &cache_key
             && let Some(result) = Self::try_cache_hit(&self.cache, key, &request, &url, &self.metrics).await
@@ -120,7 +120,7 @@ impl ProxyRequestService {
 
         for method_name in &methods_for_metrics {
             self.metrics.add_proxy_response(
-                &request.host,
+                request.chain.as_ref(),
                 &request.path_with_query,
                 method_name,
                 url.url.host_str().unwrap_or_default(),
@@ -167,7 +167,7 @@ impl ProxyRequestService {
             let request_type = request.request_type();
             let methods_for_metrics = request_type.get_methods_for_metrics();
             for method_name in &methods_for_metrics {
-                metrics.add_cache_hit(&request.host, method_name);
+                metrics.add_cache_hit(request.chain.as_ref(), method_name);
             }
 
             info_with_fields!(
@@ -191,7 +191,7 @@ impl ProxyRequestService {
 
             for method_name in &methods_for_metrics {
                 metrics.add_proxy_response(
-                    &request.host,
+                    request.chain.as_ref(),
                     &request.path_with_query,
                     method_name,
                     url.url.host_str().unwrap_or_default(),
@@ -205,7 +205,7 @@ impl ProxyRequestService {
             let request_type = request.request_type();
             let methods_for_metrics = request_type.get_methods_for_metrics();
             for method_name in &methods_for_metrics {
-                metrics.add_cache_miss(&request.host, method_name);
+                metrics.add_cache_miss(request.chain.as_ref(), method_name);
             }
             None
         }

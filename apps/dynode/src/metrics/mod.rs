@@ -27,36 +27,36 @@ pub struct Metrics {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct ProxyRequestLabels {
-    host: String,
+    chain: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct ProxyRequestByAgentLabels {
-    host: String,
+    chain: String,
     user_agent: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct ProxyRequestByMethodLabels {
-    host: String,
+    chain: String,
     method: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct HostStateLabels {
-    host: String,
+    chain: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct HostCurrentStateLabels {
+    chain: String,
     host: String,
-    remote_host: String,
 }
 
 #[derive(Clone, Hash, PartialEq, Eq, Debug, EncodeLabelSet)]
 struct ResponseLabels {
+    chain: String,
     host: String,
-    remote_host: String,
     path: String,
     method: String,
     status: u16,
@@ -64,7 +64,7 @@ struct ResponseLabels {
 
 #[derive(Clone, Hash, PartialEq, Eq, Debug, EncodeLabelSet)]
 pub struct CacheLabels {
-    host: String,
+    chain: String,
     path: String,
 }
 
@@ -125,35 +125,35 @@ impl Metrics {
         }
     }
 
-    pub fn add_proxy_request(&self, host: &str, user_agent: &str) {
-        self.proxy_requests.get_or_create(&ProxyRequestLabels { host: host.to_string() }).inc();
+    pub fn add_proxy_request(&self, chain: &str, user_agent: &str) {
+        self.proxy_requests.get_or_create(&ProxyRequestLabels { chain: chain.to_string() }).inc();
 
         let user_agent = self.categorize_user_agent(user_agent);
         self.proxy_requests_by_user_agent
             .get_or_create(&ProxyRequestByAgentLabels {
-                host: host.to_string(),
+                chain: chain.to_string(),
                 user_agent,
             })
             .inc();
     }
 
-    pub fn add_proxy_request_by_method(&self, host: &str, method: &str) {
+    pub fn add_proxy_request_by_method(&self, chain: &str, method: &str) {
         let method = self.truncate_method(method);
         self.proxy_requests_by_method
             .get_or_create(&ProxyRequestByMethodLabels {
-                host: host.to_string(),
+                chain: chain.to_string(),
                 method,
             })
             .inc();
     }
 
-    pub fn add_proxy_request_batch(&self, host: &str, user_agent: &str, methods: &[String]) {
-        self.proxy_requests.get_or_create(&ProxyRequestLabels { host: host.to_string() }).inc();
+    pub fn add_proxy_request_batch(&self, chain: &str, user_agent: &str, methods: &[String]) {
+        self.proxy_requests.get_or_create(&ProxyRequestLabels { chain: chain.to_string() }).inc();
 
         let user_agent = self.categorize_user_agent(user_agent);
         self.proxy_requests_by_user_agent
             .get_or_create(&ProxyRequestByAgentLabels {
-                host: host.to_string(),
+                chain: chain.to_string(),
                 user_agent,
             })
             .inc();
@@ -162,51 +162,51 @@ impl Metrics {
             let method = self.truncate_method(method);
             self.proxy_requests_by_method
                 .get_or_create(&ProxyRequestByMethodLabels {
-                    host: host.to_string(),
+                    chain: chain.to_string(),
                     method,
                 })
                 .inc();
         }
     }
 
-    pub fn add_proxy_response(&self, host: &str, path: &str, method: &str, remote_host: &str, status: u16, latency: u128) {
+    pub fn add_proxy_response(&self, chain: &str, path: &str, method: &str, host: &str, status: u16, latency: u128) {
         let path = self.truncate_path(path);
         let method = self.truncate_method(method);
         self.proxy_response_latency
             .get_or_create(&ResponseLabels {
-                host: host.to_string(),
+                chain: chain.to_string(),
                 path,
                 method,
-                remote_host: remote_host.to_string(),
+                host: host.to_string(),
                 status,
             })
             .observe(latency as f64);
     }
 
-    pub fn set_node_host_current(&self, host: &str, remote_host: &str) {
+    pub fn set_node_host_current(&self, chain: &str, host: &str) {
         self.node_host_current
             .get_or_create(&HostCurrentStateLabels {
+                chain: chain.to_string(),
                 host: host.to_string(),
-                remote_host: remote_host.to_string(),
             })
             .set(1);
     }
 
     #[allow(dead_code)]
-    pub fn set_node_block_latest(&self, host: &str, value: u64) {
+    pub fn set_node_block_latest(&self, chain: &str, value: u64) {
         self.node_block_latest
-            .get_or_create(&HostStateLabels { host: host.to_string() })
+            .get_or_create(&HostStateLabels { chain: chain.to_string() })
             .set(value as i64);
     }
 
-    pub fn add_cache_hit(&self, host: &str, path: &str) {
+    pub fn add_cache_hit(&self, chain: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_hits.get_or_create(&CacheLabels { host: host.to_string(), path }).inc();
+        self.cache_hits.get_or_create(&CacheLabels { chain: chain.to_string(), path }).inc();
     }
 
-    pub fn add_cache_miss(&self, host: &str, path: &str) {
+    pub fn add_cache_miss(&self, chain: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_misses.get_or_create(&CacheLabels { host: host.to_string(), path }).inc();
+        self.cache_misses.get_or_create(&CacheLabels { chain: chain.to_string(), path }).inc();
     }
 
     pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str) {
