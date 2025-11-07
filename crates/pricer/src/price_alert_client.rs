@@ -128,6 +128,9 @@ impl PriceAlertClient {
         let formatter = NumberFormatter::new();
 
         for price_alert in notifications {
+            if !price_alert.device.can_receive_price_alerts() {
+                continue;
+            }
             let price = formatter.currency(price_alert.price.price, &price_alert.device.currency);
             if price.is_none() {
                 println!("Unknown currency symbol: {}", &price_alert.device.currency);

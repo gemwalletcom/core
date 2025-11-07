@@ -17,7 +17,11 @@ impl PusherClient {
 
     pub async fn push_notifications(&self, notifications: Vec<GorushNotification>) -> Result<Response, reqwest::Error> {
         let url = format!("{}/api/push", self.url);
-        let notifications = notifications.into_iter().map(|x| x.clone().with_topic(self.get_topic(x.platform))).collect();
+        let notifications = notifications
+            .into_iter()
+            .filter(|n| !n.tokens.is_empty() && n.tokens.iter().all(|t| !t.is_empty()))
+            .map(|x| x.clone().with_topic(self.get_topic(x.platform)))
+            .collect();
         let notifications = GorushNotifications { notifications };
         self.client.post(&url).json(&notifications).send().await?.json::<Response>().await
     }

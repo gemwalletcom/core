@@ -1,5 +1,6 @@
 pub mod asset_mock;
 pub mod delegation_mock;
+pub mod device_mock;
 pub mod fiat_mock;
 pub mod json_rpc;
 pub mod perpetual_mock;

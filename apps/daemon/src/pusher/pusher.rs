@@ -143,8 +143,7 @@ impl Pusher {
         subscription: Subscription,
         assets: Vec<Asset>,
     ) -> Result<Vec<GorushNotification>, Box<dyn Error + Send + Sync>> {
-        // only push if push is enabled and token is set
-        if !device.is_push_enabled || device.token.is_empty() {
+        if !device.can_receive_push_notification() {
             return Ok(vec![]);
         }
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
