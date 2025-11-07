@@ -3,13 +3,19 @@ use crate::{DatabaseClient, models::*};
 use chrono::{Duration, Utc};
 use diesel::{prelude::*, upsert::excluded};
 
+#[derive(Debug, Clone)]
+pub enum DeviceFieldUpdate {
+    IsPushEnabled(bool),
+    IsPriceAlertsEnabled(bool),
+}
+
 pub(crate) trait DevicesStore {
     fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error>;
     fn get_device_by_id(&mut self, id: i32) -> Result<Device, diesel::result::Error>;
     fn get_device(&mut self, device_id: &str) -> Result<Device, diesel::result::Error>;
     fn update_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error>;
+    fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, diesel::result::Error>;
     fn delete_device(&mut self, device_id: &str) -> Result<usize, diesel::result::Error>;
-    fn update_device_is_push_enabled(&mut self, device_id: &str, value: bool) -> Result<usize, diesel::result::Error>;
     fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error>;
     fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<Device>, diesel::result::Error>;
 }
@@ -45,17 +51,31 @@ impl DevicesStore for DatabaseClient {
             .get_result(&mut self.connection)
     }
 
+    fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+
+        if updates.is_empty() || device_ids.is_empty() {
+            return Ok(0);
+        }
+
+        let mut total_updated = 0;
+        for update in updates {
+            let target = devices.filter(device_id.eq_any(&device_ids));
+            let updated = match update {
+                DeviceFieldUpdate::IsPushEnabled(value) => diesel::update(target).set(is_push_enabled.eq(value)).execute(&mut self.connection)?,
+                DeviceFieldUpdate::IsPriceAlertsEnabled(value) => {
+                    diesel::update(target).set(is_price_alerts_enabled.eq(value)).execute(&mut self.connection)?
+                }
+            };
+            total_updated += updated;
+        }
+
+        Ok(total_updated)
+    }
+
     fn delete_device(&mut self, _device_id: &str) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::delete(devices.filter(device_id.eq(_device_id))).execute(&mut self.connection)
-    }
-
-    fn update_device_is_push_enabled(&mut self, _device_id: &str, value: bool) -> Result<usize, diesel::result::Error> {
-        use crate::schema::devices::dsl::*;
-        diesel::update(devices)
-            .filter(device_id.eq(_device_id))
-            .set(is_push_enabled.eq(value))
-            .execute(&mut self.connection)
     }
 
     // Delete subscriptions for inactive devices
@@ -105,10 +125,6 @@ impl DatabaseClient {
 
     pub fn delete_device(&mut self, device_id: &str) -> Result<usize, diesel::result::Error> {
         DevicesStore::delete_device(self, device_id)
-    }
-
-    pub fn update_device_is_push_enabled(&mut self, device_id: &str, value: bool) -> Result<usize, diesel::result::Error> {
-        DevicesStore::update_device_is_push_enabled(self, device_id, value)
     }
 
     pub fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {

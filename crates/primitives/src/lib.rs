@@ -91,9 +91,9 @@ pub use self::address_status::AddressStatus;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
-pub use self::push_notification::{
-    GorushNotification, GorushNotifications, PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes,
-};
+pub use self::push_notification::{PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes};
+pub mod gorush;
+pub use self::gorush::{FailedNotification, GorushNotification, GorushNotifications, PushErrorLog};
 pub mod scan;
 pub use self::scan::{AddressType, ScanAddress, ScanAddressTarget, ScanTransaction, ScanTransactionPayload};
 pub mod transaction_metadata_types;

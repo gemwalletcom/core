@@ -1,4 +1,4 @@
-use primitives::{AssetAddress, AssetId, Chain, ChainAddress, FiatProviderName, FiatTransaction, GorushNotification, Transaction};
+use primitives::{AssetAddress, AssetId, Chain, ChainAddress, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, Transaction};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -41,6 +41,23 @@ impl fmt::Display for NotificationsPayload {
 impl NotificationsPayload {
     pub fn new(notifications: Vec<GorushNotification>) -> Self {
         Self { notifications }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationsFailedPayload {
+    pub failures: Vec<FailedNotification>,
+}
+
+impl fmt::Display for NotificationsFailedPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "failures: {}", self.failures.len())
+    }
+}
+
+impl NotificationsFailedPayload {
+    pub fn new(failures: Vec<FailedNotification>) -> Self {
+        Self { failures }
     }
 }
 

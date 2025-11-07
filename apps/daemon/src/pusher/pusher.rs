@@ -160,7 +160,7 @@ impl Pusher {
             data: serde_json::to_value(&notification_transaction).ok(),
         };
 
-        let notification = GorushNotification::new(vec![device.token], device.platform, message.title, message.message.unwrap_or_default(), data);
+        let notification = GorushNotification::from_device(device, message.title, message.message.unwrap_or_default(), data);
 
         Ok(vec![notification])
     }

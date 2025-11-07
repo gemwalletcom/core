@@ -10,7 +10,7 @@ pub use consumer::ConsumerConfig;
 pub use consumer::run_consumer;
 pub use exchange::ExchangeName;
 pub use payload::*;
-pub use primitives::AssetId;
+pub use primitives::{AssetId, PushErrorLog};
 pub use queue::QueueName;
 pub use steam_producer_queue::StreamProducerQueue;
 pub use stream_producer::StreamProducer;

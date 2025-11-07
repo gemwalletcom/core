@@ -43,7 +43,7 @@ impl DevicesClient {
                 data: None,
             },
         );
-        Ok(self.pusher.push_notifications(vec![notification]).await?.counts > 0)
+        Ok(self.pusher.push_notifications(vec![notification]).await?.response.counts > 0)
     }
 
     pub fn delete_device(&mut self, device_id: &str) -> Result<usize, DatabaseError> {

@@ -155,13 +155,7 @@ impl PriceAlertClient {
                 data: serde_json::to_value(&price_alert_data).ok(),
                 notification_type: PushNotificationTypes::PriceAlert,
             };
-            let notification = GorushNotification::new(
-                vec![price_alert.device.token.clone()],
-                price_alert.device.platform,
-                notification_message.title,
-                notification_message.description,
-                data,
-            );
+            let notification = GorushNotification::from_device(price_alert.device.clone(), notification_message.title, notification_message.description, data);
             results.push(notification);
         }
         results
