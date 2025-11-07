@@ -1,4 +1,4 @@
-use crate::database::devices::{DeviceFieldUpdate, DevicesStore};
+use crate::database::devices::{DeviceFieldUpdate, DeviceFilter, DevicesStore};
 use crate::{DatabaseClient, DatabaseError};
 
 pub trait DevicesRepository {
@@ -46,7 +46,21 @@ impl DevicesRepository for DatabaseClient {
     }
 
     fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<primitives::Device>, DatabaseError> {
-        let result = DevicesStore::devices_inactive_days(self, min_days, max_days, push_enabled)?;
+        use chrono::{Duration, Utc};
+
+        let min_days_cutoff = Utc::now() - Duration::days(min_days);
+        let max_days_cutoff = Utc::now() - Duration::days(max_days);
+
+        let mut filters = vec![DeviceFilter::CreatedBetween {
+            start: max_days_cutoff.naive_utc(),
+            end: min_days_cutoff.naive_utc(),
+        }];
+
+        if let Some(enabled) = push_enabled {
+            filters.push(DeviceFilter::IsPushEnabled(enabled));
+        }
+
+        let result = DevicesStore::get_devices_by_filter(self, filters)?;
         Ok(result.into_iter().map(|x| x.as_primitive()).collect())
     }
 }
