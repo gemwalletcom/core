@@ -68,6 +68,10 @@ lint:
     @cargo clippy --version
     cargo clippy -- -D warnings
 
+audit:
+    @command -v cargo-audit >/dev/null || cargo install cargo-audit --locked
+    cargo audit
+
 unused:
     cargo install cargo-machete
     cargo machete
