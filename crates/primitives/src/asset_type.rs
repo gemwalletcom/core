@@ -19,6 +19,7 @@ pub enum AssetType {
     SYNTH,   // Thorchain
     ASA,     // Algorand
     PERPETUAL,
+    SPOT,
 }
 
 impl AssetType {

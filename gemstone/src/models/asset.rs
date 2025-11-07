@@ -19,6 +19,7 @@ pub enum GemAssetType {
     SYNTH,
     ASA,
     PERPETUAL,
+    SPOT,
 }
 
 #[uniffi::remote(Record)]
