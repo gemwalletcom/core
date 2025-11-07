@@ -76,10 +76,9 @@ impl Across {
             return false;
         };
 
-        let supported = AcrossDeployment::asset_mappings()
+        AcrossDeployment::asset_mappings()
             .into_iter()
-            .any(|x| x.set.contains(&from) && x.set.contains(&to));
-        supported
+            .any(|x| x.set.contains(&from) && x.set.contains(&to))
     }
 
     pub fn get_rate_model(from_asset: &AssetId, to_asset: &AssetId, token_config: &TokenConfig) -> RateModel {
