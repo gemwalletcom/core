@@ -9,7 +9,6 @@ pub trait AssetsRepository {
     fn get_assets_all(&mut self) -> Result<Vec<AssetBasic>, DatabaseError>;
     fn add_assets(&mut self, values: Vec<AssetBasic>) -> Result<usize, DatabaseError>;
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, DatabaseError>;
-    fn update_asset(&mut self, asset_id: String, update: AssetUpdate) -> Result<usize, DatabaseError>;
     fn upsert_assets(&mut self, values: Vec<PrimitiveAsset>) -> Result<usize, DatabaseError>;
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetBasic>, DatabaseError>;
     fn get_asset(&mut self, asset_id: &str) -> Result<PrimitiveAsset, DatabaseError>;
@@ -36,10 +35,6 @@ impl AssetsRepository for DatabaseClient {
 
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, DatabaseError> {
         Ok(AssetsStore::update_assets(self, asset_ids, updates)?)
-    }
-
-    fn update_asset(&mut self, asset_id: String, update: AssetUpdate) -> Result<usize, DatabaseError> {
-        Ok(AssetsStore::update_asset(self, asset_id, update)?)
     }
 
     fn upsert_assets(&mut self, values: Vec<PrimitiveAsset>) -> Result<usize, DatabaseError> {
