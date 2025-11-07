@@ -14,7 +14,6 @@ pub struct GorushNotification {
     pub message: String,
     pub topic: Option<String>,
     pub data: PushNotification,
-    #[serde(skip_serializing)]
     pub device_id: String,
 }
 
