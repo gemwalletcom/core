@@ -1,6 +1,6 @@
 pub mod bridge;
-pub mod math;
 pub mod hyperliquid;
+pub mod math;
 pub mod spot;
 
 pub use bridge::HyperCoreBridge;

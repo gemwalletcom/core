@@ -39,7 +39,6 @@ use gem_evm::{
 use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, EVMChain, swap::ApprovalData, swap::SwapStatus};
 use serde_serializers::biguint_from_hex_str;
-use tracing::debug;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 #[derive(Debug)]
@@ -80,12 +79,6 @@ impl Across {
         let supported = AcrossDeployment::asset_mappings()
             .into_iter()
             .any(|x| x.set.contains(&from) && x.set.contains(&to));
-        debug!(
-            ?from,
-            ?to,
-            supported,
-            "Across is_supported_pair evaluated"
-        );
         supported
     }
 

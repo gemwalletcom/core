@@ -127,8 +127,8 @@ impl AssetsStore for DatabaseClient {
     }
 
     fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(Asset, Option<Price>)>, diesel::result::Error> {
-        use crate::schema::prices_assets;
         use crate::schema::prices;
+        use crate::schema::prices_assets;
 
         assets
             .filter(id.eq_any(asset_ids))

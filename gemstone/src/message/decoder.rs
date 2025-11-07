@@ -346,7 +346,10 @@ mod tests {
 
     #[test]
     fn test_eip712_hyperliquid_approve_agent_hash() {
-        let json_str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json"));
+        let json_str = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json"
+        ));
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),

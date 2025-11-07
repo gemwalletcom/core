@@ -9,7 +9,7 @@ use crate::models::{
     user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
-use gem_client::{Client, ContentType, CONTENT_TYPE};
+use gem_client::{CONTENT_TYPE, Client, ContentType};
 use std::{
     collections::HashMap,
     error::Error,

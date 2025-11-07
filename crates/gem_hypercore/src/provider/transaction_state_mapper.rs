@@ -11,23 +11,17 @@ fn direction_from_dir(dir: &str) -> Option<PerpetualDirection> {
     }
 }
 
-fn append_perpetual_metadata(
-    update: &mut TransactionUpdate,
-    matching_fills: &[&PerpetualFill],
-    last_fill: &PerpetualFill,
-) -> bool {
+fn append_perpetual_metadata(update: &mut TransactionUpdate, matching_fills: &[&PerpetualFill], last_fill: &PerpetualFill) -> bool {
     if let Some(direction) = direction_from_dir(&last_fill.dir) {
         let pnl: f64 = matching_fills.iter().map(|fill| fill.closed_pnl).sum();
         update
             .changes
-            .push(TransactionChange::Metadata(TransactionMetadata::Perpetual(
-                TransactionPerpetualMetadata {
-                    pnl,
-                    price: last_fill.px,
-                    direction,
-                    provider: Some(PerpetualProvider::Hypercore),
-                },
-            )));
+            .push(TransactionChange::Metadata(TransactionMetadata::Perpetual(TransactionPerpetualMetadata {
+                pnl,
+                price: last_fill.px,
+                direction,
+                provider: Some(PerpetualProvider::Hypercore),
+            })));
         return true;
     }
 
@@ -139,10 +133,12 @@ mod tests {
         let added = append_perpetual_metadata(&mut update, &matching, last_fill);
 
         assert!(added);
-        assert!(update.changes.iter().any(|change| matches!(
-            change,
-            TransactionChange::Metadata(TransactionMetadata::Perpetual(_))
-        )));
+        assert!(
+            update
+                .changes
+                .iter()
+                .any(|change| matches!(change, TransactionChange::Metadata(TransactionMetadata::Perpetual(_))))
+        );
     }
 
     #[test]

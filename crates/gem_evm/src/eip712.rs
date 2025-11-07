@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_serializers::deserialize_u64_from_str_or_int;
-use std::collections::HashMap;
 use signer::hash_eip712;
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EIP712Domain {
