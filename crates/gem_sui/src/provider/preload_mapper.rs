@@ -21,8 +21,14 @@ pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_ty
     }
 }
 
-pub fn calculate_fee_rates(base_gas_price: BigInt) -> Vec<FeeRate> {
-    vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(base_gas_price))]
+pub fn map_transaction_rate_rates(base_gas_price: BigInt) -> Vec<FeeRate> {
+    vec![
+        FeeRate::new(
+            FeePriority::Normal,
+            GasPriceType::regular(&base_gas_price * BigInt::from(110) / BigInt::from(100)),
+        ),
+        FeeRate::new(FeePriority::Fast, GasPriceType::regular(&base_gas_price * BigInt::from(2))),
+    ]
 }
 
 fn get_gas_limit(input_type: &TransactionInputType) -> u64 {
@@ -200,5 +206,16 @@ mod tests {
 
         let result = map_transaction_data(input, gas_coins, vec![], objects);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_map_transaction_rate_rates() {
+        let rates = map_transaction_rate_rates(BigInt::from(497));
+
+        assert_eq!(rates.len(), 2);
+        assert_eq!(rates[0].priority, FeePriority::Normal);
+        assert_eq!(rates[0].gas_price_type.gas_price(), BigInt::from(546));
+        assert_eq!(rates[1].priority, FeePriority::Fast);
+        assert_eq!(rates[1].gas_price_type.gas_price(), BigInt::from(994));
     }
 }
