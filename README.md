@@ -49,6 +49,10 @@ Run `just install` to install rust, typeshare
 
 Run API locally: `cargo run --package api`
 
+## Security Scanning
+
+Run `just audit` to execute [`cargo-audit`](https://github.com/RustSec/rustsec/tree/main/cargo-audit) across the entire workspace. The command installs `cargo-audit` if needed and reports vulnerable or unmaintained dependencies surfaced via the RustSec advisory database. Treat the warnings as action items when possible, and file follow-up issues if immediate remediation is not feasible.
+
 ## Gemstone
 
 Cross platform Rust library for iOS and Android with native async networking support.
