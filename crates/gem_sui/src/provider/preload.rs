@@ -112,9 +112,10 @@ mod chain_integration_tests {
 
         println!("Sui transaction fee rates: {:?}", rates);
 
-        assert_eq!(rates.len(), 2);
-        assert_eq!(rates[0].priority, FeePriority::Normal);
-        assert_eq!(rates[1].priority, FeePriority::Fast);
+        assert_eq!(rates.len(), 3);
+        assert_eq!(rates[0].priority, FeePriority::Slow);
+        assert_eq!(rates[1].priority, FeePriority::Normal);
+        assert_eq!(rates[2].priority, FeePriority::Fast);
 
         Ok(())
     }

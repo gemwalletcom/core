@@ -23,6 +23,7 @@ pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_ty
 
 pub fn map_transaction_rate_rates(base_gas_price: BigInt) -> Vec<FeeRate> {
     vec![
+        FeeRate::new(FeePriority::Slow, GasPriceType::regular(base_gas_price.clone())),
         FeeRate::new(
             FeePriority::Normal,
             GasPriceType::regular(&base_gas_price * BigInt::from(110) / BigInt::from(100)),
