@@ -69,7 +69,7 @@ lint:
     cargo clippy -- -D warnings
 
 audit:
-    @command -v cargo-audit >/dev/null || cargo install cargo-audit --locked
+    @command -v cargo-audit >/dev/null || cargo install cargo-audit --locked --version 0.22.0
     cargo audit
 
 unused:
