@@ -103,13 +103,9 @@ impl DevicesStore for DatabaseClient {
                     query = query.filter(is_push_enabled.eq(enabled));
                 }
                 DeviceFilter::CreatedBetween { start, end } => {
-                    query = query.filter(
-                        created_at
-                            .between(start, end)
-                            .and(diesel::dsl::sql::<diesel::sql_types::Bool>(
-                                "DATE_TRUNC('hour', updated_at) = DATE_TRUNC('hour', created_at)",
-                            )),
-                    );
+                    query = query.filter(created_at.between(start, end).and(diesel::dsl::sql::<diesel::sql_types::Bool>(
+                        "DATE_TRUNC('hour', updated_at) = DATE_TRUNC('hour', created_at)",
+                    )));
                 }
             }
         }

@@ -92,7 +92,8 @@ impl ProxyRequestService {
         let cache_key = cache_ttl.map(|_| request_type.cache_key(&request.host, &request.path_with_query));
 
         let methods_for_metrics = request_type.get_methods_for_metrics();
-        self.metrics.add_proxy_request_batch(request.chain.as_ref(), &request.user_agent, &methods_for_metrics);
+        self.metrics
+            .add_proxy_request_batch(request.chain.as_ref(), &request.user_agent, &methods_for_metrics);
 
         if let Some(key) = &cache_key
             && let Some(result) = Self::try_cache_hit(&self.cache, key, &request, &url, &self.metrics).await

@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
-    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::BASE_URL,
+    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::base_url,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -51,7 +51,7 @@ where
 
 impl NearIntents<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let client = NearIntentsClient::new(RpcClient::new(BASE_URL.to_string(), rpc_provider.clone()), None);
+        let client = NearIntentsClient::new(RpcClient::new(base_url(), rpc_provider.clone()), None);
         let sui_client = Arc::new(SuiClient::new(create_client_with_chain(rpc_provider.clone(), Chain::Sui)));
         Self::with_client(client, sui_client)
     }

@@ -224,7 +224,10 @@ impl AssetUpdater {
         let asset_id = asset.id.to_string();
         let asset = AssetBasic::new(asset.clone(), properties, score.clone());
         let _ = self.database.assets().add_assets(vec![asset]);
-        let _ = self.database.assets().update_assets(vec![asset_id.clone()], vec![AssetUpdate::Rank(score.rank)]);
+        let _ = self
+            .database
+            .assets()
+            .update_assets(vec![asset_id.clone()], vec![AssetUpdate::Rank(score.rank)]);
         let _ = self.update_links(&asset_id, asset_links.clone()).await;
         Ok(())
     }

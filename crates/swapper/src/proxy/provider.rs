@@ -12,7 +12,7 @@ use crate::{
     alien::{RpcClient, RpcProvider},
     approval::evm::check_approval_erc20,
     asset::*,
-    config::DEFAULT_SWAP_FEE_BPS,
+    config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
     models::{ApprovalType, SwapperChainAsset},
 };
 use gem_client::Client;
@@ -21,7 +21,6 @@ use primitives::{
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
-pub const PROVIDER_API_URL: &str = "https://api.gemwallet.com/swap/swapper";
 const DEFAULT_GAS_LIMIT: u64 = 750_000;
 
 #[derive(Debug)]
@@ -93,7 +92,7 @@ where
 
 impl ProxyProvider<RpcClient> {
     fn new_with_path(provider: SwapperProvider, path: &str, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let base_url = format!("{PROVIDER_API_URL}/{path}");
+        let base_url = get_swap_api_url(&format!("swapper/{path}"));
         let client = ProxyClient::new(RpcClient::new(base_url, rpc_provider.clone()));
         Self::new_with_client(provider, client, assets, rpc_provider)
     }

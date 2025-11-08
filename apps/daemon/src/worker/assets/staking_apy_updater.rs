@@ -21,7 +21,8 @@ impl StakeApyUpdater {
             match self.chain_providers.get_staking_apy(chain).await {
                 Ok(apy) => {
                     let apy = (apy * 100.0).round() / 100.0;
-                    self.database.update_assets(vec![chain.as_asset_id().to_string()], vec![AssetUpdate::StakingApr(Some(apy))])?;
+                    self.database
+                        .update_assets(vec![chain.as_asset_id().to_string()], vec![AssetUpdate::StakingApr(Some(apy))])?;
                     info_with_fields!("update_staking_apy chain", chain = chain.as_ref(), apy = apy);
                 }
                 Err(e) => return Err(e),

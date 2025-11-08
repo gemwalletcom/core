@@ -201,12 +201,22 @@ impl Metrics {
 
     pub fn add_cache_hit(&self, chain: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_hits.get_or_create(&CacheLabels { chain: chain.to_string(), path }).inc();
+        self.cache_hits
+            .get_or_create(&CacheLabels {
+                chain: chain.to_string(),
+                path,
+            })
+            .inc();
     }
 
     pub fn add_cache_miss(&self, chain: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_misses.get_or_create(&CacheLabels { chain: chain.to_string(), path }).inc();
+        self.cache_misses
+            .get_or_create(&CacheLabels {
+                chain: chain.to_string(),
+                path,
+            })
+            .inc();
     }
 
     pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str) {

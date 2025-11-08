@@ -1,5 +1,5 @@
 use super::{
-    api::client::{CETUS_API_URL, CetusClient},
+    api::client::{CetusClient, cetus_api_url},
     provider::Cetus,
 };
 use crate::{
@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 impl Cetus<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let http_client = CetusClient::new(RpcClient::new(CETUS_API_URL.into(), rpc_provider.clone()));
+        let http_client = CetusClient::new(RpcClient::new(cetus_api_url(), rpc_provider.clone()));
         let sui_client = Arc::new(SuiClient::new(create_client_with_chain(rpc_provider.clone(), Chain::Sui)));
         Self::with_clients(http_client, sui_client)
     }

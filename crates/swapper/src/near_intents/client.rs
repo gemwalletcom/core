@@ -1,10 +1,12 @@
-use crate::SwapperError;
+use crate::{SwapperError, config::get_swap_api_url};
 use gem_client::{Client, ClientError};
 use std::{collections::HashMap, fmt::Debug};
 
 use super::model::{ExecutionStatus, QuoteRequest, QuoteResponseResult};
 
-pub const BASE_URL: &str = "https://api.gemwallet.com/swap/near-intents/1click";
+pub fn base_url() -> String {
+    get_swap_api_url("near-intents/1click")
+}
 
 #[derive(Clone, Debug)]
 pub struct NearIntentsClient<C>
