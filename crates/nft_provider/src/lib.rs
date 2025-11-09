@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use primitives::{nft::NFTCollectionId, Chain, NFTAsset, NFTAssetId, NFTCollection};
+use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, nft::NFTCollectionId};
 
 pub mod config;
 pub mod magiceden;
