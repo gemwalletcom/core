@@ -3,8 +3,8 @@ use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_co
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::Database;
 use storage::AssetUpdate;
+use storage::Database;
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
     database: Database,
@@ -12,10 +12,7 @@ pub struct AssetUpdater {
 
 impl AssetUpdater {
     pub fn new(coin_gecko_client: CoinGeckoClient, database: Database) -> Self {
-        AssetUpdater {
-            coin_gecko_client,
-            database,
-        }
+        AssetUpdater { coin_gecko_client, database }
     }
 
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {

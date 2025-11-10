@@ -10,7 +10,6 @@ pub struct TransactionsClient {
 
 impl TransactionsClient {
     pub fn new(database: Database) -> Self {
-        
         Self { database }
     }
 
@@ -20,7 +19,11 @@ impl TransactionsClient {
         options: TransactionsFetchOption,
     ) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {
         let wallet_index = options.wallet_index;
-        let subscriptions = self.database.client()?.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
+        let subscriptions = self
+            .database
+            .client()?
+            .subscriptions()
+            .get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
 
         let addresses = subscriptions.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
         let chains = subscriptions.clone().into_iter().map(|x| x.chain.as_ref().to_string()).collect::<Vec<String>>();

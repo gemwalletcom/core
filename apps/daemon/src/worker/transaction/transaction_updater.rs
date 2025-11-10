@@ -9,7 +9,6 @@ pub struct TransactionUpdater {
 
 impl TransactionUpdater {
     pub fn new(database: Database) -> Self {
-        
         Self { database }
     }
     pub async fn update(&mut self) -> Result<HashMap<String, usize>, Box<dyn Error + Send + Sync>> {
@@ -22,7 +21,11 @@ impl TransactionUpdater {
                 chain: x.chain_id,
             })
             .collect();
-        let subscriptions_excluded_added = self.database.client()?.subscriptions().add_subscriptions_exclude_addresses(subscriptions_exclude)?;
+        let subscriptions_excluded_added = self
+            .database
+            .client()?
+            .subscriptions()
+            .add_subscriptions_exclude_addresses(subscriptions_exclude)?;
 
         let addresses = addresses_result.clone().into_iter().map(|x| x.address).collect::<Vec<_>>();
         let result = self.database.client()?.transactions().delete_transactions_addresses(addresses.clone())?;

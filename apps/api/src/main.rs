@@ -23,6 +23,7 @@ mod websocket_prices;
 
 use std::{str::FromStr, sync::Arc};
 
+use ::fiat::FiatConfig;
 use ::nft::{NFTClient, NFTProviderConfig};
 use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
@@ -42,7 +43,7 @@ use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
-use storage;
+use storage::Database;
 use streamer::StreamProducer;
 use subscriptions::SubscriptionsClient;
 use support::SupportClient;
@@ -56,7 +57,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let postgres_url = settings.postgres.url.as_str();
     let settings_clone = settings.clone();
 
-    let database = storage::Database::new(postgres_url, settings.postgres.pool);
+    let database = Database::new(postgres_url, settings.postgres.pool);
     let cacher_client = CacherClient::new(redis_url).await;
 
     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
@@ -83,7 +84,15 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(database.clone());
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
-    let fiat_client = FiatClient::new(database.clone(), cacher_client.clone(), providers, ip_check_client, stream_producer.clone());
+    let fiat_config = FiatConfig::new(settings_clone.fiat.timeout, settings_clone.fiat.validate_subscription);
+    let fiat_client = FiatClient::new(
+        database.clone(),
+        cacher_client.clone(),
+        providers,
+        ip_check_client,
+        stream_producer.clone(),
+        fiat_config,
+    );
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(database.clone(), nft_config);
     let markets_client = MarketsClient::new(database.clone(), cacher_client);

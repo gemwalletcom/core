@@ -7,7 +7,7 @@ use primitives::{
 };
 use std::collections::HashSet;
 use std::error::Error;
-use storage::{Database};
+use storage::Database;
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -35,9 +35,10 @@ impl PriceAlertClient {
         Self { database }
     }
 
-
     pub async fn get_price_alerts(&self, device_id: &str, asset_id: Option<&str>) -> Result<PriceAlerts, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?
+        Ok(self
+            .database
+            .client()?
             .price_alerts()
             .get_price_alerts_for_device_id(device_id, asset_id)?
             .into_iter()
@@ -69,7 +70,8 @@ impl PriceAlertClient {
                 results.push(notification);
             }
         }
-        self.database.client()?
+        self.database
+            .client()?
             .price_alerts()
             .update_price_alerts_set_notified_at(price_alert_ids.into_iter().collect(), now.naive_utc())?;
         Ok(results)

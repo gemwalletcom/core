@@ -12,7 +12,6 @@ pub struct FiatAssetsUpdater {
 
 impl FiatAssetsUpdater {
     pub fn new(database: Database, providers: Vec<Box<dyn FiatProvider + Send + Sync>>) -> Self {
-        
         Self { database, providers }
     }
 
@@ -112,7 +111,13 @@ impl FiatAssetsUpdater {
             .map(|fiat_asset| {
                 (
                     fiat_asset.clone(),
-                    fiat_asset.asset_id().filter(|id| self.database.client().ok().and_then(|mut c| c.assets().get_asset(&id.to_string()).ok()).is_some()),
+                    fiat_asset.asset_id().filter(|id| {
+                        self.database
+                            .client()
+                            .ok()
+                            .and_then(|mut c| c.assets().get_asset(&id.to_string()).ok())
+                            .is_some()
+                    }),
                 )
             })
             .collect();

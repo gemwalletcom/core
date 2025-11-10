@@ -1,6 +1,6 @@
 use primitives::{ChartPeriod, ChartValue, DEFAULT_FIAT_CURRENCY};
 use std::error::Error;
-use storage::{Database};
+use storage::Database;
 
 #[derive(Clone)]
 pub struct ChartClient {
@@ -11,7 +11,6 @@ impl ChartClient {
     pub fn new(database: Database) -> Self {
         Self { database }
     }
-
 
     pub fn get_coin_id(&self, asset_id: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         Ok(self.database.client()?.prices().get_price(asset_id)?.ok_or("Price not found")?.id.clone())

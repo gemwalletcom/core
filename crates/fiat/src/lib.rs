@@ -13,6 +13,21 @@ pub mod error;
 pub use client::FiatClient;
 pub use ip_check_client::{IPAddressInfo, IPCheckClient};
 
+#[derive(Debug, Clone)]
+pub struct FiatConfig {
+    pub timeout: u64,
+    pub validate_subscription: bool,
+}
+
+impl FiatConfig {
+    pub fn new(timeout: u64, validate_subscription: bool) -> Self {
+        Self {
+            timeout,
+            validate_subscription,
+        }
+    }
+}
+
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 pub mod testkit;
 

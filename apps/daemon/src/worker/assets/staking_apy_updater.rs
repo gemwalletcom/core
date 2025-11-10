@@ -3,8 +3,8 @@ use std::error::Error;
 use gem_tracing::info_with_fields;
 use primitives::Chain;
 use settings_chain::ChainProviders;
-use storage::Database;
 use storage::AssetUpdate;
+use storage::Database;
 
 pub struct StakeApyUpdater {
     chain_providers: ChainProviders,
@@ -13,7 +13,6 @@ pub struct StakeApyUpdater {
 
 impl StakeApyUpdater {
     pub fn new(chain_providers: ChainProviders, database: Database) -> Self {
-        
         Self { chain_providers, database }
     }
 

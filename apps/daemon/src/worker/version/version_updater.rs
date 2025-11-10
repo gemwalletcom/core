@@ -11,7 +11,6 @@ pub struct VersionClient {
 
 impl VersionClient {
     pub fn new(database: Database) -> Self {
-        
         Self { database }
     }
 

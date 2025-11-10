@@ -16,7 +16,6 @@ pub struct FiatWebhookConsumer {
 
 impl FiatWebhookConsumer {
     pub fn new(database: Database, settings: Settings) -> Self {
-        
         let providers = FiatProviderFactory::new_providers(settings);
 
         Self { database, providers }

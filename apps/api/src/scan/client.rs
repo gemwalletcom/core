@@ -2,8 +2,8 @@ use primitives::{ScanTransaction, ScanTransactionPayload};
 use rocket::futures::future;
 use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use std::error::Error;
-use storage::Database;
 use std::sync::Arc;
+use storage::Database;
 
 #[derive(Clone)]
 pub struct ScanClient {
@@ -87,7 +87,11 @@ impl ScanClient {
     }
 
     pub async fn get_scan_address(&self, address: &str) -> Result<Vec<primitives::ScanAddress>, Box<dyn Error + Send + Sync>> {
-        let scan_addresses = self.database.client()?.scan_addresses().get_scan_addresses_by_addresses(vec![address.to_string()])?;
+        let scan_addresses = self
+            .database
+            .client()?
+            .scan_addresses()
+            .get_scan_addresses_by_addresses(vec![address.to_string()])?;
         Ok(scan_addresses.into_iter().map(|addr| addr.as_scan_address_primitive()).collect())
     }
 }

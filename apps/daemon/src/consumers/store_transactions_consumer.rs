@@ -7,7 +7,6 @@ use storage::Database;
 use storage::models;
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
-
 use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
 
 const MIN_TRANSACTION_AMOUNT_USD: f64 = 0.01;

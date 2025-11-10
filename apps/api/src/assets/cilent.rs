@@ -11,7 +11,6 @@ pub struct AssetsClient {
 
 impl AssetsClient {
     pub fn new(database: Database) -> Self {
-        
         Self { database }
     }
 
@@ -43,7 +42,11 @@ impl AssetsClient {
         wallet_index: i32,
         from_timestamp: Option<u32>,
     ) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
-        let subscriptions = self.database.client()?.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
+        let subscriptions = self
+            .database
+            .client()?
+            .subscriptions()
+            .get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
 
         let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
 

@@ -1,7 +1,6 @@
 use num_bigint::BigUint;
 use std::error::Error;
 
-
 use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
@@ -45,7 +44,8 @@ impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer
 
         let _ = self
             .database
-            .client()?.assets_addresses()
+            .client()?
+            .assets_addresses()
             .add_assets_addresses(vec![asset_address.as_primitive()])?;
 
         Ok(balance.balance.available.to_string())

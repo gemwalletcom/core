@@ -14,6 +14,7 @@ coingecko:
     secret: ""
 fiat:
   timeout: 3
+  validate_subscription: false
 moonpay:
   key:
     public: ""

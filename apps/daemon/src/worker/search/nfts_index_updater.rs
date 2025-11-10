@@ -8,7 +8,6 @@ pub struct NftsIndexUpdater {
 
 impl NftsIndexUpdater {
     pub fn new(database: Database, search_index: &SearchIndexClient) -> Self {
-        
         Self {
             database,
             search_index: search_index.clone(),

@@ -53,16 +53,14 @@ impl Parser {
                         .database
                         .client()
                         .ok()
-                        .and_then(|mut c| c.parser_state()
-                            .set_parser_state_latest_block(self.chain.as_ref(), latest_block_i64).ok());
+                        .and_then(|mut c| c.parser_state().set_parser_state_latest_block(self.chain.as_ref(), latest_block_i64).ok());
                     // initial start
                     if state.current_block == 0 {
                         let _ = self
                             .database
                             .client()
                             .ok()
-                            .and_then(|mut c| c.parser_state()
-                                .set_parser_state_current_block(self.chain.as_ref(), latest_block_i64).ok());
+                            .and_then(|mut c| c.parser_state().set_parser_state_current_block(self.chain.as_ref(), latest_block_i64).ok());
                     }
                     if next_current_block >= latest_block_i64 {
                         info_with_fields!(
@@ -103,7 +101,11 @@ impl Parser {
                 {
                     let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
                     self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
-                    let _ = self.database.client()?.parser_state().set_parser_state_current_block(self.chain.as_ref(), end_block);
+                    let _ = self
+                        .database
+                        .client()?
+                        .parser_state()
+                        .set_parser_state_current_block(self.chain.as_ref(), end_block);
 
                     info_with_fields!(
                         "block add to queue",
@@ -117,7 +119,11 @@ impl Parser {
 
                 match self.parse_blocks(next_blocks.clone()).await {
                     Ok(result) => {
-                        let _ = self.database.client()?.parser_state().set_parser_state_current_block(self.chain.as_ref(), end_block);
+                        let _ = self
+                            .database
+                            .client()?
+                            .parser_state()
+                            .set_parser_state_current_block(self.chain.as_ref(), end_block);
 
                         info_with_fields!(
                             "block complete",
@@ -165,7 +171,8 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
         vec![chain]
     } else {
         database
-            .client()?.parser_state()
+            .client()?
+            .parser_state()
             .get_parser_states()
             .unwrap()
             .into_iter()

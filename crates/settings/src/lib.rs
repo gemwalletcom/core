@@ -43,6 +43,7 @@ pub struct Settings {
 #[allow(unused)]
 pub struct Fiat {
     pub timeout: u64,
+    pub validate_subscription: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]

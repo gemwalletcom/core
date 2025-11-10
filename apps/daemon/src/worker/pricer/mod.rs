@@ -12,11 +12,11 @@ use price_asset_updater::PriceAssetUpdater;
 use price_updater::{PriceUpdater, UpdatePrices};
 use pricer::{MarketsClient, PriceClient};
 use settings::Settings;
-use storage::Database;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
+use storage::Database;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
@@ -30,7 +30,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         move || {
             let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
-        let database = database.clone();
+            let database = database.clone();
             async move {
                 price_updater_factory(&database, &cacher_client, &settings)
                     .clean_outdated_assets(settings.pricer.outdated)
@@ -45,7 +45,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         move || {
             let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
-        let database = database.clone();
+            let database = database.clone();
             async move { price_updater_factory(&database, &cacher_client, &settings).update_fiat_rates().await }
         }
     });
@@ -58,7 +58,11 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            async move { price_asset_updater_factory(&database, &cacher_client, &settings.clone()).update_prices_assets().await }
+            async move {
+                price_asset_updater_factory(&database, &cacher_client, &settings.clone())
+                    .update_prices_assets()
+                    .await
+            }
         }
     });
 
@@ -134,7 +138,11 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            async move { price_updater_factory(&database, &cacher_client, &settings.clone()).update_fiat_rates_cache().await }
+            async move {
+                price_updater_factory(&database, &cacher_client, &settings.clone())
+                    .update_fiat_rates_cache()
+                    .await
+            }
         }
     });
 
@@ -181,10 +189,10 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     //     let settings = settings.clone();
     //     let coingecko_client = coingecko_client.clone();
     //     let cacher_client = cacher_client.clone();
-        let database = database.clone();
+    let database = database.clone();
     //     move || {
     //         let cacher_client = cacher_client.clone();
-        let database = database.clone();
+    let database = database.clone();
     //         let price_client = PriceClient::new(cacher_client, &settings.postgres.url);
     //         let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
     //         async move { charts_updater.update_charts_all().await }

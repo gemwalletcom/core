@@ -10,7 +10,6 @@ pub struct AssetsIndexUpdater {
 
 impl AssetsIndexUpdater {
     pub fn new(database: Database, search_index: &SearchIndexClient) -> Self {
-        
         Self {
             database,
             search_index: search_index.clone(),

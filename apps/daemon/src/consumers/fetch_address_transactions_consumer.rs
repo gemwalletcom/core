@@ -7,7 +7,6 @@ use settings_chain::ChainProviders;
 use storage::Database;
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
-
 pub struct FetchAddressTransactionsConsumer {
     #[allow(dead_code)]
     pub database: Database,

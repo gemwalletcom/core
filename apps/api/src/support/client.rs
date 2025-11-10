@@ -1,6 +1,6 @@
 use primitives::SupportDevice;
-use storage::Database;
 use std::error::Error;
+use storage::Database;
 
 #[derive(Clone)]
 pub struct SupportClient {
@@ -9,7 +9,6 @@ pub struct SupportClient {
 
 impl SupportClient {
     pub fn new(database: Database) -> Self {
-        
         Self { database }
     }
 

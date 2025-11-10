@@ -11,6 +11,7 @@ pub(crate) trait SubscriptionsStore {
     fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, diesel::result::Error>;
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, diesel::result::Error>;
     fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExclude>) -> Result<usize, diesel::result::Error>;
+    fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, diesel::result::Error>;
 }
 
 impl SubscriptionsStore for DatabaseClient {
@@ -84,5 +85,13 @@ impl SubscriptionsStore for DatabaseClient {
     fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         diesel::delete(subscriptions.filter(device_id.eq_any(device_ids))).execute(&mut self.connection)
+    }
+
+    fn get_subscription_address_exists(&mut self, _chain: Chain, _address: &str) -> Result<bool, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        use diesel::dsl::exists;
+        use diesel::select;
+
+        select(exists(subscriptions.filter(chain.eq(_chain.as_ref())).filter(address.eq(_address)))).get_result(&mut self.connection)
     }
 }

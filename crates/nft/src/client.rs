@@ -3,7 +3,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
-use storage::{Database};
+use storage::Database;
 
 use crate::NFTProviderConfig;
 use crate::factory::NFTProviderFactory;
@@ -27,7 +27,6 @@ impl NFTClient {
             image_fetcher: Arc::new(ImageFetcher::new()),
         }
     }
-
 
     pub async fn update_collection(&self, _collection_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
@@ -53,7 +52,8 @@ impl NFTClient {
     pub async fn preload_collections(&self, collection_ids: Vec<NFTCollectionId>) -> Result<Vec<NFTCollection>, Box<dyn Error + Send + Sync>> {
         let ids = collection_ids.iter().map(|x| x.id()).collect();
         let existing_collection_ids: Vec<String> = self
-            .database.client()?
+            .database
+            .client()?
             .nft()
             .get_nft_collections(ids)?
             .into_iter()
@@ -119,7 +119,11 @@ impl NFTClient {
     }
 
     pub fn get_subscriptions(&self, device_id: &str, wallet_index: i32) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?)
+        Ok(self
+            .database
+            .client()?
+            .subscriptions()
+            .get_subscriptions_by_device_id(device_id, Some(wallet_index))?)
     }
 
     pub async fn get_nft_assets_by_chain(&self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
@@ -147,7 +151,14 @@ impl NFTClient {
     }
 
     pub fn get_assets(&self, asset_ids: Vec<String>) -> Result<Vec<NFTAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.nft().get_nft_assets(asset_ids)?.into_iter().map(|x| x.as_primitive()).collect())
+        Ok(self
+            .database
+            .client()?
+            .nft()
+            .get_nft_assets(asset_ids)?
+            .into_iter()
+            .map(|x| x.as_primitive())
+            .collect())
     }
 
     pub fn get_nft_asset(&self, id: &str) -> Result<NFTAsset, Box<dyn Error + Send + Sync>> {

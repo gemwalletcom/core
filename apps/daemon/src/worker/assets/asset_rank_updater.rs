@@ -1,7 +1,7 @@
 use primitives::asset_score::AssetRank;
 use std::error::Error;
-use storage::Database;
 use storage::AssetUpdate;
+use storage::Database;
 
 pub struct AssetRankUpdater {
     database: Database,
@@ -20,9 +20,7 @@ impl SuspiciousAsset {
 
 impl AssetRankUpdater {
     pub fn new(database: Database) -> Self {
-        AssetRankUpdater {
-            database,
-        }
+        AssetRankUpdater { database }
     }
 
     pub async fn update_suspicious_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {

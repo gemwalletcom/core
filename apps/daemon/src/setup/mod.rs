@@ -1,6 +1,6 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
-use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, PlatformStore, Subscription, TransactionType};
+use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, Subscription, TransactionType};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
@@ -20,7 +20,10 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     info_with_fields!("setup", step = "chains", chains = format!("{:?}", chains));
 
     info_with_fields!("setup", step = "add chains");
-    let _ = database.client()?.assets().add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
+    let _ = database
+        .client()?
+        .assets()
+        .add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
 
     info_with_fields!("setup", step = "parser state");
     for chain in chains.clone() {
@@ -135,18 +138,18 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         rate: 1.0,
     };
 
+    info_with_fields!("setup_dev", step = "add rate", currency = "USD");
     let _ = database.client()?.set_fiat_rates(vec![fiat_rate.clone()]).expect("Failed to add currency");
-    info_with_fields!("setup_dev", step = "currency added", currency = "USD");
 
     info_with_fields!("setup_dev", step = "add device");
 
     let device = UpdateDevice {
         device_id: "test".to_string(),
-        platform: "ios".to_string(),
-        platform_store: Some("apple".to_string()),
+        platform: Platform::IOS.as_ref().to_string(),
+        platform_store: Some(PlatformStore::AppStore.as_ref().to_string()),
         token: "test_token".to_string(),
         locale: "en".to_string(),
-        currency: fiat_rate.name.clone(),
+        currency: fiat_rate.id.clone(),
         is_push_enabled: true,
         is_price_alerts_enabled: true,
         version: "1.0.0".to_string(),

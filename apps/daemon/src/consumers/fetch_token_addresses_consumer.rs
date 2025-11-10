@@ -2,7 +2,6 @@ use num_bigint::BigUint;
 use primitives::{AssetId, AssetIdVecExt, AssetVecExt};
 use std::error::Error;
 
-
 use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
@@ -71,11 +70,13 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
 
         let _ = self
             .database
-            .client()?.assets_addresses()
+            .client()?
+            .assets_addresses()
             .delete_assets_addresses(zero_balance_addresses.into_iter().map(|x| x.as_primitive()).collect());
         let _ = self
             .database
-            .client()?.assets_addresses()
+            .client()?
+            .assets_addresses()
             .add_assets_addresses(existing_addresses.iter().map(|x| x.as_primitive()).collect());
 
         self.stream_producer.publish_fetch_assets(missing_ids).await?;

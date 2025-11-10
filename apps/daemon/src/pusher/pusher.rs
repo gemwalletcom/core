@@ -16,7 +16,6 @@ pub struct Pusher {
 
 impl Pusher {
     pub fn new(database: Database) -> Self {
-        
         Self { database }
     }
 

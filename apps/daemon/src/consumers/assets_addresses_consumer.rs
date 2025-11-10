@@ -1,10 +1,8 @@
 use std::error::Error;
 
-
 use async_trait::async_trait;
 use storage::Database;
 use streamer::{AssetsAddressPayload, consumer::MessageConsumer};
-
 
 pub struct AssetsAddressesConsumer {
     pub database: Database,
@@ -31,7 +29,8 @@ impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
 
         Ok(self
             .database
-            .client()?.assets_addresses()
+            .client()?
+            .assets_addresses()
             .add_assets_addresses(assets_addresses.clone().into_iter().map(|x| x.as_primitive()).collect())?)
     }
 }

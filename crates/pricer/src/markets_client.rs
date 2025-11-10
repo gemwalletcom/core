@@ -2,7 +2,7 @@ use std::error::Error;
 
 use cacher::CacherClient;
 use primitives::{AssetId, AssetTag, Markets, MarketsAssets};
-use storage::{Database};
+use storage::Database;
 
 #[derive(Clone)]
 pub struct MarketsClient {
@@ -16,7 +16,6 @@ impl MarketsClient {
     pub fn new(database: Database, cacher: CacherClient) -> Self {
         Self { database, cacher }
     }
-
 
     pub async fn get_markets(&self) -> Result<Markets, Box<dyn Error + Send + Sync>> {
         self.cacher.get_value::<Markets>(MARKETS_KEY).await
@@ -38,7 +37,8 @@ impl MarketsClient {
 
     pub fn get_asset_ids_for_tag(&self, tag: AssetTag) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
         Ok(self
-            .database.client()?
+            .database
+            .client()?
             .tag()
             .get_assets_tags_for_tag(tag.as_ref())?
             .into_iter()

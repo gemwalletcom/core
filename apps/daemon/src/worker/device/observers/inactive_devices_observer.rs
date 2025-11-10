@@ -13,7 +13,6 @@ pub struct InactiveDevicesObserver {
 
 impl InactiveDevicesObserver {
     pub fn new(database: Database, cacher: CacherClient, stream_producer: StreamProducer) -> Self {
-        
         Self {
             database,
             cacher,

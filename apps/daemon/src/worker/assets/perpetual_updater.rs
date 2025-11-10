@@ -14,10 +14,7 @@ pub struct PerpetualUpdater {
 
 impl PerpetualUpdater {
     pub fn new(settings: Settings, database: Database) -> Self {
-        Self {
-            settings,
-            database,
-        }
+        Self { settings, database }
     }
 
     pub async fn update_perpetuals(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {

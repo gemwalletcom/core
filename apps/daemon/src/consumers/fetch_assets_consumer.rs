@@ -6,7 +6,6 @@ use settings_chain::ChainProviders;
 use storage::Database;
 use streamer::{FetchAssetsPayload, consumer::MessageConsumer};
 
-
 pub struct FetchAssetsConsumer {
     pub database: Database,
     pub providers: ChainProviders,

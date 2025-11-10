@@ -10,6 +10,7 @@ pub enum FiatError {
     UnsupportedCountry(String),
     UnsupportedCountryAsset(String, String),
     UnsupportedState(String),
+    AddressNotSubscribed(String),
 }
 
 impl fmt::Display for FiatError {
@@ -23,6 +24,7 @@ impl fmt::Display for FiatError {
             Self::UnsupportedCountry(country) => write!(f, "Unsupported country: {}", country),
             Self::UnsupportedCountryAsset(country, asset) => write!(f, "Unsupported country {} for an asset: {}", country, asset),
             Self::UnsupportedState(state) => write!(f, "Unsupported state: {}", state),
+            Self::AddressNotSubscribed(address) => write!(f, "Address {} is not subscribed", address),
         }
     }
 }

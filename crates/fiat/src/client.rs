@@ -5,7 +5,7 @@ use std::error::Error;
 use std::time::Duration;
 
 use crate::{
-    FiatProvider, IPCheckClient,
+    FiatConfig, FiatProvider, IPCheckClient,
     error::FiatError,
     ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
@@ -22,6 +22,7 @@ pub struct FiatClient {
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ip_check_client: IPCheckClient,
     stream_producer: StreamProducer,
+    config: FiatConfig,
 }
 
 impl FiatClient {
@@ -31,6 +32,7 @@ impl FiatClient {
         providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
         ip_check_client: IPCheckClient,
         stream_producer: StreamProducer,
+        config: FiatConfig,
     ) -> Self {
         Self {
             database,
@@ -38,9 +40,9 @@ impl FiatClient {
             providers,
             ip_check_client,
             stream_producer,
+            config,
         }
     }
-
 
     fn provider(&self, provider_name: &str) -> Result<&(dyn FiatProvider + Send + Sync), Box<dyn std::error::Error + Send + Sync>> {
         self.providers
@@ -74,11 +76,7 @@ impl FiatClient {
         Ok(self.database.client()?.fiat().get_fiat_providers_countries()?)
     }
 
-    pub async fn get_order_status(
-        &self,
-        provider_name: &str,
-        order_id: &str,
-    ) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_order_status(&self, provider_name: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         self.provider(provider_name)?.get_order_status(order_id).await
     }
 
@@ -107,7 +105,8 @@ impl FiatClient {
 
     fn get_fiat_mapping(&self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
         let list = self
-            .database.client()?
+            .database
+            .client()?
             .fiat()
             .get_fiat_assets_for_asset_id(asset_id)?
             .into_iter()
@@ -146,6 +145,11 @@ impl FiatClient {
 
     pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
+
+        if self.config.validate_subscription {
+            self.validate_address_subscription(&asset, &request.wallet_address)?;
+        }
+
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
         let ip_address_info = self.get_ip_address(&request.ip_address).await?;
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
@@ -187,6 +191,20 @@ impl FiatClient {
         self.cacher
             .get_or_set_value(&key, || self.ip_check_client.get_ip_address(ip_address), Some(86400))
             .await
+    }
+
+    fn validate_address_subscription(&self, asset: &Asset, wallet_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let exists = self
+            .database
+            .client()?
+            .subscriptions()
+            .get_subscription_address_exists(asset.chain, wallet_address)?;
+
+        if !exists {
+            return Err(FiatError::AddressNotSubscribed(wallet_address.to_string()).into());
+        }
+
+        Ok(())
     }
 
     fn check_asset_limits(request: &FiatQuoteRequest, mapping: &FiatMapping) -> Result<(), FiatError> {
