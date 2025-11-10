@@ -206,18 +206,21 @@ fn make_market_order_type() -> OrderType {
 }
 
 fn make_trigger_order_type(trigger_px: String, tpsl: TpslType) -> OrderType {
+    let is_market = match tpsl {
+        TpslType::StopLoss => true,
+        TpslType::TakeProfit => false,
+    };
     OrderType::Trigger {
-        trigger: Trigger {
-            is_market: true,
-            trigger_px,
-            tpsl,
-        },
+        trigger: Trigger { is_market, trigger_px, tpsl },
     }
 }
 
 fn make_tpsl_order(asset: u32, is_buy: bool, size: &str, trigger: String, tpsl_type: TpslType, add_slippage: bool) -> Order {
-    let price = calculate_execution_price(&trigger, add_slippage);
-    make_trigger_order(asset, !is_buy, &price, size, true, trigger, tpsl_type)
+    let execution_price = match tpsl_type {
+        TpslType::TakeProfit => trigger.clone(),
+        TpslType::StopLoss => calculate_execution_price(&trigger, add_slippage),
+    };
+    make_trigger_order(asset, !is_buy, &execution_price, size, true, trigger, tpsl_type)
 }
 
 fn make_trigger_order(asset: u32, is_buy: bool, price: &str, size: &str, reduce_only: bool, trigger_px: String, tpsl: TpslType) -> Order {
@@ -268,23 +271,41 @@ mod tests {
     }
 
     #[test]
-    fn test_make_market_with_tp_sl_market_orders() {
+    fn test_make_market_with_tp_sl_orders() {
         let result = make_market_with_tp_sl(1, true, "100", "1.0", false, Some("110".to_string()), Some("95".to_string()), None);
 
         assert_eq!(result.orders.len(), 3);
         assert_eq!(result.grouping, Grouping::NormalTpsl);
-        assert_eq!(result.orders[2].price, "118.8");
         assert_eq!(result.orders[1].price, "102.6");
+        assert_eq!(result.orders[2].price, "110");
+
+        if let OrderType::Trigger { trigger } = &result.orders[1].order_type {
+            assert!(trigger.is_market);
+        }
+
+        if let OrderType::Trigger { trigger } = &result.orders[2].order_type {
+            assert!(!trigger.is_market);
+            assert_eq!(trigger.trigger_px, "110");
+        }
     }
 
     #[test]
-    fn test_make_position_tp_sl_market_orders() {
+    fn test_make_position_tp_sl_orders() {
         let result = make_position_tp_sl(1, true, "1.0", Some("110".to_string()), Some("95".to_string()), None);
 
         assert_eq!(result.orders.len(), 2);
         assert_eq!(result.grouping, Grouping::PositionTpsl);
-        assert_eq!(result.orders[1].price, "101.2");
         assert_eq!(result.orders[0].price, "87.4");
+        assert_eq!(result.orders[1].price, "110");
+
+        if let OrderType::Trigger { trigger } = &result.orders[0].order_type {
+            assert!(trigger.is_market);
+        }
+
+        if let OrderType::Trigger { trigger } = &result.orders[1].order_type {
+            assert!(!trigger.is_market);
+            assert_eq!(trigger.trigger_px, "110");
+        }
     }
 
     #[test]
@@ -294,7 +315,16 @@ mod tests {
         assert_eq!(result.orders.len(), 3);
         assert!(!result.orders[0].is_buy);
         assert_eq!(result.orders[0].size, "2.5");
-        assert_eq!(result.orders[2].price, "97.2");
         assert_eq!(result.orders[1].price, "113.4");
+        assert_eq!(result.orders[2].price, "90");
+
+        if let OrderType::Trigger { trigger } = &result.orders[1].order_type {
+            assert!(trigger.is_market);
+        }
+
+        if let OrderType::Trigger { trigger } = &result.orders[2].order_type {
+            assert!(!trigger.is_market);
+            assert_eq!(trigger.trigger_px, "90");
+        }
     }
 }
