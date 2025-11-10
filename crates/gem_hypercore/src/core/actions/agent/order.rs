@@ -242,13 +242,13 @@ mod tests {
     #[test]
     fn test_calculate_execution_price_rounds_to_5_sig_figs() {
         let result = calculate_execution_price("156.66", false);
-        assert_eq!(result, "144.13");
+        assert_eq!(result, "140.99");
 
         let result = calculate_execution_price("100", true);
-        assert_eq!(result, "108");
+        assert_eq!(result, "110");
 
         let result = calculate_execution_price("1234.56", false);
-        assert_eq!(result, "1135.8");
+        assert_eq!(result, "1111.1");
     }
 
     #[test]
@@ -276,7 +276,7 @@ mod tests {
 
         assert_eq!(result.orders.len(), 3);
         assert_eq!(result.grouping, Grouping::NormalTpsl);
-        assert_eq!(result.orders[1].price, "102.6");
+        assert_eq!(result.orders[1].price, "104.5");
         assert_eq!(result.orders[2].price, "110");
 
         if let OrderType::Trigger { trigger } = &result.orders[1].order_type {
@@ -295,7 +295,7 @@ mod tests {
 
         assert_eq!(result.orders.len(), 2);
         assert_eq!(result.grouping, Grouping::PositionTpsl);
-        assert_eq!(result.orders[0].price, "87.4");
+        assert_eq!(result.orders[0].price, "85.5");
         assert_eq!(result.orders[1].price, "110");
 
         if let OrderType::Trigger { trigger } = &result.orders[0].order_type {
@@ -315,7 +315,7 @@ mod tests {
         assert_eq!(result.orders.len(), 3);
         assert!(!result.orders[0].is_buy);
         assert_eq!(result.orders[0].size, "2.5");
-        assert_eq!(result.orders[1].price, "113.4");
+        assert_eq!(result.orders[1].price, "115.5");
         assert_eq!(result.orders[2].price, "90");
 
         if let OrderType::Trigger { trigger } = &result.orders[1].order_type {
