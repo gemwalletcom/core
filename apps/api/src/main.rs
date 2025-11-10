@@ -54,7 +54,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
     let postgres_url = settings.postgres.url.as_str();
     let settings_clone = settings.clone();
-    let cacher_client = CacherClient::new(redis_url);
+    let cacher_client = CacherClient::new(redis_url).await;
     let price_client = PriceClient::new(cacher_client.clone(), postgres_url);
     let charts_client = ChartClient::new(postgres_url);
     let config_client = ConfigClient::new(postgres_url).await;
@@ -172,7 +172,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
-    let cacher_client = CacherClient::new(&settings.redis.url);
+    let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(cacher_client, settings.postgres.url.as_str());
     let price_observer_config = PriceObserverConfig { redis_url: settings.redis.url };
     rocket::build()

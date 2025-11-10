@@ -1,57 +1,58 @@
 use std::error::Error;
-
-use redis::{AsyncCommands, Client};
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use redis::{AsyncCommands, Client, aio::MultiplexedConnection};
+use tokio::sync::Mutex;
 
 mod error;
 mod keys;
 pub use error::*;
 pub use keys::*;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CacherClient {
-    client: Client,
+    connection: Arc<Mutex<MultiplexedConnection>>,
 }
 
 impl CacherClient {
-    pub fn new(redis_url: &str) -> Self {
-        let client = redis::Client::open(redis_url).unwrap();
-        Self { client }
+    pub async fn new(redis_url: &str) -> Self {
+        let client = Client::open(redis_url).unwrap();
+        let connection = client.get_multiplexed_async_connection().await.unwrap();
+        Self {
+            connection: Arc::new(Mutex::new(connection)),
+        }
     }
 
     pub async fn set_values(&mut self, values: Vec<(String, String)>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.client
-            .get_multiplexed_async_connection()
-            .await?
-            .mset::<String, String, ()>(values.as_slice())
-            .await?;
+        self.connection.lock().await.mset::<String, String, ()>(values.as_slice()).await?;
         // redis always returns "OK" instead of usize for the number of inserts
         Ok(values.len())
     }
 
     pub async fn set_values_with_publish(&mut self, values: Vec<(String, String)>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let mut connection = self.connection.lock().await;
         let mut pipe = redis::pipe();
         for (key, value) in &values {
             pipe.cmd("SET").arg(key).arg(value).arg("EX").arg(ttl_seconds).ignore();
             pipe.cmd("PUBLISH").arg(key).arg(value).ignore();
         }
-        pipe.query_async::<()>(&mut connection).await?;
+        pipe.query_async::<()>(&mut *connection).await?;
         Ok(values.len())
     }
 
     pub async fn set_value_with_ttl(&mut self, key: &str, value: String, seconds: u64) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let mut connection = self.connection.lock().await;
         Ok(connection.set_ex::<&str, String, ()>(key, value.clone(), seconds).await?)
     }
 
     pub async fn set_value<T: serde::Serialize>(&mut self, key: &str, value: &T) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let mut connection = self.connection.lock().await;
         Ok(connection.set::<&str, String, ()>(key, serde_json::to_string(value)?).await?)
     }
 
     pub async fn get_value<T: serde::de::DeserializeOwned>(&mut self, key: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
-        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let mut connection = self.connection.lock().await;
         let value: Option<String> = connection.get(key).await?;
         match value {
             Some(s) => Ok(serde_json::from_str(&s)?),
@@ -64,7 +65,7 @@ impl CacherClient {
         I: serde::de::DeserializeOwned,
         T: FromIterator<I>,
     {
-        let result: Vec<Option<String>> = self.client.get_multiplexed_async_connection().await?.mget(keys).await?;
+        let result: Vec<Option<String>> = self.connection.lock().await.mget(keys).await?;
         let values: T = result
             .into_iter()
             .flatten()
@@ -81,11 +82,8 @@ impl CacherClient {
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = Result<T, Box<dyn Error + Send + Sync>>>,
     {
-        let mut connection = self.client.get_multiplexed_async_connection().await?;
-        let cached: Option<String> = connection.get(key).await?;
-
-        if let Some(value) = cached {
-            return Ok(serde_json::from_str(&value)?);
+        if let Ok(cached_value) = self.get_value::<T>(key).await {
+            return Ok(cached_value);
         }
 
         let fresh_value = fetch_fn().await?;
@@ -94,42 +92,17 @@ impl CacherClient {
         if let Some(ttl) = ttl_seconds {
             self.set_value_with_ttl(key, serialized, ttl).await?;
         } else {
-            connection.set::<&str, String, ()>(key, serialized).await?;
+            self.connection.lock().await.set::<&str, String, ()>(key, serialized).await?;
         }
 
         Ok(fresh_value)
     }
 
     pub async fn set_hset<T: serde::Serialize>(&mut self, hash_key: &str, field: &str, value: &T) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let mut connection = self.client.get_multiplexed_async_connection().await?;
+        let mut connection = self.connection.lock().await;
         let serialized_value = serde_json::to_string(value)?;
         let redis_result: i64 = connection.hset(hash_key, field, serialized_value).await?;
         Ok(redis_result == 1)
-    }
-
-    pub async fn get_or_set_hset<T, F, Fut>(&mut self, hash_key: &str, field: &str, fetch_fn: F) -> Result<T, Box<dyn Error + Send + Sync>>
-    where
-        T: serde::de::DeserializeOwned + serde::Serialize,
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = Result<T, Box<dyn Error + Send + Sync>>>,
-    {
-        let mut connection = self.client.get_multiplexed_async_connection().await?;
-        let cached_str: Option<String> = connection.hget(hash_key, field).await?;
-
-        if let Some(value_str) = cached_str {
-            return Ok(serde_json::from_str(&value_str)?);
-        }
-
-        let fresh_value = fetch_fn().await?;
-        let serialized_fresh_value = serde_json::to_string(&fresh_value)?;
-
-        self.client
-            .get_multiplexed_async_connection()
-            .await?
-            .hset::<&str, &str, String, ()>(hash_key, field, serialized_fresh_value)
-            .await?;
-
-        Ok(fresh_value)
     }
 
     pub async fn can_process_now(&mut self, key: &str, ttl_seconds: u64) -> Result<bool, Box<dyn Error + Send + Sync>> {

@@ -12,7 +12,7 @@ use std::time::Duration;
 use streamer::StreamProducer;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
-    let cacher_client = CacherClient::new(settings.redis.url.as_str());
+    let cacher_client = CacherClient::new(settings.redis.url.as_str()).await;
 
     let device_updater = run_job("device updater", Duration::from_secs(86400), {
         let settings = Arc::new(settings.clone());

@@ -19,7 +19,7 @@ use std::time::Duration;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
-    let cacher_client = CacherClient::new(&settings.redis.url);
+    let cacher_client = CacherClient::new(&settings.redis.url).await;
 
     let clean_updated_assets = run_job("Clean outdated assets", Duration::from_secs(86400), {
         let settings = Arc::new(settings.clone());
