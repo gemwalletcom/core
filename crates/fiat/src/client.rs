@@ -6,12 +6,12 @@ use std::time::Duration;
 
 use crate::{
     FiatConfig, FiatProvider, IPCheckClient,
-    error::FiatError,
+    error::{FiatQuoteError, FiatQuotesError},
     ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
 };
 use futures::future::join_all;
-use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
+use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use reqwest::Client as RequestClient;
 use storage::{AssetFilter, Database};
 use streamer::{FiatWebhookPayload, StreamProducer};
@@ -147,11 +147,17 @@ impl FiatClient {
         let asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
 
         if self.config.validate_subscription {
-            self.validate_address_subscription(&asset, &request.wallet_address)?;
+            let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;
+            if !is_subscribed {
+                return Err(Box::new(FiatQuotesError::AddressNotSubscribed(request.wallet_address.to_string())));
+            }
         }
 
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
-        let ip_address_info = self.get_ip_address(&request.ip_address).await?;
+        let ip_address_info = self
+            .get_ip_address(&request.ip_address)
+            .await
+            .map_err(|e| FiatQuotesError::IpAddressValidationFailed(e.to_string()))?;
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
 
         let quotes = match request.clone().quote_type {
@@ -193,21 +199,15 @@ impl FiatClient {
             .await
     }
 
-    fn validate_address_subscription(&self, asset: &Asset, wallet_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let exists = self
+    fn is_address_subscribed(&self, asset: &Asset, wallet_address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(self
             .database
             .client()?
             .subscriptions()
-            .get_subscription_address_exists(asset.chain, wallet_address)?;
-
-        if !exists {
-            return Err(FiatError::AddressNotSubscribed(wallet_address.to_string()).into());
-        }
-
-        Ok(())
+            .get_subscription_address_exists(asset.chain, wallet_address)?)
     }
 
-    fn check_asset_limits(request: &FiatQuoteRequest, mapping: &FiatMapping) -> Result<(), FiatError> {
+    fn check_asset_limits(request: &FiatQuoteRequest, mapping: &FiatMapping) -> Result<(), FiatQuoteError> {
         let fiat_currency = request.fiat_currency.clone();
 
         let limits = match request.quote_type {
@@ -230,12 +230,12 @@ impl FiatClient {
                     if let Some(min_amount) = limit.min_amount
                         && amount < min_amount
                     {
-                        return Err(FiatError::InsufficientAmount(amount, min_amount));
+                        return Err(FiatQuoteError::InsufficientAmount(amount, min_amount));
                     }
                     if let Some(max_amount) = limit.max_amount
                         && amount > max_amount
                     {
-                        return Err(FiatError::ExcessiveAmount(amount, max_amount));
+                        return Err(FiatQuoteError::ExcessiveAmount(amount, max_amount));
                     }
                     return Ok(());
                 }
@@ -276,22 +276,22 @@ impl FiatClient {
 
                 async move {
                     if !countries.contains(&country_code) {
-                        Err(FiatQuoteError::new(
+                        Err(PrimitiveFiatQuoteError::new(
                             provider_id.clone(),
-                            FiatError::UnsupportedCountry(country_code).to_string(),
+                            FiatQuoteError::UnsupportedCountry(country_code).to_string(),
                         ))
                     } else if mapping.unsupported_countries.clone().contains_key(&country_code) {
-                        Err(FiatQuoteError::new(
+                        Err(PrimitiveFiatQuoteError::new(
                             provider_id.clone(),
-                            FiatError::UnsupportedCountryAsset(country_code, mapping.symbol.clone()).to_string(),
+                            FiatQuoteError::UnsupportedCountryAsset(country_code, mapping.symbol.clone()).to_string(),
                         ))
                     } else {
                         match Self::check_asset_limits(&request, &mapping) {
                             Ok(_) => match quote_fn(provider, request, mapping).await {
                                 Ok(quote) => Ok(quote),
-                                Err(e) => Err(FiatQuoteError::new(provider_id, e.to_string())),
+                                Err(e) => Err(PrimitiveFiatQuoteError::new(provider_id, e.to_string())),
                             },
-                            Err(limit_error) => Err(FiatQuoteError::new(provider_id, limit_error.to_string())),
+                            Err(limit_error) => Err(PrimitiveFiatQuoteError::new(provider_id, limit_error.to_string())),
                         }
                     }
                 }
@@ -371,7 +371,7 @@ mod tests {
             sell_limits: vec![],
         };
         match FiatClient::check_asset_limits(&request, &mapping).unwrap_err() {
-            FiatError::InsufficientAmount(amount, min) => {
+            FiatQuoteError::InsufficientAmount(amount, min) => {
                 assert_eq!(amount, 25.0);
                 assert_eq!(min, 50.0);
             }
@@ -391,7 +391,7 @@ mod tests {
             sell_limits: vec![],
         };
         match FiatClient::check_asset_limits(&request, &mapping).unwrap_err() {
-            FiatError::ExcessiveAmount(amount, max) => {
+            FiatQuoteError::ExcessiveAmount(amount, max) => {
                 assert_eq!(amount, 300.0);
                 assert_eq!(max, 200.0);
             }
