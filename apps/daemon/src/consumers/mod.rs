@@ -44,7 +44,7 @@ pub async fn run_consumer_fetch_assets(settings: Settings, database: Database) -
     let cacher = CacherClient::new(&settings.redis.url).await;
     let consumer = FetchAssetsConsumer {
         providers: chain_providers(&settings, NAME),
-        database: database,
+        database,
         cacher,
     };
     streamer::run_consumer::<FetchAssetsPayload, FetchAssetsConsumer, usize>(NAME, stream_reader, QueueName::FetchAssets, consumer, ConsumerConfig::default())
@@ -59,7 +59,7 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Datab
     let pusher = Pusher::new(database.clone());
 
     let consumer = StoreTransactionsConsumer {
-        database: database,
+        database,
         stream_producer,
         pusher,
         config: StoreTransactionsConsumerConfig::default(),
