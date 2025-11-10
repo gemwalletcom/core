@@ -101,7 +101,7 @@ bcs = { version = "0.1.6" }
 sui-types = { package = "sui-sdk-types", version = "0.0.8", features = [
     "serde",
 ] }
-sui-transaction-builder = { package = "sui-transaction-builder", version = "0.0.8" }
+sui-transaction-builder = { package = "sui-transaction-builder", version = "0.1.0" }
 k256 = { version = "0.13.4", features = ["ecdsa", "sha256"] }
 
 uniffi = { version = "0.30.0" }
