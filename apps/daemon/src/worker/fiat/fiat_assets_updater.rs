@@ -15,7 +15,7 @@ impl FiatAssetsUpdater {
         Self { database, providers }
     }
 
-    pub async fn update_buyable_sellable_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_buyable_sellable_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let enabled_asset_ids = self.database.client()?.get_fiat_assets_is_enabled()?;
 
         // buyable
@@ -66,7 +66,7 @@ impl FiatAssetsUpdater {
         Ok(1)
     }
 
-    pub async fn update_trending_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_trending_fiat_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let from = Utc::now() - Duration::days(30);
         let asset_ids = self.database.client()?.fiat().get_fiat_assets_popular(from.naive_utc(), 30)?;
         Ok(self
@@ -76,7 +76,7 @@ impl FiatAssetsUpdater {
             .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }
 
-    pub async fn update_fiat_assets(&mut self, name: &str) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_fiat_assets(&self, name: &str) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let mut total_assets = 0;
 
         for i in 0..self.providers.len() {
@@ -101,7 +101,7 @@ impl FiatAssetsUpdater {
             .ok_or_else(|| format!("Provider {} not found", provider_name.id()).into())
     }
 
-    async fn update_fiat_assets_for_provider(&mut self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    async fn update_fiat_assets_for_provider(&self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.get_provider(provider_name)?;
         let assets = provider.get_assets().await?;
         let asset_count = assets.len();
@@ -139,7 +139,7 @@ impl FiatAssetsUpdater {
         Ok(asset_count)
     }
 
-    pub async fn update_fiat_countries(&mut self, name: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_fiat_countries(&self, name: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
         for i in 0..self.providers.len() {
             let provider_name = self.providers[i].name();
             match self.update_fiat_countries_for_provider(provider_name.clone()).await {
@@ -150,7 +150,7 @@ impl FiatAssetsUpdater {
         Ok(true)
     }
 
-    async fn update_fiat_countries_for_provider(&mut self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    async fn update_fiat_countries_for_provider(&self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.get_provider(provider_name)?;
         let countries = provider.get_countries().await?;
         let country_count = countries.len();

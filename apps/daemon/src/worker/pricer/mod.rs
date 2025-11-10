@@ -154,7 +154,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let price_client = PriceClient::new(database.clone(), cacher_client);
-            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            let charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
             async move { charts_updater.aggregate_hourly_charts().await }
         }
     });
@@ -167,7 +167,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let price_client = PriceClient::new(database.clone(), cacher_client);
-            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            let charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
             async move { charts_updater.aggregate_daily_charts().await }
         }
     });
@@ -180,7 +180,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let price_client = PriceClient::new(database.clone(), cacher_client);
-            let mut charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
+            let charts_updater = ChartsUpdater::new(price_client, coingecko_client.clone());
             async move { charts_updater.cleanup_charts_data().await }
         }
     });

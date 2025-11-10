@@ -21,10 +21,10 @@ pub struct StoreTransactionsConsumer {
 
 #[async_trait]
 impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
-    async fn should_process(&mut self, _payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, _payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
-    async fn process(&mut self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
         let transactions = payload.transactions;
         let is_notify_devices = !payload.blocks.is_empty();
@@ -119,7 +119,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
 impl StoreTransactionsConsumer {
     async fn get_existing_and_missing_assets(
-        &mut self,
+        &self,
         assets_ids: Vec<AssetId>,
     ) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
         let assets_with_prices = self.database.client()?.assets().get_assets_with_prices(assets_ids.ids().clone())?;
@@ -132,7 +132,7 @@ impl StoreTransactionsConsumer {
         Ok((assets_with_prices, missing_assets_ids))
     }
 
-    async fn store_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn store_transactions(&self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         if transactions.is_empty() {
             return Ok(0);
         }

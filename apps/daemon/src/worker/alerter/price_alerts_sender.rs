@@ -18,7 +18,7 @@ impl PriceAlertSender {
         }
     }
 
-    pub async fn run_observer(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn run_observer(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let rules = PriceAlertRules {
             price_change_increase: self.rules.price_increase_percent,
             price_change_decrease: self.rules.price_decrease_percent,

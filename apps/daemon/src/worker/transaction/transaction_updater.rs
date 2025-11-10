@@ -11,7 +11,7 @@ impl TransactionUpdater {
     pub fn new(database: Database) -> Self {
         Self { database }
     }
-    pub async fn update(&mut self) -> Result<HashMap<String, usize>, Box<dyn Error + Send + Sync>> {
+    pub async fn update(&self) -> Result<HashMap<String, usize>, Box<dyn Error + Send + Sync>> {
         let addresses_result = self.database.client()?.transactions().get_transactions_addresses(5000, 5)?;
         let subscriptions_exclude = addresses_result
             .clone()

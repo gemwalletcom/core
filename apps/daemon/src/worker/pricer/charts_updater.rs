@@ -18,7 +18,7 @@ impl ChartsUpdater {
     }
 
     #[allow(unused)]
-    pub async fn update_charts_all(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_charts_all(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let coin_list = self.coin_gecko_client.get_all_coin_markets(None, 250, 10).await?;
 
         for coin_id in coin_list.clone() {
@@ -51,15 +51,15 @@ impl ChartsUpdater {
         Ok(coin_list.len())
     }
 
-    pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn aggregate_hourly_charts(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         self.prices_client.aggregate_hourly_charts().await
     }
 
-    pub async fn aggregate_daily_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn aggregate_daily_charts(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         self.prices_client.aggregate_daily_charts().await
     }
 
-    pub async fn cleanup_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn cleanup_charts_data(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         self.prices_client.cleanup_charts_data().await
     }
 }

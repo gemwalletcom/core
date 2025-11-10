@@ -22,13 +22,13 @@ impl FetchCoinAddressesConsumer {
 
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer {
-    async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
             .can_process_now(&format!("fetch_coin_addresses:{}:{}", payload.value.chain, payload.value.address), 7 * 86400)
             .await
     }
 
-    async fn process(&mut self, payload: ChainAddressPayload) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: ChainAddressPayload) -> Result<String, Box<dyn Error + Send + Sync>> {
         let balance = self.provider.get_balance_coin(payload.value.chain, payload.value.address.clone()).await?;
 
         if balance.balance.available == BigUint::ZERO {

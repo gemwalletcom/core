@@ -15,12 +15,15 @@ impl SupportClient {
         Self { database, stream_producer }
     }
 
-    pub async fn handle_message_created(&mut self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut client = self.database.client()?;
-        let device = client.get_support_device(support_device_id)?.as_primitive();
+    pub async fn handle_message_created(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let device = {
+            let mut client = self.database.client()?;
+            client.get_support_device(support_device_id)?.as_primitive()
+        };
 
         if let Some(unread) = payload.get_unread() {
-            self.database.client()?.support().support_update_unread(support_device_id, unread)?;
+            let mut client = self.database.client()?;
+            client.support().support_update_unread(support_device_id, unread)?;
         }
 
         if let Some(message_type) = payload.message_type.clone()
@@ -42,9 +45,10 @@ impl SupportClient {
         Ok(())
     }
 
-    pub fn handle_conversation_updated(&mut self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub fn handle_conversation_updated(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
         if let Some(unread) = payload.get_unread() {
-            self.database.client()?.support().support_update_unread(support_device_id, unread)?;
+            let mut client = self.database.client()?;
+            client.support().support_update_unread(support_device_id, unread)?;
         }
 
         Ok(())

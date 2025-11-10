@@ -28,23 +28,23 @@ impl PricesDexUpdater {
         }
     }
 
-    pub async fn update_feeds(&mut self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_feeds(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let feeds = self.provider.get_supported_feeds().await?;
         self.save_feeds(feeds)
     }
 
-    pub async fn update_prices(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_prices(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let feed_ids = self.database.client()?.prices_dex().get_feed_ids_by_provider(self.provider_type.clone())?;
         let prices = self.provider.get_assets_prices(feed_ids).await?;
         self.save_prices(prices)
     }
 
-    fn validate_asset_ids(&mut self, asset_ids: Vec<String>) -> Result<HashSet<String>, Box<dyn std::error::Error + Send + Sync>> {
+    fn validate_asset_ids(&self, asset_ids: Vec<String>) -> Result<HashSet<String>, Box<dyn std::error::Error + Send + Sync>> {
         let existing_assets = self.database.client()?.assets().get_assets_basic(asset_ids)?;
         Ok(existing_assets.into_iter().map(|a| a.asset.id.to_string()).collect())
     }
 
-    fn save_feeds(&mut self, feeds: Vec<AssetPriceFeed>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn save_feeds(&self, feeds: Vec<AssetPriceFeed>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let asset_ids: Vec<String> = feeds.iter().map(|feed| feed.asset_id.to_string()).collect();
         let existing_asset_ids = self.validate_asset_ids(asset_ids)?;
 
@@ -80,7 +80,7 @@ impl PricesDexUpdater {
         Ok(())
     }
 
-    fn save_prices(&mut self, prices: Vec<DexAssetPrice>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    fn save_prices(&self, prices: Vec<DexAssetPrice>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let asset_ids: Vec<String> = prices.iter().map(|p| p.asset_id.to_string()).collect();
         let existing_asset_ids = self.validate_asset_ids(asset_ids)?;
 

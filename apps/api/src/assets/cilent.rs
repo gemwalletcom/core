@@ -37,7 +37,7 @@ impl AssetsClient {
     }
 
     pub fn get_assets_by_device_id(
-        &mut self,
+        &self,
         device_id: &str,
         wallet_index: i32,
         from_timestamp: Option<u32>,

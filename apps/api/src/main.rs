@@ -84,7 +84,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(database.clone());
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
-    let fiat_config = FiatConfig::new(settings_clone.fiat.timeout, settings_clone.fiat.validate_subscription);
+    let fiat_config = FiatConfig::new(settings_clone.fiat.timeout, settings_clone.fiat.validate.subscription);
     let fiat_client = FiatClient::new(
         database.clone(),
         cacher_client.clone(),

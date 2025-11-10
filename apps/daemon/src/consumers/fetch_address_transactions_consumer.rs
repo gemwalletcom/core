@@ -34,7 +34,7 @@ impl FetchAddressTransactionsConsumer {
 
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAddressTransactionsConsumer {
-    async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
             .can_process_now(
                 &format!("fetch_address_transactions:{}:{}", payload.value.chain, payload.value.address),
@@ -42,7 +42,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchAddressTransactionsCon
             )
             .await
     }
-    async fn process(&mut self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let transactions = self
             .providers
             .get_transactions_by_address(payload.value.chain, payload.value.address.clone())

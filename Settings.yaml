@@ -13,8 +13,9 @@ coingecko:
   key:
     secret: ""
 fiat:
-  timeout: 3
-  validate_subscription: false
+  timeout: 3s
+  validate:
+    subscription: false
 moonpay:
   key:
     public: ""
@@ -206,7 +207,7 @@ swap:
       percent: 0
       address: ""
 scan:
-  timeout_ms: 1200 # ms
+  timeout: 1200ms
   goplus:
     url: "https://api.gopluslabs.io"
     key:
@@ -219,7 +220,7 @@ scan:
       secret: ""
 
 parser:
-  timeout: 1000
+  timeout: 1s
 
 pusher:
   url: "http://localhost:8088"

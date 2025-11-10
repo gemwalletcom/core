@@ -20,7 +20,7 @@ impl ValidatorScanner {
         }
     }
 
-    pub async fn update_validators(&mut self, name: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn update_validators(&self, name: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let chains = Chain::stakeable();
 
         for chain in chains {
@@ -32,7 +32,7 @@ impl ValidatorScanner {
         Ok(())
     }
 
-    async fn update_validators_for_chain(&mut self, chain: Chain) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn update_validators_for_chain(&self, chain: Chain) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let validators = self.chain_providers.get_validators(chain).await?;
         let addresses: Vec<_> = validators.into_iter().filter_map(|v| v.as_scan_address(chain)).collect();
         let count = addresses.len();
@@ -40,7 +40,7 @@ impl ValidatorScanner {
         Ok(count)
     }
 
-    pub async fn update_validators_from_static_assets(&mut self, name: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn update_validators_from_static_assets(&self, name: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let chains = vec![Chain::Tron, Chain::SmartChain];
         let static_assets_client = StaticAssetsClient::new(&self.assets_url);
 
@@ -54,7 +54,7 @@ impl ValidatorScanner {
     }
 
     async fn update_validators_from_static_assets_for_chain(
-        &mut self,
+        &self,
         chain: Chain,
         static_assets_client: &StaticAssetsClient,
     ) -> Result<usize, Box<dyn Error + Send + Sync>> {

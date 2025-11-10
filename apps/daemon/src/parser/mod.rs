@@ -35,13 +35,13 @@ impl Parser {
         }
     }
 
-    pub async fn start(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn start(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
         loop {
             let state = self.database.client()?.parser_state().get_parser_state(self.chain.as_ref())?;
-            let timeout = cmp::max(state.timeout_latest_block as u64, self.options.timeout);
+            let timeout = cmp::max(Duration::from_millis(state.timeout_latest_block as u64), self.options.timeout);
 
             if !state.is_enabled {
-                tokio::time::sleep(Duration::from_millis(timeout)).await;
+                tokio::time::sleep(timeout).await;
                 continue;
             }
             let next_current_block = state.current_block + state.await_blocks as i64;
@@ -71,14 +71,14 @@ impl Parser {
                             await_blocks = state.await_blocks
                         );
 
-                        tokio::time::sleep(Duration::from_millis(timeout)).await;
+                        tokio::time::sleep(timeout).await;
                         continue;
                     }
                 }
                 Err(err) => {
                     error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
 
-                    tokio::time::sleep(Duration::from_millis(timeout * 5)).await;
+                    tokio::time::sleep(timeout * 5).await;
                     continue;
                 }
             }
@@ -137,7 +137,7 @@ impl Parser {
                     Err(err) => {
                         error_with_fields!("parser parse_block", &*err, chain = self.chain.as_ref(), blocks = format!("{:?}", next_blocks));
 
-                        tokio::time::sleep(Duration::from_millis(timeout)).await;
+                        tokio::time::sleep(timeout).await;
                         break;
                     }
                 }
@@ -153,7 +153,7 @@ impl Parser {
         }
     }
 
-    pub async fn parse_blocks(&mut self, blocks: Vec<u64>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn parse_blocks(&self, blocks: Vec<u64>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let transactions = self.provider.get_transactions_in_blocks(blocks.clone()).await?;
         if transactions.is_empty() {
             return Ok(0);
@@ -207,7 +207,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
 async fn parser_start(database: Database, stream_producer: StreamProducer, provider: Box<dyn ChainTraits>, parser_options: ParserOptions) {
     let chain = provider.get_chain();
 
-    let mut parser = Parser::new(provider, stream_producer, database, parser_options.clone());
+    let parser = Parser::new(provider, stream_producer, database, parser_options.clone());
 
     loop {
         match parser.start().await {
@@ -218,7 +218,7 @@ async fn parser_start(database: Database, stream_producer: StreamProducer, provi
                 error_with_fields!("parser start error", &*e, chain = chain.as_ref());
             }
         }
-        tokio::time::sleep(Duration::from_millis(parser_options.timeout)).await;
+        tokio::time::sleep(parser_options.timeout).await;
         info_with_fields!("parser restart timeout", chain = chain.as_ref());
     }
 }

@@ -14,7 +14,7 @@ impl TransactionsClient {
     }
 
     pub fn get_transactions_by_device_id(
-        &mut self,
+        &self,
         device_id: &str,
         options: TransactionsFetchOption,
     ) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {

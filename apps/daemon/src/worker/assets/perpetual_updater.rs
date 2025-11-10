@@ -17,7 +17,7 @@ impl PerpetualUpdater {
         Self { settings, database }
     }
 
-    pub async fn update_perpetuals(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn update_perpetuals(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
         let chains = [Chain::HyperCore];
         for chain in chains {
             let provider = ProviderFactory::new_from_settings_with_user_agent(chain, &self.settings, &service_user_agent("daemon", Some("perpetual_updater")));

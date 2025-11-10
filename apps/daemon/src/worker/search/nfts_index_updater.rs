@@ -14,7 +14,7 @@ impl NftsIndexUpdater {
         }
     }
 
-    pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let collections = self.database.client()?.nft().get_nft_collections_all()?;
 
         let documents: Vec<NFTDocument> = collections

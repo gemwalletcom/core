@@ -19,8 +19,9 @@ impl Pusher {
         Self { database }
     }
 
-    pub fn get_address(&mut self, chain: Chain, address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let result = self.database.client()?.scan_addresses().get_scan_address(chain, address);
+    pub fn get_address(&self, chain: Chain, address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let mut client = self.database.client()?;
+        let result = client.scan_addresses().get_scan_address(chain, address);
         match result {
             Ok(address) => Ok(address.name.unwrap_or_default()),
             Err(_) => Ok(AddressFormatter::short(chain, address)),
@@ -28,7 +29,7 @@ impl Pusher {
     }
 
     pub fn message(
-        &mut self,
+        &self,
         localizer: LanguageLocalizer,
         transaction: Transaction,
         subscription: Subscription,
@@ -136,7 +137,7 @@ impl Pusher {
     }
 
     pub async fn get_messages(
-        &mut self,
+        &self,
         device: primitives::Device,
         transaction: Transaction,
         subscription: Subscription,

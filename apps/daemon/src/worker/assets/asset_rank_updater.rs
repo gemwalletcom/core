@@ -23,7 +23,7 @@ impl AssetRankUpdater {
         AssetRankUpdater { database }
     }
 
-    pub async fn update_suspicious_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_suspicious_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let assets = self.database.client()?.assets().get_assets_all()?;
         let asset_ids: Vec<String> = assets
             .into_iter()

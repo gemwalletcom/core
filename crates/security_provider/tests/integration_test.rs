@@ -15,8 +15,7 @@ mod tests {
         Settings::new_setting_path(path).unwrap()
     }
 
-    fn build_client(base_url: String, timeout_ms: u64) -> ReqwestClient {
-        let timeout = Duration::from_millis(timeout_ms);
+    fn build_client(base_url: String, timeout: Duration) -> ReqwestClient {
         let http = reqwest::Client::builder().timeout(timeout).build().expect("failed to build reqwest client");
         ReqwestClient::new(base_url, http)
     }
@@ -24,7 +23,7 @@ mod tests {
     #[tokio::test]
     async fn test_goplus_scan_address_eth() {
         let settings = load_settings();
-        let client = build_client(settings.scan.goplus.url.clone(), settings.scan.timeout_ms);
+        let client = build_client(settings.scan.goplus.url.clone(), settings.scan.timeout);
         let provider = GoPlusProvider::new(client, &settings.scan.goplus.key.secret);
 
         let target = AddressTarget {
@@ -41,7 +40,7 @@ mod tests {
     #[tokio::test]
     async fn test_goplus_scan_token_eth_usdc() {
         let settings = load_settings();
-        let client = build_client(settings.scan.goplus.url.clone(), settings.scan.timeout_ms);
+        let client = build_client(settings.scan.goplus.url.clone(), settings.scan.timeout);
         let provider = GoPlusProvider::new(client, &settings.scan.goplus.key.secret);
 
         let target = TokenTarget {
@@ -58,7 +57,7 @@ mod tests {
     #[tokio::test]
     async fn test_hashdit_scan_address_eth() {
         let settings = load_settings();
-        let client = build_client(settings.scan.hashdit.url.clone(), settings.scan.timeout_ms);
+        let client = build_client(settings.scan.hashdit.url.clone(), settings.scan.timeout);
         let app_id = &settings.scan.hashdit.key.public;
         let app_secret = &settings.scan.hashdit.key.secret;
         let provider = HashDitProvider::new(client, app_id, app_secret);
@@ -77,7 +76,7 @@ mod tests {
     #[tokio::test]
     async fn test_hashdit_scan_token_eth_usdc() {
         let settings = load_settings();
-        let client = build_client(settings.scan.hashdit.url.clone(), settings.scan.timeout_ms);
+        let client = build_client(settings.scan.hashdit.url.clone(), settings.scan.timeout);
         let app_id = &settings.scan.hashdit.key.public;
         let app_secret = &settings.scan.hashdit.key.secret;
         let provider = HashDitProvider::new(client, app_id, app_secret);

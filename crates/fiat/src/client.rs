@@ -52,8 +52,8 @@ impl FiatClient {
             .ok_or_else(|| format!("Provider {} not found", provider_name).into())
     }
 
-    pub fn request_client(timeout_seconds: u64) -> RequestClient {
-        RequestClient::builder().timeout(Duration::from_secs(timeout_seconds)).build().unwrap()
+    pub fn request_client(timeout: Duration) -> RequestClient {
+        RequestClient::builder().timeout(timeout).build().unwrap()
     }
 
     pub async fn get_on_ramp_assets(&self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {

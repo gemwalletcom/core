@@ -11,10 +11,7 @@ impl WebhooksClient {
         Self { stream_producer }
     }
 
-    pub async fn process_support_webhook(
-        &mut self,
-        webhook_data: serde_json::Value,
-    ) -> Result<SupportWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn process_support_webhook(&self, webhook_data: serde_json::Value) -> Result<SupportWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
         let payload = SupportWebhookPayload::new(webhook_data.clone());
         self.stream_producer.publish(QueueName::SupportWebhooks, &payload).await?;
         Ok(payload)

@@ -17,11 +17,11 @@ impl NotificationsConsumer {
 
 #[async_trait]
 impl MessageConsumer<NotificationsPayload, usize> for NotificationsConsumer {
-    async fn should_process(&mut self, _payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, _payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
 
-    async fn process(&mut self, payload: NotificationsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: NotificationsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let result = self.pusher.push_notifications(payload.notifications).await?;
         let counts = result.response.counts as usize;
         let failures = result.failures();

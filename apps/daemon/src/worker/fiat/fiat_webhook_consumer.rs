@@ -24,11 +24,11 @@ impl FiatWebhookConsumer {
 
 #[async_trait]
 impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
-    async fn should_process(&mut self, _payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, _payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
 
-    async fn process(&mut self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         for provider in &self.providers {
             if provider.name() == payload.provider {
                 let transaction = match &payload.payload {

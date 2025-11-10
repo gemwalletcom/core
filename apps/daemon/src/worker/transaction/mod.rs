@@ -13,7 +13,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let database = database.clone();
         move || {
             let database = database.clone();
-            let mut transaction_updater = TransactionUpdater::new(database);
+            let transaction_updater = TransactionUpdater::new(database);
             async move { transaction_updater.update().await }
         }
     });

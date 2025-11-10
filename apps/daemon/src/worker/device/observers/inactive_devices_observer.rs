@@ -20,7 +20,7 @@ impl InactiveDevicesObserver {
         }
     }
 
-    pub async fn observe(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn observe(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         // 7 days to 14 days
         let devices = self.database.client()?.devices().devices_inactive_days(10, 14, Some(true))?;
         for device in &devices {

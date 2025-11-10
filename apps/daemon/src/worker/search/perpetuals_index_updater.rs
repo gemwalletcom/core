@@ -14,7 +14,7 @@ impl PerpetualsIndexUpdater {
         }
     }
 
-    pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let perpetuals = self.database.client()?.perpetuals().perpetuals_all()?;
         let asset_ids = perpetuals.iter().map(|p| p.asset_id.to_string()).collect::<Vec<_>>();
         let assets = self.database.client()?.assets().get_assets(asset_ids)?;

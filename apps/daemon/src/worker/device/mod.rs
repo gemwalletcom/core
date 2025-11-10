@@ -18,7 +18,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let device_updater = run_job("device updater", Duration::from_secs(86400), {
         let database = database.clone();
         move || {
-            let mut device_updater = DeviceUpdater::new(database.clone());
+            let device_updater = DeviceUpdater::new(database.clone());
             async move { device_updater.update().await }
         }
     });
@@ -28,7 +28,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let database = database.clone();
         let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "inactive_devices_observer").await.unwrap();
         move || {
-            let mut observer = InactiveDevicesObserver::new(database.clone(), cacher_client.clone(), stream_producer.clone());
+            let observer = InactiveDevicesObserver::new(database.clone(), cacher_client.clone(), stream_producer.clone());
             async move { observer.observe().await }
         }
     });

@@ -16,7 +16,7 @@ impl StakeApyUpdater {
         Self { chain_providers, database }
     }
 
-    pub async fn update_staking_apy(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn update_staking_apy(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
         for chain in Chain::stakeable() {
             match self.chain_providers.get_staking_apy(chain).await {
                 Ok(apy) => {

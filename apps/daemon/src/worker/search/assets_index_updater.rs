@@ -16,7 +16,7 @@ impl AssetsIndexUpdater {
         }
     }
 
-    pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let prices = self.database.client()?.prices().get_prices_assets_list()?;
         let assets_tags = self.database.client()?.tag().get_assets_tags()?;
         let assets_tags_map: HashMap<String, Vec<String>> = assets_tags.into_iter().fold(HashMap::new(), |mut acc, tag| {

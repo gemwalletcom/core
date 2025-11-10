@@ -22,7 +22,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let update_assets = run_job("Update CoinGecko assets", Duration::from_secs(86400), {
         let (coingecko_client, database) = (coingecko_client.clone(), database.clone());
         move || {
-            let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone());
+            let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone());
             async move { asset_updater.update_assets().await }
         }
     });
@@ -30,7 +30,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let update_tranding_assets = run_job("Update CoinGecko Trending assets", Duration::from_secs(3600), {
         let (coingecko_client, database) = (coingecko_client.clone(), database.clone());
         move || {
-            let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone());
+            let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone());
             async move { asset_updater.update_trending_assets().await }
         }
     });
@@ -38,7 +38,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let update_recently_added_assets = run_job("Update CoinGecko recently added assets", Duration::from_secs(3600), {
         let (coingecko_client, database) = (coingecko_client.clone(), database.clone());
         move || {
-            let mut asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone());
+            let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone());
             async move { asset_updater.update_recently_added_assets().await }
         }
     });
@@ -46,7 +46,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     let update_suspicious_assets = run_job("Update suspicious asset ranks", Duration::from_secs(3600), {
         let database = database.clone();
         move || {
-            let mut suspicious_updater = AssetRankUpdater::new(database.clone());
+            let suspicious_updater = AssetRankUpdater::new(database.clone());
             async move { suspicious_updater.update_suspicious_assets().await }
         }
     });
@@ -56,7 +56,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let database = database.clone();
         move || {
             let chain_providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
-            let mut updater = StakeApyUpdater::new(chain_providers, database.clone());
+            let updater = StakeApyUpdater::new(chain_providers, database.clone());
             async move { updater.update_staking_apy().await }
         }
     });
@@ -65,7 +65,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let settings = settings.clone();
         let database = database.clone();
         move || {
-            let mut updater = PerpetualUpdater::new(settings.clone(), database.clone());
+            let updater = PerpetualUpdater::new(settings.clone(), database.clone());
             async move { updater.update_perpetuals().await }
         }
     });

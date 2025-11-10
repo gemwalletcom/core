@@ -3,13 +3,12 @@ use security_provider::ScanProvider;
 use security_provider::providers::goplus::GoPlusProvider;
 use security_provider::providers::hashdit::HashDitProvider;
 use settings::Settings;
-use std::time::Duration;
 
 pub struct ScanProviderFactory {}
 
 impl ScanProviderFactory {
     pub fn create_providers(settings: &Settings) -> Vec<Box<dyn ScanProvider + Send + Sync>> {
-        let client = gem_client::builder().timeout(Duration::from_millis(settings.scan.timeout_ms)).build().unwrap();
+        let client = gem_client::builder().timeout(settings.scan.timeout).build().unwrap();
 
         vec![
             Box::new(GoPlusProvider::new(

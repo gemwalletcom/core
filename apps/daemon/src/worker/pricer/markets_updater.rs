@@ -17,7 +17,7 @@ impl MarketsUpdater {
         }
     }
 
-    pub async fn update_markets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_markets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let global = self.coin_gecko_client.get_global().await?;
         let trending = self.coin_gecko_client.get_search_trending().await?;
         let top_gainers_losers = self.coin_gecko_client.get_top_gainers_losers().await?;

@@ -15,7 +15,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let settings = settings.clone();
         let database = database.clone();
         move || {
-            let mut validator_scanner = ValidatorScanner::new(
+            let validator_scanner = ValidatorScanner::new(
                 ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_validators"))),
                 database.clone(),
                 &settings.assets.url,
@@ -28,7 +28,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let settings = settings.clone();
         let database = database.clone();
         move || {
-            let mut validator_scanner = ValidatorScanner::new(
+            let validator_scanner = ValidatorScanner::new(
                 ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_static_assets"))),
                 database.clone(),
                 &settings.assets.url,

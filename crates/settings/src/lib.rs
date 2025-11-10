@@ -1,5 +1,7 @@
+mod duration;
+
 use serde::Deserialize;
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf, time::Duration};
 
 use config::{Config, ConfigError, Environment, File};
 
@@ -42,8 +44,15 @@ pub struct Settings {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Fiat {
-    pub timeout: u64,
-    pub validate_subscription: bool,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
+    pub validate: Validate,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Validate {
+    pub subscription: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -276,7 +285,8 @@ pub enum ChainURLType {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Parser {
-    pub timeout: u64,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -308,7 +318,8 @@ pub struct PusherIOS {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Scan {
-    pub timeout_ms: u64,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
     pub hashdit: ScanProvider,
     pub goplus: ScanProvider,
 }

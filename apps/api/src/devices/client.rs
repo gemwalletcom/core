@@ -31,7 +31,7 @@ impl DevicesClient {
         Ok(device)
     }
 
-    pub async fn send_push_notification_device(&mut self, device_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    pub async fn send_push_notification_device(&self, device_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let device = self.get_device(device_id)?;
         let notification = GorushNotification::from_device(
             device,

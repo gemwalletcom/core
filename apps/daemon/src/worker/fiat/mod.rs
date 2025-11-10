@@ -18,7 +18,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let database = database.clone();
         move || {
             let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let mut fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
             async move { fiat_assets_updater.update_fiat_assets("fiat_update_assets").await }
         }
     });
@@ -28,7 +28,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let database = database.clone();
         move || {
             let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let mut fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
             async move { fiat_assets_updater.update_fiat_countries("fiat_update_countries").await }
         }
     });
@@ -38,7 +38,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let database = database.clone();
         move || {
             let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let mut fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
             async move { fiat_assets_updater.update_buyable_sellable_assets().await }
         }
     });
@@ -48,7 +48,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let database = database.clone();
         move || {
             let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let mut fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
             async move { fiat_assets_updater.update_trending_fiat_assets().await }
         }
     });

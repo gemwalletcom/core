@@ -21,7 +21,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let search_index_client = search_index_client.clone();
 
         move || {
-            let mut updater = AssetsIndexUpdater::new(database.clone(), &search_index_client);
+            let updater = AssetsIndexUpdater::new(database.clone(), &search_index_client);
             async move { updater.update().await }
         }
     });
@@ -31,7 +31,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let search_index_client = search_index_client.clone();
 
         move || {
-            let mut updater = PerpetualsIndexUpdater::new(database.clone(), &search_index_client);
+            let updater = PerpetualsIndexUpdater::new(database.clone(), &search_index_client);
             async move { updater.update().await }
         }
     });
@@ -41,7 +41,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let search_index_client = search_index_client.clone();
 
         move || {
-            let mut updater = NftsIndexUpdater::new(database.clone(), &search_index_client);
+            let updater = NftsIndexUpdater::new(database.clone(), &search_index_client);
             async move { updater.update().await }
         }
     });
