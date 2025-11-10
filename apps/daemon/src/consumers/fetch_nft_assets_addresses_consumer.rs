@@ -1,15 +1,16 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 use tokio::sync::Mutex;
 
+
 use ::nft::NFTClient;
 use async_trait::async_trait;
 use cacher::CacherClient;
-use storage::DatabaseClient;
+use storage::Database;
 use streamer::{ChainAddressPayload, StreamProducer, consumer::MessageConsumer};
 
 pub struct FetchNftAssetsAddressesConsumer {
     #[allow(dead_code)]
-    pub database: Arc<Mutex<DatabaseClient>>,
+    pub database: Database,
     #[allow(dead_code)]
     pub stream_producer: StreamProducer,
     pub cacher: CacherClient,
@@ -17,7 +18,7 @@ pub struct FetchNftAssetsAddressesConsumer {
 }
 
 impl FetchNftAssetsAddressesConsumer {
-    pub fn new(database: Arc<Mutex<DatabaseClient>>, stream_producer: StreamProducer, cacher: CacherClient, nft_client: Arc<Mutex<NFTClient>>) -> Self {
+    pub fn new(database: Database, stream_producer: StreamProducer, cacher: CacherClient, nft_client: Arc<Mutex<NFTClient>>) -> Self {
         Self {
             database,
             stream_producer,

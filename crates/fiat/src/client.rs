@@ -13,11 +13,11 @@ use crate::{
 use futures::future::join_all;
 use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use reqwest::Client as RequestClient;
-use storage::{AssetFilter, DatabaseClient};
+use storage::{AssetFilter, Database};
 use streamer::{FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
-    database: DatabaseClient,
+    database: Database,
     cacher: CacherClient,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ip_check_client: IPCheckClient,
@@ -25,15 +25,13 @@ pub struct FiatClient {
 }
 
 impl FiatClient {
-    pub async fn new(
-        database_url: &str,
+    pub fn new(
+        database: Database,
         cacher: CacherClient,
         providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
         ip_check_client: IPCheckClient,
         stream_producer: StreamProducer,
     ) -> Self {
-        let database = DatabaseClient::new(database_url);
-
         Self {
             database,
             cacher,
@@ -42,6 +40,7 @@ impl FiatClient {
             stream_producer,
         }
     }
+
 
     fn provider(&self, provider_name: &str) -> Result<&(dyn FiatProvider + Send + Sync), Box<dyn std::error::Error + Send + Sync>> {
         self.providers
@@ -55,28 +54,28 @@ impl FiatClient {
         RequestClient::builder().timeout(Duration::from_secs(timeout_seconds)).build().unwrap()
     }
 
-    pub async fn get_on_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.assets().get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?;
+    pub async fn get_on_ramp_assets(&self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
+        let assets = self.database.client()?.assets().get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>(),
         })
     }
 
-    pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.assets().get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?;
+    pub async fn get_off_ramp_assets(&self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
+        let assets = self.database.client()?.assets().get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>(),
         })
     }
 
-    pub async fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.fiat().get_fiat_providers_countries()?)
+    pub async fn get_fiat_providers_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.fiat().get_fiat_providers_countries()?)
     }
 
     pub async fn get_order_status(
-        &mut self,
+        &self,
         provider_name: &str,
         order_id: &str,
     ) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
@@ -84,7 +83,7 @@ impl FiatClient {
     }
 
     pub async fn process_and_publish_webhook(
-        &mut self,
+        &self,
         provider_name: &str,
         webhook_data: serde_json::Value,
     ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
@@ -106,9 +105,9 @@ impl FiatClient {
         Ok(payload)
     }
 
-    fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
+    fn get_fiat_mapping(&self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
         let list = self
-            .database
+            .database.client()?
             .fiat()
             .get_fiat_assets_for_asset_id(asset_id)?
             .into_iter()
@@ -141,12 +140,12 @@ impl FiatClient {
             .collect()
     }
 
-    pub async fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().get_asset(asset_id)?)
+    pub async fn get_asset(&self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.assets().get_asset(asset_id)?)
     }
 
-    pub async fn get_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.assets().get_asset(&request.asset_id)?;
+    pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+        let asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
         let ip_address_info = self.get_ip_address(&request.ip_address).await?;
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
@@ -183,7 +182,7 @@ impl FiatClient {
         Ok(quotes)
     }
 
-    pub async fn get_ip_address(&mut self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
+    pub async fn get_ip_address(&self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
         let key = format!("fiat_ip_resolver_ip_address:{ip_address}");
         self.cacher
             .get_or_set_value(&key, || self.ip_check_client.get_ip_address(ip_address), Some(86400))
@@ -229,7 +228,7 @@ impl FiatClient {
     }
 
     async fn get_quotes_in_parallel<F>(
-        &mut self,
+        &self,
         request: FiatQuoteRequest,
         fiat_mapping_map: HashMap<String, FiatMapping>,
         ip_address_info: IPAddressInfo,

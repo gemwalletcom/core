@@ -1,20 +1,20 @@
 use std::error::Error;
 
 use primitives::FiatAssets;
-use storage::DatabaseClient;
+use storage::Database;
 
+#[derive(Clone)]
 pub struct SwapClient {
-    database: DatabaseClient,
+    database: Database,
 }
 
 impl SwapClient {
-    pub async fn new(database_url: &str) -> Self {
-        let database = DatabaseClient::new(database_url);
+    pub fn new(database: Database) -> Self {
         Self { database }
     }
 
-    pub async fn get_swap_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.assets().get_swap_assets()?;
+    pub async fn get_swap_assets(&self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
+        let assets = self.database.client()?.assets().get_swap_assets()?;
         let version = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_secs() / 3600;
 
         Ok(FiatAssets {

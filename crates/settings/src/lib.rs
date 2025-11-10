@@ -6,8 +6,8 @@ use config::{Config, ConfigError, Environment, File};
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Settings {
-    pub redis: Database,
-    pub postgres: Database,
+    pub redis: Redis,
+    pub postgres: Postgres,
     pub meilisearch: MeiliSearch,
     pub rabbitmq: RabbitMQ,
 
@@ -47,8 +47,15 @@ pub struct Fiat {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Database {
+pub struct Redis {
     pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Postgres {
+    pub url: String,
+    pub pool: u32,
 }
 
 #[derive(Debug, Deserialize, Clone)]

@@ -23,6 +23,7 @@ pub trait NFTProvider: Send + Sync {
 }
 
 #[allow(unused)]
+#[derive(Clone)]
 pub struct NFTProviderClient {
     providers: Vec<Arc<dyn NFTProvider>>,
 }

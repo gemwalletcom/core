@@ -3,23 +3,25 @@ use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_co
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::{AssetUpdate, DatabaseClient};
+use storage::Database;
+use storage::AssetUpdate;
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
-    database: DatabaseClient,
+    database: Database,
 }
 
 impl AssetUpdater {
-    pub fn new(coin_gecko_client: CoinGeckoClient, database_url: &str) -> Self {
+    pub fn new(coin_gecko_client: CoinGeckoClient, database: Database) -> Self {
         AssetUpdater {
             coin_gecko_client,
-            database: DatabaseClient::new(database_url),
+            database,
         }
     }
 
     pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = self
             .database
+            .client()?
             .prices()
             .get_prices()?
             .into_iter()
@@ -219,21 +221,22 @@ impl AssetUpdater {
     }
 
     // asset, asset details
-    pub async fn update_asset(&mut self, asset: Asset, score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
+    pub async fn update_asset(&mut self, asset: Asset, score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error + Send + Sync>> {
         let properties = AssetProperties::default(asset.id.clone());
         let asset_id = asset.id.to_string();
         let asset = AssetBasic::new(asset.clone(), properties, score.clone());
-        let _ = self.database.assets().add_assets(vec![asset]);
+        let _ = self.database.client()?.assets().add_assets(vec![asset]);
         let _ = self
             .database
+            .client()?
             .assets()
             .update_assets(vec![asset_id.clone()], vec![AssetUpdate::Rank(score.rank)]);
         let _ = self.update_links(&asset_id, asset_links.clone()).await;
         Ok(())
     }
 
-    pub async fn update_links(&mut self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
-        let _ = self.database.assets_links().add_assets_links(asset_id, asset_links);
+    pub async fn update_links(&mut self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let _ = self.database.client()?.assets_links().add_assets_links(asset_id, asset_links);
         Ok(())
     }
 }

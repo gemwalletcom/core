@@ -1,23 +1,23 @@
-use std::{error::Error, sync::Arc};
+use std::error::Error;
 
 use async_trait::async_trait;
 use cacher::CacherClient;
 use primitives::{Chain, Transaction};
 use settings_chain::ChainProviders;
-use storage::DatabaseClient;
+use storage::Database;
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
-use tokio::sync::Mutex;
+
 
 pub struct FetchAddressTransactionsConsumer {
     #[allow(dead_code)]
-    pub database: Arc<Mutex<DatabaseClient>>,
+    pub database: Database,
     pub providers: ChainProviders,
     pub producer: StreamProducer,
     pub cacher: CacherClient,
 }
 
 impl FetchAddressTransactionsConsumer {
-    pub fn new(database: Arc<Mutex<DatabaseClient>>, providers: ChainProviders, producer: StreamProducer, cacher: CacherClient) -> Self {
+    pub fn new(database: Database, providers: ChainProviders, producer: StreamProducer, cacher: CacherClient) -> Self {
         Self {
             database,
             providers,

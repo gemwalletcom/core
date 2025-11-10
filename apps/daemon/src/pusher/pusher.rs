@@ -6,22 +6,22 @@ use primitives::{
     AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
     Subscription, Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
 };
-use storage::DatabaseClient;
+use storage::Database;
 
 use api_connector::pusher::model::Message;
 
 pub struct Pusher {
-    database_client: DatabaseClient,
+    database: Database,
 }
 
 impl Pusher {
-    pub fn new(database_url: &str) -> Self {
-        let database_client = DatabaseClient::new(database_url);
-        Self { database_client }
+    pub fn new(database: Database) -> Self {
+        
+        Self { database }
     }
 
     pub fn get_address(&mut self, chain: Chain, address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let result = self.database_client.scan_addresses().get_scan_address(chain, address);
+        let result = self.database.client()?.scan_addresses().get_scan_address(chain, address);
         match result {
             Ok(address) => Ok(address.name.unwrap_or_default()),
             Err(_) => Ok(AddressFormatter::short(chain, address)),

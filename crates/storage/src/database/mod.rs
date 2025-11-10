@@ -22,10 +22,13 @@ pub mod support;
 pub mod tag;
 pub mod transactions;
 
-use diesel::Connection;
 use diesel::pg::PgConnection;
+use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel_migrations::{EmbeddedMigrations, embed_migrations};
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
+
+pub type PgPool = Pool<ConnectionManager<PgConnection>>;
+pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 use crate::{
     AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DevicesRepository, FiatRepository,
@@ -34,18 +37,24 @@ use crate::{
     TransactionsRepository,
 };
 
+pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
+    let manager = ConnectionManager::<PgConnection>::new(database_url);
+    Pool::builder()
+        .max_size(pool_size)
+        .build(manager)
+        .unwrap_or_else(|_| panic!("Error creating connection pool for {database_url}"))
+}
+
 pub struct DatabaseClient {
-    connection: PgConnection,
+    connection: PgPooledConnection,
 }
 
 impl DatabaseClient {
-    pub fn new(database_url: &str) -> Self {
-        let connection = PgConnection::establish(database_url).unwrap_or_else(|_| panic!("Error connecting to {database_url}"));
-
-        Self { connection }
+    pub fn from_pool(pool: &PgPool) -> Result<Self, r2d2::Error> {
+        let connection = pool.get()?;
+        Ok(Self { connection })
     }
 
-    // Direct repository access methods
     pub fn assets(&mut self) -> &mut dyn AssetsRepository {
         self
     }

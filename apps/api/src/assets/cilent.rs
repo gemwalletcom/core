@@ -2,37 +2,39 @@ use std::error::Error;
 
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, Perpetual};
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTDocument, NFTS_INDEX_NAME, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
-use storage::DatabaseClient;
+use storage::Database;
 
+#[derive(Clone)]
 pub struct AssetsClient {
-    database: Box<DatabaseClient>,
+    database: Database,
 }
 
 impl AssetsClient {
-    pub async fn new(database_url: &str) -> Self {
-        let database = Box::new(DatabaseClient::new(database_url));
+    pub fn new(database: Database) -> Self {
+        
         Self { database }
     }
 
-    pub fn add_assets(&mut self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub fn add_assets(&self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let assets = assets.into_iter().map(|x| x.as_basic_primitive()).collect();
         self.database
+            .client()?
             .assets()
             .add_assets(assets)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 
     #[allow(unused)]
-    pub fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().get_asset(asset_id)?)
+    pub fn get_asset(&self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.assets().get_asset(asset_id)?)
     }
 
-    pub fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().get_assets_basic(asset_ids)?)
+    pub fn get_assets(&self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.assets().get_assets_basic(asset_ids)?)
     }
 
-    pub fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().get_asset_full(asset_id)?)
+    pub fn get_asset_full(&self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.assets().get_asset_full(asset_id)?)
     }
 
     pub fn get_assets_by_device_id(
@@ -41,12 +43,13 @@ impl AssetsClient {
         wallet_index: i32,
         from_timestamp: Option<u32>,
     ) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
-        let subscriptions = self.database.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
+        let subscriptions = self.database.client()?.subscriptions().get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
 
         let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
 
         Ok(self
             .database
+            .client()?
             .assets_addresses()
             .get_assets_by_addresses(chain_addresses, from_timestamp, true)?)
     }

@@ -2,25 +2,27 @@ use chrono::{Duration, Utc};
 use fiat::{FiatProvider, model::FiatProviderAsset};
 use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{AssetTag, Diff, FiatProviderName, currency::Currency};
-use storage::{AssetFilter, AssetUpdate, AssetsRepository, DatabaseClient};
+use storage::Database;
+use storage::{AssetFilter, AssetUpdate};
 
 pub struct FiatAssetsUpdater {
-    database: DatabaseClient,
+    database: Database,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
 }
 
 impl FiatAssetsUpdater {
-    pub fn new(database_url: &str, providers: Vec<Box<dyn FiatProvider + Send + Sync>>) -> Self {
-        let database: DatabaseClient = DatabaseClient::new(database_url);
+    pub fn new(database: Database, providers: Vec<Box<dyn FiatProvider + Send + Sync>>) -> Self {
+        
         Self { database, providers }
     }
 
     pub async fn update_buyable_sellable_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let enabled_asset_ids = self.database.get_fiat_assets_is_enabled()?;
+        let enabled_asset_ids = self.database.client()?.get_fiat_assets_is_enabled()?;
 
         // buyable
         let buyable_assets_ids = self
             .database
+            .client()?
             .assets()
             .get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?
             .into_iter()
@@ -30,16 +32,19 @@ impl FiatAssetsUpdater {
 
         let _ = self
             .database
+            .client()?
             .assets()
             .update_assets(buyable_result.missing.clone(), vec![AssetUpdate::IsBuyable(true)]);
         let _ = self
             .database
+            .client()?
             .assets()
             .update_assets(buyable_result.different.clone(), vec![AssetUpdate::IsBuyable(false)]);
 
         // sellable
         let sellable_assets_ids = self
             .database
+            .client()?
             .assets()
             .get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?
             .into_iter()
@@ -50,10 +55,12 @@ impl FiatAssetsUpdater {
         let sellable_result = Diff::compare(sellable_assets_ids, enabled_asset_ids.clone());
         let _ = self
             .database
+            .client()?
             .assets()
             .update_assets(sellable_result.missing.clone(), vec![AssetUpdate::IsSellable(true)]);
         let _ = self
             .database
+            .client()?
             .assets()
             .update_assets(sellable_result.different.clone(), vec![AssetUpdate::IsSellable(false)]);
 
@@ -62,9 +69,10 @@ impl FiatAssetsUpdater {
 
     pub async fn update_trending_fiat_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let from = Utc::now() - Duration::days(30);
-        let asset_ids = self.database.fiat().get_fiat_assets_popular(from.naive_utc(), 30)?;
+        let asset_ids = self.database.client()?.fiat().get_fiat_assets_popular(from.naive_utc(), 30)?;
         Ok(self
             .database
+            .client()?
             .tag()
             .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }
@@ -104,7 +112,7 @@ impl FiatAssetsUpdater {
             .map(|fiat_asset| {
                 (
                     fiat_asset.clone(),
-                    fiat_asset.asset_id().filter(|id| self.database.get_asset(&id.to_string()).is_ok()),
+                    fiat_asset.asset_id().filter(|id| self.database.client().ok().and_then(|mut c| c.assets().get_asset(&id.to_string()).ok()).is_some()),
                 )
             })
             .collect();
@@ -120,7 +128,7 @@ impl FiatAssetsUpdater {
             .collect::<Vec<storage::models::FiatAsset>>();
 
         for asset in insert_assets {
-            self.database.add_fiat_assets(vec![asset])?;
+            self.database.client()?.fiat().add_fiat_assets(vec![asset])?;
         }
 
         Ok(asset_count)
@@ -142,6 +150,8 @@ impl FiatAssetsUpdater {
         let countries = provider.get_countries().await?;
         let country_count = countries.len();
         self.database
+            .client()?
+            .fiat()
             .add_fiat_providers_countries(countries.into_iter().map(storage::models::FiatProviderCountry::from_primitive).collect())?;
         Ok(country_count)
     }
