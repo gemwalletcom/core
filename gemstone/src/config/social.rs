@@ -17,7 +17,7 @@ pub enum SocialUrl {
 
 pub fn get_social_url(item: SocialUrl) -> Option<&'static str> {
     match item {
-        SocialUrl::X => Some("https://x.com/GemWalletApp"),
+        SocialUrl::X => Some("https://x.com/GemWallet"),
         SocialUrl::Discord => Some("https://discord.gg/aWkq5sj7SY"),
         SocialUrl::Telegram => Some("https://t.me/gemwallet"),
         SocialUrl::GitHub => Some("https://github.com/gemwalletcom"),
@@ -28,7 +28,7 @@ pub fn get_social_url(item: SocialUrl) -> Option<&'static str> {
 
 pub fn get_social_url_deeplink(item: SocialUrl) -> Option<String> {
     match item {
-        SocialUrl::X => build_social_url_deeplink(item, "GemWalletApp"),
+        SocialUrl::X => build_social_url_deeplink(item, "GemWallet"),
         SocialUrl::Discord => build_social_url_deeplink(item, "aWkq5sj7SY"),
         SocialUrl::Telegram => build_social_url_deeplink(item, "gemwallet"),
         SocialUrl::GitHub => build_social_url_deeplink(item, "gemwalletcom"),
