@@ -1,6 +1,5 @@
 pub mod database;
 pub mod error;
-pub mod redis_client;
 pub mod models;
 pub mod repositories;
 pub mod schema;
@@ -10,7 +9,6 @@ pub use self::database::{
     assets::{AssetFilter, AssetUpdate},
 };
 pub use self::error::DatabaseError;
-pub use self::redis_client::RedisClient;
 pub use self::models::ScanAddressType;
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
