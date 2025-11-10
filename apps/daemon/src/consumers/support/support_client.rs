@@ -2,24 +2,25 @@ use super::model::{ChatwootWebhookPayload, MESSAGE_TYPE_INCOMING};
 use localizer::LanguageLocalizer;
 use primitives::{GorushNotification, PushNotification, PushNotificationTypes, push_notification::PushNotificationSupport};
 use std::error::Error;
-use storage::DatabaseClient;
+use storage::Database;
 use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct SupportClient {
-    database: Box<DatabaseClient>,
+    database: Database,
     stream_producer: StreamProducer,
 }
 
 impl SupportClient {
-    pub fn new(database: Box<DatabaseClient>, stream_producer: StreamProducer) -> Self {
+    pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
         Self { database, stream_producer }
     }
 
     pub async fn handle_message_created(&mut self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let device = self.database.get_support_device(support_device_id)?.as_primitive();
+        let mut client = self.database.client()?;
+        let device = client.get_support_device(support_device_id)?.as_primitive();
 
         if let Some(unread) = payload.get_unread() {
-            self.database.support().support_update_unread(support_device_id, unread)?;
+            self.database.client()?.support().support_update_unread(support_device_id, unread)?;
         }
 
         if let Some(message_type) = payload.message_type.clone()
@@ -43,7 +44,7 @@ impl SupportClient {
 
     pub fn handle_conversation_updated(&mut self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
         if let Some(unread) = payload.get_unread() {
-            self.database.support().support_update_unread(support_device_id, unread)?;
+            self.database.client()?.support().support_update_unread(support_device_id, unread)?;
         }
 
         Ok(())

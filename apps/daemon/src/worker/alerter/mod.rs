@@ -12,13 +12,16 @@ use settings::Settings;
 use streamer::StreamProducer;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let price_alerts_job = run_job("Price Alerts", Duration::from_secs(settings.alerter.update_interval_seconds), {
         let settings = Arc::new(settings.clone());
+        let database = database.clone();
         move || {
             let settings = Arc::clone(&settings);
+            let database = database.clone();
 
             async move {
-                let price_alert_client = PriceAlertClient::new(&settings.postgres.url).await;
+                let price_alert_client = PriceAlertClient::new(database);
                 let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "price_alerts").await.unwrap();
 
                 PriceAlertSender::new(price_alert_client, stream_producer, settings.alerter.rules.clone())

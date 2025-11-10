@@ -1,14 +1,13 @@
 use search_index::{PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
-use storage::DatabaseClient;
+use storage::Database;
 
 pub struct PerpetualsIndexUpdater {
-    database: DatabaseClient,
+    database: Database,
     search_index: SearchIndexClient,
 }
 
 impl PerpetualsIndexUpdater {
-    pub fn new(database_url: &str, search_index: &SearchIndexClient) -> Self {
-        let database = DatabaseClient::new(database_url);
+    pub fn new(database: Database, search_index: &SearchIndexClient) -> Self {
         Self {
             database,
             search_index: search_index.clone(),
@@ -16,9 +15,9 @@ impl PerpetualsIndexUpdater {
     }
 
     pub async fn update(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let perpetuals = self.database.perpetuals().perpetuals_all()?;
+        let perpetuals = self.database.client()?.perpetuals().perpetuals_all()?;
         let asset_ids = perpetuals.iter().map(|p| p.asset_id.to_string()).collect::<Vec<_>>();
-        let assets = self.database.assets().get_assets(asset_ids)?;
+        let assets = self.database.client()?.assets().get_assets(asset_ids)?;
 
         let assets_map = assets.into_iter().map(|a| (a.id.to_string(), a)).collect::<std::collections::HashMap<_, _>>();
 

@@ -5,41 +5,42 @@ use std::error::Error;
 use std::time::Duration;
 
 use crate::{
-    FiatProvider, IPCheckClient,
-    error::FiatError,
+    FiatConfig, FiatProvider, IPCheckClient,
+    error::{FiatQuoteError, FiatQuotesError},
     ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
 };
 use futures::future::join_all;
-use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
+use primitives::{Asset, FiatAssets, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use reqwest::Client as RequestClient;
-use storage::{AssetFilter, DatabaseClient};
+use storage::{AssetFilter, Database};
 use streamer::{FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
-    database: DatabaseClient,
+    database: Database,
     cacher: CacherClient,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ip_check_client: IPCheckClient,
     stream_producer: StreamProducer,
+    config: FiatConfig,
 }
 
 impl FiatClient {
-    pub async fn new(
-        database_url: &str,
+    pub fn new(
+        database: Database,
         cacher: CacherClient,
         providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
         ip_check_client: IPCheckClient,
         stream_producer: StreamProducer,
+        config: FiatConfig,
     ) -> Self {
-        let database = DatabaseClient::new(database_url);
-
         Self {
             database,
             cacher,
             providers,
             ip_check_client,
             stream_producer,
+            config,
         }
     }
 
@@ -55,36 +56,32 @@ impl FiatClient {
         RequestClient::builder().timeout(Duration::from_secs(timeout_seconds)).build().unwrap()
     }
 
-    pub async fn get_on_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.assets().get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?;
+    pub async fn get_on_ramp_assets(&self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
+        let assets = self.database.client()?.assets().get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>(),
         })
     }
 
-    pub async fn get_off_ramp_assets(&mut self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.assets().get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?;
+    pub async fn get_off_ramp_assets(&self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
+        let assets = self.database.client()?.assets().get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>(),
         })
     }
 
-    pub async fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.fiat().get_fiat_providers_countries()?)
+    pub async fn get_fiat_providers_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.fiat().get_fiat_providers_countries()?)
     }
 
-    pub async fn get_order_status(
-        &mut self,
-        provider_name: &str,
-        order_id: &str,
-    ) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_order_status(&self, provider_name: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         self.provider(provider_name)?.get_order_status(order_id).await
     }
 
     pub async fn process_and_publish_webhook(
-        &mut self,
+        &self,
         provider_name: &str,
         webhook_data: serde_json::Value,
     ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
@@ -106,9 +103,10 @@ impl FiatClient {
         Ok(payload)
     }
 
-    fn get_fiat_mapping(&mut self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
+    fn get_fiat_mapping(&self, asset_id: &str) -> Result<FiatMappingMap, Box<dyn Error + Send + Sync>> {
         let list = self
             .database
+            .client()?
             .fiat()
             .get_fiat_assets_for_asset_id(asset_id)?
             .into_iter()
@@ -141,14 +139,25 @@ impl FiatClient {
             .collect()
     }
 
-    pub async fn get_asset(&mut self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets().get_asset(asset_id)?)
+    pub async fn get_asset(&self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.assets().get_asset(asset_id)?)
     }
 
-    pub async fn get_quotes(&mut self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.assets().get_asset(&request.asset_id)?;
+    pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+        let asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
+
+        if self.config.validate_subscription {
+            let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;
+            if !is_subscribed {
+                return Err(Box::new(FiatQuotesError::AddressNotSubscribed(request.wallet_address.to_string())));
+            }
+        }
+
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
-        let ip_address_info = self.get_ip_address(&request.ip_address).await?;
+        let ip_address_info = self
+            .get_ip_address(&request.ip_address)
+            .await
+            .map_err(|e| FiatQuotesError::IpAddressValidationFailed(e.to_string()))?;
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
 
         let quotes = match request.clone().quote_type {
@@ -183,14 +192,22 @@ impl FiatClient {
         Ok(quotes)
     }
 
-    pub async fn get_ip_address(&mut self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
+    pub async fn get_ip_address(&self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
         let key = format!("fiat_ip_resolver_ip_address:{ip_address}");
         self.cacher
             .get_or_set_value(&key, || self.ip_check_client.get_ip_address(ip_address), Some(86400))
             .await
     }
 
-    fn check_asset_limits(request: &FiatQuoteRequest, mapping: &FiatMapping) -> Result<(), FiatError> {
+    fn is_address_subscribed(&self, asset: &Asset, wallet_address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .database
+            .client()?
+            .subscriptions()
+            .get_subscription_address_exists(asset.chain, wallet_address)?)
+    }
+
+    fn check_asset_limits(request: &FiatQuoteRequest, mapping: &FiatMapping) -> Result<(), FiatQuoteError> {
         let fiat_currency = request.fiat_currency.clone();
 
         let limits = match request.quote_type {
@@ -213,12 +230,12 @@ impl FiatClient {
                     if let Some(min_amount) = limit.min_amount
                         && amount < min_amount
                     {
-                        return Err(FiatError::InsufficientAmount(amount, min_amount));
+                        return Err(FiatQuoteError::InsufficientAmount(amount, min_amount));
                     }
                     if let Some(max_amount) = limit.max_amount
                         && amount > max_amount
                     {
-                        return Err(FiatError::ExcessiveAmount(amount, max_amount));
+                        return Err(FiatQuoteError::ExcessiveAmount(amount, max_amount));
                     }
                     return Ok(());
                 }
@@ -229,7 +246,7 @@ impl FiatClient {
     }
 
     async fn get_quotes_in_parallel<F>(
-        &mut self,
+        &self,
         request: FiatQuoteRequest,
         fiat_mapping_map: HashMap<String, FiatMapping>,
         ip_address_info: IPAddressInfo,
@@ -259,22 +276,22 @@ impl FiatClient {
 
                 async move {
                     if !countries.contains(&country_code) {
-                        Err(FiatQuoteError::new(
+                        Err(PrimitiveFiatQuoteError::new(
                             provider_id.clone(),
-                            FiatError::UnsupportedCountry(country_code).to_string(),
+                            FiatQuoteError::UnsupportedCountry(country_code).to_string(),
                         ))
                     } else if mapping.unsupported_countries.clone().contains_key(&country_code) {
-                        Err(FiatQuoteError::new(
+                        Err(PrimitiveFiatQuoteError::new(
                             provider_id.clone(),
-                            FiatError::UnsupportedCountryAsset(country_code, mapping.symbol.clone()).to_string(),
+                            FiatQuoteError::UnsupportedCountryAsset(country_code, mapping.symbol.clone()).to_string(),
                         ))
                     } else {
                         match Self::check_asset_limits(&request, &mapping) {
                             Ok(_) => match quote_fn(provider, request, mapping).await {
                                 Ok(quote) => Ok(quote),
-                                Err(e) => Err(FiatQuoteError::new(provider_id, e.to_string())),
+                                Err(e) => Err(PrimitiveFiatQuoteError::new(provider_id, e.to_string())),
                             },
-                            Err(limit_error) => Err(FiatQuoteError::new(provider_id, limit_error.to_string())),
+                            Err(limit_error) => Err(PrimitiveFiatQuoteError::new(provider_id, limit_error.to_string())),
                         }
                     }
                 }
@@ -354,7 +371,7 @@ mod tests {
             sell_limits: vec![],
         };
         match FiatClient::check_asset_limits(&request, &mapping).unwrap_err() {
-            FiatError::InsufficientAmount(amount, min) => {
+            FiatQuoteError::InsufficientAmount(amount, min) => {
                 assert_eq!(amount, 25.0);
                 assert_eq!(min, 50.0);
             }
@@ -374,7 +391,7 @@ mod tests {
             sell_limits: vec![],
         };
         match FiatClient::check_asset_limits(&request, &mapping).unwrap_err() {
-            FiatError::ExcessiveAmount(amount, max) => {
+            FiatQuoteError::ExcessiveAmount(amount, max) => {
                 assert_eq!(amount, 300.0);
                 assert_eq!(max, 200.0);
             }

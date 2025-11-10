@@ -1,11 +1,11 @@
 use std::collections::HashSet;
-use std::{collections::HashMap, error::Error, sync::Arc};
+use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, Transaction, TransactionId};
-use storage::{DatabaseClient, models};
+use storage::Database;
+use storage::models;
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
-use tokio::sync::Mutex;
 
 use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
 
@@ -13,7 +13,7 @@ const MIN_TRANSACTION_AMOUNT_USD: f64 = 0.01;
 const TRANSACTION_BATCH_SIZE: usize = 100;
 
 pub struct StoreTransactionsConsumer {
-    pub database: Arc<Mutex<DatabaseClient>>,
+    pub database: Database,
     pub stream_producer: StreamProducer,
     pub pusher: Pusher,
     pub config: StoreTransactionsConsumerConfig,
@@ -30,7 +30,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let is_notify_devices = !payload.blocks.is_empty();
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
-        let subscriptions = self.database.lock().await.subscriptions().get_subscriptions(chain, addresses)?;
+        let subscriptions = self.database.client()?.subscriptions().get_subscriptions(chain, addresses)?;
 
         let subscription_addresses: HashSet<_> = subscriptions.iter().map(|s| &s.subscription.address).collect();
 
@@ -122,7 +122,7 @@ impl StoreTransactionsConsumer {
         &mut self,
         assets_ids: Vec<AssetId>,
     ) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
-        let assets_with_prices = self.database.lock().await.assets().get_assets_with_prices(assets_ids.ids().clone())?;
+        let assets_with_prices = self.database.client()?.assets().get_assets_with_prices(assets_ids.ids().clone())?;
 
         let missing_assets_ids = assets_ids
             .into_iter()
@@ -152,8 +152,7 @@ impl StoreTransactionsConsumer {
             }
 
             self.database
-                .lock()
-                .await
+                .client()?
                 .transactions()
                 .add_transactions(transactions_to_store, transaction_addresses_to_store)?;
         }

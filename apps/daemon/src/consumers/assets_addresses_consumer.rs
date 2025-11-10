@@ -1,17 +1,15 @@
 use std::error::Error;
-use std::sync::Arc;
 
 use async_trait::async_trait;
-use storage::DatabaseClient;
+use storage::Database;
 use streamer::{AssetsAddressPayload, consumer::MessageConsumer};
-use tokio::sync::Mutex;
 
 pub struct AssetsAddressesConsumer {
-    pub database: Arc<Mutex<DatabaseClient>>,
+    pub database: Database,
 }
 
 impl AssetsAddressesConsumer {
-    pub fn new(database: Arc<Mutex<DatabaseClient>>) -> Self {
+    pub fn new(database: Database) -> Self {
         Self { database }
     }
 }
@@ -31,8 +29,7 @@ impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
 
         Ok(self
             .database
-            .lock()
-            .await
+            .client()?
             .assets_addresses()
             .add_assets_addresses(assets_addresses.clone().into_iter().map(|x| x.as_primitive()).collect())?)
     }

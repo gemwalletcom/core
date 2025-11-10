@@ -1,6 +1,6 @@
 use crate::{
     FiatProvider,
-    error::FiatError,
+    error::FiatQuoteError,
     model::{FiatMapping, FiatProviderAsset},
     providers::moonpay::models::{Data, WebhookOrderId},
 };
@@ -27,7 +27,7 @@ impl FiatProvider for MoonPayClient {
             .await?;
 
         if quote.total_amount > request.fiat_amount {
-            return Err(Box::new(FiatError::MinimumAmount(quote.total_amount)));
+            return Err(FiatQuoteError::MinimumAmount(quote.total_amount).into());
         }
 
         Ok(self.get_buy_fiat_quote(request, quote))
@@ -36,7 +36,7 @@ impl FiatProvider for MoonPayClient {
     async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
         let ip_address_check = self.get_ip_address(&request.ip_address).await?;
         if !ip_address_check.is_allowed && !ip_address_check.is_sell_allowed {
-            return Err(FiatError::FiatSellNotAllowed.into());
+            return Err(FiatQuoteError::FiatSellNotAllowed.into());
         }
         let quote = self
             .get_sell_quote(

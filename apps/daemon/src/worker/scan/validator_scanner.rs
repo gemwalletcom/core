@@ -3,19 +3,19 @@ use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{Chain, StakeValidator};
 use settings_chain::ChainProviders;
 use std::error::Error;
-use storage::{DatabaseClient, ScanAddressesRepository};
+use storage::Database;
 
 pub struct ValidatorScanner {
     chain_providers: ChainProviders,
-    database: DatabaseClient,
+    database: Database,
     assets_url: String,
 }
 
 impl ValidatorScanner {
-    pub fn new(chain_providers: ChainProviders, database_url: &str, assets_url: &str) -> Self {
+    pub fn new(chain_providers: ChainProviders, database: Database, assets_url: &str) -> Self {
         Self {
             chain_providers,
-            database: DatabaseClient::new(database_url),
+            database,
             assets_url: assets_url.to_string(),
         }
     }
@@ -36,7 +36,7 @@ impl ValidatorScanner {
         let validators = self.chain_providers.get_validators(chain).await?;
         let addresses: Vec<_> = validators.into_iter().filter_map(|v| v.as_scan_address(chain)).collect();
         let count = addresses.len();
-        self.database.add_scan_addresses(addresses)?;
+        self.database.client()?.scan_addresses().add_scan_addresses(addresses)?;
         Ok(count)
     }
 
@@ -62,7 +62,7 @@ impl ValidatorScanner {
         let validators: Vec<_> = static_validators.into_iter().map(|v| StakeValidator::new(v.id, v.name)).collect();
         let addresses: Vec<_> = validators.into_iter().filter_map(|v| v.as_scan_address(chain)).collect();
         let count = addresses.len();
-        self.database.add_scan_addresses(addresses)?;
+        self.database.client()?.scan_addresses().add_scan_addresses(addresses)?;
         Ok(count)
     }
 }

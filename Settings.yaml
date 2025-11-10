@@ -2,19 +2,19 @@ redis:
   url: "redis://default:@localhost:6379?protocol=resp3"
 postgres:
   url: "postgres://username:password@localhost/api"
-
+  pool: 32
 meilisearch:
   url: "http://localhost:7700"
   key: "test"
 rabbitmq:
   url: "amqp://username:password@localhost:5672"
   prefetch: 50
-
 coingecko:
   key:
     secret: ""
 fiat:
   timeout: 3
+  validate_subscription: false
 moonpay:
   key:
     public: ""

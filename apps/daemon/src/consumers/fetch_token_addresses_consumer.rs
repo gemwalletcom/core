@@ -1,23 +1,23 @@
 use num_bigint::BigUint;
 use primitives::{AssetId, AssetIdVecExt, AssetVecExt};
-use std::{error::Error, sync::Arc};
-use tokio::sync::Mutex;
+use std::error::Error;
 
 use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
-use storage::{DatabaseClient, models::AssetAddress};
+use storage::Database;
+use storage::models::AssetAddress;
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
 pub struct FetchTokenAddressesConsumer {
     pub provider: ChainProviders,
-    pub database: Arc<Mutex<DatabaseClient>>,
+    pub database: Database,
     pub stream_producer: StreamProducer,
     pub cacher: CacherClient,
 }
 
 impl FetchTokenAddressesConsumer {
-    pub fn new(provider: ChainProviders, database: Arc<Mutex<DatabaseClient>>, stream_producer: StreamProducer, cacher: CacherClient) -> Self {
+    pub fn new(provider: ChainProviders, database: Database, stream_producer: StreamProducer, cacher: CacherClient) -> Self {
         Self {
             provider,
             database,
@@ -60,7 +60,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
         }
 
         let asset_ids: Vec<_> = non_zero_addresses.iter().flat_map(|x| AssetId::new(&x.asset_id)).collect();
-        let existing_ids = self.database.lock().await.assets().get_assets(asset_ids.ids())?.ids();
+        let existing_ids = self.database.client()?.assets().get_assets(asset_ids.ids())?.ids();
 
         let missing_ids: Vec<_> = asset_ids.into_iter().filter(|id| !existing_ids.contains(id)).collect();
         let existing_addresses: Vec<_> = non_zero_addresses
@@ -70,14 +70,12 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
 
         let _ = self
             .database
-            .lock()
-            .await
+            .client()?
             .assets_addresses()
             .delete_assets_addresses(zero_balance_addresses.into_iter().map(|x| x.as_primitive()).collect());
         let _ = self
             .database
-            .lock()
-            .await
+            .client()?
             .assets_addresses()
             .add_assets_addresses(existing_addresses.iter().map(|x| x.as_primitive()).collect());
 

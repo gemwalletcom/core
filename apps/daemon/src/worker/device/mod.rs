@@ -12,21 +12,23 @@ use std::time::Duration;
 use streamer::StreamProducer;
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
-    let cacher_client = CacherClient::new(settings.redis.url.as_str());
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+    let cacher_client = CacherClient::new(settings.redis.url.as_str()).await;
 
     let device_updater = run_job("device updater", Duration::from_secs(86400), {
-        let settings = Arc::new(settings.clone());
+        let database = database.clone();
         move || {
-            let mut device_updater = DeviceUpdater::new(&settings.postgres.url);
+            let mut device_updater = DeviceUpdater::new(database.clone());
             async move { device_updater.update().await }
         }
     });
 
     let inactive_devices_observer = run_job("inactive devices observer", Duration::from_secs(86400), {
         let settings = Arc::new(settings.clone());
+        let database = database.clone();
         let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "inactive_devices_observer").await.unwrap();
         move || {
-            let mut observer = InactiveDevicesObserver::new(&settings.postgres.url, cacher_client.clone(), stream_producer.clone());
+            let mut observer = InactiveDevicesObserver::new(database.clone(), cacher_client.clone(), stream_producer.clone());
             async move { observer.observe().await }
         }
     });

@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Debug)]
-pub enum FiatError {
+pub enum FiatQuoteError {
     FiatPurchaseNotAllowed,
     FiatSellNotAllowed,
     MinimumAmount(f64),
@@ -12,7 +12,7 @@ pub enum FiatError {
     UnsupportedState(String),
 }
 
-impl fmt::Display for FiatError {
+impl fmt::Display for FiatQuoteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::FiatPurchaseNotAllowed => write!(f, "Purchase not allowed"),
@@ -27,4 +27,23 @@ impl fmt::Display for FiatError {
     }
 }
 
-impl std::error::Error for FiatError {}
+impl std::error::Error for FiatQuoteError {}
+
+#[derive(Debug)]
+pub enum FiatQuotesError {
+    AddressNotSubscribed(String),
+    IpAddressValidationFailed(String),
+    InvalidRequest(String),
+}
+
+impl fmt::Display for FiatQuotesError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AddressNotSubscribed(address) => write!(f, "Address {} is not subscribed", address),
+            Self::IpAddressValidationFailed(msg) => write!(f, "IP address validation failed: {}", msg),
+            Self::InvalidRequest(msg) => write!(f, "Invalid request: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for FiatQuotesError {}

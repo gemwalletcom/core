@@ -16,6 +16,7 @@ struct ProviderConfig {
 }
 
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let providers = vec![
         ProviderConfig {
             provider_type: PriceFeedProvider::Pyth,
@@ -37,26 +38,26 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         let feeds_job_name = format!("Update {} feeds", provider_config.name).leak() as &'static str;
         let feeds_job = run_job(feeds_job_name, Duration::from_secs(3600), {
             let url = provider_config.url.clone();
-            let database_url = settings.postgres.url.clone();
+            let database = database.clone();
             let provider_type = provider_config.provider_type.clone();
             move || {
                 let url = url.clone();
-                let database_url = database_url.clone();
+                let database = database.clone();
                 let provider_type = provider_type.clone();
-                async move { PricesDexUpdater::new(provider_type, &url, &database_url).update_feeds().await }
+                async move { PricesDexUpdater::new(provider_type, &url, database).update_feeds().await }
             }
         });
 
         let prices_job_name = format!("Update {} prices", provider_config.name).leak() as &'static str;
         let prices_job = run_job(prices_job_name, Duration::from_secs(provider_config.timer), {
             let url = provider_config.url.clone();
-            let database_url = settings.postgres.url.clone();
+            let database = database.clone();
             let provider_type = provider_config.provider_type.clone();
             move || {
                 let url = url.clone();
-                let database_url = database_url.clone();
+                let database = database.clone();
                 let provider_type = provider_type.clone();
-                async move { PricesDexUpdater::new(provider_type, &url, &database_url).update_prices().await }
+                async move { PricesDexUpdater::new(provider_type, &url, database).update_prices().await }
             }
         });
 

@@ -12,6 +12,7 @@ pub trait SubscriptionsRepository {
     fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, DatabaseError>;
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError>;
     fn add_subscriptions_exclude_addresses(&mut self, values: Vec<crate::models::SubscriptionAddressExclude>) -> Result<usize, DatabaseError>;
+    fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError>;
 }
 
 impl SubscriptionsRepository for DatabaseClient {
@@ -60,5 +61,9 @@ impl SubscriptionsRepository for DatabaseClient {
 
     fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, DatabaseError> {
         Ok(SubscriptionsStore::delete_subscriptions_for_device_ids(self, device_ids)?)
+    }
+
+    fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError> {
+        Ok(SubscriptionsStore::get_subscription_address_exists(self, chain, address)?)
     }
 }
