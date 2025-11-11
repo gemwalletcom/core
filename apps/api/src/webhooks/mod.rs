@@ -7,7 +7,7 @@ pub struct WebhooksClient {
 }
 
 impl WebhooksClient {
-    pub async fn new(stream_producer: StreamProducer) -> Self {
+    pub fn new(stream_producer: StreamProducer) -> Self {
         Self { stream_producer }
     }
 

@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use super::filter::{build_assets_filters, build_filter};
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, Perpetual};
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTDocument, NFTS_INDEX_NAME, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
 use storage::Database;
@@ -66,27 +67,27 @@ pub struct SearchRequest {
     pub offset: usize,
 }
 
+impl SearchRequest {
+    pub fn rank_threshold(&self) -> u32 {
+        if self.query.len() < 5 {
+            15
+        } else {
+            0
+        }
+    }
+}
+
 pub struct SearchClient {
     client: SearchIndexClient,
 }
 
 impl SearchClient {
-    pub async fn new(client: &SearchIndexClient) -> Self {
+    pub fn new(client: &SearchIndexClient) -> Self {
         Self { client: client.clone() }
     }
 
     pub async fn get_assets_search(&self, request: &SearchRequest) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error + Send + Sync>> {
-        let mut filters = vec![];
-        filters.push("score.rank > 0".to_string());
-        //filters.push("properties.isEnabled = true".to_string()); // Does not work, why?
-
-        if !request.tags.is_empty() {
-            filters.push(filter_array("tags", request.tags.clone()));
-        }
-
-        if !request.chains.is_empty() {
-            filters.push(filter_array("asset.chain", request.chains.clone()));
-        }
+        let filters = build_assets_filters(request);
 
         let assets: Vec<AssetDocument> = self
             .client
@@ -136,10 +137,3 @@ impl SearchClient {
     }
 }
 
-fn build_filter(filters: Vec<String>) -> String {
-    filters.join(" AND ")
-}
-
-fn filter_array(field: &str, values: Vec<String>) -> String {
-    format!("{} IN [\"{}\"]", field, values.join("\",\""))
-}

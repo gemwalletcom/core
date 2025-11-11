@@ -80,7 +80,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let scan_client = ScanClient::new(database.clone(), security_providers);
     let assets_client = AssetsClient::new(database.clone());
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
-    let search_client = SearchClient::new(&search_index_client).await;
+    let search_client = SearchClient::new(&search_index_client);
     let swap_client = SwapClient::new(database.clone());
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
@@ -96,7 +96,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(database.clone(), nft_config);
     let markets_client = MarketsClient::new(database.clone(), cacher_client);
-    let webhooks_client = WebhooksClient::new(stream_producer.clone()).await;
+    let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
 
     rocket::build()

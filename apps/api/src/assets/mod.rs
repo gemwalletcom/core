@@ -1,4 +1,6 @@
 pub mod cilent;
+mod filter;
+
 use crate::responders::{ApiError, ApiResponse};
 pub use cilent::{AssetsClient, SearchClient, SearchRequest};
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, Chain, SearchResponse};
@@ -7,7 +9,7 @@ use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 use std::str::FromStr;
 
 impl SearchRequest {
-    fn new(query: String, chains: Option<String>, tags: Option<String>, limit: Option<usize>, offset: Option<usize>) -> Self {
+    pub fn new(query: String, chains: Option<String>, tags: Option<String>, limit: Option<usize>, offset: Option<usize>) -> Self {
         let chains = chains
             .unwrap_or_default()
             .split(',')
