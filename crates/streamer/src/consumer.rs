@@ -26,15 +26,15 @@ impl Default for ConsumerConfig {
 
 #[async_trait]
 pub trait MessageConsumer<P, R> {
-    async fn process(&mut self, payload: P) -> Result<R, Box<dyn Error + Send + Sync>>;
-    async fn should_process(&mut self, payload: P) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn process(&self, payload: P) -> Result<R, Box<dyn Error + Send + Sync>>;
+    async fn should_process(&self, payload: P) -> Result<bool, Box<dyn Error + Send + Sync>>;
 }
 
 pub async fn run_consumer<P, C, R>(
     name: &str,
     mut stream_reader: StreamReader,
     queue_name: QueueName,
-    mut consumer: C,
+    consumer: C,
     config: ConsumerConfig,
 ) -> Result<(), Box<dyn Error + Send + Sync>>
 where

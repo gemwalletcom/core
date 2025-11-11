@@ -24,15 +24,25 @@ pub struct FiatQuotes {
     pub errors: Vec<FiatQuoteError>,
 }
 
+impl FiatQuotes {
+    pub fn new_error(error: FiatQuoteError) -> Self {
+        Self {
+            quotes: vec![],
+            errors: vec![error],
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 pub struct FiatQuoteError {
-    pub provider: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
     pub error: String,
 }
 
 impl FiatQuoteError {
-    pub fn new(provider: String, error: String) -> Self {
+    pub fn new(provider: Option<String>, error: String) -> Self {
         Self { provider, error }
     }
 }

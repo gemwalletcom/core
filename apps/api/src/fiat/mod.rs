@@ -24,11 +24,7 @@ pub async fn get_fiat_quotes(
 ) -> Result<ApiResponse<FiatQuotes>, ApiError> {
     let quote_type = FiatQuoteType::from_str(r#type).unwrap_or(FiatQuoteType::Buy);
     if fiat_amount.is_none() && crypto_value.is_none() {
-        return Ok(FiatQuotes {
-            quotes: vec![],
-            errors: vec![],
-        }
-        .into());
+        return Err(ApiError::BadRequest("Either fiat_amount or crypto_value is required".to_string()));
     }
     let request: FiatQuoteRequest = FiatQuoteRequest {
         asset_id: asset_id.to_string(),
@@ -40,14 +36,7 @@ pub async fn get_fiat_quotes(
         wallet_address: wallet_address.to_string(),
         provider_id: provider_id.map(|x| x.to_string()),
     };
-    match fiat_client.lock().await.get_quotes(request).await {
-        Ok(value) => Ok(value.into()),
-        Err(_) => Ok(FiatQuotes {
-            quotes: vec![],
-            errors: vec![],
-        }
-        .into()),
-    }
+    Ok(fiat_client.lock().await.get_quotes(request).await?.into())
 }
 
 #[get("/fiat/on_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>&<provider_id>")]
@@ -71,14 +60,7 @@ pub async fn get_fiat_on_ramp_quotes(
         wallet_address,
         provider_id,
     };
-    match fiat_client.lock().await.get_quotes(request).await {
-        Ok(value) => Ok(value.into()),
-        Err(_) => Ok(FiatQuotes {
-            quotes: vec![],
-            errors: vec![],
-        }
-        .into()),
-    }
+    Ok(fiat_client.lock().await.get_quotes(request).await?.into())
 }
 
 #[get("/fiat/on_ramp/assets")]

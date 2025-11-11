@@ -1,6 +1,6 @@
 use crate::{
     FiatProvider,
-    error::FiatError,
+    error::FiatQuoteError,
     model::{FiatMapping, FiatProviderAsset},
 };
 use async_trait::async_trait;
@@ -26,7 +26,7 @@ impl FiatProvider for PaybisClient {
             .await?;
 
         if quote.payment_methods.is_empty() {
-            return Err(Box::new(FiatError::UnsupportedState("No payment methods available".to_string())));
+            return Err(FiatQuoteError::UnsupportedState("No payment methods available".to_string()).into());
         }
 
         Ok(self.get_buy_fiat_quote(request, quote))
@@ -38,7 +38,7 @@ impl FiatProvider for PaybisClient {
             .await?;
 
         if quote.payment_methods.is_empty() {
-            return Err(Box::new(FiatError::UnsupportedState("No payment methods available".to_string())));
+            return Err(FiatQuoteError::UnsupportedState("No payment methods available".to_string()).into());
         }
 
         Ok(self.get_sell_fiat_quote(request, quote))

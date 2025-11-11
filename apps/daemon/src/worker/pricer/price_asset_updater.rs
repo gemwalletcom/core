@@ -17,7 +17,7 @@ impl PriceAssetUpdater {
         }
     }
 
-    pub async fn update_prices_assets(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_prices_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         // native assets
         let chains_assets = Chain::all()
             .into_iter()
@@ -38,7 +38,7 @@ impl PriceAssetUpdater {
         Ok(chains_assets.len() + assets.len())
     }
 
-    pub fn get_prices_assets_for_coin(&mut self, coin: Coin) -> Vec<PriceAsset> {
+    pub fn get_prices_assets_for_coin(&self, coin: Coin) -> Vec<PriceAsset> {
         coin.platforms
             .clone()
             .into_iter()

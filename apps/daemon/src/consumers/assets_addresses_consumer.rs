@@ -1,28 +1,26 @@
 use std::error::Error;
-use std::sync::Arc;
 
 use async_trait::async_trait;
-use storage::DatabaseClient;
+use storage::Database;
 use streamer::{AssetsAddressPayload, consumer::MessageConsumer};
-use tokio::sync::Mutex;
 
 pub struct AssetsAddressesConsumer {
-    pub database: Arc<Mutex<DatabaseClient>>,
+    pub database: Database,
 }
 
 impl AssetsAddressesConsumer {
-    pub fn new(database: Arc<Mutex<DatabaseClient>>) -> Self {
+    pub fn new(database: Database) -> Self {
         Self { database }
     }
 }
 
 #[async_trait]
 impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
-    async fn should_process(&mut self, _payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, _payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
 
-    async fn process(&mut self, payload: AssetsAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: AssetsAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let assets_addresses = payload
             .values
             .into_iter()
@@ -31,8 +29,7 @@ impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
 
         Ok(self
             .database
-            .lock()
-            .await
+            .client()?
             .assets_addresses()
             .add_assets_addresses(assets_addresses.clone().into_iter().map(|x| x.as_primitive()).collect())?)
     }

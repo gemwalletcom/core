@@ -3,23 +3,22 @@ use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_co
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::{AssetUpdate, DatabaseClient};
+use storage::AssetUpdate;
+use storage::Database;
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
-    database: DatabaseClient,
+    database: Database,
 }
 
 impl AssetUpdater {
-    pub fn new(coin_gecko_client: CoinGeckoClient, database_url: &str) -> Self {
-        AssetUpdater {
-            coin_gecko_client,
-            database: DatabaseClient::new(database_url),
-        }
+    pub fn new(coin_gecko_client: CoinGeckoClient, database: Database) -> Self {
+        AssetUpdater { coin_gecko_client, database }
     }
 
-    pub async fn update_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = self
             .database
+            .client()?
             .prices()
             .get_prices()?
             .into_iter()
@@ -30,17 +29,17 @@ impl AssetUpdater {
         self.update_assets_ids(ids).await
     }
 
-    pub async fn update_trending_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_trending_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = self.coin_gecko_client.get_search_trending().await?.get_coins_ids();
         self.update_assets_ids(ids).await
     }
 
-    pub async fn update_recently_added_assets(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_recently_added_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = self.coin_gecko_client.get_coin_list_new().await?.ids().iter().take(10).cloned().collect();
         self.update_assets_ids(ids).await
     }
 
-    async fn update_assets_ids(&mut self, ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn update_assets_ids(&self, ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         for coin in ids.clone() {
             match self.coin_gecko_client.get_coin(&coin).await {
                 Ok(coin_info) => {
@@ -219,21 +218,22 @@ impl AssetUpdater {
     }
 
     // asset, asset details
-    pub async fn update_asset(&mut self, asset: Asset, score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
+    pub async fn update_asset(&self, asset: Asset, score: AssetScore, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error + Send + Sync>> {
         let properties = AssetProperties::default(asset.id.clone());
         let asset_id = asset.id.to_string();
         let asset = AssetBasic::new(asset.clone(), properties, score.clone());
-        let _ = self.database.assets().add_assets(vec![asset]);
+        let _ = self.database.client()?.assets().add_assets(vec![asset]);
         let _ = self
             .database
+            .client()?
             .assets()
             .update_assets(vec![asset_id.clone()], vec![AssetUpdate::Rank(score.rank)]);
         let _ = self.update_links(&asset_id, asset_links.clone()).await;
         Ok(())
     }
 
-    pub async fn update_links(&mut self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error>> {
-        let _ = self.database.assets_links().add_assets_links(asset_id, asset_links);
+    pub async fn update_links(&self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let _ = self.database.client()?.assets_links().add_assets_links(asset_id, asset_links);
         Ok(())
     }
 }

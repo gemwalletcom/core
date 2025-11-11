@@ -1,13 +1,15 @@
+mod duration;
+
 use serde::Deserialize;
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf, time::Duration};
 
 use config::{Config, ConfigError, Environment, File};
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Settings {
-    pub redis: Database,
-    pub postgres: Database,
+    pub redis: Redis,
+    pub postgres: Postgres,
     pub meilisearch: MeiliSearch,
     pub rabbitmq: RabbitMQ,
 
@@ -42,13 +44,28 @@ pub struct Settings {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Fiat {
-    pub timeout: u64,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
+    pub validate: Validate,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Database {
+pub struct Validate {
+    pub subscription: bool,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Redis {
     pub url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Postgres {
+    pub url: String,
+    pub pool: u32,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -268,7 +285,8 @@ pub enum ChainURLType {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Parser {
-    pub timeout: u64,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -300,7 +318,8 @@ pub struct PusherIOS {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Scan {
-    pub timeout_ms: u64,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
     pub hashdit: ScanProvider,
     pub goplus: ScanProvider,
 }

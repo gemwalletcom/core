@@ -40,7 +40,7 @@ async fn run_notifications_failed_consumer(settings: Arc<Settings>) -> Result<()
     let name = "notifications_failed".to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let database = storage::DatabaseClient::new(&settings.postgres.url);
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let consumer = NotificationsFailedConsumer::new(database);
 
     run_consumer::<NotificationsFailedPayload, NotificationsFailedConsumer, usize>(

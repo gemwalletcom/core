@@ -27,7 +27,7 @@ impl PriceUpdater {
         }
     }
 
-    pub async fn update_prices_type(&mut self, update_type: UpdatePrices) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_prices_type(&self, update_type: UpdatePrices) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let ids = self.price_client.get_prices_ids()?;
         let asset_ids = match update_type {
             UpdatePrices::Top => ids.into_iter().take(500).collect::<Vec<_>>(),
@@ -46,7 +46,7 @@ impl PriceUpdater {
             .collect::<Vec<Price>>()
     }
 
-    pub async fn update_prices(&mut self, ids: Vec<String>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_prices(&self, ids: Vec<String>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let ids_chunks = ids.chunks(250);
         for ids in ids_chunks {
             let coin_markets = self.coin_gecko_client.get_coin_markets_ids(ids.to_vec(), MAX_MARKETS_PER_PAGE).await?;
@@ -58,13 +58,13 @@ impl PriceUpdater {
         Ok(ids.len())
     }
 
-    pub async fn update_fiat_rates_cache(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_fiat_rates_cache(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let rates = self.price_client.get_fiat_rates()?;
         self.price_client.set_cache_fiat_rates(rates.clone()).await?;
         Ok(rates.len())
     }
 
-    pub async fn update_prices_cache(&mut self, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_prices_cache(&self, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let (prices_assets, prices) = (self.price_client.get_prices_assets()?, self.price_client.get_prices()?);
         let prices_assets_map: HashMap<String, HashSet<String>> = prices_assets.into_iter().fold(HashMap::new(), |mut map, price_asset| {
             map.entry(price_asset.price_id.clone()).or_default().insert(price_asset.asset_id);
@@ -99,12 +99,12 @@ impl PriceUpdater {
         Ok(prices.len())
     }
 
-    pub async fn update_fiat_rates(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_fiat_rates(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let rates = self.coin_gecko_client.get_fiat_rates().await?;
         self.price_client.set_fiat_rates(rates).await
     }
 
-    pub async fn clean_outdated_assets(&mut self, seconds: u64) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn clean_outdated_assets(&self, seconds: u64) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let time = Utc::now() - Duration::seconds(seconds as i64);
         self.price_client.delete_prices_updated_at_before(time.naive_utc())
     }

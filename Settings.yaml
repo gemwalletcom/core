@@ -2,19 +2,20 @@ redis:
   url: "redis://default:@localhost:6379?protocol=resp3"
 postgres:
   url: "postgres://username:password@localhost/api"
-
+  pool: 32
 meilisearch:
   url: "http://localhost:7700"
   key: "test"
 rabbitmq:
   url: "amqp://username:password@localhost:5672"
   prefetch: 50
-
 coingecko:
   key:
     secret: ""
 fiat:
-  timeout: 3
+  timeout: 3s
+  validate:
+    subscription: false
 moonpay:
   key:
     public: ""
@@ -206,7 +207,7 @@ swap:
       percent: 0
       address: ""
 scan:
-  timeout_ms: 1200 # ms
+  timeout: 1200ms
   goplus:
     url: "https://api.gopluslabs.io"
     key:
@@ -219,7 +220,7 @@ scan:
       secret: ""
 
 parser:
-  timeout: 1000
+  timeout: 1s
 
 pusher:
   url: "http://localhost:8088"

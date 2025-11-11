@@ -13,10 +13,10 @@ impl UpdateNftCollectionConsumer {
 
 #[async_trait]
 impl MessageConsumer<FetchNFTCollectionPayload, usize> for UpdateNftCollectionConsumer {
-    async fn should_process(&mut self, _payload: FetchNFTCollectionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, _payload: FetchNFTCollectionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
-    async fn process(&mut self, _payload: FetchNFTCollectionPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, _payload: FetchNFTCollectionPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(0)
     }
 }

@@ -8,8 +8,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 redis = { workspace = true }
 chrono = { workspace = true }
+r2d2 = { workspace = true }
 
-diesel = { version = "2.3.2", features = ["postgres", "chrono", "serde_json"] }
+diesel = { version = "2.3.2", features = ["postgres", "chrono", "serde_json", "r2d2"] }
 diesel_migrations = { version = "2.3.0" }
 
 primitives = { path = "../primitives" }

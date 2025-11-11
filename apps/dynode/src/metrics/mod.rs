@@ -236,7 +236,11 @@ impl Metrics {
     }
 
     fn truncate_method(&self, method: &str) -> String {
-        self.truncate_path(method)
+        if method.contains('/') {
+            self.truncate_path(method)
+        } else {
+            method.to_string()
+        }
     }
 
     fn truncate_path(&self, path: &str) -> String {
@@ -323,5 +327,15 @@ mod tests {
             let result = metrics.truncate_path(input);
             assert_eq!(result, expected, "Failed for input: {}", input);
         }
+    }
+
+    #[test]
+    fn test_truncate_method() {
+        let m = create_test_metrics();
+
+        assert_eq!(m.truncate_method("eth_getBlockByNumber"), "eth_getBlockByNumber");
+        assert_eq!(m.truncate_method("suix_getLatestSuiSystemState"), "suix_getLatestSuiSystemState");
+        assert_eq!(m.truncate_method("/api/v1/blocks/by_height/12345"), "/api/v1/blocks/by_height/:number");
+        assert_eq!(m.truncate_method("/v1/verylongsegmentthatisgreaterthan20characters"), "/v1/:value");
     }
 }

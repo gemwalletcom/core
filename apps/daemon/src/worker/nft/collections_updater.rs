@@ -9,18 +9,18 @@ use storage::{
 };
 
 pub struct OpenSeaUpdater {
-    database: DatabaseClient,
+    database: Database,
     opensea_client: OpenSeaClient,
 }
 
 impl OpenSeaUpdater {
-    pub fn new(database_url: &str, opensea_client: OpenSeaClient) -> Self {
-        let database = DatabaseClient::new(database_url);
+    pub fn new(database: Database, opensea_client: OpenSeaClient) -> Self {
+        
         Self { database, opensea_client }
     }
 
-    pub async fn update_collections(&mut self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let collections = self.database.nft().get_nft_collections_all()?;
+    pub async fn update_collections(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let collections = self.database.client()?.nft().get_nft_collections_all()?;
 
         for collection in collections.clone() {
             let chain = Chain::from_str(collection.chain.as_str())?;
@@ -51,7 +51,7 @@ impl OpenSeaUpdater {
         Ok(collections.len())
     }
 
-    fn update_collection(&mut self, collection: NftCollection, opensea_collection: Collection) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn update_collection(&self, collection: NftCollection, opensea_collection: Collection) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut links: Vec<NftLink> = vec![];
 
         if !opensea_collection.opensea_url.is_empty() {

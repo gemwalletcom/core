@@ -1,21 +1,22 @@
 use primitives::SupportDevice;
-use storage::{DatabaseClient, DatabaseError};
+use std::error::Error;
+use storage::Database;
 
+#[derive(Clone)]
 pub struct SupportClient {
-    database: DatabaseClient,
+    database: Database,
 }
 
 impl SupportClient {
-    pub fn new(database_url: &str) -> Self {
-        let database = DatabaseClient::new(database_url);
+    pub fn new(database: Database) -> Self {
         Self { database }
     }
 
-    pub fn add_support_device(&mut self, support_id: &str, device_id: &str) -> Result<SupportDevice, DatabaseError> {
-        self.database.support().add_support_device(support_id, device_id)
+    pub fn add_support_device(&self, support_id: &str, device_id: &str) -> Result<SupportDevice, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.support().add_support_device(support_id, device_id)?)
     }
 
-    pub fn get_support_device(&mut self, support_id: &str) -> Result<SupportDevice, DatabaseError> {
-        self.database.support().get_support(support_id)
+    pub fn get_support_device(&self, support_id: &str) -> Result<SupportDevice, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.support().get_support(support_id)?)
     }
 }
