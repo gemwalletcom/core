@@ -13,11 +13,12 @@ use crate::{
     core::{
         actions::{
             ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, Cancel, CancelOrder, PlaceOrder, SetReferrer, SpotSend, TokenDelegate,
-            WithdrawalRequest, make_market_order, make_position_tp_sl,
+            UpdateLeverage, WithdrawalRequest, make_market_order, make_position_tp_sl,
         },
         hypercore::{
             approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data,
-            place_order_typed_data, send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, withdrawal_request_typed_data,
+            place_order_typed_data, send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data,
+            update_leverage_typed_data, withdrawal_request_typed_data,
         },
     },
     is_spot_swap,
@@ -172,6 +173,10 @@ impl HyperCoreSigner {
         self.sign_serialized_action(delegate, timestamp, private_key, token_delegate_typed_data, "token delegate")
     }
 
+    fn sign_update_leverage(&self, update_leverage: UpdateLeverage, nonce: u64, private_key: &[u8]) -> SignerResult<String> {
+        self.sign_serialized_action(update_leverage, nonce, private_key, |value| update_leverage_typed_data(value, nonce), "update leverage")
+    }
+
     fn sign_market_message(
         &self,
         perpetual_type: &PerpetualType,
@@ -181,13 +186,34 @@ impl HyperCoreSigner {
     ) -> SignerResult<Vec<String>> {
         let (data, is_open) = match perpetual_type {
             PerpetualType::Modify(modify_data) => return self.sign_modify_orders(modify_data, agent_key, builder, timestamp_incrementer),
-            PerpetualType::Open(data) | PerpetualType::Increase(data) => (data, true),
+            PerpetualType::Open(data) => return self.sign_open_orders(data, agent_key, builder, timestamp_incrementer),
+            PerpetualType::Increase(data) => (data, true),
             PerpetualType::Close(data) => (data, false),
             PerpetualType::Reduce(reduce_data) => (&reduce_data.data, false),
         };
 
         let order = Self::market_order_from_confirm_data(data, is_open, builder);
         Ok(vec![self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)?])
+    }
+
+    fn sign_open_orders(
+        &self,
+        data: &PerpetualConfirmData,
+        agent_key: &[u8],
+        builder: Option<&Builder>,
+        timestamp_incrementer: &mut NumberIncrementer,
+    ) -> SignerResult<Vec<String>> {
+        let leverage_action = self.sign_update_leverage(
+            UpdateLeverage::new(data.asset_index as u32, true, data.leverage),
+            timestamp_incrementer.next_val(),
+            agent_key,
+        )?;
+        let place_order_action = self.sign_place_order(
+            Self::market_order_from_confirm_data(data, true, builder),
+            timestamp_incrementer.next_val(),
+            agent_key,
+        )?;
+        Ok(vec![leverage_action, place_order_action])
     }
 
     fn sign_modify_orders(
