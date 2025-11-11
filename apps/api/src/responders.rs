@@ -1,5 +1,5 @@
 use cacher::CacheError;
-use fiat::error::FiatQuotesError;
+use fiat::error::FiatQuoteError;
 use primitives::ResponseResult;
 use rocket::response::{Responder, Response};
 use rocket::serde::json::Json;
@@ -53,8 +53,8 @@ impl From<DatabaseError> for ApiError {
     }
 }
 
-impl From<FiatQuotesError> for ApiError {
-    fn from(error: FiatQuotesError) -> Self {
+impl From<FiatQuoteError> for ApiError {
+    fn from(error: FiatQuoteError) -> Self {
         ApiError::BadRequest(error.to_string())
     }
 }

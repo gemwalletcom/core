@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use super::filter::{build_assets_filters, build_filter};
+use super::model::SearchRequest;
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, Perpetual};
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTDocument, NFTS_INDEX_NAME, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
 use storage::Database;
@@ -56,24 +57,6 @@ impl AssetsClient {
             .client()?
             .assets_addresses()
             .get_assets_by_addresses(chain_addresses, from_timestamp, true)?)
-    }
-}
-
-pub struct SearchRequest {
-    pub query: String,
-    pub chains: Vec<String>,
-    pub tags: Vec<String>,
-    pub limit: usize,
-    pub offset: usize,
-}
-
-impl SearchRequest {
-    pub fn rank_threshold(&self) -> u32 {
-        if self.query.len() < 5 {
-            15
-        } else {
-            0
-        }
     }
 }
 
@@ -136,4 +119,3 @@ impl SearchClient {
         Ok(nfts.into_iter().map(|x| x.collection).collect())
     }
 }
-

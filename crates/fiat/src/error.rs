@@ -10,6 +10,9 @@ pub enum FiatQuoteError {
     UnsupportedCountry(String),
     UnsupportedCountryAsset(String, String),
     UnsupportedState(String),
+    AddressNotSubscribed(String),
+    IpAddressValidationFailed(String),
+    InvalidRequest(String),
 }
 
 impl fmt::Display for FiatQuoteError {
@@ -23,22 +26,6 @@ impl fmt::Display for FiatQuoteError {
             Self::UnsupportedCountry(country) => write!(f, "Unsupported country: {}", country),
             Self::UnsupportedCountryAsset(country, asset) => write!(f, "Unsupported country {} for an asset: {}", country, asset),
             Self::UnsupportedState(state) => write!(f, "Unsupported state: {}", state),
-        }
-    }
-}
-
-impl std::error::Error for FiatQuoteError {}
-
-#[derive(Debug)]
-pub enum FiatQuotesError {
-    AddressNotSubscribed(String),
-    IpAddressValidationFailed(String),
-    InvalidRequest(String),
-}
-
-impl fmt::Display for FiatQuotesError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
             Self::AddressNotSubscribed(address) => write!(f, "Address {} is not subscribed", address),
             Self::IpAddressValidationFailed(msg) => write!(f, "IP address validation failed: {}", msg),
             Self::InvalidRequest(msg) => write!(f, "Invalid request: {}", msg),
@@ -46,4 +33,4 @@ impl fmt::Display for FiatQuotesError {
     }
 }
 
-impl std::error::Error for FiatQuotesError {}
+impl std::error::Error for FiatQuoteError {}

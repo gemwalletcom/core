@@ -40,7 +40,7 @@ mod tests {
         let request = SearchRequest::new("ethereum".to_string(), None, None, None, None);
         let filters = build_assets_filters(&request);
 
-        assert_eq!(filters[0], "score.rank > 0");
+        assert_eq!(filters[0], "score.rank > 5");
     }
 
     #[test]
@@ -48,7 +48,7 @@ mod tests {
         let request = SearchRequest::new("longquery".to_string(), None, Some("defi".to_string()), None, None);
         let filters = build_assets_filters(&request);
 
-        assert_eq!(filters[0], "score.rank > 0");
+        assert_eq!(filters[0], "score.rank > 5");
         assert_eq!(filters[1], "tags IN [\"defi\"]");
     }
 
@@ -57,7 +57,7 @@ mod tests {
         let request = SearchRequest::new("longquery".to_string(), Some("ethereum".to_string()), None, None, None);
         let filters = build_assets_filters(&request);
 
-        assert_eq!(filters[0], "score.rank > 0");
+        assert_eq!(filters[0], "score.rank > 5");
         assert_eq!(filters[1], "asset.chain IN [\"ethereum\"]");
     }
 

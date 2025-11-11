@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use crate::{
     FiatConfig, FiatProvider, IPCheckClient,
-    error::{FiatQuoteError, FiatQuotesError},
+    error::FiatQuoteError,
     ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
 };
@@ -149,15 +149,19 @@ impl FiatClient {
         if self.config.validate_subscription {
             let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;
             if !is_subscribed {
-                return Err(Box::new(FiatQuotesError::AddressNotSubscribed(request.wallet_address.to_string())));
+                let error = FiatQuoteError::AddressNotSubscribed(request.wallet_address.to_string());
+                return Ok(FiatQuotes::new_error(PrimitiveFiatQuoteError::new(None, error.to_string())));
             }
         }
 
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
-        let ip_address_info = self
-            .get_ip_address(&request.ip_address)
-            .await
-            .map_err(|e| FiatQuotesError::IpAddressValidationFailed(e.to_string()))?;
+        let ip_address_info = match self.get_ip_address(&request.ip_address).await {
+            Ok(info) => info,
+            Err(e) => {
+                let error = FiatQuoteError::IpAddressValidationFailed(e.to_string());
+                return Ok(FiatQuotes::new_error(PrimitiveFiatQuoteError::new(None, error.to_string())));
+            }
+        };
         let fiat_mapping_map = self.get_fiat_mapping(&request.asset_id)?;
 
         let quotes = match request.clone().quote_type {
@@ -277,21 +281,21 @@ impl FiatClient {
                 async move {
                     if !countries.contains(&country_code) {
                         Err(PrimitiveFiatQuoteError::new(
-                            provider_id.clone(),
+                            Some(provider_id.clone()),
                             FiatQuoteError::UnsupportedCountry(country_code).to_string(),
                         ))
                     } else if mapping.unsupported_countries.clone().contains_key(&country_code) {
                         Err(PrimitiveFiatQuoteError::new(
-                            provider_id.clone(),
+                            Some(provider_id.clone()),
                             FiatQuoteError::UnsupportedCountryAsset(country_code, mapping.symbol.clone()).to_string(),
                         ))
                     } else {
                         match Self::check_asset_limits(&request, &mapping) {
                             Ok(_) => match quote_fn(provider, request, mapping).await {
                                 Ok(quote) => Ok(quote),
-                                Err(e) => Err(PrimitiveFiatQuoteError::new(provider_id, e.to_string())),
+                                Err(e) => Err(PrimitiveFiatQuoteError::new(Some(provider_id), e.to_string())),
                             },
-                            Err(limit_error) => Err(PrimitiveFiatQuoteError::new(provider_id, limit_error.to_string())),
+                            Err(limit_error) => Err(PrimitiveFiatQuoteError::new(Some(provider_id), limit_error.to_string())),
                         }
                     }
                 }
