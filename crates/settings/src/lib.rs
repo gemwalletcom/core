@@ -302,6 +302,7 @@ pub struct Parser {
 pub struct Daemon {
     pub service: String,
     pub search: DaemonSearch,
+    pub transactions: DaemonTransactions,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -421,6 +422,18 @@ pub struct BucketConfiguration {
 #[allow(unused)]
 pub struct DaemonSearch {
     pub assets_update_interval: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct DaemonTransactions {
+    pub amount: DaemonTransactionsAmount,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct DaemonTransactionsAmount {
+    pub min: f64,
 }
 
 #[derive(Debug, Deserialize, Clone)]

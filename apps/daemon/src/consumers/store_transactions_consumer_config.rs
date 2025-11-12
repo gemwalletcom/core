@@ -2,8 +2,10 @@ use chrono::{Duration, NaiveDateTime, Utc};
 use number_formatter::BigNumberFormatter;
 use primitives::{Asset, Chain, Price, Transaction, TransactionType};
 
-#[derive(Default)]
-pub struct StoreTransactionsConsumerConfig {}
+pub struct StoreTransactionsConsumerConfig {
+    pub min_transaction_amount_usd: f64,
+}
+
 impl StoreTransactionsConsumerConfig {
     pub fn is_transaction_outdated(&self, transaction_created_at: NaiveDateTime, chain: Chain) -> bool {
         Utc::now().naive_utc() - transaction_created_at > Duration::seconds(self.outdated_seconds(chain))
@@ -33,16 +35,24 @@ mod tests {
     use super::*;
     use primitives::{Chain, TransactionType};
 
+    impl StoreTransactionsConsumerConfig {
+        fn mock() -> Self {
+            Self {
+                min_transaction_amount_usd: 0.05,
+            }
+        }
+    }
+
     #[test]
     fn test_is_transaction_outdated_positive() {
-        let options = StoreTransactionsConsumerConfig::default();
+        let options = StoreTransactionsConsumerConfig::mock();
         let created_at = Utc::now() - Duration::seconds(options.outdated_seconds(Chain::Bitcoin) + 1);
         assert!(options.is_transaction_outdated(created_at.naive_utc(), Chain::Bitcoin));
     }
 
     #[test]
     fn test_is_transaction_outdated_negative() {
-        let options = StoreTransactionsConsumerConfig::default();
+        let options = StoreTransactionsConsumerConfig::mock();
         let created_at = Utc::now() - Duration::seconds(options.outdated_seconds(Chain::Bitcoin) - 1);
         assert!(!options.is_transaction_outdated(created_at.naive_utc(), Chain::Bitcoin));
     }
@@ -52,7 +62,7 @@ mod tests {
         use chrono::Utc;
         use primitives::AssetId;
 
-        let options = StoreTransactionsConsumerConfig::default();
+        let options = StoreTransactionsConsumerConfig::mock();
 
         let token_asset = Asset::mock_erc20();
         let native_asset = Asset::mock_btc();

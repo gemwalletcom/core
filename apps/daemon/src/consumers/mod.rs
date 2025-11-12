@@ -62,7 +62,9 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Datab
         database,
         stream_producer,
         pusher,
-        config: StoreTransactionsConsumerConfig::default(),
+        config: StoreTransactionsConsumerConfig {
+            min_transaction_amount_usd: settings.daemon.transactions.amount.min,
+        },
     };
     streamer::run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(
         NAME,

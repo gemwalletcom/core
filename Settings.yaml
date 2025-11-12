@@ -233,6 +233,9 @@ daemon:
   service: ""
   search:
     assets_update_interval: 1800
+  transactions:
+    amount:
+      min: 0.05 # usd
 
 api:
   service: ""

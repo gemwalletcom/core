@@ -9,7 +9,6 @@ use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProduc
 
 use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
 
-const MIN_TRANSACTION_AMOUNT_USD: f64 = 0.01;
 const TRANSACTION_BATCH_SIZE: usize = 100;
 
 pub struct StoreTransactionsConsumer {
@@ -79,10 +78,12 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
                 address_assets_payload.push(AssetsAddressPayload::new(assets_addresses));
 
-                if self
-                    .config
-                    .is_transaction_insufficient_amount(transaction, &asset_price.asset.asset, asset_price.price, MIN_TRANSACTION_AMOUNT_USD)
-                {
+                if self.config.is_transaction_insufficient_amount(
+                    transaction,
+                    &asset_price.asset.asset,
+                    asset_price.price,
+                    self.config.min_transaction_amount_usd,
+                ) {
                     continue;
                 }
 

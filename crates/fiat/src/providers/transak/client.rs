@@ -167,9 +167,10 @@ impl TransakClient {
         let mut token_guard = self.cached_token.lock().await;
 
         if let Some(cached) = token_guard.as_ref()
-            && cached.is_valid() {
-                return Ok(cached.access_token.clone());
-            }
+            && cached.is_valid()
+        {
+            return Ok(cached.access_token.clone());
+        }
 
         let access_token = self.refresh_token_internal().await?;
         let cached = CachedToken::new(access_token.clone(), TOKEN_TTL_SECONDS);
