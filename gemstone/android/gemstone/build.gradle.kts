@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.gemwallet.gemstone"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 28
@@ -48,7 +48,7 @@ cargoNdk {
 }
 
 dependencies {
-    api("net.java.dev.jna:jna:5.18.1@aar"){ artifact { type = "aar" } }
+    api("net.java.dev.jna:jna:5.18.1@aar")
 
     implementation("androidx.core:core-ktx:1.17.0")
 
