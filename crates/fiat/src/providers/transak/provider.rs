@@ -20,16 +20,16 @@ impl FiatProvider for TransakClient {
     }
 
     async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let quote = self
-            .get_buy_quote(
+        Ok(self
+            .get_fiat_quote_with_redirect(
+                request.clone(),
                 request_map.symbol.clone(),
                 request.fiat_currency.as_ref().to_string(),
                 request.fiat_amount,
                 request_map.network.unwrap_or_default(),
                 request.ip_address.clone(),
             )
-            .await?;
-        Ok(self.get_fiat_quote(request, quote))
+            .await?)
     }
 
     async fn get_sell_quote(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {

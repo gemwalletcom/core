@@ -5,6 +5,7 @@ pub use provider::FiatProvider;
 pub mod hmac_signature;
 pub mod ip_check_client;
 pub mod providers;
+pub mod rsa_signature;
 
 use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, PaybisClient, TransakClient};
 use settings::Settings;
@@ -44,9 +45,14 @@ impl FiatProviderFactory {
             settings.mercuryo.key.secret.clone(),
             settings.mercuryo.key.token.clone(),
         );
-        let transak = TransakClient::new(request_client.clone(), settings.transak.key.public, settings.transak.key.secret);
+        let transak = TransakClient::new(
+            request_client.clone(),
+            settings.transak.key.public,
+            settings.transak.key.secret,
+            settings.transak.referrer_domain,
+        );
         let banxa = BanxaClient::new(request_client.clone(), settings.banxa.url, settings.banxa.key.public, settings.banxa.key.secret);
-        let paybis = PaybisClient::new(request_client.clone(), settings.paybis.key.public, settings.paybis.key.secret);
+        let paybis = PaybisClient::new(request_client.clone(), settings.paybis.key.public, settings.paybis.key.private);
 
         vec![Box::new(moonpay), Box::new(mercuryo), Box::new(transak), Box::new(banxa), Box::new(paybis)]
     }

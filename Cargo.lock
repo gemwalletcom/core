@@ -2363,6 +2363,7 @@ dependencies = [
  "number_formatter",
  "primitives",
  "reqwest",
+ "ring",
  "serde",
  "serde_json",
  "serde_serializers",

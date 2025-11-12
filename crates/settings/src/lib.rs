@@ -103,6 +103,13 @@ pub struct Key {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
+pub struct KeyPublicPrivate {
+    pub public: String,
+    pub private: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
 pub struct MoonPay {
     pub key: Key,
 }
@@ -111,6 +118,7 @@ pub struct MoonPay {
 #[allow(unused)]
 pub struct Transak {
     pub key: Key,
+    pub referrer_domain: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -137,7 +145,7 @@ pub struct Banxa {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Paybis {
-    pub key: Key,
+    pub key: KeyPublicPrivate,
 }
 
 #[derive(Debug, Deserialize, Clone)]

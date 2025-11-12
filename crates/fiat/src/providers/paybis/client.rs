@@ -1,9 +1,8 @@
-use super::models::{PaybisData, PaybisQuote, PaymentMethodWithLimits, QuoteRequest};
-use crate::{hmac_signature::generate_hmac_signature_from_base64_key, providers::paybis::models::Assets};
+use super::models::{Assets, PaybisData, PaybisQuote, PaybisResponse, PaymentMethodWithLimits, QuoteRequest, Request, RequestResponse};
+use crate::rsa_signature::generate_rsa_pss_signature;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
 use reqwest::Client;
-use std::collections::BTreeMap;
 use url::Url;
 
 const PAYBIS_API_BASE_URL: &str = "https://widget-api.paybis.com";
@@ -12,17 +11,22 @@ const PAYBIS_WIDGET_URL: &str = "https://widget.paybis.com";
 pub struct PaybisClient {
     client: Client,
     api_key: String,
-    secret_key: String,
+    private_key: String,
 }
 
 impl PaybisClient {
     pub const NAME: FiatProviderName = FiatProviderName::Paybis;
 
-    pub fn new(client: Client, api_key: String, secret_key: String) -> Self {
-        Self { client, api_key, secret_key }
+    pub fn new(client: Client, api_key: String, private_key: String) -> Self {
+        Self { client, api_key, private_key }
     }
 
-    pub async fn get_buy_quote(&self, crypto_currency: String, fiat_currency: String, fiat_amount: f64) -> Result<PaybisQuote, reqwest::Error> {
+    pub async fn get_buy_quote(
+        &self,
+        crypto_currency: String,
+        fiat_currency: String,
+        fiat_amount: f64,
+    ) -> Result<PaybisQuote, Box<dyn std::error::Error + Send + Sync>> {
         let request_body = QuoteRequest {
             amount: fiat_amount.to_string(),
             direction_change: "from".to_string(),
@@ -31,17 +35,28 @@ impl PaybisClient {
             currency_code_to: crypto_currency,
         };
         let url = format!("{PAYBIS_API_BASE_URL}/v2/public/quote");
-        self.client
+        let response: PaybisResponse<PaybisQuote> = self
+            .client
             .post(url)
             .query(&[("apikey", &self.api_key)])
             .json(&request_body)
             .send()
             .await?
             .json()
-            .await
+            .await?;
+
+        match response {
+            PaybisResponse::Success(quote) => Ok(quote),
+            PaybisResponse::Error(error) => Err(error.into_error()),
+        }
     }
 
-    pub async fn get_sell_quote(&self, crypto_currency: String, fiat_currency: String, crypto_amount: f64) -> Result<PaybisQuote, reqwest::Error> {
+    pub async fn get_sell_quote(
+        &self,
+        crypto_currency: String,
+        fiat_currency: String,
+        crypto_amount: f64,
+    ) -> Result<PaybisQuote, Box<dyn std::error::Error + Send + Sync>> {
         let request_body = QuoteRequest {
             amount: crypto_amount.to_string(),
             direction_change: "from".to_string(),
@@ -50,14 +65,20 @@ impl PaybisClient {
             currency_code_to: fiat_currency,
         };
         let url = format!("{PAYBIS_API_BASE_URL}/v2/public/quote");
-        self.client
+        let response: PaybisResponse<PaybisQuote> = self
+            .client
             .post(url)
             .query(&[("apikey", &self.api_key)])
             .json(&request_body)
             .send()
             .await?
             .json()
-            .await
+            .await?;
+
+        match response {
+            PaybisResponse::Success(quote) => Ok(quote),
+            PaybisResponse::Error(error) => Err(error.into_error()),
+        }
     }
 
     pub async fn get_assets(&self) -> Result<Assets, reqwest::Error> {
@@ -70,116 +91,110 @@ impl PaybisClient {
         self.client.get(url).query(&[("apikey", &self.api_key)]).send().await?.json().await
     }
 
-    pub fn get_buy_fiat_quote(&self, request: FiatBuyQuote, quote: PaybisQuote) -> FiatQuote {
+    pub async fn create_request(&self, request_body: Request) -> Result<RequestResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let body_json = serde_json::to_string(&request_body)?;
+
+        let signature = generate_rsa_pss_signature(&self.private_key, &body_json)?;
+
+        let url = format!("{PAYBIS_API_BASE_URL}/v3/request");
+        let response = self
+            .client
+            .post(url)
+            .query(&[("partnerId", &self.api_key)])
+            .header("X-Request-Signature", signature)
+            .header("Content-Type", "application/json")
+            .body(body_json)
+            .send()
+            .await?;
+
+        let response_data: PaybisData<RequestResponse> = response.json().await?;
+        Ok(response_data.data)
+    }
+
+    pub async fn get_buy_fiat_quote(
+        &self,
+        request: FiatBuyQuote,
+        quote: PaybisQuote,
+        user_ip: Option<String>,
+    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
         let payment_method = quote.payment_methods.first().unwrap();
         let crypto_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
 
         let crypto_value = BigNumberFormatter::f64_as_value(crypto_amount, request.asset.decimals as u32).unwrap_or_default();
 
-        FiatQuote {
+        let redirect_url = self
+            .get_redirect_url(
+                &request.wallet_address,
+                request.fiat_currency.as_ref(),
+                &quote.currency_code_to,
+                request.fiat_amount,
+                true,
+                user_ip,
+            )
+            .await?;
+
+        Ok(FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount,
             crypto_value,
-            redirect_url: self.redirect_url(
+            redirect_url,
+        })
+    }
+
+    pub async fn get_sell_fiat_quote(
+        &self,
+        request: FiatSellQuote,
+        quote: PaybisQuote,
+        user_ip: Option<String>,
+    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+        let payment_method = quote.payment_methods.first().unwrap();
+        let fiat_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
+
+        let redirect_url = self
+            .get_redirect_url(
                 &request.wallet_address,
-                request.fiat_currency.as_ref(),
                 &quote.currency_code_to,
-                request.fiat_amount,
-                true,
-            ),
-        }
+                request.fiat_currency.as_ref(),
+                request.crypto_amount,
+                false,
+                user_ip,
+            )
+            .await?;
+
+        Ok(FiatQuote {
+            provider: Self::NAME.as_fiat_provider(),
+            quote_type: FiatQuoteType::Sell,
+            fiat_amount,
+            fiat_currency: request.fiat_currency.as_ref().to_string(),
+            crypto_amount: request.crypto_amount,
+            crypto_value: request.crypto_value,
+            redirect_url,
+        })
     }
 
-    pub fn get_sell_fiat_quote(&self, _request: FiatSellQuote, _quote: PaybisQuote) -> FiatQuote {
-        unimplemented!();
-        // let payment_method = quote.payment_methods.first().unwrap();
-        // let fiat_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
-
-        // FiatQuote {
-        //     provider: Self::NAME.as_fiat_provider(),
-        //     quote_type: FiatQuoteType::Sell,
-        //     fiat_amount,
-        //     fiat_currency: request.fiat_currency.clone(),
-        //     crypto_amount: request.crypto_amount,
-        //     crypto_value: request.crypto_value,
-        //     redirect_url: self.redirect_url(
-        //         &request.wallet_address,
-        //         &quote.currency_code_to,
-        //         &request.fiat_currency,
-        //         request.crypto_amount,
-        //         false,
-        //     ),
-        // }
-    }
-
-    pub fn redirect_url(&self, wallet_address: &str, from_currency: &str, to_currency: &str, amount: f64, is_buy: bool) -> String {
-        let mut url = Url::parse(PAYBIS_WIDGET_URL).unwrap();
-
-        // Use BTreeMap to ensure parameters are always sorted alphabetically
-        let mut params = BTreeMap::new();
-        params.insert("currencyCodeFrom", from_currency.to_string());
-        params.insert("currencyCodeTo", to_currency.to_string());
-        params.insert("partnerId", self.api_key.clone());
-        params.insert("amountFrom", amount.to_string());
-        params.insert("cryptoAddress", wallet_address.to_string());
-
-        if is_buy {
-            params.insert("transactionFlow", "buyCrypto".to_string());
+    pub async fn get_redirect_url(
+        &self,
+        wallet_address: &str,
+        from_currency: &str,
+        to_currency: &str,
+        amount: f64,
+        is_buy: bool,
+        user_ip: Option<String>,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        let request_body = if is_buy {
+            Request::new_buy(wallet_address.to_string(), from_currency.to_string(), to_currency.to_string(), amount, user_ip)
         } else {
-            params.insert("transactionFlow", "sellCrypto".to_string());
-        }
+            Request::new_sell(wallet_address.to_string(), to_currency.to_string(), from_currency.to_string(), amount, user_ip)
+        };
 
-        for (key, value) in params {
-            url.query_pairs_mut().append_pair(key, &value);
-        }
+        let response = self.create_request(request_body).await?;
 
-        self.sign(url).expect("Failed to sign URL")
-    }
+        let mut url = Url::parse(PAYBIS_WIDGET_URL)?;
+        url.query_pairs_mut().append_pair("requestId", &response.request_id);
 
-    fn sign(&self, mut url: Url) -> Option<String> {
-        let query = url.query()?;
-        let query = format!("?{}", &query);
-
-        let signature = generate_hmac_signature_from_base64_key(&self.secret_key, &query)?;
-        url.query_pairs_mut().append_pair("signature", &signature);
-        Some(url.as_str().to_string())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_redirect_url_buy() {
-        let client = Client::builder().no_proxy().build().expect("failed to build client");
-        // Use a base64-encoded test secret key
-        let base64_secret = "dGVzdF9zZWNyZXRfa2V5"; // "test_secret_key" in base64
-        let paybis_client = PaybisClient::new(client, "test_api_key".to_string(), base64_secret.to_string());
-        let redirect_url = paybis_client.redirect_url("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "USD", "BTC", 100.0, true);
-
-        // The expected signature for this exact query string with the test secret
-        assert_eq!(
-            redirect_url,
-            "https://widget.paybis.com/?amountFrom=100&cryptoAddress=bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq&currencyCodeFrom=USD&currencyCodeTo=BTC&partnerId=test_api_key&transactionFlow=buyCrypto&signature=7ul26u1ze6T78AdtMPqHv64EK8eyZbfGXCCbjq%2F5gH0%3D"
-        );
-    }
-
-    #[test]
-    fn test_redirect_url_sell() {
-        let client = Client::builder().no_proxy().build().expect("failed to build client");
-        // Use a base64-encoded test secret key
-        let base64_secret = "dGVzdF9zZWNyZXRfa2V5"; // "test_secret_key" in base64
-        let paybis_client = PaybisClient::new(client, "test_api_key".to_string(), base64_secret.to_string());
-        let redirect_url = paybis_client.redirect_url("0x742d35Cc6634C0532925a3b844Bc9e7595f5843", "ETH", "EUR", 2.5, false);
-
-        // The expected signature for this exact query string with the test secret
-        assert_eq!(
-            redirect_url,
-            "https://widget.paybis.com/?amountFrom=2.5&cryptoAddress=0x742d35Cc6634C0532925a3b844Bc9e7595f5843&currencyCodeFrom=ETH&currencyCodeTo=EUR&partnerId=test_api_key&transactionFlow=sellCrypto&signature=r9JL0lr%2BE%2BaS6OOWpFiz8Q099rXAh41t48kf4mieinA%3D"
-        );
+        Ok(url.to_string())
     }
 }

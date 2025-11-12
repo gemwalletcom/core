@@ -29,7 +29,7 @@ mod tests {
 
     #[test]
     fn build_assets_filters_short_query() {
-        let request = SearchRequest::new("USDT".to_string(), None, None, None, None);
+        let request = SearchRequest::new("USDT", None, None, None, None);
         let filters = build_assets_filters(&request);
 
         assert_eq!(filters[0], "score.rank > 15");
@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn build_assets_filters_long_query() {
-        let request = SearchRequest::new("ethereum".to_string(), None, None, None, None);
+        let request = SearchRequest::new("ethereum", None, None, None, None);
         let filters = build_assets_filters(&request);
 
         assert_eq!(filters[0], "score.rank > 5");
@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn build_assets_filters_with_tags() {
-        let request = SearchRequest::new("longquery".to_string(), None, Some("defi".to_string()), None, None);
+        let request = SearchRequest::new("longquery", None, Some("defi"), None, None);
         let filters = build_assets_filters(&request);
 
         assert_eq!(filters[0], "score.rank > 5");
@@ -54,7 +54,7 @@ mod tests {
 
     #[test]
     fn build_assets_filters_with_chains() {
-        let request = SearchRequest::new("longquery".to_string(), Some("ethereum".to_string()), None, None, None);
+        let request = SearchRequest::new("longquery", Some("ethereum"), None, None, None);
         let filters = build_assets_filters(&request);
 
         assert_eq!(filters[0], "score.rank > 5");

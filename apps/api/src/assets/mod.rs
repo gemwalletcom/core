@@ -41,9 +41,9 @@ pub async fn add_asset(
 
 #[get("/assets/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_assets_search(
-    query: String,
-    chains: Option<String>,
-    tags: Option<String>,
+    query: &str,
+    chains: Option<&str>,
+    tags: Option<&str>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<SearchClient>>,
@@ -64,9 +64,9 @@ pub async fn get_assets_by_device_id(
 
 #[get("/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_search(
-    query: String,
-    chains: Option<String>,
-    tags: Option<String>,
+    query: &str,
+    chains: Option<&str>,
+    tags: Option<&str>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<SearchClient>>,

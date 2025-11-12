@@ -29,7 +29,7 @@ impl FiatProvider for PaybisClient {
             return Err(FiatQuoteError::UnsupportedState("No payment methods available".to_string()).into());
         }
 
-        Ok(self.get_buy_fiat_quote(request, quote))
+        self.get_buy_fiat_quote(request, quote, None).await
     }
 
     async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
@@ -41,7 +41,7 @@ impl FiatProvider for PaybisClient {
             return Err(FiatQuoteError::UnsupportedState("No payment methods available".to_string()).into());
         }
 
-        Ok(self.get_sell_fiat_quote(request, quote))
+        self.get_sell_fiat_quote(request, quote, None).await
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
