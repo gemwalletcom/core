@@ -166,11 +166,10 @@ impl TransakClient {
     async fn get_access_token(&self) -> Result<String, reqwest::Error> {
         let mut token_guard = self.cached_token.lock().await;
 
-        if let Some(cached) = token_guard.as_ref() {
-            if cached.is_valid() {
+        if let Some(cached) = token_guard.as_ref()
+            && cached.is_valid() {
                 return Ok(cached.access_token.clone());
             }
-        }
 
         let access_token = self.refresh_token_internal().await?;
         let cached = CachedToken::new(access_token.clone(), TOKEN_TTL_SECONDS);
