@@ -6,11 +6,11 @@ pub struct UpdateLeverage {
     pub asset: u32,
     #[serde(rename = "isCross")]
     pub is_cross: bool,
-    pub leverage: u64,
+    pub leverage: u8,
 }
 
 impl UpdateLeverage {
-    pub fn new(asset: u32, is_cross: bool, leverage: u64) -> Self {
+    pub fn new(asset: u32, is_cross: bool, leverage: u8) -> Self {
         Self {
             r#type: "updateLeverage".to_string(),
             asset,
