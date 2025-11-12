@@ -127,7 +127,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
                 open_interest: open_interest_usd,
                 volume_24h: metadata_item.and_then(|m| m.day_ntl_vlm.parse().ok()).unwrap_or(0.0),
                 funding: funding_rate,
-                leverage: vec![universe_asset.max_leverage as u8],
+                max_leverage: vec![universe_asset.max_leverage as u8],
             };
 
             let asset = Asset {
@@ -285,7 +285,7 @@ mod tests {
         assert_eq!(eth_data.perpetual.provider, PerpetualProvider::Hypercore);
         assert_eq!(eth_data.perpetual.price, 2102.5);
         assert_eq!(eth_data.perpetual.funding, 0.05);
-        assert_eq!(eth_data.perpetual.leverage, vec![50]);
+        assert_eq!(eth_data.perpetual.max_leverage, vec![50]);
         assert_eq!(eth_data.perpetual.volume_24h, 500000.0);
 
         assert_eq!(eth_data.asset.name, "ETH");
