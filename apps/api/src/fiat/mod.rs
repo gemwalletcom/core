@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::responders::{ApiError, ApiResponse};
-pub use fiat::{FiatClient, FiatProviderFactory};
+pub use fiat::{FiatClient, FiatProviderFactory, IPAddressInfo, IPCheckClient};
 use primitives::currency::Currency;
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuotes};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
@@ -41,24 +41,24 @@ pub async fn get_fiat_quotes(
 
 #[get("/fiat/on_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>&<provider_id>")]
 pub async fn get_fiat_on_ramp_quotes(
-    asset_id: String,
+    asset_id: &str,
     amount: f64,
-    currency: String,
-    wallet_address: String,
-    ip_address: Option<String>,
-    provider_id: Option<String>,
+    currency: &str,
+    wallet_address: &str,
+    ip_address: Option<&str>,
+    provider_id: Option<&str>,
     ip: std::net::IpAddr,
     fiat_client: &State<Mutex<FiatClient>>,
 ) -> Result<ApiResponse<FiatQuotes>, ApiError> {
     let request: FiatQuoteRequest = FiatQuoteRequest {
-        asset_id,
+        asset_id: asset_id.to_string(),
         quote_type: FiatQuoteType::Buy,
-        ip_address: ip_address.unwrap_or(ip.to_string()),
+        ip_address: ip_address.unwrap_or(&ip.to_string()).to_string(),
         fiat_amount: Some(amount),
-        fiat_currency: Currency::from_str(&currency).unwrap_or(Currency::USD),
+        fiat_currency: Currency::from_str(currency).unwrap_or(Currency::USD),
         crypto_value: None,
-        wallet_address,
-        provider_id,
+        wallet_address: wallet_address.to_string(),
+        provider_id: provider_id.map(|x| x.to_string()),
     };
     Ok(fiat_client.lock().await.get_quotes(request).await?.into())
 }
@@ -95,4 +95,9 @@ pub async fn get_fiat_order(
     fiat_client: &State<Mutex<FiatClient>>,
 ) -> Result<ApiResponse<primitives::FiatTransaction>, ApiError> {
     Ok(fiat_client.lock().await.get_order_status(provider, order_id).await?.into())
+}
+
+#[get("/ip")]
+pub async fn get_ip_address(ip: std::net::IpAddr, ip_check_client: &State<Mutex<IPCheckClient>>) -> Result<ApiResponse<IPAddressInfo>, ApiError> {
+    Ok(ip_check_client.lock().await.get_ip_address(&ip.to_string()).await?.into())
 }

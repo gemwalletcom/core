@@ -10,6 +10,7 @@ use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatQ
 use reqwest::Client;
 use url::Url;
 
+#[derive(Clone)]
 pub struct MoonPayClient {
     client: Client,
     api_key: String,

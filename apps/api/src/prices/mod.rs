@@ -24,24 +24,20 @@ pub async fn get_fiat_rates(price_client: &State<Mutex<PriceClient>>) -> Result<
 
 #[get("/charts/<asset_id>?<period>&<currency>")]
 pub async fn get_charts(
-    asset_id: String,
-    period: Option<String>,
-    currency: Option<String>,
+    asset_id: &str,
+    period: Option<&str>,
+    currency: Option<&str>,
     charts_client: &State<Mutex<ChartClient>>,
     price_client: &State<Mutex<PriceClient>>,
 ) -> Result<ApiResponse<Charts>, ApiError> {
-    let period = ChartPeriod::new(period.unwrap_or_default()).unwrap_or(ChartPeriod::Day);
-    let currency_value = currency.clone().unwrap_or(DEFAULT_FIAT_CURRENCY.to_string());
+    let period = ChartPeriod::new(period.unwrap_or_default().to_string()).unwrap_or(ChartPeriod::Day);
+    let currency_value = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
 
-    let coin_id = charts_client.lock().await.get_coin_id(asset_id.as_str())?;
+    let coin_id = charts_client.lock().await.get_coin_id(asset_id)?;
 
-    let prices = charts_client
-        .lock()
-        .await
-        .get_charts_prices(coin_id.as_str(), period, currency_value.as_str())
-        .await?;
+    let prices = charts_client.lock().await.get_charts_prices(&coin_id, period, currency_value).await?;
 
-    let asset_price = price_client.lock().await.get_asset_price(asset_id.as_str(), currency_value.as_str()).await?;
+    let asset_price = price_client.lock().await.get_asset_price(asset_id, currency_value).await?;
 
     let response = Charts {
         price: asset_price.price,

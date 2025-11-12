@@ -89,7 +89,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         database.clone(),
         cacher_client.clone(),
         providers,
-        ip_check_client,
+        ip_check_client.clone(),
         stream_producer.clone(),
         fiat_config,
     );
@@ -119,6 +119,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
         .manage(Mutex::new(support_client))
+        .manage(Mutex::new(ip_check_client))
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
             "/v1",
@@ -178,6 +179,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 webhooks::create_support_webhook,
                 support::add_device,
                 support::get_support_device,
+                fiat::get_ip_address,
             ],
         )
         .mount("/v2", routes![transactions::get_transactions_by_device_id_v2, nft::get_nft_assets_v2,])

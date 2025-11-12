@@ -24,6 +24,7 @@ transak:
   key:
     public: ""
     secret: ""
+  referrer_domain: "gemwallet.com"
 mercuryo:
   key:
     public: ""
@@ -38,6 +39,7 @@ paybis:
   key:
     public: ""
     secret: ""
+    private: ""
 pricer:
   timer: 60
   outdated: 604800
