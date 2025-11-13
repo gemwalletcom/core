@@ -24,4 +24,3 @@ pub struct ScanAddressTarget {
     pub asset_id: AssetId,
     pub address: String,
 }
-
