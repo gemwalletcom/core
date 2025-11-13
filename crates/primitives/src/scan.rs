@@ -2,14 +2,12 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::{Chain, TransactionType};
+use crate::{AssetId, Chain, TransactionType};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct ScanTransactionPayload {
-    pub device_id: String,
-    pub wallet_index: u32,
     pub origin: ScanAddressTarget,
     pub target: ScanAddressTarget,
     pub website: Option<String>,
@@ -29,7 +27,7 @@ pub struct ScanTransaction {
 #[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct ScanAddressTarget {
-    pub chain: Chain,
+    pub asset_id: AssetId,
     pub address: String,
 }
 

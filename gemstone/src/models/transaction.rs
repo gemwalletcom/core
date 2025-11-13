@@ -4,9 +4,8 @@ use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionState, TransactionStateRequest, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64,
-    WalletConnectionSessionAppMetadata,
-    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
+    TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
+    UInt64, WalletConnectionSessionAppMetadata, perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
 use swap::{GemApprovalData, GemSwapData};
@@ -23,6 +22,7 @@ pub type GemTransactionMetadata = TransactionMetadata;
 pub type GemTransactionState = TransactionState;
 pub type GemTransactionChange = TransactionChange;
 pub type GemTransactionUpdate = TransactionUpdate;
+pub type GemTransactionType = TransactionType;
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualDirection {
@@ -85,6 +85,26 @@ pub enum TransactionChange {
 pub struct TransactionUpdate {
     pub state: TransactionState,
     pub changes: Vec<TransactionChange>,
+}
+
+#[uniffi::remote(Enum)]
+pub enum TransactionType {
+    Transfer,
+    TransferNFT,
+    Swap,
+    TokenApproval,
+    StakeDelegate,
+    StakeUndelegate,
+    StakeRewards,
+    StakeRedelegate,
+    StakeWithdraw,
+    StakeFreeze,
+    StakeUnfreeze,
+    AssetActivation,
+    SmartContractCall,
+    PerpetualOpenPosition,
+    PerpetualClosePosition,
+    PerpetualModifyPosition,
 }
 
 pub type GemAccountDataType = AccountDataType;
