@@ -11,6 +11,6 @@ impl PerpetualCalculator {
     }
 
     pub fn calculate_minimum_usdc(&self, price: f64, sz_decimals: i32, leverage: u8) -> u64 {
-        perpetual_calculator::PerpetualCalculator::new().calculate_minimum_usdc(price, sz_decimals, leverage)
+        perpetual_calculator::PerpetualCalculator::calculate_minimum_usdc(price, sz_decimals, leverage)
     }
 }
