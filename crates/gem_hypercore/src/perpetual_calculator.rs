@@ -1,3 +1,9 @@
+// https://hyperliquid.gitbook.io/hyperliquid-docs/trading/contract-specifications
+// https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/error-responses
+const MIN_NOTIONAL_VALUE_USD: f64 = 10.0;
+const USDC_CENTS_MULTIPLIER: f64 = 100.0;
+const USDC_DECIMALS_MULTIPLIER: f64 = 1_000_000.0;
+
 pub struct PerpetualCalculator;
 
 impl Default for PerpetualCalculator {
@@ -14,10 +20,10 @@ impl PerpetualCalculator {
     /// Hyperliquid requires minimum $10 notional value (size × price).
     pub fn calculate_minimum_usdc(&self, price: f64, sz_decimals: i32, leverage: u8) -> u64 {
         let size_multiplier = 10_f64.powi(sz_decimals);
-        let rounded_size = ((10.0 / price) * size_multiplier).ceil() / size_multiplier;
-        let min_usdc = ((rounded_size * price / leverage as f64) * 100.0).ceil() / 100.0;
+        let rounded_size = ((MIN_NOTIONAL_VALUE_USD / price) * size_multiplier).ceil() / size_multiplier;
+        let min_usdc = ((rounded_size * price / leverage as f64) * USDC_CENTS_MULTIPLIER).ceil() / USDC_CENTS_MULTIPLIER;
 
-        (min_usdc * 1_000_000.0) as u64
+        (min_usdc * USDC_DECIMALS_MULTIPLIER) as u64
     }
 }
 
