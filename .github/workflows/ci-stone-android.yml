@@ -32,11 +32,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain with Android targets
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-linux-android,aarch64-linux-android,armv7-linux-androideabi
-
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -48,16 +43,8 @@ jobs:
         with:
           packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709'
 
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
@@ -75,5 +62,5 @@ jobs:
 
       - name: Build Android Bindings
         run: |
-          df -h
+          just install-android-targets
           just build-android
