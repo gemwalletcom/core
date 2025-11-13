@@ -28,16 +28,14 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.8
 
       - name: Install just
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y just
+        uses: extractions/setup-just@v2
 
       - name: Run tests
-        run: just --unstable test-all
+        run: just test-all
 
       - name: Build all integration tests only
         run: |
-          just --unstable build-integration-tests
+          just build-integration-tests
 
       - name: Check gemstone dependencies
         run: |
