@@ -24,7 +24,7 @@ impl ScanClient {
         }
 
         let target = AddressTarget {
-            chain: payload.origin.chain,
+            chain: payload.origin.asset_id.chain,
             address: payload.origin.address.clone(),
         };
         let providers_scan = self.scan_address_providers(target).await?;
@@ -37,8 +37,8 @@ impl ScanClient {
 
     fn get_scan_transaction_local(&self, payload: ScanTransactionPayload) -> Result<ScanTransaction, Box<dyn Error + Send + Sync>> {
         let queries = [
-            (payload.origin.chain, payload.origin.address.as_str()),
-            (payload.target.chain, payload.target.address.as_str()),
+            (payload.origin.asset_id.chain, payload.origin.address.as_str()),
+            (payload.target.asset_id.chain, payload.target.address.as_str()),
         ];
         let addresses = self.database.client()?.scan_addresses().get_scan_addresses(&queries)?;
         let is_malicious = addresses.iter().any(|address| address.is_fraudulent);

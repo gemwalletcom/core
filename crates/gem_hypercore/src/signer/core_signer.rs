@@ -17,8 +17,8 @@ use crate::{
         },
         hypercore::{
             approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data,
-            place_order_typed_data, send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data,
-            update_leverage_typed_data, withdrawal_request_typed_data,
+            place_order_typed_data, send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, update_leverage_typed_data,
+            withdrawal_request_typed_data,
         },
     },
     is_spot_swap,
@@ -174,7 +174,13 @@ impl HyperCoreSigner {
     }
 
     fn sign_update_leverage(&self, update_leverage: UpdateLeverage, nonce: u64, private_key: &[u8]) -> SignerResult<String> {
-        self.sign_serialized_action(update_leverage, nonce, private_key, |value| update_leverage_typed_data(value, nonce), "update leverage")
+        self.sign_serialized_action(
+            update_leverage,
+            nonce,
+            private_key,
+            |value| update_leverage_typed_data(value, nonce),
+            "update leverage",
+        )
     }
 
     fn sign_market_message(
