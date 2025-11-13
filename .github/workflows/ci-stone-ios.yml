@@ -34,7 +34,7 @@ jobs:
         with:
           targets: aarch64-apple-ios-sim,aarch64-apple-ios,aarch64-apple-ios-macabi,aarch64-apple-darwin
 
-      - name: Cache cargo registry and git
+      - name: Cache cargo registry
         uses: actions/cache@v4
         with:
           path: |
@@ -45,17 +45,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Expose GitHub cache env for sccache
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-            core.exportVariable('ACTIONS_RESULTS_URL', process.env.ACTIONS_RESULTS_URL || '');
-
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.8
-        continue-on-error: true
+        uses: mozilla-actions/sccache-action@v0.0.9
+        with:
+          version: "v0.12.0"
 
       - name: Install just
         uses: extractions/setup-just@v2
