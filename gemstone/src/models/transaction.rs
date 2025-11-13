@@ -4,8 +4,9 @@ use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
-    UInt64, WalletConnectionSessionAppMetadata, perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
+    TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64,
+    WalletConnectionSessionAppMetadata,
+    perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
 use swap::{GemApprovalData, GemSwapData};
