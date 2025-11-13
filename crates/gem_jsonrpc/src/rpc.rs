@@ -43,12 +43,12 @@ impl Target {
         }
     }
 
-    pub fn post_json(url: &str, body: serde_json::Value) -> Self {
+    pub fn post_json<T: serde::Serialize>(url: &str, body: &T) -> Self {
         Self {
             url: url.into(),
             method: HttpMethod::Post,
             headers: Some(HashMap::from([("Content-Type".into(), "application/json".into())])),
-            body: Some(serde_json::to_vec(&body).expect("Failed to serialize JSON body")),
+            body: Some(serde_json::to_vec(body).expect("Failed to serialize JSON body")),
         }
     }
 
