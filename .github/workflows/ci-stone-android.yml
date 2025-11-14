@@ -56,6 +56,9 @@ jobs:
         uses: gradle/gradle-build-action@v3
 
       - name: Build Android Bindings
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           just install-android-targets
           just build-android

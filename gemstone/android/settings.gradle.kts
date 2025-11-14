@@ -6,7 +6,7 @@ pluginManagement {
         val githubUser = localProps?.getProperty("github.user")
         val githubToken = localProps?.getProperty("github.token")
         maven {
-            url = uri("https://maven.pkg.github.com/0xh3rman/cargo-ndk-android-gradle")
+            url = uri("https://maven.pkg.github.com/gemwalletcom/cargo-ndk-android-gradle")
             credentials {
                 username = githubUser
                 password = githubToken
