@@ -33,10 +33,10 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.8
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        run: brew install just
+        uses: extractions/setup-just@v2
 
       - name: Setup Xcode
         run: |

@@ -47,18 +47,18 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.8
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y just
+        uses: extractions/setup-just@v2
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk@3.5.4
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
 
       - name: Build Android Bindings
         run: |
-          df -h
-          just --unstable install-android-targets
-          just --unstable build-android
+          just install-android-targets
+          just build-android

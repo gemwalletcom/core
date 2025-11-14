@@ -45,10 +45,10 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.8
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        run: brew install just
+        uses: extractions/setup-just@v2
 
       - name: Build iOS frameworks
         run: |

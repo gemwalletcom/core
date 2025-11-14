@@ -27,6 +27,18 @@ android {
             )
         }
     }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+        singleVariant("debug") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -64,6 +76,12 @@ afterEvaluate {
                 groupId = "com.gemwallet.gemstone"
                 artifactId = "gemstone"
                 version = System.getenv("VER_NAME") ?: "1.0.0"
+            }
+            create<MavenPublication>("debug") {
+                from(components["debug"])
+                groupId = "com.gemwallet.gemstone"
+                artifactId = "gemstone-debug"
+                version = System.getenv("VER_NAME") ?: "1.0.0-debug"
             }
         }
     }
