@@ -13,7 +13,12 @@ pub fn decode_transaction<T: DeserializeOwned>(tx: &str) -> Result<T, Box<dyn Er
 }
 
 pub fn validate_and_hash(encoded: &str) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
-    TxOutput::from_tx(&decode_transaction(encoded)?)
+    if encoded.trim().is_empty() {
+        return Err("Missing Sui transaction data".into());
+    }
+
+    let tx = decode_transaction(encoded).map_err(|err| format!("Invalid Sui transaction payload: {err}"))?;
+    TxOutput::from_tx(&tx)
 }
 
 pub fn prefill_tx(ptb: TransactionBuilder) -> Transaction {
