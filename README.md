@@ -114,6 +114,6 @@ This project is licensed under the [MIT](./LICENSE) License.
 
 - 💬 Join our [Discord](https://discord.com/invite/aWkq5sj7SY) or [Telegram](https://t.me/gemwallet_developers)
 - 📖 Read the [Docs](https://docs.gemwallet.com/)
-- 🐦 Follow us on [X](https://x.com/GemWalletApp)
+- 🐦 Follow us on [X](https://x.com/gemwallet)
 
 Made with ❤️ by the Gem Wallet community.

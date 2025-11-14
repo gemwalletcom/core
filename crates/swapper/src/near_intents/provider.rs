@@ -337,7 +337,17 @@ where
             .build_deposit_data(deposit_memo, from_asset, &quote.request.wallet_address, &deposit_address, &amount_in)
             .await?;
 
-        Ok(SwapperQuoteData::new_tranfer(data.to, data.value, data.memo))
+        let DepositData {
+            to,
+            value,
+            data: payload,
+            memo,
+        } = data;
+
+        Ok(SwapperQuoteData {
+            data: payload,
+            ..SwapperQuoteData::new_tranfer(to, value, memo)
+        })
     }
 
     async fn get_swap_result(&self, chain: Chain, deposit_address: &str) -> Result<SwapResult, SwapperError> {

@@ -24,9 +24,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install just
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y just
+        uses: extractions/setup-just@v2
 
       - name: Run Lint
-        run: just --unstable lint
+        run: just lint

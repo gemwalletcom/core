@@ -5,7 +5,7 @@ use std::error::Error;
 
 use gem_client::Client;
 
-use crate::{provider::transactions_mapper::map_transactions, rpc::client::BitcoinClient};
+use crate::{models::Address, provider::transactions_mapper::map_transactions, rpc::client::BitcoinClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for BitcoinClient<C> {
@@ -39,6 +39,7 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
     }
 
     async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let address = Address::new(&address, self.get_chain()).full();
         let address_details = self.get_address_details(&address, limit.unwrap_or(25)).await?;
         let transactions = address_details.transactions.unwrap_or_default();
         Ok(map_transactions(self.get_chain(), transactions))

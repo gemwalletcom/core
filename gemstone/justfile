@@ -47,7 +47,6 @@ test-ios:
     echo "Using iOS $IOS_VERSION Simulator: $DEVICE_ID"
     xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
     -scheme GemTest \
-    -sdk iphonesimulator \
     -destination "platform=iOS Simulator,OS=$IOS_VERSION,id=$DEVICE_ID" \
     test | xcbeautify
 
@@ -153,7 +152,7 @@ bindgen-kotlin:
 build-android: bindgen-kotlin
     #!/usr/bin/env bash
     rm -rf ~/.m2/repository/com/gemwallet/gemstone/gemstone
-    cd android && touch local.properties && ./gradlew publishToMavenLocal
+    cd android && touch local.properties && ./gradlew publishDebugPublicationToMavenLocal
 
 publish-android:
     #!/usr/bin/env bash
