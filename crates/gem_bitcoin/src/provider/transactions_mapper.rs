@@ -1,4 +1,4 @@
-use crate::models::transaction::Transaction;
+use crate::models::{Address, Transaction};
 use chrono::{TimeZone, Utc};
 use primitives::{TransactionState, TransactionType, chain::Chain, transaction_utxo::TransactionUtxoInput};
 use std::error::Error;
@@ -17,7 +17,7 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
         .iter()
         .filter(|i| i.is_address)
         .map(|input| TransactionUtxoInput {
-            address: input.addresses.clone().unwrap().first().unwrap().to_string(),
+            address: Address::new(input.addresses.clone().unwrap().first().unwrap(), chain).short().to_string(),
             value: input.value.clone(),
         })
         .collect();
@@ -27,7 +27,9 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
         .iter()
         .filter(|o| o.is_address)
         .map(|output| TransactionUtxoInput {
-            address: output.addresses.clone().unwrap_or_default().first().unwrap().to_string(),
+            address: Address::new(output.addresses.clone().unwrap_or_default().first().unwrap(), chain)
+                .short()
+                .to_string(),
             value: output.value.clone(),
         })
         .collect();
@@ -63,26 +65,9 @@ mod tests {
     #[test]
     fn test_map_transaction() {
         let transaction = Transaction {
-            txid: "abc123".to_string(),
-            value: "100000".to_string(),
-            value_in: "105000".to_string(),
-            fees: "5000".to_string(),
-            block_time: 1640995200,
-            block_height: 700000,
-            vin: vec![Input {
-                is_address: true,
-                addresses: Some(vec!["bc1qinput".to_string()]),
-                value: "105000".to_string(),
-                n: 0,
-                tx_id: Some("prev_tx".to_string()),
-                vout: Some(0),
-            }],
-            vout: vec![Output {
-                is_address: true,
-                addresses: Some(vec!["bc1qoutput".to_string()]),
-                value: "100000".to_string(),
-                n: 0,
-            }],
+            vin: vec![Input::mock()],
+            vout: vec![Output::mock()],
+            ..Transaction::mock()
         };
 
         let result = map_transaction(Chain::Bitcoin, &transaction);
@@ -100,5 +85,33 @@ mod tests {
         let utxo_outputs = result.utxo_outputs.as_ref().expect("expected at least one output");
         assert_eq!(utxo_outputs.len(), 1);
         assert_eq!(utxo_outputs[0].address, "bc1qoutput");
+    }
+
+    #[test]
+    fn test_map_transaction_with_address_prefix() {
+        let transaction = Transaction {
+            txid: "def456".to_string(),
+            vin: vec![Input {
+                addresses: Some(vec!["bitcoincash:qqm3kh5j8ptj2y4ryglk0j83t6jkcjk7x52kgzvh4q".to_string()]),
+                ..Input::mock()
+            }],
+            vout: vec![Output {
+                addresses: Some(vec!["bitcoincash:qpcns7lget89x9km0t8ry5fk52e8lhl53q0a64gd65".to_string()]),
+                ..Output::mock()
+            }],
+            ..Transaction::mock()
+        };
+
+        let result = map_transaction(Chain::BitcoinCash, &transaction);
+
+        assert!(result.is_some());
+        let result = result.unwrap();
+        assert_eq!(result.id.to_string(), "bitcoincash_def456");
+        let utxo_inputs = result.utxo_inputs.as_ref().expect("expected at least one input");
+        assert_eq!(utxo_inputs.len(), 1);
+        assert_eq!(utxo_inputs[0].address, "qqm3kh5j8ptj2y4ryglk0j83t6jkcjk7x52kgzvh4q");
+        let utxo_outputs = result.utxo_outputs.as_ref().expect("expected at least one output");
+        assert_eq!(utxo_outputs.len(), 1);
+        assert_eq!(utxo_outputs[0].address, "qpcns7lget89x9km0t8ry5fk52e8lhl53q0a64gd65");
     }
 }

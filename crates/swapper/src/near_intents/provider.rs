@@ -337,7 +337,12 @@ where
             .build_deposit_data(deposit_memo, from_asset, &quote.request.wallet_address, &deposit_address, &amount_in)
             .await?;
 
-        let DepositData { to, value, data: payload, memo } = data;
+        let DepositData {
+            to,
+            value,
+            data: payload,
+            memo,
+        } = data;
 
         Ok(SwapperQuoteData {
             data: payload,
