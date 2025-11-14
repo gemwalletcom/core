@@ -37,7 +37,7 @@ install-ios-targets:
 
 install-android-targets:
     rustup target add x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
-    cargo install cargo-ndk@3.5.4
+    cargo install cargo-ndk@4.1.2
 
 test-ios:
     #!/usr/bin/env bash
