@@ -1,7 +1,7 @@
 pluginManagement {
     repositories {
         val localProps = rootDir.resolve("local.properties").takeIf { it.isFile }?.inputStream()?.use { stream ->
-            Properties().apply { load(stream) }
+            java.util.Properties().apply { load(stream) }
         }
         val githubUser = localProps?.getProperty("github.user")
         val githubToken = localProps?.getProperty("github.token")
