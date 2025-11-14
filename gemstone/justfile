@@ -47,7 +47,6 @@ test-ios:
     echo "Using iOS $IOS_VERSION Simulator: $DEVICE_ID"
     xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
     -scheme GemTest \
-    -sdk iphonesimulator \
     -destination "platform=iOS Simulator,OS=$IOS_VERSION,id=$DEVICE_ID" \
     test | xcbeautify
 

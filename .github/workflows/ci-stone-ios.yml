@@ -34,8 +34,6 @@ jobs:
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
-        with:
-          version: "v0.12.0"
 
       - name: Install just
         uses: extractions/setup-just@v2
