@@ -146,7 +146,52 @@ impl Chain {
     }
 
     pub fn is_utxo(&self) -> bool {
-        matches!(self, Self::Bitcoin | Self::Litecoin | Self::Doge | Self::Zcash | Self::Cardano)
+        match self {
+            Self::Bitcoin | Self::BitcoinCash | Self::Litecoin | Self::Doge | Self::Zcash | Self::Cardano => true,
+            Self::Ethereum
+            | Self::SmartChain
+            | Self::Solana
+            | Self::Polygon
+            | Self::Thorchain
+            | Self::Cosmos
+            | Self::Osmosis
+            | Self::Arbitrum
+            | Self::Ton
+            | Self::Tron
+            | Self::Optimism
+            | Self::Aptos
+            | Self::Base
+            | Self::AvalancheC
+            | Self::Sui
+            | Self::Xrp
+            | Self::OpBNB
+            | Self::Fantom
+            | Self::Gnosis
+            | Self::Celestia
+            | Self::Injective
+            | Self::Sei
+            | Self::Manta
+            | Self::Blast
+            | Self::Noble
+            | Self::ZkSync
+            | Self::Linea
+            | Self::Mantle
+            | Self::Celo
+            | Self::Near
+            | Self::World
+            | Self::Stellar
+            | Self::Sonic
+            | Self::Algorand
+            | Self::Polkadot
+            | Self::Plasma
+            | Self::Abstract
+            | Self::Berachain
+            | Self::Ink
+            | Self::Unichain
+            | Self::Monad
+            | Self::Hyperliquid
+            | Self::HyperCore => false,
+        }
     }
 
     pub fn as_slip44(&self) -> i64 {
