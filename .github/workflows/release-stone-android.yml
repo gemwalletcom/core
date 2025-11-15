@@ -1,26 +1,45 @@
 name: Release - Gemstone Android
 
 on:
+  push:
+    tags:
+      - "*"
   workflow_dispatch:
+    inputs:
+      ref_name:
+        description: "github ref name (tag)"
+        required: true
 
 env:
   CARGO_TERM_COLOR: always
   SCCACHE_GHA_ENABLED: "true"
   RUSTC_WRAPPER: "sccache"
+  BUILD_MODE: "release"
 
 jobs:
-  build_and_publish_android:
+  publish_gpr:
     runs-on: ubuntu-latest
     env:
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.1.13356709
       ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.1.13356709
-      GITHUB_USER: ${{ github.actor }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     defaults:
       run:
         working-directory: gemstone
     steps:
+      - name: Set version tag
+        run: |
+          if [ -n "${{ github.event.inputs.ref_name }}" ]; then
+            echo "VER_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "VER_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+          else
+            echo "No ref_name provided and not running on a tag"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VER_NAME }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -48,5 +67,10 @@ jobs:
       - name: Build Android Bindings
         run: |
           just install-android-targets
-          just bindgen-kotlin BUILD_MODE=release
-          cd android && touch local.properties && ./gradlew publishReleasePublicationToGPRRepository
+          just bindgen-kotlin
+
+      - name: Publish to Github Packages
+        run: just publish-android
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
