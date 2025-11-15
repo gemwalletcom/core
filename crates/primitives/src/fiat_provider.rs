@@ -10,8 +10,10 @@ pub struct FiatProvider {
     pub name: String,
     pub image_url: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[typeshare(skip)]
     pub priority: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[typeshare(skip)]
     pub threshold_bps: Option<i32>,
 }
 
