@@ -71,7 +71,7 @@ impl HyperCoreSigner {
 
         match stake_type {
             StakeType::Stake(validator) => {
-                let wei = Self::hypercore_wei_from_value(&input.value)?;
+                let wei = BigNumberFormatter::value_as_u64(&input.value, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
 
                 let deposit_request = CDeposit::new(wei, nonce_incrementer.next_val());
                 let deposit_action = self.sign_c_deposit(deposit_request, private_key)?;
@@ -82,7 +82,7 @@ impl HyperCoreSigner {
             }
             StakeType::Unstake(delegation) => {
                 let balance = delegation.base.balance.to_string();
-                let wei = Self::hypercore_wei_from_value(&balance)?;
+                let wei = BigNumberFormatter::value_as_u64(&balance, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
 
                 let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.next_val());
                 let undelegate_action = self.sign_token_delegate(undelegate_request, private_key)?;
@@ -93,12 +93,6 @@ impl HyperCoreSigner {
             }
             _ => Err(SignerError::UnsupportedOperation("Stake type not supported".to_string())),
         }
-    }
-
-    fn hypercore_wei_from_value(value: &str) -> SignerResult<u64> {
-        value
-            .parse::<u64>()
-            .map_err(|err| SignerError::InvalidInput(format!("Invalid Hypercore wei amount: {err}")))
     }
 
     fn sign_perpetual_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
@@ -426,6 +420,49 @@ mod tests {
     };
 
     #[test]
+    fn stake_actions_preserve_wei_and_nonces() {
+        let signer = HyperCoreSigner::default();
+        let asset = Asset::from_chain(Chain::HyperCore);
+        let validator = DelegationValidator {
+            chain: Chain::HyperCore,
+            id: "0x5ac99df645f3414876c816caa18b2d234024b487".into(),
+            name: "Validator".into(),
+            is_active: true,
+            commission: 0.0,
+            apr: 0.0,
+        };
+        let input = TransactionLoadInput {
+            input_type: TransactionInputType::Stake(asset.clone(), StakeType::Stake(validator)),
+            sender_address: "0xsender".into(),
+            destination_address: "".into(),
+            value: "150000000".into(),
+            gas_price: GasPriceType::regular(BigInt::from(0)),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::None,
+        };
+        let private_key = [2u8; 32];
+
+        let responses = signer.sign_stake_action(&input, &private_key).expect("should sign");
+        assert_eq!(responses.len(), 2);
+
+        let deposit: serde_json::Value = serde_json::from_str(&responses[0]).expect("json");
+        let delegate: serde_json::Value = serde_json::from_str(&responses[1]).expect("json");
+
+        assert_eq!(deposit["action"]["type"], "cDeposit");
+        assert_eq!(delegate["action"]["type"], "tokenDelegate");
+
+        let deposit_wei = deposit["action"]["wei"].as_u64().expect("deposit wei");
+        let delegate_wei = delegate["action"]["wei"].as_u64().expect("delegate wei");
+        assert_eq!(deposit_wei, 150000000);
+        assert_eq!(delegate_wei, 150000000);
+
+        let deposit_nonce = deposit["action"]["nonce"].as_u64().expect("nonce");
+        let delegate_nonce = delegate["action"]["nonce"].as_u64().expect("nonce");
+        assert!(deposit_nonce < delegate_nonce);
+    }
+
+    #[test]
     fn unstake_actions_have_unique_nonces() {
         let signer = HyperCoreSigner::default();
         let asset = Asset::from_chain(Chain::HyperCore);
@@ -479,17 +516,14 @@ mod tests {
 
     #[test]
     fn hypercore_wei_parser_parses_amount() {
-        let wei = HyperCoreSigner::hypercore_wei_from_value("150000000").unwrap();
+        let wei = BigNumberFormatter::value_as_u64("150000000", 0).unwrap();
         assert_eq!(wei, 150000000);
     }
 
     #[test]
     fn hypercore_wei_parser_rejects_invalid_inputs() {
-        assert!(HyperCoreSigner::hypercore_wei_from_value("invalid").is_err());
-        assert!(HyperCoreSigner::hypercore_wei_from_value("-1").is_err());
-        assert!(HyperCoreSigner::hypercore_wei_from_value("1.23").is_err());
         let too_large = (u64::MAX as u128 + 1).to_string();
-        assert!(HyperCoreSigner::hypercore_wei_from_value(&too_large).is_err());
+        assert!(BigNumberFormatter::value_as_u64(&too_large, 0).is_err());
     }
 
     #[test]
