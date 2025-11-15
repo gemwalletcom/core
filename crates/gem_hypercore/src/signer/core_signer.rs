@@ -84,7 +84,7 @@ impl HyperCoreSigner {
                 let balance = delegation.base.balance.to_string();
                 let wei = Self::hypercore_wei_from_value(&balance)?;
 
-                let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.current());
+                let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.next_val());
                 let undelegate_action = self.sign_token_delegate(undelegate_request, private_key)?;
 
                 let withdraw_request = CWithdraw::new(wei, nonce_incrementer.next_val());
@@ -419,6 +419,63 @@ fn fee_rate(tenths_bps: u32) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use num_bigint::{BigInt, BigUint};
+    use primitives::{
+        Asset, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, GasPriceType, StakeType, TransactionInputType, TransactionLoadInput,
+        TransactionLoadMetadata,
+    };
+
+    #[test]
+    fn unstake_actions_have_unique_nonces() {
+        let signer = HyperCoreSigner::default();
+        let asset = Asset::from_chain(Chain::HyperCore);
+        let delegation = Delegation {
+            base: DelegationBase {
+                asset_id: asset.id.clone(),
+                state: DelegationState::Active,
+                balance: BigUint::from(150_000_000u64),
+                shares: BigUint::from(0u64),
+                rewards: BigUint::from(0u64),
+                completion_date: None,
+                delegation_id: "delegation".into(),
+                validator_id: "validator".into(),
+            },
+            validator: DelegationValidator {
+                chain: Chain::HyperCore,
+                id: "0x66be52ec79f829cc88e5778a255e2cb9492798fd".into(),
+                name: "Validator".into(),
+                is_active: true,
+                commission: 0.0,
+                apr: 0.0,
+            },
+            price: None,
+        };
+        let input = TransactionLoadInput {
+            input_type: TransactionInputType::Stake(asset, StakeType::Unstake(delegation)),
+            sender_address: "0xsender".into(),
+            destination_address: "".into(),
+            value: "0".into(),
+            gas_price: GasPriceType::regular(BigInt::from(0)),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::None,
+        };
+        let private_key = [1u8; 32];
+
+        let responses = signer.sign_stake_action(&input, &private_key).expect("should sign");
+        assert_eq!(responses.len(), 2);
+
+        let nonces: Vec<u64> = responses
+            .iter()
+            .map(|payload| {
+                let value: serde_json::Value = serde_json::from_str(payload).expect("valid json");
+                value["action"]["nonce"].as_u64().expect("action nonce")
+            })
+            .collect();
+
+        assert_eq!(nonces.len(), 2);
+        assert!(nonces[0] < nonces[1], "unstake actions should advance nonce");
+    }
 
     #[test]
     fn hypercore_wei_parser_parses_amount() {
