@@ -23,8 +23,6 @@ pub enum WalletConnectionState {
 pub enum WalletConnectionMethods {
     #[serde(rename = "eth_chainId")]
     EthChainId,
-    #[serde(rename = "eth_sign")]
-    EthSign,
     #[serde(rename = "personal_sign")]
     PersonalSign,
     #[serde(rename = "eth_signTypedData")]

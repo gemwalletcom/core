@@ -3,8 +3,6 @@
 pub enum WalletConnectEthereumMethods {
     #[serde(rename = "chainId")]
     chain_id,
-    #[serde(rename = "sign")]
-    sign,
     #[serde(rename = "personalSign")]
     personal_sign,
     #[serde(rename = "signTypedData")]
