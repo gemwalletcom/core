@@ -486,6 +486,10 @@ mod tests {
     #[test]
     fn hypercore_wei_parser_rejects_invalid_inputs() {
         assert!(HyperCoreSigner::hypercore_wei_from_value("invalid").is_err());
+        assert!(HyperCoreSigner::hypercore_wei_from_value("-1").is_err());
+        assert!(HyperCoreSigner::hypercore_wei_from_value("1.23").is_err());
+        let too_large = (u64::MAX as u128 + 1).to_string();
+        assert!(HyperCoreSigner::hypercore_wei_from_value(&too_large).is_err());
     }
 
     #[test]
