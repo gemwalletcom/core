@@ -71,7 +71,7 @@ impl HyperCoreSigner {
 
         match stake_type {
             StakeType::Stake(validator) => {
-                let wei = BigNumberFormatter::value_as_u64(&input.value, 10).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+                let wei = Self::hypercore_wei_from_value(&input.value)?;
 
                 let deposit_request = CDeposit::new(wei, nonce_incrementer.next_val());
                 let deposit_action = self.sign_c_deposit(deposit_request, private_key)?;
@@ -81,8 +81,8 @@ impl HyperCoreSigner {
                 Ok(vec![deposit_action, delegate_action])
             }
             StakeType::Unstake(delegation) => {
-                let wei =
-                    BigNumberFormatter::value_as_u64(&delegation.base.balance.to_string(), 10).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+                let balance = delegation.base.balance.to_string();
+                let wei = Self::hypercore_wei_from_value(&balance)?;
 
                 let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.current());
                 let undelegate_action = self.sign_token_delegate(undelegate_request, private_key)?;
@@ -93,6 +93,12 @@ impl HyperCoreSigner {
             }
             _ => Err(SignerError::UnsupportedOperation("Stake type not supported".to_string())),
         }
+    }
+
+    fn hypercore_wei_from_value(value: &str) -> SignerResult<u64> {
+        value
+            .parse::<u64>()
+            .map_err(|err| SignerError::InvalidInput(format!("Invalid Hypercore wei amount: {err}")))
     }
 
     fn sign_perpetual_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
@@ -413,6 +419,17 @@ fn fee_rate(tenths_bps: u32) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hypercore_wei_parser_parses_amount() {
+        let wei = HyperCoreSigner::hypercore_wei_from_value("150000000").unwrap();
+        assert_eq!(wei, 150000000);
+    }
+
+    #[test]
+    fn hypercore_wei_parser_rejects_invalid_inputs() {
+        assert!(HyperCoreSigner::hypercore_wei_from_value("invalid").is_err());
+    }
 
     #[test]
     fn market_order_from_open_long_sets_buy() {
