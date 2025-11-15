@@ -9,6 +9,10 @@ pub struct FiatProvider {
     pub id: String,
     pub name: String,
     pub image_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub threshold_bps: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq)]
@@ -42,6 +46,8 @@ impl FiatProviderName {
             id: self.id(),
             name: self.name().to_owned(),
             image_url: "".to_string(),
+            priority: None,
+            threshold_bps: None,
         }
     }
 

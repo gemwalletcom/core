@@ -1,6 +1,6 @@
 use crate::currency::Currency;
 use crate::fiat_assets::FiatAssetLimits;
-use crate::{Asset, Chain, FiatBuyQuote, FiatQuoteRequest, FiatQuoteType, PaymentType};
+use crate::{Asset, Chain, FiatBuyQuote, FiatProvider, FiatQuote, FiatQuoteRequest, FiatQuoteType, PaymentType};
 
 impl FiatBuyQuote {
     pub fn mock() -> Self {
@@ -27,6 +27,42 @@ impl FiatQuoteRequest {
             crypto_value: None,
             wallet_address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
             provider_id: None,
+        }
+    }
+}
+
+impl FiatProvider {
+    pub fn mock(id: &str) -> Self {
+        FiatProvider {
+            id: id.to_string(),
+            name: id.to_string(),
+            image_url: "".to_string(),
+            priority: None,
+            threshold_bps: None,
+        }
+    }
+
+    pub fn mock_with_priority(id: &str, priority: i32, threshold_bps: Option<i32>) -> Self {
+        FiatProvider {
+            id: id.to_string(),
+            name: id.to_string(),
+            image_url: "".to_string(),
+            priority: Some(priority),
+            threshold_bps,
+        }
+    }
+}
+
+impl FiatQuote {
+    pub fn mock(provider_id: &str, crypto_amount: f64, fiat_amount: f64) -> Self {
+        FiatQuote {
+            provider: FiatProvider::mock(provider_id),
+            quote_type: FiatQuoteType::Buy,
+            fiat_amount,
+            fiat_currency: "USD".to_string(),
+            crypto_amount,
+            crypto_value: crypto_amount.to_string(),
+            redirect_url: "".to_string(),
         }
     }
 }
