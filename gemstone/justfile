@@ -137,7 +137,6 @@ bindgen-kotlin:
     echo "Bindgen kotlin BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
     rm -rf ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}/uniffi
     mkdir -p ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}
-    cargo ndk-env
     if [ "${BUILD_MODE_TARGET}" == "release" ]; then \
         export RUSTFLAGS="${RUSTFLAGS:-} -C strip=none"; \
     fi
