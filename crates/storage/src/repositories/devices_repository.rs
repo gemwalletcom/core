@@ -14,23 +14,19 @@ pub trait DevicesRepository {
 
 impl DevicesRepository for DatabaseClient {
     fn add_device(&mut self, device: crate::models::UpdateDevice) -> Result<primitives::Device, DatabaseError> {
-        let result = DevicesStore::add_device(self, device)?;
-        Ok(result.as_primitive())
+        Ok(DevicesStore::add_device(self, device)?.as_primitive())
     }
 
     fn get_device_by_id(&mut self, id: i32) -> Result<primitives::Device, DatabaseError> {
-        let result = DevicesStore::get_device_by_id(self, id)?;
-        Ok(result.as_primitive())
+        Ok(DevicesStore::get_device_by_id(self, id)?.as_primitive())
     }
 
     fn get_device(&mut self, device_id: &str) -> Result<primitives::Device, DatabaseError> {
-        let result = DevicesStore::get_device(self, device_id)?;
-        Ok(result.as_primitive())
+        Ok(DevicesStore::get_device(self, device_id)?.as_primitive())
     }
 
     fn update_device(&mut self, device: crate::models::UpdateDevice) -> Result<primitives::Device, DatabaseError> {
-        let result = DevicesStore::update_device(self, device)?;
-        Ok(result.as_primitive())
+        Ok(DevicesStore::update_device(self, device)?.as_primitive())
     }
 
     fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, DatabaseError> {
