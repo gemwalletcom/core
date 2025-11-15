@@ -99,3 +99,13 @@ pub struct WalletConnectionSessionProposal {
     pub wallets: Vec<Wallet>,
     pub metadata: WalletConnectionSessionAppMetadata,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Hashable, Sendable")]
+#[serde(rename_all = "lowercase")]
+pub enum WalletConnectionVerificationStatus {
+    Verified,
+    Unknown,
+    Invalid,
+    Malicious,
+}
