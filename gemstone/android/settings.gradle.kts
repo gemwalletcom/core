@@ -3,8 +3,8 @@ pluginManagement {
         val localProps = rootDir.resolve("local.properties").takeIf { it.isFile }?.inputStream()?.use { stream ->
             java.util.Properties().apply { load(stream) }
         }
-        val githubUser = localProps?.getProperty("github.user")
-        val githubToken = localProps?.getProperty("github.token")
+        val githubUser = System.getenv("GITHUB_USER") ?: localProps?.getProperty("github.user")
+        val githubToken = System.getenv("GITHUB_TOKEN") ?: localProps?.getProperty("github.token")
         maven {
             url = uri("https://maven.pkg.github.com/gemwalletcom/cargo-ndk-android-gradle")
             credentials {
@@ -12,7 +12,6 @@ pluginManagement {
                 password = githubToken
             }
         }
-        mavenLocal()
         google {
             content {
                 includeGroupByRegex("com\\.android.*")
@@ -27,7 +26,6 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        mavenLocal()
         google()
         mavenCentral()
     }

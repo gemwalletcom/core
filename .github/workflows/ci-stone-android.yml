@@ -26,6 +26,8 @@ jobs:
     env:
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.1.13356709
       ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.1.13356709
+      GITHUB_USER: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     defaults:
       run:
         working-directory: gemstone
@@ -54,16 +56,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
-
-      - name: Write local.properties for plugin credentials
-        run: |
-          cat <<'EOF' >> android/local.properties
-          github.user=${GITHUB_USER}
-          github.token=${GITHUB_TOKEN}
-          EOF
-        env:
-          GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Android Bindings
         run: |
