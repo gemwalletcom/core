@@ -18,7 +18,7 @@ pub enum WalletConnectionState {
     Expired,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift = "CaseIterable, Sendable")]
 pub enum WalletConnectionMethods {
     #[serde(rename = "eth_chainId")]
@@ -108,4 +108,13 @@ pub enum WalletConnectionVerificationStatus {
     Unknown,
     Invalid,
     Malicious,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct WCPairingProposal {
+    pub pairing_id: String,
+    pub proposal: WalletConnectionSessionProposal,
+    pub verification_status: WalletConnectionVerificationStatus,
 }

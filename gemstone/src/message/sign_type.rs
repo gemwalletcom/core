@@ -1,4 +1,4 @@
-#[derive(Debug, uniffi::Enum)]
+#[derive(Debug, Clone, uniffi::Enum)]
 pub enum SignDigestType {
     Sign,
     Eip191,
