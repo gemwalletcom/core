@@ -85,11 +85,10 @@ impl SiweMessage {
             return Err(format!("Unsupported chain for SIWE: {chain}"));
         }
 
-        if let Some(scheme) = &self.scheme {
-            if !Self::is_valid_scheme(scheme) {
+        if let Some(scheme) = &self.scheme
+            && !Self::is_valid_scheme(scheme) {
                 return Err("Invalid SIWE scheme".to_string());
             }
-        }
 
         Self::verify_chain_id(chain, self.chain_id)?;
         Self::verify_nonce(&self.nonce)?;
