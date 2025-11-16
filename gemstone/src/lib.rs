@@ -91,3 +91,9 @@ impl From<::signer::SignerError> for GemstoneError {
         Self::AnyError { msg: error.to_string() }
     }
 }
+
+impl From<serde_json::Error> for GemstoneError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}

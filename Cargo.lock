@@ -3134,6 +3134,7 @@ dependencies = [
  "swapper",
  "tokio",
  "uniffi",
+ "url",
 ]
 
 [[package]]

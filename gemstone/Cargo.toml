@@ -60,6 +60,7 @@ hex.workspace = true
 num-bigint.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
+url = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
