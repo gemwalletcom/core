@@ -70,9 +70,14 @@ impl EthereumRequestHandler {
     fn normalize_personal_sign_data(data: String) -> Result<(String, Vec<u8>), String> {
         if let Some(stripped) = data.strip_prefix("0x") {
             let decoded = hex::decode(stripped).map_err(|e| format!("Invalid hex data: {e}"))?;
-            Ok((hex::encode(&decoded), decoded))
+            let normalized_string = match String::from_utf8(decoded.clone()) {
+                Ok(value) => value,
+                Err(_) => String::from_utf8_lossy(&decoded).into_owned(),
+            };
+            Ok((normalized_string, decoded))
         } else {
-            Ok((data.clone(), data.into_bytes()))
+            let bytes = data.as_bytes().to_vec();
+            Ok((data, bytes))
         }
     }
 }
@@ -86,9 +91,10 @@ mod tests {
         let params = serde_json::from_str(r#"["0x48656c6c6f"]"#).unwrap();
         let action = EthereumRequestHandler::parse_personal_sign(Chain::Ethereum, params).unwrap();
         match action {
-            WalletConnectAction::SignMessage { chain, sign_type, .. } => {
+            WalletConnectAction::SignMessage { chain, sign_type, data } => {
                 assert_eq!(chain, Chain::Ethereum);
                 assert!(matches!(sign_type, SignDigestType::Eip191));
+                assert_eq!(data, "Hello");
             }
             _ => panic!("Expected SignMessage action"),
         }
