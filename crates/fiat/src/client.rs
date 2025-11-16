@@ -407,7 +407,7 @@ mod tests {
         let paybis = FiatQuote::mock("paybis", 0.50, 100.0);
         let banxa = FiatQuote::mock("banxa", 0.40, 100.0);
 
-        let mut quotes = vec![paybis.clone(), moonpay.clone(), banxa.clone(), transak.clone(), mercuryo.clone()];
+        let mut quotes = [paybis.clone(), moonpay.clone(), banxa.clone(), transak.clone(), mercuryo.clone()];
         quotes.sort_by(|a, b| sort_by_crypto_amount(a, b, &providers));
 
         assert_eq!(quotes[0].provider.id, "moonpay");
@@ -430,7 +430,7 @@ mod tests {
         let transak = FiatQuote::mock("transak", 0.60, 100.0);
         let paybis = FiatQuote::mock("paybis", 0.52, 100.0);
 
-        let mut quotes = vec![paybis.clone(), transak.clone(), mercuryo.clone(), moonpay.clone()];
+        let mut quotes = [paybis.clone(), transak.clone(), mercuryo.clone(), moonpay.clone()];
         quotes.sort_by(|a, b| sort_by_crypto_amount(a, b, &providers));
 
         assert_eq!(quotes[0].provider.id, "transak");

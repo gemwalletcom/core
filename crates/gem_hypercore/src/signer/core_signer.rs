@@ -1,6 +1,6 @@
 use ::signer::Signer;
 use alloy_primitives::hex;
-use number_formatter::{BigNumberFormatter, NumberFormatterError};
+use number_formatter::BigNumberFormatter;
 use primitives::{
     ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType,
     PerpetualType, SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
@@ -24,12 +24,6 @@ use crate::{
     is_spot_swap,
     models::timestamp::TimestampField,
 };
-
-impl From<NumberFormatterError> for SignerError {
-    fn from(error: NumberFormatterError) -> Self {
-        SignerError::InvalidInput(error.to_string())
-    }
-}
 
 const AGENT_NAME_PREFIX: &str = "gemwallet_";
 const REFERRAL_CODE: &str = "GEMWALLET";
@@ -77,7 +71,8 @@ impl HyperCoreSigner {
 
         match stake_type {
             StakeType::Stake(validator) => {
-                let wei = BigNumberFormatter::value_as_u64(&input.value, 0)?;
+                let wei =
+                    BigNumberFormatter::value_as_u64(&input.value, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
 
                 let deposit_request = CDeposit::new(wei, nonce_incrementer.next_val());
                 let deposit_action = self.sign_c_deposit(deposit_request, private_key)?;
@@ -88,7 +83,7 @@ impl HyperCoreSigner {
             }
             StakeType::Unstake(delegation) => {
                 let balance = delegation.base.balance.to_string();
-                let wei = BigNumberFormatter::value_as_u64(&balance, 0)?;
+                let wei = BigNumberFormatter::value_as_u64(&balance, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
 
                 let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.next_val());
                 let undelegate_action = self.sign_token_delegate(undelegate_request, private_key)?;
