@@ -1,23 +1,5 @@
 use serde::{Deserialize, Serialize};
-use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
-
-#[derive(Debug, Serialize, AsRefStr, EnumString)]
-#[typeshare(swift = "Sendable")]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum WalletConnectCAIP2 {
-    #[serde(rename = "eip155")]
-    Eip155,
-    #[serde(rename = "solana")]
-    Solana,
-    #[serde(rename = "cosmos")]
-    Cosmos,
-    #[serde(rename = "algorand")]
-    Algorand,
-    #[serde(rename = "sui")]
-    Sui,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]

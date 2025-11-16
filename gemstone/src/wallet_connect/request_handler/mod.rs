@@ -55,17 +55,7 @@ impl WalletConnectRequestHandler {
     }
 
     fn resolve_chain(chain_id: Option<String>) -> Result<Chain, String> {
-        let chain_id = chain_id.ok_or("Chain ID is required")?;
-        let parts: Vec<&str> = chain_id.split(':').collect();
-
-        if parts.len() != 2 {
-            return Err("Invalid chain ID format".to_string());
-        }
-
-        let namespace = parts[0].to_string();
-        let reference = parts[1].to_string();
-
-        crate::wallet_connect::get_chain(namespace, reference).ok_or("Unsupported chain".to_string())
+        primitives::WalletConnectCAIP2::resolve_chain(chain_id)
     }
 }
 
