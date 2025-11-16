@@ -35,7 +35,7 @@ impl SignMessageDecoder {
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::SuiPersonalMessage => {
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::SuiPersonalMessage | SignDigestType::Siwe => {
                 let utf8_str = String::from_utf8(self.message.data.clone());
                 let preview = utf8_str.unwrap_or(hex::encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
@@ -57,10 +57,12 @@ impl SignMessageDecoder {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonalMessage => match self.preview() {
-                Ok(MessagePreview::Text(preview)) => preview,
-                _ => "".to_string(),
-            },
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonalMessage | SignDigestType::Siwe => {
+                match self.preview() {
+                    Ok(MessagePreview::Text(preview)) => preview,
+                    _ => "".to_string(),
+                }
+            }
             SignDigestType::Eip712 => {
                 let value: serde_json::Value = serde_json::from_slice(&self.message.data).unwrap_or_default();
                 serde_json::to_string_pretty(&value).unwrap_or_default()
@@ -71,7 +73,7 @@ impl SignMessageDecoder {
     pub fn hash(&self) -> Vec<u8> {
         match self.message.sign_type {
             SignDigestType::Sign => self.message.data.clone(),
-            SignDigestType::Eip191 => eip191_hash_message(&self.message.data).to_vec(),
+            SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
                 Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
                 Err(_) => Vec::new(),
@@ -91,7 +93,7 @@ impl SignMessageDecoder {
 
     pub fn get_result(&self, data: &[u8]) -> String {
         match self.message.sign_type {
-            SignDigestType::Eip191 | SignDigestType::Eip712 => {
+            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
                 if data.len() < SIGNATURE_LENGTH {
                     return hex::encode_prefixed(data);
                 }
@@ -130,6 +132,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip191,
             data,
+            siwe: None,
         });
         match decoder.preview() {
             Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "hello world"),
@@ -150,6 +153,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip191,
             data,
+            siwe: None,
         });
         match decoder.preview() {
             Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "test"),
@@ -164,6 +168,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip191,
             data,
+            siwe: None,
         });
         match decoder.preview() {
             // Since 0xdeadbeef is not valid UTF-8, preview should show the hex representation
@@ -180,6 +185,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip191,
             data: data.clone(),
+            siwe: None,
         });
         let result = decoder.get_result(data.as_slice());
         assert_eq!(
@@ -193,6 +199,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip191,
             data: b"test".to_vec(),
+            siwe: None,
         });
 
         // Test recovery ID 0 -> 27 (0x1b)
@@ -218,6 +225,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::SuiPersonalMessage,
             data: data.clone(),
+            siwe: None,
         });
 
         let hash = decoder.hash();
@@ -226,6 +234,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::SuiPersonalMessage,
             data,
+            siwe: None,
         });
         let mut signature = vec![0u8; 97];
         signature[0] = 0;
@@ -239,6 +248,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Sign,
             data: b"test".to_vec(),
+            siwe: None,
         });
 
         let sig = vec![0u8; 65];
@@ -258,6 +268,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Base58,
             data: data.clone(),
+            siwe: None,
         });
 
         match decoder.preview() {
@@ -287,6 +298,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
+            siwe: None,
         });
         let preview = decoder.preview().unwrap();
         assert_eq!(
@@ -353,6 +365,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
+            siwe: None,
         });
 
         let digest = decoder.hash();
@@ -366,6 +379,7 @@ mod tests {
         let decoder = SignMessageDecoder::new(SignMessage {
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
+            siwe: None,
         });
         let preview = decoder.preview().unwrap();
         assert_eq!(

@@ -1,5 +1,8 @@
 use crate::message::sign_type::SignDigestType;
-use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
+use crate::{
+    siwe::SiweMessage,
+    wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType},
+};
 use primitives::Chain;
 use serde_json::Value;
 
@@ -9,21 +12,23 @@ impl EthereumRequestHandler {
     pub fn parse_personal_sign(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
         let params_array = params.as_array().ok_or("Invalid params format")?;
         let data = params_array.first().and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
-
-        let data = if let Some(stripped) = data.strip_prefix("0x") {
-            hex::decode(stripped)
-                .map_err(|e| format!("Invalid hex data: {}", e))?
-                .into_iter()
-                .map(|b| format!("{:02x}", b))
-                .collect()
-        } else {
-            data
+        let (normalized_data, raw_bytes) = Self::normalize_personal_sign_data(data)?;
+        let siwe_detected = match String::from_utf8(raw_bytes) {
+            Ok(text) => {
+                if let Some(message) = SiweMessage::try_parse(&text) {
+                    message.validate(chain)?;
+                    true
+                } else {
+                    false
+                }
+            }
+            Err(_) => false,
         };
 
         Ok(WalletConnectAction::SignMessage {
             chain,
-            sign_type: SignDigestType::Eip191,
-            data,
+            sign_type: if siwe_detected { SignDigestType::Siwe } else { SignDigestType::Eip191 },
+            data: normalized_data,
         })
     }
 
@@ -60,6 +65,15 @@ impl EthereumRequestHandler {
             transaction_type: WalletConnectTransactionType::Ethereum,
             data,
         })
+    }
+
+    fn normalize_personal_sign_data(data: String) -> Result<(String, Vec<u8>), String> {
+        if let Some(stripped) = data.strip_prefix("0x") {
+            let decoded = hex::decode(stripped).map_err(|e| format!("Invalid hex data: {e}"))?;
+            Ok((hex::encode(&decoded), decoded))
+        } else {
+            Ok((data.clone(), data.into_bytes()))
+        }
     }
 }
 
@@ -118,5 +132,51 @@ mod tests {
             }
             _ => panic!("Expected SignMessage action"),
         }
+    }
+
+    #[test]
+    fn test_parse_personal_sign_detects_siwe() {
+        let message = [
+            "login.xyz wants you to sign in with your Ethereum account:",
+            "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
+            "",
+            "Sign in with Ethereum to the app.",
+            "",
+            "URI: https://login.xyz",
+            "Version: 1",
+            "Chain ID: 1",
+            "Nonce: 8hK9pX32",
+            "Issued At: 2024-04-01T12:00:00Z",
+        ]
+        .join("\n");
+        let params = serde_json::json!([message]);
+        let action = EthereumRequestHandler::parse_personal_sign(Chain::Ethereum, params).unwrap();
+        match action {
+            WalletConnectAction::SignMessage { sign_type, data, .. } => {
+                assert_eq!(data, message);
+                assert!(matches!(sign_type, SignDigestType::Siwe));
+            }
+            _ => panic!("Expected SignMessage action"),
+        }
+    }
+
+    #[test]
+    fn test_parse_personal_sign_siwe_errors_on_chain_mismatch() {
+        let message = [
+            "login.xyz wants you to sign in with your Ethereum account:",
+            "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
+            "",
+            "Sign in with Ethereum to the app.",
+            "",
+            "URI: https://login.xyz",
+            "Version: 1",
+            "Chain ID: 1",
+            "Nonce: 8hK9pX32",
+            "Issued At: 2024-04-01T12:00:00Z",
+        ]
+        .join("\n");
+        let params = serde_json::json!([message]);
+        let error = EthereumRequestHandler::parse_personal_sign(Chain::Polygon, params).unwrap_err();
+        assert!(error.contains("chain ID mismatch"));
     }
 }

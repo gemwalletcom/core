@@ -77,14 +77,30 @@ impl WalletConnect {
         WalletConnectResponseHandler::encode_send_transaction(chain.chain_type(), transaction_id)
     }
 
-    pub fn decode_sign_message(&self, sign_type: SignDigestType, data: String) -> SignMessage {
+    pub fn decode_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> SignMessage {
+        let mut utf8_value = None;
         let message_data = if let Some(stripped) = data.strip_prefix("0x") {
             Vec::from_hex(stripped).unwrap_or_else(|_| data.as_bytes().to_vec())
         } else {
-            Vec::from_hex(&data).unwrap_or_else(|_| data.as_bytes().to_vec())
+            utf8_value = Some(data.clone());
+            data.into_bytes()
         };
 
-        SignMessage { sign_type, data: message_data }
+        let raw_text = utf8_value.or_else(|| String::from_utf8(message_data.clone()).ok()).unwrap_or_default();
+
+        let siwe = match sign_type {
+            SignDigestType::Siwe => crate::siwe::SiweMessage::try_parse(&raw_text).and_then(|message| {
+                message.validate(chain).ok()?;
+                Some(message)
+            }),
+            _ => None,
+        };
+
+        SignMessage {
+            sign_type,
+            data: message_data,
+            siwe,
+        }
     }
 
     pub fn decode_send_transaction(
@@ -139,4 +155,3 @@ impl WalletConnect {
         }
     }
 }
-

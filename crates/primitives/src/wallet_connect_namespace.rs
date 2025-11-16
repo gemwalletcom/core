@@ -130,7 +130,10 @@ mod tests {
     #[test]
     fn test_resolve_chain() {
         assert_eq!(WalletConnectCAIP2::resolve_chain(Some("eip155:1".to_string())), Ok(Chain::Ethereum));
-        assert_eq!(WalletConnectCAIP2::resolve_chain(Some("solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".to_string())), Ok(Chain::Solana));
+        assert_eq!(
+            WalletConnectCAIP2::resolve_chain(Some("solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".to_string())),
+            Ok(Chain::Solana)
+        );
         assert_eq!(WalletConnectCAIP2::resolve_chain(Some("sui:mainnet".to_string())), Ok(Chain::Sui));
         assert!(WalletConnectCAIP2::resolve_chain(Some("invalid".to_string())).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(Some("eip155:1:extra".to_string())).is_err());
