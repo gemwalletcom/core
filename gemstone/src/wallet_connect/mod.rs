@@ -1,4 +1,7 @@
-use crate::message::sign_type::{SignDigestType, SignMessage};
+use crate::{
+    message::sign_type::{SignDigestType, SignMessage},
+    siwe::SiweMessage,
+};
 use hex::FromHex;
 use primitives::{Chain, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::str::FromStr;
@@ -89,7 +92,7 @@ impl WalletConnect {
         let raw_text = utf8_value.or_else(|| String::from_utf8(message_data.clone()).ok()).unwrap_or_default();
 
         let siwe = match sign_type {
-            SignDigestType::Siwe => crate::siwe::SiweMessage::try_parse(&raw_text).and_then(|message| {
+            SignDigestType::Siwe => SiweMessage::try_parse(&raw_text).and_then(|message| {
                 message.validate(chain).ok()?;
                 Some(message)
             }),
