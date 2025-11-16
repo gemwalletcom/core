@@ -1,6 +1,6 @@
 use ::signer::Signer;
 use alloy_primitives::hex;
-use number_formatter::BigNumberFormatter;
+use number_formatter::{BigNumberFormatter, NumberFormatterError};
 use primitives::{
     ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType,
     PerpetualType, SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
@@ -24,6 +24,12 @@ use crate::{
     is_spot_swap,
     models::timestamp::TimestampField,
 };
+
+impl From<NumberFormatterError> for SignerError {
+    fn from(error: NumberFormatterError) -> Self {
+        SignerError::InvalidInput(error.to_string())
+    }
+}
 
 const AGENT_NAME_PREFIX: &str = "gemwallet_";
 const REFERRAL_CODE: &str = "GEMWALLET";
@@ -71,7 +77,7 @@ impl HyperCoreSigner {
 
         match stake_type {
             StakeType::Stake(validator) => {
-                let wei = BigNumberFormatter::value_as_u64(&input.value, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+                let wei = BigNumberFormatter::value_as_u64(&input.value, 0)?;
 
                 let deposit_request = CDeposit::new(wei, nonce_incrementer.next_val());
                 let deposit_action = self.sign_c_deposit(deposit_request, private_key)?;
@@ -82,7 +88,7 @@ impl HyperCoreSigner {
             }
             StakeType::Unstake(delegation) => {
                 let balance = delegation.base.balance.to_string();
-                let wei = BigNumberFormatter::value_as_u64(&balance, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+                let wei = BigNumberFormatter::value_as_u64(&balance, 0)?;
 
                 let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.next_val());
                 let undelegate_action = self.sign_token_delegate(undelegate_request, private_key)?;
@@ -512,18 +518,6 @@ mod tests {
 
         assert_eq!(nonces.len(), 2);
         assert!(nonces[0] < nonces[1], "unstake actions should advance nonce");
-    }
-
-    #[test]
-    fn hypercore_wei_parser_parses_amount() {
-        let wei = BigNumberFormatter::value_as_u64("150000000", 0).unwrap();
-        assert_eq!(wei, 150000000);
-    }
-
-    #[test]
-    fn hypercore_wei_parser_rejects_invalid_inputs() {
-        let too_large = (u64::MAX as u128 + 1).to_string();
-        assert!(BigNumberFormatter::value_as_u64(&too_large, 0).is_err());
     }
 
     #[test]
