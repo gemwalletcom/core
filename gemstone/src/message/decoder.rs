@@ -445,7 +445,10 @@ mod tests {
             "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
             "",
             "URI: https://login.xyz",
+            "Version: 1",
             "Chain ID: 1",
+            "Nonce: 8hK9pX32",
+            "Issued At: 2024-04-01T12:00:00Z",
         ]
         .join("\n");
 
