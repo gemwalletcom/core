@@ -86,7 +86,7 @@ pub struct GemPerpetual {
     pub open_interest: f64,
     pub volume_24h: f64,
     pub funding: f64,
-    pub max_leverage: Vec<u8>,
+    pub max_leverage: u8,
 }
 
 #[uniffi::remote(Record)]
