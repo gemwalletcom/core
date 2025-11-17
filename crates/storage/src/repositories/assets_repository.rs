@@ -59,9 +59,10 @@ impl AssetsRepository for DatabaseClient {
         use crate::database::assets_links::AssetsLinksStore;
         use crate::database::prices::PricesStore;
         use crate::database::tag::TagStore;
+        use diesel::OptionalExtension;
 
         let asset = AssetsStore::get_asset(self, asset_id)?;
-        let price = PricesStore::get_price(self, asset_id)?;
+        let price = PricesStore::get_price(self, asset_id).optional()?;
         let market = price.as_ref().map(|x| x.as_market_primitive());
         let links = AssetsLinksStore::get_asset_links(self, asset_id)?
             .into_iter()

@@ -13,7 +13,7 @@ impl ChartClient {
     }
 
     pub fn get_coin_id(&self, asset_id: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.prices().get_price(asset_id)?.ok_or("Price not found")?.id.clone())
+        Ok(self.database.client()?.prices().get_coin_id(asset_id)?)
     }
 
     pub async fn get_charts_prices(&self, coin_id: &str, period: ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {

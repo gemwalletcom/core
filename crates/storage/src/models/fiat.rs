@@ -99,6 +99,8 @@ pub struct FiatProvider {
     pub id: String,
     pub name: String,
     pub enabled: bool,
+    pub priority: Option<i32>,
+    pub priority_threshold_bps: Option<i32>,
 }
 
 impl FiatProvider {
@@ -107,6 +109,18 @@ impl FiatProvider {
             id: provider.id(),
             name: provider.as_ref().to_string(),
             enabled: true,
+            priority: None,
+            priority_threshold_bps: None,
+        }
+    }
+
+    pub fn as_primitive(&self) -> primitives::FiatProvider {
+        primitives::FiatProvider {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            image_url: "".to_string(),
+            priority: self.priority,
+            threshold_bps: self.priority_threshold_bps,
         }
     }
 }

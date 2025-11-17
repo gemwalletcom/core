@@ -4,7 +4,7 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
-    id("com.github.willir.rust.cargo-ndk-android")
+    id("com.gemwallet.cargo-ndk")
 }
 
 android {

@@ -18,13 +18,11 @@ pub enum WalletConnectionState {
     Expired,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[typeshare(swift = "CaseIterable, Sendable")]
 pub enum WalletConnectionMethods {
     #[serde(rename = "eth_chainId")]
     EthChainId,
-    #[serde(rename = "eth_sign")]
-    EthSign,
     #[serde(rename = "personal_sign")]
     PersonalSign,
     #[serde(rename = "eth_signTypedData")]
@@ -100,4 +98,23 @@ pub struct WalletConnectionSessionProposal {
     pub default_wallet: Wallet,
     pub wallets: Vec<Wallet>,
     pub metadata: WalletConnectionSessionAppMetadata,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Hashable, Sendable")]
+#[serde(rename_all = "lowercase")]
+pub enum WalletConnectionVerificationStatus {
+    Verified,
+    Unknown,
+    Invalid,
+    Malicious,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct WCPairingProposal {
+    pub pairing_id: String,
+    pub proposal: WalletConnectionSessionProposal,
+    pub verification_status: WalletConnectionVerificationStatus,
 }

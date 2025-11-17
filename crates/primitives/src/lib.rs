@@ -98,16 +98,18 @@ pub mod scan;
 pub use self::scan::{AddressType, ScanAddress, ScanAddressTarget, ScanTransaction, ScanTransactionPayload};
 pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata};
+pub mod wallet_connect_namespace;
+pub use self::wallet_connect_namespace::WalletConnectCAIP2;
 pub mod wallet_connect;
-pub use self::wallet_connect::WalletConnectCAIP2;
+pub use self::wallet_connect::{WCEthereumTransaction, WalletConnectRequest};
 pub mod account;
 pub use self::account::Account;
 pub mod wallet;
 pub use self::wallet::{Wallet, WalletId, WalletType};
 pub mod wallet_connector;
 pub use self::wallet_connector::{
-    WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,
-    WalletConnectionSessionProposal, WalletConnectionState,
+    WCPairingProposal, WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,
+    WalletConnectionSessionProposal, WalletConnectionState, WalletConnectionVerificationStatus,
 };
 pub mod nft;
 pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType};

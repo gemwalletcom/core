@@ -52,13 +52,14 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk@3.5.4
-
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Android Targets
+        run: just install-android-targets
 
       - name: Build Android Bindings
-        run: |
-          just install-android-targets
-          just build-android
+        env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: just build-android
