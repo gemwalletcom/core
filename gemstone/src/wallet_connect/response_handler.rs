@@ -41,9 +41,7 @@ impl WalletConnectResponseHandler {
                         "transactionBytes": ""
                     })
                 };
-                WalletConnectResponseType::Object {
-                    json: result.to_string(),
-                }
+                WalletConnectResponseType::Object { json: result.to_string() }
             }
             _ => WalletConnectResponseType::String { value: transaction_id },
         }
