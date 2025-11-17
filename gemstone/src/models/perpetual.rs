@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
 use primitives::{
     Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
-    chart::ChartCandleStick,
-    perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
+    chart::ChartCandleStick, perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
 
 pub type GemPerpetualMarginType = PerpetualMarginType;
@@ -104,3 +103,4 @@ pub struct GemChartCandleStick {
     pub close: f64,
     pub volume: f64,
 }
+

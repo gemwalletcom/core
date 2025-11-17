@@ -1,16 +1,31 @@
-use gem_hypercore::perpetual_calculator;
+use gem_hypercore::perpetual_formatter::PerpetualFormatter;
+use primitives::PerpetualProvider;
 
 #[derive(Debug, Default, uniffi::Object)]
-pub struct PerpetualCalculator;
+pub struct Perpetual;
 
 #[uniffi::export]
-impl PerpetualCalculator {
+impl Perpetual {
     #[uniffi::constructor]
     pub fn new() -> Self {
         Self
     }
 
-    pub fn calculate_minimum_usdc(&self, price: f64, sz_decimals: i32, leverage: u8) -> u64 {
-        perpetual_calculator::PerpetualCalculator::calculate_minimum_usdc(price, sz_decimals, leverage)
+    pub fn minimum_order_usd_amount(&self, provider: PerpetualProvider, price: f64, decimals: i32, leverage: u8) -> u64 {
+        match provider {
+            PerpetualProvider::Hypercore => PerpetualFormatter::minimum_order_usd_amount(price, decimals, leverage),
+        }
+    }
+
+    pub fn format_price(&self, provider: PerpetualProvider, price: f64, decimals: i32) -> String {
+        match provider {
+            PerpetualProvider::Hypercore => PerpetualFormatter::format_price(price, decimals),
+        }
+    }
+
+    pub fn format_size(&self, provider: PerpetualProvider, size: f64, decimals: i32) -> String {
+        match provider {
+            PerpetualProvider::Hypercore => PerpetualFormatter::format_size(size, decimals),
+        }
     }
 }
