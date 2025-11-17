@@ -102,13 +102,11 @@ impl WalletConnect {
             other => other,
         };
 
-        if !matches!(normalized_type, SignDigestType::Siwe { .. }) {
-            if let Some(message) = SiweMessage::try_parse(&raw_text) {
-                if message.validate(chain).is_ok() {
+        if !matches!(normalized_type, SignDigestType::Siwe { .. })
+            && let Some(message) = SiweMessage::try_parse(&raw_text)
+                && message.validate(chain).is_ok() {
                     normalized_type = SignDigestType::Siwe { message };
                 }
-            }
-        }
 
         SignMessage {
             chain,
