@@ -66,7 +66,7 @@ final class GemTestTests: XCTestCase {
         switch preview {
         case .text(let text):
             XCTAssertEqual(text, "this is a test")
-        case .eip712:
+        case .eip712, .siwe:
             XCTFail("Unexpected result")
         }
 

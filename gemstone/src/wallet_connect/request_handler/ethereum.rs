@@ -13,25 +13,20 @@ impl EthereumRequestHandler {
         let params_array = params.as_array().ok_or("Invalid params format")?;
         let data = params_array.first().and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
         let (normalized_data, raw_bytes) = Self::normalize_personal_sign_data(data)?;
-        let siwe_message = match String::from_utf8(raw_bytes) {
-            Ok(text) => {
-                if let Some(message) = SiweMessage::try_parse(&text) {
+        let is_siwe = match String::from_utf8(raw_bytes) {
+            Ok(text) => match SiweMessage::try_parse(&text) {
+                Some(message) => {
                     message.validate(chain)?;
-                    Some(message)
-                } else {
-                    None
+                    true
                 }
-            }
-            Err(_) => None,
+                None => false,
+            },
+            Err(_) => false,
         };
 
         Ok(WalletConnectAction::SignMessage {
             chain,
-            sign_type: if let Some(message) = siwe_message {
-                SignDigestType::Siwe { message }
-            } else {
-                SignDigestType::Eip191
-            },
+            sign_type: if is_siwe { SignDigestType::Siwe } else { SignDigestType::Eip191 },
             data: normalized_data,
         })
     }
@@ -164,7 +159,7 @@ mod tests {
         match action {
             WalletConnectAction::SignMessage { sign_type, data, .. } => {
                 assert_eq!(data, message);
-                assert!(matches!(sign_type, SignDigestType::Siwe { .. }));
+                assert!(matches!(sign_type, SignDigestType::Siwe));
             }
             _ => panic!("Expected SignMessage action"),
         }

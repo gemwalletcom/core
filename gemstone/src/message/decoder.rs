@@ -10,7 +10,7 @@ use super::{
     eip712::GemEIP712Message,
     sign_type::{SignDigestType, SignMessage},
 };
-use crate::GemstoneError;
+use crate::{GemstoneError, siwe::SiweMessage};
 use ::signer::{SUI_PERSONAL_MESSAGE_SIGNATURE_LEN, hash_eip712};
 const SIGNATURE_LENGTH: usize = 65;
 const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
@@ -20,6 +20,7 @@ const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
 pub enum MessagePreview {
     Text(String),
     EIP712(GemEIP712Message),
+    Siwe(SiweMessage),
 }
 
 #[derive(Debug, uniffi::Object)]
@@ -36,7 +37,7 @@ impl SignMessageDecoder {
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Siwe { .. } => {
+            SignDigestType::Sign | SignDigestType::Eip191 => {
                 let utf8_str = String::from_utf8(self.message.data.clone());
                 let preview = utf8_str.unwrap_or(hex::encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
@@ -53,15 +54,30 @@ impl SignMessageDecoder {
                 let decoded = bs58::decode(&self.message.data).into_vec().unwrap_or_default();
                 Ok(MessagePreview::Text(String::from_utf8_lossy(&decoded).to_string()))
             }
+            SignDigestType::Siwe => {
+                let utf8_str = match String::from_utf8(self.message.data.clone()) {
+                    Ok(value) => value,
+                    Err(_) => return Ok(MessagePreview::Text(hex::encode_prefixed(&self.message.data))),
+                };
+
+                if let Some(message) = SiweMessage::try_parse(&utf8_str)
+                    && message.validate(self.message.chain).is_ok()
+                {
+                    Ok(MessagePreview::Siwe(message))
+                } else {
+                    Ok(MessagePreview::Text(utf8_str))
+                }
+            }
         }
     }
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::Siwe { .. } => match self.preview() {
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
+            SignDigestType::Siwe => String::from_utf8(self.message.data.clone()).unwrap_or_else(|_| hex::encode_prefixed(&self.message.data)),
             SignDigestType::Eip712 => {
                 let value: serde_json::Value = serde_json::from_slice(&self.message.data).unwrap_or_default();
                 serde_json::to_string_pretty(&value).unwrap_or_default()
@@ -79,7 +95,7 @@ impl SignMessageDecoder {
                     self.message.data.clone()
                 }
             }
-            SignDigestType::Eip191 | SignDigestType::Siwe { .. } => eip191_hash_message(&self.message.data).to_vec(),
+            SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
                 Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
                 Err(_) => Vec::new(),
@@ -95,7 +111,7 @@ impl SignMessageDecoder {
 
     pub fn get_result(&self, data: &[u8]) -> String {
         match &self.message.sign_type {
-            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe { .. } => {
+            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
                 if data.len() < SIGNATURE_LENGTH {
                     return hex::encode_prefixed(data);
                 }
@@ -420,5 +436,33 @@ mod tests {
                 }],
             })
         );
+    }
+
+    #[test]
+    fn test_siwe_preview() {
+        let message = [
+            "login.xyz wants you to sign in with your Ethereum account:",
+            "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
+            "",
+            "URI: https://login.xyz",
+            "Chain ID: 1",
+        ]
+        .join("\n");
+
+        let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
+            sign_type: SignDigestType::Siwe,
+            data: message.as_bytes().to_vec(),
+        });
+
+        match decoder.preview() {
+            Ok(MessagePreview::Siwe(siwe)) => {
+                assert_eq!(siwe.domain, "login.xyz");
+                assert_eq!(siwe.chain_id, 1);
+            }
+            other => panic!("Unexpected result: {other:?}"),
+        }
+
+        assert_eq!(decoder.plain_preview(), message);
     }
 }

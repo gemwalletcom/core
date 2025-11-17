@@ -1,82 +1,114 @@
 use alloy_primitives::hex;
 use chrono::{DateTime, FixedOffset};
 use primitives::{Chain, ChainType};
-use std::collections::VecDeque;
 use url::Url;
 
 /// https://eips.ethereum.org/EIPS/eip-4361
 const PREAMBLE_SUFFIX: &str = " wants you to sign in with your Ethereum account:";
 
-#[derive(Debug, Clone, uniffi::Record)]
+#[derive(Debug, Clone, PartialEq, uniffi::Record)]
 pub struct SiweMessage {
     pub domain: String,
-    pub scheme: Option<String>,
     pub address: String,
-    pub statement: Option<String>,
     pub uri: String,
-    pub version: String,
     pub chain_id: u64,
     pub nonce: String,
+    pub version: String,
     pub issued_at: String,
-    pub expiration_time: Option<String>,
-    pub not_before: Option<String>,
-    pub request_id: Option<String>,
-    pub resources: Vec<String>,
 }
 
 impl SiweMessage {
     pub fn try_parse(raw: &str) -> Option<Self> {
-        let mut lines: VecDeque<&str> = raw.lines().collect();
-        if lines.is_empty() {
-            return None;
-        }
-
-        let preamble = lines.pop_front()?.trim();
+        let mut lines = raw.lines();
+        let preamble = lines.next()?.trim();
         if !preamble.ends_with(PREAMBLE_SUFFIX) {
             return None;
         }
 
         let preamble_value = preamble[..preamble.len() - PREAMBLE_SUFFIX.len()].trim();
-        let (scheme, domain) = Self::parse_domain_and_scheme(preamble_value)?;
+        let domain = Self::parse_domain(preamble_value)?;
 
-        let address_line = lines.pop_front()?.trim().to_string();
-        Self::validate_address(&address_line).ok()?;
+        let address_line = lines.next()?.trim();
+        Self::validate_address(address_line).ok()?;
+        let address = address_line.to_string();
 
-        Self::consume_blank_lines(&mut lines);
-        let statement = Self::parse_statement(&mut lines);
+        let mut uri = None;
+        let mut chain_id = None;
+        let mut nonce = None;
+        let mut version = None;
+        let mut issued_at = None;
 
-        let uri = Self::parse_required_tag(&mut lines, "URI: ", "URI")?;
-        Url::parse(&uri).ok()?;
+        for line in lines {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
 
-        let version = Self::parse_required_tag(&mut lines, "Version: ", "Version")?;
-        if version.trim() != "1" {
-            return None;
+            if uri.is_none()
+                && let Some(value) = trimmed.strip_prefix("URI:")
+            {
+                let normalized = value.trim();
+                if normalized.is_empty() {
+                    return None;
+                }
+                Url::parse(normalized).ok()?;
+                uri = Some(normalized.to_string());
+                continue;
+            }
+
+            if version.is_none()
+                && let Some(value) = trimmed.strip_prefix("Version:")
+            {
+                let normalized = value.trim();
+                if normalized.is_empty() || normalized != "1" {
+                    return None;
+                }
+                version = Some(normalized.to_string());
+                continue;
+            }
+
+            if chain_id.is_none()
+                && let Some(value) = trimmed.strip_prefix("Chain ID:")
+            {
+                let normalized = value.trim();
+                if normalized.is_empty() {
+                    return None;
+                }
+                chain_id = normalized.parse().ok();
+                continue;
+            }
+
+            if nonce.is_none()
+                && let Some(value) = trimmed.strip_prefix("Nonce:")
+            {
+                let normalized = value.trim();
+                if normalized.is_empty() {
+                    return None;
+                }
+                nonce = Some(normalized.to_string());
+                continue;
+            }
+
+            if issued_at.is_none()
+                && let Some(value) = trimmed.strip_prefix("Issued At:")
+            {
+                let normalized = value.trim();
+                if normalized.is_empty() {
+                    return None;
+                }
+                issued_at = Some(normalized.to_string());
+                continue;
+            }
         }
-
-        let chain_id_text = Self::parse_required_tag(&mut lines, "Chain ID: ", "Chain ID")?;
-        let chain_id = chain_id_text.parse().ok()?;
-
-        let nonce = Self::parse_required_tag(&mut lines, "Nonce: ", "Nonce")?;
-        let issued_at = Self::parse_required_tag(&mut lines, "Issued At: ", "Issued At")?;
-        let expiration_time = Self::parse_optional_tag(&mut lines, "Expiration Time: ");
-        let not_before = Self::parse_optional_tag(&mut lines, "Not Before: ");
-        let request_id = Self::parse_optional_tag(&mut lines, "Request ID: ");
-        let resources = Self::parse_resources(&mut lines);
 
         Some(Self {
             domain,
-            scheme,
-            address: address_line,
-            statement,
-            uri,
-            version: version.trim().to_string(),
-            chain_id,
-            nonce,
-            issued_at,
-            expiration_time,
-            not_before,
-            request_id,
-            resources,
+            address,
+            uri: uri?,
+            chain_id: chain_id?,
+            nonce: nonce?,
+            version: version?,
+            issued_at: issued_at?,
         })
     }
 
@@ -85,137 +117,35 @@ impl SiweMessage {
             return Err(format!("Unsupported chain for SIWE: {chain}"));
         }
 
-        if let Some(scheme) = &self.scheme
-            && !Self::is_valid_scheme(scheme)
-        {
-            return Err("Invalid SIWE scheme".to_string());
-        }
-
         Self::verify_chain_id(chain, self.chain_id)?;
         Self::verify_nonce(&self.nonce)?;
-        Self::validate_statement(&self.statement)?;
-        let parsed_uri = Self::validate_uri(&self.uri)?;
+        Self::validate_version(&self.version)?;
         Self::validate_datetime(&self.issued_at).map_err(|e| format!("Invalid Issued At value: {e}"))?;
-
-        if let Some(value) = &self.expiration_time {
-            Self::validate_datetime(value).map_err(|e| format!("Invalid Expiration Time value: {e}"))?;
-        }
-
-        if let Some(value) = &self.not_before {
-            Self::validate_datetime(value).map_err(|e| format!("Invalid Not Before value: {e}"))?;
-        }
-
-        Self::validate_resources(&self.resources)?;
-        Self::validate_domain(&self.domain, self.scheme.as_deref())?;
-        Self::verify_origin(&self.domain, self.scheme.as_deref(), &parsed_uri)?;
+        let parsed_uri = Self::validate_uri(&self.uri)?;
+        Self::validate_domain(&self.domain)?;
+        Self::verify_origin(&self.domain, &parsed_uri)?;
 
         Ok(())
     }
 
-    fn parse_domain_and_scheme(value: &str) -> Option<(Option<String>, String)> {
+    fn parse_domain(value: &str) -> Option<String> {
         if value.is_empty() {
             return None;
         }
 
         if let Some(idx) = value.find("://") {
-            let scheme_part = value[..idx].trim();
             let domain_part = value[idx + 3..].trim();
-            if scheme_part.is_empty() || domain_part.is_empty() {
+            if domain_part.is_empty() {
                 return None;
             }
-
-            let normalized_scheme = Self::normalize_scheme(scheme_part)?;
-            Some((Some(normalized_scheme), domain_part.to_string()))
+            Some(domain_part.to_string())
         } else {
-            Some((None, value.to_string()))
+            Some(value.to_string())
         }
     }
 
-    fn normalize_scheme(value: &str) -> Option<String> {
-        if Self::is_valid_scheme(value) {
-            Some(value.to_ascii_lowercase())
-        } else {
-            None
-        }
-    }
-
-    fn is_valid_scheme(value: &str) -> bool {
-        let mut chars = value.chars();
-        match chars.next() {
-            Some(ch) if ch.is_ascii_alphabetic() => {}
-            _ => return false,
-        };
-
-        chars.all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '+' | '-' | '.'))
-    }
-
-    fn parse_statement(lines: &mut VecDeque<&str>) -> Option<String> {
-        Self::consume_blank_lines(lines);
-        let line = lines.front().copied()?.trim();
-        if line.is_empty() || line.starts_with("URI: ") {
-            return None;
-        }
-
-        let statement = lines.pop_front()?.trim().to_string();
-        Self::consume_blank_lines(lines);
-        if statement.is_empty() { None } else { Some(statement) }
-    }
-
-    fn parse_required_tag(lines: &mut VecDeque<&str>, tag: &str, _label: &str) -> Option<String> {
-        Self::consume_blank_lines(lines);
-        let line = lines.pop_front()?.trim().to_string();
-        let value = line.strip_prefix(tag)?.trim().to_string();
-        if value.is_empty() { None } else { Some(value) }
-    }
-
-    fn parse_optional_tag(lines: &mut VecDeque<&str>, tag: &str) -> Option<String> {
-        Self::consume_blank_lines(lines);
-        let line = lines.front()?.trim();
-        if !line.starts_with(tag) {
-            return None;
-        }
-
-        let value = line[tag.len()..].trim().to_string();
-        lines.pop_front();
-        if value.is_empty() { None } else { Some(value) }
-    }
-
-    fn parse_resources(lines: &mut VecDeque<&str>) -> Vec<String> {
-        Self::consume_blank_lines(lines);
-        let mut resources = Vec::new();
-        if !matches!(lines.front(), Some(line) if line.trim() == "Resources:") {
-            return resources;
-        }
-
-        lines.pop_front();
-        while let Some(line) = lines.front() {
-            let trimmed = line.trim();
-            if !trimmed.starts_with("- ") {
-                break;
-            }
-            let value = trimmed.trim_start_matches("- ").trim();
-            if !value.is_empty() {
-                resources.push(value.to_string());
-            }
-            lines.pop_front();
-        }
-        resources
-    }
-
-    fn validate_statement(statement: &Option<String>) -> Result<(), String> {
-        if let Some(value) = statement {
-            if value.contains('\n') {
-                return Err("SIWE statement must not include new lines".to_string());
-            }
-            if !value.is_ascii() {
-                return Err("SIWE statement must be ASCII".to_string());
-            }
-        }
-        Ok(())
-    }
-
-    fn validate_domain(domain: &str, scheme: Option<&str>) -> Result<(), String> {
-        Self::extract_domain(domain, scheme).ok_or_else(|| "Invalid SIWE domain".to_string())?;
+    fn validate_domain(domain: &str) -> Result<(), String> {
+        Self::extract_domain(domain).ok_or_else(|| "Invalid SIWE domain".to_string())?;
         Ok(())
     }
 
@@ -225,13 +155,6 @@ impl SiweMessage {
 
     fn validate_datetime(value: &str) -> Result<DateTime<FixedOffset>, chrono::ParseError> {
         DateTime::parse_from_rfc3339(value)
-    }
-
-    fn validate_resources(resources: &[String]) -> Result<(), String> {
-        for resource in resources {
-            Url::parse(resource).map_err(|e| format!("Invalid SIWE resource: {e}"))?;
-        }
-        Ok(())
     }
 
     fn verify_chain_id(chain: Chain, message_chain_id: u64) -> Result<(), String> {
@@ -255,8 +178,8 @@ impl SiweMessage {
         }
     }
 
-    fn verify_origin(domain: &str, scheme: Option<&str>, parsed_uri: &Url) -> Result<(), String> {
-        let (domain_host, domain_port) = Self::extract_domain(domain, scheme).ok_or_else(|| "SIWE domain missing host information".to_string())?;
+    fn verify_origin(domain: &str, parsed_uri: &Url) -> Result<(), String> {
+        let (domain_host, domain_port) = Self::extract_domain(domain).ok_or_else(|| "SIWE domain missing host information".to_string())?;
 
         let uri_host = parsed_uri.host_str().ok_or_else(|| "SIWE URI missing host information".to_string())?;
         let uri_port = parsed_uri.port_or_known_default();
@@ -271,11 +194,22 @@ impl SiweMessage {
         }
     }
 
-    fn extract_domain(domain: &str, scheme: Option<&str>) -> Option<(String, Option<u16>)> {
-        let scheme = scheme.unwrap_or("https");
-        let formatted = format!("{scheme}://{domain}");
+    fn extract_domain(domain: &str) -> Option<(String, Option<u16>)> {
+        let formatted = if domain.contains("://") {
+            domain.to_string()
+        } else {
+            format!("https://{domain}")
+        };
         let parsed = Url::parse(&formatted).ok()?;
         Some((parsed.host_str()?.to_lowercase(), parsed.port_or_known_default()))
+    }
+
+    fn validate_version(version: &str) -> Result<(), String> {
+        if version.trim() == "1" {
+            Ok(())
+        } else {
+            Err("Unsupported SIWE version".to_string())
+        }
     }
 
     fn validate_address(address: &str) -> Result<(), String> {
@@ -285,12 +219,6 @@ impl SiweMessage {
         }
         hex::decode(&normalized[2..]).map_err(|_| "Invalid SIWE address".to_string())?;
         Ok(())
-    }
-
-    fn consume_blank_lines(lines: &mut VecDeque<&str>) {
-        while matches!(lines.front(), Some(line) if line.trim().is_empty()) {
-            lines.pop_front();
-        }
     }
 }
 
@@ -327,12 +255,12 @@ mod tests {
         assert!(result.is_some());
         let siwe = result.unwrap();
         assert_eq!(siwe.domain, "login.xyz");
-        assert!(siwe.scheme.is_none());
         assert_eq!(siwe.address, "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c");
         assert_eq!(siwe.uri, "https://login.xyz");
         assert_eq!(siwe.chain_id, 1);
         assert_eq!(siwe.nonce, "8hK9pX32");
-        assert_eq!(siwe.resources.len(), 2);
+        assert_eq!(siwe.version, "1");
+        assert_eq!(siwe.issued_at, "2024-04-01T12:00:00Z");
         assert!(siwe.validate(Chain::Ethereum).is_ok());
     }
 
@@ -345,7 +273,6 @@ mod tests {
         );
         let siwe = SiweMessage::try_parse(&message).unwrap();
         assert_eq!(siwe.domain, "login.xyz");
-        assert_eq!(siwe.scheme.as_deref(), Some("https"));
     }
 
     #[test]
@@ -357,7 +284,6 @@ mod tests {
         );
         let siwe = SiweMessage::try_parse(&message).unwrap();
         assert_eq!(siwe.domain, "login.xyz:8080");
-        assert!(siwe.scheme.is_none());
     }
 
     #[test]
