@@ -2,6 +2,7 @@ use alloy_primitives::{eip191_hash_message, hex};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
+use primitives::Chain;
 use std::borrow::Cow;
 use sui_types::PersonalMessage;
 
@@ -35,7 +36,7 @@ impl SignMessageDecoder {
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::SuiPersonalMessage | SignDigestType::Siwe => {
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Siwe { .. } => {
                 let utf8_str = String::from_utf8(self.message.data.clone());
                 let preview = utf8_str.unwrap_or(hex::encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
@@ -57,12 +58,10 @@ impl SignMessageDecoder {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonalMessage | SignDigestType::Siwe => {
-                match self.preview() {
-                    Ok(MessagePreview::Text(preview)) => preview,
-                    _ => "".to_string(),
-                }
-            }
+            SignDigestType::Sign | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::Siwe { .. } => match self.preview() {
+                Ok(MessagePreview::Text(preview)) => preview,
+                _ => "".to_string(),
+            },
             SignDigestType::Eip712 => {
                 let value: serde_json::Value = serde_json::from_slice(&self.message.data).unwrap_or_default();
                 serde_json::to_string_pretty(&value).unwrap_or_default()
@@ -71,9 +70,16 @@ impl SignMessageDecoder {
     }
 
     pub fn hash(&self) -> Vec<u8> {
-        match self.message.sign_type {
-            SignDigestType::Sign => self.message.data.clone(),
-            SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
+        match &self.message.sign_type {
+            SignDigestType::Sign => {
+                if self.message.chain == Chain::Sui {
+                    let message = PersonalMessage(Cow::Borrowed(self.message.data.as_slice()));
+                    message.signing_digest().to_vec()
+                } else {
+                    self.message.data.clone()
+                }
+            }
+            SignDigestType::Eip191 | SignDigestType::Siwe { .. } => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
                 Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
                 Err(_) => Vec::new(),
@@ -84,16 +90,12 @@ impl SignMessageDecoder {
                 }
                 Vec::new()
             }
-            SignDigestType::SuiPersonalMessage => {
-                let message = PersonalMessage(Cow::Borrowed(self.message.data.as_slice()));
-                message.signing_digest().to_vec()
-            }
         }
     }
 
     pub fn get_result(&self, data: &[u8]) -> String {
-        match self.message.sign_type {
-            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
+        match &self.message.sign_type {
+            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe { .. } => {
                 if data.len() < SIGNATURE_LENGTH {
                     return hex::encode_prefixed(data);
                 }
@@ -103,15 +105,18 @@ impl SignMessageDecoder {
                 }
                 hex::encode_prefixed(&signature)
             }
-            SignDigestType::Sign => hex::encode_prefixed(data),
-            SignDigestType::Base58 => bs58::encode(data).into_string(),
-            SignDigestType::SuiPersonalMessage => {
-                if data.len() == SUI_PERSONAL_MESSAGE_SIGNATURE_LEN {
-                    BASE64.encode(data)
+            SignDigestType::Sign => {
+                if self.message.chain == Chain::Sui {
+                    if data.len() == SUI_PERSONAL_MESSAGE_SIGNATURE_LEN {
+                        BASE64.encode(data)
+                    } else {
+                        hex::encode_prefixed(data)
+                    }
                 } else {
                     hex::encode_prefixed(data)
                 }
             }
+            SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
     }
 }
@@ -130,9 +135,9 @@ mod tests {
     fn test_eip191() {
         let data = b"hello world".to_vec();
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data,
-            siwe: None,
         });
         match decoder.preview() {
             Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "hello world"),
@@ -151,9 +156,9 @@ mod tests {
         // 0x74657374 corresponds to "test" in UTF-8
         let data = hex::decode("74657374").expect("Invalid hex string");
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data,
-            siwe: None,
         });
         match decoder.preview() {
             Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "test"),
@@ -166,9 +171,9 @@ mod tests {
         // 0xdeadbeef is not valid UTF-8
         let data = hex::decode("deadbeef").expect("Invalid hex string");
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data,
-            siwe: None,
         });
         match decoder.preview() {
             // Since 0xdeadbeef is not valid UTF-8, preview should show the hex representation
@@ -183,9 +188,9 @@ mod tests {
             hex::decode("d80c5ffe75fcbac0706c5c5d3b8884ae3588c30065a95075e07fa6ebc24e56433e5030992ef438b1d23437ec8d66d3197b1ad92f85222af1624d8f295907a65800")
                 .expect("Invalid hex string");
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data: data.clone(),
-            siwe: None,
         });
         let result = decoder.get_result(data.as_slice());
         assert_eq!(
@@ -197,9 +202,9 @@ mod tests {
     #[test]
     fn test_get_result_recovery_id_conversion() {
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data: b"test".to_vec(),
-            siwe: None,
         });
 
         // Test recovery ID 0 -> 27 (0x1b)
@@ -223,18 +228,18 @@ mod tests {
     fn test_sui_personal_message_hash() {
         let data = b"Hello, world!".to_vec();
         let decoder = SignMessageDecoder::new(SignMessage {
-            sign_type: SignDigestType::SuiPersonalMessage,
+            chain: Chain::Sui,
+            sign_type: SignDigestType::Sign,
             data: data.clone(),
-            siwe: None,
         });
 
         let hash = decoder.hash();
         assert_eq!(hex::encode(hash), "b3a82fa7909fb9c9add005616e4024f8bc85a484a5623d44762db301cb2ad2d3");
 
         let decoder = SignMessageDecoder::new(SignMessage {
-            sign_type: SignDigestType::SuiPersonalMessage,
+            chain: Chain::Sui,
+            sign_type: SignDigestType::Sign,
             data,
-            siwe: None,
         });
         let mut signature = vec![0u8; 97];
         signature[0] = 0;
@@ -246,9 +251,9 @@ mod tests {
     #[test]
     fn test_get_result_sign_no_recovery_offset() {
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
             sign_type: SignDigestType::Sign,
             data: b"test".to_vec(),
-            siwe: None,
         });
 
         let sig = vec![0u8; 65];
@@ -266,9 +271,9 @@ mod tests {
         let message = "X3CUgCGzyn43DTAbUKnTMDzcGWMooJT2hPSZinjfN1QUgVNYYfeoJ5zg6i4Nd5coKGUrNpEYVoD";
         let data = message.as_bytes().to_vec();
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Solana,
             sign_type: SignDigestType::Base58,
             data: data.clone(),
-            siwe: None,
         });
 
         match decoder.preview() {
@@ -296,9 +301,9 @@ mod tests {
         assert_eq!(hex::encode(hash), "0b8aa9f3712df0034bc29fe5b24dd88cfdba02c7f499856ab24632e2969709a8",);
 
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
-            siwe: None,
         });
         let preview = decoder.preview().unwrap();
         assert_eq!(
@@ -363,9 +368,9 @@ mod tests {
             "/../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json"
         ));
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
-            siwe: None,
         });
 
         let digest = decoder.hash();
@@ -377,9 +382,9 @@ mod tests {
         let json_str = include_str!("./test/eip712_polymarket.json");
 
         let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Polygon,
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
-            siwe: None,
         });
         let preview = decoder.preview().unwrap();
         assert_eq!(

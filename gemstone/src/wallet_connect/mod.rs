@@ -91,18 +91,29 @@ impl WalletConnect {
 
         let raw_text = utf8_value.or_else(|| String::from_utf8(message_data.clone()).ok()).unwrap_or_default();
 
-        let siwe = match sign_type {
-            SignDigestType::Siwe => SiweMessage::try_parse(&raw_text).and_then(|message| {
-                message.validate(chain).ok()?;
-                Some(message)
-            }),
-            _ => None,
+        let mut normalized_type = match sign_type {
+            SignDigestType::Siwe { message } => {
+                if message.validate(chain).is_ok() {
+                    SignDigestType::Siwe { message }
+                } else {
+                    SignDigestType::Eip191
+                }
+            }
+            other => other,
         };
 
+        if !matches!(normalized_type, SignDigestType::Siwe { .. }) {
+            if let Some(message) = SiweMessage::try_parse(&raw_text) {
+                if message.validate(chain).is_ok() {
+                    normalized_type = SignDigestType::Siwe { message };
+                }
+            }
+        }
+
         SignMessage {
-            sign_type,
+            chain,
+            sign_type: normalized_type,
             data: message_data,
-            siwe,
         }
     }
 
