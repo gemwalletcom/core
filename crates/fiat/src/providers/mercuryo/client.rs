@@ -1,17 +1,14 @@
 use crate::model::FiatMapping;
-use hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
 use primitives::{FiatProviderName, FiatQuote};
 use reqwest::Client;
-use sha2::{Digest, Sha512};
 use std::collections::HashMap;
-use url::Url;
 
 use super::models::{Asset, Currencies, CurrencyLimits, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
+use super::widget::MercuryoWidget;
 
 const MERCURYO_API_BASE_URL: &str = "https://api.mercuryo.io";
-const MERCURYO_REDIRECT_URL: &str = "https://exchange.mercuryo.io";
 pub struct MercuryoClient {
     pub client: Client,
     // widget
@@ -101,23 +98,38 @@ impl MercuryoClient {
 
     pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
         let crypto_value = BigNumberFormatter::f64_as_value(quote.clone().amount, request.asset.decimals as u32).unwrap_or_default();
+        let widget = MercuryoWidget::new(
+            self.widget_id.clone(),
+            self.secret_key.clone(),
+            request.wallet_address.clone(),
+            request.ip_address.clone(),
+            quote.clone(),
+            FiatQuoteType::Buy,
+            request_map.network.unwrap_or_default(),
+        );
+
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency.as_ref().to_string(),
-            crypto_amount: quote.clone().amount,
+            crypto_amount: quote.amount,
             crypto_value,
-            redirect_url: self.redirect_url(
-                quote.clone(),
-                FiatQuoteType::Buy,
-                &request_map.network.unwrap_or_default(),
-                request.wallet_address.as_str(),
-            ),
+            redirect_url: widget.to_url(),
         }
     }
 
     pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
+        let widget = MercuryoWidget::new(
+            self.widget_id.clone(),
+            self.secret_key.clone(),
+            request.wallet_address.clone(),
+            request.ip_address.clone(),
+            quote.clone(),
+            FiatQuoteType::Sell,
+            request_map.network.unwrap_or_default(),
+        );
+
         FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
@@ -125,41 +137,7 @@ impl MercuryoClient {
             fiat_currency: request.fiat_currency.as_ref().to_string(),
             crypto_amount: quote.amount,
             crypto_value: request.crypto_value,
-            redirect_url: self.redirect_url(
-                quote.clone(),
-                FiatQuoteType::Sell,
-                &request_map.network.unwrap_or_default(),
-                request.wallet_address.as_str(),
-            ),
+            redirect_url: widget.to_url(),
         }
-    }
-
-    pub fn redirect_url(&self, quote: Quote, quote_type: FiatQuoteType, network: &str, address: &str) -> String {
-        let mut components = Url::parse(MERCURYO_REDIRECT_URL).unwrap();
-        let signature_content = format!("{}{}", address, self.secret_key);
-        let signature = hex::encode(Sha512::digest(signature_content));
-        let id = uuid::Uuid::new_v4().to_string();
-
-        components
-            .query_pairs_mut()
-            .append_pair("widget_id", self.widget_id.as_str())
-            .append_pair("merchant_transaction_id", id.as_str())
-            .append_pair("currency", &quote.currency)
-            .append_pair("address", address)
-            .append_pair("network", network)
-            .append_pair("signature", &signature);
-
-        match quote_type {
-            FiatQuoteType::Buy => components
-                .query_pairs_mut()
-                .append_pair("type", "buy")
-                .append_pair("fiat_amount", &quote.fiat_amount.to_string()),
-            FiatQuoteType::Sell => components
-                .query_pairs_mut()
-                .append_pair("type", "sell")
-                .append_pair("amount", &quote.amount.to_string()),
-        };
-
-        components.as_str().to_string()
     }
 }
