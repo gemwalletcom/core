@@ -1,3 +1,4 @@
+use gem_evm::domain::host;
 use primitives::WalletConnectionVerificationStatus;
 
 #[uniffi::remote(Enum)]
@@ -25,25 +26,14 @@ impl WalletConnectVerifier {
             return WalletConnectionVerificationStatus::Invalid;
         };
 
-        let metadata_domain = Self::extract_domain(&metadata_url);
-        let origin_domain = Self::extract_domain(&origin);
+        let metadata_domain = host(&metadata_url);
+        let origin_domain = host(&origin);
 
-        if Self::matches_domain(&metadata_domain, &origin_domain) {
+        if metadata_domain == origin_domain {
             WalletConnectionVerificationStatus::Verified
         } else {
             WalletConnectionVerificationStatus::Invalid
         }
-    }
-
-    fn extract_domain(url_string: &str) -> String {
-        url::Url::parse(url_string)
-            .ok()
-            .and_then(|url| url.host_str().map(|h| h.to_lowercase()))
-            .unwrap_or_else(|| url_string.to_lowercase())
-    }
-
-    fn matches_domain(domain1: &str, domain2: &str) -> bool {
-        domain1.to_lowercase() == domain2.to_lowercase()
     }
 }
 
