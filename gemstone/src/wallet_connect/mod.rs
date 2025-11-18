@@ -1,4 +1,7 @@
-use crate::message::sign_type::{SignDigestType, SignMessage};
+use crate::{
+    message::sign_type::{SignDigestType, SignMessage},
+    siwe::SiweMessage,
+};
 use hex::FromHex;
 use primitives::{Chain, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::str::FromStr;
@@ -22,6 +25,59 @@ pub struct WalletConnect {}
 impl Default for WalletConnect {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_siwe_message() -> String {
+        [
+            "login.xyz wants you to sign in with your Ethereum account:",
+            "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
+            "",
+            "Sign in with Ethereum to the app.",
+            "",
+            "URI: https://login.xyz",
+            "Version: 1",
+            "Chain ID: 1",
+            "Nonce: 8hK9pX32",
+            "Issued At: 2024-04-01T12:00:00Z",
+        ]
+        .join("\n")
+    }
+
+    #[test]
+    fn decode_sign_message_detects_siwe() {
+        let wallet_connect = WalletConnect::new();
+        let message = sample_siwe_message();
+
+        let decoded = wallet_connect.decode_sign_message(Chain::Ethereum, SignDigestType::Eip191, message.clone());
+
+        assert!(matches!(decoded.sign_type, SignDigestType::Siwe));
+        assert_eq!(decoded.data, message.into_bytes());
+    }
+
+    #[test]
+    fn decode_sign_message_preserves_non_siwe() {
+        let wallet_connect = WalletConnect::new();
+        let message = "Hello world".to_string();
+
+        let decoded = wallet_connect.decode_sign_message(Chain::Ethereum, SignDigestType::Eip191, message.clone());
+
+        assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
+        assert_eq!(decoded.data, message.into_bytes());
+    }
+
+    #[test]
+    fn decode_sign_message_siwe_chain_mismatch() {
+        let wallet_connect = WalletConnect::new();
+        let message = sample_siwe_message();
+
+        let decoded = wallet_connect.decode_sign_message(Chain::Polygon, SignDigestType::Eip191, message);
+
+        assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
     }
 }
 
@@ -77,14 +133,37 @@ impl WalletConnect {
         WalletConnectResponseHandler::encode_send_transaction(chain.chain_type(), transaction_id)
     }
 
-    pub fn decode_sign_message(&self, sign_type: SignDigestType, data: String) -> SignMessage {
+    pub fn decode_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> SignMessage {
+        let mut utf8_value = None;
         let message_data = if let Some(stripped) = data.strip_prefix("0x") {
             Vec::from_hex(stripped).unwrap_or_else(|_| data.as_bytes().to_vec())
         } else {
-            Vec::from_hex(&data).unwrap_or_else(|_| data.as_bytes().to_vec())
+            utf8_value = Some(data.clone());
+            data.into_bytes()
         };
 
-        SignMessage { sign_type, data: message_data }
+        let raw_text = utf8_value.or_else(|| String::from_utf8(message_data.clone()).ok()).unwrap_or_default();
+
+        if let Some(siwe_message) = self.decode_siwe_message(chain, &raw_text, &message_data) {
+            return siwe_message;
+        }
+
+        SignMessage {
+            chain,
+            sign_type,
+            data: message_data,
+        }
+    }
+
+    fn decode_siwe_message(&self, chain: Chain, raw_text: &str, message_data: &[u8]) -> Option<SignMessage> {
+        let message = SiweMessage::try_parse(raw_text)?;
+        message.validate(chain).ok()?;
+
+        Some(SignMessage {
+            chain,
+            sign_type: SignDigestType::Siwe,
+            data: message_data.to_vec(),
+        })
     }
 
     pub fn decode_send_transaction(

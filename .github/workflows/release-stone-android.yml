@@ -27,6 +27,7 @@ jobs:
         working-directory: gemstone
     steps:
       - name: Set version tag
+        working-directory: .
         run: |
           if [ -n "${{ github.event.inputs.ref_name }}" ]; then
             echo "VER_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
