@@ -2,14 +2,13 @@ use alloy_primitives::{eip191_hash_message, hex::encode_prefixed};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
-use primitives::Chain;
 
 use super::{
     eip712::GemEIP712Message,
     sign_type::{SignDigestType, SignMessage},
 };
 use crate::{GemstoneError, siwe::SiweMessage};
-use ::signer::{SUI_PERSONAL_MESSAGE_SIGNATURE_LEN, hash_eip712};
+use ::signer::hash_eip712;
 const SIGNATURE_LENGTH: usize = 65;
 const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
 const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
