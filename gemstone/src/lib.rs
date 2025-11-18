@@ -10,6 +10,7 @@ pub mod models;
 pub mod network;
 pub mod payment;
 pub mod signer;
+pub mod siwe;
 pub mod wallet_connect;
 
 use alien::AlienError;

@@ -10,16 +10,6 @@ impl EthereumRequestHandler {
         let params_array = params.as_array().ok_or("Invalid params format")?;
         let data = params_array.first().and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
 
-        let data = if let Some(stripped) = data.strip_prefix("0x") {
-            hex::decode(stripped)
-                .map_err(|e| format!("Invalid hex data: {}", e))?
-                .into_iter()
-                .map(|b| format!("{:02x}", b))
-                .collect()
-        } else {
-            data
-        };
-
         Ok(WalletConnectAction::SignMessage {
             chain,
             sign_type: SignDigestType::Eip191,
@@ -61,6 +51,7 @@ impl EthereumRequestHandler {
             data,
         })
     }
+
 }
 
 #[cfg(test)]
@@ -72,9 +63,10 @@ mod tests {
         let params = serde_json::from_str(r#"["0x48656c6c6f"]"#).unwrap();
         let action = EthereumRequestHandler::parse_personal_sign(Chain::Ethereum, params).unwrap();
         match action {
-            WalletConnectAction::SignMessage { chain, sign_type, .. } => {
+            WalletConnectAction::SignMessage { chain, sign_type, data } => {
                 assert_eq!(chain, Chain::Ethereum);
                 assert!(matches!(sign_type, SignDigestType::Eip191));
+                assert_eq!(data, "0x48656c6c6f");
             }
             _ => panic!("Expected SignMessage action"),
         }
@@ -115,6 +107,32 @@ mod tests {
                 assert_eq!(chain, Chain::Ethereum);
                 assert!(matches!(sign_type, SignDigestType::Eip712));
                 assert_eq!(data, r#"{"types":{"EIP712Domain":[]}}"#);
+            }
+            _ => panic!("Expected SignMessage action"),
+        }
+    }
+
+    #[test]
+    fn test_parse_personal_sign_ignores_siwe_detection() {
+        let message = [
+            "login.xyz wants you to sign in with your Ethereum account:",
+            "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
+            "",
+            "Sign in with Ethereum to the app.",
+            "",
+            "URI: https://login.xyz",
+            "Version: 1",
+            "Chain ID: 1",
+            "Nonce: 8hK9pX32",
+            "Issued At: 2024-04-01T12:00:00Z",
+        ]
+        .join("\n");
+        let params = serde_json::json!([message.clone()]);
+        let action = EthereumRequestHandler::parse_personal_sign(Chain::Ethereum, params).unwrap();
+        match action {
+            WalletConnectAction::SignMessage { sign_type, data, .. } => {
+                assert!(matches!(sign_type, SignDigestType::Eip191));
+                assert_eq!(data, message);
             }
             _ => panic!("Expected SignMessage action"),
         }

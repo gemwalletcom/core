@@ -421,7 +421,7 @@ mod tests {
 
     #[test]
     fn stake_actions_preserve_wei_and_nonces() {
-        let signer = HyperCoreSigner::default();
+        let signer = HyperCoreSigner;
         let asset = Asset::from_chain(Chain::HyperCore);
         let validator = DelegationValidator {
             chain: Chain::HyperCore,
@@ -464,7 +464,7 @@ mod tests {
 
     #[test]
     fn unstake_actions_have_unique_nonces() {
-        let signer = HyperCoreSigner::default();
+        let signer = HyperCoreSigner;
         let asset = Asset::from_chain(Chain::HyperCore);
         let delegation = Delegation {
             base: DelegationBase {
