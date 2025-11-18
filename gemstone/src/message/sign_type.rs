@@ -2,10 +2,10 @@ use primitives::Chain;
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum SignDigestType {
-    Sign,
     Eip191,
     Eip712,
     Base58,
+    SuiPersonal,
     Siwe,
 }
 

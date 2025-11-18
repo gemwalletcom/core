@@ -12,7 +12,11 @@ impl EthereumRequestHandler {
     pub fn parse_personal_sign(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
         let params_array = params.as_array().ok_or("Invalid params format")?;
         let data = params_array.first().and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
-        let (normalized_data, raw_bytes) = Self::normalize_personal_sign_data(data)?;
+        let raw_bytes = if let Some(stripped) = data.strip_prefix("0x") {
+            hex::decode(stripped).map_err(|e| format!("Invalid hex data: {e}"))?
+        } else {
+            data.as_bytes().to_vec()
+        };
         let is_siwe = match String::from_utf8(raw_bytes) {
             Ok(text) => match SiweMessage::try_parse(&text) {
                 Some(message) => {
@@ -27,7 +31,7 @@ impl EthereumRequestHandler {
         Ok(WalletConnectAction::SignMessage {
             chain,
             sign_type: if is_siwe { SignDigestType::Siwe } else { SignDigestType::Eip191 },
-            data: normalized_data,
+            data,
         })
     }
 
@@ -66,19 +70,6 @@ impl EthereumRequestHandler {
         })
     }
 
-    fn normalize_personal_sign_data(data: String) -> Result<(String, Vec<u8>), String> {
-        if let Some(stripped) = data.strip_prefix("0x") {
-            let decoded = hex::decode(stripped).map_err(|e| format!("Invalid hex data: {e}"))?;
-            let normalized_string = match String::from_utf8(decoded.clone()) {
-                Ok(value) => value,
-                Err(_) => String::from_utf8_lossy(&decoded).into_owned(),
-            };
-            Ok((normalized_string, decoded))
-        } else {
-            let bytes = data.as_bytes().to_vec();
-            Ok((data, bytes))
-        }
-    }
 }
 
 #[cfg(test)]
@@ -93,7 +84,7 @@ mod tests {
             WalletConnectAction::SignMessage { chain, sign_type, data } => {
                 assert_eq!(chain, Chain::Ethereum);
                 assert!(matches!(sign_type, SignDigestType::Eip191));
-                assert_eq!(data, "Hello");
+                assert_eq!(data, "0x48656c6c6f");
             }
             _ => panic!("Expected SignMessage action"),
         }

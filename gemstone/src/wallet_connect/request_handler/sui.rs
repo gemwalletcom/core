@@ -11,7 +11,7 @@ impl SuiRequestHandler {
 
         Ok(WalletConnectAction::SignMessage {
             chain: Chain::Sui,
-            sign_type: SignDigestType::Sign,
+            sign_type: SignDigestType::SuiPersonal,
             data: message.to_string(),
         })
     }
@@ -56,7 +56,7 @@ mod tests {
         match action {
             WalletConnectAction::SignMessage { chain, sign_type, data } => {
                 assert_eq!(chain, Chain::Sui);
-                assert!(matches!(sign_type, SignDigestType::Sign));
+                assert!(matches!(sign_type, SignDigestType::SuiPersonal));
                 assert_eq!(data, "Hello Sui");
             }
             _ => panic!("Expected SignMessage action"),
