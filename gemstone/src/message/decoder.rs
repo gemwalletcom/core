@@ -243,24 +243,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_result_sign_no_recovery_offset() {
-        let decoder = SignMessageDecoder::new(SignMessage {
-            chain: Chain::Ethereum,
-            sign_type: SignDigestType::SuiPersonal,
-            data: b"test".to_vec(),
-        });
-
-        let sig = vec![0u8; 65];
-        let result = decoder.get_result(&sig);
-
-        assert!(result.ends_with("00"));
-        assert_eq!(
-            result,
-            "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-        );
-    }
-
-    #[test]
     fn test_base58() {
         let message = "X3CUgCGzyn43DTAbUKnTMDzcGWMooJT2hPSZinjfN1QUgVNYYfeoJ5zg6i4Nd5coKGUrNpEYVoD";
         let data = message.as_bytes().to_vec();

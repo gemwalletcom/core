@@ -1,8 +1,5 @@
 use crate::message::sign_type::SignDigestType;
-use crate::{
-    siwe::SiweMessage,
-    wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType},
-};
+use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
 use primitives::Chain;
 use serde_json::Value;
 
@@ -12,25 +9,10 @@ impl EthereumRequestHandler {
     pub fn parse_personal_sign(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
         let params_array = params.as_array().ok_or("Invalid params format")?;
         let data = params_array.first().and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
-        let raw_bytes = if let Some(stripped) = data.strip_prefix("0x") {
-            hex::decode(stripped).map_err(|e| format!("Invalid hex data: {e}"))?
-        } else {
-            data.as_bytes().to_vec()
-        };
-        let is_siwe = match String::from_utf8(raw_bytes) {
-            Ok(text) => match SiweMessage::try_parse(&text) {
-                Some(message) => {
-                    message.validate(chain)?;
-                    true
-                }
-                None => false,
-            },
-            Err(_) => false,
-        };
 
         Ok(WalletConnectAction::SignMessage {
             chain,
-            sign_type: if is_siwe { SignDigestType::Siwe } else { SignDigestType::Eip191 },
+            sign_type: SignDigestType::Eip191,
             data,
         })
     }
@@ -131,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_personal_sign_detects_siwe() {
+    fn test_parse_personal_sign_ignores_siwe_detection() {
         let message = [
             "login.xyz wants you to sign in with your Ethereum account:",
             "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
@@ -145,34 +127,14 @@ mod tests {
             "Issued At: 2024-04-01T12:00:00Z",
         ]
         .join("\n");
-        let params = serde_json::json!([message]);
+        let params = serde_json::json!([message.clone()]);
         let action = EthereumRequestHandler::parse_personal_sign(Chain::Ethereum, params).unwrap();
         match action {
             WalletConnectAction::SignMessage { sign_type, data, .. } => {
+                assert!(matches!(sign_type, SignDigestType::Eip191));
                 assert_eq!(data, message);
-                assert!(matches!(sign_type, SignDigestType::Siwe));
             }
             _ => panic!("Expected SignMessage action"),
         }
-    }
-
-    #[test]
-    fn test_parse_personal_sign_siwe_errors_on_chain_mismatch() {
-        let message = [
-            "login.xyz wants you to sign in with your Ethereum account:",
-            "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
-            "",
-            "Sign in with Ethereum to the app.",
-            "",
-            "URI: https://login.xyz",
-            "Version: 1",
-            "Chain ID: 1",
-            "Nonce: 8hK9pX32",
-            "Issued At: 2024-04-01T12:00:00Z",
-        ]
-        .join("\n");
-        let params = serde_json::json!([message]);
-        let error = EthereumRequestHandler::parse_personal_sign(Chain::Polygon, params).unwrap_err();
-        assert!(error.contains("chain ID mismatch"));
     }
 }
