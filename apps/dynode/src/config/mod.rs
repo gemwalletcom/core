@@ -15,6 +15,7 @@ pub use url::{NodeResult, Override, Url};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct NodeMonitoringConfig {
+    pub enabled: bool,
     pub poll_interval_seconds: u64,
     pub block_delay: u64,
 }
@@ -22,6 +23,7 @@ pub struct NodeMonitoringConfig {
 impl Default for NodeMonitoringConfig {
     fn default() -> Self {
         Self {
+            enabled: true,
             poll_interval_seconds: 60 * 15,
             block_delay: 100,
         }
