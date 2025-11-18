@@ -2,7 +2,6 @@ use alloy_primitives::{eip191_hash_message, hex::encode_prefixed};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
-use primitives::Chain;
 
 use super::{
     eip712::GemEIP712Message,
@@ -127,6 +126,7 @@ mod tests {
     };
     use alloy_primitives::hex;
     use gem_evm::EIP712Domain;
+    use primitives::Chain;
 
     #[test]
     fn test_eip191() {
