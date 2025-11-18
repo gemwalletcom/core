@@ -12,7 +12,7 @@ impl PerpetualFormatter {
     pub fn minimum_order_usd_amount(price: f64, sz_decimals: i32, leverage: u8) -> u64 {
         let size_multiplier = 10_f64.powi(sz_decimals);
         let rounded_size = ((MIN_ORDER_VALUE_USD / price) * size_multiplier).ceil() / size_multiplier;
-        let min_usd = ((rounded_size * price / leverage as f64) * USDC_CENTS_MULTIPLIER).ceil() / USDC_CENTS_MULTIPLIER;
+        let min_usd = ((rounded_size * price / f64::from(leverage)) * USDC_CENTS_MULTIPLIER).ceil() / USDC_CENTS_MULTIPLIER;
 
         (min_usd * USDC_DECIMALS_MULTIPLIER) as u64
     }
@@ -24,8 +24,8 @@ impl PerpetualFormatter {
 
         let max_decimals = (6 - sz_decimals).max(0);
         let magnitude = price.abs().log10().floor();
-        let sig_fig_decimals = (4.0 - magnitude).max(0.0) as i32;
-        let decimals = sig_fig_decimals.min(max_decimals) as usize;
+        let sig_fig_decimals = (4.0 - magnitude).max(0.0);
+        let decimals = sig_fig_decimals.min(max_decimals as f64) as usize;
 
         format_and_trim(price, decimals)
     }
