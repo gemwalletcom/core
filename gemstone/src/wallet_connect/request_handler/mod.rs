@@ -3,6 +3,7 @@ mod solana;
 mod sui;
 
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectChainOperation};
+use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use ethereum::EthereumRequestHandler;
 use primitives::{Chain, WalletConnectRequest, WalletConnectionMethods};
 use serde_json::Value;
@@ -20,7 +21,7 @@ impl WalletConnectRequestHandler {
         match method {
             WalletConnectionMethods::PersonalSign => {
                 let chain = Self::resolve_chain(request.chain_id)?;
-                EthereumRequestHandler::parse_personal_sign(chain, params)
+                EthereumRequestHandler::parse_sign_message(chain, params)
             }
             WalletConnectionMethods::EthSignTypedData | WalletConnectionMethods::EthSignTypedDataV4 => {
                 let chain = Self::resolve_chain(request.chain_id)?;
@@ -44,13 +45,13 @@ impl WalletConnectRequestHandler {
             WalletConnectionMethods::WalletSwitchEthereumChain => Ok(WalletConnectAction::ChainOperation {
                 operation: WalletConnectChainOperation::SwitchChain,
             }),
-            WalletConnectionMethods::SolanaSignMessage => SolanaRequestHandler::parse_sign_message(params),
-            WalletConnectionMethods::SolanaSignTransaction => SolanaRequestHandler::parse_sign_transaction(params),
-            WalletConnectionMethods::SolanaSignAndSendTransaction => SolanaRequestHandler::parse_send_transaction(params),
+            WalletConnectionMethods::SolanaSignMessage => SolanaRequestHandler::parse_sign_message(Chain::Solana, params),
+            WalletConnectionMethods::SolanaSignTransaction => SolanaRequestHandler::parse_sign_transaction(Chain::Solana, params),
+            WalletConnectionMethods::SolanaSignAndSendTransaction => SolanaRequestHandler::parse_send_transaction(Chain::Solana, params),
             WalletConnectionMethods::SolanaSignAllTransactions => SolanaRequestHandler::parse_sign_all_transactions(params),
-            WalletConnectionMethods::SuiSignPersonalMessage => SuiRequestHandler::parse_sign_message(params),
-            WalletConnectionMethods::SuiSignTransaction => SuiRequestHandler::parse_sign_transaction(params),
-            WalletConnectionMethods::SuiSignAndExecuteTransaction => SuiRequestHandler::parse_send_transaction(params),
+            WalletConnectionMethods::SuiSignPersonalMessage => SuiRequestHandler::parse_sign_message(Chain::Sui, params),
+            WalletConnectionMethods::SuiSignTransaction => SuiRequestHandler::parse_sign_transaction(Chain::Sui, params),
+            WalletConnectionMethods::SuiSignAndExecuteTransaction => SuiRequestHandler::parse_send_transaction(Chain::Sui, params),
         }
     }
 

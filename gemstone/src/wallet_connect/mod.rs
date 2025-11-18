@@ -7,6 +7,7 @@ use primitives::{Chain, WCEthereumTransaction, WalletConnectRequest, WalletConne
 use std::str::FromStr;
 
 pub mod actions;
+pub mod handler_traits;
 pub mod request_handler;
 pub mod response_handler;
 pub mod verifier;
@@ -15,6 +16,7 @@ pub use actions::{
     WCEthereumTransactionData, WCSolanaTransactionData, WCSuiTransactionData, WalletConnectAction, WalletConnectChainOperation, WalletConnectTransaction,
     WalletConnectTransactionType,
 };
+pub use handler_traits::{ChainRequestHandler, ChainResponseHandler};
 pub use request_handler::WalletConnectRequestHandler;
 pub use response_handler::*;
 pub use verifier::*;
@@ -48,6 +50,7 @@ mod tests {
         .join("\n")
     }
 
+
     #[test]
     fn decode_sign_message_detects_siwe() {
         let wallet_connect = WalletConnect::new();
@@ -79,6 +82,7 @@ mod tests {
 
         assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
     }
+
 }
 
 #[uniffi::export]
@@ -133,6 +137,18 @@ impl WalletConnect {
         WalletConnectResponseHandler::encode_send_transaction(chain.chain_type(), transaction_id)
     }
 
+    pub fn validate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> Result<(), crate::GemstoneError> {
+        match sign_type {
+            SignDigestType::Eip712 => {
+                let expected_chain_id = chain.network_id().parse::<u64>().map_err(|_| crate::GemstoneError::AnyError {
+                    msg: format!("Chain {} does not have a numeric network ID", chain),
+                })?;
+                gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
+            }
+            SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe => Ok(()),
+        }
+    }
+
     pub fn decode_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> SignMessage {
         let mut utf8_value = None;
         let message_data = if let Some(stripped) = data.strip_prefix("0x") {
@@ -154,6 +170,7 @@ impl WalletConnect {
             data: message_data,
         }
     }
+
 
     fn decode_siwe_message(&self, chain: Chain, raw_text: &str, message_data: &[u8]) -> Option<SignMessage> {
         let message = SiweMessage::try_parse(raw_text)?;

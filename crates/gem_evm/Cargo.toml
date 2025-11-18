@@ -8,6 +8,7 @@ default = []
 rpc = ["gem_jsonrpc/client", "dep:async-trait", "dep:chain_traits"]
 reqwest = ["gem_jsonrpc/reqwest", "gem_client/reqwest", "dep:reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
+testkit = []
 
 [dependencies]
 primitives = { path = "../primitives" }

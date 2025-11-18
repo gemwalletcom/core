@@ -18,6 +18,6 @@ pub fn siwe_try_parse(raw: String) -> Option<SiweMessage> {
 }
 
 #[uniffi::export]
-pub fn siwe_validate(message: SiweMessage, chain: Chain) -> Result<(), String> {
-    message.validate(chain)
+pub fn siwe_validate(message: SiweMessage, chain: Chain) -> Result<(), crate::GemstoneError> {
+    message.validate(chain).map_err(|e| crate::GemstoneError::AnyError { msg: e })
 }

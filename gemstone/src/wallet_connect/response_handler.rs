@@ -1,3 +1,4 @@
+use crate::wallet_connect::handler_traits::ChainResponseHandler;
 use primitives::ChainType;
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -7,6 +8,20 @@ pub enum WalletConnectResponseType {
 }
 
 pub struct WalletConnectResponseHandler;
+
+impl ChainResponseHandler for WalletConnectResponseHandler {
+    fn encode_sign_message(signature: String) -> WalletConnectResponseType {
+        WalletConnectResponseType::String { value: signature }
+    }
+
+    fn encode_sign_transaction(transaction_id: String) -> WalletConnectResponseType {
+        WalletConnectResponseType::String { value: transaction_id }
+    }
+
+    fn encode_send_transaction(transaction_id: String) -> WalletConnectResponseType {
+        WalletConnectResponseType::String { value: transaction_id }
+    }
+}
 
 impl WalletConnectResponseHandler {
     pub fn encode_sign_message(chain_type: ChainType, signature: String) -> WalletConnectResponseType {

@@ -1,6 +1,6 @@
 use primitives::Chain;
 
-#[derive(Debug, Clone, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum SignDigestType {
     Eip191,
     Eip712,
