@@ -85,9 +85,7 @@ impl SignMessageDecoder {
 
     pub fn hash(&self) -> Vec<u8> {
         match &self.message.sign_type {
-            SignDigestType::SuiPersonal => {
-                self.message.data.clone()
-            }
+            SignDigestType::SuiPersonal => self.message.data.clone(),
             SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
                 Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
@@ -114,17 +112,7 @@ impl SignMessageDecoder {
                 }
                 encode_prefixed(&signature)
             }
-            SignDigestType::SuiPersonal => {
-                if self.message.chain == Chain::Sui {
-                    if data.len() == SUI_PERSONAL_MESSAGE_SIGNATURE_LEN {
-                        BASE64.encode(data)
-                    } else {
-                        encode_prefixed(data)
-                    }
-                } else {
-                    encode_prefixed(data)
-                }
-            }
+            SignDigestType::SuiPersonal => BASE64.encode(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
     }
