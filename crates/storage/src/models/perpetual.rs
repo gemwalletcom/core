@@ -51,7 +51,7 @@ impl Perpetual {
             open_interest: perpetual.open_interest,
             volume_24h: perpetual.volume_24h,
             funding: perpetual.funding,
-            leverage: perpetual.leverage.into_iter().map(|value| Some(i32::from(value))).collect(),
+            leverage: vec![Some(i32::from(perpetual.max_leverage))],
         }
     }
 
@@ -69,7 +69,7 @@ impl Perpetual {
             open_interest: self.open_interest,
             volume_24h: self.volume_24h,
             funding: self.funding,
-            leverage: self.leverage.iter().filter_map(|value| value.and_then(|v| u8::try_from(v).ok())).collect(),
+            max_leverage: self.leverage.first().and_then(|v| v.and_then(|i| u8::try_from(i).ok())).unwrap_or(1),
         }
     }
 

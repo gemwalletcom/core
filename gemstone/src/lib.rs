@@ -9,6 +9,7 @@ pub mod message;
 pub mod models;
 pub mod network;
 pub mod payment;
+pub mod perpetual;
 pub mod signer;
 pub mod siwe;
 pub mod wallet_connect;
