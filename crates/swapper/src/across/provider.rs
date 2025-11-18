@@ -69,10 +69,10 @@ impl Across {
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
-        let Some(from) = eth_address::normalize_weth_asset(from_asset) else {
+        let Some(from) = eth_address::convert_native_to_weth(from_asset) else {
             return false;
         };
-        let Some(to) = eth_address::normalize_weth_asset(to_asset) else {
+        let Some(to) = eth_address::convert_native_to_weth(to_asset) else {
             return false;
         };
 
@@ -333,8 +333,8 @@ impl Swapper for Across {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let input_asset = eth_address::normalize_weth_asset(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
-        let output_asset = eth_address::normalize_weth_asset(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
+        let input_asset = eth_address::convert_native_to_weth(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
+        let output_asset = eth_address::convert_native_to_weth(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
         let original_output_asset = request.to_asset.asset_id();
         let output_token = eth_address::parse_asset_id(&output_asset)?;
 
@@ -342,7 +342,7 @@ impl Swapper for Across {
         let mappings = AcrossDeployment::asset_mappings();
         let asset_mapping = mappings.iter().find(|x| x.set.contains(&input_asset)).unwrap();
         let asset_mainnet = asset_mapping.set.iter().find(|x| x.chain == Chain::Ethereum).unwrap();
-        let mainnet_token = eth_address::normalize_weth_address(asset_mainnet, from_chain)?;
+        let mainnet_token = eth_address::parse_or_weth_address(asset_mainnet, from_chain)?;
 
         let hubpool_client = HubPoolClient::new(self.rpc_provider.clone(), Chain::Ethereum);
         let config_client = ConfigStoreClient::new(self.rpc_provider.clone(), Chain::Ethereum);

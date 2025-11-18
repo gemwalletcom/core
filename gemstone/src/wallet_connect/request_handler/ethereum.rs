@@ -51,7 +51,6 @@ impl EthereumRequestHandler {
             data,
         })
     }
-
 }
 
 #[cfg(test)]
