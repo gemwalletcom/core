@@ -71,6 +71,11 @@ async fn health_endpoint() -> Status {
     Status::Ok
 }
 
+#[rocket::get("/")]
+async fn root_endpoint() -> Status {
+    Status::Ok
+}
+
 async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, ErrorResponse> {
     let body = read_request_body(data).await?;
     let headers = build_header_map(request)?;
@@ -156,7 +161,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let proxy_server = rocket::custom(Config::figment().merge(("address", node_address)).merge(("port", config.port)))
         .manage(node_service)
         .mount("/", proxy_routes())
-        .mount("/", rocket::routes![health_endpoint]);
+        .mount("/", rocket::routes![health_endpoint, root_endpoint]);
 
     let metrics_server = rocket::custom(Config::figment().merge(("address", metrics_address)).merge(("port", config.metrics.port)))
         .manage(metrics)
