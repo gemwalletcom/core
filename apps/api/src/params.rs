@@ -1,4 +1,4 @@
-use primitives::Chain;
+use primitives::{Chain, FiatQuoteType};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::request::FromParam;
 use std::str::FromStr;
@@ -18,5 +18,15 @@ impl<'r> FromFormField<'r> for ChainParam {
         Chain::from_str(field.value)
             .map(ChainParam)
             .map_err(|_| form::Error::validation(format!("Invalid chain: {}", field.value)).into())
+    }
+}
+
+pub struct FiatQuoteTypeParam(pub FiatQuoteType);
+
+impl<'r> FromParam<'r> for FiatQuoteTypeParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        FiatQuoteType::from_str(param).map(FiatQuoteTypeParam).map_err(|_| param)
     }
 }

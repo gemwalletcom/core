@@ -1,18 +1,21 @@
 pub mod client;
-pub mod model;
-pub mod provider;
-pub use provider::FiatProvider;
+pub mod error;
+pub mod fiat_cacher_client;
 pub mod hmac_signature;
 pub mod ip_check_client;
+pub mod model;
+pub mod provider;
 pub mod providers;
 pub mod rsa_signature;
+
+pub use provider::FiatProvider;
 
 use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, PaybisClient, TransakClient};
 use settings::Settings;
 use std::time::Duration;
-pub mod error;
 
 pub use client::FiatClient;
+pub use fiat_cacher_client::{CachedFiatQuoteData, FiatCacherClient};
 pub use ip_check_client::{IPAddressInfo, IPCheckClient};
 
 #[derive(Debug, Clone)]

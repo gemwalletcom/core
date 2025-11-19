@@ -8,7 +8,8 @@ use typeshare::typeshare;
 pub struct FiatProvider {
     pub id: String,
     pub name: String,
-    pub image_url: String,
+    // delete later
+    pub image_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[typeshare(skip)]
     pub priority: Option<i32>,
@@ -47,7 +48,7 @@ impl FiatProviderName {
         FiatProvider {
             id: self.id(),
             name: self.name().to_owned(),
-            image_url: "".to_string(),
+            image_url: Some("".to_string()),
             priority: None,
             threshold_bps: None,
         }

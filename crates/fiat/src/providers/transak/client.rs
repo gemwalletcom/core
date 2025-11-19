@@ -48,6 +48,18 @@ impl TransakClient {
         self.get_quote("buy", symbol, fiat_currency, Some(fiat_amount), None, network, ip_address).await
     }
 
+    pub async fn get_sell_quote(
+        &self,
+        symbol: String,
+        fiat_currency: String,
+        crypto_amount: f64,
+        network: String,
+        ip_address: String,
+    ) -> Result<TransakQuote, reqwest::Error> {
+        self.get_quote("sell", symbol, fiat_currency, None, Some(&crypto_amount.to_string()), network, ip_address)
+            .await
+    }
+
     pub async fn get_quote(
         &self,
         quote_type: &str,
@@ -94,22 +106,22 @@ impl TransakClient {
         network: String,
         ip_address: String,
     ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let quote = self.get_buy_quote(symbol, fiat_currency, fiat_amount, network, ip_address).await?;
+        let transak_quote = self.get_buy_quote(symbol, fiat_currency, fiat_amount, network, ip_address).await?;
 
-        let crypto_value = BigNumberFormatter::f64_as_value(quote.crypto_amount, request.asset.decimals as u32).ok_or_else(|| {
+        let crypto_value = BigNumberFormatter::f64_as_value(transak_quote.crypto_amount, request.asset.decimals as u32).ok_or_else(|| {
             format!(
                 "Failed to convert crypto amount {} with decimals {}",
-                quote.crypto_amount, request.asset.decimals
+                transak_quote.crypto_amount, request.asset.decimals
             )
         })?;
-        let redirect_url = self.redirect_url(quote.clone(), request.wallet_address).await?;
+        let redirect_url = self.redirect_url(transak_quote.clone(), request.wallet_address).await?;
 
         Ok(FiatQuote {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
             fiat_currency: request.fiat_currency.as_ref().to_string(),
-            crypto_amount: quote.crypto_amount,
+            crypto_amount: transak_quote.crypto_amount,
             crypto_value,
             redirect_url,
         })

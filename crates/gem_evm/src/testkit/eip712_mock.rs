@@ -1,4 +1,4 @@
-use crate::eip712::{eip712_domain_types, EIP712Domain, EIP712Field, EIP712Message, EIP712TypedValue};
+use crate::eip712::{EIP712Domain, EIP712Field, EIP712Message, EIP712TypedValue, eip712_domain_types};
 
 impl EIP712Domain {
     pub fn mock(chain_id: u64) -> Self {
@@ -19,9 +19,7 @@ impl EIP712Message {
             primary_type: "Message".to_string(),
             message: vec![EIP712Field {
                 name: "content".to_string(),
-                value: EIP712TypedValue::String {
-                    value: "Hello".to_string(),
-                },
+                value: EIP712TypedValue::String { value: "Hello".to_string() },
             }],
         }
     }

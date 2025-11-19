@@ -136,8 +136,8 @@ impl BanxaClient {
         components
             .query_pairs_mut()
             .append_pair("orderType", "buy")
-            .append_pair("coinType", &fiat_mapping.symbol)
-            .append_pair("blockchain", &fiat_mapping.network.unwrap_or_default())
+            .append_pair("coinType", &fiat_mapping.asset_symbol.symbol)
+            .append_pair("blockchain", &fiat_mapping.asset_symbol.network.unwrap_or_default())
             .append_pair("fiatType", request.fiat_currency.as_ref())
             .append_pair("fiatAmount", &request.fiat_amount.to_string())
             .append_pair("walletAddress", &request.wallet_address);
@@ -149,8 +149,8 @@ impl BanxaClient {
         components
             .query_pairs_mut()
             .append_pair("orderType", "sell")
-            .append_pair("coinType", &fiat_mapping.symbol)
-            .append_pair("blockchain", &fiat_mapping.network.unwrap_or_default())
+            .append_pair("coinType", &fiat_mapping.asset_symbol.symbol)
+            .append_pair("blockchain", &fiat_mapping.asset_symbol.network.unwrap_or_default())
             .append_pair("fiatType", request.fiat_currency.as_ref())
             .append_pair("coinAmount", request.crypto_amount.to_string().as_str())
             .append_pair("walletAddress", &request.wallet_address);

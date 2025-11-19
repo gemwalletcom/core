@@ -5,15 +5,16 @@ use std::error::Error;
 use std::time::Duration;
 
 use crate::{
-    FiatConfig, FiatProvider, IPCheckClient,
+    CachedFiatQuoteData, FiatCacherClient, FiatConfig, FiatProvider, IPCheckClient,
     error::FiatQuoteError,
     ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
 };
 use futures::future::join_all;
 use primitives::{
-    Asset, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteRequest,
-    FiatQuoteType, FiatQuotes,
+    Asset, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteData, FiatQuoteDataRequest,
+    FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesData,
+    FiatQuotesDataRequest,
 };
 use reqwest::Client as RequestClient;
 use storage::{AssetFilter, Database};
@@ -22,6 +23,7 @@ use streamer::{FiatWebhookPayload, StreamProducer};
 pub struct FiatClient {
     database: Database,
     cacher: CacherClient,
+    fiat_cacher: FiatCacherClient,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ip_check_client: IPCheckClient,
     stream_producer: StreamProducer,
@@ -39,7 +41,8 @@ impl FiatClient {
     ) -> Self {
         Self {
             database,
-            cacher,
+            cacher: cacher.clone(),
+            fiat_cacher: FiatCacherClient::new(cacher),
             providers,
             ip_check_client,
             stream_producer,
@@ -107,15 +110,9 @@ impl FiatClient {
     }
 
     fn get_fiat_mapping(&self, asset_id: &str) -> Result<(FiatMappingMap, Vec<PrimitiveFiatProvider>), Box<dyn Error + Send + Sync>> {
-        let fiat_assets = self.database.client()?.fiat().get_fiat_assets_for_asset_id(asset_id)?;
-        let providers = self
-            .database
-            .client()?
-            .fiat()
-            .get_fiat_providers()?
-            .into_iter()
-            .map(|p| p.as_primitive())
-            .collect();
+        let mut db = self.database.client()?;
+        let fiat_assets = db.fiat().get_fiat_assets_for_asset_id(asset_id)?;
+        let providers = db.fiat().get_fiat_providers()?.into_iter().map(|p| p.as_primitive()).collect();
 
         let map: FiatMappingMap = fiat_assets
             .into_iter()
@@ -124,8 +121,10 @@ impl FiatClient {
                 (
                     x.clone().provider,
                     FiatMapping {
-                        symbol: x.clone().symbol,
-                        network: x.clone().network,
+                        asset_symbol: primitives::FiatAssetSymbol {
+                            symbol: x.clone().symbol,
+                            network: x.clone().network,
+                        },
                         unsupported_countries: x.clone().unsupported_countries(),
                         buy_limits: x.clone().buy_limits(),
                         sell_limits: x.clone().sell_limits(),
@@ -136,12 +135,16 @@ impl FiatClient {
         Ok((map, providers))
     }
 
-    pub fn get_providers(&self, request: FiatQuoteRequest) -> Vec<&(dyn FiatProvider + Send + Sync)> {
+    pub fn get_providers(&self, provider_id: Option<String>) -> Vec<&(dyn FiatProvider + Send + Sync)> {
         self.providers
             .iter()
-            .filter(|x| request.provider_id.as_deref().is_none_or(|id| x.name().id() == id))
+            .filter(|x| provider_id.as_deref().is_none_or(|id| x.name().id() == id))
             .map(|x| x.as_ref())
             .collect()
+    }
+
+    pub fn get_providers_for_request(&self, request: &FiatQuoteRequest) -> Vec<&(dyn FiatProvider + Send + Sync)> {
+        self.get_providers(request.provider_id.clone())
     }
 
     pub async fn get_asset(&self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
@@ -201,6 +204,127 @@ impl FiatClient {
             }
         }?;
         Ok(quotes)
+    }
+
+    pub async fn get_quotes_data(
+        &self,
+        request: FiatQuotesDataRequest,
+        asset_id: &str,
+        ip_address: &str,
+    ) -> Result<FiatQuotesData, Box<dyn Error + Send + Sync>> {
+        let _asset = self.database.client()?.assets().get_asset(asset_id)?;
+
+        let fiat_providers_countries = self.get_fiat_providers_countries().await?;
+        let ip_address_info = match self.get_ip_address(ip_address).await {
+            Ok(info) => info,
+            Err(e) => {
+                return Err(format!("IP address validation failed: {}", e).into());
+            }
+        };
+        let (fiat_mapping_map, _providers) = self.get_fiat_mapping(asset_id)?;
+
+        let provider_impls = self.get_providers(request.provider_id.clone());
+        let ip_address_str = ip_address.to_string();
+        let asset_id_str = asset_id.to_string();
+
+        let futures = provider_impls.into_iter().filter_map(|provider| {
+            let provider_id = provider.name().id().to_string();
+            let countries = fiat_providers_countries
+                .iter()
+                .filter(|x| x.provider == provider_id)
+                .map(|x| x.alpha2.clone())
+                .collect::<HashSet<_>>();
+
+            fiat_mapping_map.get(&provider_id).map(|mapping| {
+                let request = request.clone();
+                let mapping = mapping.clone();
+                let country_code = ip_address_info.clone().alpha2;
+                let asset_id = asset_id_str.clone();
+                let ip_address = ip_address_str.clone();
+
+                async move {
+                    if !countries.contains(&country_code) {
+                        return Err(Box::<dyn Error + Send + Sync>::from(format!("Unsupported country: {}", country_code)));
+                    }
+                    if mapping.unsupported_countries.clone().contains_key(&country_code) {
+                        return Err(Box::<dyn Error + Send + Sync>::from(format!("Unsupported country for asset: {}", country_code)));
+                    }
+
+                    let quote_request = FiatQuoteDataRequest {
+                        quote_type: FiatQuoteType::Buy,
+                        fiat_currency: request.fiat_currency.clone(),
+                        fiat_amount: request.fiat_amount,
+                        ip_address,
+                    };
+
+                    let response = provider.get_quote_buy_data(quote_request.clone(), mapping.clone()).await?;
+                    let quote_asset_id = primitives::AssetId::new(&asset_id).ok_or_else(|| format!("Invalid asset_id: {}", asset_id))?;
+                    let quote = FiatQuoteData::new(
+                        response.quote_id,
+                        provider.name().as_fiat_provider(),
+                        quote_request.quote_type,
+                        quote_asset_id,
+                        response.fiat_amount,
+                        quote_request.fiat_currency,
+                        response.crypto_amount,
+                    );
+                    Ok(CachedFiatQuoteData {
+                        quote,
+                        asset_symbol: mapping.asset_symbol,
+                    })
+                }
+            })
+        });
+
+        let results = join_all(futures).await;
+
+        let mut quotes = Vec::new();
+        let mut errors = Vec::new();
+
+        for result in results {
+            match result {
+                Ok(cached_quote) => quotes.push(cached_quote),
+                Err(e) => errors.push(primitives::FiatQuoteError::new(None, e.to_string())),
+            }
+        }
+
+        self.fiat_cacher.set_quotes(&quotes).await?;
+
+        let quotes = quotes.into_iter().map(|x| x.quote).collect();
+        Ok(FiatQuotesData { quotes, errors })
+    }
+
+    pub async fn get_quote_url(
+        &self,
+        quote_id: &str,
+        wallet_address: &str,
+        ip_address: &str,
+        device_id: &str,
+    ) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+        let mut db = self.database.client()?;
+        db.devices().get_device(device_id)?;
+
+        let quote = self.fiat_cacher.get_quote(quote_id).await?;
+        let provider = self.provider(&quote.quote.provider.id)?;
+
+        let data = FiatQuoteUrlData {
+            quote: quote.quote.clone(),
+            asset_symbol: quote.asset_symbol,
+            wallet_address: wallet_address.to_string(),
+            ip_address: ip_address.to_string(),
+        };
+
+        let url = provider.get_quote_url(data).await?;
+
+        let db_quote = storage::models::FiatQuote::from_primitive(&quote.quote);
+        db.add_fiat_quotes(vec![db_quote])?;
+
+        db.add_fiat_quote_request(storage::models::FiatQuoteRequest {
+            device_id: device_id.to_string(),
+            quote_id: quote_id.to_string(),
+        })?;
+
+        Ok(url)
     }
 
     pub async fn get_ip_address(&self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
@@ -271,7 +395,7 @@ impl FiatClient {
             + Send
             + Sync,
     {
-        let providers = self.get_providers(request.clone());
+        let providers = self.get_providers_for_request(&request);
         let futures = providers.into_iter().filter_map(|provider| {
             let provider_id = provider.name().id().to_string();
             let countries = countries
@@ -295,7 +419,7 @@ impl FiatClient {
                     } else if mapping.unsupported_countries.clone().contains_key(&country_code) {
                         Err(PrimitiveFiatQuoteError::new(
                             Some(provider_id.clone()),
-                            FiatQuoteError::UnsupportedCountryAsset(country_code, mapping.symbol.clone()).to_string(),
+                            FiatQuoteError::UnsupportedCountryAsset(country_code, mapping.asset_symbol.symbol.clone()).to_string(),
                         ))
                     } else {
                         match Self::check_asset_limits(&request, &mapping) {

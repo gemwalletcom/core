@@ -39,10 +39,39 @@ impl MercuryoWidget {
         }
     }
 
+    pub fn new_from_data(
+        widget_id: String,
+        secret_key: String,
+        merchant_transaction_id: String,
+        address: String,
+        ip_address: String,
+        currency: String,
+        _fiat_currency: String,
+        amount: f64,
+        quote_type: FiatQuoteType,
+        network: String,
+    ) -> Self {
+        Self {
+            widget_id,
+            secret_key,
+            merchant_transaction_id,
+            address,
+            ip_address,
+            currency,
+            network,
+            quote_type,
+            amount,
+        }
+    }
+
     fn signature(&self) -> String {
         let content = format!("{}{}{}{}", self.address, self.secret_key, self.ip_address, self.merchant_transaction_id);
         let hash = hex::encode(Sha512::digest(content));
         format!("v2:{}", hash)
+    }
+
+    pub fn merchant_transaction_id(&self) -> &str {
+        &self.merchant_transaction_id
     }
 
     pub fn to_url(&self) -> String {

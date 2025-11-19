@@ -118,7 +118,7 @@ impl FiatProvider {
         primitives::FiatProvider {
             id: self.id.clone(),
             name: self.name.clone(),
-            image_url: "".to_string(),
+            image_url: Some("".to_string()),
             priority: self.priority,
             threshold_bps: self.priority_threshold_bps,
         }
@@ -196,4 +196,35 @@ pub struct FiatTransactionUpdate {
     pub country: Option<String>,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
+}
+
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::fiat_quotes)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FiatQuote {
+    pub id: String,
+    pub provider_id: String,
+    pub asset_id: String,
+    pub fiat_amount: f64,
+    pub fiat_currency: String,
+}
+
+impl FiatQuote {
+    pub fn from_primitive(quote: &primitives::FiatQuoteData) -> Self {
+        Self {
+            id: quote.id.clone(),
+            provider_id: quote.provider.id.clone(),
+            asset_id: quote.asset_id.to_string(),
+            fiat_amount: quote.fiat_amount,
+            fiat_currency: quote.fiat_currency.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
+#[diesel(table_name = crate::schema::fiat_quotes_requests)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FiatQuoteRequest {
+    pub device_id: String,
+    pub quote_id: String,
 }

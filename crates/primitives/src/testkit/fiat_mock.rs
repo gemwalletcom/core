@@ -36,7 +36,7 @@ impl FiatProvider {
         FiatProvider {
             id: id.to_string(),
             name: id.to_string(),
-            image_url: "".to_string(),
+            image_url: Some("".to_string()),
             priority: None,
             threshold_bps: None,
         }
@@ -46,7 +46,7 @@ impl FiatProvider {
         FiatProvider {
             id: id.to_string(),
             name: id.to_string(),
-            image_url: "".to_string(),
+            image_url: Some("".to_string()),
             priority: Some(priority),
             threshold_bps,
         }

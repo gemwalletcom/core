@@ -13,6 +13,7 @@ pub struct QuoteRequest {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PaybisQuote {
+    pub id: String,
     pub currency_code_to: String,
     pub payment_methods: Vec<PaymentMethod>,
 }

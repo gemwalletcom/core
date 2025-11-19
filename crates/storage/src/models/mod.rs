@@ -30,7 +30,7 @@ pub use self::chain::Chain;
 pub use self::chart::{Chart, DailyChart, HourlyChart};
 pub use self::device::Device;
 pub use self::device::UpdateDevice;
-pub use self::fiat::{FiatAsset, FiatProvider, FiatProviderCountry, FiatRate, FiatTransaction, FiatTransactionUpdate};
+pub use self::fiat::{FiatAsset, FiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteRequest, FiatRate, FiatTransaction, FiatTransactionUpdate};
 pub use self::link::LinkType;
 pub use self::nft_asset::{NftAsset, NftType};
 pub use self::nft_collection::NftCollection;

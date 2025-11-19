@@ -49,7 +49,10 @@ pub mod asset_order;
 pub use self::asset_order::AssetOrder;
 pub mod fiat_assets;
 pub mod fiat_quote;
-pub use self::fiat_quote::{FiatQuote, FiatQuoteError, FiatQuotes};
+pub use self::fiat_quote::{
+    FiatAssetSymbol, FiatQuote, FiatQuoteData, FiatQuoteDataRequest, FiatQuoteDataResponse, FiatQuoteError, FiatQuoteUrl, FiatQuoteUrlData,
+    FiatQuoteUrlRequest, FiatQuotes, FiatQuotesData,
+};
 pub mod fiat_transaction;
 pub use self::fiat_assets::FiatAsset;
 pub use self::fiat_assets::FiatAssets;
@@ -57,7 +60,7 @@ pub use self::fiat_transaction::{FiatQuoteType, FiatTransaction, FiatTransaction
 pub mod fiat_provider;
 pub use self::fiat_provider::{FiatProvider, FiatProviderCountry, FiatProviderName};
 pub mod fiat_quote_request;
-pub use self::fiat_quote_request::{FiatBuyQuote, FiatQuoteAmount, FiatQuoteRequest, FiatQuoteTypeResult, FiatSellQuote};
+pub use self::fiat_quote_request::{FiatBuyQuote, FiatQuoteAmount, FiatQuoteRequest, FiatQuoteTypeResult, FiatQuotesDataRequest, FiatSellQuote};
 pub mod fiat_rate;
 pub use self::fiat_rate::FiatRate;
 pub mod fiat_provider_id;

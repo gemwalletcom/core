@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use crate::model::{FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatSellQuote, FiatTransaction};
+use primitives::{
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteDataRequest, FiatQuoteDataResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
+    FiatTransaction,
+};
 use streamer::FiatWebhook;
 
 #[async_trait]
@@ -15,6 +18,18 @@ pub trait FiatProvider {
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>>;
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>>;
+
+    async fn get_quote_buy_data(
+        &self,
+        request: FiatQuoteDataRequest,
+        request_map: FiatMapping,
+    ) -> Result<FiatQuoteDataResponse, Box<dyn std::error::Error + Send + Sync>>;
+    async fn get_quote_sell_data(
+        &self,
+        request: FiatQuoteDataRequest,
+        request_map: FiatMapping,
+    ) -> Result<FiatQuoteDataResponse, Box<dyn std::error::Error + Send + Sync>>;
+    async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 #[async_trait]
@@ -47,5 +62,25 @@ where
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
         (**self).process_webhook(data).await
+    }
+
+    async fn get_quote_buy_data(
+        &self,
+        request: FiatQuoteDataRequest,
+        request_map: FiatMapping,
+    ) -> Result<FiatQuoteDataResponse, Box<dyn std::error::Error + Send + Sync>> {
+        (**self).get_quote_buy_data(request, request_map).await
+    }
+
+    async fn get_quote_sell_data(
+        &self,
+        request: FiatQuoteDataRequest,
+        request_map: FiatMapping,
+    ) -> Result<FiatQuoteDataResponse, Box<dyn std::error::Error + Send + Sync>> {
+        (**self).get_quote_sell_data(request, request_map).await
+    }
+
+    async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn std::error::Error + Send + Sync>> {
+        (**self).get_quote_url(data).await
     }
 }

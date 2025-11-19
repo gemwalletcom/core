@@ -50,7 +50,6 @@ mod tests {
         .join("\n")
     }
 
-
     #[test]
     fn decode_sign_message_detects_siwe() {
         let wallet_connect = WalletConnect::new();
@@ -82,7 +81,6 @@ mod tests {
 
         assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
     }
-
 }
 
 #[uniffi::export]
@@ -170,7 +168,6 @@ impl WalletConnect {
             data: message_data,
         }
     }
-
 
     fn decode_siwe_message(&self, chain: Chain, raw_text: &str, message_data: &[u8]) -> Option<SignMessage> {
         let message = SiweMessage::try_parse(raw_text)?;

@@ -62,6 +62,16 @@ impl FiatQuoteTypeResult {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct FiatQuotesDataRequest {
+    pub fiat_amount: f64,
+    pub fiat_currency: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider_id: Option<String>,
+}
+
 impl FiatQuoteRequest {
     pub fn get_buy_quote(&self, asset: Asset, fiat_value: String) -> FiatBuyQuote {
         FiatBuyQuote {

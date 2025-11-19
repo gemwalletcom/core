@@ -23,6 +23,7 @@ mod websocket_prices;
 
 use std::{str::FromStr, sync::Arc};
 
+use ::fiat::FiatClient;
 use ::fiat::FiatConfig;
 use ::nft::{NFTClient, NFTProviderConfig};
 use api_connector::PusherClient;
@@ -30,7 +31,7 @@ use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
-use fiat::{FiatClient, FiatProviderFactory};
+use fiat::FiatProviderFactory;
 use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
@@ -93,6 +94,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         stream_producer.clone(),
         fiat_config,
     );
+    let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client, database.clone());
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(database.clone(), nft_config);
     let markets_client = MarketsClient::new(database.clone(), cacher_client);
@@ -100,7 +102,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let support_client = SupportClient::new(database.clone());
 
     rocket::build()
-        .manage(Mutex::new(fiat_client))
+        .manage(Mutex::new(fiat_quotes_client))
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(charts_client))
         .manage(Mutex::new(config_client))
@@ -128,12 +130,14 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 prices::get_assets_prices,
                 prices::get_charts,
                 prices::get_fiat_rates,
+                fiat::get_fiat_quotes_by_type,
                 fiat::get_fiat_quotes,
                 fiat::get_fiat_on_ramp_quotes,
                 fiat::get_fiat_on_ramp_assets,
                 fiat::get_fiat_off_ramp_assets,
                 fiat::create_fiat_webhook,
                 fiat::get_fiat_order,
+                fiat::get_fiat_quote_url,
                 config::get_config,
                 name::get_name_resolve,
                 devices::add_device,

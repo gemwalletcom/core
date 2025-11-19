@@ -105,7 +105,7 @@ impl MercuryoClient {
             request.ip_address.clone(),
             quote.clone(),
             FiatQuoteType::Buy,
-            request_map.network.unwrap_or_default(),
+            request_map.asset_symbol.network.unwrap_or_default(),
         );
 
         FiatQuote {
@@ -127,7 +127,7 @@ impl MercuryoClient {
             request.ip_address.clone(),
             quote.clone(),
             FiatQuoteType::Sell,
-            request_map.network.unwrap_or_default(),
+            request_map.asset_symbol.network.unwrap_or_default(),
         );
 
         FiatQuote {

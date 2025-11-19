@@ -18,7 +18,11 @@ pub fn extract_host(url_or_domain: &str) -> Option<String> {
 }
 
 pub fn parse_url(domain: &str) -> Option<Url> {
-    let url_str = if domain.contains("://") { domain.to_string() } else { format!("https://{domain}") };
+    let url_str = if domain.contains("://") {
+        domain.to_string()
+    } else {
+        format!("https://{domain}")
+    };
     Url::parse(&url_str).ok()
 }
 

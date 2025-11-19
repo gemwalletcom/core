@@ -39,6 +39,16 @@ impl CacherClient {
         Ok(self.connection.clone().set_ex::<&str, String, ()>(key, value.clone(), seconds).await?)
     }
 
+    pub async fn set_values_with_ttl<T: serde::Serialize>(&self, values: Vec<(&str, &T)>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let mut pipe = redis::pipe();
+        for (key, value) in &values {
+            let serialized = serde_json::to_string(value)?;
+            pipe.cmd("SET").arg(key).arg(serialized).arg("EX").arg(ttl_seconds).ignore();
+        }
+        pipe.query_async::<()>(&mut self.connection.clone()).await?;
+        Ok(values.len())
+    }
+
     pub async fn set_value<T: serde::Serialize>(&self, key: &str, value: &T) -> Result<(), Box<dyn Error + Send + Sync>> {
         Ok(self.connection.clone().set::<&str, String, ()>(key, serde_json::to_string(value)?).await?)
     }
