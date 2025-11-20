@@ -154,7 +154,7 @@ mod fiat_integration_tests {
         let request = FiatBuyQuote::mock();
         let mapping = FiatMapping::mock();
 
-        let quote = FiatProvider::get_buy_quote(&client, request, mapping).await?;
+        let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
 
         println!("Mercuryo buy quote: {:?}", quote);
         assert_eq!(quote.provider.id, "mercuryo");
