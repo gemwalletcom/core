@@ -92,6 +92,7 @@ impl FiatQuote {
             fiat_amount: 100.0,
             fiat_currency: "USD".to_string(),
             crypto_amount: 0.001,
+            latency: 0,
         }
     }
 }

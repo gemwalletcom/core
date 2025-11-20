@@ -27,7 +27,16 @@ pub async fn get_fiat_quotes(
     Ok(client
         .lock()
         .await
-        .get_quotes_old(asset_id, fiat_amount, crypto_value, quote_type, &currency.as_string(), wallet_address, &ip_addr, provider_id)
+        .get_quotes_old(
+            asset_id,
+            fiat_amount,
+            crypto_value,
+            quote_type,
+            &currency.as_string(),
+            wallet_address,
+            &ip_addr,
+            provider_id,
+        )
         .await?
         .into())
 }
@@ -52,12 +61,7 @@ pub async fn get_fiat_quotes_by_type(
         provider_id: provider_id.map(|x| x.to_string()),
         ip_address: ip_addr,
     };
-    Ok(client
-        .lock()
-        .await
-        .get_quotes(request)
-        .await?
-        .into())
+    Ok(client.lock().await.get_quotes(request).await?.into())
 }
 
 #[post("/fiat/quotes/url", data = "<request>")]
@@ -66,12 +70,7 @@ pub async fn get_fiat_quote_url(
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
 ) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
-    Ok(client
-        .lock()
-        .await
-        .get_quote_url(&request, &ip.to_string())
-        .await?
-        .into())
+    Ok(client.lock().await.get_quote_url(&request, &ip.to_string()).await?.into())
 }
 
 #[get("/fiat/on_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>&<provider_id>")]

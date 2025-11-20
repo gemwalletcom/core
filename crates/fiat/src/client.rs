@@ -12,8 +12,8 @@ use crate::{
 };
 use futures::future::join_all;
 use primitives::{
-    Asset, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError,
-    FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
+    Asset, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteOldRequest,
+    FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
 };
 use reqwest::Client as RequestClient;
 use storage::{AssetFilter, Database};
@@ -256,11 +256,13 @@ impl FiatClient {
                         ip_address: request.ip_address.clone(),
                     };
 
+                    let start = std::time::Instant::now();
                     let response = match request.quote_type {
                         FiatQuoteType::Buy => provider.get_quote_buy(quote_request.clone(), mapping.clone()).await,
                         FiatQuoteType::Sell => provider.get_quote_sell(quote_request.clone(), mapping.clone()).await,
                     }
                     .map_err(|e| (provider_id_clone.clone(), e))?;
+                    let latency = start.elapsed().as_millis() as u64;
                     let quote = FiatQuote::new(
                         response.quote_id,
                         request.asset_id.clone(),
@@ -269,6 +271,7 @@ impl FiatClient {
                         response.fiat_amount,
                         quote_request.currency,
                         response.crypto_amount,
+                        latency,
                     );
                     Ok((
                         provider_id_clone,

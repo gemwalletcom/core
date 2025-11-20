@@ -28,10 +28,21 @@ pub struct FiatQuote {
     pub fiat_amount: f64,
     pub fiat_currency: String,
     pub crypto_amount: f64,
+    #[typeshare(skip)]
+    pub latency: u64,
 }
 
 impl FiatQuote {
-    pub fn new(id: String, asset_id: String, provider: FiatProvider, quote_type: FiatQuoteType, fiat_amount: f64, fiat_currency: String, crypto_amount: f64) -> Self {
+    pub fn new(
+        id: String,
+        asset_id: String,
+        provider: FiatProvider,
+        quote_type: FiatQuoteType,
+        fiat_amount: f64,
+        fiat_currency: String,
+        crypto_amount: f64,
+        latency: u64,
+    ) -> Self {
         Self {
             id,
             asset_id,
@@ -40,6 +51,7 @@ impl FiatQuote {
             fiat_amount,
             fiat_currency,
             crypto_amount,
+            latency,
         }
     }
 }

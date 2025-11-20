@@ -36,9 +36,7 @@ pub struct CurrencyParam(pub Currency);
 
 impl<'r> FromFormField<'r> for CurrencyParam {
     fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
-        Currency::from_str(field.value)
-            .map(CurrencyParam)
-            .or_else(|_| Ok(CurrencyParam(Currency::USD)))
+        Currency::from_str(field.value).map(CurrencyParam).or_else(|_| Ok(CurrencyParam(Currency::USD)))
     }
 }
 

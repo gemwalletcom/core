@@ -50,8 +50,7 @@ pub use self::asset_order::AssetOrder;
 pub mod fiat_assets;
 pub mod fiat_quote;
 pub use self::fiat_quote::{
-    FiatAssetSymbol, FiatQuote, FiatQuoteError, FiatQuoteOld, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatQuoteUrlRequest,
-    FiatQuotes, FiatQuotesOld,
+    FiatAssetSymbol, FiatQuote, FiatQuoteError, FiatQuoteOld, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld,
 };
 pub mod fiat_transaction;
 pub use self::fiat_assets::FiatAsset;
