@@ -4,8 +4,8 @@ use crate::{
     providers::banxa::mapper::map_asset_with_limits,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatQuoteDataRequest, FiatQuoteDataResponse, FiatSellQuote};
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
+use primitives::{FiatBuyQuote, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatSellQuote};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 use std::error::Error;
 use streamer::FiatWebhook;
 
@@ -17,7 +17,7 @@ impl FiatProvider for BanxaClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         let symbol = &request_map.asset_symbol.symbol;
         let network = request_map.asset_symbol.network.as_deref().unwrap_or_default();
         let quote = self.get_quote_buy(symbol, network, request.fiat_currency.as_ref(), request.fiat_amount).await?;
@@ -25,7 +25,7 @@ impl FiatProvider for BanxaClient {
         Ok(self.get_fiat_buy_quote(request, request_map, quote))
     }
 
-    async fn get_sell_quote(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
         Err("Not implemented".into())
         // v2/payment-methods/sell
         // let method = self
@@ -82,19 +82,11 @@ impl FiatProvider for BanxaClient {
         Ok(FiatWebhook::OrderId(order_id))
     }
 
-    async fn get_quote_buy_data(
-        &self,
-        _request: FiatQuoteDataRequest,
-        _request_map: FiatMapping,
-    ) -> Result<FiatQuoteDataResponse, Box<dyn Error + Send + Sync>> {
+    async fn get_quote_buy(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         Err("not implemented".into())
     }
 
-    async fn get_quote_sell_data(
-        &self,
-        _request: FiatQuoteDataRequest,
-        _request_map: FiatMapping,
-    ) -> Result<FiatQuoteDataResponse, Box<dyn Error + Send + Sync>> {
+    async fn get_quote_sell(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         Err("not implemented".into())
     }
 

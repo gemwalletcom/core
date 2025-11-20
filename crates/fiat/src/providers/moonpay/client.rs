@@ -6,7 +6,7 @@ use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySe
 use number_formatter::BigNumberFormatter;
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote, PaymentType};
+use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote, PaymentType};
 use reqwest::Client;
 use url::Url;
 
@@ -182,10 +182,10 @@ impl MoonPayClient {
         })
     }
 
-    pub fn get_buy_fiat_quote(&self, request: FiatBuyQuote, quote: MoonPayBuyQuote) -> FiatQuote {
+    pub fn get_buy_fiat_quote(&self, request: FiatBuyQuote, quote: MoonPayBuyQuote) -> FiatQuoteOld {
         let crypto_value = BigNumberFormatter::f64_as_value(quote.quote_currency_amount, quote.quote_currency.decimals).unwrap_or_default();
 
-        FiatQuote {
+        FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.clone().fiat_amount,
@@ -196,10 +196,10 @@ impl MoonPayClient {
         }
     }
 
-    pub fn get_sell_fiat_quote(&self, request: FiatSellQuote, quote: MoonPaySellQuote) -> FiatQuote {
+    pub fn get_sell_fiat_quote(&self, request: FiatSellQuote, quote: MoonPaySellQuote) -> FiatQuoteOld {
         let crypto_value = request.clone().crypto_value;
         let crypto_amount = quote.base_currency_amount;
-        FiatQuote {
+        FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.quote_currency_amount,
@@ -230,16 +230,22 @@ impl MoonPayClient {
         components.query_pairs_mut().append_pair("apiKey", &self.api_key);
 
         match quote_type {
-            FiatQuoteType::Buy => components
-                .query_pairs_mut()
-                .append_pair("baseCurrencyAmount", &amount.to_string())
-                .append_pair("currencyCode", symbol)
-                .append_pair("walletAddress", wallet_address),
-            FiatQuoteType::Sell => components
-                .query_pairs_mut()
-                .append_pair("quoteCurrencyAmount", &amount.to_string())
-                .append_pair("defaultBaseCurrencyCode", symbol)
-                .append_pair("refundWalletAddress", wallet_address),
+            FiatQuoteType::Buy => {
+                // For buy: amount is fiat, symbol is crypto
+                components
+                    .query_pairs_mut()
+                    .append_pair("baseCurrencyAmount", &amount.to_string())
+                    .append_pair("currencyCode", symbol)
+                    .append_pair("walletAddress", wallet_address);
+            }
+            FiatQuoteType::Sell => {
+                // For sell: amount is crypto, symbol is crypto
+                components
+                    .query_pairs_mut()
+                    .append_pair("baseCurrencyCode", symbol)
+                    .append_pair("baseCurrencyAmount", &amount.to_string())
+                    .append_pair("refundWalletAddress", wallet_address);
+            }
         };
         self.sign(components)
     }

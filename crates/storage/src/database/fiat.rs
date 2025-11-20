@@ -172,10 +172,7 @@ impl FiatStore for DatabaseClient {
 
     fn get_fiat_quote(&mut self, quote_id: &str) -> Result<FiatQuote, diesel::result::Error> {
         use crate::schema::fiat_quotes::dsl::*;
-        fiat_quotes
-            .filter(id.eq(quote_id))
-            .select(FiatQuote::as_select())
-            .first(&mut self.connection)
+        fiat_quotes.filter(id.eq(quote_id)).select(FiatQuote::as_select()).first(&mut self.connection)
     }
 
     fn add_fiat_quote_request(&mut self, request: FiatQuoteRequest) -> Result<usize, diesel::result::Error> {

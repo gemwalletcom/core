@@ -10,7 +10,7 @@ use streamer::FiatWebhook;
 
 use super::{client::MoonPayClient, mapper::map_order};
 use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteDataRequest, FiatQuoteDataResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
     FiatSellQuote, FiatTransaction,
 };
 
@@ -20,7 +20,7 @@ impl FiatProvider for MoonPayClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_buy_quote(
                 request_map.asset_symbol.symbol.to_lowercase(),
@@ -36,7 +36,7 @@ impl FiatProvider for MoonPayClient {
         Ok(self.get_buy_fiat_quote(request, quote))
     }
 
-    async fn get_sell_quote(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
         Err("Not implemented".into())
         // let ip_address_check = self.get_ip_address(&request.ip_address).await?;
         // if !ip_address_check.is_allowed && !ip_address_check.is_sell_allowed {
@@ -86,28 +86,24 @@ impl FiatProvider for MoonPayClient {
         Ok(FiatWebhook::OrderId(payload.id))
     }
 
-    async fn get_quote_buy_data(&self, request: FiatQuoteDataRequest, request_map: FiatMapping) -> Result<FiatQuoteDataResponse, Box<dyn Error + Send + Sync>> {
+    async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         let quote = self
-            .get_buy_quote(request_map.asset_symbol.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
+            .get_buy_quote(request_map.asset_symbol.symbol.to_lowercase(), request.currency.to_lowercase(), request.amount)
             .await?;
 
-        Ok(FiatQuoteDataResponse::new(
+        Ok(FiatQuoteResponse::new(
             MoonPayClient::generate_quote_id(),
-            request.fiat_amount,
+            request.amount,
             quote.quote_currency_amount,
         ))
     }
 
-    async fn get_quote_sell_data(
-        &self,
-        request: FiatQuoteDataRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuoteDataResponse, Box<dyn Error + Send + Sync>> {
+    async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         let quote = self
-            .get_sell_quote(request_map.asset_symbol.symbol.to_lowercase(), request.fiat_currency.to_lowercase(), request.fiat_amount)
+            .get_sell_quote(request_map.asset_symbol.symbol.to_lowercase(), request.currency.to_lowercase(), request.amount)
             .await?;
 
-        Ok(FiatQuoteDataResponse::new(
+        Ok(FiatQuoteResponse::new(
             MoonPayClient::generate_quote_id(),
             quote.quote_currency_amount,
             quote.base_currency_amount,

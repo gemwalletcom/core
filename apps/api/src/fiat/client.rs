@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use fiat::FiatClient;
 use primitives::currency::Currency;
-use primitives::{Device, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, FiatQuotesData, FiatQuotesDataRequest};
+use primitives::{Device, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld};
 use storage::Database;
 
 pub struct FiatQuotesClient {
@@ -20,7 +20,7 @@ impl FiatQuotesClient {
         Ok(self.database.client()?.devices().get_device(device_id)?)
     }
 
-    pub async fn get_quotes(
+    pub async fn get_quotes_old(
         &self,
         asset_id: &str,
         fiat_amount: Option<f64>,
@@ -30,12 +30,12 @@ impl FiatQuotesClient {
         wallet_address: &str,
         ip_address: &str,
         provider_id: Option<&str>,
-    ) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
+    ) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
         if fiat_amount.is_none() && crypto_value.is_none() {
             return Err("Either fiat_amount or crypto_value is required".into());
         }
 
-        let request = FiatQuoteRequest {
+        let request = FiatQuoteOldRequest {
             asset_id: asset_id.to_string(),
             quote_type,
             ip_address: ip_address.to_string(),
@@ -46,30 +46,18 @@ impl FiatQuotesClient {
             provider_id: provider_id.map(|x| x.to_string()),
         };
 
+        self.fiat_client.get_quotes_old(request).await
+    }
+
+    pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         self.fiat_client.get_quotes(request).await
     }
 
-    pub async fn get_quotes_data(
-        &self,
-        asset_id: &str,
-        fiat_amount: f64,
-        _quote_type: FiatQuoteType,
-        currency: &str,
-        ip_address: &str,
-        provider_id: Option<&str>,
-    ) -> Result<FiatQuotesData, Box<dyn Error + Send + Sync>> {
-        let request = FiatQuotesDataRequest {
-            fiat_amount,
-            fiat_currency: Currency::from_str(currency).unwrap_or(Currency::USD).as_ref().to_string(),
-            provider_id: provider_id.map(|x| x.to_string()),
-        };
-
-        self.fiat_client.get_quotes_data(request, asset_id, ip_address).await
-    }
-
-    pub async fn get_quote_url(&self, quote_id: &str, wallet_address: &str, ip_address: &str, device_id: &str) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
-        self.get_device(device_id)?;
-        self.fiat_client.get_quote_url(quote_id, wallet_address, ip_address, device_id).await
+    pub async fn get_quote_url(&self, request: &FiatQuoteUrlRequest, ip_address: &str) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+        self.get_device(&request.device_id)?;
+        self.fiat_client
+            .get_quote_url(&request.quote_id, &request.wallet_address, ip_address, &request.device_id)
+            .await
     }
 
     pub async fn get_on_ramp_assets(&self) -> Result<primitives::FiatAssets, Box<dyn Error + Send + Sync>> {

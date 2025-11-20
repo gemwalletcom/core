@@ -5,7 +5,7 @@ use super::models::{
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as BASE64};
 use number_formatter::BigNumberFormatter;
 use primitives::FiatBuyQuote;
-use primitives::{FiatProviderName, FiatQuote, FiatQuoteType};
+use primitives::{FiatProviderName, FiatQuoteOld, FiatQuoteType};
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -105,7 +105,7 @@ impl TransakClient {
         fiat_amount: f64,
         network: String,
         ip_address: String,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         let transak_quote = self.get_buy_quote(symbol, fiat_currency, fiat_amount, network, ip_address).await?;
 
         let crypto_value = BigNumberFormatter::f64_as_value(transak_quote.crypto_amount, request.asset.decimals as u32).ok_or_else(|| {
@@ -116,7 +116,7 @@ impl TransakClient {
         })?;
         let redirect_url = self.redirect_url(transak_quote.clone(), request.wallet_address).await?;
 
-        Ok(FiatQuote {
+        Ok(FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,

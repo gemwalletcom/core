@@ -10,7 +10,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteDataRequest, FiatQuoteDataResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
     FiatTransaction,
 };
 use std::error::Error;
@@ -22,7 +22,7 @@ impl FiatProvider for TransakClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self
             .get_fiat_quote_with_redirect(
                 request.clone(),
@@ -35,7 +35,7 @@ impl FiatProvider for TransakClient {
             .await?)
     }
 
-    async fn get_sell_quote(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
         Err(Box::from("not supported"))
     }
 
@@ -76,38 +76,34 @@ impl FiatProvider for TransakClient {
         Ok(FiatWebhook::OrderId(webhook_payload.webhook_data.id))
     }
 
-    async fn get_quote_buy_data(&self, request: FiatQuoteDataRequest, request_map: FiatMapping) -> Result<FiatQuoteDataResponse, Box<dyn Error + Send + Sync>> {
+    async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         let network = request_map.asset_symbol.network.unwrap_or_default();
         let quote = self
             .get_buy_quote(
                 request_map.asset_symbol.symbol,
-                request.fiat_currency.clone(),
-                request.fiat_amount,
+                request.currency.clone(),
+                request.amount,
                 network,
                 request.ip_address,
             )
             .await?;
 
-        Ok(FiatQuoteDataResponse::new(quote.quote_id, request.fiat_amount, quote.crypto_amount))
+        Ok(FiatQuoteResponse::new(quote.quote_id, request.amount, quote.crypto_amount))
     }
 
-    async fn get_quote_sell_data(
-        &self,
-        request: FiatQuoteDataRequest,
-        request_map: FiatMapping,
-    ) -> Result<FiatQuoteDataResponse, Box<dyn Error + Send + Sync>> {
+    async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         let network = request_map.asset_symbol.network.unwrap_or_default();
         let quote = self
             .get_sell_quote(
                 request_map.asset_symbol.symbol,
-                request.fiat_currency.clone(),
-                request.fiat_amount,
+                request.currency.clone(),
+                request.amount,
                 network,
                 request.ip_address,
             )
             .await?;
 
-        Ok(FiatQuoteDataResponse::new(quote.quote_id, quote.fiat_amount, request.fiat_amount))
+        Ok(FiatQuoteResponse::new(quote.quote_id, quote.fiat_amount, request.amount))
     }
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {

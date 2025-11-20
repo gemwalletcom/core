@@ -1,10 +1,10 @@
 mod client;
 
-use crate::params::FiatQuoteTypeParam;
+use crate::params::{CurrencyParam, FiatQuoteTypeParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use client::FiatQuotesClient;
 pub use fiat::{FiatProviderFactory, IPAddressInfo, IPCheckClient};
-use primitives::{FiatAssets, FiatQuoteType, FiatQuoteUrl, FiatQuotes, FiatQuotesData};
+use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 use std::str::FromStr;
 use streamer::FiatWebhook;
@@ -15,52 +15,63 @@ pub async fn get_fiat_quotes(
     fiat_amount: Option<f64>,
     crypto_value: Option<&str>,
     r#type: &str,
-    currency: &str,
+    currency: CurrencyParam,
     wallet_address: &str,
     ip_address: Option<&str>,
     provider_id: Option<&str>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<FiatQuotes>, ApiError> {
+) -> Result<ApiResponse<FiatQuotesOld>, ApiError> {
     let quote_type = FiatQuoteType::from_str(r#type).unwrap_or(FiatQuoteType::Buy);
     let ip_addr = ip_address.unwrap_or(&ip.to_string()).to_string();
     Ok(client
         .lock()
         .await
-        .get_quotes(asset_id, fiat_amount, crypto_value, quote_type, currency, wallet_address, &ip_addr, provider_id)
+        .get_quotes_old(asset_id, fiat_amount, crypto_value, quote_type, &currency.as_string(), wallet_address, &ip_addr, provider_id)
         .await?
         .into())
 }
 
-#[get("/fiat/quotes/<quote_type>/<asset_id>?<fiat_amount>&<currency>&<ip_address>&<provider_id>")]
+#[get("/fiat/quotes/<quote_type>/<asset_id>?<amount>&<currency>&<ip_address>&<provider_id>")]
 pub async fn get_fiat_quotes_by_type(
     quote_type: FiatQuoteTypeParam,
     asset_id: &str,
-    fiat_amount: f64,
-    currency: &str,
+    amount: f64,
+    currency: CurrencyParam,
     ip_address: Option<&str>,
     provider_id: Option<&str>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<FiatQuotesData>, ApiError> {
+) -> Result<ApiResponse<FiatQuotes>, ApiError> {
     let ip_addr = ip_address.unwrap_or(&ip.to_string()).to_string();
+    let request = FiatQuoteRequest {
+        asset_id: asset_id.to_string(),
+        quote_type: quote_type.0,
+        amount,
+        currency: currency.as_string(),
+        provider_id: provider_id.map(|x| x.to_string()),
+        ip_address: ip_addr,
+    };
     Ok(client
         .lock()
         .await
-        .get_quotes_data(asset_id, fiat_amount, quote_type.0, currency, &ip_addr, provider_id)
+        .get_quotes(request)
         .await?
         .into())
 }
 
-#[post("/fiat/quotes/url?<quote_id>&<wallet_address>&<device_id>")]
+#[post("/fiat/quotes/url", data = "<request>")]
 pub async fn get_fiat_quote_url(
-    quote_id: &str,
-    wallet_address: &str,
-    device_id: &str,
+    request: Json<FiatQuoteUrlRequest>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
 ) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
-    Ok(client.lock().await.get_quote_url(quote_id, wallet_address, &ip.to_string(), device_id).await?.into())
+    Ok(client
+        .lock()
+        .await
+        .get_quote_url(&request, &ip.to_string())
+        .await?
+        .into())
 }
 
 #[get("/fiat/on_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>&<provider_id>")]
@@ -73,12 +84,12 @@ pub async fn get_fiat_on_ramp_quotes(
     provider_id: Option<&str>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<FiatQuotes>, ApiError> {
+) -> Result<ApiResponse<FiatQuotesOld>, ApiError> {
     let ip_addr = ip_address.unwrap_or(&ip.to_string()).to_string();
     Ok(client
         .lock()
         .await
-        .get_quotes(
+        .get_quotes_old(
             asset_id,
             Some(amount),
             None,

@@ -12,7 +12,7 @@ use super::{
     mapper::{map_assets_with_limits, map_process_webhook},
 };
 use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteDataRequest, FiatQuoteDataResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
     FiatTransaction,
 };
 use streamer::FiatWebhook;
@@ -23,9 +23,13 @@ impl FiatProvider for PaybisClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
-            .get_buy_quote(request_map.asset_symbol.symbol, request.fiat_currency.as_ref().to_uppercase(), request.fiat_amount)
+            .get_buy_quote(
+                request_map.asset_symbol.symbol,
+                request.fiat_currency.as_ref().to_uppercase(),
+                request.fiat_amount,
+            )
             .await?;
 
         if quote.payment_methods.is_empty() {
@@ -35,9 +39,13 @@ impl FiatProvider for PaybisClient {
         self.get_buy_fiat_quote(request, quote, None).await
     }
 
-    async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote_old(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
         let quote = self
-            .get_sell_quote(request_map.asset_symbol.symbol, request.fiat_currency.as_ref().to_uppercase(), request.crypto_amount)
+            .get_sell_quote(
+                request_map.asset_symbol.symbol,
+                request.fiat_currency.as_ref().to_uppercase(),
+                request.crypto_amount,
+            )
             .await?;
 
         if quote.payment_methods.is_empty() {
@@ -75,19 +83,11 @@ impl FiatProvider for PaybisClient {
         Ok(map_process_webhook(data))
     }
 
-    async fn get_quote_buy_data(
-        &self,
-        _request: FiatQuoteDataRequest,
-        _request_map: FiatMapping,
-    ) -> Result<FiatQuoteDataResponse, Box<dyn Error + Send + Sync>> {
+    async fn get_quote_buy(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         Err("not implemented".into())
     }
 
-    async fn get_quote_sell_data(
-        &self,
-        _request: FiatQuoteDataRequest,
-        _request_map: FiatMapping,
-    ) -> Result<FiatQuoteDataResponse, Box<dyn Error + Send + Sync>> {
+    async fn get_quote_sell(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         Err("not implemented".into())
     }
 

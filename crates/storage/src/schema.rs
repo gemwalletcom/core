@@ -175,8 +175,22 @@ diesel::table! {
         #[max_length = 32]
         name -> Varchar,
         enabled -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
         priority -> Nullable<Int4>,
         priority_threshold_bps -> Nullable<Int4>,
+    }
+}
+
+diesel::table! {
+    fiat_providers_countries (id) {
+        #[max_length = 32]
+        id -> Varchar,
+        #[max_length = 128]
+        provider -> Varchar,
+        #[max_length = 32]
+        alpha2 -> Varchar,
+        is_allowed -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -205,20 +219,6 @@ diesel::table! {
         device_id -> Varchar,
         #[max_length = 128]
         quote_id -> Varchar,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    fiat_providers_countries (id) {
-        #[max_length = 32]
-        id -> Varchar,
-        #[max_length = 128]
-        provider -> Varchar,
-        #[max_length = 32]
-        alpha2 -> Varchar,
-        is_allowed -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

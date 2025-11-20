@@ -1,13 +1,13 @@
 use cacher::CacherClient;
-use primitives::FiatQuoteData;
+use primitives::{FiatAssetSymbol, FiatQuote};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CachedFiatQuoteData {
-    pub quote: FiatQuoteData,
+    pub quote: FiatQuote,
     #[serde(flatten)]
-    pub asset_symbol: primitives::FiatAssetSymbol,
+    pub asset_symbol: FiatAssetSymbol,
 }
 
 pub struct FiatCacherClient {

@@ -1,7 +1,7 @@
 use crate::model::FiatMapping;
 use number_formatter::BigNumberFormatter;
 use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
-use primitives::{FiatProviderName, FiatQuote};
+use primitives::{FiatProviderName, FiatQuoteOld};
 use reqwest::Client;
 use std::collections::HashMap;
 
@@ -96,7 +96,7 @@ impl MercuryoClient {
         self.client.get(&url).query(&query).send().await?.json().await
     }
 
-    pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping, quote: Quote) -> FiatQuoteOld {
         let crypto_value = BigNumberFormatter::f64_as_value(quote.clone().amount, request.asset.decimals as u32).unwrap_or_default();
         let widget = MercuryoWidget::new(
             self.widget_id.clone(),
@@ -108,7 +108,7 @@ impl MercuryoClient {
             request_map.asset_symbol.network.unwrap_or_default(),
         );
 
-        FiatQuote {
+        FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
@@ -119,7 +119,7 @@ impl MercuryoClient {
         }
     }
 
-    pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping, quote: Quote) -> FiatQuoteOld {
         let widget = MercuryoWidget::new(
             self.widget_id.clone(),
             self.secret_key.clone(),
@@ -130,7 +130,7 @@ impl MercuryoClient {
             request_map.asset_symbol.network.unwrap_or_default(),
         );
 
-        FiatQuote {
+        FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.fiat_amount,

@@ -1,7 +1,7 @@
 use super::models::{Assets, PaybisData, PaybisQuote, PaybisResponse, PaymentMethodWithLimits, QuoteRequest, Request, RequestResponse};
 use crate::rsa_signature::generate_rsa_pss_signature;
 use number_formatter::BigNumberFormatter;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
+use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatSellQuote};
 use reqwest::Client;
 use url::Url;
 
@@ -116,7 +116,7 @@ impl PaybisClient {
         request: FiatBuyQuote,
         quote: PaybisQuote,
         user_ip: Option<String>,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         let payment_method = quote.payment_methods.first().unwrap();
         let crypto_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
 
@@ -133,7 +133,7 @@ impl PaybisClient {
             )
             .await?;
 
-        Ok(FiatQuote {
+        Ok(FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
@@ -149,7 +149,7 @@ impl PaybisClient {
         request: FiatSellQuote,
         quote: PaybisQuote,
         user_ip: Option<String>,
-    ) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         let payment_method = quote.payment_methods.first().unwrap();
         let fiat_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
 
@@ -164,7 +164,7 @@ impl PaybisClient {
             )
             .await?;
 
-        Ok(FiatQuote {
+        Ok(FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
             fiat_amount,

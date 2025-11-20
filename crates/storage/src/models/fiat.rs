@@ -210,11 +210,11 @@ pub struct FiatQuote {
 }
 
 impl FiatQuote {
-    pub fn from_primitive(quote: &primitives::FiatQuoteData) -> Self {
+    pub fn from_primitive(quote: &primitives::FiatQuote) -> Self {
         Self {
             id: quote.id.clone(),
             provider_id: quote.provider.id.clone(),
-            asset_id: quote.asset_id.to_string(),
+            asset_id: quote.asset_id.clone(),
             fiat_amount: quote.fiat_amount,
             fiat_currency: quote.fiat_currency.clone(),
         }

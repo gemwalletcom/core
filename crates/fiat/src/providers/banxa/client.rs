@@ -1,6 +1,6 @@
 use crate::model::FiatMapping;
 use number_formatter::BigNumberFormatter;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuote, FiatQuoteType, FiatSellQuote};
+use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatSellQuote};
 use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
@@ -100,11 +100,11 @@ impl BanxaClient {
         self.client.get(&url).headers(self.get_headers()).send().await?.json().await
     }
 
-    pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, fiat_mapping: FiatMapping, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, fiat_mapping: FiatMapping, quote: Quote) -> FiatQuoteOld {
         let redirect_url = self.get_redirect_buy_url(request.clone(), fiat_mapping);
         let crypto_value = BigNumberFormatter::f64_as_value(quote.crypto_amount, request.asset.decimals as u32).unwrap_or_default();
 
-        FiatQuote {
+        FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: request.fiat_amount,
@@ -115,10 +115,10 @@ impl BanxaClient {
         }
     }
 
-    pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, fiat_mapping: FiatMapping, quote: Quote) -> FiatQuote {
+    pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, fiat_mapping: FiatMapping, quote: Quote) -> FiatQuoteOld {
         let redirect_url = self.get_redirect_sell_url(request.clone(), fiat_mapping);
 
-        FiatQuote {
+        FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
             quote_type: FiatQuoteType::Sell,
             fiat_amount: quote.fiat_amount,
