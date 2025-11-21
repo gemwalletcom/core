@@ -54,6 +54,9 @@ impl FiatProvider {
             image_url: Some("".to_string()),
             priority: None,
             threshold_bps: None,
+            enabled: true,
+            buy_enabled: true,
+            sell_enabled: true,
         }
     }
 
@@ -64,6 +67,9 @@ impl FiatProvider {
             image_url: Some("".to_string()),
             priority: Some(priority),
             threshold_bps,
+            enabled: true,
+            buy_enabled: true,
+            sell_enabled: true,
         }
     }
 }

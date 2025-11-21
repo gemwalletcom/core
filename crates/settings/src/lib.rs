@@ -103,13 +103,6 @@ pub struct Key {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct KeyPublicPrivate {
-    pub public: String,
-    pub private: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct MoonPay {
     pub key: Key,
 }
@@ -145,7 +138,7 @@ pub struct Banxa {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Paybis {
-    pub key: KeyPublicPrivate,
+    pub key: Key,
 }
 
 #[derive(Debug, Deserialize, Clone)]

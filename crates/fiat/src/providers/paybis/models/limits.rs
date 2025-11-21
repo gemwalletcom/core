@@ -13,6 +13,15 @@ pub enum PaybisResponse<T> {
     Error(PaybisError),
 }
 
+impl<T> From<PaybisResponse<T>> for Result<T, Box<dyn std::error::Error + Send + Sync>> {
+    fn from(resp: PaybisResponse<T>) -> Self {
+        match resp {
+            PaybisResponse::Success(data) => Ok(data),
+            PaybisResponse::Error(error) => Err(error.into_error()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct PaybisError {
     pub message: String,

@@ -175,6 +175,8 @@ diesel::table! {
         #[max_length = 32]
         name -> Varchar,
         enabled -> Bool,
+        buy_enabled -> Bool,
+        sell_enabled -> Bool,
         priority -> Nullable<Int4>,
         priority_threshold_bps -> Nullable<Int4>,
         updated_at -> Timestamp,

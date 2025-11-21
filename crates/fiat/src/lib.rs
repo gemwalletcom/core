@@ -55,7 +55,7 @@ impl FiatProviderFactory {
             settings.transak.referrer_domain,
         );
         let banxa = BanxaClient::new(request_client.clone(), settings.banxa.url, settings.banxa.key.public, settings.banxa.key.secret);
-        let paybis = PaybisClient::new(request_client.clone(), settings.paybis.key.public, settings.paybis.key.private);
+        let paybis = PaybisClient::new(request_client.clone(), settings.paybis.key.public, settings.paybis.key.secret);
 
         vec![Box::new(moonpay), Box::new(mercuryo), Box::new(transak), Box::new(banxa), Box::new(paybis)]
     }

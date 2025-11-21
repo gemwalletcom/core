@@ -11,48 +11,13 @@ use super::{
     client::PaybisClient,
     mapper::{map_assets_with_limits, map_process_webhook},
 };
-use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
-    FiatTransaction,
-};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 use streamer::FiatWebhook;
 
 #[async_trait]
 impl FiatProvider for PaybisClient {
     fn name(&self) -> FiatProviderName {
         Self::NAME
-    }
-
-    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        let quote = self
-            .get_buy_quote(
-                request_map.asset_symbol.symbol,
-                request.fiat_currency.as_ref().to_uppercase(),
-                request.fiat_amount,
-            )
-            .await?;
-
-        if quote.payment_methods.is_empty() {
-            return Err(FiatQuoteError::UnsupportedState("No payment methods available".to_string()).into());
-        }
-
-        self.get_buy_fiat_quote(request, quote, None).await
-    }
-
-    async fn get_sell_quote_old(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
-        let quote = self
-            .get_sell_quote(
-                request_map.asset_symbol.symbol,
-                request.fiat_currency.as_ref().to_uppercase(),
-                request.crypto_amount,
-            )
-            .await?;
-
-        if quote.payment_methods.is_empty() {
-            return Err(FiatQuoteError::UnsupportedState("No payment methods available".to_string()).into());
-        }
-
-        self.get_sell_fiat_quote(request, quote, None).await
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -83,16 +48,53 @@ impl FiatProvider for PaybisClient {
         Ok(map_process_webhook(data))
     }
 
-    async fn get_quote_buy(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
-        Err("not implemented".into())
+    async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
+        let quote = self
+            .get_buy_quote(request_map.asset_symbol.symbol, request.currency.to_uppercase(), request.amount)
+            .await?;
+
+        if quote.payment_methods.is_empty() {
+            return Err(FiatQuoteError::UnsupportedState("No payment methods available".to_string()).into());
+        }
+
+        let payment_method = quote.payment_methods.first().unwrap();
+        let crypto_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
+        let quote_id = uuid::Uuid::new_v4().to_string();
+
+        Ok(FiatQuoteResponse::new(quote_id, request.amount, crypto_amount))
     }
 
-    async fn get_quote_sell(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
-        Err("not implemented".into())
+    async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
+        let quote = self
+            .get_sell_quote(request_map.asset_symbol.symbol, request.currency.to_uppercase(), request.amount)
+            .await?;
+
+        if quote.payment_methods.is_empty() {
+            return Err(FiatQuoteError::UnsupportedState("No payment methods available".to_string()).into());
+        }
+
+        let payment_method = quote.payment_methods.first().unwrap();
+        let fiat_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
+        let quote_id = uuid::Uuid::new_v4().to_string();
+
+        Ok(FiatQuoteResponse::new(quote_id, fiat_amount, request.amount))
     }
 
-    async fn get_quote_url(&self, _data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
-        Err("not implemented".into())
+    async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+        let is_buy = matches!(data.quote.quote_type, primitives::FiatQuoteType::Buy);
+        let redirect_url = self
+            .get_redirect_url(
+                &data.wallet_address,
+                &data.quote.fiat_currency,
+                &data.asset_symbol.symbol,
+                data.quote.fiat_amount,
+                is_buy,
+                &data.ip_address,
+                &data.locale,
+            )
+            .await?;
+
+        Ok(FiatQuoteUrl { redirect_url })
     }
 }
 

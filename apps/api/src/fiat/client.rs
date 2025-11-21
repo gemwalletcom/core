@@ -3,21 +3,15 @@ use std::str::FromStr;
 
 use fiat::FiatClient;
 use primitives::currency::Currency;
-use primitives::{Device, FiatQuote, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld};
-use storage::Database;
+use primitives::{FiatQuote, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld};
 
 pub struct FiatQuotesClient {
     fiat_client: FiatClient,
-    database: Database,
 }
 
 impl FiatQuotesClient {
-    pub fn new(fiat_client: FiatClient, database: Database) -> Self {
-        Self { fiat_client, database }
-    }
-
-    pub fn get_device(&self, device_id: &str) -> Result<Device, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.devices().get_device(device_id)?)
+    pub fn new(fiat_client: FiatClient) -> Self {
+        Self { fiat_client }
     }
 
     pub async fn get_quotes_old(
@@ -29,7 +23,7 @@ impl FiatQuotesClient {
         currency: &str,
         wallet_address: &str,
         ip_address: &str,
-        provider_id: Option<&str>,
+        provider: Option<&str>,
     ) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
         if fiat_amount.is_none() && crypto_value.is_none() {
             return Err("Either fiat_amount or crypto_value is required".into());
@@ -43,7 +37,7 @@ impl FiatQuotesClient {
             fiat_currency: Currency::from_str(currency).unwrap_or(Currency::USD),
             crypto_value: crypto_value.map(|x| x.to_string()),
             wallet_address: wallet_address.to_string(),
-            provider_id: provider_id.map(|x| x.to_string()),
+            provider_id: provider.map(|x| x.to_string()),
         };
 
         self.fiat_client.get_quotes_old(request).await
@@ -54,7 +48,6 @@ impl FiatQuotesClient {
     }
 
     pub async fn get_quote_url(&self, request: &FiatQuoteUrlRequest, ip_address: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
-        self.get_device(&request.device_id)?;
         self.fiat_client
             .get_quote_url(&request.quote_id, &request.wallet_address, ip_address, &request.device_id)
             .await

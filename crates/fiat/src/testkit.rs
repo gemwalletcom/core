@@ -38,7 +38,7 @@ pub fn create_moonpay_test_client() -> MoonPayClient {
 pub fn create_paybis_test_client() -> PaybisClient {
     let settings = get_test_settings();
     let client = FiatClient::request_client(settings.fiat.timeout);
-    PaybisClient::new(client, settings.paybis.key.public, settings.paybis.key.private)
+    PaybisClient::new(client, settings.paybis.key.public, settings.paybis.key.secret)
 }
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]

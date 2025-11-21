@@ -215,12 +215,23 @@ impl FiatClient {
                 return Err(format!("IP address validation failed: {}", e).into());
             }
         };
-        let (fiat_mapping_map, _providers) = self.get_fiat_mapping(&request.asset_id)?;
+        let (fiat_mapping_map, db_providers) = self.get_fiat_mapping(&request.asset_id)?;
 
         let provider_impls = self.get_providers(request.provider_id.clone());
 
         let futures = provider_impls.into_iter().filter_map(|provider| {
             let provider_id = provider.name().id().to_string();
+
+            let db_provider = db_providers.iter().find(|p| p.id == provider_id)?;
+            let is_enabled = match request.quote_type {
+                FiatQuoteType::Buy => db_provider.is_buy_enabled(),
+                FiatQuoteType::Sell => db_provider.is_sell_enabled(),
+            };
+
+            if !is_enabled {
+                return None;
+            }
+
             let countries = fiat_providers_countries
                 .iter()
                 .filter(|x| x.provider == provider_id)
@@ -310,7 +321,7 @@ impl FiatClient {
         device_id: &str,
     ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
         let mut db = self.database.client()?;
-        db.devices().get_device(device_id)?;
+        let device = db.devices().get_device(device_id)?;
 
         let quote = self.fiat_cacher.get_quote(quote_id).await?;
         let provider = self.provider(&quote.quote.provider.id)?;
@@ -320,6 +331,7 @@ impl FiatClient {
             asset_symbol: quote.asset_symbol,
             wallet_address: wallet_address.to_string(),
             ip_address: ip_address.to_string(),
+            locale: device.locale,
         };
 
         let url = provider.get_quote_url(data).await?;

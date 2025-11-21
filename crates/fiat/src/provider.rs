@@ -9,10 +9,17 @@ use primitives::{
 use streamer::FiatWebhook;
 
 #[async_trait]
-pub trait FiatProvider {
+pub trait FiatProvider: Send + Sync {
     fn name(&self) -> FiatProviderName;
-    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>>;
-    async fn get_sell_quote_old(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>>;
+
+    async fn get_buy_quote_old(&self, _request: FiatBuyQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
+        Err("not implemented".into())
+    }
+
+    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
+        Err("not implemented".into())
+    }
+
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>>;
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>>;
     async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>>;

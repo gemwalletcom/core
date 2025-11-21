@@ -94,7 +94,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         stream_producer.clone(),
         fiat_config,
     );
-    let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client, database.clone());
+    let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client);
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(database.clone(), nft_config);
     let markets_client = MarketsClient::new(database.clone(), cacher_client);

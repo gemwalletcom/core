@@ -2,6 +2,8 @@ CREATE TABLE fiat_providers (
     id VARCHAR(32) PRIMARY KEY NOT NULL,
     name VARCHAR(32) NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    buy_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    sell_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     priority INTEGER NULL,
     priority_threshold_bps INTEGER NULL,
 

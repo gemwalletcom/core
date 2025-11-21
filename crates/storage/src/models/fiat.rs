@@ -99,6 +99,8 @@ pub struct FiatProvider {
     pub id: String,
     pub name: String,
     pub enabled: bool,
+    pub buy_enabled: bool,
+    pub sell_enabled: bool,
     pub priority: Option<i32>,
     pub priority_threshold_bps: Option<i32>,
 }
@@ -109,6 +111,8 @@ impl FiatProvider {
             id: provider.id(),
             name: provider.as_ref().to_string(),
             enabled: true,
+            buy_enabled: true,
+            sell_enabled: true,
             priority: None,
             priority_threshold_bps: None,
         }
@@ -121,7 +125,18 @@ impl FiatProvider {
             image_url: Some("".to_string()),
             priority: self.priority,
             threshold_bps: self.priority_threshold_bps,
+            enabled: self.enabled,
+            buy_enabled: self.buy_enabled,
+            sell_enabled: self.sell_enabled,
         }
+    }
+
+    pub fn is_buy_enabled(&self) -> bool {
+        self.enabled && self.buy_enabled
+    }
+
+    pub fn is_sell_enabled(&self) -> bool {
+        self.enabled && self.sell_enabled
     }
 }
 

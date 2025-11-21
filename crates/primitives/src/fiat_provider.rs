@@ -10,12 +10,26 @@ pub struct FiatProvider {
     pub name: String,
     // delete later
     pub image_url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[typeshare(skip)]
     pub priority: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     #[typeshare(skip)]
     pub threshold_bps: Option<i32>,
+    #[typeshare(skip)]
+    pub enabled: bool,
+    #[typeshare(skip)]
+    pub buy_enabled: bool,
+    #[typeshare(skip)]
+    pub sell_enabled: bool,
+}
+
+impl FiatProvider {
+    pub fn is_buy_enabled(&self) -> bool {
+        self.enabled && self.buy_enabled
+    }
+
+    pub fn is_sell_enabled(&self) -> bool {
+        self.enabled && self.sell_enabled
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq)]
@@ -51,6 +65,9 @@ impl FiatProviderName {
             image_url: Some("".to_string()),
             priority: None,
             threshold_bps: None,
+            enabled: true,
+            buy_enabled: true,
+            sell_enabled: true,
         }
     }
 
