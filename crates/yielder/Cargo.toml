@@ -1,0 +1,18 @@
+[package]
+name = "yielder"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+description.workspace = true
+repository.workspace = true
+documentation.workspace = true
+
+[dependencies]
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+gem_client = { path = "../gem_client" }
+gem_evm = { path = "../gem_evm", features = ["rpc"] }
+primitives = { path = "../primitives" }
+async-trait = { workspace = true }
+serde_json = { workspace = true }

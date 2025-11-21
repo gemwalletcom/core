@@ -3140,6 +3140,7 @@ dependencies = [
  "tokio",
  "uniffi",
  "url",
+ "yielder",
 ]
 
 [[package]]
@@ -8377,6 +8378,19 @@ dependencies = [
  "form_urlencoded",
  "serde",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "yielder"
+version = "1.0.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "async-trait",
+ "gem_client",
+ "gem_evm",
+ "primitives",
+ "serde_json",
 ]
 
 [[package]]
