@@ -157,6 +157,6 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://hyperliquid-json-rpc.stakely.io", NodePriority::High),
         ],
         Chain::HyperCore => vec![Node::new("https://api.hyperliquid.xyz", NodePriority::High)],
-        Chain::Monad => vec![], //TODO: Monad
+        Chain::Monad => vec![Node::new("https://rpc.monad.xyz", NodePriority::High)],
     }
 }
