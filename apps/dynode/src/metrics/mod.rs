@@ -1,17 +1,16 @@
 use crate::config::MetricsConfig;
+use metrics::MetricsRegistry;
 use prometheus_client::encoding::EncodeLabelSet;
-use prometheus_client::encoding::text::encode;
 use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::metrics::histogram::{Histogram, exponential_buckets};
-use prometheus_client::registry::Registry;
 use regex::Regex;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct Metrics {
-    registry: Arc<Registry>,
+    registry: Arc<MetricsRegistry>,
     proxy_requests: Family<ProxyRequestLabels, Counter>,
     proxy_requests_by_user_agent: Family<ProxyRequestByAgentLabels, Gauge>,
     proxy_requests_by_method: Family<ProxyRequestByMethodLabels, Counter>,
@@ -87,7 +86,8 @@ impl Metrics {
         let cache_misses = Family::<CacheLabels, Counter>::default();
         let node_switches = Family::<NodeSwitchLabels, Counter>::default();
 
-        let mut registry = Registry::with_prefix(&config.prefix);
+        let mut metrics_registry = MetricsRegistry::with_prefix(&config.prefix);
+        let registry = metrics_registry.registry_mut();
         registry.register("proxy_requests", "Proxy requests by host", proxy_requests.clone());
         registry.register(
             "proxy_requests_by_user_agent_total",
@@ -111,7 +111,7 @@ impl Metrics {
         registry.register("node_switches_total", "Node switches by chain and host", node_switches.clone());
 
         Self {
-            registry: Arc::new(registry),
+            registry: Arc::new(metrics_registry),
             proxy_requests,
             proxy_requests_by_user_agent,
             proxy_requests_by_method,
@@ -230,9 +230,7 @@ impl Metrics {
     }
 
     pub fn get_metrics(&self) -> String {
-        let mut buffer = String::new();
-        encode(&mut buffer, &self.registry).expect("failed to encode metrics");
-        buffer
+        self.registry.encode()
     }
 
     fn truncate_method(&self, method: &str) -> String {

@@ -487,6 +487,7 @@ dependencies = [
  "fiat",
  "gem_client",
  "gem_tracing",
+ "metrics",
  "name_resolver",
  "nft",
  "pricer",
@@ -2152,6 +2153,7 @@ dependencies = [
  "futures",
  "gem_client",
  "gem_tracing",
+ "metrics",
  "moka",
  "primitives",
  "prometheus-client",
@@ -4240,6 +4242,13 @@ name = "memchr"
 version = "2.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
+
+[[package]]
+name = "metrics"
+version = "1.0.0"
+dependencies = [
+ "prometheus-client",
+]
 
 [[package]]
 name = "migrations_internals"

@@ -30,6 +30,7 @@ api_connector = { path = "../../crates/api_connector" }
 search_index = { path = "../../crates/search_index" }
 nft = { path = "../../crates/nft" }
 cacher = { path = "../../crates/cacher" }
+metrics = { path = "../../crates/metrics" }
 streamer = { path = "../../crates/streamer" }
 gem_client = { path = "../../crates/gem_client", features = ["reqwest"] }
 

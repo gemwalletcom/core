@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use fiat::FiatClient;
 use primitives::currency::Currency;
-use primitives::{Device, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld};
+use primitives::{Device, FiatQuote, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld};
 use storage::Database;
 
 pub struct FiatQuotesClient {
@@ -53,7 +53,7 @@ impl FiatQuotesClient {
         self.fiat_client.get_quotes(request).await
     }
 
-    pub async fn get_quote_url(&self, request: &FiatQuoteUrlRequest, ip_address: &str) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+    pub async fn get_quote_url(&self, request: &FiatQuoteUrlRequest, ip_address: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
         self.get_device(&request.device_id)?;
         self.fiat_client
             .get_quote_url(&request.quote_id, &request.wallet_address, ip_address, &request.device_id)

@@ -308,7 +308,7 @@ impl FiatClient {
         wallet_address: &str,
         ip_address: &str,
         device_id: &str,
-    ) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
         let mut db = self.database.client()?;
         db.devices().get_device(device_id)?;
 
@@ -332,7 +332,7 @@ impl FiatClient {
             quote_id: quote_id.to_string(),
         })?;
 
-        Ok(url)
+        Ok((url, quote.quote))
     }
 
     pub async fn get_ip_address(&self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {

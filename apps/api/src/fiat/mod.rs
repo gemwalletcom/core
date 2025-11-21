@@ -1,5 +1,6 @@
 mod client;
 
+use crate::metrics::{metrics_fiat_quote_url, metrics_fiat_quotes};
 use crate::params::{CurrencyParam, FiatQuoteTypeParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use client::FiatQuotesClient;
@@ -61,7 +62,9 @@ pub async fn get_fiat_quotes_by_type(
         provider_id: provider_id.map(|x| x.to_string()),
         ip_address: ip_addr,
     };
-    Ok(client.lock().await.get_quotes(request).await?.into())
+    let quotes = client.lock().await.get_quotes(request).await?;
+    metrics_fiat_quotes(&quotes);
+    Ok(quotes.into())
 }
 
 #[post("/fiat/quotes/url", data = "<request>")]
@@ -70,7 +73,9 @@ pub async fn get_fiat_quote_url(
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
 ) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
-    Ok(client.lock().await.get_quote_url(&request, &ip.to_string()).await?.into())
+    let (url, quote) = client.lock().await.get_quote_url(&request, &ip.to_string()).await?;
+    metrics_fiat_quote_url(&quote);
+    Ok(url.into())
 }
 
 #[get("/fiat/on_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>&<provider_id>")]
