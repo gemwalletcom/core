@@ -89,5 +89,6 @@ pub fn price_feed_id_for_chain(chain: Chain) -> &'static str {
         Chain::Fantom | Chain::Sonic => "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
         Chain::Gnosis => "c5f60d00d926ee369ded32a38a6bd5c1e0faa936f91b987a5d0dcf3c5d8afab0",
         Chain::Monad => "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
+        Chain::XLayer => "119d83a6073a8948e0f5f7c50e31c35af07d0ce2fa4cf35c6e2a8a6d3c68ccc9", // OKB
     }
 }

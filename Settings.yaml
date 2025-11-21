@@ -188,6 +188,8 @@ chains:
     url: https://api.hyperliquid.xyz
   monad:
     url: https://testnet-rpc.monad.xyz #TODO: Monad
+  xlayer:
+    url: https://rpc.xlayer.tech
 
 swap:
   jupiter:

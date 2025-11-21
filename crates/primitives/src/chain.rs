@@ -60,6 +60,7 @@ pub enum Chain {
     Hyperliquid, // HyperEVM
     HyperCore,   // HyperCore native chain
     Monad,
+    XLayer,
 }
 
 impl fmt::Display for Chain {
@@ -138,6 +139,7 @@ impl Chain {
             Self::Hyperliquid => "999",
             Self::HyperCore => "1337",
             Self::Monad => "10143", //TODO: Monad 143
+            Self::XLayer => "196",
         }
     }
 
@@ -190,7 +192,8 @@ impl Chain {
             | Self::Unichain
             | Self::Monad
             | Self::Hyperliquid
-            | Self::HyperCore => false,
+            | Self::HyperCore
+            | Self::XLayer => false,
         }
     }
 
@@ -220,7 +223,8 @@ impl Chain {
             | Self::Hyperliquid
             | Self::HyperCore
             | Self::Plasma
-            | Self::Monad => 60,
+            | Self::Monad
+            | Self::XLayer => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
             Self::Litecoin => 2,
@@ -270,7 +274,8 @@ impl Chain {
             | Self::Unichain
             | Self::Hyperliquid
             | Self::Plasma
-            | Self::Monad => ChainType::Ethereum,
+            | Self::Monad
+            | Self::XLayer => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin | Self::Zcash => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -313,7 +318,8 @@ impl Chain {
             | Self::Hyperliquid
             | Self::HyperCore
             | Self::Plasma
-            | Self::Monad => Some(AssetType::ERC20),
+            | Self::Monad
+            | Self::XLayer => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
@@ -409,7 +415,7 @@ impl Chain {
             | Self::Stellar
             | Self::Near
             | Self::Cardano => true,
-            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot => false,
+            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot | Self::XLayer => false,
         }
     }
 
@@ -449,7 +455,8 @@ impl Chain {
             | Self::World
             | Self::Berachain
             | Self::Plasma
-            | Self::Thorchain => 2_000,
+            | Self::Thorchain
+            | Self::XLayer => 2_000,
             Self::Polygon | Self::Tron => 3_000,
             Self::Algorand | Self::Xrp => 4_000,
             Self::Gnosis | Self::Polkadot | Self::Ton => 5_000,
@@ -506,7 +513,8 @@ impl Chain {
             | Self::Sonic
             | Self::Plasma
             | Self::Algorand
-            | Self::Cardano => 30,
+            | Self::Cardano
+            | Self::XLayer => 30,
             Self::Noble => 20,
         }
     }

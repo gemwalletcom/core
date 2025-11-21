@@ -89,5 +89,6 @@ pub fn deployment_by_chain(chain: &EVMChain) -> &'static str {
         | EVMChain::Hyperliquid => "0xcA11bde05977b3631167028862bE2a173976CA11",
         EVMChain::ZkSync | EVMChain::Abstract => "0xF9cda624FBC7e059355ce98a31693d299FACd963",
         EVMChain::Plasma | EVMChain::Monad => "", //TODO: Monad
+        EVMChain::XLayer => "0xcA11bde05977b3631167028862bE2a173976CA11",
     }
 }
