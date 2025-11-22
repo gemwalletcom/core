@@ -1,3 +1,4 @@
+use crate::models::price::NewPrice;
 use crate::schema::prices_assets;
 use crate::{DatabaseClient, models::*};
 use chrono::NaiveDateTime;
@@ -6,6 +7,7 @@ use diesel::upsert::excluded;
 use price::PriceAssetData;
 
 pub(crate) trait PricesStore {
+    fn add_prices(&mut self, values: Vec<NewPrice>) -> Result<usize, diesel::result::Error>;
     fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error>;
     fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, diesel::result::Error>;
     fn get_prices(&mut self) -> Result<Vec<Price>, diesel::result::Error>;
@@ -18,6 +20,13 @@ pub(crate) trait PricesStore {
 }
 
 impl PricesStore for DatabaseClient {
+    fn add_prices(&mut self, values: Vec<NewPrice>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::prices::dsl::*;
+        diesel::insert_into(prices)
+            .values(&values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)
+    }
     fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
         diesel::insert_into(prices)

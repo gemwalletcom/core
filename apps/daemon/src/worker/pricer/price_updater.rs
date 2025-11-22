@@ -1,8 +1,7 @@
 use chrono::{DateTime, Duration, Utc};
 use coingecko::{CoinGeckoClient, CoinMarket};
 use pricer::PriceClient;
-use primitives::{AssetId, AssetPriceInfo};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::error::Error;
 use storage::models::{Chart, Price};
 use streamer::{ChartsPayload, PricesPayload, StreamProducer, StreamProducerQueue};
@@ -50,7 +49,7 @@ impl PriceUpdater {
     }
 
     pub async fn update_prices(&self, ids: Vec<String>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let ids_chunks = ids.chunks(250);
+        let ids_chunks = ids.chunks(MAX_MARKETS_PER_PAGE);
         for ids in ids_chunks {
             let coin_markets = self.coin_gecko_client.get_coin_markets_ids(ids.to_vec(), MAX_MARKETS_PER_PAGE).await?;
             let prices = Self::map_coin_markets(coin_markets);
@@ -58,52 +57,10 @@ impl PriceUpdater {
             let prices_data = prices.iter().map(|p| p.as_price_data()).collect();
             let charts_data = prices.iter().map(|p| Chart::from_price(p.clone()).as_chart_data()).collect();
 
-            println!("Publishing {} prices and {} charts", prices.len(), prices.len());
             self.stream_producer.publish_prices(PricesPayload::new(prices_data)).await?;
             self.stream_producer.publish_charts(ChartsPayload::new(charts_data)).await?;
         }
         Ok(ids.len())
-    }
-
-    pub async fn update_fiat_rates_cache(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let rates = self.price_client.get_fiat_rates()?;
-        self.price_client.set_cache_fiat_rates(rates.clone()).await?;
-        Ok(rates.len())
-    }
-
-    pub async fn update_prices_cache(&self, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let (prices_assets, prices) = (self.price_client.get_prices_assets()?, self.price_client.get_prices()?);
-        let prices_assets_map: HashMap<String, HashSet<String>> = prices_assets.into_iter().fold(HashMap::new(), |mut map, price_asset| {
-            map.entry(price_asset.price_id.clone()).or_default().insert(price_asset.asset_id);
-            map
-        });
-
-        let prices: Vec<AssetPriceInfo> = prices
-            .clone()
-            .into_iter()
-            .flat_map(|price| {
-                if let Some(asset_ids) = prices_assets_map.get(price.id.as_str()) {
-                    return asset_ids
-                        .iter()
-                        .map(|asset_id| price.as_price_asset_info(AssetId::new(asset_id).unwrap()))
-                        .collect::<Vec<_>>();
-                }
-                vec![]
-            })
-            .collect();
-
-        if prices.is_empty() {
-            return Ok(prices.len());
-        }
-
-        match self.price_client.set_cache_prices(prices.clone(), ttl_seconds).await {
-            Ok(_) => {}
-            Err(e) => {
-                println!("Error setting cache prices: {e}");
-            }
-        }
-
-        Ok(prices.len())
     }
 
     pub async fn update_fiat_rates(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {

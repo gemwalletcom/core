@@ -1,6 +1,5 @@
 mod charts_updater;
 mod markets_updater;
-mod price_asset_updater;
 mod price_updater;
 
 use cacher::CacherClient;
@@ -8,7 +7,6 @@ use charts_updater::ChartsUpdater;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
 use markets_updater::MarketsUpdater;
-use price_asset_updater::PriceAssetUpdater;
 use price_updater::{PriceUpdater, UpdatePrices};
 use pricer::{MarketsClient, PriceClient};
 use settings::Settings;
@@ -49,22 +47,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             async move {
                 let updater = price_updater_factory(&database, &cacher_client, &settings).await;
                 updater.update_fiat_rates().await
-            }
-        }
-    });
-
-    let update_prices_assets = run_job("Update prices assets", Duration::from_secs(1800), {
-        let settings = Arc::new(settings.clone());
-        let cacher_client = cacher_client.clone();
-        let database = database.clone();
-        move || {
-            let settings = Arc::clone(&settings);
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            async move {
-                price_asset_updater_factory(&database, &cacher_client, &settings.clone())
-                    .update_prices_assets()
-                    .await
             }
         }
     });
@@ -110,36 +92,6 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
             async move {
                 let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
                 updater.update_prices_type(UpdatePrices::Low).await
-            }
-        }
-    });
-
-    let update_prices_cache = run_job("Update prices cache", Duration::from_secs(30), {
-        let settings = Arc::new(settings.clone());
-        let cacher_client = cacher_client.clone();
-        let database = database.clone();
-        move || {
-            let settings = Arc::clone(&settings);
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            async move {
-                let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
-                updater.update_prices_cache(settings.pricer.outdated as i64).await
-            }
-        }
-    });
-
-    let update_fiat_rates_cache = run_job("Update fiat rates cache", Duration::from_secs(30), {
-        let settings = Arc::new(settings.clone());
-        let cacher_client = cacher_client.clone();
-        let database = database.clone();
-        move || {
-            let settings = Arc::clone(&settings);
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            async move {
-                let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
-                updater.update_fiat_rates_cache().await
             }
         }
     });
@@ -224,13 +176,9 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
     vec![
         Box::pin(clean_updated_assets),
         Box::pin(update_fiat_assets),
-        Box::pin(update_prices_assets),
         Box::pin(update_prices_top_market_cap),
         Box::pin(update_prices_high_market_cap),
         Box::pin(update_prices_low_market_cap),
-        Box::pin(update_prices_cache),
-        Box::pin(update_fiat_rates_cache),
-        // Box::pin(update_all_charts),
         Box::pin(update_hourly_charts_job),
         Box::pin(update_daily_charts_job),
         Box::pin(cleanup_charts_data_job),
@@ -253,12 +201,6 @@ async fn charts_updater_factory(database: &Database, cacher: &CacherClient, sett
         .await
         .expect("Failed to create stream producer");
     ChartsUpdater::new(price_client, coingecko_client, stream_producer)
-}
-
-fn price_asset_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> PriceAssetUpdater {
-    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
-    let price_client = PriceClient::new(database.clone(), cacher.clone());
-    PriceAssetUpdater::new(price_client, coingecko_client)
 }
 
 fn markets_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> MarketsUpdater {

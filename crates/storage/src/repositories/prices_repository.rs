@@ -3,9 +3,10 @@ use chrono::NaiveDateTime;
 
 use crate::DatabaseClient;
 use crate::database::prices::PricesStore;
-use crate::models::{Price, PriceAsset, price::PriceAssetData};
+use crate::models::{Price, PriceAsset, price::NewPrice, price::PriceAssetData};
 
 pub trait PricesRepository {
+    fn add_prices(&mut self, values: Vec<NewPrice>) -> Result<usize, DatabaseError>;
     fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, DatabaseError>;
     fn set_prices_assets(&mut self, values: Vec<PriceAsset>) -> Result<usize, DatabaseError>;
     fn get_prices(&mut self) -> Result<Vec<Price>, DatabaseError>;
@@ -19,6 +20,9 @@ pub trait PricesRepository {
 }
 
 impl PricesRepository for DatabaseClient {
+    fn add_prices(&mut self, values: Vec<NewPrice>) -> Result<usize, DatabaseError> {
+        Ok(PricesStore::add_prices(self, values)?)
+    }
     fn set_prices(&mut self, values: Vec<Price>) -> Result<usize, DatabaseError> {
         Ok(PricesStore::set_prices(self, values)?)
     }

@@ -15,7 +15,6 @@ pub struct PriceClient {
 }
 
 const PRICES_INSERT_BATCH_LIMIT: usize = 1000;
-const PRICES_ASSETS_INSERT_BATCH_LIMIT: usize = 1000;
 const FIAT_RATES_KEY: &str = "fiat_rates";
 
 impl PriceClient {
@@ -36,28 +35,6 @@ impl PriceClient {
         Ok(prices.len())
     }
 
-    pub fn set_prices_assets(&self, values: Vec<PriceAsset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let mut db = self.database.client()?;
-        let assets_ids = db
-            .assets()
-            .get_assets(values.iter().map(|x| x.asset_id.clone()).collect())?
-            .iter()
-            .map(|x| x.id.to_string())
-            .collect::<Vec<_>>();
-
-        let prices_ids = db.prices().get_prices()?.iter().map(|x| x.id.clone()).collect::<Vec<_>>();
-
-        let values = values
-            .into_iter()
-            .filter(|x| assets_ids.contains(&x.asset_id) && prices_ids.contains(&x.price_id))
-            .collect::<Vec<_>>();
-
-        for chunk in values.chunks(PRICES_ASSETS_INSERT_BATCH_LIMIT).clone() {
-            self.database.client()?.prices().set_prices_assets(chunk.to_vec())?;
-        }
-        Ok(values.len())
-    }
-
     pub fn get_prices(&self) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
         Ok(self.database.client()?.prices().get_prices()?)
     }
@@ -71,11 +48,15 @@ impl PriceClient {
     }
 
     pub async fn set_fiat_rates(&self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self
+        let count = self
             .database
             .client()?
             .fiat()
-            .set_fiat_rates(rates.into_iter().map(storage::models::FiatRate::from_primitive).collect())?)
+            .set_fiat_rates(rates.clone().into_iter().map(storage::models::FiatRate::from_primitive).collect())?;
+
+        self.set_cache_fiat_rates(rates).await?;
+
+        Ok(count)
     }
 
     pub fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {

@@ -38,7 +38,7 @@ pub use self::nft_link::NftLink;
 pub use self::node::Node;
 pub use self::parser_state::ParserState;
 pub use self::perpetual::{NewPerpetualAsset, Perpetual as StoragePerpetual};
-pub use self::price::{Price, PriceAsset};
+pub use self::price::{NewPrice, Price, PriceAsset};
 pub use self::price_alert::{NewPriceAlert, PriceAlert};
 pub use self::price_dex::{PriceDex, PriceDexAsset, PriceDexProvider};
 pub use self::release::Release;

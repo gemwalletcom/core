@@ -29,12 +29,31 @@ pub struct Price {
     pub last_updated_at: NaiveDateTime,
 }
 
+#[derive(Debug, Selectable, Identifiable, Serialize, Deserialize, Insertable, Clone)]
+#[diesel(table_name = crate::schema::prices)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct NewPrice {
+    pub id: String,
+}
+
+impl NewPrice {
+    pub fn new(id: String) -> Self {
+        NewPrice { id }
+    }
+}
+
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceAsset {
     pub asset_id: String,
     pub price_id: String,
+}
+
+impl PriceAsset {
+    pub fn new(asset_id: String, price_id: String) -> Self {
+        PriceAsset { asset_id, price_id }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable)]

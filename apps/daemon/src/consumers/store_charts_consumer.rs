@@ -21,7 +21,6 @@ impl MessageConsumer<ChartsPayload, usize> for StoreChartsConsumer {
     }
 
     async fn process(&self, payload: ChartsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        println!("StoreChartsConsumer received {} charts", payload.charts.len());
         let charts: Vec<Chart> = payload.charts.iter().map(|c| Chart::from_chart_data(c.clone())).collect();
         self.price_client.add_charts(charts).await?;
         Ok(payload.charts.len())
