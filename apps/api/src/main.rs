@@ -133,6 +133,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 fiat::get_fiat_quotes_by_type,
                 fiat::get_fiat_quotes,
                 fiat::get_fiat_on_ramp_quotes,
+                fiat::get_fiat_assets,
                 fiat::get_fiat_on_ramp_assets,
                 fiat::get_fiat_off_ramp_assets,
                 fiat::create_fiat_webhook,

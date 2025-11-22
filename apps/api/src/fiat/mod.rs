@@ -101,11 +101,22 @@ pub async fn get_fiat_on_ramp_quotes(
         .into())
 }
 
+#[get("/fiat/assets/<quote_type>")]
+pub async fn get_fiat_assets(quote_type: FiatQuoteTypeParam, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatAssets>, ApiError> {
+    let assets = match quote_type.0 {
+        FiatQuoteType::Buy => client.lock().await.get_on_ramp_assets().await?,
+        FiatQuoteType::Sell => client.lock().await.get_off_ramp_assets().await?,
+    };
+    Ok(assets.into())
+}
+
+// Deprecated: Use /fiat/assets/<quote_type> instead. To be removed in future version.
 #[get("/fiat/on_ramp/assets")]
 pub async fn get_fiat_on_ramp_assets(client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatAssets>, ApiError> {
     Ok(client.lock().await.get_on_ramp_assets().await?.into())
 }
 
+// Deprecated: Use /fiat/assets/<quote_type> instead. To be removed in future version.
 #[get("/fiat/off_ramp/assets")]
 pub async fn get_fiat_off_ramp_assets(client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatAssets>, ApiError> {
     Ok(client.lock().await.get_off_ramp_assets().await?.into())
