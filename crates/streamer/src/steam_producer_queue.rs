@@ -2,7 +2,10 @@ use std::error::Error;
 
 use primitives::AssetId;
 
-use crate::{AssetsAddressPayload, FetchAssetsPayload, NotificationsFailedPayload, NotificationsPayload, QueueName, StreamProducer, TransactionsPayload};
+use crate::{
+    AssetsAddressPayload, ChartsPayload, FetchAssetsPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName, StreamProducer,
+    TransactionsPayload,
+};
 
 #[async_trait::async_trait]
 pub trait StreamProducerQueue {
@@ -14,6 +17,8 @@ pub trait StreamProducerQueue {
     async fn publish_notifications_support(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
 }
 
 #[async_trait::async_trait]
@@ -75,5 +80,19 @@ impl StreamProducerQueue for StreamProducer {
             return Ok(true);
         }
         self.publish_batch(QueueName::StoreAssetsAssociations, &payload).await
+    }
+
+    async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.prices.is_empty() {
+            return Ok(true);
+        }
+        self.publish(QueueName::StorePrices, &payload).await
+    }
+
+    async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.charts.is_empty() {
+            return Ok(true);
+        }
+        self.publish(QueueName::StoreCharts, &payload).await
     }
 }

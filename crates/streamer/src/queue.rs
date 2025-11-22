@@ -37,6 +37,10 @@ pub enum QueueName {
     FiatOrderWebhooks,
     // Process support webhooks
     SupportWebhooks,
+    // Store prices to database
+    StorePrices,
+    // Store charts to database
+    StoreCharts,
 }
 
 impl QueueName {
@@ -65,6 +69,8 @@ impl fmt::Display for QueueName {
             QueueName::SupportWebhooks => write!(f, "support_webhooks"),
             QueueName::NotificationsSupport => write!(f, "notifications_support"),
             QueueName::NotificationsFailed => write!(f, "notifications_failed"),
+            QueueName::StorePrices => write!(f, "store_prices"),
+            QueueName::StoreCharts => write!(f, "store_charts"),
         }
     }
 }

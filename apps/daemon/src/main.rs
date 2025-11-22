@@ -28,7 +28,7 @@ pub async fn main() {
     });
     let _tracing = SentryTracing::init(sentry_config.as_ref(), service.as_ref());
 
-    info_with_fields!("daemon start", service = service.as_ref());
+    info_with_fields!("daemon start", service = service.name());
 
     match service {
         DaemonService::Setup => {
@@ -81,5 +81,7 @@ async fn run_consumer_mode(settings: settings::Settings, service: ConsumerServic
         ConsumerService::Notifications => consumers::notifications::run(settings).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, database).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, database).await,
+        ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings, database).await,
+        ConsumerService::StoreCharts => consumers::run_consumer_store_charts(settings, database).await,
     }
 }

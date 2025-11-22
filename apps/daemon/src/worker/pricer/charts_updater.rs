@@ -2,18 +2,20 @@ use coingecko::CoinGeckoClient;
 use pricer::PriceClient;
 use std::error::Error;
 use storage::models::Chart;
+use streamer::{ChartsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct ChartsUpdater {
     coin_gecko_client: CoinGeckoClient,
-
     prices_client: PriceClient,
+    stream_producer: StreamProducer,
 }
 
 impl ChartsUpdater {
-    pub fn new(prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
+    pub fn new(prices_client: PriceClient, coin_gecko_client: CoinGeckoClient, stream_producer: StreamProducer) -> Self {
         Self {
             coin_gecko_client,
             prices_client,
+            stream_producer,
         }
     }
 
@@ -36,7 +38,8 @@ impl ChartsUpdater {
                         .filter(|x| x.price > 0.0)
                         .collect::<Vec<Chart>>();
 
-                    self.prices_client.add_charts(charts).await?;
+                    let charts_data: Vec<_> = charts.iter().map(|c| c.as_chart_data()).collect();
+                    self.stream_producer.publish_charts(ChartsPayload::new(charts_data)).await?;
 
                     println!("update charts {}", coin_id.id.clone());
 

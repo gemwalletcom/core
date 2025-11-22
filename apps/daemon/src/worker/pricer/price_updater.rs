@@ -5,10 +5,12 @@ use primitives::{AssetId, AssetPriceInfo};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::models::{Chart, Price};
+use streamer::{ChartsPayload, PricesPayload, StreamProducer, StreamProducerQueue};
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
     price_client: PriceClient,
+    stream_producer: StreamProducer,
 }
 
 pub enum UpdatePrices {
@@ -20,10 +22,11 @@ pub enum UpdatePrices {
 const MAX_MARKETS_PER_PAGE: usize = 250;
 
 impl PriceUpdater {
-    pub fn new(price_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
+    pub fn new(price_client: PriceClient, coin_gecko_client: CoinGeckoClient, stream_producer: StreamProducer) -> Self {
         Self {
             coin_gecko_client,
             price_client,
+            stream_producer,
         }
     }
 
@@ -51,9 +54,13 @@ impl PriceUpdater {
         for ids in ids_chunks {
             let coin_markets = self.coin_gecko_client.get_coin_markets_ids(ids.to_vec(), MAX_MARKETS_PER_PAGE).await?;
             let prices = Self::map_coin_markets(coin_markets);
-            self.price_client.set_prices(prices.clone())?;
-            let charts = prices.iter().map(|x| Chart::from_price(x.clone())).collect::<Vec<Chart>>();
-            self.price_client.add_charts(charts).await?;
+
+            let prices_data = prices.iter().map(|p| p.as_price_data()).collect();
+            let charts_data = prices.iter().map(|p| Chart::from_price(p.clone()).as_chart_data()).collect();
+
+            println!("Publishing {} prices and {} charts", prices.len(), prices.len());
+            self.stream_producer.publish_prices(PricesPayload::new(prices_data)).await?;
+            self.stream_producer.publish_charts(ChartsPayload::new(charts_data)).await?;
         }
         Ok(ids.len())
     }

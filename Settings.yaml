@@ -2,7 +2,7 @@ redis:
   url: "redis://default:@localhost:6379?protocol=resp3"
 postgres:
   url: "postgres://username:password@localhost/api"
-  pool: 32
+  pool: 2
 meilisearch:
   url: "http://localhost:7700"
   key: "test"

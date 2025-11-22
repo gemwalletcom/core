@@ -1,6 +1,6 @@
 use chrono::{DateTime, NaiveDateTime};
 use diesel::prelude::*;
-use primitives::{AssetId, AssetMarket, AssetPriceInfo};
+use primitives::{AssetId, AssetMarket, AssetPriceInfo, PriceData};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
@@ -140,6 +140,46 @@ impl Price {
             asset_id,
             price: self.as_primitive(),
             market: self.as_market_primitive(),
+        }
+    }
+
+    pub fn as_price_data(&self) -> PriceData {
+        PriceData {
+            id: self.id.clone(),
+            price: self.price,
+            price_change_percentage_24h: self.price_change_percentage_24h,
+            all_time_high: self.all_time_high,
+            all_time_high_date: self.all_time_high_date.map(|d| d.and_utc()),
+            all_time_low: self.all_time_low,
+            all_time_low_date: self.all_time_low_date.map(|d| d.and_utc()),
+            market_cap: self.market_cap,
+            market_cap_fdv: self.market_cap_fdv,
+            market_cap_rank: self.market_cap_rank,
+            total_volume: self.total_volume,
+            circulating_supply: self.circulating_supply,
+            total_supply: self.total_supply,
+            max_supply: self.max_supply,
+            last_updated_at: self.last_updated_at.and_utc(),
+        }
+    }
+
+    pub fn from_price_data(data: PriceData) -> Self {
+        Price {
+            id: data.id,
+            price: data.price,
+            price_change_percentage_24h: data.price_change_percentage_24h,
+            all_time_high: data.all_time_high,
+            all_time_high_date: data.all_time_high_date.map(|d| d.naive_utc()),
+            all_time_low: data.all_time_low,
+            all_time_low_date: data.all_time_low_date.map(|d| d.naive_utc()),
+            market_cap: data.market_cap,
+            market_cap_fdv: data.market_cap_fdv,
+            market_cap_rank: data.market_cap_rank,
+            total_volume: data.total_volume,
+            circulating_supply: data.circulating_supply,
+            total_supply: data.total_supply,
+            max_supply: data.max_supply,
+            last_updated_at: data.last_updated_at.naive_utc(),
         }
     }
 }
