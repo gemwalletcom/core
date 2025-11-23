@@ -1,4 +1,4 @@
-use alloy_primitives::{address, Address};
+use alloy_primitives::{Address, address};
 use primitives::{AssetId, Chain};
 
 #[derive(Debug, Clone, Copy)]

@@ -8,6 +8,10 @@ description.workspace = true
 repository.workspace = true
 documentation.workspace = true
 
+[features]
+default = []
+yield_integration_tests = ["gem_jsonrpc/reqwest", "gem_client/reqwest", "tokio/rt-multi-thread"]
+
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
@@ -16,3 +20,10 @@ gem_evm = { path = "../gem_evm", features = ["rpc"] }
 primitives = { path = "../primitives" }
 async-trait = { workspace = true }
 serde_json = { workspace = true }
+tokio = { workspace = true, features = ["macros"] }
+
+[dev-dependencies]
+gem_client = { path = "../gem_client", features = ["reqwest"] }
+gem_jsonrpc = { path = "../gem_jsonrpc", features = ["reqwest"] }
+reqwest = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
