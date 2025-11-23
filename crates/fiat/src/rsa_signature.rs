@@ -1,50 +1,22 @@
-use std::error::Error;
-use std::fmt;
-
 use base64::{Engine as _, engine::general_purpose};
 use pem_rfc7468::decode_vec;
-use ring::error::KeyRejected;
 use ring::rand::SystemRandom;
 use ring::signature::{RSA_PSS_SHA512, RsaKeyPair};
 
-#[derive(Debug)]
-struct SignatureError(String);
-
-impl SignatureError {
-    fn new(message: String) -> Self {
-        Self(message)
-    }
-}
-
-impl fmt::Display for SignatureError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for SignatureError {}
-
 pub fn generate_rsa_pss_signature(private_key_base_64: &str, message: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let decoded = general_purpose::STANDARD
-        .decode(private_key_base_64)
-        .map_err(|err| SignatureError::new(format!("Invalid base64 private key: {err}")))?;
-    let key_der = if let Ok(pem_str) = String::from_utf8(decoded.clone()) {
-        if pem_str.contains("BEGIN") {
-            let (_, der) = decode_vec(pem_str.as_bytes()).map_err(|err| SignatureError::new(format!("Invalid PEM key: {err}")))?;
+    let decoded = general_purpose::STANDARD.decode(private_key_base_64)?;
+    let key_der = match std::str::from_utf8(&decoded) {
+        Ok(pem_str) if pem_str.contains("BEGIN") => {
+            let (_, der) = decode_vec(pem_str.as_bytes())?;
             der
-        } else {
-            decoded
         }
-    } else {
-        decoded
+        _ => decoded,
     };
 
-    let key_pair = RsaKeyPair::from_pkcs8(&key_der).map_err(|err: KeyRejected| SignatureError::new(format!("Invalid PKCS#8 key: {err}")))?;
+    let key_pair = RsaKeyPair::from_pkcs8(&key_der)?;
     let mut signature = vec![0u8; key_pair.public().modulus_len()];
     let rng = SystemRandom::new();
-    key_pair
-        .sign(&RSA_PSS_SHA512, &rng, message.as_bytes(), &mut signature)
-        .map_err(|err| SignatureError::new(format!("Failed to sign message: {err}")))?;
+    key_pair.sign(&RSA_PSS_SHA512, &rng, message.as_bytes(), &mut signature)?;
 
     Ok(general_purpose::STANDARD.encode(signature))
 }
