@@ -1,4 +1,5 @@
 use cacher::CacheError;
+use fiat::error::FiatQuoteError;
 use primitives::ResponseResult;
 use rocket::response::{Responder, Response};
 use rocket::serde::json::Json;
@@ -52,6 +53,12 @@ impl From<DatabaseError> for ApiError {
     }
 }
 
+impl From<FiatQuoteError> for ApiError {
+    fn from(error: FiatQuoteError) -> Self {
+        ApiError::BadRequest(error.to_string())
+    }
+}
+
 impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
     fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
         let mut current_error: &dyn std::error::Error = error.as_ref();
@@ -71,7 +78,7 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
             }
         }
 
-        ApiError::InternalServerError("Service error".to_string())
+        ApiError::InternalServerError(format!("Service error: {}", error))
     }
 }
 

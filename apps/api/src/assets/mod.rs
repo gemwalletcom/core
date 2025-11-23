@@ -1,36 +1,12 @@
 pub mod cilent;
+mod filter;
+mod model;
+
 use crate::responders::{ApiError, ApiResponse};
-pub use cilent::{AssetsClient, SearchClient, SearchRequest};
-use primitives::{Asset, AssetBasic, AssetFull, AssetId, Chain, SearchResponse};
+pub use cilent::{AssetsClient, SearchClient};
+pub use model::SearchRequest;
+use primitives::{Asset, AssetBasic, AssetFull, AssetId, SearchResponse};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
-
-use std::str::FromStr;
-
-impl SearchRequest {
-    fn new(query: String, chains: Option<String>, tags: Option<String>, limit: Option<usize>, offset: Option<usize>) -> Self {
-        let chains = chains
-            .unwrap_or_default()
-            .split(',')
-            .flat_map(Chain::from_str)
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>();
-
-        let tags = tags
-            .unwrap_or_default()
-            .split(',')
-            .filter(|x| !x.is_empty())
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>();
-
-        Self {
-            query,
-            chains,
-            tags,
-            limit: limit.unwrap_or(50),
-            offset: offset.unwrap_or(0),
-        }
-    }
-}
 
 #[get("/assets/<asset_id>")]
 pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Result<ApiResponse<AssetFull>, ApiError> {
@@ -65,9 +41,9 @@ pub async fn add_asset(
 
 #[get("/assets/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_assets_search(
-    query: String,
-    chains: Option<String>,
-    tags: Option<String>,
+    query: &str,
+    chains: Option<&str>,
+    tags: Option<&str>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<SearchClient>>,
@@ -88,9 +64,9 @@ pub async fn get_assets_by_device_id(
 
 #[get("/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_search(
-    query: String,
-    chains: Option<String>,
-    tags: Option<String>,
+    query: &str,
+    chains: Option<&str>,
+    tags: Option<&str>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<SearchClient>>,

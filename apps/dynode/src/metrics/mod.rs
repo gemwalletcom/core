@@ -1,17 +1,16 @@
 use crate::config::MetricsConfig;
+use metrics::MetricsRegistry;
 use prometheus_client::encoding::EncodeLabelSet;
-use prometheus_client::encoding::text::encode;
 use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::metrics::histogram::{Histogram, exponential_buckets};
-use prometheus_client::registry::Registry;
 use regex::Regex;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct Metrics {
-    registry: Arc<Registry>,
+    registry: Arc<MetricsRegistry>,
     proxy_requests: Family<ProxyRequestLabels, Counter>,
     proxy_requests_by_user_agent: Family<ProxyRequestByAgentLabels, Gauge>,
     proxy_requests_by_method: Family<ProxyRequestByMethodLabels, Counter>,
@@ -27,36 +26,36 @@ pub struct Metrics {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct ProxyRequestLabels {
-    host: String,
+    chain: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct ProxyRequestByAgentLabels {
-    host: String,
+    chain: String,
     user_agent: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct ProxyRequestByMethodLabels {
-    host: String,
+    chain: String,
     method: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct HostStateLabels {
-    host: String,
+    chain: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct HostCurrentStateLabels {
+    chain: String,
     host: String,
-    remote_host: String,
 }
 
 #[derive(Clone, Hash, PartialEq, Eq, Debug, EncodeLabelSet)]
 struct ResponseLabels {
+    chain: String,
     host: String,
-    remote_host: String,
     path: String,
     method: String,
     status: u16,
@@ -64,7 +63,7 @@ struct ResponseLabels {
 
 #[derive(Clone, Hash, PartialEq, Eq, Debug, EncodeLabelSet)]
 pub struct CacheLabels {
-    host: String,
+    chain: String,
     path: String,
 }
 
@@ -87,7 +86,8 @@ impl Metrics {
         let cache_misses = Family::<CacheLabels, Counter>::default();
         let node_switches = Family::<NodeSwitchLabels, Counter>::default();
 
-        let mut registry = Registry::with_prefix(&config.prefix);
+        let mut metrics_registry = MetricsRegistry::with_prefix(&config.prefix);
+        let registry = metrics_registry.registry_mut();
         registry.register("proxy_requests", "Proxy requests by host", proxy_requests.clone());
         registry.register(
             "proxy_requests_by_user_agent_total",
@@ -111,7 +111,7 @@ impl Metrics {
         registry.register("node_switches_total", "Node switches by chain and host", node_switches.clone());
 
         Self {
-            registry: Arc::new(registry),
+            registry: Arc::new(metrics_registry),
             proxy_requests,
             proxy_requests_by_user_agent,
             proxy_requests_by_method,
@@ -125,35 +125,35 @@ impl Metrics {
         }
     }
 
-    pub fn add_proxy_request(&self, host: &str, user_agent: &str) {
-        self.proxy_requests.get_or_create(&ProxyRequestLabels { host: host.to_string() }).inc();
+    pub fn add_proxy_request(&self, chain: &str, user_agent: &str) {
+        self.proxy_requests.get_or_create(&ProxyRequestLabels { chain: chain.to_string() }).inc();
 
         let user_agent = self.categorize_user_agent(user_agent);
         self.proxy_requests_by_user_agent
             .get_or_create(&ProxyRequestByAgentLabels {
-                host: host.to_string(),
+                chain: chain.to_string(),
                 user_agent,
             })
             .inc();
     }
 
-    pub fn add_proxy_request_by_method(&self, host: &str, method: &str) {
+    pub fn add_proxy_request_by_method(&self, chain: &str, method: &str) {
         let method = self.truncate_method(method);
         self.proxy_requests_by_method
             .get_or_create(&ProxyRequestByMethodLabels {
-                host: host.to_string(),
+                chain: chain.to_string(),
                 method,
             })
             .inc();
     }
 
-    pub fn add_proxy_request_batch(&self, host: &str, user_agent: &str, methods: &[String]) {
-        self.proxy_requests.get_or_create(&ProxyRequestLabels { host: host.to_string() }).inc();
+    pub fn add_proxy_request_batch(&self, chain: &str, user_agent: &str, methods: &[String]) {
+        self.proxy_requests.get_or_create(&ProxyRequestLabels { chain: chain.to_string() }).inc();
 
         let user_agent = self.categorize_user_agent(user_agent);
         self.proxy_requests_by_user_agent
             .get_or_create(&ProxyRequestByAgentLabels {
-                host: host.to_string(),
+                chain: chain.to_string(),
                 user_agent,
             })
             .inc();
@@ -162,51 +162,61 @@ impl Metrics {
             let method = self.truncate_method(method);
             self.proxy_requests_by_method
                 .get_or_create(&ProxyRequestByMethodLabels {
-                    host: host.to_string(),
+                    chain: chain.to_string(),
                     method,
                 })
                 .inc();
         }
     }
 
-    pub fn add_proxy_response(&self, host: &str, path: &str, method: &str, remote_host: &str, status: u16, latency: u128) {
+    pub fn add_proxy_response(&self, chain: &str, path: &str, method: &str, host: &str, status: u16, latency: u128) {
         let path = self.truncate_path(path);
         let method = self.truncate_method(method);
         self.proxy_response_latency
             .get_or_create(&ResponseLabels {
-                host: host.to_string(),
+                chain: chain.to_string(),
                 path,
                 method,
-                remote_host: remote_host.to_string(),
+                host: host.to_string(),
                 status,
             })
             .observe(latency as f64);
     }
 
-    pub fn set_node_host_current(&self, host: &str, remote_host: &str) {
+    pub fn set_node_host_current(&self, chain: &str, host: &str) {
         self.node_host_current
             .get_or_create(&HostCurrentStateLabels {
+                chain: chain.to_string(),
                 host: host.to_string(),
-                remote_host: remote_host.to_string(),
             })
             .set(1);
     }
 
     #[allow(dead_code)]
-    pub fn set_node_block_latest(&self, host: &str, value: u64) {
+    pub fn set_node_block_latest(&self, chain: &str, value: u64) {
         self.node_block_latest
-            .get_or_create(&HostStateLabels { host: host.to_string() })
+            .get_or_create(&HostStateLabels { chain: chain.to_string() })
             .set(value as i64);
     }
 
-    pub fn add_cache_hit(&self, host: &str, path: &str) {
+    pub fn add_cache_hit(&self, chain: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_hits.get_or_create(&CacheLabels { host: host.to_string(), path }).inc();
+        self.cache_hits
+            .get_or_create(&CacheLabels {
+                chain: chain.to_string(),
+                path,
+            })
+            .inc();
     }
 
-    pub fn add_cache_miss(&self, host: &str, path: &str) {
+    pub fn add_cache_miss(&self, chain: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_misses.get_or_create(&CacheLabels { host: host.to_string(), path }).inc();
+        self.cache_misses
+            .get_or_create(&CacheLabels {
+                chain: chain.to_string(),
+                path,
+            })
+            .inc();
     }
 
     pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str) {
@@ -220,13 +230,15 @@ impl Metrics {
     }
 
     pub fn get_metrics(&self) -> String {
-        let mut buffer = String::new();
-        encode(&mut buffer, &self.registry).expect("failed to encode metrics");
-        buffer
+        self.registry.encode()
     }
 
     fn truncate_method(&self, method: &str) -> String {
-        self.truncate_path(method)
+        if method.contains('/') {
+            self.truncate_path(method)
+        } else {
+            method.to_string()
+        }
     }
 
     fn truncate_path(&self, path: &str) -> String {
@@ -313,5 +325,15 @@ mod tests {
             let result = metrics.truncate_path(input);
             assert_eq!(result, expected, "Failed for input: {}", input);
         }
+    }
+
+    #[test]
+    fn test_truncate_method() {
+        let m = create_test_metrics();
+
+        assert_eq!(m.truncate_method("eth_getBlockByNumber"), "eth_getBlockByNumber");
+        assert_eq!(m.truncate_method("suix_getLatestSuiSystemState"), "suix_getLatestSuiSystemState");
+        assert_eq!(m.truncate_method("/api/v1/blocks/by_height/12345"), "/api/v1/blocks/by_height/:number");
+        assert_eq!(m.truncate_method("/v1/verylongsegmentthatisgreaterthan20characters"), "/v1/:value");
     }
 }

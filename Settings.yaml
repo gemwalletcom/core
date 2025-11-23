@@ -2,19 +2,20 @@ redis:
   url: "redis://default:@localhost:6379?protocol=resp3"
 postgres:
   url: "postgres://username:password@localhost/api"
-
+  pool: 2
 meilisearch:
   url: "http://localhost:7700"
   key: "test"
 rabbitmq:
   url: "amqp://username:password@localhost:5672"
   prefetch: 50
-
 coingecko:
   key:
     secret: ""
 fiat:
-  timeout: 3
+  timeout: 3s
+  validate:
+    subscription: false
 moonpay:
   key:
     public: ""
@@ -23,6 +24,7 @@ transak:
   key:
     public: ""
     secret: ""
+  referrer_domain: "gemwallet.com"
 mercuryo:
   key:
     public: ""
@@ -37,6 +39,7 @@ paybis:
   key:
     public: ""
     secret: ""
+    private: ""
 pricer:
   timer: 60
   outdated: 604800
@@ -168,7 +171,7 @@ chains:
   algorand:
     url: https://mainnet-api.algonode.cloud
   polkadot:
-    url: https://polkadot-public-sidecar.parity-chains.parity.io
+    url: https://polkadot-asset-hub-public-sidecar.parity-chains.parity.io
   cardano:
     url: ""
   abstract:
@@ -185,6 +188,8 @@ chains:
     url: https://api.hyperliquid.xyz
   monad:
     url: https://rpc.monad.xyz
+  xlayer:
+    url: https://rpc.xlayer.tech
 
 swap:
   jupiter:
@@ -206,7 +211,7 @@ swap:
       percent: 0
       address: ""
 scan:
-  timeout_ms: 1200 # ms
+  timeout: 1200ms
   goplus:
     url: "https://api.gopluslabs.io"
     key:
@@ -219,7 +224,7 @@ scan:
       secret: ""
 
 parser:
-  timeout: 1000
+  timeout: 1s
 
 pusher:
   url: "http://localhost:8088"
@@ -230,6 +235,9 @@ daemon:
   service: ""
   search:
     assets_update_interval: 1800
+  transactions:
+    amount:
+      min: 0.05 # usd
 
 api:
   service: ""

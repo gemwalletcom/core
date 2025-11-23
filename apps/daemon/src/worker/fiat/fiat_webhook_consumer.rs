@@ -5,18 +5,17 @@ use fiat::FiatProvider;
 use fiat::FiatProviderFactory;
 use gem_tracing::{error_with_fields, info_with_fields};
 use settings::Settings;
-use storage::DatabaseClient;
+use storage::Database;
 use streamer::consumer::MessageConsumer;
 use streamer::{FiatWebhook, FiatWebhookPayload};
 
 pub struct FiatWebhookConsumer {
-    pub database: DatabaseClient,
+    pub database: Database,
     pub providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
 }
 
 impl FiatWebhookConsumer {
-    pub fn new(database_url: &str, settings: Settings) -> Self {
-        let database = DatabaseClient::new(database_url);
+    pub fn new(database: Database, settings: Settings) -> Self {
         let providers = FiatProviderFactory::new_providers(settings);
 
         Self { database, providers }
@@ -25,11 +24,11 @@ impl FiatWebhookConsumer {
 
 #[async_trait]
 impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
-    async fn should_process(&mut self, _payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, _payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
 
-    async fn process(&mut self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         for provider in &self.providers {
             if provider.name() == payload.provider {
                 let transaction = match &payload.payload {
@@ -60,7 +59,7 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                     status = format!("{:?}", transaction.status)
                 );
 
-                match self.database.fiat().add_fiat_transaction(transaction) {
+                match self.database.client()?.fiat().add_fiat_transaction(transaction) {
                     Ok(_) => return Ok(true),
                     Err(e) => {
                         error_with_fields!("add_fiat_transaction", &e, provider = provider.name().id());

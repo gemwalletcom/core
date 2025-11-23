@@ -41,6 +41,7 @@ pub enum EVMChain {
     Unichain,
     Hyperliquid,
     Monad,
+    XLayer,
 }
 
 impl EVMChain {
@@ -69,6 +70,7 @@ impl EVMChain {
             Self::Berachain => 1_000_000_000,   // 1 Gwei
             Self::Hyperliquid => 1_000_000_000, // 1 Gwei
             Self::Monad => 1_000_000_000,       // 1 Gwei
+            Self::XLayer => 1_000_000_000,      // 1 Gwei
         }
     }
 
@@ -91,7 +93,8 @@ impl EVMChain {
             | Self::Sonic
             | Self::Berachain
             | Self::Hyperliquid
-            | Self::Monad => ChainStack::Native,
+            | Self::Monad
+            | Self::XLayer => ChainStack::Native,
         }
     }
 
@@ -110,6 +113,7 @@ impl EVMChain {
                 | Self::Linea
                 | Self::Celo
                 | Self::Mantle
+                | Self::XLayer
         )
     }
 
@@ -145,6 +149,7 @@ impl EVMChain {
             Self::Manta => Some("0x0dc808adce2099a9f62aa87d9670745aba741746"),
             Self::Plasma => Some("0x6100E367285b01F48D07953803A2d8dCA5D19873"), // Wrapped Plasma (WXPL)
             Self::Monad => Some("0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A"),
+            Self::XLayer => Some("0xe538905cf8410324e03a5a23c1c177a474d59b2b"), // WOKB
         }
     }
 

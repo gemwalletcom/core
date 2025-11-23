@@ -1,10 +1,13 @@
 use super::models::{CetusPool, Request, Response};
-use crate::{SwapperError, alien::X_CACHE_TTL};
+use crate::{SwapperError, alien::X_CACHE_TTL, config::get_swap_api_url};
 use gem_client::Client;
 use std::collections::HashMap;
 
-pub const CETUS_API_URL: &str = "https://api.gemwallet.com/swap/cetus";
 const POOL_CACHE_TTL: u64 = 60 * 60; // 1 hour
+
+pub fn cetus_api_url() -> String {
+    get_swap_api_url("cetus")
+}
 
 #[derive(Clone, Debug)]
 pub struct CetusClient<C>

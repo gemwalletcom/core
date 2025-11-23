@@ -6,22 +6,22 @@ use primitives::{
     AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
     Subscription, Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
 };
-use storage::DatabaseClient;
+use storage::Database;
 
 use api_connector::pusher::model::Message;
 
 pub struct Pusher {
-    database_client: DatabaseClient,
+    database: Database,
 }
 
 impl Pusher {
-    pub fn new(database_url: &str) -> Self {
-        let database_client = DatabaseClient::new(database_url);
-        Self { database_client }
+    pub fn new(database: Database) -> Self {
+        Self { database }
     }
 
-    pub fn get_address(&mut self, chain: Chain, address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let result = self.database_client.scan_addresses().get_scan_address(chain, address);
+    pub fn get_address(&self, chain: Chain, address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let mut client = self.database.client()?;
+        let result = client.scan_addresses().get_scan_address(chain, address);
         match result {
             Ok(address) => Ok(address.name.unwrap_or_default()),
             Err(_) => Ok(AddressFormatter::short(chain, address)),
@@ -29,7 +29,7 @@ impl Pusher {
     }
 
     pub fn message(
-        &mut self,
+        &self,
         localizer: LanguageLocalizer,
         transaction: Transaction,
         subscription: Subscription,
@@ -137,14 +137,13 @@ impl Pusher {
     }
 
     pub async fn get_messages(
-        &mut self,
+        &self,
         device: primitives::Device,
         transaction: Transaction,
         subscription: Subscription,
         assets: Vec<Asset>,
     ) -> Result<Vec<GorushNotification>, Box<dyn Error + Send + Sync>> {
-        // only push if push is enabled and token is set
-        if !device.is_push_enabled || device.token.is_empty() {
+        if !device.can_receive_push_notification() {
             return Ok(vec![]);
         }
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
@@ -161,7 +160,7 @@ impl Pusher {
             data: serde_json::to_value(&notification_transaction).ok(),
         };
 
-        let notification = GorushNotification::new(vec![device.token], device.platform, message.title, message.message.unwrap_or_default(), data);
+        let notification = GorushNotification::from_device(device, message.title, message.message.unwrap_or_default(), data);
 
         Ok(vec![notification])
     }

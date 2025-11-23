@@ -1,4 +1,5 @@
-use primitives::Chain;
+use primitives::currency::Currency;
+use primitives::{Chain, FiatQuoteType};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::request::FromParam;
 use std::str::FromStr;
@@ -18,5 +19,29 @@ impl<'r> FromFormField<'r> for ChainParam {
         Chain::from_str(field.value)
             .map(ChainParam)
             .map_err(|_| form::Error::validation(format!("Invalid chain: {}", field.value)).into())
+    }
+}
+
+pub struct FiatQuoteTypeParam(pub FiatQuoteType);
+
+impl<'r> FromParam<'r> for FiatQuoteTypeParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        FiatQuoteType::from_str(param).map(FiatQuoteTypeParam).map_err(|_| param)
+    }
+}
+
+pub struct CurrencyParam(pub Currency);
+
+impl<'r> FromFormField<'r> for CurrencyParam {
+    fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
+        Currency::from_str(field.value).map(CurrencyParam).or_else(|_| Ok(CurrencyParam(Currency::USD)))
+    }
+}
+
+impl CurrencyParam {
+    pub fn as_string(&self) -> String {
+        self.0.as_ref().to_string()
     }
 }

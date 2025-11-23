@@ -175,6 +175,10 @@ diesel::table! {
         #[max_length = 32]
         name -> Varchar,
         enabled -> Bool,
+        buy_enabled -> Bool,
+        sell_enabled -> Bool,
+        priority -> Nullable<Int4>,
+        priority_threshold_bps -> Nullable<Int4>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -189,6 +193,34 @@ diesel::table! {
         #[max_length = 32]
         alpha2 -> Varchar,
         is_allowed -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    fiat_quotes (id) {
+        #[max_length = 128]
+        id -> Varchar,
+        #[max_length = 128]
+        provider_id -> Varchar,
+        #[max_length = 128]
+        asset_id -> Varchar,
+        fiat_amount -> Float8,
+        #[max_length = 32]
+        fiat_currency -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    fiat_quotes_requests (id) {
+        id -> Int4,
+        #[max_length = 128]
+        device_id -> Varchar,
+        #[max_length = 128]
+        quote_id -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -631,6 +663,9 @@ diesel::joinable!(devices -> fiat_rates (currency));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_providers_countries -> fiat_providers (provider));
+diesel::joinable!(fiat_quotes -> assets (asset_id));
+diesel::joinable!(fiat_quotes -> fiat_providers (provider_id));
+diesel::joinable!(fiat_quotes_requests -> fiat_quotes (quote_id));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
 diesel::joinable!(nft_assets -> chains (chain));
@@ -678,6 +713,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_assets,
     fiat_providers,
     fiat_providers_countries,
+    fiat_quotes,
+    fiat_quotes_requests,
     fiat_rates,
     fiat_transactions,
     link_types,

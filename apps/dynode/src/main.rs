@@ -1,9 +1,10 @@
 use std::net::IpAddr;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use dynode::config::NodeConfig;
 use dynode::metrics::Metrics;
-use dynode::monitoring::NodeService;
+use dynode::monitoring::{NodeMonitor, NodeService};
 use dynode::proxy::{ProxyRequestBuilder, ProxyResponse};
 use dynode::response::{ErrorResponse, ProxyRocketResponse};
 use gem_tracing::{error_with_fields, info_with_fields};
@@ -70,6 +71,11 @@ async fn health_endpoint() -> Status {
     Status::Ok
 }
 
+#[rocket::get("/")]
+async fn root_endpoint() -> Status {
+    Status::Ok
+}
+
 async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, ErrorResponse> {
     let body = read_request_body(data).await?;
     let headers = build_header_map(request)?;
@@ -133,11 +139,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         config.retry.clone(),
         config.request.clone(),
     );
-    let node_service_clone = node_service.clone();
+    if node_service.monitoring_config.enabled {
+        let monitor = NodeMonitor::new(
+            node_service.domains.clone(),
+            Arc::clone(&node_service.nodes),
+            Arc::clone(&node_service.metrics),
+            node_service.monitoring_config.clone(),
+        );
 
-    rocket::tokio::spawn(async move {
-        node_service_clone.start_monitoring().await;
-    });
+        rocket::tokio::spawn(async move {
+            monitor.start_monitoring().await;
+        });
+    }
 
     info_with_fields!(
         "Server started",
@@ -148,7 +161,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let proxy_server = rocket::custom(Config::figment().merge(("address", node_address)).merge(("port", config.port)))
         .manage(node_service)
         .mount("/", proxy_routes())
-        .mount("/", rocket::routes![health_endpoint]);
+        .mount("/", rocket::routes![health_endpoint, root_endpoint]);
 
     let metrics_server = rocket::custom(Config::figment().merge(("address", metrics_address)).merge(("port", config.metrics.port)))
         .manage(metrics)

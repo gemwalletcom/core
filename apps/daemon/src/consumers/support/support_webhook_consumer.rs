@@ -3,7 +3,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use gem_tracing::{error_with_fields, info_with_fields};
 use settings::Settings;
-use storage::DatabaseClient;
+use storage::Database;
 use streamer::consumer::MessageConsumer;
 use streamer::{StreamProducer, SupportWebhookPayload};
 
@@ -16,7 +16,7 @@ pub struct SupportWebhookConsumer {
 
 impl SupportWebhookConsumer {
     pub async fn new(settings: &Settings) -> Result<Self, Box<dyn Error + Send + Sync>> {
-        let database = Box::new(DatabaseClient::new(&settings.postgres.url));
+        let database = Database::new(&settings.postgres.url, settings.postgres.pool);
         let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "daemon_support_producer").await?;
         let support_client = SupportClient::new(database, stream_producer);
         Ok(Self { support_client })
@@ -25,11 +25,11 @@ impl SupportWebhookConsumer {
 
 #[async_trait]
 impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
-    async fn should_process(&mut self, _payload: SupportWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, _payload: SupportWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
 
-    async fn process(&mut self, payload: SupportWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: SupportWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let webhook_payload = match serde_json::from_value::<ChatwootWebhookPayload>(payload.data.clone()) {
             Ok(payload) => payload,
             Err(e) => {

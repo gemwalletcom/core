@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, Device, Platform, Transaction};
+use crate::{AssetId, Transaction};
 
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -14,51 +14,6 @@ pub enum PushNotificationTypes {
     BuyAsset,   // PushNotificationBuyAsset payload
     SwapAsset,  // PushNotificationSwapAsset payload
     Support,    // PushNotificationSupport payload
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct GorushNotifications {
-    pub notifications: Vec<GorushNotification>,
-}
-
-// Notification used to send to Pusher
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct GorushNotification {
-    pub tokens: Vec<String>,
-    pub platform: i32,
-    pub title: String,
-    pub message: String,
-    pub topic: Option<String>,
-    pub data: PushNotification,
-}
-
-impl GorushNotification {
-    pub fn new(tokens: Vec<String>, platform: Platform, title: String, message: String, data: PushNotification) -> Self {
-        Self {
-            tokens,
-            platform: platform.as_i32(),
-            title,
-            message,
-            topic: None,
-            data,
-        }
-    }
-
-    pub fn from_device(device: Device, title: String, message: String, data: PushNotification) -> Self {
-        Self {
-            tokens: vec![device.token],
-            platform: device.platform.as_i32(),
-            title,
-            message,
-            topic: None,
-            data,
-        }
-    }
-
-    pub fn with_topic(mut self, topic: Option<String>) -> Self {
-        self.topic = topic;
-        self
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

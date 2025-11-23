@@ -11,8 +11,8 @@
     "[yaml]": {
         "editor.formatOnSave": true
     },
-    "search.useIgnoreFiles": true, // respect .gitignore
-    "search.useGlobalIgnoreFiles": true, // also respect global .gitignore
+    "search.useIgnoreFiles": true,
+    "search.useGlobalIgnoreFiles": true,
     "search.exclude": {
         "**/target/**": true,
         "**/.git/**": true

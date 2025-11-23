@@ -7,6 +7,7 @@ pub mod call_decoder;
 pub mod chainlink;
 pub mod constants;
 pub mod contracts;
+pub mod domain;
 pub mod eip712;
 pub mod ether_conv;
 pub mod everstake;
@@ -16,6 +17,7 @@ pub mod multicall3;
 pub mod permit2;
 #[cfg(feature = "rpc")]
 pub mod registry;
+pub mod siwe;
 pub mod thorchain;
 pub mod uniswap;
 pub mod weth;
@@ -27,6 +29,9 @@ pub mod rpc;
 
 #[cfg(feature = "rpc")]
 pub mod provider;
+
+#[cfg(any(test, feature = "testkit"))]
+pub mod testkit;
 
 pub use address::ethereum_address_checksum;
 pub use eip712::{EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue, eip712_domain_types};

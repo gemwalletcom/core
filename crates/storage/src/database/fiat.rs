@@ -20,6 +20,9 @@ pub(crate) trait FiatStore {
     fn get_fiat_rate(&mut self, currency: &str) -> Result<FiatRate, diesel::result::Error>;
     fn get_fiat_providers(&mut self) -> Result<Vec<FiatProvider>, diesel::result::Error>;
     fn get_fiat_assets_is_enabled(&mut self) -> Result<Vec<String>, diesel::result::Error>;
+    fn add_fiat_quotes(&mut self, quotes: Vec<FiatQuote>) -> Result<usize, diesel::result::Error>;
+    fn get_fiat_quote(&mut self, quote_id: &str) -> Result<FiatQuote, diesel::result::Error>;
+    fn add_fiat_quote_request(&mut self, request: FiatQuoteRequest) -> Result<usize, diesel::result::Error>;
 }
 
 impl FiatStore for DatabaseClient {
@@ -151,6 +154,35 @@ impl FiatStore for DatabaseClient {
             .flatten()
             .collect::<Vec<String>>())
     }
+
+    fn add_fiat_quotes(&mut self, quotes: Vec<FiatQuote>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_quotes::dsl::*;
+        diesel::insert_into(fiat_quotes)
+            .values(&quotes)
+            .on_conflict(id)
+            .do_update()
+            .set((
+                provider_id.eq(excluded(provider_id)),
+                asset_id.eq(excluded(asset_id)),
+                fiat_amount.eq(excluded(fiat_amount)),
+                fiat_currency.eq(excluded(fiat_currency)),
+            ))
+            .execute(&mut self.connection)
+    }
+
+    fn get_fiat_quote(&mut self, quote_id: &str) -> Result<FiatQuote, diesel::result::Error> {
+        use crate::schema::fiat_quotes::dsl::*;
+        fiat_quotes.filter(id.eq(quote_id)).select(FiatQuote::as_select()).first(&mut self.connection)
+    }
+
+    fn add_fiat_quote_request(&mut self, request: FiatQuoteRequest) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_quotes_requests::dsl::*;
+        diesel::insert_into(fiat_quotes_requests)
+            .values(&request)
+            .on_conflict((device_id, quote_id))
+            .do_nothing()
+            .execute(&mut self.connection)
+    }
 }
 
 // Public methods for backward compatibility
@@ -205,5 +237,13 @@ impl DatabaseClient {
 
     pub fn get_fiat_assets_is_enabled(&mut self) -> Result<Vec<String>, diesel::result::Error> {
         FiatStore::get_fiat_assets_is_enabled(self)
+    }
+
+    pub fn add_fiat_quotes(&mut self, quotes: Vec<FiatQuote>) -> Result<usize, diesel::result::Error> {
+        FiatStore::add_fiat_quotes(self, quotes)
+    }
+
+    pub fn add_fiat_quote_request(&mut self, request: FiatQuoteRequest) -> Result<usize, diesel::result::Error> {
+        FiatStore::add_fiat_quote_request(self, request)
     }
 }

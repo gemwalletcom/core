@@ -24,7 +24,6 @@ pub(crate) trait AssetsStore {
     fn get_assets_all(&mut self) -> Result<Vec<Asset>, diesel::result::Error>;
     fn add_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error>;
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, diesel::result::Error>;
-    fn update_asset(&mut self, asset_id: String, update: AssetUpdate) -> Result<usize, diesel::result::Error>;
     fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error>;
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<Asset>, diesel::result::Error>;
     fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error>;
@@ -76,19 +75,6 @@ impl AssetsStore for DatabaseClient {
         })
     }
 
-    fn update_asset(&mut self, asset_id: String, update: AssetUpdate) -> Result<usize, diesel::result::Error> {
-        let target = assets.find(&asset_id);
-
-        match update {
-            AssetUpdate::IsSwappable(value) => diesel::update(target).set(is_swappable.eq(value)).execute(&mut self.connection),
-            AssetUpdate::IsBuyable(value) => diesel::update(target).set(is_buyable.eq(value)).execute(&mut self.connection),
-            AssetUpdate::IsSellable(value) => diesel::update(target).set(is_sellable.eq(value)).execute(&mut self.connection),
-            AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(value)).execute(&mut self.connection),
-            AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(value)).execute(&mut self.connection),
-            AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(value)).execute(&mut self.connection),
-        }
-    }
-
     fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error> {
         diesel::insert_into(assets)
             .values(values)
@@ -127,8 +113,8 @@ impl AssetsStore for DatabaseClient {
     }
 
     fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(Asset, Option<Price>)>, diesel::result::Error> {
-        use crate::schema::prices_assets;
         use crate::schema::prices;
+        use crate::schema::prices_assets;
 
         assets
             .filter(id.eq_any(asset_ids))

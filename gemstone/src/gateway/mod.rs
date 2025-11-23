@@ -1,4 +1,5 @@
 use crate::alien::{AlienProvider, new_alien_client};
+use crate::api_client::GemApiClient;
 use crate::models::*;
 use crate::network::jsonrpc_client_with_chain;
 use chain_traits::ChainTraits;
@@ -20,7 +21,7 @@ use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
-use primitives::{BitcoinChain, Chain, ChartPeriod, EVMChain, chain_cosmos::CosmosChain};
+use primitives::{BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -59,6 +60,7 @@ pub struct GemGateway {
     pub provider: Arc<dyn AlienProvider>,
     pub preferences: Arc<dyn GemPreferences>,
     pub secure_preferences: Arc<dyn GemPreferences>,
+    pub api_client: GemApiClient,
 }
 
 impl std::fmt::Debug for GemGateway {
@@ -67,6 +69,7 @@ impl std::fmt::Debug for GemGateway {
             .field("provider", &"<AlienProvider>")
             .field("preferences", &"<GemPreferences>")
             .field("secure_preferences", &"<GemPreferences>")
+            .field("api_client", &self.api_client)
             .finish()
     }
 }
@@ -136,7 +139,8 @@ impl GemGateway {
             | Chain::Unichain
             | Chain::Hyperliquid
             | Chain::Plasma
-            | Chain::Monad => Ok(Arc::new(EthereumClient::new(
+            | Chain::Monad
+            | Chain::XLayer => Ok(Arc::new(EthereumClient::new(
                 jsonrpc_client_with_chain(self.provider.clone(), chain),
                 EVMChain::from_chain(chain).unwrap(),
             ))),
@@ -158,11 +162,13 @@ impl GemGatewayEstimateFee for GemGateway {
 #[uniffi::export]
 impl GemGateway {
     #[uniffi::constructor]
-    pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>) -> Self {
+    pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
+        let api_client = GemApiClient::new(api_url, provider.clone());
         Self {
             provider,
             preferences,
             secure_preferences,
+            api_client,
         }
     }
 
@@ -172,7 +178,7 @@ impl GemGateway {
             .await?
             .get_balance_coin(address)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(balance)
     }
 
@@ -182,7 +188,7 @@ impl GemGateway {
             .await?
             .get_balance_tokens(address, token_ids)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(balance)
     }
 
@@ -192,7 +198,7 @@ impl GemGateway {
             .await?
             .get_balance_staking(address)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(balance)
     }
 
@@ -202,7 +208,7 @@ impl GemGateway {
         let validators = provider
             .get_staking_validators(apy)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(validators)
     }
 
@@ -212,7 +218,7 @@ impl GemGateway {
             .await?
             .get_staking_delegations(address)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(delegations)
     }
 
@@ -222,7 +228,7 @@ impl GemGateway {
             .await?
             .transaction_broadcast(data, options)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(hash)
     }
 
@@ -231,7 +237,7 @@ impl GemGateway {
             .await?
             .get_transaction_status(request.into())
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
     }
 
     pub async fn get_chain_id(&self, chain: Chain) -> Result<String, GatewayError> {
@@ -240,7 +246,7 @@ impl GemGateway {
             .await?
             .get_chain_id()
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(chain_id)
     }
 
@@ -250,7 +256,7 @@ impl GemGateway {
             .await?
             .get_block_latest_number()
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(block_number)
     }
 
@@ -260,7 +266,7 @@ impl GemGateway {
             .await?
             .get_transaction_fee_rates(input.into())
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(fees.into_iter().map(|f| f.into()).collect())
     }
 
@@ -270,7 +276,7 @@ impl GemGateway {
             .await?
             .get_utxos(address)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(utxos)
     }
 
@@ -280,18 +286,46 @@ impl GemGateway {
             .await?
             .get_address_status(address)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(status)
     }
 
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
+        let preload_input: primitives::TransactionPreloadInput = input.into();
         let metadata = self
             .provider(chain)
             .await?
-            .get_transaction_preload(input.into())
+            .get_transaction_preload(preload_input)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(metadata.into())
+    }
+
+    pub async fn get_transaction_scan(&self, _chain: Chain, input: GemTransactionPreloadInput) -> Result<Option<GemScanTransaction>, GatewayError> {
+        let preload_input: TransactionPreloadInput = input.into();
+
+        let Some(scan_type) = preload_input.scan_type() else {
+            return Ok(None);
+        };
+
+        let payload = ScanTransactionPayload {
+            origin: ScanAddressTarget {
+                asset_id: preload_input.input_type.get_asset().id.clone(),
+                address: preload_input.sender_address.clone(),
+            },
+            target: ScanAddressTarget {
+                asset_id: preload_input.input_type.get_recipient_asset().id.clone(),
+                address: preload_input.destination_address.clone(),
+            },
+            website: preload_input.get_website(),
+            transaction_type: scan_type,
+        };
+
+        self.api_client
+            .scan_transaction(payload)
+            .await
+            .map(Some)
+            .map_err(|e| GatewayError::NetworkError { msg: e })
     }
 
     pub async fn get_fee(
@@ -310,7 +344,7 @@ impl GemGateway {
                 .await?
                 .get_transaction_fee_from_data(fee_data)
                 .await
-                .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+                .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
             return Ok(Some(data.into()));
         }
         Ok(None)
@@ -329,7 +363,7 @@ impl GemGateway {
             .await?
             .get_transaction_load(input.clone().into())
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
 
         let data = if let Some(fee) = fee { load_data.new_from(fee.into()) } else { load_data };
 
@@ -345,7 +379,7 @@ impl GemGateway {
             .await?
             .get_positions(address)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(positions)
     }
 
@@ -355,7 +389,7 @@ impl GemGateway {
             .await?
             .get_perpetuals_data()
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
 
         Ok(data)
     }
@@ -367,7 +401,7 @@ impl GemGateway {
             .await?
             .get_candlesticks(symbol, chart_period)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
 
         Ok(candlesticks)
     }
@@ -377,7 +411,7 @@ impl GemGateway {
             .await?
             .get_token_data(token_id)
             .await
-            .map_err(|e| GatewayError::NetworkError(e.to_string()))
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
     }
 
     pub async fn get_is_token_address(&self, chain: Chain, token_id: String) -> Result<bool, GatewayError> {
@@ -389,7 +423,7 @@ impl GemGateway {
         let provider = self.provider_with_url(chain, url.to_string()).await?;
 
         let (chain_id, latest_block_number) =
-            futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(|e| GatewayError::NetworkError(e.to_string()))?;
+            futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
 
         let latency_ms = start_time.elapsed().as_millis() as u64;
 
@@ -403,13 +437,13 @@ impl GemGateway {
 
 #[derive(Debug, Clone, uniffi::Error)]
 pub enum GatewayError {
-    NetworkError(String),
+    NetworkError { msg: String },
 }
 
 impl std::fmt::Display for GatewayError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NetworkError(msg) => write!(f, "Network error: {}", msg),
+            Self::NetworkError { msg: message } => write!(f, "Network error: {}", message),
         }
     }
 }

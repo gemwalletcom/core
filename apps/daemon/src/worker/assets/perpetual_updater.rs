@@ -4,22 +4,20 @@ use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{Chain, asset_score::AssetRank};
 use settings::{Settings, service_user_agent};
 use settings_chain::ProviderFactory;
-use storage::{AssetUpdate, DatabaseClient, models::StoragePerpetual};
+use storage::Database;
+use storage::{AssetUpdate, models::StoragePerpetual};
 
 pub struct PerpetualUpdater {
     settings: Settings,
-    database: DatabaseClient,
+    database: Database,
 }
 
 impl PerpetualUpdater {
-    pub fn new(settings: &Settings) -> Self {
-        Self {
-            settings: settings.clone(),
-            database: DatabaseClient::new(&settings.postgres.url),
-        }
+    pub fn new(settings: Settings, database: Database) -> Self {
+        Self { settings, database }
     }
 
-    pub async fn update_perpetuals(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn update_perpetuals(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
         let chains = [Chain::HyperCore];
         for chain in chains {
             let provider = ProviderFactory::new_from_settings_with_user_agent(chain, &self.settings, &service_user_agent("daemon", Some("perpetual_updater")));
@@ -32,8 +30,8 @@ impl PerpetualUpdater {
                 .map(|x| StoragePerpetual::from_primitive(x.perpetual))
                 .collect::<Vec<_>>();
 
-            self.database.assets().upsert_assets(assets)?;
-            self.database.assets().update_assets(
+            self.database.client()?.assets().upsert_assets(assets)?;
+            self.database.client()?.assets().update_assets(
                 asset_ids,
                 vec![
                     AssetUpdate::Rank(AssetRank::Unknown.threshold()),
@@ -44,7 +42,7 @@ impl PerpetualUpdater {
                 ],
             )?;
 
-            match self.database.perpetuals().perpetuals_update(perpetuals.clone()) {
+            match self.database.client()?.perpetuals().perpetuals_update(perpetuals.clone()) {
                 Ok(_) => {
                     info_with_fields!("Updated perpetuals for chain", chain = &chain.to_string(), values = perpetuals.len());
                 }

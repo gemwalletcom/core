@@ -6,12 +6,12 @@ use crate::{
 use async_trait::async_trait;
 use futures::future;
 use primitives::currency::Currency;
-use primitives::{FiatBuyQuote, FiatSellQuote};
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
+use primitives::{FiatBuyQuote, FiatQuoteRequest, FiatQuoteResponse, FiatSellQuote};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 use std::error::Error;
 use streamer::FiatWebhook;
 
-use super::{client::MercuryoClient, mapper::map_order_from_response, models::Webhook};
+use super::{client::MercuryoClient, mapper::map_order_from_response, models::Webhook, widget::MercuryoWidget};
 
 #[async_trait]
 impl FiatProvider for MercuryoClient {
@@ -19,29 +19,30 @@ impl FiatProvider for MercuryoClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         let quote = self
             .get_quote_buy(
                 request.fiat_currency.as_ref().to_string(),
-                request_map.symbol.clone(),
+                request_map.asset_symbol.symbol.clone(),
                 request.fiat_amount,
-                request_map.network.clone().unwrap_or_default(),
+                request_map.asset_symbol.network.clone().unwrap_or_default(),
             )
             .await?;
 
         Ok(self.get_fiat_buy_quote(request, request_map.clone(), quote))
     }
 
-    async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
-        let quote = self
-            .get_quote_sell(
-                request.fiat_currency.as_ref().to_string(),
-                request_map.symbol.clone(),
-                request.crypto_amount,
-                request_map.network.clone().unwrap_or_default(),
-            )
-            .await?;
-        Ok(self.get_fiat_sell_quote(request, request_map, quote))
+    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
+        Err("Not implemented".into())
+        // let quote = self
+        //     .get_quote_sell(
+        //         request.fiat_currency.as_ref().to_string(),
+        //         request_map.asset_symbol.symbol.clone(),
+        //         request.crypto_amount,
+        //         request_map.asset_symbol.network.clone().unwrap_or_default(),
+        //     )
+        //     .await?;
+        // Ok(self.get_fiat_sell_quote(request, request_map, quote))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -95,6 +96,49 @@ impl FiatProvider for MercuryoClient {
         let order_id = webhook_data.merchant_transaction_id.unwrap_or(webhook_data.id);
         Ok(FiatWebhook::OrderId(order_id))
     }
+
+    async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
+        let network = request_map.asset_symbol.network.clone().unwrap_or_default();
+        let merchant_transaction_id = uuid::Uuid::new_v4().to_string();
+        let quote = self
+            .get_quote_buy(request.currency.clone(), request_map.asset_symbol.symbol, request.amount, network)
+            .await?;
+
+        Ok(FiatQuoteResponse::new(merchant_transaction_id, request.amount, quote.amount))
+    }
+
+    async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
+        let network = request_map.asset_symbol.network.clone().unwrap_or_default();
+        let merchant_transaction_id = uuid::Uuid::new_v4().to_string();
+        let quote = self
+            .get_quote_sell(request.currency.clone(), request_map.asset_symbol.symbol, request.amount, network)
+            .await?;
+
+        Ok(FiatQuoteResponse::new(merchant_transaction_id, quote.fiat_amount, quote.amount))
+    }
+
+    async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+        let network = data.asset_symbol.network.unwrap_or_default();
+        let amount = match data.quote.quote_type {
+            FiatQuoteType::Buy => data.quote.fiat_amount,
+            FiatQuoteType::Sell => data.quote.crypto_amount,
+        };
+
+        let widget = MercuryoWidget::new_from_data(
+            self.widget_id.clone(),
+            self.secret_key.clone(),
+            data.quote.id.clone(),
+            data.wallet_address,
+            data.ip_address,
+            data.asset_symbol.symbol,
+            data.quote.fiat_currency,
+            amount,
+            data.quote.quote_type,
+            network,
+        );
+
+        Ok(FiatQuoteUrl { redirect_url: widget.to_url() })
+    }
 }
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]
@@ -110,7 +154,7 @@ mod fiat_integration_tests {
         let request = FiatBuyQuote::mock();
         let mapping = FiatMapping::mock();
 
-        let quote = FiatProvider::get_buy_quote(&client, request, mapping).await?;
+        let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
 
         println!("Mercuryo buy quote: {:?}", quote);
         assert_eq!(quote.provider.id, "mercuryo");

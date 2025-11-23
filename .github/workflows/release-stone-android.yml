@@ -22,15 +22,19 @@ jobs:
     env:
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.1.13356709
       ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.1.13356709
+    defaults:
+      run:
+        working-directory: gemstone
     steps:
       - name: Set version tag
+        working-directory: .
         run: |
-          if [ ${{ github.event.inputs.ref_name }} ]; then
+          if [ -n "${{ github.event.inputs.ref_name }}" ]; then
             echo "VER_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
-          elif [ ${{ github.ref_type == 'tag' }} ]; then
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
             echo "VER_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
           else
-            echo "no ref_name or tag"
+            echo "No ref_name provided and not running on a tag"
             exit 1
           fi
 
@@ -49,32 +53,25 @@ jobs:
         with:
           packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709'
 
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.8
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y just
+        uses: extractions/setup-just@v2
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Build Android Bindings
         run: |
-          just --unstable install-android-targets
-          just --unstable bindgen-kotlin
-        working-directory: gemstone
+          just install-android-targets
+          just bindgen-kotlin
 
       - name: Publish to Github Packages
-        run: |
-          just --unstable publish-android
+        run: just publish-android
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: gemstone

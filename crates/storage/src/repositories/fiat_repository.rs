@@ -19,6 +19,9 @@ pub trait FiatRepository {
     fn get_fiat_rate(&mut self, currency: &str) -> Result<primitives::FiatRate, DatabaseError>;
     fn get_fiat_providers(&mut self) -> Result<Vec<crate::models::FiatProvider>, DatabaseError>;
     fn get_fiat_assets_is_enabled(&mut self) -> Result<Vec<String>, DatabaseError>;
+    fn add_fiat_quotes(&mut self, quotes: Vec<crate::models::FiatQuote>) -> Result<usize, DatabaseError>;
+    fn get_fiat_quote(&mut self, quote_id: &str) -> Result<crate::models::FiatQuote, DatabaseError>;
+    fn add_fiat_quote_request(&mut self, request: crate::models::FiatQuoteRequest) -> Result<usize, DatabaseError>;
 }
 
 impl FiatRepository for DatabaseClient {
@@ -78,5 +81,17 @@ impl FiatRepository for DatabaseClient {
 
     fn get_fiat_assets_is_enabled(&mut self) -> Result<Vec<String>, DatabaseError> {
         Ok(FiatStore::get_fiat_assets_is_enabled(self)?)
+    }
+
+    fn add_fiat_quotes(&mut self, quotes: Vec<crate::models::FiatQuote>) -> Result<usize, DatabaseError> {
+        Ok(FiatStore::add_fiat_quotes(self, quotes)?)
+    }
+
+    fn get_fiat_quote(&mut self, quote_id: &str) -> Result<crate::models::FiatQuote, DatabaseError> {
+        Ok(FiatStore::get_fiat_quote(self, quote_id)?)
+    }
+
+    fn add_fiat_quote_request(&mut self, request: crate::models::FiatQuoteRequest) -> Result<usize, DatabaseError> {
+        Ok(FiatStore::add_fiat_quote_request(self, request)?)
     }
 }

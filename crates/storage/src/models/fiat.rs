@@ -99,6 +99,10 @@ pub struct FiatProvider {
     pub id: String,
     pub name: String,
     pub enabled: bool,
+    pub buy_enabled: bool,
+    pub sell_enabled: bool,
+    pub priority: Option<i32>,
+    pub priority_threshold_bps: Option<i32>,
 }
 
 impl FiatProvider {
@@ -107,7 +111,32 @@ impl FiatProvider {
             id: provider.id(),
             name: provider.as_ref().to_string(),
             enabled: true,
+            buy_enabled: true,
+            sell_enabled: true,
+            priority: None,
+            priority_threshold_bps: None,
         }
+    }
+
+    pub fn as_primitive(&self) -> primitives::FiatProvider {
+        primitives::FiatProvider {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            image_url: Some("".to_string()),
+            priority: self.priority,
+            threshold_bps: self.priority_threshold_bps,
+            enabled: self.enabled,
+            buy_enabled: self.buy_enabled,
+            sell_enabled: self.sell_enabled,
+        }
+    }
+
+    pub fn is_buy_enabled(&self) -> bool {
+        self.enabled && self.buy_enabled
+    }
+
+    pub fn is_sell_enabled(&self) -> bool {
+        self.enabled && self.sell_enabled
     }
 }
 
@@ -182,4 +211,35 @@ pub struct FiatTransactionUpdate {
     pub country: Option<String>,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
+}
+
+#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::fiat_quotes)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FiatQuote {
+    pub id: String,
+    pub provider_id: String,
+    pub asset_id: String,
+    pub fiat_amount: f64,
+    pub fiat_currency: String,
+}
+
+impl FiatQuote {
+    pub fn from_primitive(quote: &primitives::FiatQuote) -> Self {
+        Self {
+            id: quote.id.clone(),
+            provider_id: quote.provider.id.clone(),
+            asset_id: quote.asset_id.clone(),
+            fiat_amount: quote.fiat_amount,
+            fiat_currency: quote.fiat_currency.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
+#[diesel(table_name = crate::schema::fiat_quotes_requests)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FiatQuoteRequest {
+    pub device_id: String,
+    pub quote_id: String,
 }

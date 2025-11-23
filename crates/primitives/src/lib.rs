@@ -24,6 +24,10 @@ pub mod latency_type;
 pub use self::latency_type::{Latency, LatencyType};
 pub mod price;
 pub use self::price::{Price, PriceFull};
+pub mod price_data;
+pub use self::price_data::PriceData;
+pub mod chart_data;
+pub use self::chart_data::ChartData;
 pub mod price_feed;
 pub use self::price_feed::{PriceFeedId, PriceFeedProvider};
 pub mod asset;
@@ -49,7 +53,9 @@ pub mod asset_order;
 pub use self::asset_order::AssetOrder;
 pub mod fiat_assets;
 pub mod fiat_quote;
-pub use self::fiat_quote::{FiatQuote, FiatQuoteError, FiatQuotes};
+pub use self::fiat_quote::{
+    FiatAssetSymbol, FiatQuote, FiatQuoteError, FiatQuoteOld, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld,
+};
 pub mod fiat_transaction;
 pub use self::fiat_assets::FiatAsset;
 pub use self::fiat_assets::FiatAssets;
@@ -57,7 +63,7 @@ pub use self::fiat_transaction::{FiatQuoteType, FiatTransaction, FiatTransaction
 pub mod fiat_provider;
 pub use self::fiat_provider::{FiatProvider, FiatProviderCountry, FiatProviderName};
 pub mod fiat_quote_request;
-pub use self::fiat_quote_request::{FiatBuyQuote, FiatQuoteAmount, FiatQuoteRequest, FiatQuoteTypeResult, FiatSellQuote};
+pub use self::fiat_quote_request::{FiatBuyQuote, FiatQuoteAmount, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteTypeResult, FiatSellQuote};
 pub mod fiat_rate;
 pub use self::fiat_rate::FiatRate;
 pub mod fiat_provider_id;
@@ -91,23 +97,25 @@ pub use self::address_status::AddressStatus;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
-pub use self::push_notification::{
-    GorushNotification, GorushNotifications, PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes,
-};
+pub use self::push_notification::{PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes};
+pub mod gorush;
+pub use self::gorush::{FailedNotification, GorushNotification, GorushNotifications, PushErrorLog};
 pub mod scan;
 pub use self::scan::{AddressType, ScanAddress, ScanAddressTarget, ScanTransaction, ScanTransactionPayload};
 pub mod transaction_metadata_types;
 pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata};
+pub mod wallet_connect_namespace;
+pub use self::wallet_connect_namespace::WalletConnectCAIP2;
 pub mod wallet_connect;
-pub use self::wallet_connect::WalletConnectCAIP2;
+pub use self::wallet_connect::{WCEthereumTransaction, WalletConnectRequest};
 pub mod account;
 pub use self::account::Account;
 pub mod wallet;
 pub use self::wallet::{Wallet, WalletId, WalletType};
 pub mod wallet_connector;
 pub use self::wallet_connector::{
-    WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,
-    WalletConnectionSessionProposal, WalletConnectionState,
+    WCPairingProposal, WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,
+    WalletConnectionSessionProposal, WalletConnectionState, WalletConnectionVerificationStatus,
 };
 pub mod nft;
 pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType};

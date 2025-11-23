@@ -1,4 +1,4 @@
-use super::model::Response;
+use super::model::{PushResult, Response};
 use primitives::{GorushNotification, GorushNotifications};
 use reqwest::Client;
 
@@ -15,11 +15,18 @@ impl PusherClient {
         Self { url, client, topic }
     }
 
-    pub async fn push_notifications(&self, notifications: Vec<GorushNotification>) -> Result<Response, reqwest::Error> {
+    pub async fn push_notifications(&self, notifications: Vec<GorushNotification>) -> Result<PushResult, reqwest::Error> {
         let url = format!("{}/api/push", self.url);
-        let notifications = notifications.into_iter().map(|x| x.clone().with_topic(self.get_topic(x.platform))).collect();
-        let notifications = GorushNotifications { notifications };
-        self.client.post(&url).json(&notifications).send().await?.json::<Response>().await
+        let notifications: Vec<GorushNotification> = notifications
+            .into_iter()
+            .filter(|n| !n.tokens.is_empty() && n.tokens.iter().all(|t| !t.is_empty()))
+            .map(|x| x.clone().with_topic(self.get_topic(x.platform)))
+            .collect();
+        let payload = GorushNotifications {
+            notifications: notifications.clone(),
+        };
+        let response = self.client.post(&url).json(&payload).send().await?.json::<Response>().await?;
+        Ok(PushResult { response, notifications })
     }
 
     //Remove in the future

@@ -39,13 +39,13 @@ impl NodeMonitor {
         for (index, domain) in self.domains.values().cloned().enumerate() {
             if domain.urls.len() <= 1 {
                 if let Some(url) = domain.urls.first() {
-                    self.metrics.set_node_host_current(&domain.domain, &url.url);
+                    self.metrics.set_node_host_current(domain.chain.as_ref(), &url.url);
                 }
                 continue;
             }
 
             if let Some(url) = domain.urls.first() {
-                self.metrics.set_node_host_current(&domain.domain, &url.url);
+                self.metrics.set_node_host_current(domain.chain.as_ref(), &url.url);
             }
 
             let domain_clone = domain;
@@ -108,7 +108,7 @@ impl NodeMonitor {
         if let Some(best_candidate) = NodeSyncAnalyzer::select_best_node(&current_node.url, &fallback_statuses) {
             if best_candidate.url.url != current_node.url.url {
                 NodeService::update_node_domain(nodes, domain.domain.clone(), NodeDomain::new(best_candidate.url.clone(), domain.clone())).await;
-                metrics.set_node_host_current(&domain.domain, &best_candidate.url.url);
+                metrics.set_node_host_current(domain.chain.as_ref(), &best_candidate.url.url);
                 metrics.add_node_switch(domain.chain.as_ref(), &current_node.url.url, &best_candidate.url.url);
 
                 NodeTelemetry::log_node_switch(domain, &current_node.url, &best_candidate);

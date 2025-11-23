@@ -14,7 +14,7 @@ use primitives::{
 };
 
 use crate::{
-    provider::preload_mapper::{GAS_BUDGET, calculate_fee_rates, map_transaction_data},
+    provider::preload_mapper::{GAS_BUDGET, map_transaction_data, map_transaction_rate_rates},
     rpc::client::SuiClient,
 };
 
@@ -39,7 +39,7 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let gas_price = self.get_gas_price().await?;
-        Ok(calculate_fee_rates(gas_price))
+        Ok(map_transaction_rate_rates(gas_price))
     }
 }
 
@@ -112,8 +112,10 @@ mod chain_integration_tests {
 
         println!("Sui transaction fee rates: {:?}", rates);
 
-        assert_eq!(rates.len(), 1);
-        assert_eq!(rates[0].priority, FeePriority::Normal);
+        assert_eq!(rates.len(), 3);
+        assert_eq!(rates[0].priority, FeePriority::Slow);
+        assert_eq!(rates[1].priority, FeePriority::Normal);
+        assert_eq!(rates[2].priority, FeePriority::Fast);
 
         Ok(())
     }

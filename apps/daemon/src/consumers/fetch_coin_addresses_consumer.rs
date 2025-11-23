@@ -1,34 +1,34 @@
 use num_bigint::BigUint;
-use std::{error::Error, sync::Arc};
-use tokio::sync::Mutex;
+use std::error::Error;
 
 use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
-use storage::{DatabaseClient, models::AssetAddress};
+use storage::Database;
+use storage::models::AssetAddress;
 use streamer::{ChainAddressPayload, consumer::MessageConsumer};
 
 pub struct FetchCoinAddressesConsumer {
     pub provider: ChainProviders,
-    pub database: Arc<Mutex<DatabaseClient>>,
+    pub database: Database,
     pub cacher: CacherClient,
 }
 
 impl FetchCoinAddressesConsumer {
-    pub fn new(provider: ChainProviders, database: Arc<Mutex<DatabaseClient>>, cacher: CacherClient) -> Self {
+    pub fn new(provider: ChainProviders, database: Database, cacher: CacherClient) -> Self {
         Self { provider, database, cacher }
     }
 }
 
 #[async_trait]
 impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer {
-    async fn should_process(&mut self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
             .can_process_now(&format!("fetch_coin_addresses:{}:{}", payload.value.chain, payload.value.address), 7 * 86400)
             .await
     }
 
-    async fn process(&mut self, payload: ChainAddressPayload) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: ChainAddressPayload) -> Result<String, Box<dyn Error + Send + Sync>> {
         let balance = self.provider.get_balance_coin(payload.value.chain, payload.value.address.clone()).await?;
 
         if balance.balance.available == BigUint::ZERO {
@@ -44,8 +44,7 @@ impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer
 
         let _ = self
             .database
-            .lock()
-            .await
+            .client()?
             .assets_addresses()
             .add_assets_addresses(vec![asset_address.as_primitive()])?;
 

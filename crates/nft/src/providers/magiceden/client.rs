@@ -21,10 +21,10 @@ impl MagicEdenClient {
         Err("Token owner lookup not implemented - use dedicated Solana client".into())
     }
 
-    pub async fn get_nfts_by_account(&self, account_address: &str) -> Result<Vec<Nft>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_nfts_by_account(&self, address: &str) -> Result<Vec<Nft>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .client
-            .get(format!("{}/v2/wallets/{account_address}/tokens", Self::BASE_URL))
+            .get(format!("{}/v2/wallets/{address}/tokens", Self::BASE_URL))
             .send()
             .await?
             .json::<Vec<Nft>>()

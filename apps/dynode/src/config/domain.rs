@@ -102,6 +102,7 @@ mod tests {
 
     fn make_monitoring_config(poll_interval: u64, block_delay: u64) -> NodeMonitoringConfig {
         NodeMonitoringConfig {
+            enabled: true,
             poll_interval_seconds: poll_interval,
             block_delay,
         }

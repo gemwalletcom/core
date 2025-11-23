@@ -1,4 +1,6 @@
-use primitives::{AssetAddress, AssetId, Chain, ChainAddress, FiatProviderName, FiatTransaction, GorushNotification, Transaction};
+use primitives::{
+    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, PriceData, Transaction,
+};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -41,6 +43,23 @@ impl fmt::Display for NotificationsPayload {
 impl NotificationsPayload {
     pub fn new(notifications: Vec<GorushNotification>) -> Self {
         Self { notifications }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationsFailedPayload {
+    pub failures: Vec<FailedNotification>,
+}
+
+impl fmt::Display for NotificationsFailedPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "failures: {}", self.failures.len())
+    }
+}
+
+impl NotificationsFailedPayload {
+    pub fn new(failures: Vec<FailedNotification>) -> Self {
+        Self { failures }
     }
 }
 
@@ -204,5 +223,39 @@ impl SupportWebhookPayload {
 impl fmt::Display for SupportWebhookPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "size: {} bytes", serde_json::to_vec(&self.data).unwrap().len())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PricesPayload {
+    pub prices: Vec<PriceData>,
+}
+
+impl PricesPayload {
+    pub fn new(prices: Vec<PriceData>) -> Self {
+        Self { prices }
+    }
+}
+
+impl fmt::Display for PricesPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "prices: {}", self.prices.len())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChartsPayload {
+    pub charts: Vec<ChartData>,
+}
+
+impl ChartsPayload {
+    pub fn new(charts: Vec<ChartData>) -> Self {
+        Self { charts }
+    }
+}
+
+impl fmt::Display for ChartsPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "charts: {}", self.charts.len())
     }
 }

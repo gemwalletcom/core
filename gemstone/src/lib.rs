@@ -1,4 +1,5 @@
 pub mod alien;
+pub mod api_client;
 pub mod block_explorer;
 pub mod config;
 pub mod ethereum;
@@ -8,7 +9,9 @@ pub mod message;
 pub mod models;
 pub mod network;
 pub mod payment;
+pub mod perpetual;
 pub mod signer;
+pub mod siwe;
 pub mod wallet_connect;
 
 use alien::AlienError;
@@ -87,6 +90,12 @@ impl From<primitives::SignerError> for GemstoneError {
 
 impl From<::signer::SignerError> for GemstoneError {
     fn from(error: ::signer::SignerError) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<serde_json::Error> for GemstoneError {
+    fn from(error: serde_json::Error) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }

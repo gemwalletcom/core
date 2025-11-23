@@ -1,19 +1,18 @@
 use std::collections::HashSet;
-use std::{collections::HashMap, error::Error, sync::Arc};
+use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, Transaction, TransactionId};
-use storage::{DatabaseClient, models};
+use storage::Database;
+use storage::models;
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
-use tokio::sync::Mutex;
 
 use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
 
-const MIN_TRANSACTION_AMOUNT_USD: f64 = 0.01;
 const TRANSACTION_BATCH_SIZE: usize = 100;
 
 pub struct StoreTransactionsConsumer {
-    pub database: Arc<Mutex<DatabaseClient>>,
+    pub database: Database,
     pub stream_producer: StreamProducer,
     pub pusher: Pusher,
     pub config: StoreTransactionsConsumerConfig,
@@ -21,16 +20,16 @@ pub struct StoreTransactionsConsumer {
 
 #[async_trait]
 impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
-    async fn should_process(&mut self, _payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn should_process(&self, _payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
-    async fn process(&mut self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
         let transactions = payload.transactions;
         let is_notify_devices = !payload.blocks.is_empty();
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
-        let subscriptions = self.database.lock().await.subscriptions().get_subscriptions(chain, addresses)?;
+        let subscriptions = self.database.client()?.subscriptions().get_subscriptions(chain, addresses)?;
 
         let subscription_addresses: HashSet<_> = subscriptions.iter().map(|s| &s.subscription.address).collect();
 
@@ -79,10 +78,12 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
                 address_assets_payload.push(AssetsAddressPayload::new(assets_addresses));
 
-                if self
-                    .config
-                    .is_transaction_insufficient_amount(transaction, &asset_price.asset.asset, asset_price.price, MIN_TRANSACTION_AMOUNT_USD)
-                {
+                if self.config.is_transaction_insufficient_amount(
+                    transaction,
+                    &asset_price.asset.asset,
+                    asset_price.price,
+                    self.config.min_transaction_amount_usd,
+                ) {
                     continue;
                 }
 
@@ -119,10 +120,10 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
 impl StoreTransactionsConsumer {
     async fn get_existing_and_missing_assets(
-        &mut self,
+        &self,
         assets_ids: Vec<AssetId>,
     ) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
-        let assets_with_prices = self.database.lock().await.assets().get_assets_with_prices(assets_ids.ids().clone())?;
+        let assets_with_prices = self.database.client()?.assets().get_assets_with_prices(assets_ids.ids().clone())?;
 
         let missing_assets_ids = assets_ids
             .into_iter()
@@ -132,7 +133,7 @@ impl StoreTransactionsConsumer {
         Ok((assets_with_prices, missing_assets_ids))
     }
 
-    async fn store_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn store_transactions(&self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         if transactions.is_empty() {
             return Ok(0);
         }
@@ -152,8 +153,7 @@ impl StoreTransactionsConsumer {
             }
 
             self.database
-                .lock()
-                .await
+                .client()?
                 .transactions()
                 .add_transactions(transactions_to_store, transaction_addresses_to_store)?;
         }

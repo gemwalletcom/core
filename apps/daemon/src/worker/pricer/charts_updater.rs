@@ -2,23 +2,25 @@ use coingecko::CoinGeckoClient;
 use pricer::PriceClient;
 use std::error::Error;
 use storage::models::Chart;
+use streamer::{ChartsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct ChartsUpdater {
     coin_gecko_client: CoinGeckoClient,
-
     prices_client: PriceClient,
+    stream_producer: StreamProducer,
 }
 
 impl ChartsUpdater {
-    pub fn new(prices_client: PriceClient, coin_gecko_client: CoinGeckoClient) -> Self {
+    pub fn new(prices_client: PriceClient, coin_gecko_client: CoinGeckoClient, stream_producer: StreamProducer) -> Self {
         Self {
             coin_gecko_client,
             prices_client,
+            stream_producer,
         }
     }
 
     #[allow(unused)]
-    pub async fn update_charts_all(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn update_charts_all(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let coin_list = self.coin_gecko_client.get_all_coin_markets(None, 250, 10).await?;
 
         for coin_id in coin_list.clone() {
@@ -36,7 +38,8 @@ impl ChartsUpdater {
                         .filter(|x| x.price > 0.0)
                         .collect::<Vec<Chart>>();
 
-                    self.prices_client.add_charts(charts).await?;
+                    let charts_data: Vec<_> = charts.iter().map(|c| c.as_chart_data()).collect();
+                    self.stream_producer.publish_charts(ChartsPayload::new(charts_data)).await?;
 
                     println!("update charts {}", coin_id.id.clone());
 
@@ -51,15 +54,15 @@ impl ChartsUpdater {
         Ok(coin_list.len())
     }
 
-    pub async fn aggregate_hourly_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn aggregate_hourly_charts(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         self.prices_client.aggregate_hourly_charts().await
     }
 
-    pub async fn aggregate_daily_charts(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn aggregate_daily_charts(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         self.prices_client.aggregate_daily_charts().await
     }
 
-    pub async fn cleanup_charts_data(&mut self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn cleanup_charts_data(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         self.prices_client.cleanup_charts_data().await
     }
 }

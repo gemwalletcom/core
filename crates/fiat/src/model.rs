@@ -1,6 +1,6 @@
 use chain_primitives::format_token_id;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::{AssetId, Chain, CosmosDenom, FiatProviderName};
+use primitives::{AssetId, Chain, CosmosDenom, FiatAssetSymbol, FiatProviderName};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -15,12 +15,11 @@ pub struct FiatRates {
     pub rates: Vec<storage::models::FiatRate>,
 }
 
-// mappings
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FiatMapping {
-    pub symbol: String,
-    pub network: Option<String>,
+    #[serde(flatten)]
+    pub asset_symbol: FiatAssetSymbol,
     pub unsupported_countries: HashMap<String, Vec<String>>,
     pub buy_limits: Vec<FiatAssetLimits>,
     pub sell_limits: Vec<FiatAssetLimits>,

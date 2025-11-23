@@ -59,14 +59,14 @@ final class GemTestTests: XCTestCase {
 
     func testMessagePreview() async throws {
         let base58 = "jo91waLQA1NNeBmZKUF".data(using: .utf8)!
-        let message = SignMessage(signType: .base58, data: base58)
+        let message = SignMessage(chain: "solana", signType: .base58, data: base58)
         let decoder = SignMessageDecoder(message: message)
         let preview = try decoder.preview()
 
         switch preview {
         case .text(let text):
             XCTAssertEqual(text, "this is a test")
-        case .eip712:
+        case .eip712, .siwe:
             XCTFail("Unexpected result")
         }
 
@@ -78,6 +78,7 @@ final class GemTestTests: XCTestCase {
 
     func testMessageHash() async throws {
         let message = SignMessage(
+            chain: "ethereum",
             signType: .eip191,
             data: "hello world".data(using: .utf8)!
         )

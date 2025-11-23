@@ -8,9 +8,6 @@ mod worker;
 use crate::model::{ConsumerService, DaemonService, WorkerService};
 use gem_tracing::{SentryConfig, SentryTracing, info_with_fields};
 use std::str::FromStr;
-use std::sync::Arc;
-use storage::DatabaseClient;
-use tokio::sync::Mutex;
 
 #[tokio::main]
 pub async fn main() {
@@ -31,14 +28,14 @@ pub async fn main() {
     });
     let _tracing = SentryTracing::init(sentry_config.as_ref(), service.as_ref());
 
-    info_with_fields!("daemon start", service = service.as_ref());
+    info_with_fields!("daemon start", service = service.name());
 
     match service {
         DaemonService::Setup => {
-            setup::run_setup(settings).await;
+            let _ = setup::run_setup(settings).await;
         }
         DaemonService::SetupDev => {
-            setup::run_setup_dev(settings).await;
+            let _ = setup::run_setup_dev(settings).await;
         }
         DaemonService::Worker(service) => {
             run_worker_mode(settings, service).await;
@@ -70,7 +67,7 @@ async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
 }
 
 async fn run_consumer_mode(settings: settings::Settings, service: ConsumerService) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let database = Arc::new(Mutex::new(DatabaseClient::new(&settings.postgres.url)));
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
 
     match service {
         ConsumerService::FetchAddressTransactions => consumers::run_consumer_fetch_address_transactions(settings, database).await,
@@ -84,5 +81,7 @@ async fn run_consumer_mode(settings: settings::Settings, service: ConsumerServic
         ConsumerService::Notifications => consumers::notifications::run(settings).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, database).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, database).await,
+        ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings, database).await,
+        ConsumerService::StoreCharts => consumers::run_consumer_store_charts(settings, database).await,
     }
 }

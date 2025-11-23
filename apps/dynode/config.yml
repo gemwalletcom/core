@@ -12,6 +12,7 @@ metrics:
         - "okhttp/4\\..*"
 
 monitoring:
+  enabled: false
   poll_interval_seconds: 600
   block_delay: 100
 

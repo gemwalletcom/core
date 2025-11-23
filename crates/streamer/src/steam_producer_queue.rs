@@ -2,7 +2,10 @@ use std::error::Error;
 
 use primitives::AssetId;
 
-use crate::{AssetsAddressPayload, FetchAssetsPayload, NotificationsPayload, QueueName, StreamProducer, TransactionsPayload};
+use crate::{
+    AssetsAddressPayload, ChartsPayload, FetchAssetsPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName, StreamProducer,
+    TransactionsPayload,
+};
 
 #[async_trait::async_trait]
 pub trait StreamProducerQueue {
@@ -12,7 +15,10 @@ pub trait StreamProducerQueue {
     async fn publish_notifications_price_alerts(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_observers(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_support(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
 }
 
 #[async_trait::async_trait]
@@ -61,11 +67,32 @@ impl StreamProducerQueue for StreamProducer {
         self.publish(QueueName::NotificationsSupport, &payload).await
     }
 
+    async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.failures.is_empty() {
+            return Ok(true);
+        }
+        self.publish(QueueName::NotificationsFailed, &payload).await
+    }
+
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let payload: Vec<AssetsAddressPayload> = payload.into_iter().filter(|p| !p.values.is_empty()).collect();
         if payload.is_empty() {
             return Ok(true);
         }
         self.publish_batch(QueueName::StoreAssetsAssociations, &payload).await
+    }
+
+    async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.prices.is_empty() {
+            return Ok(true);
+        }
+        self.publish(QueueName::StorePrices, &payload).await
+    }
+
+    async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.charts.is_empty() {
+            return Ok(true);
+        }
+        self.publish(QueueName::StoreCharts, &payload).await
     }
 }

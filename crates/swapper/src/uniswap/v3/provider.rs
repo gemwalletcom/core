@@ -46,7 +46,7 @@ impl UniswapV3 {
 
     fn get_asset_address(asset_id: &str, evm_chain: EVMChain) -> Result<Address, SwapperError> {
         let asset_id = AssetId::new(asset_id).ok_or(SwapperError::NotSupportedAsset)?;
-        eth_address::normalize_weth_address(&asset_id, evm_chain)
+        eth_address::parse_or_weth_address(&asset_id, evm_chain)
     }
 
     fn parse_request(request: &QuoteRequest) -> Result<(EVMChain, Address, Address, U256), SwapperError> {

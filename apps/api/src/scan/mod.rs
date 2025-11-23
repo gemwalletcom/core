@@ -18,7 +18,7 @@ pub async fn scan_transaction(
 }
 
 #[get("/scan/address/<address>")]
-pub async fn get_scan_address(address: String, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ResponseResultNew<Vec<ScanAddress>>>, ApiError> {
-    let scan_addresses = client.lock().await.get_scan_address(&address).await?;
+pub async fn get_scan_address(address: &str, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ResponseResultNew<Vec<ScanAddress>>>, ApiError> {
+    let scan_addresses = client.lock().await.get_scan_address(address).await?;
     Ok(ResponseResultNew::new(scan_addresses).into())
 }

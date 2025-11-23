@@ -9,7 +9,6 @@ use crate::cache::RequestCache;
 use crate::config::{CacheConfig, Domain, NodeMonitoringConfig, RequestConfig, RetryConfig};
 use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
-use crate::monitoring::NodeMonitor;
 use crate::monitoring::domain_resolution::DomainResolution;
 use crate::proxy::constants::JSON_CONTENT_TYPE;
 use crate::proxy::proxy_builder::ProxyBuilder;
@@ -78,17 +77,6 @@ impl NodeService {
 
         let chain_from_path = path.trim_start_matches('/').split('/').next()?;
         primitives::Chain::from_str(chain_from_path).ok().map(DomainResolution::Path)
-    }
-
-    pub async fn start_monitoring(&self) {
-        let monitor = NodeMonitor::new(
-            self.domains.clone(),
-            Arc::clone(&self.nodes),
-            Arc::clone(&self.metrics),
-            self.monitoring_config.clone(),
-        );
-
-        monitor.start_monitoring().await;
     }
 
     pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {

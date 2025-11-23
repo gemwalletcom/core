@@ -152,7 +152,7 @@ All commands use the `just` task runner. Run from the workspace root unless spec
 
 ## Coding Standards
 
-Follow the existing code style patterns unless explicitly asked to change.
+Follow the existing code style patterns unless explicitly asked to change
 
 ### Code Formatting
 - Line length: 160 characters maximum (configured in `rustfmt.toml`)
@@ -164,13 +164,15 @@ Follow the existing code style patterns unless explicitly asked to change.
 ### Commit Messages
 - Write descriptive messages following conventional commit format
 
-### Naming
+### Naming and Conventions
 - Files/modules: `snake_case` (e.g., `asset_id.rs`, `chain_address.rs`)
 - Crates: Prefixed naming (`gem_*` for blockchains, `security_*` for security)
 - Functions/variables: `snake_case`
 - Structs/enums: `PascalCase`
 - Constants: `SCREAMING_SNAKE_CASE`
 - Helper names: inside a module stick to concise names that rely on scope rather than repeating crate/module prefixes (e.g., prefer `is_spot_swap` over `is_hypercore_spot_swap` in `core_signer.rs`).
+- Don't use `util`, `utils`, `normalize`, or any other similar names for modules or functions.
+- Avoid using `matches!` for pattern matching as much as possible, it's easy to missing a case later.
 
 ### Imports
 1. Standard library imports first
@@ -264,8 +266,6 @@ Direct repository access methods available on `DatabaseClient` include:
 - Place mapper functions in separate `*_mapper.rs` files for clean separation
 - Example: `get_balance_coin()` calls `self.get_balance()` then `balances_mapper::map_coin_balance()`
 - This pattern ensures consistent data transformation and testability across all blockchain implementations
-
- 
 
 ## Testing
 

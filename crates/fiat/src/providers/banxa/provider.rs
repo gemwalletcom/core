@@ -4,16 +4,12 @@ use crate::{
     providers::banxa::mapper::map_asset_with_limits,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatSellQuote};
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuote, FiatTransaction};
+use primitives::{FiatBuyQuote, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatSellQuote};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 use std::error::Error;
 use streamer::FiatWebhook;
 
-use super::{
-    client::BanxaClient,
-    mapper::map_order,
-    models::{ORDER_TYPE_SELL, Webhook},
-};
+use super::{client::BanxaClient, mapper::map_order, models::Webhook};
 
 #[async_trait]
 impl FiatProvider for BanxaClient {
@@ -21,38 +17,34 @@ impl FiatProvider for BanxaClient {
         Self::NAME
     }
 
-    async fn get_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn std::error::Error + Send + Sync>> {
-        let quote = self
-            .get_quote_buy(
-                &request_map.clone().symbol,
-                &request_map.clone().network.unwrap_or_default(),
-                request.fiat_currency.as_ref(),
-                request.fiat_amount,
-            )
-            .await?;
+    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
+        let symbol = &request_map.asset_symbol.symbol;
+        let network = request_map.asset_symbol.network.as_deref().unwrap_or_default();
+        let quote = self.get_quote_buy(symbol, network, request.fiat_currency.as_ref(), request.fiat_amount).await?;
 
         Ok(self.get_fiat_buy_quote(request, request_map, quote))
     }
 
-    async fn get_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
+        Err("Not implemented".into())
         // v2/payment-methods/sell
-        let method = self
-            .get_payment_methods(ORDER_TYPE_SELL)
-            .await?
-            .into_iter()
-            .find(|x| x.supported_fiats.contains(&request.fiat_currency.as_ref().to_string()))
-            .ok_or("Payment method not found")?;
+        // let method = self
+        //     .get_payment_methods(ORDER_TYPE_SELL)
+        //     .await?
+        //     .into_iter()
+        //     .find(|x| x.supported_fiats.contains(&request.fiat_currency.as_ref().to_string()))
+        //     .ok_or("Payment method not found")?;
 
-        let quote = self
-            .get_quote_sell(
-                &method.id,
-                &request_map.symbol,
-                &request_map.clone().network.unwrap_or_default(),
-                request.fiat_currency.as_ref(),
-                request.crypto_amount,
-            )
-            .await?;
-        Ok(self.get_fiat_sell_quote(request, request_map, quote))
+        // let quote = self
+        //     .get_quote_sell(
+        //         &method.id,
+        //         &request_map.asset_symbol.symbol,
+        //         &request_map.clone().network.unwrap_or_default(),
+        //         request.fiat_currency.as_ref(),
+        //         request.crypto_amount,
+        //     )
+        //     .await?;
+        // Ok(self.get_fiat_sell_quote(request, request_map, quote))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -89,6 +81,18 @@ impl FiatProvider for BanxaClient {
         let order_id = serde_json::from_value::<Webhook>(data)?.order_id;
         Ok(FiatWebhook::OrderId(order_id))
     }
+
+    async fn get_quote_buy(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
+        Err("not implemented".into())
+    }
+
+    async fn get_quote_sell(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
+        Err("not implemented".into())
+    }
+
+    async fn get_quote_url(&self, _data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+        Err("not implemented".into())
+    }
 }
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]
@@ -103,9 +107,9 @@ mod fiat_integration_tests {
 
         let request = FiatBuyQuote::mock();
         let mut mapping = FiatMapping::mock();
-        mapping.network = Some("BTC".to_string());
+        mapping.asset_symbol.network = Some("BTC".to_string());
 
-        let quote = FiatProvider::get_buy_quote(&client, request, mapping).await?;
+        let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
 
         println!("Banxa buy quote: {:?}", quote);
         assert_eq!(quote.provider.id, "banxa");

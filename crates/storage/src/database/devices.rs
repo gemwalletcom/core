@@ -1,17 +1,29 @@
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::{DatabaseClient, models::*};
-use chrono::{Duration, Utc};
+use chrono::{Duration, NaiveDateTime, Utc};
 use diesel::{prelude::*, upsert::excluded};
+
+#[derive(Debug, Clone)]
+pub enum DeviceFieldUpdate {
+    IsPushEnabled(bool),
+    IsPriceAlertsEnabled(bool),
+}
+
+#[derive(Debug, Clone)]
+pub enum DeviceFilter {
+    IsPushEnabled(bool),
+    CreatedBetween { start: NaiveDateTime, end: NaiveDateTime },
+}
 
 pub(crate) trait DevicesStore {
     fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error>;
     fn get_device_by_id(&mut self, id: i32) -> Result<Device, diesel::result::Error>;
     fn get_device(&mut self, device_id: &str) -> Result<Device, diesel::result::Error>;
     fn update_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error>;
+    fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, diesel::result::Error>;
     fn delete_device(&mut self, device_id: &str) -> Result<usize, diesel::result::Error>;
-    fn update_device_is_push_enabled(&mut self, device_id: &str, value: bool) -> Result<usize, diesel::result::Error>;
     fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error>;
-    fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<Device>, diesel::result::Error>;
+    fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<Device>, diesel::result::Error>;
 }
 
 impl DevicesStore for DatabaseClient {
@@ -45,17 +57,31 @@ impl DevicesStore for DatabaseClient {
             .get_result(&mut self.connection)
     }
 
+    fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::devices::dsl::*;
+
+        if updates.is_empty() || device_ids.is_empty() {
+            return Ok(0);
+        }
+
+        let mut total_updated = 0;
+        for update in updates {
+            let target = devices.filter(device_id.eq_any(&device_ids));
+            let updated = match update {
+                DeviceFieldUpdate::IsPushEnabled(value) => diesel::update(target).set(is_push_enabled.eq(value)).execute(&mut self.connection)?,
+                DeviceFieldUpdate::IsPriceAlertsEnabled(value) => {
+                    diesel::update(target).set(is_price_alerts_enabled.eq(value)).execute(&mut self.connection)?
+                }
+            };
+            total_updated += updated;
+        }
+
+        Ok(total_updated)
+    }
+
     fn delete_device(&mut self, _device_id: &str) -> Result<usize, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::delete(devices.filter(device_id.eq(_device_id))).execute(&mut self.connection)
-    }
-
-    fn update_device_is_push_enabled(&mut self, _device_id: &str, value: bool) -> Result<usize, diesel::result::Error> {
-        use crate::schema::devices::dsl::*;
-        diesel::update(devices)
-            .filter(device_id.eq(_device_id))
-            .set(is_push_enabled.eq(value))
-            .execute(&mut self.connection)
     }
 
     // Delete subscriptions for inactive devices
@@ -63,24 +89,27 @@ impl DevicesStore for DatabaseClient {
         use crate::schema::devices::dsl::*;
         let cutoff_date = Utc::now() - Duration::days(days);
         let device_ids: Vec<i32> = devices.filter(updated_at.lt(cutoff_date.naive_utc())).select(id).load(&mut self.connection)?;
-        self.delete_subscriptions_for_device_ids(device_ids)
+        SubscriptionsStore::delete_subscriptions_for_device_ids(self, device_ids)
     }
 
-    fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<Device>, diesel::result::Error> {
+    fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<Device>, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        let min_days_cutoff = Utc::now() - Duration::days(min_days);
-        let max_days_cutoff = Utc::now() - Duration::days(max_days);
+
         let mut query = devices.into_boxed();
-        query = query.filter(
-            created_at
-                .between(max_days_cutoff.naive_utc(), min_days_cutoff.naive_utc())
-                .and(diesel::dsl::sql::<diesel::sql_types::Bool>(
-                    "DATE_TRUNC('hour', updated_at) = DATE_TRUNC('hour', created_at)",
-                )),
-        );
-        if let Some(enabled) = push_enabled {
-            query = query.filter(is_push_enabled.eq(enabled));
+
+        for filter in filters {
+            match filter {
+                DeviceFilter::IsPushEnabled(enabled) => {
+                    query = query.filter(is_push_enabled.eq(enabled));
+                }
+                DeviceFilter::CreatedBetween { start, end } => {
+                    query = query.filter(created_at.between(start, end).and(diesel::dsl::sql::<diesel::sql_types::Bool>(
+                        "DATE_TRUNC('hour', updated_at) = DATE_TRUNC('hour', created_at)",
+                    )));
+                }
+            }
         }
+
         query.select(Device::as_select()).load(&mut self.connection)
     }
 }
@@ -107,15 +136,7 @@ impl DatabaseClient {
         DevicesStore::delete_device(self, device_id)
     }
 
-    pub fn update_device_is_push_enabled(&mut self, device_id: &str, value: bool) -> Result<usize, diesel::result::Error> {
-        DevicesStore::update_device_is_push_enabled(self, device_id, value)
-    }
-
     pub fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
         DevicesStore::delete_devices_subscriptions_after_days(self, days)
-    }
-
-    pub fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<Device>, diesel::result::Error> {
-        DevicesStore::devices_inactive_days(self, min_days, max_days, push_enabled)
     }
 }

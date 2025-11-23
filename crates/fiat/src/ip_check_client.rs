@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::providers::MoonPayClient;
 
+#[derive(Clone)]
 pub struct IPCheckClient {
     client: MoonPayClient,
 }

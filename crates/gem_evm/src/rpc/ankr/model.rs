@@ -58,5 +58,6 @@ pub fn ankr_chain(chain: EVMChain) -> Option<String> {
         EVMChain::Hyperliquid => None,
         EVMChain::Plasma => None,
         EVMChain::Monad => None,
+        EVMChain::XLayer => None,
     }
 }

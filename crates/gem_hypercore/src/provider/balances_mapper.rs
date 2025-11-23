@@ -38,10 +38,8 @@ pub fn map_balance_tokens(
 
 pub fn map_balance_staking(balance: &StakeBalance, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let native_decimals = Asset::from_chain(chain).decimals as u32;
-    let available_biguint =
-        BigNumberFormatter::value_from_amount_biguint(&balance.delegated.to_string(), native_decimals).unwrap_or_default();
-    let pending_biguint =
-        BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal.to_string(), native_decimals).unwrap_or_default();
+    let available_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.delegated.to_string(), native_decimals).unwrap_or_default();
+    let pending_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal.to_string(), native_decimals).unwrap_or_default();
 
     Ok(AssetBalance::new_balance(
         chain.as_asset_id(),

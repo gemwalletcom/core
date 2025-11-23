@@ -23,13 +23,15 @@ mod websocket_prices;
 
 use std::{str::FromStr, sync::Arc};
 
+use ::fiat::FiatClient;
+use ::fiat::FiatConfig;
 use ::nft::{NFTClient, NFTProviderConfig};
 use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
-use fiat::{FiatClient, FiatProviderFactory};
+use fiat::FiatProviderFactory;
 use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
@@ -42,6 +44,7 @@ use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
+use storage::Database;
 use streamer::StreamProducer;
 use subscriptions::SubscriptionsClient;
 use support::SupportClient;
@@ -54,40 +57,52 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let redis_url = settings.redis.url.as_str();
     let postgres_url = settings.postgres.url.as_str();
     let settings_clone = settings.clone();
-    let cacher_client = CacherClient::new(redis_url);
-    let price_client = PriceClient::new(cacher_client.clone(), postgres_url);
-    let charts_client = ChartClient::new(postgres_url);
-    let config_client = ConfigClient::new(postgres_url).await;
-    let price_alert_client = PriceAlertClient::new(postgres_url).await;
+
+    let database = Database::new(postgres_url, settings.postgres.pool);
+    let cacher_client = CacherClient::new(redis_url).await;
+
+    let price_client = PriceClient::new(database.clone(), cacher_client.clone());
+    let charts_client = ChartClient::new(database.clone());
+    let config_client = ConfigClient::new(database.clone());
+    let price_alert_client = PriceAlertClient::new(database.clone());
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
     let name_client = NameClient::new(providers);
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
 
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
-    let devices_client = DevicesClient::new(postgres_url, pusher_client).await;
-    let transactions_client = TransactionsClient::new(postgres_url).await;
+    let devices_client = DevicesClient::new(database.clone(), pusher_client);
+    let transactions_client = TransactionsClient::new(database.clone());
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "api").await.unwrap();
-    let subscriptions_client = SubscriptionsClient::new(postgres_url, stream_producer.clone()).await;
-    let metrics_client = MetricsClient::new(postgres_url).await;
+    let subscriptions_client = SubscriptionsClient::new(database.clone(), stream_producer.clone());
+    let metrics_client = MetricsClient::new(database.clone());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
-    let scan_client = ScanClient::new(postgres_url, security_providers).await;
-    let assets_client = AssetsClient::new(postgres_url).await;
+    let scan_client = ScanClient::new(database.clone(), security_providers);
+    let assets_client = AssetsClient::new(database.clone());
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
-    let search_client = SearchClient::new(&search_index_client).await;
-    let swap_client = SwapClient::new(postgres_url).await;
+    let search_client = SearchClient::new(&search_index_client);
+    let swap_client = SwapClient::new(database.clone());
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
-    let fiat_client = FiatClient::new(postgres_url, cacher_client.clone(), providers, ip_check_client, stream_producer.clone()).await;
+    let fiat_config = FiatConfig::new(settings_clone.fiat.timeout, settings_clone.fiat.validate.subscription);
+    let fiat_client = FiatClient::new(
+        database.clone(),
+        cacher_client.clone(),
+        providers,
+        ip_check_client.clone(),
+        stream_producer.clone(),
+        fiat_config,
+    );
+    let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client);
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
-    let nft_client = NFTClient::new(postgres_url, nft_config).await;
-    let markets_client = MarketsClient::new(postgres_url, cacher_client);
-    let webhooks_client = WebhooksClient::new(stream_producer.clone()).await;
-    let support_client = SupportClient::new(postgres_url);
+    let nft_client = NFTClient::new(database.clone(), nft_config);
+    let markets_client = MarketsClient::new(database.clone(), cacher_client);
+    let webhooks_client = WebhooksClient::new(stream_producer.clone());
+    let support_client = SupportClient::new(database.clone());
 
     rocket::build()
-        .manage(Mutex::new(fiat_client))
+        .manage(Mutex::new(fiat_quotes_client))
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(charts_client))
         .manage(Mutex::new(config_client))
@@ -106,6 +121,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
         .manage(Mutex::new(support_client))
+        .manage(Mutex::new(ip_check_client))
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
             "/v1",
@@ -114,12 +130,15 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 prices::get_assets_prices,
                 prices::get_charts,
                 prices::get_fiat_rates,
+                fiat::get_fiat_quotes_by_type,
                 fiat::get_fiat_quotes,
                 fiat::get_fiat_on_ramp_quotes,
+                fiat::get_fiat_assets,
                 fiat::get_fiat_on_ramp_assets,
                 fiat::get_fiat_off_ramp_assets,
                 fiat::create_fiat_webhook,
                 fiat::get_fiat_order,
+                fiat::get_fiat_quote_url,
                 config::get_config,
                 name::get_name_resolve,
                 devices::add_device,
@@ -165,6 +184,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 webhooks::create_support_webhook,
                 support::add_device,
                 support::get_support_device,
+                fiat::get_ip_address,
             ],
         )
         .mount("/v2", routes![transactions::get_transactions_by_device_id_v2, nft::get_nft_assets_v2,])
@@ -172,8 +192,9 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
-    let cacher_client = CacherClient::new(&settings.redis.url);
-    let price_client = PriceClient::new(cacher_client, settings.postgres.url.as_str());
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+    let cacher_client = CacherClient::new(&settings.redis.url).await;
+    let price_client = PriceClient::new(database, cacher_client);
     let price_observer_config = PriceObserverConfig { redis_url: settings.redis.url };
     rocket::build()
         .manage(Arc::new(Mutex::new(price_client)))

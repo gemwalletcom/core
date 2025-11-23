@@ -13,6 +13,8 @@ pub enum QueueName {
     NotificationsObservers,
     // Notifications for support messages
     NotificationsSupport,
+    // Failed notifications to handle device disabling
+    NotificationsFailed,
     // fetch new assets and store to db
     FetchAssets,
     // fetch new blocks and store to db
@@ -35,6 +37,10 @@ pub enum QueueName {
     FiatOrderWebhooks,
     // Process support webhooks
     SupportWebhooks,
+    // Store prices to database
+    StorePrices,
+    // Store charts to database
+    StoreCharts,
 }
 
 impl QueueName {
@@ -62,6 +68,9 @@ impl fmt::Display for QueueName {
             QueueName::FiatOrderWebhooks => write!(f, "fiat_order_webhooks"),
             QueueName::SupportWebhooks => write!(f, "support_webhooks"),
             QueueName::NotificationsSupport => write!(f, "notifications_support"),
+            QueueName::NotificationsFailed => write!(f, "notifications_failed"),
+            QueueName::StorePrices => write!(f, "store_prices"),
+            QueueName::StoreCharts => write!(f, "store_charts"),
         }
     }
 }

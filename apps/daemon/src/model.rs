@@ -16,6 +16,8 @@ pub enum ConsumerService {
     Notifications,
     Support,
     Fiat,
+    StorePrices,
+    StoreCharts,
 }
 
 #[derive(Debug, Clone, AsRefStr, EnumString, PartialEq)]
@@ -45,6 +47,24 @@ pub enum DaemonService {
     Parser(Option<Chain>),
     #[strum(serialize = "consumer")]
     Consumer(ConsumerService),
+}
+
+impl DaemonService {
+    pub fn name(&self) -> String {
+        match self {
+            DaemonService::Setup => "setup".to_owned(),
+            DaemonService::SetupDev => "setup_dev".to_owned(),
+            DaemonService::Worker(name) => format!("worker {}", name.as_ref()),
+            DaemonService::Parser(chain) => {
+                if let Some(chain) = chain {
+                    format!("parser {}", chain.as_ref())
+                } else {
+                    "parser".to_owned()
+                }
+            }
+            DaemonService::Consumer(name) => format!("consumer {}", name.as_ref()),
+        }
+    }
 }
 
 impl DaemonService {

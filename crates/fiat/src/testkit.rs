@@ -19,7 +19,12 @@ fn get_test_settings() -> Settings {
 pub fn create_transak_test_client() -> TransakClient {
     let settings = get_test_settings();
     let client = FiatClient::request_client(settings.fiat.timeout);
-    TransakClient::new(client, settings.transak.key.public, settings.transak.key.secret)
+    TransakClient::new(
+        client,
+        settings.transak.key.public,
+        settings.transak.key.secret,
+        settings.transak.referrer_domain,
+    )
 }
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]
@@ -54,8 +59,10 @@ pub fn create_mercuryo_test_client() -> MercuryoClient {
 impl FiatMapping {
     pub fn mock() -> Self {
         FiatMapping {
-            symbol: "BTC".to_string(),
-            network: Some("BITCOIN".to_string()),
+            asset_symbol: primitives::FiatAssetSymbol {
+                symbol: "BTC".to_string(),
+                network: Some("BITCOIN".to_string()),
+            },
             unsupported_countries: std::collections::HashMap::new(),
             buy_limits: vec![],
             sell_limits: vec![],

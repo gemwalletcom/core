@@ -16,6 +16,7 @@ rocket = { workspace = true }
 primitives = { path = "../../crates/primitives" }
 gem_tracing = { path = "../../crates/tracing" }
 gem_client = { path = "../../crates/gem_client" }
+metrics = { path = "../../crates/metrics" }
 settings_chain = { path = "../../crates/settings_chain" }
 
 regex = { version = "1.12.1" }
