@@ -144,7 +144,8 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::OpBNB => "0x9e5AAC1Ba1a2e6aEd6b32689DFcF62A509Ca96f3",
         EVMChain::Ink => "0x0200C29006150606B650577BBE7B6248F58470c1",
         EVMChain::Plasma => "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb", // USDT0
-        EVMChain::Blast | EVMChain::World | EVMChain::Monad => "",        // None
+        EVMChain::Monad => "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",  // USDT0
+        EVMChain::Blast | EVMChain::World => "",                          // None
         _ => panic!("USDT is not configured for this chain"),
     };
 
