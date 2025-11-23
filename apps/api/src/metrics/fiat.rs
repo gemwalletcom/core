@@ -31,7 +31,7 @@ pub fn init_fiat_metrics(registry: &mut Registry) {
     let latency = Family::<FiatQuoteLabels, Histogram>::new_with_constructor(histogram::latency);
     let success = Family::<FiatQuoteLabels, Counter>::default();
     let error = Family::<FiatQuoteErrorLabels, Counter>::default();
-    let amount = Family::<FiatQuoteLabels, Histogram>::new_with_constructor(|| Histogram::new(FIAT_AMOUNT_BUCKETS.into_iter()));
+    let amount = Family::<FiatQuoteLabels, Histogram>::new_with_constructor(|| Histogram::new(FIAT_AMOUNT_BUCKETS));
     let url_generated = Family::<FiatQuoteLabels, Counter>::default();
 
     registry.register("fiat_quote_latency", "Fiat provider quote latency in seconds", latency.clone());
