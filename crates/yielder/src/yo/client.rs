@@ -6,7 +6,13 @@ use gem_evm::{jsonrpc::TransactionObject, rpc::EthereumClient};
 use primitives::Chain;
 use serde_json::json;
 
-use super::{contract::IYoGateway, error::YieldError, YoVault, YO_GATEWAY_BASE_MAINNET, YO_PARTNER_ID_GEM};
+use super::{YO_GATEWAY_BASE_MAINNET, YO_PARTNER_ID_GEM, YoVault, contract::IYoGateway, error::YieldError};
+
+alloy_sol_types::sol! {
+    interface IYoVaultToken {
+        function convertToAssets(uint256 shares) external view returns (uint256 assets);
+    }
+}
 
 #[async_trait]
 pub trait YoGatewayApi: Send + Sync {
@@ -31,6 +37,9 @@ pub trait YoGatewayApi: Send + Sync {
         partner_id: u32,
     ) -> TransactionObject;
     async fn balance_of(&self, token: Address, owner: Address) -> Result<U256, YieldError>;
+    async fn convert_to_assets_at_block(&self, yo_vault: Address, shares: U256, block_number: u64) -> Result<U256, YieldError>;
+    async fn latest_block_number(&self) -> Result<u64, YieldError>;
+    async fn block_timestamp(&self, block_number: u64) -> Result<u64, YieldError>;
 }
 
 #[derive(Debug, Clone)]
@@ -45,7 +54,10 @@ impl<C: Client + Clone> YoGatewayClient<C> {
     }
 
     pub fn new(ethereum_client: EthereumClient<C>, contract_address: Address) -> Self {
-        Self { ethereum_client, contract_address }
+        Self {
+            ethereum_client,
+            contract_address,
+        }
     }
 
     pub fn base_mainnet(ethereum_client: EthereumClient<C>) -> Self {
@@ -57,27 +69,31 @@ impl<C: Client + Clone> YoGatewayClient<C> {
     }
 
     pub async fn quote_convert_to_shares(&self, yo_vault: Address, assets: U256) -> Result<U256, YieldError> {
-        self.call_contract(IYoGateway::quoteConvertToSharesCall { yoVault: yo_vault, assets }).await
+        self.call_gateway_contract(IYoGateway::quoteConvertToSharesCall { yoVault: yo_vault, assets })
+            .await
     }
 
     pub async fn quote_convert_to_assets(&self, yo_vault: Address, shares: U256) -> Result<U256, YieldError> {
-        self.call_contract(IYoGateway::quoteConvertToAssetsCall { yoVault: yo_vault, shares }).await
+        self.call_gateway_contract(IYoGateway::quoteConvertToAssetsCall { yoVault: yo_vault, shares })
+            .await
     }
 
     pub async fn quote_preview_deposit(&self, yo_vault: Address, assets: U256) -> Result<U256, YieldError> {
-        self.call_contract(IYoGateway::quotePreviewDepositCall { yoVault: yo_vault, assets }).await
+        self.call_gateway_contract(IYoGateway::quotePreviewDepositCall { yoVault: yo_vault, assets })
+            .await
     }
 
     pub async fn quote_preview_redeem(&self, yo_vault: Address, shares: U256) -> Result<U256, YieldError> {
-        self.call_contract(IYoGateway::quotePreviewRedeemCall { yoVault: yo_vault, shares }).await
+        self.call_gateway_contract(IYoGateway::quotePreviewRedeemCall { yoVault: yo_vault, shares })
+            .await
     }
 
     pub async fn get_asset_allowance(&self, yo_vault: Address, owner: Address) -> Result<U256, YieldError> {
-        self.call_contract(IYoGateway::getAssetAllowanceCall { yoVault: yo_vault, owner }).await
+        self.call_gateway_contract(IYoGateway::getAssetAllowanceCall { yoVault: yo_vault, owner }).await
     }
 
     pub async fn get_share_allowance(&self, yo_vault: Address, owner: Address) -> Result<U256, YieldError> {
-        self.call_contract(IYoGateway::getShareAllowanceCall { yoVault: yo_vault, owner }).await
+        self.call_gateway_contract(IYoGateway::getShareAllowanceCall { yoVault: yo_vault, owner }).await
     }
 
     pub async fn quote_convert_to_shares_for(&self, vault: YoVault, assets: U256) -> Result<U256, YieldError> {
@@ -160,16 +176,37 @@ impl<C: Client + Clone> YoGatewayClient<C> {
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
 
-    async fn call_contract<Call>(&self, call: Call) -> Result<Call::Return, YieldError>
+    async fn call_gateway_contract<Call>(&self, call: Call) -> Result<Call::Return, YieldError>
     where
         Call: SolCall,
     {
-        let encoded = call.abi_encode();
-        let payload = hex::encode_prefixed(&encoded);
-        let contract = self.contract_address.to_string();
+        self.call_contract_at_block(call, self.contract_address, None).await
+    }
+
+    async fn call_contract_at_block<Call>(&self, call: Call, contract: Address, block_number: Option<u64>) -> Result<Call::Return, YieldError>
+    where
+        Call: SolCall,
+    {
+        let payload = hex::encode_prefixed(call.abi_encode());
+        let contract_address = contract.to_string();
+
+        let block_param = block_number
+            .map(|number| format!("0x{number:x}"))
+            .map_or_else(|| json!("latest"), serde_json::Value::String);
+
         let response: String = self
             .ethereum_client
-            .eth_call(&contract, &payload)
+            .client
+            .call(
+                "eth_call",
+                json!([
+                    {
+                        "to": contract_address,
+                        "data": payload,
+                    },
+                    block_param
+                ]),
+            )
             .await
             .map_err(|err| YieldError::new(format!("yo gateway rpc call failed: {err}")))?;
 
@@ -177,10 +214,8 @@ impl<C: Client + Clone> YoGatewayClient<C> {
             return Err(YieldError::new("yo gateway response did not contain data"));
         }
 
-        let decoded = hex::decode(&response)
-            .map_err(|err| YieldError::new(format!("invalid hex returned by yo gateway: {err}")))?;
-        Call::abi_decode_returns(&decoded)
-            .map_err(|err| YieldError::new(format!("failed to decode yo gateway response: {err}")))
+        let decoded = hex::decode(&response).map_err(|err| YieldError::new(format!("invalid hex returned by yo gateway: {err}")))?;
+        Call::abi_decode_returns(&decoded).map_err(|err| YieldError::new(format!("failed to decode yo gateway response: {err}")))
     }
 }
 
@@ -247,5 +282,36 @@ where
 
         let value = result.trim_start_matches("0x");
         U256::from_str_radix(value, 16).map_err(|err| YieldError::new(format!("invalid balance data: {err}")))
+    }
+
+    async fn convert_to_assets_at_block(&self, yo_vault: Address, shares: U256, block_number: u64) -> Result<U256, YieldError> {
+        self.call_contract_at_block(IYoVaultToken::convertToAssetsCall { shares }, yo_vault, Some(block_number))
+            .await
+    }
+
+    async fn latest_block_number(&self) -> Result<u64, YieldError> {
+        self.ethereum_client
+            .get_latest_block()
+            .await
+            .map_err(|err| YieldError::new(format!("yo gateway failed to fetch latest block: {err}")))
+    }
+
+    async fn block_timestamp(&self, block_number: u64) -> Result<u64, YieldError> {
+        let block_hex = format!("0x{block_number:x}");
+        let mut blocks = self
+            .ethereum_client
+            .get_blocks(&[block_hex], false)
+            .await
+            .map_err(|err| YieldError::new(format!("yo gateway failed to fetch block {block_number}: {err}")))?;
+
+        let block = blocks
+            .pop()
+            .ok_or_else(|| YieldError::new(format!("yo gateway missing block data for {block_number}")))?;
+
+        block
+            .timestamp
+            .to_string()
+            .parse::<u64>()
+            .map_err(|err| YieldError::new(format!("yo gateway failed to parse timestamp for block {block_number}: {err}")))
     }
 }

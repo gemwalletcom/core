@@ -8389,8 +8389,11 @@ dependencies = [
  "async-trait",
  "gem_client",
  "gem_evm",
+ "gem_jsonrpc",
  "primitives",
+ "reqwest",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]

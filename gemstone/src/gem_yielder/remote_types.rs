@@ -1,12 +1,5 @@
 use primitives::AssetId;
-use yielder::{
-    Yield as CoreYield,
-    YieldDepositRequest as CoreDepositRequest,
-    YieldDetails as CoreDetails,
-    YieldDetailsRequest as CoreDetailsRequest,
-    YieldTransaction as CoreTransaction,
-    YieldWithdrawRequest as CoreWithdrawRequest,
-};
+use yielder::{Yield as CoreYield, YieldDetails as CoreDetails, YieldTransaction as CoreTransaction};
 
 pub type GemYield = CoreYield;
 
@@ -29,38 +22,6 @@ pub struct GemYieldTransaction {
     pub value: Option<String>,
 }
 
-pub type GemYieldDepositRequest = CoreDepositRequest;
-
-#[uniffi::remote(Record)]
-pub struct GemYieldDepositRequest {
-    pub asset: AssetId,
-    pub wallet_address: String,
-    pub receiver_address: Option<String>,
-    pub amount: String,
-    pub min_shares: Option<String>,
-    pub partner_id: Option<u32>,
-}
-
-pub type GemYieldWithdrawRequest = CoreWithdrawRequest;
-
-#[uniffi::remote(Record)]
-pub struct GemYieldWithdrawRequest {
-    pub asset: AssetId,
-    pub wallet_address: String,
-    pub receiver_address: Option<String>,
-    pub shares: String,
-    pub min_assets: Option<String>,
-    pub partner_id: Option<u32>,
-}
-
-pub type GemYieldDetailsRequest = CoreDetailsRequest;
-
-#[uniffi::remote(Record)]
-pub struct GemYieldDetailsRequest {
-    pub asset: AssetId,
-    pub wallet_address: String,
-}
-
 pub type GemYieldDetails = CoreDetails;
 
 #[uniffi::remote(Record)]
@@ -71,5 +32,6 @@ pub struct GemYieldDetails {
     pub asset_token: String,
     pub share_balance: Option<String>,
     pub asset_balance: Option<String>,
+    pub apy: Option<f64>,
     pub rewards: Option<String>,
 }

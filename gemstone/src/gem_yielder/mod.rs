@@ -4,14 +4,14 @@ pub use remote_types::*;
 use std::sync::Arc;
 
 use crate::{
-    alien::{AlienProvider, AlienProviderWrapper},
     GemstoneError,
+    alien::{AlienProvider, AlienProviderWrapper},
 };
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_jsonrpc::rpc::RpcClient;
 use primitives::{AssetId, Chain, EVMChain};
-use yielder::{YieldProvider, YoGatewayApi, YoGatewayClient, YoYieldProvider, Yielder, YO_GATEWAY_BASE_MAINNET};
+use yielder::{YO_GATEWAY_BASE_MAINNET, YieldDetailsRequest, YieldProvider, Yielder, YoGatewayApi, YoGatewayClient, YoYieldProvider};
 
 #[derive(uniffi::Object)]
 pub struct GemYielder {
@@ -34,19 +34,20 @@ impl GemYielder {
         Ok(Self { inner })
     }
 
-    pub fn yields_for_asset(&self, asset_id: &AssetId) -> Vec<GemYield> {
-        self.inner.yields_for_asset(asset_id)
+    pub async fn yields_for_asset(&self, asset_id: &AssetId) -> Result<Vec<GemYield>, GemstoneError> {
+        self.inner.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
     }
 
-    pub async fn deposit(&self, provider: String, request: GemYieldDepositRequest) -> Result<GemYieldTransaction, GemstoneError> {
-        self.inner.deposit(&provider, &request).await.map_err(Into::into)
+    pub async fn deposit(&self, provider: String, asset: AssetId, wallet_address: String, amount: String) -> Result<GemYieldTransaction, GemstoneError> {
+        self.inner.deposit(&provider, &asset, &wallet_address, &amount).await.map_err(Into::into)
     }
 
-    pub async fn withdraw(&self, provider: String, request: GemYieldWithdrawRequest) -> Result<GemYieldTransaction, GemstoneError> {
-        self.inner.withdraw(&provider, &request).await.map_err(Into::into)
+    pub async fn withdraw(&self, provider: String, asset: AssetId, wallet_address: String, amount: String) -> Result<GemYieldTransaction, GemstoneError> {
+        self.inner.withdraw(&provider, &asset, &wallet_address, &amount).await.map_err(Into::into)
     }
 
-    pub async fn details(&self, provider: String, request: GemYieldDetailsRequest) -> Result<GemYieldDetails, GemstoneError> {
+    pub async fn details(&self, provider: String, asset: AssetId, wallet_address: String) -> Result<GemYieldDetails, GemstoneError> {
+        let request = YieldDetailsRequest { asset, wallet_address };
         self.inner.details(&provider, &request).await.map_err(Into::into)
     }
 }

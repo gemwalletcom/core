@@ -35,26 +35,6 @@ pub struct YieldTransaction {
 }
 
 #[derive(Debug, Clone)]
-pub struct YieldDepositRequest {
-    pub asset: AssetId,
-    pub wallet_address: String,
-    pub receiver_address: Option<String>,
-    pub amount: String,
-    pub min_shares: Option<String>,
-    pub partner_id: Option<u32>,
-}
-
-#[derive(Debug, Clone)]
-pub struct YieldWithdrawRequest {
-    pub asset: AssetId,
-    pub wallet_address: String,
-    pub receiver_address: Option<String>,
-    pub shares: String,
-    pub min_assets: Option<String>,
-    pub partner_id: Option<u32>,
-}
-
-#[derive(Debug, Clone)]
 pub struct YieldDetailsRequest {
     pub asset: AssetId,
     pub wallet_address: String,
@@ -68,6 +48,7 @@ pub struct YieldDetails {
     pub asset_token: String,
     pub share_balance: Option<String>,
     pub asset_balance: Option<String>,
+    pub apy: Option<f64>,
     pub rewards: Option<String>,
 }
 
@@ -80,6 +61,7 @@ impl YieldDetails {
             asset_token: asset_token.to_string(),
             share_balance: None,
             asset_balance: None,
+            apy: None,
             rewards: None,
         }
     }
@@ -89,9 +71,12 @@ impl YieldDetails {
 pub trait YieldProvider: Send + Sync {
     fn protocol(&self) -> &'static str;
     fn yields(&self, asset_id: &AssetId) -> Vec<Yield>;
-    async fn deposit(&self, request: &YieldDepositRequest) -> Result<YieldTransaction, YieldError>;
-    async fn withdraw(&self, request: &YieldWithdrawRequest) -> Result<YieldTransaction, YieldError>;
+    async fn deposit(&self, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError>;
+    async fn withdraw(&self, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError>;
     async fn details(&self, request: &YieldDetailsRequest) -> Result<YieldDetails, YieldError>;
+    async fn yields_with_apy(&self, asset_id: &AssetId) -> Result<Vec<Yield>, YieldError> {
+        Ok(self.yields(asset_id))
+    }
 }
 
 #[derive(Default)]
@@ -123,14 +108,23 @@ impl Yielder {
         self.providers.iter().flat_map(|provider| provider.yields(asset_id)).collect()
     }
 
-    pub async fn deposit(&self, protocol: &str, request: &YieldDepositRequest) -> Result<YieldTransaction, YieldError> {
-        let provider = self.provider(protocol)?;
-        provider.deposit(request).await
+    pub async fn yields_for_asset_with_apy(&self, asset_id: &AssetId) -> Result<Vec<Yield>, YieldError> {
+        let mut yields = Vec::new();
+        for provider in &self.providers {
+            let mut provider_yields = provider.yields_with_apy(asset_id).await?;
+            yields.append(&mut provider_yields);
+        }
+        Ok(yields)
     }
 
-    pub async fn withdraw(&self, protocol: &str, request: &YieldWithdrawRequest) -> Result<YieldTransaction, YieldError> {
+    pub async fn deposit(&self, protocol: &str, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError> {
         let provider = self.provider(protocol)?;
-        provider.withdraw(request).await
+        provider.deposit(asset, wallet_address, amount).await
+    }
+
+    pub async fn withdraw(&self, protocol: &str, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError> {
+        let provider = self.provider(protocol)?;
+        provider.withdraw(asset, wallet_address, amount).await
     }
 
     pub async fn details(&self, protocol: &str, request: &YieldDetailsRequest) -> Result<YieldDetails, YieldError> {
