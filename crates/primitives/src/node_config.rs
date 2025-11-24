@@ -158,8 +158,8 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
         ],
         Chain::HyperCore => vec![Node::new("https://api.hyperliquid.xyz", NodePriority::High)],
         Chain::Monad => vec![
-          Node::new("https://rpc.monad.xyz", NodePriority::High),
-          Node::new("https://rpc1.monad.xyz", NodePriority::Medium),
+            Node::new("https://rpc.monad.xyz", NodePriority::High),
+            Node::new("https://rpc1.monad.xyz", NodePriority::Medium),
         ],
         Chain::XLayer => vec![
             Node::new("https://rpc.xlayer.tech", NodePriority::High),
