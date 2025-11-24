@@ -21,6 +21,5 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=builder /app/dynode /app/
 COPY --from=builder /app/apps/dynode/config.yml /app/
-COPY --from=builder /app/apps/dynode/domains.yml /app/
 
 CMD ["/app/dynode"]

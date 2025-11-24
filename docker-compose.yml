@@ -57,7 +57,7 @@ services:
       - redis
       - postgres
     volumes:
-      - ./apps/dynode/domains.yml:/app/domains.yml
+      - ./apps/dynode/chains.yml:/app/chains.yml
     networks:
       default: {}
       dynode_internal:
