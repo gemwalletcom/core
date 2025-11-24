@@ -2,10 +2,11 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use dynode::config::NodeConfig;
+use dynode::config::load_config;
 use dynode::metrics::Metrics;
 use dynode::monitoring::{NodeMonitor, NodeService};
 use dynode::proxy::{ProxyRequestBuilder, ProxyResponse};
+use primitives::Chain;
 use dynode::response::{ErrorResponse, ProxyRocketResponse};
 use gem_tracing::{error_with_fields, info_with_fields};
 use reqwest::Method;
@@ -40,7 +41,13 @@ impl Handler for ProxyHandler {
             Err(_) => return Outcome::from(request, ErrorResponse::new(Status::BadRequest, "Invalid HTTP method".to_string())),
         };
 
-        match process_proxy(method, request, data, node_service.inner()).await {
+        let uri = request.uri().to_string();
+        let chain = match resolve_chain(&uri) {
+            Some(chain) => chain,
+            None => return Outcome::from(request, ErrorResponse::new(Status::BadRequest, "Invalid chain".to_string())),
+        };
+
+        match process_proxy(chain, method, request, data, node_service.inner()).await {
             Ok(response) => Outcome::from(request, ProxyRocketResponse(response)),
             Err(err) => Outcome::from(request, err),
         }
@@ -76,15 +83,15 @@ async fn root_endpoint() -> Status {
     Status::Ok
 }
 
-async fn process_proxy(method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, ErrorResponse> {
+async fn process_proxy(chain: Chain, method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, ErrorResponse> {
     let body = read_request_body(data).await?;
     let headers = build_header_map(request)?;
     let uri = request.uri().to_string();
 
-    let proxy_request = match ProxyRequestBuilder::build(method.clone(), headers, body, uri, node_service) {
+    let proxy_request = match ProxyRequestBuilder::build(method.clone(), headers, body, uri, chain) {
         Ok(req) => req,
         Err(status) => {
-            let msg = "Failed to resolve domain or build request".to_string();
+            let msg = "Failed to build request".to_string();
             return Err(ErrorResponse::new(status, msg));
         }
     };
@@ -119,9 +126,14 @@ fn build_header_map(request: &Request<'_>) -> Result<HeaderMap, ErrorResponse> {
     Ok(headers)
 }
 
+fn resolve_chain(path: &str) -> Option<Chain> {
+    let chain_str = path.trim_start_matches('/').split('/').next()?;
+    Chain::from_str(chain_str).ok()
+}
+
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let config = NodeConfig::new()?;
+    let (config, chains) = load_config()?;
 
     let node_address = IpAddr::from_str(config.address.as_str())?;
     let metrics_address = IpAddr::from_str(config.metrics.address.as_str())?;
@@ -132,7 +144,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     };
     let metrics = Metrics::new(metrics_config);
     let node_service = NodeService::new(
-        config.domains_map(),
+        chains,
         metrics.clone(),
         config.cache.clone(),
         config.monitoring.clone(),
@@ -141,7 +153,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     );
     if node_service.monitoring_config.enabled {
         let monitor = NodeMonitor::new(
-            node_service.domains.clone(),
+            node_service.chains.clone(),
             Arc::clone(&node_service.nodes),
             Arc::clone(&node_service.metrics),
             node_service.monitoring_config.clone(),

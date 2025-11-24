@@ -5,8 +5,7 @@ use super::NodeMonitoringConfig;
 use super::url::{NodeResult, Override, Url};
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Domain {
-    pub domain: String,
+pub struct ChainConfig {
     pub chain: Chain,
     pub block_delay: Option<u64>,
     pub poll_interval_seconds: Option<u64>,
@@ -14,7 +13,7 @@ pub struct Domain {
     pub urls: Vec<Url>,
 }
 
-impl Domain {
+impl ChainConfig {
     pub fn get_poll_interval_seconds(&self, monitoring_config: &NodeMonitoringConfig) -> u64 {
         self.poll_interval_seconds.unwrap_or(monitoring_config.poll_interval_seconds)
     }
@@ -71,9 +70,8 @@ impl Domain {
 mod tests {
     use super::*;
 
-    fn make_domain(poll_interval: Option<u64>, block_delay: Option<u64>) -> Domain {
-        Domain {
-            domain: "test".to_string(),
+    fn make_chain_config(poll_interval: Option<u64>, block_delay: Option<u64>) -> ChainConfig {
+        ChainConfig {
             chain: primitives::Chain::Ethereum,
             block_delay,
             poll_interval_seconds: poll_interval,
@@ -89,9 +87,8 @@ mod tests {
         }
     }
 
-    fn make_domain_with_overrides(overrides: Vec<Override>) -> Domain {
-        Domain {
-            domain: "test".to_string(),
+    fn make_chain_config_with_overrides(overrides: Vec<Override>) -> ChainConfig {
+        ChainConfig {
             chain: primitives::Chain::Ethereum,
             block_delay: None,
             poll_interval_seconds: None,
@@ -109,110 +106,110 @@ mod tests {
     }
 
     #[test]
-    fn get_poll_interval_seconds_uses_domain_override() {
-        let domain = make_domain(Some(20), None);
+    fn get_poll_interval_seconds_uses_chain_override() {
+        let chain_config = make_chain_config(Some(20), None);
         let config = make_monitoring_config(45, 100);
-        assert_eq!(domain.get_poll_interval_seconds(&config), 20);
+        assert_eq!(chain_config.get_poll_interval_seconds(&config), 20);
     }
 
     #[test]
     fn get_poll_interval_seconds_uses_global_fallback() {
-        let domain = make_domain(None, None);
+        let chain_config = make_chain_config(None, None);
         let config = make_monitoring_config(45, 100);
-        assert_eq!(domain.get_poll_interval_seconds(&config), 45);
+        assert_eq!(chain_config.get_poll_interval_seconds(&config), 45);
     }
 
     #[test]
-    fn get_block_delay_uses_domain_override() {
-        let domain = make_domain(None, Some(50));
+    fn get_block_delay_uses_chain_override() {
+        let chain_config = make_chain_config(None, Some(50));
         let config = make_monitoring_config(900, 200);
-        assert_eq!(domain.get_block_delay(&config), 50);
+        assert_eq!(chain_config.get_block_delay(&config), 50);
     }
 
     #[test]
     fn get_block_delay_uses_global_fallback() {
-        let domain = make_domain(None, None);
+        let chain_config = make_chain_config(None, None);
         let config = make_monitoring_config(900, 200);
-        assert_eq!(domain.get_block_delay(&config), 200);
+        assert_eq!(chain_config.get_block_delay(&config), 200);
     }
 
     #[test]
     fn resolve_url_without_override() {
-        let domain = make_domain(None, None);
+        let chain_config = make_chain_config(None, None);
         let base_url = make_url("https://example.com/rpc");
-        assert_eq!(domain.resolve_url(&base_url, Some("eth_sendTransaction"), None).url, "https://example.com/rpc");
+        assert_eq!(chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url, "https://example.com/rpc");
     }
 
     #[test]
     fn resolve_url_with_rpc_method_override() {
-        let domain = make_domain_with_overrides(vec![Override {
+        let chain_config = make_chain_config_with_overrides(vec![Override {
             rpc_method: Some("eth_sendTransaction".to_string()),
             path: None,
             url: "https://tx-relay.example.com".to_string(),
         }]);
         let base_url = make_url("https://example.com/rpc");
         assert_eq!(
-            domain.resolve_url(&base_url, Some("eth_sendTransaction"), None).url,
+            chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url,
             "https://tx-relay.example.com"
         );
     }
 
     #[test]
     fn resolve_url_with_rpc_method_and_path_override() {
-        let domain = make_domain_with_overrides(vec![Override {
+        let chain_config = make_chain_config_with_overrides(vec![Override {
             rpc_method: Some("eth_sendTransaction".to_string()),
             path: None,
             url: "https://tx-relay.example.com/tx/submit".to_string(),
         }]);
         let base_url = make_url("https://example.com/rpc");
         assert_eq!(
-            domain.resolve_url(&base_url, Some("eth_sendTransaction"), None).url,
+            chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url,
             "https://tx-relay.example.com/tx/submit"
         );
     }
 
     #[test]
     fn resolve_url_without_matching_override() {
-        let domain = make_domain_with_overrides(vec![Override {
+        let chain_config = make_chain_config_with_overrides(vec![Override {
             rpc_method: Some("eth_sendTransaction".to_string()),
             path: None,
             url: "https://tx-relay.example.com".to_string(),
         }]);
         let base_url = make_url("https://example.com/rpc");
-        assert_eq!(domain.resolve_url(&base_url, Some("eth_blockNumber"), None).url, "https://example.com/rpc");
+        assert_eq!(chain_config.resolve_url(&base_url, Some("eth_blockNumber"), None).url, "https://example.com/rpc");
     }
 
     #[test]
     fn resolve_url_with_wildcard_override() {
-        let domain = make_domain_with_overrides(vec![Override {
+        let chain_config = make_chain_config_with_overrides(vec![Override {
             rpc_method: None,
             path: None,
             url: "https://fallback.example.com/v2/rpc".to_string(),
         }]);
         let base_url = make_url("https://example.com/rpc");
         assert_eq!(
-            domain.resolve_url(&base_url, Some("eth_blockNumber"), None).url,
+            chain_config.resolve_url(&base_url, Some("eth_blockNumber"), None).url,
             "https://fallback.example.com/v2/rpc"
         );
     }
 
     #[test]
     fn resolve_url_with_path_override() {
-        let domain = make_domain_with_overrides(vec![Override {
+        let chain_config = make_chain_config_with_overrides(vec![Override {
             rpc_method: None,
             path: Some("/api/v1/block".to_string()),
             url: "https://api.example.com/v2/block".to_string(),
         }]);
         let base_url = make_url("https://example.com");
         assert_eq!(
-            domain.resolve_url(&base_url, None, Some("/api/v1/block")).url,
+            chain_config.resolve_url(&base_url, None, Some("/api/v1/block")).url,
             "https://api.example.com/v2/block"
         );
     }
 
     #[test]
     fn resolve_url_preserves_headers() {
-        let domain = make_domain_with_overrides(vec![Override {
+        let chain_config = make_chain_config_with_overrides(vec![Override {
             rpc_method: Some("eth_sendTransaction".to_string()),
             path: None,
             url: "https://tx-relay.example.com".to_string(),
@@ -221,7 +218,7 @@ mod tests {
             url: "https://example.com/rpc".to_string(),
             headers: Some(std::collections::HashMap::from([("x-api-key".to_string(), "test123".to_string())])),
         };
-        let resolved = domain.resolve_url(&base_url, Some("eth_sendTransaction"), None);
+        let resolved = chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None);
         assert_eq!(resolved.headers.as_ref().unwrap().get("x-api-key").unwrap(), "test123");
     }
 }

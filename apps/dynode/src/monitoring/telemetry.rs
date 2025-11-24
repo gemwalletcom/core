@@ -3,15 +3,15 @@ use std::error::Error;
 use gem_tracing::{DurationMs, error_with_fields, error_with_fields_impl, info_with_fields_impl};
 use primitives::NodeStatusState;
 
-use crate::config::{Domain, Url};
+use crate::config::{ChainConfig, Url};
 
 use super::sync::{NodeStatusObservation, NodeSyncAnalyzer};
 
 pub struct NodeTelemetry;
 
 impl NodeTelemetry {
-    pub fn log_status_debug(domain: &Domain, observations: &[NodeStatusObservation]) {
-        let chain = domain.chain.as_ref();
+    pub fn log_status_debug(chain_config: &ChainConfig, observations: &[NodeStatusObservation]) {
+        let chain = chain_config.chain.as_ref();
         for observation in observations {
             match &observation.state {
                 NodeStatusState::Healthy(sync_status) => {
@@ -41,8 +41,8 @@ impl NodeTelemetry {
         }
     }
 
-    pub fn log_node_healthy(domain: &Domain, observation: &NodeStatusObservation) {
-        let chain = domain.chain.as_ref();
+    pub fn log_node_healthy(chain_config: &ChainConfig, observation: &NodeStatusObservation) {
+        let chain = chain_config.chain.as_ref();
         if let NodeStatusState::Healthy(status) = &observation.state {
             let mut fields = vec![("host", observation.url.host())];
             if !status.in_sync {
@@ -57,8 +57,8 @@ impl NodeTelemetry {
         }
     }
 
-    pub fn log_node_unhealthy(domain: &Domain, observation: &NodeStatusObservation) {
-        let chain = domain.chain.as_ref();
+    pub fn log_node_unhealthy(chain_config: &ChainConfig, observation: &NodeStatusObservation) {
+        let chain = chain_config.chain.as_ref();
         match &observation.state {
             NodeStatusState::Healthy(status) => {
                 let mut fields = vec![("host", observation.url.host())];
@@ -89,8 +89,8 @@ impl NodeTelemetry {
         }
     }
 
-    pub fn log_node_switch(domain: &Domain, previous: &Url, observation: &NodeStatusObservation) {
-        let chain = domain.chain.as_ref();
+    pub fn log_node_switch(chain_config: &ChainConfig, previous: &Url, observation: &NodeStatusObservation) {
+        let chain = chain_config.chain.as_ref();
         match &observation.state {
             NodeStatusState::Healthy(status) => {
                 let latency = DurationMs(observation.latency);
@@ -120,24 +120,24 @@ impl NodeTelemetry {
         }
     }
 
-    pub fn log_no_candidate(domain: &Domain, observations: &[NodeStatusObservation]) {
+    pub fn log_no_candidate(chain_config: &ChainConfig, observations: &[NodeStatusObservation]) {
         error_with_fields!(
             "Node switch unavailable",
             &std::io::Error::other("No healthy nodes available"),
-            chain = domain.chain.as_ref(),
+            chain = chain_config.chain.as_ref(),
             statuses = &NodeSyncAnalyzer::format_status_summary(observations),
         );
     }
 
-    pub fn log_monitor_error(domain: &Domain, err: &dyn std::error::Error) {
-        error_with_fields!("Node monitor error", err, chain = domain.chain.as_ref());
+    pub fn log_monitor_error(chain_config: &ChainConfig, err: &dyn std::error::Error) {
+        error_with_fields!("Node monitor error", err, chain = chain_config.chain.as_ref());
     }
 
-    pub fn log_missing_current(domain: &Domain) {
+    pub fn log_missing_current(chain_config: &ChainConfig) {
         error_with_fields!(
             "Node monitor current missing",
             &std::io::Error::other("Node not configured"),
-            chain = domain.chain.as_ref(),
+            chain = chain_config.chain.as_ref(),
         );
     }
 }

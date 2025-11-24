@@ -1,5 +1,5 @@
 use crate::cache::{CacheProvider, CachedResponse, RequestCache};
-use crate::config::{Domain, Url};
+use crate::config::{ChainConfig, Url};
 use crate::jsonrpc_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::proxy::jsonrpc::JsonRpcHandler;
@@ -27,11 +27,11 @@ pub struct ProxyRequestService {
 #[derive(Debug, Clone)]
 pub struct NodeDomain {
     pub url: Url,
-    pub config: Domain,
+    pub config: ChainConfig,
 }
 
 impl NodeDomain {
-    pub fn new(url: Url, config: Domain) -> Self {
+    pub fn new(url: Url, config: ChainConfig) -> Self {
         Self { url, config }
     }
 }
@@ -284,9 +284,7 @@ impl ProxyRequestService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::Url;
     use crate::proxy::constants::JSON_CONTENT_TYPE;
-    use primitives::Chain;
     use reqwest::header;
 
     #[test]
@@ -305,52 +303,5 @@ mod tests {
             filtered.get(header::CONTENT_TYPE).unwrap(),
             &header::HeaderValue::from_static(JSON_CONTENT_TYPE)
         );
-    }
-
-    #[test]
-    fn test_domain_matching_prioritizes_exact_then_longest_chain() {
-        let mut domain_configs = HashMap::new();
-
-        domain_configs.insert(
-            "bitcoin".to_string(),
-            Domain {
-                domain: "bitcoin".to_string(),
-                chain: Chain::Bitcoin,
-                block_delay: None,
-                poll_interval_seconds: None,
-                overrides: None,
-                urls: vec![Url {
-                    url: "https://bitcoin.example.com".to_string(),
-                    headers: None,
-                }],
-            },
-        );
-
-        domain_configs.insert(
-            "bitcoin.dynode.internal".to_string(),
-            Domain {
-                domain: "bitcoin.dynode.internal".to_string(),
-                chain: Chain::Bitcoin,
-                block_delay: None,
-                poll_interval_seconds: None,
-                overrides: None,
-                urls: vec![Url {
-                    url: "https://bitcoin-internal.example.com".to_string(),
-                    headers: None,
-                }],
-            },
-        );
-
-        let exact_match1 = domain_configs.get("bitcoin");
-        assert!(exact_match1.is_some());
-        assert_eq!(exact_match1.unwrap().domain, "bitcoin");
-
-        let exact_match2 = domain_configs.get("bitcoin.dynode.internal");
-        assert!(exact_match2.is_some());
-        assert_eq!(exact_match2.unwrap().domain, "bitcoin.dynode.internal");
-
-        let chain_fallback = domain_configs.values().filter(|d| d.chain == Chain::Bitcoin).max_by_key(|d| d.domain.len());
-        assert!(chain_fallback.is_some());
-        assert_eq!(chain_fallback.unwrap().domain, "bitcoin.dynode.internal");
     }
 }

@@ -1,5 +1,5 @@
-use crate::monitoring::NodeService;
 use crate::proxy::proxy_request::ProxyRequest;
+use primitives::Chain;
 use reqwest::{Method, header::HeaderMap};
 use rocket::http::Status;
 use url::Url;
@@ -7,12 +7,10 @@ use url::Url;
 pub struct ProxyRequestBuilder;
 
 impl ProxyRequestBuilder {
-    pub fn build(method: Method, headers: HeaderMap, body: Vec<u8>, uri: String, node_service: &NodeService) -> Result<ProxyRequest, Status> {
+    pub fn build(method: Method, headers: HeaderMap, body: Vec<u8>, uri: String, chain: Chain) -> Result<ProxyRequest, Status> {
         let host = Self::extract_host(&headers)?;
         let user_agent = Self::extract_user_agent(&headers);
-        let path = Self::extract_path(&uri);
-        let resolution = node_service.resolve_chain(&host, &path).ok_or(Status::BadRequest)?;
-        let (path, path_with_query) = Self::prepare_paths(&uri, resolution.is_path_based());
+        let (path, path_with_query) = Self::prepare_paths(&uri);
 
         Ok(ProxyRequest::new(
             method,
@@ -22,7 +20,7 @@ impl ProxyRequestBuilder {
             path_with_query,
             host,
             user_agent,
-            resolution.chain(),
+            chain,
         ))
     }
 
@@ -44,12 +42,8 @@ impl ProxyRequestBuilder {
         uri.split('?').next().unwrap_or(uri).to_string()
     }
 
-    fn prepare_paths(uri: &str, path_based_routing: bool) -> (String, String) {
-        if path_based_routing {
-            (Self::remove_chain_from_path(&Self::extract_path(uri)), Self::remove_chain_from_path(uri))
-        } else {
-            (Self::extract_path(uri), uri.to_string())
-        }
+    fn prepare_paths(uri: &str) -> (String, String) {
+        (Self::remove_chain_from_path(&Self::extract_path(uri)), Self::remove_chain_from_path(uri))
     }
 
     fn parse_hostname(host_header: &str) -> String {
@@ -102,4 +96,5 @@ mod tests {
         assert_eq!(ProxyRequestBuilder::parse_hostname("example.com:8080"), "example.com");
         assert_eq!(ProxyRequestBuilder::parse_hostname("localhost:3000"), "localhost");
     }
+
 }

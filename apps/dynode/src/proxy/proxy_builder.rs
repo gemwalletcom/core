@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[cfg(test)]
-use crate::config::{Domain, Url};
+use crate::config::{ChainConfig, Url};
 
 pub struct ProxyBuilder {
     metrics: Metrics,
@@ -56,9 +56,8 @@ mod tests {
         }
     }
 
-    fn create_test_domain() -> Domain {
-        Domain {
-            domain: "test.com".to_string(),
+    fn create_test_chain_config() -> ChainConfig {
+        ChainConfig {
             chain: Chain::Ethereum,
             block_delay: None,
             poll_interval_seconds: None,
@@ -75,7 +74,7 @@ mod tests {
 
         let builder = ProxyBuilder::new(metrics, cache, client);
         let url = create_test_url("https://test-node.com");
-        let node_domain = NodeDomain::new(url, create_test_domain());
+        let node_domain = NodeDomain::new(url, create_test_chain_config());
         let proxy = builder.create_for_domain("test.com", &node_domain);
 
         let domains = proxy.domains.read().await;
