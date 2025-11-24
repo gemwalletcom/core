@@ -29,6 +29,8 @@ mod blocksec;
 pub use blocksec::Blocksec;
 mod algorand;
 pub use algorand::AlgorandAllo;
+pub mod blockvision;
+pub use blockvision::BlockVision;
 mod subscan;
 pub use subscan::SubScan;
 mod cardano;

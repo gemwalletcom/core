@@ -1,8 +1,8 @@
 use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
-    AlgorandAllo, BlockScout, Blocksec, Cardanocan, EtherScan, HyperliquidExplorer, MantleExplorer, NearBlocks, OkxExplorer, RouteScan, RuneScan, SubScan,
-    TonScan, TronScan, Viewblock, XrpScan, ZkSync, aptos, blockchair, mempool, mintscan, solana, stellar_expert, sui, threexpl, ton,
+    aptos, blockchair, mempool, mintscan, solana, stellar_expert, sui, threexpl, ton, AlgorandAllo, BlockScout, BlockVision, Blocksec, Cardanocan,
+    EtherScan, HyperliquidExplorer, MantleExplorer, NearBlocks, OkxExplorer, RouteScan, RuneScan, SubScan, TonScan, TronScan, Viewblock, XrpScan, ZkSync,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -84,7 +84,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Tron => vec![TronScan::boxed(), blockchair::new_tron()],
         Chain::Xrp => vec![XrpScan::boxed(), blockchair::new_xrp()],
         Chain::Aptos => vec![aptos::new_aptos_scan(), aptos::new_aptos_explorer(), blockchair::new_aptos()],
-        Chain::Sui => vec![sui::new_sui_scan(), sui::new_sui_vision()],
+        Chain::Sui => vec![sui::new_sui_scan(), BlockVision::new_sui()],
         Chain::Near => vec![NearBlocks::boxed()],
         Chain::Stellar => vec![stellar_expert::new(), blockchair::new_stellar()],
         Chain::Sonic => vec![EtherScan::boxed(EVMChain::Sonic), RouteScan::new_sonic()],
@@ -97,7 +97,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Unichain => vec![EtherScan::boxed(EVMChain::Unichain)],
         Chain::Hyperliquid => vec![EtherScan::boxed(EVMChain::Hyperliquid), BlockScout::new_hyperliquid()],
         Chain::HyperCore => vec![HyperliquidExplorer::boxed()],
-        Chain::Monad => vec![EtherScan::boxed(EVMChain::Monad)],
+        Chain::Monad => vec![EtherScan::boxed(EVMChain::Monad), BlockVision::new_monad()],
         Chain::XLayer => vec![OkxExplorer::new_xlayer()],
     }
 }

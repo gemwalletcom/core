@@ -29,7 +29,7 @@ impl EtherScan {
             EVMChain::Abstract => Explorer::boxed(Metadata::with_token("Abscan", "https://abscan.org")),
             EVMChain::Berachain => Explorer::boxed(Metadata::with_token("Berascan", "https://berascan.com")),
             EVMChain::Unichain => Explorer::boxed(Metadata::with_token("Uniscan", "https://uniscan.xyz")),
-            EVMChain::Monad => Explorer::boxed(Metadata::with_token("Monad", "https://testnet.monadexplorer.com")),
+            EVMChain::Monad => Explorer::boxed(Metadata::with_token("Monadscan", "https://monadscan.com")),
             EVMChain::Hyperliquid => Explorer::boxed(Metadata::with_token("HyperEvmScan", "https://hyperevmscan.io")),
             _ => todo!(),
         }

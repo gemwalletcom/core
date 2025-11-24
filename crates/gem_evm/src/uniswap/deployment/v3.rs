@@ -86,6 +86,12 @@ pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deploym
             permit2,
             universal_router: "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3",
         }),
+        // See: https://github.com/Uniswap/contracts/blob/main/deployments/143.md
+        Chain::Monad => Some(V3Deployment {
+            quoter_v2: "0x661E93cca42AfacB172121EF892830cA3b70F08d",
+            permit2,
+            universal_router: "0x0D97Dc33264bfC1c226207428A79b26757fb9dc3",
+        }),
         _ => None,
     }
 }
