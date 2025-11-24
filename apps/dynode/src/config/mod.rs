@@ -1,6 +1,6 @@
 use std::{collections::HashMap, env, fs, path::{Path, PathBuf}};
 
-use config::{Config, ConfigError, File};
+use config::{Config, ConfigError, Environment, File};
 use primitives::Chain;
 use serde::Deserialize;
 
@@ -112,7 +112,11 @@ pub fn load_config() -> Result<(NodeConfig, HashMap<Chain, ChainConfig>), Config
         current_dir.join("apps/dynode")
     };
 
-    let config: NodeConfig = Config::builder().add_source(File::from(base_dir.join("config.yml"))).build()?.try_deserialize()?;
+    let config: NodeConfig = Config::builder()
+        .add_source(File::from(base_dir.join("config.yml")))
+        .add_source(Environment::default().separator("_"))
+        .build()?
+        .try_deserialize()?;
 
     let chains = find_chain_files(&base_dir)
         .into_iter()
