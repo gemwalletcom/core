@@ -79,8 +79,8 @@ async fn health_endpoint() -> Status {
 }
 
 #[rocket::get("/")]
-async fn root_endpoint() -> Status {
-    Status::Ok
+async fn root_endpoint() -> &'static str {
+    "ok"
 }
 
 async fn process_proxy(chain: Chain, method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, ErrorResponse> {
