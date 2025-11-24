@@ -80,6 +80,8 @@ pub mod transaction_type;
 pub use self::transaction_type::TransactionType;
 pub mod transaction_state;
 pub use self::transaction_state::TransactionState;
+pub mod recent_activity_type;
+pub use self::recent_activity_type::RecentActivityType;
 pub mod transaction_direction;
 pub use self::transaction_direction::TransactionDirection;
 pub mod subscription;
