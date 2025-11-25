@@ -1,4 +1,8 @@
-use std::{collections::HashMap, env, fs, path::{Path, PathBuf}};
+use std::{
+    collections::HashMap,
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use config::{Config, ConfigError, Environment, File};
 use primitives::Chain;
@@ -120,7 +124,9 @@ pub fn load_config() -> Result<(NodeConfig, HashMap<Chain, ChainConfig>), Config
 
     let chains = find_chain_files(&base_dir)
         .into_iter()
-        .filter_map(|path| Config::builder().add_source(File::from(path)).build().ok()?.try_deserialize::<ChainsFile>().ok())
+        .map(|path| Config::builder().add_source(File::from(path)).build()?.try_deserialize::<ChainsFile>())
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
         .flat_map(|cf| cf.chains)
         .map(|c| (c.chain, c))
         .collect();

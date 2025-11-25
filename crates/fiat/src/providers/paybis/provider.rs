@@ -9,7 +9,7 @@ use std::error::Error;
 use super::models::country::country_status;
 use super::{
     client::PaybisClient,
-    mapper::{map_assets_with_limits, map_process_webhook},
+    mapper::{map_assets, map_process_webhook},
 };
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 use streamer::FiatWebhook;
@@ -22,9 +22,7 @@ impl FiatProvider for PaybisClient {
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
         let assets = PaybisClient::get_assets(self).await?;
-        let limits = PaybisClient::get_payment_method_limits(self).await?;
-
-        Ok(map_assets_with_limits(assets.meta.currencies, &limits))
+        Ok(map_assets(assets.meta.currencies))
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
@@ -59,9 +57,8 @@ impl FiatProvider for PaybisClient {
 
         let payment_method = quote.payment_methods.first().unwrap();
         let crypto_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
-        let quote_id = uuid::Uuid::new_v4().to_string();
 
-        Ok(FiatQuoteResponse::new(quote_id, request.amount, crypto_amount))
+        Ok(FiatQuoteResponse::new(quote.id, request.amount, crypto_amount))
     }
 
     async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
@@ -75,9 +72,8 @@ impl FiatProvider for PaybisClient {
 
         let payment_method = quote.payment_methods.first().unwrap();
         let fiat_amount: f64 = payment_method.amount_to.amount.parse().unwrap_or(0.0);
-        let quote_id = uuid::Uuid::new_v4().to_string();
 
-        Ok(FiatQuoteResponse::new(quote_id, fiat_amount, request.amount))
+        Ok(FiatQuoteResponse::new(quote.id, fiat_amount, request.amount))
     }
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
@@ -87,7 +83,7 @@ impl FiatProvider for PaybisClient {
                 &data.wallet_address,
                 &data.quote.fiat_currency,
                 &data.asset_symbol.symbol,
-                data.quote.fiat_amount,
+                &data.quote.id,
                 is_buy,
                 &data.ip_address,
                 &data.locale,
@@ -103,7 +99,7 @@ mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
     use primitives::currency::Currency;
-    use primitives::{Chain, FiatBuyQuote};
+    use primitives::{Chain, FiatBuyQuote, FiatQuoteRequest};
     use streamer::FiatWebhook;
 
     #[tokio::test]
@@ -121,6 +117,24 @@ mod fiat_integration_tests {
         assert_eq!(quote.fiat_currency, "USD");
         assert!(quote.crypto_amount > 0.0);
         assert_eq!(quote.fiat_amount, 100.0);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_paybis_get_sell_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_paybis_test_client();
+
+        let request = FiatQuoteRequest::mock_sell();
+        let mut mapping = FiatMapping::mock();
+        mapping.asset_symbol.network = Some("bitcoin".to_string());
+
+        let quote = FiatProvider::get_quote_sell(&client, request, mapping).await?;
+
+        println!("Paybis sell quote: {:?}", quote);
+        assert!(!quote.quote_id.is_empty());
+        assert!(quote.fiat_amount > 0.0);
+        assert_eq!(quote.crypto_amount, 0.001);
 
         Ok(())
     }
@@ -161,14 +175,10 @@ mod fiat_integration_tests {
         if let Some(asset) = usdt_trc20_asset {
             assert!(!asset.buy_limits.is_empty(), "USDT-TRC20 should have buy limits");
             let usd_buy_limit = asset.buy_limits.iter().find(|limit| limit.currency == Currency::USD);
-            if let Some(limit) = usd_buy_limit {
-                assert!(limit.min_amount > Some(1.0));
-                assert!(limit.max_amount > Some(1000.0));
-            }
+            assert!(usd_buy_limit.is_some(), "Should have USD limit with Card payment type");
         }
 
-        let assets_with_limits = result.iter().filter(|a| !a.buy_limits.is_empty()).count();
-        println!("Found {} assets with {} having buy limits", result.len(), assets_with_limits);
+        println!("Found {} assets", result.len());
 
         Ok(())
     }

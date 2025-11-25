@@ -14,8 +14,7 @@ pub struct Request {
     pub crypto_wallet_address: CryptoWalletAddress,
     pub currency_code_from: String,
     pub currency_code_to: String,
-    pub requested_amount: f64,
-    pub requested_amount_type: String,
+    pub quote_id: String,
     pub user_ip: String,
     pub locale: String,
 }
@@ -32,7 +31,7 @@ impl Request {
         wallet_address: String,
         crypto_currency: String,
         fiat_currency: String,
-        fiat_amount: f64,
+        quote_id: String,
         user_ip: String,
         locale: String,
     ) -> Self {
@@ -44,8 +43,7 @@ impl Request {
             },
             currency_code_from: fiat_currency,
             currency_code_to: crypto_currency,
-            requested_amount: fiat_amount,
-            requested_amount_type: "from".to_string(),
+            quote_id,
             user_ip,
             locale,
         }
@@ -56,7 +54,7 @@ impl Request {
         wallet_address: String,
         crypto_currency: String,
         fiat_currency: String,
-        crypto_amount: f64,
+        quote_id: String,
         user_ip: String,
         locale: String,
     ) -> Self {
@@ -68,8 +66,7 @@ impl Request {
             },
             currency_code_from: crypto_currency,
             currency_code_to: fiat_currency,
-            requested_amount: crypto_amount,
-            requested_amount_type: "from".to_string(),
+            quote_id,
             user_ip,
             locale,
         }
@@ -90,8 +87,7 @@ mod tests {
             },
             currency_code_from: "USD".to_string(),
             currency_code_to: "SOL".to_string(),
-            requested_amount: 50.0,
-            requested_amount_type: "from".to_string(),
+            quote_id: "test-quote-id".to_string(),
             user_ip: "1.2.3.4".to_string(),
             locale: "en".to_string(),
         };
@@ -104,8 +100,7 @@ mod tests {
         assert_eq!(parsed["cryptoWalletAddress"]["currencyCode"], "SOL");
         assert_eq!(parsed["currencyCodeFrom"], "USD");
         assert_eq!(parsed["currencyCodeTo"], "SOL");
-        assert_eq!(parsed["requestedAmount"], 50.0);
-        assert_eq!(parsed["requestedAmountType"], "from");
+        assert_eq!(parsed["quoteId"], "test-quote-id");
         assert_eq!(parsed["userIp"], "1.2.3.4");
         assert_eq!(parsed["locale"], "en");
     }

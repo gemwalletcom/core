@@ -137,7 +137,10 @@ mod tests {
     fn resolve_url_without_override() {
         let chain_config = make_chain_config(None, None);
         let base_url = make_url("https://example.com/rpc");
-        assert_eq!(chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url, "https://example.com/rpc");
+        assert_eq!(
+            chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url,
+            "https://example.com/rpc"
+        );
     }
 
     #[test]
@@ -176,7 +179,10 @@ mod tests {
             url: "https://tx-relay.example.com".to_string(),
         }]);
         let base_url = make_url("https://example.com/rpc");
-        assert_eq!(chain_config.resolve_url(&base_url, Some("eth_blockNumber"), None).url, "https://example.com/rpc");
+        assert_eq!(
+            chain_config.resolve_url(&base_url, Some("eth_blockNumber"), None).url,
+            "https://example.com/rpc"
+        );
     }
 
     #[test]

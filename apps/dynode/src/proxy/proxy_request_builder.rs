@@ -12,16 +12,7 @@ impl ProxyRequestBuilder {
         let user_agent = Self::extract_user_agent(&headers);
         let (path, path_with_query) = Self::prepare_paths(&uri);
 
-        Ok(ProxyRequest::new(
-            method,
-            headers,
-            body,
-            path,
-            path_with_query,
-            host,
-            user_agent,
-            chain,
-        ))
+        Ok(ProxyRequest::new(method, headers, body, path, path_with_query, host, user_agent, chain))
     }
 
     fn extract_host(headers: &HeaderMap) -> Result<String, Status> {
@@ -96,5 +87,4 @@ mod tests {
         assert_eq!(ProxyRequestBuilder::parse_hostname("example.com:8080"), "example.com");
         assert_eq!(ProxyRequestBuilder::parse_hostname("localhost:3000"), "localhost");
     }
-
 }

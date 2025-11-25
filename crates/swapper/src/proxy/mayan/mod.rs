@@ -28,6 +28,7 @@ pub fn wormhole_chain_id_to_chain(chain_id: u16) -> Option<Chain> {
         44 => Some(Chain::Unichain),
         45 => Some(Chain::World),
         47 => Some(Chain::Hyperliquid),
+        48 => Some(Chain::Monad),
         58 => Some(Chain::Plasma),
         65000 => Some(Chain::HyperCore),
         _ => None,
