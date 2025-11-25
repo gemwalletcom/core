@@ -945,6 +945,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c953fe1ba023e6b7730c0d4b031d06f267f23a46167dcbd40316644b10a17ba"
 dependencies = [
  "aws-lc-sys",
+ "untrusted 0.7.1",
  "zeroize",
 ]
 
@@ -3961,15 +3962,17 @@ dependencies = [
 
 [[package]]
 name = "jsonwebtoken"
-version = "9.3.1"
+version = "10.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a87cc7a48537badeae96744432de36f4be2b4a34a05a5ef32e9dd8a1c169dde"
+checksum = "c76e1c7d7df3e34443b3621b459b066a7b79644f059fc8b2db7070c825fd417e"
 dependencies = [
+ "aws-lc-rs",
  "base64 0.22.1",
+ "getrandom 0.2.16",
  "js-sys",
- "ring",
  "serde",
  "serde_json",
+ "signature",
 ]
 
 [[package]]
@@ -4197,9 +4200,9 @@ dependencies = [
 
 [[package]]
 name = "meilisearch-index-setting-macro"
-version = "0.30.0"
+version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e36e5cad3754ed329feb201c24f26c0694442bef50a90dbcff0ba6d12b5ca133"
+checksum = "45be1063aa1851aacf36a93f5d0d243e0cb7693cde4dd110cd5c0e66eb59dcc7"
 dependencies = [
  "convert_case 0.8.0",
  "proc-macro2",
@@ -4210,9 +4213,9 @@ dependencies = [
 
 [[package]]
 name = "meilisearch-sdk"
-version = "0.30.0"
+version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f620c9ed9b790cf292b66c8dab16f0e4aafb377583ec0e589da7c3ee81ff2038"
+checksum = "06c230967213165b7c42c93ba253478eccf7478432a09cc5ff6c586dd8e11656"
 dependencies = [
  "async-trait",
  "bytes",
@@ -5544,7 +5547,7 @@ dependencies = [
  "cfg-if",
  "getrandom 0.2.16",
  "libc",
- "untrusted",
+ "untrusted 0.9.0",
  "windows-sys 0.52.0",
 ]
 
@@ -5963,7 +5966,7 @@ dependencies = [
  "aws-lc-rs",
  "ring",
  "rustls-pki-types",
- "untrusted",
+ "untrusted 0.9.0",
 ]
 
 [[package]]
@@ -7659,6 +7662,12 @@ dependencies = [
  "uniffi_meta",
  "weedle2",
 ]
+
+[[package]]
+name = "untrusted"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "untrusted"
