@@ -2,7 +2,8 @@ use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
     aptos, blockchair, mempool, mintscan, solana, stellar_expert, sui, threexpl, ton, AlgorandAllo, BlockScout, BlockVision, Blocksec, Cardanocan,
-    EtherScan, HyperliquidExplorer, MantleExplorer, NearBlocks, OkxExplorer, RouteScan, RuneScan, SubScan, TonScan, TronScan, Viewblock, XrpScan, ZkSync,
+    EtherScan, FlowScan, HyperliquidExplorer, HypurrScan, MantleExplorer, NearBlocks, OkxExplorer, RouteScan, RuneScan, SubScan, TonScan, TronScan,
+    Viewblock, XrpScan, ZkSync,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -96,7 +97,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Ink => vec![RouteScan::new_ink(), BlockScout::new_ink(), OkxExplorer::new_ink()],
         Chain::Unichain => vec![EtherScan::boxed(EVMChain::Unichain)],
         Chain::Hyperliquid => vec![EtherScan::boxed(EVMChain::Hyperliquid), BlockScout::new_hyperliquid()],
-        Chain::HyperCore => vec![HyperliquidExplorer::boxed()],
+        Chain::HyperCore => vec![HyperliquidExplorer::boxed(), HypurrScan::boxed(), FlowScan::boxed()],
         Chain::Monad => vec![EtherScan::boxed(EVMChain::Monad), BlockVision::new_monad()],
         Chain::XLayer => vec![OkxExplorer::new_xlayer()],
     }
