@@ -261,6 +261,26 @@ pub static UNICHAIN_USDC: LazyLock<Asset> =
     LazyLock::new(|| Asset::new(USDC_UNICHAIN_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
 pub static UNICHAIN_DAI: LazyLock<Asset> =
     LazyLock::new(|| Asset::new(DAI_UNICHAIN_ASSET_ID.into(), DAI_NAME.to_owned(), DAI_SYMBOL.to_owned(), 18, AssetType::ERC20));
+// Monad
+pub static MONAD_MON: LazyLock<Asset> = LazyLock::new(|| Asset::from_chain(Chain::Monad));
+pub static MONAD_USDC: LazyLock<Asset> = LazyLock::new(|| {
+    Asset::new(
+        USDC_MONAD_ASSET_ID.into(),
+        USDC_NAME.to_owned(),
+        USDC_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    )
+});
+pub static MONAD_USDT: LazyLock<Asset> = LazyLock::new(|| {
+    Asset::new(
+        USDT_MONAD_ASSET_ID.into(),
+        USDT_NAME.to_owned(),
+        USDT_SYMBOL.to_owned(),
+        6,
+        AssetType::ERC20,
+    )
+});
 // HyperCore
 pub static HYPERCORE_HYPE: LazyLock<Asset> = LazyLock::new(|| Asset::from_chain(Chain::HyperCore));
 pub static HYPERCORE_SPOT_HYPE: LazyLock<Asset> = LazyLock::new(|| {
