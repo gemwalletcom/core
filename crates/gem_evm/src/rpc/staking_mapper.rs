@@ -5,7 +5,7 @@ use num_traits::{Num, ToPrimitive};
 use crate::{
     address::{ethereum_address_checksum, ethereum_address_from_topic},
     everstake::{EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS},
-    monad::{EVENT_CLAIM_REWARDS, EVENT_DELEGATE, EVENT_UNDELEGATE, EVENT_WITHDRAW, STAKING_PRECOMPILE_ADDRESS},
+    monad::{EVENT_CLAIM_REWARDS, EVENT_DELEGATE, EVENT_UNDELEGATE, EVENT_WITHDRAW, STAKING_CONTRACT},
     rpc::{
         balance_differ::BalanceDiffer,
         model::{Log, Transaction, TransactionReciept, TransactionReplayTrace},
@@ -56,7 +56,7 @@ impl StakingMapper {
                 }
             }
             Chain::Monad => {
-                if transaction.to.as_ref().is_some_and(|to| to.eq_ignore_ascii_case(STAKING_PRECOMPILE_ADDRESS)) && !transaction_reciept.logs.is_empty() {
+                if transaction.to.as_ref().is_some_and(|to| to.eq_ignore_ascii_case(STAKING_CONTRACT)) && !transaction_reciept.logs.is_empty() {
                     Self::map_monad_staking_transaction(chain, transaction, transaction_reciept, created_at)
                 } else {
                     None

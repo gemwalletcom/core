@@ -1,14 +1,14 @@
 use crate::address::ethereum_address_checksum;
 use crate::constants::STAKING_VALIDATORS_LIMIT;
 use crate::monad::{
-    ACTIVE_VALIDATOR_SET, MonadDelegatorState, MonadValidator, STAKING_PRECOMPILE_ADDRESS, decode_get_delegations, decode_get_delegator, decode_get_validator,
+    ACTIVE_VALIDATOR_SET, MonadDelegatorState, MonadValidator, STAKING_CONTRACT, decode_get_delegations, decode_get_delegator, decode_get_validator,
     decode_get_validator_set, encode_get_delegations, encode_get_delegator, encode_get_validator, encode_get_validator_set,
 };
 use crate::rpc::client::EthereumClient;
 use alloy_primitives::hex;
 use gem_client::Client;
 use num_bigint::BigUint;
-use num_traits::{ToPrimitive, Zero};
+use num_traits::Zero;
 use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
 
@@ -71,8 +71,10 @@ impl<C: Client + Clone> EthereumClient<C> {
             }
         }
 
-        let balance = primitives::Balance::stake_balance(staked, pending, Some(rewards));
-        Ok(Some(AssetBalance::new_balance(AssetId::from_chain(Chain::Monad), balance)))
+        Ok(Some(AssetBalance::new_balance(
+            AssetId::from_chain(Chain::Monad),
+            primitives::Balance::stake_balance(staked, pending, Some(rewards)),
+        )))
     }
 
     async fn fetch_monad_validator_set(&self) -> Result<Vec<u64>, Box<dyn Error + Sync + Send>> {
@@ -113,7 +115,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         let mut validators = Vec::new();
         for (idx, result) in results.into_iter().enumerate() {
             if let Some(validator_id) = validator_ids.get(idx) {
-                let decoded_bytes = hex::decode(result.trim_start_matches("0x"))?;
+                let decoded_bytes = hex::decode(result)?;
                 let validator = decode_get_validator(&decoded_bytes)?;
                 validators.push((*validator_id, validator));
             }
@@ -144,7 +146,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         for (idx, result) in results.into_iter().enumerate() {
             if let Some(validator_id) = validator_ids.get(idx) {
-                let decoded_bytes = hex::decode(result.trim_start_matches("0x"))?;
+                let decoded_bytes = hex::decode(result)?;
                 let state = decode_get_delegator(&decoded_bytes)?;
                 states.push((*validator_id, state));
             }
@@ -155,7 +157,6 @@ impl<C: Client + Clone> EthereumClient<C> {
 
     fn map_validator(&self, validator_id: u64, validator: &MonadValidator, apy: f64) -> DelegationValidator {
         let auth_address = ethereum_address_checksum(&validator.auth_address.to_string()).unwrap_or_else(|_| validator.auth_address.to_string());
-        let commission = validator.commission.to_f64().unwrap_or(0.0) / 1e18f64;
         let is_active = validator.flags == 0;
 
         DelegationValidator {
@@ -163,7 +164,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             chain: Chain::Monad,
             name: auth_address,
             is_active,
-            commission,
+            commission: validator.commission,
             apr: apy,
         }
     }
@@ -208,14 +209,14 @@ impl<C: Client + Clone> EthereumClient<C> {
     async fn call_staking(&self, data: Vec<u8>) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
         let call = Self::build_staking_call(&data);
         let result: String = self.call(call.0, call.1).await?;
-        Ok(hex::decode(result.trim_start_matches("0x"))?)
+        Ok(hex::decode(result)?)
     }
 
     fn build_staking_call(data: &[u8]) -> (String, serde_json::Value) {
         (
             "eth_call".to_string(),
             serde_json::json!([{
-                "to": STAKING_PRECOMPILE_ADDRESS,
+                "to": STAKING_CONTRACT,
                 "data": hex::encode_prefixed(data)
             }, "latest"]),
         )

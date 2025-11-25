@@ -170,6 +170,7 @@ mod chain_integration_tests {
         let validators = client.get_staking_validators(Some(0.0)).await?;
 
         assert!(validators.len() as u32 <= ACTIVE_VALIDATOR_SET);
+        println!("Monad Validators: {:?}", validators[0]);
         Ok(())
     }
 
