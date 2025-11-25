@@ -1,4 +1,4 @@
-use super::models::{Assets, PaybisData, PaybisQuote, PaybisResponse, PaymentMethodWithLimits, QuoteRequest, Request, RequestResponse};
+use super::models::{Assets, PaybisQuote, PaybisResponse, QuoteRequest, Request, RequestResponse};
 use crate::rsa_signature::generate_rsa_pss_signature;
 use primitives::FiatProviderName;
 use reqwest::Client;
@@ -89,18 +89,6 @@ impl PaybisClient {
             .into()
     }
 
-    pub async fn get_payment_method_limits(&self) -> Result<PaybisData<Vec<PaymentMethodWithLimits>>, Box<dyn std::error::Error + Send + Sync>> {
-        let url = format!("{PAYBIS_API_BASE_URL}/v2/payment-method-list-with-limits");
-        self.client
-            .get(url)
-            .header("Authorization", &self.api_key)
-            .send()
-            .await?
-            .json::<PaybisResponse<PaybisData<Vec<PaymentMethodWithLimits>>>>()
-            .await?
-            .into()
-    }
-
     pub async fn create_request(&self, request_body: Request) -> Result<RequestResponse, Box<dyn std::error::Error + Send + Sync>> {
         let body = serde_json::to_string(&request_body)?;
         let url = format!("{PAYBIS_API_BASE_URL}/v3/request");
@@ -112,7 +100,7 @@ impl PaybisClient {
         wallet_address: &str,
         from_currency: &str,
         to_currency: &str,
-        amount: f64,
+        quote_id: &str,
         is_buy: bool,
         user_ip: &str,
         locale: &str,
@@ -123,7 +111,7 @@ impl PaybisClient {
                 wallet_address.to_owned(),
                 to_currency.to_string(),
                 from_currency.to_string(),
-                amount,
+                quote_id.to_string(),
                 user_ip.to_string(),
                 locale.to_string(),
             )
@@ -133,7 +121,7 @@ impl PaybisClient {
                 wallet_address.to_owned(),
                 to_currency.to_string(),
                 from_currency.to_string(),
-                amount,
+                quote_id.to_string(),
                 user_ip.to_string(),
                 locale.to_string(),
             )

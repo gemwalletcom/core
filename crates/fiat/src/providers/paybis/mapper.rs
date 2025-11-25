@@ -1,16 +1,13 @@
-use std::str::FromStr;
-
 use primitives::currency::Currency;
 use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType};
 use streamer::FiatWebhook;
 
 use crate::model::FiatProviderAsset;
-use crate::providers::paybis::models::{PaybisData, PaymentMethodWithLimits};
 use primitives::fiat_assets::FiatAssetLimits;
 
 use super::{
     client::PaybisClient,
-    models::{Currency as PaybisCurrency, PaybisWebhookData},
+    models::{Currency as PaybisCurrency, PaybisData, PaybisWebhookData},
 };
 
 pub fn map_asset_id(currency: PaybisCurrency) -> Option<AssetId> {
@@ -137,7 +134,16 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
     })
 }
 
-fn map_asset(currency: PaybisCurrency, buy_limits: Vec<FiatAssetLimits>, sell_limits: Vec<FiatAssetLimits>) -> Option<FiatProviderAsset> {
+fn default_buy_limits() -> Vec<FiatAssetLimits> {
+    vec![FiatAssetLimits {
+        currency: Currency::USD,
+        payment_type: PaymentType::Card,
+        min_amount: None,
+        max_amount: None,
+    }]
+}
+
+fn map_asset(currency: PaybisCurrency) -> Option<FiatProviderAsset> {
     if !currency.is_crypto() {
         return None;
     }
@@ -151,52 +157,13 @@ fn map_asset(currency: PaybisCurrency, buy_limits: Vec<FiatAssetLimits>, sell_li
         network: currency.blockchain_name.clone(),
         enabled: true,
         unsupported_countries: Some(currency.unsupported_countries()),
-        buy_limits,
-        sell_limits,
+        buy_limits: default_buy_limits(),
+        sell_limits: vec![],
     })
 }
 
 pub fn map_assets(currencies: Vec<PaybisCurrency>) -> Vec<FiatProviderAsset> {
-    currencies.into_iter().flat_map(|currency| map_asset(currency, vec![], vec![])).collect()
-}
-
-fn map_payment_type(payment_method_name: &str) -> Option<PaymentType> {
-    match payment_method_name {
-        "gem-wallet-credit-card" => Some(PaymentType::Card),
-        "gem-wallet-google-pay-credit-card" => Some(PaymentType::GooglePay),
-        "gem-wallet-apple-pay-credit-card" => Some(PaymentType::ApplePay),
-        _ => None,
-    }
-}
-
-pub fn map_assets_with_limits(currencies: Vec<PaybisCurrency>, limits: &PaybisData<Vec<PaymentMethodWithLimits>>) -> Vec<FiatProviderAsset> {
-    currencies
-        .into_iter()
-        .filter_map(|currency| {
-            let asset_buy_limits = limits
-                .data
-                .iter()
-                .filter_map(|payment_method| map_payment_type(&payment_method.name).map(|payment_type| (payment_method, payment_type)))
-                .flat_map(|(payment_method, payment_type)| {
-                    payment_method.pairs.iter().filter_map({
-                        let value = currency.code.clone();
-                        move |currency_pair| {
-                            currency_pair.to.iter().find(|c| c.currency_code == value).and_then(|currency_limit| {
-                                Currency::from_str(currency_pair.from.as_str()).ok().map(|fiat_currency| FiatAssetLimits {
-                                    currency: fiat_currency,
-                                    payment_type: payment_type.clone(),
-                                    min_amount: Some(currency_limit.min_amount),
-                                    max_amount: Some(currency_limit.max_amount),
-                                })
-                            })
-                        }
-                    })
-                })
-                .collect();
-
-            map_asset(currency, asset_buy_limits, vec![])
-        })
-        .collect()
+    currencies.into_iter().flat_map(map_asset).collect()
 }
 
 #[cfg(test)]
@@ -350,40 +317,13 @@ mod tests {
     }
 
     #[test]
-    fn test_paybis_limits_parsing() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let limits: PaybisData<Vec<PaymentMethodWithLimits>> = serde_json::from_str(include_str!("../../../testdata/paybis/assets_with_limits.json"))?;
+    fn test_default_buy_limits() {
+        let limits = default_buy_limits();
 
-        let test_currencies = vec![
-            PaybisCurrency {
-                code: "USDT-TRC20".to_string(),
-                blockchain_name: Some("tron".to_string()),
-            },
-            PaybisCurrency {
-                code: "TRX".to_string(),
-                blockchain_name: Some("tron".to_string()),
-            },
-            PaybisCurrency {
-                code: "XRP".to_string(),
-                blockchain_name: Some("xrp".to_string()),
-            },
-        ];
-
-        let mapped_assets = map_assets_with_limits(test_currencies, &limits);
-
-        // Test that assets with limits have expected min/max amounts
-        let usdt_trc20 = mapped_assets.iter().find(|a| a.symbol == "USDT-TRC20").expect("USDT-TRC20 should exist");
-        assert!(!usdt_trc20.buy_limits.is_empty(), "USDT-TRC20 should have buy limits");
-
-        // Find USD limit
-        let usd_limit = usdt_trc20.buy_limits.iter().find(|limit| limit.currency == Currency::USD);
-        assert!(usd_limit.is_some(), "Should have USD limit");
-
-        if let Some(limit) = usd_limit {
-            assert_eq!(limit.min_amount, Some(5.0));
-            assert_eq!(limit.max_amount, Some(20000.0));
-            assert_eq!(limit.payment_type, PaymentType::Card);
-        }
-
-        Ok(())
+        assert_eq!(limits.len(), 1);
+        assert_eq!(limits[0].currency, Currency::USD);
+        assert_eq!(limits[0].payment_type, PaymentType::Card);
+        assert_eq!(limits[0].min_amount, None);
+        assert_eq!(limits[0].max_amount, None);
     }
 }

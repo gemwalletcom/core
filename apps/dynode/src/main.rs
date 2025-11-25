@@ -6,9 +6,9 @@ use dynode::config::load_config;
 use dynode::metrics::Metrics;
 use dynode::monitoring::{NodeMonitor, NodeService};
 use dynode::proxy::{ProxyRequestBuilder, ProxyResponse};
-use primitives::Chain;
 use dynode::response::{ErrorResponse, ProxyRocketResponse};
 use gem_tracing::{error_with_fields, info_with_fields};
+use primitives::Chain;
 use reqwest::Method;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use rocket::config::Config;
@@ -83,7 +83,13 @@ async fn root_endpoint() -> &'static str {
     "ok"
 }
 
-async fn process_proxy(chain: Chain, method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, ErrorResponse> {
+async fn process_proxy(
+    chain: Chain,
+    method: Method,
+    request: &Request<'_>,
+    data: Data<'_>,
+    node_service: &NodeService,
+) -> Result<ProxyResponse, ErrorResponse> {
     let body = read_request_body(data).await?;
     let headers = build_header_map(request)?;
     let uri = request.uri().to_string();
