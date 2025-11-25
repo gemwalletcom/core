@@ -48,7 +48,7 @@ pub use chainflip::ChainflipScan;
 pub mod relay;
 pub use relay::RelayScan;
 pub mod hyperliquid;
-pub use hyperliquid::HyperliquidExplorer;
+pub use hyperliquid::{FlowScan, HyperliquidExplorer, HypurrScan};
 pub mod metadata;
 pub mod stellar_expert;
 pub use metadata::{Explorer, Metadata, MultiChainExplorer};
