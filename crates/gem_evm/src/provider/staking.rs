@@ -16,6 +16,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_staking_apy().await,
             EVMChain::Ethereum => self.get_ethereum_staking_apy().await,
+            EVMChain::Monad => self.get_monad_staking_apy().await,
             _ => Ok(None),
         }
     }
@@ -24,6 +25,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_validators(apy.unwrap_or(0.0)).await,
             EVMChain::Ethereum => self.get_ethereum_validators(apy.unwrap_or(0.0)).await,
+            EVMChain::Monad => self.get_monad_validators(apy.unwrap_or(0.0)).await,
             _ => Ok(vec![]),
         }
     }
@@ -32,6 +34,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_delegations(&address).await,
             EVMChain::Ethereum => self.get_ethereum_delegations(&address).await,
+            EVMChain::Monad => self.get_monad_delegations(&address).await,
             _ => Ok(vec![]),
         }
     }
@@ -39,7 +42,10 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::{TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_smartchain_test_client};
+    use crate::monad::ACTIVE_VALIDATOR_SET;
+    use crate::provider::testkit::{
+        TEST_MONAD_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_monad_test_client, create_smartchain_test_client,
+    };
     use chain_traits::ChainStaking;
     use num_bigint::BigUint;
     use primitives::{Chain, DelegationState};
@@ -142,6 +148,38 @@ mod chain_integration_tests {
             ));
             // Balance should be a valid positive number
             assert!(delegation.balance >= BigUint::from(0u32));
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_get_staking_balance_specific_account() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+        let address = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string();
+        let balance = client.get_ethereum_staking_balance(&address).await?.unwrap();
+
+        assert_eq!(balance.asset_id.chain, Chain::Ethereum);
+        assert_eq!(balance.balance.staked, BigUint::from(200_000_000_000_000_000u64));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_monad_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_monad_test_client();
+        let validators = client.get_staking_validators(Some(0.0)).await?;
+
+        assert!(validators.len() as u32 <= ACTIVE_VALIDATOR_SET);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_monad_get_staking_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_monad_test_client();
+        let delegations = client.get_staking_delegations(TEST_MONAD_ADDRESS.to_string()).await?;
+
+        for delegation in &delegations {
+            assert_eq!(delegation.asset_id.chain, Chain::Monad);
         }
 
         Ok(())
