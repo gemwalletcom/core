@@ -35,10 +35,10 @@ pub fn init_fiat_metrics(registry: &mut Registry) {
     let url_generated = Family::<FiatQuoteLabels, Counter>::default();
 
     registry.register("fiat_quote_latency", "Fiat provider quote latency in seconds", latency.clone());
-    registry.register("fiat_quote_success_total", "Successful fiat quotes", success.clone());
-    registry.register("fiat_quote_error_total", "Failed fiat quotes", error.clone());
+    registry.register("fiat_quote_success", "Successful fiat quotes", success.clone());
+    registry.register("fiat_quote_error", "Failed fiat quotes", error.clone());
     registry.register("fiat_quote_amount", "Fiat quote amount distribution", amount.clone());
-    registry.register("fiat_quote_url_generated_total", "Fiat quote URLs generated", url_generated.clone());
+    registry.register("fiat_quote_url_generated", "Fiat quote URLs generated", url_generated.clone());
 
     FIAT_QUOTE_LATENCY.set(latency).ok();
     FIAT_QUOTE_SUCCESS.set(success).ok();
