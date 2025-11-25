@@ -45,6 +45,7 @@ pub const USDC_SOLANA_ASSET_ID: &str = "solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wE
 pub const USDC_NEAR_ASSET_ID: &str = "near_17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
 pub const USDC_UNICHAIN_ASSET_ID: &str = "unichain_0x078D782b760474a361dDA0AF3839290b0EF57AD6";
 pub const USDC_HYPEREVM_ASSET_ID: &str = "hyperliquid_0xb88339CB7199b77E23DB6E890353E22632Ba630f";
+pub const USDC_MONAD_ASSET_ID: &str = "monad_0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
 
 pub const USDC_SMARTCHAIN_ASSET_ID: &str = "smartchain_0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
 pub const USDC_AVAX_ASSET_ID: &str = "avalanchec_0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
@@ -75,6 +76,7 @@ pub const USDT_NEAR_ASSET_ID: &str = "near_usdt.tether-token.near";
 pub const USDT_INK_ASSET_ID: &str = "ink_0x3baD7AD0728f9917d1Bf08af5782dCbD516cDd96"; // USDT0
 pub const USDT_HYPEREVM_ASSET_ID: &str = "hyperliquid_0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"; // USDT0
 pub const USDT_PLASMA_ASSET_ID: &str = "plasma_0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb";
+pub const USDT_MONAD_ASSET_ID: &str = "monad_0xe7cd86e13AC4309349F30B3435a9d337750fC82D";
 
 // WBTC
 pub const WBTC_ARB_ASSET_ID: &str = "arbitrum_0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f";
