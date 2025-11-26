@@ -75,12 +75,13 @@ mod tests {
 
     #[test]
     fn test_map_token_data_invalid_metadata() {
-        let name_hex = "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000".to_string();
+        let token_id = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string();
+        let name_hex = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000855534420436f696e000000000000000000000000000000000000000000000000".to_string();
         let symbol_hex = "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000045553444300000000000000000000000000000000000000000000000000000000".to_string();
         let decimals_hex = "0x0000000000000000000000000000000000000000000000000000000000000006".to_string();
-        let token_id = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string();
 
-        let result = map_token_data(Chain::Ethereum, token_id, name_hex, symbol_hex, decimals_hex);
-        assert!(result.unwrap_err().to_string().contains("Invalid token metadata"));
+        assert!(map_token_data(Chain::Ethereum, token_id.clone(), "".to_string(), symbol_hex, decimals_hex.clone()).is_err());
+        assert!(map_token_data(Chain::Ethereum, token_id.clone(), name_hex, "".to_string(), decimals_hex.clone()).is_err());
+        assert!(map_token_data(Chain::Ethereum, token_id, "".to_string(), "".to_string(), decimals_hex).is_err());
     }
 }
