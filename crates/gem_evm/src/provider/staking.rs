@@ -185,4 +185,14 @@ mod chain_integration_tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_monad_get_staking_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_monad_test_client();
+        let apy = client.get_staking_apy().await?.unwrap();
+
+        println!("Monad APY: {}", apy);
+        assert!(apy > 0.0);
+        Ok(())
+    }
 }

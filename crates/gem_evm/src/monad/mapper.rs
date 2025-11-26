@@ -1,9 +1,9 @@
-use crate::monad::constants::DEFAULT_WITHDRAW_ID;
+use crate::monad::constants::{DEFAULT_WITHDRAW_ID, MONAD_COMMISSION_SCALE, MONAD_WEI_PER_MON};
 use crate::monad::contracts::IMonadStaking;
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
 use num_bigint::{BigInt, BigUint, Sign};
-use num_traits::Zero;
+use num_traits::{ToPrimitive, Zero};
 use primitives::StakeType;
 use std::error::Error;
 use std::str::FromStr;
@@ -11,7 +11,8 @@ use std::str::FromStr;
 pub struct MonadValidator {
     pub auth_address: Address,
     pub flags: u64,
-    pub commission: f64,
+    pub stake: BigUint,
+    pub commission: BigUint,
     pub unclaimed_rewards: BigUint,
 }
 
@@ -92,7 +93,8 @@ pub fn decode_get_validator(data: &[u8]) -> Result<MonadValidator, Box<dyn Error
     Ok(MonadValidator {
         auth_address: decoded.authAddress,
         flags: decoded.flags,
-        commission: f64::from_str(decoded.commission.to_string().as_str()).unwrap_or(0.0) / 10.0_f64.powi(18),
+        stake: BigUint::from_bytes_be(&decoded.stake.to_be_bytes::<32>()),
+        commission: BigUint::from_bytes_be(&decoded.commission.to_be_bytes::<32>()),
         unclaimed_rewards: BigUint::from_bytes_be(&decoded.unclaimedRewards.to_be_bytes::<32>()),
     })
 }
@@ -139,5 +141,15 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
             Ok((IMonadStaking::claimRewardsCall { validatorId: validator_id }.abi_encode(), BigInt::zero()))
         }
         _ => Err("Unsupported stake type for Monad".into()),
+    }
+}
+
+impl MonadValidator {
+    pub fn commission_rate(&self) -> f64 {
+        self.commission.to_f64().unwrap_or(0.0) / MONAD_COMMISSION_SCALE
+    }
+
+    pub fn stake_in_mon(&self) -> Option<f64> {
+        self.stake.to_f64().map(|value| value / MONAD_WEI_PER_MON)
     }
 }

@@ -1,13 +1,15 @@
 use crate::address::ethereum_address_checksum;
 use crate::constants::STAKING_VALIDATORS_LIMIT;
 use crate::monad::{
-    ACTIVE_VALIDATOR_SET, MonadDelegatorState, MonadValidator, STAKING_CONTRACT, decode_get_delegations, decode_get_delegator, decode_get_validator,
-    decode_get_validator_set, encode_get_delegations, encode_get_delegator, encode_get_validator, encode_get_validator_set,
+    ACTIVE_VALIDATOR_SET, MONAD_BLOCK_REWARD_MON, MONAD_BLOCKS_PER_YEAR, MONAD_WEI_PER_MON, MonadDelegatorState, MonadValidator, STAKING_CONTRACT,
+    decode_get_delegations, decode_get_delegator, decode_get_validator, decode_get_validator_set, encode_get_delegations, encode_get_delegator,
+    encode_get_validator, encode_get_validator_set,
 };
 use crate::rpc::client::EthereumClient;
 use alloy_primitives::hex;
 use gem_client::Client;
 use num_bigint::BigUint;
+use num_traits::ToPrimitive;
 use num_traits::Zero;
 use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
@@ -15,13 +17,25 @@ use std::error::Error;
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_monad_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        Ok(None)
-    }
-
-    pub async fn get_monad_validators(&self, apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
         let validator_ids = self.fetch_monad_validator_set().await?;
         let validators = self.fetch_monad_validators(&validator_ids).await?;
-        Ok(validators.into_iter().map(|(id, val)| self.map_validator(id, &val, apy)).collect())
+        let total_stake = Self::total_validator_stake(&validators);
+        Self::calculate_monad_network_apy(&total_stake)
+    }
+
+    pub async fn get_monad_validators(&self, fallback_apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+        let validator_ids = self.fetch_monad_validator_set().await?;
+        let validators = self.fetch_monad_validators(&validator_ids).await?;
+        let total_stake = Self::total_validator_stake(&validators);
+        let network_apy = Self::calculate_monad_network_apy(&total_stake)?;
+
+        validators
+            .into_iter()
+            .map(|(id, val)| -> Result<DelegationValidator, Box<dyn Error + Sync + Send>> {
+                let validator_apy = Self::calculate_validator_apy(&val, &total_stake)?.or(network_apy).unwrap_or(fallback_apy);
+                Ok(self.map_validator(id, &val, validator_apy))
+            })
+            .collect()
     }
 
     pub async fn get_monad_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
@@ -164,7 +178,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             chain: Chain::Monad,
             name: auth_address,
             is_active,
-            commission: validator.commission,
+            commission: validator.commission_rate(),
             apr: apy,
         }
     }
@@ -220,5 +234,44 @@ impl<C: Client + Clone> EthereumClient<C> {
                 "data": hex::encode_prefixed(data)
             }, "latest"]),
         )
+    }
+
+    fn total_validator_stake(validators: &[(u64, MonadValidator)]) -> BigUint {
+        validators.iter().fold(BigUint::zero(), |acc, (_, validator)| acc + &validator.stake)
+    }
+
+    fn calculate_monad_network_apy(total_stake: &BigUint) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
+        let total_stake_mon = Self::stake_to_mon(total_stake)?;
+        if total_stake_mon == 0.0 {
+            return Ok(None);
+        }
+
+        let annual_rewards = MONAD_BLOCK_REWARD_MON * MONAD_BLOCKS_PER_YEAR;
+        Ok(Some((annual_rewards / total_stake_mon) * 100.0))
+    }
+
+    fn calculate_validator_apy(validator: &MonadValidator, total_stake: &BigUint) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
+        let total_stake_mon = Self::stake_to_mon(total_stake)?;
+        let validator_stake_mon = validator.stake_in_mon().unwrap_or(0.0);
+
+        if total_stake_mon == 0.0 || validator_stake_mon == 0.0 {
+            return Ok(None);
+        }
+
+        let stake_weight = validator_stake_mon / total_stake_mon;
+        let expected_blocks = stake_weight * MONAD_BLOCKS_PER_YEAR;
+        let gross_rewards = expected_blocks * MONAD_BLOCK_REWARD_MON;
+
+        let commission = validator.commission_rate().clamp(0.0, 1.0);
+        let net_rewards = gross_rewards * (1.0 - commission);
+
+        Ok(Some((net_rewards / validator_stake_mon) * 100.0))
+    }
+
+    fn stake_to_mon(stake: &BigUint) -> Result<f64, Box<dyn Error + Sync + Send>> {
+        let stake_value = stake
+            .to_f64()
+            .ok_or_else(|| "Failed to convert Monad stake to floating point value".to_string())?;
+        Ok(stake_value / MONAD_WEI_PER_MON)
     }
 }
