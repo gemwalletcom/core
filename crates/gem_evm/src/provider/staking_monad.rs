@@ -297,12 +297,9 @@ impl<C: Client + Clone> EthereumClient<C> {
                     continue;
                 }
 
+                let is_ready = request.withdraw_epoch < current_epoch;
                 let completion_date = Self::withdrawal_completion_date(request.withdraw_epoch, current_epoch);
-                let state = if request.withdraw_epoch > current_epoch {
-                    DelegationState::Deactivating
-                } else {
-                    DelegationState::AwaitingWithdrawal
-                };
+                let state = if is_ready { DelegationState::AwaitingWithdrawal } else { DelegationState::Deactivating };
 
                 let withdrawal_delegation_id = format!("{}:{}", base_delegation_id, request.withdraw_id);
 
@@ -388,7 +385,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     fn withdrawal_completion_date(withdraw_epoch: u64, current_epoch: u64) -> Option<DateTime<Utc>> {
-        if withdraw_epoch <= current_epoch {
+        if withdraw_epoch < current_epoch {
             return None;
         }
 
@@ -397,7 +394,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             return None;
         }
 
-        let remaining_epochs = withdraw_epoch.saturating_sub(current_epoch) as i64;
+        let remaining_epochs = withdraw_epoch.saturating_sub(current_epoch).saturating_add(1) as i64;
         Some(Utc::now() + Duration::seconds(epoch_seconds.saturating_mul(remaining_epochs)))
     }
 }
