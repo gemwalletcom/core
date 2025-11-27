@@ -211,17 +211,16 @@ impl StakingMapper {
                 .topics
                 .get(1)
                 .and_then(|topic| BigUint::from_str_radix(topic.trim_start_matches("0x"), 16).ok()?.to_u64())?;
-            let validator_address = format!("0x{:040x}", validator_id);
-            let validator_address = ethereum_address_checksum(&validator_address).ok()?;
 
             match log.topics.first().map(|t| t.as_str()) {
                 Some(EVENT_DELEGATE) => {
                     let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
+                    // Monad validator ids are numeric, not addresses; pass the id as a string.
                     return Self::create_staking_transaction(
                         chain,
                         transaction,
                         transaction_reciept,
-                        &validator_address,
+                        &validator_id.to_string(),
                         TransactionType::StakeDelegate,
                         &value.to_string(),
                         created_at,
@@ -229,11 +228,12 @@ impl StakingMapper {
                 }
                 Some(EVENT_UNDELEGATE) => {
                     let value = ethereum_value_from_log_data(&log.data, 64, 128)?;
+                    // Monad validator ids are numeric, not addresses; pass the id as a string.
                     return Self::create_staking_transaction(
                         chain,
                         transaction,
                         transaction_reciept,
-                        &validator_address,
+                        &validator_id.to_string(),
                         TransactionType::StakeUndelegate,
                         &value.to_string(),
                         created_at,
@@ -241,11 +241,12 @@ impl StakingMapper {
                 }
                 Some(EVENT_WITHDRAW) => {
                     let value = ethereum_value_from_log_data(&log.data, 64, 128)?;
+                    // Monad validator ids are numeric, not addresses; pass the id as a string.
                     return Self::create_staking_transaction(
                         chain,
                         transaction,
                         transaction_reciept,
-                        &validator_address,
+                        &validator_id.to_string(),
                         TransactionType::StakeWithdraw,
                         &value.to_string(),
                         created_at,
@@ -253,11 +254,12 @@ impl StakingMapper {
                 }
                 Some(EVENT_CLAIM_REWARDS) => {
                     let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
+                    // Monad validator ids are numeric, not addresses; pass the id as a string.
                     return Self::create_staking_transaction(
                         chain,
                         transaction,
                         transaction_reciept,
-                        &validator_address,
+                        &validator_id.to_string(),
                         TransactionType::StakeRewards,
                         &value.to_string(),
                         created_at,
@@ -361,6 +363,7 @@ impl StakingMapper {
             created_at,
         ))
     }
+
 }
 
 #[cfg(test)]

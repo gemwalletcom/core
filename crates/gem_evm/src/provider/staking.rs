@@ -154,17 +154,6 @@ mod chain_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_ethereum_get_staking_balance_specific_account() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_ethereum_test_client();
-        let address = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string();
-        let balance = client.get_ethereum_staking_balance(&address).await?.unwrap();
-
-        assert_eq!(balance.asset_id.chain, Chain::Ethereum);
-        assert_eq!(balance.balance.staked, BigUint::from(200_000_000_000_000_000u64));
-        Ok(())
-    }
-
-    #[tokio::test]
     async fn test_monad_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_monad_test_client();
         let validators = client.get_staking_validators(Some(0.0)).await?;

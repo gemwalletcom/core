@@ -27,6 +27,7 @@ pub struct MonadDelegatorState {
 pub struct MonadWithdrawalRequest {
     pub amount: BigUint,
     pub withdraw_epoch: u64,
+    pub withdraw_id: u8,
 }
 
 pub struct MonadIdsPage<T> {
@@ -121,6 +122,7 @@ pub fn decode_get_withdrawal_request(data: &[u8]) -> Result<MonadWithdrawalReque
     Ok(MonadWithdrawalRequest {
         amount: BigUint::from_bytes_be(&decoded.withdrawalAmount.to_be_bytes::<32>()),
         withdraw_epoch: decoded.withdrawEpoch,
+        withdraw_id: 0,
     })
 }
 
