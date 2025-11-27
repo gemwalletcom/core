@@ -8,5 +8,6 @@ pub enum RecentActivityType {
     Search,
     Transfer,
     Receive,
-    Buy,
+    FiatBuy,
+    FiatSell,
 }
