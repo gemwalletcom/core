@@ -8,4 +8,5 @@ pub enum RecentActivityType {
     Search,
     Transfer,
     Receive,
+    Buy,
 }
