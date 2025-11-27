@@ -90,12 +90,11 @@ impl FeeCalculator {
             })
             .collect();
 
-        let ordered_priorities: Vec<FeePriority> = priorities.to_vec();
-        result.sort_by(|a, b| a.value.cmp(&b.value));
+        result.sort_unstable_by(|a, b| a.value.cmp(&b.value));
         result
             .iter_mut()
-            .zip(ordered_priorities.into_iter())
-            .for_each(|(fee, priority)| fee.priority = priority);
+            .zip(priorities.iter())
+            .for_each(|(fee, &priority)| fee.priority = priority);
 
         Ok(result)
     }
