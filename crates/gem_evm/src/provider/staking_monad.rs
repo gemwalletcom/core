@@ -308,7 +308,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                     shares: BigUint::zero(),
                     rewards: BigUint::zero(),
                     completion_date,
-                    delegation_id: delegation_id.clone(),
+                    delegation_id: format!("{}:{}", delegation_id, request.withdraw_id),
                     validator_id: validator_id.to_string(),
                 });
             }

@@ -162,10 +162,13 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
         }
         StakeType::Withdraw(delegation) => {
             let validator_id = delegation.base.validator_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
+            let parts = delegation.base.delegation_id.splitn(2, ':');
+            let withdraw_id = parts.last().and_then(|id| id.parse::<u8>().ok()).ok_or("Invalid withdraw id for Monad")?;
+
             Ok((
                 IMonadStaking::withdrawCall {
                     validatorId: validator_id,
-                    withdrawId: DEFAULT_WITHDRAW_ID,
+                    withdrawId: withdraw_id,
                 }
                 .abi_encode(),
                 BigInt::zero(),

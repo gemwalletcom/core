@@ -168,9 +168,10 @@ mod chain_integration_tests {
         let client = create_monad_test_client();
         let delegations = client.get_staking_delegations(TEST_MONAD_ADDRESS.to_string()).await?;
 
-        for delegation in &delegations {
-            assert_eq!(delegation.asset_id.chain, Chain::Monad);
-        }
+        assert!(!delegations.is_empty());
+
+        println!("Monad Delegations count: {}", delegations.len());
+        println!("Monad Delegations: {:?}", delegations);
 
         Ok(())
     }
