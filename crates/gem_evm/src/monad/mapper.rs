@@ -1,4 +1,4 @@
-use crate::monad::constants::{DEFAULT_WITHDRAW_ID, MONAD_COMMISSION_SCALE, MONAD_WEI_PER_MON};
+use crate::monad::constants::{DEFAULT_WITHDRAW_ID, MONAD_SCALE};
 use crate::monad::contracts::IMonadStaking;
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
@@ -9,7 +9,6 @@ use std::error::Error;
 use std::str::FromStr;
 
 pub struct MonadValidator {
-    pub auth_address: Address,
     pub flags: u64,
     pub stake: BigUint,
     pub commission: BigUint,
@@ -21,6 +20,13 @@ pub struct MonadDelegatorState {
     pub delta_stake: BigUint,
     pub next_delta_stake: BigUint,
     pub unclaimed_rewards: BigUint,
+    pub delta_epoch: u64,
+    pub next_delta_epoch: u64,
+}
+
+pub struct MonadWithdrawalRequest {
+    pub amount: BigUint,
+    pub withdraw_epoch: u64,
 }
 
 pub struct MonadIdsPage<T> {
@@ -80,6 +86,8 @@ pub fn decode_get_delegator(data: &[u8]) -> Result<MonadDelegatorState, Box<dyn 
         delta_stake: BigUint::from_bytes_be(&decoded.deltaStake.to_be_bytes::<32>()),
         next_delta_stake: BigUint::from_bytes_be(&decoded.nextDeltaStake.to_be_bytes::<32>()),
         unclaimed_rewards: BigUint::from_bytes_be(&decoded.unclaimedRewards.to_be_bytes::<32>()),
+        delta_epoch: decoded.deltaEpoch,
+        next_delta_epoch: decoded.nextDeltaEpoch,
     })
 }
 
@@ -91,12 +99,38 @@ pub fn decode_get_validator(data: &[u8]) -> Result<MonadValidator, Box<dyn Error
     let decoded = IMonadStaking::getValidatorCall::abi_decode_returns(data)?;
 
     Ok(MonadValidator {
-        auth_address: decoded.authAddress,
         flags: decoded.flags,
         stake: BigUint::from_bytes_be(&decoded.stake.to_be_bytes::<32>()),
         commission: BigUint::from_bytes_be(&decoded.commission.to_be_bytes::<32>()),
         unclaimed_rewards: BigUint::from_bytes_be(&decoded.unclaimedRewards.to_be_bytes::<32>()),
     })
+}
+
+pub fn encode_get_withdrawal_request(validator_id: u64, delegator: &str, withdraw_id: u8) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
+    let delegator = Address::from_str(delegator)?;
+    Ok(IMonadStaking::getWithdrawalRequestCall {
+        validatorId: validator_id,
+        delegator,
+        withdrawId: withdraw_id,
+    }
+    .abi_encode())
+}
+
+pub fn decode_get_withdrawal_request(data: &[u8]) -> Result<MonadWithdrawalRequest, Box<dyn Error + Sync + Send>> {
+    let decoded = IMonadStaking::getWithdrawalRequestCall::abi_decode_returns(data)?;
+    Ok(MonadWithdrawalRequest {
+        amount: BigUint::from_bytes_be(&decoded.withdrawalAmount.to_be_bytes::<32>()),
+        withdraw_epoch: decoded.withdrawEpoch,
+    })
+}
+
+pub fn encode_get_epoch() -> Vec<u8> {
+    IMonadStaking::getEpochCall {}.abi_encode()
+}
+
+pub fn decode_get_epoch(data: &[u8]) -> Result<(u64, bool), Box<dyn Error + Sync + Send>> {
+    let decoded = IMonadStaking::getEpochCall::abi_decode_returns(data)?;
+    Ok((decoded.epoch, decoded.inEpochDelayPeriod))
 }
 
 pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(Vec<u8>, BigInt), Box<dyn Error + Sync + Send>> {
@@ -146,10 +180,10 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
 
 impl MonadValidator {
     pub fn commission_rate(&self) -> f64 {
-        self.commission.to_f64().unwrap_or(0.0) / MONAD_COMMISSION_SCALE
+        self.commission.to_f64().unwrap_or(0.0) / MONAD_SCALE
     }
 
     pub fn stake_in_mon(&self) -> Option<f64> {
-        self.stake.to_f64().map(|value| value / MONAD_WEI_PER_MON)
+        self.stake.to_f64().map(|value| value / MONAD_SCALE)
     }
 }

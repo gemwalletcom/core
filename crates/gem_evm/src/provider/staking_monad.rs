@@ -1,18 +1,22 @@
+use std::collections::HashMap;
+use std::error::Error;
+
+use alloy_primitives::hex;
+use chrono::{DateTime, Duration, Utc};
+use gem_client::Client;
+use num_bigint::BigUint;
+use num_traits::{ToPrimitive, Zero};
+use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
+
 use crate::address::ethereum_address_checksum;
 use crate::constants::STAKING_VALIDATORS_LIMIT;
 use crate::monad::{
-    ACTIVE_VALIDATOR_SET, MONAD_BLOCK_REWARD_MON, MONAD_BLOCKS_PER_YEAR, MONAD_WEI_PER_MON, MonadDelegatorState, MonadValidator, STAKING_CONTRACT,
-    decode_get_delegations, decode_get_delegator, decode_get_validator, encode_get_delegations, encode_get_delegator, encode_get_validator,
+    ACTIVE_VALIDATOR_SET, DEFAULT_WITHDRAW_ID, MONAD_BLOCK_REWARD_MON, MONAD_BLOCK_TIME_SECONDS, MONAD_BLOCKS_PER_YEAR, MONAD_BOUNDARY_BLOCK_PERIOD,
+    MONAD_SCALE, MonadDelegatorState, MonadValidator, MonadWithdrawalRequest, STAKING_CONTRACT, decode_get_delegations, decode_get_delegator, decode_get_epoch,
+    decode_get_validator, decode_get_withdrawal_request, encode_get_delegations, encode_get_delegator, encode_get_epoch, encode_get_validator,
+    encode_get_withdrawal_request,
 };
 use crate::rpc::client::EthereumClient;
-use alloy_primitives::hex;
-use gem_client::Client;
-use num_bigint::BigUint;
-use num_traits::ToPrimitive;
-use num_traits::Zero;
-use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
-use std::collections::HashMap;
-use std::error::Error;
 
 const MONAD_VALIDATOR_NAMES: &[(u64, &str)] = &[
     (16, "MonadVision"),
@@ -80,9 +84,13 @@ impl<C: Client + Clone> EthereumClient<C> {
         }
 
         let mut delegations = Vec::new();
+        let current_epoch = self.fetch_monad_epoch().await?;
         let delegator_states = self.fetch_monad_delegator_states(address, &validator_ids).await?;
+        let withdrawal_requests = self.fetch_monad_withdrawal_requests(address, &validator_ids).await?;
+
         for (validator_id, delegator_state) in delegator_states {
-            self.push_delegations(address, validator_id, &delegator_state, &mut delegations);
+            let withdrawal = withdrawal_requests.get(&validator_id);
+            self.push_delegations(address, validator_id, &delegator_state, withdrawal, current_epoch, &mut delegations);
         }
 
         Ok(delegations)
@@ -172,6 +180,46 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(states)
     }
 
+    async fn fetch_monad_withdrawal_requests(
+        &self,
+        address: &str,
+        validator_ids: &[u64],
+    ) -> Result<HashMap<u64, MonadWithdrawalRequest>, Box<dyn Error + Sync + Send>> {
+        if validator_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        let calls = validator_ids
+            .iter()
+            .map(|validator_id| {
+                let data = encode_get_withdrawal_request(*validator_id, address, DEFAULT_WITHDRAW_ID).unwrap_or_default();
+                Self::build_staking_call(&data)
+            })
+            .collect::<Vec<_>>();
+
+        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
+        let mut withdrawals = HashMap::new();
+
+        for (idx, result) in results.into_iter().enumerate() {
+            if let Some(validator_id) = validator_ids.get(idx) {
+                let decoded_bytes = hex::decode(result)?;
+                let request = decode_get_withdrawal_request(&decoded_bytes)?;
+                if !request.amount.is_zero() {
+                    withdrawals.insert(*validator_id, request);
+                }
+            }
+        }
+
+        Ok(withdrawals)
+    }
+
+    async fn fetch_monad_epoch(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
+        let data = encode_get_epoch();
+        let result = self.call_staking(data).await?;
+        let (epoch, _) = decode_get_epoch(&result)?;
+        Ok(epoch)
+    }
+
     fn map_validator(&self, validator_id: u64, validator: &MonadValidator, apy: f64, name_override: Option<String>) -> DelegationValidator {
         let validator_name = name_override.unwrap_or_else(|| validator_id.to_string());
         let is_active = validator.flags == 0 && !validator.stake.is_zero();
@@ -186,28 +234,30 @@ impl<C: Client + Clone> EthereumClient<C> {
         }
     }
 
-    fn push_delegations(&self, address: &str, validator_id: u64, delegator_state: &MonadDelegatorState, delegations: &mut Vec<DelegationBase>) {
-        let pending_balance = &delegator_state.delta_stake + &delegator_state.next_delta_stake;
-        let state = if !delegator_state.stake.is_zero() {
-            DelegationState::Active
-        } else if !pending_balance.is_zero() {
-            DelegationState::Activating
-        } else {
-            DelegationState::Pending
-        };
-
+    fn push_delegations(
+        &self,
+        address: &str,
+        validator_id: u64,
+        delegator_state: &MonadDelegatorState,
+        withdrawal: Option<&MonadWithdrawalRequest>,
+        current_epoch: u64,
+        delegations: &mut Vec<DelegationBase>,
+    ) {
         let delegation_id = ethereum_address_checksum(address).unwrap_or_else(|_| address.to_string());
+        let pending_balance = &delegator_state.delta_stake + &delegator_state.next_delta_stake;
 
-        delegations.push(DelegationBase {
-            asset_id: AssetId::from_chain(Chain::Monad),
-            state,
-            balance: delegator_state.stake.clone(),
-            shares: BigUint::zero(),
-            rewards: delegator_state.unclaimed_rewards.clone(),
-            completion_date: None,
-            delegation_id: delegation_id.clone(),
-            validator_id: validator_id.to_string(),
-        });
+        if !delegator_state.stake.is_zero() {
+            delegations.push(DelegationBase {
+                asset_id: AssetId::from_chain(Chain::Monad),
+                state: DelegationState::Active,
+                balance: delegator_state.stake.clone(),
+                shares: BigUint::zero(),
+                rewards: delegator_state.unclaimed_rewards.clone(),
+                completion_date: None,
+                delegation_id: delegation_id.clone(),
+                validator_id: validator_id.to_string(),
+            });
+        }
 
         if !pending_balance.is_zero() {
             delegations.push(DelegationBase {
@@ -217,6 +267,28 @@ impl<C: Client + Clone> EthereumClient<C> {
                 shares: BigUint::zero(),
                 rewards: BigUint::zero(),
                 completion_date: None,
+                delegation_id: delegation_id.clone(),
+                validator_id: validator_id.to_string(),
+            });
+        }
+
+        if let Some(request) = withdrawal
+            && !request.amount.is_zero()
+        {
+            let completion_date = Self::withdrawal_completion_date(request.withdraw_epoch, current_epoch);
+            let state = if request.withdraw_epoch > current_epoch {
+                DelegationState::Deactivating
+            } else {
+                DelegationState::AwaitingWithdrawal
+            };
+
+            delegations.push(DelegationBase {
+                asset_id: AssetId::from_chain(Chain::Monad),
+                state,
+                balance: request.amount.clone(),
+                shares: BigUint::zero(),
+                rewards: BigUint::zero(),
+                completion_date,
                 delegation_id,
                 validator_id: validator_id.to_string(),
             });
@@ -275,7 +347,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         let stake_value = stake
             .to_f64()
             .ok_or_else(|| "Failed to convert Monad stake to floating point value".to_string())?;
-        Ok(stake_value / MONAD_WEI_PER_MON)
+        Ok(stake_value / MONAD_SCALE)
     }
 
     fn monad_all_validator_ids() -> Vec<u64> {
@@ -288,5 +360,19 @@ impl<C: Client + Clone> EthereumClient<C> {
 
     fn monad_validator_names() -> HashMap<u64, &'static str> {
         MONAD_VALIDATOR_NAMES.iter().copied().collect()
+    }
+
+    fn withdrawal_completion_date(withdraw_epoch: u64, current_epoch: u64) -> Option<DateTime<Utc>> {
+        if withdraw_epoch <= current_epoch {
+            return Some(Utc::now());
+        }
+
+        let epoch_seconds = (MONAD_BOUNDARY_BLOCK_PERIOD as f64 * MONAD_BLOCK_TIME_SECONDS) as i64;
+        if epoch_seconds <= 0 {
+            return None;
+        }
+
+        let remaining_epochs = withdraw_epoch.saturating_sub(current_epoch) as i64;
+        Some(Utc::now() + Duration::seconds(epoch_seconds.saturating_mul(remaining_epochs)))
     }
 }

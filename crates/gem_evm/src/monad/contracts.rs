@@ -9,6 +9,11 @@ sol! {
         function claimRewards(uint64 validatorId) external returns (bool success);
 
         function getConsensusValidatorSet(uint32 startIndex) external view returns (bool isDone, uint32 nextIndex, uint64[] memory valIds);
+        function getWithdrawalRequest(uint64 validatorId, address delegator, uint8 withdrawId)
+            external
+            view
+            returns (uint256 withdrawalAmount, uint256 accRewardPerToken, uint64 withdrawEpoch);
+        function getEpoch() external view returns (uint64 epoch, bool inEpochDelayPeriod);
 
         function getValidator(uint64 validatorId)
             external
