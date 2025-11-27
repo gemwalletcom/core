@@ -54,8 +54,8 @@ pub fn get_validators() -> HashMap<String, Vec<String>> {
         (
             Chain::Monad.to_string(),
             vec![
-                "0xd18Ea79d1A648160B077F694b835cB84f8B25958".to_string(), // everstake
-                "0xC9ae0f38DF01b55593A8a9cCec88096F64C82b74".to_string(), // stakin
+                "9".to_string(),  // Everstake (validator id)
+                "10".to_string(), // Stakin (validator id)
             ],
         ),
     ]
