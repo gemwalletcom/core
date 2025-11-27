@@ -207,6 +207,7 @@ impl StakingMapper {
                 continue;
             }
 
+            // Monad validator ids are numeric, not addresses; pass the id as a string.
             let validator_id = log
                 .topics
                 .get(1)
@@ -215,7 +216,6 @@ impl StakingMapper {
             match log.topics.first().map(|t| t.as_str()) {
                 Some(EVENT_DELEGATE) => {
                     let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
-                    // Monad validator ids are numeric, not addresses; pass the id as a string.
                     return Self::create_staking_transaction(
                         chain,
                         transaction,
@@ -228,7 +228,6 @@ impl StakingMapper {
                 }
                 Some(EVENT_UNDELEGATE) => {
                     let value = ethereum_value_from_log_data(&log.data, 64, 128)?;
-                    // Monad validator ids are numeric, not addresses; pass the id as a string.
                     return Self::create_staking_transaction(
                         chain,
                         transaction,
@@ -241,7 +240,6 @@ impl StakingMapper {
                 }
                 Some(EVENT_WITHDRAW) => {
                     let value = ethereum_value_from_log_data(&log.data, 64, 128)?;
-                    // Monad validator ids are numeric, not addresses; pass the id as a string.
                     return Self::create_staking_transaction(
                         chain,
                         transaction,
@@ -254,7 +252,6 @@ impl StakingMapper {
                 }
                 Some(EVENT_CLAIM_REWARDS) => {
                     let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
-                    // Monad validator ids are numeric, not addresses; pass the id as a string.
                     return Self::create_staking_transaction(
                         chain,
                         transaction,
@@ -363,7 +360,6 @@ impl StakingMapper {
             created_at,
         ))
     }
-
 }
 
 #[cfg(test)]
