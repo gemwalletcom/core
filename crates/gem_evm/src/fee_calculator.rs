@@ -73,7 +73,7 @@ impl FeeCalculator {
             }
         }
 
-        let result = priorities
+        let mut result: Vec<PriorityFeeValue> = priorities
             .iter()
             .zip(columns.iter())
             .map(|(&priority, fees)| {
@@ -89,6 +89,12 @@ impl FeeCalculator {
                 PriorityFeeValue { priority, value }
             })
             .collect();
+
+        result.sort_unstable_by(|a, b| a.value.cmp(&b.value));
+        result
+            .iter_mut()
+            .zip(priorities.iter())
+            .for_each(|(fee, &priority)| fee.priority = priority);
 
         Ok(result)
     }
@@ -173,6 +179,33 @@ mod tests {
 
         assert_eq!(result[2].priority, FeePriority::Fast);
         assert_eq!(result[2].value, BigInt::from(962019260));
+    }
+
+    #[test]
+    fn test_calculate_priority_fees_sorts_and_relabels() {
+        let calculator = FeeCalculator::new();
+        let fee_history = EthereumFeeHistory {
+            reward: vec![vec![
+                "0x77359400".to_string(), // 2 Gwei
+                "0xb2d05e00".to_string(), // 3 Gwei
+                "0x3b9aca00".to_string(), // 1 Gwei
+            ]],
+            base_fee_per_gas: vec![BigInt::from(100_000_000_000u64)],
+            gas_used_ratio: vec![0.5],
+            oldest_block: 0,
+        };
+        let priorities = [FeePriority::Slow, FeePriority::Normal, FeePriority::Fast];
+
+        let result = calculator
+            .calculate_priority_fees(&fee_history, &priorities, BigInt::from(0))
+            .unwrap();
+
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0].priority, FeePriority::Slow);
+        assert_eq!(result[1].priority, FeePriority::Normal);
+        assert_eq!(result[2].priority, FeePriority::Fast);
+        assert!(result[0].value < result[1].value);
+        assert!(result[1].value < result[2].value);
     }
 
     #[test]
