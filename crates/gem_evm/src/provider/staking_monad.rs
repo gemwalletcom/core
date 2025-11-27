@@ -8,13 +8,12 @@ use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
 use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
-use crate::address::ethereum_address_checksum;
 use crate::constants::STAKING_VALIDATORS_LIMIT;
 use crate::monad::{
-    ACTIVE_VALIDATOR_SET, MONAD_BLOCK_REWARD_MON, MONAD_BLOCK_TIME_SECONDS, MONAD_BLOCKS_PER_YEAR, MONAD_BOUNDARY_BLOCK_PERIOD, MONAD_MAX_WITHDRAW_IDS,
-    MONAD_SCALE, MonadDelegatorState, MonadValidator, MonadWithdrawalRequest, STAKING_CONTRACT, decode_get_delegations, decode_get_delegator,
-    decode_get_epoch, decode_get_validator, decode_get_withdrawal_request, encode_get_delegations, encode_get_delegator, encode_get_epoch,
-    encode_get_validator, encode_get_withdrawal_request,
+    ACTIVE_VALIDATOR_SET, DEFAULT_WITHDRAW_ID, MONAD_BLOCK_REWARD_MON, MONAD_BLOCK_TIME_SECONDS, MONAD_BLOCKS_PER_YEAR, MONAD_BOUNDARY_BLOCK_PERIOD,
+    MONAD_MAX_WITHDRAW_IDS, MONAD_SCALE, MonadDelegatorState, MonadValidator, MonadWithdrawalRequest, STAKING_CONTRACT, decode_get_delegations,
+    decode_get_delegator, decode_get_epoch, decode_get_validator, decode_get_withdrawal_request, encode_get_delegations, encode_get_delegator,
+    encode_get_epoch, encode_get_validator, encode_get_withdrawal_request,
 };
 use crate::rpc::client::EthereumClient;
 
@@ -259,8 +258,11 @@ impl<C: Client + Clone> EthereumClient<C> {
         current_epoch: u64,
         delegations: &mut Vec<DelegationBase>,
     ) {
-        let delegation_id = ethereum_address_checksum(address).unwrap_or_else(|_| address.to_string());
         let pending_balance = &delegator_state.delta_stake + &delegator_state.next_delta_stake;
+        let next_withdraw_id = withdrawals
+            .and_then(|reqs| reqs.iter().map(|r| r.withdraw_id).max().map(|max_id| max_id.saturating_add(1)))
+            .unwrap_or(DEFAULT_WITHDRAW_ID);
+        let delegation_id = format!("{}:{}", address.to_lowercase(), next_withdraw_id);
 
         if !delegator_state.stake.is_zero() {
             delegations.push(DelegationBase {
@@ -308,7 +310,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                     shares: BigUint::zero(),
                     rewards: BigUint::zero(),
                     completion_date,
-                    delegation_id: format!("{}:{}", delegation_id, request.withdraw_id),
+                    delegation_id: format!("{}:{}", &delegation_id, request.withdraw_id),
                     validator_id: validator_id.to_string(),
                 });
             }

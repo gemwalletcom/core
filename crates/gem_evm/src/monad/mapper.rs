@@ -20,8 +20,6 @@ pub struct MonadDelegatorState {
     pub delta_stake: BigUint,
     pub next_delta_stake: BigUint,
     pub unclaimed_rewards: BigUint,
-    pub delta_epoch: u64,
-    pub next_delta_epoch: u64,
 }
 
 pub struct MonadWithdrawalRequest {
@@ -87,8 +85,6 @@ pub fn decode_get_delegator(data: &[u8]) -> Result<MonadDelegatorState, Box<dyn 
         delta_stake: BigUint::from_bytes_be(&decoded.deltaStake.to_be_bytes::<32>()),
         next_delta_stake: BigUint::from_bytes_be(&decoded.nextDeltaStake.to_be_bytes::<32>()),
         unclaimed_rewards: BigUint::from_bytes_be(&decoded.unclaimedRewards.to_be_bytes::<32>()),
-        delta_epoch: decoded.deltaEpoch,
-        next_delta_epoch: decoded.nextDeltaEpoch,
     })
 }
 
@@ -145,6 +141,13 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
         }
         StakeType::Unstake(delegation) => {
             let validator_id = delegation.base.validator_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
+            let next_withdraw_id = delegation
+                .base
+                .delegation_id
+                .split(':')
+                .nth(1)
+                .and_then(|id| id.parse::<u8>().ok())
+                .unwrap_or(DEFAULT_WITHDRAW_ID);
             if amount.sign() == Sign::Minus {
                 return Err("Negative values are not supported".into());
             }
@@ -154,7 +157,7 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
                 IMonadStaking::undelegateCall {
                     validatorId: validator_id,
                     amount: amount_u256,
-                    withdrawId: DEFAULT_WITHDRAW_ID,
+                    withdrawId: next_withdraw_id,
                 }
                 .abi_encode(),
                 BigInt::zero(),
@@ -162,8 +165,13 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
         }
         StakeType::Withdraw(delegation) => {
             let validator_id = delegation.base.validator_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
-            let parts = delegation.base.delegation_id.splitn(2, ':');
-            let withdraw_id = parts.last().and_then(|id| id.parse::<u8>().ok()).ok_or("Invalid withdraw id for Monad")?;
+            let withdraw_id = delegation
+                .base
+                .delegation_id
+                .split(':')
+                .nth(1)
+                .and_then(|id| id.parse::<u8>().ok())
+                .ok_or("Invalid withdraw id for Monad")?;
 
             Ok((
                 IMonadStaking::withdrawCall {
