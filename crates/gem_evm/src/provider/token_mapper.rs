@@ -16,8 +16,11 @@ pub fn map_token_data(
     let decimals = decode_abi_uint8(decimals_hex.trim_start_matches("0x"))?;
     let token_id = ethereum_address_checksum(&token_id)?;
 
-    if name.is_empty() || symbol.is_empty() {
-        return Err("Invalid token metadata".into());
+    if name.is_empty() {
+        return Err("Invalid token metadata: name is empty".into());
+    }
+    if symbol.is_empty() {
+        return Err("Invalid token metadata: symbol is empty".into());
     }
 
     let asset_id = AssetId {
