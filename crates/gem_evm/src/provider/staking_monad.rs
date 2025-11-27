@@ -17,23 +17,21 @@ use std::error::Error;
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_monad_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        let validator_ids = self.fetch_monad_validator_set().await?;
-        let validators = self.fetch_monad_validators(&validator_ids).await?;
+        let validators = self.fetch_monad_validator_set().await?;
         let total_stake = Self::total_validator_stake(&validators);
         Self::calculate_monad_network_apy(&total_stake)
     }
 
     pub async fn get_monad_validators(&self, fallback_apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        let validator_ids = self.fetch_monad_validator_set().await?;
-        let validators = self.fetch_monad_validators(&validator_ids).await?;
+        let validators = self.fetch_monad_validator_set().await?;
         let total_stake = Self::total_validator_stake(&validators);
         let network_apy = Self::calculate_monad_network_apy(&total_stake)?;
 
         validators
             .into_iter()
-            .map(|(id, val)| -> Result<DelegationValidator, Box<dyn Error + Sync + Send>> {
+            .map(|(_, val)| -> Result<DelegationValidator, Box<dyn Error + Sync + Send>> {
                 let validator_apy = Self::calculate_validator_apy(&val, &total_stake)?.or(network_apy).unwrap_or(fallback_apy);
-                Ok(self.map_validator(id, &val, validator_apy))
+                Ok(self.map_validator(&val, validator_apy))
             })
             .collect()
     }
@@ -91,7 +89,12 @@ impl<C: Client + Clone> EthereumClient<C> {
         )))
     }
 
-    async fn fetch_monad_validator_set(&self) -> Result<Vec<u64>, Box<dyn Error + Sync + Send>> {
+    async fn fetch_monad_validator_set(&self) -> Result<Vec<(u64, MonadValidator)>, Box<dyn Error + Sync + Send>> {
+        let validator_ids = self.fetch_monad_validator_ids().await?;
+        self.fetch_monad_validators(&validator_ids).await
+    }
+
+    async fn fetch_monad_validator_ids(&self) -> Result<Vec<u64>, Box<dyn Error + Sync + Send>> {
         let mut ids = Vec::new();
         let mut start_index: u32 = 0;
 
@@ -169,12 +172,12 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(states)
     }
 
-    fn map_validator(&self, validator_id: u64, validator: &MonadValidator, apy: f64) -> DelegationValidator {
+    fn map_validator(&self, validator: &MonadValidator, apy: f64) -> DelegationValidator {
         let auth_address = ethereum_address_checksum(&validator.auth_address.to_string()).unwrap_or_else(|_| validator.auth_address.to_string());
         let is_active = validator.flags == 0;
 
         DelegationValidator {
-            id: validator_id.to_string(),
+            id: auth_address.clone(),
             chain: Chain::Monad,
             name: auth_address,
             is_active,
