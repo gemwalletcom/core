@@ -141,13 +141,14 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
         }
         StakeType::Unstake(delegation) => {
             let validator_id = delegation.base.validator_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
-            let next_withdraw_id = delegation
+            let current_withdraw_id = delegation
                 .base
                 .delegation_id
                 .split(':')
                 .nth(1)
                 .and_then(|id| id.parse::<u8>().ok())
                 .unwrap_or(DEFAULT_WITHDRAW_ID);
+            let next_withdraw_id = current_withdraw_id.saturating_add(1);
             if amount.sign() == Sign::Minus {
                 return Err("Negative values are not supported".into());
             }

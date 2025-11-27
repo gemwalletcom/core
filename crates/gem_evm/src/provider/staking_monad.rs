@@ -259,10 +259,11 @@ impl<C: Client + Clone> EthereumClient<C> {
         delegations: &mut Vec<DelegationBase>,
     ) {
         let pending_balance = &delegator_state.delta_stake + &delegator_state.next_delta_stake;
-        let next_withdraw_id = withdrawals
-            .and_then(|reqs| reqs.iter().map(|r| r.withdraw_id).max().map(|max_id| max_id.saturating_add(1)))
+        let current_withdraw_id = withdrawals
+            .and_then(|reqs| reqs.iter().map(|r| r.withdraw_id).max())
             .unwrap_or(DEFAULT_WITHDRAW_ID);
-        let delegation_id = format!("{}:{}", address.to_lowercase(), next_withdraw_id);
+        let base_delegation_id = address.to_lowercase();
+        let delegation_id = format!("{}:{}", base_delegation_id, current_withdraw_id);
 
         if !delegator_state.stake.is_zero() {
             delegations.push(DelegationBase {
@@ -303,6 +304,8 @@ impl<C: Client + Clone> EthereumClient<C> {
                     DelegationState::AwaitingWithdrawal
                 };
 
+                let withdrawal_delegation_id = format!("{}:{}", base_delegation_id, request.withdraw_id);
+
                 delegations.push(DelegationBase {
                     asset_id: AssetId::from_chain(Chain::Monad),
                     state,
@@ -310,7 +313,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                     shares: BigUint::zero(),
                     rewards: BigUint::zero(),
                     completion_date,
-                    delegation_id: format!("{}:{}", &delegation_id, request.withdraw_id),
+                    delegation_id: withdrawal_delegation_id,
                     validator_id: validator_id.to_string(),
                 });
             }
