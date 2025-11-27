@@ -39,7 +39,7 @@ impl StakeChain {
             Self::Sui => 86400,
             Self::Osmosis | Self::Tron => 1_209_600,
             Self::SmartChain => 604800,
-            Self::Monad => 20_000,    // ~5.5 hours
+            Self::Monad => 86400,     // less than 1 day
             Self::Aptos => 2_592_000, // 30 days
             Self::HyperCore => 604800,
         }

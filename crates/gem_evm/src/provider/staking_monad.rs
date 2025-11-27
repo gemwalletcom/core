@@ -2,8 +2,7 @@ use crate::address::ethereum_address_checksum;
 use crate::constants::STAKING_VALIDATORS_LIMIT;
 use crate::monad::{
     ACTIVE_VALIDATOR_SET, MONAD_BLOCK_REWARD_MON, MONAD_BLOCKS_PER_YEAR, MONAD_WEI_PER_MON, MonadDelegatorState, MonadValidator, STAKING_CONTRACT,
-    decode_get_delegations, decode_get_delegator, decode_get_validator, decode_get_validator_set, encode_get_delegations, encode_get_delegator,
-    encode_get_validator, encode_get_validator_set,
+    decode_get_delegations, decode_get_delegator, decode_get_validator, encode_get_delegations, encode_get_delegator, encode_get_validator,
 };
 use crate::rpc::client::EthereumClient;
 use alloy_primitives::hex;
@@ -12,26 +11,52 @@ use num_bigint::BigUint;
 use num_traits::ToPrimitive;
 use num_traits::Zero;
 use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
+use std::collections::HashMap;
 use std::error::Error;
+
+const MONAD_VALIDATOR_NAMES: &[(u64, &str)] = &[
+    (16, "MonadVision"),
+    (3, "gmonads.com"),
+    (6, "ProStaking"),
+    (123, "P2P.org"),
+    (5, "Alchemy"),
+    (128, "Laine"),
+    (10, "Stakin"),
+    (4, "B-Harvest"),
+    (7, "Staking4All"),
+    (72, "01node"),
+    (43, "P-OPS Team"),
+    (92, "CMS Holdings"),
+    (9, "Everstake"),
+    (23, "Nansen | Stake to Stack Points"),
+    (11, "Pier Two"),
+    (12, "Chorus One"),
+    (78, "Validation Cloud"),
+    (114, "nadradar"),
+    (17, "Cosmostation"),
+    (75, "laminatedlabs"),
+];
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_monad_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        let validators = self.fetch_monad_validator_set().await?;
+        let validators = self.fetch_monad_validators(&Self::monad_all_validator_ids()).await?;
         let total_stake = Self::total_validator_stake(&validators);
         Self::calculate_monad_network_apy(&total_stake)
     }
 
     pub async fn get_monad_validators(&self, fallback_apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        let validators = self.fetch_monad_validator_set().await?;
-        let total_stake = Self::total_validator_stake(&validators);
+        let total_stake = Self::total_validator_stake(&self.fetch_monad_validators(&Self::monad_all_validator_ids()).await?);
+        let validators = self.fetch_monad_validators(&Self::monad_featured_validator_ids()).await?;
+        let validator_names = Self::monad_validator_names();
         let network_apy = Self::calculate_monad_network_apy(&total_stake)?;
 
         validators
             .into_iter()
-            .map(|(_, val)| -> Result<DelegationValidator, Box<dyn Error + Sync + Send>> {
+            .map(|(id, val)| -> Result<DelegationValidator, Box<dyn Error + Sync + Send>> {
                 let validator_apy = Self::calculate_validator_apy(&val, &total_stake)?.or(network_apy).unwrap_or(fallback_apy);
-                Ok(self.map_validator(&val, validator_apy))
+                let name_override = validator_names.get(&id).map(|name| name.to_string());
+                Ok(self.map_validator(id, &val, validator_apy, name_override))
             })
             .collect()
     }
@@ -87,31 +112,6 @@ impl<C: Client + Clone> EthereumClient<C> {
             AssetId::from_chain(Chain::Monad),
             primitives::Balance::stake_balance(staked, pending, Some(rewards)),
         )))
-    }
-
-    async fn fetch_monad_validator_set(&self) -> Result<Vec<(u64, MonadValidator)>, Box<dyn Error + Sync + Send>> {
-        let validator_ids = self.fetch_monad_validator_ids().await?;
-        self.fetch_monad_validators(&validator_ids).await
-    }
-
-    async fn fetch_monad_validator_ids(&self) -> Result<Vec<u64>, Box<dyn Error + Sync + Send>> {
-        let mut ids = Vec::new();
-        let mut start_index: u32 = 0;
-
-        loop {
-            let data = encode_get_validator_set(start_index);
-            let result = self.call_staking(data).await?;
-            let page = decode_get_validator_set(&result)?;
-
-            ids.extend_from_slice(&page.validator_ids);
-            if page.is_done || ids.len() as u32 >= ACTIVE_VALIDATOR_SET {
-                break;
-            }
-
-            start_index = page.next;
-        }
-
-        Ok(ids)
     }
 
     async fn fetch_monad_validators(&self, validator_ids: &[u64]) -> Result<Vec<(u64, MonadValidator)>, Box<dyn Error + Sync + Send>> {
@@ -172,14 +172,14 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(states)
     }
 
-    fn map_validator(&self, validator: &MonadValidator, apy: f64) -> DelegationValidator {
-        let auth_address = ethereum_address_checksum(&validator.auth_address.to_string()).unwrap_or_else(|_| validator.auth_address.to_string());
-        let is_active = validator.flags == 0;
+    fn map_validator(&self, validator_id: u64, validator: &MonadValidator, apy: f64, name_override: Option<String>) -> DelegationValidator {
+        let validator_name = name_override.unwrap_or_else(|| validator_id.to_string());
+        let is_active = validator.flags == 0 && !validator.stake.is_zero();
 
         DelegationValidator {
-            id: auth_address.clone(),
+            id: validator_id.to_string(),
             chain: Chain::Monad,
-            name: auth_address,
+            name: validator_name,
             is_active,
             commission: validator.commission_rate(),
             apr: apy,
@@ -276,5 +276,17 @@ impl<C: Client + Clone> EthereumClient<C> {
             .to_f64()
             .ok_or_else(|| "Failed to convert Monad stake to floating point value".to_string())?;
         Ok(stake_value / MONAD_WEI_PER_MON)
+    }
+
+    fn monad_all_validator_ids() -> Vec<u64> {
+        (0..ACTIVE_VALIDATOR_SET).map(u64::from).collect()
+    }
+
+    fn monad_featured_validator_ids() -> Vec<u64> {
+        MONAD_VALIDATOR_NAMES.iter().map(|(id, _)| *id).collect()
+    }
+
+    fn monad_validator_names() -> HashMap<u64, &'static str> {
+        MONAD_VALIDATOR_NAMES.iter().copied().collect()
     }
 }
