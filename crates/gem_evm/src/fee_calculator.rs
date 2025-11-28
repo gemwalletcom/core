@@ -91,10 +91,7 @@ impl FeeCalculator {
             .collect();
 
         result.sort_unstable_by(|a, b| a.value.cmp(&b.value));
-        result
-            .iter_mut()
-            .zip(priorities.iter())
-            .for_each(|(fee, &priority)| fee.priority = priority);
+        result.iter_mut().zip(priorities.iter()).for_each(|(fee, &priority)| fee.priority = priority);
 
         Ok(result)
     }
@@ -196,9 +193,7 @@ mod tests {
         };
         let priorities = [FeePriority::Slow, FeePriority::Normal, FeePriority::Fast];
 
-        let result = calculator
-            .calculate_priority_fees(&fee_history, &priorities, BigInt::from(0))
-            .unwrap();
+        let result = calculator.calculate_priority_fees(&fee_history, &priorities, BigInt::from(0)).unwrap();
 
         assert_eq!(result.len(), 3);
         assert_eq!(result[0].priority, FeePriority::Slow);

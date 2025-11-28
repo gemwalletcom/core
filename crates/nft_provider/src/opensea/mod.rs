@@ -1,5 +1,6 @@
 pub mod client;
-pub mod model;
-pub use client::OpenSeaClient;
 pub mod mapper;
+pub mod model;
 pub mod provider;
+
+pub use client::OpenSeaClient;

@@ -56,7 +56,7 @@ pub struct Collection {
     pub image_url: Option<String>,
     // pub banner_image_url: String,
     // pub owner: String,
-    // pub safelist_status: String,
+    pub safelist_status: Option<String>,
     // pub category: String,
     // pub is_disabled: bool,
     // pub is_nsfw: bool,

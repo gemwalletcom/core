@@ -13,24 +13,21 @@ impl NFTProvider for OpenSeaClient {
     }
 
     fn get_chains(&self) -> Vec<Chain> {
-        vec![Chain::Ethereum]
+        vec![Chain::Ethereum, Chain::Polygon]
     }
 
     async fn get_assets(&self, chain: Chain, address: String) -> Result<Vec<NFTAssetId>, Box<dyn Error + Send + Sync>> {
-        let response = self.get_nfts_by_account(chain.as_ref(), &address).await?;
-        Ok(map_assets(response, chain))
+        Ok(map_assets(self.get_nfts_by_account(chain, &address).await?, chain))
     }
 
     async fn get_collection(&self, collection_id: NFTCollectionId) -> Result<NFTCollection, Box<dyn Error + Send + Sync>> {
-        let collection = self.get_collection_id(collection_id.chain.as_ref(), &collection_id.contract_address).await?;
+        let collection = self.get_collection_by_contract(collection_id.chain, &collection_id.contract_address).await?;
         Ok(map_collection(collection, collection_id))
     }
 
     async fn get_asset(&self, asset_id: NFTAssetId) -> Result<NFTAsset, Box<dyn Error + Send + Sync>> {
-        let response = self
-            .get_asset_id(asset_id.chain.as_ref(), &asset_id.contract_address, &asset_id.token_id)
-            .await?;
-        Ok(map_asset(response, asset_id).ok_or("Asset not found")?)
+        map_asset(self.get_asset_id(asset_id.chain, &asset_id.contract_address, &asset_id.token_id).await?, asset_id)
+            .ok_or("Asset not found".into())
     }
 }
 
