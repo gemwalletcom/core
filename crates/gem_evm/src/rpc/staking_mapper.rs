@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
-use num_traits::Num;
+use num_traits::{Num, ToPrimitive};
 
 use crate::{
     address::{ethereum_address_checksum, ethereum_address_from_topic},
     everstake::{EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS},
+    monad::{EVENT_CLAIM_REWARDS, EVENT_DELEGATE, EVENT_UNDELEGATE, EVENT_WITHDRAW, STAKING_CONTRACT},
     rpc::{
         balance_differ::BalanceDiffer,
         model::{Log, Transaction, TransactionReciept, TransactionReplayTrace},
@@ -50,6 +51,13 @@ impl StakingMapper {
                     .is_some_and(|to| to.eq_ignore_ascii_case(EVERSTAKE_POOL_ADDRESS) || to.eq_ignore_ascii_case(EVERSTAKE_ACCOUNTING_ADDRESS))
                 {
                     Self::map_ethereum_everstake_transaction(chain, transaction, transaction_reciept, trace, created_at)
+                } else {
+                    None
+                }
+            }
+            Chain::Monad => {
+                if transaction.to.as_ref().is_some_and(|to| to.eq_ignore_ascii_case(STAKING_CONTRACT)) && !transaction_reciept.logs.is_empty() {
+                    Self::map_monad_staking_transaction(chain, transaction, transaction_reciept, created_at)
                 } else {
                     None
                 }
@@ -186,6 +194,79 @@ impl StakingMapper {
             &value.to_string(),
             created_at,
         )
+    }
+
+    fn map_monad_staking_transaction(
+        chain: &Chain,
+        transaction: &Transaction,
+        transaction_reciept: &TransactionReciept,
+        created_at: DateTime<Utc>,
+    ) -> Option<primitives::Transaction> {
+        for log in &transaction_reciept.logs {
+            if log.topics.len() < 3 {
+                continue;
+            }
+
+            // Monad validator ids are numeric, not addresses; pass the id as a string.
+            let validator_id = log
+                .topics
+                .get(1)
+                .and_then(|topic| BigUint::from_str_radix(topic.trim_start_matches("0x"), 16).ok()?.to_u64())?;
+
+            match log.topics.first().map(|t| t.as_str()) {
+                Some(EVENT_DELEGATE) => {
+                    let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
+                    return Self::create_staking_transaction(
+                        chain,
+                        transaction,
+                        transaction_reciept,
+                        &validator_id.to_string(),
+                        TransactionType::StakeDelegate,
+                        &value.to_string(),
+                        created_at,
+                    );
+                }
+                Some(EVENT_UNDELEGATE) => {
+                    let value = ethereum_value_from_log_data(&log.data, 64, 128)?;
+                    return Self::create_staking_transaction(
+                        chain,
+                        transaction,
+                        transaction_reciept,
+                        &validator_id.to_string(),
+                        TransactionType::StakeUndelegate,
+                        &value.to_string(),
+                        created_at,
+                    );
+                }
+                Some(EVENT_WITHDRAW) => {
+                    let value = ethereum_value_from_log_data(&log.data, 64, 128)?;
+                    return Self::create_staking_transaction(
+                        chain,
+                        transaction,
+                        transaction_reciept,
+                        &validator_id.to_string(),
+                        TransactionType::StakeWithdraw,
+                        &value.to_string(),
+                        created_at,
+                    );
+                }
+                Some(EVENT_CLAIM_REWARDS) => {
+                    let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
+                    return Self::create_staking_transaction(
+                        chain,
+                        transaction,
+                        transaction_reciept,
+                        &validator_id.to_string(),
+                        TransactionType::StakeRewards,
+                        &value.to_string(),
+                        created_at,
+                    );
+                }
+                _ => continue,
+            }
+        }
+
+        None
     }
 
     fn map_ethereum_everstake_transaction(
