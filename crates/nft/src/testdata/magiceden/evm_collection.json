@@ -1,0 +1,61 @@
+{
+    "collections": [
+        {
+            "id": "0x6dfbb01ecb7991366cd8acc4d18dcc67bbe345ba",
+            "chain": "bsc",
+            "name": "Reefers by CoralApp",
+            "symbol": "CRAPP",
+            "description": "Welcome to the Reefers collection, a 13,000 unique Coral Reef dwellers, united by their belief in the power of decentralization. Each Reefer is a symbol of individuality and freedom, yet thrives in collaboration within an immersive ecosystem. With the rise of blockchain technology, they merge web3 gaming, digital art, physical infrastructure and ownership into a dynamic space where creativity and community thrives. As they come together, Reefers are more than just inhabitants of a digital reef\u2014they are the architects of a new world. In this multichain ecosystem, freedom, unity, and innovation reign, and the journey is only just beginning. Welcome to The Reef, where the tide is always rising and the possibilities are endless.",
+            "media": {
+                "url": "https://img.reservoir.tools/images/v2/bsc/M%2FK47YBCAs6ieLgkYDuIwv46DpQnevL2hmBULPkK3BuBY8BG4GGzXB22H3E0Phb8M9RMHorMwBwK9g1GNRSmHqKVgKxZwKqawUsxLVBU98czgEyHu8JPigR%2B0hTOIEKPQ2fByOR1AiDomIAfUK%2BOjwn70fv7FQbGrZSFpOxFo3IM2D6K7unSJoB%2BIKRyIT38%2Fnx%2F0gpUvVgL3ehrSXBVchEdeTxrzHqQXzaxM9WErHlgdPAGFDVnnuDu62qDy0dJ"
+            },
+            "social": {
+                "discordUrl": "https://discord.gg/bQYBUHJSkw",
+                "websiteUrl": "https://nft.coralapp.io"
+            },
+            "verification": "VERIFIED",
+            "isTradeable": true,
+            "royalty": {
+                "recipient": "0x7d87e30dd93eb4466ad0bc9d107d946c4e8ecf92",
+                "bps": 500,
+                "isOptional": true
+            },
+            "collectionType": "ERC721",
+            "isSeaportV16Disabled": false,
+            "isSeaportV16RoyaltyOptional": true,
+            "seaportV16ListingCurrencies": [
+                {
+                    "address": "0x0000000000000000000000000000000000000000",
+                    "name": "Binance Coin",
+                    "symbol": "BNB",
+                    "decimals": 18
+                },
+                {
+                    "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+                    "name": "Wrapped BNB",
+                    "symbol": "WBNB",
+                    "decimals": 18
+                },
+                {
+                    "address": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+                    "name": "Ethereum Token",
+                    "symbol": "ETH",
+                    "decimals": 18
+                },
+                {
+                    "address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d",
+                    "name": "USD Coin",
+                    "symbol": "USDC",
+                    "decimals": 18
+                }
+            ],
+            "chainData": {
+                "contract": "0x6dfbb01ecb7991366cd8acc4d18dcc67bbe345ba",
+                "transferability": "TRANSFERABLE_TRADABLE",
+                "collectionBidSupported": true,
+                "contractDeployedAt": "2025-02-05T06:35:32.000Z",
+                "isMinting": false
+            }
+        }
+    ]
+}

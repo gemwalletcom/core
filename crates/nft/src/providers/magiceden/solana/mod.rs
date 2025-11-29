@@ -3,4 +3,4 @@ pub mod mapper;
 pub mod model;
 pub mod provider;
 
-pub use client::OpenSeaClient;
+pub use client::MagicEdenSolanaClient;

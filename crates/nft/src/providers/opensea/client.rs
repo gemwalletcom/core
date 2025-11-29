@@ -1,6 +1,5 @@
 use super::model::{Collection, Contract, NftResponse, NftsResponse};
 use primitives::Chain;
-use reqwest::header::{HeaderMap, HeaderValue};
 use std::error::Error;
 
 pub struct OpenSeaClient {
@@ -10,12 +9,8 @@ pub struct OpenSeaClient {
 impl OpenSeaClient {
     const BASE_URL: &'static str = "https://api.opensea.io";
 
-    pub fn new(api_key: &str) -> Self {
-        let mut headers = HeaderMap::new();
-        headers.insert("x-api-key", HeaderValue::from_str(api_key).unwrap());
-        OpenSeaClient {
-            client: reqwest::Client::builder().default_headers(headers).build().unwrap(),
-        }
+    pub fn new(client: reqwest::Client) -> Self {
+        Self { client }
     }
 
     fn chain_id(chain: Chain) -> Result<&'static str, Box<dyn Error + Send + Sync>> {

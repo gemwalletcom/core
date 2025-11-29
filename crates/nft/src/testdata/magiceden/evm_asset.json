@@ -1,0 +1,79 @@
+{
+    "token": {
+        "chain": "bsc",
+        "id": "0x6dfbb01ecb7991366cd8acc4d18dcc67bbe345ba:410",
+        "collectionId": "0x6dfbb01ecb7991366cd8acc4d18dcc67bbe345ba",
+        "owner": "0xba4d1d35bce0e8f28e5a3403e7a0b996c5d50ac4",
+        "name": "Reefers by CoralApp #411",
+        "description": "Welcome to the Reefers collection, a 10,000 unique Coral Reef dwellers, united by their belief in the power of decentralization. Each Reefer is a symbol of individuality and freedom, yet thrives in collaboration within an immersive ecosystem. With the rise of blockchain technology, they merge web3 gaming, digital art, physical infrastructure and ownership into a dynamic space where creativity and community thrives. As they come together, Reefers are more than just inhabitants of a digital reef\u2014they are the architects of a new world. In this multichain ecosystem, freedom, unity, and innovation reign, and the journey is only just beginning. Welcome to The Reef, where the tide is always rising and the possibilities are endless.",
+        "assetClass": "NFT",
+        "attributes": [
+            {
+                "traitType": "Aura",
+                "value": "None"
+            },
+            {
+                "traitType": "Eyes",
+                "value": "Pixelated Glasses"
+            },
+            {
+                "traitType": "Head",
+                "value": "Cowboy Hat"
+            },
+            {
+                "traitType": "Skin",
+                "value": "Gold"
+            },
+            {
+                "traitType": "Mouth",
+                "value": "Surprised"
+            },
+            {
+                "traitType": "Clothes",
+                "value": "Gear Fin"
+            },
+            {
+                "traitType": "Accesories",
+                "value": "Tridents"
+            },
+            {
+                "traitType": "Background",
+                "value": "Blue"
+            },
+            {
+                "traitType": "Sea Friends",
+                "value": "Octopus"
+            }
+        ],
+        "mediaV2": {
+            "main": {
+                "type": "img",
+                "typeRaw": "img",
+                "uri": "https://i2c.seadn.io/bsc/0x6dfbb01ecb7991366cd8acc4d18dcc67bbe345ba/97cbd66a79ea436d7db3224f55be70/4f97cbd66a79ea436d7db3224f55be70.png"
+            }
+        },
+        "remainingSupply": "1",
+        "rarity": [],
+        "contractAddress": "0x6dfbb01ecb7991366cd8acc4d18dcc67bbe345ba",
+        "tokenId": "410",
+        "standard": "ERC721",
+        "lastSalePrice": {
+            "amount": {
+                "raw": "3480000000000000",
+                "native": "0.00348",
+                "fiat": {
+                    "usd": "3.082390792468749"
+                }
+            },
+            "currency": {
+                "contract": "0x0000000000000000000000000000000000000000",
+                "symbol": "BNB",
+                "decimals": 18,
+                "displayName": "BNB",
+                "fiatConversion": {
+                    "usd": 885.9128204347875
+                }
+            }
+        }
+    }
+}

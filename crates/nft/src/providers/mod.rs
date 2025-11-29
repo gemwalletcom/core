@@ -1,5 +1,6 @@
 pub mod magiceden;
 pub mod opensea;
 
-pub use magiceden::client::MagicEdenClient;
+pub use magiceden::MagicEdenEvmClient;
+pub use magiceden::MagicEdenSolanaClient;
 pub use opensea::client::OpenSeaClient;

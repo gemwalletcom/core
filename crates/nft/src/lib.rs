@@ -14,4 +14,4 @@ pub use config::NFTProviderConfig;
 pub use factory::NFTProviderFactory;
 pub use image_fetcher::ImageFetcher;
 pub use provider::{NFTProvider, NFTProviderClient};
-pub use providers::{MagicEdenClient, OpenSeaClient};
+pub use providers::{MagicEdenEvmClient, MagicEdenSolanaClient, OpenSeaClient};

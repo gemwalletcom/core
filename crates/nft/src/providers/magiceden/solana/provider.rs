@@ -2,13 +2,14 @@ use std::error::Error;
 
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId};
 
+use super::client::MagicEdenSolanaClient;
 use super::mapper::{map_asset, map_assets, map_collection};
-use crate::{MagicEdenClient, NFTProvider};
+use crate::provider::NFTProvider;
 
 #[async_trait::async_trait]
-impl NFTProvider for MagicEdenClient {
+impl NFTProvider for MagicEdenSolanaClient {
     fn name(&self) -> &'static str {
-        "MagicEden"
+        "MagicEdenSolana"
     }
 
     fn get_chains(&self) -> Vec<Chain> {
@@ -39,7 +40,7 @@ mod nft_integration_tests {
 
     #[tokio::test]
     async fn test_magiceden_get_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_magiceden_test_client();
+        let client = create_magiceden_solana_test_client();
 
         let assets = client.get_assets(Chain::Solana, TEST_SOLANA_ADDRESS.to_string()).await?;
 
@@ -57,7 +58,7 @@ mod nft_integration_tests {
 
     #[tokio::test]
     async fn test_magiceden_get_collection() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_magiceden_test_client();
+        let client = create_magiceden_solana_test_client();
 
         let collection_id = NFTCollectionId::new(Chain::Solana, TEST_SOLANA_COLLECTION);
         let collection = client.get_collection(collection_id).await?;
@@ -71,7 +72,7 @@ mod nft_integration_tests {
 
     #[tokio::test]
     async fn test_magiceden_get_asset() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_magiceden_test_client();
+        let client = create_magiceden_solana_test_client();
 
         let asset_id = NFTAssetId::new(Chain::Solana, TEST_SOLANA_COLLECTION_POOKS, TEST_SOLANA_TOKEN_ID);
 
