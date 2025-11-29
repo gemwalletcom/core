@@ -86,13 +86,13 @@ impl Collection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::magiceden::model;
+    use crate::providers::magiceden::solana::model;
     use crate::testkit::{TEST_SOLANA_ADDRESS, TEST_SOLANA_COLLECTION, TEST_SOLANA_COLLECTION_POOKS, TEST_SOLANA_TOKEN_ID};
     use primitives::{Chain, NFTCollectionId};
 
     #[test]
     fn test_map_assets() {
-        let response: Vec<model::Nft> = serde_json::from_str(include_str!("../../../testdata/magiceden/assets.json")).unwrap();
+        let response: Vec<model::Nft> = serde_json::from_str(include_str!("../../../../testdata/magiceden/assets.json")).unwrap();
         let asset_ids = map_assets(response, Chain::Solana);
 
         assert!(!asset_ids.is_empty());
@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_map_collection() {
-        let collection: model::Collection = serde_json::from_str(include_str!("../../../testdata/magiceden/collection.json")).unwrap();
+        let collection: model::Collection = serde_json::from_str(include_str!("../../../../testdata/magiceden/collection.json")).unwrap();
         let collection_id = NFTCollectionId::new(Chain::Solana, TEST_SOLANA_COLLECTION);
         let nft_collection = map_collection(collection, collection_id);
 
@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_map_asset() {
-        let nft: model::Nft = serde_json::from_str(include_str!("../../../testdata/magiceden/asset.json")).unwrap();
+        let nft: model::Nft = serde_json::from_str(include_str!("../../../../testdata/magiceden/asset.json")).unwrap();
         let asset_id = NFTAssetId::new(Chain::Solana, TEST_SOLANA_COLLECTION_POOKS, TEST_SOLANA_TOKEN_ID);
         let owner = TEST_SOLANA_ADDRESS.to_string();
         let nft_asset = map_asset(nft, asset_id, owner.clone()).expect("Failed to map asset");
@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn test_asset_id_mapping() {
-        let response: Vec<model::Nft> = serde_json::from_str(include_str!("../../../testdata/magiceden/assets.json")).unwrap();
+        let response: Vec<model::Nft> = serde_json::from_str(include_str!("../../../../testdata/magiceden/assets.json")).unwrap();
         let asset_ids: Vec<NFTAssetId> = response.into_iter().flat_map(|nft| nft.as_asset_id(Chain::Solana)).collect();
 
         assert!(!asset_ids.is_empty());
@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_asset_primitive_mapping() {
-        let nft: model::Nft = serde_json::from_str(include_str!("../../../testdata/magiceden/asset.json")).unwrap();
+        let nft: model::Nft = serde_json::from_str(include_str!("../../../../testdata/magiceden/asset.json")).unwrap();
         let asset_id = NFTAssetId::new(Chain::Solana, TEST_SOLANA_COLLECTION_POOKS, TEST_SOLANA_TOKEN_ID);
         let owner = TEST_SOLANA_ADDRESS.to_string();
 
@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn test_collection_primitive_mapping() {
-        let collection: model::Collection = serde_json::from_str(include_str!("../../../testdata/magiceden/collection.json")).unwrap();
+        let collection: model::Collection = serde_json::from_str(include_str!("../../../../testdata/magiceden/collection.json")).unwrap();
         let collection_id = NFTCollectionId::new(Chain::Solana, TEST_SOLANA_COLLECTION);
         let nft_collection = collection.as_primitive(collection_id);
 

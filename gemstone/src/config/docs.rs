@@ -33,6 +33,7 @@ pub enum DocsUrl {
     PerpetualsOpenInterest,
     PerpetualsFundingPayments,
     PerpetualsAutoclose,
+    Dust,
 }
 const DOCS_URL: &str = "https://docs.gemwallet.com";
 
@@ -68,6 +69,7 @@ pub fn get_docs_url(item: DocsUrl) -> String {
         DocsUrl::PerpetualsOpenInterest => "/defi/perps/open-interest/",
         DocsUrl::PerpetualsFundingPayments => "/defi/perps/funding-payment/",
         DocsUrl::PerpetualsAutoclose => "/defi/perps/auto-close/",
+        DocsUrl::Dust => "/blockchains/bitcoin/dust/",
     };
     format!("{DOCS_URL}{path}")
 }

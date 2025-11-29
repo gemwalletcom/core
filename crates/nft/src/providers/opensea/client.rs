@@ -1,5 +1,5 @@
 use super::model::{Collection, Contract, NftResponse, NftsResponse};
-use reqwest::header::{HeaderMap, HeaderValue};
+use primitives::Chain;
 use std::error::Error;
 
 pub struct OpenSeaClient {
@@ -9,32 +9,42 @@ pub struct OpenSeaClient {
 impl OpenSeaClient {
     const BASE_URL: &'static str = "https://api.opensea.io";
 
-    pub fn new(api_key: &str) -> Self {
-        let mut headers = HeaderMap::new();
-        headers.insert("x-api-key", HeaderValue::from_str(api_key).unwrap());
-        OpenSeaClient {
-            client: reqwest::Client::builder().default_headers(headers).build().unwrap(),
+    pub fn new(client: reqwest::Client) -> Self {
+        Self { client }
+    }
+
+    fn chain_id(chain: Chain) -> Result<&'static str, Box<dyn Error + Send + Sync>> {
+        match chain {
+            Chain::Ethereum => Ok("ethereum"),
+            Chain::Polygon => Ok("polygon"),
+            _ => Err(format!("Unsupported chain for OpenSea: {:?}", chain).into()),
         }
     }
 
-    pub async fn get_nfts_by_account(&self, chain: &str, account_address: &str) -> Result<NftsResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/chain/{}/account/{}/nfts", Self::BASE_URL, chain, account_address);
+    pub async fn get_nfts_by_account(&self, chain: Chain, account_address: &str) -> Result<NftsResponse, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/chain/{}/account/{}/nfts", Self::BASE_URL, Self::chain_id(chain)?, account_address);
         let query = [("limit", 100)];
         Ok(self.client.get(&url).query(&query).send().await?.json().await?)
     }
 
-    pub async fn get_collection_id(&self, chain: &str, contract_address: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
+    pub async fn get_collection_by_contract(&self, chain: Chain, contract_address: &str) -> Result<Collection, Box<dyn Error + Send + Sync>> {
         let contract = self.get_contract(chain, contract_address).await?;
         self.get_collection_by_slug(&contract.collection).await
     }
 
-    pub async fn get_contract(&self, chain: &str, contract_address: &str) -> Result<Contract, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/chain/{}/contract/{}", Self::BASE_URL, chain, contract_address);
+    pub async fn get_contract(&self, chain: Chain, contract_address: &str) -> Result<Contract, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/api/v2/chain/{}/contract/{}", Self::BASE_URL, Self::chain_id(chain)?, contract_address);
         Ok(self.client.get(&url).send().await?.json().await?)
     }
 
-    pub async fn get_asset_id(&self, chain: &str, contract_address: &str, token_id: &str) -> Result<NftResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/chain/{}/contract/{}/nfts/{}", Self::BASE_URL, chain, contract_address, token_id);
+    pub async fn get_asset_id(&self, chain: Chain, contract_address: &str, token_id: &str) -> Result<NftResponse, Box<dyn Error + Send + Sync>> {
+        let url = format!(
+            "{}/api/v2/chain/{}/contract/{}/nfts/{}",
+            Self::BASE_URL,
+            Self::chain_id(chain)?,
+            contract_address,
+            token_id
+        );
         Ok(self.client.get(&url).send().await?.json().await?)
     }
 

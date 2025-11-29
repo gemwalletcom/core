@@ -78,7 +78,7 @@ impl Collection {
                 preview: NFTResource::from_url(self.image_url.as_deref().unwrap_or("")),
             },
             links: self.as_links(),
-            is_verified: true,
+            is_verified: self.safelist_status.as_deref() == Some("verified"),
         }
     }
 
