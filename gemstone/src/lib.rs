@@ -5,6 +5,7 @@ pub mod config;
 pub mod ethereum;
 pub mod gateway;
 pub mod gem_swapper;
+pub mod gem_yielder;
 pub mod message;
 pub mod models;
 pub mod network;
@@ -96,6 +97,12 @@ impl From<::signer::SignerError> for GemstoneError {
 
 impl From<serde_json::Error> for GemstoneError {
     fn from(error: serde_json::Error) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<yielder::yo::YieldError> for GemstoneError {
+    fn from(error: yielder::yo::YieldError) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }
