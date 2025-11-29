@@ -424,7 +424,7 @@ impl Chain {
     }
 
     pub fn is_nft_supported(&self) -> bool {
-        matches!(self, Self::Ethereum | Self::Polygon | Self::Solana)
+        matches!(self, Self::Ethereum | Self::Polygon | Self::Solana | Self::SmartChain)
     }
 
     // milliseconds
