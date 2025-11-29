@@ -19,10 +19,6 @@ impl MonadValidator {
     pub fn commission_rate(&self) -> f64 {
         self.commission.to_f64().unwrap_or(0.0) / MONAD_SCALE
     }
-
-    pub fn stake_in_mon(&self) -> Option<f64> {
-        self.stake.to_f64().map(|value| value / MONAD_SCALE)
-    }
 }
 
 pub struct MonadDelegatorState {

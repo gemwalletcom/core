@@ -17,28 +17,7 @@ use crate::monad::{
 };
 use crate::rpc::client::EthereumClient;
 
-const MONAD_VALIDATOR_NAMES: &[(u64, &str)] = &[
-    (16, "MonadVision"),
-    (3, "gmonads.com"),
-    (6, "ProStaking"),
-    (123, "P2P.org"),
-    (5, "Alchemy"),
-    (128, "Laine"),
-    (10, "Stakin"),
-    (4, "B-Harvest"),
-    (7, "Staking4All"),
-    (72, "01node"),
-    (43, "P-OPS Team"),
-    (92, "CMS Holdings"),
-    (9, "Everstake"),
-    (23, "Nansen | Stake to Stack Points"),
-    (11, "Pier Two"),
-    (12, "Chorus One"),
-    (78, "Validation Cloud"),
-    (114, "nadradar"),
-    (17, "Cosmostation"),
-    (75, "laminatedlabs"),
-];
+const MONAD_VALIDATOR_NAMES: &[(u64, &str)] = &[(16, "MonadVision"), (5, "Alchemy"), (10, "Stakin"), (9, "Everstake")];
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
@@ -49,27 +28,29 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     pub async fn get_monad_validators(&self, fallback_apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        let total_stake = Self::total_validator_stake(&self.fetch_monad_validators(&Self::monad_all_validator_ids()).await?);
-        let validators = self.fetch_monad_validators(&Self::monad_featured_validator_ids()).await?;
-        let validator_names = Self::monad_validator_names();
+        let validators = self.fetch_monad_validators(&Self::monad_all_validator_ids()).await?;
+        let total_stake = Self::total_validator_stake(&validators);
+        let validator_names: HashMap<u64, &str> = MONAD_VALIDATOR_NAMES.iter().copied().collect();
         let network_apy = Self::calculate_monad_network_apy(&total_stake)?;
 
-        validators
-            .into_iter()
+        MONAD_VALIDATOR_NAMES
+            .iter()
+            .map(|(id, _)| *id)
+            .filter_map(|validator_id| validators.iter().find(|(id, _)| *id == validator_id).map(|(_, val)| (validator_id, val)))
             .map(|(id, val)| -> Result<DelegationValidator, Box<dyn Error + Sync + Send>> {
-                let validator_apy = Self::calculate_validator_apy(&val, &total_stake)?.or(network_apy).unwrap_or(fallback_apy);
-                let name_override = validator_names.get(&id).map(|name| name.to_string());
-                Ok(self.map_validator(id, &val, validator_apy, name_override))
+                let validator_apy = Self::calculate_validator_apy(val, &total_stake)?.or(network_apy).unwrap_or(fallback_apy);
+                let name_override = validator_names.get(&id).map(|name| (*name).to_string());
+                Ok(self.map_validator(id, val, validator_apy, name_override))
             })
             .collect()
     }
 
     pub async fn get_monad_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
         let mut validator_ids = Vec::new();
-        let mut start_val_id: u64 = 0;
+        let mut next_validator_id: u64 = 1;
 
         loop {
-            let data = encode_get_delegations(address, start_val_id)?;
+            let data = encode_get_delegations(address, next_validator_id)?;
             let result = self.call_staking(data).await?;
             let page = decode_get_delegations(&result)?;
 
@@ -79,7 +60,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                 break;
             }
 
-            start_val_id = page.next;
+            next_validator_id = page.next;
         }
 
         let mut delegations = Vec::new();
@@ -229,8 +210,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     async fn fetch_monad_epoch(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        let data = encode_get_epoch();
-        let result = self.call_staking(data).await?;
+        let result = self.call_staking(encode_get_epoch()).await?;
         let (epoch, _) = decode_get_epoch(&result)?;
         Ok(epoch)
     }
@@ -299,7 +279,11 @@ impl<C: Client + Clone> EthereumClient<C> {
 
                 let is_ready = request.withdraw_epoch < current_epoch;
                 let completion_date = Self::withdrawal_completion_date(request.withdraw_epoch, current_epoch);
-                let state = if is_ready { DelegationState::AwaitingWithdrawal } else { DelegationState::Deactivating };
+                let state = if is_ready {
+                    DelegationState::AwaitingWithdrawal
+                } else {
+                    DelegationState::Deactivating
+                };
 
                 let withdrawal_delegation_id = format!("{}:{}", base_delegation_id, request.withdraw_id);
 
@@ -338,7 +322,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     fn calculate_monad_network_apy(total_stake: &BigUint) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        let total_stake_mon = Self::stake_to_mon(total_stake)?;
+        let total_stake_mon = Self::value_to_f64_amount(total_stake)?;
         if total_stake_mon == 0.0 {
             return Ok(None);
         }
@@ -348,8 +332,8 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     fn calculate_validator_apy(validator: &MonadValidator, total_stake: &BigUint) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        let total_stake_mon = Self::stake_to_mon(total_stake)?;
-        let validator_stake_mon = validator.stake_in_mon().unwrap_or(0.0);
+        let total_stake_mon = Self::value_to_f64_amount(total_stake)?;
+        let validator_stake_mon = Self::value_to_f64_amount(&validator.stake)?;
 
         if total_stake_mon == 0.0 || validator_stake_mon == 0.0 {
             return Ok(None);
@@ -365,7 +349,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(Some((net_rewards / validator_stake_mon) * 100.0))
     }
 
-    fn stake_to_mon(stake: &BigUint) -> Result<f64, Box<dyn Error + Sync + Send>> {
+    fn value_to_f64_amount(stake: &BigUint) -> Result<f64, Box<dyn Error + Sync + Send>> {
         let stake_value = stake
             .to_f64()
             .ok_or_else(|| "Failed to convert Monad stake to floating point value".to_string())?;
@@ -373,15 +357,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     fn monad_all_validator_ids() -> Vec<u64> {
-        (0..ACTIVE_VALIDATOR_SET).map(u64::from).collect()
-    }
-
-    fn monad_featured_validator_ids() -> Vec<u64> {
-        MONAD_VALIDATOR_NAMES.iter().map(|(id, _)| *id).collect()
-    }
-
-    fn monad_validator_names() -> HashMap<u64, &'static str> {
-        MONAD_VALIDATOR_NAMES.iter().copied().collect()
+        (1..=ACTIVE_VALIDATOR_SET).map(u64::from).collect()
     }
 
     fn withdrawal_completion_date(withdraw_epoch: u64, current_epoch: u64) -> Option<DateTime<Utc>> {
