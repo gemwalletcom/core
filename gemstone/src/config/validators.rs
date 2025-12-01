@@ -51,6 +51,13 @@ pub fn get_validators() -> HashMap<String, Vec<String>> {
                 "4PsiLMyoUQ7QRn1FFiFCvej4hsUTFzfvJnyN4bj1tmSN".to_string(), // stakin
             ],
         ),
+        (
+            Chain::Monad.to_string(),
+            vec![
+                "9".to_string(),  // Everstake (validator id)
+                "10".to_string(), // Stakin (validator id)
+            ],
+        ),
     ]
     .iter()
     .cloned()

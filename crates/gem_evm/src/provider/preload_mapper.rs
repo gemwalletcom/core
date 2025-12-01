@@ -16,6 +16,7 @@ use crate::contracts::{IERC20, IERC721, IERC1155};
 use crate::everstake::{DEFAULT_ALLOWED_INTERCHANGE_NUM, EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS, EVERSTAKE_SOURCE, IAccounting, IPool};
 use crate::fee_calculator::FeeCalculator;
 use crate::models::fee::EthereumFeeHistory;
+use crate::monad::{STAKING_CONTRACT, encode_monad_staking};
 
 const GAS_LIMIT_PERCENT_INCREASE: u32 = 50;
 const GAS_LIMIT_21000: u64 = 21000;
@@ -150,6 +151,10 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                     _ => BigInt::from(0),
                 };
                 Ok(TransactionParams::new(to, data, value))
+            }
+            Chain::Monad => {
+                let (data, stake_value) = encode_monad_staking(stake_type, &BigInt::from_str_radix(&input.value, 10)?)?;
+                Ok(TransactionParams::new(STAKING_CONTRACT.to_string(), data, stake_value))
             }
             _ => Err("Unsupported chain for staking".into()),
         },

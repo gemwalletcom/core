@@ -16,6 +16,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_staking_apy().await,
             EVMChain::Ethereum => self.get_ethereum_staking_apy().await,
+            EVMChain::Monad => self.get_monad_staking_apy().await,
             _ => Ok(None),
         }
     }
@@ -24,6 +25,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_validators(apy.unwrap_or(0.0)).await,
             EVMChain::Ethereum => self.get_ethereum_validators(apy.unwrap_or(0.0)).await,
+            EVMChain::Monad => self.get_monad_validators(apy.unwrap_or(0.0)).await,
             _ => Ok(vec![]),
         }
     }
@@ -32,6 +34,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_delegations(&address).await,
             EVMChain::Ethereum => self.get_ethereum_delegations(&address).await,
+            EVMChain::Monad => self.get_monad_delegations(&address).await,
             _ => Ok(vec![]),
         }
     }
@@ -39,7 +42,10 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::{TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_smartchain_test_client};
+    use crate::monad::ACTIVE_VALIDATOR_SET;
+    use crate::provider::testkit::{
+        TEST_MONAD_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_monad_test_client, create_smartchain_test_client,
+    };
     use chain_traits::ChainStaking;
     use num_bigint::BigUint;
     use primitives::{Chain, DelegationState};
@@ -144,6 +150,39 @@ mod chain_integration_tests {
             assert!(delegation.balance >= BigUint::from(0u32));
         }
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_monad_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_monad_test_client();
+        let validators = client.get_staking_validators(Some(0.0)).await?;
+
+        assert!(validators.len() as u32 <= ACTIVE_VALIDATOR_SET);
+        println!("Monad Validators: {:?}", validators[0]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_monad_get_staking_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_monad_test_client();
+        let delegations = client.get_staking_delegations(TEST_MONAD_ADDRESS.to_string()).await?;
+
+        assert!(!delegations.is_empty());
+
+        println!("Monad Delegations count: {}", delegations.len());
+        println!("Monad Delegations: {:?}", delegations);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_monad_get_staking_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_monad_test_client();
+        let apy = client.get_staking_apy().await?.unwrap();
+
+        println!("Monad APY: {}", apy);
+        assert!(apy > 0.0);
         Ok(())
     }
 }
