@@ -217,3 +217,13 @@ fn mime_type_for_image_url(url: &str) -> String {
         MIME_TYPE_PNG.to_string()
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[typeshare(swift = "Sendable")]
+pub struct ReportNft {
+    pub device_id: String,
+    pub collection_id: String,
+    pub asset_id: Option<String>,
+    pub reason: Option<String>,
+}

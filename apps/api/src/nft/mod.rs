@@ -1,11 +1,12 @@
 use crate::params::ChainParam;
 use crate::responders::{ApiError, ApiResponse};
 use ::nft::NFTClient;
-use primitives::{NFTAsset, NFTData, response::ResponseResultNew};
+use primitives::{NFTAsset, NFTData, ReportNft, response::ResponseResultNew};
 use rocket::Request;
 use rocket::http::ContentType;
 use rocket::response::{self, Responder};
-use rocket::{State, get, put, tokio::sync::Mutex};
+use rocket::serde::json::Json;
+use rocket::{State, get, post, put, tokio::sync::Mutex};
 use std::collections::HashMap;
 use std::io::Cursor;
 
@@ -73,6 +74,15 @@ pub async fn get_nft_asset_image_preview(asset_id: &str, client: &State<Mutex<NF
         headers.insert("last-modified".to_string(), last_modified);
     }
     Ok(ImageResponse::new(image_data, content_type, headers))
+}
+
+#[post("/nft/report", format = "json", data = "<request>")]
+pub async fn report_nft(request: Json<ReportNft>, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
+    Ok(client
+        .lock()
+        .await
+        .report_nft(&request.device_id, request.collection_id.clone(), request.asset_id.clone(), request.reason.clone())?
+        .into())
 }
 
 pub struct ImageResponse {

@@ -349,6 +349,23 @@ diesel::table! {
 }
 
 diesel::table! {
+    nft_reports (id) {
+        id -> Int4,
+        #[max_length = 512]
+        asset_id -> Nullable<Varchar>,
+        #[max_length = 512]
+        collection_id -> Varchar,
+        #[max_length = 64]
+        device_id -> Varchar,
+        #[max_length = 1024]
+        reason -> Nullable<Varchar>,
+        reviewed -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     nft_types (id) {
         #[max_length = 32]
         id -> Varchar,
@@ -674,6 +691,8 @@ diesel::joinable!(nft_assets -> nft_types (token_type));
 diesel::joinable!(nft_collections -> chains (chain));
 diesel::joinable!(nft_collections_links -> link_types (link_type));
 diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
+diesel::joinable!(nft_reports -> nft_assets (asset_id));
+diesel::joinable!(nft_reports -> nft_collections (collection_id));
 diesel::joinable!(nodes -> chains (chain));
 diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(perpetuals -> assets (asset_id));
@@ -721,6 +740,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     nft_assets,
     nft_collections,
     nft_collections_links,
+    nft_reports,
     nft_types,
     nodes,
     parser_state,
