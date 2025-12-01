@@ -88,7 +88,7 @@ pub mod subscription;
 pub mod support;
 pub mod transaction_utxo;
 pub use self::subscription::{DeviceSubscription, Subscription};
-pub use self::support::SupportDevice;
+pub use self::support::{NewSupportDevice, SupportDevice};
 pub use self::transaction_utxo::TransactionUtxoInput;
 pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;

@@ -11,10 +11,9 @@ pub struct Support {
 }
 
 impl Support {
-    pub fn as_primitive(&self, device_id: String) -> primitives::SupportDevice {
+    pub fn as_primitive(&self) -> primitives::SupportDevice {
         primitives::SupportDevice {
-            support_id: self.support_id.clone(),
-            device_id,
+            support_device_id: self.support_id.clone(),
             unread: self.unread,
         }
     }
