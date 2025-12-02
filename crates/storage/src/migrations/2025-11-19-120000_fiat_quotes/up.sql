@@ -19,7 +19,7 @@ CREATE INDEX idx_fiat_quotes_asset_id ON fiat_quotes(asset_id);
 CREATE TABLE fiat_quotes_requests (
     id SERIAL PRIMARY KEY,
 
-    device_id VARCHAR(128) NOT NULL REFERENCES devices (device_id) ON DELETE CASCADE,
+    device_id INTEGER NOT NULL REFERENCES devices (id) ON DELETE CASCADE,
     quote_id VARCHAR(128) NOT NULL REFERENCES fiat_quotes (id) ON DELETE CASCADE,
 
     updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,

@@ -26,6 +26,7 @@ impl<C: Client + Clone> ChainBalances for EthereumClient<C> {
         match self.chain {
             EVMChain::Ethereum => self.get_ethereum_staking_balance(&address).await,
             EVMChain::SmartChain => self.get_smartchain_staking_balance(&address).await,
+            EVMChain::Monad => self.get_monad_staking_balance(&address).await,
             _ => Ok(None),
         }
     }

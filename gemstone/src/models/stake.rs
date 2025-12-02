@@ -34,6 +34,7 @@ pub enum GemStakeChain {
     Solana,
     Sui,
     SmartChain,
+    Monad,
     Tron,
     Aptos,
     HyperCore,

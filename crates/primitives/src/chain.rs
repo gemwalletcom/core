@@ -473,9 +473,10 @@ impl Chain {
     pub fn rank(&self) -> i32 {
         match self {
             Self::Bitcoin => 100,
-            Self::Ethereum => 80,
-            Self::Solana | Self::SmartChain => 70,
-            Self::Osmosis | Self::Ton | Self::Tron => 50,
+            Self::Ethereum => 85,
+            Self::Solana | Self::SmartChain => 80,
+            Self::Tron => 70,
+            Self::Osmosis | Self::Ton => 50,
             Self::Cosmos
             | Self::Injective
             | Self::Aptos

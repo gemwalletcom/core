@@ -8,16 +8,20 @@ use typeshare::typeshare;
 pub struct FiatProvider {
     pub id: String,
     pub name: String,
-    // delete later
     pub image_url: Option<String>,
+    #[serde(skip_serializing)]
     #[typeshare(skip)]
     pub priority: Option<i32>,
+    #[serde(skip_serializing)]
     #[typeshare(skip)]
     pub threshold_bps: Option<i32>,
+    #[serde(skip_serializing)]
     #[typeshare(skip)]
     pub enabled: bool,
+    #[serde(skip_serializing)]
     #[typeshare(skip)]
     pub buy_enabled: bool,
+    #[serde(skip_serializing)]
     #[typeshare(skip)]
     pub sell_enabled: bool,
 }

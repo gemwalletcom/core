@@ -88,7 +88,7 @@ pub mod subscription;
 pub mod support;
 pub mod transaction_utxo;
 pub use self::subscription::{DeviceSubscription, Subscription};
-pub use self::support::SupportDevice;
+pub use self::support::{NewSupportDevice, SupportDevice};
 pub use self::transaction_utxo::TransactionUtxoInput;
 pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
@@ -120,7 +120,7 @@ pub use self::wallet_connector::{
     WalletConnectionSessionProposal, WalletConnectionState, WalletConnectionVerificationStatus,
 };
 pub mod nft;
-pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType};
+pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, ReportNft};
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod tag;

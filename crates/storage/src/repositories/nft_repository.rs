@@ -2,7 +2,7 @@ use crate::DatabaseError;
 
 use crate::DatabaseClient;
 use crate::database::nft::NftStore;
-use crate::models::{NftAsset, NftCollection, NftType, nft_asset::UpdateNftAssetImageUrl, nft_collection::UpdateNftCollectionImageUrl, nft_link::NftLink};
+use crate::models::{NftAsset, NftCollection, NftType, nft_asset::UpdateNftAssetImageUrl, nft_collection::UpdateNftCollectionImageUrl, nft_link::NftLink, nft_report::NewNftReport};
 
 pub trait NftRepository {
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAsset>, DatabaseError>;
@@ -17,6 +17,7 @@ pub trait NftRepository {
     fn update_nft_collection_image_url(&mut self, update: UpdateNftCollectionImageUrl) -> Result<usize, DatabaseError>;
     fn add_nft_types(&mut self, values: Vec<NftType>) -> Result<usize, DatabaseError>;
     fn add_nft_collections_links(&mut self, values: Vec<NftLink>) -> Result<usize, DatabaseError>;
+    fn add_nft_report(&mut self, report: NewNftReport) -> Result<usize, DatabaseError>;
 }
 
 impl NftRepository for DatabaseClient {
@@ -66,5 +67,9 @@ impl NftRepository for DatabaseClient {
 
     fn add_nft_collections_links(&mut self, values: Vec<NftLink>) -> Result<usize, DatabaseError> {
         Ok(NftStore::add_nft_collections_links(self, values)?)
+    }
+
+    fn add_nft_report(&mut self, report: NewNftReport) -> Result<usize, DatabaseError> {
+        Ok(NftStore::add_nft_report(self, report)?)
     }
 }

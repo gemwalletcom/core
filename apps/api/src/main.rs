@@ -168,6 +168,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 nft::get_nft_asset_image_preview,
                 nft::update_nft_collection,
                 nft::update_nft_asset,
+                nft::report_nft,
                 price_alerts::get_price_alerts,
                 price_alerts::add_price_alerts,
                 price_alerts::delete_price_alerts,
@@ -187,7 +188,14 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 fiat::get_ip_address,
             ],
         )
-        .mount("/v2", routes![transactions::get_transactions_by_device_id_v2, nft::get_nft_assets_v2,])
+        .mount(
+            "/v2",
+            routes![
+                transactions::get_transactions_by_device_id_v2,
+                nft::get_nft_assets_v2,
+                scan::scan_transaction_v2,
+            ],
+        )
         .mount(settings.metrics.path, routes![metrics::get_metrics])
 }
 

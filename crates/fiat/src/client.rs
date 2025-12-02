@@ -320,8 +320,7 @@ impl FiatClient {
         ip_address: &str,
         device_id: &str,
     ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
-        let mut db = self.database.client()?;
-        let device = db.devices().get_device(device_id)?;
+        let device = self.database.client()?.get_device(device_id)?;
 
         let quote = self.fiat_cacher.get_quote(quote_id).await?;
         let provider = self.provider(&quote.quote.provider.id)?;
@@ -337,10 +336,10 @@ impl FiatClient {
         let url = provider.get_quote_url(data).await?;
 
         let db_quote = storage::models::FiatQuote::from_primitive(&quote.quote);
-        db.add_fiat_quotes(vec![db_quote])?;
+        self.database.client()?.add_fiat_quotes(vec![db_quote])?;
 
-        db.add_fiat_quote_request(storage::models::FiatQuoteRequest {
-            device_id: device_id.to_string(),
+        self.database.client()?.add_fiat_quote_request(storage::models::FiatQuoteRequest {
+            device_id: device.id,
             quote_id: quote_id.to_string(),
         })?;
 

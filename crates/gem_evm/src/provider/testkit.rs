@@ -2,6 +2,7 @@ pub const TEST_ADDRESS: &str = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
 pub const TOKEN_USDC_ADDRESS: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 pub const TOKEN_DAI_ADDRESS: &str = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 pub const TEST_SMARTCHAIN_STAKING_ADDRESS: &str = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
+pub const TEST_MONAD_ADDRESS: &str = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7";
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]
 use primitives::FeeRate;
@@ -47,6 +48,12 @@ pub fn create_polygon_test_client() -> crate::rpc::client::EthereumClient<gem_cl
 pub fn create_arbitrum_test_client() -> crate::rpc::client::EthereumClient<gem_client::ReqwestClient> {
     let settings = get_test_settings();
     build_test_client(primitives::EVMChain::Arbitrum, &settings.chains.arbitrum.url)
+}
+
+#[cfg(all(test, feature = "rpc", feature = "reqwest"))]
+pub fn create_monad_test_client() -> crate::rpc::client::EthereumClient<gem_client::ReqwestClient> {
+    let settings = get_test_settings();
+    build_test_client(primitives::EVMChain::Monad, &settings.chains.monad.url)
 }
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest"))]

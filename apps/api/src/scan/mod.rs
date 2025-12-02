@@ -17,6 +17,11 @@ pub async fn scan_transaction(
     Ok(ResponseResultNew::new(result).into())
 }
 
+#[post("/scan/transaction", data = "<request>")]
+pub async fn scan_transaction_v2(request: Json<ScanTransactionPayload>, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ScanTransaction>, ApiError> {
+    Ok(client.lock().await.get_scan_transaction(request.0).await?.into())
+}
+
 #[get("/scan/address/<address>")]
 pub async fn get_scan_address(address: &str, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ResponseResultNew<Vec<ScanAddress>>>, ApiError> {
     let scan_addresses = client.lock().await.get_scan_address(address).await?;
