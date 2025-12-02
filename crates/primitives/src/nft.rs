@@ -218,6 +218,18 @@ fn mime_type_for_image_url(url: &str) -> String {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, EnumIter, AsRefStr, EnumString)]
+#[typeshare(swift = "Sendable, CaseIterable")]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum ReportReason {
+    Spam,
+    Scam,
+    Inappropriate,
+    Copyright,
+    Other,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable")]
