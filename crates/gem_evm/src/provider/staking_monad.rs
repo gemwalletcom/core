@@ -47,7 +47,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
     pub async fn get_monad_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
         let mut validator_ids = Vec::new();
-        let mut next_validator_id: u64 = 1;
+        let mut next_validator_id: u64 = 0;
 
         loop {
             let data = encode_get_delegations(address, next_validator_id)?;
