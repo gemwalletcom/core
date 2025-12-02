@@ -1,13 +1,20 @@
 use primitives::AssetId;
-use yielder::{Yield as CoreYield, YieldDetails as CoreDetails, YieldTransaction as CoreTransaction};
+use yielder::{Yield as CoreYield, YieldPosition as CorePosition, YieldProvider as CoreYieldProvider, YieldTransaction as CoreTransaction};
+
+pub type GemYieldProvider = CoreYieldProvider;
+
+#[uniffi::remote(Enum)]
+pub enum GemYieldProvider {
+    Yo,
+}
 
 pub type GemYield = CoreYield;
 
 #[uniffi::remote(Record)]
 pub struct GemYield {
     pub name: String,
-    pub asset: AssetId,
-    pub provider: String,
+    pub asset_id: AssetId,
+    pub provider: GemYieldProvider,
     pub apy: Option<f64>,
 }
 
@@ -22,16 +29,16 @@ pub struct GemYieldTransaction {
     pub value: Option<String>,
 }
 
-pub type GemYieldDetails = CoreDetails;
+pub type GemYieldPosition = CorePosition;
 
 #[uniffi::remote(Record)]
-pub struct GemYieldDetails {
-    pub asset: AssetId,
-    pub provider: String,
-    pub share_token: String,
-    pub asset_token: String,
-    pub share_balance: Option<String>,
-    pub asset_balance: Option<String>,
+pub struct GemYieldPosition {
+    pub asset_id: AssetId,
+    pub provider: GemYieldProvider,
+    pub vault_token_address: String,
+    pub asset_token_address: String,
+    pub vault_balance_value: Option<String>,
+    pub asset_balance_value: Option<String>,
     pub apy: Option<f64>,
     pub rewards: Option<String>,
 }

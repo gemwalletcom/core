@@ -6,9 +6,9 @@ use gem_evm::jsonrpc::TransactionObject;
 use primitives::AssetId;
 use tokio::try_join;
 
-use crate::provider::{Yield, YieldDetails, YieldDetailsRequest, YieldProvider, YieldTransaction};
+use crate::provider::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldProviderClient, YieldTransaction};
 
-use super::{YO_PARTNER_ID_GEM, YoVault, client::YoGatewayApi, error::YieldError, vaults};
+use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
 
 const SECONDS_PER_YEAR: f64 = 31_536_000.0;
 const APY_LOOKBACK_SECONDS: u64 = 7 * 24 * 60 * 60;
@@ -16,11 +16,11 @@ const APY_LOOKBACK_SECONDS: u64 = 7 * 24 * 60 * 60;
 #[derive(Clone)]
 pub struct YoYieldProvider {
     vaults: Vec<YoVault>,
-    gateway: Arc<dyn YoGatewayApi>,
+    gateway: Arc<dyn YoProvider>,
 }
 
 impl YoYieldProvider {
-    pub fn new(gateway: Arc<dyn YoGatewayApi>) -> Self {
+    pub fn new(gateway: Arc<dyn YoProvider>) -> Self {
         Self {
             vaults: vaults().to_vec(),
             gateway,
@@ -77,9 +77,9 @@ impl YoYieldProvider {
 }
 
 #[async_trait]
-impl YieldProvider for YoYieldProvider {
-    fn protocol(&self) -> &'static str {
-        "yo"
+impl YieldProviderClient for YoYieldProvider {
+    fn provider(&self) -> YieldProvider {
+        YieldProvider::Yo
     }
 
     fn yields(&self, asset_id: &AssetId) -> Vec<Yield> {
@@ -88,7 +88,7 @@ impl YieldProvider for YoYieldProvider {
             .filter_map(|vault| {
                 let vault_asset = vault.asset_id();
                 if &vault_asset == asset_id {
-                    Some(Yield::new(vault.name, vault_asset, self.protocol(), None))
+                    Some(Yield::new(vault.name, vault_asset, self.provider(), None))
                 } else {
                     None
                 }
@@ -101,17 +101,17 @@ impl YieldProvider for YoYieldProvider {
 
         for vault in self.vaults.iter().copied().filter(|vault| vault.asset_id() == *asset_id) {
             let apy = self.performance_apy(vault).await?;
-            results.push(Yield::new(vault.name, vault.asset_id(), self.protocol(), apy));
+            results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy));
         }
 
         Ok(results)
     }
 
-    async fn deposit(&self, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError> {
-        let vault = self.find_vault(asset)?;
+    async fn deposit(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
+        let vault = self.find_vault(asset_id)?;
         let wallet = parse_address(wallet_address)?;
         let receiver = wallet;
-        let amount = parse_amount(amount)?;
+        let amount = parse_value(value)?;
         let min_shares = U256::from(0);
         let partner_id = YO_PARTNER_ID_GEM;
 
@@ -121,11 +121,11 @@ impl YieldProvider for YoYieldProvider {
         Ok(convert_transaction(vault, tx))
     }
 
-    async fn withdraw(&self, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError> {
-        let vault = self.find_vault(asset)?;
+    async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
+        let vault = self.find_vault(asset_id)?;
         let wallet = parse_address(wallet_address)?;
         let receiver = wallet;
-        let shares = parse_amount(amount)?;
+        let shares = parse_value(value)?;
         let min_assets = U256::from(0);
         let partner_id = YO_PARTNER_ID_GEM;
 
@@ -135,16 +135,16 @@ impl YieldProvider for YoYieldProvider {
         Ok(convert_transaction(vault, tx))
     }
 
-    async fn details(&self, request: &YieldDetailsRequest) -> Result<YieldDetails, YieldError> {
-        let vault = self.find_vault(&request.asset)?;
+    async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
+        let vault = self.find_vault(&request.asset_id)?;
         let owner = parse_address(&request.wallet_address)?;
-        let mut details = YieldDetails::new(request.asset.clone(), self.protocol(), vault.yo_token, vault.asset_token);
+        let mut details = YieldPosition::new(request.asset_id.clone(), self.provider(), vault.yo_token, vault.asset_token);
 
         let share_balance = self.gateway.balance_of(vault.yo_token, owner).await?;
-        details.share_balance = Some(share_balance.to_string());
+        details.vault_balance_value = Some(share_balance.to_string());
 
         let asset_balance = self.gateway.balance_of(vault.asset_token, owner).await?;
-        details.asset_balance = Some(asset_balance.to_string());
+        details.asset_balance_value = Some(asset_balance.to_string());
 
         details.apy = self.performance_apy(vault).await?;
 
@@ -156,8 +156,8 @@ fn parse_address(value: &str) -> Result<Address, YieldError> {
     Address::from_str(value).map_err(|err| YieldError::new(format!("invalid address {value}: {err}")))
 }
 
-fn parse_amount(value: &str) -> Result<U256, YieldError> {
-    U256::from_str_radix(value, 10).map_err(|err| YieldError::new(format!("invalid amount {value}: {err}")))
+fn parse_value(value: &str) -> Result<U256, YieldError> {
+    U256::from_str_radix(value, 10).map_err(|err| YieldError::new(format!("invalid value {value}: {err}")))
 }
 
 fn convert_transaction(vault: YoVault, tx: TransactionObject) -> YieldTransaction {

@@ -198,7 +198,13 @@ impl NFTClient {
         self.preload(asset_ids.clone()).await
     }
 
-    pub fn report_nft(&self, device_id: &str, collection_id: String, asset_id: Option<String>, reason: Option<String>) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    pub fn report_nft(
+        &self,
+        device_id: &str,
+        collection_id: String,
+        asset_id: Option<String>,
+        reason: Option<String>,
+    ) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let device = self.database.client()?.get_device(device_id)?;
         let report = storage::models::NewNftReport {
             device_id: device.id,

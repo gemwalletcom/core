@@ -81,7 +81,12 @@ pub async fn report_nft(request: Json<ReportNft>, client: &State<Mutex<NFTClient
     Ok(client
         .lock()
         .await
-        .report_nft(&request.device_id, request.collection_id.clone(), request.asset_id.clone(), request.reason.clone())?
+        .report_nft(
+            &request.device_id,
+            request.collection_id.clone(),
+            request.asset_id.clone(),
+            request.reason.clone(),
+        )?
         .into())
 }
 

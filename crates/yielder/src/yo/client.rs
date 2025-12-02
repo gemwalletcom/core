@@ -3,10 +3,11 @@ use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_client::Client;
 use gem_evm::{jsonrpc::TransactionObject, rpc::EthereumClient};
+use num_traits::ToPrimitive;
 use primitives::Chain;
 use serde_json::json;
 
-use super::{YO_GATEWAY_BASE_MAINNET, YO_PARTNER_ID_GEM, YoVault, contract::IYoGateway, error::YieldError};
+use super::{YO_GATEWAY_BASE_MAINNET, YoVault, contract::IYoGateway, error::YieldError};
 
 alloy_sol_types::sol! {
     interface IYoVaultToken {
@@ -15,7 +16,7 @@ alloy_sol_types::sol! {
 }
 
 #[async_trait]
-pub trait YoGatewayApi: Send + Sync {
+pub trait YoProvider: Send + Sync {
     fn contract_address(&self) -> Address;
     fn chain(&self) -> Chain;
     fn build_deposit_transaction(
@@ -49,10 +50,6 @@ pub struct YoGatewayClient<C: Client + Clone> {
 }
 
 impl<C: Client + Clone> YoGatewayClient<C> {
-    pub const fn default_partner_id() -> u32 {
-        YO_PARTNER_ID_GEM
-    }
-
     pub fn new(ethereum_client: EthereumClient<C>, contract_address: Address) -> Self {
         Self {
             ethereum_client,
@@ -220,7 +217,7 @@ impl<C: Client + Clone> YoGatewayClient<C> {
 }
 
 #[async_trait]
-impl<C> YoGatewayApi for YoGatewayClient<C>
+impl<C> YoProvider for YoGatewayClient<C>
 where
     C: Client + Clone + Send + Sync + 'static,
 {
@@ -297,21 +294,15 @@ where
     }
 
     async fn block_timestamp(&self, block_number: u64) -> Result<u64, YieldError> {
-        let block_hex = format!("0x{block_number:x}");
-        let mut blocks = self
+        let block = self
             .ethereum_client
-            .get_blocks(&[block_hex], false)
+            .get_block(block_number)
             .await
             .map_err(|err| YieldError::new(format!("yo gateway failed to fetch block {block_number}: {err}")))?;
 
-        let block = blocks
-            .pop()
-            .ok_or_else(|| YieldError::new(format!("yo gateway missing block data for {block_number}")))?;
-
         block
             .timestamp
-            .to_string()
-            .parse::<u64>()
-            .map_err(|err| YieldError::new(format!("yo gateway failed to parse timestamp for block {block_number}: {err}")))
+            .to_u64()
+            .ok_or_else(|| YieldError::new(format!("yo gateway failed to parse timestamp for block {block_number}")))
     }
 }

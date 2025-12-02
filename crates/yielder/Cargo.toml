@@ -19,6 +19,7 @@ gem_client = { path = "../gem_client" }
 gem_evm = { path = "../gem_evm", features = ["rpc"] }
 primitives = { path = "../primitives" }
 async-trait = { workspace = true }
+num-traits = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true, features = ["macros"] }
 
