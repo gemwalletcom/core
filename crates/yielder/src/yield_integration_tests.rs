@@ -6,7 +6,7 @@ use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use primitives::EVMChain;
 
-use crate::{YO_GATEWAY_BASE_MAINNET, YO_USD, YieldDetailsRequest, YieldProvider, Yielder, YoGatewayClient, YoYieldProvider};
+use crate::{YO_GATEWAY_BASE_MAINNET, YO_USD, YieldDetailsRequest, YieldProvider, YieldProviderClient, Yielder, YoGatewayClient, YoYieldProvider};
 
 #[tokio::test]
 async fn yield_integration_test_fetches_performance_apy() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -14,7 +14,7 @@ async fn yield_integration_test_fetches_performance_apy() -> Result<(), Box<dyn 
     let jsonrpc_client = JsonRpcClient::new_reqwest(rpc_url);
     let ethereum_client = EthereumClient::new(jsonrpc_client, EVMChain::Base);
     let gateway_client = YoGatewayClient::new(ethereum_client, YO_GATEWAY_BASE_MAINNET);
-    let provider: Arc<dyn YieldProvider> = Arc::new(YoYieldProvider::new(Arc::new(gateway_client)));
+    let provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(Arc::new(gateway_client)));
     let yielder = Yielder::with_providers(vec![provider]);
 
     let apy_yields = yielder.yields_for_asset_with_apy(&YO_USD.asset_id()).await?;
@@ -24,10 +24,10 @@ async fn yield_integration_test_fetches_performance_apy() -> Result<(), Box<dyn 
     assert!(apy > -1.0, "apy should be > -100%");
 
     let details = yielder
-        .details(
-            "yo",
+        .positions(
+            YieldProvider::Yo,
             &YieldDetailsRequest {
-                asset: YO_USD.asset_id(),
+                asset_id: YO_USD.asset_id(),
                 wallet_address: "0x0000000000000000000000000000000000000000".to_string(),
             },
         )

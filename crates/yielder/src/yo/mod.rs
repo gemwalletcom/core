@@ -4,11 +4,11 @@ mod error;
 mod provider;
 mod vault;
 
-pub use client::{YoGatewayApi, YoGatewayClient};
+pub use client::{YoGatewayClient, YoProvider};
 pub use contract::IYoGateway;
 pub use error::YieldError;
 pub use provider::YoYieldProvider;
-pub use vault::{YO_ETH, YO_USD, YoVault, vaults};
+pub use vault::{YO_USD, YoVault, vaults};
 
 use alloy_primitives::{Address, address};
 

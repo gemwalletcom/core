@@ -9056,6 +9056,7 @@ dependencies = [
  "gem_client",
  "gem_evm",
  "gem_jsonrpc",
+ "num-traits",
  "primitives",
  "reqwest",
  "serde_json",

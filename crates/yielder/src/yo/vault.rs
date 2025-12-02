@@ -34,14 +34,6 @@ pub const YO_USD: YoVault = YoVault::new(
     6,
 );
 
-pub const YO_ETH: YoVault = YoVault::new(
-    "yoETH",
-    Chain::Base,
-    address!("0x3a43aec53490cb9fa922847385d82fe25d0e9de7"),
-    address!("0x4200000000000000000000000000000000000006"),
-    18,
-);
-
 pub fn vaults() -> &'static [YoVault] {
-    &[YO_USD, YO_ETH]
+    &[YO_USD]
 }

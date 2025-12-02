@@ -11,11 +11,11 @@ use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_jsonrpc::rpc::RpcClient;
 use primitives::{AssetId, Chain, EVMChain};
-use yielder::{YO_GATEWAY_BASE_MAINNET, YieldDetailsRequest, YieldProvider, Yielder, YoGatewayApi, YoGatewayClient, YoYieldProvider};
+use yielder::{YO_GATEWAY_BASE_MAINNET, YieldDetailsRequest, YieldProvider, YieldProviderClient, Yielder, YoGatewayClient, YoProvider, YoYieldProvider};
 
 #[derive(uniffi::Object)]
 pub struct GemYielder {
-    inner: Yielder,
+    yielder: Yielder,
 }
 
 impl std::fmt::Debug for GemYielder {
@@ -31,28 +31,34 @@ impl GemYielder {
         let mut inner = Yielder::new();
         let yo_provider = build_yo_provider(rpc_provider)?;
         inner.add_provider_arc(yo_provider);
-        Ok(Self { inner })
+        Ok(Self { yielder: inner })
     }
 
     pub async fn yields_for_asset(&self, asset_id: &AssetId) -> Result<Vec<GemYield>, GemstoneError> {
-        self.inner.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
+        self.yielder.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
     }
 
-    pub async fn deposit(&self, provider: String, asset: AssetId, wallet_address: String, amount: String) -> Result<GemYieldTransaction, GemstoneError> {
-        self.inner.deposit(&provider, &asset, &wallet_address, &amount).await.map_err(Into::into)
+    pub async fn deposit(&self, provider: String, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
+        let provider = provider.parse::<YieldProvider>()?;
+        self.yielder.deposit(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn withdraw(&self, provider: String, asset: AssetId, wallet_address: String, amount: String) -> Result<GemYieldTransaction, GemstoneError> {
-        self.inner.withdraw(&provider, &asset, &wallet_address, &amount).await.map_err(Into::into)
+    pub async fn withdraw(&self, provider: String, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
+        let provider = provider.parse::<YieldProvider>()?;
+        self.yielder.withdraw(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn details(&self, provider: String, asset: AssetId, wallet_address: String) -> Result<GemYieldDetails, GemstoneError> {
-        let request = YieldDetailsRequest { asset, wallet_address };
-        self.inner.details(&provider, &request).await.map_err(Into::into)
+    pub async fn positions(&self, provider: String, asset: AssetId, wallet_address: String) -> Result<GemYieldPosition, GemstoneError> {
+        let provider = provider.parse::<YieldProvider>()?;
+        let request = YieldDetailsRequest {
+            asset_id: asset,
+            wallet_address,
+        };
+        self.yielder.positions(provider, &request).await.map_err(Into::into)
     }
 }
 
-fn build_yo_provider(rpc_provider: Arc<dyn AlienProvider>) -> Result<Arc<dyn YieldProvider>, GemstoneError> {
+fn build_yo_provider(rpc_provider: Arc<dyn AlienProvider>) -> Result<Arc<dyn YieldProviderClient>, GemstoneError> {
     let endpoint = rpc_provider.get_endpoint(Chain::Base)?;
     let wrapper = AlienProviderWrapper { provider: rpc_provider };
     let rpc_client = RpcClient::new(endpoint, Arc::new(wrapper));
@@ -60,7 +66,7 @@ fn build_yo_provider(rpc_provider: Arc<dyn AlienProvider>) -> Result<Arc<dyn Yie
     let evm_chain = EVMChain::Base;
     let ethereum_client = EthereumClient::new(jsonrpc_client, evm_chain);
     let gateway_client = YoGatewayClient::new(ethereum_client, YO_GATEWAY_BASE_MAINNET);
-    let gateway: Arc<dyn YoGatewayApi> = Arc::new(gateway_client);
-    let provider: Arc<dyn YieldProvider> = Arc::new(YoYieldProvider::new(gateway));
+    let gateway: Arc<dyn YoProvider> = Arc::new(gateway_client);
+    let provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateway));
     Ok(provider)
 }

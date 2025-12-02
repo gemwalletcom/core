@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fmt, str::FromStr, sync::Arc};
 
 use alloy_primitives::Address;
 use async_trait::async_trait;
@@ -6,20 +6,50 @@ use primitives::{AssetId, Chain};
 
 use crate::yo::YieldError;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum YieldProvider {
+    Yo,
+}
+
+impl YieldProvider {
+    pub fn name(&self) -> &'static str {
+        match self {
+            YieldProvider::Yo => "yo",
+        }
+    }
+}
+
+impl fmt::Display for YieldProvider {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.name())
+    }
+}
+
+impl FromStr for YieldProvider {
+    type Err = YieldError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.to_ascii_lowercase().as_str() {
+            "yo" => Ok(YieldProvider::Yo),
+            other => Err(YieldError::new(format!("unknown yield provider {other}"))),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Yield {
     pub name: String,
-    pub asset: AssetId,
-    pub provider: String,
+    pub asset_id: AssetId,
+    pub provider: YieldProvider,
     pub apy: Option<f64>,
 }
 
 impl Yield {
-    pub fn new(name: impl Into<String>, asset: AssetId, provider: impl Into<String>, apy: Option<f64>) -> Self {
+    pub fn new(name: impl Into<String>, asset_id: AssetId, provider: YieldProvider, apy: Option<f64>) -> Self {
         Self {
             name: name.into(),
-            asset,
-            provider: provider.into(),
+            asset_id,
+            provider,
             apy,
         }
     }
@@ -36,31 +66,31 @@ pub struct YieldTransaction {
 
 #[derive(Debug, Clone)]
 pub struct YieldDetailsRequest {
-    pub asset: AssetId,
+    pub asset_id: AssetId,
     pub wallet_address: String,
 }
 
 #[derive(Debug, Clone)]
-pub struct YieldDetails {
-    pub asset: AssetId,
-    pub provider: String,
-    pub share_token: String,
-    pub asset_token: String,
-    pub share_balance: Option<String>,
-    pub asset_balance: Option<String>,
+pub struct YieldPosition {
+    pub asset_id: AssetId,
+    pub provider: YieldProvider,
+    pub vault_token_address: String,
+    pub asset_token_address: String,
+    pub vault_balance_value: Option<String>,
+    pub asset_balance_value: Option<String>,
     pub apy: Option<f64>,
     pub rewards: Option<String>,
 }
 
-impl YieldDetails {
-    pub fn new(asset: AssetId, provider: impl Into<String>, share_token: Address, asset_token: Address) -> Self {
+impl YieldPosition {
+    pub fn new(asset_id: AssetId, provider: YieldProvider, share_token: Address, asset_token: Address) -> Self {
         Self {
-            asset,
-            provider: provider.into(),
-            share_token: share_token.to_string(),
-            asset_token: asset_token.to_string(),
-            share_balance: None,
-            asset_balance: None,
+            asset_id,
+            provider,
+            vault_token_address: share_token.to_string(),
+            asset_token_address: asset_token.to_string(),
+            vault_balance_value: None,
+            asset_balance_value: None,
             apy: None,
             rewards: None,
         }
@@ -68,12 +98,12 @@ impl YieldDetails {
 }
 
 #[async_trait]
-pub trait YieldProvider: Send + Sync {
-    fn protocol(&self) -> &'static str;
+pub trait YieldProviderClient: Send + Sync {
+    fn provider(&self) -> YieldProvider;
     fn yields(&self, asset_id: &AssetId) -> Vec<Yield>;
-    async fn deposit(&self, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError>;
-    async fn withdraw(&self, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError>;
-    async fn details(&self, request: &YieldDetailsRequest) -> Result<YieldDetails, YieldError>;
+    async fn deposit(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError>;
+    async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError>;
+    async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError>;
     async fn yields_with_apy(&self, asset_id: &AssetId) -> Result<Vec<Yield>, YieldError> {
         Ok(self.yields(asset_id))
     }
@@ -81,7 +111,7 @@ pub trait YieldProvider: Send + Sync {
 
 #[derive(Default)]
 pub struct Yielder {
-    providers: Vec<Arc<dyn YieldProvider>>,
+    providers: Vec<Arc<dyn YieldProviderClient>>,
 }
 
 impl Yielder {
@@ -89,18 +119,18 @@ impl Yielder {
         Self { providers: Vec::new() }
     }
 
-    pub fn with_providers(providers: Vec<Arc<dyn YieldProvider>>) -> Self {
+    pub fn with_providers(providers: Vec<Arc<dyn YieldProviderClient>>) -> Self {
         Self { providers }
     }
 
     pub fn add_provider<P>(&mut self, provider: P)
     where
-        P: YieldProvider + 'static,
+        P: YieldProviderClient + 'static,
     {
         self.providers.push(Arc::new(provider));
     }
 
-    pub fn add_provider_arc(&mut self, provider: Arc<dyn YieldProvider>) {
+    pub fn add_provider_arc(&mut self, provider: Arc<dyn YieldProviderClient>) {
         self.providers.push(provider);
     }
 
@@ -117,26 +147,26 @@ impl Yielder {
         Ok(yields)
     }
 
-    pub async fn deposit(&self, protocol: &str, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError> {
-        let provider = self.provider(protocol)?;
-        provider.deposit(asset, wallet_address, amount).await
+    pub async fn deposit(&self, provider: YieldProvider, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
+        let provider = self.provider(provider)?;
+        provider.deposit(asset_id, wallet_address, value).await
     }
 
-    pub async fn withdraw(&self, protocol: &str, asset: &AssetId, wallet_address: &str, amount: &str) -> Result<YieldTransaction, YieldError> {
-        let provider = self.provider(protocol)?;
-        provider.withdraw(asset, wallet_address, amount).await
+    pub async fn withdraw(&self, provider: YieldProvider, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
+        let provider = self.provider(provider)?;
+        provider.withdraw(asset_id, wallet_address, value).await
     }
 
-    pub async fn details(&self, protocol: &str, request: &YieldDetailsRequest) -> Result<YieldDetails, YieldError> {
-        let provider = self.provider(protocol)?;
-        provider.details(request).await
+    pub async fn positions(&self, provider: YieldProvider, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
+        let provider = self.provider(provider)?;
+        provider.positions(request).await
     }
 
-    fn provider(&self, protocol: &str) -> Result<Arc<dyn YieldProvider>, YieldError> {
+    fn provider(&self, provider: YieldProvider) -> Result<Arc<dyn YieldProviderClient>, YieldError> {
         self.providers
             .iter()
-            .find(|provider| provider.protocol().eq_ignore_ascii_case(protocol))
+            .find(|candidate| candidate.provider() == provider)
             .cloned()
-            .ok_or_else(|| YieldError::new(format!("provider {protocol} not found")))
+            .ok_or_else(|| YieldError::new(format!("provider {provider} not found")))
     }
 }
