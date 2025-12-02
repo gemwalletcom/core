@@ -240,6 +240,6 @@ impl FiatQuote {
 #[diesel(table_name = crate::schema::fiat_quotes_requests)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatQuoteRequest {
-    pub device_id: String,
+    pub device_id: i32,
     pub quote_id: String,
 }

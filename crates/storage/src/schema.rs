@@ -217,8 +217,7 @@ diesel::table! {
 diesel::table! {
     fiat_quotes_requests (id) {
         id -> Int4,
-        #[max_length = 128]
-        device_id -> Varchar,
+        device_id -> Int4,
         #[max_length = 128]
         quote_id -> Varchar,
         updated_at -> Timestamp,
@@ -355,8 +354,7 @@ diesel::table! {
         asset_id -> Nullable<Varchar>,
         #[max_length = 512]
         collection_id -> Varchar,
-        #[max_length = 64]
-        device_id -> Varchar,
+        device_id -> Int4,
         #[max_length = 1024]
         reason -> Nullable<Varchar>,
         reviewed -> Bool,
@@ -682,6 +680,7 @@ diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_providers_countries -> fiat_providers (provider));
 diesel::joinable!(fiat_quotes -> assets (asset_id));
 diesel::joinable!(fiat_quotes -> fiat_providers (provider_id));
+diesel::joinable!(fiat_quotes_requests -> devices (device_id));
 diesel::joinable!(fiat_quotes_requests -> fiat_quotes (quote_id));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
@@ -691,6 +690,7 @@ diesel::joinable!(nft_assets -> nft_types (token_type));
 diesel::joinable!(nft_collections -> chains (chain));
 diesel::joinable!(nft_collections_links -> link_types (link_type));
 diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
+diesel::joinable!(nft_reports -> devices (device_id));
 diesel::joinable!(nft_reports -> nft_assets (asset_id));
 diesel::joinable!(nft_reports -> nft_collections (collection_id));
 diesel::joinable!(nodes -> chains (chain));
