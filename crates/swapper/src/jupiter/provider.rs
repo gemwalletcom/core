@@ -19,8 +19,6 @@ use gem_solana::{
 use primitives::{AssetId, Chain};
 use std::collections::HashSet;
 
-pub(crate) const JUPITER_API_URL: &str = "https://lite-api.jup.ag";
-
 #[derive(Debug)]
 pub struct Jupiter<C, R>
 where
@@ -45,10 +43,6 @@ where
             http_client,
             rpc_client,
         }
-    }
-
-    pub fn api_url() -> &'static str {
-        JUPITER_API_URL
     }
 
     pub fn get_asset_address(&self, asset_id: &str) -> Result<String, SwapperError> {
