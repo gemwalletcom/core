@@ -4,8 +4,14 @@ use super::models::{
     Asset, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction,
 };
 use crate::{model::FiatProviderAsset, providers::mercuryo::models::FiatPaymentMethod};
-use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteResponse, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 use primitives::{PaymentType, currency::Currency, fiat_assets::FiatAssetLimits};
+
+use super::models::Quote;
+
+pub fn map_sell_quote_response(quote_id: String, quote: Quote, request_fiat_amount: f64) -> FiatQuoteResponse {
+    FiatQuoteResponse::new(quote_id, request_fiat_amount, quote.amount)
+}
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
     match chain.as_str() {
@@ -400,5 +406,20 @@ mod tests {
         assert!(!trump_assets.is_empty());
 
         Ok(())
+    }
+
+    #[test]
+    fn test_map_sell_quote_response() {
+        let quote = Quote {
+            amount: 58.12, // crypto amount needed to get 100 USD
+            currency: "NEAR".to_string(),
+            fiat_amount: 171.88,
+        };
+        let request_fiat_amount = 100.0;
+
+        let result = map_sell_quote_response("test-id".to_string(), quote, request_fiat_amount);
+
+        assert_eq!(result.fiat_amount, 100.0);
+        assert_eq!(result.crypto_amount, 58.12);
     }
 }

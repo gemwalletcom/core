@@ -1,7 +1,7 @@
 use crate::{
     FiatProvider,
     model::{FiatMapping, FiatProviderAsset},
-    providers::mercuryo::mapper::{map_asset_limits, map_asset_with_limits},
+    providers::mercuryo::mapper::{map_asset_limits, map_asset_with_limits, map_sell_quote_response},
 };
 use async_trait::async_trait;
 use futures::future;
@@ -114,7 +114,7 @@ impl FiatProvider for MercuryoClient {
             .get_quote_sell(request.currency.clone(), request_map.asset_symbol.symbol, request.amount, network)
             .await?;
 
-        Ok(FiatQuoteResponse::new(merchant_transaction_id, quote.fiat_amount, quote.amount))
+        Ok(map_sell_quote_response(merchant_transaction_id, quote, request.amount))
     }
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {

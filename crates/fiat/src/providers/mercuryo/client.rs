@@ -43,8 +43,8 @@ impl MercuryoClient {
 
     pub async fn get_quote_sell(&self, fiat_currency: String, symbol: String, fiat_amount: f64, network: String) -> Result<Quote, reqwest::Error> {
         let query = QuoteSellQuery {
-            from: symbol.clone(),
-            to: fiat_currency.clone(),
+            from: fiat_currency.clone(),
+            to: symbol.clone(),
             quote_type: "sell".to_string(),
             amount: fiat_amount,
             network: network.clone(),
