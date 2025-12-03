@@ -52,7 +52,7 @@ where
         .unwrap_or(STATIC_BASE_FEE)
 }
 
-pub async fn get_max_swap_amount<C>(request: &QuoteRequest, rpc_client: &JsonRpcClient<C>, is_swap: bool) -> Result<(String, QuoteRequest), SwapperError>
+pub async fn get_max_swap_amount<C>(request: &QuoteRequest, rpc_client: &JsonRpcClient<C>) -> Result<(String, QuoteRequest), SwapperError>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
@@ -60,7 +60,7 @@ where
         return Ok((request.value.clone(), request.clone()));
     }
 
-    let reserved_fee = solana_fee_for_kind(rpc_client, is_swap).await;
+    let reserved_fee = solana_fee_for_kind(rpc_client, true).await;
     resolve_with_fee(request, reserved_fee)
 }
 

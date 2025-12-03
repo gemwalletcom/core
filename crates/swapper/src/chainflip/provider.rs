@@ -143,7 +143,7 @@ where
 
         let (value, adjusted_request) = if request.should_use_max_native_amount() && request.from_asset.chain() == Chain::Solana {
             let solana_rpc_client = create_client_with_chain(self.rpc_provider.clone(), Chain::Solana);
-            get_max_swap_amount(request, &solana_rpc_client, true).await?
+            get_max_swap_amount(request, &solana_rpc_client).await?
         } else {
             (request.value.clone(), request.clone())
         };

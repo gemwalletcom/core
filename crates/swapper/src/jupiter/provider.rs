@@ -122,7 +122,7 @@ where
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        let (value, adjusted_request) = get_max_swap_amount(request, &self.rpc_client, true).await?;
+        let (value, adjusted_request) = get_max_swap_amount(request, &self.rpc_client).await?;
 
         let input_mint = self.get_asset_address(&adjusted_request.from_asset.id)?;
         let output_mint = self.get_asset_address(&adjusted_request.to_asset.id)?;
