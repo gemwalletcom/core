@@ -83,6 +83,8 @@ pub fn map_order(order: Order) -> Result<FiatTransaction, Box<dyn std::error::Er
 
 fn map_asset_base(asset: Asset, buy_limits: Vec<FiatAssetLimits>, sell_limits: Vec<FiatAssetLimits>) -> Vec<FiatProviderAsset> {
     let asset_id = asset.id.clone();
+    let is_buy_enabled = !buy_limits.is_empty();
+    let is_sell_enabled = !sell_limits.is_empty();
     asset
         .blockchains
         .into_iter()
@@ -98,6 +100,8 @@ fn map_asset_base(asset: Asset, buy_limits: Vec<FiatAssetLimits>, sell_limits: V
                 symbol: asset_id.clone(),
                 network: Some(blockchain.id),
                 enabled: true,
+                is_buy_enabled,
+                is_sell_enabled,
                 unsupported_countries: Some(blockchain.unsupported_countries.list_map()),
                 buy_limits: buy_limits.clone(),
                 sell_limits: sell_limits.clone(),

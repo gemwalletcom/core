@@ -10,6 +10,7 @@ impl Asset {
             }),
             is_suspended: Some(false),
             is_base_asset: Some(is_base_asset),
+            is_sell_supported: Some(true),
             not_allowed_countries: None,
             currency_type: FiatCurrencyType::Crypto,
             min_buy_amount: None,

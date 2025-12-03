@@ -172,6 +172,9 @@ impl MoonPayClient {
             vec![]
         };
 
+        let is_buy_enabled = asset.min_buy_amount.is_some() || asset.max_buy_amount.is_some();
+        let is_sell_enabled = asset.is_sell_supported.unwrap_or(false);
+
         Some(FiatProviderAsset {
             id: asset.clone().code,
             provider: FiatProviderName::MoonPay,
@@ -180,6 +183,8 @@ impl MoonPayClient {
             symbol: asset.clone().code,
             network: asset.clone().metadata.map(|x| x.network_code),
             enabled,
+            is_buy_enabled,
+            is_sell_enabled,
             unsupported_countries: Some(asset.unsupported_countries()),
             buy_limits,
             sell_limits,

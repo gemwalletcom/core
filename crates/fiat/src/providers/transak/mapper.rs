@@ -134,6 +134,8 @@ pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
         symbol: asset.clone().symbol,
         network: Some(asset.clone().network.name),
         enabled: asset.is_allowed,
+        is_buy_enabled: true,
+        is_sell_enabled: true,
         unsupported_countries: Some(asset.unsupported_countries()),
         buy_limits: vec![],
         sell_limits: vec![],
@@ -144,9 +146,13 @@ pub fn map_asset_with_limits(asset: Asset, fiat_currencies: &[FiatCurrency]) -> 
     let provider_asset = map_asset(asset.clone())?;
     let buy_limits = map_limits(fiat_currencies, FiatQuoteType::Buy);
     let sell_limits = map_limits(fiat_currencies, FiatQuoteType::Sell);
+    let is_buy_enabled = !buy_limits.is_empty();
+    let is_sell_enabled = !sell_limits.is_empty();
     Some(FiatProviderAsset {
         buy_limits,
         sell_limits,
+        is_buy_enabled,
+        is_sell_enabled,
         ..provider_asset
     })
 }

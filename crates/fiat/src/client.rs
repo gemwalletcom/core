@@ -108,14 +108,21 @@ impl FiatClient {
         Ok(payload)
     }
 
-    fn get_fiat_mapping(&self, asset_id: &str) -> Result<(FiatMappingMap, Vec<PrimitiveFiatProvider>), Box<dyn Error + Send + Sync>> {
+    fn get_fiat_mapping(
+        &self,
+        asset_id: &str,
+        quote_type: &FiatQuoteType,
+    ) -> Result<(FiatMappingMap, Vec<PrimitiveFiatProvider>), Box<dyn Error + Send + Sync>> {
         let mut db = self.database.client()?;
         let fiat_assets = db.fiat().get_fiat_assets_for_asset_id(asset_id)?;
         let providers = db.fiat().get_fiat_providers()?.into_iter().map(|p| p.as_primitive()).collect();
 
         let map: FiatMappingMap = fiat_assets
             .into_iter()
-            .filter(|x| x.is_enabled())
+            .filter(|x| match quote_type {
+                FiatQuoteType::Buy => x.is_buy_enabled(),
+                FiatQuoteType::Sell => x.is_sell_enabled(),
+            })
             .map(|x| {
                 (
                     x.clone().provider,
@@ -169,7 +176,7 @@ impl FiatClient {
                 return Ok(FiatQuotesOld::new_error(PrimitiveFiatQuoteError::new(None, error.to_string())));
             }
         };
-        let (fiat_mapping_map, providers) = self.get_fiat_mapping(&request.asset_id)?;
+        let (fiat_mapping_map, providers) = self.get_fiat_mapping(&request.asset_id, &request.quote_type)?;
 
         let quotes = match request.clone().quote_type {
             FiatQuoteType::Buy => {
@@ -215,7 +222,7 @@ impl FiatClient {
                 return Err(format!("IP address validation failed: {}", e).into());
             }
         };
-        let (fiat_mapping_map, db_providers) = self.get_fiat_mapping(&request.asset_id)?;
+        let (fiat_mapping_map, db_providers) = self.get_fiat_mapping(&request.asset_id, &request.quote_type)?;
 
         let provider_impls = self.get_providers(request.provider_id.clone());
 
@@ -309,7 +316,13 @@ impl FiatClient {
 
         self.fiat_cacher.set_quotes(&quotes).await?;
 
-        let quotes = quotes.into_iter().map(|x| x.quote).collect();
+        let mut quotes: Vec<FiatQuote> = quotes.into_iter().map(|x| x.quote).collect();
+        let sort_fn = match request.quote_type {
+            FiatQuoteType::Buy => sort_quotes_by_crypto_amount,
+            FiatQuoteType::Sell => sort_quotes_by_fiat_amount,
+        };
+        quotes.sort_by(|a, b| sort_fn(a, b, &db_providers));
+
         Ok(FiatQuotes { quotes, errors })
     }
 
@@ -482,53 +495,56 @@ fn precision(val: f64, precision: usize) -> f64 {
     format!("{val:.precision$}").parse::<f64>().unwrap()
 }
 
-fn sort_by_priority_then_amount<F>(
-    a: &primitives::FiatQuoteOld,
-    b: &primitives::FiatQuoteOld,
-    get_amount: F,
+fn sort_by_priority_then_amount(
+    a_provider_id: &str,
+    b_provider_id: &str,
+    a_amount: f64,
+    b_amount: f64,
     providers: &[PrimitiveFiatProvider],
-) -> std::cmp::Ordering
-where
-    F: Fn(&primitives::FiatQuoteOld) -> f64,
-{
-    let a_amount = get_amount(a);
-    let b_amount = get_amount(b);
-
-    let a_priority = providers.iter().find(|p| p.id == a.provider.id).and_then(|p| p.priority).unwrap_or(0);
-    let b_priority = providers.iter().find(|p| p.id == b.provider.id).and_then(|p| p.priority).unwrap_or(0);
+) -> std::cmp::Ordering {
+    let a_priority = providers.iter().find(|p| p.id == a_provider_id).and_then(|p| p.priority).unwrap_or(0);
+    let b_priority = providers.iter().find(|p| p.id == b_provider_id).and_then(|p| p.priority).unwrap_or(0);
 
     match (a_priority, b_priority) {
-        (0, 0) => b_amount.partial_cmp(&a_amount).unwrap(),
+        (0, 0) => b_amount.partial_cmp(&a_amount).unwrap_or(std::cmp::Ordering::Equal),
         (0, _) => std::cmp::Ordering::Greater,
         (_, 0) => std::cmp::Ordering::Less,
         (a_pri, b_pri) if a_pri != b_pri => {
             let better_amount = b_amount.max(a_amount);
             let worse_amount = b_amount.min(a_amount);
 
-            let higher_priority_id = if a_pri < b_pri { &a.provider.id } else { &b.provider.id };
-            let threshold_bps = providers.iter().find(|p| &p.id == higher_priority_id).and_then(|p| p.threshold_bps);
+            let higher_priority_id = if a_pri < b_pri { a_provider_id } else { b_provider_id };
+            let threshold_bps = providers.iter().find(|p| p.id == higher_priority_id).and_then(|p| p.threshold_bps);
 
             if let Some(threshold_bps) = threshold_bps {
                 let threshold = threshold_bps as f64 / 10000.0;
                 let diff_percent = (better_amount - worse_amount) / worse_amount;
 
                 if diff_percent > threshold {
-                    return b_amount.partial_cmp(&a_amount).unwrap();
+                    return b_amount.partial_cmp(&a_amount).unwrap_or(std::cmp::Ordering::Equal);
                 }
             }
 
             a_pri.cmp(&b_pri)
         }
-        _ => b_amount.partial_cmp(&a_amount).unwrap(),
+        _ => b_amount.partial_cmp(&a_amount).unwrap_or(std::cmp::Ordering::Equal),
     }
 }
 
 fn sort_by_crypto_amount(a: &primitives::FiatQuoteOld, b: &primitives::FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(a, b, |q| q.crypto_amount, providers)
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers)
 }
 
 fn sort_by_fiat_amount(a: &primitives::FiatQuoteOld, b: &primitives::FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(a, b, |q| q.fiat_amount, providers)
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.fiat_amount, b.fiat_amount, providers)
+}
+
+fn sort_quotes_by_crypto_amount(a: &FiatQuote, b: &FiatQuote, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers)
+}
+
+fn sort_quotes_by_fiat_amount(a: &FiatQuote, b: &FiatQuote, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.fiat_amount, b.fiat_amount, providers)
 }
 
 #[cfg(test)]
@@ -586,5 +602,43 @@ mod tests {
         assert_eq!(quotes[1].provider.id, "moonpay");
         assert_eq!(quotes[2].provider.id, "mercuryo");
         assert_eq!(quotes[3].provider.id, "paybis");
+    }
+
+    #[test]
+    fn sort_new_quotes_by_amount_no_priority() {
+        let providers = vec![PrimitiveFiatProvider::mock_with_priority("moonpay", 1, Some(100))];
+
+        let moonpay = FiatQuote::mock("moonpay");
+        let mercuryo = FiatQuote::mock("mercuryo");
+        let transak = FiatQuote::mock("transak");
+        let paybis = FiatQuote::mock("paybis");
+
+        let mut quotes = vec![
+            FiatQuote {
+                crypto_amount: 0.0773,
+                ..moonpay
+            },
+            FiatQuote {
+                crypto_amount: 0.0759,
+                ..mercuryo
+            },
+            FiatQuote {
+                crypto_amount: 0.07505,
+                ..transak
+            },
+            FiatQuote {
+                crypto_amount: 0.07721,
+                ..paybis
+            },
+        ];
+
+        quotes.sort_by(|a, b| sort_quotes_by_crypto_amount(a, b, &providers));
+
+        // MoonPay has priority 1, so it goes first despite lower amount
+        // Others have no priority, so sorted by amount (highest first)
+        assert_eq!(quotes[0].provider.id, "moonpay"); // priority 1
+        assert_eq!(quotes[1].provider.id, "paybis"); // 0.07721 (highest among non-priority)
+        assert_eq!(quotes[2].provider.id, "mercuryo"); // 0.0759
+        assert_eq!(quotes[3].provider.id, "transak"); // 0.07505 (lowest)
     }
 }

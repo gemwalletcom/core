@@ -170,6 +170,8 @@ impl FiatAssetsUpdater {
             network: fiat_asset.network,
             token_id: fiat_asset.token_id,
             enabled: fiat_asset.enabled,
+            is_buy_enabled: fiat_asset.is_buy_enabled,
+            is_sell_enabled: fiat_asset.is_sell_enabled,
             unsupported_countries: fiat_asset.unsupported_countries.unwrap_or_default(),
             buy_limits: fiat_asset.buy_limits.into_iter().filter(|x| x.currency == Currency::USD).collect::<Vec<_>>(), // stored usd only for now
             sell_limits: fiat_asset.sell_limits.into_iter().filter(|x| x.currency == Currency::USD).collect::<Vec<_>>(), // stored usd only for now

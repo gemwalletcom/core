@@ -148,6 +148,8 @@ fn map_asset(currency: PaybisCurrency) -> Option<FiatProviderAsset> {
         return None;
     }
     let asset = map_asset_id(currency.clone());
+    let buy_limits = default_buy_limits();
+    let sell_limits = vec![];
     Some(FiatProviderAsset {
         id: currency.code.clone(),
         provider: FiatProviderName::Paybis,
@@ -156,9 +158,11 @@ fn map_asset(currency: PaybisCurrency) -> Option<FiatProviderAsset> {
         symbol: currency.code.clone(),
         network: currency.blockchain_name.clone(),
         enabled: true,
+        is_buy_enabled: !buy_limits.is_empty(),
+        is_sell_enabled: !sell_limits.is_empty(),
         unsupported_countries: Some(currency.unsupported_countries()),
-        buy_limits: default_buy_limits(),
-        sell_limits: vec![],
+        buy_limits,
+        sell_limits,
     })
 }
 

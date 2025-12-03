@@ -17,6 +17,7 @@ pub struct Asset {
     pub metadata: Option<CurrencyMetadata>,
     pub is_suspended: Option<bool>,
     pub is_base_asset: Option<bool>,
+    pub is_sell_supported: Option<bool>,
     #[serde(rename = "notAllowedCountries")]
     pub not_allowed_countries: Option<Vec<String>>,
     #[serde(rename = "type")]

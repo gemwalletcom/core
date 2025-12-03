@@ -33,6 +33,8 @@ pub struct FiatAsset {
     pub network: Option<String>,
     pub token_id: Option<String>,
     pub enabled: bool,
+    pub is_buy_enabled: bool,
+    pub is_sell_enabled: bool,
     pub unsupported_countries: HashMap<String, Vec<String>>,
     pub buy_limits: Vec<FiatAssetLimits>,
     pub sell_limits: Vec<FiatAssetLimits>,

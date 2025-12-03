@@ -42,6 +42,8 @@ pub struct FiatAsset {
     pub token_id: Option<String>,
     pub is_enabled: bool, // managed by db
     pub is_enabled_by_provider: bool,
+    pub is_buy_enabled: bool,
+    pub is_sell_enabled: bool,
     pub buy_limits: Option<serde_json::Value>,
     pub sell_limits: Option<serde_json::Value>,
     pub unsupported_countries: Option<serde_json::Value>,
@@ -60,6 +62,8 @@ impl FiatAsset {
             token_id: asset.token_id,
             is_enabled: asset.enabled,
             is_enabled_by_provider: asset.enabled,
+            is_buy_enabled: asset.is_buy_enabled,
+            is_sell_enabled: asset.is_sell_enabled,
             buy_limits: Some(serde_json::to_value(asset.buy_limits).unwrap()),
             sell_limits: Some(serde_json::to_value(asset.sell_limits).unwrap()),
             unsupported_countries: Some(serde_json::to_value(asset.unsupported_countries).unwrap()),
@@ -68,6 +72,14 @@ impl FiatAsset {
 
     pub fn is_enabled(&self) -> bool {
         self.is_enabled && self.is_enabled_by_provider
+    }
+
+    pub fn is_buy_enabled(&self) -> bool {
+        self.is_enabled() && self.is_buy_enabled
+    }
+
+    pub fn is_sell_enabled(&self) -> bool {
+        self.is_enabled() && self.is_sell_enabled
     }
 
     pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {

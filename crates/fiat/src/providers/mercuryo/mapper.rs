@@ -248,6 +248,8 @@ fn map_sell_transaction_new(sell: SellTransaction, deposit: Option<DepositTransa
 fn map_asset_base(asset: Asset, buy_limits: Vec<FiatAssetLimits>, sell_limits: Vec<FiatAssetLimits>) -> Option<FiatProviderAsset> {
     let chain = map_asset_chain(asset.network.clone());
     let token_id = if asset.contract.is_empty() { None } else { Some(asset.contract.clone()) };
+    let is_buy_enabled = !buy_limits.is_empty();
+    let is_sell_enabled = !sell_limits.is_empty();
     Some(FiatProviderAsset {
         id: asset.clone().currency + "_" + asset.network.as_str(),
         provider: FiatProviderName::Mercuryo,
@@ -256,6 +258,8 @@ fn map_asset_base(asset: Asset, buy_limits: Vec<FiatAssetLimits>, sell_limits: V
         symbol: asset.clone().currency,
         network: Some(asset.network),
         enabled: true,
+        is_buy_enabled,
+        is_sell_enabled,
         unsupported_countries: None,
         buy_limits,
         sell_limits,

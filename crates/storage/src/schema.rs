@@ -160,6 +160,8 @@ diesel::table! {
         token_id -> Nullable<Varchar>,
         is_enabled -> Bool,
         is_enabled_by_provider -> Bool,
+        is_buy_enabled -> Bool,
+        is_sell_enabled -> Bool,
         unsupported_countries -> Nullable<Jsonb>,
         buy_limits -> Nullable<Jsonb>,
         sell_limits -> Nullable<Jsonb>,
