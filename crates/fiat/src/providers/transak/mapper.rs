@@ -125,6 +125,8 @@ fn map_limits(fiat_currencies: &[FiatCurrency], quote_type: FiatQuoteType) -> Ve
 pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
     let chain = map_asset_chain(&asset.network.name, Some(&asset.coin_id));
     let token_id = filter_token_id(chain, asset.clone().address);
+    let enabled = asset.is_allowed && !asset.is_suspended.unwrap_or(false);
+    let is_sell_enabled = asset.is_pay_in_allowed.unwrap_or(false);
 
     Some(FiatProviderAsset {
         id: asset.clone().unique_id,
@@ -133,9 +135,9 @@ pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
         token_id,
         symbol: asset.clone().symbol,
         network: Some(asset.clone().network.name),
-        enabled: asset.is_allowed,
+        enabled,
         is_buy_enabled: true,
-        is_sell_enabled: true,
+        is_sell_enabled,
         unsupported_countries: Some(asset.unsupported_countries()),
         buy_limits: vec![],
         sell_limits: vec![],
@@ -143,11 +145,11 @@ pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
 }
 
 pub fn map_asset_with_limits(asset: Asset, fiat_currencies: &[FiatCurrency]) -> Option<FiatProviderAsset> {
-    let provider_asset = map_asset(asset.clone())?;
+    let provider_asset = map_asset(asset)?;
     let buy_limits = map_limits(fiat_currencies, FiatQuoteType::Buy);
     let sell_limits = map_limits(fiat_currencies, FiatQuoteType::Sell);
     let is_buy_enabled = !buy_limits.is_empty();
-    let is_sell_enabled = !sell_limits.is_empty();
+    let is_sell_enabled = provider_asset.is_sell_enabled && !sell_limits.is_empty();
     Some(FiatProviderAsset {
         buy_limits,
         sell_limits,
@@ -206,6 +208,8 @@ mod tests {
             network: AssetNetwork { name: "ethereum".to_string() },
             address: None,
             is_allowed: true,
+            is_suspended: Some(false),
+            is_pay_in_allowed: Some(true),
             kyc_countries_not_supported: vec![],
         };
 

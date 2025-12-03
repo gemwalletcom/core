@@ -1,6 +1,6 @@
 use super::models::{
     Asset, CachedToken, Country, CreateWidgetUrlRequest, CreateWidgetUrlResponse, Data, FiatCurrency, Response, TokenResponse, TransakOrderResponse,
-    TransakQuote,
+    TransakQuote, TransakResponse,
 };
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as BASE64};
 use number_formatter::BigNumberFormatter;
@@ -44,7 +44,7 @@ impl TransakClient {
         fiat_amount: f64,
         network: String,
         ip_address: String,
-    ) -> Result<TransakQuote, reqwest::Error> {
+    ) -> Result<TransakQuote, Box<dyn std::error::Error + Send + Sync>> {
         self.get_quote("buy", symbol, fiat_currency, Some(fiat_amount), None, network, ip_address).await
     }
 
@@ -55,7 +55,7 @@ impl TransakClient {
         crypto_amount: f64,
         network: String,
         ip_address: String,
-    ) -> Result<TransakQuote, reqwest::Error> {
+    ) -> Result<TransakQuote, Box<dyn std::error::Error + Send + Sync>> {
         self.get_quote("sell", symbol, fiat_currency, None, Some(&crypto_amount.to_string()), network, ip_address)
             .await
     }
@@ -69,7 +69,7 @@ impl TransakClient {
         crypto_amount: Option<&str>,
         network: String,
         country_code: String,
-    ) -> Result<TransakQuote, reqwest::Error> {
+    ) -> Result<TransakQuote, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{TRANSAK_API_URL}/api/v1/pricing/public/quotes");
         let mut query = vec![
             ("isBuyOrSell", quote_type.to_string()),
@@ -86,15 +86,14 @@ impl TransakClient {
             query.push(("cryptoAmount", amount.to_string()));
         }
 
-        Ok(self
-            .client
+        self.client
             .get(url)
             .query(&query)
             .send()
             .await?
-            .json::<Response<TransakQuote>>()
+            .json::<TransakResponse<TransakQuote>>()
             .await?
-            .response)
+            .into()
     }
 
     pub async fn get_fiat_quote_with_redirect(

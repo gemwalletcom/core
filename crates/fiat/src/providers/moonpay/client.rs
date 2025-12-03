@@ -2,7 +2,7 @@ use crate::hmac_signature::generate_hmac_signature;
 use crate::model::{FiatProviderAsset, filter_token_id};
 
 use super::mapper::map_asset_chain;
-use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPaySellQuote, Transaction};
+use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPayResponse, MoonPaySellQuote, Transaction};
 use number_formatter::BigNumberFormatter;
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
@@ -42,7 +42,12 @@ impl MoonPayClient {
             .await
     }
 
-    pub async fn get_buy_quote(&self, symbol: String, fiat_currency: String, fiat_amount: f64) -> Result<MoonPayBuyQuote, reqwest::Error> {
+    pub async fn get_buy_quote(
+        &self,
+        symbol: String,
+        fiat_currency: String,
+        fiat_amount: f64,
+    ) -> Result<MoonPayBuyQuote, Box<dyn std::error::Error + Send + Sync>> {
         self.client
             .get(format!("{MOONPAY_API_BASE_URL}/v3/currencies/{symbol}/buy_quote/"))
             .query(&[
@@ -53,11 +58,17 @@ impl MoonPayClient {
             ])
             .send()
             .await?
-            .json()
-            .await
+            .json::<MoonPayResponse<MoonPayBuyQuote>>()
+            .await?
+            .into()
     }
 
-    pub async fn get_sell_quote(&self, symbol: String, fiat_currency: String, fiat_amount: f64) -> Result<MoonPaySellQuote, reqwest::Error> {
+    pub async fn get_sell_quote(
+        &self,
+        symbol: String,
+        fiat_currency: String,
+        fiat_amount: f64,
+    ) -> Result<MoonPaySellQuote, Box<dyn std::error::Error + Send + Sync>> {
         self.client
             .get(format!("{MOONPAY_API_BASE_URL}/v3/currencies/{symbol}/sell_quote/"))
             .query(&[
@@ -68,8 +79,9 @@ impl MoonPayClient {
             ])
             .send()
             .await?
-            .json()
-            .await
+            .json::<MoonPayResponse<MoonPaySellQuote>>()
+            .await?
+            .into()
     }
 
     pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {

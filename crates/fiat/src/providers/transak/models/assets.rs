@@ -10,6 +10,8 @@ pub struct Asset {
     pub network: AssetNetwork,
     pub address: Option<String>,
     pub is_allowed: bool,
+    pub is_suspended: Option<bool>,
+    pub is_pay_in_allowed: Option<bool>,
     pub kyc_countries_not_supported: Vec<String>,
 }
 
