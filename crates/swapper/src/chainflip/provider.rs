@@ -23,8 +23,9 @@ use crate::{
     alien::RpcProvider,
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
+    client_factory::create_client_with_chain,
     config::DEFAULT_CHAINFLIP_FEE_BPS,
-    create_client_with_chain, slippage,
+    slippage,
     solana::get_max_swap_amount,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};

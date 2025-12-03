@@ -7,9 +7,8 @@ use primitives::{Asset, Chain, FeePriority, TransactionInputType};
 use std::{fmt::Debug, str::FromStr};
 
 use crate::{QuoteRequest, SwapperError};
-use primitives::swap::SwapData;
 
-const SOLANA_SWAP_FEE_MULTIPLIER: u64 = 2;
+const SOLANA_SWAP_FEE_MULTIPLIER: u64 = 5;
 
 fn resolve_with_fee(request: &QuoteRequest, reserved_fee_lamports: u64) -> Result<(String, QuoteRequest), SwapperError> {
     if !request.should_use_max_native_amount() {
@@ -30,25 +29,24 @@ fn resolve_with_fee(request: &QuoteRequest, reserved_fee_lamports: u64) -> Resul
     Ok((adjusted_request.value.clone(), adjusted_request))
 }
 
-async fn solana_fee_for_kind<C>(rpc_client: &JsonRpcClient<C>, is_swap: bool) -> u64
+async fn solana_fee_for_transfer<C>(rpc_client: &JsonRpcClient<C>) -> u64
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
     let solana_client = SolanaClient::new(rpc_client.clone());
     let prioritization_fees = solana_client.get_recent_prioritization_fees().await.unwrap_or_default();
-    let input_type = if is_swap {
-        TransactionInputType::Swap(Asset::from_chain(Chain::Solana), Asset::from_chain(Chain::Solana), SwapData::mock())
-    } else {
-        TransactionInputType::Transfer(Asset::from_chain(Chain::Solana))
-    };
+    let input_type = TransactionInputType::Transfer(Asset::from_chain(Chain::Solana));
 
     let fee_rates = calculate_fee_rates(&input_type, &prioritization_fees);
     let normal_fee = fee_rates.iter().find(|rate| rate.priority == FeePriority::Normal).or_else(|| fee_rates.first());
 
-    let multiplier = if is_swap { SOLANA_SWAP_FEE_MULTIPLIER } else { 1 };
-
     normal_fee
-        .and_then(|rate| rate.gas_price_type.total_fee().to_u64().map(|base| base.saturating_mul(multiplier)))
+        .and_then(|rate| {
+            rate.gas_price_type
+                .total_fee()
+                .to_u64()
+                .map(|base| base.saturating_mul(SOLANA_SWAP_FEE_MULTIPLIER))
+        })
         .unwrap_or(STATIC_BASE_FEE)
 }
 
@@ -60,7 +58,7 @@ where
         return Ok((request.value.clone(), request.clone()));
     }
 
-    let reserved_fee = solana_fee_for_kind(rpc_client, true).await;
+    let reserved_fee = solana_fee_for_transfer(rpc_client).await;
     resolve_with_fee(request, reserved_fee)
 }
 
