@@ -224,7 +224,7 @@ fn mime_type_for_image_url(url: &str) -> String {
 #[strum(serialize_all = "lowercase")]
 pub enum ReportReason {
     Spam,
-    Scam,
+    Malicious,
     Inappropriate,
     Copyright,
     Other,
