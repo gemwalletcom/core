@@ -160,7 +160,7 @@ impl TransakClient {
     }
 
     pub async fn get_supported_assets(&self) -> Result<Response<Vec<Asset>>, reqwest::Error> {
-        let url = format!("{TRANSAK_API_URL}/api/v2/currencies/crypto-currencies");
+        let url = format!("{TRANSAK_API_URL}/cryptocoverage/api/v1/public/crypto-currencies");
         self.client.get(&url).send().await?.json().await
     }
 
