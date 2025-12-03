@@ -65,6 +65,12 @@ pub struct QuoteRequest {
     pub options: Options,
 }
 
+impl QuoteRequest {
+    pub fn should_use_max_native_amount(&self) -> bool {
+        self.options.use_max_amount && self.from_asset.is_native()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Options {
     pub slippage: SwapperSlippage,

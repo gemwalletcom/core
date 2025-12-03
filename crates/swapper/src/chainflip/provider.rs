@@ -24,7 +24,8 @@ use crate::{
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
-    slippage,
+    create_client_with_chain, slippage,
+    solana::get_max_swap_amount,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 
@@ -140,12 +141,19 @@ where
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let src_asset = Self::map_asset_id(&request.from_asset);
-        let dest_asset = Self::map_asset_id(&request.to_asset);
+        let (value, adjusted_request) = if request.should_use_max_native_amount() && request.from_asset.chain() == Chain::Solana {
+            let solana_rpc_client = create_client_with_chain(self.rpc_provider.clone(), Chain::Solana);
+            get_max_swap_amount(request, &solana_rpc_client, true).await?
+        } else {
+            (request.value.clone(), request.clone())
+        };
+
+        let src_asset = Self::map_asset_id(&adjusted_request.from_asset);
+        let dest_asset = Self::map_asset_id(&adjusted_request.to_asset);
 
         let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
         let quote_request = ChainflipQuoteRequest {
-            amount: request.value.clone(),
+            amount: value.clone(),
             src_chain: src_asset.chain.clone(),
             src_asset: src_asset.asset.clone(),
             dest_chain: dest_asset.chain,
@@ -163,7 +171,7 @@ where
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, fee_bps);
 
         Ok(Quote {
-            from_value: request.value.clone(),
+            from_value: value,
             to_value: egress_amount.to_string(),
             data: ProviderData {
                 provider: self.provider.clone(),
@@ -176,7 +184,7 @@ where
                 }],
             },
             eta_in_seconds: Some(eta_in_seconds),
-            request: request.clone(),
+            request: adjusted_request,
         })
     }
 

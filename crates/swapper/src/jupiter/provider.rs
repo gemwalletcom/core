@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider,
-    SwapperQuoteData, SwapperSlippageMode,
+    SwapperQuoteData, SwapperSlippageMode, solana::get_max_swap_amount,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -122,9 +122,11 @@ where
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        let input_mint = self.get_asset_address(&request.from_asset.id)?;
-        let output_mint = self.get_asset_address(&request.to_asset.id)?;
-        let swap_options = request.options.clone();
+        let (value, adjusted_request) = get_max_swap_amount(request, &self.rpc_client, true).await?;
+
+        let input_mint = self.get_asset_address(&adjusted_request.from_asset.id)?;
+        let output_mint = self.get_asset_address(&adjusted_request.to_asset.id)?;
+        let swap_options = adjusted_request.options.clone();
         let slippage_bps = swap_options.slippage.bps;
         let platform_fee_bps = swap_options.fee.unwrap_or_default().solana.bps;
 
@@ -136,7 +138,7 @@ where
         let quote_request = JupiterRequest {
             input_mint: input_mint.clone(),
             output_mint: output_mint.clone(),
-            amount: request.value.clone(),
+            amount: value.clone(),
             platform_fee_bps,
             slippage_bps,
             auto_slippage,
@@ -150,7 +152,7 @@ where
         let out_amount: U256 = swap_quote.out_amount.parse().map_err(SwapperError::from)?;
 
         let quote = Quote {
-            from_value: request.value.clone(),
+            from_value: value,
             to_value: out_amount.to_string(),
             data: ProviderData {
                 provider: self.provider().clone(),
@@ -162,7 +164,7 @@ where
                 }],
                 slippage_bps: computed_auto_slippage,
             },
-            request: request.clone(),
+            request: adjusted_request,
             eta_in_seconds: None,
         };
         Ok(quote)
