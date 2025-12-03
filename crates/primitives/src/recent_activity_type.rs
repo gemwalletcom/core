@@ -10,4 +10,6 @@ pub enum RecentActivityType {
     Receive,
     FiatBuy,
     FiatSell,
+    Swap,
+    Perpetual,
 }
