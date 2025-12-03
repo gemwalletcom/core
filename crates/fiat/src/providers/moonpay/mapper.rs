@@ -202,4 +202,10 @@ mod tests {
         assert!(result.sell_limits.iter().any(|limit| limit.payment_type == PaymentType::ApplePay));
         assert!(result.sell_limits.iter().any(|limit| limit.payment_type == PaymentType::GooglePay));
     }
+
+    #[test]
+    fn test_skip_token_without_contract() {
+        assert!(MoonPayClient::map_asset(Asset::mock("sweat_near", "near", None, false)).is_none());
+        assert!(MoonPayClient::map_asset(Asset::mock("near", "near", None, true)).is_some());
+    }
 }

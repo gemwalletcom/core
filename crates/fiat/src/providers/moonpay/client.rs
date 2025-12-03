@@ -125,17 +125,21 @@ impl MoonPayClient {
     }
 
     pub fn map_asset(asset: Asset) -> Option<FiatProviderAsset> {
-        let chain = map_asset_chain(asset.clone());
+        let chain = map_asset_chain(asset.clone())?;
         let contract_address = match asset.metadata.as_ref().map(|m| m.network_code.as_str()) {
             Some("ripple") => asset
                 .metadata
                 .as_ref()
                 .and_then(|m| m.contract_address.as_deref().and_then(|s| s.split('.').next_back().map(String::from))),
-            // Add other blockchain specific rules here
             _ => asset.clone().metadata?.contract_address,
         };
 
-        let token_id = filter_token_id(chain, contract_address);
+        let token_id = filter_token_id(Some(chain), contract_address);
+
+        // Skip tokens without contract address (only base assets can have no token_id)
+        if token_id.is_none() && !asset.is_base_asset.unwrap_or(false) {
+            return None;
+        }
         let enabled = !asset.is_suspended.unwrap_or(true);
 
         let payment_types = PaymentType::all();
@@ -171,7 +175,7 @@ impl MoonPayClient {
         Some(FiatProviderAsset {
             id: asset.clone().code,
             provider: FiatProviderName::MoonPay,
-            chain,
+            chain: Some(chain),
             token_id,
             symbol: asset.clone().code,
             network: asset.clone().metadata.map(|x| x.network_code),
