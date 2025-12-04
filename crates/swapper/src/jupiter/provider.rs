@@ -1,5 +1,5 @@
 use super::{
-    DEFAULT_DEXES, PROGRAM_ADDRESS,
+    PROGRAM_ADDRESS,
     client::JupiterClient,
     model::{DynamicSlippage, QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
 };
@@ -141,7 +141,6 @@ where
             slippage_bps,
             auto_slippage,
             max_auto_slippage_bps: slippage_bps,
-            dexes: Some(DEFAULT_DEXES.to_string()),
         };
         let swap_quote = self.http_client.get_swap_quote(quote_request).await?;
         let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
