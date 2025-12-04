@@ -21,7 +21,7 @@ sol! {
             AwaitingWithdrawal
         }
 
-        struct DelegationPosition {
+        struct Delegation {
             uint64 validatorId;
             uint8 withdrawId;
             DelegationState state;
@@ -41,7 +41,7 @@ sol! {
 
         function getBalance(address delegator) external returns (uint256 staked, uint256 pending, uint256 rewards);
 
-        function getDelegations(address delegator) external returns (DelegationPosition[] memory positions);
+        function getDelegations(address delegator) external returns (Delegation[] memory positions);
 
         function getValidators(uint64[] calldata validatorIds) external returns (ValidatorInfo[] memory validators, uint64 networkApyBps);
 
