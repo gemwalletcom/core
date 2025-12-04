@@ -2,18 +2,16 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use alloy_primitives::hex;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
 use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
-use crate::constants::STAKING_VALIDATORS_LIMIT;
 use crate::monad::{
-    ACTIVE_VALIDATOR_SET, DEFAULT_WITHDRAW_ID, MONAD_BLOCK_REWARD_MON, MONAD_BLOCK_TIME_SECONDS, MONAD_BLOCKS_PER_YEAR, MONAD_BOUNDARY_BLOCK_PERIOD,
-    MONAD_MAX_WITHDRAW_IDS, MONAD_SCALE, MonadDelegatorState, MonadValidator, MonadWithdrawalRequest, STAKING_CONTRACT, decode_get_delegations,
-    decode_get_delegator, decode_get_epoch, decode_get_validator, decode_get_withdrawal_request, encode_get_delegations, encode_get_delegator,
-    encode_get_epoch, encode_get_validator, encode_get_withdrawal_request,
+    IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegation, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys,
+    decode_get_lens_balance, decode_get_lens_delegations, decode_get_lens_validators, encode_get_lens_apys, encode_get_lens_balance,
+    encode_get_lens_delegations, encode_get_lens_validators,
 };
 use crate::rpc::client::EthereumClient;
 
@@ -22,355 +20,161 @@ const MONAD_VALIDATOR_NAMES: &[(u64, &str)] = &[(16, "MonadVision"), (5, "Alchem
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_monad_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        let validators = self.fetch_monad_validators(&Self::monad_all_validator_ids()).await?;
-        let total_stake = Self::total_validator_stake(&validators);
-        Self::calculate_monad_network_apy(&total_stake)
+        let data = encode_get_lens_apys(&[]);
+        let result = self.call_lens(data).await.ok_or_else(|| "Monad staking lens not configured".to_string())??;
+
+        let apys = decode_get_lens_apys(&result)?;
+        let apy_bps = apys.into_iter().max().unwrap_or(0);
+
+        if apy_bps == 0 {
+            return Ok(None);
+        }
+
+        Ok(Some(apy_bps as f64 / 100.0))
     }
 
-    pub async fn get_monad_validators(&self, fallback_apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        let validators = self.fetch_monad_validators(&Self::monad_all_validator_ids()).await?;
-        let total_stake = Self::total_validator_stake(&validators);
+    pub async fn get_monad_validators(&self) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
         let validator_names: HashMap<u64, &str> = MONAD_VALIDATOR_NAMES.iter().copied().collect();
-        let network_apy = Self::calculate_monad_network_apy(&total_stake)?;
+        let validator_ids = Self::monad_curated_validator_ids();
+        let data = encode_get_lens_validators(&validator_ids);
+        let result = self.call_lens(data).await.ok_or_else(|| "Monad staking lens not configured".to_string())??;
 
-        MONAD_VALIDATOR_NAMES
-            .iter()
-            .map(|(id, _)| *id)
-            .filter_map(|validator_id| validators.iter().find(|(id, _)| *id == validator_id).map(|(_, val)| (validator_id, val)))
-            .map(|(id, val)| -> Result<DelegationValidator, Box<dyn Error + Sync + Send>> {
-                let validator_apy = Self::calculate_validator_apy(val, &total_stake)?.or(network_apy).unwrap_or(fallback_apy);
-                let name_override = validator_names.get(&id).map(|name| (*name).to_string());
-                Ok(self.map_validator(id, val, validator_apy, name_override))
-            })
-            .collect()
+        let (validators, network_apy_bps) = decode_get_lens_validators(&result)?;
+        let network_apy = network_apy_bps as f64 / 100.0;
+
+        Ok(validators
+            .into_iter()
+            .map(|validator| self.map_lens_validator(&validator, &validator_names, network_apy))
+            .collect())
     }
 
     pub async fn get_monad_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
-        let mut validator_ids = Vec::new();
-        let mut next_validator_id: u64 = 0;
+        self.fetch_monad_delegations(address).await
+    }
 
-        loop {
-            let data = encode_get_delegations(address, next_validator_id)?;
-            let result = self.call_staking(data).await?;
-            let page = decode_get_delegations(&result)?;
+    pub async fn get_monad_staking_balance(&self, address: &str) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
+        let balance = self.fetch_monad_balance(address).await?;
+        Ok(Some(Self::monad_asset_balance(balance.staked, balance.pending, balance.rewards)))
+    }
 
-            validator_ids.extend_from_slice(&page.validator_ids);
+    async fn fetch_monad_balance(&self, address: &str) -> Result<MonadLensBalance, Box<dyn Error + Sync + Send>> {
+        let data = encode_get_lens_balance(address)?;
+        let result = self.call_lens(data).await.ok_or_else(|| "Monad staking lens not configured".to_string())??;
 
-            if page.is_done || validator_ids.len() as u16 >= STAKING_VALIDATORS_LIMIT {
-                break;
-            }
+        decode_get_lens_balance(&result)
+    }
 
-            next_validator_id = page.next;
+    async fn fetch_monad_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+        let data = encode_get_lens_delegations(address)?;
+        let Some(result) = self.call_lens(data).await else {
+            return Ok(Vec::new());
+        };
+
+        let positions = match result {
+            Ok(bytes) => match decode_get_lens_delegations(&bytes) {
+                Ok(position_list) => position_list,
+                Err(_) => return Ok(Vec::new()),
+            },
+            Err(_) => return Ok(Vec::new()),
+        };
+
+        if positions.is_empty() {
+            return Ok(Vec::new());
         }
 
+        let base_delegation_id = address.to_lowercase();
         let mut delegations = Vec::new();
-        let current_epoch = self.fetch_monad_epoch().await?;
-        let delegator_states = self.fetch_monad_delegator_states(address, &validator_ids).await?;
-        let withdrawal_requests = self.fetch_monad_withdrawal_requests(address, &validator_ids).await?;
 
-        for (validator_id, delegator_state) in delegator_states {
-            let withdrawals = withdrawal_requests.get(&validator_id);
-            self.push_delegations(address, validator_id, &delegator_state, withdrawals, current_epoch, &mut delegations);
+        for position in positions {
+            if position.amount.is_zero() {
+                continue;
+            }
+
+            let state = Self::map_lens_state(&position);
+            let completion_date = if position.completion_timestamp == 0 {
+                None
+            } else {
+                DateTime::<Utc>::from_timestamp(position.completion_timestamp as i64, 0)
+            };
+
+            delegations.push(DelegationBase {
+                asset_id: AssetId::from_chain(Chain::Monad),
+                state,
+                balance: position.amount,
+                shares: BigUint::zero(),
+                rewards: position.rewards,
+                completion_date,
+                delegation_id: format!("{}:{}", base_delegation_id, position.withdraw_id),
+                validator_id: position.validator_id.to_string(),
+            });
         }
 
         Ok(delegations)
     }
 
-    pub async fn get_monad_staking_balance(&self, address: &str) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
-        let delegations = self.get_monad_delegations(address).await?;
-
-        let mut staked = BigUint::zero();
-        let mut pending = BigUint::zero();
-        let mut rewards = BigUint::zero();
-
-        for delegation in &delegations {
-            match delegation.state {
-                DelegationState::Active => {
-                    staked += &delegation.balance;
-                    rewards += &delegation.rewards;
-                }
-                DelegationState::Activating | DelegationState::Deactivating | DelegationState::AwaitingWithdrawal | DelegationState::Pending => {
-                    pending += &delegation.balance;
-                }
-                DelegationState::Inactive => {}
-            }
-        }
-
-        Ok(Some(AssetBalance::new_balance(
-            AssetId::from_chain(Chain::Monad),
-            primitives::Balance::stake_balance(staked, pending, Some(rewards)),
-        )))
-    }
-
-    async fn fetch_monad_validators(&self, validator_ids: &[u64]) -> Result<Vec<(u64, MonadValidator)>, Box<dyn Error + Sync + Send>> {
-        if validator_ids.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let calls = validator_ids
-            .iter()
-            .map(|validator_id| {
-                let data = encode_get_validator(*validator_id);
-                Self::build_staking_call(&data)
-            })
-            .collect::<Vec<_>>();
-
-        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
-
-        let mut validators = Vec::new();
-        for (idx, result) in results.into_iter().enumerate() {
-            if let Some(validator_id) = validator_ids.get(idx) {
-                let decoded_bytes = hex::decode(result)?;
-                let validator = decode_get_validator(&decoded_bytes)?;
-                validators.push((*validator_id, validator));
-            }
-        }
-
-        Ok(validators)
-    }
-
-    async fn fetch_monad_delegator_states(
-        &self,
-        address: &str,
-        validator_ids: &[u64],
-    ) -> Result<Vec<(u64, MonadDelegatorState)>, Box<dyn Error + Sync + Send>> {
-        if validator_ids.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let calls = validator_ids
-            .iter()
-            .map(|validator_id| {
-                let data = encode_get_delegator(*validator_id, address).unwrap_or_default();
-                Self::build_staking_call(&data)
-            })
-            .collect::<Vec<_>>();
-
-        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
-        let mut states = Vec::new();
-
-        for (idx, result) in results.into_iter().enumerate() {
-            if let Some(validator_id) = validator_ids.get(idx) {
-                let decoded_bytes = hex::decode(result)?;
-                let state = decode_get_delegator(&decoded_bytes)?;
-                states.push((*validator_id, state));
-            }
-        }
-
-        Ok(states)
-    }
-
-    async fn fetch_monad_withdrawal_requests(
-        &self,
-        address: &str,
-        validator_ids: &[u64],
-    ) -> Result<HashMap<u64, Vec<MonadWithdrawalRequest>>, Box<dyn Error + Sync + Send>> {
-        if validator_ids.is_empty() {
-            return Ok(HashMap::new());
-        }
-
-        let mut active_validator_ids = validator_ids.to_vec();
-        let mut withdrawals: HashMap<u64, Vec<MonadWithdrawalRequest>> = HashMap::new();
-
-        for withdraw_id in 0..MONAD_MAX_WITHDRAW_IDS {
-            if active_validator_ids.is_empty() {
-                break;
-            }
-
-            let calls = active_validator_ids
-                .iter()
-                .map(|validator_id| {
-                    let data = encode_get_withdrawal_request(*validator_id, address, withdraw_id).unwrap_or_default();
-                    Self::build_staking_call(&data)
-                })
-                .collect::<Vec<_>>();
-
-            let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
-            let mut next_round_ids = Vec::new();
-
-            for (idx, result) in results.into_iter().enumerate() {
-                if let Some(validator_id) = active_validator_ids.get(idx) {
-                    let decoded_bytes = hex::decode(result)?;
-                    let mut request = decode_get_withdrawal_request(&decoded_bytes)?;
-                    request.withdraw_id = withdraw_id;
-
-                    if request.amount.is_zero() {
-                        continue;
-                    }
-
-                    withdrawals.entry(*validator_id).or_default().push(request);
-                    next_round_ids.push(*validator_id);
-                }
-            }
-
-            active_validator_ids = next_round_ids;
-        }
-
-        Ok(withdrawals)
-    }
-
-    async fn fetch_monad_epoch(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        let result = self.call_staking(encode_get_epoch()).await?;
-        let (epoch, _) = decode_get_epoch(&result)?;
-        Ok(epoch)
-    }
-
-    fn map_validator(&self, validator_id: u64, validator: &MonadValidator, apy: f64, name_override: Option<String>) -> DelegationValidator {
-        let validator_name = name_override.unwrap_or_else(|| validator_id.to_string());
-        let is_active = validator.flags == 0 && !validator.stake.is_zero();
+    fn map_lens_validator(&self, validator: &MonadLensValidatorInfo, validator_names: &HashMap<u64, &str>, network_apy: f64) -> DelegationValidator {
+        let validator_name = validator_names
+            .get(&validator.validator_id)
+            .map(|name| (*name).to_string())
+            .unwrap_or_else(|| validator.validator_id.to_string());
 
         DelegationValidator {
-            id: validator_id.to_string(),
+            id: validator.validator_id.to_string(),
             chain: Chain::Monad,
             name: validator_name,
-            is_active,
-            commission: validator.commission_rate(),
-            apr: apy,
+            is_active: validator.is_active,
+            commission: Self::lens_commission_rate(&validator.commission),
+            apr: if validator.apy_bps > 0 {
+                validator.apy_bps as f64 / 100.0
+            } else {
+                network_apy
+            },
         }
     }
 
-    fn push_delegations(
-        &self,
-        address: &str,
-        validator_id: u64,
-        delegator_state: &MonadDelegatorState,
-        withdrawals: Option<&Vec<MonadWithdrawalRequest>>,
-        current_epoch: u64,
-        delegations: &mut Vec<DelegationBase>,
-    ) {
-        let pending_balance = &delegator_state.delta_stake + &delegator_state.next_delta_stake;
-        let current_withdraw_id = withdrawals
-            .and_then(|reqs| reqs.iter().map(|r| r.withdraw_id).max())
-            .unwrap_or(DEFAULT_WITHDRAW_ID);
-        let base_delegation_id = address.to_lowercase();
-        let delegation_id = format!("{}:{}", base_delegation_id, current_withdraw_id);
-
-        if !delegator_state.stake.is_zero() {
-            delegations.push(DelegationBase {
-                asset_id: AssetId::from_chain(Chain::Monad),
-                state: DelegationState::Active,
-                balance: delegator_state.stake.clone(),
-                shares: BigUint::zero(),
-                rewards: delegator_state.unclaimed_rewards.clone(),
-                completion_date: None,
-                delegation_id: delegation_id.clone(),
-                validator_id: validator_id.to_string(),
-            });
-        }
-
-        if !pending_balance.is_zero() {
-            delegations.push(DelegationBase {
-                asset_id: AssetId::from_chain(Chain::Monad),
-                state: DelegationState::Activating,
-                balance: pending_balance,
-                shares: BigUint::zero(),
-                rewards: BigUint::zero(),
-                completion_date: None,
-                delegation_id: delegation_id.clone(),
-                validator_id: validator_id.to_string(),
-            });
-        }
-
-        if let Some(requests) = withdrawals {
-            for request in requests {
-                if request.amount.is_zero() {
-                    continue;
-                }
-
-                let is_ready = request.withdraw_epoch < current_epoch;
-                let completion_date = Self::withdrawal_completion_date(request.withdraw_epoch, current_epoch);
-                let state = if is_ready {
-                    DelegationState::AwaitingWithdrawal
-                } else {
-                    DelegationState::Deactivating
-                };
-
-                let withdrawal_delegation_id = format!("{}:{}", base_delegation_id, request.withdraw_id);
-
-                delegations.push(DelegationBase {
-                    asset_id: AssetId::from_chain(Chain::Monad),
-                    state,
-                    balance: request.amount.clone(),
-                    shares: BigUint::zero(),
-                    rewards: BigUint::zero(),
-                    completion_date,
-                    delegation_id: withdrawal_delegation_id,
-                    validator_id: validator_id.to_string(),
-                });
-            }
+    fn map_lens_state(position: &MonadLensDelegation) -> DelegationState {
+        match position.state {
+            IMonadStakingLens::DelegationState::Active => DelegationState::Active,
+            IMonadStakingLens::DelegationState::Activating => DelegationState::Activating,
+            IMonadStakingLens::DelegationState::Deactivating => DelegationState::Deactivating,
+            IMonadStakingLens::DelegationState::AwaitingWithdrawal => DelegationState::AwaitingWithdrawal,
+            IMonadStakingLens::DelegationState::__Invalid => DelegationState::Inactive,
         }
     }
 
-    async fn call_staking(&self, data: Vec<u8>) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
-        let call = Self::build_staking_call(&data);
-        let result: String = self.call(call.0, call.1).await?;
-        Ok(hex::decode(result)?)
-    }
+    async fn call_lens(&self, data: Vec<u8>) -> Option<Result<Vec<u8>, Box<dyn Error + Sync + Send>>> {
+        let call = Self::build_lens_call(&data)?;
 
-    fn build_staking_call(data: &[u8]) -> (String, serde_json::Value) {
-        (
-            "eth_call".to_string(),
-            serde_json::json!([{
-                "to": STAKING_CONTRACT,
-                "data": hex::encode_prefixed(data)
-            }, "latest"]),
+        Some(
+            self.call(call.0, call.1)
+                .await
+                .map_err(|err| -> Box<dyn Error + Sync + Send> { Box::new(err) })
+                .and_then(|result: String| hex::decode(result).map_err(|err| -> Box<dyn Error + Sync + Send> { Box::new(err) })),
         )
     }
 
-    fn total_validator_stake(validators: &[(u64, MonadValidator)]) -> BigUint {
-        validators.iter().fold(BigUint::zero(), |acc, (_, validator)| acc + &validator.stake)
+    fn build_lens_call(data: &[u8]) -> Option<(String, serde_json::Value)> {
+        Some((
+            "eth_call".to_string(),
+            serde_json::json!([{
+                "to": STAKING_LENS_CONTRACT,
+                "data": hex::encode_prefixed(data)
+            }, "latest"]),
+        ))
     }
 
-    fn calculate_monad_network_apy(total_stake: &BigUint) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        let total_stake_mon = Self::value_to_f64_amount(total_stake)?;
-        if total_stake_mon == 0.0 {
-            return Ok(None);
-        }
-
-        let annual_rewards = MONAD_BLOCK_REWARD_MON * MONAD_BLOCKS_PER_YEAR;
-        Ok(Some((annual_rewards / total_stake_mon) * 100.0))
+    fn lens_commission_rate(commission: &BigUint) -> f64 {
+        commission.to_f64().unwrap_or(0.0) / MONAD_SCALE
     }
 
-    fn calculate_validator_apy(validator: &MonadValidator, total_stake: &BigUint) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
-        let total_stake_mon = Self::value_to_f64_amount(total_stake)?;
-        let validator_stake_mon = Self::value_to_f64_amount(&validator.stake)?;
-
-        if total_stake_mon == 0.0 || validator_stake_mon == 0.0 {
-            return Ok(None);
-        }
-
-        let stake_weight = validator_stake_mon / total_stake_mon;
-        let expected_blocks = stake_weight * MONAD_BLOCKS_PER_YEAR;
-        let gross_rewards = expected_blocks * MONAD_BLOCK_REWARD_MON;
-
-        let commission = validator.commission_rate().clamp(0.0, 1.0);
-        let net_rewards = gross_rewards * (1.0 - commission);
-
-        Ok(Some((net_rewards / validator_stake_mon) * 100.0))
+    fn monad_asset_balance(staked: BigUint, pending: BigUint, rewards: BigUint) -> AssetBalance {
+        AssetBalance::new_balance(
+            AssetId::from_chain(Chain::Monad),
+            primitives::Balance::stake_balance(staked, pending, Some(rewards)),
+        )
     }
 
-    fn value_to_f64_amount(stake: &BigUint) -> Result<f64, Box<dyn Error + Sync + Send>> {
-        let stake_value = stake
-            .to_f64()
-            .ok_or_else(|| "Failed to convert Monad stake to floating point value".to_string())?;
-        Ok(stake_value / MONAD_SCALE)
-    }
-
-    fn monad_all_validator_ids() -> Vec<u64> {
-        (1..=ACTIVE_VALIDATOR_SET).map(u64::from).collect()
-    }
-
-    fn withdrawal_completion_date(withdraw_epoch: u64, current_epoch: u64) -> Option<DateTime<Utc>> {
-        if withdraw_epoch < current_epoch {
-            return None;
-        }
-
-        let epoch_seconds = (MONAD_BOUNDARY_BLOCK_PERIOD as f64 * MONAD_BLOCK_TIME_SECONDS) as i64;
-        if epoch_seconds <= 0 {
-            return None;
-        }
-
-        let remaining_epochs = withdraw_epoch.saturating_sub(current_epoch).saturating_add(1) as i64;
-        Some(Utc::now() + Duration::seconds(epoch_seconds.saturating_mul(remaining_epochs)))
+    fn monad_curated_validator_ids() -> Vec<u64> {
+        MONAD_VALIDATOR_NAMES.iter().map(|(id, _)| *id).collect()
     }
 }

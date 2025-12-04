@@ -1,140 +1,115 @@
-use crate::monad::constants::{DEFAULT_WITHDRAW_ID, MONAD_SCALE};
-use crate::monad::contracts::IMonadStaking;
-use alloy_primitives::{Address, U256};
-use alloy_sol_types::SolCall;
-use num_bigint::{BigInt, BigUint, Sign};
-use num_traits::{ToPrimitive, Zero};
-use primitives::StakeType;
 use std::error::Error;
 use std::str::FromStr;
 
-pub struct MonadValidator {
-    pub flags: u64,
+use alloy_primitives::{Address, U256};
+use alloy_sol_types::SolCall;
+use num_bigint::{BigInt, BigUint, Sign};
+use num_traits::Zero;
+use primitives::StakeType;
+
+use crate::monad::constants::DEFAULT_WITHDRAW_ID;
+use crate::monad::contracts::{IMonadStaking, IMonadStakingLens};
+use crate::u256::u256_to_biguint;
+
+#[derive(Clone)]
+pub struct MonadLensDelegation {
+    pub validator_id: u64,
+    pub withdraw_id: u8,
+    pub state: IMonadStakingLens::DelegationState,
+    pub amount: BigUint,
+    pub rewards: BigUint,
+    pub withdraw_epoch: u64,
+    pub completion_timestamp: u64,
+}
+
+#[derive(Clone)]
+pub struct MonadLensValidatorInfo {
+    pub validator_id: u64,
     pub stake: BigUint,
     pub commission: BigUint,
-    pub unclaimed_rewards: BigUint,
+    pub apy_bps: u64,
+    pub is_active: bool,
 }
 
-impl MonadValidator {
-    pub fn commission_rate(&self) -> f64 {
-        self.commission.to_f64().unwrap_or(0.0) / MONAD_SCALE
-    }
+#[derive(Clone)]
+pub struct MonadLensBalance {
+    pub staked: BigUint,
+    pub pending: BigUint,
+    pub rewards: BigUint,
 }
 
-pub struct MonadDelegatorState {
-    pub stake: BigUint,
-    pub delta_stake: BigUint,
-    pub next_delta_stake: BigUint,
-    pub unclaimed_rewards: BigUint,
-}
-
-pub struct MonadWithdrawalRequest {
-    pub amount: BigUint,
-    pub withdraw_epoch: u64,
-    pub withdraw_id: u8,
-}
-
-pub struct MonadIdsPage<T> {
-    pub is_done: bool,
-    pub next: T,
-    pub validator_ids: Vec<u64>,
-}
-
-pub type MonadDelegationsPage = MonadIdsPage<u64>;
-pub type MonadValidatorSetPage = MonadIdsPage<u32>;
-
-pub fn encode_get_validator_set(start_index: u32) -> Vec<u8> {
-    IMonadStaking::getConsensusValidatorSetCall { startIndex: start_index }.abi_encode()
-}
-
-pub fn decode_get_validator_set(data: &[u8]) -> Result<MonadValidatorSetPage, Box<dyn Error + Sync + Send>> {
-    let decoded = IMonadStaking::getConsensusValidatorSetCall::abi_decode_returns(data)?;
-    Ok(MonadValidatorSetPage {
-        is_done: decoded.isDone,
-        next: decoded.nextIndex,
-        validator_ids: decoded.valIds,
-    })
-}
-
-pub fn encode_get_delegations(delegator: &str, start_val_id: u64) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
+pub fn encode_get_lens_balance(delegator: &str) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
     let delegator = Address::from_str(delegator)?;
-    Ok(IMonadStaking::getDelegationsCall {
-        delegator,
-        startValId: start_val_id,
-    }
-    .abi_encode())
+    Ok(IMonadStakingLens::getBalanceCall { delegator }.abi_encode())
 }
 
-pub fn decode_get_delegations(data: &[u8]) -> Result<MonadDelegationsPage, Box<dyn Error + Sync + Send>> {
-    let decoded = IMonadStaking::getDelegationsCall::abi_decode_returns(data)?;
-    Ok(MonadDelegationsPage {
-        is_done: decoded.isDone,
-        next: decoded.nextValId,
-        validator_ids: decoded.valIds,
+pub fn decode_get_lens_balance(data: &[u8]) -> Result<MonadLensBalance, Box<dyn Error + Sync + Send>> {
+    let decoded = IMonadStakingLens::getBalanceCall::abi_decode_returns(data)?;
+    Ok(MonadLensBalance {
+        staked: u256_to_biguint(&decoded.staked),
+        pending: u256_to_biguint(&decoded.pending),
+        rewards: u256_to_biguint(&decoded.rewards),
     })
 }
 
-pub fn encode_get_delegator(validator_id: u64, delegator: &str) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
+pub fn encode_get_lens_delegations(delegator: &str) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
     let delegator = Address::from_str(delegator)?;
-    Ok(IMonadStaking::getDelegatorCall {
-        validatorId: validator_id,
-        delegator,
+    Ok(IMonadStakingLens::getDelegationsCall { delegator }.abi_encode())
+}
+
+pub fn encode_get_lens_apys(validator_ids: &[u64]) -> Vec<u8> {
+    IMonadStakingLens::getAPYsCall {
+        validatorIds: validator_ids.to_vec(),
     }
-    .abi_encode())
+    .abi_encode()
 }
 
-pub fn decode_get_delegator(data: &[u8]) -> Result<MonadDelegatorState, Box<dyn Error + Sync + Send>> {
-    let decoded = IMonadStaking::getDelegatorCall::abi_decode_returns(data)?;
-
-    Ok(MonadDelegatorState {
-        stake: BigUint::from_bytes_be(&decoded.stake.to_be_bytes::<32>()),
-        delta_stake: BigUint::from_bytes_be(&decoded.deltaStake.to_be_bytes::<32>()),
-        next_delta_stake: BigUint::from_bytes_be(&decoded.nextDeltaStake.to_be_bytes::<32>()),
-        unclaimed_rewards: BigUint::from_bytes_be(&decoded.unclaimedRewards.to_be_bytes::<32>()),
-    })
+pub fn decode_get_lens_apys(data: &[u8]) -> Result<Vec<u64>, Box<dyn Error + Sync + Send>> {
+    let (apys_bps,): (Vec<u64>,) = (IMonadStakingLens::getAPYsCall::abi_decode_returns(data)?,);
+    Ok(apys_bps)
 }
 
-pub fn encode_get_validator(validator_id: u64) -> Vec<u8> {
-    IMonadStaking::getValidatorCall { validatorId: validator_id }.abi_encode()
+pub fn decode_get_lens_delegations(data: &[u8]) -> Result<Vec<MonadLensDelegation>, Box<dyn Error + Sync + Send>> {
+    let decoded = IMonadStakingLens::getDelegationsCall::abi_decode_returns(data)?;
+
+    Ok(decoded
+        .into_iter()
+        .map(|position| MonadLensDelegation {
+            validator_id: position.validatorId,
+            withdraw_id: position.withdrawId,
+            state: position.state,
+            amount: u256_to_biguint(&position.amount),
+            rewards: u256_to_biguint(&position.rewards),
+            withdraw_epoch: position.withdrawEpoch,
+            completion_timestamp: position.completionTimestamp,
+        })
+        .collect())
 }
 
-pub fn decode_get_validator(data: &[u8]) -> Result<MonadValidator, Box<dyn Error + Sync + Send>> {
-    let decoded = IMonadStaking::getValidatorCall::abi_decode_returns(data)?;
-
-    Ok(MonadValidator {
-        flags: decoded.flags,
-        stake: BigUint::from_bytes_be(&decoded.stake.to_be_bytes::<32>()),
-        commission: BigUint::from_bytes_be(&decoded.commission.to_be_bytes::<32>()),
-        unclaimed_rewards: BigUint::from_bytes_be(&decoded.unclaimedRewards.to_be_bytes::<32>()),
-    })
-}
-
-pub fn encode_get_withdrawal_request(validator_id: u64, delegator: &str, withdraw_id: u8) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
-    let delegator = Address::from_str(delegator)?;
-    Ok(IMonadStaking::getWithdrawalRequestCall {
-        validatorId: validator_id,
-        delegator,
-        withdrawId: withdraw_id,
+pub fn encode_get_lens_validators(validator_ids: &[u64]) -> Vec<u8> {
+    IMonadStakingLens::getValidatorsCall {
+        validatorIds: validator_ids.to_vec(),
     }
-    .abi_encode())
+    .abi_encode()
 }
 
-pub fn decode_get_withdrawal_request(data: &[u8]) -> Result<MonadWithdrawalRequest, Box<dyn Error + Sync + Send>> {
-    let decoded = IMonadStaking::getWithdrawalRequestCall::abi_decode_returns(data)?;
-    Ok(MonadWithdrawalRequest {
-        amount: BigUint::from_bytes_be(&decoded.withdrawalAmount.to_be_bytes::<32>()),
-        withdraw_epoch: decoded.withdrawEpoch,
-        withdraw_id: 0,
-    })
-}
+pub fn decode_get_lens_validators(data: &[u8]) -> Result<(Vec<MonadLensValidatorInfo>, u64), Box<dyn Error + Sync + Send>> {
+    let decoded = IMonadStakingLens::getValidatorsCall::abi_decode_returns(data)?;
 
-pub fn encode_get_epoch() -> Vec<u8> {
-    IMonadStaking::getEpochCall {}.abi_encode()
-}
-
-pub fn decode_get_epoch(data: &[u8]) -> Result<(u64, bool), Box<dyn Error + Sync + Send>> {
-    let decoded = IMonadStaking::getEpochCall::abi_decode_returns(data)?;
-    Ok((decoded.epoch, decoded.inEpochDelayPeriod))
+    Ok((
+        decoded
+            .validators
+            .into_iter()
+            .map(|validator| MonadLensValidatorInfo {
+                validator_id: validator.validatorId,
+                stake: u256_to_biguint(&validator.stake),
+                commission: u256_to_biguint(&validator.commission),
+                apy_bps: validator.apyBps,
+                is_active: validator.isActive,
+            })
+            .collect(),
+        decoded.networkApyBps,
+    ))
 }
 
 pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(Vec<u8>, BigInt), Box<dyn Error + Sync + Send>> {

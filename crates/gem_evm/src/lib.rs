@@ -20,6 +20,7 @@ pub mod permit2;
 pub mod registry;
 pub mod siwe;
 pub mod thorchain;
+pub mod u256;
 pub mod uniswap;
 pub mod weth;
 

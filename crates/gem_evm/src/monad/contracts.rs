@@ -8,36 +8,43 @@ sol! {
         function withdraw(uint64 validatorId, uint8 withdrawId) external returns (bool success);
         function claimRewards(uint64 validatorId) external returns (bool success);
 
-        function getConsensusValidatorSet(uint32 startIndex) external view returns (bool isDone, uint32 nextIndex, uint64[] memory valIds);
-        function getWithdrawalRequest(uint64 validatorId, address delegator, uint8 withdrawId)
-            external
-            view
-            returns (uint256 withdrawalAmount, uint256 accRewardPerToken, uint64 withdrawEpoch);
-        function getEpoch() external view returns (uint64 epoch, bool inEpochDelayPeriod);
+    }
+}
 
-        function getValidator(uint64 validatorId)
-            external
-            view
-            returns (
-                address authAddress,
-                uint64 flags,
-                uint256 stake,
-                uint256 accRewardPerToken,
-                uint256 commission,
-                uint256 unclaimedRewards,
-                uint256 consensusStake,
-                uint256 consensusCommission,
-                uint256 snapshotStake,
-                uint256 snapshotCommission,
-                bytes memory secpPubkey,
-                bytes memory blsPubkey
-            );
+sol! {
+    #[derive(Debug, PartialEq)]
+    interface IMonadStakingLens {
+        enum DelegationState {
+            Active,
+            Activating,
+            Deactivating,
+            AwaitingWithdrawal
+        }
 
-        function getDelegations(address delegator, uint64 startValId) external view returns (bool isDone, uint64 nextValId, uint64[] memory valIds);
+        struct Delegation {
+            uint64 validatorId;
+            uint8 withdrawId;
+            DelegationState state;
+            uint256 amount;
+            uint256 rewards;
+            uint64 withdrawEpoch;
+            uint64 completionTimestamp;
+        }
 
-        function getDelegator(uint64 validatorId, address delegator)
-            external
-            view
-            returns (uint256 stake, uint256 accRewardPerToken, uint256 unclaimedRewards, uint256 deltaStake, uint256 nextDeltaStake, uint64 deltaEpoch, uint64 nextDeltaEpoch);
+        struct ValidatorInfo {
+            uint64 validatorId;
+            uint256 stake;
+            uint256 commission;
+            uint64 apyBps;
+            bool isActive;
+        }
+
+        function getBalance(address delegator) external returns (uint256 staked, uint256 pending, uint256 rewards);
+
+        function getDelegations(address delegator) external returns (Delegation[] memory positions);
+
+        function getValidators(uint64[] calldata validatorIds) external returns (ValidatorInfo[] memory validators, uint64 networkApyBps);
+
+        function getAPYs(uint64[] calldata validatorIds) external returns (uint64[] memory apysBps);
     }
 }
