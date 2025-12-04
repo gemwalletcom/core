@@ -9,19 +9,19 @@ pub struct FiatProvider {
     pub id: String,
     pub name: String,
     pub image_url: Option<String>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     #[typeshare(skip)]
     pub priority: Option<i32>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     #[typeshare(skip)]
     pub threshold_bps: Option<i32>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     #[typeshare(skip)]
     pub enabled: bool,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     #[typeshare(skip)]
     pub buy_enabled: bool,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     #[typeshare(skip)]
     pub sell_enabled: bool,
 }
