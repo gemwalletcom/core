@@ -209,6 +209,7 @@ IMPORTANT: Always import models and types at the top of the file. Never use inli
 - Use async/await with Tokio across services
 - Database models use Diesel ORM with automatic migrations
 - Consider cross-platform performance constraints for mobile
+- Shared U256 conversions: prefer `u256_to_biguint` and `biguint_to_u256` from `crates/gem_evm/src/u256.rs` for Alloy `U256` <-> `BigUint` conversions.
 
 ### Repository Pattern
 

@@ -9,9 +9,10 @@ use primitives::StakeType;
 
 use crate::monad::constants::DEFAULT_WITHDRAW_ID;
 use crate::monad::contracts::{IMonadStaking, IMonadStakingLens};
+use crate::u256::u256_to_biguint;
 
 #[derive(Clone)]
-pub struct MonadLensDelegationPosition {
+pub struct MonadLensDelegation {
     pub validator_id: u64,
     pub withdraw_id: u8,
     pub state: IMonadStakingLens::DelegationState,
@@ -35,10 +36,6 @@ pub struct MonadLensBalance {
     pub staked: BigUint,
     pub pending: BigUint,
     pub rewards: BigUint,
-}
-
-fn u256_to_biguint(value: &U256) -> BigUint {
-    BigUint::from_bytes_be(&value.to_be_bytes::<32>())
 }
 
 pub fn encode_get_lens_balance(delegator: &str) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
@@ -72,12 +69,12 @@ pub fn decode_get_lens_apys(data: &[u8]) -> Result<Vec<u64>, Box<dyn Error + Syn
     Ok(decoded)
 }
 
-pub fn decode_get_lens_delegations(data: &[u8]) -> Result<Vec<MonadLensDelegationPosition>, Box<dyn Error + Sync + Send>> {
+pub fn decode_get_lens_delegations(data: &[u8]) -> Result<Vec<MonadLensDelegation>, Box<dyn Error + Sync + Send>> {
     let decoded = IMonadStakingLens::getDelegationsCall::abi_decode_returns(data)?;
 
     Ok(decoded
         .into_iter()
-        .map(|position| MonadLensDelegationPosition {
+        .map(|position| MonadLensDelegation {
             validator_id: position.validatorId,
             withdraw_id: position.withdrawId,
             state: position.state,

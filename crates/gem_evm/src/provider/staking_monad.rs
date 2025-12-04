@@ -9,7 +9,7 @@ use num_traits::{ToPrimitive, Zero};
 use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
 use crate::monad::{
-    IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegationPosition, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys,
+    IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegation, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys,
     decode_get_lens_balance, decode_get_lens_delegations, decode_get_lens_validators, encode_get_lens_apys, encode_get_lens_balance,
     encode_get_lens_delegations, encode_get_lens_validators,
 };
@@ -26,7 +26,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         };
 
         let apys = result.ok().and_then(|bytes| decode_get_lens_apys(&bytes).ok()).unwrap_or_default();
-        let apy_bps = apys.first().copied().unwrap_or(0);
+        let apy_bps = apys.into_iter().max().unwrap_or(0);
 
         if apy_bps == 0 {
             return Ok(None);
@@ -128,11 +128,15 @@ impl<C: Client + Clone> EthereumClient<C> {
             name: validator_name,
             is_active: validator.is_active,
             commission: Self::lens_commission_rate(&validator.commission),
-            apr: Self::lens_apy_bps_to_percent(validator.apy_bps, network_apy),
+            apr: if validator.apy_bps > 0 {
+                validator.apy_bps as f64 / 100.0
+            } else {
+                network_apy
+            },
         }
     }
 
-    fn map_lens_state(position: &MonadLensDelegationPosition) -> DelegationState {
+    fn map_lens_state(position: &MonadLensDelegation) -> DelegationState {
         match position.state {
             IMonadStakingLens::DelegationState::Active => DelegationState::Active,
             IMonadStakingLens::DelegationState::Activating => DelegationState::Activating,
@@ -160,14 +164,6 @@ impl<C: Client + Clone> EthereumClient<C> {
                 "data": hex::encode_prefixed(data)
             }, "latest"]),
         ))
-    }
-
-    fn lens_apy_bps_to_percent(apy_bps: u64, network_apy: f64) -> f64 {
-        if apy_bps > 0 {
-            return apy_bps as f64 / 100.0;
-        }
-
-        network_apy
     }
 
     fn lens_commission_rate(commission: &BigUint) -> f64 {
