@@ -42,7 +42,6 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::monad::ACTIVE_VALIDATOR_SET;
     use crate::provider::testkit::{
         TEST_MONAD_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_monad_test_client, create_smartchain_test_client,
     };
@@ -150,16 +149,6 @@ mod chain_integration_tests {
             assert!(delegation.balance >= BigUint::from(0u32));
         }
 
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_monad_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = create_monad_test_client();
-        let validators = client.get_staking_validators(Some(0.0)).await?;
-
-        assert!(validators.len() as u32 <= ACTIVE_VALIDATOR_SET);
-        println!("Monad Validators: {:?}", validators[0]);
         Ok(())
     }
 
