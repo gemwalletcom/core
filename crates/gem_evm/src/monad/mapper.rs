@@ -65,8 +65,8 @@ pub fn encode_get_lens_apys(validator_ids: &[u64]) -> Vec<u8> {
 }
 
 pub fn decode_get_lens_apys(data: &[u8]) -> Result<Vec<u64>, Box<dyn Error + Sync + Send>> {
-    let decoded = IMonadStakingLens::getAPYsCall::abi_decode_returns(data)?;
-    Ok(decoded)
+    let (apys_bps,): (Vec<u64>,) = (IMonadStakingLens::getAPYsCall::abi_decode_returns(data)?,);
+    Ok(apys_bps)
 }
 
 pub fn decode_get_lens_delegations(data: &[u8]) -> Result<Vec<MonadLensDelegation>, Box<dyn Error + Sync + Send>> {

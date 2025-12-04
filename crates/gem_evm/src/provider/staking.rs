@@ -25,7 +25,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_validators(apy.unwrap_or(0.0)).await,
             EVMChain::Ethereum => self.get_ethereum_validators(apy.unwrap_or(0.0)).await,
-            EVMChain::Monad => self.get_monad_validators(apy.unwrap_or(0.0)).await,
+            EVMChain::Monad => self.get_monad_validators().await,
             _ => Ok(vec![]),
         }
     }

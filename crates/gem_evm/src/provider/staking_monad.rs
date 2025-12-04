@@ -21,11 +21,9 @@ const MONAD_VALIDATOR_NAMES: &[(u64, &str)] = &[(16, "MonadVision"), (5, "Alchem
 impl<C: Client + Clone> EthereumClient<C> {
     pub async fn get_monad_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
         let data = encode_get_lens_apys(&[]);
-        let Some(result) = self.call_lens(data).await else {
-            return Ok(None);
-        };
+        let result = self.call_lens(data).await.ok_or_else(|| "Monad staking lens not configured".to_string())??;
 
-        let apys = result.ok().and_then(|bytes| decode_get_lens_apys(&bytes).ok()).unwrap_or_default();
+        let apys = decode_get_lens_apys(&result)?;
         let apy_bps = apys.into_iter().max().unwrap_or(0);
 
         if apy_bps == 0 {
@@ -35,15 +33,13 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(Some(apy_bps as f64 / 100.0))
     }
 
-    pub async fn get_monad_validators(&self, _fallback_apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    pub async fn get_monad_validators(&self) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
         let validator_names: HashMap<u64, &str> = MONAD_VALIDATOR_NAMES.iter().copied().collect();
         let validator_ids = Self::monad_curated_validator_ids();
         let data = encode_get_lens_validators(&validator_ids);
-        let Some(result) = self.call_lens(data).await else {
-            return Ok(Vec::new());
-        };
+        let result = self.call_lens(data).await.ok_or_else(|| "Monad staking lens not configured".to_string())??;
 
-        let (validators, network_apy_bps) = result.and_then(|bytes| decode_get_lens_validators(&bytes)).unwrap_or_default();
+        let (validators, network_apy_bps) = decode_get_lens_validators(&result)?;
         let network_apy = network_apy_bps as f64 / 100.0;
 
         Ok(validators
@@ -141,7 +137,8 @@ impl<C: Client + Clone> EthereumClient<C> {
             IMonadStakingLens::DelegationState::Active => DelegationState::Active,
             IMonadStakingLens::DelegationState::Activating => DelegationState::Activating,
             IMonadStakingLens::DelegationState::Deactivating => DelegationState::Deactivating,
-            IMonadStakingLens::DelegationState::AwaitingWithdrawal | IMonadStakingLens::DelegationState::__Invalid => DelegationState::AwaitingWithdrawal,
+            IMonadStakingLens::DelegationState::AwaitingWithdrawal => DelegationState::AwaitingWithdrawal,
+            IMonadStakingLens::DelegationState::__Invalid => DelegationState::Inactive,
         }
     }
 
