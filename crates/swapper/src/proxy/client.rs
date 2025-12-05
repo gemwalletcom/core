@@ -61,10 +61,6 @@ struct VersionQuery {
 /// Try to cast a proxy error back into a `SwapperError` variant.
 fn map_proxy_error(error: ProxyError) -> SwapperError {
     match error {
-        ProxyError::Object { code } => match code {
-            SwapperError::ComputeQuoteError(message) => SwapperError::ComputeQuoteError(message),
-            SwapperError::TransactionError(message) => SwapperError::TransactionError(message),
-            other => other,
-        },
+        ProxyError::Object { code } => code,
     }
 }
