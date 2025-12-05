@@ -21,7 +21,7 @@ pub trait Swapper: Send + Sync + Debug {
         if self.provider().mode == SwapperProviderMode::OnChain {
             Ok(self.get_onchain_swap_status(chain, transaction_hash))
         } else {
-            Err(SwapperError::NotImplemented)
+            todo!("get_swap_result not implemented for provider {:?}", self.provider().id)
         }
     }
 

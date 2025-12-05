@@ -19,7 +19,7 @@ pub fn scale_units(value: BigUint, from_decimals: u32, to_decimals: u32) -> Resu
             let factor = BigUint::from(10u32).pow(diff);
             let (quotient, remainder) = value.div_rem(&factor);
             if !remainder.is_zero() {
-                return Err(SwapperError::InvalidAmount("amount precision loss".to_string()));
+                return Err(SwapperError::ComputeQuoteError("amount precision loss".into()));
             }
             Ok(quotient)
         }
@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn test_scale_units_precision_loss_rejected() {
         let err = scale_units(BigUint::from(5u32), 3, 1).unwrap_err();
-        assert!(matches!(err, SwapperError::InvalidAmount(_)));
+        assert!(matches!(err, SwapperError::ComputeQuoteError(_)));
     }
 
     #[test]
@@ -73,6 +73,6 @@ mod tests {
     #[test]
     fn test_scale_quote_value_invalid_number() {
         let err = scale_quote_value("abc", 6, 8).unwrap_err();
-        assert!(matches!(err, SwapperError::InvalidAmount(_)));
+        assert!(matches!(err, SwapperError::ComputeQuoteError(_)));
     }
 }

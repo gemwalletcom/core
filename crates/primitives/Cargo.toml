@@ -8,7 +8,7 @@ default = []
 testkit = []
 
 [dependencies]
-typeshare = { version = "1.0.4" }
+typeshare = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }

@@ -12,11 +12,11 @@ pub async fn check_approval_tron(
     amount: U256,
     provider: Arc<dyn RpcProvider>,
 ) -> Result<ApprovalType, SwapperError> {
-    let client = create_tron_client(provider.clone()).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+    let client = create_tron_client(provider.clone()).map_err(|e| SwapperError::TransactionError(e.to_string()))?;
     let allowance = client
         .get_token_allowance(owner_address, token_address, spender_address)
         .await
-        .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+        .map_err(|e| SwapperError::TransactionError(e.to_string()))?;
     let amount_big = BigUint::from_bytes_be(&amount.to_be_bytes::<32>());
     if allowance < amount_big {
         return Ok(ApprovalType::Approve(ApprovalData {

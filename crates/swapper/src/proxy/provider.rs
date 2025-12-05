@@ -258,7 +258,7 @@ where
                 if self.provider.mode == SwapperProviderMode::OnChain {
                     Ok(self.get_onchain_swap_status(chain, transaction_hash))
                 } else {
-                    Err(SwapperError::NotImplemented)
+                    todo!("Swap result not implemented for provider {:?}", self.provider.id)
                 }
             }
         }

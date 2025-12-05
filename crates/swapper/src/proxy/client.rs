@@ -1,14 +1,21 @@
 use crate::SwapperError;
-use gem_client::Client;
+use gem_client::{Client, build_path_with_query};
 use primitives::swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData};
 use serde::Deserialize;
+use serde::Serialize;
 use std::fmt::Debug;
 
+const API_VERSION: u8 = 1;
+
 #[derive(Debug, Deserialize)]
-#[serde(untagged)]
 enum ProxyResult<T> {
-    Ok(T),
-    Err { error: String },
+    Ok { ok: T },
+    Err { err: ProxyError },
+}
+
+#[derive(Debug, Deserialize)]
+enum ProxyError {
+    Object { code: SwapperError },
 }
 
 #[derive(Clone, Debug)]
@@ -28,18 +35,36 @@ where
     }
 
     pub async fn get_quote(&self, request: ProxyQuoteRequest) -> Result<ProxyQuote, SwapperError> {
-        let response: ProxyResult<ProxyQuote> = self.client.post("/quote", &request, None).await.map_err(SwapperError::from)?;
+        let path = build_path_with_query("/quote", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
+        let response: ProxyResult<ProxyQuote> = self.client.post(&path, &request, None).await.map_err(SwapperError::from)?;
         match response {
-            ProxyResult::Ok(q) => Ok(q),
-            ProxyResult::Err { error } => Err(SwapperError::ComputeQuoteError(error)),
+            ProxyResult::Ok { ok } => Ok(ok),
+            ProxyResult::Err { err } => Err(map_proxy_error(err)),
         }
     }
 
     pub async fn get_quote_data(&self, quote: ProxyQuote) -> Result<SwapQuoteData, SwapperError> {
-        let response: ProxyResult<SwapQuoteData> = self.client.post("/quote_data", &quote, None).await.map_err(SwapperError::from)?;
+        let path = build_path_with_query("/quote_data", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
+        let response: ProxyResult<SwapQuoteData> = self.client.post(&path, &quote, None).await.map_err(SwapperError::from)?;
         match response {
-            ProxyResult::Ok(qd) => Ok(qd),
-            ProxyResult::Err { error } => Err(SwapperError::TransactionError(error)),
+            ProxyResult::Ok { ok } => Ok(ok),
+            ProxyResult::Err { err } => Err(map_proxy_error(err)),
         }
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct VersionQuery {
+    v: u8,
+}
+
+/// Try to cast a proxy error back into a `SwapperError` variant.
+fn map_proxy_error(error: ProxyError) -> SwapperError {
+    match error {
+        ProxyError::Object { code } => match code {
+            SwapperError::ComputeQuoteError(message) => SwapperError::ComputeQuoteError(message),
+            SwapperError::TransactionError(message) => SwapperError::TransactionError(message),
+            other => other,
+        },
     }
 }

@@ -75,6 +75,16 @@ impl GemSwapper {
 
         from_symbol.contains("USD") && to_symbol.contains("USD")
     }
+
+    fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
+        for err in errors {
+            if let SwapperError::InputAmountTooSmall = err {
+                return Some(SwapperError::InputAmountTooSmall);
+            }
+        }
+
+        None
+    }
 }
 
 impl GemSwapper {
@@ -137,7 +147,7 @@ impl GemSwapper {
 
     pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
         if request.from_asset.id == request.to_asset.id {
-            return Err(SwapperError::NotSupportedPair);
+            return Err(SwapperError::NotSupportedAsset);
         }
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
@@ -157,21 +167,25 @@ impl GemSwapper {
         let request_for_quote = Self::transform_request(request);
         let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request_for_quote.as_ref()));
 
-        let quotes = futures::future::join_all(quotes_futures.into_iter().map(|fut| async {
-            match &fut.await {
-                Ok(quote) => Some(quote.clone()),
-                Err(_err) => {
-                    tracing::debug!("fetch_quote error: {:?}", _err);
-                    None
+        let quote_results = futures::future::join_all(quotes_futures).await;
+
+        let mut quotes = Vec::new();
+        let mut errors = Vec::new();
+
+        for result in quote_results {
+            match result {
+                Ok(quote) => quotes.push(quote),
+                Err(err) => {
+                    tracing::debug!("fetch_quote error: {:?}", err);
+                    errors.push(err);
                 }
             }
-        }))
-        .await
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
+        }
 
         if quotes.is_empty() {
+            if let Some(error) = Self::prioritized_error(&errors) {
+                return Err(error);
+            }
             return Err(SwapperError::NoQuoteAvailable);
         }
 
@@ -207,15 +221,18 @@ impl GemSwapper {
 #[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
 
+    use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
+
+    use primitives::{AssetId, Chain, asset_constants::USDT_ETH_ASSET_ID};
+
     use super::*;
     use crate::{
-        Options, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
+        Options, SwapperChainAsset, SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
         alien::reqwest_provider::NativeProvider,
         config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFees},
+        testkit::{MockSwapper, mock_quote},
         uniswap::default::{new_pancakeswap, new_uniswap_v3},
     };
-    use primitives::asset_constants::USDT_ETH_ASSET_ID;
-    use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
 
     fn build_request(from_symbol: &str, to_symbol: &str, fee: Option<ReferralFees>) -> QuoteRequest {
         QuoteRequest {
@@ -384,5 +401,52 @@ mod tests {
 
         let stable_without_fees = build_request("USDC", "USDT", None);
         assert!(matches!(GemSwapper::transform_request(&stable_without_fees), Cow::Borrowed(_)));
+    }
+
+    #[tokio::test]
+    async fn test_fetch_quote_amount_error() {
+        let request = mock_quote(
+            SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
+        );
+
+        let gem_swapper = GemSwapper {
+            rpc_provider: Arc::new(NativeProvider::default()),
+            swappers: vec![
+                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountTooSmall))),
+                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || Err(SwapperError::InputAmountTooSmall))),
+                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
+            ],
+        };
+
+        let result = gem_swapper.fetch_quote(&request).await;
+
+        match result {
+            Err(SwapperError::InputAmountTooSmall) => {}
+            _ => panic!("expected InputAmountTooSmall when every provider rejects the amount"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_fetch_quote_no_quote() {
+        let request = mock_quote(
+            SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, "0xdAC17F958D2ee523a2206206994597C13D831ec7")),
+        );
+
+        let gem_swapper = GemSwapper {
+            rpc_provider: Arc::new(NativeProvider::default()),
+            swappers: vec![
+                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::NoQuoteAvailable))),
+                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || Err(SwapperError::NoQuoteAvailable))),
+            ],
+        };
+
+        let result = gem_swapper.fetch_quote(&request).await;
+
+        match result {
+            Err(SwapperError::NoQuoteAvailable) => {}
+            _ => panic!("expected NoQuoteAvailable when providers failed without amount errors"),
+        }
     }
 }

@@ -186,7 +186,10 @@ where
             Some(ObjectDataOptions::default()),
         );
 
-        let pool_datas: Vec<CetusPoolType> = sui_client.rpc_call(rpc_call).await.map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+        let pool_datas: Vec<CetusPoolType> = sui_client
+            .rpc_call(rpc_call)
+            .await
+            .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
 
         let pool_quotes = top_pools
             .into_iter()
@@ -287,11 +290,11 @@ where
         // Execute gas_price and coin_assets fetching in parallel
         let (gas_price_result, all_coin_assets_result) = join!(sui_client.get_gas_price(), sui_client.get_coin_assets(sender_address));
 
-        let gas_price_bigint = gas_price_result.map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+        let gas_price_bigint = gas_price_result.map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let gas_price = gas_price_bigint
             .to_u64()
-            .ok_or_else(|| SwapperError::NetworkError("Failed to convert gas price to u64".into()))?;
-        let all_coin_assets = all_coin_assets_result.map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+            .ok_or_else(|| SwapperError::TransactionError("Failed to convert gas price to u64".into()))?;
+        let all_coin_assets = all_coin_assets_result.map_err(|e| SwapperError::TransactionError(e.to_string()))?;
 
         // Prepare swap params for tx building
         let a2b = from_coin == route_data.coin_a;
@@ -323,7 +326,7 @@ where
         let inspect_result = sui_client
             .inspect_transaction_block(&quote.request.wallet_address, &tx_bytes)
             .await
-            .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+            .map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let gas_budget = GasBudgetCalculator::gas_budget(&inspect_result.effects.gas_used);
 
         let coin_refs = all_coin_assets

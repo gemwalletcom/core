@@ -50,15 +50,27 @@ pub async fn check_approval_erc20_with_client<C>(
 where
     C: Client + Clone + std::fmt::Debug + Send + Sync + 'static,
 {
-    let owner: Address = owner.as_str().parse().map_err(|_| SwapperError::InvalidAddress(owner))?;
-    let spender: Address = spender.as_str().parse().map_err(|_| SwapperError::InvalidAddress(spender))?;
+    let owner: Address = owner
+        .as_str()
+        .parse()
+        .map_err(|_| SwapperError::TransactionError(format!("Invalid address {owner}")))?;
+    let spender: Address = spender
+        .as_str()
+        .parse()
+        .map_err(|_| SwapperError::TransactionError(format!("Invalid address {spender}")))?;
     let allowance_data = IERC20::allowanceCall { owner, spender }.abi_encode();
     let allowance_call = EthereumRpc::Call(TransactionObject::new_call(&token, allowance_data), BlockParameter::Latest);
 
-    let result: String = client.request(allowance_call).await.map_err(SwapperError::from)?;
-    let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode allowance_call result".into()))?;
+    let result: String = client
+        .request(allowance_call)
+        .await
+        .map_err(SwapperError::from)
+        .map_err(SwapperError::into_transaction_error)?;
+    let decoded = HexDecode(result).map_err(|_| SwapperError::TransactionError("failed to decode allowance_call result".into()))?;
 
-    let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
+    let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded)
+        .map_err(SwapperError::from)
+        .map_err(SwapperError::into_transaction_error)?;
     if allowance < amount {
         return Ok(ApprovalType::Approve(ApprovalData {
             token: token.to_string(),
@@ -101,15 +113,21 @@ where
     .abi_encode();
     let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
 
-    let result: String = client.request(permit2_call).await.map_err(SwapperError::from)?;
-    let decoded = HexDecode(result).map_err(|_| SwapperError::ABIError("failed to decode permit2 allowance result".into()))?;
-    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
+    let result: String = client
+        .request(permit2_call)
+        .await
+        .map_err(SwapperError::from)
+        .map_err(SwapperError::into_transaction_error)?;
+    let decoded = HexDecode(result).map_err(|_| SwapperError::TransactionError("failed to decode permit2 allowance result".into()))?;
+    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded)
+        .map_err(SwapperError::from)
+        .map_err(SwapperError::into_transaction_error)?;
 
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
     let expiration: u64 = allowance_return
         ._1
         .try_into()
-        .map_err(|_| SwapperError::ABIError("failed to convert expiration to u64".into()))?;
+        .map_err(|_| SwapperError::TransactionError("failed to convert expiration to u64".into()))?;
 
     if U256::from(allowance_return._0) < amount || expiration < timestamp {
         return Ok(ApprovalType::Permit2(Permit2ApprovalData {
@@ -120,7 +138,7 @@ where
             permit2_nonce: allowance_return
                 ._2
                 .try_into()
-                .map_err(|_| SwapperError::ABIError("failed to convert nonce to u64".into()))?,
+                .map_err(|_| SwapperError::TransactionError("failed to convert nonce to u64".into()))?,
         }));
     }
 

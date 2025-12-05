@@ -229,7 +229,7 @@ where
             from_asset.asset_id().token_id.as_deref(),
         )
         .await
-        .map_err(|err| SwapperError::NetworkError(format!("Failed to build Sui deposit data: {err}")))?;
+        .map_err(|err| SwapperError::TransactionError(format!("Failed to build Sui deposit data: {err}")))?;
 
         Ok(DepositData {
             to: deposit_address.to_string(),
@@ -252,7 +252,7 @@ fn map_quote_error(error: &QuoteResponseError) -> SwapperError {
     if lower.contains("too low") {
         SwapperError::InputAmountTooSmall
     } else {
-        SwapperError::NetworkError(format!("Near Intents quote error: {}", error.message))
+        SwapperError::ComputeQuoteError(format!("Near Intents quote error: {}", error.message))
     }
 }
 
@@ -272,7 +272,7 @@ where
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let mode = match request.mode {
             SwapperMode::ExactIn => SwapType::FlexInput,
-            SwapperMode::ExactOut => return Err(SwapperError::NotImplemented),
+            SwapperMode::ExactOut => todo!("ExactOut mode is not supported for Near Intents"),
         };
 
         let amount = Self::resolve_quote_amount(request, &mode)?;
@@ -521,12 +521,12 @@ mod swap_integration_tests {
 
         let quote = match provider.fetch_quote(&request).await {
             Ok(quote) => quote,
-            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(SwapperError::ComputeQuoteError(_)) => return Ok(()),
             Err(error) => return Err(error),
         };
         let quote_data = match provider.fetch_quote_data(&quote, FetchQuoteData::None).await {
             Ok(data) => data,
-            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(SwapperError::TransactionError(_)) => return Ok(()),
             Err(error) => return Err(error),
         };
 

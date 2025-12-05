@@ -48,7 +48,7 @@ where
     pub fn get_asset_address(&self, asset_id: &str) -> Result<String, SwapperError> {
         get_pubkey_by_str(asset_id)
             .map(|x| x.to_string())
-            .ok_or(SwapperError::InvalidAddress(asset_id.to_string()))
+            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("Invalid address {asset_id}")))
     }
 
     fn get_fee_mint(&self, mode: &SwapperMode, input: &str, output: &str) -> String {
@@ -80,7 +80,7 @@ where
         value
             .value
             .map(|x| x.owner)
-            .ok_or(SwapperError::NetworkError("fetch_token_program error".to_string()))
+            .ok_or_else(|| SwapperError::ComputeQuoteError("fetch_token_program error".to_string()))
     }
 
     async fn fetch_fee_account(&self, mode: &SwapperMode, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {

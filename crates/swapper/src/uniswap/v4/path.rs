@@ -91,11 +91,15 @@ impl TryFrom<&Route> for PathKey {
     type Error = SwapperError;
 
     fn try_from(value: &Route) -> Result<Self, Self::Error> {
-        let token_id = value.output.token_id.as_ref().ok_or(SwapperError::InvalidAddress(value.output.to_string()))?;
+        let token_id = value
+            .output
+            .token_id
+            .as_ref()
+            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("Invalid address {}", value.output)))?;
         let currency = eth_address::parse_str(token_id)?;
 
         let route_data: RouteData = serde_json::from_str(&value.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let fee_tier = FeeTier::try_from(route_data.fee_tier.as_str()).map_err(|_| SwapperError::InvalidAmount("invalid fee tier".into()))?;
+        let fee_tier = FeeTier::try_from(route_data.fee_tier.as_str()).map_err(|_| SwapperError::ComputeQuoteError("invalid fee tier".into()))?;
         Ok(PathKey {
             intermediateCurrency: currency,
             fee: fee_tier.as_u24(),

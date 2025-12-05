@@ -74,7 +74,7 @@ impl ConfigStoreClient {
             let result: TokenConfig = serde_json::from_str(&decoded).map_err(SwapperError::from)?;
             Ok(result)
         } else {
-            Err(SwapperError::ABIError("config call failed".into()))
+            Err(SwapperError::ComputeQuoteError("config call failed".into()))
         }
     }
 
@@ -83,7 +83,7 @@ impl ConfigStoreClient {
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, data), BlockParameter::Latest);
         let response: JsonRpcResult<String> = self.client.call_with_cache(&call, Some(CONFIG_CACHE_TTL)).await?;
         let result = response.take()?;
-        let hex_data = HexDecode(result).map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+        let hex_data = HexDecode(result).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
         let decoded = AcrossConfigStore::l1TokenConfigCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;
 
         let result: TokenConfig = serde_json::from_str(&decoded).map_err(SwapperError::from)?;
