@@ -1,6 +1,7 @@
 mod ethereum;
 mod solana;
 mod sui;
+mod ton;
 
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectChainOperation};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
@@ -9,6 +10,7 @@ use primitives::{Chain, WalletConnectRequest, WalletConnectionMethods};
 use serde_json::Value;
 use solana::SolanaRequestHandler;
 use sui::SuiRequestHandler;
+use ton::TonRequestHandler;
 
 pub struct WalletConnectRequestHandler;
 
@@ -52,6 +54,8 @@ impl WalletConnectRequestHandler {
             WalletConnectionMethods::SuiSignPersonalMessage => SuiRequestHandler::parse_sign_message(Chain::Sui, params),
             WalletConnectionMethods::SuiSignTransaction => SuiRequestHandler::parse_sign_transaction(Chain::Sui, params),
             WalletConnectionMethods::SuiSignAndExecuteTransaction => SuiRequestHandler::parse_send_transaction(Chain::Sui, params),
+            WalletConnectionMethods::TonSignData => TonRequestHandler::parse_sign_message(Chain::Ton, params),
+            WalletConnectionMethods::TonSendMessage => TonRequestHandler::parse_send_transaction(Chain::Ton, params),
         }
     }
 

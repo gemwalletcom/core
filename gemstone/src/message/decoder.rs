@@ -34,7 +34,7 @@ impl SignMessageDecoder {
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 => {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::TonPersonal => {
                 let string = String::from_utf8(self.message.data.clone());
                 let preview = string.unwrap_or(encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
@@ -70,7 +70,7 @@ impl SignMessageDecoder {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 => match self.preview() {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
@@ -84,7 +84,7 @@ impl SignMessageDecoder {
 
     pub fn hash(&self) -> Vec<u8> {
         match &self.message.sign_type {
-            SignDigestType::SuiPersonal => self.message.data.clone(),
+            SignDigestType::SuiPersonal | SignDigestType::TonPersonal => self.message.data.clone(),
             SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
                 Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
@@ -111,7 +111,7 @@ impl SignMessageDecoder {
                 }
                 encode_prefixed(&signature)
             }
-            SignDigestType::SuiPersonal => BASE64.encode(data),
+            SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
     }
