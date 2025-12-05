@@ -4,13 +4,20 @@ use super::models::{
     Asset, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction,
 };
 use crate::{model::FiatProviderAsset, providers::mercuryo::models::FiatPaymentMethod};
-use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteResponse, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
 use primitives::{PaymentType, currency::Currency, fiat_assets::FiatAssetLimits};
 
 use super::models::Quote;
 
-pub fn map_sell_quote_response(quote_id: String, quote: Quote, request_fiat_amount: f64) -> FiatQuoteResponse {
-    FiatQuoteResponse::new(quote_id, request_fiat_amount, quote.amount)
+pub fn map_sell_quote(buy_quote: Quote, sell_quote: Quote, requested_fiat_amount: f64) -> Quote {
+    let fee_ratio = sell_quote.fiat_amount / requested_fiat_amount;
+    let adjusted_crypto_amount = buy_quote.amount / fee_ratio;
+
+    Quote {
+        amount: adjusted_crypto_amount,
+        currency: sell_quote.currency,
+        fiat_amount: requested_fiat_amount,
+    }
 }
 
 pub fn map_asset_chain(chain: String) -> Option<Chain> {
@@ -413,17 +420,22 @@ mod tests {
     }
 
     #[test]
-    fn test_map_sell_quote_response() {
-        let quote = Quote {
-            amount: 58.12, // crypto amount needed to get 100 USD
-            currency: "NEAR".to_string(),
-            fiat_amount: 171.88,
+    fn test_map_sell_quote() {
+        let buy_quote = Quote {
+            amount: 0.031198,
+            currency: "ETH".to_string(),
+            fiat_amount: 100.0,
         };
-        let request_fiat_amount = 100.0;
+        let sell_quote = Quote {
+            amount: 0.031198,
+            currency: "ETH".to_string(),
+            fiat_amount: 90.26,
+        };
 
-        let result = map_sell_quote_response("test-id".to_string(), quote, request_fiat_amount);
+        let result = map_sell_quote(buy_quote, sell_quote, 100.0);
 
+        assert!((result.amount - 0.03456).abs() < 0.0001);
         assert_eq!(result.fiat_amount, 100.0);
-        assert_eq!(result.crypto_amount, 58.12);
+        assert_eq!(result.currency, "ETH");
     }
 }

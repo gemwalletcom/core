@@ -52,12 +52,24 @@ impl TransakClient {
         &self,
         symbol: String,
         fiat_currency: String,
-        crypto_amount: f64,
+        fiat_amount: f64,
         network: String,
         ip_address: String,
     ) -> Result<TransakQuote, Box<dyn std::error::Error + Send + Sync>> {
-        self.get_quote("sell", symbol, fiat_currency, None, Some(&crypto_amount.to_string()), network, ip_address)
-            .await
+        let buy_quote = self
+            .get_buy_quote(symbol.clone(), fiat_currency.clone(), fiat_amount, network.clone(), ip_address.clone())
+            .await?;
+
+        self.get_quote(
+            "sell",
+            symbol,
+            fiat_currency,
+            None,
+            Some(&buy_quote.crypto_amount.to_string()),
+            network,
+            ip_address,
+        )
+        .await
     }
 
     pub async fn get_quote(
@@ -113,7 +125,7 @@ impl TransakClient {
                 transak_quote.crypto_amount, request.asset.decimals
             )
         })?;
-        let redirect_url = self.redirect_url(transak_quote.clone(), request.wallet_address).await?;
+        let redirect_url = self.redirect_url(transak_quote.clone(), request.wallet_address, FiatQuoteType::Buy).await?;
 
         Ok(FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
@@ -145,16 +157,27 @@ impl TransakClient {
         Ok(response.data.widget_url)
     }
 
-    pub async fn redirect_url(&self, quote: TransakQuote, address: String) -> Result<String, reqwest::Error> {
+    pub async fn redirect_url(&self, quote: TransakQuote, address: String, quote_type: FiatQuoteType) -> Result<String, reqwest::Error> {
         let mut params = HashMap::new();
         params.insert("apiKey".to_string(), self.api_key.clone());
         params.insert("referrerDomain".to_string(), self.referrer_domain.clone());
-        params.insert("fiatAmount".to_string(), quote.fiat_amount.to_string());
         params.insert("fiatCurrency".to_string(), quote.fiat_currency);
         params.insert("cryptoCurrencyCode".to_string(), quote.crypto_currency);
         params.insert("network".to_string(), quote.network);
         params.insert("disableWalletAddressForm".to_string(), "true".to_string());
         params.insert("walletAddress".to_string(), address);
+
+        match quote_type {
+            FiatQuoteType::Buy => {
+                params.insert("productsAvailed".to_string(), "BUY".to_string());
+                params.insert("fiatAmount".to_string(), quote.fiat_amount.to_string());
+            }
+            FiatQuoteType::Sell => {
+                params.insert("productsAvailed".to_string(), "SELL".to_string());
+                params.insert("cryptoAmount".to_string(), quote.crypto_amount.to_string());
+                params.insert("paymentMethod".to_string(), "credit_debit_card".to_string());
+            }
+        }
 
         self.create_widget_url(params).await
     }
