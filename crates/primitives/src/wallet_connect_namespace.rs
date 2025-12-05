@@ -17,6 +17,8 @@ pub enum WalletConnectCAIP2 {
     Algorand,
     #[serde(rename = "sui")]
     Sui,
+    #[serde(rename = "ton")]
+    Ton,
 }
 
 impl WalletConnectCAIP2 {
@@ -27,8 +29,8 @@ impl WalletConnectCAIP2 {
             ChainType::Cosmos => Some(format!("{}:{}", WalletConnectCAIP2::Cosmos.as_ref(), chain.network_id())),
             ChainType::Algorand => Some(WalletConnectCAIP2::Algorand.as_ref().to_string()),
             ChainType::Sui => Some(WalletConnectCAIP2::Sui.as_ref().to_string()),
+            ChainType::Ton => Some(WalletConnectCAIP2::Ton.as_ref().to_string()),
             ChainType::Bitcoin
-            | ChainType::Ton
             | ChainType::Tron
             | ChainType::Aptos
             | ChainType::Xrp
@@ -47,6 +49,7 @@ impl WalletConnectCAIP2 {
             WalletConnectCAIP2::Cosmos => Some(ChainType::Cosmos),
             WalletConnectCAIP2::Algorand => Some(ChainType::Algorand),
             WalletConnectCAIP2::Sui => Some(ChainType::Sui),
+            WalletConnectCAIP2::Ton => Some(ChainType::Ton),
         }
     }
 
@@ -65,6 +68,7 @@ impl WalletConnectCAIP2 {
             WalletConnectCAIP2::Solana => Some(Chain::Solana),
             WalletConnectCAIP2::Algorand => Some(Chain::Algorand),
             WalletConnectCAIP2::Sui => Some(Chain::Sui),
+            WalletConnectCAIP2::Ton => Some(Chain::Ton),
         }
     }
 
@@ -75,8 +79,8 @@ impl WalletConnectCAIP2 {
             ChainType::Cosmos => Self::get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id())),
             ChainType::Algorand => Some("wGHE2Pwdvd7S12BL5FaOP20EGYesN73k".to_string()),
             ChainType::Sui => Some("mainnet".to_string()),
+            ChainType::Ton => Some("-239".to_string()),
             ChainType::Bitcoin
-            | ChainType::Ton
             | ChainType::Tron
             | ChainType::Aptos
             | ChainType::Xrp
@@ -114,6 +118,7 @@ mod tests {
         assert_eq!(WalletConnectCAIP2::get_chain_type("cosmos".to_string()), Some(ChainType::Cosmos));
         assert_eq!(WalletConnectCAIP2::get_chain_type("algorand".to_string()), Some(ChainType::Algorand));
         assert_eq!(WalletConnectCAIP2::get_chain_type("sui".to_string()), Some(ChainType::Sui));
+        assert_eq!(WalletConnectCAIP2::get_chain_type("ton".to_string()), Some(ChainType::Ton));
         assert_eq!(WalletConnectCAIP2::get_chain_type("unknown".to_string()), None);
     }
 
@@ -123,6 +128,7 @@ mod tests {
         assert_eq!(WalletConnectCAIP2::get_chain("eip155".to_string(), "56".to_string()), Some(Chain::SmartChain));
         assert_eq!(WalletConnectCAIP2::get_chain("solana".to_string(), "ignored".to_string()), Some(Chain::Solana));
         assert_eq!(WalletConnectCAIP2::get_chain("sui".to_string(), "mainnet".to_string()), Some(Chain::Sui));
+        assert_eq!(WalletConnectCAIP2::get_chain("ton".to_string(), "-239".to_string()), Some(Chain::Ton));
     }
 
     #[test]
@@ -133,9 +139,20 @@ mod tests {
             Ok(Chain::Solana)
         );
         assert_eq!(WalletConnectCAIP2::resolve_chain(Some("sui:mainnet".to_string())), Ok(Chain::Sui));
+        assert_eq!(WalletConnectCAIP2::resolve_chain(Some("ton:-239".to_string())), Ok(Chain::Ton));
         assert!(WalletConnectCAIP2::resolve_chain(Some("invalid".to_string())).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(Some("eip155:1:extra".to_string())).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(None).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(Some("unknown:chain".to_string())).is_err());
+    }
+
+    #[test]
+    fn test_get_namespace_ton() {
+        assert_eq!(WalletConnectCAIP2::get_namespace(Chain::Ton), Some("ton".to_string()));
+    }
+
+    #[test]
+    fn test_get_reference_ton() {
+        assert_eq!(WalletConnectCAIP2::get_reference(Chain::Ton), Some("-239".to_string()));
     }
 }

@@ -27,6 +27,12 @@ pub struct WCSuiTransactionData {
     pub wallet_address: String,
 }
 
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct WCTonTransactionData {
+    pub messages: String,
+    pub valid_until: Option<i64>,
+}
+
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum WalletConnectAction {
     SignMessage {
@@ -57,6 +63,7 @@ pub enum WalletConnectTransactionType {
     Ethereum,
     Solana { output_type: TransferDataOutputType },
     Sui { output_type: TransferDataOutputType },
+    Ton { output_type: TransferDataOutputType },
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -71,6 +78,10 @@ pub enum WalletConnectTransaction {
     },
     Sui {
         data: WCSuiTransactionData,
+        output_type: TransferDataOutputType,
+    },
+    Ton {
+        data: WCTonTransactionData,
         output_type: TransferDataOutputType,
     },
 }

@@ -18,6 +18,16 @@ pub struct WCEthereumTransaction {
     pub data: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct WCTonMessage {
+    pub address: String,
+    pub amount: String,
+    pub payload: Option<String>,
+    pub state_init: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WalletConnectRequest {

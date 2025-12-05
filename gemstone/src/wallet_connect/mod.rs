@@ -2,6 +2,7 @@ use crate::{
     message::sign_type::{SignDigestType, SignMessage},
     siwe::SiweMessage,
 };
+use base64::Engine as _;
 use hex::FromHex;
 use primitives::{Chain, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::str::FromStr;
@@ -81,6 +82,30 @@ mod tests {
 
         assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
     }
+
+    #[test]
+    fn decode_ton_sign_message_text() {
+        let wallet_connect = WalletConnect::new();
+        let data = r#"{"type":"text","text":"Hello TON"}"#.to_string();
+
+        let decoded = wallet_connect.decode_sign_message(Chain::Ton, SignDigestType::TonPersonal, data);
+
+        assert!(matches!(decoded.sign_type, SignDigestType::TonPersonal));
+        assert_eq!(decoded.chain, Chain::Ton);
+        assert_eq!(decoded.data, b"Hello TON".to_vec());
+    }
+
+    #[test]
+    fn decode_ton_sign_message_binary() {
+        let wallet_connect = WalletConnect::new();
+        let data = r#"{"type":"binary","data":"SGVsbG8gVE9O"}"#.to_string();
+
+        let decoded = wallet_connect.decode_sign_message(Chain::Ton, SignDigestType::TonPersonal, data);
+
+        assert!(matches!(decoded.sign_type, SignDigestType::TonPersonal));
+        assert_eq!(decoded.chain, Chain::Ton);
+        assert_eq!(decoded.data, b"Hello TON".to_vec());
+    }
 }
 
 #[uniffi::export]
@@ -143,11 +168,15 @@ impl WalletConnect {
                 })?;
                 gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
             }
-            SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe => Ok(()),
+            SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe | SignDigestType::TonPersonal => Ok(()),
         }
     }
 
     pub fn decode_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> SignMessage {
+        if matches!(sign_type, SignDigestType::TonPersonal) {
+            return self.decode_ton_sign_message(data);
+        }
+
         let mut utf8_value = None;
         let message_data = if let Some(stripped) = data.strip_prefix("0x") {
             Vec::from_hex(stripped).unwrap_or_else(|_| data.as_bytes().to_vec())
@@ -166,6 +195,33 @@ impl WalletConnect {
             chain,
             sign_type,
             data: message_data,
+        }
+    }
+
+    fn decode_ton_sign_message(&self, data: String) -> SignMessage {
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&data) {
+            let payload_type = json.get("type").and_then(|v| v.as_str()).unwrap_or("text");
+
+            let message_data = match payload_type {
+                "text" => json.get("text").and_then(|v| v.as_str()).unwrap_or_default().as_bytes().to_vec(),
+                "binary" => {
+                    let binary_data = json.get("data").and_then(|v| v.as_str()).unwrap_or_default();
+                    base64::engine::general_purpose::STANDARD.decode(binary_data).unwrap_or_default()
+                }
+                _ => data.as_bytes().to_vec(),
+            };
+
+            return SignMessage {
+                chain: Chain::Ton,
+                sign_type: SignDigestType::TonPersonal,
+                data: message_data,
+            };
+        }
+
+        SignMessage {
+            chain: Chain::Ton,
+            sign_type: SignDigestType::TonPersonal,
+            data: data.as_bytes().to_vec(),
         }
     }
 
@@ -226,6 +282,23 @@ impl WalletConnect {
 
                 Ok(WalletConnectTransaction::Sui {
                     data: actions::WCSuiTransactionData { transaction, wallet_address },
+                    output_type,
+                })
+            }
+            WalletConnectTransactionType::Ton { output_type } => {
+                let json: serde_json::Value = serde_json::from_str(&data)?;
+
+                let messages = json
+                    .get("messages")
+                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                        msg: "Missing messages field".to_string(),
+                    })?
+                    .to_string();
+
+                let valid_until = json.get("valid_until").and_then(|v| v.as_i64());
+
+                Ok(WalletConnectTransaction::Ton {
+                    data: actions::WCTonTransactionData { messages, valid_until },
                     output_type,
                 })
             }
