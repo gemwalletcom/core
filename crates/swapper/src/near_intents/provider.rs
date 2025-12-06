@@ -91,7 +91,9 @@ where
         let amount_u256 = Self::parse_u256(&base_amount, "amount")?;
 
         if amount_u256 <= reserved_fee {
-            return Err(SwapperError::InputAmountTooSmall);
+            return Err(SwapperError::InputAmountError {
+                min_amount: Some(reserved_fee.to_string()),
+            });
         }
 
         Ok((amount_u256 - reserved_fee).to_string())
@@ -229,7 +231,7 @@ where
             from_asset.asset_id().token_id.as_deref(),
         )
         .await
-        .map_err(|err| SwapperError::NetworkError(format!("Failed to build Sui deposit data: {err}")))?;
+        .map_err(|err| SwapperError::TransactionError(format!("Failed to build Sui deposit data: {err}")))?;
 
         Ok(DepositData {
             to: deposit_address.to_string(),
@@ -250,9 +252,9 @@ where
 fn map_quote_error(error: &QuoteResponseError) -> SwapperError {
     let lower = error.message.to_ascii_lowercase();
     if lower.contains("too low") {
-        SwapperError::InputAmountTooSmall
+        SwapperError::InputAmountError { min_amount: None }
     } else {
-        SwapperError::NetworkError(format!("Near Intents quote error: {}", error.message))
+        SwapperError::ComputeQuoteError(format!("Near Intents quote error: {}", error.message))
     }
 }
 
@@ -272,7 +274,7 @@ where
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let mode = match request.mode {
             SwapperMode::ExactIn => SwapType::FlexInput,
-            SwapperMode::ExactOut => return Err(SwapperError::NotImplemented),
+            SwapperMode::ExactOut => todo!("ExactOut mode is not supported for Near Intents"),
         };
 
         let amount = Self::resolve_quote_amount(request, &mode)?;
@@ -432,7 +434,7 @@ mod tests {
 
         let err = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect_err("expected error");
 
-        assert!(matches!(err, SwapperError::InputAmountTooSmall));
+        assert!(matches!(err, SwapperError::InputAmountError { .. }));
     }
 
     #[test]
@@ -446,7 +448,7 @@ mod tests {
         match decoded {
             QuoteResponseResult::Err(err) => {
                 assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
-                assert!(matches!(map_quote_error(&err), SwapperError::InputAmountTooSmall));
+                assert!(matches!(map_quote_error(&err), SwapperError::InputAmountError { .. }));
             }
             QuoteResponseResult::Ok(_) => panic!("expected error variant"),
         }
@@ -521,12 +523,12 @@ mod swap_integration_tests {
 
         let quote = match provider.fetch_quote(&request).await {
             Ok(quote) => quote,
-            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(SwapperError::ComputeQuoteError(_)) => return Ok(()),
             Err(error) => return Err(error),
         };
         let quote_data = match provider.fetch_quote_data(&quote, FetchQuoteData::None).await {
             Ok(data) => data,
-            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(SwapperError::TransactionError(_)) => return Ok(()),
             Err(error) => return Err(error),
         };
 

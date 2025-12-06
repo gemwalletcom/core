@@ -57,12 +57,15 @@ impl HyperCoreSpot {
 
     async fn load_spot_meta(&self) -> Result<SpotMeta, SwapperError> {
         let client = self.client()?;
-        client.get_spot_meta().await.map_err(|err| SwapperError::NetworkError(err.to_string()))
+        client.get_spot_meta().await.map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))
     }
 
     async fn load_orderbook(&self, coin: &str) -> Result<OrderbookResponse, SwapperError> {
         let client = self.client()?;
-        client.get_spot_orderbook(coin).await.map_err(|err| SwapperError::NetworkError(err.to_string()))
+        client
+            .get_spot_orderbook(coin)
+            .await
+            .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))
     }
 
     fn resolve_token<'a>(&self, meta: &'a SpotMeta, asset: &'a SwapperQuoteAsset) -> Result<&'a SpotToken, SwapperError> {
@@ -100,7 +103,7 @@ impl HyperCoreSpot {
         meta.universe()
             .iter()
             .find(|market| market.tokens.len() == 2 && market.tokens[0] == base.index && market.tokens[1] == quote.index)
-            .ok_or(SwapperError::NotSupportedPair)
+            .ok_or(SwapperError::NotSupportedAsset)
     }
 }
 
@@ -124,13 +127,13 @@ impl Swapper for HyperCoreSpot {
 
         let amount_in = BigNumberFormatter::big_decimal_value(&request.value, request.from_asset.decimals)?;
         if amount_in <= BigDecimal::zero() {
-            return Err(SwapperError::InvalidAmount("amount must be greater than zero".to_string()));
+            return Err(SwapperError::ComputeQuoteError("amount must be greater than zero".into()));
         }
 
         let (side, base_token, quote_token) = match (from_token.name.as_str(), to_token.name.as_str()) {
             (PAIR_BASE_SYMBOL, PAIR_QUOTE_SYMBOL) => (SpotSide::Sell, from_token, to_token),
             (PAIR_QUOTE_SYMBOL, PAIR_BASE_SYMBOL) => (SpotSide::Buy, to_token, from_token),
-            _ => return Err(SwapperError::NotSupportedPair),
+            _ => return Err(SwapperError::NotSupportedAsset),
         };
 
         let market = self.resolve_market(&meta, base_token, quote_token)?;
@@ -150,11 +153,11 @@ impl Swapper for HyperCoreSpot {
         let token_decimals: u32 = to_token
             .wei_decimals
             .try_into()
-            .map_err(|_| SwapperError::InvalidAmount("invalid amount precision".to_string()))?;
+            .map_err(|_| SwapperError::ComputeQuoteError("invalid amount precision".into()))?;
 
         let output_amount_str = format_decimal(&output_amount);
         let token_units = BigNumberFormatter::value_from_amount_biguint(&output_amount_str, token_decimals)
-            .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?;
+            .map_err(|err| SwapperError::ComputeQuoteError(format!("invalid amount: {err}")))?;
         let scaled_units = scale_units(token_units, token_decimals, request.to_asset.decimals)?;
         let to_value = scaled_units.to_string();
 
@@ -194,7 +197,7 @@ impl Swapper for HyperCoreSpot {
     async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let order: PlaceOrder = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let order_json = serde_json::to_string(&order).map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?;
+        let order_json = serde_json::to_string(&order).map_err(|err| SwapperError::TransactionError(err.to_string()))?;
 
         Ok(SwapperQuoteData::new_contract(
             "".to_string(),
