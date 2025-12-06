@@ -91,7 +91,9 @@ where
         let amount_u256 = Self::parse_u256(&base_amount, "amount")?;
 
         if amount_u256 <= reserved_fee {
-            return Err(SwapperError::InputAmountTooSmall);
+            return Err(SwapperError::InputAmountError {
+                min_amount: Some(reserved_fee.to_string()),
+            });
         }
 
         Ok((amount_u256 - reserved_fee).to_string())
@@ -250,7 +252,7 @@ where
 fn map_quote_error(error: &QuoteResponseError) -> SwapperError {
     let lower = error.message.to_ascii_lowercase();
     if lower.contains("too low") {
-        SwapperError::InputAmountTooSmall
+        SwapperError::InputAmountError { min_amount: None }
     } else {
         SwapperError::ComputeQuoteError(format!("Near Intents quote error: {}", error.message))
     }
@@ -432,7 +434,7 @@ mod tests {
 
         let err = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect_err("expected error");
 
-        assert!(matches!(err, SwapperError::InputAmountTooSmall));
+        assert!(matches!(err, SwapperError::InputAmountError { .. }));
     }
 
     #[test]
@@ -446,7 +448,7 @@ mod tests {
         match decoded {
             QuoteResponseResult::Err(err) => {
                 assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
-                assert!(matches!(map_quote_error(&err), SwapperError::InputAmountTooSmall));
+                assert!(matches!(map_quote_error(&err), SwapperError::InputAmountError { .. }));
             }
             QuoteResponseResult::Ok(_) => panic!("expected error variant"),
         }

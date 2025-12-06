@@ -5,7 +5,7 @@ pub enum SwapperError {
     NotSupportedChain,
     NotSupportedAsset,
     NoAvailableProvider,
-    InputAmountTooSmall,
+    InputAmountError { min_amount: Option<String> },
     InvalidRoute,
     ComputeQuoteError(String),
     TransactionError(String),

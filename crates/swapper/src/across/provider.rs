@@ -426,7 +426,7 @@ impl Swapper for Across {
 
         // Check if bridge amount is too small
         if remain_amount < gas_fee {
-            return Err(SwapperError::InputAmountTooSmall);
+            return Err(SwapperError::InputAmountError { min_amount: None });
         }
 
         let output_amount = remain_amount - gas_fee;

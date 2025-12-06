@@ -12,7 +12,7 @@ pub enum SwapperError {
     NotSupportedChain,
     NotSupportedAsset,
     NoAvailableProvider,
-    InputAmountTooSmall,
+    InputAmountError { min_amount: Option<String> },
     InvalidRoute,
     ComputeQuoteError(String),
     TransactionError(String),
@@ -25,7 +25,13 @@ impl std::fmt::Display for SwapperError {
             Self::NotSupportedAsset => write!(f, "Not supported asset"),
             Self::NotSupportedChain => write!(f, "Not supported chain"),
             Self::NoAvailableProvider => write!(f, "No available provider"),
-            Self::InputAmountTooSmall => write!(f, "Input amount is too small"),
+            Self::InputAmountError { min_amount } => {
+                if let Some(min) = min_amount {
+                    write!(f, "Input amount is too small (minimum {min})")
+                } else {
+                    write!(f, "Input amount is too small")
+                }
+            }
             Self::InvalidRoute => write!(f, "Invalid route or route data"),
             Self::ComputeQuoteError(msg) => write!(f, "Compute quote error: {}", msg),
             Self::TransactionError(msg) => write!(f, "Transaction error: {}", msg),

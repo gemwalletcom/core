@@ -32,7 +32,7 @@ serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
 
 reqwest = { workspace = true, optional = true }
-typeshare = { workspace = true }
+typeshare = { version = "1.0.4" }
 
 bcs.workspace = true
 sui-types = { workspace = true }

@@ -78,8 +78,10 @@ impl GemSwapper {
 
     fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
         for err in errors {
-            if let SwapperError::InputAmountTooSmall = err {
-                return Some(SwapperError::InputAmountTooSmall);
+            if let SwapperError::InputAmountError { min_amount } = err {
+                return Some(SwapperError::InputAmountError {
+                    min_amount: min_amount.clone(),
+                });
             }
         }
 
@@ -413,8 +415,12 @@ mod tests {
         let gem_swapper = GemSwapper {
             rpc_provider: Arc::new(NativeProvider::default()),
             swappers: vec![
-                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountTooSmall))),
-                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || Err(SwapperError::InputAmountTooSmall))),
+                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || {
+                    Err(SwapperError::InputAmountError { min_amount: None })
+                })),
+                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
+                    Err(SwapperError::InputAmountError { min_amount: None })
+                })),
                 Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
             ],
         };
@@ -422,8 +428,8 @@ mod tests {
         let result = gem_swapper.fetch_quote(&request).await;
 
         match result {
-            Err(SwapperError::InputAmountTooSmall) => {}
-            _ => panic!("expected InputAmountTooSmall when every provider rejects the amount"),
+            Err(SwapperError::InputAmountError(_)) => {}
+            _ => panic!("expected InputAmountError when every provider rejects the amount"),
         }
     }
 
