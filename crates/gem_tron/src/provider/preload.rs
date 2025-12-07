@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::str::FromStr;
 
 use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
@@ -104,11 +103,14 @@ impl<C: Client> TronClient<C> {
         let estimated_energy = self
             .estimate_trc20_transfer_gas(sender_address, token_id, format_address_parameter(&destination_address)?, value)
             .await?;
-        let (total_fee, _chargeable_energy, energy_price) =
-            calculate_transfer_token_fee_rate(chain_parameters, account_usage, BigInt::from_str(&estimated_energy)?)?;
-        let gas_price_type = GasPriceType::regular(energy_price);
+        let token_fee = calculate_transfer_token_fee_rate(chain_parameters, account_usage, estimated_energy)?;
 
-        Ok(TransactionFee::new_gas_price_type(gas_price_type, total_fee.clone(), total_fee, HashMap::new()))
+        Ok(TransactionFee::new_gas_price_type(
+            GasPriceType::regular(BigInt::from(token_fee.energy_price)),
+            BigInt::from(token_fee.fee),
+            BigInt::from(token_fee.fee_limit),
+            HashMap::new(),
+        ))
     }
 
     async fn get_is_new_account_for_input_type(&self, address: &str, input_type: TransactionInputType) -> Result<bool, Box<dyn Error + Send + Sync>> {

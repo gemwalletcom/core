@@ -45,12 +45,18 @@ impl TronAccount {
             address: Some(address.to_string()),
             owner_permission: Some(TronAccountOwnerPermission {
                 permission_name: "owner".to_string(),
-                keys: Some(vec![TronAccountPermissionKey { address: address.to_string(), weight: 1 }]),
+                keys: Some(vec![TronAccountPermissionKey {
+                    address: address.to_string(),
+                    weight: 1,
+                }]),
             }),
             active_permission: Some(vec![TronAccountPermission {
                 id: None,
                 threshold: 1,
-                keys: Some(vec![TronAccountPermissionKey { address: address.to_string(), weight: 1 }]),
+                keys: Some(vec![TronAccountPermissionKey {
+                    address: address.to_string(),
+                    weight: 1,
+                }]),
             }]),
             votes: None,
             frozen_v2: None,
@@ -83,8 +89,16 @@ mod tests {
     fn test_multiple_active_permissions() {
         let mut account = TronAccount::mock(ADDRESS);
         account.active_permission = Some(vec![
-            TronAccountPermission { id: None, threshold: 1, keys: None },
-            TronAccountPermission { id: None, threshold: 1, keys: None },
+            TronAccountPermission {
+                id: None,
+                threshold: 1,
+                keys: None,
+            },
+            TronAccountPermission {
+                id: None,
+                threshold: 1,
+                keys: None,
+            },
         ]);
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
     }
@@ -92,7 +106,11 @@ mod tests {
     #[test]
     fn test_high_threshold() {
         let mut account = TronAccount::mock(ADDRESS);
-        account.active_permission = Some(vec![TronAccountPermission { id: None, threshold: 2, keys: None }]);
+        account.active_permission = Some(vec![TronAccountPermission {
+            id: None,
+            threshold: 2,
+            keys: None,
+        }]);
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
     }
 
@@ -109,7 +127,11 @@ mod tests {
     #[test]
     fn test_active_permission_id_not_default() {
         let mut account = TronAccount::mock(ADDRESS);
-        account.active_permission = Some(vec![TronAccountPermission { id: Some(2), threshold: 1, keys: None }]);
+        account.active_permission = Some(vec![TronAccountPermission {
+            id: Some(2),
+            threshold: 1,
+            keys: None,
+        }]);
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
     }
 
@@ -118,7 +140,10 @@ mod tests {
         let mut account = TronAccount::mock(ADDRESS);
         account.owner_permission = Some(TronAccountOwnerPermission {
             permission_name: "owner".to_string(),
-            keys: Some(vec![TronAccountPermissionKey { address: OTHER_ADDRESS.to_string(), weight: 1 }]),
+            keys: Some(vec![TronAccountPermissionKey {
+                address: OTHER_ADDRESS.to_string(),
+                weight: 1,
+            }]),
         });
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
     }
@@ -129,7 +154,10 @@ mod tests {
         account.active_permission = Some(vec![TronAccountPermission {
             id: None,
             threshold: 1,
-            keys: Some(vec![TronAccountPermissionKey { address: OTHER_ADDRESS.to_string(), weight: 1 }]),
+            keys: Some(vec![TronAccountPermissionKey {
+                address: OTHER_ADDRESS.to_string(),
+                weight: 1,
+            }]),
         }]);
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
     }
@@ -140,8 +168,14 @@ mod tests {
         account.owner_permission = Some(TronAccountOwnerPermission {
             permission_name: "owner".to_string(),
             keys: Some(vec![
-                TronAccountPermissionKey { address: ADDRESS.to_string(), weight: 1 },
-                TronAccountPermissionKey { address: OTHER_ADDRESS.to_string(), weight: 1 },
+                TronAccountPermissionKey {
+                    address: ADDRESS.to_string(),
+                    weight: 1,
+                },
+                TronAccountPermissionKey {
+                    address: OTHER_ADDRESS.to_string(),
+                    weight: 1,
+                },
             ]),
         });
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
