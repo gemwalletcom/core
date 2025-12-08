@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use num_bigint::BigUint;
 use num_traits::Num;
-use primitives::{AssetId, Transaction, TransactionState, TransactionType, chain::Chain};
+use primitives::{AssetId, Transaction, TransactionResourceTypeMetadata, TransactionState, TransactionType, chain::Chain, stake_type::Resource};
 use std::error::Error;
 
 use crate::address::TronAddress;
@@ -19,6 +19,15 @@ fn decode_hex_message(hex_str: &str) -> String {
         Ok(bytes) => String::from_utf8(bytes).unwrap_or_else(|_| hex_str.to_string()),
         Err(_) => hex_str.to_string(),
     }
+}
+
+fn resource_type_metadata(resource: Option<String>) -> Option<serde_json::Value> {
+    let resource_type = resource
+        .map(|s| s.to_lowercase())
+        .as_deref()
+        .and_then(|s| s.parse::<Resource>().ok())
+        .unwrap_or(Resource::Bandwidth);
+    serde_json::to_value(TransactionResourceTypeMetadata::new(resource_type)).ok()
 }
 
 pub fn map_transaction_broadcast(response: &TronTransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -60,27 +69,29 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
 
         let from = TronAddress::from_hex(value.parameter.value.owner_address.unwrap_or_default().as_str()).unwrap_or_default();
 
-        if let Some((transaction_type, to, amount)) = match value.contract_type.as_str() {
+        if let Some((transaction_type, to, amount, metadata)) = match value.contract_type.as_str() {
             TRANSFER_CONTRACT if !transaction.ret.is_empty() => {
                 let to = TronAddress::from_hex(value.parameter.value.to_address.unwrap_or_default().as_str()).unwrap_or_default();
-                Some((TransactionType::Transfer, to, value.parameter.value.amount.unwrap_or_default().to_string()))
+                Some((TransactionType::Transfer, to, value.parameter.value.amount.unwrap_or_default().to_string(), None))
             }
             FREEZE_BALANCE_V2_CONTRACT => Some((
                 TransactionType::StakeFreeze,
                 from.clone(),
                 value.parameter.value.frozen_balance.unwrap_or_default().to_string(),
+                resource_type_metadata(value.parameter.value.resource.clone()),
             )),
             UNFREEZE_BALANCE_V2_CONTRACT => Some((
                 TransactionType::StakeUnfreeze,
                 from.clone(),
                 value.parameter.value.unfreeze_balance.unwrap_or_default().to_string(),
+                resource_type_metadata(value.parameter.value.resource.clone()),
             )),
             VOTE_WITNESS_CONTRACT => {
                 let votes = value.parameter.value.votes.as_ref()?;
                 let vote = votes.first()?;
                 let to = TronAddress::from_hex(vote.vote_address.as_str()).unwrap_or_default();
                 let amount = vote.vote_count * 1_000_000;
-                Some((TransactionType::StakeDelegate, to, amount.to_string()))
+                Some((TransactionType::StakeDelegate, to, amount.to_string(), None))
             }
             _ => None,
         } {
@@ -96,7 +107,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
                 chain.as_asset_id(),
                 amount,
                 None,
-                None,
+                metadata,
                 created_at,
             );
             return Some(transaction);
@@ -178,7 +189,7 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_freeze() {
+    fn test_map_transaction_freeze_bandwidth() {
         let transaction: TronTransaction = serde_json::from_str(include_str!("../../testdata/transaction_freeze.json")).unwrap();
         let receipt = TransactionReceiptData {
             id: "test_id".to_string(),
@@ -197,6 +208,30 @@ mod tests {
         assert_eq!(tx.transaction_type, TransactionType::StakeFreeze);
         assert_eq!(tx.value, "100000000");
         assert_eq!(tx.from, tx.to);
+        assert_eq!(tx.metadata, serde_json::to_value(TransactionResourceTypeMetadata::new(Resource::Bandwidth)).ok());
+    }
+
+    #[test]
+    fn test_map_transaction_freeze_energy() {
+        let transaction: TronTransaction = serde_json::from_str(include_str!("../../testdata/transaction_freeze_energy.json")).unwrap();
+        let receipt = TransactionReceiptData {
+            id: "test_id".to_string(),
+            fee: Some(1000),
+            block_number: 12345,
+            block_time_stamp: 1760552376000,
+            receipt: TransactionReceipt {
+                result: Some("SUCCESS".to_string()),
+            },
+            log: None,
+        };
+
+        let result = map_transaction(Chain::Tron, transaction, receipt);
+        assert!(result.is_some());
+        let tx = result.unwrap();
+        assert_eq!(tx.transaction_type, TransactionType::StakeFreeze);
+        assert_eq!(tx.value, "10000000");
+        assert_eq!(tx.from, tx.to);
+        assert_eq!(tx.metadata, serde_json::to_value(TransactionResourceTypeMetadata::new(Resource::Energy)).ok());
     }
 
     #[test]
@@ -242,6 +277,7 @@ mod tests {
         assert_eq!(tx.transaction_type, TransactionType::StakeUnfreeze);
         assert_eq!(tx.value, "100000000");
         assert_eq!(tx.from, tx.to);
+        assert_eq!(tx.metadata, serde_json::to_value(TransactionResourceTypeMetadata::new(Resource::Bandwidth)).ok());
     }
 
     #[test]
