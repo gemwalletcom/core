@@ -18,7 +18,7 @@ use crate::sui::assemble_signature;
 pub use eip712::hash_typed_data as hash_eip712;
 pub use error::SignerError;
 pub use sui::SUI_PERSONAL_MESSAGE_SIGNATURE_LEN;
-pub use ton::TonSignDataInput;
+pub use ton::{TonSignDataPayload, TonSignDataResponse, TonSignDataType};
 
 #[derive(Debug, Default)]
 pub struct Signer;
@@ -60,10 +60,6 @@ impl Signer {
         let private_key_vec = Zeroizing::new(private_key.to_vec());
         let signature = Self::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key_vec.to_vec())?;
         Ok(hex::encode(signature))
-    }
-
-    pub fn sign_ton_personal_message(input: TonSignDataInput, private_key: Vec<u8>) -> Result<String, SignerError> {
-        ton::sign_ton_personal_message(input, private_key)
     }
 }
 

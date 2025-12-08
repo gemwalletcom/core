@@ -2,6 +2,7 @@ use alloy_primitives::{eip191_hash_message, hex::encode_prefixed};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
+use signer::{TonSignDataPayload, TonSignDataResponse};
 
 use super::{
     eip712::GemEIP712Message,
@@ -41,19 +42,10 @@ impl SignMessageDecoder {
             }
             SignDigestType::TonPersonal => {
                 let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
-                let Some(json) = serde_json::from_str::<serde_json::Value>(&string).ok() else {
+                let Ok(payload) = TonSignDataPayload::parse(&string) else {
                     return Ok(MessagePreview::Text(string));
                 };
-                let Some(payload_type) = json.get("type").and_then(|v| v.as_str()) else {
-                    return Ok(MessagePreview::Text(string));
-                };
-                let preview = match payload_type {
-                    "text" => json.get("text").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
-                    "binary" => json.get("bytes").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
-                    "cell" => json.get("cell").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
-                    _ => string,
-                };
-                Ok(MessagePreview::Text(preview))
+                Ok(MessagePreview::Text(payload.data))
             }
             SignDigestType::Eip712 => {
                 let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8 string for EIP712"))?;
@@ -100,7 +92,16 @@ impl SignMessageDecoder {
 
     pub fn hash(&self) -> Vec<u8> {
         match &self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::TonPersonal => self.message.data.clone(),
+            SignDigestType::SuiPersonal => self.message.data.clone(),
+            SignDigestType::TonPersonal => {
+                let Ok(string) = String::from_utf8(self.message.data.clone()) else {
+                    return Vec::new();
+                };
+                let Ok(payload) = TonSignDataPayload::parse(&string) else {
+                    return Vec::new();
+                };
+                payload.hash()
+            }
             SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
                 Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
@@ -130,6 +131,15 @@ impl SignMessageDecoder {
             SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
+    }
+
+    pub fn get_ton_result(&self, signature: &[u8], public_key: &[u8], timestamp: u64, domain: String) -> Result<String, GemstoneError> {
+        let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
+        let payload = TonSignDataPayload::parse(&string).map_err(|e| GemstoneError::from(e.to_string()))?;
+
+        let response = TonSignDataResponse::new(BASE64.encode(signature), BASE64.encode(public_key), timestamp, domain, payload.to_json());
+
+        response.to_json().map_err(|e| GemstoneError::from(e.to_string()))
     }
 }
 

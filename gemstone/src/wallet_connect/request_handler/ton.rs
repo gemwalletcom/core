@@ -75,7 +75,10 @@ mod tests {
             panic!("Expected SendTransaction action")
         };
         assert_eq!(chain, Chain::Ton);
-        let WalletConnectTransactionType::Ton { output_type: TransferDataOutputType::EncodedTransaction } = transaction_type else {
+        let WalletConnectTransactionType::Ton {
+            output_type: TransferDataOutputType::EncodedTransaction,
+        } = transaction_type
+        else {
             panic!("Expected Ton transaction type with EncodedTransaction output")
         };
         let parsed_data: serde_json::Value = serde_json::from_str(&data).expect("Data should be valid JSON");

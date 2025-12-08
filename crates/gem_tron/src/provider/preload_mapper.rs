@@ -119,7 +119,10 @@ mod tests {
     use primitives::delegation::DelegationValidator;
 
     fn chain_parameter(key: &str, value: i64) -> ChainParameter {
-        ChainParameter { key: key.to_string(), value: Some(value) }
+        ChainParameter {
+            key: key.to_string(),
+            value: Some(value),
+        }
     }
 
     fn account_usage(free_bandwidth: u64, staked_bandwidth: u64, available_energy: u64) -> TronAccountUsage {
