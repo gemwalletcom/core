@@ -9,10 +9,10 @@ pub fn map_address_status(account: &TronAccount) -> Vec<AddressStatus> {
         if owner_permission.permission_name != "owner" {
             return vec![AddressStatus::MultiSignature];
         }
-        if let Some(keys) = &owner_permission.keys {
-            if keys.len() != 1 || keys.iter().any(|k| k.address != address) {
-                return vec![AddressStatus::MultiSignature];
-            }
+        if let Some(keys) = &owner_permission.keys
+            && (keys.len() != 1 || keys.iter().any(|k| k.address != address))
+        {
+            return vec![AddressStatus::MultiSignature];
         }
     }
 
@@ -24,10 +24,10 @@ pub fn map_address_status(account: &TronAccount) -> Vec<AddressStatus> {
             return vec![AddressStatus::MultiSignature];
         }
         for permission in active_permissions {
-            if let Some(keys) = &permission.keys {
-                if keys.len() != 1 || keys.iter().any(|k| k.address != address) {
-                    return vec![AddressStatus::MultiSignature];
-                }
+            if let Some(keys) = &permission.keys
+                && (keys.len() != 1 || keys.iter().any(|k| k.address != address))
+            {
+                return vec![AddressStatus::MultiSignature];
             }
         }
     }
