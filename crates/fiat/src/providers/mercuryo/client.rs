@@ -5,6 +5,7 @@ use primitives::{FiatProviderName, FiatQuoteOld};
 use reqwest::Client;
 use std::collections::HashMap;
 
+use super::mapper::map_sell_quote;
 use super::models::{Asset, Currencies, CurrencyLimits, MercuryoResponse, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
 use super::widget::MercuryoWidget;
 
@@ -61,12 +62,25 @@ impl MercuryoClient {
         fiat_amount: f64,
         network: String,
     ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+        let buy_quote = self.get_quote_buy(fiat_currency.clone(), symbol.clone(), fiat_amount, network.clone()).await?;
+        let sell_quote = self.get_sell_rate(symbol, fiat_currency, buy_quote.amount, network).await?;
+
+        Ok(map_sell_quote(buy_quote, sell_quote, fiat_amount))
+    }
+
+    async fn get_sell_rate(
+        &self,
+        symbol: String,
+        fiat_currency: String,
+        crypto_amount: f64,
+        network: String,
+    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
         let query = QuoteSellQuery {
-            from: fiat_currency.clone(),
-            to: symbol.clone(),
+            from: symbol,
+            to: fiat_currency,
             quote_type: "sell".to_string(),
-            amount: fiat_amount,
-            network: network.clone(),
+            amount: crypto_amount,
+            network,
             widget_id: self.widget_id.clone(),
         };
         let url = format!("{MERCURYO_API_BASE_URL}/v1.6/public/convert");

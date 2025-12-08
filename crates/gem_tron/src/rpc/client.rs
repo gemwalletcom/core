@@ -68,7 +68,7 @@ impl<C: Client> TronClient<C> {
         function_selector: &str,
         parameter: &str,
     ) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let request_payload = TriggerConstantContractRequest {
+        let request = TriggerConstantContractRequest {
             owner_address: owner_address.to_owned(),
             contract_address: contract_address.to_string(),
             function_selector: function_selector.to_string(),
@@ -78,13 +78,20 @@ impl<C: Client> TronClient<C> {
             visible: true,
         };
 
-        let response: TriggerConstantContractResponse = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
+        let response = self.trigger_constant_contract_request(&request).await?;
 
         if response.constant_result.is_empty() {
             return Err("Empty response from Tron contract call".into());
         }
 
         Ok(response.constant_result[0].clone())
+    }
+
+    async fn trigger_constant_contract_request(
+        &self,
+        request: &TriggerConstantContractRequest,
+    ) -> Result<TriggerConstantContractResponse, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.post("/wallet/triggerconstantcontract", request, None).await?)
     }
 
     pub async fn get_token_allowance(&self, owner_address: &str, token_address: &str, spender_address: &str) -> Result<BigUint, Box<dyn Error + Send + Sync>> {
@@ -238,12 +245,12 @@ impl<C: Client> TronClient<C> {
         contract_address: String,
         recipient_address: String,
         value: String,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    ) -> Result<u64, Box<dyn Error + Send + Sync>> {
         let value_bigint = BigUint::from_str(&value).map_err(|e| format!("Failed to parse value as decimal: {}", e))?;
         let value_hex = format!("{:0>64}", hex::encode(value_bigint.to_bytes_be()));
         let parameter = format!("{}{}", recipient_address, value_hex);
 
-        let request_payload = TriggerConstantContractRequest {
+        let request = TriggerConstantContractRequest {
             owner_address: sender_address,
             contract_address,
             function_selector: "transfer(address,uint256)".to_string(),
@@ -253,9 +260,7 @@ impl<C: Client> TronClient<C> {
             visible: true,
         };
 
-        let response: TriggerConstantContractResponse = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
-
-        Ok(response.energy_used.to_string())
+        Ok(self.trigger_constant_contract_request(&request).await?.energy_used)
     }
 }
 

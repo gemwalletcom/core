@@ -29,12 +29,21 @@ impl TronAccount {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TronAccountPermission {
+    pub id: Option<u64>,
     pub threshold: u64,
+    pub keys: Option<Vec<TronAccountPermissionKey>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TronAccountPermissionKey {
+    pub address: String,
+    pub weight: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TronAccountOwnerPermission {
     pub permission_name: String,
+    pub keys: Option<Vec<TronAccountPermissionKey>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
