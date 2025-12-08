@@ -46,6 +46,7 @@ impl TransactionNFTTransferMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionResourceTypeMetadata {
     pub resource_type: Resource,
