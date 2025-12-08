@@ -91,15 +91,10 @@ impl NameClient for Hyperliquid {
 
         let slip44 = chain.as_slip44();
         let chain_address = record.data.chain_addresses.get(&slip44.to_string()).ok_or("Chain not found".to_string())?;
-
-        // Get Resolved address other EVM chains
-        if EVMChain::from_chain(chain).is_some() {
-            let address = Address::from_str(chain_address)?;
-            return Ok(address.to_checksum(None));
-        }
-
-        // For non-EVM chains, return the address as-is
-        Ok(chain_address.to_string())
+        Ok(match EVMChain::from_chain(chain) {
+            Some(_) => Address::from_str(chain_address)?.to_checksum(None),
+            None => chain_address.to_string(),
+        })
     }
 
     fn provider(&self) -> NameProvider {
