@@ -34,9 +34,25 @@ impl SignMessageDecoder {
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::TonPersonal => {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 => {
                 let string = String::from_utf8(self.message.data.clone());
                 let preview = string.unwrap_or(encode_prefixed(&self.message.data));
+                Ok(MessagePreview::Text(preview))
+            }
+            SignDigestType::TonPersonal => {
+                let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
+                let Some(json) = serde_json::from_str::<serde_json::Value>(&string).ok() else {
+                    return Ok(MessagePreview::Text(string));
+                };
+                let Some(payload_type) = json.get("type").and_then(|v| v.as_str()) else {
+                    return Ok(MessagePreview::Text(string));
+                };
+                let preview = match payload_type {
+                    "text" => json.get("text").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    "binary" => json.get("bytes").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    "cell" => json.get("cell").and_then(|v| v.as_str()).unwrap_or_default().to_string(),
+                    _ => string,
+                };
                 Ok(MessagePreview::Text(preview))
             }
             SignDigestType::Eip712 => {
@@ -427,5 +443,22 @@ mod tests {
         }
 
         assert_eq!(decoder.plain_preview(), message);
+    }
+
+    #[test]
+    fn test_ton_personal_preview() {
+        let data = r#"{"type":"text","text":"Hello TON","from":"UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}"#;
+        let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ton,
+            sign_type: SignDigestType::TonPersonal,
+            data: data.as_bytes().to_vec(),
+        });
+
+        match decoder.preview() {
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "Hello TON"),
+            other => panic!("Unexpected result: {other:?}"),
+        }
+
+        assert_eq!(decoder.plain_preview(), "Hello TON");
     }
 }

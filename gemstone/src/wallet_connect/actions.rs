@@ -27,12 +27,6 @@ pub struct WCSuiTransactionData {
     pub wallet_address: String,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct WCTonTransactionData {
-    pub messages: String,
-    pub valid_until: Option<i64>,
-}
-
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum WalletConnectAction {
     SignMessage {
@@ -81,7 +75,7 @@ pub enum WalletConnectTransaction {
         output_type: TransferDataOutputType,
     },
     Ton {
-        data: WCTonTransactionData,
+        messages: String,
         output_type: TransferDataOutputType,
     },
 }

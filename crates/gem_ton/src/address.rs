@@ -172,4 +172,12 @@ mod tests {
 
         assert_eq!(original_hex, decoded_hex);
     }
+
+    #[test]
+    fn test_base64_to_hex_user_address() {
+        let base64 = "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg";
+        let hex = base64_to_hex_address(base64.to_string()).unwrap();
+
+        assert!(hex.starts_with("0:") || hex.starts_with("-1:"));
+    }
 }

@@ -49,14 +49,12 @@ mod tests {
     fn test_parse_sign_message() {
         let params = serde_json::from_str(r#"[{"type":"text","text":"Hello TON"}]"#).unwrap();
         let action = TonRequestHandler::parse_sign_message(Chain::Ton, params).unwrap();
-        match action {
-            WalletConnectAction::SignMessage { chain, sign_type, data } => {
-                assert_eq!(chain, Chain::Ton);
-                assert!(matches!(sign_type, SignDigestType::TonPersonal));
-                assert!(data.contains("Hello TON"));
-            }
-            _ => panic!("Expected SignMessage action"),
-        }
+        let WalletConnectAction::SignMessage { chain, sign_type, data } = action else {
+            panic!("Expected SignMessage action")
+        };
+        assert_eq!(chain, Chain::Ton);
+        assert_eq!(sign_type, SignDigestType::TonPersonal);
+        assert_eq!(data, r#"{"type":"text","text":"Hello TON"}"#);
     }
 
     #[test]
@@ -73,21 +71,15 @@ mod tests {
         let params = serde_json::from_str(params_json).unwrap();
         let action = TonRequestHandler::parse_send_transaction(Chain::Ton, params).unwrap();
 
-        match action {
-            WalletConnectAction::SendTransaction { chain, transaction_type, data } => {
-                assert_eq!(chain, Chain::Ton);
-                assert!(matches!(
-                    transaction_type,
-                    WalletConnectTransactionType::Ton {
-                        output_type: TransferDataOutputType::EncodedTransaction
-                    }
-                ));
-                let parsed_data: serde_json::Value = serde_json::from_str(&data).expect("Data should be valid JSON");
-                assert!(parsed_data.get("messages").is_some());
-                assert_eq!(parsed_data.get("valid_until").and_then(|v| v.as_i64()), Some(1234567890));
-            }
-            _ => panic!("Expected SendTransaction action"),
-        }
+        let WalletConnectAction::SendTransaction { chain, transaction_type, data } = action else {
+            panic!("Expected SendTransaction action")
+        };
+        assert_eq!(chain, Chain::Ton);
+        let WalletConnectTransactionType::Ton { output_type: TransferDataOutputType::EncodedTransaction } = transaction_type else {
+            panic!("Expected Ton transaction type with EncodedTransaction output")
+        };
+        let parsed_data: serde_json::Value = serde_json::from_str(&data).expect("Data should be valid JSON");
+        assert!(parsed_data.get("messages").is_some());
     }
 
     #[test]
