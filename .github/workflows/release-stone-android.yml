@@ -1,4 +1,5 @@
 name: Release - Gemstone Android
+run-name: "Release Gemstone Android ${{ github.event.inputs.ref_name || github.ref_name }}"
 
 on:
   push:
