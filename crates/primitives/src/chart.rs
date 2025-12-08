@@ -39,4 +39,5 @@ pub struct ChartLine {
     #[serde(rename = "type")]
     pub line_type: ChartLineType,
     pub price: f64,
+    pub decimals: i32,
 }
