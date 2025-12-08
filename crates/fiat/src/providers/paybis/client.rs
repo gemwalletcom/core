@@ -62,11 +62,11 @@ impl PaybisClient {
         &self,
         crypto_currency: String,
         fiat_currency: String,
-        crypto_amount: f64,
+        fiat_amount: f64,
     ) -> Result<PaybisQuote, Box<dyn std::error::Error + Send + Sync>> {
         let request_body = QuoteRequest {
-            amount: crypto_amount.to_string(),
-            direction_change: "from".to_string(),
+            amount: fiat_amount.to_string(),
+            direction_change: "to".to_string(),
             is_received_amount: false,
             currency_code_from: crypto_currency,
             currency_code_to: fiat_currency,

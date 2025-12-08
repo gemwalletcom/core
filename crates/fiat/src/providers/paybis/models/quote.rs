@@ -21,6 +21,7 @@ pub struct PaybisQuote {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PaymentMethod {
+    pub amount_from: AmountInfo,
     pub amount_to: AmountInfo,
 }
 
