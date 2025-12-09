@@ -13,7 +13,7 @@ use crate::{
     core::{
         actions::{
             ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, Cancel, CancelOrder, PlaceOrder, SetReferrer, SpotSend, TokenDelegate,
-            UpdateLeverage, WithdrawalRequest, make_market_order, make_position_tp_sl,
+            UpdateLeverage, WithdrawalRequest, make_market_order, make_market_with_tp_sl, make_position_tp_sl,
         },
         hypercore::{
             approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data,
@@ -259,7 +259,20 @@ impl HyperCoreSigner {
             data.direction == PerpetualDirection::Short
         };
 
-        make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder.cloned())
+        if is_open && (data.take_profit.is_some() || data.stop_loss.is_some()) {
+            make_market_with_tp_sl(
+                data.asset_index as u32,
+                is_buy,
+                &data.price,
+                &data.size,
+                false,
+                data.take_profit.clone(),
+                data.stop_loss.clone(),
+                builder.cloned(),
+            )
+        } else {
+            make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder.cloned())
+        }
     }
 
     fn sign_place_order(&self, order: PlaceOrder, nonce: u64, private_key: &[u8]) -> SignerResult<String> {
@@ -413,6 +426,7 @@ fn fee_rate(tenths_bps: u32) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::actions::Grouping;
     use num_bigint::{BigInt, BigUint};
     use primitives::{
         Asset, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, GasPriceType, StakeType, TransactionInputType, TransactionLoadInput,
@@ -515,43 +529,59 @@ mod tests {
     }
 
     #[test]
-    fn market_order_from_open_long_sets_buy() {
-        let data = PerpetualConfirmData::mock(PerpetualDirection::Long, 11);
-        let builder = Builder {
-            builder_address: "0xdeadbeef".to_string(),
-            fee: 25,
-        };
-
+    fn market_order_open_long() {
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Long, 11, None, None);
+        let builder = Builder { builder_address: "0xdeadbeef".to_string(), fee: 25 };
         let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, Some(&builder));
+        let market_order = &order.orders[0];
 
         assert_eq!(order.orders.len(), 1);
-        let market_order = &order.orders[0];
+        assert_eq!(order.grouping, Grouping::Na);
         assert!(market_order.is_buy);
         assert!(!market_order.reduce_only);
         assert_eq!(market_order.asset, data.asset_index as u32);
         assert_eq!(market_order.size, data.size);
 
-        let cloned_builder = order.builder.expect("builder should be propagated");
-        assert_eq!(cloned_builder.builder_address, builder.builder_address);
-        assert_eq!(cloned_builder.fee, builder.fee);
+        let order_builder = order.builder.expect("builder");
+        assert_eq!(order_builder.builder_address, builder.builder_address);
+        assert_eq!(order_builder.fee, builder.fee);
     }
 
     #[test]
-    fn market_order_from_close_short_sets_sell_and_reduce_only() {
-        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 5);
-        let order = HyperCoreSigner::market_order_from_confirm_data(&data, false, None);
-
+    fn market_order_open_long_with_tpsl() {
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Long, 5, Some("150.0".to_string()), Some("100.0".to_string()));
+        let builder = Builder { builder_address: "0xdeadbeef".to_string(), fee: 25 };
+        let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, Some(&builder));
         let market_order = &order.orders[0];
+
+        assert_eq!(order.orders.len(), 3);
+        assert_eq!(order.grouping, Grouping::NormalTpsl);
+        assert!(market_order.is_buy);
+        assert!(!market_order.reduce_only);
+        assert_eq!(market_order.asset, data.asset_index as u32);
+        assert_eq!(market_order.size, data.size);
+
+        let order_builder = order.builder.expect("builder");
+        assert_eq!(order_builder.builder_address, builder.builder_address);
+        assert_eq!(order_builder.fee, builder.fee);
+    }
+
+    #[test]
+    fn market_order_close_short() {
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 5, None, None);
+        let order = HyperCoreSigner::market_order_from_confirm_data(&data, false, None);
+        let market_order = &order.orders[0];
+
         assert!(market_order.is_buy);
         assert!(market_order.reduce_only);
     }
 
     #[test]
-    fn market_order_from_open_short_sets_sell() {
-        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 9);
+    fn market_order_open_short() {
+        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 9, None, None);
         let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, None);
-
         let market_order = &order.orders[0];
+
         assert!(!market_order.is_buy);
         assert!(!market_order.reduce_only);
     }
