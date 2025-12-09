@@ -9,11 +9,7 @@ pub struct Record {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct NameRecord {
-    pub owner: String,
-    pub controller: String,
     pub resolved: String,
-    pub name: String,
-    pub expiry: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
