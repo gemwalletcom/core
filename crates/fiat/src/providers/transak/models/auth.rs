@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
@@ -31,7 +32,7 @@ impl CachedToken {
 #[serde(rename_all = "camelCase")]
 pub struct CreateWidgetUrlRequest {
     #[serde(rename = "widgetParams")]
-    pub params: HashMap<String, String>,
+    pub params: HashMap<String, Value>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -8,8 +8,4 @@ sol! {
     interface Registrator {
         function getFullRecordJSON(bytes32 _namehash) external view returns (string);
     }
-
-    interface HyperliquidNames {
-        function tokenIdToAddress(uint256 _tokenId) external view returns (address);
-    }
 }

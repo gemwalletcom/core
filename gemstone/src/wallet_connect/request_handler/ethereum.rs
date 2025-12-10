@@ -46,7 +46,12 @@ impl ChainRequestHandler for EthereumRequestHandler {
 impl EthereumRequestHandler {
     pub fn parse_sign_typed_data(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
         let params_array = params.as_array().ok_or("Invalid params format")?;
-        let data = params_array.get(1).and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
+        let typed_data = params_array.get(1).ok_or("Missing data parameter")?;
+        let data = if let Some(s) = typed_data.as_str() {
+            s.to_string()
+        } else {
+            serde_json::to_string(typed_data).map_err(|e| format!("Failed to serialize typed data: {}", e))?
+        };
 
         Ok(WalletConnectAction::SignMessage {
             chain,
@@ -82,6 +87,19 @@ mod tests {
         match action {
             WalletConnectAction::SignMessage { chain, sign_type, .. } => {
                 assert_eq!(chain, Chain::Ethereum);
+                assert!(matches!(sign_type, SignDigestType::Eip712));
+            }
+            _ => panic!("Expected SignMessage action"),
+        }
+    }
+
+    #[test]
+    fn test_parse_sign_typed_data_hyperliquid() {
+        let params = serde_json::from_str(r#"["0x123", {"types":{}}]"#).unwrap();
+        let action = EthereumRequestHandler::parse_sign_typed_data(Chain::Arbitrum, params).unwrap();
+        match action {
+            WalletConnectAction::SignMessage { chain, sign_type, .. } => {
+                assert_eq!(chain, Chain::Arbitrum);
                 assert!(matches!(sign_type, SignDigestType::Eip712));
             }
             _ => panic!("Expected SignMessage action"),

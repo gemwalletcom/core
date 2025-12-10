@@ -7,6 +7,7 @@ use number_formatter::BigNumberFormatter;
 use primitives::FiatBuyQuote;
 use primitives::{FiatProviderName, FiatQuoteOld, FiatQuoteType};
 use reqwest::Client;
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -60,17 +61,23 @@ impl TransakClient {
             .get_buy_quote(symbol.clone(), fiat_currency.clone(), fiat_amount, network.clone(), ip_address.clone())
             .await?;
 
-        self.get_quote(
-            "sell",
-            symbol,
-            fiat_currency,
-            None,
-            Some(&buy_quote.crypto_amount.to_string()),
-            network,
-            ip_address,
-        )
-        .await
+        let sell_quote = self
+            .get_quote(
+                "sell",
+                symbol.clone(),
+                fiat_currency.clone(),
+                None,
+                Some(&buy_quote.crypto_amount.to_string()),
+                network.clone(),
+                ip_address.clone(),
+            )
+            .await?;
+
+        let crypto_amount = sell_quote.sell_crypto_amount(fiat_amount);
+        self.get_quote("sell", symbol, fiat_currency, None, Some(&crypto_amount.to_string()), network, ip_address)
+            .await
     }
+
 
     pub async fn get_quote(
         &self,
@@ -125,7 +132,9 @@ impl TransakClient {
                 transak_quote.crypto_amount, request.asset.decimals
             )
         })?;
-        let redirect_url = self.redirect_url(transak_quote.clone(), request.wallet_address, FiatQuoteType::Buy).await?;
+        let redirect_url = self
+            .redirect_url(transak_quote.clone(), request.wallet_address, FiatQuoteType::Buy, request.fiat_amount)
+            .await?;
 
         Ok(FiatQuoteOld {
             provider: Self::NAME.as_fiat_provider(),
@@ -138,7 +147,7 @@ impl TransakClient {
         })
     }
 
-    pub async fn create_widget_url(&self, params: HashMap<String, String>) -> Result<String, reqwest::Error> {
+    pub async fn create_widget_url(&self, params: HashMap<String, Value>) -> Result<String, reqwest::Error> {
         let access_token = self.get_access_token().await?;
         let url = format!("{TRANSAK_API_GATEWAY_URL}/api/v2/auth/session");
 
@@ -157,25 +166,30 @@ impl TransakClient {
         Ok(response.data.widget_url)
     }
 
-    pub async fn redirect_url(&self, quote: TransakQuote, address: String, quote_type: FiatQuoteType) -> Result<String, reqwest::Error> {
-        let mut params = HashMap::new();
-        params.insert("apiKey".to_string(), self.api_key.clone());
-        params.insert("referrerDomain".to_string(), self.referrer_domain.clone());
-        params.insert("fiatCurrency".to_string(), quote.fiat_currency);
-        params.insert("cryptoCurrencyCode".to_string(), quote.crypto_currency);
-        params.insert("network".to_string(), quote.network);
-        params.insert("disableWalletAddressForm".to_string(), "true".to_string());
-        params.insert("walletAddress".to_string(), address);
+    pub async fn redirect_url(
+        &self,
+        quote: TransakQuote,
+        address: String,
+        quote_type: FiatQuoteType,
+        fiat_amount: f64,
+    ) -> Result<String, reqwest::Error> {
+        let mut params: HashMap<String, Value> = HashMap::new();
+        params.insert("apiKey".to_string(), json!(self.api_key));
+        params.insert("referrerDomain".to_string(), json!(self.referrer_domain));
+        params.insert("fiatCurrency".to_string(), json!(quote.fiat_currency));
+        params.insert("cryptoCurrencyCode".to_string(), json!(quote.crypto_currency));
+        params.insert("network".to_string(), json!(quote.network));
+        params.insert("disableWalletAddressForm".to_string(), json!(true));
+        params.insert("walletAddress".to_string(), json!(address));
 
         match quote_type {
             FiatQuoteType::Buy => {
-                params.insert("productsAvailed".to_string(), "BUY".to_string());
-                params.insert("fiatAmount".to_string(), quote.fiat_amount.to_string());
+                params.insert("productsAvailed".to_string(), json!("BUY"));
+                params.insert("fiatAmount".to_string(), json!(fiat_amount));
             }
             FiatQuoteType::Sell => {
-                params.insert("productsAvailed".to_string(), "SELL".to_string());
-                params.insert("cryptoAmount".to_string(), quote.crypto_amount.to_string());
-                params.insert("paymentMethod".to_string(), "credit_debit_card".to_string());
+                params.insert("productsAvailed".to_string(), json!("SELL"));
+                params.insert("cryptoAmount".to_string(), json!(quote.sell_crypto_amount(fiat_amount)));
             }
         }
 

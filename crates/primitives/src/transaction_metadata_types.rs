@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, NFTAssetId, PerpetualDirection, PerpetualProvider};
+use crate::{AssetId, NFTAssetId, PerpetualDirection, PerpetualProvider, stake_type::Resource};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable")]
@@ -42,5 +42,18 @@ impl TransactionNFTTransferMetadata {
             asset_id: asset_id.to_string(),
             name: None,
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionResourceTypeMetadata {
+    pub resource_type: Resource,
+}
+
+impl TransactionResourceTypeMetadata {
+    pub fn new(resource_type: Resource) -> Self {
+        Self { resource_type }
     }
 }

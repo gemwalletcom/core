@@ -10,8 +10,8 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
-    FiatTransaction,
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
+    FiatSellQuote, FiatTransaction,
 };
 use std::error::Error;
 use streamer::FiatWebhook;
@@ -107,18 +107,34 @@ impl FiatProvider for TransakClient {
     }
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
-        let network = data.asset_symbol.network.unwrap_or_default();
+        let network = data.asset_symbol.network.clone().unwrap_or_default();
 
-        let transak_quote = TransakQuote {
-            quote_id: data.quote.id.clone(),
-            fiat_amount: data.quote.fiat_amount,
-            fiat_currency: data.quote.fiat_currency.clone(),
-            crypto_currency: data.asset_symbol.symbol.clone(),
-            crypto_amount: data.quote.crypto_amount,
-            network,
+        let transak_quote = match data.quote.quote_type {
+            FiatQuoteType::Buy => TransakQuote {
+                quote_id: data.quote.id.clone(),
+                fiat_amount: data.quote.fiat_amount,
+                fiat_currency: data.quote.fiat_currency.clone(),
+                crypto_currency: data.asset_symbol.symbol.clone(),
+                crypto_amount: data.quote.crypto_amount,
+                network,
+                conversion_price: 0.0,
+                total_fee: 0.0,
+            },
+            FiatQuoteType::Sell => {
+                self.get_sell_quote(
+                    data.asset_symbol.symbol.clone(),
+                    data.quote.fiat_currency.clone(),
+                    data.quote.fiat_amount,
+                    network,
+                    data.ip_address.clone(),
+                )
+                .await?
+            }
         };
 
-        let redirect_url = self.redirect_url(transak_quote, data.wallet_address, data.quote.quote_type).await?;
+        let redirect_url = self
+            .redirect_url(transak_quote, data.wallet_address, data.quote.quote_type, data.quote.fiat_amount)
+            .await?;
 
         Ok(FiatQuoteUrl { redirect_url })
     }
