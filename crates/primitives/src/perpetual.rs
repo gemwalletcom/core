@@ -164,6 +164,19 @@ pub struct PerpetualReduceData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct AutocloseOpenData {
+    pub direction: PerpetualDirection,
+    pub market_price: f64,
+    pub leverage: u8,
+    pub size: f64,
+    pub asset_decimals: i32,
+    pub take_profit: Option<String>,
+    pub stop_loss: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(tag = "type", content = "content")]
 pub enum PerpetualType {
     Open(PerpetualConfirmData),
