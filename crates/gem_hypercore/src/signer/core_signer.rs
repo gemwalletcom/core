@@ -13,7 +13,7 @@ use crate::{
     core::{
         actions::{
             ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, Cancel, CancelOrder, PlaceOrder, SetReferrer, SpotSend, TokenDelegate,
-            UpdateLeverage, WithdrawalRequest, make_market_order, make_market_with_tp_sl, make_position_tp_sl,
+            UpdateLeverage, WithdrawalRequest, make_market_order, make_position_tp_sl,
         },
         hypercore::{
             approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data,
@@ -209,17 +209,18 @@ impl HyperCoreSigner {
         builder: Option<&Builder>,
         timestamp_incrementer: &mut NumberIncrementer,
     ) -> SignerResult<Vec<String>> {
-        let leverage_action = self.sign_update_leverage(
-            UpdateLeverage::new(data.asset_index as u32, true, data.leverage),
-            timestamp_incrementer.next_val(),
-            agent_key,
-        )?;
-        let place_order_action = self.sign_place_order(
-            Self::market_order_from_confirm_data(data, true, builder),
-            timestamp_incrementer.next_val(),
-            agent_key,
-        )?;
-        Ok(vec![leverage_action, place_order_action])
+        let is_buy = data.direction == PerpetualDirection::Long;
+        let asset = data.asset_index as u32;
+
+        let leverage = self.sign_update_leverage(UpdateLeverage::new(asset, true, data.leverage), timestamp_incrementer.next_val(), agent_key)?;
+        let market = self.sign_place_order(make_market_order(asset, is_buy, &data.price, &data.size, false, builder.cloned()), timestamp_incrementer.next_val(), agent_key)?;
+
+        let tpsl = match (data.take_profit.as_ref(), data.stop_loss.as_ref()) {
+            (None, None) => None,
+            _ => Some(self.sign_place_order(make_position_tp_sl(asset, is_buy, "0", data.take_profit.clone(), data.stop_loss.clone(), builder.cloned()), timestamp_incrementer.next_val(), agent_key)?),
+        };
+
+        Ok([vec![leverage, market], tpsl.into_iter().collect()].concat())
     }
 
     fn sign_modify_orders(
@@ -258,21 +259,7 @@ impl HyperCoreSigner {
         } else {
             data.direction == PerpetualDirection::Short
         };
-
-        if is_open && (data.take_profit.is_some() || data.stop_loss.is_some()) {
-            make_market_with_tp_sl(
-                data.asset_index as u32,
-                is_buy,
-                &data.price,
-                &data.size,
-                false,
-                data.take_profit.clone(),
-                data.stop_loss.clone(),
-                builder.cloned(),
-            )
-        } else {
-            make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder.cloned())
-        }
+        make_market_order(data.asset_index as u32, is_buy, &data.price, &data.size, !is_open, builder.cloned())
     }
 
     fn sign_place_order(&self, order: PlaceOrder, nonce: u64, private_key: &[u8]) -> SignerResult<String> {
