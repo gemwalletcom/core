@@ -80,7 +80,10 @@ mod tests {
     #[test]
     fn test_encode_sign_message_ethereum() {
         let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ethereum, "0xsignature".to_string());
-        assert!(matches!(result, WalletConnectResponseType::String { value } if value == "0xsignature"));
+        let WalletConnectResponseType::String { value } = result else {
+            panic!("Expected String response for Ethereum")
+        };
+        assert_eq!(value, "0xsignature");
     }
 
     #[test]
@@ -110,7 +113,10 @@ mod tests {
     #[test]
     fn test_encode_sign_transaction_ethereum() {
         let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ethereum, "0xtxid".to_string());
-        assert!(matches!(result, WalletConnectResponseType::String { value } if value == "0xtxid"));
+        let WalletConnectResponseType::String { value } = result else {
+            panic!("Expected String response for Ethereum")
+        };
+        assert_eq!(value, "0xtxid");
     }
 
     #[test]
@@ -142,7 +148,10 @@ mod tests {
     #[test]
     fn test_encode_send_transaction_ethereum() {
         let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Ethereum, "0xhash".to_string());
-        assert!(matches!(result, WalletConnectResponseType::String { value } if value == "0xhash"));
+        let WalletConnectResponseType::String { value } = result else {
+            panic!("Expected String response for Ethereum")
+        };
+        assert_eq!(value, "0xhash");
     }
 
     #[test]
@@ -172,18 +181,18 @@ mod tests {
     #[test]
     fn test_encode_sign_transaction_ton() {
         let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ton, "tontxsig".to_string());
-        match result {
-            WalletConnectResponseType::Object { json } => {
-                let parsed: serde_json::Value = serde_json::from_str(&json).expect("JSON should be valid");
-                assert_eq!(parsed.get("signature").and_then(|v| v.as_str()), Some("tontxsig"));
-            }
-            _ => panic!("Expected Object response for Ton"),
-        }
+        let WalletConnectResponseType::Object { json } = result else {
+            panic!("Expected Object response for Ton")
+        };
+        assert_eq!(json, r#"{"signature":"tontxsig"}"#);
     }
 
     #[test]
     fn test_encode_send_transaction_ton() {
         let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Ton, "tonhash123".to_string());
-        assert!(matches!(result, WalletConnectResponseType::String { value } if value == "tonhash123"));
+        let WalletConnectResponseType::String { value } = result else {
+            panic!("Expected String response for Ton")
+        };
+        assert_eq!(value, "tonhash123");
     }
 }
