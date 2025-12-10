@@ -217,10 +217,13 @@ impl HyperCoreSigner {
 
         let tpsl = match (data.take_profit.as_ref(), data.stop_loss.as_ref()) {
             (None, None) => None,
-            _ => Some(self.sign_place_order(make_position_tp_sl(asset, is_buy, "0", data.take_profit.clone(), data.stop_loss.clone(), builder.cloned()), timestamp_incrementer.next_val(), agent_key)?),
+            _ => {
+                let order = make_position_tp_sl(asset, is_buy, "0", data.take_profit.clone(), data.stop_loss.clone(), builder.cloned());
+                Some(self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)?)
+            }
         };
 
-        Ok([vec![leverage, market], tpsl.into_iter().collect()].concat())
+        Ok(vec![leverage, market].into_iter().chain(tpsl).collect())
     }
 
     fn sign_modify_orders(
