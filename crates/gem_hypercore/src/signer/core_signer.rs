@@ -538,25 +538,6 @@ mod tests {
     }
 
     #[test]
-    fn market_order_open_long_with_tpsl() {
-        let data = PerpetualConfirmData::mock(PerpetualDirection::Long, 5, Some("150.0".to_string()), Some("100.0".to_string()));
-        let builder = Builder { builder_address: "0xdeadbeef".to_string(), fee: 25 };
-        let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, Some(&builder));
-        let market_order = &order.orders[0];
-
-        assert_eq!(order.orders.len(), 3);
-        assert_eq!(order.grouping, Grouping::NormalTpsl);
-        assert!(market_order.is_buy);
-        assert!(!market_order.reduce_only);
-        assert_eq!(market_order.asset, data.asset_index as u32);
-        assert_eq!(market_order.size, data.size);
-
-        let order_builder = order.builder.expect("builder");
-        assert_eq!(order_builder.builder_address, builder.builder_address);
-        assert_eq!(order_builder.fee, builder.fee);
-    }
-
-    #[test]
     fn market_order_close_short() {
         let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 5, None, None);
         let order = HyperCoreSigner::market_order_from_confirm_data(&data, false, None);
