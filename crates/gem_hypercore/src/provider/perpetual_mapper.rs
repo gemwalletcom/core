@@ -70,7 +70,7 @@ pub fn map_position(position: Position, address: String, orders: &[OpenOrder]) -
         size: size.abs(),
         size_value: position.position_value.parse::<f64>().unwrap_or(0.0).abs(),
         leverage: position.leverage.value as u8,
-        entry_price: Some(position.entry_px.parse().unwrap_or(0.0)),
+        entry_price: position.entry_px.parse().unwrap_or(0.0),
         liquidation_price: position.liquidation_px.and_then(|p| p.parse().ok()),
         margin_type: match position.leverage.leverage_type {
             LeverageType::Cross => PerpetualMarginType::Cross,

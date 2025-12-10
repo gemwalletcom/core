@@ -1,7 +1,7 @@
 use crate::{Asset, Chain, PerpetualConfirmData, PerpetualDirection};
 
 impl PerpetualConfirmData {
-    pub fn mock(direction: PerpetualDirection, asset_index: u32) -> Self {
+    pub fn mock(direction: PerpetualDirection, asset_index: u32, take_profit: Option<String>, stop_loss: Option<String>) -> Self {
         Self {
             direction,
             base_asset: Asset::from_chain(Chain::HyperCore),
@@ -15,6 +15,8 @@ impl PerpetualConfirmData {
             entry_price: None,
             market_price: 123.45,
             margin_amount: 50.0,
+            take_profit,
+            stop_loss,
         }
     }
 }
