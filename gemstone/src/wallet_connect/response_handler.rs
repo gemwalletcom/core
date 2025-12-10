@@ -160,12 +160,10 @@ mod tests {
     #[test]
     fn test_encode_sign_message_ton() {
         let ton_json = r#"{"signature":"tonsig123","timestamp":1700000000}"#.to_string();
-        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ton, ton_json);
+        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ton, ton_json.clone());
         match result {
             WalletConnectResponseType::Object { json } => {
-                assert!(json.contains("\"signature\""));
-                assert!(json.contains("tonsig123"));
-                assert!(json.contains("\"timestamp\""));
+                assert_eq!(json, ton_json);
             }
             _ => panic!("Expected Object response for Ton"),
         }
@@ -176,8 +174,8 @@ mod tests {
         let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ton, "tontxsig".to_string());
         match result {
             WalletConnectResponseType::Object { json } => {
-                assert!(json.contains("\"signature\""));
-                assert!(json.contains("tontxsig"));
+                let parsed: serde_json::Value = serde_json::from_str(&json).expect("JSON should be valid");
+                assert_eq!(parsed.get("signature").and_then(|v| v.as_str()), Some("tontxsig"));
             }
             _ => panic!("Expected Object response for Ton"),
         }
