@@ -213,7 +213,11 @@ impl HyperCoreSigner {
         let asset = data.asset_index as u32;
 
         let leverage = self.sign_update_leverage(UpdateLeverage::new(asset, true, data.leverage), timestamp_incrementer.next_val(), agent_key)?;
-        let market = self.sign_place_order(make_market_order(asset, is_buy, &data.price, &data.size, false, builder.cloned()), timestamp_incrementer.next_val(), agent_key)?;
+        let market = self.sign_place_order(
+            make_market_order(asset, is_buy, &data.price, &data.size, false, builder.cloned()),
+            timestamp_incrementer.next_val(),
+            agent_key,
+        )?;
 
         let tpsl = match (data.take_profit.as_ref(), data.stop_loss.as_ref()) {
             (None, None) => None,
@@ -521,7 +525,10 @@ mod tests {
     #[test]
     fn market_order_open_long() {
         let data = PerpetualConfirmData::mock(PerpetualDirection::Long, 11, None, None);
-        let builder = Builder { builder_address: "0xdeadbeef".to_string(), fee: 25 };
+        let builder = Builder {
+            builder_address: "0xdeadbeef".to_string(),
+            fee: 25,
+        };
         let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, Some(&builder));
         let market_order = &order.orders[0];
 

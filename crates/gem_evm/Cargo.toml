@@ -17,10 +17,12 @@ serde_serializers = { path = "../serde_serializers" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
 gem_bsc = { path = "../gem_bsc" }
+gem_hash = { path = "../gem_hash" }
 signer = { path = "../signer" }
 
 hex = { workspace = true }
 alloy-primitives = { workspace = true }
+k256 = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["eip712-serde"] }
 alloy-dyn-abi = { workspace = true, features = ["eip712"] }
 alloy-json-abi = { workspace = true }
@@ -30,6 +32,7 @@ num-bigint = { workspace = true }
 num-traits = { workspace = true }
 bigdecimal = { workspace = true }
 url = { workspace = true }
+uuid = { workspace = true }
 reqwest = { workspace = true, features = ["json"], optional = true }
 
 # rpc feature

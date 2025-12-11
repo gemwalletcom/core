@@ -134,7 +134,11 @@ mod tests {
             TransactionType::StakeDelegate
         );
         assert_eq!(
-            TransactionInputType::Perpetual(Asset::mock(), PerpetualType::Open(PerpetualConfirmData::mock(PerpetualDirection::Long, 0, None, None))).transaction_type(),
+            TransactionInputType::Perpetual(
+                Asset::mock(),
+                PerpetualType::Open(PerpetualConfirmData::mock(PerpetualDirection::Long, 0, None, None))
+            )
+            .transaction_type(),
             TransactionType::PerpetualOpenPosition
         );
     }

@@ -526,6 +526,52 @@ diesel::table! {
 }
 
 diesel::table! {
+    referrals (id) {
+        id -> Int4,
+        #[max_length = 256]
+        address -> Varchar,
+        #[max_length = 64]
+        code -> Nullable<Varchar>,
+        #[max_length = 64]
+        used_referral_code -> Nullable<Varchar>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    referrals_events (id) {
+        id -> Int4,
+        #[max_length = 256]
+        address -> Varchar,
+        #[max_length = 64]
+        event_type -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    referrals_events_types (id) {
+        #[max_length = 64]
+        id -> Varchar,
+        points -> Int4,
+    }
+}
+
+diesel::table! {
+    referrals_uses (id) {
+        id -> Int4,
+        #[max_length = 256]
+        referrer_address -> Varchar,
+        #[max_length = 256]
+        referred_address -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     releases (platform_store) {
         #[max_length = 32]
         platform_store -> Varchar,
@@ -708,6 +754,7 @@ diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
+diesel::joinable!(referrals_events -> referrals_events_types (event_type));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
@@ -754,6 +801,10 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices_dex,
     prices_dex_assets,
     prices_dex_providers,
+    referrals,
+    referrals_events,
+    referrals_events_types,
+    referrals_uses,
     releases,
     scan_addresses,
     scan_addresses_types,

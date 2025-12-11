@@ -105,7 +105,9 @@ pub use self::gorush::{FailedNotification, GorushNotification, GorushNotificatio
 pub mod scan;
 pub use self::scan::{AddressType, ScanAddress, ScanAddressTarget, ScanTransaction, ScanTransactionPayload};
 pub mod transaction_metadata_types;
-pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionResourceTypeMetadata, TransactionSwapMetadata};
+pub use self::transaction_metadata_types::{
+    TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionResourceTypeMetadata, TransactionSwapMetadata,
+};
 pub mod wallet_connect_namespace;
 pub use self::wallet_connect_namespace::WalletConnectCAIP2;
 pub mod wallet_connect;
@@ -123,6 +125,8 @@ pub mod nft;
 pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, ReportNft};
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
+pub mod referral;
+pub use self::referral::{Referral, ReferralCodeRequest, ReferralEvent, ReferralEventItem};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;

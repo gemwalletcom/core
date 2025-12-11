@@ -494,6 +494,7 @@ dependencies = [
  "primitives",
  "prometheus-client",
  "redis",
+ "referral",
  "reqwest",
  "rocket",
  "rocket_ws",
@@ -2853,8 +2854,10 @@ dependencies = [
  "chrono",
  "gem_bsc",
  "gem_client",
+ "gem_hash",
  "gem_jsonrpc",
  "hex",
+ "k256",
  "num-bigint",
  "num-traits",
  "primitives",
@@ -2866,6 +2869,7 @@ dependencies = [
  "signer",
  "tokio",
  "url",
+ "uuid",
 ]
 
 [[package]]
@@ -3136,6 +3140,7 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "primitives",
+ "referral",
  "reqwest",
  "serde",
  "serde_json",
@@ -5414,6 +5419,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.106",
+]
+
+[[package]]
+name = "referral"
+version = "1.0.0"
+dependencies = [
+ "gem_evm",
 ]
 
 [[package]]
