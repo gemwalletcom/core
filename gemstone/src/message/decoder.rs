@@ -2,6 +2,7 @@ use alloy_primitives::{eip191_hash_message, hex::encode_prefixed};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
+use signer::{TonSignDataPayload, TonSignDataResponse};
 
 use super::{
     eip712::GemEIP712Message,
@@ -39,6 +40,13 @@ impl SignMessageDecoder {
                 let preview = string.unwrap_or(encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
             }
+            SignDigestType::TonPersonal => {
+                let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
+                let Ok(payload) = TonSignDataPayload::parse(&string) else {
+                    return Ok(MessagePreview::Text(string));
+                };
+                Ok(MessagePreview::Text(payload.data))
+            }
             SignDigestType::Eip712 => {
                 let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8 string for EIP712"))?;
                 if string.is_empty() {
@@ -70,7 +78,7 @@ impl SignMessageDecoder {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 => match self.preview() {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
@@ -85,6 +93,15 @@ impl SignMessageDecoder {
     pub fn hash(&self) -> Vec<u8> {
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => self.message.data.clone(),
+            SignDigestType::TonPersonal => {
+                let Ok(string) = String::from_utf8(self.message.data.clone()) else {
+                    return Vec::new();
+                };
+                let Ok(payload) = TonSignDataPayload::parse(&string) else {
+                    return Vec::new();
+                };
+                payload.hash()
+            }
             SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
                 Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
@@ -111,9 +128,18 @@ impl SignMessageDecoder {
                 }
                 encode_prefixed(&signature)
             }
-            SignDigestType::SuiPersonal => BASE64.encode(data),
+            SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
+    }
+
+    pub fn get_ton_result(&self, signature: &[u8], public_key: &[u8], timestamp: u64, domain: String) -> Result<String, GemstoneError> {
+        let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
+        let payload = TonSignDataPayload::parse(&string).map_err(|e| GemstoneError::from(e.to_string()))?;
+
+        let response = TonSignDataResponse::new(BASE64.encode(signature), BASE64.encode(public_key), timestamp, domain, payload.to_json());
+
+        response.to_json().map_err(|e| GemstoneError::from(e.to_string()))
     }
 }
 
@@ -427,5 +453,22 @@ mod tests {
         }
 
         assert_eq!(decoder.plain_preview(), message);
+    }
+
+    #[test]
+    fn test_ton_personal_preview() {
+        let data = r#"{"type":"text","text":"Hello TON","from":"UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}"#;
+        let decoder = SignMessageDecoder::new(SignMessage {
+            chain: Chain::Ton,
+            sign_type: SignDigestType::TonPersonal,
+            data: data.as_bytes().to_vec(),
+        });
+
+        match decoder.preview() {
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "Hello TON"),
+            other => panic!("Unexpected result: {other:?}"),
+        }
+
+        assert_eq!(decoder.plain_preview(), "Hello TON");
     }
 }

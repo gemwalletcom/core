@@ -1,10 +1,16 @@
-use crate::{
-    message::sign_type::{SignDigestType, SignMessage},
-    siwe::SiweMessage,
-};
+use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use hex::FromHex;
 use primitives::{Chain, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
-use std::str::FromStr;
+use signer::TonSignDataType;
+
+fn current_timestamp() -> i64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
+}
+
+use crate::message::sign_type::{SignDigestType, SignMessage};
+use crate::siwe::SiweMessage;
 
 pub mod actions;
 pub mod handler_traits;
@@ -57,7 +63,7 @@ mod tests {
 
         let decoded = wallet_connect.decode_sign_message(Chain::Ethereum, SignDigestType::Eip191, message.clone());
 
-        assert!(matches!(decoded.sign_type, SignDigestType::Siwe));
+        assert_eq!(decoded.sign_type, SignDigestType::Siwe);
         assert_eq!(decoded.data, message.into_bytes());
     }
 
@@ -68,7 +74,7 @@ mod tests {
 
         let decoded = wallet_connect.decode_sign_message(Chain::Ethereum, SignDigestType::Eip191, message.clone());
 
-        assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
+        assert_eq!(decoded.sign_type, SignDigestType::Eip191);
         assert_eq!(decoded.data, message.into_bytes());
     }
 
@@ -79,7 +85,58 @@ mod tests {
 
         let decoded = wallet_connect.decode_sign_message(Chain::Polygon, SignDigestType::Eip191, message);
 
-        assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
+        assert_eq!(decoded.sign_type, SignDigestType::Eip191);
+    }
+
+    #[test]
+    fn validate_ton_sign_message() {
+        let wallet_connect = WalletConnect::new();
+
+        assert!(
+            wallet_connect
+                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, r#"{"text":"Hello"}"#.to_string())
+                .is_err()
+        );
+        assert!(
+            wallet_connect
+                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, r#"{"type":"unknown"}"#.to_string())
+                .is_err()
+        );
+        assert!(
+            wallet_connect
+                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, r#"{"type":"text","text":"Hello"}"#.to_string())
+                .is_ok()
+        );
+        assert!(
+            wallet_connect
+                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, r#"{"type":"binary","bytes":"SGVsbG8="}"#.to_string())
+                .is_ok()
+        );
+        assert!(
+            wallet_connect
+                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, r#"{"type":"cell","cell":"te6c"}"#.to_string())
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn validate_ton_send_transaction() {
+        let wallet_connect = WalletConnect::new();
+        let ton_type = WalletConnectTransactionType::Ton {
+            output_type: primitives::TransferDataOutputType::EncodedTransaction,
+        };
+
+        assert!(
+            wallet_connect
+                .validate_send_transaction(ton_type.clone(), r#"{"valid_until": 1234567890, "messages": []}"#.to_string())
+                .is_err()
+        );
+        assert!(
+            wallet_connect
+                .validate_send_transaction(ton_type.clone(), r#"{"valid_until": 9999999999, "messages": []}"#.to_string())
+                .is_ok()
+        );
+        assert!(wallet_connect.validate_send_transaction(ton_type, r#"{"messages": []}"#.to_string()).is_ok());
     }
 }
 
@@ -143,8 +200,40 @@ impl WalletConnect {
                 })?;
                 gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
             }
+            SignDigestType::TonPersonal => {
+                let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| crate::GemstoneError::AnyError {
+                    msg: "Invalid JSON".to_string(),
+                })?;
+                let payload_type = json.get("type").and_then(|v| v.as_str()).ok_or_else(|| crate::GemstoneError::AnyError {
+                    msg: "Missing type field".to_string(),
+                })?;
+                TonSignDataType::from_str(payload_type).map_err(|_| crate::GemstoneError::AnyError {
+                    msg: format!("Unsupported payload type: {}", payload_type),
+                })?;
+                Ok(())
+            }
             SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe => Ok(()),
         }
+    }
+
+    pub fn validate_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<(), crate::GemstoneError> {
+        let WalletConnectTransactionType::Ton { .. } = transaction_type else {
+            return Ok(());
+        };
+
+        let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| crate::GemstoneError::AnyError {
+            msg: "Invalid JSON".to_string(),
+        })?;
+
+        if let Some(valid_until) = json.get("valid_until").and_then(|v| v.as_i64())
+            && current_timestamp() >= valid_until
+        {
+            return Err(crate::GemstoneError::AnyError {
+                msg: "Transaction expired".to_string(),
+            });
+        }
+
+        Ok(())
     }
 
     pub fn decode_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> SignMessage {
@@ -158,7 +247,9 @@ impl WalletConnect {
 
         let raw_text = utf8_value.or_else(|| String::from_utf8(message_data.clone()).ok()).unwrap_or_default();
 
-        if let Some(siwe_message) = self.decode_siwe_message(chain, &raw_text, &message_data) {
+        if sign_type == SignDigestType::Eip191
+            && let Some(siwe_message) = self.decode_siwe_message(chain, &raw_text, &message_data)
+        {
             return siwe_message;
         }
 
@@ -228,6 +319,18 @@ impl WalletConnect {
                     data: actions::WCSuiTransactionData { transaction, wallet_address },
                     output_type,
                 })
+            }
+            WalletConnectTransactionType::Ton { output_type } => {
+                let json: serde_json::Value = serde_json::from_str(&data)?;
+
+                let messages = json
+                    .get("messages")
+                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                        msg: "Missing messages field".to_string(),
+                    })?
+                    .to_string();
+
+                Ok(WalletConnectTransaction::Ton { messages, output_type })
             }
         }
     }
