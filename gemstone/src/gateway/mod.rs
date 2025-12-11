@@ -1,4 +1,4 @@
-use crate::alien::{AlienProvider, new_alien_client};
+use crate::alien::{AlienError, AlienProvider, new_alien_client};
 use crate::api_client::GemApiClient;
 use crate::models::*;
 use crate::network::jsonrpc_client_with_chain;
@@ -422,8 +422,7 @@ impl GemGateway {
         let start_time = std::time::Instant::now();
         let provider = self.provider_with_url(chain, url.to_string()).await?;
 
-        let (chain_id, latest_block_number) =
-            futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
+        let (chain_id, latest_block_number) = futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(map_network_error)?;
 
         let latency_ms = start_time.elapsed().as_millis() as u64;
 
@@ -432,6 +431,60 @@ impl GemGateway {
             latest_block_number,
             latency_ms,
         })
+    }
+}
+
+fn map_network_error(error: Box<dyn std::error::Error + Send + Sync>) -> GatewayError {
+    let message = if let Some(status) = http_status_from_error(error.as_ref()) {
+        let error_message = error.to_string();
+        if error_message.contains(&status.to_string()) {
+            error_message
+        } else {
+            format!("HTTP error: status {} ({})", status, error_message)
+        }
+    } else {
+        error.to_string()
+    };
+
+    GatewayError::NetworkError { msg: message }
+}
+
+fn http_status_from_error(error: &(dyn std::error::Error + 'static)) -> Option<u16> {
+    let mut current_error: Option<&(dyn std::error::Error + 'static)> = Some(error);
+
+    while let Some(err) = current_error {
+        if let Some(alien_error) = err.downcast_ref::<AlienError>() {
+            if let AlienError::Http { status, .. } = alien_error {
+                return Some(*status);
+            }
+        }
+
+        if let Some(client_error) = err.downcast_ref::<gem_client::ClientError>() {
+            if let gem_client::ClientError::Http { status, .. } = client_error {
+                return Some(*status);
+            }
+        }
+
+        current_error = err.source();
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_map_network_error_with_status_code() {
+        let error = AlienError::Http { status: 404, len: 0 };
+        let mapped = map_network_error(Box::new(error));
+
+        match mapped {
+            GatewayError::NetworkError { msg } => {
+                assert!(msg.contains("404"), "expected status code in error message, got: {msg}");
+            }
+        }
     }
 }
 

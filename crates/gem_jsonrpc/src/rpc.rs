@@ -145,6 +145,7 @@ where
         };
 
         let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
+        validate_http_status(&response)?;
 
         serde_json::from_slice(&response.data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
@@ -190,9 +191,22 @@ where
         };
 
         let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
+        validate_http_status(&response)?;
 
         serde_json::from_slice(&response.data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
     }
+}
+
+fn validate_http_status(response: &RpcResponse) -> Result<(), ClientError> {
+    if let Some(status) = response.status {
+        if !(200..300).contains(&status) {
+            return Err(ClientError::Http {
+                status,
+                len: response.data.len(),
+            });
+        }
+    }
+    Ok(())
 }
 
 #[async_trait]

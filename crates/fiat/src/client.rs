@@ -632,7 +632,7 @@ mod tests {
         let transak = FiatQuote::mock("transak");
         let paybis = FiatQuote::mock("paybis");
 
-        let mut quotes = vec![
+        let mut quotes = [
             FiatQuote {
                 crypto_amount: 0.0773,
                 ..moonpay
@@ -667,7 +667,7 @@ mod tests {
         let mercuryo = FiatQuote::mock("mercuryo");
         let transak = FiatQuote::mock("transak");
 
-        let mut quotes = vec![
+        let mut quotes = [
             FiatQuote {
                 crypto_amount: 0.036108,
                 ..moonpay
