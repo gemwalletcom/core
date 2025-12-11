@@ -17,6 +17,7 @@ pub struct Request {
     pub quote_id: String,
     pub user_ip: String,
     pub locale: String,
+    pub flow: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -46,6 +47,7 @@ impl Request {
             quote_id,
             user_ip,
             locale,
+            flow: "buyCrypto".to_string(),
         }
     }
 
@@ -69,6 +71,7 @@ impl Request {
             quote_id,
             user_ip,
             locale,
+            flow: "sellCrypto".to_string(),
         }
     }
 }
@@ -78,19 +81,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_request_serialization() {
-        let request = Request {
-            partner_user_id: "test-user-id".to_string(),
-            crypto_wallet_address: CryptoWalletAddress {
-                address: "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H".to_string(),
-                currency_code: "SOL".to_string(),
-            },
-            currency_code_from: "USD".to_string(),
-            currency_code_to: "SOL".to_string(),
-            quote_id: "test-quote-id".to_string(),
-            user_ip: "1.2.3.4".to_string(),
-            locale: "en".to_string(),
-        };
+    fn test_request_buy_serialization() {
+        let request = Request::new_buy(
+            "test-user-id".to_string(),
+            "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H".to_string(),
+            "SOL".to_string(),
+            "USD".to_string(),
+            "test-quote-id".to_string(),
+            "1.2.3.4".to_string(),
+            "en".to_string(),
+        );
 
         let json = serde_json::to_string(&request).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -103,5 +103,29 @@ mod tests {
         assert_eq!(parsed["quoteId"], "test-quote-id");
         assert_eq!(parsed["userIp"], "1.2.3.4");
         assert_eq!(parsed["locale"], "en");
+        assert_eq!(parsed["flow"], "buyCrypto");
+    }
+
+    #[test]
+    fn test_request_sell_serialization() {
+        let request = Request::new_sell(
+            "test-user-id".to_string(),
+            "0x1234567890abcdef".to_string(),
+            "ETH".to_string(),
+            "USD".to_string(),
+            "test-quote-id".to_string(),
+            "1.2.3.4".to_string(),
+            "en".to_string(),
+        );
+
+        let json = serde_json::to_string(&request).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed["partnerUserId"], "test-user-id");
+        assert_eq!(parsed["cryptoWalletAddress"]["address"], "0x1234567890abcdef");
+        assert_eq!(parsed["cryptoWalletAddress"]["currencyCode"], "ETH");
+        assert_eq!(parsed["currencyCodeFrom"], "ETH");
+        assert_eq!(parsed["currencyCodeTo"], "USD");
+        assert_eq!(parsed["flow"], "sellCrypto");
     }
 }

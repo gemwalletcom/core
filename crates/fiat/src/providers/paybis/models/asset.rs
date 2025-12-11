@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Assets {
@@ -25,5 +25,30 @@ impl Currency {
 
     pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {
         HashMap::new()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SellAssets {
+    pub data: Vec<PayoutMethod>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PayoutMethod {
+    pub pairs: Vec<PayoutPair>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PayoutPair {
+    pub from_asset_id: String,
+}
+
+impl SellAssets {
+    pub fn get_crypto_codes(&self) -> HashSet<String> {
+        self.data
+            .iter()
+            .flat_map(|method| method.pairs.iter().map(|pair| pair.from_asset_id.clone()))
+            .collect()
     }
 }
