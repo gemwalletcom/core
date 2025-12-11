@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use tokio::sync::RwLock;
 
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, ChainConfig, NodeMonitoringConfig, RequestConfig, RetryConfig};
+use crate::config::{CacheConfig, ChainConfig, HeadersConfig, NodeMonitoringConfig, RequestConfig, RetryConfig};
 use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::proxy::constants::JSON_CONTENT_TYPE;
@@ -26,6 +26,7 @@ pub struct NodeService {
     pub monitoring_config: NodeMonitoringConfig,
     pub retry_config: RetryConfig,
     pub request_config: RequestConfig,
+    pub headers_config: HeadersConfig,
     pub http_client: reqwest::Client,
 }
 
@@ -37,6 +38,7 @@ impl NodeService {
         monitoring_config: NodeMonitoringConfig,
         retry_config: RetryConfig,
         request_config: RequestConfig,
+        headers_config: HeadersConfig,
     ) -> Self {
         let nodes = chains
             .values()
@@ -53,6 +55,7 @@ impl NodeService {
             monitoring_config,
             retry_config,
             request_config,
+            headers_config,
             http_client,
         }
     }
@@ -140,7 +143,12 @@ impl NodeService {
     }
 
     fn create_proxy_builder(&self) -> ProxyBuilder {
-        ProxyBuilder::new(self.metrics.as_ref().clone(), self.cache.clone(), self.http_client.clone())
+        ProxyBuilder::new(
+            self.metrics.as_ref().clone(),
+            self.cache.clone(),
+            self.http_client.clone(),
+            self.headers_config.clone(),
+        )
     }
 }
 
@@ -149,7 +157,7 @@ mod tests {
     use super::*;
     use crate::config::{CacheConfig, MetricsConfig, Url};
     use primitives::Chain;
-    use reqwest::{Method, header::HeaderMap};
+    use reqwest::{Method, header, header::HeaderMap};
 
     fn create_service(chains: HashMap<Chain, ChainConfig>) -> NodeService {
         NodeService::new(
@@ -163,6 +171,10 @@ mod tests {
                 error_messages: vec![],
             },
             RequestConfig { timeout: 30000 },
+            HeadersConfig {
+                forward: vec![header::CONTENT_TYPE.to_string()],
+                domains: HashMap::new(),
+            },
         )
     }
 

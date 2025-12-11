@@ -1,4 +1,5 @@
 use crate::cache::RequestCache;
+use crate::config::HeadersConfig;
 #[cfg(test)]
 use crate::config::MetricsConfig;
 use crate::metrics::Metrics;
@@ -14,11 +15,17 @@ pub struct ProxyBuilder {
     metrics: Metrics,
     cache: RequestCache,
     client: reqwest::Client,
+    headers_config: HeadersConfig,
 }
 
 impl ProxyBuilder {
-    pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client) -> Self {
-        Self { metrics, cache, client }
+    pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client, headers_config: HeadersConfig) -> Self {
+        Self {
+            metrics,
+            cache,
+            client,
+            headers_config,
+        }
     }
 
     pub fn create_for_domain(&self, domain: &str, node_domain: &NodeDomain) -> ProxyRequestService {
@@ -30,6 +37,7 @@ impl ProxyBuilder {
             self.metrics.clone(),
             self.cache.clone(),
             self.client.clone(),
+            self.headers_config.clone(),
         )
     }
 
@@ -48,6 +56,7 @@ mod tests {
     use super::*;
     use crate::config::CacheConfig;
     use primitives::Chain;
+    use reqwest::header;
 
     fn create_test_url(url: &str) -> Url {
         Url {
@@ -66,13 +75,21 @@ mod tests {
         }
     }
 
+    fn create_test_headers_config() -> HeadersConfig {
+        HeadersConfig {
+            forward: vec![header::CONTENT_TYPE.to_string()],
+            domains: HashMap::new(),
+        }
+    }
+
     #[tokio::test]
     async fn test_simple_proxy_builder_creation() {
         let metrics = Metrics::new(MetricsConfig::default());
         let cache = RequestCache::new(CacheConfig::default());
         let client = reqwest::Client::new();
+        let headers_config = create_test_headers_config();
 
-        let builder = ProxyBuilder::new(metrics, cache, client);
+        let builder = ProxyBuilder::new(metrics, cache, client, headers_config);
         let url = create_test_url("https://test-node.com");
         let node_domain = NodeDomain::new(url, create_test_chain_config());
         let proxy = builder.create_for_domain("test.com", &node_domain);
