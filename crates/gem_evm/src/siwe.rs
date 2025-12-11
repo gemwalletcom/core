@@ -43,7 +43,7 @@ pub fn verify_signature(message: &str, signature_hex: &str, expected_address: &s
     recovered.eq_ignore_ascii_case(expected_address)
 }
 
-fn eip191_hash(message: &str) -> [u8; 32] {
+pub fn eip191_hash(message: &str) -> [u8; 32] {
     let prefix = format!("\x19Ethereum Signed Message:\n{}", message.len());
     let prefixed = [prefix.as_bytes(), message.as_bytes()].concat();
     keccak256(&prefixed)

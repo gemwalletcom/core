@@ -1,6 +1,6 @@
 pub const SIWE_DOMAIN: &str = "gemwallet.com";
 pub const SIWE_URI: &str = "https://gemwallet.com";
-pub const SIWE_STATEMENT: &str = "Gem Wallet Referral Authentication";
+pub const SIWE_STATEMENT: &str = "Gem Wallet Authentication";
 
 pub fn create_siwe_message(address: &str, chain_id: u64) -> String {
     gem_evm::siwe::create_message(SIWE_DOMAIN, SIWE_URI, address, chain_id, SIWE_STATEMENT)
