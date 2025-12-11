@@ -1,7 +1,10 @@
+use std::borrow::Cow;
+
 use alloy_primitives::{eip191_hash_message, hex::encode_prefixed};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
+use sui_types::PersonalMessage;
 
 use super::{
     eip712::GemEIP712Message,
@@ -84,7 +87,10 @@ impl SignMessageDecoder {
 
     pub fn hash(&self) -> Vec<u8> {
         match &self.message.sign_type {
-            SignDigestType::SuiPersonal => self.message.data.clone(),
+            SignDigestType::SuiPersonal => {
+                let message = PersonalMessage(Cow::Owned(self.message.data.clone()));
+                message.signing_digest().to_vec()
+            }
             SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
                 Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
@@ -228,7 +234,8 @@ mod tests {
         });
 
         let hash = decoder.hash();
-        assert_eq!(hash, data);
+        let expected_hash = PersonalMessage(Cow::Owned(data)).signing_digest().to_vec();
+        assert_eq!(hash, expected_hash);
 
         let decoder = SignMessageDecoder::new(SignMessage {
             chain: Chain::Sui,

@@ -1,3 +1,4 @@
+use ::signer::Signer;
 use hex::decode;
 use primitives::{ChainSigner, SignerError, TransactionInputType, TransactionLoadInput, stake_type::StakeType};
 
@@ -43,6 +44,10 @@ impl ChainSigner for SuiChainSigner {
 
     fn sign_data(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
         self.sign_from_metadata(input, private_key)
+    }
+
+    fn sign_message(&self, message: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
+        Signer::sign_sui_personal_message(message.to_vec(), private_key.to_vec()).map_err(|err| SignerError::InvalidInput(err.to_string()))
     }
 }
 
