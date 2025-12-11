@@ -44,6 +44,9 @@ impl ReferralsRepository for DatabaseClient {
             Ok(existing) if existing.used_referral_code.is_some() => {
                 return Err(DatabaseError::Internal("Already used a referral code".into()));
             }
+            Ok(existing) if existing.code.is_some() => {
+                return Err(DatabaseError::Internal("Cannot use referral code after creating your own".into()));
+            }
             Ok(_) => {}
             Err(_) => {
                 let new_referral = NewReferral {
