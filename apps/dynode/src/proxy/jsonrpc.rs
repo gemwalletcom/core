@@ -93,11 +93,10 @@ impl JsonRpcHandler {
                 info_with_fields!(
                     "Proxy response",
                     chain = request.chain.as_ref(),
-                    host = request.host,
+                    remote_host = url.url.host_str().unwrap_or_default(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
                     rpc_method = call.method.as_str(),
-                    remote_host = url.url.host_str().unwrap_or_default(),
                     status = response_status,
                     latency = DurationMs(request.elapsed()),
                 );
@@ -106,11 +105,10 @@ impl JsonRpcHandler {
                 info_with_fields!(
                     "Proxy response",
                     chain = request.chain.as_ref(),
-                    host = request.host,
+                    remote_host = url.url.host_str().unwrap_or_default(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
                     rpc_method = call.method.as_str(),
-                    remote_host = url.url.host_str().unwrap_or_default(),
                     status = response_status,
                     latency = DurationMs(request.elapsed()),
                     error_code = error_response.error.code,
@@ -154,11 +152,10 @@ impl JsonRpcHandler {
         info_with_fields!(
             "Proxy response",
             chain = request.chain.as_ref(),
-            host = request.host,
+            remote_host = url.url.host_str().unwrap_or_default(),
             method = request.method.as_str(),
             uri = request.path.as_str(),
             rpc_method = &rpc_methods,
-            remote_host = url.url.host_str().unwrap_or_default(),
             status = response_status,
             latency = DurationMs(request.elapsed()),
         );
