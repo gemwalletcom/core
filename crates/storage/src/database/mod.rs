@@ -15,6 +15,7 @@ pub mod perpetuals;
 pub mod price_alerts;
 pub mod prices;
 pub mod prices_dex;
+pub mod referrals;
 pub mod releases;
 pub mod scan_addresses;
 pub mod subscriptions;
@@ -33,9 +34,10 @@ pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 use crate::{
     AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DevicesRepository, FiatRepository,
     LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository, PriceAlertsRepository,
-    PricesDexRepository, PricesRepository, ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, SupportRepository, TagRepository,
-    TransactionsRepository,
+    PricesDexRepository, PricesRepository, ReferralsRepository, ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, SupportRepository,
+    TagRepository, TransactionsRepository,
 };
+use referrals::ReferralsEventTypesStore;
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
     let manager = ConnectionManager::<PgConnection>::new(database_url);
@@ -116,6 +118,14 @@ impl DatabaseClient {
     }
 
     pub fn prices_dex(&mut self) -> &mut dyn PricesDexRepository {
+        self
+    }
+
+    pub fn referrals(&mut self) -> &mut dyn ReferralsRepository {
+        self
+    }
+
+    pub fn referral_event_types(&mut self) -> &mut dyn ReferralsEventTypesStore {
         self
     }
 

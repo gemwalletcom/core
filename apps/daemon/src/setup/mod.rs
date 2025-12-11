@@ -1,10 +1,12 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
-use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, Subscription, TransactionType};
+use primitives::{
+    AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, ReferralEvent, Subscription, TransactionType,
+};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{FiatRate, UpdateDevice};
+use storage::models::{FiatRate, ReferralEventType, UpdateDevice};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -91,6 +93,10 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
         .map(|(index, p)| storage::models::PriceDexProvider::new(p.as_ref().to_string(), index as i32))
         .collect::<Vec<_>>();
     let _ = database.client()?.prices_dex().add_prices_dex_providers(providers);
+
+    info_with_fields!("setup", step = "referral event types");
+    let event_types = ReferralEvent::all().into_iter().map(ReferralEventType::from_primitive).collect::<Vec<_>>();
+    let _ = database.client()?.referral_event_types().add_referral_event_types(event_types);
 
     info_with_fields!(
         "setup",

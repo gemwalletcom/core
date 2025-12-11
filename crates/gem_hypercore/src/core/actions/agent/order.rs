@@ -158,6 +158,7 @@ pub fn make_market_with_tp_sl(
     PlaceOrder::new(orders, Grouping::NormalTpsl, builder)
 }
 
+// size zero(0) - means entire position
 pub fn make_position_tp_sl(
     asset: u32,
     is_buy: bool,

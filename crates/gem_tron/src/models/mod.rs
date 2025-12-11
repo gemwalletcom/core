@@ -75,6 +75,7 @@ pub struct ContractParameterValue {
     pub data: Option<String>,
     pub frozen_balance: Option<i64>,
     pub unfreeze_balance: Option<i64>,
+    pub resource: Option<String>,
     pub votes: Option<Vec<VoteInfo>>,
     pub support: Option<bool>,
 }

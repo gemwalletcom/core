@@ -1,5 +1,5 @@
 use alloy_ens::namehash;
-use alloy_primitives::{Address, Bytes, U256, hex};
+use alloy_primitives::{Address, Bytes, hex};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_client::ReqwestClient;
@@ -11,16 +11,14 @@ use super::{
     contracts::{Registrator, Router},
     record::Record,
 };
-use crate::{client::NameClient, ens::normalize_domain, hyperliquid::contracts::HyperliquidNames};
+use crate::{client::NameClient, ens::normalize_domain};
 use primitives::{Chain, EVMChain, NameProvider};
 
 const ROUTER_ADDRESS: &str = "0x25d1971d6dc9812ea1111662008f07735c74bff5";
-const HYPERLIQUID_NAMES_ADDRESS: &str = "0x1d9d87eBc14e71490bB87f1C39F65BDB979f3cb7";
 
 pub struct Hyperliquid {
     client: JsonRpcClient<ReqwestClient>,
     router_address: Address,
-    hyperliquid_names_address: Address,
 }
 
 impl Hyperliquid {
@@ -28,12 +26,8 @@ impl Hyperliquid {
         let reqwest_client = gem_client::builder().build().expect("Failed to build reqwest client");
         let client = JsonRpcClient::new(ReqwestClient::new(provider_url, reqwest_client));
         let router_address = Address::from_str(ROUTER_ADDRESS).expect("Invalid Router address");
-        let hyperliquid_names_address = Address::from_str(HYPERLIQUID_NAMES_ADDRESS).expect("Invalid Hyperliquid names address");
-        Self {
-            client,
-            router_address,
-            hyperliquid_names_address,
-        }
+
+        Self { client, router_address }
     }
 
     pub fn is_valid_name(name: &str) -> bool {
@@ -43,6 +37,20 @@ impl Hyperliquid {
         }
 
         !labels.iter().any(|label| label.is_empty())
+    }
+
+    async fn eth_call(&self, to: Address, call_data: &[u8]) -> Result<Bytes, Box<dyn Error + Send + Sync>> {
+        let params = json!([
+            {
+                "to": to.to_string(),
+                "data": hex::encode_prefixed(call_data)
+            },
+            "latest"
+        ]);
+
+        let result_str: String = self.client.call("eth_call", params).await?;
+        let result = Bytes::from(hex::decode(&result_str).map_err(|e| format!("Failed to decode hex response: {}", e))?);
+        Ok(result)
     }
 }
 
@@ -59,61 +67,30 @@ impl NameClient for Hyperliquid {
         }
         let node = namehash(&name);
 
+        // Get current registrator from Router
+        let router_call_data = Router::getCurrentRegistratorCall {}.abi_encode();
+        let router_result = self.eth_call(self.router_address, &router_call_data).await?;
+        let registrator = Router::getCurrentRegistratorCall::abi_decode_returns(&router_result)?.0;
+
+        // Get full record JSON
+        let registrator_call_data = Registrator::getFullRecordJSONCall { _namehash: node }.abi_encode();
+        let registrator_result = self.eth_call(Address::from(registrator), &registrator_call_data).await?;
+        let record_json = Registrator::getFullRecordJSONCall::abi_decode_returns(&registrator_result)?;
+        let record: Record = serde_json::from_str(&record_json)?;
+
         // Get Resolved address for HyperEVM
         if chain == Chain::Hyperliquid {
-            let token_id = U256::from_be_bytes::<32>(node.as_slice().try_into().expect("node should be 32 bytes"));
-            let call_data = HyperliquidNames::tokenIdToAddressCall { _tokenId: token_id }.abi_encode();
-            let params = json!([
-                {
-                    "to": self.hyperliquid_names_address.to_string(),
-                    "data": hex::encode_prefixed(&call_data)
-                },
-                "latest"
-            ]);
-            let result_str: String = self.client.call("eth_call", params).await?;
-            let result = Bytes::from(hex::decode(&result_str).map_err(|e| format!("Failed to decode hex response: {}", e))?);
-            let address = HyperliquidNames::tokenIdToAddressCall::abi_decode_returns(&result)?.0;
-            let address = Address::from(address);
+            let resolved_address = &record.name.resolved;
+            let address = Address::from_str(resolved_address)?;
             return Ok(address.to_checksum(None));
         }
-
-        // Get Linked Address for other chains
-        let router_address = self.router_address;
-        let call_data = Router::getCurrentRegistratorCall {}.abi_encode();
-        let params = json!([
-            {
-                "to": router_address.to_string(),
-                "data": hex::encode_prefixed(&call_data)
-            },
-            "latest"
-        ]);
-
-        let result_str: String = self.client.call("eth_call", params).await?;
-        let result = Bytes::from(hex::decode(&result_str).map_err(|e| format!("Failed to decode hex response: {}", e))?);
-
-        // Get full record json
-        let registrator = Router::getCurrentRegistratorCall::abi_decode_returns(&result)?.0;
-        let call_data = Registrator::getFullRecordJSONCall { _namehash: node }.abi_encode();
-        let params = json!([
-            {
-                "to": Address::from(registrator).to_string(),
-                "data": hex::encode_prefixed(&call_data)
-            },
-            "latest"
-        ]);
-        let result_str: String = self.client.call("eth_call", params).await?;
-        let result = Bytes::from(hex::decode(&result_str).map_err(|e| format!("Failed to decode hex response: {}", e))?);
-
-        let record_json = Registrator::getFullRecordJSONCall::abi_decode_returns(&result)?;
-        let record: Record = serde_json::from_str(&record_json)?;
 
         let slip44 = chain.as_slip44();
         let chain_address = record.data.chain_addresses.get(&slip44.to_string()).ok_or("Chain not found".to_string())?;
-        if EVMChain::from_chain(chain).is_some() {
-            let address = Address::from_str(chain_address)?;
-            return Ok(address.to_checksum(None));
-        }
-        Ok(chain_address.to_string())
+        Ok(match EVMChain::from_chain(chain) {
+            Some(_) => Address::from_str(chain_address)?.to_checksum(None),
+            None => chain_address.to_string(),
+        })
     }
 
     fn provider(&self) -> NameProvider {
