@@ -1,4 +1,4 @@
-use super::models::{Assets, PaybisQuote, PaybisResponse, QuoteRequest, Request, RequestResponse};
+use super::models::{Assets, PaybisQuote, PaybisResponse, QuoteRequest, Request, RequestResponse, SellAssets};
 use crate::rsa_signature::generate_rsa_pss_signature;
 use primitives::FiatProviderName;
 use reqwest::Client;
@@ -67,7 +67,7 @@ impl PaybisClient {
         let request_body = QuoteRequest {
             amount: fiat_amount.to_string(),
             direction_change: "to".to_string(),
-            is_received_amount: false,
+            is_received_amount: true,
             currency_code_from: crypto_currency,
             currency_code_to: fiat_currency,
         };
@@ -77,8 +77,8 @@ impl PaybisClient {
         self.signed_post(url, body).await
     }
 
-    pub async fn get_assets(&self) -> Result<Assets, Box<dyn std::error::Error + Send + Sync>> {
-        let url = format!("{PAYBIS_API_BASE_URL}/v2/currency/pairs/buy-crypto");
+    async fn get_assets(&self, flow: &str) -> Result<Assets, Box<dyn std::error::Error + Send + Sync>> {
+        let url = format!("{PAYBIS_API_BASE_URL}/v2/currency/pairs/{flow}");
         self.client
             .get(url)
             .header("Authorization", &self.api_key)
@@ -87,6 +87,22 @@ impl PaybisClient {
             .json::<PaybisResponse<Assets>>()
             .await?
             .into()
+    }
+
+    pub async fn get_buy_assets(&self) -> Result<Assets, Box<dyn std::error::Error + Send + Sync>> {
+        self.get_assets("buy-crypto").await
+    }
+
+    pub async fn get_sell_assets(&self) -> Result<SellAssets, Box<dyn std::error::Error + Send + Sync>> {
+        let url = format!("{PAYBIS_API_BASE_URL}/v2/currency/pairs/sell-crypto");
+        self.client
+            .get(url)
+            .header("Authorization", &self.api_key)
+            .send()
+            .await?
+            .json::<SellAssets>()
+            .await
+            .map_err(|e| e.into())
     }
 
     pub async fn create_request(&self, request_body: Request) -> Result<RequestResponse, Box<dyn std::error::Error + Send + Sync>> {

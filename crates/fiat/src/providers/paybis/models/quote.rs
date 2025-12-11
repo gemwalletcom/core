@@ -15,7 +15,10 @@ pub struct QuoteRequest {
 pub struct PaybisQuote {
     pub id: String,
     pub currency_code_to: String,
+    #[serde(default)]
     pub payment_methods: Vec<PaymentMethod>,
+    #[serde(default)]
+    pub payout_methods: Vec<PaymentMethod>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

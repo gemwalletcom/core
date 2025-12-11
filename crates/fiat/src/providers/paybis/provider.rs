@@ -21,8 +21,11 @@ impl FiatProvider for PaybisClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = PaybisClient::get_assets(self).await?;
-        Ok(map_assets(assets.meta.currencies))
+        let buy_assets = PaybisClient::get_buy_assets(self).await?;
+        let sell_assets = PaybisClient::get_sell_assets(self).await?;
+        let buy_currencies = buy_assets.meta.currencies;
+        let sell_currencies = sell_assets.get_crypto_codes();
+        Ok(map_assets(buy_currencies, sell_currencies))
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>> {
@@ -65,11 +68,11 @@ impl FiatProvider for PaybisClient {
             .get_sell_quote(request_map.asset_symbol.symbol, request.currency.to_uppercase(), request.amount)
             .await?;
 
-        let payment_method = quote
-            .payment_methods
+        let payout_method = quote
+            .payout_methods
             .first()
-            .ok_or_else(|| FiatQuoteError::UnsupportedState("No payment methods available".to_string()))?;
-        let crypto_amount: f64 = payment_method.amount_from.amount.parse()?;
+            .ok_or_else(|| FiatQuoteError::UnsupportedState("No payout methods available".to_string()))?;
+        let crypto_amount: f64 = payout_method.amount_from.amount.parse()?;
 
         Ok(FiatQuoteResponse::new(quote.id, request.amount, crypto_amount))
     }
