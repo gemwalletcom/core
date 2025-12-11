@@ -68,10 +68,10 @@ impl ProxyRequestService {
 
         if let Some(names) = self.headers_config.get_domain_headers(host) {
             for name in names {
-                if let Ok(key) = HeaderName::from_str(name) {
-                    if let Some(value) = original.get(&key) {
-                        headers.insert(key, value.clone());
-                    }
+                if let Ok(key) = HeaderName::from_str(name)
+                    && let Some(value) = original.get(&key)
+                {
+                    headers.insert(key, value.clone());
                 }
             }
         }
