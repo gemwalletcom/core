@@ -84,6 +84,9 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn use_referral_code(&mut self, address: &str, referral_code: &str) -> Result<Vec<i32>, DatabaseError> {
+        if !UsernamesStore::username_exists(self, UsernameLookup::Username(referral_code))? {
+            return Err(DatabaseError::Internal("Referral code does not exist".into()));
+        }
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
 
         let user = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
