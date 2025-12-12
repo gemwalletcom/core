@@ -22,7 +22,7 @@ impl ReferralsEventTypesStore for DatabaseClient {
 }
 
 pub(crate) trait ReferralsStore {
-    fn get_referral(&mut self, lookup: ReferralLookup) -> Result<StorageReferral, diesel::result::Error>;
+    fn get_referral(&mut self, lookup: ReferralLookup) -> Result<Option<StorageReferral>, diesel::result::Error>;
     fn create_referral(&mut self, referral: NewReferral) -> Result<StorageReferral, diesel::result::Error>;
     fn set_used_referral_code(&mut self, address: &str, referral_code: &str) -> Result<StorageReferral, diesel::result::Error>;
     fn add_referral_use(&mut self, referral_use: NewReferralUse) -> Result<(), diesel::result::Error>;
@@ -32,17 +32,19 @@ pub(crate) trait ReferralsStore {
 }
 
 impl ReferralsStore for DatabaseClient {
-    fn get_referral(&mut self, lookup: ReferralLookup) -> Result<StorageReferral, diesel::result::Error> {
+    fn get_referral(&mut self, lookup: ReferralLookup) -> Result<Option<StorageReferral>, diesel::result::Error> {
         use crate::schema::referrals::dsl;
         match lookup {
             ReferralLookup::Address(address) => dsl::referrals
                 .filter(dsl::address.eq(address))
                 .select(StorageReferral::as_select())
-                .first(&mut self.connection),
+                .first(&mut self.connection)
+                .optional(),
             ReferralLookup::Code(code) => dsl::referrals
                 .filter(dsl::code.eq(code))
                 .select(StorageReferral::as_select())
-                .first(&mut self.connection),
+                .first(&mut self.connection)
+                .optional(),
         }
     }
 
