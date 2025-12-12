@@ -61,6 +61,10 @@ impl GemChainSigner {
     pub fn sign_data(&self, input: GemTransactionLoadInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         self.dispatch(input, private_key, "data", |signer, tx, key| signer.sign_data(tx, key))
     }
+
+    pub fn sign_message(&self, message: Vec<u8>, private_key: Vec<u8>) -> Result<String, GemstoneError> {
+        self.dispatch_message(message, private_key, "message", |signer, msg, key| signer.sign_message(msg, key))
+    }
 }
 
 impl GemChainSigner {
@@ -72,6 +76,16 @@ impl GemChainSigner {
         let key = private_key;
 
         method(self.signer.as_ref(), &tx_input, key.as_slice()).map_err(|err| match err {
+            SignerError::UnsupportedOperation(_) => unsupported_error(self.chain, action),
+            other => GemstoneError::from(other),
+        })
+    }
+
+    fn dispatch_message<T, F>(&self, message: Vec<u8>, private_key: Vec<u8>, action: &'static str, method: F) -> Result<T, GemstoneError>
+    where
+        F: Fn(&dyn ChainSigner, &[u8], &[u8]) -> Result<T, SignerError>,
+    {
+        method(self.signer.as_ref(), &message, &private_key).map_err(|err| match err {
             SignerError::UnsupportedOperation(_) => unsupported_error(self.chain, action),
             other => GemstoneError::from(other),
         })
