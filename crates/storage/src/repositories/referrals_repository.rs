@@ -65,6 +65,10 @@ impl ReferralsRepository for DatabaseClient {
             address: referrer.address,
             event_type: primitives::ReferralEvent::Invite.as_ref().to_string(),
         })?;
+        ReferralsStore::add_event(self, NewReferralEvent {
+            address: address.to_string(),
+            event_type: primitives::ReferralEvent::Joined.as_ref().to_string(),
+        })?;
 
         Ok(())
     }
