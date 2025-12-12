@@ -145,9 +145,7 @@ where
         };
 
         let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
-        validate_http_status(&response)?;
-
-        serde_json::from_slice(&response.data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
+        deserialize_response(&response)
     }
 
     async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
@@ -191,21 +189,32 @@ where
         };
 
         let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
-        validate_http_status(&response)?;
 
-        serde_json::from_slice(&response.data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
+        deserialize_response(&response)
+    }
+}
+
+fn deserialize_response<R>(response: &RpcResponse) -> Result<R, ClientError>
+where
+    R: DeserializeOwned,
+{
+    match serde_json::from_slice(&response.data) {
+        Ok(value) => Ok(value),
+        Err(error) => {
+            validate_http_status(response)?;
+            Err(ClientError::Serialization(format!("Failed to deserialize response: {error}")))
+        }
     }
 }
 
 fn validate_http_status(response: &RpcResponse) -> Result<(), ClientError> {
-    if let Some(status) = response.status {
-        if !(200..300).contains(&status) {
+    if let Some(status) = response.status
+        && !(200..400).contains(&status) {
             return Err(ClientError::Http {
                 status,
                 len: response.data.len(),
             });
         }
-    }
     Ok(())
 }
 

@@ -453,17 +453,15 @@ fn http_status_from_error(error: &(dyn std::error::Error + 'static)) -> Option<u
     let mut current_error: Option<&(dyn std::error::Error + 'static)> = Some(error);
 
     while let Some(err) = current_error {
-        if let Some(alien_error) = err.downcast_ref::<AlienError>() {
-            if let AlienError::Http { status, .. } = alien_error {
+        if let Some(alien_error) = err.downcast_ref::<AlienError>()
+            && let AlienError::Http { status, .. } = alien_error {
                 return Some(*status);
             }
-        }
 
-        if let Some(client_error) = err.downcast_ref::<gem_client::ClientError>() {
-            if let gem_client::ClientError::Http { status, .. } = client_error {
+        if let Some(client_error) = err.downcast_ref::<gem_client::ClientError>()
+            && let gem_client::ClientError::Http { status, .. } = client_error {
                 return Some(*status);
             }
-        }
 
         current_error = err.source();
     }
