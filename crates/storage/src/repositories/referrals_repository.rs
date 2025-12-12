@@ -2,6 +2,7 @@ use crate::database::referrals::{ReferralLookup, ReferralsStore};
 use crate::models::{NewReferral, NewReferralEvent, NewReferralUse};
 use crate::{DatabaseClient, DatabaseError};
 use chrono::{TimeZone, Utc};
+use primitives::ReferralEvent;
 use std::str::FromStr;
 
 pub trait ReferralsRepository {
@@ -53,22 +54,37 @@ impl ReferralsRepository for DatabaseClient {
                 return Err(DatabaseError::Internal("Cannot use referral code after creating your own".into()));
             }
         } else {
-            ReferralsStore::create_referral(self, NewReferral { address: address.to_string(), code: None })?;
+            ReferralsStore::create_referral(
+                self,
+                NewReferral {
+                    address: address.to_string(),
+                    code: None,
+                },
+            )?;
         }
 
         ReferralsStore::set_used_referral_code(self, address, referral_code)?;
-        ReferralsStore::add_referral_use(self, NewReferralUse {
-            referrer_address: referrer.address.clone(),
-            referred_address: address.to_string(),
-        })?;
-        ReferralsStore::add_event(self, NewReferralEvent {
-            address: referrer.address,
-            event_type: primitives::ReferralEvent::Invite.as_ref().to_string(),
-        })?;
-        ReferralsStore::add_event(self, NewReferralEvent {
-            address: address.to_string(),
-            event_type: primitives::ReferralEvent::Joined.as_ref().to_string(),
-        })?;
+        ReferralsStore::add_referral_use(
+            self,
+            NewReferralUse {
+                referrer_address: referrer.address.clone(),
+                referred_address: address.to_string(),
+            },
+        )?;
+        ReferralsStore::add_event(
+            self,
+            NewReferralEvent {
+                address: referrer.address,
+                event_type: ReferralEvent::Invite.as_ref().to_string(),
+            },
+        )?;
+        ReferralsStore::add_event(
+            self,
+            NewReferralEvent {
+                address: address.to_string(),
+                event_type: ReferralEvent::Joined.as_ref().to_string(),
+            },
+        )?;
 
         Ok(())
     }

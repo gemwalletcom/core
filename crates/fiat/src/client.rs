@@ -632,8 +632,7 @@ mod tests {
         let transak = FiatQuote::mock("transak");
         let paybis = FiatQuote::mock("paybis");
 
-        let mut quotes = vec![
-            FiatQuote {
+        let mut quotes = [FiatQuote {
                 crypto_amount: 0.0773,
                 ..moonpay
             },
@@ -648,8 +647,7 @@ mod tests {
             FiatQuote {
                 crypto_amount: 0.07721,
                 ..paybis
-            },
-        ];
+            }];
 
         quotes.sort_by(|a, b| sort_quotes_by_crypto_amount_desc(a, b, &providers));
 
@@ -667,8 +665,7 @@ mod tests {
         let mercuryo = FiatQuote::mock("mercuryo");
         let transak = FiatQuote::mock("transak");
 
-        let mut quotes = vec![
-            FiatQuote {
+        let mut quotes = [FiatQuote {
                 crypto_amount: 0.036108,
                 ..moonpay
             },
@@ -679,8 +676,7 @@ mod tests {
             FiatQuote {
                 crypto_amount: 0.03086637,
                 ..transak
-            },
-        ];
+            }];
 
         quotes.sort_by(|a, b| sort_quotes_by_crypto_amount_asc(a, b, &providers));
 
