@@ -4,41 +4,17 @@ use crate::config::HeadersConfig;
 use crate::config::MetricsConfig;
 use crate::metrics::Metrics;
 use crate::proxy::{NodeDomain, ProxyRequestService, proxy_request::ProxyRequest};
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
-#[cfg(test)]
-use crate::config::{ChainConfig, Url};
-
+#[derive(Debug, Clone)]
 pub struct ProxyBuilder {
-    metrics: Metrics,
-    cache: RequestCache,
-    client: reqwest::Client,
-    headers_config: HeadersConfig,
+    service: ProxyRequestService,
 }
 
 impl ProxyBuilder {
     pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client, headers_config: HeadersConfig) -> Self {
         Self {
-            metrics,
-            cache,
-            client,
-            headers_config,
+            service: ProxyRequestService::new(metrics, cache, client, headers_config),
         }
-    }
-
-    pub fn create_for_domain(&self, domain: &str, node_domain: &NodeDomain) -> ProxyRequestService {
-        let mut node_domains = HashMap::new();
-        node_domains.insert(domain.to_string(), node_domain.clone());
-
-        ProxyRequestService::new(
-            Arc::new(RwLock::new(node_domains)),
-            self.metrics.clone(),
-            self.cache.clone(),
-            self.client.clone(),
-            self.headers_config.clone(),
-        )
     }
 
     pub async fn handle_request(
@@ -46,8 +22,7 @@ impl ProxyBuilder {
         request: ProxyRequest,
         node_domain: &NodeDomain,
     ) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
-        let proxy_service = self.create_for_domain(&request.host, node_domain);
-        proxy_service.handle_request(request, node_domain).await
+        self.service.handle_request(request, node_domain).await
     }
 }
 
@@ -55,25 +30,8 @@ impl ProxyBuilder {
 mod tests {
     use super::*;
     use crate::config::CacheConfig;
-    use primitives::Chain;
     use reqwest::header;
-
-    fn create_test_url(url: &str) -> Url {
-        Url {
-            url: url.to_string(),
-            headers: None,
-        }
-    }
-
-    fn create_test_chain_config() -> ChainConfig {
-        ChainConfig {
-            chain: Chain::Ethereum,
-            block_delay: None,
-            poll_interval_seconds: None,
-            overrides: None,
-            urls: vec![create_test_url("https://primary.com")],
-        }
-    }
+    use std::collections::HashMap;
 
     fn create_test_headers_config() -> HeadersConfig {
         HeadersConfig {
@@ -82,20 +40,13 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_simple_proxy_builder_creation() {
+    #[test]
+    fn test_proxy_builder_creation() {
         let metrics = Metrics::new(MetricsConfig::default());
         let cache = RequestCache::new(CacheConfig::default());
         let client = reqwest::Client::new();
         let headers_config = create_test_headers_config();
 
-        let builder = ProxyBuilder::new(metrics, cache, client, headers_config);
-        let url = create_test_url("https://test-node.com");
-        let node_domain = NodeDomain::new(url, create_test_chain_config());
-        let proxy = builder.create_for_domain("test.com", &node_domain);
-
-        let domains = proxy.domains.read().await;
-        assert!(domains.contains_key("test.com"));
-        assert_eq!(domains.get("test.com").unwrap().url.url, "https://test-node.com");
+        let _builder = ProxyBuilder::new(metrics, cache, client, headers_config);
     }
 }

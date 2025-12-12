@@ -11,14 +11,11 @@ use gem_tracing::{DurationMs, info_with_fields};
 use reqwest::Method;
 use reqwest::StatusCode;
 use reqwest::header::{HeaderMap, HeaderName};
-use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequestService {
-    pub domains: Arc<RwLock<HashMap<String, NodeDomain>>>,
     pub metrics: Metrics,
     pub cache: RequestCache,
     pub client: reqwest::Client,
@@ -39,13 +36,7 @@ impl NodeDomain {
 }
 
 impl ProxyRequestService {
-    pub fn new(
-        domains: Arc<RwLock<HashMap<String, NodeDomain>>>,
-        metrics: Metrics,
-        cache: RequestCache,
-        client: reqwest::Client,
-        headers_config: HeadersConfig,
-    ) -> Self {
+    pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client, headers_config: HeadersConfig) -> Self {
         let forward_headers: Arc<[HeaderName]> = headers_config
             .forward
             .iter()
@@ -54,7 +45,6 @@ impl ProxyRequestService {
             .into();
 
         Self {
-            domains,
             metrics,
             cache,
             client,
@@ -117,7 +107,7 @@ impl ProxyRequestService {
         }
 
         let cache_ttl = self.cache.should_cache_request(&chain, &request_type);
-        let cache_key = cache_ttl.map(|_| request_type.cache_key(&request.host, &request.path_with_query));
+        let cache_key = cache_ttl.and_then(|_| request_type.cache_key(&request.host, &request.path_with_query));
 
         let methods_for_metrics = request_type.get_methods_for_metrics();
         self.metrics
@@ -303,12 +293,10 @@ mod tests {
     use crate::metrics::Metrics;
     use crate::proxy::constants::JSON_CONTENT_TYPE;
     use reqwest::header;
-    use std::sync::Arc;
-    use tokio::sync::RwLock;
+    use std::collections::HashMap;
 
     fn create_service(headers_config: HeadersConfig) -> ProxyRequestService {
         ProxyRequestService::new(
-            Arc::new(RwLock::new(HashMap::new())),
             Metrics::new(MetricsConfig::default()),
             RequestCache::new(CacheConfig::default()),
             reqwest::Client::new(),
