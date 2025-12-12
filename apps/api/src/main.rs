@@ -101,7 +101,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let markets_client = MarketsClient::new(database.clone(), cacher_client);
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
-    let referral_client = referral::ReferralClient::new(database.clone());
+    let rewards_client = referral::RewardsClient::new(database.clone());
 
     rocket::build()
         .manage(Mutex::new(fiat_quotes_client))
@@ -124,7 +124,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(webhooks_client))
         .manage(Mutex::new(support_client))
         .manage(Mutex::new(ip_check_client))
-        .manage(Mutex::new(referral_client))
+        .manage(Mutex::new(rewards_client))
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
             "/v1",
@@ -189,8 +189,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 support::add_device,
                 support::get_support_device,
                 fiat::get_ip_address,
-                referral::get_referral,
-                referral::get_referral_events,
+                referral::get_rewards,
+                referral::get_rewards_events,
                 referral::create_referral,
                 referral::use_referral_code,
             ],

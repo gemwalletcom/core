@@ -1,7 +1,7 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::{
-    AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, ReferralEvent, Subscription, TransactionType,
+    AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, RewardsEvent, Subscription, TransactionType,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
@@ -95,7 +95,7 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     let _ = database.client()?.prices_dex().add_prices_dex_providers(providers);
 
     info_with_fields!("setup", step = "reward event types");
-    let event_types = ReferralEvent::all().into_iter().map(RewardEventType::from_primitive).collect::<Vec<_>>();
+    let event_types = RewardsEvent::all().into_iter().map(RewardEventType::from_primitive).collect::<Vec<_>>();
     let _ = database.client()?.reward_event_types().add_reward_event_types(event_types);
 
     info_with_fields!(

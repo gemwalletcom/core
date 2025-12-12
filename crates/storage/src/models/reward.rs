@@ -26,7 +26,7 @@ pub struct RewardEventType {
 }
 
 impl RewardEventType {
-    pub fn from_primitive(event: primitives::ReferralEvent) -> Self {
+    pub fn from_primitive(event: primitives::RewardsEvent) -> Self {
         Self {
             id: event.as_ref().to_string(),
             points: event.points(),

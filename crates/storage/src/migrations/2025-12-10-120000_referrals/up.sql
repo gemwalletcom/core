@@ -9,8 +9,8 @@ SELECT diesel_manage_updated_at('usernames');
 
 CREATE TABLE rewards_referrals (
     id SERIAL PRIMARY KEY,
-    referrer_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE,
-    referred_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE UNIQUE,
+    referrer_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
+    referred_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE UNIQUE,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );
@@ -26,7 +26,7 @@ CREATE TABLE rewards_events_types (
 
 CREATE TABLE rewards_events (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE,
+    username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
     event_type VARCHAR(64) NOT NULL REFERENCES rewards_events_types(id) ON DELETE CASCADE,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
