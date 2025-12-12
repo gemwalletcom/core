@@ -438,7 +438,7 @@ fn map_network_error(error: Box<dyn std::error::Error + Send + Sync>) -> Gateway
     let message = if let Some(status) = http_status_from_error(error.as_ref()) {
         let error_message = error.to_string();
         if error_message.contains(&status.to_string()) {
-            error_message
+            format!("HTTP error: status {}", status)
         } else {
             format!("HTTP error: status {} ({})", status, error_message)
         }
@@ -480,7 +480,7 @@ mod tests {
 
         match mapped {
             GatewayError::NetworkError { msg } => {
-                assert_eq!(msg, "HTTP error: status 404, body len: 0");
+                assert_eq!(msg, "HTTP error: status 404");
             }
         }
     }

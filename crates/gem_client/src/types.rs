@@ -13,7 +13,7 @@ impl fmt::Display for ClientError {
         match self {
             Self::Network(msg) => write!(f, "Network error: {}", msg),
             Self::Timeout => write!(f, "Timeout error"),
-            Self::Http { status, len } => write!(f, "HTTP error: status {}, body len: {}", status, len),
+            Self::Http { status, .. } => write!(f, "HTTP error: status {}", status),
             Self::Serialization(msg) => write!(f, "Serialization error: {}", msg),
         }
     }
