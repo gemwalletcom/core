@@ -12,6 +12,7 @@ use super::{
 };
 use crate::{GemstoneError, siwe::SiweMessage};
 use ::signer::{SignatureScheme, Signer, hash_eip712};
+use zeroize::Zeroizing;
 
 const SIGNATURE_LENGTH: usize = 65;
 const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
@@ -124,15 +125,16 @@ impl MessageSigner {
     }
 
     pub fn sign(&self, private_key: Vec<u8>) -> Result<String, GemstoneError> {
+        let private_key = Zeroizing::new(private_key);
         let hash = self.hash();
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => Signer::sign_sui_digest(&hash, &private_key).map_err(GemstoneError::from),
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
-                let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key)?;
+                let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
             }
             SignDigestType::Base58 => {
-                let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key)?;
+                let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
             }
         }
