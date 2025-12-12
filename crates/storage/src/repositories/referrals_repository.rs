@@ -25,6 +25,10 @@ impl ReferralsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Referral already exists".into()));
         }
 
+        if ReferralsStore::get_referral(self, ReferralLookup::Code(code)).is_ok() {
+            return Err(DatabaseError::Internal("Referral code already taken".into()));
+        }
+
         let new_referral = NewReferral {
             address: address.to_string(),
             code: Some(code.to_string()),
