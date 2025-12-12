@@ -9,7 +9,7 @@ pub use preferences::{EmptyPreferences, GemPreferences};
 use crate::alien::{AlienProvider, new_alien_client};
 use crate::api_client::GemApiClient;
 use crate::models::*;
-use crate::network::{jsonrpc_client_with_chain, jsonrpc_client_with_endpoint};
+use crate::network::JsonRpcClient;
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::AlgorandClientIndexer;
 use gem_algorand::rpc::client::AlgorandClient;
@@ -80,13 +80,13 @@ impl GemGateway {
             }
             Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
-            Chain::Sui => Ok(Arc::new(SuiClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
-            Chain::Xrp => Ok(Arc::new(XRPClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
+            Chain::Sui => Ok(Arc::new(SuiClient::new(JsonRpcClient::new(alien_client.clone())))),
+            Chain::Xrp => Ok(Arc::new(XRPClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Algorand => Ok(Arc::new(AlgorandClient::new(
                 alien_client.clone(),
                 AlgorandClientIndexer::new(alien_client.clone()),
             ))),
-            Chain::Near => Ok(Arc::new(NearClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
+            Chain::Near => Ok(Arc::new(NearClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Aptos => Ok(Arc::new(AptosClient::new(alien_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Sei | Chain::Noble => {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
@@ -97,7 +97,7 @@ impl GemGateway {
                 TronGridClient::new(alien_client.clone(), String::new()),
             ))),
             Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
-            Chain::Solana => Ok(Arc::new(SolanaClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
+            Chain::Solana => Ok(Arc::new(SolanaClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Ethereum
             | Chain::Arbitrum
             | Chain::SmartChain
@@ -124,7 +124,7 @@ impl GemGateway {
             | Chain::Plasma
             | Chain::Monad
             | Chain::XLayer => Ok(Arc::new(EthereumClient::new(
-                jsonrpc_client_with_endpoint(url, self.provider.clone()),
+                JsonRpcClient::new(alien_client),
                 EVMChain::from_chain(chain).unwrap(),
             ))),
         }
