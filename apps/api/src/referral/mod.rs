@@ -18,12 +18,12 @@ pub async fn get_rewards_events(address: &str, client: &State<Mutex<RewardsClien
     Ok(client.lock().await.get_rewards_events(address)?.into())
 }
 
-#[post("/rewards/create_referral", format = "json", data = "<request>")]
+#[post("/rewards/referrals/create", format = "json", data = "<request>")]
 pub async fn create_referral(request: Json<RewardsReferralRequest>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
     Ok(client.lock().await.create_referral(&request.0)?.into())
 }
 
-#[post("/rewards/use_referral", format = "json", data = "<request>")]
+#[post("/rewards/referrals/use", format = "json", data = "<request>")]
 pub async fn use_referral_code(request: Json<RewardsReferralRequest>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<bool>, ApiError> {
     client.lock().await.use_referral_code(&request.0)?;
     Ok(true.into())
