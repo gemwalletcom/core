@@ -480,7 +480,7 @@ mod tests {
 
         match mapped {
             GatewayError::NetworkError { msg } => {
-                assert!(msg.contains("404"), "expected status code in error message, got: {msg}");
+                assert_eq!(msg, "HTTP error: status 404, body len: 0");
             }
         }
     }
