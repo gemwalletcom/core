@@ -6,14 +6,15 @@ pub mod fetch_coin_addresses_consumer;
 pub mod fetch_nft_assets_addresses_consumer;
 pub mod fetch_token_addresses_consumer;
 pub mod notifications;
+pub mod rewards_consumer;
 pub mod store_charts_consumer;
 pub mod store_prices_consumer;
 pub mod store_transactions_consumer;
 pub mod store_transactions_consumer_config;
 pub mod support;
+
 use std::error::Error;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use ::nft::{NFTClient, NFTProviderConfig};
 pub use assets_addresses_consumer::AssetsAddressesConsumer;
@@ -29,17 +30,16 @@ pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
     AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, PricesPayload,
-    QueueName, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload,
+    QueueName, RewardsNotificationPayload, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload,
 };
+use tokio::sync::Mutex;
 
-use crate::{
-    consumers::{
-        fetch_address_transactions_consumer::FetchAddressTransactionsConsumer, fetch_blocks_consumer::FetchBlocksConsumer,
-        fetch_coin_addresses_consumer::FetchCoinAddressesConsumer, fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer,
-        fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
-    },
-    pusher::Pusher,
+use crate::consumers::{
+    fetch_address_transactions_consumer::FetchAddressTransactionsConsumer, fetch_blocks_consumer::FetchBlocksConsumer,
+    fetch_coin_addresses_consumer::FetchCoinAddressesConsumer, fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer,
+    fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
 };
+use crate::pusher::Pusher;
 use settings::service_user_agent;
 
 pub async fn run_consumer_fetch_assets(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -187,4 +187,21 @@ pub async fn run_consumer_store_charts(settings: Settings, database: Database) -
     let price_client = PriceClient::new(database, cacher_client);
     let consumer = StoreChartsConsumer::new(price_client);
     streamer::run_consumer::<ChartsPayload, StoreChartsConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
+}
+
+pub async fn run_consumer_rewards(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let queue = QueueName::RewardsEvents;
+    let name = queue.to_string();
+    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+    let stream_reader = StreamReader::new(config).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let consumer = rewards_consumer::RewardsConsumer::new(database, stream_producer);
+    streamer::run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(
+        &name,
+        stream_reader,
+        queue,
+        consumer,
+        ConsumerConfig::default(),
+    )
+    .await
 }

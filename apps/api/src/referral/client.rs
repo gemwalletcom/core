@@ -1,13 +1,15 @@
 use primitives::{Rewards, RewardsEventItem, RewardsReferralRequest};
 use storage::Database;
+use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 pub struct RewardsClient {
     database: Database,
+    stream_producer: StreamProducer,
 }
 
 impl RewardsClient {
-    pub fn new(database: Database) -> Self {
-        Self { database }
+    pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
+        Self { database, stream_producer }
     }
 
     pub fn get_rewards(&mut self, address: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
@@ -18,14 +20,29 @@ impl RewardsClient {
         Ok(self.database.client()?.rewards().get_reward_events_by_address(address)?)
     }
 
-    pub fn create_referral(&mut self, request: &RewardsReferralRequest) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn create_referral(&mut self, request: &RewardsReferralRequest) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
         let address = self.verify_request(request)?;
-        Ok(self.database.client()?.rewards().create_reward(&address, &request.code)?)
+        let (rewards, event_id) = self.database.client()?.rewards().create_reward(&address, &request.code)?;
+        self.publish_event(event_id).await?;
+        Ok(rewards)
     }
 
-    pub fn use_referral_code(&mut self, request: &RewardsReferralRequest) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn use_referral_code(&mut self, request: &RewardsReferralRequest) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let address = self.verify_request(request)?;
-        self.database.client()?.rewards().use_referral_code(&address, &request.code)?;
+        let event_ids = self.database.client()?.rewards().use_referral_code(&address, &request.code)?;
+        self.publish_events(event_ids).await?;
+        Ok(())
+    }
+
+    async fn publish_event(&self, event_id: i32) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let payload = vec![RewardsNotificationPayload::new(event_id)];
+        self.stream_producer.publish_rewards_events(payload).await?;
+        Ok(())
+    }
+
+    async fn publish_events(&self, event_ids: Vec<i32>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let payload: Vec<RewardsNotificationPayload> = event_ids.into_iter().map(RewardsNotificationPayload::new).collect();
+        self.stream_producer.publish_rewards_events(payload).await?;
         Ok(())
     }
 

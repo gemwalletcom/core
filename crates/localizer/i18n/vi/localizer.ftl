@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Mua {$name} một cách an toàn
 support_new_message_title = Tin nhắn mới từ bộ phận Hỗ trợ
 notification_freeze_title = Đóng băng {$value}
 notification_unfreeze_title = Giải phóng {$value}
+notification_reward_title = 💎 Bạn đã kiếm được {$value} điểm!
+notification_reward_create_username_description = Tên người dùng đã sẵn sàng. Mời bạn bè để tăng phần thưởng của bạn.
+notification_reward_invite_description = Lượt giới thiệu của bạn đã thành công! Một người bạn của tôi đã tham gia bằng mã giới thiệu của bạn.
+notification_rewards_joined_description = Bạn đã nhận được điểm khi đăng ký bằng mã giới thiệu.

@@ -99,7 +99,9 @@ pub use self::address_status::AddressStatus;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
-pub use self::push_notification::{PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes};
+pub use self::push_notification::{
+    PushNotification, PushNotificationAsset, PushNotificationReward, PushNotificationSupport, PushNotificationTransaction, PushNotificationTypes,
+};
 pub mod gorush;
 pub use self::gorush::{FailedNotification, GorushNotification, GorushNotifications, PushErrorLog};
 pub mod scan;

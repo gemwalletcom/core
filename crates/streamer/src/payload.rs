@@ -259,3 +259,20 @@ impl fmt::Display for ChartsPayload {
         write!(f, "charts: {}", self.charts.len())
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RewardsNotificationPayload {
+    pub event_id: i32,
+}
+
+impl RewardsNotificationPayload {
+    pub fn new(event_id: i32) -> Self {
+        Self { event_id }
+    }
+}
+
+impl fmt::Display for RewardsNotificationPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "event_id: {}", self.event_id)
+    }
+}

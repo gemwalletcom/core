@@ -14,6 +14,7 @@ pub enum PushNotificationTypes {
     BuyAsset,   // PushNotificationBuyAsset payload
     SwapAsset,  // PushNotificationSwapAsset payload
     Support,    // PushNotificationSupport payload
+    Rewards,    // PushNotificationReward payload
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -73,3 +74,8 @@ pub struct PushNotificationSwapAsset {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationSupport {}
+
+#[typeshare(swift = "Equatable, Sendable")]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PushNotificationReward {}

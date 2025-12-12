@@ -2,11 +2,12 @@ use crate::DatabaseError;
 
 use crate::DatabaseClient;
 use crate::database::subscriptions::SubscriptionsStore;
-use primitives::{Chain, DeviceSubscription, Subscription as PrimitiveSubscription};
+use primitives::{Chain, Device, DeviceSubscription, Subscription as PrimitiveSubscription};
 
 pub trait SubscriptionsRepository {
     fn get_subscriptions_by_device_id(&mut self, device_id: &str, wallet_index: Option<i32>) -> Result<Vec<PrimitiveSubscription>, DatabaseError>;
     fn get_subscriptions(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<DeviceSubscription>, DatabaseError>;
+    fn get_devices_by_address(&mut self, address: &str) -> Result<Vec<Device>, DatabaseError>;
     fn add_subscriptions(&mut self, values: Vec<PrimitiveSubscription>, device_id: &str) -> Result<usize, DatabaseError>;
     fn delete_subscriptions(&mut self, values: Vec<PrimitiveSubscription>, device_id: &str) -> Result<usize, DatabaseError>;
     fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, DatabaseError>;
@@ -39,6 +40,13 @@ impl SubscriptionsRepository for DatabaseClient {
                 device: device.as_primitive(),
                 subscription: subscription.as_primitive(),
             })
+            .collect())
+    }
+
+    fn get_devices_by_address(&mut self, address: &str) -> Result<Vec<Device>, DatabaseError> {
+        Ok(SubscriptionsStore::get_subscriptions_by_address(self, address)?
+            .into_iter()
+            .map(|d| d.as_primitive())
             .collect())
     }
 

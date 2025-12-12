@@ -1,5 +1,7 @@
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, TimeZone, Utc};
 use diesel::prelude::*;
+use primitives::RewardsEventItem;
+use std::str::FromStr;
 
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards_referrals)]
@@ -38,8 +40,20 @@ impl RewardEventType {
 #[diesel(table_name = crate::schema::rewards_events)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardEvent {
+    pub username: String,
     pub event_type: String,
     pub created_at: NaiveDateTime,
+}
+
+impl RewardEvent {
+    pub fn as_primitive(&self) -> RewardsEventItem {
+        let event = primitives::RewardsEvent::from_str(&self.event_type).unwrap();
+        RewardsEventItem {
+            points: event.points(),
+            event,
+            created_at: Utc.from_utc_datetime(&self.created_at),
+        }
+    }
 }
 
 #[derive(Debug, Insertable, Clone)]

@@ -101,7 +101,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let markets_client = MarketsClient::new(database.clone(), cacher_client);
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
-    let rewards_client = referral::RewardsClient::new(database.clone());
+    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone());
 
     rocket::build()
         .manage(Mutex::new(fiat_quotes_client))
