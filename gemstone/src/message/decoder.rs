@@ -88,7 +88,7 @@ impl SignMessageDecoder {
     pub fn hash(&self) -> Vec<u8> {
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => {
-                let message = PersonalMessage(Cow::Owned(self.message.data.clone()));
+                let message = PersonalMessage(Cow::Borrowed(&self.message.data));
                 message.signing_digest().to_vec()
             }
             SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),

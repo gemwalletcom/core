@@ -26,17 +26,16 @@ pub enum SignatureScheme {
 }
 
 impl Signer {
-    pub fn sign_sui_personal_message(message: Vec<u8>, private_key: Vec<u8>) -> Result<String, SignerError> {
-        let private_key = Zeroizing::new(private_key);
-        let personal_message = PersonalMessage(Cow::Owned(message));
+    pub fn sign_sui_personal_message(message: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
+        let personal_message = PersonalMessage(Cow::Borrowed(message));
         let digest = personal_message.signing_digest();
-        Self::sign_sui_digest(digest.to_vec(), private_key.to_vec())
+        Self::sign_sui_digest(digest.as_ref(), private_key)
     }
 
-    pub fn sign_sui_digest(digest: Vec<u8>, private_key: Vec<u8>) -> Result<String, SignerError> {
-        let private_key = Zeroizing::new(private_key);
+    pub fn sign_sui_digest(digest: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
+        let private_key = Zeroizing::new(private_key.to_vec());
         let signing_key = signing_key_from_bytes(&private_key)?;
-        let signature = signing_key.sign(digest.as_slice());
+        let signature = signing_key.sign(digest);
         let signature_bytes = signature.to_bytes();
         let public_key_bytes = signing_key.verifying_key().to_bytes();
 
@@ -71,7 +70,7 @@ mod tests {
         let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").expect("valid hex");
         let message = b"Hello, world!".to_vec();
 
-        let signature_base64 = Signer::sign_sui_personal_message(message.clone(), private_key.clone()).expect("signing succeeds");
+        let signature_base64 = Signer::sign_sui_personal_message(&message, &private_key).expect("signing succeeds");
 
         let signature_bytes = STANDARD.decode(&signature_base64).expect("valid base64");
         assert_eq!(signature_bytes.len(), SUI_PERSONAL_MESSAGE_SIGNATURE_LEN, "signature layout length");

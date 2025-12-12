@@ -85,9 +85,7 @@ impl GemChainSigner {
     where
         F: Fn(&dyn ChainSigner, &[u8], &[u8]) -> Result<T, SignerError>,
     {
-        let key = private_key;
-
-        method(self.signer.as_ref(), message.as_slice(), key.as_slice()).map_err(|err| match err {
+        method(self.signer.as_ref(), &message, &private_key).map_err(|err| match err {
             SignerError::UnsupportedOperation(_) => unsupported_error(self.chain, action),
             other => GemstoneError::from(other),
         })
