@@ -13,7 +13,7 @@ pub trait ReferralsRepository {
 
 impl ReferralsRepository for DatabaseClient {
     fn get_referral(&mut self, address: &str) -> Result<primitives::Referral, DatabaseError> {
-        let referral = ReferralsStore::get_referral(self, ReferralLookup::Address(address))?;
+        let referral = ReferralsStore::get_referral(self, ReferralLookup::Address(address))?.ok_or(DatabaseError::NotFound)?;
         let uses = ReferralsStore::get_referral_uses(self, &referral.address)?;
         let events = self.get_referral_events(&referral.address)?;
         let total_points = events.iter().map(|e| e.points).sum();
@@ -21,8 +21,12 @@ impl ReferralsRepository for DatabaseClient {
     }
 
     fn create_referral(&mut self, address: &str, code: &str) -> Result<primitives::Referral, DatabaseError> {
-        if ReferralsStore::get_referral(self, ReferralLookup::Address(address)).is_ok() {
+        if ReferralsStore::get_referral(self, ReferralLookup::Address(address))?.is_some() {
             return Err(DatabaseError::Internal("Referral already exists".into()));
+        }
+
+        if ReferralsStore::get_referral(self, ReferralLookup::Code(code))?.is_some() {
+            return Err(DatabaseError::Internal("Referral code already taken".into()));
         }
 
         let new_referral = NewReferral {
@@ -34,44 +38,37 @@ impl ReferralsRepository for DatabaseClient {
     }
 
     fn use_referral_code(&mut self, address: &str, referral_code: &str) -> Result<(), DatabaseError> {
-        let referrer = ReferralsStore::get_referral(self, ReferralLookup::Code(referral_code))?;
+        let referrer = ReferralsStore::get_referral(self, ReferralLookup::Code(referral_code))?
+            .ok_or_else(|| DatabaseError::Internal("Referral code does not exist".into()))?;
 
-        if referrer.address.eq_ignore_ascii_case(address) {
+        if referrer.address == address {
             return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
         }
 
-        match ReferralsStore::get_referral(self, ReferralLookup::Address(address)) {
-            Ok(existing) if existing.used_referral_code.is_some() => {
+        if let Some(existing) = ReferralsStore::get_referral(self, ReferralLookup::Address(address))? {
+            if existing.used_referral_code.is_some() {
                 return Err(DatabaseError::Internal("Already used a referral code".into()));
             }
-            Ok(existing) if existing.code.is_some() => {
+            if existing.code.is_some() {
                 return Err(DatabaseError::Internal("Cannot use referral code after creating your own".into()));
             }
-            Ok(_) => {}
-            Err(_) => {
-                let new_referral = NewReferral {
-                    address: address.to_string(),
-                    code: None,
-                };
-                ReferralsStore::create_referral(self, new_referral)?;
-            }
+        } else {
+            ReferralsStore::create_referral(self, NewReferral { address: address.to_string(), code: None })?;
         }
 
         ReferralsStore::set_used_referral_code(self, address, referral_code)?;
-        ReferralsStore::add_referral_use(
-            self,
-            NewReferralUse {
-                referrer_address: referrer.address.clone(),
-                referred_address: address.to_string(),
-            },
-        )?;
-        ReferralsStore::add_event(
-            self,
-            NewReferralEvent {
-                address: referrer.address,
-                event_type: primitives::ReferralEvent::Invite.as_ref().to_string(),
-            },
-        )?;
+        ReferralsStore::add_referral_use(self, NewReferralUse {
+            referrer_address: referrer.address.clone(),
+            referred_address: address.to_string(),
+        })?;
+        ReferralsStore::add_event(self, NewReferralEvent {
+            address: referrer.address,
+            event_type: primitives::ReferralEvent::Invite.as_ref().to_string(),
+        })?;
+        ReferralsStore::add_event(self, NewReferralEvent {
+            address: address.to_string(),
+            event_type: primitives::ReferralEvent::Joined.as_ref().to_string(),
+        })?;
 
         Ok(())
     }
