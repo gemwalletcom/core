@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use tokio::sync::RwLock;
 
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, ChainConfig, NodeMonitoringConfig, RequestConfig, RetryConfig};
+use crate::config::{CacheConfig, ChainConfig, HeadersConfig, NodeMonitoringConfig, RequestConfig, RetryConfig};
 use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::proxy::constants::JSON_CONTENT_TYPE;
@@ -22,11 +22,9 @@ pub struct NodeService {
     pub chains: HashMap<Chain, ChainConfig>,
     pub nodes: Arc<RwLock<HashMap<Chain, NodeDomain>>>,
     pub metrics: Arc<Metrics>,
-    pub cache: RequestCache,
     pub monitoring_config: NodeMonitoringConfig,
     pub retry_config: RetryConfig,
-    pub request_config: RequestConfig,
-    pub http_client: reqwest::Client,
+    proxy_builder: ProxyBuilder,
 }
 
 impl NodeService {
@@ -37,6 +35,7 @@ impl NodeService {
         monitoring_config: NodeMonitoringConfig,
         retry_config: RetryConfig,
         request_config: RequestConfig,
+        headers_config: HeadersConfig,
     ) -> Self {
         let nodes = chains
             .values()
@@ -44,16 +43,16 @@ impl NodeService {
             .collect();
 
         let http_client = gem_client::builder().timeout(Duration::from_millis(request_config.timeout)).build().unwrap();
+        let cache = RequestCache::new(cache_config);
+        let proxy_builder = ProxyBuilder::new(metrics.clone(), cache, http_client, headers_config);
 
         Self {
             chains,
             nodes: Arc::new(RwLock::new(nodes)),
             metrics: Arc::new(metrics),
-            cache: RequestCache::new(cache_config),
             monitoring_config,
             retry_config,
-            request_config,
-            http_client,
+            proxy_builder,
         }
     }
 
@@ -68,7 +67,6 @@ impl NodeService {
     pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
         let chain_config = self.get_chain_config(&request)?;
         let urls = &chain_config.urls;
-        let proxy_builder = self.create_proxy_builder();
 
         if !self.retry_config.enabled || urls.len() <= 1 {
             let Some(node_domain) = NodeService::get_node_domain(&self.nodes, chain_config.chain).await else {
@@ -79,7 +77,7 @@ impl NodeService {
             } else {
                 node_domain
             };
-            match proxy_builder.handle_request(request.clone(), &active_node).await {
+            match self.proxy_builder.handle_request(request.clone(), &active_node).await {
                 Ok(response) if self.should_retry_response(&request, &response) => {
                     return self.create_error_response(&request, Some(&active_node.url.host()), &format!("Upstream status code: {}", response.status));
                 }
@@ -89,7 +87,7 @@ impl NodeService {
 
         for url in urls {
             let node_domain = NodeDomain::new(url.clone(), chain_config.clone());
-            if let Ok(response) = proxy_builder.handle_request(request.clone(), &node_domain).await
+            if let Ok(response) = self.proxy_builder.handle_request(request.clone(), &node_domain).await
                 && !self.should_retry_response(&request, &response)
             {
                 return Ok(response);
@@ -138,10 +136,6 @@ impl NodeService {
 
         ResponseBuilder::build_with_headers(body, StatusCode::INTERNAL_SERVER_ERROR.as_u16(), JSON_CONTENT_TYPE, upstream_headers)
     }
-
-    fn create_proxy_builder(&self) -> ProxyBuilder {
-        ProxyBuilder::new(self.metrics.as_ref().clone(), self.cache.clone(), self.http_client.clone())
-    }
 }
 
 #[cfg(test)]
@@ -149,7 +143,7 @@ mod tests {
     use super::*;
     use crate::config::{CacheConfig, MetricsConfig, Url};
     use primitives::Chain;
-    use reqwest::{Method, header::HeaderMap};
+    use reqwest::{Method, header, header::HeaderMap};
 
     fn create_service(chains: HashMap<Chain, ChainConfig>) -> NodeService {
         NodeService::new(
@@ -163,6 +157,10 @@ mod tests {
                 error_messages: vec![],
             },
             RequestConfig { timeout: 30000 },
+            HeadersConfig {
+                forward: vec![header::CONTENT_TYPE.to_string()],
+                domains: HashMap::new(),
+            },
         )
     }
 

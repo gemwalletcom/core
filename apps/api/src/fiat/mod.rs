@@ -10,7 +10,7 @@ use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 use std::str::FromStr;
 use streamer::FiatWebhook;
 
-const DEBUG_FIAT_IP: &str = "210.138.184.59";
+const DEBUG_FIAT_IP: &str = "64.94.85.118";
 
 #[get("/fiat/quotes/<asset_id>?<fiat_amount>&<crypto_value>&<type>&<currency>&<wallet_address>&<ip_address>&<provider>")]
 pub async fn get_fiat_quotes(
