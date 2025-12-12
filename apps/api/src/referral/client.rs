@@ -11,21 +11,21 @@ impl ReferralClient {
     }
 
     pub fn get_referral(&mut self, address: &str) -> Result<Referral, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.database.client()?.referrals().get_referral(address)?)
+        Ok(self.database.client()?.rewards().get_reward_by_address(address)?)
     }
 
     pub fn get_referral_events(&mut self, address: &str) -> Result<Vec<ReferralEventItem>, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.database.client()?.referrals().get_referral_events(address)?)
+        Ok(self.database.client()?.rewards().get_reward_events_by_address(address)?)
     }
 
     pub fn create_referral(&mut self, request: &ReferralCodeRequest) -> Result<Referral, Box<dyn std::error::Error + Send + Sync>> {
         let address = self.verify_request(request)?;
-        Ok(self.database.client()?.referrals().create_referral(&address, &request.code)?)
+        Ok(self.database.client()?.rewards().create_reward(&address, &request.code)?)
     }
 
     pub fn use_referral_code(&mut self, request: &ReferralCodeRequest) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let address = self.verify_request(request)?;
-        self.database.client()?.referrals().use_referral_code(&address, &request.code)?;
+        self.database.client()?.rewards().use_referral_code(&address, &request.code)?;
         Ok(())
     }
 

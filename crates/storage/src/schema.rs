@@ -526,24 +526,22 @@ diesel::table! {
 }
 
 diesel::table! {
-    referrals (id) {
-        id -> Int4,
-        #[max_length = 256]
-        address -> Varchar,
-        #[max_length = 64]
-        code -> Nullable<Varchar>,
-        #[max_length = 64]
-        used_referral_code -> Nullable<Varchar>,
+    releases (platform_store) {
+        #[max_length = 32]
+        platform_store -> Varchar,
+        #[max_length = 32]
+        version -> Varchar,
+        upgrade_required -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
 }
 
 diesel::table! {
-    referrals_events (id) {
+    rewards_events (id) {
         id -> Int4,
-        #[max_length = 256]
-        address -> Varchar,
+        #[max_length = 64]
+        username -> Varchar,
         #[max_length = 64]
         event_type -> Varchar,
         updated_at -> Timestamp,
@@ -552,7 +550,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    referrals_events_types (id) {
+    rewards_events_types (id) {
         #[max_length = 64]
         id -> Varchar,
         points -> Int4,
@@ -560,24 +558,12 @@ diesel::table! {
 }
 
 diesel::table! {
-    referrals_uses (id) {
+    rewards_referrals (id) {
         id -> Int4,
-        #[max_length = 256]
-        referrer_address -> Varchar,
-        #[max_length = 256]
-        referred_address -> Varchar,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    releases (platform_store) {
-        #[max_length = 32]
-        platform_store -> Varchar,
-        #[max_length = 32]
-        version -> Varchar,
-        upgrade_required -> Bool,
+        #[max_length = 64]
+        referrer_username -> Varchar,
+        #[max_length = 64]
+        referred_username -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -711,6 +697,17 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    usernames (username) {
+        #[max_length = 64]
+        username -> Varchar,
+        #[max_length = 256]
+        address -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_addresses -> assets (asset_id));
@@ -754,7 +751,8 @@ diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
-diesel::joinable!(referrals_events -> referrals_events_types (event_type));
+diesel::joinable!(rewards_events -> rewards_events_types (event_type));
+diesel::joinable!(rewards_events -> usernames (username));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
@@ -801,11 +799,10 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices_dex,
     prices_dex_assets,
     prices_dex_providers,
-    referrals,
-    referrals_events,
-    referrals_events_types,
-    referrals_uses,
     releases,
+    rewards_events,
+    rewards_events_types,
+    rewards_referrals,
     scan_addresses,
     scan_addresses_types,
     subscriptions,
@@ -815,4 +812,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions,
     transactions_addresses,
     transactions_types,
+    usernames,
 );

@@ -8,6 +8,7 @@ use typeshare::typeshare;
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum ReferralEvent {
+    CreateUsername,
     Invite,
     Joined,
 }
@@ -19,6 +20,7 @@ impl ReferralEvent {
 
     pub fn points(&self) -> i32 {
         match self {
+            ReferralEvent::CreateUsername => 25,
             ReferralEvent::Invite => 100,
             ReferralEvent::Joined => 10,
         }

@@ -6,7 +6,7 @@ use primitives::{
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{FiatRate, ReferralEventType, UpdateDevice};
+use storage::models::{FiatRate, RewardEventType, UpdateDevice};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -94,9 +94,9 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
         .collect::<Vec<_>>();
     let _ = database.client()?.prices_dex().add_prices_dex_providers(providers);
 
-    info_with_fields!("setup", step = "referral event types");
-    let event_types = ReferralEvent::all().into_iter().map(ReferralEventType::from_primitive).collect::<Vec<_>>();
-    let _ = database.client()?.referral_event_types().add_referral_event_types(event_types);
+    info_with_fields!("setup", step = "reward event types");
+    let event_types = ReferralEvent::all().into_iter().map(RewardEventType::from_primitive).collect::<Vec<_>>();
+    let _ = database.client()?.reward_event_types().add_reward_event_types(event_types);
 
     info_with_fields!(
         "setup",

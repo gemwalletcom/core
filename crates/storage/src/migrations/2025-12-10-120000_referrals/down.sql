@@ -1,4 +1,4 @@
-DROP TABLE referrals_events;
-DROP TABLE referrals_events_types;
-DROP TABLE referrals_uses;
-DROP TABLE referrals;
+DROP TABLE IF EXISTS rewards_events;
+DROP TABLE IF EXISTS rewards_events_types;
+DROP TABLE IF EXISTS rewards_referrals;
+DROP TABLE IF EXISTS usernames;
