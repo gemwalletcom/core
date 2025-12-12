@@ -40,7 +40,19 @@ pub struct JsonRpcError {
 
 impl Display for JsonRpcError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({})", self.message, self.code)
+        let message = if self.message.trim().is_empty() {
+            match self.code {
+                ERROR_INVALID_REQUEST => "Invalid request",
+                ERROR_METHOD_NOT_FOUND => "Method not found",
+                ERROR_INVALID_PARAMS => "Invalid params",
+                ERROR_INTERNAL_ERROR => "Internal error",
+                _ => "Unknown error",
+            }
+        } else {
+            &self.message
+        };
+
+        write!(f, "{} ({})", message, self.code)
     }
 }
 
@@ -86,7 +98,6 @@ impl<T> JsonRpcResults<T> {
                 }
                 JsonRpcResult::Error(error) => {
                     eprintln!("Batch call error for request {}: {:?}", i, error);
-                    // Continue processing other results
                 }
             }
         }
@@ -112,5 +123,20 @@ impl<T> IntoIterator for JsonRpcResults<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_jsonrpc_error_display_with_empty_message() {
+        let error = JsonRpcError {
+            code: ERROR_INTERNAL_ERROR,
+            message: "".into(),
+        };
+
+        assert_eq!(format!("{error}"), "Internal error (-32603)");
     }
 }
