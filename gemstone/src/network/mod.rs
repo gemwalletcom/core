@@ -9,6 +9,10 @@ pub use gem_jsonrpc::{
 
 pub fn jsonrpc_client_with_chain(provider: Arc<dyn AlienProvider>, chain: Chain) -> JsonRpcClient<AlienClient> {
     let endpoint = provider.get_endpoint(chain).expect("Failed to get endpoint for chain");
+    jsonrpc_client_with_endpoint(endpoint, provider)
+}
+
+pub fn jsonrpc_client_with_endpoint(endpoint: String, provider: Arc<dyn AlienProvider>) -> JsonRpcClient<AlienClient> {
     let alien_client = new_alien_client(endpoint, provider);
     JsonRpcClient::new(alien_client)
 }

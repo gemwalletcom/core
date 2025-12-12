@@ -8,6 +8,7 @@ pub const ERROR_INVALID_REQUEST: i32 = -32600;
 pub const ERROR_METHOD_NOT_FOUND: i32 = -32601;
 pub const ERROR_INVALID_PARAMS: i32 = -32602;
 pub const ERROR_INTERNAL_ERROR: i32 = -32603;
+pub const ERROR_CLIENT_ERROR: i32 = -32604;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcRequest {
@@ -40,16 +41,18 @@ pub struct JsonRpcError {
 
 impl Display for JsonRpcError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let message = if self.message.trim().is_empty() {
+        let original = self.message.trim();
+        let message = if original.is_empty() {
             match self.code {
                 ERROR_INVALID_REQUEST => "Invalid request",
                 ERROR_METHOD_NOT_FOUND => "Method not found",
                 ERROR_INVALID_PARAMS => "Invalid params",
                 ERROR_INTERNAL_ERROR => "Internal error",
+                ERROR_CLIENT_ERROR => "Client error",
                 _ => "Unknown error",
             }
         } else {
-            &self.message
+            original
         };
 
         write!(f, "{} ({})", message, self.code)
@@ -131,12 +134,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_jsonrpc_error_display_with_empty_message() {
+    fn test_jsonrpc_error_display_with_client_error_code() {
         let error = JsonRpcError {
-            code: ERROR_INTERNAL_ERROR,
+            code: ERROR_CLIENT_ERROR,
             message: "".into(),
         };
 
-        assert_eq!(format!("{error}"), "Internal error (-32603)");
+        assert_eq!(format!("{error}"), "Client error (-32604)");
     }
 }

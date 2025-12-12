@@ -1,4 +1,4 @@
-use crate::types::{ERROR_INTERNAL_ERROR, JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, JsonRpcResults};
+use crate::types::{ERROR_CLIENT_ERROR, ERROR_INTERNAL_ERROR, JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, JsonRpcResults};
 use gem_client::{Client, ClientError};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -16,7 +16,7 @@ pub struct JsonRpcClient<C: Client + Clone> {
 impl From<ClientError> for JsonRpcError {
     fn from(value: ClientError) -> Self {
         JsonRpcError {
-            code: ERROR_INTERNAL_ERROR,
+            code: ERROR_CLIENT_ERROR,
             message: value.to_string(),
         }
     }
