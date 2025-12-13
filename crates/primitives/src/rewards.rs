@@ -41,6 +41,7 @@ pub struct Rewards {
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct RewardsReferralRequest {
+    pub device_id: String,
     pub address: String,
     pub message: String,
     pub signature: String,

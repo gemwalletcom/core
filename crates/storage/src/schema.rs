@@ -564,6 +564,7 @@ diesel::table! {
         referrer_username -> Varchar,
         #[max_length = 64]
         referred_username -> Varchar,
+        referred_device_id -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -753,6 +754,7 @@ diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
 diesel::joinable!(rewards_events -> rewards_events_types (event_type));
 diesel::joinable!(rewards_events -> usernames (username));
+diesel::joinable!(rewards_referrals -> devices (referred_device_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));

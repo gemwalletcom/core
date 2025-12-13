@@ -20,6 +20,7 @@ pub(crate) trait RewardsStore {
     fn add_referral(&mut self, referral: NewRewardReferral) -> Result<(), diesel::result::Error>;
     fn get_referrals_by_referrer(&mut self, referrer_username: &str) -> Result<Vec<RewardReferral>, diesel::result::Error>;
     fn get_referral_by_referred(&mut self, referred_username: &str) -> Result<Option<RewardReferral>, diesel::result::Error>;
+    fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferral>, diesel::result::Error>;
     fn add_event(&mut self, event: NewRewardEvent) -> Result<i32, diesel::result::Error>;
     fn get_event(&mut self, event_id: i32) -> Result<RewardEvent, diesel::result::Error>;
     fn get_events(&mut self, username: &str) -> Result<Vec<RewardEvent>, diesel::result::Error>;
@@ -45,6 +46,15 @@ impl RewardsStore for DatabaseClient {
         use crate::schema::rewards_referrals::dsl;
         dsl::rewards_referrals
             .filter(dsl::referred_username.eq(referred_username))
+            .select(RewardReferral::as_select())
+            .first(&mut self.connection)
+            .optional()
+    }
+
+    fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferral>, diesel::result::Error> {
+        use crate::schema::rewards_referrals::dsl;
+        dsl::rewards_referrals
+            .filter(dsl::referred_device_id.eq(referred_device_id))
             .select(RewardReferral::as_select())
             .first(&mut self.connection)
             .optional()
