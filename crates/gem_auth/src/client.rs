@@ -19,7 +19,7 @@ impl AuthClient {
     pub async fn get_nonce(&self, device_id: &str) -> Result<AuthNonce, Box<dyn Error + Send + Sync>> {
         let auth_nonce = AuthNonce {
             nonce: Uuid::new_v4().to_string(),
-            timestamp: Utc::now().timestamp(),
+            timestamp: Utc::now().timestamp() as u32,
         };
         let key = format!("{}{}:{}", NONCE_KEY_PREFIX, device_id, auth_nonce.nonce);
         let value = serde_json::to_string(&auth_nonce)?;

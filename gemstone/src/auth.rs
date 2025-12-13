@@ -6,7 +6,7 @@ pub type GemAuthNonce = AuthNonce;
 #[uniffi::remote(Record)]
 pub struct GemAuthNonce {
     pub nonce: String,
-    pub timestamp: i64,
+    pub timestamp: u32,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]

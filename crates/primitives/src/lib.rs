@@ -3,7 +3,7 @@
 pub type UInt64 = u64;
 
 pub mod auth;
-pub use self::auth::{AuthMessage, AuthNonce, AuthPayload};
+pub use self::auth::{AuthMessage, AuthNonce, AuthPayload, AuthenticatedRequest};
 pub mod chain;
 pub use self::chain::Chain;
 pub mod chain_stake;
@@ -130,7 +130,7 @@ pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollec
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod rewards;
-pub use self::rewards::{Rewards, RewardsEvent, RewardsEventItem, RewardsReferralRequest};
+pub use self::rewards::{ReferralCode, Rewards, RewardsEvent, RewardsEventItem};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;

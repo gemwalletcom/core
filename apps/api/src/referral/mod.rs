@@ -2,9 +2,9 @@ mod client;
 
 pub use client::RewardsClient;
 
+use crate::auth::Authenticated;
 use crate::responders::{ApiError, ApiResponse};
-use primitives::{Rewards, RewardsEventItem, RewardsReferralRequest};
-use rocket::serde::json::Json;
+use primitives::{ReferralCode, Rewards, RewardsEventItem};
 use rocket::{State, get, post};
 use tokio::sync::Mutex;
 
@@ -19,12 +19,12 @@ pub async fn get_rewards_events(address: &str, client: &State<Mutex<RewardsClien
 }
 
 #[post("/rewards/referrals/create", format = "json", data = "<request>")]
-pub async fn create_referral(request: Json<RewardsReferralRequest>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
-    Ok(client.lock().await.create_referral(&request.0).await?.into())
+pub async fn create_referral(request: Authenticated<ReferralCode>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
+    Ok(client.lock().await.create_referral(&request.auth.address, &request.data.code).await?.into())
 }
 
 #[post("/rewards/referrals/use", format = "json", data = "<request>")]
-pub async fn use_referral_code(request: Json<RewardsReferralRequest>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<bool>, ApiError> {
-    client.lock().await.use_referral_code(&request.0).await?;
+pub async fn use_referral_code(request: Authenticated<ReferralCode>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<bool>, ApiError> {
+    client.lock().await.use_referral_code(&request.auth, &request.data.code).await?;
     Ok(true.into())
 }

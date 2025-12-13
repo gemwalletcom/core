@@ -7,7 +7,7 @@ use typeshare::typeshare;
 #[serde(rename_all = "camelCase")]
 pub struct AuthNonce {
     pub nonce: String,
-    pub timestamp: i64,
+    pub timestamp: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -28,4 +28,13 @@ pub struct AuthPayload {
     pub address: String,
     pub nonce: String,
     pub signature: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[typeshare(swiftGenericConstraints = "T: Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct AuthenticatedRequest<T> {
+    pub auth: AuthPayload,
+    pub data: T,
 }
