@@ -134,7 +134,7 @@ mod tests {
             message: "".into(),
         };
 
-        assert_eq!(format!("{error}"), "Client error (-32604)");
+        assert_eq!(format!("{error}"), "Client error (-32900)");
     }
 
     #[test]
