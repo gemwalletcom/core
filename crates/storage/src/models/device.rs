@@ -1,7 +1,7 @@
-use std::str::FromStr;
-
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::devices)]
@@ -20,6 +20,7 @@ pub struct Device {
     pub subscriptions_version: i32,
     pub os: Option<String>,
     pub model: Option<String>,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]

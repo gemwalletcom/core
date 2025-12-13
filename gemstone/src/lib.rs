@@ -1,5 +1,6 @@
 pub mod alien;
 pub mod api_client;
+pub mod auth;
 pub mod block_explorer;
 pub mod config;
 pub mod ethereum;
@@ -10,7 +11,6 @@ pub mod models;
 pub mod network;
 pub mod payment;
 pub mod perpetual;
-pub mod auth;
 pub mod signer;
 pub mod siwe;
 pub mod wallet_connect;

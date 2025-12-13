@@ -1,5 +1,6 @@
 use crate::schema::devices;
 use crate::{DatabaseClient, models::*};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::Chain;
 
@@ -14,6 +15,7 @@ pub(crate) trait SubscriptionsStore {
     fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExclude>) -> Result<usize, diesel::result::Error>;
     fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, diesel::result::Error>;
     fn get_device_subscription_address_exists(&mut self, device_id: i32, address: &str) -> Result<bool, diesel::result::Error>;
+    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, diesel::result::Error>;
 }
 
 impl SubscriptionsStore for DatabaseClient {
@@ -114,5 +116,15 @@ impl SubscriptionsStore for DatabaseClient {
         use diesel::select;
 
         select(exists(subscriptions.filter(device_id.eq(_device_id)).filter(address.ilike(_address)))).get_result(&mut self.connection)
+    }
+
+    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        subscriptions
+            .filter(address.eq_any(addresses))
+            .select(created_at)
+            .order(created_at.asc())
+            .first(&mut self.connection)
+            .optional()
     }
 }

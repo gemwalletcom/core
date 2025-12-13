@@ -4,6 +4,7 @@ use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::models::{NewRewardEvent, NewRewardReferral, Username};
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
+use chrono::NaiveDateTime;
 use primitives::{Device, Rewards, RewardsEvent, RewardsEventItem};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
@@ -31,6 +32,7 @@ pub trait RewardsRepository {
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
     fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<Vec<i32>, DatabaseError>;
+    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -165,6 +167,10 @@ impl RewardsRepository for DatabaseClient {
         )?;
 
         Ok(vec![invite_event_id, joined_event_id])
+    }
+
+    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError> {
+        Ok(SubscriptionsStore::get_first_subscription_date(self, addresses)?)
     }
 }
 

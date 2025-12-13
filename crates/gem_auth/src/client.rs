@@ -27,13 +27,9 @@ impl AuthClient {
         Ok(auth_nonce)
     }
 
-    pub async fn get_auth_nonce(&self, device_id: &str, nonce: &str) -> Result<Option<AuthNonce>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_auth_nonce(&self, device_id: &str, nonce: &str) -> Result<AuthNonce, Box<dyn Error + Send + Sync>> {
         let key = format!("{}{}:{}", NONCE_KEY_PREFIX, device_id, nonce);
-        let stored: Result<String, _> = self.cacher.get_value(&key).await;
-        match stored {
-            Ok(value) => Ok(serde_json::from_str(&value).ok()),
-            Err(_) => Ok(None),
-        }
+        self.cacher.get_value::<AuthNonce>(&key).await
     }
 
     pub async fn invalidate_nonce(&self, device_id: &str, nonce: &str) -> Result<(), Box<dyn Error + Send + Sync>> {

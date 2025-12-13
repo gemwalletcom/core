@@ -220,6 +220,8 @@ pub use self::secure_preferences::{Preferences, PreferencesExt, SecurePreference
 
 pub mod signer_error;
 pub use self::signer_error::SignerError;
+pub mod date_ext;
+pub use self::date_ext::NaiveDateTimeExt;
 pub mod number_incrementer;
 pub use self::number_incrementer::NumberIncrementer;
 pub mod chain_signer;

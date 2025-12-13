@@ -1,8 +1,10 @@
-use gem_auth::{verify_auth_signature, AuthClient};
-use primitives::{AuthMessage, Rewards, RewardsEventItem, RewardsReferralRequest};
+use gem_auth::{AuthClient, verify_auth_signature};
+use primitives::{AuthMessage, NaiveDateTimeExt, Rewards, RewardsEventItem, RewardsReferralRequest};
 use std::sync::Arc;
 use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
+
+const REFERRAL_ELIGIBILITY_DAYS: i64 = 7;
 
 pub struct RewardsClient {
     database: Database,
@@ -37,6 +39,17 @@ impl RewardsClient {
     pub async fn use_referral_code(&mut self, request: &RewardsReferralRequest) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let address = self.verify_request(request).await?;
         let device = self.database.client()?.get_device(&request.auth.device_id)?;
+
+        if !device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS) {
+            return Err("Device not eligible for referral".into());
+        }
+
+        if let Some(date) = self.database.client()?.rewards().get_first_subscription_date(vec![address.clone()])? {
+            if !date.is_within_days(REFERRAL_ELIGIBILITY_DAYS) {
+                return Err("Address not eligible for referral".into());
+            }
+        }
+
         let event_ids = self.database.client()?.rewards().use_referral_code(&address, &request.code, device.id)?;
         self.publish_events(event_ids).await?;
         Ok(())
@@ -55,11 +68,7 @@ impl RewardsClient {
     }
 
     async fn verify_request(&self, request: &RewardsReferralRequest) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        let auth_nonce = self
-            .auth_client
-            .get_auth_nonce(&request.auth.device_id, &request.auth.nonce)
-            .await?
-            .ok_or("Authentication failed")?;
+        let auth_nonce = self.auth_client.get_auth_nonce(&request.auth.device_id, &request.auth.nonce).await?;
 
         self.database.client()?.get_device(&request.auth.device_id)?;
 
