@@ -1,4 +1,5 @@
 use crate::database::rewards::RewardsStore;
+use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::models::{NewRewardEvent, NewRewardReferral, Username};
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
@@ -109,6 +110,10 @@ impl RewardsRepository for DatabaseClient {
         };
 
         if referrer.username == user.username || referrer.address.eq_ignore_ascii_case(&user.address) {
+            return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
+        }
+
+        if SubscriptionsStore::get_device_subscription_address_exists(self, device_id, &referrer.address)? {
             return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
         }
 
