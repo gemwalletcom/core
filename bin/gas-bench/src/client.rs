@@ -3,8 +3,8 @@ use std::error::Error;
 use gem_evm::fee_calculator::FeeCalculator;
 use gem_evm::models::fee::EthereumFeeHistory;
 use gem_evm::{ether_conv::EtherConv, jsonrpc::EthereumRpc};
-use gemstone::alien::reqwest_provider::NativeProvider;
-use gemstone::network::jsonrpc_client_with_chain;
+use gemstone::alien::{AlienProvider, new_alien_client, reqwest_provider::NativeProvider};
+use gemstone::network::JsonRpcClient;
 use num_bigint::BigInt;
 use primitives::{Chain, PriorityFeeValue, fee::FeePriority};
 use std::fmt::Display;
@@ -49,7 +49,9 @@ impl GemstoneClient {
         reward_percentiles: Vec<u64>,
         min_priority_fee: u64,
     ) -> Result<GemstoneFeeData, Box<dyn Error + Send + Sync>> {
-        let client = jsonrpc_client_with_chain(self.native_provider.clone(), Chain::Ethereum);
+        let endpoint = self.native_provider.get_endpoint(Chain::Ethereum)?;
+        let alien_client = new_alien_client(endpoint, self.native_provider.clone());
+        let client = JsonRpcClient::new(alien_client);
         let call = EthereumRpc::FeeHistory { blocks, reward_percentiles };
 
         let fee_history_data: EthereumFeeHistory = client.request(call).await?;

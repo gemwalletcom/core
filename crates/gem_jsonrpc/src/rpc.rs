@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use gem_client::{Client, ClientError, ContentType};
+use gem_client::{Client, ClientError, ContentType, Response, deserialize_response};
 use primitives::Chain;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json;
@@ -13,11 +13,7 @@ use std::{
 
 pub const X_CACHE_TTL: &str = "x-cache-ttl";
 
-#[derive(Debug, Clone)]
-pub struct RpcResponse {
-    pub status: Option<u16>,
-    pub data: Vec<u8>,
-}
+pub type RpcResponse = Response;
 
 pub trait RpcClientError: Error + Send + Sync + 'static + Display + Sized {
     fn into_client_error(self) -> ClientError {
@@ -145,8 +141,7 @@ where
         };
 
         let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
-
-        serde_json::from_slice(&response.data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
+        deserialize_response(&response)
     }
 
     async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
@@ -191,7 +186,7 @@ where
 
         let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
 
-        serde_json::from_slice(&response.data).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: {e}")))
+        deserialize_response(&response)
     }
 }
 

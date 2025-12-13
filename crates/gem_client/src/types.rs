@@ -1,4 +1,11 @@
+use serde::de::DeserializeOwned;
 use std::fmt;
+
+#[derive(Debug, Clone)]
+pub struct Response {
+    pub status: Option<u16>,
+    pub data: Vec<u8>,
+}
 
 #[derive(Debug)]
 pub enum ClientError {
@@ -13,7 +20,7 @@ impl fmt::Display for ClientError {
         match self {
             Self::Network(msg) => write!(f, "Network error: {}", msg),
             Self::Timeout => write!(f, "Timeout error"),
-            Self::Http { status, len } => write!(f, "HTTP error: status {}, body len: {}", status, len),
+            Self::Http { status, .. } => write!(f, "HTTP error: status {}", status),
             Self::Serialization(msg) => write!(f, "Serialization error: {}", msg),
         }
     }
@@ -25,4 +32,31 @@ impl From<serde_json::Error> for ClientError {
     fn from(err: serde_json::Error) -> Self {
         ClientError::Serialization(format!("JSON error: {err}"))
     }
+}
+
+/// Deserializes a response, trying to decode the model first.
+/// If deserialization fails, checks if it's an HTTP error before returning a serde error.
+pub fn deserialize_response<R>(response: &Response) -> Result<R, ClientError>
+where
+    R: DeserializeOwned,
+{
+    match serde_json::from_slice(&response.data) {
+        Ok(value) => Ok(value),
+        Err(error) => {
+            validate_http_status(response)?;
+            Err(ClientError::Serialization(format!("Failed to deserialize response: {error}")))
+        }
+    }
+}
+
+fn validate_http_status(response: &Response) -> Result<(), ClientError> {
+    if let Some(status) = response.status {
+        if !(200..400).contains(&status) {
+            return Err(ClientError::Http {
+                status,
+                len: response.data.len(),
+            });
+        }
+    }
+    Ok(())
 }
