@@ -50,7 +50,7 @@ impl FiatQuoteRequest {
             asset_id: "bitcoin".to_string(),
             quote_type: FiatQuoteType::Sell,
             currency: "USD".to_string(),
-            amount: 0.001,
+            amount: 250.0,
             provider_id: None,
             ip_address: "192.168.1.1".to_string(),
         }

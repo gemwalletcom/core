@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Безопасно купите 
 support_new_message_title = Новое сообщение от службы поддержки
 notification_freeze_title = Заморозить {$value}
 notification_unfreeze_title = Разморозить {$value}
+notification_reward_title = 💎 Вы заслужили {$value} баллов!
+notification_reward_create_username_description = Имя пользователя готово. Приглашайте друзей, чтобы получать награды.
+notification_reward_invite_description = Реферал зарегистрировался, используя ваш код.
+notification_rewards_joined_description = Вы зарегистрировались, используя реферальный код.

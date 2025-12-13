@@ -1,10 +1,12 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
-use primitives::{AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, Subscription, TransactionType};
+use primitives::{
+    AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, RewardsEvent, Subscription, TransactionType,
+};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{FiatRate, UpdateDevice};
+use storage::models::{FiatRate, RewardEventType, UpdateDevice};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -92,6 +94,10 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
         .collect::<Vec<_>>();
     let _ = database.client()?.prices_dex().add_prices_dex_providers(providers);
 
+    info_with_fields!("setup", step = "reward event types");
+    let event_types = RewardsEvent::all().into_iter().map(RewardEventType::from_primitive).collect::<Vec<_>>();
+    let _ = database.client()?.reward_event_types().add_reward_event_types(event_types);
+
     info_with_fields!(
         "setup",
         step = "search index",
@@ -141,9 +147,9 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     info_with_fields!("setup_dev", step = "add rate", currency = "USD");
     let _ = database.client()?.set_fiat_rates(vec![fiat_rate.clone()]).expect("Failed to add currency");
 
-    info_with_fields!("setup_dev", step = "add device");
+    info_with_fields!("setup_dev", step = "add devices");
 
-    let device = UpdateDevice {
+    let ios_device = UpdateDevice {
         device_id: "test".to_string(),
         platform: Platform::IOS.as_ref().to_string(),
         platform_store: Some(PlatformStore::AppStore.as_ref().to_string()),
@@ -158,8 +164,26 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         model: Some("iPhone 16".to_string()),
     };
 
-    let _ = database.client()?.add_device(device).expect("Failed to add device");
+    let android_device = UpdateDevice {
+        device_id: "test-android".to_string(),
+        platform: Platform::Android.as_ref().to_string(),
+        platform_store: Some(PlatformStore::GooglePlay.as_ref().to_string()),
+        token: "test_token_android".to_string(),
+        locale: "en".to_string(),
+        currency: fiat_rate.id.clone(),
+        is_push_enabled: true,
+        is_price_alerts_enabled: true,
+        version: "1.0.0".to_string(),
+        subscriptions_version: 1,
+        os: Some("Android 15".to_string()),
+        model: Some("Pixel 9".to_string()),
+    };
+
+    let _ = database.client()?.add_device(ios_device).expect("Failed to add iOS device");
     info_with_fields!("setup_dev", step = "device added", device_id = "test");
+
+    let _ = database.client()?.add_device(android_device).expect("Failed to add Android device");
+    info_with_fields!("setup_dev", step = "device added", device_id = "test-android");
 
     info_with_fields!("setup_dev", step = "add subscription");
 

@@ -19,6 +19,15 @@ monitoring:
 request:
   timeout: 3000
 
+headers:
+  forward:
+    - content-type
+    - content-encoding
+    - content-length
+  domains:
+    public-eth.nownodes.io:
+      - user-agent
+
 retry:
   enabled: true
   status_codes: [403, 429, 502, 503, 504]

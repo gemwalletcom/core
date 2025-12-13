@@ -9,6 +9,8 @@ pub const ERROR_METHOD_NOT_FOUND: i32 = -32601;
 pub const ERROR_INVALID_PARAMS: i32 = -32602;
 pub const ERROR_INTERNAL_ERROR: i32 = -32603;
 
+pub const ERROR_CLIENT_ERROR: i32 = -32900;
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct JsonRpcRequest {
     pub jsonrpc: &'static str,
@@ -40,7 +42,14 @@ pub struct JsonRpcError {
 
 impl Display for JsonRpcError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({})", self.message, self.code)
+        let original = self.message.trim();
+        let message = if original.is_empty() && self.code == ERROR_CLIENT_ERROR {
+            "Client error"
+        } else {
+            original
+        };
+
+        write!(f, "{} ({})", message, self.code)
     }
 }
 
@@ -86,7 +95,6 @@ impl<T> JsonRpcResults<T> {
                 }
                 JsonRpcResult::Error(error) => {
                     eprintln!("Batch call error for request {}: {:?}", i, error);
-                    // Continue processing other results
                 }
             }
         }
@@ -112,5 +120,30 @@ impl<T> IntoIterator for JsonRpcResults<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_jsonrpc_error_display_with_client_error_code() {
+        let error = JsonRpcError {
+            code: ERROR_CLIENT_ERROR,
+            message: "".into(),
+        };
+
+        assert_eq!(format!("{error}"), "Client error (-32900)");
+    }
+
+    #[test]
+    fn test_jsonrpc_error_display_with_method_not_found_code() {
+        let error = JsonRpcError {
+            code: ERROR_METHOD_NOT_FOUND,
+            message: "Method not found".into(),
+        };
+
+        assert_eq!(format!("{error}"), "Method not found (-32601)");
     }
 }

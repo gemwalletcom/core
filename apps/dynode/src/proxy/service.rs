@@ -1,5 +1,5 @@
 use crate::cache::{CacheProvider, CachedResponse, RequestCache};
-use crate::config::{ChainConfig, Url};
+use crate::config::{ChainConfig, HeadersConfig, Url};
 use crate::jsonrpc_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::proxy::jsonrpc::JsonRpcHandler;
@@ -10,18 +10,17 @@ use crate::proxy::response_builder::{ProxyResponse, ResponseBuilder};
 use gem_tracing::{DurationMs, info_with_fields};
 use reqwest::Method;
 use reqwest::StatusCode;
-use reqwest::header::{self, HeaderMap, HeaderName};
-use std::collections::HashMap;
+use reqwest::header::{HeaderMap, HeaderName};
+use std::str::FromStr;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequestService {
-    pub domains: Arc<RwLock<HashMap<String, NodeDomain>>>,
     pub metrics: Metrics,
     pub cache: RequestCache,
     pub client: reqwest::Client,
-    pub keep_headers: Arc<[HeaderName]>,
+    pub forward_headers: Arc<[HeaderName]>,
+    pub headers_config: HeadersConfig,
 }
 
 #[derive(Debug, Clone)]
@@ -37,16 +36,37 @@ impl NodeDomain {
 }
 
 impl ProxyRequestService {
-    pub fn new(domains: Arc<RwLock<HashMap<String, NodeDomain>>>, metrics: Metrics, cache: RequestCache, client: reqwest::Client) -> Self {
-        let keep_headers: Arc<[HeaderName]> = Arc::new([header::CONTENT_TYPE, header::CONTENT_ENCODING, header::CONTENT_LENGTH]);
+    pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client, headers_config: HeadersConfig) -> Self {
+        let forward_headers: Arc<[HeaderName]> = headers_config
+            .forward
+            .iter()
+            .filter_map(|s| HeaderName::from_str(s).ok())
+            .collect::<Vec<_>>()
+            .into();
 
         Self {
-            domains,
             metrics,
             cache,
             client,
-            keep_headers,
+            forward_headers,
+            headers_config,
         }
+    }
+
+    fn build_headers(&self, host: &str, original: &HeaderMap) -> HeaderMap {
+        let mut headers = RequestBuilder::filter_headers(original, &self.forward_headers);
+
+        if let Some(names) = self.headers_config.get_domain_headers(host) {
+            for name in names {
+                if let Ok(key) = HeaderName::from_str(name)
+                    && let Some(value) = original.get(&key)
+                {
+                    headers.insert(key, value.clone());
+                }
+            }
+        }
+
+        headers
     }
 
     pub async fn handle_request(&self, request: ProxyRequest, node_domain: &NodeDomain) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
@@ -59,8 +79,8 @@ impl ProxyRequestService {
         };
 
         let resolved_url = node_domain.config.resolve_url(&node_domain.url, rpc_method, Some(&request.path));
-
         let url = RequestUrl::from_parts(resolved_url, &request.path_with_query);
+        let headers = self.build_headers(url.url.host_str().unwrap_or_default(), &request.headers);
 
         self.metrics.add_proxy_request(request.chain.as_ref(), &request.user_agent);
 
@@ -69,7 +89,6 @@ impl ProxyRequestService {
                 info_with_fields!(
                     "Incoming request",
                     chain = request.chain.as_ref(),
-                    host = request.host.as_str(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
                     rpc_method = &request_type.get_methods_list(),
@@ -80,7 +99,6 @@ impl ProxyRequestService {
                 info_with_fields!(
                     "Incoming request",
                     chain = request.chain.as_ref(),
-                    host = request.host.as_str(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
                     user_agent = &request.user_agent,
@@ -89,7 +107,7 @@ impl ProxyRequestService {
         }
 
         let cache_ttl = self.cache.should_cache_request(&chain, &request_type);
-        let cache_key = cache_ttl.map(|_| request_type.cache_key(&request.host, &request.path_with_query));
+        let cache_key = cache_ttl.and_then(|_| request_type.cache_key(&request.host, &request.path_with_query));
 
         let methods_for_metrics = request_type.get_methods_for_metrics();
         self.metrics
@@ -102,22 +120,14 @@ impl ProxyRequestService {
         }
 
         if let RequestType::JsonRpc(rpc_request) = &request_type {
-            return JsonRpcHandler::handle_request(rpc_request, &request, &self.cache, &self.metrics, &url, &self.client).await;
+            return JsonRpcHandler::handle_request(rpc_request, &request, &self.cache, &self.metrics, &url, &self.client, &headers).await;
         }
 
-        let response = Self::proxy_pass_get_data(
-            request.method.clone(),
-            request.headers.clone(),
-            request.body.clone(),
-            url.clone(),
-            &self.client,
-            &self.keep_headers,
-        )
-        .await?;
+        let response = Self::proxy_pass_get_data(request.method.clone(), request.body.clone(), url.clone(), &self.client, headers).await?;
         let status = response.status().as_u16();
 
         let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), request.elapsed());
-        let (processed_response, body_bytes) = Self::proxy_pass_response(response, &self.keep_headers, upstream_headers).await?;
+        let (processed_response, body_bytes) = Self::proxy_pass_response(response, &self.forward_headers, upstream_headers).await?;
 
         for method_name in &methods_for_metrics {
             self.metrics.add_proxy_response(
@@ -133,10 +143,9 @@ impl ProxyRequestService {
         info_with_fields!(
             "Proxy response",
             chain = request.chain.as_ref(),
-            host = request.host,
+            remote_host = url.url.host_str().unwrap_or_default(),
             method = request.method.as_str(),
             uri = request.path.as_str(),
-            remote_host = url.url.host_str().unwrap_or_default(),
             status = status,
             latency = DurationMs(request.elapsed()),
         );
@@ -251,14 +260,14 @@ impl ProxyRequestService {
 
     async fn proxy_pass_response(
         response: reqwest::Response,
-        keep_headers: &[HeaderName],
+        forward_headers: &[HeaderName],
         additional_headers: HeaderMap,
     ) -> Result<(ProxyResponse, Vec<u8>), Box<dyn std::error::Error + Send + Sync>> {
         let resp_headers = response.headers().clone();
         let status = response.status().as_u16();
         let body = response.bytes().await?.to_vec();
 
-        let mut headers = Self::persist_headers(&resp_headers, keep_headers);
+        let mut headers = RequestBuilder::filter_headers(&resp_headers, forward_headers);
         headers.extend(additional_headers);
 
         Ok((ProxyResponse::new(status, headers, body.clone()), body))
@@ -266,42 +275,71 @@ impl ProxyRequestService {
 
     async fn proxy_pass_get_data(
         method: Method,
-        original_headers: HeaderMap,
         body: Vec<u8>,
         url: RequestUrl,
         client: &reqwest::Client,
-        keep_headers: &[HeaderName],
+        headers: HeaderMap,
     ) -> Result<reqwest::Response, Box<dyn std::error::Error + Send + Sync>> {
-        let request = RequestBuilder::build_forwarded(&method, &url, body, &original_headers, keep_headers)?;
+        let request = RequestBuilder::build(&method, &url, body, headers)?;
         Ok(client.execute(request).await?)
-    }
-
-    pub fn persist_headers(headers: &HeaderMap, list: &[HeaderName]) -> HeaderMap {
-        RequestBuilder::filter_headers(headers, list)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cache::RequestCache;
+    use crate::config::{CacheConfig, HeadersConfig, MetricsConfig};
+    use crate::metrics::Metrics;
     use crate::proxy::constants::JSON_CONTENT_TYPE;
     use reqwest::header;
+    use std::collections::HashMap;
+
+    fn create_service(headers_config: HeadersConfig) -> ProxyRequestService {
+        ProxyRequestService::new(
+            Metrics::new(MetricsConfig::default()),
+            RequestCache::new(CacheConfig::default()),
+            reqwest::Client::new(),
+            headers_config,
+        )
+    }
 
     #[test]
-    fn test_persist_headers_filters_correctly() {
-        let mut headers = HeaderMap::new();
-        headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(JSON_CONTENT_TYPE));
-        headers.insert("x-keep", header::HeaderValue::from_static("1"));
-        headers.insert("x-drop", header::HeaderValue::from_static("0"));
+    fn test_build_headers_with_domain_config() {
+        let mut domains = HashMap::new();
+        domains.insert("example.com".to_string(), vec![header::USER_AGENT.to_string()]);
 
-        let keep = [header::CONTENT_TYPE, HeaderName::from_static("x-keep")];
-        let filtered = ProxyRequestService::persist_headers(&headers, &keep);
+        let service = create_service(HeadersConfig {
+            forward: vec![header::CONTENT_TYPE.to_string()],
+            domains,
+        });
 
-        assert!(filtered.get("x-drop").is_none());
-        assert_eq!(filtered.get("x-keep").unwrap(), &header::HeaderValue::from_static("1"));
-        assert_eq!(
-            filtered.get(header::CONTENT_TYPE).unwrap(),
-            &header::HeaderValue::from_static(JSON_CONTENT_TYPE)
-        );
+        let mut original = HeaderMap::new();
+        original.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(JSON_CONTENT_TYPE));
+        original.insert(header::USER_AGENT, header::HeaderValue::from_static("TestAgent/1.0"));
+        original.insert("x-drop", header::HeaderValue::from_static("dropped"));
+
+        let headers = service.build_headers("example.com", &original);
+
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), JSON_CONTENT_TYPE);
+        assert_eq!(headers.get(header::USER_AGENT).unwrap(), "TestAgent/1.0");
+        assert!(headers.get("x-drop").is_none());
+    }
+
+    #[test]
+    fn test_build_headers_without_domain_config() {
+        let service = create_service(HeadersConfig {
+            forward: vec![header::CONTENT_TYPE.to_string()],
+            domains: HashMap::new(),
+        });
+
+        let mut original = HeaderMap::new();
+        original.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(JSON_CONTENT_TYPE));
+        original.insert(header::USER_AGENT, header::HeaderValue::from_static("TestAgent/1.0"));
+
+        let headers = service.build_headers("example.com", &original);
+
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), JSON_CONTENT_TYPE);
+        assert!(headers.get(header::USER_AGENT).is_none());
     }
 }

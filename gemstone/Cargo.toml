@@ -41,6 +41,7 @@ gem_polkadot = { path = "../crates/gem_polkadot", features = ["rpc"] }
 serde_serializers = { path = "../crates/serde_serializers" }
 chain_traits = { path = "../crates/chain_traits" }
 signer = { path = "../crates/signer" }
+referral = { path = "../crates/referral" }
 number_formatter = { path = "../crates/number_formatter" }
 
 reqwest = { workspace = true, optional = true }
@@ -61,6 +62,7 @@ num-bigint.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
 url = { workspace = true }
+zeroize = "1.8"
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

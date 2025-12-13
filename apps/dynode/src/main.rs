@@ -156,6 +156,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         config.monitoring.clone(),
         config.retry.clone(),
         config.request.clone(),
+        config.headers.clone(),
     );
     if node_service.monitoring_config.enabled {
         let monitor = NodeMonitor::new(

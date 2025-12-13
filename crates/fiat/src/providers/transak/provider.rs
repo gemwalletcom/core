@@ -10,8 +10,8 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
-    FiatTransaction,
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
+    FiatSellQuote, FiatTransaction,
 };
 use std::error::Error;
 use streamer::FiatWebhook;
@@ -103,22 +103,38 @@ impl FiatProvider for TransakClient {
             )
             .await?;
 
-        Ok(FiatQuoteResponse::new(quote.quote_id, quote.fiat_amount, request.amount))
+        Ok(FiatQuoteResponse::new(quote.quote_id, request.amount, quote.crypto_amount))
     }
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
-        let network = data.asset_symbol.network.unwrap_or_default();
+        let network = data.asset_symbol.network.clone().unwrap_or_default();
 
-        let transak_quote = TransakQuote {
-            quote_id: data.quote.id.clone(),
-            fiat_amount: data.quote.fiat_amount,
-            fiat_currency: data.quote.fiat_currency.clone(),
-            crypto_currency: data.asset_symbol.symbol.clone(),
-            crypto_amount: data.quote.crypto_amount,
-            network,
+        let transak_quote = match data.quote.quote_type {
+            FiatQuoteType::Buy => TransakQuote {
+                quote_id: data.quote.id.clone(),
+                fiat_amount: data.quote.fiat_amount,
+                fiat_currency: data.quote.fiat_currency.clone(),
+                crypto_currency: data.asset_symbol.symbol.clone(),
+                crypto_amount: data.quote.crypto_amount,
+                network,
+                conversion_price: 0.0,
+                total_fee: 0.0,
+            },
+            FiatQuoteType::Sell => {
+                self.get_sell_quote(
+                    data.asset_symbol.symbol.clone(),
+                    data.quote.fiat_currency.clone(),
+                    data.quote.fiat_amount,
+                    network,
+                    data.ip_address.clone(),
+                )
+                .await?
+            }
         };
 
-        let redirect_url = self.redirect_url(transak_quote, data.wallet_address).await?;
+        let redirect_url = self
+            .redirect_url(transak_quote, data.wallet_address, data.quote.quote_type, data.quote.fiat_amount)
+            .await?;
 
         Ok(FiatQuoteUrl { redirect_url })
     }
@@ -128,7 +144,7 @@ impl FiatProvider for TransakClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::FiatBuyQuote;
+    use primitives::{FiatBuyQuote, FiatQuoteRequest};
 
     #[tokio::test]
     async fn test_transak_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -199,6 +215,25 @@ mod fiat_integration_tests {
             assert!(!country.alpha2.is_empty());
             println!("Sample Transak country: {:?}", country);
         }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_transak_get_sell_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_transak_test_client();
+
+        let request = FiatQuoteRequest::mock_sell();
+        let mut mapping = FiatMapping::mock();
+        mapping.asset_symbol.symbol = "BTC".to_string();
+        mapping.asset_symbol.network = Some("mainnet".to_string());
+
+        let quote = FiatProvider::get_quote_sell(&client, request.clone(), mapping).await?;
+
+        println!("Transak sell quote: {:?}", quote);
+        assert!(!quote.quote_id.is_empty());
+        assert_eq!(quote.fiat_amount, request.amount);
+        assert!(quote.crypto_amount > 0.0);
 
         Ok(())
     }

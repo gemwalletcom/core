@@ -54,6 +54,9 @@ mod tests {
 
         let address = client.resolve(name, Chain::Hyperliquid).await.unwrap();
         assert_eq!(address, "0xF26F5551E96aE5162509B25925fFfa7F07B2D652");
+
+        let address = client.resolve(name, Chain::Solana).await.unwrap();
+        assert_eq!(address, "CKAvaYmwqCbg8nZCUCNj6Cvr11HauALtNoGT7WirPoAp");
     }
 
     #[tokio::test]

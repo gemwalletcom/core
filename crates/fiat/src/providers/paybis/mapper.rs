@@ -134,7 +134,7 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
     })
 }
 
-fn default_buy_limits() -> Vec<FiatAssetLimits> {
+fn default_limits() -> Vec<FiatAssetLimits> {
     vec![FiatAssetLimits {
         currency: Currency::USD,
         payment_type: PaymentType::Card,
@@ -143,31 +143,36 @@ fn default_buy_limits() -> Vec<FiatAssetLimits> {
     }]
 }
 
-fn map_asset(currency: PaybisCurrency) -> Option<FiatProviderAsset> {
-    if !currency.is_crypto() {
-        return None;
-    }
-    let asset = map_asset_id(currency.clone());
-    let buy_limits = default_buy_limits();
-    let sell_limits = vec![];
-    Some(FiatProviderAsset {
-        id: currency.code.clone(),
-        provider: FiatProviderName::Paybis,
-        chain: asset.as_ref().map(|x| x.chain),
-        token_id: asset.as_ref().and_then(|x| x.token_id.clone()),
-        symbol: currency.code.clone(),
-        network: currency.blockchain_name.clone(),
-        enabled: true,
-        is_buy_enabled: !buy_limits.is_empty(),
-        is_sell_enabled: !sell_limits.is_empty(),
-        unsupported_countries: Some(currency.unsupported_countries()),
-        buy_limits,
-        sell_limits,
-    })
-}
+use std::collections::HashSet;
 
-pub fn map_assets(currencies: Vec<PaybisCurrency>) -> Vec<FiatProviderAsset> {
-    currencies.into_iter().flat_map(map_asset).collect()
+pub fn map_assets(buy_currencies: Vec<PaybisCurrency>, sell_codes: HashSet<String>) -> Vec<FiatProviderAsset> {
+    buy_currencies
+        .into_iter()
+        .filter_map(|currency| {
+            if !currency.is_crypto() {
+                return None;
+            }
+            let asset = map_asset_id(currency.clone());
+            let is_sell = sell_codes.contains(&currency.code);
+            let buy_limits = default_limits();
+            let sell_limits = if is_sell { default_limits() } else { vec![] };
+
+            Some(FiatProviderAsset {
+                id: currency.code.clone(),
+                provider: FiatProviderName::Paybis,
+                chain: asset.as_ref().map(|x| x.chain),
+                token_id: asset.as_ref().and_then(|x| x.token_id.clone()),
+                symbol: currency.code.clone(),
+                network: currency.blockchain_name.clone(),
+                enabled: true,
+                is_buy_enabled: true,
+                is_sell_enabled: is_sell,
+                unsupported_countries: Some(currency.unsupported_countries()),
+                buy_limits,
+                sell_limits,
+            })
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -321,13 +326,46 @@ mod tests {
     }
 
     #[test]
-    fn test_default_buy_limits() {
-        let limits = default_buy_limits();
+    fn test_default_limits() {
+        let limits = default_limits();
 
         assert_eq!(limits.len(), 1);
         assert_eq!(limits[0].currency, Currency::USD);
         assert_eq!(limits[0].payment_type, PaymentType::Card);
         assert_eq!(limits[0].min_amount, None);
         assert_eq!(limits[0].max_amount, None);
+    }
+
+    #[test]
+    fn test_map_assets_buy_and_sell() {
+        let buy_currencies = vec![
+            PaybisCurrency {
+                code: "ETH".to_string(),
+                blockchain_name: Some("ethereum".to_string()),
+            },
+            PaybisCurrency {
+                code: "BTC".to_string(),
+                blockchain_name: Some("bitcoin".to_string()),
+            },
+            PaybisCurrency {
+                code: "SOL".to_string(),
+                blockchain_name: Some("solana".to_string()),
+            },
+        ];
+        let sell_codes: HashSet<String> = ["ETH".to_string(), "SOL".to_string()].into_iter().collect();
+
+        let assets = map_assets(buy_currencies, sell_codes);
+
+        let eth = assets.iter().find(|a| a.symbol == "ETH").unwrap();
+        assert!(eth.is_buy_enabled);
+        assert!(eth.is_sell_enabled);
+
+        let btc = assets.iter().find(|a| a.symbol == "BTC").unwrap();
+        assert!(btc.is_buy_enabled);
+        assert!(!btc.is_sell_enabled);
+
+        let sol = assets.iter().find(|a| a.symbol == "SOL").unwrap();
+        assert!(sol.is_buy_enabled);
+        assert!(sol.is_sell_enabled);
     }
 }

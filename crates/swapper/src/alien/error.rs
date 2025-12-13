@@ -30,7 +30,7 @@ impl std::fmt::Display for AlienError {
         match self {
             Self::RequestError { msg } => write!(f, "Request error: {}", msg),
             Self::ResponseError { msg } => write!(f, "Response error: {}", msg),
-            Self::Http { status, len } => write!(f, "HTTP error: status {}, body len: {}", status, len),
+            Self::Http { status, .. } => write!(f, "HTTP error: status {}", status),
         }
     }
 }

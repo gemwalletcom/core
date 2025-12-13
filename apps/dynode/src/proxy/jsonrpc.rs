@@ -22,10 +22,11 @@ impl JsonRpcHandler {
         metrics: &Metrics,
         url: &RequestUrl,
         client: &reqwest::Client,
+        forward_headers: &HeaderMap,
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         match rpc_request {
-            JsonRpcRequest::Single(call) => Self::handle_single_request(call, request, cache, metrics, url, client).await,
-            JsonRpcRequest::Batch(calls) => Self::handle_batch_request(rpc_request, calls, request, metrics, url, client).await,
+            JsonRpcRequest::Single(call) => Self::handle_single_request(call, request, cache, metrics, url, client, forward_headers).await,
+            JsonRpcRequest::Batch(calls) => Self::handle_batch_request(rpc_request, calls, request, metrics, url, client, forward_headers).await,
         }
     }
 
@@ -36,6 +37,7 @@ impl JsonRpcHandler {
         metrics: &Metrics,
         url: &RequestUrl,
         client: &reqwest::Client,
+        forward_headers: &HeaderMap,
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         metrics.add_proxy_request_by_method(request.chain.as_ref(), &call.method);
 
@@ -75,7 +77,7 @@ impl JsonRpcHandler {
             metrics.add_cache_miss(request.chain.as_ref(), &call.method);
         }
 
-        let (response, response_status) = Self::fetch_single_response(call, request, cache, url, client).await?;
+        let (response, response_status) = Self::fetch_single_response(call, request, cache, url, client, forward_headers).await?;
 
         metrics.add_proxy_response(
             request.chain.as_ref(),
@@ -91,11 +93,10 @@ impl JsonRpcHandler {
                 info_with_fields!(
                     "Proxy response",
                     chain = request.chain.as_ref(),
-                    host = request.host,
+                    remote_host = url.url.host_str().unwrap_or_default(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
                     rpc_method = call.method.as_str(),
-                    remote_host = url.url.host_str().unwrap_or_default(),
                     status = response_status,
                     latency = DurationMs(request.elapsed()),
                 );
@@ -104,11 +105,10 @@ impl JsonRpcHandler {
                 info_with_fields!(
                     "Proxy response",
                     chain = request.chain.as_ref(),
-                    host = request.host,
+                    remote_host = url.url.host_str().unwrap_or_default(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
                     rpc_method = call.method.as_str(),
-                    remote_host = url.url.host_str().unwrap_or_default(),
                     status = response_status,
                     latency = DurationMs(request.elapsed()),
                     error_code = error_response.error.code,
@@ -128,13 +128,14 @@ impl JsonRpcHandler {
         metrics: &Metrics,
         url: &RequestUrl,
         client: &reqwest::Client,
+        forward_headers: &HeaderMap,
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         for call in calls {
             metrics.add_proxy_request_by_method(request.chain.as_ref(), &call.method);
             metrics.add_cache_miss(request.chain.as_ref(), &call.method);
         }
 
-        let (responses, response_status) = Self::fetch_batch_responses(calls, url, client, &request.method).await?;
+        let (responses, response_status) = Self::fetch_batch_responses(calls, url, client, &request.method, forward_headers).await?;
 
         for call in calls {
             metrics.add_proxy_response(
@@ -151,11 +152,10 @@ impl JsonRpcHandler {
         info_with_fields!(
             "Proxy response",
             chain = request.chain.as_ref(),
-            host = request.host,
+            remote_host = url.url.host_str().unwrap_or_default(),
             method = request.method.as_str(),
             uri = request.path.as_str(),
             rpc_method = &rpc_methods,
-            remote_host = url.url.host_str().unwrap_or_default(),
             status = response_status,
             latency = DurationMs(request.elapsed()),
         );
@@ -169,8 +169,9 @@ impl JsonRpcHandler {
         method: &Method,
         url: &RequestUrl,
         body: Vec<u8>,
+        headers: &HeaderMap,
     ) -> Result<reqwest::Response, Box<dyn std::error::Error + Send + Sync>> {
-        let request = RequestBuilder::build_jsonrpc(url, method, body)?;
+        let request = RequestBuilder::build(method, url, body, headers.clone())?;
         Ok(client.execute(request).await?)
     }
 
@@ -180,9 +181,10 @@ impl JsonRpcHandler {
         cache: &RequestCache,
         url: &RequestUrl,
         client: &reqwest::Client,
+        forward_headers: &HeaderMap,
     ) -> Result<(JsonRpcResult, u16), Box<dyn std::error::Error + Send + Sync>> {
         let body = serde_json::to_vec(&call)?;
-        let response = Self::send_jsonrpc_request(client, &request.method, url, body).await?;
+        let response = Self::send_jsonrpc_request(client, &request.method, url, body, forward_headers).await?;
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
 
@@ -243,9 +245,10 @@ impl JsonRpcHandler {
         url: &RequestUrl,
         client: &reqwest::Client,
         method: &Method,
+        forward_headers: &HeaderMap,
     ) -> Result<(serde_json::Value, u16), Box<dyn std::error::Error + Send + Sync>> {
         let body = serde_json::to_vec(&calls)?;
-        let response = Self::send_jsonrpc_request(client, method, url, body).await?;
+        let response = Self::send_jsonrpc_request(client, method, url, body, forward_headers).await?;
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
         let responses: serde_json::Value = serde_json::from_slice(&body_bytes)?;

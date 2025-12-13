@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = 今天安全地购买{$name} —
 support_new_message_title = 来自支持的新消息
 notification_freeze_title = 冻结{$value}
 notification_unfreeze_title = 解冻{$value}
+notification_reward_title = 💎 您已获得 {$value} 得分！
+notification_reward_create_username_description = 用户名已准备就绪。邀请好友即可获得奖励。
+notification_reward_invite_description = 推荐人使用您的邀请码加入。
+notification_rewards_joined_description = 您是通过推荐码加入的。

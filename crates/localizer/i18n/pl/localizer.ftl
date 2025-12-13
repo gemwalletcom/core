@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Kup {$name} bezpiecznie już dzi
 support_new_message_title = Nowa wiadomość od Wsparcia
 notification_freeze_title = Zamroź {$value}
 notification_unfreeze_title = Odmroź {$value}
+notification_reward_title = 💎 Zarobiłeś {$value} zwrotnica!
+notification_reward_create_username_description = Nazwa użytkownika gotowa. Zaproś znajomych i zdobądź nagrody.
+notification_reward_invite_description = Polecenie zostało dodane przy użyciu Twojego kodu.
+notification_rewards_joined_description = Dołączyłeś używając kodu polecającego.

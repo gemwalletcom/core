@@ -95,12 +95,10 @@ pub enum JsonRpcRequest {
 }
 
 impl JsonRpcRequest {
-    pub fn cache_key(&self, host: &str, path: &str) -> String {
+    pub fn cache_key(&self, host: &str, path: &str) -> Option<String> {
         match self {
-            Self::Single(call) => call.cache_key(host, path),
-            Self::Batch(_) => {
-                panic!("Batch requests do not support caching")
-            }
+            Self::Single(call) => Some(call.cache_key(host, path)),
+            Self::Batch(_) => None,
         }
     }
 
@@ -156,7 +154,7 @@ impl RequestType {
         JSON_CONTENT_TYPE
     }
 
-    pub fn cache_key(&self, host: &str, path: &str) -> String {
+    pub fn cache_key(&self, host: &str, path: &str) -> Option<String> {
         match self {
             Self::Regular { path, method, body } => {
                 let mut key = format!("{}:{}:{}", host, method, path);
@@ -164,7 +162,7 @@ impl RequestType {
                     key.push(':');
                     key.push_str(body_str);
                 }
-                key
+                Some(key)
             }
             Self::JsonRpc(json_rpc) => json_rpc.cache_key(host, path),
         }
@@ -200,7 +198,7 @@ mod tests {
         };
 
         let request = JsonRpcRequest::Single(call);
-        let key = request.cache_key("example.com", "/rpc");
+        let key = request.cache_key("example.com", "/rpc").unwrap();
 
         assert_eq!(key, "example.com:POST:/rpc:eth_blockNumber:[]");
     }
@@ -215,7 +213,7 @@ mod tests {
         };
 
         let request = JsonRpcRequest::Single(call);
-        let key = request.cache_key("example.com", "/rpc");
+        let key = request.cache_key("example.com", "/rpc").unwrap();
 
         assert!(key.contains("eth_getBalance"));
         assert!(key.contains("0x123"));
@@ -232,7 +230,7 @@ mod tests {
         };
 
         let request = JsonRpcRequest::Single(call);
-        let key = request.cache_key("example.com", "/rpc");
+        let key = request.cache_key("example.com", "/rpc").unwrap();
 
         assert_eq!(key, "example.com:POST:/rpc:eth_blockNumber");
     }
@@ -260,8 +258,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Batch requests do not support caching")]
-    fn test_batch_cache_key_generation_panics() {
+    fn test_batch_cache_key_returns_none() {
         let calls = vec![JsonRpcCall {
             jsonrpc: "2.0".to_string(),
             method: "eth_blockNumber".to_string(),
@@ -270,7 +267,7 @@ mod tests {
         }];
 
         let request = JsonRpcRequest::Batch(calls);
-        let _ = request.cache_key("example.com", "/rpc");
+        assert!(request.cache_key("example.com", "/rpc").is_none());
     }
 
     #[test]
@@ -350,8 +347,8 @@ mod tests {
             body: body2,
         };
 
-        let key1 = request1.cache_key("example.com", "/info");
-        let key2 = request2.cache_key("example.com", "/info");
+        let key1 = request1.cache_key("example.com", "/info").unwrap();
+        let key2 = request2.cache_key("example.com", "/info").unwrap();
 
         assert_ne!(key1, key2, "Different request bodies should produce different cache keys");
         assert!(key1.contains(r#"{"type":"metaAndAssetCtxs"}"#));
