@@ -1,3 +1,4 @@
+use crate::catchers::ErrorContext;
 use gem_auth::{AuthClient, verify_auth_signature};
 use primitives::{AuthMessage, AuthenticatedRequest};
 use rocket::data::{FromData, Outcome, ToByteUnit};
@@ -7,6 +8,11 @@ use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use storage::Database;
+
+fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
+    req.local_cache(|| ErrorContext(message.to_string()));
+    Error((status, message.to_string()))
+}
 
 pub struct VerifiedAuth {
     pub device_id: String,
@@ -24,32 +30,32 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
 
     async fn from_data(req: &'r Request<'_>, data: Data<'r>) -> Outcome<'r, Self> {
         let Success(auth_client) = req.guard::<&State<Arc<AuthClient>>>().await else {
-            return Error((Status::InternalServerError, "Auth client not available".into()));
+            return error_outcome(req, Status::InternalServerError, "Auth client not available");
         };
         let Success(database) = req.guard::<&State<Database>>().await else {
-            return Error((Status::InternalServerError, "Database not available".into()));
+            return error_outcome(req, Status::InternalServerError, "Database not available");
         };
 
         let Ok(bytes) = data.open(1.mebibytes()).into_bytes().await else {
-            return Error((Status::BadRequest, "Failed to read body".into()));
+            return error_outcome(req, Status::BadRequest, "Failed to read body");
         };
         if !bytes.is_complete() {
-            return Error((Status::BadRequest, "Request body too large".into()));
+            return error_outcome(req, Status::BadRequest, "Request body too large");
         }
 
         let Ok(body) = serde_json::from_slice::<AuthenticatedRequest<T>>(&bytes.into_inner()) else {
-            return Error((Status::BadRequest, "Invalid JSON".into()));
+            return error_outcome(req, Status::BadRequest, "Invalid JSON");
         };
 
         let Ok(auth_nonce) = auth_client.get_auth_nonce(&body.auth.device_id, &body.auth.nonce).await else {
-            return Error((Status::Unauthorized, "Invalid nonce".into()));
+            return error_outcome(req, Status::Unauthorized, "Invalid nonce");
         };
 
         let Ok(mut db_client) = database.client() else {
-            return Error((Status::InternalServerError, "Database error".into()));
+            return error_outcome(req, Status::InternalServerError, "Database error");
         };
         if db_client.get_device(&body.auth.device_id).is_err() {
-            return Error((Status::Unauthorized, "Device not found".into()));
+            return error_outcome(req, Status::Unauthorized, "Device not found");
         }
 
         let auth_message = AuthMessage {
@@ -58,11 +64,11 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
             auth_nonce,
         };
         if !verify_auth_signature(&auth_message, &body.auth.signature) {
-            return Error((Status::Unauthorized, "Invalid signature".into()));
+            return error_outcome(req, Status::Unauthorized, "Invalid signature");
         }
 
         if auth_client.invalidate_nonce(&body.auth.device_id, &body.auth.nonce).await.is_err() {
-            return Error((Status::InternalServerError, "Failed to invalidate nonce".into()));
+            return error_outcome(req, Status::InternalServerError, "Failed to invalidate nonce");
         }
 
         Success(Authenticated {

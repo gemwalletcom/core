@@ -1,5 +1,6 @@
 mod assets;
 mod auth;
+mod catchers;
 mod chain;
 mod config;
 mod devices;
@@ -42,7 +43,7 @@ use name_resolver::NameProviderFactory;
 use name_resolver::client::Client as NameClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
-use rocket::{Build, Rocket, routes};
+use rocket::{Build, Rocket, catchers, routes};
 use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
@@ -210,6 +211,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])
+        .register("/", catchers![catchers::default_catcher])
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
