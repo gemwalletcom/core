@@ -26,9 +26,11 @@ impl primitives::Preferences for PreferencesWrapper {
     }
 }
 
+#[cfg(test)]
 #[derive(Debug, Default)]
 pub struct EmptyPreferences;
 
+#[cfg(test)]
 impl GemPreferences for EmptyPreferences {
     fn get(&self, _key: String) -> Result<Option<String>, GatewayError> {
         Ok(None)
