@@ -40,12 +40,12 @@ impl RewardsClient {
         let address = self.verify_request(request).await?;
         let device = self.database.client()?.get_device(&request.auth.device_id)?;
 
-        if !device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS) {
+        if device.created_at.is_older_than_days(REFERRAL_ELIGIBILITY_DAYS) {
             return Err("Device not eligible for referral".into());
         }
 
         if let Some(date) = self.database.client()?.rewards().get_first_subscription_date(vec![address.clone()])? {
-            if !date.is_within_days(REFERRAL_ELIGIBILITY_DAYS) {
+            if date.is_older_than_days(REFERRAL_ELIGIBILITY_DAYS) {
                 return Err("Address not eligible for referral".into());
             }
         }
