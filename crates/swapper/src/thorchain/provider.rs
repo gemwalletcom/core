@@ -73,7 +73,9 @@ where
                 .ok_or(SwapperError::InvalidRoute)?;
 
             if from_inbound_address.dust_threshold > value {
-                return Err(SwapperError::InputAmountTooSmall);
+                return Err(SwapperError::InputAmountError {
+                    min_amount: Some(from_inbound_address.dust_threshold.to_string()),
+                });
             }
         }
 

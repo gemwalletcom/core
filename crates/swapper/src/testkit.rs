@@ -1,6 +1,11 @@
-use crate::{SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, config::get_swap_config};
+use crate::{
+    FetchQuoteData, ProviderType, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage,
+    SwapperSlippageMode, config::get_swap_config,
+};
+use async_trait::async_trait;
+use primitives::Chain;
 
-use super::{Options, QuoteRequest, SwapperMode};
+use super::{Options, Quote, QuoteRequest, SwapperMode};
 
 pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) -> QuoteRequest {
     let config = get_swap_config();
@@ -21,5 +26,43 @@ pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) ->
             preferred_providers: vec![],
             use_max_amount: false,
         },
+    }
+}
+
+type MockResponse = fn() -> Result<Quote, SwapperError>;
+
+#[derive(Debug)]
+pub struct MockSwapper {
+    provider: ProviderType,
+    supported_assets: Vec<SwapperChainAsset>,
+    response: MockResponse,
+}
+
+impl MockSwapper {
+    pub fn new(provider: SwapperProvider, response: MockResponse) -> Self {
+        Self {
+            provider: ProviderType::new(provider),
+            supported_assets: vec![SwapperChainAsset::All(Chain::Ethereum)],
+            response,
+        }
+    }
+}
+
+#[async_trait]
+impl Swapper for MockSwapper {
+    fn provider(&self) -> &ProviderType {
+        &self.provider
+    }
+
+    fn supported_assets(&self) -> Vec<SwapperChainAsset> {
+        self.supported_assets.clone()
+    }
+
+    async fn fetch_quote(&self, _request: &QuoteRequest) -> Result<Quote, SwapperError> {
+        (self.response)()
+    }
+
+    async fn fetch_quote_data(&self, _quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+        todo!("MockSwapper fetch_quote_data not implemented")
     }
 }

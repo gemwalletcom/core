@@ -25,10 +25,11 @@ pub(crate) fn parse_asset_id(asset: &AssetId) -> Result<Address, SwapperError> {
     if let Some(token_id) = &asset.token_id {
         parse_str(token_id)
     } else {
-        Err(SwapperError::InvalidAddress(asset.to_string()))
+        Err(SwapperError::ComputeQuoteError(format!("Invalid address {}", asset)))
     }
 }
 
 pub(crate) fn parse_str(str: &str) -> Result<Address, SwapperError> {
-    str.parse::<Address>().map_err(|_| SwapperError::InvalidAddress(str.to_string()))
+    str.parse::<Address>()
+        .map_err(|_| SwapperError::ComputeQuoteError(format!("Invalid address {}", str)))
 }

@@ -32,14 +32,14 @@ pub(super) fn format_decimal_with_scale(value: &BigDecimal, scale: u32) -> Strin
 pub(super) fn format_order_size(amount: &BigDecimal, decimals: u32) -> Result<String, SwapperError> {
     let value = amount
         .to_f64()
-        .ok_or_else(|| SwapperError::InvalidAmount("failed to convert amount".to_string()))?;
+        .ok_or_else(|| SwapperError::ComputeQuoteError("failed to convert amount".into()))?;
     let rounded = round_to_decimals(value, decimals);
     let formatted = if decimals == 0 {
         format!("{rounded:.0}")
     } else {
         format!("{rounded:.decimals$}", decimals = decimals as usize)
     };
-    let big_decimal = BigDecimal::from_str(&formatted).map_err(|_| SwapperError::InvalidAmount("failed to format size".to_string()))?;
+    let big_decimal = BigDecimal::from_str(&formatted).map_err(|_| SwapperError::ComputeQuoteError("failed to format size".into()))?;
     Ok(BigNumberFormatter::decimal_to_string(&big_decimal, decimals))
 }
 
@@ -49,18 +49,18 @@ pub(super) fn spot_asset_index(market_index: u32) -> u32 {
 
 pub(super) fn apply_slippage(limit_price: &BigDecimal, side: SpotSide, slippage_bps: u32, price_decimals: u32) -> Result<BigDecimal, SwapperError> {
     if limit_price <= &BigDecimal::zero() {
-        return Err(SwapperError::InvalidAmount("invalid limit price".to_string()));
+        return Err(SwapperError::ComputeQuoteError("invalid limit price".into()));
     }
 
     let limit_price_f64 = limit_price
         .to_f64()
-        .ok_or_else(|| SwapperError::InvalidAmount("failed to convert price".to_string()))?;
+        .ok_or_else(|| SwapperError::ComputeQuoteError("failed to convert price".into()))?;
 
     let slippage_fraction = slippage_bps as f64 / 10_000.0;
     let multiplier = if side.is_buy() { 1.0 + slippage_fraction } else { 1.0 - slippage_fraction };
 
     if multiplier <= 0.0 {
-        return Err(SwapperError::InvalidAmount("slippage multiplier not positive".to_string()));
+        return Err(SwapperError::ComputeQuoteError("slippage multiplier not positive".into()));
     }
 
     let adjusted = limit_price_f64 * multiplier;
@@ -72,7 +72,7 @@ pub(super) fn apply_slippage(limit_price: &BigDecimal, side: SpotSide, slippage_
         format!("{rounded:.price_decimals$}", price_decimals = price_decimals as usize)
     };
 
-    BigDecimal::from_str(&formatted).map_err(|_| SwapperError::InvalidAmount("failed to format limit price".to_string()))
+    BigDecimal::from_str(&formatted).map_err(|_| SwapperError::ComputeQuoteError("failed to format limit price".into()))
 }
 
 fn round_to_decimals(value: f64, decimals: u32) -> f64 {
