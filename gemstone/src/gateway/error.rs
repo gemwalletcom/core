@@ -1,12 +1,13 @@
 use crate::alien::AlienError;
 use gem_jsonrpc::types::{ERROR_CLIENT_ERROR, JsonRpcError};
+use std::{error::Error, fmt::Display};
 
 #[derive(Debug, Clone, uniffi::Error)]
 pub enum GatewayError {
     NetworkError { msg: String },
 }
 
-impl std::fmt::Display for GatewayError {
+impl Display for GatewayError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::NetworkError { msg: message } => write!(f, "Network error: {}", message),
@@ -14,9 +15,9 @@ impl std::fmt::Display for GatewayError {
     }
 }
 
-impl std::error::Error for GatewayError {}
+impl Error for GatewayError {}
 
-pub(crate) fn map_network_error(error: Box<dyn std::error::Error + Send + Sync>) -> GatewayError {
+pub(crate) fn map_network_error(error: Box<dyn Error + Send + Sync>) -> GatewayError {
     if let Some(jsonrpc_error) = error.downcast_ref::<JsonRpcError>()
         && jsonrpc_error.code == ERROR_CLIENT_ERROR
     {
@@ -27,10 +28,10 @@ pub(crate) fn map_network_error(error: Box<dyn std::error::Error + Send + Sync>)
 
     let message = if let Some(status) = http_status_from_error(error.as_ref()) {
         let error_message = error.to_string();
-        if error_message.contains(&status.to_string()) {
+        if error_message.is_empty() {
             format!("HTTP error: status {}", status)
         } else {
-            format!("HTTP error: status {} ({})", status, error_message)
+            error_message
         }
     } else {
         error.to_string()
@@ -39,8 +40,8 @@ pub(crate) fn map_network_error(error: Box<dyn std::error::Error + Send + Sync>)
     GatewayError::NetworkError { msg: message }
 }
 
-fn http_status_from_error(error: &(dyn std::error::Error + 'static)) -> Option<u16> {
-    let mut current_error: Option<&(dyn std::error::Error + 'static)> = Some(error);
+fn http_status_from_error(error: &(dyn Error + 'static)) -> Option<u16> {
+    let mut current_error: Option<&(dyn Error + 'static)> = Some(error);
 
     while let Some(err) = current_error {
         if let Some(alien_error) = err.downcast_ref::<AlienError>()

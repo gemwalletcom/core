@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use gem_client::{Client, ClientError, ContentType};
+use gem_client::{Client, ClientError, ContentType, Response, deserialize_response};
 use primitives::Chain;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json;
@@ -13,11 +13,7 @@ use std::{
 
 pub const X_CACHE_TTL: &str = "x-cache-ttl";
 
-#[derive(Debug, Clone)]
-pub struct RpcResponse {
-    pub status: Option<u16>,
-    pub data: Vec<u8>,
-}
+pub type RpcResponse = Response;
 
 pub trait RpcClientError: Error + Send + Sync + 'static + Display + Sized {
     fn into_client_error(self) -> ClientError {
@@ -192,30 +188,6 @@ where
 
         deserialize_response(&response)
     }
-}
-
-fn deserialize_response<R>(response: &RpcResponse) -> Result<R, ClientError>
-where
-    R: DeserializeOwned,
-{
-    match serde_json::from_slice(&response.data) {
-        Ok(value) => Ok(value),
-        Err(error) => {
-            validate_http_status(response)?;
-            Err(ClientError::Serialization(format!("Failed to deserialize response: {error}")))
-        }
-    }
-}
-
-fn validate_http_status(response: &RpcResponse) -> Result<(), ClientError> {
-    if let Some(status) = response.status
-        && !(200..400).contains(&status) {
-            return Err(ClientError::Http {
-                status,
-                len: response.data.len(),
-            });
-        }
-    Ok(())
 }
 
 #[async_trait]
