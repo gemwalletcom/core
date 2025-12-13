@@ -1,4 +1,5 @@
 mod assets;
+mod auth;
 mod chain;
 mod config;
 mod devices;
@@ -28,6 +29,7 @@ use ::fiat::FiatClient;
 use ::fiat::FiatConfig;
 use ::nft::{NFTClient, NFTProviderConfig};
 use api_connector::PusherClient;
+use gem_auth::AuthClient;
 use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
@@ -98,10 +100,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client);
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(database.clone(), nft_config);
+    let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
     let markets_client = MarketsClient::new(database.clone(), cacher_client);
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
-    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone());
+    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), auth_client.clone());
 
     rocket::build()
         .manage(Mutex::new(fiat_quotes_client))
@@ -125,6 +128,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(support_client))
         .manage(Mutex::new(ip_check_client))
         .manage(Mutex::new(rewards_client))
+        .manage(auth_client)
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
             "/v1",
@@ -149,6 +153,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::update_device,
                 devices::delete_device,
                 devices::send_push_notification_device,
+                auth::get_auth_nonce,
                 assets::get_asset,
                 assets::get_assets,
                 assets::add_asset,

@@ -2,6 +2,8 @@
 
 pub type UInt64 = u64;
 
+pub mod auth;
+pub use self::auth::{AuthMessage, AuthNonce, AuthPayload};
 pub mod chain;
 pub use self::chain::Chain;
 pub mod chain_stake;

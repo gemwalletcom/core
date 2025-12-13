@@ -1,3 +1,4 @@
+use crate::AuthPayload;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
@@ -41,10 +42,7 @@ pub struct Rewards {
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct RewardsReferralRequest {
-    pub device_id: String,
-    pub address: String,
-    pub message: String,
-    pub signature: String,
+    pub auth: AuthPayload,
     pub code: String,
 }
 

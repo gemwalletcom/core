@@ -485,6 +485,7 @@ dependencies = [
  "cacher",
  "config",
  "fiat",
+ "gem_auth",
  "gem_client",
  "gem_tracing",
  "metrics",
@@ -494,7 +495,6 @@ dependencies = [
  "primitives",
  "prometheus-client",
  "redis",
- "referral",
  "reqwest",
  "rocket",
  "rocket_ws",
@@ -2758,6 +2758,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_auth"
+version = "1.0.0"
+dependencies = [
+ "alloy-primitives",
+ "cacher",
+ "chrono",
+ "gem_hash",
+ "k256",
+ "primitives",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "gem_bitcoin"
 version = "1.0.0"
 dependencies = [
@@ -3120,6 +3135,7 @@ dependencies = [
  "futures",
  "gem_algorand",
  "gem_aptos",
+ "gem_auth",
  "gem_bitcoin",
  "gem_cardano",
  "gem_client",
@@ -3140,7 +3156,6 @@ dependencies = [
  "num-bigint",
  "number_formatter",
  "primitives",
- "referral",
  "reqwest",
  "serde",
  "serde_json",
@@ -5420,13 +5435,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.106",
-]
-
-[[package]]
-name = "referral"
-version = "1.0.0"
-dependencies = [
- "gem_evm",
 ]
 
 [[package]]

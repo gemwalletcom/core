@@ -116,4 +116,8 @@ impl CacherClient {
         let last_processed: u64 = self.get_or_set_value(key, || async { Ok(now) }, Some(ttl_seconds)).await?;
         Ok(last_processed == now)
     }
+
+    pub async fn delete(&self, key: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(self.connection.clone().del::<&str, i64>(key).await? > 0)
+    }
 }

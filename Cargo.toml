@@ -47,7 +47,6 @@ members = [
     "crates/streamer",
     "crates/swapper",
     "crates/tracing",
-    "crates/referral",
 ]
 
 [workspace.dependencies]

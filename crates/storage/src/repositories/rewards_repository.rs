@@ -10,6 +10,20 @@ fn has_custom_username(username: &str, address: &str) -> bool {
     !username.eq_ignore_ascii_case(address)
 }
 
+fn validate_username(username: &str) -> Result<(), DatabaseError> {
+    let len = username.len();
+    if len < 4 {
+        return Err(DatabaseError::Internal("Username must be at least 4 characters".into()));
+    }
+    if len > 16 {
+        return Err(DatabaseError::Internal("Username must be at most 16 characters".into()));
+    }
+    if !username.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(DatabaseError::Internal("Username must contain only letters and digits".into()));
+    }
+    Ok(())
+}
+
 pub trait RewardsRepository {
     fn get_reward_by_address(&mut self, address: &str) -> Result<Rewards, DatabaseError>;
     fn get_reward_events_by_address(&mut self, address: &str) -> Result<Vec<RewardsEventItem>, DatabaseError>;
@@ -60,6 +74,8 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError> {
+        validate_username(username)?;
+
         if UsernamesStore::username_exists(self, UsernameLookup::Username(username))? {
             return Err(DatabaseError::Internal("Username already taken".into()));
         }
@@ -162,5 +178,19 @@ mod tests {
         assert!(!has_custom_username("0x1234567890abcdef", "0x1234567890abcdef"));
         assert!(!has_custom_username("0xABCDEF", "0xabcdef"));
         assert!(!has_custom_username("0xabcdef", "0xABCDEF"));
+    }
+
+    #[test]
+    fn test_validate_username() {
+        assert!(validate_username("abcd").is_ok());
+        assert!(validate_username("user123").is_ok());
+        assert!(validate_username("1234567890123456").is_ok());
+
+        assert!(validate_username("abc").is_err());
+        assert!(validate_username("12345678901234567").is_err());
+        assert!(validate_username("user_name").is_err());
+        assert!(validate_username("user-name").is_err());
+        assert!(validate_username("user.name").is_err());
+        assert!(validate_username("user name").is_err());
     }
 }

@@ -1,7 +1,0 @@
-[package]
-name = "referral"
-version = { workspace = true }
-edition = { workspace = true }
-
-[dependencies]
-gem_evm = { path = "../gem_evm" }
