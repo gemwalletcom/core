@@ -15,13 +15,14 @@ pub mod perpetuals;
 pub mod price_alerts;
 pub mod prices;
 pub mod prices_dex;
-pub mod referrals;
 pub mod releases;
+pub mod rewards;
 pub mod scan_addresses;
 pub mod subscriptions;
 pub mod support;
 pub mod tag;
 pub mod transactions;
+pub mod usernames;
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
@@ -34,10 +35,10 @@ pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 use crate::{
     AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, DevicesRepository, FiatRepository,
     LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository, PriceAlertsRepository,
-    PricesDexRepository, PricesRepository, ReferralsRepository, ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, SupportRepository,
+    PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, ScanAddressesRepository, SubscriptionsRepository, SupportRepository,
     TagRepository, TransactionsRepository,
 };
-use referrals::ReferralsEventTypesStore;
+use rewards::RewardsEventTypesStore;
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
     let manager = ConnectionManager::<PgConnection>::new(database_url);
@@ -121,11 +122,11 @@ impl DatabaseClient {
         self
     }
 
-    pub fn referrals(&mut self) -> &mut dyn ReferralsRepository {
+    pub fn rewards(&mut self) -> &mut dyn RewardsRepository {
         self
     }
 
-    pub fn referral_event_types(&mut self) -> &mut dyn ReferralsEventTypesStore {
+    pub fn reward_event_types(&mut self) -> &mut dyn RewardsEventTypesStore {
         self
     }
 

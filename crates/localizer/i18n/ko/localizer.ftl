@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = 오늘 {$name} 안전하게 구�
 support_new_message_title = 지원팀의 새 메시지
 notification_freeze_title = {$value} 동결
 notification_unfreeze_title = {$value} 동결 해제
+notification_reward_title = 💎 획득하셨습니다 {$value} 전철기!
+notification_reward_create_username_description = 사용자 이름이 준비되었습니다. 친구를 초대하여 보상을 늘리세요.
+notification_reward_invite_description = 추천이 성공했습니다! 친구분이 당신의 코드를 사용하여 가입했습니다.
+notification_rewards_joined_description = 추천 코드를 사용하여 가입하셨으므로 포인트를 적립하셨습니다.

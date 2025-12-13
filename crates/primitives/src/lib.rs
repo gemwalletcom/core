@@ -99,7 +99,9 @@ pub use self::address_status::AddressStatus;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
-pub use self::push_notification::{PushNotification, PushNotificationAsset, PushNotificationTransaction, PushNotificationTypes};
+pub use self::push_notification::{
+    PushNotification, PushNotificationAsset, PushNotificationReward, PushNotificationSupport, PushNotificationTransaction, PushNotificationTypes,
+};
 pub mod gorush;
 pub use self::gorush::{FailedNotification, GorushNotification, GorushNotifications, PushErrorLog};
 pub mod scan;
@@ -125,8 +127,8 @@ pub mod nft;
 pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, ReportNft};
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
-pub mod referral;
-pub use self::referral::{Referral, ReferralCodeRequest, ReferralEvent, ReferralEventItem};
+pub mod rewards;
+pub use self::rewards::{Rewards, RewardsEvent, RewardsEventItem, RewardsReferralRequest};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;

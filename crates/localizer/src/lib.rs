@@ -222,4 +222,21 @@ impl LanguageLocalizer {
     pub fn notification_support_new_message_title(&self) -> String {
         fl!(self.loader.as_ref(), "support_new_message_title")
     }
+
+    // rewards
+    pub fn notification_reward_title(&self, points: i32) -> String {
+        fl!(self.loader.as_ref(), "notification_reward_title", value = points)
+    }
+
+    pub fn notification_reward_create_username_description(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_reward_create_username_description")
+    }
+
+    pub fn notification_reward_invite_description(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_reward_invite_description")
+    }
+
+    pub fn notification_reward_joined_description(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_rewards_joined_description")
+    }
 }

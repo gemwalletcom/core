@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = 今すぐ{$name}を安全に購�
 support_new_message_title = サポートからの新しいメッセージ
 notification_freeze_title = {$value}を凍結
 notification_unfreeze_title = {$value}を解凍
+notification_reward_title = 💎 獲得しました {$value} ポイント！
+notification_reward_create_username_description = ユーザー名の準備ができました。友達を招待して報酬を増やしましょう。
+notification_reward_invite_description = 紹介が成功しました。あなたのコードを使用して友達が参加しました。
+notification_rewards_joined_description = 紹介コードを使用して参加するとポイントを獲得できます。

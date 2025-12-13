@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Achetez {$name} en toute sécuri
 support_new_message_title = Nouveau message du support
 notification_freeze_title = Geler {$value}
 notification_unfreeze_title = Dégeler {$value}
+notification_reward_title = 💎 Vous avez gagné {$value} points!
+notification_reward_create_username_description = Nom d'utilisateur prêt. Invitez des amis pour augmenter vos récompenses.
+notification_reward_invite_description = Votre parrainage a fonctionné ! Un ami s'est inscrit grâce à votre code.
+notification_rewards_joined_description = Vous avez gagné des points en vous inscrivant avec un code de parrainage.

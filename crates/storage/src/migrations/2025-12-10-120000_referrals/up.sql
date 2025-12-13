@@ -1,39 +1,37 @@
-CREATE TABLE referrals (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE usernames (
+    username VARCHAR(64) PRIMARY KEY,
     address VARCHAR(256) NOT NULL UNIQUE,
-    code VARCHAR(64) UNIQUE,
-    used_referral_code VARCHAR(64),
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );
 
-SELECT diesel_manage_updated_at('referrals');
+SELECT diesel_manage_updated_at('usernames');
 
-CREATE TABLE referrals_uses (
+CREATE TABLE rewards_referrals (
     id SERIAL PRIMARY KEY,
-    referrer_address VARCHAR(256) NOT NULL REFERENCES referrals (address) ON DELETE CASCADE,
-    referred_address VARCHAR(256) NOT NULL REFERENCES referrals (address) ON DELETE CASCADE UNIQUE,
+    referrer_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
+    referred_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE UNIQUE,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );
 
-CREATE INDEX referrals_uses_referrer_idx ON referrals_uses (referrer_address);
+CREATE INDEX rewards_referrals_referrer_idx ON rewards_referrals(referrer_username);
 
-SELECT diesel_manage_updated_at('referrals_uses');
+SELECT diesel_manage_updated_at('rewards_referrals');
 
-CREATE TABLE referrals_events_types (
+CREATE TABLE rewards_events_types (
     id VARCHAR(64) PRIMARY KEY,
     points INT NOT NULL
 );
 
-CREATE TABLE referrals_events (
+CREATE TABLE rewards_events (
     id SERIAL PRIMARY KEY,
-    address VARCHAR(256) NOT NULL REFERENCES referrals (address) ON DELETE CASCADE,
-    event_type VARCHAR(64) NOT NULL REFERENCES referrals_events_types (id) ON DELETE CASCADE,
+    username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
+    event_type VARCHAR(64) NOT NULL REFERENCES rewards_events_types(id) ON DELETE CASCADE,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );
 
-CREATE INDEX referrals_events_address_idx ON referrals_events (address);
+CREATE INDEX rewards_events_username_idx ON rewards_events(username);
 
-SELECT diesel_manage_updated_at('referrals_events');
+SELECT diesel_manage_updated_at('rewards_events');

@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Kaufen Sie {$name} noch heute si
 support_new_message_title = Neue Nachricht vom Support
 notification_freeze_title = {$value} einfrieren
 notification_unfreeze_title = {$value} freigeben
+notification_reward_title = 💎 Du hast verdient {$value} Punkte!
+notification_reward_create_username_description = Benutzername bereit. Lade Freunde ein, um deine Belohnungen zu erhöhen.
+notification_reward_invite_description = Ihre Empfehlung war erfolgreich! Ein Freund hat sich mit Ihrem Code angemeldet.
+notification_rewards_joined_description = Sie haben Punkte für die Anmeldung mit einem Empfehlungscode erhalten.

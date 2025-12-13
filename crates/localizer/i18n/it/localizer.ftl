@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Acquista {$name} oggi stesso in 
 support_new_message_title = Nuovo messaggio dal supporto
 notification_freeze_title = Congela {$value}
 notification_unfreeze_title = Sblocca {$value}
+notification_reward_title = 💎 Hai guadagnato {$value} punti!
+notification_reward_create_username_description = Nome utente pronto. Invita gli amici per aumentare i tuoi premi.
+notification_reward_invite_description = Il tuo referral è andato a buon fine! Un amico si è iscritto usando il tuo codice.
+notification_rewards_joined_description = Hai guadagnato punti iscrivendoti con un codice di riferimento.

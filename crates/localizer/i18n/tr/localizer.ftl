@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = {$name} bugün güvenli bir şek
 support_new_message_title = Destek'ten yeni mesaj
 notification_freeze_title = {$value} dondur
 notification_unfreeze_title = {$value} çöz
+notification_reward_title = 💎 Bunu hak ettiniz {$value} puanlar!
+notification_reward_create_username_description = Kullanıcı adınız hazır. Ödüllerinizi artırmak için arkadaşlarınızı davet edin.
+notification_reward_invite_description = Referansınız başarılı oldu! Bir arkadaşınız sizin kodunuzu kullanarak katıldı.
+notification_rewards_joined_description = Referans koduyla katıldığınız için puan kazandınız.

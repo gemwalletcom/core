@@ -145,10 +145,7 @@ fn default_limits() -> Vec<FiatAssetLimits> {
 
 use std::collections::HashSet;
 
-pub fn map_assets(
-    buy_currencies: Vec<PaybisCurrency>,
-    sell_codes: HashSet<String>,
-) -> Vec<FiatProviderAsset> {
+pub fn map_assets(buy_currencies: Vec<PaybisCurrency>, sell_codes: HashSet<String>) -> Vec<FiatProviderAsset> {
     buy_currencies
         .into_iter()
         .filter_map(|currency| {
@@ -342,9 +339,18 @@ mod tests {
     #[test]
     fn test_map_assets_buy_and_sell() {
         let buy_currencies = vec![
-            PaybisCurrency { code: "ETH".to_string(), blockchain_name: Some("ethereum".to_string()) },
-            PaybisCurrency { code: "BTC".to_string(), blockchain_name: Some("bitcoin".to_string()) },
-            PaybisCurrency { code: "SOL".to_string(), blockchain_name: Some("solana".to_string()) },
+            PaybisCurrency {
+                code: "ETH".to_string(),
+                blockchain_name: Some("ethereum".to_string()),
+            },
+            PaybisCurrency {
+                code: "BTC".to_string(),
+                blockchain_name: Some("bitcoin".to_string()),
+            },
+            PaybisCurrency {
+                code: "SOL".to_string(),
+                blockchain_name: Some("solana".to_string()),
+            },
         ];
         let sell_codes: HashSet<String> = ["ETH".to_string(), "SOL".to_string()].into_iter().collect();
 

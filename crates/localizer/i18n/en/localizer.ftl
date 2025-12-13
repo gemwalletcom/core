@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Securely buy {$name} today—sim
 support_new_message_title = New message from Support
 notification_freeze_title = Freeze {$value}
 notification_unfreeze_title = Unfreeze {$value}
+notification_reward_title = 💎 You earned {$value} points!
+notification_reward_create_username_description = Username ready. Invite friends to boost your rewards.
+notification_reward_invite_description = Your referral was successful! A friend joined using your code.
+notification_rewards_joined_description = You earned points for joining with a referral code.

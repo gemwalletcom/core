@@ -3,22 +3,26 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-#[derive(Clone, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
-#[serde(rename_all = "snake_case")]
-#[strum(serialize_all = "snake_case")]
-pub enum ReferralEvent {
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
+pub enum RewardsEvent {
+    CreateUsername,
     Invite,
+    Joined,
 }
 
-impl ReferralEvent {
+impl RewardsEvent {
     pub fn all() -> Vec<Self> {
         Self::iter().collect()
     }
 
     pub fn points(&self) -> i32 {
         match self {
-            ReferralEvent::Invite => 100,
+            RewardsEvent::CreateUsername => 25,
+            RewardsEvent::Invite => 100,
+            RewardsEvent::Joined => 10,
         }
     }
 }
@@ -26,7 +30,7 @@ impl ReferralEvent {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-pub struct Referral {
+pub struct Rewards {
     pub code: Option<String>,
     pub referral_count: i32,
     pub points: i32,
@@ -36,7 +40,7 @@ pub struct Referral {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
-pub struct ReferralCodeRequest {
+pub struct RewardsReferralRequest {
     pub address: String,
     pub message: String,
     pub signature: String,
@@ -46,8 +50,8 @@ pub struct ReferralCodeRequest {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-pub struct ReferralEventItem {
-    pub event: ReferralEvent,
+pub struct RewardsEventItem {
+    pub event: RewardsEvent,
     pub points: i32,
     pub created_at: DateTime<Utc>,
 }
