@@ -428,7 +428,7 @@ mod tests {
         let result = gem_swapper.fetch_quote(&request).await;
 
         match result {
-            Err(SwapperError::InputAmountError(_)) => {}
+            Err(SwapperError::InputAmountError { min_amount: _ }) => {}
             _ => panic!("expected InputAmountError when every provider rejects the amount"),
         }
     }
