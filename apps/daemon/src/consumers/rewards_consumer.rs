@@ -25,13 +25,14 @@ impl MessageConsumer<RewardsNotificationPayload, usize> for RewardsConsumer {
 
     async fn process(&self, payload: RewardsNotificationPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
-        let (address, event) = client.rewards().get_reward_event(payload.event_id)?;
-        let devices = client.subscriptions().get_devices_by_address(&address)?;
+
+        let event = client.rewards().get_reward_event(payload.event_id)?;
+        let devices = client.rewards().get_reward_event_devices(payload.event_id)?;
 
         let notifications: Vec<GorushNotification> = devices
             .into_iter()
             .filter(|d| d.can_receive_push_notification())
-            .map(|device| create_notification(device, event))
+            .map(|device| create_notification(device, event.event))
             .collect();
 
         if notifications.is_empty() {

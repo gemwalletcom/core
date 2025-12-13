@@ -32,6 +32,6 @@ support_new_message_title = رسالة جديدة من الدعم
 notification_freeze_title = تجميد {$value}
 notification_unfreeze_title = إلغاء تجميد {$value}
 notification_reward_title = 💎 لقد ربحت {$value} نقاط!
-notification_reward_create_username_description = اسم المستخدم جاهز. ادعُ أصدقاءك لزيادة مكافآتك.
-notification_reward_invite_description = تمت عملية الإحالة بنجاح! انضم صديق باستخدام رمزك.
-notification_rewards_joined_description = لقد ربحت نقاطاً لانضمامك باستخدام رمز الإحالة.
+notification_reward_create_username_description = اسم المستخدم جاهز. ادعُ أصدقاءك لربح المكافآت.
+notification_reward_invite_description = تم الانضمام عن طريق الإحالة باستخدام رمزك.
+notification_rewards_joined_description = لقد انضممت باستخدام رمز إحالة.

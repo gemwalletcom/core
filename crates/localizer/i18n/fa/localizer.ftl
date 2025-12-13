@@ -32,6 +32,6 @@ support_new_message_title = پیام جدید از پشتیبانی
 notification_freeze_title = ثابت کردن {$value}
 notification_unfreeze_title = رفع انسداد {$value}
 notification_reward_title = 💎 شما سود کردید {$value} امتیاز!
-notification_reward_create_username_description = نام کاربری آماده است. برای افزایش جوایز خود، دوستان خود را دعوت کنید.
-notification_reward_invite_description = معرفی شما با موفقیت انجام شد! یکی از دوستانتان با استفاده از کد شما عضو شد.
-notification_rewards_joined_description = شما با عضویت از طریق کد معرف امتیاز کسب کردید.
+notification_reward_create_username_description = نام کاربری آماده است. دوستان خود را برای کسب جوایز دعوت کنید.
+notification_reward_invite_description = ارجاع با استفاده از کد شما پیوست شد.
+notification_rewards_joined_description = شما با استفاده از کد معرف عضو شدید.

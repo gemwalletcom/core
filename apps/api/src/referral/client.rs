@@ -29,7 +29,8 @@ impl RewardsClient {
 
     pub async fn use_referral_code(&mut self, request: &RewardsReferralRequest) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let address = self.verify_request(request)?;
-        let event_ids = self.database.client()?.rewards().use_referral_code(&address, &request.code)?;
+        let device = self.database.client()?.get_device(&request.device_id)?;
+        let event_ids = self.database.client()?.rewards().use_referral_code(&address, &request.code, device.id)?;
         self.publish_events(event_ids).await?;
         Ok(())
     }

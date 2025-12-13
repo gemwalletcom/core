@@ -1,8 +1,9 @@
 use crate::database::rewards::RewardsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::models::{NewRewardEvent, NewRewardReferral, Username};
+use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
-use primitives::{Rewards, RewardsEvent, RewardsEventItem};
+use primitives::{Device, Rewards, RewardsEvent, RewardsEventItem};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
     !username.eq_ignore_ascii_case(address)
@@ -11,9 +12,10 @@ fn has_custom_username(username: &str, address: &str) -> bool {
 pub trait RewardsRepository {
     fn get_reward_by_address(&mut self, address: &str) -> Result<Rewards, DatabaseError>;
     fn get_reward_events_by_address(&mut self, address: &str) -> Result<Vec<RewardsEventItem>, DatabaseError>;
-    fn get_reward_event(&mut self, event_id: i32) -> Result<(String, RewardsEvent), DatabaseError>;
+    fn get_reward_event(&mut self, event_id: i32) -> Result<RewardsEventItem, DatabaseError>;
+    fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
-    fn use_referral_code(&mut self, address: &str, referral_code: &str) -> Result<Vec<i32>, DatabaseError>;
+    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<Vec<i32>, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -45,10 +47,15 @@ impl RewardsRepository for DatabaseClient {
         Ok(events.iter().map(|e| e.as_primitive()).collect())
     }
 
-    fn get_reward_event(&mut self, event_id: i32) -> Result<(String, RewardsEvent), DatabaseError> {
+    fn get_reward_event(&mut self, event_id: i32) -> Result<RewardsEventItem, DatabaseError> {
+        let event = RewardsStore::get_event(self, event_id)?;
+        Ok(event.as_primitive())
+    }
+
+    fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError> {
         let event = RewardsStore::get_event(self, event_id)?;
         let user = UsernamesStore::get_username(self, UsernameLookup::Username(&event.username))?;
-        Ok((user.address, event.as_primitive().event))
+        self.get_devices_by_address(&user.address)
     }
 
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError> {
@@ -83,7 +90,7 @@ impl RewardsRepository for DatabaseClient {
         Ok((rewards, event_id))
     }
 
-    fn use_referral_code(&mut self, address: &str, referral_code: &str) -> Result<Vec<i32>, DatabaseError> {
+    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<Vec<i32>, DatabaseError> {
         if !UsernamesStore::username_exists(self, UsernameLookup::Username(referral_code))? {
             return Err(DatabaseError::Internal("Referral code does not exist".into()));
         }
@@ -109,11 +116,16 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Already used a referral code".into()));
         }
 
+        if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
+            return Err(DatabaseError::Internal("Device already used a referral code".into()));
+        }
+
         RewardsStore::add_referral(
             self,
             NewRewardReferral {
                 referrer_username: referral_code.to_string(),
                 referred_username: user.username.clone(),
+                referred_device_id: device_id,
             },
         )?;
         let invite_event_id = RewardsStore::add_event(

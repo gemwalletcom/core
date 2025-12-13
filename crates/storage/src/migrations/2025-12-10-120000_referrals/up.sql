@@ -11,11 +11,13 @@ CREATE TABLE rewards_referrals (
     id SERIAL PRIMARY KEY,
     referrer_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
     referred_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE UNIQUE,
+    referred_device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );
 
 CREATE INDEX rewards_referrals_referrer_idx ON rewards_referrals(referrer_username);
+CREATE INDEX rewards_referrals_referred_device_id_idx ON rewards_referrals(referred_device_id);
 
 SELECT diesel_manage_updated_at('rewards_referrals');
 

@@ -9,6 +9,7 @@ use std::str::FromStr;
 pub struct RewardReferral {
     pub referrer_username: String,
     pub referred_username: String,
+    pub referred_device_id: i32,
     pub created_at: NaiveDateTime,
 }
 
@@ -17,6 +18,7 @@ pub struct RewardReferral {
 pub struct NewRewardReferral {
     pub referrer_username: String,
     pub referred_username: String,
+    pub referred_device_id: i32,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, Clone)]
