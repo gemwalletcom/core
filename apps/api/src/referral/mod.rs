@@ -4,7 +4,7 @@ pub use client::RewardsClient;
 
 use crate::auth::Authenticated;
 use crate::responders::{ApiError, ApiResponse};
-use primitives::{ReferralCode, Rewards, RewardsEventItem};
+use primitives::{ReferralCode, RewardEvent, Rewards};
 use rocket::{State, get, post};
 use tokio::sync::Mutex;
 
@@ -14,7 +14,7 @@ pub async fn get_rewards(address: &str, client: &State<Mutex<RewardsClient>>) ->
 }
 
 #[get("/rewards/<address>/events")]
-pub async fn get_rewards_events(address: &str, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Vec<RewardsEventItem>>, ApiError> {
+pub async fn get_rewards_events(address: &str, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
     Ok(client.lock().await.get_rewards_events(address)?.into())
 }
 

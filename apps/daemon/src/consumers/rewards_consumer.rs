@@ -2,7 +2,7 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use localizer::LanguageLocalizer;
-use primitives::{Device, GorushNotification, PushNotification, PushNotificationReward, PushNotificationTypes, RewardsEvent};
+use primitives::{Device, GorushNotification, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType};
 use storage::Database;
 use streamer::{NotificationsPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
@@ -47,13 +47,13 @@ impl MessageConsumer<RewardsNotificationPayload, usize> for RewardsConsumer {
     }
 }
 
-fn create_notification(device: Device, event: RewardsEvent) -> GorushNotification {
+fn create_notification(device: Device, event: RewardEventType) -> GorushNotification {
     let localizer = LanguageLocalizer::new_with_language(&device.locale);
     let title = localizer.notification_reward_title(event.points());
     let message = match event {
-        RewardsEvent::CreateUsername => localizer.notification_reward_create_username_description(),
-        RewardsEvent::InviteNew | RewardsEvent::InviteExisting => localizer.notification_reward_invite_description(),
-        RewardsEvent::Joined => localizer.notification_reward_joined_description(),
+        RewardEventType::CreateUsername => localizer.notification_reward_create_username_description(),
+        RewardEventType::InviteNew | RewardEventType::InviteExisting => localizer.notification_reward_invite_description(),
+        RewardEventType::Joined => localizer.notification_reward_joined_description(),
     };
     let data = PushNotification {
         notification_type: PushNotificationTypes::Rewards,

@@ -1,5 +1,5 @@
 use crate::auth::VerifiedAuth;
-use primitives::{NaiveDateTimeExt, Rewards, RewardsEvent, RewardsEventItem};
+use primitives::{NaiveDateTimeExt, RewardEvent, RewardEventType, Rewards};
 use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
@@ -19,7 +19,7 @@ impl RewardsClient {
         Ok(self.database.client()?.rewards().get_reward_by_address(address)?)
     }
 
-    pub fn get_rewards_events(&mut self, address: &str) -> Result<Vec<RewardsEventItem>, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn get_rewards_events(&mut self, address: &str) -> Result<Vec<RewardEvent>, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self.database.client()?.rewards().get_reward_events_by_address(address)?)
     }
 
@@ -37,9 +37,14 @@ impl RewardsClient {
         let is_new_subscription = first_subscription_date
             .map(|date| date.is_within_days(REFERRAL_ELIGIBILITY_DAYS))
             .unwrap_or(true);
+
         let is_new_user = is_new_device && is_new_subscription;
 
-        let invite_event = if is_new_user { RewardsEvent::InviteNew } else { RewardsEvent::InviteExisting };
+        let invite_event = if is_new_user {
+            RewardEventType::InviteNew
+        } else {
+            RewardEventType::InviteExisting
+        };
 
         let event_ids = self
             .database

@@ -7,24 +7,24 @@ use typeshare::typeshare;
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
-pub enum RewardsEvent {
+pub enum RewardEventType {
     CreateUsername,
     InviteNew,
     InviteExisting,
     Joined,
 }
 
-impl RewardsEvent {
+impl RewardEventType {
     pub fn all() -> Vec<Self> {
         Self::iter().collect()
     }
 
     pub fn points(&self) -> i32 {
         match self {
-            RewardsEvent::CreateUsername => 25,
-            RewardsEvent::InviteNew => 100,
-            RewardsEvent::InviteExisting => 10,
-            RewardsEvent::Joined => 10,
+            Self::CreateUsername => 25,
+            Self::InviteNew => 100,
+            Self::InviteExisting => 10,
+            Self::Joined => 10,
         }
     }
 }
@@ -49,8 +49,8 @@ pub struct ReferralCode {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-pub struct RewardsEventItem {
-    pub event: RewardsEvent,
+pub struct RewardEvent {
+    pub event: RewardEventType,
     pub points: i32,
     pub created_at: DateTime<Utc>,
 }
