@@ -31,7 +31,7 @@ pub trait RewardsRepository {
     fn get_reward_event(&mut self, event_id: i32) -> Result<RewardsEventItem, DatabaseError>;
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
-    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<Vec<i32>, DatabaseError>;
+    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardsEvent) -> Result<Vec<i32>, DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
 }
 
@@ -109,7 +109,7 @@ impl RewardsRepository for DatabaseClient {
         Ok((rewards, event_id))
     }
 
-    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<Vec<i32>, DatabaseError> {
+    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardsEvent) -> Result<Vec<i32>, DatabaseError> {
         if !UsernamesStore::username_exists(self, UsernameLookup::Username(referral_code))? {
             return Err(DatabaseError::Internal("Referral code does not exist".into()));
         }
@@ -155,7 +155,7 @@ impl RewardsRepository for DatabaseClient {
             self,
             NewRewardEvent {
                 username: referrer.username,
-                event_type: RewardsEvent::Invite.as_ref().to_string(),
+                event_type: invite_event.as_ref().to_string(),
             },
         )?;
         let joined_event_id = RewardsStore::add_event(

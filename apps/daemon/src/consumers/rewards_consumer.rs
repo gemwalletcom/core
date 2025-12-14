@@ -52,7 +52,7 @@ fn create_notification(device: Device, event: RewardsEvent) -> GorushNotificatio
     let title = localizer.notification_reward_title(event.points());
     let message = match event {
         RewardsEvent::CreateUsername => localizer.notification_reward_create_username_description(),
-        RewardsEvent::Invite => localizer.notification_reward_invite_description(),
+        RewardsEvent::InviteNew | RewardsEvent::InviteExisting => localizer.notification_reward_invite_description(),
         RewardsEvent::Joined => localizer.notification_reward_joined_description(),
     };
     let data = PushNotification {

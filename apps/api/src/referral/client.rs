@@ -1,5 +1,5 @@
 use crate::auth::VerifiedAuth;
-use primitives::{NaiveDateTimeExt, Rewards, RewardsEventItem};
+use primitives::{NaiveDateTimeExt, Rewards, RewardsEvent, RewardsEventItem};
 use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
@@ -31,18 +31,21 @@ impl RewardsClient {
 
     pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let device = self.database.client()?.get_device(&auth.device_id)?;
+        let first_subscription_date = self.database.client()?.rewards().get_first_subscription_date(vec![auth.address.clone()])?;
 
-        if device.created_at.is_older_than_days(REFERRAL_ELIGIBILITY_DAYS) {
-            return Err("Device not eligible for referral".into());
-        }
+        let is_new_device = device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
+        let is_new_subscription = first_subscription_date
+            .map(|date| date.is_within_days(REFERRAL_ELIGIBILITY_DAYS))
+            .unwrap_or(true);
+        let is_new_user = is_new_device && is_new_subscription;
 
-        if let Some(date) = self.database.client()?.rewards().get_first_subscription_date(vec![auth.address.clone()])? {
-            if date.is_older_than_days(REFERRAL_ELIGIBILITY_DAYS) {
-                return Err("Address not eligible for referral".into());
-            }
-        }
+        let invite_event = if is_new_user { RewardsEvent::InviteNew } else { RewardsEvent::InviteExisting };
 
-        let event_ids = self.database.client()?.rewards().use_referral_code(&auth.address, code, device.id)?;
+        let event_ids = self
+            .database
+            .client()?
+            .rewards()
+            .use_referral_code(&auth.address, code, device.id, invite_event)?;
         self.publish_events(event_ids).await?;
         Ok(())
     }

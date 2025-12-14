@@ -9,7 +9,8 @@ use typeshare::typeshare;
 #[strum(serialize_all = "camelCase")]
 pub enum RewardsEvent {
     CreateUsername,
-    Invite,
+    InviteNew,
+    InviteExisting,
     Joined,
 }
 
@@ -21,7 +22,8 @@ impl RewardsEvent {
     pub fn points(&self) -> i32 {
         match self {
             RewardsEvent::CreateUsername => 25,
-            RewardsEvent::Invite => 100,
+            RewardsEvent::InviteNew => 100,
+            RewardsEvent::InviteExisting => 10,
             RewardsEvent::Joined => 10,
         }
     }
