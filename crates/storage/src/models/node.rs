@@ -1,11 +1,11 @@
 use diesel::prelude::*;
-use primitives::node::{ChainNode, NodeState, NodeType};
+use primitives::node::{ChainNode, Node, NodeState, NodeType};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Queryable, Selectable)]
 #[diesel(table_name = crate::schema::nodes)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Node {
+pub struct NodeRow {
     pub id: i32,
     pub chain: String,
     pub url: String,
@@ -14,7 +14,7 @@ pub struct Node {
     pub priority: i32,
 }
 
-impl Node {
+impl NodeRow {
     pub fn as_primitive(&self) -> ChainNode {
         ChainNode {
             chain: self.chain.clone(),
@@ -22,8 +22,8 @@ impl Node {
         }
     }
 
-    pub fn as_primitive_node(&self) -> primitives::node::Node {
-        primitives::node::Node {
+    pub fn as_primitive_node(&self) -> Node {
+        Node {
             url: self.url.clone(),
             node_type: NodeType::from_str(&self.node_type).unwrap_or_default(),
             status: NodeState::from_str(&self.status).unwrap_or_default(),

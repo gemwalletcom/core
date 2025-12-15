@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::parser_state)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct ParserState {
+pub struct ParserStateRow {
     pub chain: String,
     pub current_block: i64,
     pub latest_block: i64,

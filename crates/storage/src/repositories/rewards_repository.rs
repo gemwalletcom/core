@@ -1,7 +1,7 @@
 use crate::database::rewards::RewardsStore;
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEvent, NewRewardReferralRow, Username};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, UsernameRow};
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
@@ -91,7 +91,7 @@ impl RewardsRepository for DatabaseClient {
         } else {
             UsernamesStore::create_username(
                 self,
-                Username {
+                UsernameRow {
                     username: username.to_string(),
                     address: address.to_string(),
                 },
@@ -100,7 +100,7 @@ impl RewardsRepository for DatabaseClient {
 
         let event_id = RewardsStore::add_event(
             self,
-            NewRewardEvent {
+            NewRewardEventRow {
                 username: username.to_string(),
                 event_type: RewardEventType::CreateUsername.as_ref().to_string(),
             },
@@ -120,7 +120,7 @@ impl RewardsRepository for DatabaseClient {
         } else {
             UsernamesStore::create_username(
                 self,
-                Username {
+                UsernameRow {
                     username: address.to_string(),
                     address: address.to_string(),
                 },
@@ -153,14 +153,14 @@ impl RewardsRepository for DatabaseClient {
         )?;
         let invite_event_id = RewardsStore::add_event(
             self,
-            NewRewardEvent {
+            NewRewardEventRow {
                 username: referrer.username,
                 event_type: invite_event.as_ref().to_string(),
             },
         )?;
         let joined_event_id = RewardsStore::add_event(
             self,
-            NewRewardEvent {
+            NewRewardEventRow {
                 username: user.username,
                 event_type: RewardEventType::Joined.as_ref().to_string(),
             },

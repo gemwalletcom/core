@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
 use crate::database::assets_addresses::AssetsAddressesStore;
-use crate::{DatabaseClient, models::asset_address::AssetAddress};
+use crate::{DatabaseClient, models::asset_address::AssetAddressRow};
 use primitives::{AssetAddress as PrimitiveAssetAddress, AssetId, ChainAddress};
 
 pub trait AssetsAddressesRepository {
@@ -19,7 +19,7 @@ impl AssetsAddressesRepository for DatabaseClient {
     fn add_assets_addresses(&mut self, values: Vec<PrimitiveAssetAddress>) -> Result<usize, DatabaseError> {
         Ok(AssetsAddressesStore::add_assets_addresses(
             self,
-            values.into_iter().map(AssetAddress::from_primitive).collect(),
+            values.into_iter().map(AssetAddressRow::from_primitive).collect(),
         )?)
     }
 
@@ -40,7 +40,7 @@ impl AssetsAddressesRepository for DatabaseClient {
     fn delete_assets_addresses(&mut self, values: Vec<PrimitiveAssetAddress>) -> Result<usize, DatabaseError> {
         Ok(AssetsAddressesStore::delete_assets_addresses(
             self,
-            values.into_iter().map(AssetAddress::from_primitive).collect(),
+            values.into_iter().map(AssetAddressRow::from_primitive).collect(),
         )?)
     }
 }

@@ -2,11 +2,11 @@ use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
 
 pub(crate) trait LinkTypesStore {
-    fn add_link_types(&mut self, values: Vec<LinkType>) -> Result<usize, diesel::result::Error>;
+    fn add_link_types(&mut self, values: Vec<LinkTypeRow>) -> Result<usize, diesel::result::Error>;
 }
 
 impl LinkTypesStore for DatabaseClient {
-    fn add_link_types(&mut self, values: Vec<LinkType>) -> Result<usize, diesel::result::Error> {
+    fn add_link_types(&mut self, values: Vec<LinkTypeRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::link_types::dsl::*;
         diesel::insert_into(link_types)
             .values(values)
@@ -17,7 +17,7 @@ impl LinkTypesStore for DatabaseClient {
 
 // Public methods for backward compatibility
 impl DatabaseClient {
-    pub fn add_link_types(&mut self, values: Vec<LinkType>) -> Result<usize, diesel::result::Error> {
+    pub fn add_link_types(&mut self, values: Vec<LinkTypeRow>) -> Result<usize, diesel::result::Error> {
         LinkTypesStore::add_link_types(self, values)
     }
 }

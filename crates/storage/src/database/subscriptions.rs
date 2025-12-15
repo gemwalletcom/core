@@ -5,21 +5,21 @@ use diesel::prelude::*;
 use primitives::Chain;
 
 pub(crate) trait SubscriptionsStore {
-    fn get_subscriptions_by_device_id(&mut self, device_id: &str, wallet_index: Option<i32>) -> Result<Vec<Subscription>, diesel::result::Error>;
-    fn get_subscriptions(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<(Subscription, Device)>, diesel::result::Error>;
-    fn get_subscriptions_by_address(&mut self, address: &str) -> Result<Vec<Device>, diesel::result::Error>;
-    fn add_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error>;
-    fn delete_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error>;
+    fn get_subscriptions_by_device_id(&mut self, device_id: &str, wallet_index: Option<i32>) -> Result<Vec<SubscriptionRow>, diesel::result::Error>;
+    fn get_subscriptions(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<(SubscriptionRow, DeviceRow)>, diesel::result::Error>;
+    fn get_subscriptions_by_address(&mut self, address: &str) -> Result<Vec<DeviceRow>, diesel::result::Error>;
+    fn add_subscriptions(&mut self, values: Vec<SubscriptionRow>) -> Result<usize, diesel::result::Error>;
+    fn delete_subscriptions(&mut self, values: Vec<SubscriptionRow>) -> Result<usize, diesel::result::Error>;
     fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, diesel::result::Error>;
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, diesel::result::Error>;
-    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExclude>) -> Result<usize, diesel::result::Error>;
+    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, diesel::result::Error>;
     fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, diesel::result::Error>;
     fn get_device_subscription_address_exists(&mut self, device_id: i32, address: &str) -> Result<bool, diesel::result::Error>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, diesel::result::Error>;
 }
 
 impl SubscriptionsStore for DatabaseClient {
-    fn get_subscriptions_by_device_id(&mut self, _device_id: &str, _wallet_index: Option<i32>) -> Result<Vec<Subscription>, diesel::result::Error> {
+    fn get_subscriptions_by_device_id(&mut self, _device_id: &str, _wallet_index: Option<i32>) -> Result<Vec<SubscriptionRow>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
 
         let mut query = subscriptions.inner_join(devices::table).filter(devices::device_id.eq(_device_id)).into_boxed();
@@ -28,10 +28,10 @@ impl SubscriptionsStore for DatabaseClient {
             query = query.filter(wallet_index.eq(index));
         }
 
-        query.select(Subscription::as_select()).load(&mut self.connection)
+        query.select(SubscriptionRow::as_select()).load(&mut self.connection)
     }
 
-    fn delete_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error> {
+    fn delete_subscriptions(&mut self, values: Vec<SubscriptionRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         let mut result = 0;
         for subscription in values {
@@ -46,7 +46,7 @@ impl SubscriptionsStore for DatabaseClient {
         Ok(result)
     }
 
-    fn get_subscriptions(&mut self, _chain: Chain, addresses: Vec<String>) -> Result<Vec<(Subscription, Device)>, diesel::result::Error> {
+    fn get_subscriptions(&mut self, _chain: Chain, addresses: Vec<String>) -> Result<Vec<(SubscriptionRow, DeviceRow)>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         use crate::schema::subscriptions_addresses_exclude;
 
@@ -58,17 +58,17 @@ impl SubscriptionsStore for DatabaseClient {
                 subscriptions_addresses_exclude::table.filter(subscriptions_addresses_exclude::address.eq(address)),
             )))
             .distinct_on((device_id, chain, address))
-            .select((Subscription::as_select(), crate::models::Device::as_select()))
+            .select((SubscriptionRow::as_select(), crate::models::DeviceRow::as_select()))
             .load(&mut self.connection)
     }
 
-    fn get_subscriptions_by_address(&mut self, _address: &str) -> Result<Vec<Device>, diesel::result::Error> {
+    fn get_subscriptions_by_address(&mut self, _address: &str) -> Result<Vec<DeviceRow>, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
 
         subscriptions
             .inner_join(devices::table)
             .filter(address.eq(_address))
-            .select(crate::models::Device::as_select())
+            .select(crate::models::DeviceRow::as_select())
             .distinct()
             .load(&mut self.connection)
     }
@@ -81,7 +81,7 @@ impl SubscriptionsStore for DatabaseClient {
             .load(&mut self.connection)
     }
 
-    fn add_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error> {
+    fn add_subscriptions(&mut self, values: Vec<SubscriptionRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
         diesel::insert_into(subscriptions)
             .values(&values)
@@ -89,7 +89,7 @@ impl SubscriptionsStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExclude>) -> Result<usize, diesel::result::Error> {
+    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions_addresses_exclude::dsl::*;
         diesel::insert_into(subscriptions_addresses_exclude)
             .values(values)

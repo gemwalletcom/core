@@ -1,7 +1,7 @@
 use crate::DatabaseError;
 
 use crate::database::assets_links::AssetsLinksStore;
-use crate::{DatabaseClient, models::AssetLink};
+use crate::{DatabaseClient, models::AssetLinkRow};
 use primitives::AssetLink as PrimitiveAssetLink;
 
 pub trait AssetsLinksRepository {
@@ -13,7 +13,7 @@ impl AssetsLinksRepository for DatabaseClient {
     fn add_assets_links(&mut self, asset_id: &str, values: Vec<PrimitiveAssetLink>) -> Result<usize, DatabaseError> {
         Ok(AssetsLinksStore::add_assets_links(
             self,
-            values.into_iter().map(|x| AssetLink::from_primitive(asset_id, x)).collect(),
+            values.into_iter().map(|x| AssetLinkRow::from_primitive(asset_id, x)).collect(),
         )?)
     }
 

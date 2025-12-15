@@ -3,7 +3,7 @@ use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, FiatRate};
 use std::error::Error;
 use storage::{
     Database,
-    models::{Chart, Price, PriceAsset},
+    models::{ChartRow, PriceAssetRow, PriceRow},
 };
 
 use cacher::CacherClient;
@@ -28,14 +28,14 @@ impl PriceClient {
         Ok(price.price_id.clone())
     }
 
-    pub fn set_prices(&self, prices: Vec<Price>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub fn set_prices(&self, prices: Vec<PriceRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT).clone() {
             self.database.client()?.prices().set_prices(chunk.to_vec())?;
         }
         Ok(prices.len())
     }
 
-    pub fn get_prices(&self) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
+    pub fn get_prices(&self) -> Result<Vec<PriceRow>, Box<dyn Error + Send + Sync>> {
         Ok(self.database.client()?.prices().get_prices()?)
     }
 
@@ -43,7 +43,7 @@ impl PriceClient {
         Ok(self.database.client()?.prices().get_prices()?.into_iter().map(|x| x.id).collect())
     }
 
-    pub fn get_prices_assets(&self) -> Result<Vec<PriceAsset>, Box<dyn Error + Send + Sync>> {
+    pub fn get_prices_assets(&self) -> Result<Vec<PriceAssetRow>, Box<dyn Error + Send + Sync>> {
         Ok(self.database.client()?.prices().get_prices_assets()?)
     }
 
@@ -52,7 +52,7 @@ impl PriceClient {
             .database
             .client()?
             .fiat()
-            .set_fiat_rates(rates.clone().into_iter().map(storage::models::FiatRate::from_primitive).collect())?;
+            .set_fiat_rates(rates.clone().into_iter().map(storage::models::FiatRateRow::from_primitive).collect())?;
 
         self.set_cache_fiat_rates(rates).await?;
 
@@ -119,7 +119,7 @@ impl PriceClient {
         })
     }
 
-    pub async fn add_charts(&self, charts: Vec<Chart>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn add_charts(&self, charts: Vec<ChartRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self.database.client()?.charts().add_charts(charts)?)
     }
 

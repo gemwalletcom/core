@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
 use storage::Database;
-use storage::models::AssetAddress;
+use storage::models::AssetAddressRow;
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
 pub struct FetchTokenAddressesConsumer {
@@ -43,14 +43,14 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
 
         for asset in all_assets {
             if asset.balance.available == BigUint::ZERO {
-                zero_balance_addresses.push(AssetAddress::new(
+                zero_balance_addresses.push(AssetAddressRow::new(
                     asset.asset_id.chain.to_string(),
                     asset.asset_id.to_string(),
                     payload.value.address.clone(),
                     None,
                 ));
             } else {
-                non_zero_addresses.push(AssetAddress::new(
+                non_zero_addresses.push(AssetAddressRow::new(
                     payload.value.chain.to_string(),
                     asset.asset_id.to_string(),
                     payload.value.address.clone(),

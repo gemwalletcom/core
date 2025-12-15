@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{AssetBasic, AssetId, AssetProperties, AssetScore, AssetType, Chain};
+use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, Chain};
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Asset {
+pub struct AssetRow {
     pub id: String,
     pub chain: String,
     pub token_id: Option<String>,
@@ -25,9 +25,9 @@ pub struct Asset {
     pub staking_apr: Option<f64>,
 }
 
-impl Asset {
-    pub fn as_primitive(&self) -> primitives::Asset {
-        primitives::asset::Asset::new(
+impl AssetRow {
+    pub fn as_primitive(&self) -> Asset {
+        Asset::new(
             AssetId {
                 chain: Chain::from_str(&self.chain).unwrap(),
                 token_id: self.token_id.clone(),
@@ -39,19 +39,19 @@ impl Asset {
         )
     }
 
-    pub fn as_basic_primitive(&self) -> primitives::AssetBasic {
+    pub fn as_basic_primitive(&self) -> AssetBasic {
         AssetBasic::new(self.as_primitive(), self.as_property_primitive(), self.as_score_primitive())
     }
 
-    pub fn as_score_primitive(&self) -> primitives::AssetScore {
-        primitives::AssetScore::new(self.rank)
+    pub fn as_score_primitive(&self) -> AssetScore {
+        AssetScore::new(self.rank)
     }
 
-    pub fn from_primitive_default(asset: primitives::Asset) -> Self {
+    pub fn from_primitive_default(asset: Asset) -> Self {
         Self::from_primitive(asset.clone(), AssetScore::default(), AssetProperties::default(asset.id))
     }
 
-    pub fn from_primitive(asset: primitives::Asset, score: AssetScore, properties: primitives::AssetProperties) -> Self {
+    pub fn from_primitive(asset: Asset, score: AssetScore, properties: AssetProperties) -> Self {
         Self {
             id: asset.id.to_string(),
             chain: asset.id.chain.as_ref().to_string(),
@@ -70,8 +70,8 @@ impl Asset {
         }
     }
 
-    pub fn as_property_primitive(&self) -> primitives::AssetProperties {
-        primitives::AssetProperties {
+    pub fn as_property_primitive(&self) -> AssetProperties {
+        AssetProperties {
             is_enabled: self.is_enabled,
             is_buyable: self.is_buyable,
             is_sellable: self.is_sellable,
@@ -85,21 +85,21 @@ impl Asset {
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets_links)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct AssetLink {
+pub struct AssetLinkRow {
     pub asset_id: String,
     pub link_type: String,
     pub url: String,
 }
 
-impl AssetLink {
-    pub fn as_primitive(&self) -> primitives::AssetLink {
-        primitives::AssetLink {
+impl AssetLinkRow {
+    pub fn as_primitive(&self) -> AssetLink {
+        AssetLink {
             name: self.link_type.clone(),
             url: self.url.clone(),
         }
     }
 
-    pub fn from_primitive(asset_id: &str, link: primitives::AssetLink) -> Self {
+    pub fn from_primitive(asset_id: &str, link: AssetLink) -> Self {
         Self {
             asset_id: asset_id.to_string(),
             link_type: link.name.clone(),

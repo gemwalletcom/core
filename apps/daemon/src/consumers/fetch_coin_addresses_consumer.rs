@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use cacher::CacherClient;
 use settings_chain::ChainProviders;
 use storage::Database;
-use storage::models::AssetAddress;
+use storage::models::AssetAddressRow;
 use streamer::{ChainAddressPayload, consumer::MessageConsumer};
 
 pub struct FetchCoinAddressesConsumer {
@@ -35,7 +35,7 @@ impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer
             return Ok(balance.balance.available.to_string());
         }
 
-        let asset_address = AssetAddress::new(
+        let asset_address = AssetAddressRow::new(
             payload.value.chain.to_string(),
             balance.asset_id.to_string(),
             payload.value.address,

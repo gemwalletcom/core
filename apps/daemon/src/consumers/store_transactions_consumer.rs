@@ -139,11 +139,11 @@ impl StoreTransactionsConsumer {
         }
 
         for chunk in transactions.chunks(TRANSACTION_BATCH_SIZE) {
-            let transactions_to_store: Vec<models::Transaction> = chunk.iter().map(|tx| models::Transaction::from_primitive(tx.clone())).collect();
+            let transactions_to_store: Vec<models::TransactionRow> = chunk.iter().map(|tx| models::TransactionRow::from_primitive(tx.clone())).collect();
 
-            let transaction_addresses_to_store: Vec<models::TransactionAddresses> = chunk
+            let transaction_addresses_to_store: Vec<models::TransactionAddressesRow> = chunk
                 .iter()
-                .flat_map(|tx| models::TransactionAddresses::from_primitive(tx.clone()))
+                .flat_map(|tx| models::TransactionAddressesRow::from_primitive(tx.clone()))
                 .collect::<HashSet<_>>()
                 .into_iter()
                 .collect();

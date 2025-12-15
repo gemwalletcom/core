@@ -76,16 +76,16 @@ impl NFTClient {
                 Err(e) => println!("nft preload collection {} error: {e}", collection_id.id()),
             }
         }
-        let new_collections = collections.clone().into_iter().map(storage::models::NftCollection::from_primitive).collect();
+        let new_collections = collections.clone().into_iter().map(storage::models::NftCollectionRow::from_primitive).collect();
 
-        let links: Vec<storage::models::NftLink> = collections
+        let links: Vec<storage::models::NftLinkRow> = collections
             .clone()
             .into_iter()
             .flat_map(|x| {
                 x.clone()
                     .links
                     .into_iter()
-                    .map(move |link| storage::models::NftLink::from_primitive(&x.id.clone(), link))
+                    .map(move |link| storage::models::NftLinkRow::from_primitive(&x.id.clone(), link))
             })
             .filter(|x| !x.url.is_empty())
             .collect();
@@ -115,7 +115,7 @@ impl NFTClient {
             .clone()
             .into_iter()
             .clone()
-            .map(storage::models::NftAsset::from_primitive)
+            .map(storage::models::NftAssetRow::from_primitive)
             .collect::<Vec<_>>();
 
         self.database.client()?.nft().add_nft_assets(new_assets)?;
@@ -206,7 +206,7 @@ impl NFTClient {
         reason: Option<String>,
     ) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let device = self.database.client()?.get_device(device_id)?;
-        let report = storage::models::NewNftReport {
+        let report = storage::models::NewNftReportRow {
             device_id: device.id,
             collection_id,
             asset_id,

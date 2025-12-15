@@ -3,19 +3,19 @@ use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
 
 pub(crate) trait ParserStateStore {
-    fn get_parser_state(&mut self, chain: &str) -> Result<ParserState, diesel::result::Error>;
+    fn get_parser_state(&mut self, chain: &str) -> Result<ParserStateRow, diesel::result::Error>;
     fn add_parser_state(&mut self, chain: &str) -> Result<usize, diesel::result::Error>;
-    fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error>;
+    fn get_parser_states(&mut self) -> Result<Vec<ParserStateRow>, diesel::result::Error>;
     fn set_parser_state_latest_block(&mut self, chain: &str, block: i64) -> Result<usize, diesel::result::Error>;
     fn set_parser_state_current_block(&mut self, chain: &str, block: i64) -> Result<usize, diesel::result::Error>;
 }
 
 impl ParserStateStore for DatabaseClient {
-    fn get_parser_state(&mut self, chain_str: &str) -> Result<ParserState, diesel::result::Error> {
+    fn get_parser_state(&mut self, chain_str: &str) -> Result<ParserStateRow, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
         parser_state
             .filter(chain.eq(chain_str))
-            .select(ParserState::as_select())
+            .select(ParserStateRow::as_select())
             .first(&mut self.connection)
     }
 
@@ -27,9 +27,9 @@ impl ParserStateStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error> {
+    fn get_parser_states(&mut self) -> Result<Vec<ParserStateRow>, diesel::result::Error> {
         use crate::schema::parser_state::dsl::*;
-        parser_state.select(ParserState::as_select()).load(&mut self.connection)
+        parser_state.select(ParserStateRow::as_select()).load(&mut self.connection)
     }
 
     fn set_parser_state_latest_block(&mut self, chain_str: &str, block: i64) -> Result<usize, diesel::result::Error> {
@@ -49,7 +49,7 @@ impl ParserStateStore for DatabaseClient {
 
 // Public methods for backward compatibility
 impl DatabaseClient {
-    pub fn get_parser_state(&mut self, chain: &str) -> Result<ParserState, diesel::result::Error> {
+    pub fn get_parser_state(&mut self, chain: &str) -> Result<ParserStateRow, diesel::result::Error> {
         ParserStateStore::get_parser_state(self, chain)
     }
 
@@ -57,7 +57,7 @@ impl DatabaseClient {
         ParserStateStore::add_parser_state(self, chain)
     }
 
-    pub fn get_parser_states(&mut self) -> Result<Vec<ParserState>, diesel::result::Error> {
+    pub fn get_parser_states(&mut self) -> Result<Vec<ParserStateRow>, diesel::result::Error> {
         ParserStateStore::get_parser_states(self)
     }
 

@@ -51,7 +51,7 @@ impl VersionClient {
     }
 
     fn set_release(&self, release: Release) -> Result<Release, Box<dyn Error + Send + Sync>> {
-        let releases = storage::models::Release::from_primitive(release.clone()).clone();
+        let releases = storage::models::ReleaseRow::from_primitive(release.clone()).clone();
         let _ = self.database.client()?.releases().update_release(releases)?;
         Ok(release)
     }

@@ -1,5 +1,5 @@
 use crate::DatabaseClient;
-use crate::models::{NewRewardEvent, NewRewardReferralRow, RewardEvent, RewardEventTypeRow, RewardReferralRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, RewardEventRow, RewardEventTypeRow, RewardReferralRow};
 use diesel::prelude::*;
 
 pub trait RewardsEventTypesStore {
@@ -21,9 +21,9 @@ pub(crate) trait RewardsStore {
     fn get_referrals_by_referrer(&mut self, referrer_username: &str) -> Result<Vec<RewardReferralRow>, diesel::result::Error>;
     fn get_referral_by_referred(&mut self, referred_username: &str) -> Result<Option<RewardReferralRow>, diesel::result::Error>;
     fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, diesel::result::Error>;
-    fn add_event(&mut self, event: NewRewardEvent) -> Result<i32, diesel::result::Error>;
-    fn get_event(&mut self, event_id: i32) -> Result<RewardEvent, diesel::result::Error>;
-    fn get_events(&mut self, username: &str) -> Result<Vec<RewardEvent>, diesel::result::Error>;
+    fn add_event(&mut self, event: NewRewardEventRow) -> Result<i32, diesel::result::Error>;
+    fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, diesel::result::Error>;
+    fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, diesel::result::Error>;
 }
 
 impl RewardsStore for DatabaseClient {
@@ -60,7 +60,7 @@ impl RewardsStore for DatabaseClient {
             .optional()
     }
 
-    fn add_event(&mut self, event: NewRewardEvent) -> Result<i32, diesel::result::Error> {
+    fn add_event(&mut self, event: NewRewardEventRow) -> Result<i32, diesel::result::Error> {
         use crate::schema::rewards_events::dsl;
         diesel::insert_into(dsl::rewards_events)
             .values(&event)
@@ -68,20 +68,20 @@ impl RewardsStore for DatabaseClient {
             .get_result(&mut self.connection)
     }
 
-    fn get_event(&mut self, event_id: i32) -> Result<RewardEvent, diesel::result::Error> {
+    fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, diesel::result::Error> {
         use crate::schema::rewards_events::dsl;
         dsl::rewards_events
             .filter(dsl::id.eq(event_id))
-            .select(RewardEvent::as_select())
+            .select(RewardEventRow::as_select())
             .first(&mut self.connection)
     }
 
-    fn get_events(&mut self, username: &str) -> Result<Vec<RewardEvent>, diesel::result::Error> {
+    fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, diesel::result::Error> {
         use crate::schema::rewards_events::dsl;
         dsl::rewards_events
             .filter(dsl::username.eq(username))
             .order(dsl::created_at.desc())
-            .select(RewardEvent::as_select())
+            .select(RewardEventRow::as_select())
             .load(&mut self.connection)
     }
 }

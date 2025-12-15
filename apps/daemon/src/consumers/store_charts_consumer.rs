@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use pricer::PriceClient;
 use std::error::Error;
-use storage::models::Chart;
+use storage::models::ChartRow;
 use streamer::{ChartsPayload, consumer::MessageConsumer};
 
 pub struct StoreChartsConsumer {
@@ -21,7 +21,7 @@ impl MessageConsumer<ChartsPayload, usize> for StoreChartsConsumer {
     }
 
     async fn process(&self, payload: ChartsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let charts: Vec<Chart> = payload.charts.iter().map(|c| Chart::from_chart_data(c.clone())).collect();
+        let charts: Vec<ChartRow> = payload.charts.iter().map(|c| ChartRow::from_chart_data(c.clone())).collect();
         self.price_client.add_charts(charts).await?;
         Ok(payload.charts.len())
     }

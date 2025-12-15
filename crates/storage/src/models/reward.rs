@@ -1,5 +1,6 @@
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use diesel::prelude::*;
+use primitives::{RewardEvent, RewardEventType};
 use std::str::FromStr;
 
 #[derive(Debug, Queryable, Selectable, Clone)]
@@ -29,7 +30,7 @@ pub struct RewardEventTypeRow {
 }
 
 impl RewardEventTypeRow {
-    pub fn from_primitive(event: primitives::RewardEventType) -> Self {
+    pub fn from_primitive(event: RewardEventType) -> Self {
         Self {
             id: event.as_ref().to_string(),
             points: event.points(),
@@ -40,16 +41,16 @@ impl RewardEventTypeRow {
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards_events)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct RewardEvent {
+pub struct RewardEventRow {
     pub username: String,
     pub event_type: String,
     pub created_at: NaiveDateTime,
 }
 
-impl RewardEvent {
-    pub fn as_primitive(&self) -> primitives::RewardEvent {
-        let event = primitives::RewardEventType::from_str(&self.event_type).unwrap();
-        primitives::RewardEvent {
+impl RewardEventRow {
+    pub fn as_primitive(&self) -> RewardEvent {
+        let event = RewardEventType::from_str(&self.event_type).unwrap();
+        RewardEvent {
             points: event.points(),
             event,
             created_at: Utc.from_utc_datetime(&self.created_at),
@@ -59,7 +60,7 @@ impl RewardEvent {
 
 #[derive(Debug, Insertable, Clone)]
 #[diesel(table_name = crate::schema::rewards_events)]
-pub struct NewRewardEvent {
+pub struct NewRewardEventRow {
     pub username: String,
     pub event_type: String,
 }

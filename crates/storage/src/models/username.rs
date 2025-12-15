@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, Clone)]
 #[diesel(table_name = crate::schema::usernames)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Username {
+pub struct UsernameRow {
     pub username: String,
     pub address: String,
 }

@@ -4,7 +4,7 @@ use primitives::AssetId;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::Database;
-use storage::models::Price;
+use storage::models::PriceRow;
 use streamer::{PricesPayload, consumer::MessageConsumer};
 
 pub struct StorePricesConsumer {
@@ -22,7 +22,7 @@ impl StorePricesConsumer {
         }
     }
 
-    async fn update_prices_cache(&self, updated_prices: Vec<Price>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn update_prices_cache(&self, updated_prices: Vec<PriceRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let price_ids: HashSet<_> = updated_prices.iter().map(|p| &p.id).collect();
 
         let prices_assets_map: HashMap<_, Vec<_>> = self
@@ -57,7 +57,7 @@ impl MessageConsumer<PricesPayload, usize> for StorePricesConsumer {
     }
 
     async fn process(&self, payload: PricesPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let prices: Vec<Price> = payload.prices.iter().map(|p| Price::from_price_data(p.clone())).collect();
+        let prices: Vec<PriceRow> = payload.prices.iter().map(|p| PriceRow::from_price_data(p.clone())).collect();
         self.database.client()?.prices().set_prices(prices.clone())?;
 
         self.update_prices_cache(prices).await?;

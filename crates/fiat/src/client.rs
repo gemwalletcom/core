@@ -348,10 +348,10 @@ impl FiatClient {
 
         let url = provider.get_quote_url(data).await?;
 
-        let db_quote = storage::models::FiatQuote::from_primitive(&quote.quote);
+        let db_quote = storage::models::FiatQuoteRow::from_primitive(&quote.quote);
         self.database.client()?.add_fiat_quotes(vec![db_quote])?;
 
-        self.database.client()?.add_fiat_quote_request(storage::models::FiatQuoteRequest {
+        self.database.client()?.add_fiat_quote_request(storage::models::FiatQuoteRequestRow {
             device_id: device.id,
             quote_id: quote_id.to_string(),
         })?;

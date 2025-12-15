@@ -129,8 +129,8 @@ impl FiatAssetsUpdater {
 
         let insert_assets = assets
             .into_iter()
-            .map(storage::models::FiatAsset::from_primitive)
-            .collect::<Vec<storage::models::FiatAsset>>();
+            .map(storage::models::FiatAssetRow::from_primitive)
+            .collect::<Vec<storage::models::FiatAssetRow>>();
 
         for asset in insert_assets {
             self.database.client()?.fiat().add_fiat_assets(vec![asset])?;
@@ -157,7 +157,7 @@ impl FiatAssetsUpdater {
         self.database
             .client()?
             .fiat()
-            .add_fiat_providers_countries(countries.into_iter().map(storage::models::FiatProviderCountry::from_primitive).collect())?;
+            .add_fiat_providers_countries(countries.into_iter().map(storage::models::FiatProviderCountryRow::from_primitive).collect())?;
         Ok(country_count)
     }
 
