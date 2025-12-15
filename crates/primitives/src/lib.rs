@@ -115,7 +115,7 @@ pub use self::transaction_metadata_types::{
 pub mod wallet_connect_namespace;
 pub use self::wallet_connect_namespace::WalletConnectCAIP2;
 pub mod wallet_connect;
-pub use self::wallet_connect::{WCEthereumTransaction, WCTonMessage, WalletConnectRequest};
+pub use self::wallet_connect::{WCEthereumTransaction, WalletConnectRequest};
 pub mod account;
 pub use self::account::Account;
 pub mod wallet;

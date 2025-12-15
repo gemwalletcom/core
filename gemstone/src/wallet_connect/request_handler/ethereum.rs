@@ -7,7 +7,7 @@ use serde_json::Value;
 pub struct EthereumRequestHandler;
 
 impl ChainRequestHandler for EthereumRequestHandler {
-    fn parse_sign_message(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
+    fn parse_sign_message(chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
         let params_array = params.as_array().ok_or("Invalid params format")?;
         let data = params_array.first().and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
 
@@ -69,7 +69,7 @@ mod tests {
     fn test_parse_personal_sign() {
         use crate::wallet_connect::handler_traits::ChainRequestHandler;
         let params = serde_json::from_str(r#"["0x48656c6c6f"]"#).unwrap();
-        let action = EthereumRequestHandler::parse_sign_message(Chain::Ethereum, params).unwrap();
+        let action = EthereumRequestHandler::parse_sign_message(Chain::Ethereum, params, "example.com").unwrap();
         match action {
             WalletConnectAction::SignMessage { chain, sign_type, data } => {
                 assert_eq!(chain, Chain::Ethereum);
@@ -150,7 +150,7 @@ mod tests {
         ]
         .join("\n");
         let params = serde_json::json!([message.clone()]);
-        let action = EthereumRequestHandler::parse_sign_message(Chain::Ethereum, params).unwrap();
+        let action = EthereumRequestHandler::parse_sign_message(Chain::Ethereum, params, "example.com").unwrap();
         match action {
             WalletConnectAction::SignMessage { sign_type, data, .. } => {
                 assert!(matches!(sign_type, SignDigestType::Eip191));

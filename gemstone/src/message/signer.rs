@@ -4,6 +4,7 @@ use alloy_primitives::{eip191_hash_message, hex::encode_prefixed};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
+use signer::{TonSignDataResponse, TonSignMessageData};
 use sui_types::PersonalMessage;
 
 use super::{
@@ -44,6 +45,16 @@ impl MessageSigner {
                 let preview = string.unwrap_or(encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
             }
+            SignDigestType::TonPersonal => {
+                let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
+                let Ok(ton_data) = TonSignMessageData::from_bytes(string.as_bytes()) else {
+                    return Ok(MessagePreview::Text(string));
+                };
+                let Ok(payload) = ton_data.get_payload() else {
+                    return Ok(MessagePreview::Text(string));
+                };
+                Ok(MessagePreview::Text(payload.data))
+            }
             SignDigestType::Eip712 => {
                 let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8 string for EIP712"))?;
                 if string.is_empty() {
@@ -75,7 +86,7 @@ impl MessageSigner {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 => match self.preview() {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
@@ -92,6 +103,18 @@ impl MessageSigner {
             SignDigestType::SuiPersonal => {
                 let message = PersonalMessage(Cow::Borrowed(&self.message.data));
                 message.signing_digest().to_vec()
+            }
+            SignDigestType::TonPersonal => {
+                let Ok(string) = String::from_utf8(self.message.data.clone()) else {
+                    return Vec::new();
+                };
+                let Ok(ton_data) = TonSignMessageData::from_bytes(string.as_bytes()) else {
+                    return Vec::new();
+                };
+                let Ok(payload) = ton_data.get_payload() else {
+                    return Vec::new();
+                };
+                payload.hash()
             }
             SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
@@ -119,9 +142,23 @@ impl MessageSigner {
                 }
                 encode_prefixed(&signature)
             }
-            SignDigestType::SuiPersonal => BASE64.encode(data),
+            SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
+    }
+
+    pub fn get_ton_result(&self, signature: &[u8], public_key: &[u8]) -> Result<String, GemstoneError> {
+        let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
+        let ton_data = TonSignMessageData::from_bytes(string.as_bytes()).map_err(|e| GemstoneError::from(e.to_string()))?;
+        let payload = ton_data.get_payload().map_err(|e| GemstoneError::from(e.to_string()))?;
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        let response = TonSignDataResponse::new(BASE64.encode(signature), BASE64.encode(public_key), timestamp, ton_data.domain, payload.to_json());
+
+        response.to_json().map_err(|e| GemstoneError::from(e.to_string()))
     }
 
     pub fn sign(&self, private_key: Vec<u8>) -> Result<String, GemstoneError> {
@@ -129,6 +166,10 @@ impl MessageSigner {
         let hash = self.hash();
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => Signer::sign_sui_digest(&hash, &private_key).map_err(GemstoneError::from),
+            SignDigestType::TonPersonal => {
+                let (signature, public_key) = Signer::sign_ton_personal(&self.message.data, &private_key)?;
+                self.get_ton_result(&signature, &public_key)
+            }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
                 let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
@@ -452,5 +493,23 @@ mod tests {
         }
 
         assert_eq!(decoder.plain_preview(), message);
+    }
+
+    #[test]
+    fn test_ton_personal_preview() {
+        let ton_data = TonSignMessageData::new(serde_json::json!({"type": "text", "text": "Hello TON", "from": "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}), "example.com".to_string());
+        let data = String::from_utf8(ton_data.to_bytes()).unwrap();
+        let decoder = MessageSigner::new(SignMessage {
+            chain: Chain::Ton,
+            sign_type: SignDigestType::TonPersonal,
+            data: data.as_bytes().to_vec(),
+        });
+
+        match decoder.preview() {
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "Hello TON"),
+            other => panic!("Unexpected result: {other:?}"),
+        }
+
+        assert_eq!(decoder.plain_preview(), "Hello TON");
     }
 }

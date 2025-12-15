@@ -74,6 +74,31 @@ pub struct TonSignDataResponse {
     payload: serde_json::Value,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TonSignMessageData {
+    pub payload: serde_json::Value,
+    pub domain: String,
+}
+
+impl TonSignMessageData {
+    pub fn new(payload: serde_json::Value, domain: String) -> Self {
+        Self { payload, domain }
+    }
+
+    pub fn from_bytes(data: &[u8]) -> Result<Self, SignerError> {
+        serde_json::from_slice(data).map_err(SignerError::from)
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        serde_json::to_vec(self).unwrap_or_default()
+    }
+
+    pub fn get_payload(&self) -> Result<TonSignDataPayload, SignerError> {
+        let json = serde_json::to_string(&self.payload)?;
+        TonSignDataPayload::parse(&json)
+    }
+}
+
 impl TonSignDataResponse {
     pub fn new(signature: String, public_key: String, timestamp: u64, domain: String, payload: serde_json::Value) -> Self {
         Self {
@@ -158,5 +183,27 @@ mod tests {
         assert_eq!(parsed["domain"], "example.com");
         assert_eq!(parsed["payload"]["type"], "text");
         assert_eq!(parsed["payload"]["text"], "Hello TON");
+    }
+
+    #[test]
+    fn test_ton_sign_message_data_roundtrip() {
+        let payload = serde_json::json!({"type": "text", "text": "Hello TON"});
+        let data = TonSignMessageData::new(payload.clone(), "example.com".to_string());
+
+        let bytes = data.to_bytes();
+        let parsed = TonSignMessageData::from_bytes(&bytes).unwrap();
+
+        assert_eq!(parsed.payload, payload);
+        assert_eq!(parsed.domain, "example.com");
+    }
+
+    #[test]
+    fn test_ton_sign_message_data_get_payload() {
+        let payload = serde_json::json!({"type": "text", "text": "Hello TON"});
+        let data = TonSignMessageData::new(payload, "example.com".to_string());
+
+        let parsed_payload = data.get_payload().unwrap();
+        assert_eq!(parsed_payload.payload_type, TonSignDataType::Text);
+        assert_eq!(parsed_payload.data, "Hello TON");
     }
 }

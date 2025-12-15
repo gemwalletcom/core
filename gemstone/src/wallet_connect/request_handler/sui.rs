@@ -7,7 +7,7 @@ use serde_json::Value;
 pub struct SuiRequestHandler;
 
 impl ChainRequestHandler for SuiRequestHandler {
-    fn parse_sign_message(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
+    fn parse_sign_message(_chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
         let message = params.get("message").and_then(|v| v.as_str()).ok_or("Missing message parameter")?;
 
         Ok(WalletConnectAction::SignMessage {
@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn test_parse_sign_message() {
         let params = serde_json::from_str(r#"{"message":"Hello Sui"}"#).unwrap();
-        let action = SuiRequestHandler::parse_sign_message(Chain::Sui, params).unwrap();
+        let action = SuiRequestHandler::parse_sign_message(Chain::Sui, params, "example.com").unwrap();
         match action {
             WalletConnectAction::SignMessage { chain, sign_type, data } => {
                 assert_eq!(chain, Chain::Sui);
