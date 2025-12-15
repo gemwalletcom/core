@@ -6,7 +6,7 @@ pub fn map_address_status(account: &TronAccount) -> Vec<AddressStatus> {
     let address = account.address.as_deref().unwrap_or_default();
 
     if let Some(owner_permission) = &account.owner_permission {
-        if owner_permission.permission_name != "owner" {
+        if owner_permission.permission_name != "owner" || owner_permission.threshold.unwrap_or(1) > 1 {
             return vec![AddressStatus::MultiSignature];
         }
         if let Some(keys) = &owner_permission.keys
@@ -17,10 +17,7 @@ pub fn map_address_status(account: &TronAccount) -> Vec<AddressStatus> {
     }
 
     if let Some(active_permissions) = &account.active_permission {
-        if active_permissions.len() > 1
-            || active_permissions.iter().any(|p| p.threshold > 1)
-            || active_permissions.iter().any(|p| p.id.is_some_and(|id| id != 0))
-        {
+        if active_permissions.len() > 1 || active_permissions.iter().any(|p| p.threshold > 1) {
             return vec![AddressStatus::MultiSignature];
         }
         for permission in active_permissions {
@@ -45,6 +42,7 @@ impl TronAccount {
             address: Some(address.to_string()),
             owner_permission: Some(TronAccountOwnerPermission {
                 permission_name: "owner".to_string(),
+                threshold: Some(1),
                 keys: Some(vec![TronAccountPermissionKey {
                     address: address.to_string(),
                     weight: 1,
@@ -119,19 +117,9 @@ mod tests {
         let mut account = TronAccount::mock(ADDRESS);
         account.owner_permission = Some(TronAccountOwnerPermission {
             permission_name: "custom".to_string(),
+            threshold: Some(1),
             keys: None,
         });
-        assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
-    }
-
-    #[test]
-    fn test_active_permission_id_not_default() {
-        let mut account = TronAccount::mock(ADDRESS);
-        account.active_permission = Some(vec![TronAccountPermission {
-            id: Some(2),
-            threshold: 1,
-            keys: None,
-        }]);
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
     }
 
@@ -140,6 +128,7 @@ mod tests {
         let mut account = TronAccount::mock(ADDRESS);
         account.owner_permission = Some(TronAccountOwnerPermission {
             permission_name: "owner".to_string(),
+            threshold: Some(1),
             keys: Some(vec![TronAccountPermissionKey {
                 address: OTHER_ADDRESS.to_string(),
                 weight: 1,
@@ -167,6 +156,7 @@ mod tests {
         let mut account = TronAccount::mock(ADDRESS);
         account.owner_permission = Some(TronAccountOwnerPermission {
             permission_name: "owner".to_string(),
+            threshold: Some(1),
             keys: Some(vec![
                 TronAccountPermissionKey {
                     address: ADDRESS.to_string(),
@@ -179,5 +169,44 @@ mod tests {
             ]),
         });
         assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
+    }
+
+    #[test]
+    fn test_owner_high_threshold() {
+        let mut account = TronAccount::mock(ADDRESS);
+        account.owner_permission = Some(TronAccountOwnerPermission {
+            permission_name: "owner".to_string(),
+            threshold: Some(2),
+            keys: None,
+        });
+        assert_eq!(map_address_status(&account), vec![AddressStatus::MultiSignature]);
+    }
+
+    #[test]
+    fn test_standard_account_with_staking() {
+        let account = TronAccount {
+            balance: Some(5000007),
+            address: Some(ADDRESS.to_string()),
+            owner_permission: Some(TronAccountOwnerPermission {
+                permission_name: "owner".to_string(),
+                threshold: Some(1),
+                keys: Some(vec![TronAccountPermissionKey {
+                    address: ADDRESS.to_string(),
+                    weight: 1,
+                }]),
+            }),
+            active_permission: Some(vec![TronAccountPermission {
+                id: Some(2),
+                threshold: 1,
+                keys: Some(vec![TronAccountPermissionKey {
+                    address: ADDRESS.to_string(),
+                    weight: 1,
+                }]),
+            }]),
+            votes: Some(vec![]),
+            frozen_v2: Some(vec![]),
+            unfrozen_v2: None,
+        };
+        assert!(map_address_status(&account).is_empty());
     }
 }
