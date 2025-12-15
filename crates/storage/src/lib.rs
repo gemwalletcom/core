@@ -16,8 +16,9 @@ pub use self::repositories::{
     fiat_repository::FiatRepository, link_types_repository::LinkTypesRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
     nodes_repository::NodesRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
     price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
-    releases_repository::ReleasesRepository, scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository,
-    support_repository::SupportRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository,
+    releases_repository::ReleasesRepository, rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository,
+    subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository, tag_repository::TagRepository,
+    transactions_repository::TransactionsRepository,
 };
 
 #[derive(Clone)]

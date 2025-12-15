@@ -1,17 +1,21 @@
 use crate::schema::devices;
 use crate::{DatabaseClient, models::*};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::Chain;
 
 pub(crate) trait SubscriptionsStore {
     fn get_subscriptions_by_device_id(&mut self, device_id: &str, wallet_index: Option<i32>) -> Result<Vec<Subscription>, diesel::result::Error>;
     fn get_subscriptions(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<(Subscription, Device)>, diesel::result::Error>;
+    fn get_subscriptions_by_address(&mut self, address: &str) -> Result<Vec<Device>, diesel::result::Error>;
     fn add_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error>;
     fn delete_subscriptions(&mut self, values: Vec<Subscription>) -> Result<usize, diesel::result::Error>;
     fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, diesel::result::Error>;
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, diesel::result::Error>;
     fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExclude>) -> Result<usize, diesel::result::Error>;
     fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, diesel::result::Error>;
+    fn get_device_subscription_address_exists(&mut self, device_id: i32, address: &str) -> Result<bool, diesel::result::Error>;
+    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, diesel::result::Error>;
 }
 
 impl SubscriptionsStore for DatabaseClient {
@@ -58,6 +62,17 @@ impl SubscriptionsStore for DatabaseClient {
             .load(&mut self.connection)
     }
 
+    fn get_subscriptions_by_address(&mut self, _address: &str) -> Result<Vec<Device>, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+
+        subscriptions
+            .inner_join(devices::table)
+            .filter(address.eq(_address))
+            .select(crate::models::Device::as_select())
+            .distinct()
+            .load(&mut self.connection)
+    }
+
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::subscriptions_addresses_exclude::dsl::*;
         subscriptions_addresses_exclude
@@ -93,5 +108,23 @@ impl SubscriptionsStore for DatabaseClient {
         use diesel::select;
 
         select(exists(subscriptions.filter(chain.eq(_chain.as_ref())).filter(address.eq(_address)))).get_result(&mut self.connection)
+    }
+
+    fn get_device_subscription_address_exists(&mut self, _device_id: i32, _address: &str) -> Result<bool, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        use diesel::dsl::exists;
+        use diesel::select;
+
+        select(exists(subscriptions.filter(device_id.eq(_device_id)).filter(address.ilike(_address)))).get_result(&mut self.connection)
+    }
+
+    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, diesel::result::Error> {
+        use crate::schema::subscriptions::dsl::*;
+        subscriptions
+            .filter(address.eq_any(addresses))
+            .select(created_at)
+            .order(created_at.asc())
+            .first(&mut self.connection)
+            .optional()
     }
 }

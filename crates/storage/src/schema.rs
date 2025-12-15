@@ -538,6 +538,39 @@ diesel::table! {
 }
 
 diesel::table! {
+    rewards_events (id) {
+        id -> Int4,
+        #[max_length = 64]
+        username -> Varchar,
+        #[max_length = 64]
+        event_type -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    rewards_events_types (id) {
+        #[max_length = 64]
+        id -> Varchar,
+        points -> Int4,
+    }
+}
+
+diesel::table! {
+    rewards_referrals (id) {
+        id -> Int4,
+        #[max_length = 64]
+        referrer_username -> Varchar,
+        #[max_length = 64]
+        referred_username -> Varchar,
+        referred_device_id -> Int4,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     scan_addresses (id) {
         id -> Int4,
         chain -> Varchar,
@@ -665,6 +698,17 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    usernames (username) {
+        #[max_length = 64]
+        username -> Varchar,
+        #[max_length = 256]
+        address -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
 diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_addresses -> assets (asset_id));
@@ -708,6 +752,9 @@ diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
+diesel::joinable!(rewards_events -> rewards_events_types (event_type));
+diesel::joinable!(rewards_events -> usernames (username));
+diesel::joinable!(rewards_referrals -> devices (referred_device_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
@@ -755,6 +802,9 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices_dex_assets,
     prices_dex_providers,
     releases,
+    rewards_events,
+    rewards_events_types,
+    rewards_referrals,
     scan_addresses,
     scan_addresses_types,
     subscriptions,
@@ -764,4 +814,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions,
     transactions_addresses,
     transactions_types,
+    usernames,
 );

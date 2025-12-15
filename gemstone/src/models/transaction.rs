@@ -206,6 +206,8 @@ pub struct PerpetualConfirmData {
     pub entry_price: Option<f64>,
     pub market_price: f64,
     pub margin_amount: f64,
+    pub take_profit: Option<String>,
+    pub stop_loss: Option<String>,
 }
 
 #[uniffi::remote(Record)]

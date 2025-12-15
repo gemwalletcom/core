@@ -1,15 +1,19 @@
+use std::borrow::Cow;
+
 use alloy_primitives::{eip191_hash_message, hex::encode_prefixed};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
-use signer::{TonSignDataPayload, TonSignDataResponse};
+use sui_types::PersonalMessage;
 
 use super::{
     eip712::GemEIP712Message,
     sign_type::{SignDigestType, SignMessage},
 };
 use crate::{GemstoneError, siwe::SiweMessage};
-use ::signer::hash_eip712;
+use ::signer::{SignatureScheme, Signer, hash_eip712};
+use zeroize::Zeroizing;
+
 const SIGNATURE_LENGTH: usize = 65;
 const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
 const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
@@ -22,12 +26,12 @@ pub enum MessagePreview {
 }
 
 #[derive(Debug, uniffi::Object)]
-pub struct SignMessageDecoder {
+pub struct MessageSigner {
     pub message: SignMessage,
 }
 
 #[uniffi::export]
-impl SignMessageDecoder {
+impl MessageSigner {
     #[uniffi::constructor]
     pub fn new(message: SignMessage) -> Self {
         Self { message }
@@ -39,13 +43,6 @@ impl SignMessageDecoder {
                 let string = String::from_utf8(self.message.data.clone());
                 let preview = string.unwrap_or(encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
-            }
-            SignDigestType::TonPersonal => {
-                let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
-                let Ok(payload) = TonSignDataPayload::parse(&string) else {
-                    return Ok(MessagePreview::Text(string));
-                };
-                Ok(MessagePreview::Text(payload.data))
             }
             SignDigestType::Eip712 => {
                 let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8 string for EIP712"))?;
@@ -78,7 +75,7 @@ impl SignMessageDecoder {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal => match self.preview() {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
@@ -92,15 +89,9 @@ impl SignMessageDecoder {
 
     pub fn hash(&self) -> Vec<u8> {
         match &self.message.sign_type {
-            SignDigestType::SuiPersonal => self.message.data.clone(),
-            SignDigestType::TonPersonal => {
-                let Ok(string) = String::from_utf8(self.message.data.clone()) else {
-                    return Vec::new();
-                };
-                let Ok(payload) = TonSignDataPayload::parse(&string) else {
-                    return Vec::new();
-                };
-                payload.hash()
+            SignDigestType::SuiPersonal => {
+                let message = PersonalMessage(Cow::Borrowed(&self.message.data));
+                message.signing_digest().to_vec()
             }
             SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
             SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
@@ -128,18 +119,25 @@ impl SignMessageDecoder {
                 }
                 encode_prefixed(&signature)
             }
-            SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
+            SignDigestType::SuiPersonal => BASE64.encode(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
         }
     }
 
-    pub fn get_ton_result(&self, signature: &[u8], public_key: &[u8], timestamp: u64, domain: String) -> Result<String, GemstoneError> {
-        let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
-        let payload = TonSignDataPayload::parse(&string).map_err(|e| GemstoneError::from(e.to_string()))?;
-
-        let response = TonSignDataResponse::new(BASE64.encode(signature), BASE64.encode(public_key), timestamp, domain, payload.to_json());
-
-        response.to_json().map_err(|e| GemstoneError::from(e.to_string()))
+    pub fn sign(&self, private_key: Vec<u8>) -> Result<String, GemstoneError> {
+        let private_key = Zeroizing::new(private_key);
+        let hash = self.hash();
+        match &self.message.sign_type {
+            SignDigestType::SuiPersonal => Signer::sign_sui_digest(&hash, &private_key).map_err(GemstoneError::from),
+            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
+                let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key.to_vec())?;
+                Ok(self.get_result(&signed))
+            }
+            SignDigestType::Base58 => {
+                let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
+                Ok(self.get_result(&signed))
+            }
+        }
     }
 }
 
@@ -157,7 +155,7 @@ mod tests {
     #[test]
     fn test_eip191() {
         let data = b"hello world".to_vec();
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data,
@@ -175,7 +173,7 @@ mod tests {
     fn test_eip191_hex_value() {
         // 0x74657374 corresponds to "test" in UTF-8
         let data = hex::decode("74657374").expect("Invalid hex string");
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data,
@@ -190,7 +188,7 @@ mod tests {
     fn test_eip191_non_utf8_hex_value() {
         // 0xdeadbeef is not valid UTF-8
         let data = hex::decode("deadbeef").expect("Invalid hex string");
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data,
@@ -207,7 +205,7 @@ mod tests {
         let data =
             hex::decode("d80c5ffe75fcbac0706c5c5d3b8884ae3588c30065a95075e07fa6ebc24e56433e5030992ef438b1d23437ec8d66d3197b1ad92f85222af1624d8f295907a65800")
                 .expect("Invalid hex string");
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data: data.clone(),
@@ -221,7 +219,7 @@ mod tests {
 
     #[test]
     fn test_get_result_recovery_id_conversion() {
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
             data: b"test".to_vec(),
@@ -247,16 +245,17 @@ mod tests {
     #[test]
     fn test_sui_personal_message_hash() {
         let data = b"Hello, world!".to_vec();
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Sui,
             sign_type: SignDigestType::SuiPersonal,
             data: data.clone(),
         });
 
         let hash = decoder.hash();
-        assert_eq!(hash, data);
+        let expected_hash = PersonalMessage(Cow::Owned(data)).signing_digest().to_vec();
+        assert_eq!(hash, expected_hash);
 
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Sui,
             sign_type: SignDigestType::SuiPersonal,
             data: b"Hello, world!".to_vec(),
@@ -272,7 +271,7 @@ mod tests {
     fn test_base58() {
         let message = "X3CUgCGzyn43DTAbUKnTMDzcGWMooJT2hPSZinjfN1QUgVNYYfeoJ5zg6i4Nd5coKGUrNpEYVoD";
         let data = message.as_bytes().to_vec();
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Solana,
             sign_type: SignDigestType::Base58,
             data: data.clone(),
@@ -302,7 +301,7 @@ mod tests {
 
         assert_eq!(hex::encode(hash), "0b8aa9f3712df0034bc29fe5b24dd88cfdba02c7f499856ab24632e2969709a8",);
 
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
@@ -369,7 +368,7 @@ mod tests {
             env!("CARGO_MANIFEST_DIR"),
             "/../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json"
         ));
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
@@ -383,7 +382,7 @@ mod tests {
     fn test_eip712_ploymarket_hash() {
         let json_str = include_str!("./test/eip712_polymarket.json");
 
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Polygon,
             sign_type: SignDigestType::Eip712,
             data: json_str.as_bytes().to_vec(),
@@ -438,7 +437,7 @@ mod tests {
         ]
         .join("\n");
 
-        let decoder = SignMessageDecoder::new(SignMessage {
+        let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Siwe,
             data: message.as_bytes().to_vec(),
@@ -453,22 +452,5 @@ mod tests {
         }
 
         assert_eq!(decoder.plain_preview(), message);
-    }
-
-    #[test]
-    fn test_ton_personal_preview() {
-        let data = r#"{"type":"text","text":"Hello TON","from":"UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}"#;
-        let decoder = SignMessageDecoder::new(SignMessage {
-            chain: Chain::Ton,
-            sign_type: SignDigestType::TonPersonal,
-            data: data.as_bytes().to_vec(),
-        });
-
-        match decoder.preview() {
-            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "Hello TON"),
-            other => panic!("Unexpected result: {other:?}"),
-        }
-
-        assert_eq!(decoder.plain_preview(), "Hello TON");
     }
 }

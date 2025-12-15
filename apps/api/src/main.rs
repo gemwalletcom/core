@@ -1,4 +1,6 @@
 mod assets;
+mod auth;
+mod catchers;
 mod chain;
 mod config;
 mod devices;
@@ -11,6 +13,7 @@ mod nft;
 mod params;
 mod price_alerts;
 mod prices;
+mod referral;
 mod responders;
 mod scan;
 mod status;
@@ -32,6 +35,7 @@ use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::FiatProviderFactory;
+use gem_auth::AuthClient;
 use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
@@ -39,7 +43,7 @@ use name_resolver::NameProviderFactory;
 use name_resolver::client::Client as NameClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
-use rocket::{Build, Rocket, routes};
+use rocket::{Build, Rocket, catchers, routes};
 use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
@@ -97,11 +101,14 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client);
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(database.clone(), nft_config);
+    let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
     let markets_client = MarketsClient::new(database.clone(), cacher_client);
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
+    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone());
 
     rocket::build()
+        .manage(database)
         .manage(Mutex::new(fiat_quotes_client))
         .manage(Mutex::new(price_client))
         .manage(Mutex::new(charts_client))
@@ -122,6 +129,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(webhooks_client))
         .manage(Mutex::new(support_client))
         .manage(Mutex::new(ip_check_client))
+        .manage(Mutex::new(rewards_client))
+        .manage(auth_client)
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
             "/v1",
@@ -146,6 +155,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::update_device,
                 devices::delete_device,
                 devices::send_push_notification_device,
+                auth::get_auth_nonce,
                 assets::get_asset,
                 assets::get_assets,
                 assets::add_asset,
@@ -186,6 +196,10 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 support::add_device,
                 support::get_support_device,
                 fiat::get_ip_address,
+                referral::get_rewards,
+                referral::get_rewards_events,
+                referral::create_referral,
+                referral::use_referral_code,
             ],
         )
         .mount(
@@ -197,6 +211,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])
+        .register("/", catchers![catchers::default_catcher])
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {

@@ -27,10 +27,7 @@ impl Hyperliquid {
         let client = JsonRpcClient::new(ReqwestClient::new(provider_url, reqwest_client));
         let router_address = Address::from_str(ROUTER_ADDRESS).expect("Invalid Router address");
 
-        Self {
-            client,
-            router_address,
-        }
+        Self { client, router_address }
     }
 
     pub fn is_valid_name(name: &str) -> bool {
@@ -52,8 +49,7 @@ impl Hyperliquid {
         ]);
 
         let result_str: String = self.client.call("eth_call", params).await?;
-        let result = Bytes::from(hex::decode(&result_str)
-            .map_err(|e| format!("Failed to decode hex response: {}", e))?);
+        let result = Bytes::from(hex::decode(&result_str).map_err(|e| format!("Failed to decode hex response: {}", e))?);
         Ok(result)
     }
 }
@@ -75,13 +71,13 @@ impl NameClient for Hyperliquid {
         let router_call_data = Router::getCurrentRegistratorCall {}.abi_encode();
         let router_result = self.eth_call(self.router_address, &router_call_data).await?;
         let registrator = Router::getCurrentRegistratorCall::abi_decode_returns(&router_result)?.0;
-        
+
         // Get full record JSON
         let registrator_call_data = Registrator::getFullRecordJSONCall { _namehash: node }.abi_encode();
         let registrator_result = self.eth_call(Address::from(registrator), &registrator_call_data).await?;
         let record_json = Registrator::getFullRecordJSONCall::abi_decode_returns(&registrator_result)?;
         let record: Record = serde_json::from_str(&record_json)?;
-        
+
         // Get Resolved address for HyperEVM
         if chain == Chain::Hyperliquid {
             let resolved_address = &record.name.resolved;

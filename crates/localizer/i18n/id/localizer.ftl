@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Beli {$name} dengan aman hari in
 support_new_message_title = Pesan baru dari Dukungan
 notification_freeze_title = Bekukan {$value}
 notification_unfreeze_title = Cairkan {$value}
+notification_reward_title = 💎 Anda telah mendapatkan {$value} poin!
+notification_reward_create_username_description = Nama pengguna sudah siap. Undang teman untuk mendapatkan hadiah.
+notification_reward_invite_description = Bergabung melalui referensi menggunakan kode Anda.
+notification_rewards_joined_description = Anda bergabung menggunakan kode referensi.

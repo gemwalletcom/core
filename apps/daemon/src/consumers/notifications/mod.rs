@@ -8,17 +8,20 @@ use api_connector::PusherClient;
 use settings::Settings;
 use std::error::Error;
 use std::sync::Arc;
+use storage::Database;
 use streamer::{ConsumerConfig, NotificationsFailedPayload, NotificationsPayload, QueueName, StreamProducer, StreamReader, StreamReaderConfig, run_consumer};
 
-pub async fn run(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
     let settings = Arc::new(settings);
+    let database = Arc::new(database);
 
     futures::future::try_join_all(vec![
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsPriceAlerts)),
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsTransactions)),
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsObservers)),
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsSupport)),
-        tokio::spawn(run_notifications_failed_consumer(settings.clone())),
+        tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsRewards)),
+        tokio::spawn(run_notifications_failed_consumer(settings.clone(), database.clone())),
     ])
     .await?;
 
@@ -36,12 +39,11 @@ async fn run_notification_consumer(settings: Arc<Settings>, queue: QueueName) ->
     run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
 }
 
-async fn run_notifications_failed_consumer(settings: Arc<Settings>) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_notifications_failed_consumer(settings: Arc<Settings>, database: Arc<Database>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = "notifications_failed".to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
-    let consumer = NotificationsFailedConsumer::new(database);
+    let consumer = NotificationsFailedConsumer::new((*database).clone());
 
     run_consumer::<NotificationsFailedPayload, NotificationsFailedConsumer, usize>(
         &name,

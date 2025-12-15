@@ -1,4 +1,4 @@
-use crate::{retry_policy, Client, ClientError, ContentType, CONTENT_TYPE};
+use crate::{deserialize_response, retry_policy, Client, ClientError, ContentType, Response, CONTENT_TYPE};
 use async_trait::async_trait;
 use reqwest::header::USER_AGENT;
 use reqwest::RequestBuilder;
@@ -73,21 +73,15 @@ impl ReqwestClient {
     where
         R: DeserializeOwned,
     {
-        let status = response.status();
-        let body_bytes = response
+        let status = response.status().as_u16();
+        let data = response
             .bytes()
             .await
-            .map_err(|e| ClientError::Network(format!("Failed to read response body: {e}")))?;
-        let body = String::from_utf8_lossy(&body_bytes);
+            .map_err(|e| ClientError::Network(format!("Failed to read response body: {e}")))?
+            .to_vec();
 
-        if status.is_success() {
-            serde_json::from_slice(&body_bytes).map_err(|e| ClientError::Serialization(format!("Failed to deserialize response: status {} {}", status, e)))
-        } else {
-            Err(ClientError::Http {
-                status: status.as_u16(),
-                len: body.len(),
-            })
-        }
+        let response = Response { status: Some(status), data };
+        deserialize_response(&response)
     }
 
     fn map_reqwest_error(e: reqwest::Error) -> ClientError {

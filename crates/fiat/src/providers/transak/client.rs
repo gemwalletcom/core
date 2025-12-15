@@ -78,7 +78,6 @@ impl TransakClient {
             .await
     }
 
-
     pub async fn get_quote(
         &self,
         quote_type: &str,
@@ -166,13 +165,7 @@ impl TransakClient {
         Ok(response.data.widget_url)
     }
 
-    pub async fn redirect_url(
-        &self,
-        quote: TransakQuote,
-        address: String,
-        quote_type: FiatQuoteType,
-        fiat_amount: f64,
-    ) -> Result<String, reqwest::Error> {
+    pub async fn redirect_url(&self, quote: TransakQuote, address: String, quote_type: FiatQuoteType, fiat_amount: f64) -> Result<String, reqwest::Error> {
         let mut params: HashMap<String, Value> = HashMap::new();
         params.insert("apiKey".to_string(), json!(self.api_key));
         params.insert("referrerDomain".to_string(), json!(self.referrer_domain));

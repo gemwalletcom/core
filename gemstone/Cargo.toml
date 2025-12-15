@@ -28,6 +28,7 @@ gem_evm = { path = "../crates/gem_evm", features = ["rpc"] }
 gem_sui = { path = "../crates/gem_sui", features = ["rpc", "signer"] }
 gem_aptos = { path = "../crates/gem_aptos", features = ["rpc"] }
 gem_hash = { path = "../crates/gem_hash" }
+gem_auth = { path = "../crates/gem_auth" }
 gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
 gem_client = { path = "../crates/gem_client" }
 gem_hypercore = { path = "../crates/gem_hypercore", features = ["signer"] }
@@ -61,6 +62,7 @@ num-bigint.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
 url = { workspace = true }
+zeroize = "1.8"
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

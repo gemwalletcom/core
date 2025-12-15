@@ -485,6 +485,7 @@ dependencies = [
  "cacher",
  "config",
  "fiat",
+ "gem_auth",
  "gem_client",
  "gem_tracing",
  "metrics",
@@ -2757,6 +2758,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_auth"
+version = "1.0.0"
+dependencies = [
+ "alloy-primitives",
+ "cacher",
+ "chrono",
+ "gem_hash",
+ "k256",
+ "primitives",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "gem_bitcoin"
 version = "1.0.0"
 dependencies = [
@@ -2853,8 +2869,10 @@ dependencies = [
  "chrono",
  "gem_bsc",
  "gem_client",
+ "gem_hash",
  "gem_jsonrpc",
  "hex",
+ "k256",
  "num-bigint",
  "num-traits",
  "primitives",
@@ -2866,6 +2884,7 @@ dependencies = [
  "signer",
  "tokio",
  "url",
+ "uuid",
 ]
 
 [[package]]
@@ -3116,6 +3135,7 @@ dependencies = [
  "futures",
  "gem_algorand",
  "gem_aptos",
+ "gem_auth",
  "gem_bitcoin",
  "gem_cardano",
  "gem_client",
@@ -3146,6 +3166,7 @@ dependencies = [
  "tokio",
  "uniffi",
  "url",
+ "zeroize",
 ]
 
 [[package]]

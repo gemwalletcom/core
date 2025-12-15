@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = Compre {$name} com segurança ho
 support_new_message_title = Nova mensagem do Suporte
 notification_freeze_title = Congelar {$value}
 notification_unfreeze_title = Descongelar {$value}
+notification_reward_title = 💎 Você ganhou {$value} pontos!
+notification_reward_create_username_description = Nome de usuário pronto. Convide amigos para ganhar recompensas.
+notification_reward_invite_description = A pessoa indicada entrou usando seu código.
+notification_rewards_joined_description = Você se cadastrou usando um código de indicação.

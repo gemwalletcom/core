@@ -3,8 +3,8 @@ use std::error::Error;
 use primitives::AssetId;
 
 use crate::{
-    AssetsAddressPayload, ChartsPayload, FetchAssetsPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName, StreamProducer,
-    TransactionsPayload,
+    AssetsAddressPayload, ChartsPayload, FetchAssetsPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName,
+    RewardsNotificationPayload, StreamProducer, TransactionsPayload,
 };
 
 #[async_trait::async_trait]
@@ -15,6 +15,8 @@ pub trait StreamProducerQueue {
     async fn publish_notifications_price_alerts(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_observers(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_support(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_notifications_rewards(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_rewards_events(&self, payload: Vec<RewardsNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
@@ -65,6 +67,20 @@ impl StreamProducerQueue for StreamProducer {
             return Ok(true);
         }
         self.publish(QueueName::NotificationsSupport, &payload).await
+    }
+
+    async fn publish_notifications_rewards(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.notifications.is_empty() {
+            return Ok(true);
+        }
+        self.publish(QueueName::NotificationsRewards, &payload).await
+    }
+
+    async fn publish_rewards_events(&self, payload: Vec<RewardsNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.is_empty() {
+            return Ok(true);
+        }
+        self.publish_batch(QueueName::RewardsEvents, &payload).await
     }
 
     async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {

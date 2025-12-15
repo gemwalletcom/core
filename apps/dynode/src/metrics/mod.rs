@@ -1,3 +1,5 @@
+mod user_agent;
+
 use crate::config::MetricsConfig;
 use metrics::MetricsRegistry;
 use prometheus_client::encoding::EncodeLabelSet;
@@ -5,8 +7,8 @@ use prometheus_client::metrics::counter::Counter;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::metrics::histogram::{Histogram, exponential_buckets};
-use regex::Regex;
 use std::sync::Arc;
+use user_agent::UserAgentMatcher;
 
 #[derive(Debug, Clone)]
 pub struct Metrics {
@@ -16,12 +18,10 @@ pub struct Metrics {
     proxy_requests_by_method: Family<ProxyRequestByMethodLabels, Counter>,
     proxy_response_latency: Family<ResponseLabels, Histogram>,
     node_host_current: Family<HostCurrentStateLabels, Gauge>,
-    #[allow(dead_code)]
-    node_block_latest: Family<HostStateLabels, Gauge>,
     cache_hits: Family<CacheLabels, Counter>,
     cache_misses: Family<CacheLabels, Counter>,
     node_switches: Family<NodeSwitchLabels, Counter>,
-    config: Arc<MetricsConfig>,
+    user_agent_matcher: UserAgentMatcher,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -39,11 +39,6 @@ pub struct ProxyRequestByAgentLabels {
 pub struct ProxyRequestByMethodLabels {
     chain: String,
     method: String,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
-pub struct HostStateLabels {
-    chain: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -81,7 +76,6 @@ impl Metrics {
         let proxy_requests_by_method = Family::<ProxyRequestByMethodLabels, Counter>::default();
         let proxy_response_latency = Family::<ResponseLabels, Histogram>::new_with_constructor(|| Histogram::new(exponential_buckets(50.0, 1.44, 12)));
         let node_host_current = Family::<HostCurrentStateLabels, Gauge>::default();
-        let node_block_latest = Family::<HostStateLabels, Gauge>::default();
         let cache_hits = Family::<CacheLabels, Counter>::default();
         let cache_misses = Family::<CacheLabels, Counter>::default();
         let node_switches = Family::<NodeSwitchLabels, Counter>::default();
@@ -105,7 +99,6 @@ impl Metrics {
             proxy_response_latency.clone(),
         );
         registry.register("node_host_current", "Node current host url", node_host_current.clone());
-        registry.register("node_block_latest", "Node block latest", node_block_latest.clone());
         registry.register("cache_hits", "Cache hits by host and path", cache_hits.clone());
         registry.register("cache_misses", "Cache misses by host and path", cache_misses.clone());
         registry.register("node_switches_total", "Node switches by chain and host", node_switches.clone());
@@ -117,18 +110,17 @@ impl Metrics {
             proxy_requests_by_method,
             proxy_response_latency,
             node_host_current,
-            node_block_latest,
             cache_hits,
             cache_misses,
             node_switches,
-            config: Arc::new(config),
+            user_agent_matcher: UserAgentMatcher::new(&config.user_agent_patterns),
         }
     }
 
     pub fn add_proxy_request(&self, chain: &str, user_agent: &str) {
         self.proxy_requests.get_or_create(&ProxyRequestLabels { chain: chain.to_string() }).inc();
 
-        let user_agent = self.categorize_user_agent(user_agent);
+        let user_agent = self.categorize_user_agent(user_agent).to_string();
         self.proxy_requests_by_user_agent
             .get_or_create(&ProxyRequestByAgentLabels {
                 chain: chain.to_string(),
@@ -150,7 +142,7 @@ impl Metrics {
     pub fn add_proxy_request_batch(&self, chain: &str, user_agent: &str, methods: &[String]) {
         self.proxy_requests.get_or_create(&ProxyRequestLabels { chain: chain.to_string() }).inc();
 
-        let user_agent = self.categorize_user_agent(user_agent);
+        let user_agent = self.categorize_user_agent(user_agent).to_string();
         self.proxy_requests_by_user_agent
             .get_or_create(&ProxyRequestByAgentLabels {
                 chain: chain.to_string(),
@@ -190,13 +182,6 @@ impl Metrics {
                 host: host.to_string(),
             })
             .set(1);
-    }
-
-    #[allow(dead_code)]
-    pub fn set_node_block_latest(&self, chain: &str, value: u64) {
-        self.node_block_latest
-            .get_or_create(&HostStateLabels { chain: chain.to_string() })
-            .set(value as i64);
     }
 
     pub fn add_cache_hit(&self, chain: &str, path: &str) {
@@ -278,17 +263,8 @@ impl Metrics {
         }
     }
 
-    fn categorize_user_agent(&self, user_agent: &str) -> String {
-        for (category, patterns) in &self.config.user_agent_patterns.patterns {
-            for pattern in patterns {
-                if let Ok(re) = Regex::new(pattern)
-                    && re.is_match(user_agent)
-                {
-                    return category.clone();
-                }
-            }
-        }
-        "unknown".to_string()
+    fn categorize_user_agent(&self, user_agent: &str) -> &str {
+        self.user_agent_matcher.categorize(user_agent)
     }
 }
 

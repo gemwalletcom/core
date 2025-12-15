@@ -26,6 +26,9 @@ impl CacherClient {
     }
 
     pub async fn set_values_with_publish(&self, values: Vec<(String, String)>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if values.is_empty() {
+            return Ok(0);
+        }
         let mut pipe = redis::pipe();
         for (key, value) in &values {
             pipe.cmd("SET").arg(key).arg(value).arg("EX").arg(ttl_seconds).ignore();
@@ -40,6 +43,9 @@ impl CacherClient {
     }
 
     pub async fn set_values_with_ttl<T: serde::Serialize>(&self, values: Vec<(&str, &T)>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if values.is_empty() {
+            return Ok(0);
+        }
         let mut pipe = redis::pipe();
         for (key, value) in &values {
             let serialized = serde_json::to_string(value)?;
@@ -109,5 +115,9 @@ impl CacherClient {
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
         let last_processed: u64 = self.get_or_set_value(key, || async { Ok(now) }, Some(ttl_seconds)).await?;
         Ok(last_processed == now)
+    }
+
+    pub async fn delete(&self, key: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(self.connection.clone().del::<&str, i64>(key).await? > 0)
     }
 }

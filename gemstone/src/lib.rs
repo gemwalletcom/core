@@ -1,5 +1,6 @@
 pub mod alien;
 pub mod api_client;
+pub mod auth;
 pub mod block_explorer;
 pub mod config;
 pub mod ethereum;

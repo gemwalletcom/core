@@ -15,12 +15,16 @@ pub struct QuoteRequest {
 pub struct PaybisQuote {
     pub id: String,
     pub currency_code_to: String,
+    #[serde(default)]
     pub payment_methods: Vec<PaymentMethod>,
+    #[serde(default)]
+    pub payout_methods: Vec<PaymentMethod>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PaymentMethod {
+    pub amount_from: AmountInfo,
     pub amount_to: AmountInfo,
 }
 

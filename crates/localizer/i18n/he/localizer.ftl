@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = קנה את {$name} בצורה �
 support_new_message_title = הודעה חדשה מהתמיכה
 notification_freeze_title = הקפאת {$value}
 notification_unfreeze_title = הפשר את {$value}
+notification_reward_title = 💎 הרווחת {$value} נקודות!
+notification_reward_create_username_description = שם המשתמש מוכן. הזמן חברים כדי לצבור פרסים.
+notification_reward_invite_description = הפניה הצטרפה באמצעות הקוד שלך.
+notification_rewards_joined_description = הצטרפת באמצעות קוד הפניה.

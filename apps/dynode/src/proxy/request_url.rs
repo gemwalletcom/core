@@ -41,4 +41,16 @@ mod tests {
         assert_eq!(request_url.url.to_string(), "https://example.com/path");
         assert!(request_url.params.is_empty());
     }
+
+    #[test]
+    fn test_from_uri_with_headers() {
+        let mut headers = HashMap::new();
+        headers.insert("x-api-key".to_string(), "secret".to_string());
+        let url = Url {
+            url: "https://example.com".to_string(),
+            headers: Some(headers),
+        };
+        let request_url = RequestUrl::from_parts(url, "/path");
+        assert_eq!(request_url.params.get("x-api-key"), Some(&"secret".to_string()));
+    }
 }

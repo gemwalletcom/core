@@ -1,7 +1,17 @@
+mod error;
+mod preferences;
+
+pub use error::GatewayError;
+use error::map_network_error;
+#[cfg(test)]
+pub use preferences::EmptyPreferences;
+pub use preferences::GemPreferences;
+use preferences::PreferencesWrapper;
+
 use crate::alien::{AlienProvider, new_alien_client};
 use crate::api_client::GemApiClient;
 use crate::models::*;
-use crate::network::jsonrpc_client_with_chain;
+use crate::network::JsonRpcClient;
 use chain_traits::ChainTraits;
 use gem_algorand::rpc::AlgorandClientIndexer;
 use gem_algorand::rpc::client::AlgorandClient;
@@ -28,31 +38,6 @@ use primitives::{BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, 
 pub trait GemGatewayEstimateFee: Send + Sync {
     async fn get_fee(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<Option<GemTransactionLoadFee>, GatewayError>;
     async fn get_fee_data(&self, chain: Chain, input: GemTransactionLoadInput) -> Result<Option<String>, GatewayError>;
-}
-
-#[uniffi::export(with_foreign)]
-pub trait GemPreferences: Send + Sync {
-    fn get(&self, key: String) -> Result<Option<String>, GatewayError>;
-    fn set(&self, key: String, value: String) -> Result<(), GatewayError>;
-    fn remove(&self, key: String) -> Result<(), GatewayError>;
-}
-
-struct PreferencesWrapper {
-    preferences: Arc<dyn GemPreferences>,
-}
-
-impl primitives::Preferences for PreferencesWrapper {
-    fn get(&self, key: String) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
-        self.preferences.get(key).map_err(Into::into)
-    }
-
-    fn set(&self, key: String, value: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        self.preferences.set(key, value).map_err(Into::into)
-    }
-
-    fn remove(&self, key: String) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        self.preferences.remove(key).map_err(Into::into)
-    }
 }
 
 #[derive(uniffi::Object)]
@@ -97,13 +82,13 @@ impl GemGateway {
             }
             Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
-            Chain::Sui => Ok(Arc::new(SuiClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
-            Chain::Xrp => Ok(Arc::new(XRPClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
+            Chain::Sui => Ok(Arc::new(SuiClient::new(JsonRpcClient::new(alien_client.clone())))),
+            Chain::Xrp => Ok(Arc::new(XRPClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Algorand => Ok(Arc::new(AlgorandClient::new(
                 alien_client.clone(),
                 AlgorandClientIndexer::new(alien_client.clone()),
             ))),
-            Chain::Near => Ok(Arc::new(NearClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
+            Chain::Near => Ok(Arc::new(NearClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Aptos => Ok(Arc::new(AptosClient::new(alien_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Sei | Chain::Noble => {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
@@ -114,7 +99,7 @@ impl GemGateway {
                 TronGridClient::new(alien_client.clone(), String::new()),
             ))),
             Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
-            Chain::Solana => Ok(Arc::new(SolanaClient::new(jsonrpc_client_with_chain(self.provider.clone(), chain)))),
+            Chain::Solana => Ok(Arc::new(SolanaClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Ethereum
             | Chain::Arbitrum
             | Chain::SmartChain
@@ -141,7 +126,7 @@ impl GemGateway {
             | Chain::Plasma
             | Chain::Monad
             | Chain::XLayer => Ok(Arc::new(EthereumClient::new(
-                jsonrpc_client_with_chain(self.provider.clone(), chain),
+                JsonRpcClient::new(alien_client),
                 EVMChain::from_chain(chain).unwrap(),
             ))),
         }
@@ -422,8 +407,7 @@ impl GemGateway {
         let start_time = std::time::Instant::now();
         let provider = self.provider_with_url(chain, url.to_string()).await?;
 
-        let (chain_id, latest_block_number) =
-            futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
+        let (chain_id, latest_block_number) = futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(map_network_error)?;
 
         let latency_ms = start_time.elapsed().as_millis() as u64;
 
@@ -435,17 +419,22 @@ impl GemGateway {
     }
 }
 
-#[derive(Debug, Clone, uniffi::Error)]
-pub enum GatewayError {
-    NetworkError { msg: String },
-}
+#[cfg(all(test, feature = "reqwest_provider"))]
+mod tests {
+    use super::*;
+    use crate::alien::reqwest_provider::NativeProvider;
 
-impl std::fmt::Display for GatewayError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::NetworkError { msg: message } => write!(f, "Network error: {}", message),
+    #[tokio::test]
+    async fn test_get_node_status_http_404_error() {
+        let provider: Arc<dyn AlienProvider> = Arc::new(NativeProvider::new().set_debug(false));
+        let preferences: Arc<dyn GemPreferences> = Arc::new(EmptyPreferences {});
+        let gateway = GemGateway::new(provider, preferences.clone(), preferences.clone(), "https://example.invalid".to_string());
+
+        let result = gateway.get_node_status(Chain::Bitcoin, "https://httpbin.io/status/404").await;
+
+        match result {
+            Ok(status) => panic!("expected network error for 404 response, got {:?}", status),
+            Err(GatewayError::NetworkError { msg }) => assert_eq!(msg, "HTTP error: status 404"),
         }
     }
 }
-
-impl std::error::Error for GatewayError {}

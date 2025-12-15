@@ -90,6 +90,19 @@ pub struct RequestConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct HeadersConfig {
+    pub forward: Vec<String>,
+    #[serde(default)]
+    pub domains: HashMap<String, Vec<String>>,
+}
+
+impl HeadersConfig {
+    pub fn get_domain_headers(&self, host: &str) -> Option<&Vec<String>> {
+        self.domains.get(host)
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct NodeConfig {
     pub port: u16,
     pub address: String,
@@ -100,6 +113,7 @@ pub struct NodeConfig {
     pub monitoring: NodeMonitoringConfig,
     pub retry: RetryConfig,
     pub request: RequestConfig,
+    pub headers: HeadersConfig,
 }
 
 #[derive(Debug, Deserialize)]

@@ -31,3 +31,7 @@ notification_onboarding_buy_asset_description = همین امروز با خیا�
 support_new_message_title = پیام جدید از پشتیبانی
 notification_freeze_title = ثابت کردن {$value}
 notification_unfreeze_title = رفع انسداد {$value}
+notification_reward_title = 💎 شما سود کردید {$value} امتیاز!
+notification_reward_create_username_description = نام کاربری آماده است. دوستان خود را برای کسب جوایز دعوت کنید.
+notification_reward_invite_description = ارجاع با استفاده از کد شما پیوست شد.
+notification_rewards_joined_description = شما با استفاده از کد معرف عضو شدید.
