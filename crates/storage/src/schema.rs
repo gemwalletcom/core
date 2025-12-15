@@ -558,6 +558,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    rewards_levels_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+    }
+}
+
+diesel::table! {
     rewards_referrals (id) {
         id -> Int4,
         #[max_length = 64]
@@ -704,6 +711,10 @@ diesel::table! {
         username -> Varchar,
         #[max_length = 256]
         address -> Varchar,
+        is_verified -> Bool,
+        is_rewards_enabled -> Bool,
+        #[max_length = 32]
+        rewards_level -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -766,6 +777,7 @@ diesel::joinable!(transactions -> transactions_types (kind));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
+diesel::joinable!(usernames -> rewards_levels_types (rewards_level));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -804,6 +816,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     releases,
     rewards_events,
     rewards_events_types,
+    rewards_levels_types,
     rewards_referrals,
     scan_addresses,
     scan_addresses_types,

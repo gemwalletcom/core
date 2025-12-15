@@ -1,6 +1,6 @@
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use diesel::prelude::*;
-use primitives::{RewardEvent, RewardEventType};
+use primitives::{RewardEvent, RewardEventType, RewardLevel};
 use std::str::FromStr;
 
 #[derive(Debug, Queryable, Selectable, Clone)]
@@ -63,4 +63,19 @@ impl RewardEventRow {
 pub struct NewRewardEventRow {
     pub username: String,
     pub event_type: String,
+}
+
+#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
+#[diesel(table_name = crate::schema::rewards_levels_types)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct RewardLevelTypeRow {
+    pub id: String,
+}
+
+impl RewardLevelTypeRow {
+    pub fn from_primitive(level: RewardLevel) -> Self {
+        Self {
+            id: level.as_ref().to_string(),
+        }
+    }
 }

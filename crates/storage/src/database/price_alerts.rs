@@ -4,7 +4,8 @@ use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
 
 pub(crate) trait PriceAlertsStore {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlertRow, PriceRow, crate::models::DeviceRow)>, diesel::result::Error>;
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime)
+    -> Result<Vec<(PriceAlertRow, PriceRow, crate::models::DeviceRow)>, diesel::result::Error>;
     fn get_price_alerts_for_device_id(
         &mut self,
         device_id: &str,
@@ -16,7 +17,10 @@ pub(crate) trait PriceAlertsStore {
 }
 
 impl PriceAlertsStore for DatabaseClient {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlertRow, PriceRow, crate::models::DeviceRow)>, diesel::result::Error> {
+    fn get_price_alerts(
+        &mut self,
+        after_notified_at: NaiveDateTime,
+    ) -> Result<Vec<(PriceAlertRow, PriceRow, crate::models::DeviceRow)>, diesel::result::Error> {
         use crate::schema::devices;
         use crate::schema::price_alerts::dsl::*;
         use crate::schema::prices;

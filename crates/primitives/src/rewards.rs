@@ -4,6 +4,18 @@ use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
+//#[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
+pub enum RewardLevel {}
+
+impl RewardLevel {
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
@@ -37,6 +49,8 @@ pub struct Rewards {
     pub referral_count: i32,
     pub points: i32,
     pub used_referral_code: Option<String>,
+    pub is_enabled: bool,
+    //pub level: Option<RewardLevel>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

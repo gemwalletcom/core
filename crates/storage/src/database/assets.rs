@@ -138,7 +138,10 @@ impl AssetsStore for DatabaseClient {
     }
 
     fn add_chains(&mut self, values: Vec<String>) -> Result<usize, diesel::result::Error> {
-        let chain_values = values.iter().map(|chain_id| crate::models::ChainRow { id: chain_id.clone() }).collect::<Vec<_>>();
+        let chain_values = values
+            .iter()
+            .map(|chain_id| crate::models::ChainRow { id: chain_id.clone() })
+            .collect::<Vec<_>>();
 
         use crate::schema::chains::dsl::*;
         diesel::insert_into(chains)

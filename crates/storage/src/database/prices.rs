@@ -80,7 +80,10 @@ impl PricesStore for DatabaseClient {
 
     fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAssetRow>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
-        prices_assets.filter(asset_id.eq(id)).select(PriceAssetRow::as_select()).load(&mut self.connection)
+        prices_assets
+            .filter(asset_id.eq(id))
+            .select(PriceAssetRow::as_select())
+            .load(&mut self.connection)
     }
 
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAssetRow>, diesel::result::Error> {

@@ -29,7 +29,10 @@ impl SubscriptionsRepository for DatabaseClient {
         let device = DevicesStore::get_device(self, device_id)?;
         Ok(SubscriptionsStore::delete_subscriptions(
             self,
-            values.into_iter().map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id)).collect(),
+            values
+                .into_iter()
+                .map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id))
+                .collect(),
         )?)
     }
 
@@ -59,7 +62,10 @@ impl SubscriptionsRepository for DatabaseClient {
         let device = DevicesStore::get_device(self, device_id)?;
         Ok(SubscriptionsStore::add_subscriptions(
             self,
-            values.into_iter().map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id)).collect(),
+            values
+                .into_iter()
+                .map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id))
+                .collect(),
         )?)
     }
 
