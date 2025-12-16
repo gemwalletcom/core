@@ -168,11 +168,11 @@ mod tests {
 
     #[test]
     fn test_encode_sign_message_ton() {
-        let ton_json = r#"{"signature":"tonsig123","timestamp":1700000000}"#.to_string();
-        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ton, ton_json.clone());
+        let payload_json = r#"{"signature":"tonsig123","timestamp":1700000000}"#.to_string();
+        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ton, payload_json.clone());
         match result {
             WalletConnectResponseType::Object { json } => {
-                assert_eq!(json, ton_json);
+                assert_eq!(json, payload_json);
             }
             _ => panic!("Expected Object response for Ton"),
         }

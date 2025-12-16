@@ -18,9 +18,7 @@ use crate::sui::assemble_signature;
 pub use eip712::hash_typed_data as hash_eip712;
 pub use error::SignerError;
 pub use sui::SUI_PERSONAL_MESSAGE_SIGNATURE_LEN;
-pub use ton::{TonSignDataPayload, TonSignDataResponse, TonSignDataType, TonSignMessageData};
-
-use crate::ton::TonSignMessageData as TonSignMessageDataInternal;
+pub use ton::{TonSignDataPayload, TonSignDataResponse, TonSignMessageData};
 
 #[derive(Debug, Default)]
 pub struct Signer;
@@ -64,7 +62,7 @@ impl Signer {
     }
 
     pub fn sign_ton_personal(data: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), SignerError> {
-        let ton_data = TonSignMessageDataInternal::from_bytes(data)?;
+        let ton_data = TonSignMessageData::from_bytes(data)?;
         let payload = ton_data.get_payload()?;
         let digest = payload.hash();
 

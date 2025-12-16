@@ -6557,7 +6557,6 @@ dependencies = [
  "k256",
  "serde",
  "serde_json",
- "strum",
  "sui-sdk-types",
  "zeroize",
 ]

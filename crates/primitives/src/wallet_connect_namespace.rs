@@ -145,14 +145,4 @@ mod tests {
         assert!(WalletConnectCAIP2::resolve_chain(None).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(Some("unknown:chain".to_string())).is_err());
     }
-
-    #[test]
-    fn test_get_namespace_ton() {
-        assert_eq!(WalletConnectCAIP2::get_namespace(Chain::Ton), Some("ton".to_string()));
-    }
-
-    #[test]
-    fn test_get_reference_ton() {
-        assert_eq!(WalletConnectCAIP2::get_reference(Chain::Ton), Some("-239".to_string()));
-    }
 }

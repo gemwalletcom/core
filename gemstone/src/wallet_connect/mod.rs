@@ -3,7 +3,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use hex::FromHex;
 use primitives::{Chain, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
-use signer::TonSignDataType;
 
 fn current_timestamp() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
@@ -218,15 +217,8 @@ impl WalletConnect {
                 gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
             }
             SignDigestType::TonPersonal => {
-                let ton_data = signer::TonSignMessageData::from_bytes(data.as_bytes()).map_err(|e| crate::GemstoneError::AnyError {
-                    msg: format!("Invalid TonSignMessageData: {}", e),
-                })?;
-                let payload_type = ton_data.payload.get("type").and_then(|v| v.as_str()).ok_or_else(|| crate::GemstoneError::AnyError {
-                    msg: "Missing type field in payload".to_string(),
-                })?;
-                TonSignDataType::from_str(payload_type).map_err(|_| crate::GemstoneError::AnyError {
-                    msg: format!("Unsupported payload type: {}", payload_type),
-                })?;
+                let ton_data = signer::TonSignMessageData::from_bytes(data.as_bytes())?;
+                ton_data.get_payload()?;
                 Ok(())
             }
             SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe => Ok(()),

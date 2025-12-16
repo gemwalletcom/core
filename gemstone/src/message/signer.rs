@@ -46,17 +46,17 @@ impl MessageSigner {
                 Ok(MessagePreview::Text(preview))
             }
             SignDigestType::TonPersonal => {
-                let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
+                let string = String::from_utf8(self.message.data.clone())?;
                 let Ok(ton_data) = TonSignMessageData::from_bytes(string.as_bytes()) else {
                     return Ok(MessagePreview::Text(string));
                 };
                 let Ok(payload) = ton_data.get_payload() else {
                     return Ok(MessagePreview::Text(string));
                 };
-                Ok(MessagePreview::Text(payload.data))
+                Ok(MessagePreview::Text(payload.data().to_string()))
             }
             SignDigestType::Eip712 => {
-                let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8 string for EIP712"))?;
+                let string = String::from_utf8(self.message.data.clone())?;
                 if string.is_empty() {
                     return Err(GemstoneError::from("Empty EIP712 message string"));
                 }
@@ -98,34 +98,27 @@ impl MessageSigner {
         }
     }
 
-    pub fn hash(&self) -> Vec<u8> {
+    pub fn hash(&self) -> Result<Vec<u8>, GemstoneError> {
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => {
                 let message = PersonalMessage(Cow::Borrowed(&self.message.data));
-                message.signing_digest().to_vec()
+                Ok(message.signing_digest().to_vec())
             }
             SignDigestType::TonPersonal => {
-                let Ok(string) = String::from_utf8(self.message.data.clone()) else {
-                    return Vec::new();
-                };
-                let Ok(ton_data) = TonSignMessageData::from_bytes(string.as_bytes()) else {
-                    return Vec::new();
-                };
-                let Ok(payload) = ton_data.get_payload() else {
-                    return Vec::new();
-                };
-                payload.hash()
+                let string = String::from_utf8(self.message.data.clone())?;
+                let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
+                let payload = ton_data.get_payload()?;
+                Ok(payload.hash())
             }
-            SignDigestType::Eip191 | SignDigestType::Siwe => eip191_hash_message(&self.message.data).to_vec(),
-            SignDigestType::Eip712 => match std::str::from_utf8(&self.message.data) {
-                Ok(json) => hash_eip712(json).map(|digest| digest.to_vec()).unwrap_or_default(),
-                Err(_) => Vec::new(),
-            },
+            SignDigestType::Eip191 | SignDigestType::Siwe => Ok(eip191_hash_message(&self.message.data).to_vec()),
+            SignDigestType::Eip712 => {
+                let json = String::from_utf8(self.message.data.clone())?;
+                let digest = hash_eip712(&json)?;
+                Ok(digest.to_vec())
+            }
             SignDigestType::Base58 => {
-                if let Ok(decoded) = bs58::decode(&self.message.data).into_vec() {
-                    return decoded;
-                }
-                Vec::new()
+                let decoded = bs58::decode(&self.message.data).into_vec().map_err(|e| GemstoneError::from(e.to_string()))?;
+                Ok(decoded)
             }
         }
     }
@@ -148,22 +141,22 @@ impl MessageSigner {
     }
 
     pub fn get_ton_result(&self, signature: &[u8], public_key: &[u8]) -> Result<String, GemstoneError> {
-        let string = String::from_utf8(self.message.data.clone()).map_err(|_| GemstoneError::from("Invalid UTF-8"))?;
-        let ton_data = TonSignMessageData::from_bytes(string.as_bytes()).map_err(|e| GemstoneError::from(e.to_string()))?;
-        let payload = ton_data.get_payload().map_err(|e| GemstoneError::from(e.to_string()))?;
+        let string = String::from_utf8(self.message.data.clone())?;
+        let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
+        let payload = ton_data.get_payload()?;
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_secs())
             .unwrap_or(0);
 
-        let response = TonSignDataResponse::new(BASE64.encode(signature), BASE64.encode(public_key), timestamp, ton_data.domain, payload.to_json());
+        let response = TonSignDataResponse::new(BASE64.encode(signature), BASE64.encode(public_key), timestamp, ton_data.domain, payload);
 
-        response.to_json().map_err(|e| GemstoneError::from(e.to_string()))
+        Ok(response.to_json()?)
     }
 
     pub fn sign(&self, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let private_key = Zeroizing::new(private_key);
-        let hash = self.hash();
+        let hash = self.hash()?;
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => Signer::sign_sui_digest(&hash, &private_key).map_err(GemstoneError::from),
             SignDigestType::TonPersonal => {
@@ -206,7 +199,7 @@ mod tests {
             _ => panic!("Unexpected preview result"),
         }
 
-        let hash = decoder.hash();
+        let hash = decoder.hash().unwrap();
         assert_eq!(encode_prefixed(&hash), "0xd9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68");
     }
 
@@ -292,7 +285,7 @@ mod tests {
             data: data.clone(),
         });
 
-        let hash = decoder.hash();
+        let hash = decoder.hash().unwrap();
         let expected_hash = PersonalMessage(Cow::Owned(data)).signing_digest().to_vec();
         assert_eq!(hash, expected_hash);
 
@@ -322,7 +315,7 @@ mod tests {
             Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "This is an example message to be signed - 1747125759060"),
             _ => panic!("Unexpected preview result for base58"),
         }
-        let hash = decoder.hash();
+        let hash = decoder.hash().unwrap();
 
         assert_eq!(
             hex::encode(&hash),
@@ -415,7 +408,7 @@ mod tests {
             data: json_str.as_bytes().to_vec(),
         });
 
-        let digest = decoder.hash();
+        let digest = decoder.hash().unwrap();
         assert_eq!(hex::encode(digest), "480af9fd3cdc70c2f8a521388be13620d16a0f643d9cffdfbb65cd019cc27537");
     }
 
