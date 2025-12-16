@@ -6,8 +6,16 @@ CREATE TABLE usernames (
     username VARCHAR(64) PRIMARY KEY,
     address VARCHAR(256) NOT NULL UNIQUE,
     is_verified BOOLEAN NOT NULL DEFAULT false,
-    is_rewards_enabled BOOLEAN NOT NULL DEFAULT true,
-    rewards_level VARCHAR(32) REFERENCES rewards_levels_types(id),
+    updated_at timestamp NOT NULL default current_timestamp,
+    created_at timestamp NOT NULL default current_timestamp
+);
+
+SELECT diesel_manage_updated_at('usernames');
+
+CREATE TABLE rewards (
+    username VARCHAR(64) PRIMARY KEY REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
+    is_enabled BOOLEAN NOT NULL DEFAULT true,
+    level VARCHAR(32) REFERENCES rewards_levels_types(id),
     points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
     referrer_username VARCHAR(64) REFERENCES usernames(username) ON DELETE SET NULL ON UPDATE CASCADE,
     referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
@@ -15,7 +23,7 @@ CREATE TABLE usernames (
     created_at timestamp NOT NULL default current_timestamp
 );
 
-SELECT diesel_manage_updated_at('usernames');
+SELECT diesel_manage_updated_at('rewards');
 
 CREATE TABLE rewards_referrals (
     id SERIAL PRIMARY KEY,

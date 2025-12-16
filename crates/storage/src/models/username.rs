@@ -8,9 +8,4 @@ pub struct UsernameRow {
     pub username: String,
     pub address: String,
     pub is_verified: bool,
-    pub is_rewards_enabled: bool,
-    pub rewards_level: Option<String>,
-    pub points: i32,
-    pub referrer_username: Option<String>,
-    pub referral_count: i32,
 }

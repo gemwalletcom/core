@@ -1,7 +1,7 @@
 use crate::database::rewards::{RedemptionUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RewardRedemptionOptionRow, RewardRedemptionRow, UsernameRow};
+use crate::models::{NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardsRow, UsernameRow};
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
@@ -45,6 +45,7 @@ pub trait RewardsRepository {
 impl RewardsRepository for DatabaseClient {
     fn get_reward_by_address(&mut self, address: &str) -> Result<Rewards, DatabaseError> {
         let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+        let rewards = RewardsStore::get_rewards(self, &username.username)?;
 
         let code = if has_custom_username(&username.username, &username.address) {
             Some(username.username)
@@ -57,10 +58,10 @@ impl RewardsRepository for DatabaseClient {
 
         Ok(Rewards {
             code,
-            referral_count: username.referral_count,
-            points: username.points,
-            used_referral_code: username.referrer_username,
-            is_enabled: username.is_rewards_enabled,
+            referral_count: rewards.referral_count,
+            points: rewards.points,
+            used_referral_code: rewards.referrer_username,
+            is_enabled: rewards.is_enabled,
             redemption_options: options,
         })
     }
@@ -94,6 +95,10 @@ impl RewardsRepository for DatabaseClient {
             if has_custom_username(&existing.username, &existing.address) {
                 return Err(DatabaseError::Internal("Address already has a username".into()));
             }
+            let existing_rewards = RewardsStore::get_rewards(self, &existing.username)?;
+            if !existing_rewards.is_enabled {
+                return Err(DatabaseError::Internal("Rewards are not enabled for this user".into()));
+            }
             UsernamesStore::update_username(self, address, username)?;
         } else {
             UsernamesStore::create_username(
@@ -102,8 +107,14 @@ impl RewardsRepository for DatabaseClient {
                     username: username.to_string(),
                     address: address.to_string(),
                     is_verified: false,
-                    is_rewards_enabled: true,
-                    rewards_level: None,
+                },
+            )?;
+            RewardsStore::create_rewards(
+                self,
+                RewardsRow {
+                    username: username.to_string(),
+                    is_enabled: true,
+                    level: None,
                     points: 0,
                     referrer_username: None,
                     referral_count: 0,
@@ -111,7 +122,7 @@ impl RewardsRepository for DatabaseClient {
             )?;
         }
 
-        let event_id = RewardsStore::add_event_with_points(
+        let event_id = RewardsStore::add_event(
             self,
             NewRewardEventRow {
                 username: username.to_string(),
@@ -129,27 +140,37 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Referral code does not exist".into()));
         }
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
+        let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
 
-        if !referrer.is_rewards_enabled {
+        if !referrer_rewards.is_enabled {
             return Err(DatabaseError::Internal("Rewards are not enabled for this referral code".into()));
         }
 
-        let referred = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
-            UsernamesStore::get_username(self, UsernameLookup::Address(address))?
+        let (referred, referred_rewards) = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
+            let u = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+            let r = RewardsStore::get_rewards(self, &u.username)?;
+            (u, r)
         } else {
-            UsernamesStore::create_username(
+            let u = UsernamesStore::create_username(
                 self,
                 UsernameRow {
                     username: address.to_string(),
                     address: address.to_string(),
                     is_verified: false,
-                    is_rewards_enabled: true,
-                    rewards_level: None,
+                },
+            )?;
+            let r = RewardsStore::create_rewards(
+                self,
+                RewardsRow {
+                    username: address.to_string(),
+                    is_enabled: true,
+                    level: None,
                     points: 0,
                     referrer_username: None,
                     referral_count: 0,
                 },
-            )?
+            )?;
+            (u, r)
         };
 
         if referrer.username == referred.username || referrer.address.eq_ignore_ascii_case(&referred.address) {
@@ -160,7 +181,7 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
         }
 
-        if referred.referrer_username.is_some() {
+        if referred_rewards.referrer_username.is_some() {
             return Err(DatabaseError::Internal("Already used a referral code".into()));
         }
 
@@ -168,7 +189,7 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Device already used a referral code".into()));
         }
 
-        if !referred.is_rewards_enabled {
+        if !referred_rewards.is_enabled {
             return Err(DatabaseError::Internal("Rewards are not enabled for this user".into()));
         }
 
@@ -181,7 +202,7 @@ impl RewardsRepository for DatabaseClient {
             },
         )?;
 
-        let invite_event_id = RewardsStore::add_event_with_points(
+        let invite_event_id = RewardsStore::add_event(
             self,
             NewRewardEventRow {
                 username: referrer.username.clone(),
@@ -190,7 +211,7 @@ impl RewardsRepository for DatabaseClient {
             invite_event.points(),
         )?;
 
-        let joined_event_id = RewardsStore::add_event_with_points(
+        let joined_event_id = RewardsStore::add_event(
             self,
             NewRewardEventRow {
                 username: referred.username.clone(),
@@ -209,7 +230,7 @@ impl RewardsRepository for DatabaseClient {
     fn add_redemption(&mut self, username: &str, option_id: &str) -> Result<RewardRedemption, DatabaseError> {
         let option_row = RewardsStore::get_redemption_option(self, option_id)?;
 
-        let redemption_id = RewardsStore::add_redemption_with_points_deduction(
+        let redemption_id = RewardsStore::add_redemption(
             self,
             username,
             option_row.points,
