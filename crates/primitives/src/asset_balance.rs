@@ -123,18 +123,4 @@ impl Balance {
             metadata,
         }
     }
-
-    pub fn available_with_metadata(available: BigUint, metadata: Option<BalanceMetadata>) -> Self {
-        Self {
-            available,
-            metadata,
-            frozen: BigUint::from(0u32),
-            locked: BigUint::from(0u32),
-            staked: BigUint::from(0u32),
-            pending: BigUint::from(0u32),
-            rewards: BigUint::from(0u32),
-            reserved: BigUint::from(0u32),
-            withdrawable: BigUint::from(0u32),
-        }
-    }
 }

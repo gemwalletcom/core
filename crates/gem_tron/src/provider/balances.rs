@@ -21,17 +21,15 @@ impl<C: Client> ChainBalances for TronClient<C> {
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
         let parameter = format_address_parameter(&address)?;
-        let usage = self.get_account_usage(&address).await?;
 
         let futures: Vec<_> = token_ids
             .into_iter()
             .map(|token_id| {
                 let parameter = parameter.clone();
-                let usage = usage.clone();
                 async move {
                     let balance_hex = self.trigger_constant_contract(&token_id, "balanceOf(address)", &parameter).await?;
                     let asset_id = AssetId::from(self.get_chain(), Some(token_id));
-                    map_token_balance(&balance_hex, asset_id, Some(&usage))
+                    map_token_balance(&balance_hex, asset_id)
                 }
             })
             .collect();

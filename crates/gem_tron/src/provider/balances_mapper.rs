@@ -13,19 +13,15 @@ pub fn map_coin_balance(account: &TronAccount) -> Result<AssetBalance, Box<dyn E
     Ok(AssetBalance::new(AssetId::from_chain(Chain::Tron), available_balance))
 }
 
-pub fn map_token_balance(balance_hex: &str, asset_id: AssetId, usage: Option<&TronAccountUsage>) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-    let available = if balance_hex.is_empty() || balance_hex == "0x" {
+pub fn map_token_balance(balance_hex: &str, asset_id: AssetId) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+    let balance = if balance_hex.is_empty() || balance_hex == "0x" {
         BigUint::from(0u32)
     } else {
         let hex_str = balance_hex.strip_prefix("0x").unwrap_or(balance_hex);
         BigUint::from_str_radix(hex_str, 16).map_err(|e| format!("Failed to parse hex balance: {}", e))?
     };
-    let metadata = usage.map(|u| map_metadata_from_usage(u, 0));
 
-    Ok(AssetBalance::new_balance(
-        asset_id,
-        Balance::available_with_metadata(available, metadata),
-    ))
+    Ok(AssetBalance::new(asset_id, balance))
 }
 
 pub fn map_metadata_from_usage(usage: &TronAccountUsage, votes: u32) -> BalanceMetadata {
@@ -126,21 +122,27 @@ mod tests {
     fn test_map_token_balance_with_real_payload() {
         let response: TronSmartContractResult = serde_json::from_str(include_str!("../../testdata/balance_token.json")).unwrap();
         let asset_id = AssetId::from(Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string()));
-        let balance = map_token_balance(&response.constant_result[0], asset_id.clone(), None).unwrap();
+        let balance = map_token_balance(&response.constant_result[0], asset_id.clone()).unwrap();
 
         assert_eq!(balance.asset_id, asset_id);
         assert_eq!(balance.balance.available, BigUint::from(136389002_u64));
-        assert_eq!(balance.balance.metadata, None);
     }
 
     #[test]
     fn test_map_token_balance_edge_cases() {
         let asset_id = AssetId::from(Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string()));
 
-        assert_eq!(map_token_balance("", asset_id.clone(), None).unwrap().balance.available, BigUint::from(0u32));
-        assert_eq!(map_token_balance("0x", asset_id.clone(), None).unwrap().balance.available, BigUint::from(0u32));
-        assert_eq!(map_token_balance("0x0", asset_id.clone(), None).unwrap().balance.available, BigUint::from(0u32));
-        assert_eq!(map_token_balance("0x821218a", asset_id, None).unwrap().balance.available, BigUint::from(136389002_u64));
+        let balance = map_token_balance("", asset_id.clone()).unwrap();
+        assert_eq!(balance.balance.available, BigUint::from(0u32));
+
+        let balance = map_token_balance("0x", asset_id.clone()).unwrap();
+        assert_eq!(balance.balance.available, BigUint::from(0u32));
+
+        let balance = map_token_balance("0x0", asset_id.clone()).unwrap();
+        assert_eq!(balance.balance.available, BigUint::from(0u32));
+
+        let balance = map_token_balance("0x821218a", asset_id).unwrap();
+        assert_eq!(balance.balance.available, BigUint::from(136389002_u64));
     }
 
     #[test]
@@ -379,29 +381,6 @@ mod tests {
         assert_eq!(metadata.energy_total, 0);
         assert_eq!(metadata.bandwidth_available, 0);
         assert_eq!(metadata.bandwidth_total, 0);
-    }
-
-    #[test]
-    fn test_map_token_balance_with_usage() {
-        let asset_id = AssetId::from(Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string()));
-        let usage = TronAccountUsage {
-            energy_limit: 1000000,
-            energy_used: 500000,
-            free_net_limit: 1500,
-            free_net_used: 500,
-            net_used: 200,
-            net_limit: 5000,
-        };
-
-        let balance = map_token_balance("0x821218a", asset_id.clone(), Some(&usage)).unwrap();
-        let metadata = balance.balance.metadata.unwrap();
-
-        assert_eq!(balance.asset_id, asset_id);
-        assert_eq!(balance.balance.available, BigUint::from(136389002_u64));
-        assert_eq!(metadata.energy_available, 500000);
-        assert_eq!(metadata.energy_total, 1000000);
-        assert_eq!(metadata.bandwidth_available, 5800);
-        assert_eq!(metadata.bandwidth_total, 6500);
     }
 
     #[test]
