@@ -46,9 +46,6 @@ impl RewardsRepository for DatabaseClient {
     fn get_reward_by_address(&mut self, address: &str) -> Result<Rewards, DatabaseError> {
         let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
 
-        let referrals = RewardsStore::get_referrals_by_referrer(self, &username.username)?;
-        let used_referral = RewardsStore::get_referral_by_referred(self, &username.username)?;
-
         let code = if has_custom_username(&username.username, &username.address) {
             Some(username.username)
         } else {
@@ -60,9 +57,9 @@ impl RewardsRepository for DatabaseClient {
 
         Ok(Rewards {
             code,
-            referral_count: referrals.len() as i32,
+            referral_count: username.referral_count,
             points: username.points,
-            used_referral_code: used_referral.map(|r| r.referrer_username),
+            used_referral_code: username.referrer_username,
             is_enabled: username.is_rewards_enabled,
             redemption_options: options,
         })
@@ -108,6 +105,8 @@ impl RewardsRepository for DatabaseClient {
                     is_rewards_enabled: true,
                     rewards_level: None,
                     points: 0,
+                    referrer_username: None,
+                    referral_count: 0,
                 },
             )?;
         }
@@ -147,6 +146,8 @@ impl RewardsRepository for DatabaseClient {
                     is_rewards_enabled: true,
                     rewards_level: None,
                     points: 0,
+                    referrer_username: None,
+                    referral_count: 0,
                 },
             )?
         };
@@ -159,7 +160,7 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
         }
 
-        if RewardsStore::get_referral_by_referred(self, &referred.username)?.is_some() {
+        if referred.referrer_username.is_some() {
             return Err(DatabaseError::Internal("Already used a referral code".into()));
         }
 

@@ -55,8 +55,6 @@ impl RewardsRedemptionOptionsStore for DatabaseClient {
 
 pub(crate) trait RewardsStore {
     fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), diesel::result::Error>;
-    fn get_referrals_by_referrer(&mut self, referrer_username: &str) -> Result<Vec<RewardReferralRow>, diesel::result::Error>;
-    fn get_referral_by_referred(&mut self, referred_username: &str) -> Result<Option<RewardReferralRow>, diesel::result::Error>;
     fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, diesel::result::Error>;
     fn add_event_with_points(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, diesel::result::Error>;
     fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, diesel::result::Error>;
@@ -70,27 +68,22 @@ pub(crate) trait RewardsStore {
 
 impl RewardsStore for DatabaseClient {
     fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), diesel::result::Error> {
-        use crate::schema::rewards_referrals::dsl;
-        diesel::insert_into(dsl::rewards_referrals).values(&referral).execute(&mut self.connection)?;
-        Ok(())
-    }
+        use crate::schema::{rewards_referrals, usernames};
+        use diesel::Connection;
 
-    fn get_referrals_by_referrer(&mut self, referrer_username: &str) -> Result<Vec<RewardReferralRow>, diesel::result::Error> {
-        use crate::schema::rewards_referrals::dsl;
-        dsl::rewards_referrals
-            .filter(dsl::referrer_username.eq(referrer_username))
-            .order(dsl::created_at.desc())
-            .select(RewardReferralRow::as_select())
-            .load(&mut self.connection)
-    }
+        self.connection.transaction(|conn| {
+            diesel::insert_into(rewards_referrals::table).values(&referral).execute(conn)?;
 
-    fn get_referral_by_referred(&mut self, referred_username: &str) -> Result<Option<RewardReferralRow>, diesel::result::Error> {
-        use crate::schema::rewards_referrals::dsl;
-        dsl::rewards_referrals
-            .filter(dsl::referred_username.eq(referred_username))
-            .select(RewardReferralRow::as_select())
-            .first(&mut self.connection)
-            .optional()
+            diesel::update(usernames::table.filter(usernames::username.eq(&referral.referred_username)))
+                .set(usernames::referrer_username.eq(&referral.referrer_username))
+                .execute(conn)?;
+
+            diesel::update(usernames::table.filter(usernames::username.eq(&referral.referrer_username)))
+                .set(usernames::referral_count.eq(usernames::referral_count + 1))
+                .execute(conn)?;
+
+            Ok(())
+        })
     }
 
     fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, diesel::result::Error> {

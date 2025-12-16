@@ -9,6 +9,8 @@ CREATE TABLE usernames (
     is_rewards_enabled BOOLEAN NOT NULL DEFAULT true,
     rewards_level VARCHAR(32) REFERENCES rewards_levels_types(id),
     points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
+    referrer_username VARCHAR(64) REFERENCES usernames(username) ON DELETE SET NULL ON UPDATE CASCADE,
+    referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

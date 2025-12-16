@@ -755,6 +755,9 @@ diesel::table! {
         #[max_length = 32]
         rewards_level -> Nullable<Varchar>,
         points -> Int4,
+        #[max_length = 64]
+        referrer_username -> Nullable<Varchar>,
+        referral_count -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
