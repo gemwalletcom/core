@@ -7,6 +7,7 @@ pub mod fetch_nft_assets_addresses_consumer;
 pub mod fetch_token_addresses_consumer;
 pub mod notifications;
 pub mod rewards_consumer;
+pub mod rewards_redemption_consumer;
 pub mod store_charts_consumer;
 pub mod store_prices_consumer;
 pub mod store_transactions_consumer;
@@ -30,7 +31,8 @@ pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
     AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, PricesPayload,
-    QueueName, RewardsNotificationPayload, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload,
+    QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload,
+    TransactionsPayload,
 };
 use tokio::sync::Mutex;
 
@@ -40,6 +42,7 @@ use crate::consumers::{
     fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
 };
 use crate::pusher::Pusher;
+use gem_rewards::TransferRedemptionService;
 use settings::service_user_agent;
 
 pub async fn run_consumer_fetch_assets(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -197,6 +200,26 @@ pub async fn run_consumer_rewards(settings: Settings, database: Database) -> Res
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
     let consumer = rewards_consumer::RewardsConsumer::new(database, stream_producer);
     streamer::run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(
+        &name,
+        stream_reader,
+        queue,
+        consumer,
+        ConsumerConfig::default(),
+    )
+    .await
+}
+
+pub async fn run_rewards_redemption_consumer(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let queue = QueueName::RewardsRedemptions;
+    let name = queue.to_string();
+    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+    let stream_reader = StreamReader::new(config).await?;
+
+    let secret_phrase = settings.rewards.secret.clone();
+    let redemption_service = Arc::new(TransferRedemptionService::new(secret_phrase));
+    let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service);
+
+    streamer::run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, ()>(
         &name,
         stream_reader,
         queue,

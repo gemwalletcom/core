@@ -7,7 +7,11 @@ use primitives::TransactionsFetchOption;
 
 pub(crate) trait TransactionsStore {
     fn get_transaction_by_id(&mut self, transaction_id: &str) -> Result<TransactionRow, diesel::result::Error>;
-    fn add_transactions(&mut self, transactions_values: Vec<TransactionRow>, addresses_values: Vec<TransactionAddressesRow>) -> Result<bool, diesel::result::Error>;
+    fn add_transactions(
+        &mut self,
+        transactions_values: Vec<TransactionRow>,
+        addresses_values: Vec<TransactionAddressesRow>,
+    ) -> Result<bool, diesel::result::Error>;
     fn get_transactions_by_device_id(
         &mut self,
         _device_id: &str,
@@ -25,10 +29,17 @@ pub(crate) trait TransactionsStore {
 impl TransactionsStore for DatabaseClient {
     fn get_transaction_by_id(&mut self, transaction_id: &str) -> Result<TransactionRow, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
-        transactions.find(transaction_id).select(TransactionRow::as_select()).first(&mut self.connection)
+        transactions
+            .find(transaction_id)
+            .select(TransactionRow::as_select())
+            .first(&mut self.connection)
     }
 
-    fn add_transactions(&mut self, transactions_values: Vec<TransactionRow>, addresses_values: Vec<TransactionAddressesRow>) -> Result<bool, diesel::result::Error> {
+    fn add_transactions(
+        &mut self,
+        transactions_values: Vec<TransactionRow>,
+        addresses_values: Vec<TransactionAddressesRow>,
+    ) -> Result<bool, diesel::result::Error> {
         self.connection
             .build_transaction()
             .read_write()

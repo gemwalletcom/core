@@ -487,6 +487,7 @@ dependencies = [
  "fiat",
  "gem_auth",
  "gem_client",
+ "gem_rewards",
  "gem_tracing",
  "metrics",
  "name_resolver",
@@ -1814,6 +1815,7 @@ dependencies = [
  "coingecko",
  "fiat",
  "futures",
+ "gem_rewards",
  "gem_tracing",
  "job_runner",
  "localizer",
@@ -2971,6 +2973,16 @@ dependencies = [
  "serde_serializers",
  "settings",
  "tokio",
+]
+
+[[package]]
+name = "gem_rewards"
+version = "0.1.0"
+dependencies = [
+ "primitives",
+ "serde",
+ "serde_json",
+ "storage",
 ]
 
 [[package]]

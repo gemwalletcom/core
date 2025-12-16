@@ -276,3 +276,20 @@ impl fmt::Display for RewardsNotificationPayload {
         write!(f, "event_id: {}", self.event_id)
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RewardsRedemptionPayload {
+    pub redemption_id: i32,
+}
+
+impl RewardsRedemptionPayload {
+    pub fn new(redemption_id: i32) -> Self {
+        Self { redemption_id }
+    }
+}
+
+impl fmt::Display for RewardsRedemptionPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "redemption_id: {}", self.redemption_id)
+    }
+}

@@ -27,7 +27,10 @@ impl NftStore for DatabaseClient {
 
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAssetRow>, diesel::result::Error> {
         use crate::schema::nft_assets::dsl::*;
-        nft_assets.filter(id.eq_any(asset_ids)).select(NftAssetRow::as_select()).load(&mut self.connection)
+        nft_assets
+            .filter(id.eq_any(asset_ids))
+            .select(NftAssetRow::as_select())
+            .load(&mut self.connection)
     }
 
     fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAssetRow, diesel::result::Error> {

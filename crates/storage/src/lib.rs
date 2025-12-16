@@ -7,6 +7,7 @@ pub mod schema;
 pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},
+    rewards::RedemptionUpdate,
 };
 pub use self::error::DatabaseError;
 pub use self::models::ScanAddressTypeRow;

@@ -34,3 +34,4 @@ localizer = { path = "../../crates/localizer" }
 settings_chain = { path = "../../crates/settings_chain" }
 chain_traits = { path = "../../crates/chain_traits" }
 number_formatter = { path = "../../crates/number_formatter" }
+gem_rewards = { path = "../../crates/gem_rewards" }

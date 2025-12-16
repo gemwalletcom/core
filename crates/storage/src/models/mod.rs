@@ -33,8 +33,7 @@ pub use self::chain::ChainRow;
 pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};
 pub use self::device::{DeviceRow, UpdateDeviceRow};
 pub use self::fiat::{
-    FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow,
-    FiatTransactionRow, FiatTransactionUpdateRow,
+    FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow,
 };
 pub use self::link::LinkTypeRow;
 pub use self::nft_asset::{NftAssetRow, NftTypeRow};
@@ -48,7 +47,10 @@ pub use self::price::{NewPriceRow, PriceAssetDataRow, PriceAssetRow, PriceRow};
 pub use self::price_alert::{NewPriceAlertRow, PriceAlertRow};
 pub use self::price_dex::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};
 pub use self::release::ReleaseRow;
-pub use self::reward::{NewRewardEventRow, NewRewardReferralRow, RewardEventRow, RewardEventTypeRow, RewardReferralRow};
+pub use self::reward::{
+    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RewardEventRow, RewardEventTypeRow, RewardLevelTypeRow, RewardRedemptionOptionRow,
+    RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow,
+};
 pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow, ScanAddressTypeRow};
 pub use self::subscription::{SubscriptionAddressExcludeRow, SubscriptionRow};
 pub use self::support::SupportRow;

@@ -1,5 +1,5 @@
 use crate::database::prices_dex::PricesDexStore;
-use crate::models::{PriceDexRow, PriceDexAssetRow, PriceDexProviderRow};
+use crate::models::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};
 use crate::{DatabaseClient, DatabaseError};
 use primitives::{PriceFeedId, PriceFeedProvider};
 

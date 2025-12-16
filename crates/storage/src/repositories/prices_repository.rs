@@ -4,7 +4,7 @@ use primitives::Price;
 
 use crate::DatabaseClient;
 use crate::database::prices::PricesStore;
-use crate::models::{PriceRow, PriceAssetRow, price::NewPriceRow, price::PriceAssetDataRow};
+use crate::models::{PriceAssetRow, PriceRow, price::NewPriceRow, price::PriceAssetDataRow};
 
 pub trait PricesRepository {
     fn add_prices(&mut self, values: Vec<NewPriceRow>) -> Result<usize, DatabaseError>;

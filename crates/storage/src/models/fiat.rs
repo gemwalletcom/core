@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
 use diesel::prelude::*;
-use primitives::{
-    fiat_assets::FiatAssetLimits, FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatQuote, FiatRate, FiatTransaction,
-};
+use primitives::{FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatQuote, FiatRate, FiatTransaction, fiat_assets::FiatAssetLimits};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
