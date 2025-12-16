@@ -229,6 +229,11 @@ impl RewardsRepository for DatabaseClient {
 
     fn add_redemption(&mut self, username: &str, option_id: &str) -> Result<RewardRedemption, DatabaseError> {
         let option_row = RewardsStore::get_redemption_option(self, option_id)?;
+        let rewards = RewardsStore::get_rewards(self, username)?;
+
+        if rewards.points < option_row.points {
+            return Err(DatabaseError::Internal("Not enough points".into()));
+        }
 
         let redemption_id = RewardsStore::add_redemption(
             self,
