@@ -8,6 +8,7 @@ CREATE TABLE usernames (
     is_verified BOOLEAN NOT NULL DEFAULT false,
     is_rewards_enabled BOOLEAN NOT NULL DEFAULT true,
     rewards_level VARCHAR(32) REFERENCES rewards_levels_types(id),
+    points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

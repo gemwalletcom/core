@@ -39,6 +39,7 @@ pub struct Settings {
     pub trongrid: Trongrid,
     pub assets: Assets,
     pub sentry: Option<Sentry>,
+    pub rewards: Rewards,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -441,6 +442,12 @@ pub struct Assets {
 pub struct Sentry {
     pub dsn: String,
     pub sample_rate: f32,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Rewards {
+    pub secret: String,
 }
 
 #[cfg(feature = "testkit")]

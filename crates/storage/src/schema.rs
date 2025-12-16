@@ -565,6 +565,45 @@ diesel::table! {
 }
 
 diesel::table! {
+    rewards_redemption_options (id) {
+        #[max_length = 64]
+        id -> Varchar,
+        #[max_length = 32]
+        redemption_type -> Varchar,
+        points -> Int4,
+        #[max_length = 128]
+        asset_id -> Nullable<Varchar>,
+        #[max_length = 64]
+        value -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    rewards_redemptions (id) {
+        id -> Int4,
+        #[max_length = 64]
+        username -> Varchar,
+        #[max_length = 64]
+        option_id -> Varchar,
+        #[max_length = 512]
+        transaction_id -> Nullable<Varchar>,
+        #[max_length = 32]
+        status -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    rewards_redemptions_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+    }
+}
+
+diesel::table! {
     rewards_referrals (id) {
         id -> Int4,
         #[max_length = 64]
@@ -706,6 +745,12 @@ diesel::table! {
 }
 
 diesel::table! {
+    untitled_table_264 (id) {
+        id -> Int4,
+    }
+}
+
+diesel::table! {
     usernames (username) {
         #[max_length = 64]
         username -> Varchar,
@@ -715,6 +760,7 @@ diesel::table! {
         is_rewards_enabled -> Bool,
         #[max_length = 32]
         rewards_level -> Nullable<Varchar>,
+        points -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -765,6 +811,9 @@ diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
 diesel::joinable!(rewards_events -> rewards_events_types (event_type));
 diesel::joinable!(rewards_events -> usernames (username));
+diesel::joinable!(rewards_redemption_options -> assets (asset_id));
+diesel::joinable!(rewards_redemption_options -> rewards_redemptions_types (redemption_type));
+diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
@@ -817,6 +866,9 @@ diesel::allow_tables_to_appear_in_same_query!(
     rewards_events,
     rewards_events_types,
     rewards_levels_types,
+    rewards_redemption_options,
+    rewards_redemptions,
+    rewards_redemptions_types,
     rewards_referrals,
     scan_addresses,
     scan_addresses_types,
@@ -827,5 +879,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions,
     transactions_addresses,
     transactions_types,
+    untitled_table_264,
     usernames,
 );
