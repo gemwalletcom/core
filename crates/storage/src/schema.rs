@@ -745,12 +745,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    untitled_table_264 (id) {
-        id -> Int4,
-    }
-}
-
-diesel::table! {
     usernames (username) {
         #[max_length = 64]
         username -> Varchar,
@@ -879,6 +873,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions,
     transactions_addresses,
     transactions_types,
-    untitled_table_264,
     usernames,
 );
