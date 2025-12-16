@@ -25,7 +25,7 @@ impl RewardsClient {
 
     pub async fn create_referral(&mut self, address: &str, code: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
         let (rewards, event_id) = self.database.client()?.rewards().create_reward(address, code)?;
-        self.publish_event(event_id).await?;
+        self.publish_events(vec![event_id]).await?;
         Ok(rewards)
     }
 
@@ -55,15 +55,11 @@ impl RewardsClient {
         Ok(())
     }
 
-    async fn publish_event(&self, event_id: i32) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let payload = vec![RewardsNotificationPayload::new(event_id)];
-        self.stream_producer.publish_rewards_events(payload).await?;
-        Ok(())
-    }
-
     async fn publish_events(&self, event_ids: Vec<i32>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let payload: Vec<RewardsNotificationPayload> = event_ids.into_iter().map(RewardsNotificationPayload::new).collect();
-        self.stream_producer.publish_rewards_events(payload).await?;
+        for event_id in event_ids {
+            let payload = RewardsNotificationPayload::new(event_id);
+            self.stream_producer.publish_rewards_events(vec![payload]).await?;
+        }
         Ok(())
     }
 }
