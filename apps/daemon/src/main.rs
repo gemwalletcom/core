@@ -80,6 +80,7 @@ async fn run_consumer_mode(settings: settings::Settings, service: ConsumerServic
         ConsumerService::FetchNftAssociations => consumers::run_consumer_fetch_nft_associations(settings, database).await,
         ConsumerService::Notifications => consumers::notifications::run(settings, database).await,
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings, database).await,
+        ConsumerService::RewardsRedemptions => consumers::run_rewards_redemption_consumer(settings, database).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, database).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, database).await,
         ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings, database).await,

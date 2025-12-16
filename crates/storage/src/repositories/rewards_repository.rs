@@ -1,10 +1,11 @@
-use crate::database::rewards::RewardsStore;
+use crate::database::rewards::{RedemptionUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEvent, NewRewardReferralRow, Username};
+use crate::models::{NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RewardRedemptionOptionRow, RewardRedemptionRow, UsernameRow};
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
+use primitives::rewards::{RedemptionStatus, RewardRedemption};
 use primitives::{Device, RewardEvent, RewardEventType, Rewards};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
@@ -33,34 +34,43 @@ pub trait RewardsRepository {
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
     fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
+    fn add_redemption(&mut self, username: &str, option_id: &str) -> Result<RewardRedemption, DatabaseError>;
+    fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
+    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
+    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
+    fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOptionRow>, DatabaseError>;
+    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOptionRow, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
     fn get_reward_by_address(&mut self, address: &str) -> Result<Rewards, DatabaseError> {
-        let user = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+        let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
 
-        let referrals = RewardsStore::get_referrals_by_referrer(self, &user.username)?;
-        let used_referral = RewardsStore::get_referral_by_referred(self, &user.username)?;
-        let events = RewardsStore::get_events(self, &user.username)?;
-        let total_points: i32 = events.iter().map(|e| e.as_primitive().points).sum();
+        let referrals = RewardsStore::get_referrals_by_referrer(self, &username.username)?;
+        let used_referral = RewardsStore::get_referral_by_referred(self, &username.username)?;
 
-        let code = if has_custom_username(&user.username, &user.address) {
-            Some(user.username)
+        let code = if has_custom_username(&username.username, &username.address) {
+            Some(username.username)
         } else {
             None
         };
 
+        let redemption_options = RewardsStore::get_redemption_options(self)?;
+        let options = redemption_options.iter().map(|row| row.as_primitive()).collect();
+
         Ok(Rewards {
             code,
             referral_count: referrals.len() as i32,
-            points: total_points,
+            points: username.points,
             used_referral_code: used_referral.map(|r| r.referrer_username),
+            is_enabled: username.is_rewards_enabled,
+            redemption_options: options,
         })
     }
 
     fn get_reward_events_by_address(&mut self, address: &str) -> Result<Vec<RewardEvent>, DatabaseError> {
-        let user = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
-        let events = RewardsStore::get_events(self, &user.username)?;
+        let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+        let events = RewardsStore::get_events(self, &username.username)?;
         Ok(events.iter().map(|e| e.as_primitive()).collect())
     }
 
@@ -71,8 +81,8 @@ impl RewardsRepository for DatabaseClient {
 
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError> {
         let event = RewardsStore::get_event(self, event_id)?;
-        let user = UsernamesStore::get_username(self, UsernameLookup::Username(&event.username))?;
-        self.get_devices_by_address(&user.address)
+        let username = UsernamesStore::get_username(self, UsernameLookup::Username(&event.username))?;
+        self.get_devices_by_address(&username.address)
     }
 
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError> {
@@ -91,20 +101,26 @@ impl RewardsRepository for DatabaseClient {
         } else {
             UsernamesStore::create_username(
                 self,
-                Username {
+                UsernameRow {
                     username: username.to_string(),
                     address: address.to_string(),
+                    is_verified: false,
+                    is_rewards_enabled: true,
+                    rewards_level: None,
+                    points: 0,
                 },
             )?;
         }
 
-        let event_id = RewardsStore::add_event(
+        let event_id = RewardsStore::add_event_with_points(
             self,
-            NewRewardEvent {
+            NewRewardEventRow {
                 username: username.to_string(),
                 event_type: RewardEventType::CreateUsername.as_ref().to_string(),
             },
+            RewardEventType::CreateUsername.points(),
         )?;
+
         let rewards = self.get_reward_by_address(address)?;
         Ok((rewards, event_id))
     }
@@ -115,19 +131,27 @@ impl RewardsRepository for DatabaseClient {
         }
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
 
-        let user = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
+        if !referrer.is_rewards_enabled {
+            return Err(DatabaseError::Internal("Rewards are not enabled for this referral code".into()));
+        }
+
+        let referred = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
             UsernamesStore::get_username(self, UsernameLookup::Address(address))?
         } else {
             UsernamesStore::create_username(
                 self,
-                Username {
+                UsernameRow {
                     username: address.to_string(),
                     address: address.to_string(),
+                    is_verified: false,
+                    is_rewards_enabled: true,
+                    rewards_level: None,
+                    points: 0,
                 },
             )?
         };
 
-        if referrer.username == user.username || referrer.address.eq_ignore_ascii_case(&user.address) {
+        if referrer.username == referred.username || referrer.address.eq_ignore_ascii_case(&referred.address) {
             return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
         }
 
@@ -135,7 +159,7 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
         }
 
-        if RewardsStore::get_referral_by_referred(self, &user.username)?.is_some() {
+        if RewardsStore::get_referral_by_referred(self, &referred.username)?.is_some() {
             return Err(DatabaseError::Internal("Already used a referral code".into()));
         }
 
@@ -143,27 +167,35 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Device already used a referral code".into()));
         }
 
+        if !referred.is_rewards_enabled {
+            return Err(DatabaseError::Internal("Rewards are not enabled for this user".into()));
+        }
+
         RewardsStore::add_referral(
             self,
             NewRewardReferralRow {
                 referrer_username: referral_code.to_string(),
-                referred_username: user.username.clone(),
+                referred_username: referred.username.clone(),
                 referred_device_id: device_id,
             },
         )?;
-        let invite_event_id = RewardsStore::add_event(
+
+        let invite_event_id = RewardsStore::add_event_with_points(
             self,
-            NewRewardEvent {
-                username: referrer.username,
+            NewRewardEventRow {
+                username: referrer.username.clone(),
                 event_type: invite_event.as_ref().to_string(),
             },
+            invite_event.points(),
         )?;
-        let joined_event_id = RewardsStore::add_event(
+
+        let joined_event_id = RewardsStore::add_event_with_points(
             self,
-            NewRewardEvent {
-                username: user.username,
+            NewRewardEventRow {
+                username: referred.username.clone(),
                 event_type: RewardEventType::Joined.as_ref().to_string(),
             },
+            RewardEventType::Joined.points(),
         )?;
 
         Ok(vec![invite_event_id, joined_event_id])
@@ -171,6 +203,45 @@ impl RewardsRepository for DatabaseClient {
 
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError> {
         Ok(SubscriptionsStore::get_first_subscription_date(self, addresses)?)
+    }
+
+    fn add_redemption(&mut self, username: &str, option_id: &str) -> Result<RewardRedemption, DatabaseError> {
+        let option_row = RewardsStore::get_redemption_option(self, option_id)?;
+
+        let redemption_id = RewardsStore::add_redemption_with_points_deduction(
+            self,
+            username,
+            option_row.points,
+            NewRewardRedemptionRow {
+                username: username.to_string(),
+                option_id: option_id.to_string(),
+                status: RedemptionStatus::Pending.as_ref().to_string(),
+            },
+        )?;
+
+        let redemption_row = RewardsStore::get_redemption(self, redemption_id)?;
+        Ok(redemption_row.as_primitive(option_row.as_primitive()))
+    }
+
+    fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {
+        let username = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
+        Ok(username.address)
+    }
+
+    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError> {
+        Ok(RewardsStore::get_redemption(self, redemption_id)?)
+    }
+
+    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError> {
+        Ok(RewardsStore::update_redemption(self, redemption_id, updates)?)
+    }
+
+    fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOptionRow>, DatabaseError> {
+        Ok(RewardsStore::get_redemption_options(self)?)
+    }
+
+    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOptionRow, DatabaseError> {
+        Ok(RewardsStore::get_redemption_option(self, id)?)
     }
 }
 

@@ -10,7 +10,7 @@ use std::str::FromStr;
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::perpetuals)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Perpetual {
+pub struct PerpetualRow {
     pub id: String,
     pub name: String,
     pub provider: String,
@@ -27,18 +27,18 @@ pub struct Perpetual {
 #[derive(Debug, Insertable, Clone)]
 #[diesel(table_name = crate::schema::perpetuals_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct NewPerpetualAsset {
+pub struct NewPerpetualAssetRow {
     pub perpetual_id: String,
     pub asset_id: String,
 }
 
-impl NewPerpetualAsset {
+impl NewPerpetualAssetRow {
     pub fn new(perpetual_id: String, asset_id: String) -> Self {
         Self { perpetual_id, asset_id }
     }
 }
 
-impl Perpetual {
+impl PerpetualRow {
     pub fn from_primitive(perpetual: PrimitivePerpetual) -> Self {
         Self {
             id: perpetual.id,

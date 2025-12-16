@@ -4,7 +4,7 @@ use prices_dex::{AssetPriceFeed, DexAssetPrice, JupiterProvider, PriceChainAsset
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use storage::Database;
-use storage::models::{PriceDex, PriceDexAsset};
+use storage::models::{PriceDexAssetRow, PriceDexRow};
 
 pub struct PricesDexUpdater {
     provider_type: PriceFeedProvider,
@@ -55,16 +55,16 @@ impl PricesDexUpdater {
             return Ok(());
         }
 
-        let feed_records: Vec<PriceDex> = valid_feeds
+        let feed_records: Vec<PriceDexRow> = valid_feeds
             .iter()
-            .map(|feed| PriceDex::new(feed.get_id(), self.provider_type.as_ref().to_string(), 0.0, chrono::Utc::now().naive_utc()))
+            .map(|feed| PriceDexRow::new(feed.get_id(), self.provider_type.as_ref().to_string(), 0.0, chrono::Utc::now().naive_utc()))
             .collect();
 
         self.database.client()?.prices_dex().add_prices_dex(feed_records)?;
 
-        let asset_records: Vec<PriceDexAsset> = valid_feeds
+        let asset_records: Vec<PriceDexAssetRow> = valid_feeds
             .iter()
-            .map(|feed| PriceDexAsset::new(feed.asset_id.to_string(), feed.get_id()))
+            .map(|feed| PriceDexAssetRow::new(feed.asset_id.to_string(), feed.get_id()))
             .collect();
 
         self.database.client()?.prices_dex().set_prices_dex_assets(asset_records)?;
@@ -95,10 +95,10 @@ impl PricesDexUpdater {
             feed_map.insert(price.price_feed.get_id(), *price);
         }
 
-        let values: Vec<PriceDex> = feed_map
+        let values: Vec<PriceDexRow> = feed_map
             .values()
             .map(|p| {
-                PriceDex::new(
+                PriceDexRow::new(
                     p.price_feed.get_id(),
                     self.provider_type.as_ref().to_string(),
                     p.price,

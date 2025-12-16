@@ -1,0 +1,10 @@
+[package]
+name = "gem_rewards"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+primitives = { path = "../primitives" }
+storage = { path = "../storage" }
+serde = { workspace = true }
+serde_json = { workspace = true }

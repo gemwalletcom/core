@@ -1,7 +1,7 @@
 use api_connector::PusherClient;
 use primitives::{Device, GorushNotification, PushNotification, PushNotificationTypes};
 use std::error::Error;
-use storage::{Database, models::UpdateDevice};
+use storage::{Database, models::UpdateDeviceRow};
 
 #[derive(Clone)]
 pub struct DevicesClient {
@@ -15,7 +15,7 @@ impl DevicesClient {
     }
 
     pub fn add_device(&self, device: Device) -> Result<Device, Box<dyn Error + Send + Sync>> {
-        let add_device = UpdateDevice::from_primitive(device.clone());
+        let add_device = UpdateDeviceRow::from_primitive(device.clone());
         let device = self.database.client()?.devices().add_device(add_device)?;
         Ok(device)
     }
@@ -26,7 +26,7 @@ impl DevicesClient {
     }
 
     pub fn update_device(&self, device: Device) -> Result<Device, Box<dyn Error + Send + Sync>> {
-        let update_device = UpdateDevice::from_primitive(device);
+        let update_device = UpdateDeviceRow::from_primitive(device);
         let device = self.database.client()?.devices().update_device(update_device)?;
         Ok(device)
     }

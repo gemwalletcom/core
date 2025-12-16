@@ -12,7 +12,7 @@ pub struct FiatRequestMap {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FiatRates {
-    pub rates: Vec<storage::models::FiatRate>,
+    pub rates: Vec<storage::models::FiatRateRow>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

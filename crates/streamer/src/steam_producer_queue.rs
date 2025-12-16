@@ -4,7 +4,7 @@ use primitives::AssetId;
 
 use crate::{
     AssetsAddressPayload, ChartsPayload, FetchAssetsPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName,
-    RewardsNotificationPayload, StreamProducer, TransactionsPayload,
+    RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload,
 };
 
 #[async_trait::async_trait]
@@ -17,6 +17,7 @@ pub trait StreamProducerQueue {
     async fn publish_notifications_support(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_rewards(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_rewards_events(&self, payload: Vec<RewardsNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_rewards_redemption(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_store_assets_addresses_associations(&self, payload: Vec<AssetsAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
@@ -81,6 +82,10 @@ impl StreamProducerQueue for StreamProducer {
             return Ok(true);
         }
         self.publish_batch(QueueName::RewardsEvents, &payload).await
+    }
+
+    async fn publish_rewards_redemption(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        self.publish(QueueName::RewardsRedemptions, &payload).await
     }
 
     async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {

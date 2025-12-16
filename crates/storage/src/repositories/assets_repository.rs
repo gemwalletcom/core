@@ -2,18 +2,18 @@ use crate::DatabaseError;
 
 use crate::database::assets::AssetsStore;
 use crate::database::assets::{AssetFilter, AssetUpdate};
-use crate::{DatabaseClient, models::Asset};
-use primitives::{Asset as PrimitiveAsset, AssetBasic, AssetPriceMetadata};
+use crate::{DatabaseClient, models::AssetRow};
+use primitives::{Asset, AssetBasic, AssetFull, AssetPriceMetadata};
 
 pub trait AssetsRepository {
     fn get_assets_all(&mut self) -> Result<Vec<AssetBasic>, DatabaseError>;
     fn add_assets(&mut self, values: Vec<AssetBasic>) -> Result<usize, DatabaseError>;
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, DatabaseError>;
-    fn upsert_assets(&mut self, values: Vec<PrimitiveAsset>) -> Result<usize, DatabaseError>;
+    fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, DatabaseError>;
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetBasic>, DatabaseError>;
-    fn get_asset(&mut self, asset_id: &str) -> Result<PrimitiveAsset, DatabaseError>;
-    fn get_asset_full(&mut self, asset_id: &str) -> Result<primitives::AssetFull, DatabaseError>;
-    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<PrimitiveAsset>, DatabaseError>;
+    fn get_asset(&mut self, asset_id: &str) -> Result<Asset, DatabaseError>;
+    fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, DatabaseError>;
+    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, DatabaseError>;
     fn get_assets_basic(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, DatabaseError>;
     fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceMetadata>, DatabaseError>;
     fn get_swap_assets(&mut self) -> Result<Vec<String>, DatabaseError>;
@@ -29,7 +29,7 @@ impl AssetsRepository for DatabaseClient {
     fn add_assets(&mut self, values: Vec<AssetBasic>) -> Result<usize, DatabaseError> {
         Ok(AssetsStore::add_assets(
             self,
-            values.into_iter().map(|x| Asset::from_primitive(x.asset, x.score, x.properties)).collect(),
+            values.into_iter().map(|x| AssetRow::from_primitive(x.asset, x.score, x.properties)).collect(),
         )?)
     }
 
@@ -37,10 +37,10 @@ impl AssetsRepository for DatabaseClient {
         Ok(AssetsStore::update_assets(self, asset_ids, updates)?)
     }
 
-    fn upsert_assets(&mut self, values: Vec<PrimitiveAsset>) -> Result<usize, DatabaseError> {
+    fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, DatabaseError> {
         Ok(AssetsStore::upsert_assets(
             self,
-            values.into_iter().map(Asset::from_primitive_default).collect(),
+            values.into_iter().map(AssetRow::from_primitive_default).collect(),
         )?)
     }
 
@@ -51,11 +51,11 @@ impl AssetsRepository for DatabaseClient {
             .collect())
     }
 
-    fn get_asset(&mut self, asset_id: &str) -> Result<PrimitiveAsset, DatabaseError> {
+    fn get_asset(&mut self, asset_id: &str) -> Result<Asset, DatabaseError> {
         Ok(AssetsStore::get_asset(self, asset_id)?.as_primitive())
     }
 
-    fn get_asset_full(&mut self, asset_id: &str) -> Result<primitives::AssetFull, DatabaseError> {
+    fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, DatabaseError> {
         use crate::database::assets_links::AssetsLinksStore;
         use crate::database::prices::PricesStore;
         use crate::database::tag::TagStore;
@@ -72,7 +72,7 @@ impl AssetsRepository for DatabaseClient {
         let perpetuals = self.perpetuals().get_perpetuals_for_asset(asset.id.as_str())?;
         let perpetuals = perpetuals.into_iter().map(|x| x.as_basic()).collect();
 
-        Ok(primitives::AssetFull {
+        Ok(AssetFull {
             price: price.map(|x| x.as_primitive()),
             market,
             asset: asset.as_primitive(),
@@ -84,7 +84,7 @@ impl AssetsRepository for DatabaseClient {
         })
     }
 
-    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<PrimitiveAsset>, DatabaseError> {
+    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, DatabaseError> {
         Ok(AssetsStore::get_assets(self, asset_ids)?.into_iter().map(|x| x.as_primitive()).collect())
     }
 

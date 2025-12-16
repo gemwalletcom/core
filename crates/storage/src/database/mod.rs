@@ -38,7 +38,7 @@ use crate::{
     PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, ScanAddressesRepository, SubscriptionsRepository, SupportRepository,
     TagRepository, TransactionsRepository,
 };
-use rewards::RewardsEventTypesStore;
+use rewards::{RewardsEventTypesStore, RewardsRedemptionOptionsStore, RewardsRedemptionTypesStore};
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
     let manager = ConnectionManager::<PgConnection>::new(database_url);
@@ -127,6 +127,14 @@ impl DatabaseClient {
     }
 
     pub fn reward_event_types(&mut self) -> &mut dyn RewardsEventTypesStore {
+        self
+    }
+
+    pub fn reward_redemption_types(&mut self) -> &mut dyn RewardsRedemptionTypesStore {
+        self
+    }
+
+    pub fn redemption_options(&mut self) -> &mut dyn RewardsRedemptionOptionsStore {
         self
     }
 

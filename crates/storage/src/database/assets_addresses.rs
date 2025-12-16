@@ -1,6 +1,6 @@
 use crate::schema::assets_addresses::dsl::*;
 
-use crate::{DatabaseClient, models::asset_address::AssetAddress};
+use crate::{DatabaseClient, models::asset_address::AssetAddressRow};
 use chrono::DateTime;
 use diesel::dsl::sql;
 use diesel::prelude::*;
@@ -8,18 +8,18 @@ use diesel::sql_types::{Nullable, Text};
 use primitives::ChainAddress;
 
 pub(crate) trait AssetsAddressesStore {
-    fn add_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error>;
+    fn add_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error>;
     fn get_assets_by_addresses(
         &mut self,
         values: Vec<ChainAddress>,
         from_timestamp: Option<u32>,
         include_with_prices: bool,
-    ) -> Result<Vec<AssetAddress>, diesel::result::Error>;
-    fn delete_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error>;
+    ) -> Result<Vec<AssetAddressRow>, diesel::result::Error>;
+    fn delete_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error>;
 }
 
 impl AssetsAddressesStore for DatabaseClient {
-    fn add_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error> {
+    fn add_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error> {
         if values.is_empty() {
             return Ok(0);
         }
@@ -36,7 +36,7 @@ impl AssetsAddressesStore for DatabaseClient {
         values: Vec<ChainAddress>,
         from_timestamp: Option<u32>,
         include_with_prices: bool,
-    ) -> Result<Vec<AssetAddress>, diesel::result::Error> {
+    ) -> Result<Vec<AssetAddressRow>, diesel::result::Error> {
         let datetime = if let Some(from_timestamp) = from_timestamp {
             DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc()
         } else {
@@ -51,7 +51,7 @@ impl AssetsAddressesStore for DatabaseClient {
             .filter(assets_addresses_dsl::chain.eq_any(chains))
             .filter(assets_addresses_dsl::address.eq_any(addresses))
             .filter(assets_addresses_dsl::created_at.gt(datetime))
-            .select(AssetAddress::as_select())
+            .select(AssetAddressRow::as_select())
             .into_boxed();
 
         if include_with_prices {
@@ -63,7 +63,7 @@ impl AssetsAddressesStore for DatabaseClient {
         query.load(&mut self.connection)
     }
 
-    fn delete_assets_addresses(&mut self, values: Vec<AssetAddress>) -> Result<usize, diesel::result::Error> {
+    fn delete_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error> {
         if values.is_empty() {
             return Ok(0);
         }

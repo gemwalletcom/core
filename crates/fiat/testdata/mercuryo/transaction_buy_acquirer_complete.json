@@ -1,0 +1,38 @@
+{
+    "status": 200,
+    "total": 1,
+    "next": null,
+    "prev": null,
+    "data": [
+        {
+            "buy_acquirer": {
+                "id": "0000000000000000",
+                "transaction_id": "0000000000000001",
+                "widget_id": "00000000-0000-0000-0000-000000000000",
+                "merchant_transaction_id": "00000000-0000-0000-0000-000000000001",
+                "fiat_currency": "EUR",
+                "fiat_amount": "123",
+                "currency": "SOL",
+                "amount": "1.027805",
+                "status": "completed",
+                "created_at": "2025-01-01 00:00:00",
+                "updated_at": "2025-01-01 00:00:01",
+                "payment_method": "revolut"
+            },
+            "withdraw": {
+                "id": "0000000000000002",
+                "transaction_id": "0000000000000001",
+                "widget_id": "00000000-0000-0000-0000-000000000000",
+                "merchant_transaction_id": "00000000-0000-0000-0000-000000000001",
+                "hash": "0x0000000000000000000000000000000000000000000000000000000000000001",
+                "url": "https://solscan.io/tx/0x0000000000000000000000000000000000000000000000000000000000000001",
+                "address": "0x0000000000000000000000000000000000000001",
+                "currency": "SOL",
+                "amount": "1.027805",
+                "status": "completed",
+                "created_at": "2025-01-01 00:00:01",
+                "updated_at": "2025-01-01 00:00:02"
+            }
+        }
+    ]
+}

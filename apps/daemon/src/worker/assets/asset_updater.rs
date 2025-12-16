@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use storage::AssetUpdate;
 use storage::Database;
-use storage::models::price::{NewPrice, PriceAsset};
+use storage::models::price::{NewPriceRow, PriceAssetRow};
 
 const COIN_INFO_CACHE_TTL_SECONDS: i64 = 30 * 86400;
 
@@ -49,7 +49,7 @@ impl AssetUpdater {
     pub async fn update_native_prices_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let native_assets = Chain::all()
             .into_iter()
-            .map(|x| PriceAsset::new(x.as_ref().to_string(), get_coingecko_market_id_for_chain(x).to_string()))
+            .map(|x| PriceAssetRow::new(x.as_ref().to_string(), get_coingecko_market_id_for_chain(x).to_string()))
             .collect::<Vec<_>>();
 
         let ids = native_assets.iter().map(|x| x.price_id.clone()).collect();
@@ -89,12 +89,12 @@ impl AssetUpdater {
                     let result = self.get_assets_from_coin_info(coin_info.clone());
                     let asset_links = self.get_asset_links(coin_info.clone());
 
-                    let _ = self.database.client()?.prices().add_prices(vec![NewPrice::new(coin.clone())]);
+                    let _ = self.database.client()?.prices().add_prices(vec![NewPriceRow::new(coin.clone())]);
 
                     let values = result
                         .clone()
                         .into_iter()
-                        .map(|(asset, _)| PriceAsset::new(asset.id.to_string(), coin.clone()))
+                        .map(|(asset, _)| PriceAssetRow::new(asset.id.to_string(), coin.clone()))
                         .collect::<Vec<_>>();
 
                     let _ = self.database.client()?.prices().set_prices_assets(values);

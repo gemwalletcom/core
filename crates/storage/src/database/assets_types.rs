@@ -1,14 +1,14 @@
 use crate::schema::assets_types::dsl::*;
 
-use crate::{DatabaseClient, models::AssetType};
+use crate::{DatabaseClient, models::AssetTypeRow};
 use diesel::prelude::*;
 
 pub(crate) trait AssetsTypesStore {
-    fn add_assets_types(&mut self, values: Vec<AssetType>) -> Result<usize, diesel::result::Error>;
+    fn add_assets_types(&mut self, values: Vec<AssetTypeRow>) -> Result<usize, diesel::result::Error>;
 }
 
 impl AssetsTypesStore for DatabaseClient {
-    fn add_assets_types(&mut self, values: Vec<AssetType>) -> Result<usize, diesel::result::Error> {
+    fn add_assets_types(&mut self, values: Vec<AssetTypeRow>) -> Result<usize, diesel::result::Error> {
         diesel::insert_into(assets_types)
             .values(values)
             .on_conflict_do_nothing()

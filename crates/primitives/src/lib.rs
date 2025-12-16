@@ -130,7 +130,7 @@ pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollec
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod rewards;
-pub use self::rewards::{ReferralCode, RewardEvent, RewardEventType, Rewards};
+pub use self::rewards::{ReferralCode, RewardEvent, RewardEventType, RewardLevel, Rewards};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;

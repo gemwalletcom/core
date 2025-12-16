@@ -1,6 +1,6 @@
 use crate::schema::assets::dsl::*;
 
-use crate::{DatabaseClient, models::Asset, models::Price};
+use crate::{DatabaseClient, models::AssetRow, models::PriceRow};
 use diesel::{prelude::*, upsert::excluded};
 
 #[derive(Debug, Clone)]
@@ -21,24 +21,24 @@ pub enum AssetFilter {
 }
 
 pub(crate) trait AssetsStore {
-    fn get_assets_all(&mut self) -> Result<Vec<Asset>, diesel::result::Error>;
-    fn add_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error>;
+    fn get_assets_all(&mut self) -> Result<Vec<AssetRow>, diesel::result::Error>;
+    fn add_assets(&mut self, values: Vec<AssetRow>) -> Result<usize, diesel::result::Error>;
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, diesel::result::Error>;
-    fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error>;
-    fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<Asset>, diesel::result::Error>;
-    fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error>;
-    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error>;
-    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(Asset, Option<Price>)>, diesel::result::Error>;
+    fn upsert_assets(&mut self, values: Vec<AssetRow>) -> Result<usize, diesel::result::Error>;
+    fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetRow>, diesel::result::Error>;
+    fn get_asset(&mut self, asset_id: &str) -> Result<AssetRow, diesel::result::Error>;
+    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetRow>, diesel::result::Error>;
+    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(AssetRow, Option<PriceRow>)>, diesel::result::Error>;
     fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error>;
     fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error>;
     fn add_chains(&mut self, values: Vec<String>) -> Result<usize, diesel::result::Error>;
 }
 
 impl AssetsStore for DatabaseClient {
-    fn get_assets_all(&mut self) -> Result<Vec<Asset>, diesel::result::Error> {
-        assets.filter(is_enabled.eq(true)).select(Asset::as_select()).load(&mut self.connection)
+    fn get_assets_all(&mut self) -> Result<Vec<AssetRow>, diesel::result::Error> {
+        assets.filter(is_enabled.eq(true)).select(AssetRow::as_select()).load(&mut self.connection)
     }
-    fn add_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error> {
+    fn add_assets(&mut self, values: Vec<AssetRow>) -> Result<usize, diesel::result::Error> {
         if values.is_empty() {
             return Ok(0);
         }
@@ -75,7 +75,7 @@ impl AssetsStore for DatabaseClient {
         })
     }
 
-    fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, diesel::result::Error> {
+    fn upsert_assets(&mut self, values: Vec<AssetRow>) -> Result<usize, diesel::result::Error> {
         diesel::insert_into(assets)
             .values(values)
             .on_conflict(id)
@@ -84,7 +84,7 @@ impl AssetsStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<Asset>, diesel::result::Error> {
+    fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetRow>, diesel::result::Error> {
         let mut query = assets.filter(is_enabled.eq(true)).into_boxed();
 
         for filter in filters {
@@ -101,18 +101,18 @@ impl AssetsStore for DatabaseClient {
             }
         }
 
-        query.select(Asset::as_select()).load(&mut self.connection)
+        query.select(AssetRow::as_select()).load(&mut self.connection)
     }
 
-    fn get_asset(&mut self, asset_id: &str) -> Result<Asset, diesel::result::Error> {
-        assets.find(asset_id).select(Asset::as_select()).first(&mut self.connection)
+    fn get_asset(&mut self, asset_id: &str) -> Result<AssetRow, diesel::result::Error> {
+        assets.find(asset_id).select(AssetRow::as_select()).first(&mut self.connection)
     }
 
-    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, diesel::result::Error> {
-        assets.filter(id.eq_any(asset_ids)).select(Asset::as_select()).load(&mut self.connection)
+    fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetRow>, diesel::result::Error> {
+        assets.filter(id.eq_any(asset_ids)).select(AssetRow::as_select()).load(&mut self.connection)
     }
 
-    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(Asset, Option<Price>)>, diesel::result::Error> {
+    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(AssetRow, Option<PriceRow>)>, diesel::result::Error> {
         use crate::schema::prices;
         use crate::schema::prices_assets;
 
@@ -120,7 +120,7 @@ impl AssetsStore for DatabaseClient {
             .filter(id.eq_any(asset_ids))
             .left_join(prices_assets::table.on(id.eq(prices_assets::asset_id)))
             .left_join(prices::table.on(prices_assets::price_id.eq(prices::id)))
-            .select((Asset::as_select(), Option::<Price>::as_select()))
+            .select((AssetRow::as_select(), Option::<PriceRow>::as_select()))
             .load(&mut self.connection)
     }
 
@@ -138,7 +138,10 @@ impl AssetsStore for DatabaseClient {
     }
 
     fn add_chains(&mut self, values: Vec<String>) -> Result<usize, diesel::result::Error> {
-        let chain_values = values.iter().map(|chain_id| crate::models::Chain { id: chain_id.clone() }).collect::<Vec<_>>();
+        let chain_values = values
+            .iter()
+            .map(|chain_id| crate::models::ChainRow { id: chain_id.clone() })
+            .collect::<Vec<_>>();
 
         use crate::schema::chains::dsl::*;
         diesel::insert_into(chains)

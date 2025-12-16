@@ -3,18 +3,18 @@ use crate::{DatabaseClient, models::*};
 use diesel::{prelude::*, upsert::excluded};
 
 pub(crate) trait ReleasesStore {
-    fn get_releases(&mut self) -> Result<Vec<Release>, diesel::result::Error>;
-    fn add_releases(&mut self, values: Vec<Release>) -> Result<usize, diesel::result::Error>;
-    fn update_release(&mut self, release: Release) -> Result<usize, diesel::result::Error>;
+    fn get_releases(&mut self) -> Result<Vec<ReleaseRow>, diesel::result::Error>;
+    fn add_releases(&mut self, values: Vec<ReleaseRow>) -> Result<usize, diesel::result::Error>;
+    fn update_release(&mut self, release: ReleaseRow) -> Result<usize, diesel::result::Error>;
 }
 
 impl ReleasesStore for DatabaseClient {
-    fn get_releases(&mut self) -> Result<Vec<Release>, diesel::result::Error> {
+    fn get_releases(&mut self) -> Result<Vec<ReleaseRow>, diesel::result::Error> {
         use crate::schema::releases::dsl::*;
-        releases.order(updated_at.desc()).select(Release::as_select()).load(&mut self.connection)
+        releases.order(updated_at.desc()).select(ReleaseRow::as_select()).load(&mut self.connection)
     }
 
-    fn add_releases(&mut self, values: Vec<Release>) -> Result<usize, diesel::result::Error> {
+    fn add_releases(&mut self, values: Vec<ReleaseRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::releases::dsl::*;
         diesel::insert_into(releases)
             .values(&values)
@@ -22,7 +22,7 @@ impl ReleasesStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn update_release(&mut self, release: Release) -> Result<usize, diesel::result::Error> {
+    fn update_release(&mut self, release: ReleaseRow) -> Result<usize, diesel::result::Error> {
         use crate::schema::releases::dsl::*;
         diesel::insert_into(releases)
             .values(&release)

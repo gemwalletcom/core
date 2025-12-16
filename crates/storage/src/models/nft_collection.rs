@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{AssetLink, Chain, NFTImages, NFTResource};
+use primitives::{AssetLink, Chain, NFTCollection, NFTImages, NFTResource};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_collections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct NftCollection {
+pub struct NftCollectionRow {
     pub id: String,
     pub chain: String,
     pub name: String,
@@ -24,15 +24,15 @@ pub struct NftCollection {
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_collections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct UpdateNftCollectionImageUrl {
+pub struct UpdateNftCollectionImageUrlRow {
     pub id: String,
     pub image_preview_url: Option<String>,
     pub image_preview_mime_type: Option<String>,
 }
 
-impl NftCollection {
-    pub fn as_primitive(&self, links: Vec<AssetLink>) -> primitives::NFTCollection {
-        primitives::NFTCollection {
+impl NftCollectionRow {
+    pub fn as_primitive(&self, links: Vec<AssetLink>) -> NFTCollection {
+        NFTCollection {
             id: self.id.clone(),
             name: self.name.clone(),
             symbol: self.symbol.clone(),
@@ -50,8 +50,8 @@ impl NftCollection {
         }
     }
 
-    pub fn from_primitive(collection: primitives::NFTCollection) -> Self {
-        NftCollection {
+    pub fn from_primitive(collection: NFTCollection) -> Self {
+        NftCollectionRow {
             id: collection.id.clone(),
             name: collection.name.clone(),
             description: collection.description.unwrap_or_default(),

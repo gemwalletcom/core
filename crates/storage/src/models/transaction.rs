@@ -2,13 +2,13 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetId, TransactionId, TransactionUtxoInput};
+use primitives::{AssetId, Transaction, TransactionDirection, TransactionId, TransactionState, TransactionType, TransactionUtxoInput};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, Clone)]
 #[diesel(table_name = crate::schema::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Transaction {
+pub struct TransactionRow {
     pub id: String,
     pub chain: String,
     pub memo: Option<String>,
@@ -26,12 +26,12 @@ pub struct Transaction {
     pub metadata: Option<serde_json::Value>,
 }
 
-impl Transaction {
+impl TransactionRow {
     pub fn get_addresses(&self) -> Vec<String> {
         vec![self.from_address.clone(), self.to_address.clone()].into_iter().flatten().collect()
     }
 
-    pub fn from_primitive(transaction: primitives::Transaction) -> Self {
+    pub fn from_primitive(transaction: Transaction) -> Self {
         let utxo_inputs = if transaction.utxo_inputs.clone().unwrap_or_default().is_empty() {
             None
         } else {
@@ -74,7 +74,7 @@ impl Transaction {
         }
     }
 
-    pub fn as_primitive(&self, addresses: Vec<String>) -> primitives::Transaction {
+    pub fn as_primitive(&self, addresses: Vec<String>) -> Transaction {
         let transaction_id = TransactionId::from_str(&self.id.clone()).unwrap();
         let asset_id = AssetId::new(self.asset_id.clone().as_str()).unwrap();
         let from = self.from_address.clone().unwrap_or_default();
@@ -83,15 +83,15 @@ impl Transaction {
         let outputs: Option<Vec<TransactionUtxoInput>> = serde_json::from_value(self.utxo_outputs.clone().into()).ok();
 
         let direction = if addresses.contains(&from) {
-            primitives::TransactionDirection::Outgoing
+            TransactionDirection::Outgoing
         } else if addresses.contains(&to_address) {
-            primitives::TransactionDirection::Incoming
+            TransactionDirection::Incoming
         } else {
-            primitives::TransactionDirection::SelfTransfer
+            TransactionDirection::SelfTransfer
         };
-        let transaction_type = primitives::TransactionType::from_str(self.kind.as_str()).ok().unwrap();
+        let transaction_type = TransactionType::from_str(self.kind.as_str()).ok().unwrap();
 
-        primitives::Transaction {
+        Transaction {
             id: transaction_id.clone(),
             hash: transaction_id.hash.clone(),
             asset_id,
@@ -99,7 +99,7 @@ impl Transaction {
             to: to_address.clone(),
             contract: None,
             transaction_type,
-            state: primitives::TransactionState::new(self.state.as_str()).unwrap(),
+            state: TransactionState::new(self.state.as_str()).unwrap(),
             block_number: None,
             sequence: None,
             fee: self.fee.clone().unwrap(),
@@ -118,12 +118,12 @@ impl Transaction {
 #[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::transactions_types)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct TransactionType {
+pub struct TransactionTypeRow {
     pub id: String,
 }
 
-impl TransactionType {
-    pub fn from_primitive(primitive: primitives::TransactionType) -> Self {
+impl TransactionTypeRow {
+    pub fn from_primitive(primitive: TransactionType) -> Self {
         Self {
             id: primitive.as_ref().to_owned(),
         }

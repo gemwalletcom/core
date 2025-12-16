@@ -16,44 +16,47 @@ pub enum DeviceFilter {
 }
 
 pub(crate) trait DevicesStore {
-    fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error>;
-    fn get_device_by_id(&mut self, id: i32) -> Result<Device, diesel::result::Error>;
-    fn get_device(&mut self, device_id: &str) -> Result<Device, diesel::result::Error>;
-    fn update_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error>;
+    fn add_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error>;
+    fn get_device_by_id(&mut self, id: i32) -> Result<DeviceRow, diesel::result::Error>;
+    fn get_device(&mut self, device_id: &str) -> Result<DeviceRow, diesel::result::Error>;
+    fn update_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error>;
     fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, diesel::result::Error>;
     fn delete_device(&mut self, device_id: &str) -> Result<usize, diesel::result::Error>;
     fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error>;
-    fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<Device>, diesel::result::Error>;
+    fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<DeviceRow>, diesel::result::Error>;
 }
 
 impl DevicesStore for DatabaseClient {
-    fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
+    fn add_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::insert_into(devices)
             .values(&device)
             .on_conflict(device_id)
             .do_update()
             .set((device_id.eq(excluded(device_id)),))
-            .returning(Device::as_returning())
+            .returning(DeviceRow::as_returning())
             .get_result(&mut self.connection)
     }
 
-    fn get_device_by_id(&mut self, _id: i32) -> Result<Device, diesel::result::Error> {
+    fn get_device_by_id(&mut self, _id: i32) -> Result<DeviceRow, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        devices.find(_id).select(Device::as_select()).first(&mut self.connection)
+        devices.find(_id).select(DeviceRow::as_select()).first(&mut self.connection)
     }
 
-    fn get_device(&mut self, _device_id: &str) -> Result<Device, diesel::result::Error> {
+    fn get_device(&mut self, _device_id: &str) -> Result<DeviceRow, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        devices.filter(device_id.eq(_device_id)).select(Device::as_select()).first(&mut self.connection)
+        devices
+            .filter(device_id.eq(_device_id))
+            .select(DeviceRow::as_select())
+            .first(&mut self.connection)
     }
 
-    fn update_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
+    fn update_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         diesel::update(devices)
             .filter(device_id.eq(device.clone().device_id))
             .set(device)
-            .returning(Device::as_returning())
+            .returning(DeviceRow::as_returning())
             .get_result(&mut self.connection)
     }
 
@@ -92,7 +95,7 @@ impl DevicesStore for DatabaseClient {
         SubscriptionsStore::delete_subscriptions_for_device_ids(self, device_ids)
     }
 
-    fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<Device>, diesel::result::Error> {
+    fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<DeviceRow>, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
 
         let mut query = devices.into_boxed();
@@ -110,25 +113,25 @@ impl DevicesStore for DatabaseClient {
             }
         }
 
-        query.select(Device::as_select()).load(&mut self.connection)
+        query.select(DeviceRow::as_select()).load(&mut self.connection)
     }
 }
 
 // Public methods for backward compatibility
 impl DatabaseClient {
-    pub fn get_device(&mut self, device_id: &str) -> Result<Device, diesel::result::Error> {
+    pub fn get_device(&mut self, device_id: &str) -> Result<DeviceRow, diesel::result::Error> {
         DevicesStore::get_device(self, device_id)
     }
 
-    pub fn get_device_by_id(&mut self, id: i32) -> Result<Device, diesel::result::Error> {
+    pub fn get_device_by_id(&mut self, id: i32) -> Result<DeviceRow, diesel::result::Error> {
         DevicesStore::get_device_by_id(self, id)
     }
 
-    pub fn add_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
+    pub fn add_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error> {
         DevicesStore::add_device(self, device)
     }
 
-    pub fn update_device(&mut self, device: UpdateDevice) -> Result<Device, diesel::result::Error> {
+    pub fn update_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error> {
         DevicesStore::update_device(self, device)
     }
 

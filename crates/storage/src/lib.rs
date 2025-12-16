@@ -7,9 +7,10 @@ pub mod schema;
 pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},
+    rewards::RedemptionUpdate,
 };
 pub use self::error::DatabaseError;
-pub use self::models::ScanAddressType;
+pub use self::models::ScanAddressTypeRow;
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
     assets_types_repository::AssetsTypesRepository, charts_repository::ChartsRepository, devices_repository::DevicesRepository,

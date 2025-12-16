@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{Chain, NFTImages, NFTResource, NFTType};
+use primitives::{Chain, NFTAsset, NFTImages, NFTResource, NFTType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct NftAsset {
+pub struct NftAssetRow {
     pub id: String,
     pub collection_id: String,
     pub contract_address: String,
@@ -26,7 +26,7 @@ pub struct NftAsset {
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct UpdateNftAssetImageUrl {
+pub struct UpdateNftAssetImageUrlRow {
     pub id: String,
     pub image_preview_url: Option<String>,
     pub image_preview_mime_type: Option<String>,
@@ -35,21 +35,21 @@ pub struct UpdateNftAssetImageUrl {
 #[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_types)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct NftType {
+pub struct NftTypeRow {
     pub id: String,
 }
 
-impl NftType {
-    pub fn from_primitive(primitive: primitives::NFTType) -> Self {
+impl NftTypeRow {
+    pub fn from_primitive(primitive: NFTType) -> Self {
         Self {
             id: primitive.as_ref().to_string(),
         }
     }
 }
 
-impl NftAsset {
-    pub fn as_primitive(&self) -> primitives::NFTAsset {
-        primitives::NFTAsset {
+impl NftAssetRow {
+    pub fn as_primitive(&self) -> NFTAsset {
+        NFTAsset {
             id: self.id.clone(),
             collection_id: self.collection_id.clone(),
             name: self.name.clone(),
@@ -72,7 +72,7 @@ impl NftAsset {
         }
     }
 
-    pub fn from_primitive(primitive: primitives::NFTAsset) -> Self {
+    pub fn from_primitive(primitive: NFTAsset) -> Self {
         Self {
             id: primitive.id.clone(),
             collection_id: primitive.collection_id.clone(),

@@ -106,6 +106,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone());
+    let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
 
     rocket::build()
         .manage(database)
@@ -130,6 +131,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(support_client))
         .manage(Mutex::new(ip_check_client))
         .manage(Mutex::new(rewards_client))
+        .manage(Mutex::new(redemption_client))
         .manage(auth_client)
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
@@ -200,6 +202,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 referral::get_rewards_events,
                 referral::create_referral,
                 referral::use_referral_code,
+                referral::redeem_rewards,
             ],
         )
         .mount(
