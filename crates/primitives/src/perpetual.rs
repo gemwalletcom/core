@@ -1,4 +1,4 @@
-use crate::{Asset, AssetId, PerpetualPosition, PerpetualProvider, UInt64};
+use crate::{Asset, AssetId, PerpetualOrderType, PerpetualPosition, PerpetualProvider, UInt64};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -104,6 +104,7 @@ pub struct PerpetualConfirmData {
     pub margin_amount: f64,
     pub take_profit: Option<String>,
     pub stop_loss: Option<String>,
+    pub autoclose_order_type: PerpetualOrderType,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -131,6 +132,7 @@ pub struct TPSLOrderData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_loss: Option<String>,
     pub size: String,
+    pub autoclose_order_type: PerpetualOrderType,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
