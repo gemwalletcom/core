@@ -4,7 +4,9 @@ use alloy_primitives::{eip191_hash_message, hex::encode_prefixed};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
-use signer::{TonSignDataResponse, TonSignMessageData};
+use gem_sui::signer as sui_signer;
+use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, sign_personal as ton_sign_personal};
+use signer::{SignatureScheme, Signer, hash_eip712};
 use sui_types::PersonalMessage;
 
 use super::{
@@ -12,7 +14,6 @@ use super::{
     sign_type::{SignDigestType, SignMessage},
 };
 use crate::{GemstoneError, siwe::SiweMessage};
-use ::signer::{SignatureScheme, Signer, hash_eip712};
 use zeroize::Zeroizing;
 
 const SIGNATURE_LENGTH: usize = 65;
@@ -158,9 +159,9 @@ impl MessageSigner {
         let private_key = Zeroizing::new(private_key);
         let hash = self.hash()?;
         match &self.message.sign_type {
-            SignDigestType::SuiPersonal => Signer::sign_sui_digest(&hash, &private_key).map_err(GemstoneError::from),
+            SignDigestType::SuiPersonal => sui_signer::sign_digest(&hash, &private_key).map_err(GemstoneError::from),
             SignDigestType::TonPersonal => {
-                let (signature, public_key) = Signer::sign_ton_personal(&self.message.data, &private_key)?;
+                let (signature, public_key) = ton_sign_personal(&self.message.data, &private_key)?;
                 self.get_ton_result(&signature, &public_key)
             }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
@@ -490,7 +491,10 @@ mod tests {
 
     #[test]
     fn test_ton_personal_preview() {
-        let ton_data = TonSignMessageData::new(serde_json::json!({"type": "text", "text": "Hello TON", "from": "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}), "example.com".to_string());
+        let ton_data = TonSignMessageData::new(
+            serde_json::json!({"type": "text", "text": "Hello TON", "from": "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}),
+            "example.com".to_string(),
+        );
         let data = String::from_utf8(ton_data.to_bytes()).unwrap();
         let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ton,

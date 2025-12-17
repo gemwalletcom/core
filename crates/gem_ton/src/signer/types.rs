@@ -1,6 +1,5 @@
+use primitives::SignerError;
 use serde::{Deserialize, Serialize};
-
-use crate::error::SignerError;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]

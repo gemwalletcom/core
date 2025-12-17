@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn validate_ton_sign_message() {
-        use signer::TonSignMessageData;
+        use gem_ton::signer::TonSignMessageData;
 
         let wallet_connect = WalletConnect::new();
 
@@ -176,7 +176,14 @@ impl WalletConnect {
         Some(primitives::WalletConnectCAIP2::get_chain(caip2, caip10)?.to_string())
     }
 
-    pub fn parse_request(&self, topic: String, method: String, params: String, chain_id: String, domain: String) -> Result<WalletConnectAction, crate::GemstoneError> {
+    pub fn parse_request(
+        &self,
+        topic: String,
+        method: String,
+        params: String,
+        chain_id: String,
+        domain: String,
+    ) -> Result<WalletConnectAction, crate::GemstoneError> {
         let request = WalletConnectRequest {
             topic,
             method,
@@ -217,7 +224,7 @@ impl WalletConnect {
                 gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
             }
             SignDigestType::TonPersonal => {
-                let ton_data = signer::TonSignMessageData::from_bytes(data.as_bytes())?;
+                let ton_data = gem_ton::signer::TonSignMessageData::from_bytes(data.as_bytes())?;
                 ton_data.get_payload()?;
                 Ok(())
             }

@@ -3040,6 +3040,7 @@ dependencies = [
  "chain_primitives",
  "chain_traits",
  "chrono",
+ "ed25519-dalek",
  "futures",
  "gem_client",
  "gem_jsonrpc",
@@ -3052,10 +3053,10 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
- "signer",
  "sui-sdk-types",
  "sui-transaction-builder",
  "tokio",
+ "zeroize",
 ]
 
 [[package]]
@@ -3067,6 +3068,7 @@ dependencies = [
  "chain_traits",
  "chrono",
  "crc",
+ "ed25519-dalek",
  "futures",
  "gem_client",
  "hex",
@@ -3078,6 +3080,7 @@ dependencies = [
  "serde_serializers",
  "settings",
  "tokio",
+ "zeroize",
 ]
 
 [[package]]
@@ -6550,14 +6553,12 @@ name = "signer"
 version = "1.0.0"
 dependencies = [
  "alloy-primitives",
- "base64 0.22.1",
  "ed25519-dalek",
  "gem_hash",
  "hex",
  "k256",
  "serde",
  "serde_json",
- "sui-sdk-types",
  "zeroize",
 ]
 
