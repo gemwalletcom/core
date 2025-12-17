@@ -27,11 +27,11 @@ k256 = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["eip712-serde"] }
 alloy-dyn-abi = { workspace = true, features = ["eip712"] }
 alloy-json-abi = { workspace = true }
-alloy-signer = { version = "1.1", optional = true }
-alloy-signer-local = { version = "1.1", optional = true }
-alloy-network = { version = "1.1", optional = true }
-alloy-rlp = { version = "0.3", optional = true }
-alloy-consensus = { version = "1.1", optional = true }
+alloy-signer = { workspace = true, optional = true }
+alloy-signer-local = { workspace = true, optional = true }
+alloy-network = { workspace = true, optional = true }
+alloy-rlp = { workspace = true, optional = true }
+alloy-consensus = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 num-bigint = { workspace = true }

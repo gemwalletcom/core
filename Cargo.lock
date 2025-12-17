@@ -3098,10 +3098,10 @@ name = "gem_auth"
 version = "1.0.0"
 dependencies = [
  "alloy-primitives",
+ "alloy-signer",
+ "alloy-signer-local",
  "cacher",
  "chrono",
- "gem_hash",
- "k256",
  "primitives",
  "serde",
  "serde_json",

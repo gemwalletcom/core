@@ -53,8 +53,12 @@ impl RewardsRepository for DatabaseClient {
             None
         };
 
-        let redemption_options = RewardsStore::get_redemption_options(self)?;
-        let options = redemption_options.iter().map(|row| row.as_primitive()).collect();
+        let options = if rewards.is_enabled {
+            let redemption_options = RewardsStore::get_redemption_options(self)?;
+            redemption_options.iter().map(|row| row.as_primitive()).collect()
+        } else {
+            vec![]
+        };
 
         Ok(Rewards {
             code,
