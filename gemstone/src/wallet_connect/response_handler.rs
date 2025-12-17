@@ -34,13 +34,14 @@ impl WalletConnectResponseHandler {
                     json: serde_json::to_string(&result).unwrap_or_default(),
                 }
             }
+            ChainType::Ton => WalletConnectResponseType::Object { json: signature },
             _ => WalletConnectResponseType::String { value: signature },
         }
     }
 
     pub fn encode_sign_transaction(chain_type: ChainType, transaction_id: String) -> WalletConnectResponseType {
         match chain_type {
-            ChainType::Solana => WalletConnectResponseType::Object {
+            ChainType::Solana | ChainType::Ton => WalletConnectResponseType::Object {
                 json: serde_json::json!({ "signature": transaction_id }).to_string(),
             },
             ChainType::Sui => {
@@ -79,7 +80,10 @@ mod tests {
     #[test]
     fn test_encode_sign_message_ethereum() {
         let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ethereum, "0xsignature".to_string());
-        assert!(matches!(result, WalletConnectResponseType::String { value } if value == "0xsignature"));
+        let WalletConnectResponseType::String { value } = result else {
+            panic!("Expected String response for Ethereum")
+        };
+        assert_eq!(value, "0xsignature");
     }
 
     #[test]
@@ -109,7 +113,10 @@ mod tests {
     #[test]
     fn test_encode_sign_transaction_ethereum() {
         let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ethereum, "0xtxid".to_string());
-        assert!(matches!(result, WalletConnectResponseType::String { value } if value == "0xtxid"));
+        let WalletConnectResponseType::String { value } = result else {
+            panic!("Expected String response for Ethereum")
+        };
+        assert_eq!(value, "0xtxid");
     }
 
     #[test]
@@ -141,7 +148,10 @@ mod tests {
     #[test]
     fn test_encode_send_transaction_ethereum() {
         let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Ethereum, "0xhash".to_string());
-        assert!(matches!(result, WalletConnectResponseType::String { value } if value == "0xhash"));
+        let WalletConnectResponseType::String { value } = result else {
+            panic!("Expected String response for Ethereum")
+        };
+        assert_eq!(value, "0xhash");
     }
 
     #[test]
@@ -154,5 +164,35 @@ mod tests {
             }
             _ => panic!("Expected Object response for Sui"),
         }
+    }
+
+    #[test]
+    fn test_encode_sign_message_ton() {
+        let payload_json = r#"{"signature":"tonsig123","timestamp":1700000000}"#.to_string();
+        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ton, payload_json.clone());
+        match result {
+            WalletConnectResponseType::Object { json } => {
+                assert_eq!(json, payload_json);
+            }
+            _ => panic!("Expected Object response for Ton"),
+        }
+    }
+
+    #[test]
+    fn test_encode_sign_transaction_ton() {
+        let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ton, "tontxsig".to_string());
+        let WalletConnectResponseType::Object { json } = result else {
+            panic!("Expected Object response for Ton")
+        };
+        assert_eq!(json, r#"{"signature":"tontxsig"}"#);
+    }
+
+    #[test]
+    fn test_encode_send_transaction_ton() {
+        let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Ton, "tonhash123".to_string());
+        let WalletConnectResponseType::String { value } = result else {
+            panic!("Expected String response for Ton")
+        };
+        assert_eq!(value, "tonhash123");
     }
 }

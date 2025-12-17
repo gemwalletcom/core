@@ -1,6 +1,7 @@
 mod ethereum;
 mod solana;
 mod sui;
+mod ton;
 
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectChainOperation};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
@@ -9,6 +10,7 @@ use primitives::{Chain, WalletConnectRequest, WalletConnectionMethods};
 use serde_json::Value;
 use solana::SolanaRequestHandler;
 use sui::SuiRequestHandler;
+use ton::TonRequestHandler;
 
 pub struct WalletConnectRequestHandler;
 
@@ -18,10 +20,12 @@ impl WalletConnectRequestHandler {
             .map_err(|_| format!("Unsupported method: {}", request.method))?;
         let params = serde_json::from_str::<Value>(&request.params).map_err(|e| format!("Failed to parse params: {}", e))?;
 
+        let domain = &request.domain;
+
         match method {
             WalletConnectionMethods::PersonalSign => {
                 let chain = Self::resolve_chain(request.chain_id)?;
-                EthereumRequestHandler::parse_sign_message(chain, params)
+                EthereumRequestHandler::parse_sign_message(chain, params, domain)
             }
             WalletConnectionMethods::EthSignTypedData | WalletConnectionMethods::EthSignTypedDataV4 => {
                 let chain = Self::resolve_chain(request.chain_id)?;
@@ -45,13 +49,15 @@ impl WalletConnectRequestHandler {
             WalletConnectionMethods::WalletSwitchEthereumChain => Ok(WalletConnectAction::ChainOperation {
                 operation: WalletConnectChainOperation::SwitchChain,
             }),
-            WalletConnectionMethods::SolanaSignMessage => SolanaRequestHandler::parse_sign_message(Chain::Solana, params),
+            WalletConnectionMethods::SolanaSignMessage => SolanaRequestHandler::parse_sign_message(Chain::Solana, params, domain),
             WalletConnectionMethods::SolanaSignTransaction => SolanaRequestHandler::parse_sign_transaction(Chain::Solana, params),
             WalletConnectionMethods::SolanaSignAndSendTransaction => SolanaRequestHandler::parse_send_transaction(Chain::Solana, params),
             WalletConnectionMethods::SolanaSignAllTransactions => SolanaRequestHandler::parse_sign_all_transactions(params),
-            WalletConnectionMethods::SuiSignPersonalMessage => SuiRequestHandler::parse_sign_message(Chain::Sui, params),
+            WalletConnectionMethods::SuiSignPersonalMessage => SuiRequestHandler::parse_sign_message(Chain::Sui, params, domain),
             WalletConnectionMethods::SuiSignTransaction => SuiRequestHandler::parse_sign_transaction(Chain::Sui, params),
             WalletConnectionMethods::SuiSignAndExecuteTransaction => SuiRequestHandler::parse_send_transaction(Chain::Sui, params),
+            WalletConnectionMethods::TonSignData => TonRequestHandler::parse_sign_message(Chain::Ton, params, domain),
+            WalletConnectionMethods::TonSendMessage => TonRequestHandler::parse_send_transaction(Chain::Ton, params),
         }
     }
 
@@ -71,6 +77,7 @@ mod tests {
             method: "unknown_method".to_string(),
             params: "{}".to_string(),
             chain_id: None,
+            domain: "example.com".to_string(),
         };
 
         let result = WalletConnectRequestHandler::parse_request(request);
@@ -84,6 +91,7 @@ mod tests {
             method: "wallet_addEthereumChain".to_string(),
             params: "{}".to_string(),
             chain_id: None,
+            domain: "example.com".to_string(),
         };
 
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();

@@ -25,4 +25,5 @@ pub struct WalletConnectRequest {
     pub method: String,
     pub params: String,
     pub chain_id: Option<String>,
+    pub domain: String,
 }
