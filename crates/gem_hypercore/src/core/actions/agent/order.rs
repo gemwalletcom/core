@@ -1,4 +1,3 @@
-use crate::core::actions::SLIPPAGE_BUFFER_PERCENT;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -124,7 +123,6 @@ pub fn make_market_order(asset: u32, is_buy: bool, price: &str, size: &str, redu
 }
 
 // size 0 - means entire position
-// Market orders: add slippage
 // TP/SL orders are always reduce_only=true
 pub fn make_position_tp_sl(
     asset: u32,
@@ -148,26 +146,6 @@ pub fn make_position_tp_sl(
     PlaceOrder::new(orders, Grouping::PositionTpsl, builder)
 }
 
-fn calculate_execution_price(trigger_px: &str, add_slippage: bool) -> String {
-    let trigger: f64 = trigger_px.parse().unwrap_or(0.0);
-    let execution_price = if add_slippage {
-        trigger * (1.0 + SLIPPAGE_BUFFER_PERCENT)
-    } else {
-        trigger * (1.0 - SLIPPAGE_BUFFER_PERCENT)
-    };
-
-    // Round to 5 significant figures (max allowed by Hyperliquid)
-    // https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/tick-and-lot-size
-    if execution_price != 0.0 && execution_price.is_finite() {
-        let magnitude = execution_price.abs().log10().floor();
-        let scale = 10_f64.powf(4.0 - magnitude);
-        let rounded = (execution_price * scale).round() / scale;
-        format!("{rounded:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
-    } else {
-        format!("{execution_price:.6}").trim_end_matches('0').trim_end_matches('.').to_string()
-    }
-}
-
 fn make_market_order_type() -> OrderType {
     OrderType::Limit {
         limit: LimitOrder::new(TimeInForce::FrontendMarket),
@@ -175,16 +153,10 @@ fn make_market_order_type() -> OrderType {
 }
 
 fn make_tpsl_order(asset: u32, is_buy: bool, size: &str, trigger: String, tpsl_type: TpslType, is_market: bool) -> Order {
-    let price = if is_market {
-        calculate_execution_price(&trigger, true)
-    } else {
-        trigger.clone()
-    };
-
     Order {
         asset,
         is_buy: !is_buy,
-        price,
+        price: trigger.clone(),
         size: size.to_string(),
         reduce_only: true,
         order_type: OrderType::Trigger {
@@ -203,46 +175,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_calculate_execution_price_rounds_to_5_sig_figs() {
-        let result = calculate_execution_price("156.66", false);
-        assert_eq!(result, "140.99");
-
-        let result = calculate_execution_price("100", true);
-        assert_eq!(result, "110");
-
-        let result = calculate_execution_price("1234.56", false);
-        assert_eq!(result, "1111.1");
-    }
-
-    #[test]
-    fn test_calculate_execution_price_handles_small_values() {
-        let result = calculate_execution_price("0.12345", true);
-        let parsed: f64 = result.parse().unwrap();
-        assert!(parsed > 0.0 && parsed < 1.0);
-    }
-
-    #[test]
-    fn test_calculate_execution_price_handles_zero() {
-        let result = calculate_execution_price("0", false);
-        assert_eq!(result, "0");
-    }
-
-    #[test]
-    fn test_calculate_execution_price_trims_trailing_zeros() {
-        let result = calculate_execution_price("100", false);
-        assert!(!result.ends_with(".0"));
-    }
-
-    #[test]
     fn test_make_position_tp_sl_long_market() {
         let result = make_position_tp_sl(1, true, "1.0", Some("110".to_string()), Some("95".to_string()), None, true);
 
         assert_eq!(result.orders.len(), 2);
         assert_eq!(result.grouping, Grouping::PositionTpsl);
-        assert_eq!(result.orders[0].price, "104.5");
+        assert_eq!(result.orders[0].price, "95");
         assert!(!result.orders[0].is_buy);
-        assert_eq!(result.orders[1].price, "121");
+        assert_eq!(result.orders[1].price, "110");
         assert!(!result.orders[1].is_buy);
+
+        if let OrderType::Trigger { trigger } = &result.orders[0].order_type {
+            assert!(trigger.is_market);
+            assert_eq!(trigger.trigger_px, "95");
+        }
     }
 
     #[test]
@@ -250,10 +196,15 @@ mod tests {
         let result = make_position_tp_sl(1, false, "1.0", Some("90".to_string()), Some("105".to_string()), None, true);
 
         assert_eq!(result.orders.len(), 2);
-        assert_eq!(result.orders[0].price, "115.5");
+        assert_eq!(result.orders[0].price, "105");
         assert!(result.orders[0].is_buy);
-        assert_eq!(result.orders[1].price, "99");
+        assert_eq!(result.orders[1].price, "90");
         assert!(result.orders[1].is_buy);
+
+        if let OrderType::Trigger { trigger } = &result.orders[1].order_type {
+            assert!(trigger.is_market);
+            assert_eq!(trigger.trigger_px, "90");
+        }
     }
 
     #[test]
@@ -266,6 +217,7 @@ mod tests {
 
         if let OrderType::Trigger { trigger } = &result.orders[0].order_type {
             assert!(!trigger.is_market);
+            assert_eq!(trigger.trigger_px, "95");
         }
     }
 }
