@@ -18,6 +18,8 @@ pub mod multicall3;
 pub mod permit2;
 #[cfg(feature = "rpc")]
 pub mod registry;
+#[cfg(feature = "signer")]
+pub mod signer;
 pub mod siwe;
 pub mod thorchain;
 pub mod u256;

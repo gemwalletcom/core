@@ -9,6 +9,7 @@ use diesel::prelude::*;
 pub enum RedemptionUpdate {
     Status(String),
     TransactionId(String),
+    Error(String),
 }
 
 pub trait RewardsEventTypesStore {
@@ -192,6 +193,7 @@ impl RewardsStore for DatabaseClient {
             match update {
                 RedemptionUpdate::Status(value) => diesel::update(target).set(dsl::status.eq(value)).execute(&mut self.connection)?,
                 RedemptionUpdate::TransactionId(value) => diesel::update(target).set(dsl::transaction_id.eq(value)).execute(&mut self.connection)?,
+                RedemptionUpdate::Error(value) => diesel::update(target).set(dsl::error.eq(value)).execute(&mut self.connection)?,
             };
         }
 

@@ -42,8 +42,15 @@ use crate::consumers::{
     fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
 };
 use crate::pusher::Pusher;
-use gem_rewards::TransferRedemptionService;
+use gem_client::ReqwestClient;
+use gem_evm::rpc::EthereumClient;
+use gem_jsonrpc::JsonRpcClient;
+use gem_rewards::{EvmClientProvider, TransferRedemptionService, WalletConfig};
+use primitives::{ChainType, EVMChain};
 use settings::service_user_agent;
+use settings_chain::ProviderFactory;
+use std::collections::HashMap;
+use std::str::FromStr;
 
 pub async fn run_consumer_fetch_assets(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::FetchAssets;
@@ -215,11 +222,12 @@ pub async fn run_rewards_redemption_consumer(settings: Settings, database: Datab
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
 
-    let secret_phrase = settings.rewards.secret.clone();
-    let redemption_service = Arc::new(TransferRedemptionService::new(secret_phrase));
+    let wallets = parse_rewards_wallets(&settings)?;
+    let client_provider = create_evm_client_provider(settings.clone());
+    let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
     let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service);
 
-    streamer::run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, ()>(
+    streamer::run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, bool>(
         &name,
         stream_reader,
         queue,
@@ -227,4 +235,31 @@ pub async fn run_rewards_redemption_consumer(settings: Settings, database: Datab
         ConsumerConfig::default(),
     )
     .await
+}
+
+fn parse_rewards_wallets(settings: &Settings) -> Result<HashMap<ChainType, WalletConfig>, Box<dyn Error + Send + Sync>> {
+    let mut wallets = HashMap::new();
+
+    for (chain_type_name, wallet_config) in &settings.rewards.wallets {
+        let chain_type = ChainType::from_str(chain_type_name).map_err(|_| format!("Invalid chain type: {}", chain_type_name))?;
+        wallets.insert(
+            chain_type,
+            WalletConfig {
+                key: wallet_config.key.clone(),
+                address: wallet_config.address.clone(),
+            },
+        );
+    }
+
+    Ok(wallets)
+}
+
+fn create_evm_client_provider(settings: Settings) -> EvmClientProvider {
+    Arc::new(move |chain: EVMChain| {
+        let chain_config = ProviderFactory::get_chain_config(chain.to_chain(), &settings);
+        let reqwest_client = gem_client::builder().build().ok()?;
+        let client = ReqwestClient::new(chain_config.url.clone(), reqwest_client);
+        let rpc_client = JsonRpcClient::new(client);
+        Some(EthereumClient::new(rpc_client, chain))
+    })
 }

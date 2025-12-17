@@ -4,6 +4,7 @@ use serde::Deserialize;
 use std::{env, path::PathBuf, time::Duration};
 
 use config::{Config, ConfigError, Environment, File};
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
@@ -447,7 +448,14 @@ pub struct Sentry {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Rewards {
-    pub secret: String,
+    pub wallets: HashMap<String, RewardsWallet>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct RewardsWallet {
+    pub key: String,
+    pub address: String,
 }
 
 #[cfg(feature = "testkit")]

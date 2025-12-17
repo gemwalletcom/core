@@ -607,6 +607,8 @@ diesel::table! {
         transaction_id -> Nullable<Varchar>,
         #[max_length = 32]
         status -> Varchar,
+        #[max_length = 1024]
+        error -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

@@ -117,6 +117,7 @@ pub struct RewardRedemptionRow {
     pub option_id: String,
     pub transaction_id: Option<String>,
     pub status: String,
+    pub error: Option<String>,
     pub updated_at: NaiveDateTime,
     pub created_at: NaiveDateTime,
 }

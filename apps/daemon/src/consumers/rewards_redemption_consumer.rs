@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use gem_rewards::{RedemptionAsset, RedemptionRequest, RedemptionService};
-use primitives::rewards::RedemptionStatus;
 use primitives::AssetId;
+use primitives::rewards::RedemptionStatus;
 use std::error::Error;
 use std::sync::Arc;
 use storage::{Database, RedemptionUpdate, RewardsRepository};
@@ -20,14 +20,19 @@ impl<S: RedemptionService> RewardsRedemptionConsumer<S> {
 }
 
 #[async_trait]
-impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, ()> for RewardsRedemptionConsumer<S> {
+impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for RewardsRedemptionConsumer<S> {
     async fn should_process(&self, _payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
     }
 
-    async fn process(&self, payload: RewardsRedemptionPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
         let redemption = client.rewards().get_redemption(payload.redemption_id)?;
+
+        if redemption.status == RedemptionStatus::Completed.as_ref() {
+            return Ok(true);
+        }
+
         let recipient_address = client.rewards().get_address_by_username(&redemption.username)?;
         let option = client.get_redemption_option(&redemption.option_id)?.as_primitive();
 
@@ -38,10 +43,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, ()> for Rew
             })
         });
 
-        let request = RedemptionRequest {
-            recipient_address,
-            asset,
-        };
+        let request = RedemptionRequest { recipient_address, asset };
 
         match self.redemption_service.process_redemption(request).await {
             Ok(result) => {
@@ -51,14 +53,17 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, ()> for Rew
                 ];
 
                 client.rewards().update_redemption(payload.redemption_id, updates)?;
+                Ok(true)
             }
-            Err(_e) => {
-                let updates = vec![RedemptionUpdate::Status(RedemptionStatus::Failed.as_ref().to_string())];
+            Err(e) => {
+                let updates = vec![
+                    RedemptionUpdate::Status(RedemptionStatus::Failed.as_ref().to_string()),
+                    RedemptionUpdate::Error(e.to_string()),
+                ];
 
                 client.rewards().update_redemption(payload.redemption_id, updates)?;
+                Ok(false)
             }
         }
-
-        Ok(())
     }
 }

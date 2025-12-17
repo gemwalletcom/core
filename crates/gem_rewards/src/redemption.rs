@@ -1,15 +1,13 @@
 use primitives::rewards::{RedemptionResponse, RedemptionResult};
 use storage::{DatabaseClient, DatabaseError, RewardsRepository};
 
-pub fn redeem_points(
-    database: &mut DatabaseClient,
-    username: &str,
-    option_id: &str,
-) -> Result<RedemptionResponse, DatabaseError> {
+pub fn redeem_points(database: &mut DatabaseClient, username: &str, option_id: &str) -> Result<RedemptionResponse, DatabaseError> {
     let redemption = RewardsRepository::add_redemption(database, username, option_id)?;
 
     Ok(RedemptionResponse {
-        result: RedemptionResult { redemption: redemption.clone() },
+        result: RedemptionResult {
+            redemption: redemption.clone(),
+        },
         redemption_id: redemption.id,
     })
 }
