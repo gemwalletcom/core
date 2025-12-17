@@ -11,7 +11,7 @@ rpc = [
     "dep:gem_client",
     "dep:chain_traits",
 ]
-signer = ["dep:ed25519-dalek", "dep:zeroize"]
+signer = ["dep:signer"]
 reqwest = ["gem_jsonrpc/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
@@ -31,8 +31,7 @@ num-traits = { workspace = true }
 
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 futures = { workspace = true }
-ed25519-dalek = { version = "2.1.1", default-features = false, features = ["std", "zeroize"], optional = true }
-zeroize = { version = "1.8.2", optional = true }
+signer = { path = "../signer", optional = true }
 
 # Optional dependencies for rpc feature
 num-bigint = { workspace = true, features = ["serde"] }

@@ -3040,7 +3040,6 @@ dependencies = [
  "chain_primitives",
  "chain_traits",
  "chrono",
- "ed25519-dalek",
  "futures",
  "gem_client",
  "gem_jsonrpc",
@@ -3053,10 +3052,10 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "sui-sdk-types",
  "sui-transaction-builder",
  "tokio",
- "zeroize",
 ]
 
 [[package]]
@@ -3068,7 +3067,6 @@ dependencies = [
  "chain_traits",
  "chrono",
  "crc",
- "ed25519-dalek",
  "futures",
  "gem_client",
  "hex",
@@ -3079,8 +3077,8 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
- "zeroize",
 ]
 
 [[package]]
