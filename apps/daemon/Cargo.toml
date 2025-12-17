@@ -35,3 +35,6 @@ settings_chain = { path = "../../crates/settings_chain" }
 chain_traits = { path = "../../crates/chain_traits" }
 number_formatter = { path = "../../crates/number_formatter" }
 gem_rewards = { path = "../../crates/gem_rewards" }
+gem_client = { path = "../../crates/gem_client", features = ["reqwest"] }
+gem_evm = { path = "../../crates/gem_evm", features = ["rpc", "reqwest"] }
+gem_jsonrpc = { path = "../../crates/gem_jsonrpc", features = ["client", "reqwest"] }

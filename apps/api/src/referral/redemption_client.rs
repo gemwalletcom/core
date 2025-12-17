@@ -16,6 +16,11 @@ impl RewardsRedemptionClient {
     pub async fn redeem(&mut self, address: &str, id: &str) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {
         let mut client = self.database.client()?;
         let rewards = client.get_reward_by_address(address)?;
+
+        if !rewards.is_enabled {
+            return Err("Rewards are not enabled".into());
+        }
+
         let username = rewards.code.ok_or("No username found for address")?;
 
         let response = redeem_points(&mut client, &username, id)?;

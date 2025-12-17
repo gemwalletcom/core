@@ -538,6 +538,22 @@ diesel::table! {
 }
 
 diesel::table! {
+    rewards (username) {
+        #[max_length = 64]
+        username -> Varchar,
+        is_enabled -> Bool,
+        #[max_length = 32]
+        level -> Nullable<Varchar>,
+        points -> Int4,
+        #[max_length = 64]
+        referrer_username -> Nullable<Varchar>,
+        referral_count -> Int4,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     rewards_events (id) {
         id -> Int4,
         #[max_length = 64]
@@ -591,6 +607,8 @@ diesel::table! {
         transaction_id -> Nullable<Varchar>,
         #[max_length = 32]
         status -> Varchar,
+        #[max_length = 1024]
+        error -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -745,22 +763,12 @@ diesel::table! {
 }
 
 diesel::table! {
-    untitled_table_264 (id) {
-        id -> Int4,
-    }
-}
-
-diesel::table! {
     usernames (username) {
         #[max_length = 64]
         username -> Varchar,
         #[max_length = 256]
         address -> Varchar,
         is_verified -> Bool,
-        is_rewards_enabled -> Bool,
-        #[max_length = 32]
-        rewards_level -> Nullable<Varchar>,
-        points -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -809,6 +817,7 @@ diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
+diesel::joinable!(rewards -> rewards_levels_types (level));
 diesel::joinable!(rewards_events -> rewards_events_types (event_type));
 diesel::joinable!(rewards_events -> usernames (username));
 diesel::joinable!(rewards_redemption_options -> assets (asset_id));
@@ -826,7 +835,6 @@ diesel::joinable!(transactions -> transactions_types (kind));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
-diesel::joinable!(usernames -> rewards_levels_types (rewards_level));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -863,6 +871,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices_dex_assets,
     prices_dex_providers,
     releases,
+    rewards,
     rewards_events,
     rewards_events_types,
     rewards_levels_types,
@@ -879,6 +888,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions,
     transactions_addresses,
     transactions_types,
-    untitled_table_264,
     usernames,
 );

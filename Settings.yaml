@@ -283,4 +283,4 @@ sentry:
   sample_rate: 1.0
 
 rewards:
-  secret: ""
+  wallets: []

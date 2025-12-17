@@ -81,7 +81,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 }
 
-#[cfg(all(test, feature = "rpc"))]
+#[cfg(all(test, feature = "chain_integration_tests"))]
 mod tests {
     use crate::provider::testkit::{TEST_ADDRESS, create_ethereum_test_client};
     use chain_traits::{ChainBalances, ChainStaking};
