@@ -448,6 +448,7 @@ pub struct Sentry {
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
 pub struct Rewards {
+    #[serde(default)]
     pub wallets: HashMap<String, RewardsWallet>,
 }
 
