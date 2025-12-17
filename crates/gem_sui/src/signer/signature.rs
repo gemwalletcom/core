@@ -43,8 +43,8 @@ fn assemble_signature(signature: &[u8], public_key: &[u8]) -> Result<String, Sig
 #[cfg(test)]
 mod tests {
     use super::*;
-    use base64::engine::general_purpose::STANDARD;
     use base64::Engine as _;
+    use base64::engine::general_purpose::STANDARD;
 
     #[test]
     fn test_sui_sign_personal_message() {

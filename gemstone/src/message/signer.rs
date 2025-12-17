@@ -51,10 +51,7 @@ impl MessageSigner {
                 let Ok(ton_data) = TonSignMessageData::from_bytes(string.as_bytes()) else {
                     return Ok(MessagePreview::Text(string));
                 };
-                let Ok(payload) = ton_data.get_payload() else {
-                    return Ok(MessagePreview::Text(string));
-                };
-                Ok(MessagePreview::Text(payload.data().to_string()))
+                Ok(MessagePreview::Text(ton_data.payload.data().to_string()))
             }
             SignDigestType::Eip712 => {
                 let string = String::from_utf8(self.message.data.clone())?;
@@ -108,8 +105,7 @@ impl MessageSigner {
             SignDigestType::TonPersonal => {
                 let string = String::from_utf8(self.message.data.clone())?;
                 let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
-                let payload = ton_data.get_payload()?;
-                Ok(payload.hash())
+                Ok(ton_data.payload.hash())
             }
             SignDigestType::Eip191 | SignDigestType::Siwe => Ok(eip191_hash_message(&self.message.data).to_vec()),
             SignDigestType::Eip712 => {
@@ -144,7 +140,7 @@ impl MessageSigner {
     pub fn get_ton_result(&self, signature: &[u8], public_key: &[u8]) -> Result<String, GemstoneError> {
         let string = String::from_utf8(self.message.data.clone())?;
         let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
-        let payload = ton_data.get_payload()?;
+        let payload = ton_data.payload;
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_secs())
@@ -491,10 +487,11 @@ mod tests {
 
     #[test]
     fn test_ton_personal_preview() {
-        let ton_data = TonSignMessageData::new(
+        let ton_data = TonSignMessageData::from_value(
             serde_json::json!({"type": "text", "text": "Hello TON", "from": "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}),
             "example.com".to_string(),
-        );
+        )
+        .unwrap();
         let data = String::from_utf8(ton_data.to_bytes()).unwrap();
         let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ton,

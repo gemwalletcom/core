@@ -10,10 +10,6 @@ pub enum TonSignDataPayload {
 }
 
 impl TonSignDataPayload {
-    pub fn parse(json: &str) -> Result<Self, SignerError> {
-        serde_json::from_str(json).map_err(SignerError::from)
-    }
-
     pub fn data(&self) -> &str {
         match self {
             Self::Text { text } => text,
@@ -39,13 +35,18 @@ pub struct TonSignDataResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TonSignMessageData {
-    pub payload: serde_json::Value,
+    pub payload: TonSignDataPayload,
     pub domain: String,
 }
 
 impl TonSignMessageData {
-    pub fn new(payload: serde_json::Value, domain: String) -> Self {
+    pub fn new(payload: TonSignDataPayload, domain: String) -> Self {
         Self { payload, domain }
+    }
+
+    pub fn from_value(payload: serde_json::Value, domain: String) -> Result<Self, SignerError> {
+        let payload: TonSignDataPayload = serde_json::from_value(payload).map_err(SignerError::from)?;
+        Ok(Self { payload, domain })
     }
 
     pub fn from_bytes(data: &[u8]) -> Result<Self, SignerError> {
@@ -54,11 +55,6 @@ impl TonSignMessageData {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         serde_json::to_vec(self).unwrap_or_default()
-    }
-
-    pub fn get_payload(&self) -> Result<TonSignDataPayload, SignerError> {
-        let json = serde_json::to_string(&self.payload)?;
-        TonSignDataPayload::parse(&json)
     }
 }
 
@@ -85,27 +81,28 @@ mod tests {
     #[test]
     fn test_parse_payload_text() {
         let json = r#"{"type":"text","text":"Hello TON"}"#;
-        let parsed = TonSignDataPayload::parse(json).unwrap();
+        let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(parsed, TonSignDataPayload::Text { text: "Hello TON".to_string() });
-        assert_eq!(parsed.data(), "Hello TON");
-        assert_eq!(parsed.hash(), b"Hello TON".to_vec());
+        assert_eq!(b"Hello TON".to_vec(), parsed.hash());
     }
 
     #[test]
     fn test_parse_payload_binary() {
         let json = r#"{"type":"binary","bytes":"SGVsbG8="}"#;
-        let parsed = TonSignDataPayload::parse(json).unwrap();
+        let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(parsed, TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() });
+        assert_eq!("SGVsbG8=".as_bytes().to_vec(), parsed.hash());
     }
 
     #[test]
     fn test_parse_payload_cell() {
         let json = r#"{"type":"cell","cell":"te6c"}"#;
-        let parsed = TonSignDataPayload::parse(json).unwrap();
+        let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(parsed, TonSignDataPayload::Cell { cell: "te6c".to_string() });
+        assert_eq!("te6c".as_bytes().to_vec(), parsed.hash());
     }
 
     #[test]
@@ -133,7 +130,7 @@ mod tests {
 
     #[test]
     fn test_ton_sign_message_data() {
-        let payload = serde_json::json!({"type": "text", "text": "Hello TON"});
+        let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
         let data = TonSignMessageData::new(payload.clone(), "example.com".to_string());
 
         let bytes = data.to_bytes();
@@ -145,10 +142,9 @@ mod tests {
 
     #[test]
     fn test_ton_sign_message_data_get_payload() {
-        let payload = serde_json::json!({"type": "text", "text": "Hello TON"});
+        let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
         let data = TonSignMessageData::new(payload, "example.com".to_string());
 
-        let parsed_payload = data.get_payload().unwrap();
-        assert_eq!(parsed_payload, TonSignDataPayload::Text { text: "Hello TON".to_string() });
+        assert_eq!(data.payload, TonSignDataPayload::Text { text: "Hello TON".to_string() });
     }
 }

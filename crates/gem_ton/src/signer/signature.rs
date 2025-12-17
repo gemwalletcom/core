@@ -5,8 +5,7 @@ use super::types::TonSignMessageData;
 
 pub fn sign_personal(data: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), SignerError> {
     let ton_data = TonSignMessageData::from_bytes(data)?;
-    let payload = ton_data.get_payload()?;
-    let digest = payload.hash();
+    let digest = ton_data.payload.hash();
 
     Signer::sign_ed25519_with_public_key(&digest, private_key).map_err(|e| SignerError::InvalidInput(e.to_string()))
 }
@@ -17,7 +16,7 @@ mod tests {
 
     #[test]
     fn test_sign_ton_personal() {
-        let payload = serde_json::json!({"type": "text", "text": "Hello TON"});
+        let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
         let ton_data = TonSignMessageData::new(payload, "example.com".to_string());
         let data = ton_data.to_bytes();
 
@@ -31,7 +30,7 @@ mod tests {
 
     #[test]
     fn test_sign_ton_personal_rejects_invalid_key() {
-        let payload = serde_json::json!({"type": "text", "text": "Hello TON"});
+        let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
         let ton_data = TonSignMessageData::new(payload, "example.com".to_string());
         let data = ton_data.to_bytes();
 

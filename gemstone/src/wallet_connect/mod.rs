@@ -89,28 +89,20 @@ mod tests {
 
     #[test]
     fn validate_ton_sign_message() {
-        use gem_ton::signer::TonSignMessageData;
+        use gem_ton::signer::{TonSignDataPayload, TonSignMessageData};
 
         let wallet_connect = WalletConnect::new();
 
         // Missing type field in payload
-        let ton_data = TonSignMessageData::new(serde_json::json!({"text":"Hello"}), "example.com".to_string());
-        assert!(
-            wallet_connect
-                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, String::from_utf8(ton_data.to_bytes()).unwrap())
-                .is_err()
-        );
+        let ton_data = r#"{"payload":{"text":"Hello"},"domain":"example.com"}"#.to_string();
+        assert!(wallet_connect.validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, ton_data).is_err());
 
         // Unknown type
-        let ton_data = TonSignMessageData::new(serde_json::json!({"type":"unknown"}), "example.com".to_string());
-        assert!(
-            wallet_connect
-                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, String::from_utf8(ton_data.to_bytes()).unwrap())
-                .is_err()
-        );
+        let ton_data = r#"{"payload":{"type":"unknown"},"domain":"example.com"}"#.to_string();
+        assert!(wallet_connect.validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, ton_data).is_err());
 
         // Valid text type
-        let ton_data = TonSignMessageData::new(serde_json::json!({"type":"text","text":"Hello"}), "example.com".to_string());
+        let ton_data = TonSignMessageData::new(TonSignDataPayload::Text { text: "Hello".to_string() }, "example.com".to_string());
         assert!(
             wallet_connect
                 .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, String::from_utf8(ton_data.to_bytes()).unwrap())
@@ -118,7 +110,7 @@ mod tests {
         );
 
         // Valid binary type
-        let ton_data = TonSignMessageData::new(serde_json::json!({"type":"binary","bytes":"SGVsbG8="}), "example.com".to_string());
+        let ton_data = TonSignMessageData::new(TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() }, "example.com".to_string());
         assert!(
             wallet_connect
                 .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, String::from_utf8(ton_data.to_bytes()).unwrap())
@@ -126,7 +118,7 @@ mod tests {
         );
 
         // Valid cell type
-        let ton_data = TonSignMessageData::new(serde_json::json!({"type":"cell","cell":"te6c"}), "example.com".to_string());
+        let ton_data = TonSignMessageData::new(TonSignDataPayload::Cell { cell: "te6c".to_string() }, "example.com".to_string());
         assert!(
             wallet_connect
                 .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, String::from_utf8(ton_data.to_bytes()).unwrap())
@@ -224,8 +216,7 @@ impl WalletConnect {
                 gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
             }
             SignDigestType::TonPersonal => {
-                let ton_data = gem_ton::signer::TonSignMessageData::from_bytes(data.as_bytes())?;
-                ton_data.get_payload()?;
+                gem_ton::signer::TonSignMessageData::from_bytes(data.as_bytes())?;
                 Ok(())
             }
             SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe => Ok(()),

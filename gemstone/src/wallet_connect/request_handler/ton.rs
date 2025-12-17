@@ -18,7 +18,7 @@ impl ChainRequestHandler for TonRequestHandler {
         let params_array = params.as_array().ok_or("Invalid params format")?;
         let payload = params_array.first().ok_or("Missing payload parameter")?.clone();
         let host = extract_host(domain);
-        let ton_data = TonSignMessageData::new(payload, host);
+        let ton_data = TonSignMessageData::from_value(payload, host).map_err(|e| e.to_string())?;
         let data = String::from_utf8(ton_data.to_bytes()).map_err(|e| format!("Failed to encode TonSignMessageData: {}", e))?;
         Ok(WalletConnectAction::SignMessage {
             chain: Chain::Ton,
@@ -53,6 +53,7 @@ impl ChainRequestHandler for TonRequestHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gem_ton::signer::TonSignDataPayload;
 
     #[test]
     fn test_parse_sign_message() {
@@ -66,8 +67,7 @@ mod tests {
 
         let parsed: TonSignMessageData = serde_json::from_str(&data).unwrap();
         assert_eq!(parsed.domain, "react-app.walletconnect.com");
-        assert_eq!(parsed.payload["type"], "text");
-        assert_eq!(parsed.payload["text"], "Hello TON");
+        assert_eq!(parsed.payload, TonSignDataPayload::Text { text: "Hello TON".to_string() });
     }
 
     #[test]
