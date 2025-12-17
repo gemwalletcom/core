@@ -100,3 +100,9 @@ impl From<serde_json::Error> for GemstoneError {
         Self::AnyError { msg: error.to_string() }
     }
 }
+
+impl From<std::string::FromUtf8Error> for GemstoneError {
+    fn from(error: std::string::FromUtf8Error) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}

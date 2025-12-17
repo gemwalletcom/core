@@ -6,8 +6,6 @@ edition = { workspace = true }
 [dependencies]
 ed25519-dalek = { version = "2.1.1", default-features = false, features = ["std", "zeroize"] }
 k256 = { workspace = true }
-sui-types = { workspace = true, features = ["hash"] }
-base64 = { workspace = true }
 hex = { workspace = true }
 alloy-primitives = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

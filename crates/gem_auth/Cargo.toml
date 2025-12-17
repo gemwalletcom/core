@@ -9,13 +9,15 @@ client = ["dep:cacher", "dep:chrono", "dep:uuid"]
 
 [dependencies]
 primitives = { path = "../primitives" }
-gem_hash = { path = "../gem_hash" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 alloy-primitives = { workspace = true }
-k256 = { workspace = true }
 
 # Optional dependencies for client feature (server-side only)
 cacher = { path = "../cacher", optional = true }
 chrono = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
+
+[dev-dependencies]
+alloy-signer = { workspace = true }
+alloy-signer-local = { workspace = true }

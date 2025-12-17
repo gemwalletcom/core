@@ -7,6 +7,7 @@ edition = { workspace = true }
 default = []
 rpc = ["gem_jsonrpc/client", "dep:async-trait", "dep:chain_traits"]
 reqwest = ["gem_jsonrpc/reqwest", "gem_client/reqwest", "dep:reqwest"]
+signer = ["dep:alloy-signer", "dep:alloy-signer-local", "dep:alloy-network", "dep:alloy-rlp", "dep:alloy-consensus"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 testkit = []
 
@@ -26,6 +27,11 @@ k256 = { workspace = true }
 alloy-sol-types = { workspace = true, features = ["eip712-serde"] }
 alloy-dyn-abi = { workspace = true, features = ["eip712"] }
 alloy-json-abi = { workspace = true }
+alloy-signer = { workspace = true, optional = true }
+alloy-signer-local = { workspace = true, optional = true }
+alloy-network = { workspace = true, optional = true }
+alloy-rlp = { workspace = true, optional = true }
+alloy-consensus = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 num-bigint = { workspace = true }

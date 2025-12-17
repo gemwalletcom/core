@@ -1,6 +1,7 @@
-use ::signer::Signer;
 use hex::decode;
 use primitives::{ChainSigner, SignerError, TransactionInputType, TransactionLoadInput, stake_type::StakeType};
+
+use super::signature::{sign_digest, sign_personal_message};
 
 #[derive(Default)]
 pub struct SuiChainSigner;
@@ -47,7 +48,7 @@ impl ChainSigner for SuiChainSigner {
     }
 
     fn sign_message(&self, message: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
-        Signer::sign_sui_personal_message(message, private_key).map_err(|err| SignerError::InvalidInput(err.to_string()))
+        sign_personal_message(message, private_key)
     }
 }
 
@@ -63,7 +64,7 @@ pub fn sign_message_bytes(message: &str, private_key: &[u8]) -> Result<String, S
 
     let digest = decode(digest_hex.trim_start_matches("0x")).map_err(|_| SignerError::InvalidInput("Invalid digest hex for Sui transaction".to_string()))?;
 
-    let signature = ::signer::Signer::sign_sui_digest(&digest, private_key).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+    let signature = sign_digest(&digest, private_key)?;
 
     Ok(format!("{prefix}_{signature}"))
 }

@@ -1,6 +1,4 @@
-use alloy_primitives::hex;
-use gem_hash::keccak::keccak256;
-use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
+use alloy_primitives::{hex, Signature, B256};
 use primitives::{AuthMessage, ChainType};
 
 pub struct AuthMessageData {
@@ -10,8 +8,8 @@ pub struct AuthMessageData {
 
 pub fn create_auth_hash(auth_message: &AuthMessage) -> AuthMessageData {
     let message = serde_json::to_string(auth_message).unwrap_or_default();
-    let hash = keccak256(message.as_bytes());
-    AuthMessageData { message, hash }
+    let hash = alloy_primitives::keccak256(message.as_bytes());
+    AuthMessageData { message, hash: hash.into() }
 }
 
 pub fn verify_auth_signature(auth_message: &AuthMessage, signature: &str) -> bool {
@@ -40,29 +38,18 @@ fn recover_address_from_hash(hash: &[u8; 32], signature: &str) -> Option<String>
         return None;
     }
 
-    let r_s = &signature_bytes[..64];
-    let v = signature_bytes[64];
+    let signature = Signature::try_from(signature_bytes.as_slice()).ok()?;
+    let hash = B256::from_slice(hash);
+    let address = signature.recover_address_from_prehash(&hash).ok()?;
 
-    let recovery_id = match v {
-        27 | 0 => RecoveryId::from_byte(0),
-        28 | 1 => RecoveryId::from_byte(1),
-        _ => return None,
-    }?;
-
-    let signature = Signature::from_slice(r_s).ok()?;
-    let recovered_key = VerifyingKey::recover_from_prehash(hash, &signature, recovery_id).ok()?;
-
-    let public_key_bytes = recovered_key.to_encoded_point(false);
-    let public_key_hash = keccak256(&public_key_bytes.as_bytes()[1..]);
-    let address = format!("0x{}", hex::encode(&public_key_hash[12..]));
-
-    Some(address)
+    Some(address.to_checksum(None))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use k256::ecdsa::SigningKey;
+    use alloy_signer::SignerSync;
+    use alloy_signer_local::PrivateKeySigner;
     use primitives::{AuthNonce, Chain};
 
     const TEST_PRIVATE_KEY: [u8; 32] = [
@@ -70,26 +57,17 @@ mod tests {
         0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
     ];
 
-    fn sign_auth_message(auth_message: &AuthMessage, signing_key: &SigningKey) -> String {
+    fn sign_auth_message(auth_message: &AuthMessage, signer: &PrivateKeySigner) -> String {
         let message = serde_json::to_string(auth_message).unwrap();
-        let hash = keccak256(message.as_bytes());
-        let (signature, recovery_id) = signing_key.sign_prehash_recoverable(&hash).unwrap();
-        let mut sig_bytes = signature.to_bytes().to_vec();
-        sig_bytes.push(recovery_id.to_byte() + 27);
-        format!("0x{}", hex::encode(&sig_bytes))
-    }
-
-    fn get_address_from_key(signing_key: &SigningKey) -> String {
-        let verifying_key = signing_key.verifying_key();
-        let public_key_bytes = verifying_key.to_encoded_point(false);
-        let public_key_hash = keccak256(&public_key_bytes.as_bytes()[1..]);
-        format!("0x{}", hex::encode(&public_key_hash[12..]))
+        let hash = alloy_primitives::keccak256(message.as_bytes());
+        let signature = signer.sign_hash_sync(&hash).unwrap();
+        format!("0x{}", hex::encode(signature.as_bytes()))
     }
 
     #[test]
     fn test_verify_auth_signature_success() {
-        let signing_key = SigningKey::from_bytes(&TEST_PRIVATE_KEY.into()).unwrap();
-        let address = get_address_from_key(&signing_key);
+        let signer = PrivateKeySigner::from_slice(&TEST_PRIVATE_KEY).unwrap();
+        let address = signer.address().to_checksum(None);
 
         let auth_message = AuthMessage {
             chain: Chain::Ethereum,
@@ -100,7 +78,7 @@ mod tests {
             },
         };
 
-        let signature = sign_auth_message(&auth_message, &signing_key);
+        let signature = sign_auth_message(&auth_message, &signer);
         assert!(verify_auth_signature(&auth_message, &signature));
     }
 

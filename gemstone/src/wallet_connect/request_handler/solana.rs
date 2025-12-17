@@ -7,7 +7,7 @@ use serde_json::Value;
 pub struct SolanaRequestHandler;
 
 impl ChainRequestHandler for SolanaRequestHandler {
-    fn parse_sign_message(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
+    fn parse_sign_message(_chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
         let message = params.get("message").and_then(|v| v.as_str()).ok_or("Missing message parameter")?.to_string();
 
         Ok(WalletConnectAction::SignMessage {
@@ -64,7 +64,7 @@ mod tests {
     #[test]
     fn test_parse_sign_message() {
         let params = serde_json::from_str(r#"{"message":"Hello"}"#).unwrap();
-        let action = SolanaRequestHandler::parse_sign_message(Chain::Solana, params).unwrap();
+        let action = SolanaRequestHandler::parse_sign_message(Chain::Solana, params, "example.com").unwrap();
         match action {
             WalletConnectAction::SignMessage { chain, sign_type, data } => {
                 assert_eq!(chain, Chain::Solana);

@@ -49,7 +49,7 @@ pub use self::price_dex::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};
 pub use self::release::ReleaseRow;
 pub use self::reward::{
     NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RewardEventRow, RewardEventTypeRow, RewardLevelTypeRow, RewardRedemptionOptionRow,
-    RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow,
+    RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
 };
 pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow, ScanAddressTypeRow};
 pub use self::subscription::{SubscriptionAddressExcludeRow, SubscriptionRow};

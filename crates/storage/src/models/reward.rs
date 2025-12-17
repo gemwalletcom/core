@@ -4,6 +4,18 @@ use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOp
 use primitives::{RewardEvent, RewardEventType, RewardLevel};
 use std::str::FromStr;
 
+#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
+#[diesel(table_name = crate::schema::rewards)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct RewardsRow {
+    pub username: String,
+    pub is_enabled: bool,
+    pub level: Option<String>,
+    pub points: i32,
+    pub referrer_username: Option<String>,
+    pub referral_count: i32,
+}
+
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards_referrals)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -105,6 +117,7 @@ pub struct RewardRedemptionRow {
     pub option_id: String,
     pub transaction_id: Option<String>,
     pub status: String,
+    pub error: Option<String>,
     pub updated_at: NaiveDateTime,
     pub created_at: NaiveDateTime,
 }
