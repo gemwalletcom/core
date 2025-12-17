@@ -283,7 +283,7 @@ sentry:
   sample_rate: 1.0
 
 rewards:
-  wallets: []
+  wallets: {}
   abuseipdb:
     url: https://api.abuseipdb.com
     key:
