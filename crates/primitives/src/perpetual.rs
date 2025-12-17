@@ -168,6 +168,8 @@ pub struct PerpetualReduceData {
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct AutocloseOpenData {
+    pub asset_id: AssetId,
+    pub symbol: String,
     pub direction: PerpetualDirection,
     pub market_price: f64,
     pub leverage: u8,
