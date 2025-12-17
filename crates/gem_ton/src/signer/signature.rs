@@ -13,6 +13,7 @@ pub fn sign_personal(data: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::signer::TonSignDataPayload;
 
     #[test]
     fn test_sign_ton_personal() {
