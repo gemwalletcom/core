@@ -591,6 +591,7 @@ diesel::table! {
         asset_id -> Nullable<Varchar>,
         #[max_length = 64]
         value -> Varchar,
+        remaining -> Nullable<Int4>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

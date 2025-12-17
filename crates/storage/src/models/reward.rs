@@ -151,6 +151,7 @@ pub struct RewardRedemptionOptionRow {
     pub points: i32,
     pub asset_id: Option<String>,
     pub value: String,
+    pub remaining: Option<i32>,
     pub updated_at: chrono::NaiveDateTime,
     pub created_at: chrono::NaiveDateTime,
 }
@@ -163,6 +164,7 @@ impl RewardRedemptionOptionRow {
             points: self.points,
             asset_id: self.asset_id.clone(),
             value: self.value.clone(),
+            remaining: self.remaining,
         }
     }
 }

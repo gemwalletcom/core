@@ -27,8 +27,16 @@ pub async fn create_referral(request: Authenticated<ReferralCode>, client: &Stat
 }
 
 #[post("/rewards/referrals/use", format = "json", data = "<request>")]
-pub async fn use_referral_code(request: Authenticated<ReferralCode>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<bool>, ApiError> {
-    client.lock().await.use_referral_code(&request.auth, &request.data.code).await?;
+pub async fn use_referral_code(
+    request: Authenticated<ReferralCode>,
+    ip: std::net::IpAddr,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<bool>, ApiError> {
+    client
+        .lock()
+        .await
+        .use_referral_code(&request.auth, &request.data.code, &ip.to_string())
+        .await?;
     Ok(true.into())
 }
 

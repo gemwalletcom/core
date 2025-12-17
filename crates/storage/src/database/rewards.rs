@@ -128,13 +128,10 @@ impl RewardsStore for DatabaseClient {
                 .returning(rewards_events::id)
                 .get_result(conn)?;
 
-            let affected = diesel::update(rewards::table.filter(rewards::username.eq(&event.username)))
+            diesel::update(rewards::table.filter(rewards::username.eq(&event.username)))
                 .set(rewards::points.eq(rewards::points + points))
-                .execute(conn)?;
-
-            if affected == 0 {
-                return Err(diesel::result::Error::NotFound);
-            }
+                .returning(rewards::username)
+                .get_result::<String>(conn)?;
 
             Ok(event_id)
         })
@@ -158,7 +155,7 @@ impl RewardsStore for DatabaseClient {
     }
 
     fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, diesel::result::Error> {
-        use crate::schema::{rewards, rewards_redemptions};
+        use crate::schema::{rewards, rewards_redemption_options, rewards_redemptions};
         use diesel::Connection;
 
         if points <= 0 {
@@ -166,13 +163,21 @@ impl RewardsStore for DatabaseClient {
         }
 
         self.connection.transaction(|conn| {
-            let affected = diesel::update(rewards::table.filter(rewards::username.eq(username).and(rewards::points.ge(points))))
-                .set(rewards::points.eq(rewards::points - points))
-                .execute(conn)?;
+            diesel::update(
+                rewards_redemption_options::table.filter(
+                    rewards_redemption_options::id
+                        .eq(&redemption.option_id)
+                        .and(rewards_redemption_options::remaining.is_null().or(rewards_redemption_options::remaining.gt(0))),
+                ),
+            )
+            .set(rewards_redemption_options::remaining.eq(rewards_redemption_options::remaining - 1))
+            .returning(rewards_redemption_options::id)
+            .get_result::<String>(conn)?;
 
-            if affected == 0 {
-                return Err(diesel::result::Error::NotFound);
-            }
+            diesel::update(rewards::table.filter(rewards::username.eq(username).and(rewards::points.ge(points))))
+                .set(rewards::points.eq(rewards::points - points))
+                .returning(rewards::username)
+                .get_result::<String>(conn)?;
 
             diesel::insert_into(rewards_redemptions::table)
                 .values(&redemption)

@@ -450,6 +450,7 @@ pub struct Sentry {
 pub struct Rewards {
     #[serde(default)]
     pub wallets: HashMap<String, RewardsWallet>,
+    pub abuseipdb: AbuseIPDB,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -457,6 +458,13 @@ pub struct Rewards {
 pub struct RewardsWallet {
     pub key: String,
     pub address: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct AbuseIPDB {
+    pub url: String,
+    pub key: KeySecret,
 }
 
 #[cfg(feature = "testkit")]

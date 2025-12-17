@@ -1,4 +1,4 @@
-use alloy_primitives::{hex, Signature, B256};
+use alloy_primitives::{B256, Signature, hex};
 use primitives::{AuthMessage, ChainType};
 
 pub struct AuthMessageData {

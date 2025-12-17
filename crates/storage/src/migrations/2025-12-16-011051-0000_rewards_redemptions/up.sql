@@ -8,6 +8,7 @@ CREATE TABLE rewards_redemption_options (
     points INT NOT NULL,
     asset_id VARCHAR(128) REFERENCES assets(id) ON DELETE CASCADE,
     value VARCHAR(64) NOT NULL,
+    remaining INT,
     updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );

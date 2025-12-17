@@ -114,6 +114,7 @@ pub struct RewardRedemptionOption {
     pub points: i32,
     pub asset_id: Option<String>,
     pub value: String,
+    pub remaining: Option<i32>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

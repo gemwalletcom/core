@@ -36,6 +36,7 @@ use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::FiatProviderFactory;
 use gem_auth::AuthClient;
+use gem_rewards::AbuseIPDBClient;
 use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
@@ -105,7 +106,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let markets_client = MarketsClient::new(database.clone(), cacher_client);
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
-    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone());
+    let abuseipdb_client = AbuseIPDBClient::new(settings.rewards.abuseipdb.url.clone(), settings.rewards.abuseipdb.key.secret.clone());
+    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), abuseipdb_client);
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
 
     rocket::build()

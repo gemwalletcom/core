@@ -1,4 +1,5 @@
 use crate::auth::VerifiedAuth;
+use gem_rewards::{AbuseIPDBClient, RewardsError};
 use primitives::{NaiveDateTimeExt, RewardEvent, RewardEventType, Rewards};
 use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
@@ -8,11 +9,16 @@ const REFERRAL_ELIGIBILITY_DAYS: i64 = 7;
 pub struct RewardsClient {
     database: Database,
     stream_producer: StreamProducer,
+    abuseipdb_client: AbuseIPDBClient,
 }
 
 impl RewardsClient {
-    pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
-        Self { database, stream_producer }
+    pub fn new(database: Database, stream_producer: StreamProducer, abuseipdb_client: AbuseIPDBClient) -> Self {
+        Self {
+            database,
+            stream_producer,
+            abuseipdb_client,
+        }
     }
 
     pub fn get_rewards(&mut self, address: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
@@ -29,7 +35,7 @@ impl RewardsClient {
         Ok(rewards)
     }
 
-    pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let device = self.database.client()?.get_device(&auth.device_id)?;
         let first_subscription_date = self.database.client()?.rewards().get_first_subscription_date(vec![auth.address.clone()])?;
 
@@ -46,6 +52,10 @@ impl RewardsClient {
             RewardEventType::InviteExisting
         };
 
+        if !self.is_eligible(ip_address).await? {
+            return Err(RewardsError::Referral("Not eligible for referral rewards".to_string()).into());
+        }
+
         let event_ids = self
             .database
             .client()?
@@ -53,6 +63,11 @@ impl RewardsClient {
             .use_referral_code(&auth.address, code, device.id, invite_event)?;
         self.publish_events(event_ids).await?;
         Ok(())
+    }
+
+    async fn is_eligible(&self, ip_address: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        let ip_data = self.abuseipdb_client.check_ip(ip_address).await?;
+        Ok(!ip_data.is_suspicious())
     }
 
     async fn publish_events(&self, event_ids: Vec<i32>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
