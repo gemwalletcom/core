@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
+use crate::Asset;
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
 //#[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
@@ -112,7 +114,7 @@ pub struct RewardRedemptionOption {
     pub id: String,
     pub redemption_type: RewardRedemptionType,
     pub points: i32,
-    pub asset_id: Option<String>,
+    pub asset: Option<Asset>,
     pub value: String,
     pub remaining: Option<i32>,
 }

@@ -1,7 +1,7 @@
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use diesel::prelude::*;
 use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption, RewardRedemptionType};
-use primitives::{RewardEvent, RewardEventType, RewardLevel};
+use primitives::{Asset, RewardEvent, RewardEventType, RewardLevel};
 use std::str::FromStr;
 
 #[derive(Debug, Queryable, Selectable, Insertable, Clone)]
@@ -157,14 +157,32 @@ pub struct RewardRedemptionOptionRow {
 }
 
 impl RewardRedemptionOptionRow {
-    pub fn as_primitive(&self) -> primitives::rewards::RewardRedemptionOption {
-        primitives::rewards::RewardRedemptionOption {
+    pub fn as_primitive(&self, asset: Option<Asset>) -> RewardRedemptionOption {
+        RewardRedemptionOption {
             id: self.id.clone(),
             redemption_type: RewardRedemptionType::from_str(&self.redemption_type).unwrap(),
             points: self.points,
-            asset_id: self.asset_id.clone(),
+            asset,
             value: self.value.clone(),
             remaining: self.remaining,
         }
+    }
+}
+
+use crate::models::AssetRow;
+
+#[derive(Debug, Clone)]
+pub struct RedemptionOptionFull {
+    pub option: RewardRedemptionOptionRow,
+    pub asset: Option<AssetRow>,
+}
+
+impl RedemptionOptionFull {
+    pub fn new(option: RewardRedemptionOptionRow, asset: Option<AssetRow>) -> Self {
+        Self { option, asset }
+    }
+
+    pub fn as_primitive(&self) -> RewardRedemptionOption {
+        self.option.as_primitive(self.asset.as_ref().map(|a| a.as_primitive()))
     }
 }

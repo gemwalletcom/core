@@ -4,7 +4,7 @@ use primitives::AssetId;
 use primitives::rewards::RedemptionStatus;
 use std::error::Error;
 use std::sync::Arc;
-use storage::{Database, RedemptionUpdate, RewardsRepository};
+use storage::{Database, RedemptionUpdate};
 use streamer::RewardsRedemptionPayload;
 use streamer::consumer::MessageConsumer;
 
@@ -34,10 +34,10 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
         }
 
         let recipient_address = client.rewards().get_address_by_username(&redemption.username)?;
-        let option = client.get_redemption_option(&redemption.option_id)?.as_primitive();
+        let option = client.rewards().get_redemption_option(&redemption.option_id)?;
 
-        let asset = option.asset_id.and_then(|asset_id_str| {
-            AssetId::new(&asset_id_str).map(|asset_id| RedemptionAsset {
+        let asset = option.asset_id.as_ref().and_then(|asset_id_str| {
+            AssetId::new(asset_id_str).map(|asset_id| RedemptionAsset {
                 asset_id,
                 amount: option.value.clone(),
             })
