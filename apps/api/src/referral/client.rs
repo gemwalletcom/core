@@ -60,11 +60,18 @@ impl RewardsClient {
             return Err(err);
         }
 
-        let event_ids = self
+        let event_ids = match self
             .database
             .client()?
             .rewards()
-            .use_referral_code(&auth.address, code, device.id, invite_event)?;
+            .use_referral_code(&auth.address, code, device.id, invite_event)
+        {
+            Ok(ids) => ids,
+            Err(err) => {
+                self.add_referral_attempt(code, &auth.address, &country, device.id, &err.to_string())?;
+                return Err(err.into());
+            }
+        };
 
         self.ip_security_client.record_referral_usage(ip_address).await?;
         self.publish_events(event_ids).await?;
