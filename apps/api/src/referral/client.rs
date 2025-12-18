@@ -56,7 +56,7 @@ impl RewardsClient {
         let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address).await?;
 
         if let Err(err) = self.check_referral_eligibility(ip_address, is_ip_eligible, &country).await {
-            self.add_referral_attempt(code, &country, device.id, &err.to_string())?;
+            self.add_referral_attempt(code, &auth.address, &country, device.id, &err.to_string())?;
             return Err(err);
         }
 
@@ -97,6 +97,7 @@ impl RewardsClient {
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
+        referred_address: &str,
         country_code: &str,
         device_id: i32,
         reason: &str,
@@ -104,7 +105,7 @@ impl RewardsClient {
         self.database
             .client()?
             .rewards()
-            .add_referral_attempt(referrer_username, country_code, device_id, reason)?;
+            .add_referral_attempt(referrer_username, referred_address, country_code, device_id, reason)?;
         Ok(())
     }
 
