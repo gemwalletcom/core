@@ -1,6 +1,6 @@
 use crate::DatabaseClient;
 use crate::models::{
-    AssetRow, NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RedemptionOptionFull, RewardEventRow, RewardEventTypeRow,
+    AssetRow, NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RedemptionOptionFull, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow,
     RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
 };
 use diesel::prelude::*;
@@ -59,6 +59,7 @@ pub(crate) trait RewardsStore {
     fn create_rewards(&mut self, rewards: RewardsRow) -> Result<RewardsRow, diesel::result::Error>;
     fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), diesel::result::Error>;
     fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, diesel::result::Error>;
+    fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), diesel::result::Error>;
     fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, diesel::result::Error>;
     fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, diesel::result::Error>;
     fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, diesel::result::Error>;
@@ -112,6 +113,14 @@ impl RewardsStore for DatabaseClient {
             .select(RewardReferralRow::as_select())
             .first(&mut self.connection)
             .optional()
+    }
+
+    fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), diesel::result::Error> {
+        use crate::schema::rewards_referral_attempts::dsl;
+        diesel::insert_into(dsl::rewards_referral_attempts)
+            .values(&attempt)
+            .execute(&mut self.connection)?;
+        Ok(())
     }
 
     fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, diesel::result::Error> {

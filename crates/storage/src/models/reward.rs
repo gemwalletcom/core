@@ -186,3 +186,12 @@ impl RedemptionOptionFull {
         self.option.as_primitive(self.asset.as_ref().map(|a| a.as_primitive()))
     }
 }
+
+#[derive(Debug, Insertable, Clone)]
+#[diesel(table_name = crate::schema::rewards_referral_attempts)]
+pub struct ReferralAttemptRow {
+    pub referrer_username: String,
+    pub country_code: String,
+    pub device_id: i32,
+    pub reason: String,
+}

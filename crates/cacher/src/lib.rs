@@ -125,11 +125,11 @@ impl CacherClient {
         Ok(self.connection.clone().incr(key, 1).await?)
     }
 
-    pub async fn increment_with_ttl(&self, key: &str, ttl_seconds: i64) -> Result<i64, Box<dyn Error + Send + Sync>> {
+    pub async fn increment_with_ttl(&self, key: &str, ttl: i64) -> Result<i64, Box<dyn Error + Send + Sync>> {
         let mut pipe = redis::pipe();
         pipe.atomic();
         pipe.cmd("INCR").arg(key);
-        pipe.cmd("EXPIRE").arg(key).arg(ttl_seconds).arg("NX");
+        pipe.cmd("EXPIRE").arg(key).arg(ttl).arg("NX");
         let results: (i64, i64) = pipe.query_async(&mut self.connection.clone()).await?;
         Ok(results.0)
     }

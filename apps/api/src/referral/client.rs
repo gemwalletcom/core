@@ -53,15 +53,11 @@ impl RewardsClient {
             RewardEventType::InviteExisting
         };
 
-        if !self.ip_security_client.is_eligible(ip_address).await? {
-            return Err(RewardsError::Referral("Not eligible for referral rewards".to_string()).into());
-        }
+        let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address).await?;
 
-        let daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
-        let weekly_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
-
-        if !self.ip_security_client.can_use_referral(ip_address, daily_limit, weekly_limit).await? {
-            return Err(RewardsError::Referral("Not eligible for referral rewards".to_string()).into());
+        if let Err(err) = self.check_referral_eligibility(ip_address, is_ip_eligible, &country).await {
+            self.add_referral_attempt(code, &country, device.id, &err.to_string())?;
+            return Err(err);
         }
 
         let event_ids = self
@@ -75,11 +71,46 @@ impl RewardsClient {
         Ok(())
     }
 
-    async fn publish_events(&self, event_ids: Vec<i32>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        for event_id in event_ids {
-            let payload = RewardsNotificationPayload::new(event_id);
-            self.stream_producer.publish_rewards_events(vec![payload]).await?;
+    async fn check_referral_eligibility(
+        &mut self,
+        ip_address: &str,
+        is_ip_eligible: bool,
+        country: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if !is_ip_eligible {
+            return Err(RewardsError::Referral("IP not eligible".to_string()).into());
         }
+
+        let ineligible_countries = self.database.client()?.config().get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?;
+
+        if ineligible_countries.contains(&country.to_string()) {
+            return Err(RewardsError::Referral(format!("Country {} not eligible", country)).into());
+        }
+
+        let daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
+        let weekly_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
+        self.ip_security_client.check_rate_limits(ip_address, daily_limit, weekly_limit).await?;
+
+        Ok(())
+    }
+
+    fn add_referral_attempt(
+        &mut self,
+        referrer_username: &str,
+        country_code: &str,
+        device_id: i32,
+        reason: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        self.database
+            .client()?
+            .rewards()
+            .add_referral_attempt(referrer_username, country_code, device_id, reason)?;
+        Ok(())
+    }
+
+    async fn publish_events(&self, event_ids: Vec<i32>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let payloads: Vec<_> = event_ids.into_iter().map(RewardsNotificationPayload::new).collect();
+        self.stream_producer.publish_rewards_events(payloads).await?;
         Ok(())
     }
 }

@@ -1,7 +1,10 @@
 use crate::database::rewards::{RedemptionUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardsRow, UsernameRow};
+use crate::models::{
+    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, ReferralAttemptRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardsRow,
+    UsernameRow,
+};
 use crate::repositories::assets_repository::AssetsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
@@ -34,6 +37,7 @@ pub trait RewardsRepository {
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
     fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
+    fn add_referral_attempt(&mut self, referrer_username: &str, country_code: &str, device_id: i32, reason: &str) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
     fn add_redemption(&mut self, username: &str, option_id: &str) -> Result<RewardRedemption, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
@@ -225,6 +229,19 @@ impl RewardsRepository for DatabaseClient {
         )?;
 
         Ok(vec![invite_event_id, joined_event_id])
+    }
+
+    fn add_referral_attempt(&mut self, referrer_username: &str, country_code: &str, device_id: i32, reason: &str) -> Result<(), DatabaseError> {
+        RewardsStore::add_referral_attempt(
+            self,
+            ReferralAttemptRow {
+                referrer_username: referrer_username.to_string(),
+                country_code: country_code.to_string(),
+                device_id,
+                reason: reason.to_string(),
+            },
+        )?;
+        Ok(())
     }
 
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError> {

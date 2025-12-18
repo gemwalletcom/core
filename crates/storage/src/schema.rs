@@ -636,6 +636,20 @@ diesel::table! {
 }
 
 diesel::table! {
+    rewards_referral_attempts (id) {
+        id -> Int4,
+        #[max_length = 64]
+        referrer_username -> Varchar,
+        #[max_length = 2]
+        country_code -> Varchar,
+        device_id -> Int4,
+        #[max_length = 256]
+        reason -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     rewards_referrals (id) {
         id -> Int4,
         #[max_length = 64]
@@ -837,6 +851,8 @@ diesel::joinable!(rewards_events -> usernames (username));
 diesel::joinable!(rewards_redemption_options -> assets (asset_id));
 diesel::joinable!(rewards_redemption_options -> rewards_redemptions_types (redemption_type));
 diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
+diesel::joinable!(rewards_referral_attempts -> devices (device_id));
+diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
@@ -893,6 +909,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     rewards_redemption_options,
     rewards_redemptions,
     rewards_redemptions_types,
+    rewards_referral_attempts,
     rewards_referrals,
     scan_addresses,
     scan_addresses_types,
