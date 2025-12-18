@@ -40,8 +40,8 @@ impl std::error::Error for AlienError {}
 impl RpcClientError for AlienError {
     fn into_client_error(self) -> ClientError {
         match self {
-            Self::RequestError { msg } => ClientError::Network(format!("Alien request error: {msg}")),
-            Self::ResponseError { msg } => ClientError::Network(format!("Alien response error: {msg}")),
+            Self::RequestError { msg } => ClientError::Network(msg),
+            Self::ResponseError { msg } => ClientError::Network(msg),
             Self::Http { status, len } => ClientError::Http { status, len: len as usize },
         }
     }
