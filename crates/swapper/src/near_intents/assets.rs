@@ -2,9 +2,10 @@ use crate::{SwapperError, SwapperQuoteAsset, models::SwapperChainAsset};
 use primitives::{
     AssetId, Chain,
     asset_constants::{
+        AAVE_ETH_ASSET_ID, ARB_ARB_ASSET_ID, CBBTC_BASE_ASSET_ID, CBBTC_ETH_ASSET_ID, DAI_ETH_ASSET_ID, LINK_ETH_ASSET_ID, OP_OP_ASSET_ID, UNI_ETH_ASSET_ID,
         USDC_ARB_ASSET_ID, USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID,
-        USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID,
-        USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID,
+        USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDC_SUI_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID,
+        USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, WBTC_ETH_ASSET_ID,
     },
 };
 use std::{collections::HashMap, sync::LazyLock};
@@ -15,19 +16,29 @@ pub const NEAR_INTENTS_WRAP_NEAR: &str = "nep141:wrap.near";
 pub const NEAR_INTENTS_ETH_NATIVE: &str = "nep141:eth.omft.near";
 pub const NEAR_INTENTS_ETH_USDC: &str = "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near";
 pub const NEAR_INTENTS_ETH_USDT: &str = "nep141:eth-0xdac17f958d2ee523a2206206994597c13d831ec7.omft.near";
+pub const NEAR_INTENTS_ETH_WBTC: &str = "nep141:eth-0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.omft.near";
+pub const NEAR_INTENTS_ETH_DAI: &str = "nep141:eth-0x6b175474e89094c44da98b954eedeac495271d0f.omft.near";
+pub const NEAR_INTENTS_ETH_CBBTC: &str = "nep141:eth-0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf.omft.near";
+pub const NEAR_INTENTS_ETH_LINK: &str = "nep141:eth-0x514910771af9ca656af840dff83e8264ecf986ca.omft.near";
+pub const NEAR_INTENTS_ETH_UNI: &str = "nep141:eth-0x1f9840a85d5af5bf1d1762f925bdaddc4201f984.omft.near";
+pub const NEAR_INTENTS_ETH_AAVE: &str = "nep141:eth-0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9.omft.near";
 pub const NEAR_INTENTS_BTC_NATIVE: &str = "nep141:btc.omft.near";
 pub const NEAR_INTENTS_SOL_NATIVE: &str = "nep141:sol.omft.near";
 pub const NEAR_INTENTS_SOL_USDC: &str = "nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near";
 pub const NEAR_INTENTS_SOL_USDT: &str = "nep141:sol-c800a4bd850783ccb82c2b2c7e84175443606352.omft.near";
 pub const NEAR_INTENTS_SUI_NATIVE: &str = "nep141:sui.omft.near";
+pub const NEAR_INTENTS_SUI_USDC: &str = "nep141:sui-c1b81ecaf27933252d31a963bc5e9458f13c18ce.omft.near";
 pub const NEAR_INTENTS_ARB_NATIVE: &str = "nep141:arb.omft.near";
 pub const NEAR_INTENTS_ARB_USDC: &str = "nep141:arb-0xaf88d065e77c8cc2239327c5edb3a432268e5831.omft.near";
 pub const NEAR_INTENTS_ARB_USDT: &str = "nep141:arb-0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9.omft.near";
+pub const NEAR_INTENTS_ARB_ARB: &str = "nep141:arb-0x912ce59144191c1204e64559fe8253a0e49e6548.omft.near";
 pub const NEAR_INTENTS_BASE_NATIVE: &str = "nep141:base.omft.near";
 pub const NEAR_INTENTS_BASE_USDC: &str = "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near";
+pub const NEAR_INTENTS_BASE_CBBTC: &str = "nep141:base-0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf.omft.near";
 pub const NEAR_INTENTS_OPT_NATIVE: &str = "nep245:v2_1.omni.hot.tg:10_11111111111111111111";
 pub const NEAR_INTENTS_OPT_USDC: &str = "nep245:v2_1.omni.hot.tg:10_A2ewyUyDp6qsue1jqZsGypkCxRJ";
 pub const NEAR_INTENTS_OPT_USDT: &str = "nep245:v2_1.omni.hot.tg:10_359RPSJVdTxwTJT9TyGssr2rFoWo";
+pub const NEAR_INTENTS_OPT_OP: &str = "nep245:v2_1.omni.hot.tg:10_vLAiSt9KfUGKpw5cD3vsSyNYBo7";
 pub const NEAR_INTENTS_AVAX_NATIVE: &str = "nep245:v2_1.omni.hot.tg:43114_11111111111111111111";
 pub const NEAR_INTENTS_AVAX_USDC: &str = "nep245:v2_1.omni.hot.tg:43114_3atVJH3r5c4GqiSYmg9fECvjc47o";
 pub const NEAR_INTENTS_AVAX_USDT: &str = "nep245:v2_1.omni.hot.tg:43114_372BeH7ENZieCaabwkbWkBiTTgXp";
@@ -48,6 +59,7 @@ pub const NEAR_INTENTS_BERA_NATIVE: &str = "nep141:bera.omft.near";
 pub const NEAR_INTENTS_GNOSIS_NATIVE: &str = "nep141:gnosis.omft.near";
 pub const NEAR_INTENTS_GNOSIS_USDC: &str = "nep141:gnosis-0x2a22f9c3b484c3629090feed35f17ff8f88f76f0.omft.near";
 pub const NEAR_INTENTS_APT_NATIVE: &str = "nep141:aptos.omft.near";
+// pub const NEAR_INTENTS_APT_USDT: &str = "nep141:aptos-88cb7619440a914fe6400149a12b443c3ac21d59.omft.near"; // Requires Fungible Asset transfer support
 pub const NEAR_INTENTS_ZEC_NATIVE: &str = "nep141:zec.omft.near";
 pub const NEAR_INTENTS_STELLAR_NATIVE: &str = "nep245:v2_1.omni.hot.tg:1100_111bzQBB5v7AhLyPMDwS8uJgQV24KaAPXtwyVWu2KXbbfQU6NXRCz";
 
@@ -64,6 +76,12 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
             ("ethereum".to_string(), NEAR_INTENTS_ETH_NATIVE),
             (asset_key(USDC_ETH_ASSET_ID), NEAR_INTENTS_ETH_USDC),
             (asset_key(USDT_ETH_ASSET_ID), NEAR_INTENTS_ETH_USDT),
+            (asset_key(WBTC_ETH_ASSET_ID), NEAR_INTENTS_ETH_WBTC),
+            (asset_key(DAI_ETH_ASSET_ID), NEAR_INTENTS_ETH_DAI),
+            (asset_key(CBBTC_ETH_ASSET_ID), NEAR_INTENTS_ETH_CBBTC),
+            (asset_key(LINK_ETH_ASSET_ID), NEAR_INTENTS_ETH_LINK),
+            (asset_key(UNI_ETH_ASSET_ID), NEAR_INTENTS_ETH_UNI),
+            (asset_key(AAVE_ETH_ASSET_ID), NEAR_INTENTS_ETH_AAVE),
         ]),
     );
 
@@ -78,7 +96,13 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
         ]),
     );
 
-    map.insert(Chain::Sui, HashMap::from([("sui".to_string(), NEAR_INTENTS_SUI_NATIVE)]));
+    map.insert(
+        Chain::Sui,
+        HashMap::from([
+            ("sui".to_string(), NEAR_INTENTS_SUI_NATIVE),
+            (asset_key(USDC_SUI_ASSET_ID), NEAR_INTENTS_SUI_USDC),
+        ]),
+    );
 
     map.insert(
         Chain::Arbitrum,
@@ -86,6 +110,7 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
             ("arbitrum".to_string(), NEAR_INTENTS_ARB_NATIVE),
             (asset_key(USDC_ARB_ASSET_ID), NEAR_INTENTS_ARB_USDC),
             (asset_key(USDT_ARB_ASSET_ID), NEAR_INTENTS_ARB_USDT),
+            (asset_key(ARB_ARB_ASSET_ID), NEAR_INTENTS_ARB_ARB),
         ]),
     );
 
@@ -94,6 +119,7 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
         HashMap::from([
             ("base".to_string(), NEAR_INTENTS_BASE_NATIVE),
             (asset_key(USDC_BASE_ASSET_ID), NEAR_INTENTS_BASE_USDC),
+            (asset_key(CBBTC_BASE_ASSET_ID), NEAR_INTENTS_BASE_CBBTC),
         ]),
     );
 
@@ -103,6 +129,7 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
             ("optimism".to_string(), NEAR_INTENTS_OPT_NATIVE),
             (asset_key(USDC_OP_ASSET_ID), NEAR_INTENTS_OPT_USDC),
             (asset_key(USDT_OP_ASSET_ID), NEAR_INTENTS_OPT_USDT),
+            (asset_key(OP_OP_ASSET_ID), NEAR_INTENTS_OPT_OP),
         ]),
     );
 

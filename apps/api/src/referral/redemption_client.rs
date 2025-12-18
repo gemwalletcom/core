@@ -1,4 +1,4 @@
-use gem_rewards::redeem_points;
+use gem_rewards::{RewardsError, redeem_points};
 use primitives::rewards::RedemptionResult;
 use storage::{Database, RewardsRepository};
 use streamer::{StreamProducer, StreamProducerQueue};
@@ -18,10 +18,10 @@ impl RewardsRedemptionClient {
         let rewards = client.get_reward_by_address(address)?;
 
         if !rewards.is_enabled {
-            return Err("Rewards are not enabled".into());
+            return Err(RewardsError::Redemption("Not eligible for rewards".to_string()).into());
         }
 
-        let username = rewards.code.ok_or("No username found for address")?;
+        let username = rewards.code.ok_or(RewardsError::Username("No username found for address".to_string()))?;
 
         let response = redeem_points(&mut client, &username, id)?;
         self.stream_producer

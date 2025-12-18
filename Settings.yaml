@@ -14,8 +14,6 @@ coingecko:
     secret: ""
 fiat:
   timeout: 3s
-  validate:
-    subscription: false
 moonpay:
   key:
     public: ""
@@ -40,9 +38,6 @@ paybis:
     public: ""
     secret: ""
     private: ""
-pricer:
-  timer: 60
-  outdated: 604800
 prices:
   pyth:
     url: "https://hermes.pyth.network"
@@ -233,20 +228,9 @@ pusher:
 
 daemon:
   service: ""
-  search:
-    assets_update_interval: 1800
-  transactions:
-    amount:
-      min: 0.05 # usd
 
 api:
   service: ""
-
-alerter:
-  update_interval_seconds: 60
-  rules:
-    price_increase_percent: 8.0
-    price_decrease_percent: 10.0
 
 ankr:
   key:
@@ -283,4 +267,8 @@ sentry:
   sample_rate: 1.0
 
 rewards:
-  wallets: []
+  wallets: {}
+  abuseipdb:
+    url: https://api.abuseipdb.com
+    key:
+      secret: ""

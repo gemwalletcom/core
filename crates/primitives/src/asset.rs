@@ -147,7 +147,7 @@ pub trait AssetHashSetExt {
 
 impl AssetHashSetExt for HashSet<AssetId> {
     fn ids(&self) -> Vec<String> {
-        self.iter().cloned().map(|x| x.to_string()).collect()
+        self.iter().map(|x| x.to_string()).collect()
     }
 }
 
