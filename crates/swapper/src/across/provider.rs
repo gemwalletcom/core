@@ -310,6 +310,7 @@ impl Swapper for Across {
             SwapperChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Monad, vec![MONAD_USDC.id.clone(), MONAD_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_ETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_USDC.id.clone(), HYPEREVM_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::Plasma, vec![PLASMA_USDT.id.clone()]),
@@ -563,10 +564,15 @@ mod tests {
 
         let usdc_eth: AssetId = USDC_ETH_ASSET_ID.into();
         let usdc_arb: AssetId = USDC_ARB_ASSET_ID.into();
+        let usdc_monad: AssetId = USDC_MONAD_ASSET_ID.into();
+        let usdt_eth: AssetId = USDT_ETH_ASSET_ID.into();
+        let usdt_monad: AssetId = USDT_MONAD_ASSET_ID.into();
 
         assert!(Across::is_supported_pair(&weth_eth, &weth_op));
         assert!(Across::is_supported_pair(&weth_op, &weth_arb));
         assert!(Across::is_supported_pair(&usdc_eth, &usdc_arb));
+        assert!(Across::is_supported_pair(&usdc_monad, &usdc_eth));
+        assert!(Across::is_supported_pair(&usdt_monad, &usdt_eth));
         assert!(Across::is_supported_pair(&weth_eth, &weth_bsc));
 
         assert!(!Across::is_supported_pair(&weth_eth, &usdc_eth));
