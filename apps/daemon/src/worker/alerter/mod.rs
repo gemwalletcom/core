@@ -14,7 +14,7 @@ use streamer::StreamProducer;
 pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
 
-    let alerter_interval = database.client()?.config().get_config_value_duration(ConfigKey::AlerterInterval)?;
+    let alerter_interval = database.client()?.config().get_config_duration(ConfigKey::AlerterInterval)?;
 
     let price_alerts_job = run_job("Price Alerts", alerter_interval, {
         let settings = Arc::new(settings.clone());

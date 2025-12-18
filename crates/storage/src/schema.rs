@@ -119,6 +119,8 @@ diesel::table! {
         key -> Varchar,
         #[max_length = 256]
         value -> Varchar,
+        #[max_length = 256]
+        default_value -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

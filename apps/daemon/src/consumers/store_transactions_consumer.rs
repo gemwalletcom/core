@@ -28,7 +28,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let transactions = payload.transactions;
         let is_notify_devices = !payload.blocks.is_empty();
 
-        let min_amount = self.database.client()?.config().get_config_value_f64(ConfigKey::TransactionsMinAmountUsd)?;
+        let min_amount = self.database.client()?.config().get_config_f64(ConfigKey::TransactionsMinAmountUsd)?;
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
         let subscriptions = self.database.client()?.subscriptions().get_subscriptions(chain, addresses)?;

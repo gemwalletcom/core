@@ -57,8 +57,8 @@ impl RewardsClient {
             return Err(RewardsError::Referral("Not eligible for referral rewards".to_string()).into());
         }
 
-        let daily_limit = self.database.client()?.config().get_config_value_i64(ConfigKey::ReferralPerIpDaily)?;
-        let weekly_limit = self.database.client()?.config().get_config_value_i64(ConfigKey::ReferralPerIpWeekly)?;
+        let daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
+        let weekly_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
 
         if !self.ip_security_client.can_use_referral(ip_address, daily_limit, weekly_limit).await? {
             return Err(RewardsError::Referral("Not eligible for referral rewards".to_string()).into());

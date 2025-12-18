@@ -156,7 +156,7 @@ impl FiatClient {
 
     pub async fn get_quotes_old(&self, request: FiatQuoteOldRequest) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
         let asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
-        let validate_subscription = self.database.client()?.config().get_config_value_bool(ConfigKey::FiatValidateSubscription)?;
+        let validate_subscription = self.database.client()?.config().get_config_bool(ConfigKey::FiatValidateSubscription)?;
 
         if validate_subscription {
             let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;

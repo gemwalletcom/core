@@ -20,8 +20,8 @@ impl PriceAlertSender {
     }
 
     pub async fn run_observer(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let price_increase = self.database.client()?.config().get_config_value_f64(ConfigKey::AlerterPriceIncreasePercent)?;
-        let price_decrease = self.database.client()?.config().get_config_value_f64(ConfigKey::AlerterPriceDecreasePercent)?;
+        let price_increase = self.database.client()?.config().get_config_f64(ConfigKey::AlerterPriceIncreasePercent)?;
+        let price_decrease = self.database.client()?.config().get_config_f64(ConfigKey::AlerterPriceDecreasePercent)?;
 
         let rules = PriceAlertRules {
             price_change_increase: price_increase,
