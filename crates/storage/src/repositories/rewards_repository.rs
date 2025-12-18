@@ -46,7 +46,7 @@ pub trait RewardsRepository {
         reason: &str,
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
-    fn add_redemption(&mut self, username: &str, option_id: &str) -> Result<RewardRedemption, DatabaseError>;
+    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
@@ -261,7 +261,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(SubscriptionsStore::get_first_subscription_date(self, addresses)?)
     }
 
-    fn add_redemption(&mut self, username: &str, option_id: &str) -> Result<RewardRedemption, DatabaseError> {
+    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError> {
         let option_row = RewardsStore::get_redemption_option(self, option_id)?;
         let rewards = RewardsStore::get_rewards(self, username)?;
 
@@ -276,6 +276,7 @@ impl RewardsRepository for DatabaseClient {
             NewRewardRedemptionRow {
                 username: username.to_string(),
                 option_id: option_id.to_string(),
+                device_id,
                 status: RedemptionStatus::Pending.as_ref().to_string(),
             },
         )?;

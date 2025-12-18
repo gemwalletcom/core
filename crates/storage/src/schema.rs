@@ -617,6 +617,7 @@ diesel::table! {
         username -> Varchar,
         #[max_length = 64]
         option_id -> Varchar,
+        device_id -> Int4,
         #[max_length = 512]
         transaction_id -> Nullable<Varchar>,
         #[max_length = 32]
@@ -853,6 +854,7 @@ diesel::joinable!(rewards_events -> usernames (username));
 diesel::joinable!(rewards_redemption_options -> assets (asset_id));
 diesel::joinable!(rewards_redemption_options -> rewards_redemptions_types (redemption_type));
 diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
+diesel::joinable!(rewards_redemptions -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));

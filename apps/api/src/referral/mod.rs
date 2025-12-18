@@ -46,5 +46,5 @@ pub async fn redeem_rewards(
     request: Authenticated<RedemptionRequest>,
     client: &State<Mutex<RewardsRedemptionClient>>,
 ) -> Result<ApiResponse<RedemptionResult>, ApiError> {
-    Ok(client.lock().await.redeem(address, &request.data.id).await?.into())
+    Ok(client.lock().await.redeem(address, &request.data.id, request.auth.device.id).await?.into())
 }

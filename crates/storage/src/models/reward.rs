@@ -115,6 +115,7 @@ pub struct RewardRedemptionRow {
     pub id: i32,
     pub username: String,
     pub option_id: String,
+    pub device_id: i32,
     pub transaction_id: Option<String>,
     pub status: String,
     pub error: Option<String>,
@@ -139,6 +140,7 @@ impl RewardRedemptionRow {
 pub struct NewRewardRedemptionRow {
     pub username: String,
     pub option_id: String,
+    pub device_id: i32,
     pub status: String,
 }
 

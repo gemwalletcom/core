@@ -37,10 +37,9 @@ impl RewardsClient {
     }
 
     pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let device = self.database.client()?.get_device(&auth.device_id)?;
         let first_subscription_date = self.database.client()?.rewards().get_first_subscription_date(vec![auth.address.clone()])?;
 
-        let is_new_device = device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
+        let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
         let is_new_subscription = first_subscription_date
             .map(|date| date.is_within_days(REFERRAL_ELIGIBILITY_DAYS))
             .unwrap_or(true);
@@ -56,7 +55,7 @@ impl RewardsClient {
         let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address).await?;
 
         if let Err(err) = self.check_referral_eligibility(ip_address, is_ip_eligible, &country).await {
-            self.add_referral_attempt(code, &auth.address, &country, device.id, &err.to_string())?;
+            self.add_referral_attempt(code, &auth.address, &country, auth.device.id, &err.to_string())?;
             return Err(err);
         }
 
@@ -64,11 +63,11 @@ impl RewardsClient {
             .database
             .client()?
             .rewards()
-            .use_referral_code(&auth.address, code, device.id, invite_event)
+            .use_referral_code(&auth.address, code, auth.device.id, invite_event)
         {
             Ok(ids) => ids,
             Err(err) => {
-                self.add_referral_attempt(code, &auth.address, &country, device.id, &err.to_string())?;
+                self.add_referral_attempt(code, &auth.address, &country, auth.device.id, &err.to_string())?;
                 return Err(err.into());
             }
         };

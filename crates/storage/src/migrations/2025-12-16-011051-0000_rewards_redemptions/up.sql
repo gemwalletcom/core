@@ -19,6 +19,7 @@ CREATE TABLE rewards_redemptions (
     id SERIAL PRIMARY KEY,
     username VARCHAR(64) NOT NULL,
     option_id VARCHAR(64) NOT NULL REFERENCES rewards_redemption_options(id) ON DELETE CASCADE,
+    device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     transaction_id VARCHAR(512),
     status VARCHAR(32) NOT NULL,
     error VARCHAR(1024),
