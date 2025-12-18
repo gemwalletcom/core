@@ -9,6 +9,7 @@ use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, sign_personal as 
 use signer::{SignatureScheme, Signer, hash_eip712};
 use sui_types::PersonalMessage;
 
+use gem_bitcoin::signer::{sign_personal as bitcoin_sign_personal, BitcoinSignMessageData};
 use super::{
     eip712::GemEIP712Message,
     sign_type::{SignDigestType, SignMessage},
@@ -45,6 +46,10 @@ impl MessageSigner {
                 let string = String::from_utf8(self.message.data.clone());
                 let preview = string.unwrap_or(encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
+            }
+            SignDigestType::BitcoinPersonal => {
+                let message = BitcoinSignMessageData::from_bytes(&self.message.data)?;
+                Ok(MessagePreview::Text(message.message))
             }
             SignDigestType::TonPersonal => {
                 let string = String::from_utf8(self.message.data.clone())?;
@@ -88,6 +93,10 @@ impl MessageSigner {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
+            SignDigestType::BitcoinPersonal => {
+                let message = BitcoinSignMessageData::from_bytes(&self.message.data).unwrap_or_default();
+                message.message
+            }
             SignDigestType::Siwe => String::from_utf8(self.message.data.clone()).unwrap_or_else(|_| encode_prefixed(&self.message.data)),
             SignDigestType::Eip712 => {
                 let value: serde_json::Value = serde_json::from_slice(&self.message.data).unwrap_or_default();
@@ -117,6 +126,10 @@ impl MessageSigner {
                 let decoded = bs58::decode(&self.message.data).into_vec().map_err(|e| GemstoneError::from(e.to_string()))?;
                 Ok(decoded)
             }
+            SignDigestType::BitcoinPersonal => {
+                let message = BitcoinSignMessageData::from_bytes(&self.message.data)?;
+                Ok(message.hash())
+            }
         }
     }
 
@@ -134,6 +147,7 @@ impl MessageSigner {
             }
             SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
+            SignDigestType::BitcoinPersonal => hex::encode(data),
         }
     }
 
@@ -167,6 +181,10 @@ impl MessageSigner {
             SignDigestType::Base58 => {
                 let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
+            }
+            SignDigestType::BitcoinPersonal => {
+                let response = bitcoin_sign_personal(&self.message.data, &private_key)?;
+                Ok(response.to_json()?)
             }
         }
     }
