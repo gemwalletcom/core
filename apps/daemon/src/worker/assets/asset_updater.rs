@@ -1,4 +1,4 @@
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use chain_primitives::format_token_id;
 use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, Chain, LinkType};
@@ -7,8 +7,6 @@ use std::error::Error;
 use storage::AssetUpdate;
 use storage::Database;
 use storage::models::price::{NewPriceRow, PriceAssetRow};
-
-const COIN_INFO_CACHE_TTL_SECONDS: i64 = 30 * 86400;
 
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -69,16 +67,11 @@ impl AssetUpdater {
     }
 
     async fn get_coin_info_cached(&self, coin_id: &str) -> Result<CoinInfo, Box<dyn Error + Send + Sync>> {
-        let cache_key = format!("pricer::coin_info::{}", coin_id);
-        let coin_id = coin_id.to_string();
+        let coin_id_owned = coin_id.to_string();
         let client = self.coin_gecko_client.clone();
 
         self.cacher
-            .get_or_set_value(
-                &cache_key,
-                || async move { client.get_coin(&coin_id).await },
-                Some(COIN_INFO_CACHE_TTL_SECONDS as u64),
-            )
+            .get_or_set_cached(CacheKey::PricerCoinInfo(coin_id), || async move { client.get_coin(&coin_id_owned).await })
             .await
     }
 

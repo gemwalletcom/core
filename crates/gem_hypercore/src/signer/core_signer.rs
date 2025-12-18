@@ -223,7 +223,15 @@ impl HyperCoreSigner {
             (None, None) => None,
             _ => {
                 let is_market = data.autoclose_order_type == PerpetualOrderType::Market;
-                let order = make_position_tp_sl(asset, is_buy, "0", data.take_profit.clone(), data.stop_loss.clone(), builder.cloned(), is_market);
+                let order = make_position_tp_sl(
+                    asset,
+                    is_buy,
+                    "0",
+                    data.take_profit.clone(),
+                    data.stop_loss.clone(),
+                    builder.cloned(),
+                    is_market,
+                );
                 Some(self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)?)
             }
         };

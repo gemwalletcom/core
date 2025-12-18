@@ -1,14 +1,10 @@
 use std::error::Error;
 
 use alloy_primitives::hex;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use sha2::{Digest, Sha256};
 
 use crate::abuseipdb_client::{AbuseIPDBClient, AbuseIPDBData};
-
-const IP_CHECK_CACHE_TTL_SECONDS: u64 = 30 * 24 * 60 * 60; // 30 days
-const SECONDS_PER_DAY: i64 = 24 * 60 * 60;
-const SECONDS_PER_WEEK: i64 = 7 * SECONDS_PER_DAY;
 
 #[derive(Clone)]
 pub struct IpSecurityClient {
@@ -23,13 +19,10 @@ impl IpSecurityClient {
 
     pub async fn check_ip(&self, ip_address: &str) -> Result<AbuseIPDBData, Box<dyn Error + Send + Sync>> {
         let ip_hash = hash_ip(ip_address);
-
         self.cacher
-            .get_or_set_value(
-                &ip_check_key(&ip_hash),
-                || async { self.abuseipdb_client.check_ip(ip_address).await },
-                Some(IP_CHECK_CACHE_TTL_SECONDS),
-            )
+            .get_or_set_cached(CacheKey::ReferralIpCheck(&ip_hash), || async {
+                self.abuseipdb_client.check_ip(ip_address).await
+            })
             .await
     }
 
@@ -41,11 +34,11 @@ impl IpSecurityClient {
     pub async fn check_rate_limits(&self, ip_address: &str, daily_limit: i64, weekly_limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
         let ip_hash = hash_ip(ip_address);
 
-        if self.cacher.get_counter(&daily_key(&ip_hash)).await? >= daily_limit {
+        if self.cacher.get_cached_counter(CacheKey::ReferralDailyLimit(&ip_hash)).await? >= daily_limit {
             return Err(crate::RewardsError::Referral("Daily limit exceeded".to_string()).into());
         }
 
-        if self.cacher.get_counter(&weekly_key(&ip_hash)).await? >= weekly_limit {
+        if self.cacher.get_cached_counter(CacheKey::ReferralWeeklyLimit(&ip_hash)).await? >= weekly_limit {
             return Err(crate::RewardsError::Referral("Weekly limit exceeded".to_string()).into());
         }
 
@@ -54,8 +47,8 @@ impl IpSecurityClient {
 
     pub async fn record_referral_usage(&self, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let ip_hash = hash_ip(ip_address);
-        self.cacher.increment_with_ttl(&daily_key(&ip_hash), SECONDS_PER_DAY).await?;
-        self.cacher.increment_with_ttl(&weekly_key(&ip_hash), SECONDS_PER_WEEK).await?;
+        self.cacher.increment_cached(CacheKey::ReferralDailyLimit(&ip_hash)).await?;
+        self.cacher.increment_cached(CacheKey::ReferralWeeklyLimit(&ip_hash)).await?;
         Ok(())
     }
 }
@@ -65,18 +58,6 @@ fn hash_ip(ip_address: &str) -> String {
     hasher.update(ip_address.as_bytes());
     let result = hasher.finalize();
     hex::encode(&result[..])
-}
-
-fn ip_check_key(ip_hash: &str) -> String {
-    format!("referral:ip_check:{}", ip_hash)
-}
-
-fn daily_key(ip_hash: &str) -> String {
-    format!("referral:ip_daily:{}", ip_hash)
-}
-
-fn weekly_key(ip_hash: &str) -> String {
-    format!("referral:ip_weekly:{}", ip_hash)
 }
 
 #[cfg(test)]

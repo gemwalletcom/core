@@ -3,7 +3,7 @@ use tokio::sync::Mutex;
 
 use ::nft::NFTClient;
 use async_trait::async_trait;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use storage::Database;
 use streamer::{ChainAddressPayload, StreamProducer, consumer::MessageConsumer};
 
@@ -31,10 +31,7 @@ impl FetchNftAssetsAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchNftAssetsAddressesConsumer {
     async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now(
-                &format!("fetch_nft_assets_addresses:{}:{}", payload.value.chain, payload.value.address),
-                30 * 86400,
-            )
+            .can_process_cached(CacheKey::FetchNftAssetsAddresses(&payload.value.chain.to_string(), &payload.value.address))
             .await
     }
 

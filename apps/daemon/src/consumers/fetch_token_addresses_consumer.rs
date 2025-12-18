@@ -3,7 +3,7 @@ use primitives::{AssetId, AssetIdVecExt, AssetVecExt};
 use std::error::Error;
 
 use async_trait::async_trait;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use settings_chain::ChainProviders;
 use storage::Database;
 use storage::models::AssetAddressRow;
@@ -31,7 +31,7 @@ impl FetchTokenAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer {
     async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now(&format!("fetch_token_addresses:{}:{}", payload.value.chain, payload.value.address), 30 * 86400)
+            .can_process_cached(CacheKey::FetchTokenAddresses(&payload.value.chain.to_string(), &payload.value.address))
             .await
     }
 

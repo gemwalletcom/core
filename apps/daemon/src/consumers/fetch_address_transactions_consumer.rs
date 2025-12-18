@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use primitives::{Chain, Transaction};
 use settings_chain::ChainProviders;
 use storage::Database;
@@ -36,10 +36,7 @@ impl FetchAddressTransactionsConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAddressTransactionsConsumer {
     async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now(
-                &format!("fetch_address_transactions:{}:{}", payload.value.chain, payload.value.address),
-                30 * 86400,
-            )
+            .can_process_cached(CacheKey::FetchAddressTransactions(&payload.value.chain.to_string(), &payload.value.address))
             .await
     }
     async fn process(&self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
