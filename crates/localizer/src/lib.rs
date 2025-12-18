@@ -4,7 +4,6 @@ use i18n_embed::{
     DefaultLocalizer, LanguageLoader, Localizer, RustEmbedNotifyAssets,
     fluent::{FluentLanguageLoader, fluent_language_loader},
 };
-use i18n_embed_fl::fl;
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]

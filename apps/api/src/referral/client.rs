@@ -1,23 +1,24 @@
-use crate::auth::VerifiedAuth;
-use gem_rewards::{AbuseIPDBClient, RewardsError};
-use primitives::{NaiveDateTimeExt, RewardEvent, RewardEventType, Rewards};
+use gem_rewards::{IpSecurityClient, RewardsError};
+use primitives::{ConfigKey, NaiveDateTimeExt, RewardEvent, RewardEventType, Rewards};
 use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
+
+use crate::auth::VerifiedAuth;
 
 const REFERRAL_ELIGIBILITY_DAYS: i64 = 7;
 
 pub struct RewardsClient {
     database: Database,
     stream_producer: StreamProducer,
-    abuseipdb_client: AbuseIPDBClient,
+    ip_security_client: IpSecurityClient,
 }
 
 impl RewardsClient {
-    pub fn new(database: Database, stream_producer: StreamProducer, abuseipdb_client: AbuseIPDBClient) -> Self {
+    pub fn new(database: Database, stream_producer: StreamProducer, ip_security_client: IpSecurityClient) -> Self {
         Self {
             database,
             stream_producer,
-            abuseipdb_client,
+            ip_security_client,
         }
     }
 
@@ -52,7 +53,14 @@ impl RewardsClient {
             RewardEventType::InviteExisting
         };
 
-        if !self.is_eligible(ip_address).await? {
+        if !self.ip_security_client.is_eligible(ip_address).await? {
+            return Err(RewardsError::Referral("Not eligible for referral rewards".to_string()).into());
+        }
+
+        let daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
+        let weekly_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
+
+        if !self.ip_security_client.can_use_referral(ip_address, daily_limit, weekly_limit).await? {
             return Err(RewardsError::Referral("Not eligible for referral rewards".to_string()).into());
         }
 
@@ -61,13 +69,10 @@ impl RewardsClient {
             .client()?
             .rewards()
             .use_referral_code(&auth.address, code, device.id, invite_event)?;
+
+        self.ip_security_client.record_referral_usage(ip_address).await?;
         self.publish_events(event_ids).await?;
         Ok(())
-    }
-
-    async fn is_eligible(&self, ip_address: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
-        let ip_data = self.abuseipdb_client.check_ip(ip_address).await?;
-        Ok(!ip_data.is_suspicious())
     }
 
     async fn publish_events(&self, event_ids: Vec<i32>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

@@ -22,6 +22,7 @@ pub use assets_addresses_consumer::AssetsAddressesConsumer;
 use cacher::CacherClient;
 pub use fetch_assets_consumer::FetchAssetsConsumer;
 use pricer::PriceClient;
+use primitives::ConfigKey;
 use settings::Settings;
 use settings_chain::ChainProviders;
 use storage::Database;
@@ -78,9 +79,7 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Datab
         database,
         stream_producer,
         pusher,
-        config: StoreTransactionsConsumerConfig {
-            min_transaction_amount_usd: settings.daemon.transactions.amount.min,
-        },
+        config: StoreTransactionsConsumerConfig {},
     };
     streamer::run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
 }
@@ -183,7 +182,7 @@ pub async fn run_consumer_store_prices(settings: Settings, database: Database) -
     let stream_reader = StreamReader::new(config).await?;
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(database.clone(), cacher_client);
-    let ttl_seconds = settings.pricer.outdated as i64;
+    let ttl_seconds = database.client()?.config().get_config_duration(ConfigKey::PricerOutdated)?.as_secs() as i64;
     let consumer = StorePricesConsumer::new(database, price_client, ttl_seconds);
     streamer::run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
 }

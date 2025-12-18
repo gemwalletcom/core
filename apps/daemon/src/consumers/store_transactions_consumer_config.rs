@@ -2,9 +2,7 @@ use chrono::{Duration, NaiveDateTime, Utc};
 use number_formatter::BigNumberFormatter;
 use primitives::{Asset, Chain, Price, Transaction, TransactionType};
 
-pub struct StoreTransactionsConsumerConfig {
-    pub min_transaction_amount_usd: f64,
-}
+pub struct StoreTransactionsConsumerConfig {}
 
 impl StoreTransactionsConsumerConfig {
     pub fn is_transaction_outdated(&self, transaction_created_at: NaiveDateTime, chain: Chain) -> bool {
@@ -37,9 +35,7 @@ mod tests {
 
     impl StoreTransactionsConsumerConfig {
         fn mock() -> Self {
-            Self {
-                min_transaction_amount_usd: 0.05,
-            }
+            Self {}
         }
     }
 

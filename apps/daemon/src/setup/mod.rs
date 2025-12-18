@@ -2,13 +2,13 @@ use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::rewards::RewardRedemptionType;
 use primitives::{
-    AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, RewardEventType, Subscription,
+    AddressType, Asset, AssetTag, AssetType, Chain, ConfigKey, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, RewardEventType, Subscription,
     TransactionType,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{FiatRateRow, RewardEventTypeRow, RewardRedemptionTypeRow, UpdateDeviceRow};
+use storage::models::{ConfigRow, FiatRateRow, RewardEventTypeRow, RewardRedemptionTypeRow, UpdateDeviceRow};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -106,6 +106,10 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
         .map(RewardRedemptionTypeRow::from_primitive)
         .collect::<Vec<_>>();
     let _ = database.client()?.reward_redemption_types().add_reward_redemption_types(redemption_types);
+
+    info_with_fields!("setup", step = "config");
+    let configs = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect::<Vec<_>>();
+    let _ = database.client()?.config().add_config(configs);
 
     info_with_fields!(
         "setup",
