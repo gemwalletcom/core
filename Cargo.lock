@@ -3320,6 +3320,7 @@ name = "gem_rewards"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
+ "cacher",
  "chain_traits",
  "gem_client",
  "gem_evm",
@@ -3328,6 +3329,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "sha2",
  "storage",
  "tokio",
 ]
