@@ -35,6 +35,8 @@ pub use self::price_feed::{PriceFeedId, PriceFeedProvider};
 pub mod asset;
 pub mod config;
 pub use self::config::{ConfigResponse, ConfigVersions, Release, SwapConfig};
+pub mod config_key;
+pub use self::config_key::ConfigKey;
 pub mod currency;
 pub use self::asset::{Asset, AssetVecExt};
 pub mod asset_id;

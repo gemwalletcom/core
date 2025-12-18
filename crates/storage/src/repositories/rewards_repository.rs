@@ -250,10 +250,7 @@ impl RewardsRepository for DatabaseClient {
             },
         )?;
 
-        let asset = option_row
-            .asset_id
-            .as_ref()
-            .and_then(|id| AssetsRepository::get_asset(self, id).ok());
+        let asset = option_row.asset_id.as_ref().and_then(|id| AssetsRepository::get_asset(self, id).ok());
         let option = option_row.as_primitive(asset);
 
         let redemption_row = RewardsStore::get_redemption(self, redemption_id)?;

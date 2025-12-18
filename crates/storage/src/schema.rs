@@ -114,6 +114,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    config (key) {
+        #[max_length = 64]
+        key -> Varchar,
+        #[max_length = 256]
+        value -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     devices (id) {
         id -> Int4,
         #[max_length = 32]
@@ -847,6 +858,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     charts,
     charts_daily,
     charts_hourly,
+    config,
     devices,
     fiat_assets,
     fiat_providers,

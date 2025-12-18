@@ -3,6 +3,7 @@ pub mod asset_address;
 pub mod asset_type;
 pub mod chain;
 pub mod chart;
+pub mod config;
 pub mod device;
 pub mod fiat;
 pub mod link;
@@ -31,6 +32,7 @@ pub use self::asset_address::AssetAddressRow;
 pub use self::asset_type::AssetTypeRow;
 pub use self::chain::ChainRow;
 pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};
+pub use self::config::ConfigRow;
 pub use self::device::{DeviceRow, UpdateDeviceRow};
 pub use self::fiat::{
     FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow,
@@ -48,8 +50,8 @@ pub use self::price_alert::{NewPriceAlertRow, PriceAlertRow};
 pub use self::price_dex::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};
 pub use self::release::ReleaseRow;
 pub use self::reward::{
-    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RedemptionOptionFull, RewardEventRow, RewardEventTypeRow,
-    RewardLevelTypeRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
+    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RedemptionOptionFull, RewardEventRow, RewardEventTypeRow, RewardLevelTypeRow,
+    RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
 };
 pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow, ScanAddressTypeRow};
 pub use self::subscription::{SubscriptionAddressExcludeRow, SubscriptionRow};
