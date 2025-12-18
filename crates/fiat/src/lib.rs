@@ -12,26 +12,10 @@ pub use provider::FiatProvider;
 
 use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, PaybisClient, TransakClient};
 use settings::Settings;
-use std::time::Duration;
 
 pub use client::FiatClient;
 pub use fiat_cacher_client::{CachedFiatQuoteData, FiatCacherClient};
 pub use ip_check_client::{IPAddressInfo, IPCheckClient};
-
-#[derive(Debug, Clone)]
-pub struct FiatConfig {
-    pub timeout: Duration,
-    pub validate_subscription: bool,
-}
-
-impl FiatConfig {
-    pub fn new(timeout: Duration, validate_subscription: bool) -> Self {
-        Self {
-            timeout,
-            validate_subscription,
-        }
-    }
-}
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 pub mod testkit;

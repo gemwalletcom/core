@@ -4,8 +4,29 @@ use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString, EnumIter, PartialEq, Eq, Hash)]
 #[strum(serialize_all = "camelCase")]
 pub enum ConfigKey {
+    // Referral
     ReferralPerIpDaily,
     ReferralPerIpWeekly,
+
+    // Fiat
+    FiatValidateSubscription,
+
+    // Transactions
+    TransactionsMinAmountUsd,
+
+    // Alerter
+    AlerterPriceIncreasePercent,
+    AlerterPriceDecreasePercent,
+    AlerterInterval,
+
+    // Pricer
+    PricerTimer,
+    PricerOutdated,
+
+    // Search
+    SearchAssetsUpdateInterval,
+    SearchPerpetualsUpdateInterval,
+    SearchNftsUpdateInterval,
 }
 
 impl ConfigKey {
@@ -17,6 +38,16 @@ impl ConfigKey {
         match self {
             Self::ReferralPerIpDaily => "3",
             Self::ReferralPerIpWeekly => "10",
+            Self::FiatValidateSubscription => "false",
+            Self::TransactionsMinAmountUsd => "0.05",
+            Self::AlerterPriceIncreasePercent => "8.0",
+            Self::AlerterPriceDecreasePercent => "10.0",
+            Self::AlerterInterval => "60s",
+            Self::PricerTimer => "60s",
+            Self::PricerOutdated => "7d",
+            Self::SearchAssetsUpdateInterval => "30m",
+            Self::SearchPerpetualsUpdateInterval => "30m",
+            Self::SearchNftsUpdateInterval => "30m",
         }
     }
 }

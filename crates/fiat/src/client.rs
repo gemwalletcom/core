@@ -5,15 +5,15 @@ use std::error::Error;
 use std::time::Duration;
 
 use crate::{
-    CachedFiatQuoteData, FiatCacherClient, FiatConfig, FiatProvider, IPCheckClient,
+    CachedFiatQuoteData, FiatCacherClient, FiatProvider, IPCheckClient,
     error::FiatQuoteError,
     ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
 };
 use futures::future::join_all;
 use primitives::{
-    Asset, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteOldRequest,
-    FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
+    Asset, ConfigKey, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError,
+    FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
 };
 use reqwest::Client as RequestClient;
 use storage::{AssetFilter, Database};
@@ -26,7 +26,6 @@ pub struct FiatClient {
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ip_check_client: IPCheckClient,
     stream_producer: StreamProducer,
-    config: FiatConfig,
 }
 
 impl FiatClient {
@@ -36,7 +35,6 @@ impl FiatClient {
         providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
         ip_check_client: IPCheckClient,
         stream_producer: StreamProducer,
-        config: FiatConfig,
     ) -> Self {
         Self {
             database,
@@ -45,7 +43,6 @@ impl FiatClient {
             providers,
             ip_check_client,
             stream_producer,
-            config,
         }
     }
 
@@ -159,8 +156,9 @@ impl FiatClient {
 
     pub async fn get_quotes_old(&self, request: FiatQuoteOldRequest) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
         let asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
+        let validate_subscription = self.database.client()?.config().get_config_value_bool(ConfigKey::FiatValidateSubscription)?;
 
-        if self.config.validate_subscription {
+        if validate_subscription {
             let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;
             if !is_subscribed {
                 let error = FiatQuoteError::AddressNotSubscribed(request.wallet_address.to_string());

@@ -51,15 +51,15 @@ pub async fn main() {
 
 async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
     let services = match service {
-        WorkerService::Alerter => worker::alerter::jobs(settings).await,
-        WorkerService::Pricer => worker::pricer::jobs(settings).await,
+        WorkerService::Alerter => worker::alerter::jobs(settings).await.unwrap(),
+        WorkerService::Pricer => worker::pricer::jobs(settings).await.unwrap(),
         WorkerService::PricesDex => worker::prices_dex::jobs(settings).await,
         WorkerService::Fiat => worker::fiat::jobs(settings).await,
         WorkerService::Assets => worker::assets::jobs(settings).await,
         WorkerService::Version => worker::version::jobs(settings).await,
         WorkerService::Transaction => worker::transaction::jobs(settings).await,
         WorkerService::Device => worker::device::jobs(settings).await,
-        WorkerService::Search => worker::search::jobs(settings).await,
+        WorkerService::Search => worker::search::jobs(settings).await.unwrap(),
         WorkerService::Nft => worker::nft::jobs(settings).await,
         WorkerService::Scan => worker::scan::jobs(settings).await,
     };

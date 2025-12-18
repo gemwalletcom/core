@@ -27,7 +27,6 @@ mod websocket_prices;
 use std::{str::FromStr, sync::Arc};
 
 use ::fiat::FiatClient;
-use ::fiat::FiatConfig;
 use ::nft::{NFTClient, NFTProviderConfig};
 use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
@@ -90,14 +89,12 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let swap_client = SwapClient::new(database.clone());
     let providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
-    let fiat_config = FiatConfig::new(settings_clone.fiat.timeout, settings_clone.fiat.validate.subscription);
     let fiat_client = FiatClient::new(
         database.clone(),
         cacher_client.clone(),
         providers,
         ip_check_client.clone(),
         stream_producer.clone(),
-        fiat_config,
     );
     let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client);
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
