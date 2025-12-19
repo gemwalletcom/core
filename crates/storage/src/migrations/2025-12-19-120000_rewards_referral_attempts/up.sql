@@ -4,6 +4,7 @@ CREATE TABLE rewards_referral_attempts (
     referred_address VARCHAR(256) NOT NULL,
     country_code VARCHAR(2) NOT NULL,
     device_id INTEGER NOT NULL REFERENCES devices(id),
+    referred_ip_address VARCHAR(45) NOT NULL,
     reason VARCHAR(256) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

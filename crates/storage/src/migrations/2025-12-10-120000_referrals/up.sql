@@ -30,6 +30,7 @@ CREATE TABLE rewards_referrals (
     referrer_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
     referred_username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE UNIQUE,
     referred_device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    referred_ip_address VARCHAR(45) NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

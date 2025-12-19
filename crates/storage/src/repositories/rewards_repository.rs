@@ -37,13 +37,14 @@ pub trait RewardsRepository {
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
     fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
-    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
+    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, ip_address: &str, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
         referred_address: &str,
         country_code: &str,
         device_id: i32,
+        ip_address: &str,
         reason: &str,
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
@@ -155,7 +156,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(RewardsStore::get_rewards(self, code).is_ok())
     }
 
-    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError> {
+    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, ip_address: &str, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError> {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
         let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
 
@@ -214,6 +215,7 @@ impl RewardsRepository for DatabaseClient {
                 referrer_username: referral_code.to_string(),
                 referred_username: referred.username.clone(),
                 referred_device_id: device_id,
+                referred_ip_address: ip_address.to_string(),
             },
         )?;
 
@@ -244,6 +246,7 @@ impl RewardsRepository for DatabaseClient {
         referred_address: &str,
         country_code: &str,
         device_id: i32,
+        ip_address: &str,
         reason: &str,
     ) -> Result<(), DatabaseError> {
         RewardsStore::add_referral_attempt(
@@ -253,6 +256,7 @@ impl RewardsRepository for DatabaseClient {
                 referred_address: referred_address.to_string(),
                 country_code: country_code.to_string(),
                 device_id,
+                referred_ip_address: ip_address.to_string(),
                 reason: reason.to_string(),
             },
         )?;
@@ -269,6 +273,10 @@ impl RewardsRepository for DatabaseClient {
 
         if rewards.points < option_row.points {
             return Err(DatabaseError::Internal("Not enough points".into()));
+        }
+
+        if option_row.remaining == Some(0) {
+            return Err(DatabaseError::Internal("Redemption option is no longer available".into()));
         }
 
         let redemption_id = RewardsStore::add_redemption(

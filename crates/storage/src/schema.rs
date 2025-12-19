@@ -646,6 +646,8 @@ diesel::table! {
         #[max_length = 2]
         country_code -> Varchar,
         device_id -> Int4,
+        #[max_length = 45]
+        referred_ip_address -> Varchar,
         #[max_length = 256]
         reason -> Varchar,
         created_at -> Timestamp,
@@ -660,6 +662,8 @@ diesel::table! {
         #[max_length = 64]
         referred_username -> Varchar,
         referred_device_id -> Int4,
+        #[max_length = 45]
+        referred_ip_address -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

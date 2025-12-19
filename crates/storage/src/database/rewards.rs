@@ -172,7 +172,7 @@ impl RewardsStore for DatabaseClient {
         }
 
         self.connection.transaction(|conn| {
-            diesel::update(
+            let rows_updated = diesel::update(
                 rewards_redemption_options::table.filter(
                     rewards_redemption_options::id
                         .eq(&redemption.option_id)
@@ -180,8 +180,11 @@ impl RewardsStore for DatabaseClient {
                 ),
             )
             .set(rewards_redemption_options::remaining.eq(rewards_redemption_options::remaining - 1))
-            .returning(rewards_redemption_options::id)
-            .get_result::<String>(conn)?;
+            .execute(conn)?;
+
+            if rows_updated == 0 {
+                return Err(diesel::result::Error::NotFound);
+            }
 
             diesel::update(rewards::table.filter(rewards::username.eq(username).and(rewards::points.ge(points))))
                 .set(rewards::points.eq(rewards::points - points))
