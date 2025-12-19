@@ -32,6 +32,7 @@ pub trait RewardsRepository {
     fn get_reward_event(&mut self, event_id: i32) -> Result<RewardEvent, DatabaseError>;
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
+    fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
     fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, ip_address: &str, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
     fn add_referral_attempt(
@@ -146,6 +147,33 @@ impl RewardsRepository for DatabaseClient {
 
         let rewards = self.get_reward_by_address(address)?;
         Ok((rewards, event_id))
+    }
+
+    fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError> {
+        validate_username(new_username)?;
+
+        let existing = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+
+        if !has_custom_username(&existing.username, &existing.address) {
+            return Err(DatabaseError::Internal("No custom username to change".into()));
+        }
+
+        if existing.username.eq_ignore_ascii_case(new_username) {
+            return Err(DatabaseError::Internal("New username is the same as current".into()));
+        }
+
+        if UsernamesStore::username_exists(self, UsernameLookup::Username(new_username))? {
+            return Err(DatabaseError::Internal("Username already taken".into()));
+        }
+
+        let rewards = RewardsStore::get_rewards(self, &existing.username)?;
+        if !rewards.is_enabled {
+            return Err(DatabaseError::Internal("Rewards are not enabled for this user".into()));
+        }
+
+        UsernamesStore::change_username(self, &existing.username, new_username)?;
+
+        self.get_reward_by_address(address)
     }
 
     fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError> {

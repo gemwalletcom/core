@@ -1,6 +1,6 @@
 CREATE TABLE rewards_referral_attempts (
     id SERIAL PRIMARY KEY,
-    referrer_username VARCHAR(64) NOT NULL REFERENCES rewards(username),
+    referrer_username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON UPDATE CASCADE ON DELETE CASCADE,
     referred_address VARCHAR(256) NOT NULL,
     country_code VARCHAR(2) NOT NULL,
     device_id INTEGER NOT NULL REFERENCES devices(id),

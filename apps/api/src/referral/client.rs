@@ -40,6 +40,10 @@ impl RewardsClient {
         Ok(rewards)
     }
 
+    pub fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self.database.client()?.rewards().change_username(address, new_username)?)
+    }
+
     pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if !self.database.client()?.rewards().referral_code_exists(code)? {
             return Err(RewardsError::Referral("Referral code does not exist".to_string()).into());
