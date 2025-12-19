@@ -37,6 +37,10 @@ impl RewardsClient {
     }
 
     pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if !self.database.client()?.rewards().referral_code_exists(code)? {
+            return Err(RewardsError::Referral("Referral code does not exist".to_string()).into());
+        }
+
         let first_subscription_date = self.database.client()?.rewards().get_first_subscription_date(vec![auth.address.clone()])?;
 
         let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);

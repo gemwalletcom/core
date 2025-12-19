@@ -36,6 +36,7 @@ pub trait RewardsRepository {
     fn get_reward_event(&mut self, event_id: i32) -> Result<RewardEvent, DatabaseError>;
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
+    fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
     fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
     fn add_referral_attempt(
         &mut self,
@@ -150,10 +151,11 @@ impl RewardsRepository for DatabaseClient {
         Ok((rewards, event_id))
     }
 
+    fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError> {
+        Ok(RewardsStore::get_rewards(self, code).is_ok())
+    }
+
     fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError> {
-        if !UsernamesStore::username_exists(self, UsernameLookup::Username(referral_code))? {
-            return Err(DatabaseError::Internal("Referral code does not exist".into()));
-        }
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
         let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
 
