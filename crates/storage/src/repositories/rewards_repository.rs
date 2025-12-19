@@ -1,11 +1,7 @@
 use crate::database::rewards::{RedemptionUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{
-    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, ReferralAttemptRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardsRow,
-    UsernameRow,
-};
-use crate::repositories::assets_repository::AssetsRepository;
+use crate::models::{NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, ReferralAttemptRow, RewardRedemptionRow, RewardsRow, UsernameRow};
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
@@ -53,7 +49,7 @@ pub trait RewardsRepository {
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
     fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOptionRow, DatabaseError>;
+    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -268,21 +264,21 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError> {
-        let option_row = RewardsStore::get_redemption_option(self, option_id)?;
+        let redemption_option = RewardsStore::get_redemption_option(self, option_id)?;
         let rewards = RewardsStore::get_rewards(self, username)?;
 
-        if rewards.points < option_row.points {
+        if rewards.points < redemption_option.option.points {
             return Err(DatabaseError::Internal("Not enough points".into()));
         }
 
-        if option_row.remaining == Some(0) {
+        if redemption_option.option.remaining == Some(0) {
             return Err(DatabaseError::Internal("Redemption option is no longer available".into()));
         }
 
         let redemption_id = RewardsStore::add_redemption(
             self,
             username,
-            option_row.points,
+            redemption_option.option.points,
             NewRewardRedemptionRow {
                 username: username.to_string(),
                 option_id: option_id.to_string(),
@@ -291,9 +287,7 @@ impl RewardsRepository for DatabaseClient {
             },
         )?;
 
-        let asset = option_row.asset_id.as_ref().and_then(|id| AssetsRepository::get_asset(self, id).ok());
-        let option = option_row.as_primitive(asset);
-
+        let option = redemption_option.as_primitive();
         let redemption_row = RewardsStore::get_redemption(self, redemption_id)?;
         Ok(redemption_row.as_primitive(option))
     }
@@ -316,8 +310,8 @@ impl RewardsRepository for DatabaseClient {
         Ok(results.into_iter().map(|r| r.as_primitive()).collect())
     }
 
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOptionRow, DatabaseError> {
-        Ok(RewardsStore::get_redemption_option(self, id)?)
+    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError> {
+        Ok(RewardsStore::get_redemption_option(self, id)?.as_primitive())
     }
 }
 

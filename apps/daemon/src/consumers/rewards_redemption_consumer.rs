@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use gem_rewards::{RedemptionAsset, RedemptionRequest, RedemptionService};
-use primitives::AssetId;
 use primitives::rewards::RedemptionStatus;
 use std::error::Error;
 use std::sync::Arc;
@@ -36,12 +35,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
         let recipient_address = client.rewards().get_address_by_username(&redemption.username)?;
         let option = client.rewards().get_redemption_option(&redemption.option_id)?;
 
-        let asset = option.asset_id.as_ref().and_then(|asset_id_str| {
-            AssetId::new(asset_id_str).map(|asset_id| RedemptionAsset {
-                asset_id,
-                amount: option.value.clone(),
-            })
-        });
+        let asset = option.asset.map(|asset| RedemptionAsset { asset, value: option.value.clone() });
 
         let request = RedemptionRequest { recipient_address, asset };
 

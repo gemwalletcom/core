@@ -1,9 +1,9 @@
-use primitives::AssetId;
+use primitives::Asset;
 use std::error::Error;
 
 pub struct RedemptionAsset {
-    pub asset_id: AssetId,
-    pub amount: String,
+    pub asset: Asset,
+    pub value: String,
 }
 
 pub struct RedemptionRequest {
