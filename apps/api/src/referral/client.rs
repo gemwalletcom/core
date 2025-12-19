@@ -23,7 +23,11 @@ impl RewardsClient {
     }
 
     pub fn get_rewards(&mut self, address: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.database.client()?.rewards().get_reward_by_address(address)?)
+        match self.database.client()?.rewards().get_reward_by_address(address) {
+            Ok(rewards) => Ok(rewards),
+            Err(storage::DatabaseError::NotFound) => Ok(Rewards::default()),
+            Err(e) => Err(e.into()),
+        }
     }
 
     pub fn get_rewards_events(&mut self, address: &str) -> Result<Vec<RewardEvent>, Box<dyn std::error::Error + Send + Sync>> {

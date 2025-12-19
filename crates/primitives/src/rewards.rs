@@ -70,6 +70,19 @@ pub struct Rewards {
     //pub level: Option<RewardLevel>,
 }
 
+impl Default for Rewards {
+    fn default() -> Self {
+        Self {
+            code: None,
+            referral_count: 0,
+            points: 0,
+            used_referral_code: None,
+            is_enabled: false,
+            redemption_options: vec![],
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
