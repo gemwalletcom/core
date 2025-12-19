@@ -1,4 +1,4 @@
-use crate::{Asset, Chain, PerpetualConfirmData, PerpetualDirection, PerpetualOrderType};
+use crate::{Asset, Chain, PerpetualConfirmData, PerpetualDirection};
 
 impl PerpetualConfirmData {
     pub fn mock(direction: PerpetualDirection, asset_index: u32, take_profit: Option<String>, stop_loss: Option<String>) -> Self {
@@ -17,7 +17,6 @@ impl PerpetualConfirmData {
             margin_amount: 50.0,
             take_profit,
             stop_loss,
-            autoclose_order_type: PerpetualOrderType::Market,
         }
     }
 }
