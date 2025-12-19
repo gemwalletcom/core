@@ -36,7 +36,7 @@ impl FetchAddressTransactionsConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchAddressTransactionsConsumer {
     async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_cached(CacheKey::FetchAddressTransactions(&payload.value.chain.to_string(), &payload.value.address))
+            .can_process_cached(CacheKey::FetchAddressTransactions(payload.value.chain.as_ref(), &payload.value.address))
             .await
     }
     async fn process(&self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {

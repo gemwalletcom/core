@@ -24,7 +24,7 @@ impl FetchCoinAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer {
     async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_cached(CacheKey::FetchCoinAddresses(&payload.value.chain.to_string(), &payload.value.address))
+            .can_process_cached(CacheKey::FetchCoinAddresses(payload.value.chain.as_ref(), &payload.value.address))
             .await
     }
 
