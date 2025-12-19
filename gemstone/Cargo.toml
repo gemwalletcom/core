@@ -63,7 +63,6 @@ futures.workspace = true
 bs58 = { workspace = true }
 url = { workspace = true }
 zeroize = "1.8"
-sha2 = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

@@ -89,13 +89,9 @@ impl MessageSigner {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal => match self.preview() {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal | SignDigestType::BitcoinPersonal => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
-            },
-            SignDigestType::BitcoinPersonal => {
-                let message = BitcoinSignMessageData::from_bytes(&self.message.data).unwrap_or_default();
-                message.message
             }
             SignDigestType::Siwe => String::from_utf8(self.message.data.clone()).unwrap_or_else(|_| encode_prefixed(&self.message.data)),
             SignDigestType::Eip712 => {
@@ -126,10 +122,7 @@ impl MessageSigner {
                 let decoded = bs58::decode(&self.message.data).into_vec().map_err(|e| GemstoneError::from(e.to_string()))?;
                 Ok(decoded)
             }
-            SignDigestType::BitcoinPersonal => {
-                let message = BitcoinSignMessageData::from_bytes(&self.message.data)?;
-                Ok(message.hash())
-            }
+            SignDigestType::BitcoinPersonal => Ok(BitcoinSignMessageData::from_bytes(&self.message.data)?.hash())
         }
     }
 
@@ -182,10 +175,7 @@ impl MessageSigner {
                 let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
             }
-            SignDigestType::BitcoinPersonal => {
-                let response = bitcoin_sign_personal(&self.message.data, &private_key)?;
-                Ok(response.to_json()?)
-            }
+            SignDigestType::BitcoinPersonal => Ok(bitcoin_sign_personal(&self.message.data, &private_key)?.to_json()?)
         }
     }
 }

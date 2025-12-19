@@ -31,25 +31,16 @@ mod tests {
 
     #[test]
     fn test_sign_bitcoin_personal() {
-        let btc_data = BitcoinSignMessageData::new("Hello Bitcoin".to_string(), "bc1qtest".to_string());
-        let data = btc_data.to_bytes();
-
-        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").expect("valid hex");
-
-        let response = sign_personal(&data, &private_key).expect("signing succeeds");
-        let json = response.to_json().unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
-
+        let data = BitcoinSignMessageData::new("Hello Bitcoin".to_string(), "bc1qtest".to_string()).to_bytes();
+        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&sign_personal(&data, &private_key).unwrap().to_json().unwrap()).unwrap();
         assert_eq!(parsed["address"], "bc1qtest");
         assert!(!parsed["signature"].as_str().unwrap().is_empty());
     }
 
     #[test]
     fn test_sign_bitcoin_personal_rejects_invalid_key() {
-        let btc_data = BitcoinSignMessageData::new("Hello Bitcoin".to_string(), "bc1qtest".to_string());
-        let data = btc_data.to_bytes();
-
-        let result = sign_personal(&data, &[0u8; 16]);
-        assert!(result.is_err());
+        let data = BitcoinSignMessageData::new("Hello Bitcoin".to_string(), "bc1qtest".to_string()).to_bytes();
+        assert!(sign_personal(&data, &[0u8; 16]).is_err());
     }
 }

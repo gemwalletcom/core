@@ -2,6 +2,7 @@ use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use gem_bitcoin::signer::BitcoinSignMessageData;
+use primitives::wallet_connect::WCBitcoinTransfer;
 use primitives::{Chain, TransferDataOutputType};
 use serde_json::Value;
 
@@ -19,7 +20,7 @@ impl ChainRequestHandler for BitcoinRequestHandler {
             .unwrap_or_default();
 
         let btc_data = BitcoinSignMessageData::new(message.to_string(), address.to_string());
-        let data = String::from_utf8(btc_data.to_bytes()).map_err(|e| format!("Failed to encode BitcoinSignMessageData: {}", e))?;
+        let data = serde_json::to_string(&btc_data).map_err(|e| e.to_string())?;
 
         Ok(WalletConnectAction::SignMessage {
             chain,
@@ -33,21 +34,15 @@ impl ChainRequestHandler for BitcoinRequestHandler {
     }
 
     fn parse_send_transaction(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params
-            .get("recipientAddress")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing recipientAddress parameter")?;
-        params
-            .get("amount")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing amount parameter")?;
+        let transfer: WCBitcoinTransfer = serde_json::from_value(params).map_err(|e| e.to_string())?;
+        let data = serde_json::to_string(&transfer).map_err(|e| e.to_string())?;
 
         Ok(WalletConnectAction::SendTransaction {
             chain,
             transaction_type: WalletConnectTransactionType::Bitcoin {
                 output_type: TransferDataOutputType::EncodedTransaction,
             },
-            data: params.to_string(),
+            data,
         })
     }
 }
@@ -94,8 +89,8 @@ mod tests {
         else {
             panic!("Expected Bitcoin transaction type with EncodedTransaction output")
         };
-        let parsed: serde_json::Value = serde_json::from_str(&data).expect("Data should be valid JSON");
-        assert_eq!(parsed["recipientAddress"], "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq");
-        assert_eq!(parsed["amount"], "100000");
+        let parsed: WCBitcoinTransfer = serde_json::from_str(&data).unwrap();
+        assert_eq!(parsed.recipient_address, "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq");
+        assert_eq!(parsed.amount, "100000");
     }
 }

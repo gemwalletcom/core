@@ -1,3 +1,4 @@
+mod encoding;
 mod signature;
 mod types;
 

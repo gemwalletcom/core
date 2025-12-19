@@ -2,6 +2,8 @@ use primitives::SignerError;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use super::encoding::encode_varint;
+
 const BITCOIN_MESSAGE_PREFIX: &[u8] = b"\x18Bitcoin Signed Message:\n";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -32,23 +34,8 @@ impl BitcoinSignMessageData {
         data.extend_from_slice(&varint);
         data.extend_from_slice(message);
 
-        let first_hash = Sha256::digest(&data);
-        Sha256::digest(first_hash).to_vec()
-    }
-}
-
-fn encode_varint(n: usize) -> Vec<u8> {
-    if n < 0xfd {
-        vec![n as u8]
-    } else if n <= 0xffff {
-        let b = (n as u16).to_le_bytes();
-        vec![0xfd, b[0], b[1]]
-    } else if n <= 0xffffffff {
-        let b = (n as u32).to_le_bytes();
-        vec![0xfe, b[0], b[1], b[2], b[3]]
-    } else {
-        let b = (n as u64).to_le_bytes();
-        vec![0xff, b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]
+        let hash = Sha256::digest(&data);
+        Sha256::digest(hash).to_vec()
     }
 }
 
@@ -85,23 +72,13 @@ mod tests {
 
     #[test]
     fn test_hash() {
-        let data = BitcoinSignMessageData::new("Hello Bitcoin".to_string(), "bc1qtest".to_string());
-        let hash = data.hash();
-
-        assert_eq!(hash.len(), 32);
-        assert_eq!(
-            hex::encode(&hash),
-            "93a4e556613458adb2019c52d7dbaff7a7261da4bc4b8b3f8b9c5f098209de37"
-        );
+        let hash = BitcoinSignMessageData::new("Hello Bitcoin".to_string(), "bc1qtest".to_string()).hash();
+        assert_eq!(hex::encode(&hash), "93a4e556613458adb2019c52d7dbaff7a7261da4bc4b8b3f8b9c5f098209de37");
     }
 
     #[test]
     fn test_response_to_json() {
-        let response = BitcoinSignDataResponse::new("bc1qtest".to_string(), "27abcdef".to_string());
-
-        let json = response.to_json().unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
-
+        let parsed: serde_json::Value = serde_json::from_str(&BitcoinSignDataResponse::new("bc1qtest".to_string(), "27abcdef".to_string()).to_json().unwrap()).unwrap();
         assert_eq!(parsed["address"], "bc1qtest");
         assert_eq!(parsed["signature"], "27abcdef");
     }
