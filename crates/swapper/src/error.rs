@@ -47,9 +47,9 @@ impl std::error::Error for SwapperError {}
 impl From<AlienError> for SwapperError {
     fn from(err: AlienError) -> Self {
         match err {
-            AlienError::RequestError { msg } => Self::NetworkError(format!("Alien request error: {msg}")),
-            AlienError::ResponseError { msg } => Self::NetworkError(format!("Alien response error: {msg}")),
-            AlienError::Http { status, len } => Self::NetworkError(format!("Alien HTTP error: status {}, body size: {}", status, len)),
+            AlienError::RequestError { msg } => Self::NetworkError(msg),
+            AlienError::ResponseError { msg } => Self::NetworkError(msg),
+            AlienError::Http { status, .. } => Self::NetworkError(format!("HTTP error: status {}", status)),
         }
     }
 }

@@ -115,6 +115,7 @@ pub struct RewardRedemptionRow {
     pub id: i32,
     pub username: String,
     pub option_id: String,
+    pub device_id: i32,
     pub transaction_id: Option<String>,
     pub status: String,
     pub error: Option<String>,
@@ -139,6 +140,7 @@ impl RewardRedemptionRow {
 pub struct NewRewardRedemptionRow {
     pub username: String,
     pub option_id: String,
+    pub device_id: i32,
     pub status: String,
 }
 
@@ -185,4 +187,14 @@ impl RedemptionOptionFull {
     pub fn as_primitive(&self) -> RewardRedemptionOption {
         self.option.as_primitive(self.asset.as_ref().map(|a| a.as_primitive()))
     }
+}
+
+#[derive(Debug, Insertable, Clone)]
+#[diesel(table_name = crate::schema::rewards_referral_attempts)]
+pub struct ReferralAttemptRow {
+    pub referrer_username: String,
+    pub referred_address: String,
+    pub country_code: String,
+    pub device_id: i32,
+    pub reason: String,
 }

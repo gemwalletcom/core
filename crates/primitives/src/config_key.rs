@@ -7,6 +7,7 @@ pub enum ConfigKey {
     // Referral
     ReferralPerIpDaily,
     ReferralPerIpWeekly,
+    ReferralIneligibleCountries,
 
     // Fiat
     FiatValidateSubscription,
@@ -38,6 +39,7 @@ impl ConfigKey {
         match self {
             Self::ReferralPerIpDaily => "3",
             Self::ReferralPerIpWeekly => "10",
+            Self::ReferralIneligibleCountries => "[]",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
             Self::AlerterPriceIncreasePercent => "8.0",

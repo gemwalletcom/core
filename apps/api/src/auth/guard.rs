@@ -7,6 +7,7 @@ use rocket::outcome::Outcome::{Error, Success};
 use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
+use storage::models::DeviceRow;
 use storage::Database;
 
 fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
@@ -15,7 +16,7 @@ fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> 
 }
 
 pub struct VerifiedAuth {
-    pub device_id: String,
+    pub device: DeviceRow,
     pub address: String,
 }
 
@@ -54,9 +55,9 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
         let Ok(mut db_client) = database.client() else {
             return error_outcome(req, Status::InternalServerError, "Database error");
         };
-        if db_client.get_device(&body.auth.device_id).is_err() {
+        let Ok(device) = db_client.get_device(&body.auth.device_id) else {
             return error_outcome(req, Status::Unauthorized, "Device not found");
-        }
+        };
 
         let auth_message = AuthMessage {
             chain: body.auth.chain,
@@ -73,7 +74,7 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
 
         Success(Authenticated {
             auth: VerifiedAuth {
-                device_id: body.auth.device_id,
+                device,
                 address: body.auth.address,
             },
             data: body.data,

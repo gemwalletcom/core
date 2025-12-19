@@ -1,4 +1,4 @@
-use cacher::{CacherClient, INACTIVE_DEVICE_OBSERVER, INACTIVE_DEVICE_OBSERVER_TIMEOUT};
+use cacher::{CacheKey, CacherClient};
 use localizer::LanguageLocalizer;
 use primitives::{Asset, Chain, GorushNotification, PushNotification};
 use std::error::Error;
@@ -28,11 +28,7 @@ impl InactiveDevicesObserver {
             if subscriptions.is_empty() {
                 continue;
             }
-            if !self
-                .cacher
-                .can_process_now(&format!("{}:{}", INACTIVE_DEVICE_OBSERVER, device.id), INACTIVE_DEVICE_OBSERVER_TIMEOUT)
-                .await?
-            {
+            if !self.cacher.can_process_cached(CacheKey::InactiveDeviceObserver(&device.id)).await? {
                 continue;
             }
             let language_localizer = LanguageLocalizer::new_with_language(&device.locale);

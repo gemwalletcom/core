@@ -1,4 +1,4 @@
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use number_formatter::BigNumberFormatter;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -358,9 +358,8 @@ impl FiatClient {
     }
 
     pub async fn get_ip_address(&self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
-        let key = format!("fiat_ip_resolver_ip_address:{ip_address}");
         self.cacher
-            .get_or_set_value(&key, || self.ip_check_client.get_ip_address(ip_address), Some(86400))
+            .get_or_set_cached(CacheKey::FiatIpCheck(ip_address), || self.ip_check_client.get_ip_address(ip_address))
             .await
     }
 

@@ -1,11 +1,8 @@
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use chrono::Utc;
 use primitives::AuthNonce;
 use std::error::Error;
 use uuid::Uuid;
-
-const NONCE_TTL_SECONDS: u64 = 300; // 5 minutes
-const NONCE_KEY_PREFIX: &str = "auth:nonce:";
 
 pub struct AuthClient {
     cacher: CacherClient,
@@ -21,20 +18,18 @@ impl AuthClient {
             nonce: Uuid::new_v4().to_string(),
             timestamp: Utc::now().timestamp() as u32,
         };
-        let key = format!("{}{}:{}", NONCE_KEY_PREFIX, device_id, auth_nonce.nonce);
+        let cache_key = CacheKey::AuthNonce(device_id, &auth_nonce.nonce);
         let value = serde_json::to_string(&auth_nonce)?;
-        self.cacher.set_value_with_ttl(&key, value, NONCE_TTL_SECONDS).await?;
+        self.cacher.set_value_with_ttl(&cache_key.key(), value, cache_key.ttl()).await?;
         Ok(auth_nonce)
     }
 
     pub async fn get_auth_nonce(&self, device_id: &str, nonce: &str) -> Result<AuthNonce, Box<dyn Error + Send + Sync>> {
-        let key = format!("{}{}:{}", NONCE_KEY_PREFIX, device_id, nonce);
-        self.cacher.get_value::<AuthNonce>(&key).await
+        self.cacher.get_value::<AuthNonce>(&CacheKey::AuthNonce(device_id, nonce).key()).await
     }
 
     pub async fn invalidate_nonce(&self, device_id: &str, nonce: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let key = format!("{}{}:{}", NONCE_KEY_PREFIX, device_id, nonce);
-        self.cacher.delete(&key).await?;
+        self.cacher.delete(&CacheKey::AuthNonce(device_id, nonce).key()).await?;
         Ok(())
     }
 }

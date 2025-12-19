@@ -13,6 +13,7 @@ pub trait ConfigRepository {
     fn get_config_f64(&mut self, key: ConfigKey) -> Result<f64, DatabaseError>;
     fn get_config_bool(&mut self, key: ConfigKey) -> Result<bool, DatabaseError>;
     fn get_config_duration(&mut self, key: ConfigKey) -> Result<Duration, DatabaseError>;
+    fn get_config_vec_string(&mut self, key: ConfigKey) -> Result<Vec<String>, DatabaseError>;
     fn add_config(&mut self, configs: Vec<ConfigRow>) -> Result<usize, DatabaseError>;
 }
 
@@ -43,6 +44,11 @@ impl ConfigRepository for DatabaseClient {
     fn get_config_duration(&mut self, key: ConfigKey) -> Result<Duration, DatabaseError> {
         let value = self.get_config(key)?;
         parse_duration(&value).ok_or_else(|| DatabaseError::Internal(format!("Failed to parse duration: {}", value)))
+    }
+
+    fn get_config_vec_string(&mut self, key: ConfigKey) -> Result<Vec<String>, DatabaseError> {
+        let value = self.get_config(key)?;
+        serde_json::from_str(&value).map_err(|e| DatabaseError::Internal(format!("Failed to parse config vec: {}", e)))
     }
 
     fn add_config(&mut self, configs: Vec<ConfigRow>) -> Result<usize, DatabaseError> {
