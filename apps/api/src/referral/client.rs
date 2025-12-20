@@ -107,7 +107,8 @@ impl RewardsClient {
 
         let daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
         let weekly_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
-        self.ip_security_client.check_rate_limits(ip_address, daily_limit, weekly_limit).await?;
+        let global_daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralUseDailyLimit)?;
+        self.ip_security_client.check_rate_limits(ip_address, daily_limit, weekly_limit, global_daily_limit).await?;
 
         Ok(())
     }

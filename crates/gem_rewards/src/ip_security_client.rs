@@ -28,7 +28,17 @@ impl IpSecurityClient {
         Ok((!ip_data.is_suspicious(), ip_data.country_code))
     }
 
-    pub async fn check_rate_limits(&self, ip_address: &str, daily_limit: i64, weekly_limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn check_rate_limits(
+        &self,
+        ip_address: &str,
+        daily_limit: i64,
+        weekly_limit: i64,
+        global_daily_limit: i64,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if self.cacher.get_cached_counter(CacheKey::ReferralUseDailyLimit).await? >= global_daily_limit {
+            return Err(crate::RewardsError::Referral("Global daily limit exceeded".to_string()).into());
+        }
+
         if self.cacher.get_cached_counter(CacheKey::ReferralDailyLimit(ip_address)).await? >= daily_limit {
             return Err(crate::RewardsError::Referral("Daily limit exceeded".to_string()).into());
         }
@@ -41,6 +51,7 @@ impl IpSecurityClient {
     }
 
     pub async fn record_referral_usage(&self, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.cacher.increment_cached(CacheKey::ReferralUseDailyLimit).await?;
         self.cacher.increment_cached(CacheKey::ReferralDailyLimit(ip_address)).await?;
         self.cacher.increment_cached(CacheKey::ReferralWeeklyLimit(ip_address)).await?;
         Ok(())
