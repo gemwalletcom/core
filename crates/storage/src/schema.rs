@@ -281,6 +281,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    fiat_webhooks (id) {
+        id -> Int4,
+        #[max_length = 32]
+        provider -> Varchar,
+        #[max_length = 256]
+        transaction_id -> Nullable<Varchar>,
+        payload -> Jsonb,
+        error -> Nullable<Text>,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     link_types (id) {
         #[max_length = 32]
         id -> Varchar,
@@ -830,6 +843,7 @@ diesel::joinable!(fiat_quotes_requests -> devices (device_id));
 diesel::joinable!(fiat_quotes_requests -> fiat_quotes (quote_id));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
+diesel::joinable!(fiat_webhooks -> fiat_providers (provider));
 diesel::joinable!(nft_assets -> chains (chain));
 diesel::joinable!(nft_assets -> nft_collections (collection_id));
 diesel::joinable!(nft_assets -> nft_types (token_type));
@@ -858,6 +872,7 @@ diesel::joinable!(rewards_events -> usernames (username));
 diesel::joinable!(rewards_redemption_options -> assets (asset_id));
 diesel::joinable!(rewards_redemption_options -> rewards_redemptions_types (redemption_type));
 diesel::joinable!(rewards_redemptions -> devices (device_id));
+diesel::joinable!(rewards_redemptions -> rewards (username));
 diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
 diesel::joinable!(rewards_referral_attempts -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
@@ -893,6 +908,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_quotes_requests,
     fiat_rates,
     fiat_transactions,
+    fiat_webhooks,
     link_types,
     nft_assets,
     nft_collections,

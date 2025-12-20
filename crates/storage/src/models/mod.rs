@@ -36,6 +36,7 @@ pub use self::config::ConfigRow;
 pub use self::device::{DeviceRow, UpdateDeviceRow};
 pub use self::fiat::{
     FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow,
+    NewFiatWebhookRow,
 };
 pub use self::link::LinkTypeRow;
 pub use self::nft_asset::{NftAssetRow, NftTypeRow};

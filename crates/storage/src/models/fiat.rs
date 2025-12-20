@@ -256,3 +256,13 @@ pub struct FiatQuoteRequestRow {
     pub device_id: i32,
     pub quote_id: String,
 }
+
+#[derive(Debug, Insertable, Clone)]
+#[diesel(table_name = crate::schema::fiat_webhooks)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct NewFiatWebhookRow {
+    pub provider: String,
+    pub transaction_id: Option<String>,
+    pub payload: serde_json::Value,
+    pub error: Option<String>,
+}
