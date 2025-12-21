@@ -240,8 +240,31 @@ impl Across {
         }
         .abi_encode();
         let tx = TransactionObject::new_call_to_value(deployment.spoke_pool, &value, data);
-        let gas_limit = self.estimate_gas_transaction(chain, tx).await.unwrap_or(U256::from(DEFAULT_FILL_GAS_LIMIT));
+        let gas_limit = self
+            .estimate_gas_transaction(chain, tx)
+            .await
+            .unwrap_or(U256::from(Self::get_default_fill_limit(chain)));
         Ok((gas_limit, v3_relay_data))
+    }
+
+    fn get_default_fill_limit(chain: Chain) -> u64 {
+        match chain {
+            Chain::Monad => DEFAULT_FILL_GAS_LIMIT * 3,
+            _ => DEFAULT_FILL_GAS_LIMIT,
+        }
+    }
+
+    async fn usd_price_for_chain(&self, chain: Chain, existing_results: &[IMulticall3::Result]) -> Result<BigInt, SwapperError> {
+        let feed = ChainlinkPriceFeed::new_usd_feed_for_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
+        if chain == Chain::Monad {
+            let results = create_eth_client(self.rpc_provider.clone(), Chain::Monad)?
+                .multicall3(vec![feed.latest_round_call3()])
+                .await
+                .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+            ChainlinkPriceFeed::decoded_answer(&results[0])
+        } else {
+            ChainlinkPriceFeed::decoded_answer(&existing_results[3])
+        }
     }
 
     pub fn update_v3_relay_data(
@@ -310,6 +333,7 @@ impl Swapper for Across {
             SwapperChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Monad, vec![MONAD_USDC.id.clone(), MONAD_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_ETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_USDC.id.clone(), HYPEREVM_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::Plasma, vec![PLASMA_USDT.id.clone()]),
@@ -373,9 +397,9 @@ impl Swapper for Across {
             hubpool_client.get_current_time(),
         ];
 
-        let eth_price_feed = ChainlinkPriceFeed::new_eth_usd_feed();
+        let gas_price_feed = ChainlinkPriceFeed::new_usd_feed_for_chain(request.to_asset.chain()).unwrap_or_else(ChainlinkPriceFeed::new_eth_usd_feed);
         if !input_is_native {
-            calls.push(eth_price_feed.latest_round_call3());
+            calls.push(gas_price_feed.latest_round_call3());
         }
 
         let multicall_results = self.multicall3(hubpool_client.chain, calls).await?;
@@ -420,8 +444,8 @@ impl Swapper for Across {
             .await?;
         let mut gas_fee = gas_limit * gas_price;
         if !input_is_native {
-            let eth_price = ChainlinkPriceFeed::decoded_answer(&multicall_results[3])?;
-            gas_fee = Self::calculate_fee_in_token(&gas_fee, &eth_price, 6);
+            let price = self.usd_price_for_chain(request.to_asset.chain(), &multicall_results).await?;
+            gas_fee = Self::calculate_fee_in_token(&gas_fee, &price, 6);
         }
 
         // Check if bridge amount is too small
@@ -563,10 +587,15 @@ mod tests {
 
         let usdc_eth: AssetId = USDC_ETH_ASSET_ID.into();
         let usdc_arb: AssetId = USDC_ARB_ASSET_ID.into();
+        let usdc_monad: AssetId = USDC_MONAD_ASSET_ID.into();
+        let usdt_eth: AssetId = USDT_ETH_ASSET_ID.into();
+        let usdt_monad: AssetId = USDT_MONAD_ASSET_ID.into();
 
         assert!(Across::is_supported_pair(&weth_eth, &weth_op));
         assert!(Across::is_supported_pair(&weth_op, &weth_arb));
         assert!(Across::is_supported_pair(&usdc_eth, &usdc_arb));
+        assert!(Across::is_supported_pair(&usdc_monad, &usdc_eth));
+        assert!(Across::is_supported_pair(&usdt_monad, &usdt_eth));
         assert!(Across::is_supported_pair(&weth_eth, &weth_bsc));
 
         assert!(!Across::is_supported_pair(&weth_eth, &usdc_eth));
@@ -634,6 +663,44 @@ mod tests {
                 wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
                 destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
                 value: "20000000000000000".into(), // 0.02 ETH
+                mode: SwapperMode::ExactIn,
+                options,
+            };
+
+            let now = SystemTime::now();
+            let quote = swap_provider.fetch_quote(&request).await?;
+            let elapsed = SystemTime::now().duration_since(now).unwrap();
+
+            println!("<== elapsed: {:?}", elapsed);
+            println!("<== quote: {:?}", quote);
+            assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+            println!("<== quote_data: {:?}", quote_data);
+
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn test_across_quote_eth_usdc_to_monad_usdc() -> Result<(), SwapperError> {
+            let network_provider = Arc::new(NativeProvider::default());
+            let swap_provider = Across::boxed(network_provider.clone());
+            let options = Options {
+                slippage: 100.into(),
+                fee: None,
+                preferred_providers: vec![],
+                use_max_amount: false,
+            };
+
+            let wallet = "0x9b1fe00135e0ff09389bfaeff0c8f299ec818d4a";
+            let from_asset: AssetId = USDC_ETH_ASSET_ID.into();
+            let to_asset: AssetId = USDC_MONAD_ASSET_ID.into();
+            let request = QuoteRequest {
+                from_asset: from_asset.into(),
+                to_asset: to_asset.into(),
+                wallet_address: wallet.into(),
+                destination_address: wallet.into(),
+                value: "50000000".into(), // 50 USDC
                 mode: SwapperMode::ExactIn,
                 options,
             };

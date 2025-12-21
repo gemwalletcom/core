@@ -69,6 +69,10 @@ impl AcrossDeployment {
                 chain_id,
                 spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
             }),
+            Chain::Monad => Some(Self {
+                chain_id,
+                spoke_pool: "0xd2ecb3afe598b746F8123CaE365a598DA831A449",
+            }),
             Chain::SmartChain => Some(Self {
                 chain_id,
                 spoke_pool: "0x4e8E101924eDE233C13e2D8622DC8aED2872d505",
@@ -93,6 +97,8 @@ impl AcrossDeployment {
             324 => "0x863859ef502F0Ee9676626ED5B418037252eFeb2".into(),
             // SmartChain
             56 => "0xAC537C12fE8f544D712d71ED4376a502EEa944d7".into(),
+            // Monad
+            143 => "0xeC41F75c686e376Ab2a4F18bde263ab5822c4511".into(),
             // HyperEvm | Plasma
             999 | 9745 => "0x5E7840E06fAcCb6d1c3b5F5E0d1d3d07F2829bba".into(),
             _ => MULTICALL_HANDLER.into(),
@@ -122,6 +128,7 @@ impl AcrossDeployment {
             (Chain::Blast, vec![WETH_BLAST_ASSET_ID.into()]),
             (Chain::Ink, vec![WETH_INK_ASSET_ID.into(), USDT_INK_ASSET_ID.into()]),
             (Chain::Unichain, vec![WETH_UNICHAIN_ASSET_ID.into(), USDC_UNICHAIN_ASSET_ID.into()]),
+            (Chain::Monad, vec![USDC_MONAD_ASSET_ID.into(), USDT_MONAD_ASSET_ID.into()]),
             (Chain::SmartChain, vec![ETH_SMARTCHAIN_ASSET_ID.into()]),
             (Chain::Plasma, vec![USDT_PLASMA_ASSET_ID.into()]),
         ])
@@ -166,6 +173,7 @@ impl AcrossDeployment {
                     USDC_POLYGON_ASSET_ID.into(),
                     USDC_UNICHAIN_ASSET_ID.into(),
                     USDC_HYPEREVM_ASSET_ID.into(),
+                    USDC_MONAD_ASSET_ID.into(),
                 ]),
             },
             // USDC on BSC decimals are 18
@@ -195,6 +203,7 @@ impl AcrossDeployment {
                     USDT_INK_ASSET_ID.into(),
                     USDT_HYPEREVM_ASSET_ID.into(),
                     USDT_PLASMA_ASSET_ID.into(),
+                    USDT_MONAD_ASSET_ID.into(),
                 ]),
             },
             // USDT on BSC decimals are 18
