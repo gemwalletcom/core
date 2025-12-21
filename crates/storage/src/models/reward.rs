@@ -23,6 +23,7 @@ pub struct RewardReferralRow {
     pub referrer_username: String,
     pub referred_username: String,
     pub referred_device_id: i32,
+    pub referred_ip_address: String,
     pub created_at: NaiveDateTime,
 }
 
@@ -32,6 +33,7 @@ pub struct NewRewardReferralRow {
     pub referrer_username: String,
     pub referred_username: String,
     pub referred_device_id: i32,
+    pub referred_ip_address: String,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, Clone)]
@@ -196,5 +198,6 @@ pub struct ReferralAttemptRow {
     pub referred_address: String,
     pub country_code: String,
     pub device_id: i32,
+    pub referred_ip_address: String,
     pub reason: String,
 }

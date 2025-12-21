@@ -3,7 +3,7 @@ use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
     ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType,
-    PerpetualOrderType, PerpetualType, SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
+    PerpetualType, SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -222,16 +222,7 @@ impl HyperCoreSigner {
         let tpsl = match (data.take_profit.as_ref(), data.stop_loss.as_ref()) {
             (None, None) => None,
             _ => {
-                let is_market = data.autoclose_order_type == PerpetualOrderType::Market;
-                let order = make_position_tp_sl(
-                    asset,
-                    is_buy,
-                    "0",
-                    data.take_profit.clone(),
-                    data.stop_loss.clone(),
-                    builder.cloned(),
-                    is_market,
-                );
+                let order = make_position_tp_sl(asset, is_buy, "0", data.take_profit.clone(), data.stop_loss.clone(), builder.cloned(), true);
                 Some(self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)?)
             }
         };
@@ -255,7 +246,6 @@ impl HyperCoreSigner {
                     self.sign_cancel_order(Cancel::new(cancels), timestamp_incrementer.next_val(), agent_key)
                 }
                 PerpetualModifyPositionType::Tpsl(tpsl) => {
-                    let is_market = tpsl.autoclose_order_type == PerpetualOrderType::Market;
                     let order = make_position_tp_sl(
                         modify_data.asset_index as u32,
                         tpsl.direction == PerpetualDirection::Long,
@@ -263,7 +253,7 @@ impl HyperCoreSigner {
                         tpsl.take_profit.clone(),
                         tpsl.stop_loss.clone(),
                         builder.cloned(),
-                        is_market,
+                        true,
                     );
                     self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)
                 }

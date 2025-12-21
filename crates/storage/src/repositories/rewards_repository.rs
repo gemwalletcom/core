@@ -1,11 +1,7 @@
 use crate::database::rewards::{RedemptionUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{
-    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, ReferralAttemptRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardsRow,
-    UsernameRow,
-};
-use crate::repositories::assets_repository::AssetsRepository;
+use crate::models::{NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, ReferralAttemptRow, RewardRedemptionRow, RewardsRow, UsernameRow};
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
@@ -36,13 +32,16 @@ pub trait RewardsRepository {
     fn get_reward_event(&mut self, event_id: i32) -> Result<RewardEvent, DatabaseError>;
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
-    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
+    fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
+    fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
+    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, ip_address: &str, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
         referred_address: &str,
         country_code: &str,
         device_id: i32,
+        ip_address: &str,
         reason: &str,
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
@@ -51,7 +50,7 @@ pub trait RewardsRepository {
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
     fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOptionRow, DatabaseError>;
+    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -150,10 +149,38 @@ impl RewardsRepository for DatabaseClient {
         Ok((rewards, event_id))
     }
 
-    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError> {
-        if !UsernamesStore::username_exists(self, UsernameLookup::Username(referral_code))? {
-            return Err(DatabaseError::Internal("Referral code does not exist".into()));
+    fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError> {
+        validate_username(new_username)?;
+
+        let existing = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+
+        if !has_custom_username(&existing.username, &existing.address) {
+            return Err(DatabaseError::Internal("No custom username to change".into()));
         }
+
+        if existing.username.eq_ignore_ascii_case(new_username) {
+            return Err(DatabaseError::Internal("New username is the same as current".into()));
+        }
+
+        if UsernamesStore::username_exists(self, UsernameLookup::Username(new_username))? {
+            return Err(DatabaseError::Internal("Username already taken".into()));
+        }
+
+        let rewards = RewardsStore::get_rewards(self, &existing.username)?;
+        if !rewards.is_enabled {
+            return Err(DatabaseError::Internal("Rewards are not enabled for this user".into()));
+        }
+
+        UsernamesStore::change_username(self, &existing.username, new_username)?;
+
+        self.get_reward_by_address(address)
+    }
+
+    fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError> {
+        Ok(RewardsStore::get_rewards(self, code).is_ok())
+    }
+
+    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, ip_address: &str, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError> {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
         let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
 
@@ -212,6 +239,7 @@ impl RewardsRepository for DatabaseClient {
                 referrer_username: referral_code.to_string(),
                 referred_username: referred.username.clone(),
                 referred_device_id: device_id,
+                referred_ip_address: ip_address.to_string(),
             },
         )?;
 
@@ -242,6 +270,7 @@ impl RewardsRepository for DatabaseClient {
         referred_address: &str,
         country_code: &str,
         device_id: i32,
+        ip_address: &str,
         reason: &str,
     ) -> Result<(), DatabaseError> {
         RewardsStore::add_referral_attempt(
@@ -251,6 +280,7 @@ impl RewardsRepository for DatabaseClient {
                 referred_address: referred_address.to_string(),
                 country_code: country_code.to_string(),
                 device_id,
+                referred_ip_address: ip_address.to_string(),
                 reason: reason.to_string(),
             },
         )?;
@@ -262,17 +292,21 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError> {
-        let option_row = RewardsStore::get_redemption_option(self, option_id)?;
+        let redemption_option = RewardsStore::get_redemption_option(self, option_id)?;
         let rewards = RewardsStore::get_rewards(self, username)?;
 
-        if rewards.points < option_row.points {
+        if rewards.points < redemption_option.option.points {
             return Err(DatabaseError::Internal("Not enough points".into()));
+        }
+
+        if redemption_option.option.remaining == Some(0) {
+            return Err(DatabaseError::Internal("Redemption option is no longer available".into()));
         }
 
         let redemption_id = RewardsStore::add_redemption(
             self,
             username,
-            option_row.points,
+            redemption_option.option.points,
             NewRewardRedemptionRow {
                 username: username.to_string(),
                 option_id: option_id.to_string(),
@@ -281,9 +315,7 @@ impl RewardsRepository for DatabaseClient {
             },
         )?;
 
-        let asset = option_row.asset_id.as_ref().and_then(|id| AssetsRepository::get_asset(self, id).ok());
-        let option = option_row.as_primitive(asset);
-
+        let option = redemption_option.as_primitive();
         let redemption_row = RewardsStore::get_redemption(self, redemption_id)?;
         Ok(redemption_row.as_primitive(option))
     }
@@ -306,8 +338,8 @@ impl RewardsRepository for DatabaseClient {
         Ok(results.into_iter().map(|r| r.as_primitive()).collect())
     }
 
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOptionRow, DatabaseError> {
-        Ok(RewardsStore::get_redemption_option(self, id)?)
+    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError> {
+        Ok(RewardsStore::get_redemption_option(self, id)?.as_primitive())
     }
 }
 

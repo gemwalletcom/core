@@ -17,7 +17,7 @@ SELECT diesel_manage_updated_at('rewards_redemption_options');
 
 CREATE TABLE rewards_redemptions (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(64) NOT NULL,
+    username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON UPDATE CASCADE ON DELETE CASCADE,
     option_id VARCHAR(64) NOT NULL REFERENCES rewards_redemption_options(id) ON DELETE CASCADE,
     device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     transaction_id VARCHAR(512),

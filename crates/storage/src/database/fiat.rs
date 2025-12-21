@@ -23,6 +23,7 @@ pub(crate) trait FiatStore {
     fn add_fiat_quotes(&mut self, quotes: Vec<FiatQuoteRow>) -> Result<usize, diesel::result::Error>;
     fn get_fiat_quote(&mut self, quote_id: &str) -> Result<FiatQuoteRow, diesel::result::Error>;
     fn add_fiat_quote_request(&mut self, request: FiatQuoteRequestRow) -> Result<usize, diesel::result::Error>;
+    fn add_fiat_webhook(&mut self, webhook: NewFiatWebhookRow) -> Result<usize, diesel::result::Error>;
 }
 
 impl FiatStore for DatabaseClient {
@@ -189,6 +190,11 @@ impl FiatStore for DatabaseClient {
             .do_nothing()
             .execute(&mut self.connection)
     }
+
+    fn add_fiat_webhook(&mut self, webhook: NewFiatWebhookRow) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_webhooks::dsl::*;
+        diesel::insert_into(fiat_webhooks).values(&webhook).execute(&mut self.connection)
+    }
 }
 
 // Public methods for backward compatibility
@@ -251,5 +257,9 @@ impl DatabaseClient {
 
     pub fn add_fiat_quote_request(&mut self, request: FiatQuoteRequestRow) -> Result<usize, diesel::result::Error> {
         FiatStore::add_fiat_quote_request(self, request)
+    }
+
+    pub fn add_fiat_webhook(&mut self, webhook: NewFiatWebhookRow) -> Result<usize, diesel::result::Error> {
+        FiatStore::add_fiat_webhook(self, webhook)
     }
 }

@@ -4,6 +4,7 @@ use crate::models::{
     RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
 };
 use diesel::prelude::*;
+use diesel::result::Error as DieselError;
 
 #[derive(Debug, Clone)]
 pub enum RedemptionUpdate {
@@ -13,11 +14,11 @@ pub enum RedemptionUpdate {
 }
 
 pub trait RewardsEventTypesStore {
-    fn add_reward_event_types(&mut self, event_types: Vec<RewardEventTypeRow>) -> Result<usize, diesel::result::Error>;
+    fn add_reward_event_types(&mut self, event_types: Vec<RewardEventTypeRow>) -> Result<usize, DieselError>;
 }
 
 impl RewardsEventTypesStore for DatabaseClient {
-    fn add_reward_event_types(&mut self, event_types: Vec<RewardEventTypeRow>) -> Result<usize, diesel::result::Error> {
+    fn add_reward_event_types(&mut self, event_types: Vec<RewardEventTypeRow>) -> Result<usize, DieselError> {
         use crate::schema::rewards_events_types::dsl;
         diesel::insert_into(dsl::rewards_events_types)
             .values(&event_types)
@@ -27,11 +28,11 @@ impl RewardsEventTypesStore for DatabaseClient {
 }
 
 pub trait RewardsRedemptionTypesStore {
-    fn add_reward_redemption_types(&mut self, redemption_types: Vec<RewardRedemptionTypeRow>) -> Result<usize, diesel::result::Error>;
+    fn add_reward_redemption_types(&mut self, redemption_types: Vec<RewardRedemptionTypeRow>) -> Result<usize, DieselError>;
 }
 
 impl RewardsRedemptionTypesStore for DatabaseClient {
-    fn add_reward_redemption_types(&mut self, redemption_types: Vec<RewardRedemptionTypeRow>) -> Result<usize, diesel::result::Error> {
+    fn add_reward_redemption_types(&mut self, redemption_types: Vec<RewardRedemptionTypeRow>) -> Result<usize, DieselError> {
         use crate::schema::rewards_redemptions_types::dsl;
         diesel::insert_into(dsl::rewards_redemptions_types)
             .values(&redemption_types)
@@ -41,11 +42,11 @@ impl RewardsRedemptionTypesStore for DatabaseClient {
 }
 
 pub trait RewardsRedemptionOptionsStore {
-    fn add_redemption_options(&mut self, options: Vec<RewardRedemptionOptionRow>) -> Result<usize, diesel::result::Error>;
+    fn add_redemption_options(&mut self, options: Vec<RewardRedemptionOptionRow>) -> Result<usize, DieselError>;
 }
 
 impl RewardsRedemptionOptionsStore for DatabaseClient {
-    fn add_redemption_options(&mut self, options: Vec<RewardRedemptionOptionRow>) -> Result<usize, diesel::result::Error> {
+    fn add_redemption_options(&mut self, options: Vec<RewardRedemptionOptionRow>) -> Result<usize, DieselError> {
         use crate::schema::rewards_redemption_options::dsl;
         diesel::insert_into(dsl::rewards_redemption_options)
             .values(&options)
@@ -55,23 +56,23 @@ impl RewardsRedemptionOptionsStore for DatabaseClient {
 }
 
 pub(crate) trait RewardsStore {
-    fn get_rewards(&mut self, username: &str) -> Result<RewardsRow, diesel::result::Error>;
-    fn create_rewards(&mut self, rewards: RewardsRow) -> Result<RewardsRow, diesel::result::Error>;
-    fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), diesel::result::Error>;
-    fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, diesel::result::Error>;
-    fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), diesel::result::Error>;
-    fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, diesel::result::Error>;
-    fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, diesel::result::Error>;
-    fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, diesel::result::Error>;
-    fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, diesel::result::Error>;
-    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), diesel::result::Error>;
-    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, diesel::result::Error>;
-    fn get_redemption_options(&mut self) -> Result<Vec<RedemptionOptionFull>, diesel::result::Error>;
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOptionRow, diesel::result::Error>;
+    fn get_rewards(&mut self, username: &str) -> Result<RewardsRow, DieselError>;
+    fn create_rewards(&mut self, rewards: RewardsRow) -> Result<RewardsRow, DieselError>;
+    fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), DieselError>;
+    fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, DieselError>;
+    fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), DieselError>;
+    fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, DieselError>;
+    fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, DieselError>;
+    fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, DieselError>;
+    fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, DieselError>;
+    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DieselError>;
+    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DieselError>;
+    fn get_redemption_options(&mut self) -> Result<Vec<RedemptionOptionFull>, DieselError>;
+    fn get_redemption_option(&mut self, id: &str) -> Result<RedemptionOptionFull, DieselError>;
 }
 
 impl RewardsStore for DatabaseClient {
-    fn get_rewards(&mut self, username: &str) -> Result<RewardsRow, diesel::result::Error> {
+    fn get_rewards(&mut self, username: &str) -> Result<RewardsRow, DieselError> {
         use crate::schema::rewards::dsl;
         dsl::rewards
             .filter(dsl::username.eq(username))
@@ -79,7 +80,7 @@ impl RewardsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn create_rewards(&mut self, rewards: RewardsRow) -> Result<RewardsRow, diesel::result::Error> {
+    fn create_rewards(&mut self, rewards: RewardsRow) -> Result<RewardsRow, DieselError> {
         use crate::schema::rewards::dsl;
         diesel::insert_into(dsl::rewards)
             .values(&rewards)
@@ -87,7 +88,7 @@ impl RewardsStore for DatabaseClient {
             .get_result(&mut self.connection)
     }
 
-    fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), diesel::result::Error> {
+    fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), DieselError> {
         use crate::schema::{rewards, rewards_referrals};
         use diesel::Connection;
 
@@ -106,7 +107,7 @@ impl RewardsStore for DatabaseClient {
         })
     }
 
-    fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, diesel::result::Error> {
+    fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, DieselError> {
         use crate::schema::rewards_referrals::dsl;
         dsl::rewards_referrals
             .filter(dsl::referred_device_id.eq(referred_device_id))
@@ -115,7 +116,7 @@ impl RewardsStore for DatabaseClient {
             .optional()
     }
 
-    fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), diesel::result::Error> {
+    fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), DieselError> {
         use crate::schema::rewards_referral_attempts::dsl;
         diesel::insert_into(dsl::rewards_referral_attempts)
             .values(&attempt)
@@ -123,12 +124,12 @@ impl RewardsStore for DatabaseClient {
         Ok(())
     }
 
-    fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, diesel::result::Error> {
+    fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, DieselError> {
         use crate::schema::{rewards, rewards_events};
         use diesel::Connection;
 
         if points < 0 {
-            return Err(diesel::result::Error::RollbackTransaction);
+            return Err(DieselError::RollbackTransaction);
         }
 
         self.connection.transaction(|conn| {
@@ -146,7 +147,7 @@ impl RewardsStore for DatabaseClient {
         })
     }
 
-    fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, diesel::result::Error> {
+    fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, DieselError> {
         use crate::schema::rewards_events::dsl;
         dsl::rewards_events
             .filter(dsl::id.eq(event_id))
@@ -154,7 +155,7 @@ impl RewardsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, diesel::result::Error> {
+    fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, DieselError> {
         use crate::schema::rewards_events::dsl;
         dsl::rewards_events
             .filter(dsl::username.eq(username))
@@ -163,16 +164,16 @@ impl RewardsStore for DatabaseClient {
             .load(&mut self.connection)
     }
 
-    fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, diesel::result::Error> {
+    fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, DieselError> {
         use crate::schema::{rewards, rewards_redemption_options, rewards_redemptions};
         use diesel::Connection;
 
         if points <= 0 {
-            return Err(diesel::result::Error::RollbackTransaction);
+            return Err(DieselError::RollbackTransaction);
         }
 
         self.connection.transaction(|conn| {
-            diesel::update(
+            let rows_updated = diesel::update(
                 rewards_redemption_options::table.filter(
                     rewards_redemption_options::id
                         .eq(&redemption.option_id)
@@ -180,8 +181,11 @@ impl RewardsStore for DatabaseClient {
                 ),
             )
             .set(rewards_redemption_options::remaining.eq(rewards_redemption_options::remaining - 1))
-            .returning(rewards_redemption_options::id)
-            .get_result::<String>(conn)?;
+            .execute(conn)?;
+
+            if rows_updated == 0 {
+                return Err(DieselError::NotFound);
+            }
 
             diesel::update(rewards::table.filter(rewards::username.eq(username).and(rewards::points.ge(points))))
                 .set(rewards::points.eq(rewards::points - points))
@@ -195,7 +199,7 @@ impl RewardsStore for DatabaseClient {
         })
     }
 
-    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), diesel::result::Error> {
+    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DieselError> {
         use crate::schema::rewards_redemptions::dsl;
 
         if updates.is_empty() {
@@ -214,7 +218,7 @@ impl RewardsStore for DatabaseClient {
         Ok(())
     }
 
-    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, diesel::result::Error> {
+    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DieselError> {
         use crate::schema::rewards_redemptions::dsl;
         dsl::rewards_redemptions
             .filter(dsl::id.eq(redemption_id))
@@ -222,7 +226,7 @@ impl RewardsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn get_redemption_options(&mut self) -> Result<Vec<RedemptionOptionFull>, diesel::result::Error> {
+    fn get_redemption_options(&mut self) -> Result<Vec<RedemptionOptionFull>, DieselError> {
         use crate::schema::{assets, rewards_redemption_options};
         rewards_redemption_options::table
             .left_join(assets::table.on(rewards_redemption_options::asset_id.eq(assets::id.nullable())))
@@ -231,11 +235,13 @@ impl RewardsStore for DatabaseClient {
             .map(|results| results.into_iter().map(|(option, asset)| RedemptionOptionFull::new(option, asset)).collect())
     }
 
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOptionRow, diesel::result::Error> {
-        use crate::schema::rewards_redemption_options::dsl;
-        dsl::rewards_redemption_options
-            .filter(dsl::id.eq(id))
-            .select(RewardRedemptionOptionRow::as_select())
-            .first(&mut self.connection)
+    fn get_redemption_option(&mut self, id: &str) -> Result<RedemptionOptionFull, DieselError> {
+        use crate::schema::{assets, rewards_redemption_options};
+        rewards_redemption_options::table
+            .filter(rewards_redemption_options::id.eq(id))
+            .left_join(assets::table.on(rewards_redemption_options::asset_id.eq(assets::id.nullable())))
+            .select((RewardRedemptionOptionRow::as_select(), Option::<AssetRow>::as_select()))
+            .first::<(RewardRedemptionOptionRow, Option<AssetRow>)>(&mut self.connection)
+            .map(|(option, asset)| RedemptionOptionFull::new(option, asset))
     }
 }

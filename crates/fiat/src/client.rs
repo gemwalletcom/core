@@ -16,8 +16,11 @@ use primitives::{
     FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
 };
 use reqwest::Client as RequestClient;
-use storage::{AssetFilter, Database};
-use streamer::{FiatWebhookPayload, StreamProducer};
+use storage::{
+    AssetFilter, Database,
+    models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
+};
+use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
     database: Database,
@@ -88,19 +91,36 @@ impl FiatClient {
         webhook_data: serde_json::Value,
     ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.provider(provider_name)?;
-        let webhook = match provider.process_webhook(webhook_data.clone()).await {
+        let webhook = provider.process_webhook(webhook_data.clone()).await;
+
+        let (transaction_id, error) = match &webhook {
+            Ok(FiatWebhook::OrderId(order_id)) => (Some(order_id.clone()), None),
+            Ok(FiatWebhook::Transaction(tx)) => (Some(tx.provider_transaction_id.clone()), None),
+            Ok(FiatWebhook::None) => (None, None),
+            Err(e) => (None, Some(e.to_string())),
+        };
+        let webhook_row = NewFiatWebhookRow {
+            provider: provider_name.to_string(),
+            transaction_id,
+            payload: webhook_data.clone(),
+            error,
+        };
+        self.database.client()?.add_fiat_webhook(webhook_row)?;
+
+        let webhook = match webhook {
             Ok(result) => result,
             Err(e) => {
                 println!("Failed to decode webhook payload: {}, JSON payload: {}", e, webhook_data);
                 return Err(e);
             }
         };
+
         let payload = FiatWebhookPayload::new(provider.name(), webhook_data.clone(), webhook.clone());
         match webhook {
-            streamer::FiatWebhook::OrderId(_) | streamer::FiatWebhook::Transaction(_) => {
+            FiatWebhook::OrderId(_) | FiatWebhook::Transaction(_) => {
                 self.stream_producer.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await?;
             }
-            streamer::FiatWebhook::None => {}
+            FiatWebhook::None => {}
         }
         Ok(payload)
     }
@@ -346,10 +366,10 @@ impl FiatClient {
 
         let url = provider.get_quote_url(data).await?;
 
-        let db_quote = storage::models::FiatQuoteRow::from_primitive(&quote.quote);
+        let db_quote = FiatQuoteRow::from_primitive(&quote.quote);
         self.database.client()?.add_fiat_quotes(vec![db_quote])?;
 
-        self.database.client()?.add_fiat_quote_request(storage::models::FiatQuoteRequestRow {
+        self.database.client()?.add_fiat_quote_request(FiatQuoteRequestRow {
             device_id: device.id,
             quote_id: quote_id.to_string(),
         })?;

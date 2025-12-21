@@ -2,10 +2,10 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualOrderType, PerpetualProvider,
-    PerpetualType, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
-    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
-    TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
+    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
+    TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64,
+    WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -208,7 +208,6 @@ pub struct PerpetualConfirmData {
     pub margin_amount: f64,
     pub take_profit: Option<String>,
     pub stop_loss: Option<String>,
-    pub autoclose_order_type: PerpetualOrderType,
 }
 
 #[uniffi::remote(Record)]
@@ -223,7 +222,6 @@ pub struct TPSLOrderData {
     pub take_profit: Option<String>,
     pub stop_loss: Option<String>,
     pub size: String,
-    pub autoclose_order_type: PerpetualOrderType,
 }
 
 #[uniffi::remote(Enum)]
