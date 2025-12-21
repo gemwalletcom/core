@@ -26,6 +26,7 @@ pub async fn create_referral(request: Authenticated<ReferralCode>, client: &Stat
     Ok(client.lock().await.create_referral(&request.auth.address, &request.data.code).await?.into())
 }
 
+#[allow(dead_code)]
 #[post("/rewards/referrals/update", format = "json", data = "<request>")]
 pub async fn update_referral(request: Authenticated<ReferralCode>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
     Ok(client.lock().await.change_username(&request.auth.address, &request.data.code)?.into())

@@ -60,6 +60,7 @@ impl RewardEventType {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
+#[derive(Default)]
 pub struct Rewards {
     pub code: Option<String>,
     pub referral_count: i32,
@@ -68,19 +69,6 @@ pub struct Rewards {
     pub is_enabled: bool,
     pub redemption_options: Vec<RewardRedemptionOption>,
     //pub level: Option<RewardLevel>,
-}
-
-impl Default for Rewards {
-    fn default() -> Self {
-        Self {
-            code: None,
-            referral_count: 0,
-            points: 0,
-            used_referral_code: None,
-            is_enabled: false,
-            redemption_options: vec![],
-        }
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

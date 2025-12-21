@@ -40,6 +40,7 @@ impl RewardsClient {
         Ok(rewards)
     }
 
+    #[allow(dead_code)]
     pub fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self.database.client()?.rewards().change_username(address, new_username)?)
     }
@@ -108,7 +109,9 @@ impl RewardsClient {
         let daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
         let weekly_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
         let global_daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralUseDailyLimit)?;
-        self.ip_security_client.check_rate_limits(ip_address, daily_limit, weekly_limit, global_daily_limit).await?;
+        self.ip_security_client
+            .check_rate_limits(ip_address, daily_limit, weekly_limit, global_daily_limit)
+            .await?;
 
         Ok(())
     }

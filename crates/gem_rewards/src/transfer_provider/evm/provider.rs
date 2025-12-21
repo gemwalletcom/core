@@ -80,7 +80,7 @@ impl EvmTransferProvider {
 
         let load_data = client.get_transaction_load(load_input).await?;
 
-        let nonce = metadata.get_sequence()? as u64;
+        let nonce = metadata.get_sequence()?;
         let chain_id: u64 = metadata.get_chain_id()?.parse()?;
         let gas_limit = load_data.fee.gas_limit.to_u64().ok_or("Gas limit overflow")?;
         let base_fee = fee_rate.gas_price_type.gas_price().to_u128().ok_or("Base fee overflow")?;

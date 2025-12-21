@@ -7,8 +7,8 @@ use rocket::outcome::Outcome::{Error, Success};
 use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
-use storage::models::DeviceRow;
 use storage::Database;
+use storage::models::DeviceRow;
 
 fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
     req.local_cache(|| ErrorContext(message.to_string()));
