@@ -42,6 +42,7 @@ pub enum EVMChain {
     Hyperliquid,
     Monad,
     XLayer,
+    Stable,
 }
 
 impl EVMChain {
@@ -71,6 +72,7 @@ impl EVMChain {
             Self::Hyperliquid => 1_000_000_000, // 1 Gwei
             Self::Monad => 1_000_000_000,       // 1 Gwei
             Self::XLayer => 1_000_000_000,      // 1 Gwei
+            Self::Stable => 1_000_000,          // https://stablescan.xyz
         }
     }
 
@@ -94,7 +96,8 @@ impl EVMChain {
             | Self::Berachain
             | Self::Hyperliquid
             | Self::Monad
-            | Self::XLayer => ChainStack::Native,
+            | Self::XLayer
+            | Self::Stable => ChainStack::Native,
         }
     }
 
@@ -150,6 +153,7 @@ impl EVMChain {
             Self::Plasma => Some("0x6100E367285b01F48D07953803A2d8dCA5D19873"), // Wrapped Plasma (WXPL)
             Self::Monad => Some("0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A"),
             Self::XLayer => Some("0xe538905cf8410324e03a5a23c1c177a474d59b2b"), // WOKB
+            Self::Stable => None,                                               // TODO: Wrapped gUSDT address
         }
     }
 

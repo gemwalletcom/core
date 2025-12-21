@@ -61,6 +61,7 @@ pub enum Chain {
     HyperCore,   // HyperCore native chain
     Monad,
     XLayer,
+    Stable,
 }
 
 impl fmt::Display for Chain {
@@ -140,6 +141,7 @@ impl Chain {
             Self::HyperCore => "1337",
             Self::Monad => "143",
             Self::XLayer => "196",
+            Self::Stable => "988",
         }
     }
 
@@ -193,7 +195,8 @@ impl Chain {
             | Self::Monad
             | Self::Hyperliquid
             | Self::HyperCore
-            | Self::XLayer => false,
+            | Self::XLayer
+            | Self::Stable => false,
         }
     }
 
@@ -224,7 +227,8 @@ impl Chain {
             | Self::HyperCore
             | Self::Plasma
             | Self::Monad
-            | Self::XLayer => 60,
+            | Self::XLayer
+            | Self::Stable => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
             Self::Litecoin => 2,
@@ -275,7 +279,8 @@ impl Chain {
             | Self::Hyperliquid
             | Self::Plasma
             | Self::Monad
-            | Self::XLayer => ChainType::Ethereum,
+            | Self::XLayer
+            | Self::Stable => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin | Self::Zcash => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -319,7 +324,8 @@ impl Chain {
             | Self::HyperCore
             | Self::Plasma
             | Self::Monad
-            | Self::XLayer => Some(AssetType::ERC20),
+            | Self::XLayer
+            | Self::Stable => Some(AssetType::ERC20),
             Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
@@ -411,6 +417,7 @@ impl Chain {
             | Self::Xrp
             | Self::Berachain
             | Self::Plasma
+            | Self::Stable
             | Self::Tron
             | Self::Stellar
             | Self::Near
@@ -441,6 +448,7 @@ impl Chain {
             | Self::Near
             | Self::OpBNB
             | Self::Sei
+            | Self::Stable
             | Self::Unichain
             | Self::ZkSync
             | Self::Abstract
@@ -513,6 +521,7 @@ impl Chain {
             | Self::Stellar
             | Self::Sonic
             | Self::Plasma
+            | Self::Stable
             | Self::Algorand
             | Self::Cardano
             | Self::XLayer => 30,
