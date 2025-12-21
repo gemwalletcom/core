@@ -1,3 +1,4 @@
+use alloy_primitives::hex;
 use gem_jsonrpc::types::{JsonRpcRequest, JsonRpcRequestConvert};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -24,7 +25,7 @@ impl TransactionObject {
             gas: None,
             gas_price: None,
             value: None,
-            data: format!("0x{}", hex::encode(data)),
+            data: hex::encode_prefixed(data),
         }
     }
 
@@ -35,7 +36,7 @@ impl TransactionObject {
             gas: None,
             gas_price: None,
             value: Some(value.to_string()),
-            data: format!("0x{}", hex::encode(data)),
+            data: hex::encode_prefixed(data),
         }
     }
 
@@ -46,7 +47,18 @@ impl TransactionObject {
             gas: None,
             gas_price: None,
             value: None,
-            data: format!("0x{}", hex::encode(data)),
+            data: hex::encode_prefixed(data),
+        }
+    }
+
+    pub fn new_call_with_from_value(from: &str, to: &str, value: &str, data: Vec<u8>) -> Self {
+        Self {
+            from: Some(from.to_string()),
+            to: to.to_string(),
+            gas: None,
+            gas_price: None,
+            value: Some(value.to_string()),
+            data: hex::encode_prefixed(data),
         }
     }
 }
