@@ -417,12 +417,11 @@ impl Chain {
             | Self::Xrp
             | Self::Berachain
             | Self::Plasma
-            | Self::Stable
             | Self::Tron
             | Self::Stellar
             | Self::Near
             | Self::Cardano => true,
-            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot | Self::XLayer => false,
+            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot | Self::XLayer | Self::Stable => false,
         }
     }
 

@@ -119,12 +119,15 @@ impl Swapper for UniswapV3 {
         let to_chain = request.to_asset.chain();
         let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
-        _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
+        if request.from_asset.is_native() || request.to_asset.is_native() {
+            _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
+        }
 
         let client = Arc::new(self.client_for(from_chain)?);
 
         let fee_tiers = self.provider.get_tiers();
-        let base_pair = get_base_pair(&evm_chain, true).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
+        let use_weth = evm_chain.weth_contract().is_some();
+        let base_pair = get_base_pair(&evm_chain, use_weth).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
 
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
@@ -233,7 +236,8 @@ impl Swapper for UniswapV3 {
         let sig_deadline = get_sig_deadline();
 
         let evm_chain = EVMChain::from_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
-        let base_pair = get_base_pair(&evm_chain, true);
+        let use_weth = evm_chain.weth_contract().is_some();
+        let base_pair = get_base_pair(&evm_chain, use_weth);
         let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
         let path: Bytes = build_paths_with_routes(&quote.data.routes)?;
