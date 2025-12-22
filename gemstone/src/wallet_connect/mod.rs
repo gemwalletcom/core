@@ -219,7 +219,11 @@ impl WalletConnect {
                 gem_ton::signer::TonSignMessageData::from_bytes(data.as_bytes())?;
                 Ok(())
             }
-            SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe => Ok(()),
+            SignDigestType::Eip191
+            | SignDigestType::Base58
+            | SignDigestType::SuiPersonal
+            | SignDigestType::Siwe
+            | SignDigestType::BitcoinPersonal => Ok(()),
         }
     }
 
@@ -339,6 +343,7 @@ impl WalletConnect {
 
                 Ok(WalletConnectTransaction::Ton { messages, output_type })
             }
+            WalletConnectTransactionType::Bitcoin { output_type } => Ok(WalletConnectTransaction::Bitcoin { data, output_type }),
         }
     }
 }

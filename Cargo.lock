@@ -3118,13 +3118,17 @@ dependencies = [
  "chrono",
  "futures",
  "gem_client",
+ "hex",
  "num-bigint",
  "number_formatter",
  "primitives",
  "reqwest",
  "serde",
+ "serde_json",
  "serde_serializers",
  "settings",
+ "sha2",
+ "signer",
  "tokio",
 ]
 
