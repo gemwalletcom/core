@@ -17,7 +17,7 @@ impl ChainRequestHandler for BitcoinRequestHandler {
         let address = params
             .get("address")
             .and_then(|v| v.as_str())
-            .unwrap_or_default();
+            .ok_or("Missing address parameter")?;
 
         let btc_data = BitcoinSignMessageData::new(message.to_string(), address.to_string());
         let data = serde_json::to_string(&btc_data).map_err(|e| e.to_string())?;
