@@ -1,123 +1,111 @@
-use crate::Chain;
+use crate::{AssetType, Chain};
+use crate::evm_chain_config::{EvmChainConfig, evm_chain_config};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ChainStack {
     Native,
     Optimism,
     ZkSync,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
-#[typeshare(swift = "Equatable, Hashable, CaseIterable, Sendable")]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum EVMChain {
-    Ethereum,
-    SmartChain,
-    Polygon,
-    Plasma,
-    Arbitrum,
-    Optimism,
-    Base,
-    AvalancheC,
-    OpBNB,
-    Fantom,
-    Gnosis,
-    Manta,
-    Blast,
-    ZkSync,
-    Linea,
-    Mantle,
-    Celo,
-    World,
-    Sonic,
-    Abstract,
-    Berachain,
-    Ink,
-    Unichain,
-    Hyperliquid,
-    Monad,
-    XLayer,
-    Stable,
+macro_rules! evm_chain_list {
+    ($(
+        $variant:ident {
+            chain_id: $chain_id:expr,
+            rpc_urls: [$($rpc_url:expr),* $(,)?],
+            native_name: $native_name:expr,
+            native_symbol: $native_symbol:expr,
+            native_decimals: $native_decimals:expr,
+            default_asset_type: $default_asset_type:expr,
+            slip44: $slip44:expr,
+            block_time_ms: $block_time_ms:expr,
+            rank: $rank:expr,
+            swap_supported: $swap_supported:expr,
+            chain_stack: $chain_stack:expr,
+            min_priority_fee: $min_priority_fee:expr,
+            is_ethereum_layer2: $is_ethereum_layer2:expr,
+            weth_contract: $weth_contract:expr,
+        }
+    ),+ $(,)?) => {
+        #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
+        #[typeshare(swift = "Equatable, Hashable, CaseIterable, Sendable")]
+        #[serde(rename_all = "lowercase")]
+        #[strum(serialize_all = "lowercase")]
+        pub enum EVMChain {
+            $($variant,)+
+        }
+    };
 }
+
+include!("evm_chain_list.rs");
 
 impl EVMChain {
     pub fn all() -> Vec<Self> {
         Self::iter().collect::<Vec<_>>()
     }
 
+    fn config(&self) -> &'static EvmChainConfig {
+        evm_chain_config(*self)
+    }
+
+    pub fn chain_id(&self) -> &'static str {
+        self.config().chain_id
+    }
+
+    pub fn rpc_urls(&self) -> &'static [&'static str] {
+        self.config().rpc_urls
+    }
+
+    pub fn rpc_url(&self) -> &'static str {
+        self.config().rpc_urls.first().copied().unwrap_or_default()
+    }
+
+    pub fn native_name(&self) -> &'static str {
+        self.config().native_name
+    }
+
+    pub fn native_symbol(&self) -> &'static str {
+        self.config().native_symbol
+    }
+
+    pub fn native_decimals(&self) -> i32 {
+        self.config().native_decimals
+    }
+
+    pub fn default_asset_type(&self) -> AssetType {
+        self.config().default_asset_type.clone()
+    }
+
+    pub fn slip44(&self) -> i64 {
+        self.config().slip44
+    }
+
+    pub fn block_time(&self) -> u32 {
+        self.config().block_time_ms
+    }
+
+    pub fn rank(&self) -> i32 {
+        self.config().rank
+    }
+
+    pub fn swap_supported(&self) -> bool {
+        self.config().swap_supported
+    }
+
     pub fn min_priority_fee(&self) -> u64 {
-        match self {
-            Self::Ethereum => 100_000_000,                                                        // https://etherscan.io/gastracker
-            Self::SmartChain => 50_000_000,                                                       // https://bscscan.com/gastracker
-            Self::Polygon => 30_000_000_000,                                                      // https://polygonscan.com/gastracker
-            Self::Plasma => 100_000,                                                              // https://plasmascan.to/insight/leaderboard/gas-tracker
-            Self::Arbitrum => 10_000_000, // https://arbiscan.io/address/0x000000000000000000000000000000000000006C#readContract getMinimumGasPrice
-            Self::Optimism => 1_000_000,  // https://optimistic.etherscan.io/chart/gasprice
-            Self::Base => 5_000_000,      // https://basescan.org/chart/gasprice
-            Self::AvalancheC => 25_000_000_000, // https://snowscan.xyz/gastracker
-            Self::OpBNB | Self::World | Self::Abstract | Self::Ink | Self::Unichain => 1_000_000, // https://opbnbscan.com/statistics
-            Self::Fantom => 3_500_000_000, // https://ftmscan.com/gastracker
-            Self::Gnosis => 3_000_000_000, // https://gnosisscan.io/gastracker
-            Self::Blast => 200_000_000,   // https://blastscan.io/chart/gasprice
-            Self::ZkSync => 20_000_000,   // https://era.zksync.network/chart/gasprice
-            Self::Linea => 50_000_000,    // https://lineascan.build/gastracker
-            Self::Mantle | Self::Celo | Self::Manta => 10_000_000,
-            Self::Sonic => 10_000_000,
-            Self::Berachain => 1_000_000_000,   // 1 Gwei
-            Self::Hyperliquid => 1_000_000_000, // 1 Gwei
-            Self::Monad => 1_000_000_000,       // 1 Gwei
-            Self::XLayer => 1_000_000_000,      // 1 Gwei
-            Self::Stable => 1_000_000,          // https://stablescan.xyz
-        }
+        self.config().min_priority_fee
     }
 
     pub fn chain_stack(&self) -> ChainStack {
-        match self {
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain | Self::Celo => ChainStack::Optimism,
-            Self::ZkSync | Self::Abstract => ChainStack::ZkSync,
-            Self::Ethereum
-            | Self::SmartChain
-            | Self::Polygon
-            | Self::Arbitrum
-            | Self::AvalancheC
-            | Self::Fantom
-            | Self::Gnosis
-            | Self::Plasma
-            | Self::Manta
-            | Self::Blast
-            | Self::Linea
-            | Self::Mantle
-            | Self::Sonic
-            | Self::Berachain
-            | Self::Hyperliquid
-            | Self::Monad
-            | Self::XLayer
-            | Self::Stable => ChainStack::Native,
-        }
+        self.config().chain_stack
     }
 
     pub fn is_ethereum_layer2(&self) -> bool {
-        matches!(
-            self,
-            Self::Abstract
-                | Self::Optimism
-                | Self::Base
-                | Self::World
-                | Self::Ink
-                | Self::Unichain
-                | Self::ZkSync
-                | Self::Arbitrum
-                | Self::Blast
-                | Self::Linea
-                | Self::Celo
-                | Self::Mantle
-                | Self::XLayer
-        )
+        self.config().is_ethereum_layer2
     }
 
     // https://docs.optimism.io/stack/getting-started
@@ -130,31 +118,8 @@ impl EVMChain {
         self.chain_stack() == ChainStack::ZkSync
     }
 
-    pub fn weth_contract(&self) -> Option<&str> {
-        match self {
-            Self::Ethereum => Some("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"),
-            Self::SmartChain => Some("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"), // WBNB
-            Self::Polygon => Some("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"),    // WMATIC
-            Self::Arbitrum => Some("0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"),
-            Self::Optimism | Self::Base | Self::OpBNB | Self::World | Self::Ink | Self::Unichain => Some("0x4200000000000000000000000000000000000006"),
-            Self::AvalancheC => Some("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"), // WAVAX
-            Self::Fantom => Some("0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83"),     // WFTM
-            Self::Gnosis => Some("0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d"),     // Wrapped XDAI (WXDAI)
-            Self::ZkSync => Some("0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91"),
-            Self::Blast => Some("0x4300000000000000000000000000000000000004"),
-            Self::Celo => Some("0x471EcE3750Da237f93B8E339c536989b8978a438"),
-            Self::Sonic => Some("0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38"), // Wrapped Sonic (wS)
-            Self::Abstract => Some("0x3439153EB7AF838Ad19d56E1571FBD09333C2809"),
-            Self::Berachain => Some("0x6969696969696969696969696969696969696969"), // WBERA
-            Self::Hyperliquid => Some("0x5555555555555555555555555555555555555555"), // WHYPE
-            Self::Linea => Some("0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f"),
-            Self::Mantle => Some("0x78c1b0C915c4FAA5FffA6CAbf0219DA63d7f4cb8"), // Wrapped Mantle (WMNT)
-            Self::Manta => Some("0x0dc808adce2099a9f62aa87d9670745aba741746"),
-            Self::Plasma => Some("0x6100E367285b01F48D07953803A2d8dCA5D19873"), // Wrapped Plasma (WXPL)
-            Self::Monad => Some("0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A"),
-            Self::XLayer => Some("0xe538905cf8410324e03a5a23c1c177a474d59b2b"), // WOKB
-            Self::Stable => None,                                               // TODO: Wrapped gUSDT address
-        }
+    pub fn weth_contract(&self) -> Option<&'static str> {
+        self.config().weth_contract
     }
 
     pub fn from_chain(chain: Chain) -> Option<Self> {

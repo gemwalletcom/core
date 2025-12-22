@@ -12,6 +12,7 @@ pub mod chain_type;
 pub use self::chain_type::ChainType;
 pub mod chain_evm;
 pub use self::chain_evm::EVMChain;
+mod evm_chain_config;
 pub mod chain_bitcoin;
 pub use self::chain_bitcoin::BitcoinChain;
 pub mod name;

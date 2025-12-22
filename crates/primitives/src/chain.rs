@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::{AssetId, AssetType, ChainType, StakeChain};
+use crate::{AssetId, AssetType, ChainType, EVMChain, StakeChain};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable, Hashable")]
@@ -64,6 +64,8 @@ pub enum Chain {
     Stable,
 }
 
+const UTXO_CHAINS: &[Chain] = &[Chain::Bitcoin, Chain::BitcoinCash, Chain::Litecoin, Chain::Doge, Chain::Zcash, Chain::Cardano];
+
 impl fmt::Display for Chain {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Use `self.number` to refer to each positional data point.
@@ -92,20 +94,11 @@ impl Chain {
     }
 
     pub fn network_id(&self) -> &str {
+        if let Some(evm_chain) = EVMChain::from_chain(*self) {
+            return evm_chain.chain_id();
+        }
+
         match self {
-            Self::Ethereum => "1",
-            Self::SmartChain => "56",
-            Self::Arbitrum => "42161",
-            Self::AvalancheC => "43114",
-            Self::Base => "8453",
-            Self::Optimism => "10",
-            Self::Polygon => "137",
-            Self::OpBNB => "204",
-            Self::Fantom => "250",
-            Self::Gnosis => "100",
-            Self::Manta => "169",
-            Self::Blast => "81457",
-            Self::World => "480",
             Self::Cosmos => "cosmoshub-4",
             Self::Osmosis => "osmosis-1",
             Self::Celestia => "celestia",
@@ -113,10 +106,6 @@ impl Chain {
             Self::Injective => "injective-1",
             Self::Sei => "pacific-1",
             Self::Thorchain => "thorchain-1",
-            Self::ZkSync => "324",
-            Self::Linea => "59144",
-            Self::Mantle => "5000",
-            Self::Celo => "42220",
             Self::Near => "mainnet",
             Self::Bitcoin | Self::BitcoinCash => "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
             Self::Litecoin => "12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2",
@@ -128,20 +117,11 @@ impl Chain {
             Self::Aptos => "1",
             Self::Tron | Self::Xrp => "",
             Self::Stellar => "Public Global Stellar Network ; September 2015",
-            Self::Sonic => "146",
             Self::Algorand => "mainnet-v1.0",
             Self::Polkadot => "Polkadot Asset Hub",
-            Self::Plasma => "9745",
             Self::Cardano => "764824073", // magic number from genesis configuration
-            Self::Abstract => "2741",
-            Self::Berachain => "80094",
-            Self::Ink => "57073",
-            Self::Unichain => "130",
-            Self::Hyperliquid => "999",
             Self::HyperCore => "1337",
-            Self::Monad => "143",
-            Self::XLayer => "196",
-            Self::Stable => "988",
+            _ => unreachable!("EVM chains should be handled before network_id match"),
         }
     }
 
@@ -150,90 +130,19 @@ impl Chain {
     }
 
     pub fn is_utxo(&self) -> bool {
-        match self {
-            Self::Bitcoin | Self::BitcoinCash | Self::Litecoin | Self::Doge | Self::Zcash | Self::Cardano => true,
-            Self::Ethereum
-            | Self::SmartChain
-            | Self::Solana
-            | Self::Polygon
-            | Self::Thorchain
-            | Self::Cosmos
-            | Self::Osmosis
-            | Self::Arbitrum
-            | Self::Ton
-            | Self::Tron
-            | Self::Optimism
-            | Self::Aptos
-            | Self::Base
-            | Self::AvalancheC
-            | Self::Sui
-            | Self::Xrp
-            | Self::OpBNB
-            | Self::Fantom
-            | Self::Gnosis
-            | Self::Celestia
-            | Self::Injective
-            | Self::Sei
-            | Self::Manta
-            | Self::Blast
-            | Self::Noble
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::Near
-            | Self::World
-            | Self::Stellar
-            | Self::Sonic
-            | Self::Algorand
-            | Self::Polkadot
-            | Self::Plasma
-            | Self::Abstract
-            | Self::Berachain
-            | Self::Ink
-            | Self::Unichain
-            | Self::Monad
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::XLayer
-            | Self::Stable => false,
-        }
+        UTXO_CHAINS.contains(self)
     }
 
     pub fn as_slip44(&self) -> i64 {
+        if let Some(evm_chain) = EVMChain::from_chain(*self) {
+            return evm_chain.slip44();
+        }
+
         match self {
-            Self::Ethereum
-            | Self::Fantom
-            | Self::OpBNB
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::Gnosis
-            | Self::Injective
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::World
-            | Self::Sonic
-            | Self::Abstract
-            | Self::Berachain
-            | Self::Ink
-            | Self::Unichain
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Plasma
-            | Self::Monad
-            | Self::XLayer
-            | Self::Stable => 60,
             Self::Bitcoin => 0,
             Self::BitcoinCash => 145,
             Self::Litecoin => 2,
             Self::Zcash => 133,
-            Self::SmartChain => 9006,
             Self::Solana => 501,
             Self::Thorchain => 931,
             Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Noble | Self::Sei => 118,
@@ -241,7 +150,6 @@ impl Chain {
             Self::Tron => 195,
             Self::Doge => 3,
             Self::Aptos => 637,
-            Self::AvalancheC => 9005,
             Self::Sui => 784,
             Self::Xrp => 144,
             Self::Near => 397,
@@ -249,38 +157,17 @@ impl Chain {
             Self::Algorand => 283,
             Self::Polkadot => 354,
             Self::Cardano => 1815,
+            Self::Injective | Self::HyperCore => 60,
+            _ => unreachable!("EVM chains should be handled before as_slip44 match"),
         }
     }
 
     pub fn chain_type(&self) -> ChainType {
+        if EVMChain::from_chain(*self).is_some() {
+            return ChainType::Ethereum;
+        }
+
         match self {
-            Self::Ethereum
-            | Self::Fantom
-            | Self::OpBNB
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::SmartChain
-            | Self::AvalancheC
-            | Self::Gnosis
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::World
-            | Self::Sonic
-            | Self::Abstract
-            | Self::Berachain
-            | Self::Ink
-            | Self::Unichain
-            | Self::Hyperliquid
-            | Self::Plasma
-            | Self::Monad
-            | Self::XLayer
-            | Self::Stable => ChainType::Ethereum,
             Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin | Self::Zcash => ChainType::Bitcoin,
             Self::Solana => ChainType::Solana,
             Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
@@ -295,43 +182,22 @@ impl Chain {
             Self::Polkadot => ChainType::Polkadot,
             Self::Cardano => ChainType::Cardano,
             Self::HyperCore => ChainType::HyperCore,
+            _ => unreachable!("EVM chains should be handled before chain_type match"),
         }
     }
 
     pub fn default_asset_type(&self) -> Option<AssetType> {
+        if let Some(evm_chain) = EVMChain::from_chain(*self) {
+            return Some(evm_chain.default_asset_type());
+        }
+
         match self {
-            Self::Ethereum
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::AvalancheC
-            | Self::Gnosis
-            | Self::Fantom
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::World
-            | Self::Sonic
-            | Self::Abstract
-            | Self::Berachain
-            | Self::Ink
-            | Self::Unichain
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Plasma
-            | Self::Monad
-            | Self::XLayer
-            | Self::Stable => Some(AssetType::ERC20),
-            Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
             Self::Solana => Some(AssetType::SPL),
             Self::Tron => Some(AssetType::TRC20),
             Self::Ton => Some(AssetType::JETTON),
             Self::Sui | Self::Aptos => Some(AssetType::TOKEN),
             Self::Algorand => Some(AssetType::ASA),
+            Self::HyperCore => Some(AssetType::ERC20),
             Self::Bitcoin
             | Self::BitcoinCash
             | Self::Litecoin
@@ -349,6 +215,7 @@ impl Chain {
             | Self::Stellar
             | Self::Polkadot
             | Self::Cardano => None,
+            _ => unreachable!("EVM chains should be handled before default_asset_type match"),
         }
     }
 
@@ -378,50 +245,30 @@ impl Chain {
     }
 
     pub fn is_swap_supported(&self) -> bool {
+        if let Some(evm_chain) = EVMChain::from_chain(*self) {
+            return evm_chain.swap_supported();
+        }
+
         match self {
-            Self::Ethereum
-            | Self::Bitcoin
+            Self::Bitcoin
             | Self::BitcoinCash
             | Self::Litecoin
             | Self::Zcash
-            | Self::SmartChain
             | Self::Cosmos
-            | Self::Fantom
-            | Self::OpBNB
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::Gnosis
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::World
             | Self::Thorchain
             | Self::Solana
-            | Self::AvalancheC
             | Self::Doge
             | Self::Aptos
-            | Self::Sonic
-            | Self::Abstract
-            | Self::Unichain
-            | Self::Ink
-            | Self::Hyperliquid
             | Self::HyperCore
             | Self::Sui
-            | Self::Monad
             | Self::Ton
             | Self::Xrp
-            | Self::Berachain
-            | Self::Plasma
             | Self::Tron
             | Self::Stellar
             | Self::Near
             | Self::Cardano => true,
-            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot | Self::XLayer | Self::Stable => false,
+            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot => false,
+            _ => unreachable!("EVM chains should be handled before is_swap_supported match"),
         }
     }
 
@@ -435,96 +282,41 @@ impl Chain {
 
     // milliseconds
     pub fn block_time(&self) -> u32 {
+        if let Some(evm_chain) = EVMChain::from_chain(*self) {
+            return evm_chain.block_time();
+        }
+
         match self {
-            Self::Solana | Self::Aptos | Self::Sui | Self::Monad | Self::Sonic => 500,
-            // 1,000 ms
-            Self::Arbitrum
-            | Self::Celo
-            | Self::Fantom
-            | Self::Ink
-            | Self::Linea
-            | Self::Mantle
-            | Self::Near
-            | Self::OpBNB
-            | Self::Sei
-            | Self::Stable
-            | Self::Unichain
-            | Self::ZkSync
-            | Self::Abstract
-            | Self::SmartChain => 1_000,
-            Self::AvalancheC
-            | Self::Base
-            | Self::Blast
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Manta
-            | Self::Optimism
-            | Self::World
-            | Self::Berachain
-            | Self::Plasma
-            | Self::Thorchain
-            | Self::XLayer => 2_000,
-            Self::Polygon | Self::Tron => 3_000,
+            Self::Solana | Self::Aptos | Self::Sui => 500,
+            Self::Near | Self::Sei => 1_000,
+            Self::HyperCore | Self::Thorchain => 2_000,
+            Self::Tron => 3_000,
             Self::Algorand | Self::Xrp => 4_000,
-            Self::Gnosis | Self::Polkadot | Self::Ton => 5_000,
+            Self::Polkadot | Self::Ton => 5_000,
             Self::Celestia | Self::Cosmos | Self::Injective | Self::Noble | Self::Osmosis | Self::Stellar => 6_000,
-            Self::Ethereum => 12_000,
             Self::Cardano => 20_000,
             Self::Doge => 60_000,
             Self::Zcash => 75_000,
             Self::Litecoin => 120_000,
             Self::Bitcoin | Self::BitcoinCash => 600_000,
+            _ => unreachable!("EVM chains should be handled before block_time match"),
         }
     }
 
     pub fn rank(&self) -> i32 {
+        if let Some(evm_chain) = EVMChain::from_chain(*self) {
+            return evm_chain.rank();
+        }
+
         match self {
             Self::Bitcoin => 100,
-            Self::Ethereum => 85,
-            Self::Solana | Self::SmartChain => 80,
+            Self::Solana => 80,
             Self::Tron => 70,
             Self::Osmosis | Self::Ton => 50,
-            Self::Cosmos
-            | Self::Injective
-            | Self::Aptos
-            | Self::Sui
-            | Self::Xrp
-            | Self::Celestia
-            | Self::BitcoinCash
-            | Self::Polkadot
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Monad => 40,
-            Self::Abstract | Self::Berachain | Self::Ink | Self::Unichain => 35,
-            Self::Manta
-            | Self::Fantom
-            | Self::OpBNB
-            | Self::Arbitrum
-            | Self::Blast
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::Gnosis
-            | Self::Thorchain
-            | Self::Doge
-            | Self::Zcash
-            | Self::AvalancheC
-            | Self::Sei
-            | Self::Litecoin
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::Near
-            | Self::World
-            | Self::Stellar
-            | Self::Sonic
-            | Self::Plasma
-            | Self::Stable
-            | Self::Algorand
-            | Self::Cardano
-            | Self::XLayer => 30,
+            Self::Cosmos | Self::Injective | Self::Aptos | Self::Sui | Self::Xrp | Self::Celestia | Self::BitcoinCash | Self::Polkadot | Self::HyperCore => 40,
+            Self::Thorchain | Self::Doge | Self::Zcash | Self::Sei | Self::Litecoin | Self::Near | Self::Stellar | Self::Algorand | Self::Cardano => 30,
             Self::Noble => 20,
+            _ => unreachable!("EVM chains should be handled before rank match"),
         }
     }
 
