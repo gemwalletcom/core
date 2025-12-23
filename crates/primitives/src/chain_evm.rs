@@ -1,5 +1,6 @@
 use crate::{AssetType, Chain};
 use crate::evm_chain_config::{EvmChainConfig, evm_chain_config};
+use crate::macros::{define_evm_chain, with_evm_chain_list};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
@@ -12,36 +13,7 @@ pub enum ChainStack {
     ZkSync,
 }
 
-macro_rules! evm_chain_list {
-    ($(
-        $variant:ident {
-            chain_id: $chain_id:expr,
-            rpc_urls: [$($rpc_url:expr),* $(,)?],
-            native_name: $native_name:expr,
-            native_symbol: $native_symbol:expr,
-            native_decimals: $native_decimals:expr,
-            default_asset_type: $default_asset_type:expr,
-            slip44: $slip44:expr,
-            block_time_ms: $block_time_ms:expr,
-            rank: $rank:expr,
-            swap_supported: $swap_supported:expr,
-            chain_stack: $chain_stack:expr,
-            min_priority_fee: $min_priority_fee:expr,
-            is_ethereum_layer2: $is_ethereum_layer2:expr,
-            weth_contract: $weth_contract:expr,
-        }
-    ),+ $(,)?) => {
-        #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
-        #[typeshare(swift = "Equatable, Hashable, CaseIterable, Sendable")]
-        #[serde(rename_all = "lowercase")]
-        #[strum(serialize_all = "lowercase")]
-        pub enum EVMChain {
-            $($variant,)+
-        }
-    };
-}
-
-include!("evm_chain_list.rs");
+with_evm_chain_list!(define_evm_chain);
 
 impl EVMChain {
     pub fn all() -> Vec<Self> {
