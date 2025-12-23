@@ -1,0 +1,166 @@
+{
+  "account": {
+    "id": 1,
+    "name": "Test"
+  },
+  "additional_attributes": {},
+  "content_attributes": {
+    "in_reply_to": null
+  },
+  "content_type": "text",
+  "content": "Test message",
+  "conversation": {
+    "additional_attributes": {
+      "browser": {
+        "device_name": "test_device",
+        "browser_name": "Chrome",
+        "platform_name": "Android",
+        "browser_version": "143.0.0.0",
+        "platform_version": "16"
+      },
+      "referer": "https://support.gemwallet.com/",
+      "initiated_at": {
+        "timestamp": "Mon Dec 22 2025 23:01:56 GMT-0800 (Pacific Standard Time)"
+      },
+      "browser_language": "en"
+    },
+    "can_reply": true,
+    "channel": "Channel::WebWidget",
+    "contact_inbox": {
+      "id": 1,
+      "contact_id": 1,
+      "inbox_id": 11,
+      "source_id": "test-source-id",
+      "created_at": "2025-12-23T07:01:33.235Z",
+      "updated_at": "2025-12-23T07:01:33.235Z",
+      "hmac_verified": false,
+      "pubsub_token": "test-token"
+    },
+    "id": 1,
+    "inbox_id": 11,
+    "messages": [
+      {
+        "id": 1,
+        "content": "Test message",
+        "account_id": 1,
+        "inbox_id": 11,
+        "conversation_id": 1,
+        "message_type": 0,
+        "created_at": 1766475526,
+        "updated_at": "2025-12-23T07:38:46.385Z",
+        "private": false,
+        "status": "sent",
+        "source_id": null,
+        "content_type": "text",
+        "content_attributes": {
+          "in_reply_to": null
+        },
+        "sender_type": "Contact",
+        "sender_id": 1,
+        "external_source_ids": {},
+        "additional_attributes": {},
+        "processed_message_content": "Test message",
+        "sentiment": {},
+        "conversation": {
+          "assignee_id": null,
+          "unread_count": 1,
+          "last_activity_at": 1766475526,
+          "contact_inbox": {
+            "source_id": "test-source-id"
+          }
+        },
+        "sender": {
+          "additional_attributes": {},
+          "custom_attributes": {
+            "os": "16",
+            "device": "Test Device",
+            "currency": "USD",
+            "platform": "android",
+            "app_version": "1.0.0",
+            "support_device_id": "test-device-id"
+          },
+          "email": null,
+          "id": 1,
+          "identifier": null,
+          "name": "test-user",
+          "phone_number": null,
+          "thumbnail": "",
+          "blocked": false,
+          "type": "contact"
+        }
+      }
+    ],
+    "labels": [],
+    "meta": {
+      "sender": {
+        "additional_attributes": {},
+        "custom_attributes": {
+          "os": "16",
+          "device": "Test Device",
+          "currency": "USD",
+          "platform": "android",
+          "app_version": "1.0.0",
+          "support_device_id": "test-device-id"
+        },
+        "email": null,
+        "id": 1,
+        "identifier": null,
+        "name": "test-user",
+        "phone_number": null,
+        "thumbnail": "",
+        "blocked": false,
+        "type": "contact"
+      },
+      "assignee": null,
+      "assignee_type": null,
+      "team": null,
+      "hmac_verified": false
+    },
+    "status": "open",
+    "custom_attributes": {},
+    "snoozed_until": null,
+    "unread_count": 1,
+    "first_reply_created_at": "2025-12-23T07:04:13.002Z",
+    "priority": null,
+    "waiting_since": 1766474603,
+    "agent_last_seen_at": 1766474697,
+    "contact_last_seen_at": 1766475519,
+    "last_activity_at": 1766475526,
+    "timestamp": 1766475526,
+    "created_at": 1766473316,
+    "updated_at": 1766475526.387767
+  },
+  "created_at": "2025-12-23T07:38:46.385Z",
+  "id": 1,
+  "inbox": {
+    "id": 11,
+    "name": "Test Support"
+  },
+  "message_type": "incoming",
+  "private": false,
+  "sender": {
+    "account": {
+      "id": 1,
+      "name": "Test"
+    },
+    "additional_attributes": {},
+    "avatar": "",
+    "custom_attributes": {
+      "os": "16",
+      "device": "Test Device",
+      "currency": "USD",
+      "platform": "android",
+      "app_version": "1.0.0",
+      "support_device_id": "test-device-id"
+    },
+    "email": null,
+    "id": 1,
+    "identifier": null,
+    "name": "test-user",
+    "phone_number": null,
+    "thumbnail": "",
+    "blocked": false
+  },
+  "source_id": null,
+  "event": "message_created"
+}

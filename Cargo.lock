@@ -7275,8 +7275,12 @@ dependencies = [
 name = "support"
 version = "1.0.0"
 dependencies = [
+ "localizer",
+ "primitives",
  "serde",
  "serde_json",
+ "storage",
+ "streamer",
 ]
 
 [[package]]

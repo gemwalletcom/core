@@ -7,8 +7,7 @@ use storage::Database;
 use streamer::consumer::MessageConsumer;
 use streamer::{StreamProducer, SupportWebhookPayload};
 
-use super::model::{ChatwootWebhookPayload, EVENT_CONVERSATION_STATUS_CHANGED, EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_CREATED};
-use super::support_client::SupportClient;
+use support::{ChatwootWebhookPayload, EVENT_CONVERSATION_STATUS_CHANGED, EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_CREATED, SupportClient};
 
 pub struct SupportWebhookConsumer {
     support_client: SupportClient,
