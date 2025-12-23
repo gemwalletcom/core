@@ -16,12 +16,24 @@ impl SupportClient {
     }
 
     pub fn get_device(&self, support_device_id: &str) -> Result<Option<Device>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.get_support_device(support_device_id).optional()?.map(|d| d.as_primitive()))
+        Ok(self
+            .database
+            .client()?
+            .get_support_device(support_device_id)
+            .optional()?
+            .map(|d| d.as_primitive()))
     }
 
-    pub async fn handle_message_created(&self, device: &Device, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn handle_message_created(
+        &self,
+        device: &Device,
+        support_device_id: &str,
+        payload: &ChatwootWebhookPayload,
+    ) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let notifications_count = if let Some(notification) = Self::build_notification(device, payload) {
-            self.stream_producer.publish_notifications_support(NotificationsPayload::new(vec![notification])).await?;
+            self.stream_producer
+                .publish_notifications_support(NotificationsPayload::new(vec![notification]))
+                .await?;
             1
         } else {
             0
@@ -65,8 +77,7 @@ mod tests {
 
     #[test]
     fn test_build_notification_message_created() {
-        let payload: ChatwootWebhookPayload =
-            serde_json::from_str(include_str!("../tests/testdata/chatwoot_message_created.json")).unwrap();
+        let payload: ChatwootWebhookPayload = serde_json::from_str(include_str!("../tests/testdata/chatwoot_message_created.json")).unwrap();
 
         let notification = SupportClient::build_notification(&Device::mock(), &payload);
 
@@ -76,8 +87,7 @@ mod tests {
 
     #[test]
     fn test_build_notification_conversation_updated() {
-        let payload: ChatwootWebhookPayload =
-            serde_json::from_str(include_str!("../tests/testdata/chatwoot_conversation_updated.json")).unwrap();
+        let payload: ChatwootWebhookPayload = serde_json::from_str(include_str!("../tests/testdata/chatwoot_conversation_updated.json")).unwrap();
 
         let notification = SupportClient::build_notification(&Device::mock(), &payload);
 

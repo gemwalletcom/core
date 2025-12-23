@@ -353,7 +353,7 @@ impl Transaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Asset;
+    use crate::{Asset, TransactionUtxoInput};
 
     #[test]
     fn test_asset_ids_transfer() {
@@ -469,5 +469,62 @@ mod tests {
         assert_eq!(transaction.assets_addresses().len(), 2);
         // With fee: 2 swap assets + 1 fee
         assert_eq!(transaction.assets_addresses_with_fee().len(), 3);
+    }
+
+    fn utxo_input(address: &str, value: &str) -> TransactionUtxoInput {
+        TransactionUtxoInput::new(address.to_string(), value.to_string())
+    }
+
+    #[test]
+    fn test_finalize_incoming_utxo() {
+        let transaction = Transaction::mock_utxo(
+            vec![utxo_input("sender", "50000")],
+            vec![utxo_input("user", "40000"), utxo_input("change", "9000")],
+        )
+        .finalize(vec!["user".to_string()]);
+
+        assert_eq!(
+            (transaction.from.as_str(), transaction.to.as_str(), transaction.value.as_str()),
+            ("sender", "user", "40000")
+        );
+        assert_eq!(transaction.direction, TransactionDirection::Incoming);
+    }
+
+    #[test]
+    fn test_finalize_outgoing_utxo() {
+        let transaction = Transaction::mock_utxo(
+            vec![utxo_input("user", "50000")],
+            vec![utxo_input("recipient", "40000"), utxo_input("user", "9000")],
+        )
+        .finalize(vec!["user".to_string()]);
+
+        assert_eq!(
+            (transaction.from.as_str(), transaction.to.as_str(), transaction.value.as_str()),
+            ("user", "recipient", "40000")
+        );
+        assert_eq!(transaction.direction, TransactionDirection::Outgoing);
+    }
+
+    #[test]
+    fn test_finalize_self_transfer_utxo() {
+        let transaction = Transaction::mock_utxo(vec![utxo_input("user", "50000")], vec![utxo_input("user", "40000"), utxo_input("user", "9000")])
+            .finalize(vec!["user".to_string()]);
+
+        assert_eq!(
+            (transaction.from.as_str(), transaction.to.as_str(), transaction.value.as_str()),
+            ("user", "user", "49000")
+        );
+        assert_eq!(transaction.direction, TransactionDirection::SelfTransfer);
+    }
+
+    #[test]
+    fn test_finalize_non_utxo_unchanged() {
+        let original = Transaction::mock();
+        let transaction = original.clone().finalize(vec!["0xfrom".to_string()]);
+
+        assert_eq!(
+            (transaction.from, transaction.to, transaction.value),
+            (original.from, original.to, original.value)
+        );
     }
 }

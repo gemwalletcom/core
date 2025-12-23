@@ -10,7 +10,6 @@ pub use self::database::{
     rewards::RedemptionUpdate,
 };
 pub use self::error::DatabaseError;
-pub use diesel::OptionalExtension;
 pub use self::models::{RewardRedemptionOptionRow, ScanAddressTypeRow};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
@@ -22,6 +21,7 @@ pub use self::repositories::{
     rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository,
     support_repository::SupportRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository,
 };
+pub use diesel::OptionalExtension;
 
 #[derive(Clone)]
 pub struct Database(database::PgPool);
