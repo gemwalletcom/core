@@ -10,6 +10,7 @@ pub use self::database::{
     rewards::RedemptionUpdate,
 };
 pub use self::error::DatabaseError;
+pub use diesel::OptionalExtension;
 pub use self::models::{RewardRedemptionOptionRow, ScanAddressTypeRow};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,

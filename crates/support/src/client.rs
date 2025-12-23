@@ -2,7 +2,7 @@ use crate::ChatwootWebhookPayload;
 use localizer::LanguageLocalizer;
 use primitives::{Device, GorushNotification, PushNotification, PushNotificationTypes, push_notification::PushNotificationSupport};
 use std::error::Error;
-use storage::{Database, DatabaseClient};
+use storage::{Database, OptionalExtension};
 use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct SupportClient {
@@ -15,30 +15,30 @@ impl SupportClient {
         Self { database, stream_producer }
     }
 
-    pub async fn handle_message_created(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let mut client = self.database.client()?;
-        let device = client.get_support_device(support_device_id)?.as_primitive();
+    pub fn get_device(&self, support_device_id: &str) -> Result<Option<Device>, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.get_support_device(support_device_id).optional()?.map(|d| d.as_primitive()))
+    }
 
-        let notifications_count = if let Some(notification) = Self::build_notification(&device, payload) {
+    pub async fn handle_message_created(&self, device: &Device, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let notifications_count = if let Some(notification) = Self::build_notification(device, payload) {
             self.stream_producer.publish_notifications_support(NotificationsPayload::new(vec![notification])).await?;
             1
         } else {
             0
         };
 
-        Self::update_unread(&mut client, support_device_id, payload)?;
+        self.update_unread(support_device_id, payload)?;
         Ok(notifications_count)
     }
 
     pub fn handle_conversation_updated(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let mut client = self.database.client()?;
-        Self::update_unread(&mut client, support_device_id, payload)?;
+        self.update_unread(support_device_id, payload)?;
         Ok(())
     }
 
-    fn update_unread(client: &mut DatabaseClient, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+    fn update_unread(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
         if let Some(unread) = payload.get_unread() {
-            client.support().support_update_unread(support_device_id, unread)?;
+            self.database.client()?.support().support_update_unread(support_device_id, unread)?;
         }
         Ok(())
     }
