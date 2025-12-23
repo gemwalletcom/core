@@ -6,6 +6,6 @@ debug = 0
 # https://github.com/johnthagen/min-sized-rust
 strip = true
 codegen-units = 1
-lto = true
+lto = "fat"
 opt-level = "z"
 panic = "abort"
