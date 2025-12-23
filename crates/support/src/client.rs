@@ -2,7 +2,7 @@ use crate::ChatwootWebhookPayload;
 use localizer::LanguageLocalizer;
 use primitives::{Device, GorushNotification, PushNotification, PushNotificationTypes, push_notification::PushNotificationSupport};
 use std::error::Error;
-use storage::Database;
+use storage::{Database, DatabaseClient};
 use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct SupportClient {
@@ -15,45 +15,47 @@ impl SupportClient {
         Self { database, stream_producer }
     }
 
-    pub async fn handle_message_created(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let device = self.database.client()?.get_support_device(support_device_id)?.as_primitive();
+    pub async fn handle_message_created(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let mut client = self.database.client()?;
+        let device = client.get_support_device(support_device_id)?.as_primitive();
 
-        if let Some(notification) = Self::build_notification(device, payload) {
-            let notifications_payload = NotificationsPayload::new(vec![notification]);
-            self.stream_producer.publish_notifications_support(notifications_payload).await?;
-        }
+        let notifications_count = if let Some(notification) = Self::build_notification(&device, payload) {
+            self.stream_producer.publish_notifications_support(NotificationsPayload::new(vec![notification])).await?;
+            1
+        } else {
+            0
+        };
 
-        if let Some(unread) = payload.get_unread() {
-            self.database.client()?.support().support_update_unread(support_device_id, unread)?;
-        }
-
-        Ok(())
+        Self::update_unread(&mut client, support_device_id, payload)?;
+        Ok(notifications_count)
     }
 
     pub fn handle_conversation_updated(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if let Some(unread) = payload.get_unread() {
-            let mut client = self.database.client()?;
-            client.support().support_update_unread(support_device_id, unread)?;
-        }
-
+        let mut client = self.database.client()?;
+        Self::update_unread(&mut client, support_device_id, payload)?;
         Ok(())
     }
 
-    pub fn build_notification(device: Device, payload: &ChatwootWebhookPayload) -> Option<GorushNotification> {
+    fn update_unread(client: &mut DatabaseClient, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if let Some(unread) = payload.get_unread() {
+            client.support().support_update_unread(support_device_id, unread)?;
+        }
+        Ok(())
+    }
+
+    fn build_notification(device: &Device, payload: &ChatwootWebhookPayload) -> Option<GorushNotification> {
         if !payload.is_outgoing_message() {
             return None;
         }
 
-        let language_localizer = LanguageLocalizer::new_with_language(&device.locale);
-        let title = language_localizer.notification_support_new_message_title();
+        let title = LanguageLocalizer::new_with_language(&device.locale).notification_support_new_message_title();
         let message = payload.content.clone().unwrap_or_default();
-
         let data = PushNotification {
             notification_type: PushNotificationTypes::Support,
             data: serde_json::to_value(PushNotificationSupport {}).ok(),
         };
 
-        Some(GorushNotification::from_device(device, title, message, data))
+        Some(GorushNotification::from_device(device.clone(), title, message, data))
     }
 }
 
@@ -65,22 +67,19 @@ mod tests {
     fn test_build_notification_message_created() {
         let payload: ChatwootWebhookPayload =
             serde_json::from_str(include_str!("../tests/testdata/chatwoot_message_created.json")).unwrap();
-        let device = Device::mock();
 
-        let notification = SupportClient::build_notification(device, &payload);
+        let notification = SupportClient::build_notification(&Device::mock(), &payload);
 
         assert!(notification.is_some());
-        let notification = notification.unwrap();
-        assert_eq!(notification.message, "from agent");
+        assert_eq!(notification.unwrap().message, "from agent");
     }
 
     #[test]
     fn test_build_notification_conversation_updated() {
         let payload: ChatwootWebhookPayload =
             serde_json::from_str(include_str!("../tests/testdata/chatwoot_conversation_updated.json")).unwrap();
-        let device = Device::mock();
 
-        let notification = SupportClient::build_notification(device, &payload);
+        let notification = SupportClient::build_notification(&Device::mock(), &payload);
 
         assert!(notification.is_none());
     }

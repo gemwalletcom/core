@@ -17,8 +17,17 @@ impl SupportWebhookConsumer {
     pub async fn new(settings: &Settings) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let database = Database::new(&settings.postgres.url, settings.postgres.pool);
         let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "daemon_support_producer").await?;
-        let support_client = SupportClient::new(database, stream_producer);
-        Ok(Self { support_client })
+        Ok(Self { support_client: SupportClient::new(database, stream_producer) })
+    }
+
+    async fn process_webhook(&self, support_device_id: &str, webhook: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        match webhook.event.as_str() {
+            EVENT_MESSAGE_CREATED => self.support_client.handle_message_created(support_device_id, webhook).await,
+            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => {
+                self.support_client.handle_conversation_updated(support_device_id, webhook).map(|_| 0)
+            }
+            _ => Ok(0),
+        }
     }
 }
 
@@ -29,47 +38,23 @@ impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
     }
 
     async fn process(&self, payload: SupportWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let webhook_payload = match serde_json::from_value::<ChatwootWebhookPayload>(payload.data.clone()) {
-            Ok(payload) => payload,
-            Err(e) => {
-                error_with_fields!("Support webhook parsing failed", &e, payload = payload.data.to_string());
-                return Err(e.into());
-            }
+        let webhook: ChatwootWebhookPayload = serde_json::from_value(payload.data.clone()).map_err(|e| {
+            error_with_fields!("Support webhook parsing failed", &e, payload = payload.data.to_string());
+            e
+        })?;
+
+        let Some(support_device_id) = webhook.get_support_device_id() else {
+            info_with_fields!("Support webhook missing support_device_id", event = webhook.event);
+            return Ok(true);
         };
 
-        let support_device_id = match webhook_payload.get_support_device_id() {
-            Some(support_device_id) => support_device_id,
-            None => {
-                info_with_fields!("Support webhook missing support_device_id, skipping", event = webhook_payload.event);
-                return Ok(true);
-            }
-        };
-
-        let result = match webhook_payload.event.as_str() {
-            EVENT_MESSAGE_CREATED => self.support_client.handle_message_created(&support_device_id, &webhook_payload).await,
-            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => {
-                self.support_client.handle_conversation_updated(&support_device_id, &webhook_payload)
-            }
-            _ => {
-                info_with_fields!(
-                    "Support webhook event skipped",
-                    support_device_id = support_device_id,
-                    event = webhook_payload.event
-                );
-                return Ok(true);
-            }
-        };
-        match result {
-            Ok(_) => {
-                info_with_fields!(
-                    "Support webhook processed",
-                    support_device_id = support_device_id,
-                    event = webhook_payload.event
-                );
+        match self.process_webhook(&support_device_id, &webhook).await {
+            Ok(notifications) => {
+                info_with_fields!("Support webhook processed", support_device_id = support_device_id, event = webhook.event, notifications = notifications);
                 Ok(true)
             }
             Err(error) => {
-                error_with_fields!("Support webhook failed", &*error, payload = payload.data.to_string());
+                error_with_fields!("Support webhook failed", &*error, support_device_id = support_device_id, payload = payload.data.to_string());
                 Err(error)
             }
         }
