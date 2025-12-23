@@ -32,7 +32,7 @@ gem_auth = { path = "../crates/gem_auth" }
 gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
 gem_client = { path = "../crates/gem_client" }
 gem_hypercore = { path = "../crates/gem_hypercore", features = ["signer"] }
-gem_bitcoin = { path = "../crates/gem_bitcoin", features = ["rpc"] }
+gem_bitcoin = { path = "../crates/gem_bitcoin", features = ["rpc", "signer"] }
 gem_cardano = { path = "../crates/gem_cardano", features = ["rpc"] }
 gem_algorand = { path = "../crates/gem_algorand", features = ["rpc"] }
 gem_stellar = { path = "../crates/gem_stellar", features = ["rpc"] }

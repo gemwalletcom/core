@@ -1,3 +1,4 @@
+mod bitcoin;
 mod ethereum;
 mod solana;
 mod sui;
@@ -5,6 +6,7 @@ mod ton;
 
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectChainOperation};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
+use bitcoin::BitcoinRequestHandler;
 use ethereum::EthereumRequestHandler;
 use primitives::{Chain, WalletConnectRequest, WalletConnectionMethods};
 use serde_json::Value;
@@ -58,6 +60,8 @@ impl WalletConnectRequestHandler {
             WalletConnectionMethods::SuiSignAndExecuteTransaction => SuiRequestHandler::parse_send_transaction(Chain::Sui, params),
             WalletConnectionMethods::TonSignData => TonRequestHandler::parse_sign_message(Chain::Ton, params, domain),
             WalletConnectionMethods::TonSendMessage => TonRequestHandler::parse_send_transaction(Chain::Ton, params),
+            WalletConnectionMethods::BtcSignMessage => BitcoinRequestHandler::parse_sign_message(Chain::Bitcoin, params, domain),
+            WalletConnectionMethods::BtcSendTransfer => BitcoinRequestHandler::parse_send_transaction(Chain::Bitcoin, params),
         }
     }
 
