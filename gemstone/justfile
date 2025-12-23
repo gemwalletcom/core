@@ -113,17 +113,31 @@ assemble-frameworks:
     fi
     for target in ${targets[@]}; do \
         pushd ${TARGET_DIR}/${target}/${BUILD_MODE_TARGET} > /dev/null && \
-        mkdir -p ${FW_FFI_FILE} && cd ${FW_FFI_FILE} && mkdir Headers Modules && echo "$MODULE_MAP" > ./Modules/module.modulemap && cp ../../../../${LIB_NAME}/${GEN_SWIFT_FOLDER}/${FW_FFI_NAME}.h ./Headers && cp ../${STATIC_LIB_NAME} ./${FW_FFI_NAME} && cp ../../../../${LIB_NAME}/src/Info.plist ./; \
+        mkdir -p ${FW_FFI_FILE} && \
+        cd ${FW_FFI_FILE} && \
+        mkdir Headers Modules && \
+        echo "$MODULE_MAP" > ./Modules/module.modulemap && \
+        cp ../../../../${LIB_NAME}/${GEN_SWIFT_FOLDER}/${FW_FFI_NAME}.h ./Headers && \
+        cp ../${STATIC_LIB_NAME} ./${FW_FFI_NAME} && \
+        cp ../../../../${LIB_NAME}/src/Info.plist ./; \
         popd > /dev/null; \
     done
 
 xcframework:
     #!/usr/bin/env bash
-    rm -rf ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME} && mkdir -p ${TARGET_XC_FW_FOLDER}/Sources
+    rm -rf ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}
+    mkdir -p ${TARGET_XC_FW_FOLDER}/Sources
     if [ ${HOST_ARCH} == "x86_64" ]; then \
-        xcodebuild -create-xcframework -framework ${TARGET_DIR}/x86_64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
+        xcodebuild -create-xcframework \
+            -framework ${TARGET_DIR}/x86_64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
+            -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
     else \
-        xcodebuild -create-xcframework -framework ${TARGET_DIR}/aarch64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-sim/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-ios-macabi/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -framework ${TARGET_DIR}/aarch64-apple-darwin/${BUILD_MODE_TARGET}/${FW_FFI_FILE} -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
+        xcodebuild -create-xcframework \
+            -framework ${TARGET_DIR}/aarch64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
+            -framework ${TARGET_DIR}/aarch64-apple-ios-sim/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
+            -framework ${TARGET_DIR}/aarch64-apple-ios-macabi/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
+            -framework ${TARGET_DIR}/aarch64-apple-darwin/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
+            -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
     fi
 
 cp-xcframework-source:
