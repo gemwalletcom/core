@@ -312,8 +312,7 @@ mod tests {
 
     #[test]
     fn test_best_quote() {
-        let json = include_str!("./test/chainflip_quotes.json");
-        let quotes: Vec<QuoteResponse> = serde_json::from_str(json).unwrap();
+        let quotes: Vec<QuoteResponse> = serde_json::from_str(include_str!("./test/chainflip_quotes.json")).unwrap();
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, DEFAULT_CHAINFLIP_FEE_BPS);
 
         assert_eq!(egress_amount.to_string(), "145118751424");
@@ -332,8 +331,7 @@ mod tests {
 
     #[test]
     fn test_best_boost_quote() {
-        let json = include_str!("./test/chainflip_boost_quotes.json");
-        let quotes: Vec<QuoteResponse> = serde_json::from_str(json).unwrap();
+        let quotes: Vec<QuoteResponse> = serde_json::from_str(include_str!("./test/chainflip_boost_quotes.json")).unwrap();
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, DEFAULT_CHAINFLIP_FEE_BPS);
 
         assert_eq!(egress_amount.to_string(), "4080936927013539226");

@@ -264,12 +264,12 @@ mod tests {
 
     #[test]
     fn test_map_v4_swap_eth_dai() {
-        let tx_json = include_str!("../../testdata/v4_eth_dai_tx.json");
-        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
-
-        let receipt_json = include_str!("../../testdata/v4_eth_dai_tx_receipt.json");
-        let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
-        let receipt = receipt_value.result;
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(include_str!("../../testdata/v4_eth_dai_tx.json"))
+            .unwrap()
+            .result;
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(include_str!("../../testdata/v4_eth_dai_tx_receipt.json"))
+            .unwrap()
+            .result;
 
         let swap_tx = SwapMapper::map_transaction(&Chain::Unichain, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
@@ -301,12 +301,12 @@ mod tests {
 
     #[test]
     fn test_map_v4_swap_usdc_eth() {
-        let tx_json = include_str!("../../testdata/v4_usdc_eth_tx.json");
-        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
-
-        let receipt_json = include_str!("../../testdata/v4_usdc_eth_tx_receipt.json");
-        let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
-        let receipt = receipt_value.result;
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(include_str!("../../testdata/v4_usdc_eth_tx.json"))
+            .unwrap()
+            .result;
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(include_str!("../../testdata/v4_usdc_eth_tx_receipt.json"))
+            .unwrap()
+            .result;
 
         let swap_tx = SwapMapper::map_transaction(&Chain::Unichain, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
@@ -339,12 +339,12 @@ mod tests {
     #[test]
     fn test_map_v3_swap_eth_token() {
         // https://app.blocksec.com/explorer/tx/eth/0xfdbc3270b7edf1e63c0aaec9466a71348a1e63bdf069af2d51e9902f996e9d75
-        let tx_json = include_str!("../../testdata/v3_eth_token_tx.json");
-        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
-
-        let receipt_json = include_str!("../../testdata/v3_eth_token_tx_receipt.json");
-        let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
-        let receipt = receipt_value.result;
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(include_str!("../../testdata/v3_eth_token_tx.json"))
+            .unwrap()
+            .result;
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(include_str!("../../testdata/v3_eth_token_tx_receipt.json"))
+            .unwrap()
+            .result;
 
         let swap_tx = SwapMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
@@ -377,12 +377,12 @@ mod tests {
     #[test]
     fn test_map_v3_swap_token_eth() {
         // https://app.blocksec.com/explorer/tx/base/0xc6c2898ddc2d2165bc6c018ec6ebf58d99922c74b9a0e323b50c029d10b09858
-        let tx_json = include_str!("../../testdata/v3_token_eth_tx.json");
-        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
-
-        let receipt_json = include_str!("../../testdata/v3_token_eth_tx_receipt.json");
-        let receipt_value: JsonRpcResult<TransactionReciept> = serde_json::from_str(receipt_json).unwrap();
-        let receipt = receipt_value.result;
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(include_str!("../../testdata/v3_token_eth_tx.json"))
+            .unwrap()
+            .result;
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(include_str!("../../testdata/v3_token_eth_tx_receipt.json"))
+            .unwrap()
+            .result;
 
         let swap_tx = SwapMapper::map_transaction(&Chain::Base, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
@@ -415,11 +415,12 @@ mod tests {
     #[test]
     fn test_map_v3_swap_pol_usdt() {
         // https://app.blocksec.com/explorer/tx/polygon/0x815759e89e4290873109e482f1f3284cdaca3eb76ff24591a9ac2c6056a2dbcc
-        let tx_json = include_str!("../../testdata/v3_pol_usdt_tx.json");
-        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
-
-        let receipt_json = include_str!("../../testdata/v3_pol_usdt_tx_receipt.json");
-        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(include_str!("../../testdata/v3_pol_usdt_tx.json"))
+            .unwrap()
+            .result;
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(include_str!("../../testdata/v3_pol_usdt_tx_receipt.json"))
+            .unwrap()
+            .result;
 
         let swap_tx = SwapMapper::map_transaction(&Chain::Polygon, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
@@ -452,11 +453,12 @@ mod tests {
     #[test]
     fn test_map_v3_swap_usdc_paxg() {
         // https://app.blocksec.com/explorer/tx/eth/0x65b5ff389386caf23a9998318d936e434c5bbca850877f1ca03eb246b3ad82e1
-        let tx_json = include_str!("../../testdata/v3_usdc_paxg_tx.json");
-        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
-
-        let receipt_json = include_str!("../../testdata/v3_usdc_paxg_receipt.json");
-        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(include_str!("../../testdata/v3_usdc_paxg_tx.json"))
+            .unwrap()
+            .result;
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(include_str!("../../testdata/v3_usdc_paxg_receipt.json"))
+            .unwrap()
+            .result;
 
         let swap_tx = SwapMapper::map_transaction(&Chain::Ethereum, &transaction, &receipt, None, DateTime::default(), None).expect("swap_metadata");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
@@ -488,14 +490,15 @@ mod tests {
 
     #[test]
     fn test_swap_from_balance_diff() {
-        let tx_json = include_str!("../../testdata/trace_replay_tx.json");
-        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
-
-        let receipt_json = include_str!("../../testdata/trace_replay_tx_receipt.json");
-        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
-
-        let trace_json = include_str!("../../testdata/trace_replay_tx_trace.json");
-        let trace = serde_json::from_str::<JsonRpcResult<TransactionReplayTrace>>(trace_json).unwrap().result;
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(include_str!("../../testdata/trace_replay_tx.json"))
+            .unwrap()
+            .result;
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(include_str!("../../testdata/trace_replay_tx_receipt.json"))
+            .unwrap()
+            .result;
+        let trace = serde_json::from_str::<JsonRpcResult<TransactionReplayTrace>>(include_str!("../../testdata/trace_replay_tx_trace.json"))
+            .unwrap()
+            .result;
 
         let contract_registry = ContractRegistry::default();
         let swap_tx = SwapMapper::map_transaction(
@@ -537,14 +540,15 @@ mod tests {
 
     #[test]
     fn test_map_transaction_v2_token_eth() {
-        let tx_json = include_str!("../../testdata/v2_token_eth_tx.json");
-        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(tx_json).unwrap().result;
-
-        let receipt_json = include_str!("../../testdata/v2_token_eth_tx_receipt.json");
-        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(receipt_json).unwrap().result;
-
-        let trace_json = include_str!("../../testdata/v2_token_eth_tx_trace.json");
-        let trace = serde_json::from_str::<JsonRpcResult<TransactionReplayTrace>>(trace_json).unwrap().result;
+        let transaction = serde_json::from_str::<JsonRpcResult<Transaction>>(include_str!("../../testdata/v2_token_eth_tx.json"))
+            .unwrap()
+            .result;
+        let receipt = serde_json::from_str::<JsonRpcResult<TransactionReciept>>(include_str!("../../testdata/v2_token_eth_tx_receipt.json"))
+            .unwrap()
+            .result;
+        let trace = serde_json::from_str::<JsonRpcResult<TransactionReplayTrace>>(include_str!("../../testdata/v2_token_eth_tx_trace.json"))
+            .unwrap()
+            .result;
 
         let contract_registry = ContractRegistry::default();
         let swap_tx = SwapMapper::map_transaction(

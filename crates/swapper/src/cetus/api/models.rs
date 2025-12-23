@@ -49,8 +49,7 @@ mod tests {
 
     #[test]
     fn test_request() {
-        let data = include_str!("test/stats_pool.json");
-        let response: Response = serde_json::from_slice(data.as_bytes()).unwrap();
+        let response: Response = serde_json::from_slice(include_str!("test/stats_pool.json").as_bytes()).unwrap();
 
         assert_eq!(response.data.lp_list.len(), 1);
     }

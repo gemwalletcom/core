@@ -91,8 +91,7 @@ mod tests {
 
     #[test]
     fn test_map_real_transaction_response() {
-        let data = include_str!("../../testdata/successful_transaction.json");
-        let response: JsonRpcResult<BroadcastResult> = serde_json::from_str(data).unwrap();
+        let response: JsonRpcResult<BroadcastResult> = serde_json::from_str(include_str!("../../testdata/successful_transaction.json")).unwrap();
 
         let hash = map_transaction_broadcast(&response.result).unwrap();
         assert_eq!(hash, "5qSP5dRVr5KQ37Dd9CV2gi7KDuvtU4eFaRK7cDKREVL2");

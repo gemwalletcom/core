@@ -219,8 +219,7 @@ mod tests {
 
     #[test]
     fn test_permit2_json_parsing() {
-        let json_str = include_str!("../testdata/uniswap_permit2.json");
-        let value = serde_json::from_str(json_str).unwrap();
+        let value: serde_json::Value = serde_json::from_str(include_str!("../testdata/uniswap_permit2.json")).unwrap();
         let result = parse_eip712_json(&value);
 
         assert!(result.is_ok(), "Parsing failed: {:?}", result.err());
@@ -282,8 +281,7 @@ mod tests {
 
     #[test]
     fn test_1inch_permit_json_parsing() {
-        let json_str = include_str!("../testdata/1inch_permit.json");
-        let value = serde_json::from_str(json_str).unwrap();
+        let value: serde_json::Value = serde_json::from_str(include_str!("../testdata/1inch_permit.json")).unwrap();
         let result = parse_eip712_json(&value);
 
         assert!(result.is_ok(), "Parsing failed: {:?}", result.err());

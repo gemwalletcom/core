@@ -104,8 +104,7 @@ pub mod test {
 
     #[test]
     pub fn get_quote_response() {
-        let json = include_str!("./test/btc_eth_quote.json");
-        let quote_response = serde_json::from_str::<Vec<QuoteResponse>>(json).unwrap();
+        let quote_response = serde_json::from_str::<Vec<QuoteResponse>>(include_str!("./test/btc_eth_quote.json")).unwrap();
 
         assert!(quote_response[0].boost_quote.is_some());
     }
