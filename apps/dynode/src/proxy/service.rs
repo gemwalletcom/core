@@ -132,7 +132,6 @@ impl ProxyRequestService {
         for method_name in &methods_for_metrics {
             self.metrics.add_proxy_response(
                 request.chain.as_ref(),
-                &request.path_with_query,
                 method_name,
                 url.url.host_str().unwrap_or_default(),
                 status,
@@ -202,7 +201,6 @@ impl ProxyRequestService {
             for method_name in &methods_for_metrics {
                 metrics.add_proxy_response(
                     request.chain.as_ref(),
-                    &request.path_with_query,
                     method_name,
                     url.url.host_str().unwrap_or_default(),
                     status,

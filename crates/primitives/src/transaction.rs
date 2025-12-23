@@ -350,7 +350,11 @@ impl Transaction {
     }
 
     pub fn without_utxo(self) -> Self {
-        Self { utxo_inputs: None, utxo_outputs: None, ..self }
+        Self {
+            utxo_inputs: None,
+            utxo_outputs: None,
+            ..self
+        }
     }
 }
 

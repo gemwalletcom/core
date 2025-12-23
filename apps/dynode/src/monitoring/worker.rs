@@ -39,13 +39,13 @@ impl NodeMonitor {
         for (index, chain_config) in self.chains.values().cloned().enumerate() {
             if chain_config.urls.len() <= 1 {
                 if let Some(url) = chain_config.urls.first() {
-                    self.metrics.set_node_host_current(chain_config.chain.as_ref(), &url.url);
+                    self.metrics.set_node_host_current(chain_config.chain.as_ref(), &url.host());
                 }
                 continue;
             }
 
             if let Some(url) = chain_config.urls.first() {
-                self.metrics.set_node_host_current(chain_config.chain.as_ref(), &url.url);
+                self.metrics.set_node_host_current(chain_config.chain.as_ref(), &url.host());
             }
 
             let nodes = Arc::clone(&self.nodes);
@@ -107,8 +107,8 @@ impl NodeMonitor {
         if let Some(best_candidate) = NodeSyncAnalyzer::select_best_node(&current_node.url, &fallback_statuses) {
             if best_candidate.url.url != current_node.url.url {
                 NodeService::update_node_domain(nodes, chain_config.chain, NodeDomain::new(best_candidate.url.clone(), chain_config.clone())).await;
-                metrics.set_node_host_current(chain_config.chain.as_ref(), &best_candidate.url.url);
-                metrics.add_node_switch(chain_config.chain.as_ref(), &current_node.url.url, &best_candidate.url.url);
+                metrics.set_node_host_current(chain_config.chain.as_ref(), &best_candidate.url.host());
+                metrics.add_node_switch(chain_config.chain.as_ref(), &current_node.url.host(), &best_candidate.url.host());
 
                 NodeTelemetry::log_node_switch(chain_config, &current_node.url, &best_candidate);
             }
