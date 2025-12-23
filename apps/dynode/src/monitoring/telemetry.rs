@@ -5,7 +5,7 @@ use primitives::NodeStatusState;
 
 use crate::config::{ChainConfig, Url};
 
-use super::sync::{NodeStatusObservation, NodeSyncAnalyzer};
+use super::sync::{NodeStatusObservation, NodeSwitchResult, NodeSyncAnalyzer};
 
 pub struct NodeTelemetry;
 
@@ -89,8 +89,9 @@ impl NodeTelemetry {
         }
     }
 
-    pub fn log_node_switch(chain_config: &ChainConfig, previous: &Url, observation: &NodeStatusObservation) {
+    pub fn log_node_switch(chain_config: &ChainConfig, previous: &Url, switch: &NodeSwitchResult) {
         let chain = chain_config.chain.as_ref();
+        let observation = &switch.observation;
         match &observation.state {
             NodeStatusState::Healthy(status) => {
                 let latency = DurationMs(observation.latency);
@@ -100,7 +101,7 @@ impl NodeTelemetry {
                 log_info_event(
                     "Node switch",
                     chain,
-                    [("new_host", observation.url.host()), ("old_host", previous.host())],
+                    [("new_host", observation.url.host()), ("old_host", previous.host()), ("reason", switch.reason.as_str().to_string())],
                     &latency,
                     latest,
                     current,
@@ -111,7 +112,7 @@ impl NodeTelemetry {
                 log_info_event(
                     "Node switch",
                     chain,
-                    [("new_host", observation.url.host()), ("old_host", previous.host())],
+                    [("new_host", observation.url.host()), ("old_host", previous.host()), ("reason", switch.reason.as_str().to_string())],
                     &latency,
                     None,
                     None,

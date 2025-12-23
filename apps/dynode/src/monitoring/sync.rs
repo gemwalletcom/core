@@ -3,6 +3,23 @@ use std::time::Duration;
 use crate::config::Url;
 use primitives::{NodeStatusState, NodeSyncStatus};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NodeSwitchReason {
+    BlockHeight,
+    Latency,
+    Unknown,
+}
+
+impl NodeSwitchReason {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::BlockHeight => "block_height",
+            Self::Latency => "latency",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct NodeStatusObservation {
     pub url: Url,
@@ -16,6 +33,12 @@ impl NodeStatusObservation {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct NodeSwitchResult {
+    pub observation: NodeStatusObservation,
+    pub reason: NodeSwitchReason,
+}
+
 pub struct NodeSyncAnalyzer;
 
 impl NodeSyncAnalyzer {
@@ -23,7 +46,9 @@ impl NodeSyncAnalyzer {
         observation.state.is_healthy()
     }
 
-    pub fn select_best_node(current: &Url, observations: &[NodeStatusObservation]) -> Option<NodeStatusObservation> {
+    pub fn select_best_node(current: &Url, observations: &[NodeStatusObservation]) -> Option<NodeSwitchResult> {
+        let current_status = observations.iter().find(|o| o.url == *current).and_then(|o| o.state.as_status());
+
         observations
             .iter()
             .filter(|observation| observation.url != *current)
@@ -34,7 +59,18 @@ impl NodeSyncAnalyzer {
             .max_by(|(left_observation, left_status), (right_observation, right_status)| {
                 Self::compare_candidates(left_observation, left_status, right_observation, right_status)
             })
-            .map(|(observation, _)| observation.clone())
+            .map(|(observation, new_status)| NodeSwitchResult {
+                observation: observation.clone(),
+                reason: Self::switch_reason(current_status, new_status),
+            })
+    }
+
+    fn switch_reason(current: Option<&NodeSyncStatus>, new: &NodeSyncStatus) -> NodeSwitchReason {
+        match current {
+            Some(curr) if Self::status_height(new) > Self::status_height(curr) => NodeSwitchReason::BlockHeight,
+            Some(_) => NodeSwitchReason::Latency,
+            None => NodeSwitchReason::Unknown,
+        }
     }
 
     pub fn format_status_summary(observations: &[NodeStatusObservation]) -> String {
@@ -104,20 +140,23 @@ mod tests {
             healthy_observation("https://c", Some(110), Some(110), 5),
         ];
 
-        let best = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
-        assert_eq!(best.url.url, "https://b");
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
+        assert_eq!(result.observation.url.url, "https://b");
+        assert_eq!(result.reason, NodeSwitchReason::BlockHeight);
     }
 
     #[test]
     fn prioritizes_latency_on_equal_height() {
         let current = url("https://a");
         let observations = vec![
+            healthy_observation("https://a", Some(120), Some(120), 50),
             healthy_observation("https://b", Some(120), Some(120), 40),
             healthy_observation("https://c", Some(120), Some(120), 10),
         ];
 
-        let best = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
-        assert_eq!(best.url.url, "https://c");
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
+        assert_eq!(result.observation.url.url, "https://c");
+        assert_eq!(result.reason, NodeSwitchReason::Latency);
     }
 
     #[test]
@@ -130,8 +169,8 @@ mod tests {
             Duration::from_millis(5),
         ));
 
-        let best = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
-        assert_eq!(best.url.url, "https://b");
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
+        assert_eq!(result.observation.url.url, "https://b");
     }
 
     #[test]

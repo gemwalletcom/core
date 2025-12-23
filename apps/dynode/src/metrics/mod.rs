@@ -66,6 +66,7 @@ pub struct NodeSwitchLabels {
     chain: String,
     old_host: String,
     new_host: String,
+    reason: String,
 }
 
 impl Metrics {
@@ -100,7 +101,7 @@ impl Metrics {
         registry.register("node_host_current", "Node current host url", node_host_current.clone());
         registry.register("cache_hits", "Cache hits by host and path", cache_hits.clone());
         registry.register("cache_misses", "Cache misses by host and path", cache_misses.clone());
-        registry.register("node_switches_total", "Node switches by chain and host", node_switches.clone());
+        registry.register("node_switches", "Node switches by chain", node_switches.clone());
 
         Self {
             registry: Arc::new(metrics_registry),
@@ -201,12 +202,13 @@ impl Metrics {
             .inc();
     }
 
-    pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str) {
+    pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str, reason: &str) {
         self.node_switches
             .get_or_create(&NodeSwitchLabels {
                 chain: chain.to_string(),
                 old_host: old_host.to_string(),
                 new_host: new_host.to_string(),
+                reason: reason.to_string(),
             })
             .inc();
     }
