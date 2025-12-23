@@ -1,6 +1,5 @@
 use crate::{AssetType, Chain};
-use crate::evm_chain_config::{EvmChainConfig, evm_chain_config};
-use crate::macros::{define_evm_chain, with_evm_chain_list};
+use crate::macros::{define_evm_chain, evm_chain_configs, with_evm_chain_list};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
@@ -14,6 +13,27 @@ pub enum ChainStack {
 }
 
 with_evm_chain_list!(define_evm_chain);
+
+#[derive(Debug)]
+pub(crate) struct EvmChainConfig {
+    pub chain: EVMChain,
+    pub chain_id: &'static str,
+    pub rpc_urls: &'static [&'static str],
+    pub native_name: &'static str,
+    pub native_symbol: &'static str,
+    pub native_decimals: i32,
+    pub default_asset_type: AssetType,
+    pub slip44: i64,
+    pub block_time_ms: u32,
+    pub rank: i32,
+    pub swap_supported: bool,
+    pub chain_stack: ChainStack,
+    pub min_priority_fee: u64,
+    pub is_ethereum_layer2: bool,
+    pub weth_contract: Option<&'static str>,
+}
+
+with_evm_chain_list!(evm_chain_configs);
 
 impl EVMChain {
     pub fn all() -> Vec<Self> {

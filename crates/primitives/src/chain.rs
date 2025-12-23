@@ -64,8 +64,6 @@ pub enum Chain {
     Stable,
 }
 
-const UTXO_CHAINS: &[Chain] = &[Chain::Bitcoin, Chain::BitcoinCash, Chain::Litecoin, Chain::Doge, Chain::Zcash, Chain::Cardano];
-
 impl fmt::Display for Chain {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Use `self.number` to refer to each positional data point.
@@ -130,7 +128,32 @@ impl Chain {
     }
 
     pub fn is_utxo(&self) -> bool {
-        UTXO_CHAINS.contains(self)
+        if EVMChain::from_chain(*self).is_some() {
+            return false;
+        }
+
+        match self {
+            Self::Bitcoin | Self::BitcoinCash | Self::Litecoin | Self::Doge | Self::Zcash | Self::Cardano => true,
+            Self::Solana
+            | Self::Thorchain
+            | Self::Cosmos
+            | Self::Osmosis
+            | Self::Ton
+            | Self::Tron
+            | Self::Aptos
+            | Self::Sui
+            | Self::Xrp
+            | Self::Celestia
+            | Self::Injective
+            | Self::Sei
+            | Self::Noble
+            | Self::Near
+            | Self::Stellar
+            | Self::Algorand
+            | Self::Polkadot
+            | Self::HyperCore => false,
+            _ => unreachable!("EVM chains should be handled before is_utxo match"),
+        }
     }
 
     pub fn as_slip44(&self) -> i64 {

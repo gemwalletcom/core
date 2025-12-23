@@ -62,7 +62,7 @@ macro_rules! evm_chain_configs {
     };
 }
 
-include!("evm_chain_list.rs");
+include!("chain_evm_list.rs");
 
 pub(crate) use define_evm_chain;
 pub(crate) use evm_chain_configs;
