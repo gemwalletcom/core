@@ -348,6 +348,10 @@ impl Transaction {
         .into_iter()
         .collect()
     }
+
+    pub fn without_utxo(self) -> Self {
+        Self { utxo_inputs: None, utxo_outputs: None, ..self }
+    }
 }
 
 #[cfg(test)]

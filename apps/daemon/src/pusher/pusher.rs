@@ -147,8 +147,7 @@ impl Pusher {
             return Ok(vec![]);
         }
 
-        let addresses = vec![subscription.address.clone()];
-        let transaction = transaction.finalize(addresses);
+        let transaction = transaction.finalize(vec![subscription.address.clone()]).without_utxo();
 
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
         let message = self.message(localizer, transaction.clone(), subscription.clone(), assets.clone())?;
