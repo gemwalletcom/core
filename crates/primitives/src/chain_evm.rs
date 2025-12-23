@@ -61,6 +61,13 @@ impl EVMChain {
         self.config().min_priority_fee
     }
 
+    pub fn chain_id(&self) -> u64 {
+        self.to_chain()
+            .network_id()
+            .parse()
+            .unwrap_or_else(|_| panic!("Invalid network id for {}", self.as_ref()))
+    }
+
     pub fn chain_stack(&self) -> ChainStack {
         self.config().chain_stack
     }
