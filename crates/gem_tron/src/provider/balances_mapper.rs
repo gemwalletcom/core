@@ -95,6 +95,7 @@ fn new_stake_balance(
         locked,
         staked,
         pending,
+        pending_unconfirmed: BigUint::from(0u32),
         rewards,
         reserved: BigUint::from(0u32),
         withdrawable: BigUint::from(0u32),
