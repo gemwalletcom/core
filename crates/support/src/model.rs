@@ -78,8 +78,8 @@ impl ChatwootWebhookPayload {
             .or_else(|| self.conversation.as_ref().and_then(|conversation| conversation.unread_count))
     }
 
-    pub fn is_incoming_message(&self) -> bool {
-        self.message_type.as_deref() == Some(MESSAGE_TYPE_INCOMING)
+    pub fn is_outgoing_message(&self) -> bool {
+        self.message_type.as_deref() == Some(MESSAGE_TYPE_OUTGOING)
     }
 
     pub fn get_messages(&self) -> &[Message] {
