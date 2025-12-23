@@ -78,7 +78,8 @@ mod tests {
 
     #[test]
     fn test_response_to_json() {
-        let parsed: serde_json::Value = serde_json::from_str(&BitcoinSignDataResponse::new("bc1qtest".to_string(), "27abcdef".to_string()).to_json().unwrap()).unwrap();
+        let parsed: serde_json::Value =
+            serde_json::from_str(&BitcoinSignDataResponse::new("bc1qtest".to_string(), "27abcdef".to_string()).to_json().unwrap()).unwrap();
         assert_eq!(parsed["address"], "bc1qtest");
         assert_eq!(parsed["signature"], "27abcdef");
     }

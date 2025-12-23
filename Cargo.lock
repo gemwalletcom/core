@@ -2155,6 +2155,7 @@ dependencies = [
  "storage",
  "streamer",
  "strum",
+ "support",
  "tokio",
 ]
 
@@ -7268,6 +7269,14 @@ dependencies = [
  "serde_with",
  "sui-sdk-types",
  "thiserror 2.0.16",
+]
+
+[[package]]
+name = "support"
+version = "1.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

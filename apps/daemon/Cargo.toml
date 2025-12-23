@@ -31,6 +31,7 @@ search_index = { path = "../../crates/search_index" }
 cacher = { path = "../../crates/cacher" }
 streamer = { path = "../../crates/streamer" }
 localizer = { path = "../../crates/localizer" }
+support = { path = "../../crates/support" }
 settings_chain = { path = "../../crates/settings_chain" }
 chain_traits = { path = "../../crates/chain_traits" }
 number_formatter = { path = "../../crates/number_formatter" }
