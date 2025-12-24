@@ -1,10 +1,11 @@
-use std::{fmt, str::FromStr};
+use std::fmt;
 
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::{AssetId, AssetType, ChainType, StakeChain};
+use crate::chain_config::{get_chain_config, ChainConfig};
+use crate::{AssetId, AssetType, ChainType};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable, Hashable")]
@@ -61,6 +62,7 @@ pub enum Chain {
     HyperCore,   // HyperCore native chain
     Monad,
     XLayer,
+    Stable,
 }
 
 impl fmt::Display for Chain {
@@ -71,19 +73,12 @@ impl fmt::Display for Chain {
 }
 
 impl Chain {
+    pub fn config(&self) -> &'static ChainConfig {
+        get_chain_config(*self)
+    }
+
     pub fn as_denom(&self) -> Option<&str> {
-        match self {
-            Self::Thorchain => Some("rune"),
-            Self::Cosmos => Some("uatom"),
-            Self::Osmosis => Some("uosmo"),
-            Self::Celestia => Some("utia"),
-            Self::Injective => Some("inj"),
-            Self::Sei => Some("usei"),
-            Self::Noble => Some("uusdc"),
-            Self::Sui => Some("0x2::sui::SUI"),
-            Self::Aptos => Some("0x1::aptos_coin::AptosCoin"),
-            _ => None,
-        }
+        self.config().denom
     }
 
     pub fn as_asset_id(&self) -> AssetId {
@@ -91,56 +86,7 @@ impl Chain {
     }
 
     pub fn network_id(&self) -> &str {
-        match self {
-            Self::Ethereum => "1",
-            Self::SmartChain => "56",
-            Self::Arbitrum => "42161",
-            Self::AvalancheC => "43114",
-            Self::Base => "8453",
-            Self::Optimism => "10",
-            Self::Polygon => "137",
-            Self::OpBNB => "204",
-            Self::Fantom => "250",
-            Self::Gnosis => "100",
-            Self::Manta => "169",
-            Self::Blast => "81457",
-            Self::World => "480",
-            Self::Cosmos => "cosmoshub-4",
-            Self::Osmosis => "osmosis-1",
-            Self::Celestia => "celestia",
-            Self::Noble => "noble-1",
-            Self::Injective => "injective-1",
-            Self::Sei => "pacific-1",
-            Self::Thorchain => "thorchain-1",
-            Self::ZkSync => "324",
-            Self::Linea => "59144",
-            Self::Mantle => "5000",
-            Self::Celo => "42220",
-            Self::Near => "mainnet",
-            Self::Bitcoin | Self::BitcoinCash => "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
-            Self::Litecoin => "12a765e31ffd4059bada1e25190f6e98c99d9714d334efa41a195a7e7e04bfe2",
-            Self::Doge => "1a91e3dace36e2be3bf030a65679fe821aa1d6ef92e7c9902eb318182c355691",
-            Self::Zcash => "00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce08",
-            Self::Solana => "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
-            Self::Ton => "F6OpKZKqvqeFp6CQmFomXNMfMj2EnaUSOXN+Mh+wVWk=",
-            Self::Sui => "35834a8a", // https://docs.sui.io/sui-api-ref#sui_getchainidentifier
-            Self::Aptos => "1",
-            Self::Tron | Self::Xrp => "",
-            Self::Stellar => "Public Global Stellar Network ; September 2015",
-            Self::Sonic => "146",
-            Self::Algorand => "mainnet-v1.0",
-            Self::Polkadot => "Polkadot Asset Hub",
-            Self::Plasma => "9745",
-            Self::Cardano => "764824073", // magic number from genesis configuration
-            Self::Abstract => "2741",
-            Self::Berachain => "80094",
-            Self::Ink => "57073",
-            Self::Unichain => "130",
-            Self::Hyperliquid => "999",
-            Self::HyperCore => "1337",
-            Self::Monad => "143",
-            Self::XLayer => "196",
-        }
+        self.config().network_id
     }
 
     pub fn from_chain_id(chain_id: u64) -> Option<Self> {
@@ -148,376 +94,52 @@ impl Chain {
     }
 
     pub fn is_utxo(&self) -> bool {
-        match self {
-            Self::Bitcoin | Self::BitcoinCash | Self::Litecoin | Self::Doge | Self::Zcash | Self::Cardano => true,
-            Self::Ethereum
-            | Self::SmartChain
-            | Self::Solana
-            | Self::Polygon
-            | Self::Thorchain
-            | Self::Cosmos
-            | Self::Osmosis
-            | Self::Arbitrum
-            | Self::Ton
-            | Self::Tron
-            | Self::Optimism
-            | Self::Aptos
-            | Self::Base
-            | Self::AvalancheC
-            | Self::Sui
-            | Self::Xrp
-            | Self::OpBNB
-            | Self::Fantom
-            | Self::Gnosis
-            | Self::Celestia
-            | Self::Injective
-            | Self::Sei
-            | Self::Manta
-            | Self::Blast
-            | Self::Noble
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::Near
-            | Self::World
-            | Self::Stellar
-            | Self::Sonic
-            | Self::Algorand
-            | Self::Polkadot
-            | Self::Plasma
-            | Self::Abstract
-            | Self::Berachain
-            | Self::Ink
-            | Self::Unichain
-            | Self::Monad
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::XLayer => false,
-        }
+        self.config().is_utxo
     }
 
     pub fn as_slip44(&self) -> i64 {
-        match self {
-            Self::Ethereum
-            | Self::Fantom
-            | Self::OpBNB
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::Gnosis
-            | Self::Injective
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::World
-            | Self::Sonic
-            | Self::Abstract
-            | Self::Berachain
-            | Self::Ink
-            | Self::Unichain
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Plasma
-            | Self::Monad
-            | Self::XLayer => 60,
-            Self::Bitcoin => 0,
-            Self::BitcoinCash => 145,
-            Self::Litecoin => 2,
-            Self::Zcash => 133,
-            Self::SmartChain => 9006,
-            Self::Solana => 501,
-            Self::Thorchain => 931,
-            Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Noble | Self::Sei => 118,
-            Self::Ton => 607,
-            Self::Tron => 195,
-            Self::Doge => 3,
-            Self::Aptos => 637,
-            Self::AvalancheC => 9005,
-            Self::Sui => 784,
-            Self::Xrp => 144,
-            Self::Near => 397,
-            Self::Stellar => 148,
-            Self::Algorand => 283,
-            Self::Polkadot => 354,
-            Self::Cardano => 1815,
-        }
+        self.config().slip44
     }
 
     pub fn chain_type(&self) -> ChainType {
-        match self {
-            Self::Ethereum
-            | Self::Fantom
-            | Self::OpBNB
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::SmartChain
-            | Self::AvalancheC
-            | Self::Gnosis
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::World
-            | Self::Sonic
-            | Self::Abstract
-            | Self::Berachain
-            | Self::Ink
-            | Self::Unichain
-            | Self::Hyperliquid
-            | Self::Plasma
-            | Self::Monad
-            | Self::XLayer => ChainType::Ethereum,
-            Self::Bitcoin | Self::BitcoinCash | Self::Doge | Self::Litecoin | Self::Zcash => ChainType::Bitcoin,
-            Self::Solana => ChainType::Solana,
-            Self::Thorchain | Self::Cosmos | Self::Osmosis | Self::Celestia | Self::Injective | Self::Noble | Self::Sei => ChainType::Cosmos,
-            Self::Ton => ChainType::Ton,
-            Self::Tron => ChainType::Tron,
-            Self::Aptos => ChainType::Aptos,
-            Self::Sui => ChainType::Sui,
-            Self::Xrp => ChainType::Xrp,
-            Self::Near => ChainType::Near,
-            Self::Stellar => ChainType::Stellar,
-            Self::Algorand => ChainType::Algorand,
-            Self::Polkadot => ChainType::Polkadot,
-            Self::Cardano => ChainType::Cardano,
-            Self::HyperCore => ChainType::HyperCore,
-        }
+        self.config().chain_type.clone()
     }
 
     pub fn default_asset_type(&self) -> Option<AssetType> {
-        match self {
-            Self::Ethereum
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::AvalancheC
-            | Self::Gnosis
-            | Self::Fantom
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::World
-            | Self::Sonic
-            | Self::Abstract
-            | Self::Berachain
-            | Self::Ink
-            | Self::Unichain
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Plasma
-            | Self::Monad
-            | Self::XLayer => Some(AssetType::ERC20),
-            Self::OpBNB | Self::SmartChain => Some(AssetType::BEP20),
-            Self::Solana => Some(AssetType::SPL),
-            Self::Tron => Some(AssetType::TRC20),
-            Self::Ton => Some(AssetType::JETTON),
-            Self::Sui | Self::Aptos => Some(AssetType::TOKEN),
-            Self::Algorand => Some(AssetType::ASA),
-            Self::Bitcoin
-            | Self::BitcoinCash
-            | Self::Litecoin
-            | Self::Thorchain
-            | Self::Cosmos
-            | Self::Osmosis
-            | Self::Doge
-            | Self::Zcash
-            | Self::Xrp
-            | Self::Celestia
-            | Self::Injective
-            | Self::Noble
-            | Self::Sei
-            | Self::Near
-            | Self::Stellar
-            | Self::Polkadot
-            | Self::Cardano => None,
-        }
+        self.config().default_asset_type.clone()
     }
 
     pub fn account_activation_fee(&self) -> Option<i32> {
-        match self {
-            Self::Xrp => Some(1_000_000), // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
-            Self::Stellar => Some(10_000_000),
-            Self::Algorand => Some(100_000),
-            _ => None,
-        }
+        self.config().account_activation_fee
     }
 
     pub fn token_activation_fee(&self) -> Option<i32> {
-        match self {
-            Self::Xrp => Some(200_000),    // https://xrpl.org/docs/concepts/accounts/reserves#base-reserve-and-owner-reserve
-            Self::Solana => Some(2039280), // 2039280 (165 bytes) https://solana.com/docs/core/accounts
-            _ => None,
-        }
+        self.config().token_activation_fee
     }
 
     pub fn minimum_account_balance(&self) -> Option<u64> {
-        match self {
-            Self::Solana => Some(890_880),
-            Self::Polkadot => Some(10_000_000_000),
-            _ => None,
-        }
+        self.config().minimum_account_balance
     }
 
     pub fn is_swap_supported(&self) -> bool {
-        match self {
-            Self::Ethereum
-            | Self::Bitcoin
-            | Self::BitcoinCash
-            | Self::Litecoin
-            | Self::Zcash
-            | Self::SmartChain
-            | Self::Cosmos
-            | Self::Fantom
-            | Self::OpBNB
-            | Self::Arbitrum
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::Gnosis
-            | Self::Manta
-            | Self::Blast
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::World
-            | Self::Thorchain
-            | Self::Solana
-            | Self::AvalancheC
-            | Self::Doge
-            | Self::Aptos
-            | Self::Sonic
-            | Self::Abstract
-            | Self::Unichain
-            | Self::Ink
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Sui
-            | Self::Monad
-            | Self::Ton
-            | Self::Xrp
-            | Self::Berachain
-            | Self::Plasma
-            | Self::Tron
-            | Self::Stellar
-            | Self::Near
-            | Self::Cardano => true,
-            Self::Osmosis | Self::Celestia | Self::Injective | Self::Sei | Self::Noble | Self::Algorand | Self::Polkadot | Self::XLayer => false,
-        }
+        self.config().is_swap_supported
     }
 
     pub fn is_stake_supported(&self) -> bool {
-        StakeChain::from_str(self.as_ref()).is_ok()
+        self.config().stake.is_some()
     }
 
     pub fn is_nft_supported(&self) -> bool {
-        matches!(self, Self::Ethereum | Self::Polygon | Self::Solana | Self::SmartChain)
+        self.config().is_nft_supported
     }
 
     // milliseconds
     pub fn block_time(&self) -> u32 {
-        match self {
-            Self::Solana | Self::Aptos | Self::Sui | Self::Monad | Self::Sonic => 500,
-            // 1,000 ms
-            Self::Arbitrum
-            | Self::Celo
-            | Self::Fantom
-            | Self::Ink
-            | Self::Linea
-            | Self::Mantle
-            | Self::Near
-            | Self::OpBNB
-            | Self::Sei
-            | Self::Unichain
-            | Self::ZkSync
-            | Self::Abstract
-            | Self::SmartChain => 1_000,
-            Self::AvalancheC
-            | Self::Base
-            | Self::Blast
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Manta
-            | Self::Optimism
-            | Self::World
-            | Self::Berachain
-            | Self::Plasma
-            | Self::Thorchain
-            | Self::XLayer => 2_000,
-            Self::Polygon | Self::Tron => 3_000,
-            Self::Algorand | Self::Xrp => 4_000,
-            Self::Gnosis | Self::Polkadot | Self::Ton => 5_000,
-            Self::Celestia | Self::Cosmos | Self::Injective | Self::Noble | Self::Osmosis | Self::Stellar => 6_000,
-            Self::Ethereum => 12_000,
-            Self::Cardano => 20_000,
-            Self::Doge => 60_000,
-            Self::Zcash => 75_000,
-            Self::Litecoin => 120_000,
-            Self::Bitcoin | Self::BitcoinCash => 600_000,
-        }
+        self.config().block_time
     }
 
     pub fn rank(&self) -> i32 {
-        match self {
-            Self::Bitcoin => 100,
-            Self::Ethereum => 85,
-            Self::Solana | Self::SmartChain => 80,
-            Self::Tron => 70,
-            Self::Osmosis | Self::Ton => 50,
-            Self::Cosmos
-            | Self::Injective
-            | Self::Aptos
-            | Self::Sui
-            | Self::Xrp
-            | Self::Celestia
-            | Self::BitcoinCash
-            | Self::Polkadot
-            | Self::Hyperliquid
-            | Self::HyperCore
-            | Self::Monad => 40,
-            Self::Abstract | Self::Berachain | Self::Ink | Self::Unichain => 35,
-            Self::Manta
-            | Self::Fantom
-            | Self::OpBNB
-            | Self::Arbitrum
-            | Self::Blast
-            | Self::Optimism
-            | Self::Polygon
-            | Self::Base
-            | Self::Gnosis
-            | Self::Thorchain
-            | Self::Doge
-            | Self::Zcash
-            | Self::AvalancheC
-            | Self::Sei
-            | Self::Litecoin
-            | Self::ZkSync
-            | Self::Linea
-            | Self::Mantle
-            | Self::Celo
-            | Self::Near
-            | Self::World
-            | Self::Stellar
-            | Self::Sonic
-            | Self::Plasma
-            | Self::Algorand
-            | Self::Cardano
-            | Self::XLayer => 30,
-            Self::Noble => 20,
-        }
+        self.config().rank
     }
 
     pub fn all() -> Vec<Self> {
