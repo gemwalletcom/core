@@ -57,13 +57,10 @@ impl QueueName {
     pub fn chain_queues() -> Vec<QueueName> {
         vec![
             QueueName::FetchBlocks,
-            QueueName::FetchAssets,
             QueueName::FetchTokenAssociations,
             QueueName::FetchCoinAssociations,
-            QueueName::StoreAssetsAssociations,
             QueueName::FetchNftAssociations,
             QueueName::FetchAddressTransactions,
-            QueueName::StoreTransactions,
         ]
     }
 }

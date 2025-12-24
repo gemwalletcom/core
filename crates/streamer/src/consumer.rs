@@ -55,14 +55,14 @@ where
     R: std::default::Default + std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
-    info_with_fields!("consumer received", consumer = name, payload = payload.to_string());
+    info_with_fields!("received", consumer = name, payload = payload.to_string());
     let start = Instant::now();
     let result = tokio::task::block_in_place(|| {
         tokio::runtime::Handle::current().block_on(async {
             match consumer.should_process(payload.clone()).await {
                 Ok(true) => consumer.process(payload.clone()).await,
                 Ok(false) => {
-                    info_with_fields!("consumer should not process", consumer = name, payload = payload.to_string());
+                    info_with_fields!("skipped", consumer = name, payload = payload.to_string());
                     Ok(R::default())
                 }
                 Err(e) => Err(e),
@@ -71,22 +71,11 @@ where
     });
     match result {
         Ok(result) => {
-            info_with_fields!(
-                "consumer result",
-                consumer = name,
-                result = format!("{:?}", result),
-                elapsed = DurationMs(start.elapsed())
-            );
+            info_with_fields!("result", consumer = name, result = format!("{:?}", result), elapsed = DurationMs(start.elapsed()));
             Ok(())
         }
         Err(e) => {
-            error_with_fields!(
-                "consumer error",
-                &*e,
-                consumer = name,
-                payload = payload.to_string(),
-                elapsed = DurationMs(start.elapsed())
-            );
+            error_with_fields!("error", &*e, consumer = name, payload = payload.to_string(), elapsed = DurationMs(start.elapsed()));
             if !config.timeout_on_error.is_zero() {
                 thread::sleep(config.timeout_on_error);
             }
