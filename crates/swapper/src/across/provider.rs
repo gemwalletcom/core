@@ -260,7 +260,7 @@ impl Across {
             let results = create_eth_client(self.rpc_provider.clone(), Chain::Monad)?
                 .multicall3(vec![feed.latest_round_call3()])
                 .await
-                .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+                .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
             ChainlinkPriceFeed::decoded_answer(&results[0])
         } else {
             ChainlinkPriceFeed::decoded_answer(&existing_results[3])

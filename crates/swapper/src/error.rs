@@ -58,9 +58,9 @@ impl SwapperError {
 impl From<AlienError> for SwapperError {
     fn from(err: AlienError) -> Self {
         match err {
-            AlienError::RequestError { msg } => Self::NetworkError(msg),
-            AlienError::ResponseError { msg } => Self::NetworkError(msg),
-            AlienError::Http { status, .. } => Self::NetworkError(format!("HTTP error: status {}", status)),
+            AlienError::RequestError { msg } => Self::ComputeQuoteError(msg),
+            AlienError::ResponseError { msg } => Self::ComputeQuoteError(msg),
+            AlienError::Http { status, .. } => Self::ComputeQuoteError(format!("HTTP error: status {}", status)),
         }
     }
 }
