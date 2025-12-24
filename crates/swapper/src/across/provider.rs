@@ -580,9 +580,9 @@ mod tests {
 
     #[test]
     fn test_is_supported_pair() {
-        let weth_eth: AssetId = WETH_ETH_ASSET_ID.into();
-        let weth_op: AssetId = WETH_OP_ASSET_ID.into();
-        let weth_arb: AssetId = WETH_ARB_ASSET_ID.into();
+        let weth_eth = AssetId::from_token(Chain::Ethereum, WETH_ETH_CONTRACT);
+        let weth_op = AssetId::from_token(Chain::Optimism, WETH_OP_CONTRACT);
+        let weth_arb = AssetId::from_token(Chain::Arbitrum, WETH_ARB_CONTRACT);
         let weth_bsc: AssetId = ETH_SMARTCHAIN_ASSET_ID.into();
 
         let usdc_eth: AssetId = USDC_ETH_ASSET_ID.into();

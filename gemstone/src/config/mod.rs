@@ -1,6 +1,5 @@
 pub mod chain;
 pub mod docs;
-pub mod evm_chain;
 pub mod node;
 pub mod public;
 pub mod social;
@@ -12,14 +11,13 @@ pub mod wallet_connect;
 use crate::config::chain::ChainConfig;
 use gem_solana;
 use primitives::{
-    Chain, EVMChain, SolanaTokenProgramId, StakeChain,
+    Chain, SolanaTokenProgramId, StakeChain,
     node_config::{self, Node},
 };
 use std::{collections::HashMap, str::FromStr};
 
 use {
     docs::{DocsUrl, get_docs_url},
-    evm_chain::{EVMChainConfig, get_evm_chain_config},
     public::{ASSETS_URL, PublicUrl, get_public_url},
     social::{SocialUrl, get_social_url, get_social_url_deeplink},
     stake::{StakeChainConfig, get_stake_config},
@@ -70,11 +68,6 @@ impl Config {
     fn get_chain_config(&self, chain: String) -> ChainConfig {
         let chain = Chain::from_str(&chain).unwrap();
         crate::config::chain::get_chain_config(chain)
-    }
-
-    fn get_evm_chain_config(&self, chain: String) -> EVMChainConfig {
-        let chain = EVMChain::from_str(&chain).unwrap();
-        get_evm_chain_config(chain)
     }
 
     fn get_wallet_connect_config(&self) -> WalletConnectConfig {

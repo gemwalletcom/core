@@ -185,6 +185,8 @@ chains:
     url: https://rpc.monad.xyz
   xlayer:
     url: https://rpc.xlayer.tech
+  stable:
+    url: https://rpc.stable.xyz
 
 swap:
   jupiter:

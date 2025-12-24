@@ -112,7 +112,8 @@ impl ProviderFactory {
             | Chain::Unichain
             | Chain::Hyperliquid
             | Chain::Monad
-            | Chain::XLayer => {
+            | Chain::XLayer
+            | Chain::Stable => {
                 let chain = EVMChain::from_chain(chain).unwrap();
                 let client = gem_client.clone();
                 let rpc_client = JsonRpcClient::new(client.clone());
@@ -201,6 +202,7 @@ impl ProviderFactory {
             Chain::HyperCore => &settings.chains.hypercore,
             Chain::Monad => &settings.chains.monad,
             Chain::XLayer => &settings.chains.xlayer,
+            Chain::Stable => &settings.chains.stable,
         }
     }
 
