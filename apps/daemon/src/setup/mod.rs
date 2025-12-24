@@ -122,14 +122,14 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
 
     info_with_fields!("setup", step = "queues");
 
-    let queues = QueueName::all();
-    let exchanges = ExchangeName::all();
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "setup").await.unwrap();
-    let _ = stream_producer.declare_queues(queues.clone()).await;
-    let _ = stream_producer.declare_exchanges(exchanges.clone()).await;
-
     let chain_queues = QueueName::chain_queues();
+    let non_chain_queues: Vec<_> = QueueName::all().into_iter().filter(|q| !chain_queues.contains(q)).collect();
+    let exchanges = ExchangeName::all();
     let chains = Chain::all();
+
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "setup").await.unwrap();
+    let _ = stream_producer.declare_queues(non_chain_queues).await;
+    let _ = stream_producer.declare_exchanges(exchanges.clone()).await;
     info_with_fields!(
         "setup",
         step = "queue exchanges for chain-based consumers",

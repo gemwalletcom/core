@@ -1,7 +1,7 @@
 use std::fmt;
 use strum::{EnumIter, IntoEnumIterator};
 
-#[derive(Debug, Clone, EnumIter)]
+#[derive(Debug, Clone, PartialEq, EnumIter)]
 pub enum QueueName {
     // Process transactions, store and send notifications. Push assets to address_assets table and fetch new assets
     StoreTransactions,
