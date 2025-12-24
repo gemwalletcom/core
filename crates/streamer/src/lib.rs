@@ -9,6 +9,7 @@ pub mod stream_reader;
 pub use consumer::ConsumerConfig;
 pub use consumer::run_consumer;
 pub use exchange::ExchangeName;
+pub use lapin::ExchangeKind;
 pub use payload::*;
 pub use primitives::{AssetId, PushErrorLog};
 pub use queue::QueueName;

@@ -11,6 +11,13 @@ use std::sync::Arc;
 use std::time::Duration;
 use streamer::{ConsumerConfig, FetchNFTCollectionAssetPayload, FetchNFTCollectionPayload, QueueName, StreamReader, StreamReaderConfig, run_consumer};
 
+fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
+    ConsumerConfig {
+        timeout_on_error: consumer.error.timeout,
+        skip_on_error: consumer.error.skip,
+    }
+}
+
 pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
     let settings_arc = Arc::new(settings);
 
@@ -26,8 +33,9 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
                 "update nft collection consumer",
                 stream_reader,
                 QueueName::FetchNFTCollection,
+                None,
                 consumer,
-                ConsumerConfig::default(),
+                consumer_config(&settings.consumer),
             )
             .await
         }
@@ -45,8 +53,9 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
                 "update nft collection assets consumer",
                 stream_reader,
                 QueueName::FetchNFTCollectionAssets,
+                None,
                 consumer,
-                ConsumerConfig::default(),
+                consumer_config(&settings.consumer),
             )
             .await
         }

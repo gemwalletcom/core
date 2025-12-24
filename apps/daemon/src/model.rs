@@ -2,7 +2,7 @@ use primitives::Chain;
 use std::str::FromStr;
 use strum::{AsRefStr, EnumString};
 
-#[derive(Debug, Clone, AsRefStr, EnumString, PartialEq)]
+#[derive(Debug, Clone, PartialEq, AsRefStr, EnumString)]
 #[strum(serialize_all = "snake_case")]
 pub enum ConsumerService {
     FetchAddressTransactions,
@@ -64,7 +64,7 @@ impl DaemonService {
                     "parser".to_owned()
                 }
             }
-            DaemonService::Consumer(name) => format!("consumer {}", name.as_ref()),
+            DaemonService::Consumer(consumer) => format!("consumer {}", consumer.as_ref()),
         }
     }
 }

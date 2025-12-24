@@ -53,6 +53,19 @@ impl QueueName {
     pub fn all() -> Vec<QueueName> {
         QueueName::iter().collect()
     }
+
+    pub fn chain_queues() -> Vec<QueueName> {
+        vec![
+            QueueName::FetchBlocks,
+            QueueName::FetchAssets,
+            QueueName::FetchTokenAssociations,
+            QueueName::FetchCoinAssociations,
+            QueueName::StoreAssetsAssociations,
+            QueueName::FetchNftAssociations,
+            QueueName::FetchAddressTransactions,
+            QueueName::StoreTransactions,
+        ]
+    }
 }
 
 impl fmt::Display for QueueName {

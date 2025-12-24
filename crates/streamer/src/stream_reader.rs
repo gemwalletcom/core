@@ -37,7 +37,19 @@ impl StreamReader {
         Ok(())
     }
 
-    pub async fn read<T, F>(&mut self, queue: QueueName, mut callback: F) -> Result<(), Box<dyn Error + Send + Sync>>
+    pub async fn read<T, F>(&mut self, queue: QueueName, routing_key: Option<&str>, callback: F) -> Result<(), Box<dyn Error + Send + Sync>>
+    where
+        T: DeserializeOwned,
+        F: FnMut(T) -> Result<(), Box<dyn Error + Send + Sync>>,
+    {
+        let (queue_name, consumer_tag) = match routing_key {
+            Some(key) => (format!("{}.{}", queue, key), format!("consumer-{}-{}", queue, key)),
+            None => (queue.to_string(), format!("consumer-{queue}")),
+        };
+        self.consume(&queue_name, &consumer_tag, callback).await
+    }
+
+    async fn consume<T, F>(&mut self, queue_name: &str, consumer_tag: &str, mut callback: F) -> Result<(), Box<dyn Error + Send + Sync>>
     where
         T: DeserializeOwned,
         F: FnMut(T) -> Result<(), Box<dyn Error + Send + Sync>>,
@@ -45,8 +57,8 @@ impl StreamReader {
         let mut consumer = self
             .channel
             .basic_consume(
-                &queue.to_string(),
-                &format!("consumer-{queue}"),
+                queue_name,
+                consumer_tag,
                 BasicConsumeOptions {
                     no_local: false,
                     no_ack: false,

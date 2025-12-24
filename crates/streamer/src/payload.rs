@@ -83,18 +83,18 @@ impl FetchAssetsPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FetchBlocksPayload {
     pub chain: Chain,
-    pub blocks: Vec<u64>,
+    pub block: u64,
 }
 
 impl fmt::Display for FetchBlocksPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "chain: {}, blocks: {:?}", self.chain.as_ref(), self.blocks)
+        write!(f, "chain: {}, block: {}", self.chain.as_ref(), self.block)
     }
 }
 
 impl FetchBlocksPayload {
-    pub fn new(chain: Chain, blocks: Vec<u64>) -> Self {
-        Self { chain, blocks }
+    pub fn new(chain: Chain, block: u64) -> Self {
+        Self { chain, block }
     }
 }
 

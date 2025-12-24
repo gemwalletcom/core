@@ -1,11 +1,13 @@
 use std::{collections::HashMap, error::Error, sync::Arc};
 use tokio::sync::Mutex;
 
-use ::nft::NFTClient;
+use ::nft::{NFTClient, NFTProviderConfig};
 use async_trait::async_trait;
 use cacher::{CacheKey, CacherClient};
+use primitives::Chain;
+use settings::Settings;
 use storage::Database;
-use streamer::{ChainAddressPayload, StreamProducer, consumer::MessageConsumer};
+use streamer::{ChainAddressPayload, ConsumerConfig, QueueName, StreamProducer, StreamReader, StreamReaderConfig, consumer::MessageConsumer, run_consumer};
 
 pub struct FetchNftAssetsAddressesConsumer {
     #[allow(dead_code)]
@@ -17,13 +19,23 @@ pub struct FetchNftAssetsAddressesConsumer {
 }
 
 impl FetchNftAssetsAddressesConsumer {
-    pub fn new(database: Database, stream_producer: StreamProducer, cacher: CacherClient, nft_client: Arc<Mutex<NFTClient>>) -> Self {
-        Self {
+    pub async fn run(settings: Settings, database: Database, chain: Chain, consumer_config: ConsumerConfig) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let queue = QueueName::FetchNftAssociations;
+        let name = format!("{}.{}", queue, chain.as_ref());
+        let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+        let stream_reader = StreamReader::new(config).await?;
+        let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+        let cacher = CacherClient::new(&settings.redis.url).await;
+        let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
+        let nft_client = NFTClient::new(database.clone(), nft_config);
+        let nft_client = Arc::new(Mutex::new(nft_client));
+        let consumer = Self {
             database,
             stream_producer,
             cacher,
             nft_client,
-        }
+        };
+        run_consumer::<ChainAddressPayload, Self, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, consumer_config).await
     }
 }
 

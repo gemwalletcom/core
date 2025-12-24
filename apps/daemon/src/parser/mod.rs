@@ -14,7 +14,7 @@ use primitives::Chain;
 use settings::{Settings, service_user_agent};
 use std::str::FromStr;
 use storage::Database;
-use streamer::{FetchBlocksPayload, QueueName, StreamProducer, TransactionsPayload};
+use streamer::{StreamProducer, StreamProducerQueue, TransactionsPayload};
 
 pub struct Parser {
     chain: Chain,
@@ -99,8 +99,7 @@ impl Parser {
                 if let Some(queue_behind_blocks) = state.queue_behind_blocks
                     && remaining > queue_behind_blocks as i64
                 {
-                    let payload = FetchBlocksPayload::new(self.chain, next_blocks.clone());
-                    self.stream_producer.publish(QueueName::FetchBlocks, &payload).await?;
+                    self.stream_producer.publish_blocks(self.chain, &next_blocks).await?;
                     let _ = self
                         .database
                         .client()?
@@ -159,7 +158,7 @@ impl Parser {
             return Ok(0);
         }
         let payload = TransactionsPayload::new(self.chain, blocks.clone(), transactions.clone());
-        self.stream_producer.publish(QueueName::StoreTransactions, &payload).await?;
+        self.stream_producer.publish_transactions(payload).await?;
         Ok(transactions.len())
     }
 }

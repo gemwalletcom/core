@@ -15,4 +15,3 @@ lapin = { version = "3.7.0" }
 
 gem_tracing = { path = "../tracing", features = ["sentry"] }
 primitives = { path = "../primitives" }
-settings = { path = "../settings" }

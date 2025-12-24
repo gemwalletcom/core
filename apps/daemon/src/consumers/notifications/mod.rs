@@ -11,6 +11,13 @@ use std::sync::Arc;
 use storage::Database;
 use streamer::{ConsumerConfig, NotificationsFailedPayload, NotificationsPayload, QueueName, StreamProducer, StreamReader, StreamReaderConfig, run_consumer};
 
+fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
+    ConsumerConfig {
+        timeout_on_error: consumer.error.timeout,
+        skip_on_error: consumer.error.skip,
+    }
+}
+
 pub async fn run(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
     let settings = Arc::new(settings);
     let database = Arc::new(database);
@@ -36,7 +43,7 @@ async fn run_notification_consumer(settings: Arc<Settings>, queue: QueueName) ->
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
     let consumer = NotificationsConsumer::new(pusher_client, stream_producer);
 
-    run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
+    run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer)).await
 }
 
 async fn run_notifications_failed_consumer(settings: Arc<Settings>, database: Arc<Database>) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -45,12 +52,14 @@ async fn run_notifications_failed_consumer(settings: Arc<Settings>, database: Ar
     let stream_reader = StreamReader::new(config).await?;
     let consumer = NotificationsFailedConsumer::new((*database).clone());
 
+    let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<NotificationsFailedPayload, NotificationsFailedConsumer, usize>(
         &name,
         stream_reader,
         QueueName::NotificationsFailed,
+        None,
         consumer,
-        ConsumerConfig::default(),
+        consumer_config,
     )
     .await
 }
