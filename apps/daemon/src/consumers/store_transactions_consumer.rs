@@ -116,7 +116,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let assets_addresses: Vec<_> = address_assets_payload.into_iter().flat_map(|p| p.values).collect();
         let _ = self
             .stream_producer
-            .publish_store_assets_addresses_associations(chain, AssetsAddressPayload::new(assets_addresses))
+            .publish_store_assets_addresses_associations(AssetsAddressPayload::new(assets_addresses))
             .await;
         Ok(transactions_count)
     }

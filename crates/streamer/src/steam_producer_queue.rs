@@ -19,7 +19,7 @@ pub trait StreamProducerQueue {
     async fn publish_rewards_events(&self, payload: Vec<RewardsNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_rewards_redemption(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
-    async fn publish_store_assets_addresses_associations(&self, chain: Chain, payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_store_assets_addresses_associations(&self, payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_blocks(&self, chain: Chain, blocks: &[u64]) -> Result<(), Box<dyn Error + Send + Sync>>;
@@ -31,7 +31,7 @@ impl StreamProducerQueue for StreamProducer {
     async fn publish_fetch_assets(&self, asset_ids: Vec<AssetId>) -> Result<bool, Box<dyn Error + Send + Sync>> {
         for asset_id in &asset_ids {
             let payload = FetchAssetsPayload::new(asset_id.clone());
-            self.publish_with_routing_key(QueueName::FetchAssets, asset_id.chain.as_ref(), &payload).await?;
+            self.publish(QueueName::FetchAssets, &payload).await?;
         }
         Ok(true)
     }
@@ -40,8 +40,7 @@ impl StreamProducerQueue for StreamProducer {
         if payload.transactions.is_empty() {
             return Ok(true);
         }
-        self.publish_with_routing_key(QueueName::StoreTransactions, payload.chain.as_ref(), &payload)
-            .await
+        self.publish(QueueName::StoreTransactions, &payload).await
     }
 
     async fn publish_notifications_transactions(&self, payload: Vec<NotificationsPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {
@@ -98,12 +97,11 @@ impl StreamProducerQueue for StreamProducer {
         self.publish(QueueName::NotificationsFailed, &payload).await
     }
 
-    async fn publish_store_assets_addresses_associations(&self, chain: Chain, payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn publish_store_assets_addresses_associations(&self, payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         if payload.values.is_empty() {
             return Ok(true);
         }
-        self.publish_with_routing_key(QueueName::StoreAssetsAssociations, chain.as_ref(), &payload)
-            .await
+        self.publish(QueueName::StoreAssetsAssociations, &payload).await
     }
 
     async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
