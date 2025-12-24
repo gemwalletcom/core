@@ -41,3 +41,25 @@ impl UserAgentMatcher {
         "unknown"
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn create_matcher() -> UserAgentMatcher {
+        let mut patterns = HashMap::new();
+        patterns.insert("mobile".to_string(), vec!["Mobile/.*".to_string()]);
+        patterns.insert("desktop".to_string(), vec!["Desktop/.*".to_string()]);
+        UserAgentMatcher::new(&UserAgentPatterns { patterns })
+    }
+
+    #[test]
+    fn test_categorize() {
+        let matcher = create_matcher();
+        assert_eq!(matcher.categorize("Mobile/1.0"), "mobile");
+        assert_eq!(matcher.categorize("Desktop/2.0"), "desktop");
+        assert_eq!(matcher.categorize("Other/1.0"), "unknown");
+        assert_eq!(matcher.categorize(""), "unknown");
+    }
+}

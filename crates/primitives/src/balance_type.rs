@@ -5,6 +5,7 @@ pub enum BalanceType {
     frozen,
     staked,
     pending,
+    pendingUnconfirmed,
     rewards,
     reserved,
 }

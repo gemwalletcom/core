@@ -146,6 +146,9 @@ impl Pusher {
         if !device.can_receive_push_notification() {
             return Ok(vec![]);
         }
+
+        let transaction = transaction.finalize(vec![subscription.address.clone()]).without_utxo();
+
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
         let message = self.message(localizer, transaction.clone(), subscription.clone(), assets.clone())?;
 

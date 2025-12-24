@@ -61,7 +61,6 @@ impl JsonRpcHandler {
 
                 metrics.add_proxy_response(
                     request.chain.as_ref(),
-                    &request.path_with_query,
                     &call.method,
                     url.url.host_str().unwrap_or_default(),
                     StatusCode::OK.as_u16(),
@@ -81,7 +80,6 @@ impl JsonRpcHandler {
 
         metrics.add_proxy_response(
             request.chain.as_ref(),
-            &request.path_with_query,
             &call.method,
             url.url.host_str().unwrap_or_default(),
             response_status,
@@ -140,7 +138,6 @@ impl JsonRpcHandler {
         for call in calls {
             metrics.add_proxy_response(
                 request.chain.as_ref(),
-                &request.path_with_query,
                 &call.method,
                 url.url.host_str().unwrap_or_default(),
                 response_status,

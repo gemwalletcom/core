@@ -5,7 +5,7 @@ use primitives::NodeStatusState;
 
 use crate::config::{ChainConfig, Url};
 
-use super::sync::{NodeStatusObservation, NodeSyncAnalyzer};
+use super::sync::{NodeStatusObservation, NodeSwitchResult, NodeSyncAnalyzer};
 
 pub struct NodeTelemetry;
 
@@ -89,35 +89,27 @@ impl NodeTelemetry {
         }
     }
 
-    pub fn log_node_switch(chain_config: &ChainConfig, previous: &Url, observation: &NodeStatusObservation) {
+    pub fn log_node_switch(chain_config: &ChainConfig, previous: &Url, switch: &NodeSwitchResult) {
         let chain = chain_config.chain.as_ref();
-        match &observation.state {
-            NodeStatusState::Healthy(status) => {
-                let latency = DurationMs(observation.latency);
-                let latest = status.latest_block_number;
-                let current = if status.in_sync { None } else { status.current_block_number };
+        let observation = &switch.observation;
+        let latency = DurationMs(observation.latency);
+        let (latest, current) = match &observation.state {
+            NodeStatusState::Healthy(status) => (status.latest_block_number, if status.in_sync { None } else { status.current_block_number }),
+            NodeStatusState::Error { .. } => (None, None),
+        };
 
-                log_info_event(
-                    "Node switch",
-                    chain,
-                    [("new_host", observation.url.host()), ("old_host", previous.host())],
-                    &latency,
-                    latest,
-                    current,
-                );
-            }
-            NodeStatusState::Error { .. } => {
-                let latency = DurationMs(observation.latency);
-                log_info_event(
-                    "Node switch",
-                    chain,
-                    [("new_host", observation.url.host()), ("old_host", previous.host())],
-                    &latency,
-                    None,
-                    None,
-                );
-            }
-        }
+        log_info_event(
+            "Node switch",
+            chain,
+            [
+                ("new_host", observation.url.host()),
+                ("old_host", previous.host()),
+                ("reason", switch.reason.as_str().to_string()),
+            ],
+            &latency,
+            latest,
+            current,
+        );
     }
 
     pub fn log_no_candidate(chain_config: &ChainConfig, observations: &[NodeStatusObservation]) {

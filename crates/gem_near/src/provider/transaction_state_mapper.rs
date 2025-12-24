@@ -69,8 +69,7 @@ mod tests {
 
     #[test]
     fn test_map_real_transaction_response() {
-        let data = include_str!("../../testdata/successful_transaction.json");
-        let response: primitives::JsonRpcResult<BroadcastResult> = serde_json::from_str(data).unwrap();
+        let response: primitives::JsonRpcResult<BroadcastResult> = serde_json::from_str(include_str!("../../testdata/successful_transaction.json")).unwrap();
 
         let status_update = map_transaction_status(&response.result);
         assert_eq!(status_update.state, TransactionState::Confirmed);

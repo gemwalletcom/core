@@ -35,7 +35,10 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
         let recipient_address = client.rewards().get_address_by_username(&redemption.username)?;
         let option = client.rewards().get_redemption_option(&redemption.option_id)?;
 
-        let asset = option.asset.map(|asset| RedemptionAsset { asset, value: option.value.clone() });
+        let asset = option.asset.map(|asset| RedemptionAsset {
+            asset,
+            value: option.value.clone(),
+        });
 
         let request = RedemptionRequest { recipient_address, asset };
 

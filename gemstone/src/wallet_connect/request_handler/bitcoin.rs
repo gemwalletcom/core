@@ -10,14 +10,8 @@ pub struct BitcoinRequestHandler;
 
 impl ChainRequestHandler for BitcoinRequestHandler {
     fn parse_sign_message(chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
-        let message = params
-            .get("message")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing message parameter")?;
-        let address = params
-            .get("address")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing address parameter")?;
+        let message = params.get("message").and_then(|v| v.as_str()).ok_or("Missing message parameter")?;
+        let address = params.get("address").and_then(|v| v.as_str()).ok_or("Missing address parameter")?;
 
         let btc_data = BitcoinSignMessageData::new(message.to_string(), address.to_string());
         let data = serde_json::to_string(&btc_data).map_err(|e| e.to_string())?;

@@ -11,8 +11,7 @@ pub fn sign_personal(data: &[u8], private_key: &[u8]) -> Result<BitcoinSignDataR
     let message = BitcoinSignMessageData::from_bytes(data)?;
     let hash = message.hash();
 
-    let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key.to_vec())
-        .map_err(|e| SignerError::InvalidInput(e.to_string()))?;
+    let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key.to_vec()).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
 
     // BIP137: [header(1), r(32), s(32)] from [r(32), s(32), recovery_id(1)]
     let recovery_id = signed[RECOVERY_ID_INDEX];

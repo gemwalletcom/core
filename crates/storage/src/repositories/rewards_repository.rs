@@ -34,7 +34,14 @@ pub trait RewardsRepository {
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
-    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, ip_address: &str, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError>;
+    fn use_referral_code(
+        &mut self,
+        address: &str,
+        referral_code: &str,
+        device_id: i32,
+        ip_address: &str,
+        invite_event: RewardEventType,
+    ) -> Result<Vec<i32>, DatabaseError>;
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
@@ -180,7 +187,14 @@ impl RewardsRepository for DatabaseClient {
         Ok(RewardsStore::get_rewards(self, code).is_ok())
     }
 
-    fn use_referral_code(&mut self, address: &str, referral_code: &str, device_id: i32, ip_address: &str, invite_event: RewardEventType) -> Result<Vec<i32>, DatabaseError> {
+    fn use_referral_code(
+        &mut self,
+        address: &str,
+        referral_code: &str,
+        device_id: i32,
+        ip_address: &str,
+        invite_event: RewardEventType,
+    ) -> Result<Vec<i32>, DatabaseError> {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
         let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
 

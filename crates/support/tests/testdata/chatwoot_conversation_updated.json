@@ -1,0 +1,124 @@
+{
+  "additional_attributes": {
+    "browser": {
+      "device_name": "test_device",
+      "browser_name": "Chrome",
+      "platform_name": "Android",
+      "browser_version": "143.0.0.0",
+      "platform_version": "16"
+    },
+    "referer": "https://support.gemwallet.com/",
+    "initiated_at": {
+      "timestamp": "Mon Dec 22 2025 23:01:56 GMT-0800 (Pacific Standard Time)"
+    },
+    "browser_language": "en"
+  },
+  "can_reply": true,
+  "channel": "Channel::WebWidget",
+  "contact_inbox": {
+    "id": 1,
+    "contact_id": 1,
+    "inbox_id": 11,
+    "source_id": "test-source-id",
+    "created_at": "2025-12-23T07:01:33.235Z",
+    "updated_at": "2025-12-23T07:01:33.235Z",
+    "hmac_verified": false,
+    "pubsub_token": "test-token"
+  },
+  "id": 1,
+  "inbox_id": 11,
+  "messages": [
+    {
+      "id": 1,
+      "content": "Test message",
+      "account_id": 1,
+      "inbox_id": 11,
+      "conversation_id": 1,
+      "message_type": 1,
+      "created_at": 1766475695,
+      "updated_at": "2025-12-23T07:41:35.594Z",
+      "private": false,
+      "status": "sent",
+      "source_id": null,
+      "content_type": "text",
+      "content_attributes": {},
+      "sender_type": "User",
+      "sender_id": 1,
+      "external_source_ids": {},
+      "additional_attributes": {},
+      "processed_message_content": "Test message",
+      "sentiment": {},
+      "conversation": {
+        "assignee_id": null,
+        "unread_count": 0,
+        "last_activity_at": 1766475695,
+        "contact_inbox": {
+          "source_id": "test-source-id"
+        }
+      },
+      "sender": {
+        "id": 1,
+        "name": "Test Agent",
+        "available_name": "Test Agent",
+        "avatar_url": "",
+        "type": "user",
+        "availability_status": "offline",
+        "thumbnail": ""
+      }
+    }
+  ],
+  "labels": [],
+  "meta": {
+    "sender": {
+      "additional_attributes": {},
+      "custom_attributes": {
+        "os": "16",
+        "device": "Test Device",
+        "currency": "USD",
+        "platform": "android",
+        "app_version": "1.0.0",
+        "support_device_id": "test-device-id"
+      },
+      "email": null,
+      "id": 1,
+      "identifier": null,
+      "name": "test-user",
+      "phone_number": null,
+      "thumbnail": "",
+      "blocked": false,
+      "type": "contact"
+    },
+    "assignee": null,
+    "assignee_type": null,
+    "team": null,
+    "hmac_verified": false
+  },
+  "status": "open",
+  "custom_attributes": {},
+  "snoozed_until": null,
+  "unread_count": 1,
+  "first_reply_created_at": "2025-12-23T07:04:13.002Z",
+  "priority": null,
+  "waiting_since": 0,
+  "agent_last_seen_at": 1766475695,
+  "contact_last_seen_at": 1766475519,
+  "last_activity_at": 1766475695,
+  "timestamp": 1766475695,
+  "created_at": 1766473316,
+  "updated_at": 1766475695.664415,
+  "event": "conversation_updated",
+  "changed_attributes": [
+    {
+      "updated_at": {
+        "previous_value": "2025-12-23T07:41:35.608Z",
+        "current_value": "2025-12-23T07:41:35.664Z"
+      }
+    },
+    {
+      "waiting_since": {
+        "previous_value": "2025-12-23T07:23:23.816Z",
+        "current_value": null
+      }
+    }
+  ]
+}

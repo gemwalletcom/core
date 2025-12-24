@@ -51,7 +51,6 @@ pub struct HostCurrentStateLabels {
 struct ResponseLabels {
     chain: String,
     host: String,
-    path: String,
     method: String,
     status: u16,
 }
@@ -67,6 +66,7 @@ pub struct NodeSwitchLabels {
     chain: String,
     old_host: String,
     new_host: String,
+    reason: String,
 }
 
 impl Metrics {
@@ -74,7 +74,7 @@ impl Metrics {
         let proxy_requests = Family::<ProxyRequestLabels, Counter>::default();
         let proxy_requests_by_user_agent = Family::<ProxyRequestByAgentLabels, Gauge>::default();
         let proxy_requests_by_method = Family::<ProxyRequestByMethodLabels, Counter>::default();
-        let proxy_response_latency = Family::<ResponseLabels, Histogram>::new_with_constructor(|| Histogram::new(exponential_buckets(50.0, 1.44, 12)));
+        let proxy_response_latency = Family::<ResponseLabels, Histogram>::new_with_constructor(|| Histogram::new(exponential_buckets(50.0, 2.0, 6)));
         let node_host_current = Family::<HostCurrentStateLabels, Gauge>::default();
         let cache_hits = Family::<CacheLabels, Counter>::default();
         let cache_misses = Family::<CacheLabels, Counter>::default();
@@ -101,7 +101,7 @@ impl Metrics {
         registry.register("node_host_current", "Node current host url", node_host_current.clone());
         registry.register("cache_hits", "Cache hits by host and path", cache_hits.clone());
         registry.register("cache_misses", "Cache misses by host and path", cache_misses.clone());
-        registry.register("node_switches_total", "Node switches by chain and host", node_switches.clone());
+        registry.register("node_switches", "Node switches by chain", node_switches.clone());
 
         Self {
             registry: Arc::new(metrics_registry),
@@ -161,15 +161,13 @@ impl Metrics {
         }
     }
 
-    pub fn add_proxy_response(&self, chain: &str, path: &str, method: &str, host: &str, status: u16, latency: u128) {
-        let path = self.truncate_path(path);
+    pub fn add_proxy_response(&self, chain: &str, method: &str, host: &str, status: u16, latency: u128) {
         let method = self.truncate_method(method);
         self.proxy_response_latency
             .get_or_create(&ResponseLabels {
                 chain: chain.to_string(),
-                path,
-                method,
                 host: host.to_string(),
+                method,
                 status,
             })
             .observe(latency as f64);
@@ -204,12 +202,13 @@ impl Metrics {
             .inc();
     }
 
-    pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str) {
+    pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str, reason: &str) {
         self.node_switches
             .get_or_create(&NodeSwitchLabels {
                 chain: chain.to_string(),
                 old_host: old_host.to_string(),
                 new_host: new_host.to_string(),
+                reason: reason.to_string(),
             })
             .inc();
     }
@@ -227,9 +226,9 @@ impl Metrics {
     }
 
     fn truncate_path(&self, path: &str) -> String {
-        let (path_part, query_part) = path.split_once('?').map(|(p, q)| (p, Some(q))).unwrap_or((path, None));
+        let path_part = path.split_once('?').map(|(p, _)| p).unwrap_or(path);
 
-        let truncated_path = path_part
+        path_part
             .split('/')
             .map(|segment| {
                 if segment.is_empty() {
@@ -243,24 +242,7 @@ impl Metrics {
                 }
             })
             .collect::<Vec<String>>()
-            .join("/");
-
-        if let Some(query) = query_part {
-            let truncated_query = query
-                .split('&')
-                .map(|param| {
-                    if let Some((key, _)) = param.split_once('=') {
-                        format!("{}=:v", key)
-                    } else {
-                        param.to_string()
-                    }
-                })
-                .collect::<Vec<String>>()
-                .join("&");
-            format!("{}?{}", truncated_path, truncated_query)
-        } else {
-            truncated_path
-        }
+            .join("/")
     }
 
     fn categorize_user_agent(&self, user_agent: &str) -> &str {
@@ -290,11 +272,11 @@ mod tests {
             ("/api/v1/verylongsegmentthatisgreaterthan20characters/data", "/api/v1/:value/data"),
             ("/block/12345/transactions", "/block/:number/transactions"),
             ("/block/12345/tx/67890", "/block/:number/tx/:number"),
-            ("/api/123456/verylongsegmentthatisgreaterthan20chars/data", "/api/:number/:value/data"),
             ("/api/v1/data", "/api/v1/data"),
             ("/api//data", "/api//data"),
-            ("/api/v2/block/5897744?page=1", "/api/v2/block/:number?page=:v"),
-            ("/api/v2/block/5897744?page=1&limit=10", "/api/v2/block/:number?page=:v&limit=:v"),
+            // Query params are stripped
+            ("/api/v2/block/5897744?page=1", "/api/v2/block/:number"),
+            ("/thorchain/quote/swap?from=X&to=Y", "/thorchain/quote/swap"),
         ];
 
         for (input, expected) in test_cases {

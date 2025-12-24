@@ -90,8 +90,7 @@ mod tests {
 
     #[test]
     fn test_decode_rpc_pool() {
-        let data = include_str!("test/sui_usdc_pool.json");
-        let response: JsonRpcResponse<CetusPoolType> = serde_json::from_slice(data.as_bytes()).unwrap();
+        let response: JsonRpcResponse<CetusPoolType> = serde_json::from_slice(include_str!("test/sui_usdc_pool.json").as_bytes()).unwrap();
         let pool = response.result.data;
         let content = pool.content.unwrap().fields;
 
@@ -101,8 +100,7 @@ mod tests {
         assert_eq!(content.current_sqrt_price.to_string(), "287685790526294295789");
         assert_eq!(content.tick_spacing, 60);
 
-        let data = include_str!("test/sui_suip_pool.json");
-        let response: Result<JsonRpcResponse<CetusPoolType>, serde_json::Error> = serde_json::from_str(data);
+        let response: Result<JsonRpcResponse<CetusPoolType>, serde_json::Error> = serde_json::from_str(include_str!("test/sui_suip_pool.json"));
         let pool = response.unwrap().result.data;
         let content = pool.content.unwrap().fields;
 
@@ -115,8 +113,7 @@ mod tests {
 
     #[test]
     fn test_decode_all_coins() {
-        let string = include_str!("test/sui_all_coins.json");
-        let response: JsonRpcResponse<SuiData<Vec<CoinAsset>>> = serde_json::from_str(string).unwrap();
+        let response: JsonRpcResponse<SuiData<Vec<CoinAsset>>> = serde_json::from_str(include_str!("test/sui_all_coins.json")).unwrap();
         let all_coins = response.result.data;
 
         assert_eq!(all_coins.len(), 7);
@@ -124,8 +121,7 @@ mod tests {
 
     #[test]
     fn test_decode_dev_inspect() {
-        let string = include_str!("test/sui_dev_inspect.json");
-        let response: JsonRpcResponse<InspectResult> = serde_json::from_str(string).unwrap();
+        let response: JsonRpcResponse<InspectResult> = serde_json::from_str(include_str!("test/sui_dev_inspect.json")).unwrap();
         let result = response.result;
 
         let event = result.events.as_array().unwrap().first().unwrap();

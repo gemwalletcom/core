@@ -88,8 +88,7 @@ mod tests {
 
     #[test]
     fn test_map_transaction_broadcast_with_real_data() {
-        let data = include_str!("../../testdata/transaction_transfer_broadcast_success.json");
-        let response: StellarTransactionStatus = serde_json::from_str(data).unwrap();
+        let response: StellarTransactionStatus = serde_json::from_str(include_str!("../../testdata/transaction_transfer_broadcast_success.json")).unwrap();
 
         let result = map_transaction_broadcast(&StellarTransactionBroadcast {
             hash: Some(response.hash.clone()),

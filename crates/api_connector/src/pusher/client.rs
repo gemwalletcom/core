@@ -22,6 +22,18 @@ impl PusherClient {
             .filter(|n| !n.tokens.is_empty() && n.tokens.iter().all(|t| !t.is_empty()))
             .map(|x| x.clone().with_topic(self.get_topic(x.platform)))
             .collect();
+
+        if notifications.is_empty() {
+            return Ok(PushResult {
+                response: Response {
+                    counts: 0,
+                    logs: vec![],
+                    success: "ok".to_string(),
+                },
+                notifications,
+            });
+        }
+
         let payload = GorushNotifications {
             notifications: notifications.clone(),
         };

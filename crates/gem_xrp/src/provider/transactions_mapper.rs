@@ -143,8 +143,10 @@ mod tests {
 
     #[test]
     fn test_map_transaction_broadcast_success() {
-        let json_data = include_str!("../testdata/transaction_broadcast_success.json");
-        let broadcast = serde_json::from_str::<JsonRpcResult<TransactionBroadcast>>(json_data).unwrap().take().unwrap();
+        let broadcast = serde_json::from_str::<JsonRpcResult<TransactionBroadcast>>(include_str!("../testdata/transaction_broadcast_success.json"))
+            .unwrap()
+            .take()
+            .unwrap();
 
         let result = map_transaction_broadcast(&broadcast);
         assert!(result.is_ok());
@@ -153,8 +155,10 @@ mod tests {
 
     #[test]
     fn test_map_transaction_broadcast_failed() {
-        let json_data = include_str!("../testdata/transaction_broadcast_failed.json");
-        let broadcast = serde_json::from_str::<JsonRpcResult<TransactionBroadcast>>(json_data).unwrap().take().unwrap();
+        let broadcast = serde_json::from_str::<JsonRpcResult<TransactionBroadcast>>(include_str!("../testdata/transaction_broadcast_failed.json"))
+            .unwrap()
+            .take()
+            .unwrap();
 
         let result = map_transaction_broadcast(&broadcast);
         assert!(result.is_err());

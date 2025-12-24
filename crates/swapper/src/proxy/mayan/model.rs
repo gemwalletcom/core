@@ -78,27 +78,21 @@ mod tests {
 
     #[test]
     fn test_decode_mayan_transaction_result() {
-        let json = include_str!("../test/eth_to_sui_swift.json");
-        let result: MayanTransactionResult = serde_json::from_str(json).unwrap();
-
+        let result: MayanTransactionResult = serde_json::from_str(include_str!("../test/eth_to_sui_swift.json")).unwrap();
         assert_eq!(result.steps[0].status, MayanTransactionStepStatus::Completed);
         assert_eq!(result.steps[0].r#type, MayanTransactionStepType::Info);
         assert_eq!(result.steps[1].status, MayanTransactionStepStatus::Completed);
         assert_eq!(result.steps[1].r#type, MayanTransactionStepType::BlockCounter);
         assert_eq!(result.client_status, MayanClientStatus::Completed);
 
-        let json = include_str!("../test/mctp_pending.json");
-        let result: MayanTransactionResult = serde_json::from_str(json).unwrap();
-
+        let result: MayanTransactionResult = serde_json::from_str(include_str!("../test/mctp_pending.json")).unwrap();
         assert_eq!(result.steps[0].status, MayanTransactionStepStatus::Completed);
         assert_eq!(result.steps[0].r#type, MayanTransactionStepType::Info);
         assert_eq!(result.steps[1].status, MayanTransactionStepStatus::Active);
         assert_eq!(result.steps[1].r#type, MayanTransactionStepType::BlockCounter);
         assert_eq!(result.client_status, MayanClientStatus::InProgress);
 
-        let json = include_str!("../test/swift_refunded.json");
-        let result: MayanTransactionResult = serde_json::from_str(json).unwrap();
-
+        let result: MayanTransactionResult = serde_json::from_str(include_str!("../test/swift_refunded.json")).unwrap();
         assert_eq!(result.steps[0].status, MayanTransactionStepStatus::Completed);
         assert_eq!(result.steps[0].r#type, MayanTransactionStepType::Info);
         assert_eq!(result.steps[1].status, MayanTransactionStepStatus::Failed);

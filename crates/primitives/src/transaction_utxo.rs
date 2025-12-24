@@ -7,3 +7,9 @@ pub struct TransactionUtxoInput {
     pub address: String, // Coinbase / OP_Return will be filtered
     pub value: String,
 }
+
+impl TransactionUtxoInput {
+    pub fn new(address: String, value: String) -> Self {
+        Self { address, value }
+    }
+}

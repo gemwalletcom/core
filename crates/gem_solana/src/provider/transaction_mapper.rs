@@ -195,8 +195,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_token_to_sol() {
-        let file = include_str!("../../testdata/swap_token_to_sol.json");
-        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/swap_token_to_sol.json")).unwrap();
 
         let transaction = map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
@@ -212,8 +211,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_token_to_token() {
-        let file = include_str!("../../testdata/swap_token_to_token.json");
-        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/swap_token_to_token.json")).unwrap();
 
         let transaction = map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
@@ -229,8 +227,7 @@ mod tests {
 
     #[test]
     fn test_transaction_swap_sol_to_token() {
-        let file = include_str!("../../testdata/swap_sol_to_token.json");
-        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/swap_sol_to_token.json")).unwrap();
 
         let transaction = map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
@@ -246,8 +243,7 @@ mod tests {
 
     #[test]
     fn test_transaction_transfer_sol() {
-        let file = include_str!("../../testdata/transfer_sol.json");
-        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/transfer_sol.json")).unwrap();
 
         let transaction = map_transaction(&result.result, 1751394455).unwrap();
         let expected = Transaction::new(
@@ -271,8 +267,7 @@ mod tests {
 
     #[test]
     fn test_transaction_transfer_sol_with_compute() {
-        let file = include_str!("../../testdata/transfer_sol_with_compute.json");
-        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(file).unwrap();
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/transfer_sol_with_compute.json")).unwrap();
 
         let transaction = map_transaction(&result.result, 1750884182).unwrap();
         let expected = Transaction::new(
@@ -296,8 +291,7 @@ mod tests {
 
     #[test]
     fn test_transaction_transfer_usdc() {
-        let file = include_str!("../../testdata/usdc_transfer.json");
-        let result: JsonRpcResult<SingleTransaction> = serde_json::from_str(file).unwrap();
+        let result: JsonRpcResult<SingleTransaction> = serde_json::from_str(include_str!("../../testdata/usdc_transfer.json")).unwrap();
 
         let block_transaction = BlockTransaction {
             meta: result.result.meta,

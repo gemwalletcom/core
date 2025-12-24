@@ -21,6 +21,7 @@ pub use self::repositories::{
     rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository,
     support_repository::SupportRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository,
 };
+pub use diesel::OptionalExtension;
 
 #[derive(Clone)]
 pub struct Database(database::PgPool);
