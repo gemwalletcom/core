@@ -53,8 +53,7 @@ mod tests {
 
     #[test]
     fn test_map_token_spl_token_2022() {
-        let file = include_str!("../../testdata/pyusd_mint.json");
-        let result = serde_json::from_str::<JsonRpcResult<ResultTokenInfo>>(file)
+        let result = serde_json::from_str::<JsonRpcResult<ResultTokenInfo>>(include_str!("../../testdata/pyusd_mint.json"))
             .unwrap()
             .result
             .value

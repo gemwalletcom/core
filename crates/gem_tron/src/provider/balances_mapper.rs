@@ -24,6 +24,21 @@ pub fn map_token_balance(balance_hex: &str, asset_id: AssetId) -> Result<AssetBa
     Ok(AssetBalance::new(asset_id, balance))
 }
 
+pub fn map_metadata_from_usage(usage: &TronAccountUsage, votes: u32) -> BalanceMetadata {
+    let energy_total = usage.energy_limit;
+    let energy_available = energy_total.saturating_sub(usage.energy_used);
+    let bandwidth_total = usage.free_net_limit + usage.net_limit;
+    let bandwidth_available = usage.free_net_limit.saturating_sub(usage.free_net_used) + usage.net_limit.saturating_sub(usage.net_used);
+
+    BalanceMetadata {
+        votes,
+        energy_available: energy_available as u32,
+        energy_total: energy_total as u32,
+        bandwidth_available: bandwidth_available as u32,
+        bandwidth_total: bandwidth_total as u32,
+    }
+}
+
 pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &TronAccountUsage) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let (bandwidth_frozen, energy_frozen) = account.frozen_v2.as_ref().map_or((0, 0), |frozen_list| {
         frozen_list
@@ -33,28 +48,12 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
                 _ => (bandwidth + frozen.amount, energy),
             })
     });
-    let votes = account.votes.as_ref().map_or(0, |votes| votes.iter().map(|vote| vote.vote_count).sum());
-
-    let pending_amount = account
+    let votes: u64 = account.votes.as_ref().map_or(0, |votes| votes.iter().map(|vote| vote.vote_count).sum());
+    let pending_amount: u64 = account
         .unfrozen_v2
         .as_ref()
         .map_or(0, |unfrozen_list| unfrozen_list.iter().map(|unfrozen| unfrozen.unfreeze_amount).sum());
-
-    let rewards_amount = reward.reward;
-
-    let energy_total = usage.energy_limit;
-    let energy_available = energy_total.saturating_sub(usage.energy_used);
-
-    let bandwidth_total = usage.free_net_limit + usage.net_limit;
-    let bandwidth_available = usage.free_net_limit.saturating_sub(usage.free_net_used) + usage.net_limit.saturating_sub(usage.net_used);
-
-    let metadata = BalanceMetadata {
-        votes: votes as u32,
-        energy_available: energy_available as u32,
-        energy_total: energy_total as u32,
-        bandwidth_available: bandwidth_available as u32,
-        bandwidth_total: bandwidth_total as u32,
-    };
+    let metadata = map_metadata_from_usage(usage, votes as u32);
 
     Ok(AssetBalance::new_balance(
         AssetId::from_chain(Chain::Tron),
@@ -63,7 +62,7 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
             BigUint::from(energy_frozen),
             BigUint::from(0u32),
             BigUint::from(pending_amount),
-            BigUint::from(rewards_amount),
+            BigUint::from(reward.reward),
             metadata,
         ),
     ))
@@ -96,6 +95,7 @@ fn new_stake_balance(
         locked,
         staked,
         pending,
+        pending_unconfirmed: BigUint::from(0u32),
         rewards,
         reserved: BigUint::from(0u32),
         withdrawable: BigUint::from(0u32),
@@ -382,5 +382,25 @@ mod tests {
         assert_eq!(metadata.energy_total, 0);
         assert_eq!(metadata.bandwidth_available, 0);
         assert_eq!(metadata.bandwidth_total, 0);
+    }
+
+    #[test]
+    fn test_map_metadata_from_usage() {
+        let usage = TronAccountUsage {
+            energy_limit: 1000000,
+            energy_used: 500000,
+            free_net_limit: 1500,
+            free_net_used: 500,
+            net_used: 200,
+            net_limit: 5000,
+        };
+
+        let metadata = map_metadata_from_usage(&usage, 100);
+
+        assert_eq!(metadata.votes, 100);
+        assert_eq!(metadata.energy_available, 500000);
+        assert_eq!(metadata.energy_total, 1000000);
+        assert_eq!(metadata.bandwidth_available, 5800);
+        assert_eq!(metadata.bandwidth_total, 6500);
     }
 }

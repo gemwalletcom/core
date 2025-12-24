@@ -1,12 +1,13 @@
-use std::str::FromStr;
-
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use primitives::{Device, Platform, PlatformStore};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::devices)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Device {
+pub struct DeviceRow {
     pub id: i32,
     pub device_id: String,
     pub platform: String,
@@ -20,12 +21,13 @@ pub struct Device {
     pub subscriptions_version: i32,
     pub os: Option<String>,
     pub model: Option<String>,
+    pub created_at: NaiveDateTime,
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::devices)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct UpdateDevice {
+pub struct UpdateDeviceRow {
     pub device_id: String,
     pub platform: String,
     pub platform_store: Option<String>,
@@ -40,12 +42,12 @@ pub struct UpdateDevice {
     pub model: Option<String>,
 }
 
-impl Device {
-    pub fn as_primitive(&self) -> primitives::Device {
-        let platform = primitives::Platform::new(self.platform.as_str()).unwrap();
-        let platform_store = primitives::PlatformStore::from_str(self.platform_store.clone().unwrap_or_default().as_str()).ok();
+impl DeviceRow {
+    pub fn as_primitive(&self) -> Device {
+        let platform = Platform::new(self.platform.as_str()).unwrap();
+        let platform_store = PlatformStore::from_str(self.platform_store.clone().unwrap_or_default().as_str()).ok();
 
-        primitives::Device {
+        Device {
             id: self.device_id.clone(),
             platform,
             os: self.os.clone(),
@@ -62,8 +64,8 @@ impl Device {
     }
 }
 
-impl UpdateDevice {
-    pub fn from_primitive(device: primitives::Device) -> Self {
+impl UpdateDeviceRow {
+    pub fn from_primitive(device: Device) -> Self {
         Self {
             device_id: device.id,
             platform: device.platform.as_str().to_string(),

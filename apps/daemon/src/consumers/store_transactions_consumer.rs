@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use primitives::{AssetIdVecExt, Transaction, TransactionId};
+use primitives::{AssetIdVecExt, ConfigKey, Transaction, TransactionId};
 use storage::Database;
 use storage::models;
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
@@ -27,6 +27,8 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let chain = payload.chain;
         let transactions = payload.transactions;
         let is_notify_devices = !payload.blocks.is_empty();
+
+        let min_amount = self.database.client()?.config().get_config_f64(ConfigKey::TransactionsMinAmountUsd)?;
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
         let subscriptions = self.database.client()?.subscriptions().get_subscriptions(chain, addresses)?;
@@ -78,12 +80,10 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
                 address_assets_payload.push(AssetsAddressPayload::new(assets_addresses));
 
-                if self.config.is_transaction_insufficient_amount(
-                    transaction,
-                    &asset_price.asset.asset,
-                    asset_price.price,
-                    self.config.min_transaction_amount_usd,
-                ) {
+                if self
+                    .config
+                    .is_transaction_insufficient_amount(transaction, &asset_price.asset.asset, asset_price.price, min_amount)
+                {
                     continue;
                 }
 
@@ -139,11 +139,11 @@ impl StoreTransactionsConsumer {
         }
 
         for chunk in transactions.chunks(TRANSACTION_BATCH_SIZE) {
-            let transactions_to_store: Vec<models::Transaction> = chunk.iter().map(|tx| models::Transaction::from_primitive(tx.clone())).collect();
+            let transactions_to_store: Vec<models::TransactionRow> = chunk.iter().map(|tx| models::TransactionRow::from_primitive(tx.clone())).collect();
 
-            let transaction_addresses_to_store: Vec<models::TransactionAddresses> = chunk
+            let transaction_addresses_to_store: Vec<models::TransactionAddressesRow> = chunk
                 .iter()
-                .flat_map(|tx| models::TransactionAddresses::from_primitive(tx.clone()))
+                .flat_map(|tx| models::TransactionAddressesRow::from_primitive(tx.clone()))
                 .collect::<HashSet<_>>()
                 .into_iter()
                 .collect();

@@ -3,6 +3,7 @@ pub mod asset_address;
 pub mod asset_type;
 pub mod chain;
 pub mod chart;
+pub mod config;
 pub mod device;
 pub mod fiat;
 pub mod link;
@@ -26,31 +27,37 @@ pub mod transaction;
 pub mod transaction_addresses;
 pub mod username;
 
-pub use self::asset::{Asset, AssetLink};
-pub use self::asset_address::AssetAddress;
-pub use self::asset_type::AssetType;
-pub use self::chain::Chain;
-pub use self::chart::{Chart, DailyChart, HourlyChart};
-pub use self::device::Device;
-pub use self::device::UpdateDevice;
-pub use self::fiat::{FiatAsset, FiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteRequest, FiatRate, FiatTransaction, FiatTransactionUpdate};
-pub use self::link::LinkType;
-pub use self::nft_asset::{NftAsset, NftType};
-pub use self::nft_collection::NftCollection;
-pub use self::nft_link::NftLink;
-pub use self::nft_report::NewNftReport;
-pub use self::node::Node;
-pub use self::parser_state::ParserState;
-pub use self::perpetual::{NewPerpetualAsset, Perpetual as StoragePerpetual};
-pub use self::price::{NewPrice, Price, PriceAsset};
-pub use self::price_alert::{NewPriceAlert, PriceAlert};
-pub use self::price_dex::{PriceDex, PriceDexAsset, PriceDexProvider};
-pub use self::release::Release;
-pub use self::reward::{NewRewardEvent, NewRewardReferral, RewardEvent, RewardEventType, RewardReferral};
-pub use self::scan_addresses::{NewScanAddress, ScanAddress, ScanAddressType};
-pub use self::subscription::{Subscription, SubscriptionAddressExclude};
-pub use self::support::Support;
-pub use self::tag::{AssetTag, Tag};
-pub use self::transaction::{Transaction, TransactionType};
-pub use self::transaction_addresses::{AddressChainIdResult, TransactionAddresses};
-pub use self::username::Username;
+pub use self::asset::{AssetLinkRow, AssetRow};
+pub use self::asset_address::AssetAddressRow;
+pub use self::asset_type::AssetTypeRow;
+pub use self::chain::ChainRow;
+pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};
+pub use self::config::ConfigRow;
+pub use self::device::{DeviceRow, UpdateDeviceRow};
+pub use self::fiat::{
+    FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow,
+    NewFiatWebhookRow,
+};
+pub use self::link::LinkTypeRow;
+pub use self::nft_asset::{NftAssetRow, NftTypeRow};
+pub use self::nft_collection::NftCollectionRow;
+pub use self::nft_link::NftLinkRow;
+pub use self::nft_report::NewNftReportRow;
+pub use self::node::NodeRow;
+pub use self::parser_state::ParserStateRow;
+pub use self::perpetual::{NewPerpetualAssetRow, PerpetualRow};
+pub use self::price::{NewPriceRow, PriceAssetDataRow, PriceAssetRow, PriceRow};
+pub use self::price_alert::{NewPriceAlertRow, PriceAlertRow};
+pub use self::price_dex::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};
+pub use self::release::ReleaseRow;
+pub use self::reward::{
+    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RedemptionOptionFull, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow,
+    RewardLevelTypeRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
+};
+pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow, ScanAddressTypeRow};
+pub use self::subscription::{SubscriptionAddressExcludeRow, SubscriptionRow};
+pub use self::support::SupportRow;
+pub use self::tag::{AssetTagRow, TagRow};
+pub use self::transaction::{TransactionRow, TransactionTypeRow};
+pub use self::transaction_addresses::{AddressChainIdResultRow, TransactionAddressesRow};
+pub use self::username::UsernameRow;

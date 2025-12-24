@@ -180,7 +180,7 @@ Follow the existing code style patterns unless explicitly asked to change
 3. Local crate imports
 4. Module re-exports with `pub use`
 
-IMPORTANT: Always import models and types at the top of the file. Never use inline imports inside functions (e.g., `use crate::models::SomeType` inside a function). Declare all imports in the file header.
+IMPORTANT: Always import models and types at the top of the file. Never use inline imports inside functions (e.g., `use crate::models::SomeType` inside a function). Never use full paths inline (e.g., `storage::DatabaseClient::new()`), always import types first. Declare all imports in the file header.
 
 ### Error Handling
 - Use `thiserror` for custom error types

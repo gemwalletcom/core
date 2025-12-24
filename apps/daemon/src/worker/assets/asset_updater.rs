@@ -1,4 +1,4 @@
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use chain_primitives::format_token_id;
 use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, Chain, LinkType};
@@ -6,9 +6,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use storage::AssetUpdate;
 use storage::Database;
-use storage::models::price::{NewPrice, PriceAsset};
-
-const COIN_INFO_CACHE_TTL_SECONDS: i64 = 30 * 86400;
+use storage::models::price::{NewPriceRow, PriceAssetRow};
 
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -49,7 +47,7 @@ impl AssetUpdater {
     pub async fn update_native_prices_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let native_assets = Chain::all()
             .into_iter()
-            .map(|x| PriceAsset::new(x.as_ref().to_string(), get_coingecko_market_id_for_chain(x).to_string()))
+            .map(|x| PriceAssetRow::new(x.as_ref().to_string(), get_coingecko_market_id_for_chain(x).to_string()))
             .collect::<Vec<_>>();
 
         let ids = native_assets.iter().map(|x| x.price_id.clone()).collect();
@@ -69,16 +67,11 @@ impl AssetUpdater {
     }
 
     async fn get_coin_info_cached(&self, coin_id: &str) -> Result<CoinInfo, Box<dyn Error + Send + Sync>> {
-        let cache_key = format!("pricer::coin_info::{}", coin_id);
-        let coin_id = coin_id.to_string();
+        let coin_id_owned = coin_id.to_string();
         let client = self.coin_gecko_client.clone();
 
         self.cacher
-            .get_or_set_value(
-                &cache_key,
-                || async move { client.get_coin(&coin_id).await },
-                Some(COIN_INFO_CACHE_TTL_SECONDS as u64),
-            )
+            .get_or_set_cached(CacheKey::PricerCoinInfo(coin_id), || async move { client.get_coin(&coin_id_owned).await })
             .await
     }
 
@@ -89,12 +82,12 @@ impl AssetUpdater {
                     let result = self.get_assets_from_coin_info(coin_info.clone());
                     let asset_links = self.get_asset_links(coin_info.clone());
 
-                    let _ = self.database.client()?.prices().add_prices(vec![NewPrice::new(coin.clone())]);
+                    let _ = self.database.client()?.prices().add_prices(vec![NewPriceRow::new(coin.clone())]);
 
                     let values = result
                         .clone()
                         .into_iter()
-                        .map(|(asset, _)| PriceAsset::new(asset.id.to_string(), coin.clone()))
+                        .map(|(asset, _)| PriceAssetRow::new(asset.id.to_string(), coin.clone()))
                         .collect::<Vec<_>>();
 
                     let _ = self.database.client()?.prices().set_prices_assets(values);

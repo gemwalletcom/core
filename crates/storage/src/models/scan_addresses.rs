@@ -1,12 +1,12 @@
 use diesel::prelude::*;
-use primitives::{AddressName as PrimitivesAddressName, Chain};
+use primitives::{AddressName, AddressType, Chain, ScanAddress};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::scan_addresses)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct ScanAddress {
+pub struct ScanAddressRow {
     pub id: i32,
     pub chain: String,
     pub address: String,
@@ -20,21 +20,21 @@ pub struct ScanAddress {
     pub created_at: chrono::NaiveDateTime,
 }
 
-impl ScanAddress {
-    pub fn as_primitive(self) -> Option<PrimitivesAddressName> {
-        self.name.map(|name| PrimitivesAddressName {
+impl ScanAddressRow {
+    pub fn as_primitive(self) -> Option<AddressName> {
+        self.name.map(|name| AddressName {
             chain: Chain::from_str(&self.chain).unwrap(),
             address: self.address,
             name,
         })
     }
 
-    pub fn as_scan_address_primitive(self) -> primitives::ScanAddress {
-        primitives::ScanAddress {
+    pub fn as_scan_address_primitive(self) -> ScanAddress {
+        ScanAddress {
             chain: Chain::from_str(&self.chain).unwrap(),
             address: self.address,
             name: self.name,
-            address_type: self.type_.and_then(|x| primitives::AddressType::from_str(&x).ok()),
+            address_type: self.type_.and_then(|x| AddressType::from_str(&x).ok()),
             is_malicious: Some(self.is_fraudulent),
             is_memo_required: Some(self.is_memo_required),
             is_verified: Some(self.is_verified),
@@ -45,12 +45,12 @@ impl ScanAddress {
 #[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::scan_addresses_types)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct ScanAddressType {
+pub struct ScanAddressTypeRow {
     pub id: String,
 }
 
-impl ScanAddressType {
-    pub fn from_primitive(primitive: primitives::AddressType) -> Self {
+impl ScanAddressTypeRow {
+    pub fn from_primitive(primitive: AddressType) -> Self {
         Self {
             id: primitive.as_ref().to_lowercase(),
         }
@@ -60,7 +60,7 @@ impl ScanAddressType {
 #[derive(Debug, Insertable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::scan_addresses)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct NewScanAddress {
+pub struct NewScanAddressRow {
     pub chain: String,
     pub address: String,
     pub name: Option<String>,
@@ -71,8 +71,8 @@ pub struct NewScanAddress {
     pub is_memo_required: bool,
 }
 
-impl NewScanAddress {
-    pub fn from_primitive(scan_address: primitives::ScanAddress) -> Self {
+impl NewScanAddressRow {
+    pub fn from_primitive(scan_address: ScanAddress) -> Self {
         Self {
             chain: scan_address.chain.as_ref().to_string(),
             address: scan_address.address,

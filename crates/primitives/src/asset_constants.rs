@@ -49,6 +49,7 @@ pub const USDC_MONAD_ASSET_ID: &str = "monad_0x754704Bc059F8C67012fEd69BC8A327a5
 
 pub const USDC_SMARTCHAIN_ASSET_ID: &str = "smartchain_0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d";
 pub const USDC_AVAX_ASSET_ID: &str = "avalanchec_0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E";
+pub const USDC_SUI_ASSET_ID: &str = "sui_0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC";
 
 // USDC.e Bridged USDC
 pub const USDC_E_ARB_ASSET_ID: &str = "arbitrum_0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8";
@@ -77,6 +78,7 @@ pub const USDT_INK_ASSET_ID: &str = "ink_0x3baD7AD0728f9917d1Bf08af5782dCbD516cD
 pub const USDT_HYPEREVM_ASSET_ID: &str = "hyperliquid_0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb"; // USDT0
 pub const USDT_PLASMA_ASSET_ID: &str = "plasma_0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb";
 pub const USDT_MONAD_ASSET_ID: &str = "monad_0xe7cd86e13AC4309349F30B3435a9d337750fC82D";
+pub const USDT_APTOS_ASSET_ID: &str = "aptos_0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b";
 
 // WBTC
 pub const WBTC_ARB_ASSET_ID: &str = "arbitrum_0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f";
@@ -90,3 +92,16 @@ pub const WBTC_ZKSYNC_ASSET_ID: &str = "zksync_0xBBeB516fb02a01611cBBE0453Fe3c58
 
 // cbBTC
 pub const CBBTC_BASE_ASSET_ID: &str = "base_0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
+pub const CBBTC_ETH_ASSET_ID: &str = "ethereum_0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
+
+// LINK
+pub const LINK_ETH_ASSET_ID: &str = "ethereum_0x514910771AF9Ca656af840dff83E8264EcF986CA";
+
+// UNI
+pub const UNI_ETH_ASSET_ID: &str = "ethereum_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
+
+// AAVE
+pub const AAVE_ETH_ASSET_ID: &str = "ethereum_0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9";
+
+// OP Token
+pub const OP_OP_ASSET_ID: &str = "optimism_0x4200000000000000000000000000000000000042";

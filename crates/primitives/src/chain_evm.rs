@@ -11,8 +11,8 @@ pub enum ChainStack {
     ZkSync,
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq)]
-#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Hashable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum EVMChain {

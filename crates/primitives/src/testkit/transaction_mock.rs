@@ -1,4 +1,4 @@
-use crate::{AssetId, Chain, Transaction, TransactionState, TransactionType};
+use crate::{AssetId, Chain, Transaction, TransactionState, TransactionType, TransactionUtxoInput};
 use chrono::Utc;
 
 impl Transaction {
@@ -33,6 +33,23 @@ impl Transaction {
             asset_id,
             value,
             None,
+            None,
+            Utc::now(),
+        )
+    }
+
+    pub fn mock_utxo(utxo_inputs: Vec<TransactionUtxoInput>, utxo_outputs: Vec<TransactionUtxoInput>) -> Self {
+        Transaction::new_with_utxo(
+            "btc_tx_hash".to_string(),
+            AssetId::from_chain(Chain::Bitcoin),
+            TransactionType::Transfer,
+            TransactionState::Confirmed,
+            "1000".to_string(),
+            AssetId::from_chain(Chain::Bitcoin),
+            "0".to_string(),
+            None,
+            Some(utxo_inputs),
+            Some(utxo_outputs),
             None,
             Utc::now(),
         )

@@ -12,7 +12,7 @@ pub trait SubscriptionsRepository {
     fn delete_subscriptions(&mut self, values: Vec<PrimitiveSubscription>, device_id: &str) -> Result<usize, DatabaseError>;
     fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, DatabaseError>;
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError>;
-    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<crate::models::SubscriptionAddressExclude>) -> Result<usize, DatabaseError>;
+    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<crate::models::SubscriptionAddressExcludeRow>) -> Result<usize, DatabaseError>;
     fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError>;
 }
 
@@ -29,7 +29,10 @@ impl SubscriptionsRepository for DatabaseClient {
         let device = DevicesStore::get_device(self, device_id)?;
         Ok(SubscriptionsStore::delete_subscriptions(
             self,
-            values.into_iter().map(|x| crate::models::Subscription::from_primitive(x, device.id)).collect(),
+            values
+                .into_iter()
+                .map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id))
+                .collect(),
         )?)
     }
 
@@ -59,11 +62,14 @@ impl SubscriptionsRepository for DatabaseClient {
         let device = DevicesStore::get_device(self, device_id)?;
         Ok(SubscriptionsStore::add_subscriptions(
             self,
-            values.into_iter().map(|x| crate::models::Subscription::from_primitive(x, device.id)).collect(),
+            values
+                .into_iter()
+                .map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id))
+                .collect(),
         )?)
     }
 
-    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<crate::models::SubscriptionAddressExclude>) -> Result<usize, DatabaseError> {
+    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<crate::models::SubscriptionAddressExcludeRow>) -> Result<usize, DatabaseError> {
         Ok(SubscriptionsStore::add_subscriptions_exclude_addresses(self, values)?)
     }
 

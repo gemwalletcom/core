@@ -2,10 +2,10 @@ use num_bigint::BigUint;
 use std::error::Error;
 
 use async_trait::async_trait;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use settings_chain::ChainProviders;
 use storage::Database;
-use storage::models::AssetAddress;
+use storage::models::AssetAddressRow;
 use streamer::{ChainAddressPayload, consumer::MessageConsumer};
 
 pub struct FetchCoinAddressesConsumer {
@@ -24,7 +24,7 @@ impl FetchCoinAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer {
     async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now(&format!("fetch_coin_addresses:{}:{}", payload.value.chain, payload.value.address), 7 * 86400)
+            .can_process_cached(CacheKey::FetchCoinAddresses(payload.value.chain.as_ref(), &payload.value.address))
             .await
     }
 
@@ -35,7 +35,7 @@ impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer
             return Ok(balance.balance.available.to_string());
         }
 
-        let asset_address = AssetAddress::new(
+        let asset_address = AssetAddressRow::new(
             payload.value.chain.to_string(),
             balance.asset_id.to_string(),
             payload.value.address,

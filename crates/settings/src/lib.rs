@@ -4,6 +4,7 @@ use serde::Deserialize;
 use std::{env, path::PathBuf, time::Duration};
 
 use config::{Config, ConfigError, Environment, File};
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
@@ -24,7 +25,6 @@ pub struct Settings {
     pub banxa: Banxa,
     pub paybis: Paybis,
 
-    pub pricer: Pricer,
     pub prices: Prices,
     pub coingecko: CoinGecko,
     pub charter: Charter,
@@ -32,13 +32,13 @@ pub struct Settings {
     pub metrics: Metrics,
     pub chains: Chains,
     pub pusher: Pusher,
-    pub alerter: Alerter,
     pub scan: Scan,
     pub nft: NFT,
     pub ankr: Ankr,
     pub trongrid: Trongrid,
     pub assets: Assets,
     pub sentry: Option<Sentry>,
+    pub rewards: Rewards,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -46,13 +46,6 @@ pub struct Settings {
 pub struct Fiat {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
-    pub validate: Validate,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Validate {
-    pub subscription: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -145,13 +138,6 @@ pub struct Paybis {
 #[allow(unused)]
 pub struct CoinGecko {
     pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Pricer {
-    pub timer: u64,
-    pub outdated: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -295,8 +281,6 @@ pub struct Parser {
 #[allow(unused)]
 pub struct Daemon {
     pub service: String,
-    pub search: DaemonSearch,
-    pub transactions: DaemonTransactions,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -332,20 +316,6 @@ pub struct Scan {
 pub struct ScanProvider {
     pub url: String,
     pub key: Key,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Alerter {
-    pub update_interval_seconds: u64,
-    pub rules: AlerterRules,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct AlerterRules {
-    pub price_increase_percent: f64,
-    pub price_decrease_percent: f64,
 }
 
 impl Settings {
@@ -414,24 +384,6 @@ pub struct BucketConfiguration {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct DaemonSearch {
-    pub assets_update_interval: u64,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct DaemonTransactions {
-    pub amount: DaemonTransactionsAmount,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct DaemonTransactionsAmount {
-    pub min: f64,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Assets {
     pub url: String,
 }
@@ -441,6 +393,28 @@ pub struct Assets {
 pub struct Sentry {
     pub dsn: String,
     pub sample_rate: f32,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Rewards {
+    #[serde(default)]
+    pub wallets: HashMap<String, RewardsWallet>,
+    pub abuseipdb: AbuseIPDB,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct RewardsWallet {
+    pub key: String,
+    pub address: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct AbuseIPDB {
+    pub url: String,
+    pub key: KeySecret,
 }
 
 #[cfg(feature = "testkit")]

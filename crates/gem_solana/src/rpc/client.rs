@@ -300,18 +300,12 @@ mod tests {
 
     #[test]
     fn test_decode_token_data() {
-        let file = include_str!("../../testdata/pyusd_mint.json");
-        let json: serde_json::Value = serde_json::from_str(file).expect("file should be proper JSON");
+        let json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/pyusd_mint.json")).expect("file should be proper JSON");
         let result: JsonRpcResult<ResultTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
-        let parsed_info = result.result.value.data.parsed.info;
+        assert_eq!(result.result.value.data.parsed.info.decimals, 6);
 
-        assert_eq!(parsed_info.decimals, 6);
-
-        let file = include_str!("../../testdata/usdc_mint.json");
-        let json: serde_json::Value = serde_json::from_str(file).expect("file should be proper JSON");
+        let json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/usdc_mint.json")).expect("file should be proper JSON");
         let result: JsonRpcResult<ResultTokenInfo> = serde_json::from_value(json).expect("Decoded into ParsedTokenInfo");
-        let parsed_info = result.result.value.data.parsed.info;
-
-        assert_eq!(parsed_info.decimals, 6);
+        assert_eq!(result.result.value.data.parsed.info.decimals, 6);
     }
 }

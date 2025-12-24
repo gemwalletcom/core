@@ -7,6 +7,8 @@ pub enum SignDigestType {
     Base58,
     SuiPersonal,
     Siwe,
+    TonPersonal,
+    BitcoinPersonal,
 }
 
 #[derive(Debug, uniffi::Record)]

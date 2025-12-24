@@ -1,7 +1,7 @@
 use coingecko::CoinGeckoClient;
 use pricer::PriceClient;
 use std::error::Error;
-use storage::models::Chart;
+use storage::models::ChartRow;
 use streamer::{ChartsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct ChartsUpdater {
@@ -30,13 +30,13 @@ impl ChartsUpdater {
                         .prices
                         .clone()
                         .into_iter()
-                        .map(|x| Chart {
+                        .map(|x| ChartRow {
                             coin_id: coin_id.id.clone(),
                             price: x[1],
                             created_at: chrono::DateTime::from_timestamp((x[0] / 1_000_f64) as i64, 0).unwrap().naive_utc(),
                         })
                         .filter(|x| x.price > 0.0)
-                        .collect::<Vec<Chart>>();
+                        .collect::<Vec<ChartRow>>();
 
                     let charts_data: Vec<_> = charts.iter().map(|c| c.as_chart_data()).collect();
                     self.stream_producer.publish_charts(ChartsPayload::new(charts_data)).await?;

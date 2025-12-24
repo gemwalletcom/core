@@ -17,6 +17,10 @@ pub enum WalletConnectCAIP2 {
     Algorand,
     #[serde(rename = "sui")]
     Sui,
+    #[serde(rename = "ton")]
+    Ton,
+    #[serde(rename = "bip122")]
+    Bip122,
 }
 
 impl WalletConnectCAIP2 {
@@ -27,9 +31,9 @@ impl WalletConnectCAIP2 {
             ChainType::Cosmos => Some(format!("{}:{}", WalletConnectCAIP2::Cosmos.as_ref(), chain.network_id())),
             ChainType::Algorand => Some(WalletConnectCAIP2::Algorand.as_ref().to_string()),
             ChainType::Sui => Some(WalletConnectCAIP2::Sui.as_ref().to_string()),
-            ChainType::Bitcoin
-            | ChainType::Ton
-            | ChainType::Tron
+            ChainType::Ton => Some(WalletConnectCAIP2::Ton.as_ref().to_string()),
+            ChainType::Bitcoin => Some(WalletConnectCAIP2::Bip122.as_ref().to_string()),
+            ChainType::Tron
             | ChainType::Aptos
             | ChainType::Xrp
             | ChainType::Near
@@ -47,6 +51,8 @@ impl WalletConnectCAIP2 {
             WalletConnectCAIP2::Cosmos => Some(ChainType::Cosmos),
             WalletConnectCAIP2::Algorand => Some(ChainType::Algorand),
             WalletConnectCAIP2::Sui => Some(ChainType::Sui),
+            WalletConnectCAIP2::Ton => Some(ChainType::Ton),
+            WalletConnectCAIP2::Bip122 => Some(ChainType::Bitcoin),
         }
     }
 
@@ -65,6 +71,8 @@ impl WalletConnectCAIP2 {
             WalletConnectCAIP2::Solana => Some(Chain::Solana),
             WalletConnectCAIP2::Algorand => Some(Chain::Algorand),
             WalletConnectCAIP2::Sui => Some(Chain::Sui),
+            WalletConnectCAIP2::Ton => Some(Chain::Ton),
+            WalletConnectCAIP2::Bip122 => Some(Chain::Bitcoin),
         }
     }
 
@@ -75,9 +83,9 @@ impl WalletConnectCAIP2 {
             ChainType::Cosmos => Self::get_namespace(chain).map(|namespace| format!("{}:{}", namespace, chain.network_id())),
             ChainType::Algorand => Some("wGHE2Pwdvd7S12BL5FaOP20EGYesN73k".to_string()),
             ChainType::Sui => Some("mainnet".to_string()),
-            ChainType::Bitcoin
-            | ChainType::Ton
-            | ChainType::Tron
+            ChainType::Ton => Some("-239".to_string()),
+            ChainType::Bitcoin => Some("000000000019d6689c085ae165831e93".to_string()),
+            ChainType::Tron
             | ChainType::Aptos
             | ChainType::Xrp
             | ChainType::Near
@@ -114,6 +122,8 @@ mod tests {
         assert_eq!(WalletConnectCAIP2::get_chain_type("cosmos".to_string()), Some(ChainType::Cosmos));
         assert_eq!(WalletConnectCAIP2::get_chain_type("algorand".to_string()), Some(ChainType::Algorand));
         assert_eq!(WalletConnectCAIP2::get_chain_type("sui".to_string()), Some(ChainType::Sui));
+        assert_eq!(WalletConnectCAIP2::get_chain_type("ton".to_string()), Some(ChainType::Ton));
+        assert_eq!(WalletConnectCAIP2::get_chain_type("bip122".to_string()), Some(ChainType::Bitcoin));
         assert_eq!(WalletConnectCAIP2::get_chain_type("unknown".to_string()), None);
     }
 
@@ -123,6 +133,11 @@ mod tests {
         assert_eq!(WalletConnectCAIP2::get_chain("eip155".to_string(), "56".to_string()), Some(Chain::SmartChain));
         assert_eq!(WalletConnectCAIP2::get_chain("solana".to_string(), "ignored".to_string()), Some(Chain::Solana));
         assert_eq!(WalletConnectCAIP2::get_chain("sui".to_string(), "mainnet".to_string()), Some(Chain::Sui));
+        assert_eq!(WalletConnectCAIP2::get_chain("ton".to_string(), "-239".to_string()), Some(Chain::Ton));
+        assert_eq!(
+            WalletConnectCAIP2::get_chain("bip122".to_string(), "000000000019d6689c085ae165831e93".to_string()),
+            Some(Chain::Bitcoin)
+        );
     }
 
     #[test]
@@ -133,6 +148,11 @@ mod tests {
             Ok(Chain::Solana)
         );
         assert_eq!(WalletConnectCAIP2::resolve_chain(Some("sui:mainnet".to_string())), Ok(Chain::Sui));
+        assert_eq!(WalletConnectCAIP2::resolve_chain(Some("ton:-239".to_string())), Ok(Chain::Ton));
+        assert_eq!(
+            WalletConnectCAIP2::resolve_chain(Some("bip122:000000000019d6689c085ae165831e93".to_string())),
+            Ok(Chain::Bitcoin)
+        );
         assert!(WalletConnectCAIP2::resolve_chain(Some("invalid".to_string())).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(Some("eip155:1:extra".to_string())).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(None).is_err());

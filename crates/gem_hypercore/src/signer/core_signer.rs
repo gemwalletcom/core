@@ -222,7 +222,7 @@ impl HyperCoreSigner {
         let tpsl = match (data.take_profit.as_ref(), data.stop_loss.as_ref()) {
             (None, None) => None,
             _ => {
-                let order = make_position_tp_sl(asset, is_buy, "0", data.take_profit.clone(), data.stop_loss.clone(), builder.cloned());
+                let order = make_position_tp_sl(asset, is_buy, "0", data.take_profit.clone(), data.stop_loss.clone(), builder.cloned(), true);
                 Some(self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)?)
             }
         };
@@ -253,6 +253,7 @@ impl HyperCoreSigner {
                         tpsl.take_profit.clone(),
                         tpsl.stop_loss.clone(),
                         builder.cloned(),
+                        true,
                     );
                     self.sign_place_order(order, timestamp_incrementer.next_val(), agent_key)
                 }

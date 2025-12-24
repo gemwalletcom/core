@@ -57,6 +57,8 @@ pub enum WalletConnectTransactionType {
     Ethereum,
     Solana { output_type: TransferDataOutputType },
     Sui { output_type: TransferDataOutputType },
+    Ton { output_type: TransferDataOutputType },
+    Bitcoin { output_type: TransferDataOutputType },
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -71,6 +73,14 @@ pub enum WalletConnectTransaction {
     },
     Sui {
         data: WCSuiTransactionData,
+        output_type: TransferDataOutputType,
+    },
+    Ton {
+        messages: String,
+        output_type: TransferDataOutputType,
+    },
+    Bitcoin {
+        data: String,
         output_type: TransferDataOutputType,
     },
 }

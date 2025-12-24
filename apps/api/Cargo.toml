@@ -33,6 +33,7 @@ cacher = { path = "../../crates/cacher" }
 metrics = { path = "../../crates/metrics" }
 streamer = { path = "../../crates/streamer" }
 gem_client = { path = "../../crates/gem_client", features = ["reqwest"] }
+gem_rewards = { path = "../../crates/gem_rewards" }
 
 security_provider = { path = "../../crates/security_provider" }
-referral = { path = "../../crates/referral" }
+gem_auth = { path = "../../crates/gem_auth", features = ["client"] }

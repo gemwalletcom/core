@@ -83,7 +83,7 @@ final class GemTestTests: XCTestCase {
             data: "hello world".data(using: .utf8)!
         )
         let signer = MessageSigner(message: message)
-        let hash = signer.hash()
+        let hash = try signer.hash()
 
         XCTAssertEqual(
             hash.hexString(),

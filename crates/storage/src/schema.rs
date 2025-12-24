@@ -114,6 +114,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    config (key) {
+        #[max_length = 64]
+        key -> Varchar,
+        #[max_length = 256]
+        value -> Varchar,
+        #[max_length = 256]
+        default_value -> Varchar,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     devices (id) {
         id -> Int4,
         #[max_length = 32]
@@ -264,6 +277,19 @@ diesel::table! {
         created_at -> Timestamp,
         #[max_length = 32]
         transaction_type -> Varchar,
+    }
+}
+
+diesel::table! {
+    fiat_webhooks (id) {
+        id -> Int4,
+        #[max_length = 32]
+        provider -> Varchar,
+        #[max_length = 256]
+        transaction_id -> Nullable<Varchar>,
+        payload -> Jsonb,
+        error -> Nullable<Text>,
+        created_at -> Timestamp,
     }
 }
 
@@ -538,6 +564,22 @@ diesel::table! {
 }
 
 diesel::table! {
+    rewards (username) {
+        #[max_length = 64]
+        username -> Varchar,
+        is_enabled -> Bool,
+        #[max_length = 32]
+        level -> Nullable<Varchar>,
+        points -> Int4,
+        #[max_length = 64]
+        referrer_username -> Nullable<Varchar>,
+        referral_count -> Int4,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     rewards_events (id) {
         id -> Int4,
         #[max_length = 64]
@@ -558,6 +600,74 @@ diesel::table! {
 }
 
 diesel::table! {
+    rewards_levels_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+    }
+}
+
+diesel::table! {
+    rewards_redemption_options (id) {
+        #[max_length = 64]
+        id -> Varchar,
+        #[max_length = 32]
+        redemption_type -> Varchar,
+        points -> Int4,
+        #[max_length = 128]
+        asset_id -> Nullable<Varchar>,
+        #[max_length = 64]
+        value -> Varchar,
+        remaining -> Nullable<Int4>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    rewards_redemptions (id) {
+        id -> Int4,
+        #[max_length = 64]
+        username -> Varchar,
+        #[max_length = 64]
+        option_id -> Varchar,
+        device_id -> Int4,
+        #[max_length = 512]
+        transaction_id -> Nullable<Varchar>,
+        #[max_length = 32]
+        status -> Varchar,
+        #[max_length = 1024]
+        error -> Nullable<Varchar>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    rewards_redemptions_types (id) {
+        #[max_length = 32]
+        id -> Varchar,
+    }
+}
+
+diesel::table! {
+    rewards_referral_attempts (id) {
+        id -> Int4,
+        #[max_length = 64]
+        referrer_username -> Varchar,
+        #[max_length = 256]
+        referred_address -> Varchar,
+        #[max_length = 2]
+        country_code -> Varchar,
+        device_id -> Int4,
+        #[max_length = 45]
+        referred_ip_address -> Varchar,
+        #[max_length = 256]
+        reason -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     rewards_referrals (id) {
         id -> Int4,
         #[max_length = 64]
@@ -565,6 +675,8 @@ diesel::table! {
         #[max_length = 64]
         referred_username -> Varchar,
         referred_device_id -> Int4,
+        #[max_length = 45]
+        referred_ip_address -> Varchar,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -704,6 +816,7 @@ diesel::table! {
         username -> Varchar,
         #[max_length = 256]
         address -> Varchar,
+        is_verified -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -730,6 +843,7 @@ diesel::joinable!(fiat_quotes_requests -> devices (device_id));
 diesel::joinable!(fiat_quotes_requests -> fiat_quotes (quote_id));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
+diesel::joinable!(fiat_webhooks -> fiat_providers (provider));
 diesel::joinable!(nft_assets -> chains (chain));
 diesel::joinable!(nft_assets -> nft_collections (collection_id));
 diesel::joinable!(nft_assets -> nft_types (token_type));
@@ -752,8 +866,16 @@ diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
+diesel::joinable!(rewards -> rewards_levels_types (level));
 diesel::joinable!(rewards_events -> rewards_events_types (event_type));
 diesel::joinable!(rewards_events -> usernames (username));
+diesel::joinable!(rewards_redemption_options -> assets (asset_id));
+diesel::joinable!(rewards_redemption_options -> rewards_redemptions_types (redemption_type));
+diesel::joinable!(rewards_redemptions -> devices (device_id));
+diesel::joinable!(rewards_redemptions -> rewards (username));
+diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
+diesel::joinable!(rewards_referral_attempts -> devices (device_id));
+diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
@@ -777,6 +899,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     charts,
     charts_daily,
     charts_hourly,
+    config,
     devices,
     fiat_assets,
     fiat_providers,
@@ -785,6 +908,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_quotes_requests,
     fiat_rates,
     fiat_transactions,
+    fiat_webhooks,
     link_types,
     nft_assets,
     nft_collections,
@@ -802,8 +926,14 @@ diesel::allow_tables_to_appear_in_same_query!(
     prices_dex_assets,
     prices_dex_providers,
     releases,
+    rewards,
     rewards_events,
     rewards_events_types,
+    rewards_levels_types,
+    rewards_redemption_options,
+    rewards_redemptions,
+    rewards_redemptions_types,
+    rewards_referral_attempts,
     rewards_referrals,
     scan_addresses,
     scan_addresses_types,

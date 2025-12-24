@@ -1,17 +1,17 @@
 use chrono::{DateTime, NaiveDateTime};
 use diesel::prelude::*;
-use primitives::{AssetId, AssetMarket, AssetPriceInfo, PriceData};
+use primitives::{AssetId, AssetMarket, AssetPriceInfo, FiatRate, Price, PriceData};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
-use crate::models::Chart;
+use crate::models::ChartRow;
 
-use super::Asset;
+use super::AssetRow;
 
 #[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Price {
+pub struct PriceRow {
     pub id: String,
     pub price: f64,
     pub price_change_percentage_24h: f64,
@@ -32,56 +32,56 @@ pub struct Price {
 #[derive(Debug, Selectable, Identifiable, Serialize, Deserialize, Insertable, Clone)]
 #[diesel(table_name = crate::schema::prices)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct NewPrice {
+pub struct NewPriceRow {
     pub id: String,
 }
 
-impl NewPrice {
+impl NewPriceRow {
     pub fn new(id: String) -> Self {
-        NewPrice { id }
+        NewPriceRow { id }
     }
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct PriceAsset {
+pub struct PriceAssetRow {
     pub asset_id: String,
     pub price_id: String,
 }
 
-impl PriceAsset {
+impl PriceAssetRow {
     pub fn new(asset_id: String, price_id: String) -> Self {
-        PriceAsset { asset_id, price_id }
+        PriceAssetRow { asset_id, price_id }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Queryable)]
-pub struct PriceAssetData {
-    pub asset: Asset,
-    pub price: Option<Price>,
+pub struct PriceAssetDataRow {
+    pub asset: AssetRow,
+    pub price: Option<PriceRow>,
 }
 
-impl PartialEq for PriceAsset {
+impl PartialEq for PriceAssetRow {
     fn eq(&self, other: &Self) -> bool {
         self.asset_id == other.asset_id && self.price_id == other.price_id
     }
 }
 
-impl PartialEq for Price {
+impl PartialEq for PriceRow {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
-impl Eq for Price {}
+impl Eq for PriceRow {}
 
-impl Hash for Price {
+impl Hash for PriceRow {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id.hash(state);
     }
 }
 
-impl Price {
+impl PriceRow {
     pub fn new(
         id: String,
         price: f64,
@@ -99,7 +99,7 @@ impl Price {
         max_supply: f64,
         last_updated_at: NaiveDateTime,
     ) -> Self {
-        Price {
+        PriceRow {
             id,
             price,
             price_change_percentage_24h,
@@ -118,7 +118,7 @@ impl Price {
         }
     }
 
-    pub fn for_rate(price: Price, base_rate: f64, rate: primitives::FiatRate) -> Price {
+    pub fn for_rate(price: PriceRow, base_rate: f64, rate: FiatRate) -> PriceRow {
         let mut new_price = price.clone();
         let rate_multiplier = rate.multiplier(base_rate);
         new_price.price = price.price * rate_multiplier;
@@ -129,9 +129,9 @@ impl Price {
     }
 }
 
-impl Price {
-    pub fn as_primitive(&self) -> primitives::Price {
-        primitives::Price::new(self.price, self.price_change_percentage_24h, self.last_updated_at.and_utc())
+impl PriceRow {
+    pub fn as_primitive(&self) -> Price {
+        Price::new(self.price, self.price_change_percentage_24h, self.last_updated_at.and_utc())
     }
 
     pub fn as_market_primitive(&self) -> AssetMarket {
@@ -146,8 +146,8 @@ impl Price {
         }
     }
 
-    pub fn as_chart(&self) -> Chart {
-        Chart {
+    pub fn as_chart(&self) -> ChartRow {
+        ChartRow {
             coin_id: self.id.clone(),
             price: self.price,
             created_at: DateTime::from_timestamp(self.last_updated_at.and_utc().timestamp(), 0).unwrap().naive_utc(),
@@ -183,7 +183,7 @@ impl Price {
     }
 
     pub fn from_price_data(data: PriceData) -> Self {
-        Price {
+        PriceRow {
             id: data.id,
             price: data.price,
             price_change_percentage_24h: data.price_change_percentage_24h,

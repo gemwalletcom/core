@@ -1,5 +1,5 @@
 use crate::DatabaseClient;
-use crate::models::Chart;
+use crate::models::ChartRow;
 use crate::schema::charts::dsl::{charts, coin_id};
 use crate::schema::charts_daily::dsl::{charts_daily, coin_id as daily_coin_id};
 use crate::schema::charts_hourly::dsl::{charts_hourly, coin_id as hourly_coin_id};
@@ -19,7 +19,7 @@ pub enum ChartGranularity {
 pub type ChartResult = (chrono::NaiveDateTime, f64);
 
 pub(crate) trait ChartsStore {
-    fn add_charts(&mut self, values: Vec<Chart>) -> Result<usize, Error>;
+    fn add_charts(&mut self, values: Vec<ChartRow>) -> Result<usize, Error>;
     fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, Error>;
     fn aggregate_hourly_charts(&mut self) -> Result<usize, diesel::result::Error>;
     fn aggregate_daily_charts(&mut self) -> Result<usize, diesel::result::Error>;
@@ -27,7 +27,7 @@ pub(crate) trait ChartsStore {
 }
 
 impl ChartsStore for DatabaseClient {
-    fn add_charts(&mut self, values: Vec<Chart>) -> Result<usize, Error> {
+    fn add_charts(&mut self, values: Vec<ChartRow>) -> Result<usize, Error> {
         diesel::insert_into(charts)
             .values(values)
             .on_conflict_do_nothing()

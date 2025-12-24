@@ -1,0 +1,105 @@
+{
+  "account": {
+    "id": 1,
+    "name": "Gem Wallet"
+  },
+  "additional_attributes": {},
+  "content_attributes": {},
+  "content_type": "text",
+  "content": "from agent",
+  "conversation": {
+    "additional_attributes": {},
+    "can_reply": true,
+    "channel": "Channel::WebWidget",
+    "contact_inbox": {
+      "id": 1,
+      "contact_id": 1,
+      "inbox_id": 11,
+      "source_id": "test-source-id",
+      "created_at": "2025-12-19T08:29:58.043Z",
+      "updated_at": "2025-12-19T08:29:58.043Z",
+      "hmac_verified": false,
+      "pubsub_token": "test-token"
+    },
+    "id": 1,
+    "inbox_id": 11,
+    "messages": [
+      {
+        "id": 1,
+        "content": "from agent",
+        "account_id": 1,
+        "inbox_id": 11,
+        "conversation_id": 1,
+        "message_type": 1,
+        "created_at": 1766478193,
+        "updated_at": "2025-12-23T08:23:13.554Z",
+        "private": false,
+        "status": "sent",
+        "source_id": null,
+        "content_type": "text",
+        "content_attributes": {},
+        "sender_type": "User",
+        "sender_id": 1,
+        "external_source_ids": {},
+        "additional_attributes": {},
+        "processed_message_content": "from agent",
+        "sentiment": {}
+      }
+    ],
+    "labels": [],
+    "meta": {
+      "sender": {
+        "additional_attributes": {},
+        "custom_attributes": {
+          "os": "16",
+          "device": "Test Device",
+          "currency": "USD",
+          "platform": "android",
+          "app_version": "1.0.0",
+          "supportDeviceId": "test-device-id"
+        },
+        "email": null,
+        "id": 1,
+        "identifier": null,
+        "name": "test-user",
+        "phone_number": null,
+        "thumbnail": "",
+        "blocked": false,
+        "type": "contact"
+      },
+      "assignee": null,
+      "assignee_type": null,
+      "team": null,
+      "hmac_verified": false
+    },
+    "status": "open",
+    "custom_attributes": {},
+    "snoozed_until": null,
+    "unread_count": 1,
+    "first_reply_created_at": "2025-12-23T06:12:32.683Z",
+    "priority": null,
+    "waiting_since": 0,
+    "agent_last_seen_at": 1766478193,
+    "contact_last_seen_at": 1766478049,
+    "last_activity_at": 1766478193,
+    "timestamp": 1766478193,
+    "created_at": 1766133025,
+    "updated_at": 1766478193.559521
+  },
+  "created_at": "2025-12-23T08:23:13.554Z",
+  "id": 1,
+  "inbox": {
+    "id": 11,
+    "name": "Gem Wallet Support"
+  },
+  "message_type": "outgoing",
+  "private": false,
+  "sender": {
+    "id": 1,
+    "name": "Test Agent",
+    "email": "agent@test.com",
+    "type": "user"
+  },
+  "source_id": null,
+  "event": "message_created"
+}

@@ -3,7 +3,7 @@ use num_traits::FromBytes;
 
 use crate::SwapperError;
 use gem_evm::{
-    chainlink::contract::{AggregatorInterface, CHAINLINK_ETH_USD_FEED},
+    chainlink::contract::{AggregatorInterface, CHAINLINK_ETH_USD_FEED, CHAINLINK_MON_USD_FEED},
     multicall3::{IMulticall3, create_call3, decode_call3_return},
 };
 
@@ -15,6 +15,19 @@ impl ChainlinkPriceFeed {
     pub fn new_eth_usd_feed() -> ChainlinkPriceFeed {
         ChainlinkPriceFeed {
             contract: CHAINLINK_ETH_USD_FEED.into(),
+        }
+    }
+
+    pub fn new_usd_feed_for_chain(chain: primitives::Chain) -> Option<ChainlinkPriceFeed> {
+        match chain {
+            primitives::Chain::Monad => Some(Self::new_mon_usd_feed()),
+            _ => Some(Self::new_eth_usd_feed()),
+        }
+    }
+
+    pub fn new_mon_usd_feed() -> ChainlinkPriceFeed {
+        ChainlinkPriceFeed {
+            contract: CHAINLINK_MON_USD_FEED.into(),
         }
     }
 

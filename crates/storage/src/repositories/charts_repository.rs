@@ -5,7 +5,7 @@ use crate::database::charts::{ChartResult, ChartsStore};
 use primitives::ChartPeriod;
 
 pub trait ChartsRepository {
-    fn add_charts(&mut self, values: Vec<crate::models::Chart>) -> Result<usize, DatabaseError>;
+    fn add_charts(&mut self, values: Vec<crate::models::ChartRow>) -> Result<usize, DatabaseError>;
     fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, DatabaseError>;
     fn aggregate_hourly_charts(&mut self) -> Result<usize, DatabaseError>;
     fn aggregate_daily_charts(&mut self) -> Result<usize, DatabaseError>;
@@ -13,7 +13,7 @@ pub trait ChartsRepository {
 }
 
 impl ChartsRepository for DatabaseClient {
-    fn add_charts(&mut self, values: Vec<crate::models::Chart>) -> Result<usize, DatabaseError> {
+    fn add_charts(&mut self, values: Vec<crate::models::ChartRow>) -> Result<usize, DatabaseError> {
         Ok(ChartsStore::add_charts(self, values)?)
     }
 

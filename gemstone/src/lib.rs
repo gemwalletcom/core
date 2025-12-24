@@ -1,5 +1,6 @@
 pub mod alien;
 pub mod api_client;
+pub mod auth;
 pub mod block_explorer;
 pub mod config;
 pub mod ethereum;
@@ -10,7 +11,6 @@ pub mod models;
 pub mod network;
 pub mod payment;
 pub mod perpetual;
-pub mod rewards;
 pub mod signer;
 pub mod siwe;
 pub mod wallet_connect;
@@ -97,6 +97,12 @@ impl From<::signer::SignerError> for GemstoneError {
 
 impl From<serde_json::Error> for GemstoneError {
     fn from(error: serde_json::Error) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<std::string::FromUtf8Error> for GemstoneError {
+    fn from(error: std::string::FromUtf8Error) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }

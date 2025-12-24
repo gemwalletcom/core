@@ -21,6 +21,7 @@ impl<C: Client> ChainBalances for TronClient<C> {
 
     async fn get_balance_tokens(&self, address: String, token_ids: Vec<String>) -> Result<Vec<AssetBalance>, Box<dyn Error + Sync + Send>> {
         let parameter = format_address_parameter(&address)?;
+
         let futures: Vec<_> = token_ids
             .into_iter()
             .map(|token_id| {

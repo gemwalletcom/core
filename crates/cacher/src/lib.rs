@@ -116,4 +116,69 @@ impl CacherClient {
         let last_processed: u64 = self.get_or_set_value(key, || async { Ok(now) }, Some(ttl_seconds)).await?;
         Ok(last_processed == now)
     }
+
+    pub async fn delete(&self, key: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(self.connection.clone().del::<&str, i64>(key).await? > 0)
+    }
+
+    pub async fn increment(&self, key: &str) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        Ok(self.connection.clone().incr(key, 1).await?)
+    }
+
+    pub async fn increment_with_ttl(&self, key: &str, ttl: i64) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        let mut pipe = redis::pipe();
+        pipe.atomic();
+        pipe.cmd("INCR").arg(key);
+        pipe.cmd("EXPIRE").arg(key).arg(ttl).arg("NX");
+        let results: (i64, i64) = pipe.query_async(&mut self.connection.clone()).await?;
+        Ok(results.0)
+    }
+
+    pub async fn get_counter(&self, key: &str) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        Ok(self.connection.clone().get::<&str, Option<i64>>(key).await?.unwrap_or(0))
+    }
+
+    // CacheKey-aware methods
+    pub async fn set_cached<T: serde::Serialize>(&self, key: CacheKey<'_>, value: &T) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.set_values_with_ttl(vec![(&key.key(), value)], key.ttl() as i64).await?;
+        Ok(())
+    }
+
+    pub async fn get_cached<T: serde::de::DeserializeOwned>(&self, key: CacheKey<'_>) -> Result<T, Box<dyn Error + Send + Sync>> {
+        self.get_value(&key.key()).await
+    }
+
+    pub async fn set_values_cached<T: serde::Serialize>(&self, entries: &[(CacheKey<'_>, &T)]) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if entries.is_empty() {
+            return Ok(0);
+        }
+        let mut pipe = redis::pipe();
+        for (key, value) in entries {
+            let serialized = serde_json::to_string(value)?;
+            pipe.cmd("SET").arg(key.key()).arg(serialized).arg("EX").arg(key.ttl()).ignore();
+        }
+        pipe.query_async::<()>(&mut self.connection.clone()).await?;
+        Ok(entries.len())
+    }
+
+    pub async fn get_or_set_cached<T, F, Fut>(&self, key: CacheKey<'_>, fetch_fn: F) -> Result<T, Box<dyn Error + Send + Sync>>
+    where
+        T: serde::de::DeserializeOwned + serde::Serialize,
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = Result<T, Box<dyn Error + Send + Sync>>>,
+    {
+        self.get_or_set_value(&key.key(), fetch_fn, Some(key.ttl())).await
+    }
+
+    pub async fn increment_cached(&self, key: CacheKey<'_>) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        self.increment_with_ttl(&key.key(), key.ttl() as i64).await
+    }
+
+    pub async fn get_cached_counter(&self, key: CacheKey<'_>) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        self.get_counter(&key.key()).await
+    }
+
+    pub async fn can_process_cached(&self, key: CacheKey<'_>) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        self.can_process_now(&key.key(), key.ttl()).await
+    }
 }

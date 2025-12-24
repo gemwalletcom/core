@@ -9,7 +9,9 @@ metrics:
       ios:
         - "Gem.*CFNetwork.*Darwin"
       android:
-        - "okhttp/4\\..*"
+        - "okhttp/.*"
+        - "Gem/Android.*"
+        - "Gem/Android"
 
 monitoring:
   enabled: false

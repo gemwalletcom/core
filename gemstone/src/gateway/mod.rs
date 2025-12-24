@@ -3,10 +3,10 @@ mod preferences;
 
 pub use error::GatewayError;
 use error::map_network_error;
-use preferences::PreferencesWrapper;
 #[cfg(test)]
 pub use preferences::EmptyPreferences;
 pub use preferences::GemPreferences;
+use preferences::PreferencesWrapper;
 
 use crate::alien::{AlienProvider, new_alien_client};
 use crate::api_client::GemApiClient;

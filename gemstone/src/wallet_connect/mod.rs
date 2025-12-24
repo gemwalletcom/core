@@ -1,10 +1,15 @@
-use crate::{
-    message::sign_type::{SignDigestType, SignMessage},
-    siwe::SiweMessage,
-};
+use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use hex::FromHex;
 use primitives::{Chain, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
-use std::str::FromStr;
+
+fn current_timestamp() -> i64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
+}
+
+use crate::message::sign_type::{SignDigestType, SignMessage};
+use crate::siwe::SiweMessage;
 
 pub mod actions;
 pub mod handler_traits;
@@ -57,7 +62,7 @@ mod tests {
 
         let decoded = wallet_connect.decode_sign_message(Chain::Ethereum, SignDigestType::Eip191, message.clone());
 
-        assert!(matches!(decoded.sign_type, SignDigestType::Siwe));
+        assert_eq!(decoded.sign_type, SignDigestType::Siwe);
         assert_eq!(decoded.data, message.into_bytes());
     }
 
@@ -68,7 +73,7 @@ mod tests {
 
         let decoded = wallet_connect.decode_sign_message(Chain::Ethereum, SignDigestType::Eip191, message.clone());
 
-        assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
+        assert_eq!(decoded.sign_type, SignDigestType::Eip191);
         assert_eq!(decoded.data, message.into_bytes());
     }
 
@@ -79,7 +84,66 @@ mod tests {
 
         let decoded = wallet_connect.decode_sign_message(Chain::Polygon, SignDigestType::Eip191, message);
 
-        assert!(matches!(decoded.sign_type, SignDigestType::Eip191));
+        assert_eq!(decoded.sign_type, SignDigestType::Eip191);
+    }
+
+    #[test]
+    fn validate_ton_sign_message() {
+        use gem_ton::signer::{TonSignDataPayload, TonSignMessageData};
+
+        let wallet_connect = WalletConnect::new();
+
+        // Missing type field in payload
+        let ton_data = r#"{"payload":{"text":"Hello"},"domain":"example.com"}"#.to_string();
+        assert!(wallet_connect.validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, ton_data).is_err());
+
+        // Unknown type
+        let ton_data = r#"{"payload":{"type":"unknown"},"domain":"example.com"}"#.to_string();
+        assert!(wallet_connect.validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, ton_data).is_err());
+
+        // Valid text type
+        let ton_data = TonSignMessageData::new(TonSignDataPayload::Text { text: "Hello".to_string() }, "example.com".to_string());
+        assert!(
+            wallet_connect
+                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, String::from_utf8(ton_data.to_bytes()).unwrap())
+                .is_ok()
+        );
+
+        // Valid binary type
+        let ton_data = TonSignMessageData::new(TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() }, "example.com".to_string());
+        assert!(
+            wallet_connect
+                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, String::from_utf8(ton_data.to_bytes()).unwrap())
+                .is_ok()
+        );
+
+        // Valid cell type
+        let ton_data = TonSignMessageData::new(TonSignDataPayload::Cell { cell: "te6c".to_string() }, "example.com".to_string());
+        assert!(
+            wallet_connect
+                .validate_sign_message(Chain::Ton, SignDigestType::TonPersonal, String::from_utf8(ton_data.to_bytes()).unwrap())
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn validate_ton_send_transaction() {
+        let wallet_connect = WalletConnect::new();
+        let ton_type = WalletConnectTransactionType::Ton {
+            output_type: primitives::TransferDataOutputType::EncodedTransaction,
+        };
+
+        assert!(
+            wallet_connect
+                .validate_send_transaction(ton_type.clone(), r#"{"valid_until": 1234567890, "messages": []}"#.to_string())
+                .is_err()
+        );
+        assert!(
+            wallet_connect
+                .validate_send_transaction(ton_type.clone(), r#"{"valid_until": 9999999999, "messages": []}"#.to_string())
+                .is_ok()
+        );
+        assert!(wallet_connect.validate_send_transaction(ton_type, r#"{"messages": []}"#.to_string()).is_ok());
     }
 }
 
@@ -104,12 +168,20 @@ impl WalletConnect {
         Some(primitives::WalletConnectCAIP2::get_chain(caip2, caip10)?.to_string())
     }
 
-    pub fn parse_request(&self, topic: String, method: String, params: String, chain_id: String) -> Result<WalletConnectAction, crate::GemstoneError> {
+    pub fn parse_request(
+        &self,
+        topic: String,
+        method: String,
+        params: String,
+        chain_id: String,
+        domain: String,
+    ) -> Result<WalletConnectAction, crate::GemstoneError> {
         let request = WalletConnectRequest {
             topic,
             method,
             params,
             chain_id: Some(chain_id),
+            domain,
         };
         WalletConnectRequestHandler::parse_request(request).map_err(|e| crate::GemstoneError::AnyError { msg: e })
     }
@@ -143,8 +215,32 @@ impl WalletConnect {
                 })?;
                 gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
             }
-            SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe => Ok(()),
+            SignDigestType::TonPersonal => {
+                gem_ton::signer::TonSignMessageData::from_bytes(data.as_bytes())?;
+                Ok(())
+            }
+            SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe | SignDigestType::BitcoinPersonal => Ok(()),
         }
+    }
+
+    pub fn validate_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<(), crate::GemstoneError> {
+        let WalletConnectTransactionType::Ton { .. } = transaction_type else {
+            return Ok(());
+        };
+
+        let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| crate::GemstoneError::AnyError {
+            msg: "Invalid JSON".to_string(),
+        })?;
+
+        if let Some(valid_until) = json.get("valid_until").and_then(|v| v.as_i64())
+            && current_timestamp() >= valid_until
+        {
+            return Err(crate::GemstoneError::AnyError {
+                msg: "Transaction expired".to_string(),
+            });
+        }
+
+        Ok(())
     }
 
     pub fn decode_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> SignMessage {
@@ -158,7 +254,9 @@ impl WalletConnect {
 
         let raw_text = utf8_value.or_else(|| String::from_utf8(message_data.clone()).ok()).unwrap_or_default();
 
-        if let Some(siwe_message) = self.decode_siwe_message(chain, &raw_text, &message_data) {
+        if sign_type == SignDigestType::Eip191
+            && let Some(siwe_message) = self.decode_siwe_message(chain, &raw_text, &message_data)
+        {
             return siwe_message;
         }
 
@@ -229,6 +327,19 @@ impl WalletConnect {
                     output_type,
                 })
             }
+            WalletConnectTransactionType::Ton { output_type } => {
+                let json: serde_json::Value = serde_json::from_str(&data)?;
+
+                let messages = json
+                    .get("messages")
+                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                        msg: "Missing messages field".to_string(),
+                    })?
+                    .to_string();
+
+                Ok(WalletConnectTransaction::Ton { messages, output_type })
+            }
+            WalletConnectTransactionType::Bitcoin { output_type } => Ok(WalletConnectTransaction::Bitcoin { data, output_type }),
         }
     }
 }

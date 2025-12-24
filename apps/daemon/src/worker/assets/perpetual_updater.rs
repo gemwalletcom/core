@@ -5,7 +5,7 @@ use primitives::{Chain, asset_score::AssetRank};
 use settings::{Settings, service_user_agent};
 use settings_chain::ProviderFactory;
 use storage::Database;
-use storage::{AssetUpdate, models::StoragePerpetual};
+use storage::{AssetUpdate, models::PerpetualRow};
 
 pub struct PerpetualUpdater {
     settings: Settings,
@@ -27,7 +27,7 @@ impl PerpetualUpdater {
             let asset_ids = assets.iter().map(|x| x.id.to_string()).collect::<Vec<_>>();
             let perpetuals = perpetuals_data
                 .into_iter()
-                .map(|x| StoragePerpetual::from_primitive(x.perpetual))
+                .map(|x| PerpetualRow::from_primitive(x.perpetual))
                 .collect::<Vec<_>>();
 
             self.database.client()?.assets().upsert_assets(assets)?;

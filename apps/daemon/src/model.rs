@@ -15,6 +15,7 @@ pub enum ConsumerService {
     FetchNftAssociations,
     Notifications,
     Rewards,
+    RewardsRedemptions,
     Support,
     Fiat,
     StorePrices,

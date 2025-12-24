@@ -1,18 +1,18 @@
 use crate::DatabaseClient;
-use crate::models::StoragePerpetual;
+use crate::models::PerpetualRow;
 use crate::schema::{perpetuals, perpetuals_assets};
 use diesel::{prelude::*, upsert::excluded};
 
 pub(crate) trait PerpetualsStore {
-    fn perpetuals_update(&mut self, values: Vec<StoragePerpetual>) -> Result<usize, diesel::result::Error>;
+    fn perpetuals_update(&mut self, values: Vec<PerpetualRow>) -> Result<usize, diesel::result::Error>;
 
-    fn get_perpetuals_for_asset(&mut self, asset_id_value: &str) -> Result<Vec<StoragePerpetual>, diesel::result::Error>;
+    fn get_perpetuals_for_asset(&mut self, asset_id_value: &str) -> Result<Vec<PerpetualRow>, diesel::result::Error>;
 
-    fn get_all_perpetuals(&mut self) -> Result<Vec<StoragePerpetual>, diesel::result::Error>;
+    fn get_all_perpetuals(&mut self) -> Result<Vec<PerpetualRow>, diesel::result::Error>;
 }
 
 impl PerpetualsStore for DatabaseClient {
-    fn perpetuals_update(&mut self, values: Vec<StoragePerpetual>) -> Result<usize, diesel::result::Error> {
+    fn perpetuals_update(&mut self, values: Vec<PerpetualRow>) -> Result<usize, diesel::result::Error> {
         if values.is_empty() {
             return Ok(0);
         }
@@ -34,15 +34,15 @@ impl PerpetualsStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn get_perpetuals_for_asset(&mut self, asset_id_value: &str) -> Result<Vec<StoragePerpetual>, diesel::result::Error> {
+    fn get_perpetuals_for_asset(&mut self, asset_id_value: &str) -> Result<Vec<PerpetualRow>, diesel::result::Error> {
         perpetuals::table
             .inner_join(perpetuals_assets::table.on(perpetuals::id.eq(perpetuals_assets::perpetual_id)))
             .filter(perpetuals_assets::asset_id.eq(asset_id_value))
-            .select(StoragePerpetual::as_select())
+            .select(PerpetualRow::as_select())
             .load(&mut self.connection)
     }
 
-    fn get_all_perpetuals(&mut self) -> Result<Vec<StoragePerpetual>, diesel::result::Error> {
-        perpetuals::table.select(StoragePerpetual::as_select()).load(&mut self.connection)
+    fn get_all_perpetuals(&mut self) -> Result<Vec<PerpetualRow>, diesel::result::Error> {
+        perpetuals::table.select(PerpetualRow::as_select()).load(&mut self.connection)
     }
 }

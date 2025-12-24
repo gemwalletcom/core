@@ -1,10 +1,7 @@
-use alloy_primitives::{Address, hex};
-use chrono::{DateTime, Utc};
-use gem_hash::keccak::keccak256;
-use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
+use alloy_primitives::Address;
+use chrono::DateTime;
 use primitives::{Chain, ChainType};
 use url::Url;
-use uuid::Uuid;
 
 use crate::domain::{extract_host, parse_url};
 
@@ -16,65 +13,6 @@ const NONCE_PREFIX: &str = "Nonce:";
 const ISSUED_AT_PREFIX: &str = "Issued At:";
 const SUPPORTED_VERSION: &str = "1";
 const MIN_NONCE_LENGTH: usize = 8;
-
-pub fn create_message(domain: &str, uri: &str, address: &str, chain_id: u64, statement: &str) -> String {
-    let nonce = Uuid::new_v4().to_string().replace("-", "");
-    let issued_at = Utc::now().to_rfc3339();
-
-    format!(
-        "{} wants you to sign in with your Ethereum account:\n\
-        {}\n\
-        \n\
-        {}\n\
-        \n\
-        URI: {}\n\
-        Version: {}\n\
-        Chain ID: {}\n\
-        Nonce: {}\n\
-        Issued At: {}",
-        domain, address, statement, uri, SUPPORTED_VERSION, chain_id, nonce, issued_at
-    )
-}
-
-pub fn verify_signature(message: &str, signature_hex: &str, expected_address: &str) -> bool {
-    let Some(recovered) = recover_address(message, signature_hex) else {
-        return false;
-    };
-    recovered.eq_ignore_ascii_case(expected_address)
-}
-
-pub fn eip191_hash(message: &str) -> [u8; 32] {
-    let prefix = format!("\x19Ethereum Signed Message:\n{}", message.len());
-    let prefixed = [prefix.as_bytes(), message.as_bytes()].concat();
-    keccak256(&prefixed)
-}
-
-fn recover_address(message: &str, signature_hex: &str) -> Option<String> {
-    let message_hash = eip191_hash(message);
-    let signature_bytes = hex::decode(signature_hex.strip_prefix("0x").unwrap_or(signature_hex)).ok()?;
-
-    if signature_bytes.len() != 65 {
-        return None;
-    }
-
-    let r_s = &signature_bytes[..64];
-    let v = signature_bytes[64];
-
-    let recovery_id = match v {
-        27 | 0 => RecoveryId::from_byte(0),
-        28 | 1 => RecoveryId::from_byte(1),
-        _ => return None,
-    }?;
-
-    let signature = Signature::from_slice(r_s).ok()?;
-    let recovered_key = VerifyingKey::recover_from_prehash(&message_hash, &signature, recovery_id).ok()?;
-
-    let public_key_bytes = recovered_key.to_encoded_point(false);
-    let public_key_hash = keccak256(&public_key_bytes.as_bytes()[1..]);
-    let address = format!("0x{}", hex::encode(&public_key_hash[12..]));
-
-    Some(address)
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SiweMessage {

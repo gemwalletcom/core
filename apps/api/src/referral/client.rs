@@ -1,58 +1,140 @@
-use primitives::{Rewards, RewardsEventItem, RewardsReferralRequest};
+use gem_rewards::{IpSecurityClient, RewardsError};
+use primitives::{ConfigKey, NaiveDateTimeExt, RewardEvent, RewardEventType, Rewards};
 use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
+
+use crate::auth::VerifiedAuth;
+
+const REFERRAL_ELIGIBILITY_DAYS: i64 = 7;
 
 pub struct RewardsClient {
     database: Database,
     stream_producer: StreamProducer,
+    ip_security_client: IpSecurityClient,
 }
 
 impl RewardsClient {
-    pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
-        Self { database, stream_producer }
+    pub fn new(database: Database, stream_producer: StreamProducer, ip_security_client: IpSecurityClient) -> Self {
+        Self {
+            database,
+            stream_producer,
+            ip_security_client,
+        }
     }
 
     pub fn get_rewards(&mut self, address: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self.database.client()?.rewards().get_reward_by_address(address)?)
+        match self.database.client()?.rewards().get_reward_by_address(address) {
+            Ok(rewards) => Ok(rewards),
+            Err(storage::DatabaseError::NotFound) => Ok(Rewards::default()),
+            Err(e) => Err(e.into()),
+        }
     }
 
-    pub fn get_rewards_events(&mut self, address: &str) -> Result<Vec<RewardsEventItem>, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn get_rewards_events(&mut self, address: &str) -> Result<Vec<RewardEvent>, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self.database.client()?.rewards().get_reward_events_by_address(address)?)
     }
 
-    pub async fn create_referral(&mut self, request: &RewardsReferralRequest) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
-        let address = self.verify_request(request)?;
-        let (rewards, event_id) = self.database.client()?.rewards().create_reward(&address, &request.code)?;
-        self.publish_event(event_id).await?;
+    pub async fn create_referral(&mut self, address: &str, code: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
+        let (rewards, event_id) = self.database.client()?.rewards().create_reward(address, code)?;
+        self.publish_events(vec![event_id]).await?;
         Ok(rewards)
     }
 
-    pub async fn use_referral_code(&mut self, request: &RewardsReferralRequest) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let address = self.verify_request(request)?;
-        let device = self.database.client()?.get_device(&request.device_id)?;
-        let event_ids = self.database.client()?.rewards().use_referral_code(&address, &request.code, device.id)?;
+    #[allow(dead_code)]
+    pub fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self.database.client()?.rewards().change_username(address, new_username)?)
+    }
+
+    pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if !self.database.client()?.rewards().referral_code_exists(code)? {
+            return Err(RewardsError::Referral("Referral code does not exist".to_string()).into());
+        }
+
+        let first_subscription_date = self.database.client()?.rewards().get_first_subscription_date(vec![auth.address.clone()])?;
+
+        let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
+        let is_new_subscription = first_subscription_date
+            .map(|date| date.is_within_days(REFERRAL_ELIGIBILITY_DAYS))
+            .unwrap_or(true);
+
+        let is_new_user = is_new_device && is_new_subscription;
+
+        let invite_event = if is_new_user {
+            RewardEventType::InviteNew
+        } else {
+            RewardEventType::InviteExisting
+        };
+
+        let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address).await?;
+
+        if let Err(err) = self.check_referral_eligibility(ip_address, is_ip_eligible, &country).await {
+            self.add_referral_attempt(code, &auth.address, &country, auth.device.id, ip_address, &err.to_string())?;
+            return Err(err);
+        }
+
+        let event_ids = match self
+            .database
+            .client()?
+            .rewards()
+            .use_referral_code(&auth.address, code, auth.device.id, ip_address, invite_event)
+        {
+            Ok(ids) => ids,
+            Err(err) => {
+                self.add_referral_attempt(code, &auth.address, &country, auth.device.id, ip_address, &err.to_string())?;
+                return Err(err.into());
+            }
+        };
+
+        self.ip_security_client.record_referral_usage(ip_address).await?;
         self.publish_events(event_ids).await?;
         Ok(())
     }
 
-    async fn publish_event(&self, event_id: i32) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let payload = vec![RewardsNotificationPayload::new(event_id)];
-        self.stream_producer.publish_rewards_events(payload).await?;
+    async fn check_referral_eligibility(
+        &mut self,
+        ip_address: &str,
+        is_ip_eligible: bool,
+        country: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if !is_ip_eligible {
+            return Err(RewardsError::Referral("IP not eligible".to_string()).into());
+        }
+
+        let ineligible_countries = self.database.client()?.config().get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?;
+
+        if ineligible_countries.contains(&country.to_string()) {
+            return Err(RewardsError::Referral(format!("Country {} not eligible", country)).into());
+        }
+
+        let daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
+        let weekly_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
+        let global_daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralUseDailyLimit)?;
+        self.ip_security_client
+            .check_rate_limits(ip_address, daily_limit, weekly_limit, global_daily_limit)
+            .await?;
+
+        Ok(())
+    }
+
+    fn add_referral_attempt(
+        &mut self,
+        referrer_username: &str,
+        referred_address: &str,
+        country_code: &str,
+        device_id: i32,
+        ip_address: &str,
+        reason: &str,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        self.database
+            .client()?
+            .rewards()
+            .add_referral_attempt(referrer_username, referred_address, country_code, device_id, ip_address, reason)?;
         Ok(())
     }
 
     async fn publish_events(&self, event_ids: Vec<i32>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let payload: Vec<RewardsNotificationPayload> = event_ids.into_iter().map(RewardsNotificationPayload::new).collect();
-        self.stream_producer.publish_rewards_events(payload).await?;
+        let payloads: Vec<_> = event_ids.into_iter().map(RewardsNotificationPayload::new).collect();
+        self.stream_producer.publish_rewards_events(payloads).await?;
         Ok(())
-    }
-
-    fn verify_request(&self, request: &RewardsReferralRequest) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        if !referral::verify_siwe_signature(&request.message, &request.signature, &request.address) {
-            return Err("Invalid signature".into());
-        }
-
-        let message = referral::parse_siwe_message(&request.message).ok_or("Invalid message format")?;
-        Ok(message.address)
     }
 }

@@ -24,7 +24,7 @@ impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
         let assets_addresses = payload
             .values
             .into_iter()
-            .map(storage::models::AssetAddress::from_primitive)
+            .map(storage::models::AssetAddressRow::from_primitive)
             .collect::<Vec<_>>();
 
         Ok(self

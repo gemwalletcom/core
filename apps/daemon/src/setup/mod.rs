@@ -1,12 +1,14 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
+use primitives::rewards::RewardRedemptionType;
 use primitives::{
-    AddressType, Asset, AssetTag, AssetType, Chain, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, RewardsEvent, Subscription, TransactionType,
+    AddressType, Asset, AssetTag, AssetType, Chain, ConfigKey, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, RewardEventType, Subscription,
+    TransactionType,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{FiatRate, RewardEventType, UpdateDevice};
+use storage::models::{ConfigRow, FiatRateRow, RewardEventTypeRow, RewardRedemptionTypeRow, UpdateDeviceRow};
 use streamer::{ExchangeName, QueueName, StreamProducer};
 
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -44,7 +46,7 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     info_with_fields!("setup", step = "fiat providers");
     let providers = FiatProviderName::all()
         .into_iter()
-        .map(storage::models::FiatProvider::from_primitive)
+        .map(storage::models::FiatProviderRow::from_primitive)
         .collect::<Vec<_>>();
     let _ = database.client()?.fiat().add_fiat_providers(providers);
 
@@ -52,7 +54,7 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
 
     let releases = PlatformStore::all()
         .into_iter()
-        .map(|x| storage::models::Release {
+        .map(|x| storage::models::ReleaseRow {
             platform_store: x.as_ref().to_string(),
             version: "1.0.0".to_string(),
             upgrade_required: false,
@@ -62,7 +64,7 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     let _ = database.client()?.releases().add_releases(releases);
 
     info_with_fields!("setup", step = "nft types");
-    let types = NFTType::all().into_iter().map(storage::models::NftType::from_primitive).collect::<Vec<_>>();
+    let types = NFTType::all().into_iter().map(storage::models::NftTypeRow::from_primitive).collect::<Vec<_>>();
     let _ = database.client()?.nft().add_nft_types(types);
 
     info_with_fields!("setup", step = "link types");
@@ -71,32 +73,43 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     info_with_fields!("setup", step = "scan address types");
     let address_types = AddressType::all()
         .into_iter()
-        .map(storage::models::ScanAddressType::from_primitive)
+        .map(storage::models::ScanAddressTypeRow::from_primitive)
         .collect::<Vec<_>>();
     let _ = database.client()?.scan_addresses().add_scan_address_types(address_types);
 
     info_with_fields!("setup", step = "transaction types");
     let address_types = TransactionType::all()
         .into_iter()
-        .map(storage::models::TransactionType::from_primitive)
+        .map(storage::models::TransactionTypeRow::from_primitive)
         .collect::<Vec<_>>();
     let _ = database.client()?.transactions().add_transactions_types(address_types);
 
     info_with_fields!("setup", step = "assets tags");
-    let assets_tags = AssetTag::all().into_iter().map(storage::models::Tag::from_primitive).collect::<Vec<_>>();
+    let assets_tags = AssetTag::all().into_iter().map(storage::models::TagRow::from_primitive).collect::<Vec<_>>();
     let _ = database.client()?.tag().add_tags(assets_tags);
 
     info_with_fields!("setup", step = "prices dex providers");
     let providers = PriceFeedProvider::all()
         .into_iter()
         .enumerate()
-        .map(|(index, p)| storage::models::PriceDexProvider::new(p.as_ref().to_string(), index as i32))
+        .map(|(index, p)| storage::models::PriceDexProviderRow::new(p.as_ref().to_string(), index as i32))
         .collect::<Vec<_>>();
     let _ = database.client()?.prices_dex().add_prices_dex_providers(providers);
 
     info_with_fields!("setup", step = "reward event types");
-    let event_types = RewardsEvent::all().into_iter().map(RewardEventType::from_primitive).collect::<Vec<_>>();
+    let event_types = RewardEventType::all().into_iter().map(RewardEventTypeRow::from_primitive).collect::<Vec<_>>();
     let _ = database.client()?.reward_event_types().add_reward_event_types(event_types);
+
+    info_with_fields!("setup", step = "reward redemption types");
+    let redemption_types = RewardRedemptionType::all()
+        .into_iter()
+        .map(RewardRedemptionTypeRow::from_primitive)
+        .collect::<Vec<_>>();
+    let _ = database.client()?.reward_redemption_types().add_reward_redemption_types(redemption_types);
+
+    info_with_fields!("setup", step = "config");
+    let configs = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect::<Vec<_>>();
+    let _ = database.client()?.config().add_config(configs);
 
     info_with_fields!(
         "setup",
@@ -138,7 +151,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
 
     info_with_fields!("setup_dev", step = "add currency");
 
-    let fiat_rate = FiatRate {
+    let fiat_rate = FiatRateRow {
         id: "USD".to_string(),
         name: "US Dollar".to_string(),
         rate: 1.0,
@@ -149,7 +162,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
 
     info_with_fields!("setup_dev", step = "add devices");
 
-    let ios_device = UpdateDevice {
+    let ios_device = UpdateDeviceRow {
         device_id: "test".to_string(),
         platform: Platform::IOS.as_ref().to_string(),
         platform_store: Some(PlatformStore::AppStore.as_ref().to_string()),
@@ -164,7 +177,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         model: Some("iPhone 16".to_string()),
     };
 
-    let android_device = UpdateDevice {
+    let android_device = UpdateDeviceRow {
         device_id: "test-android".to_string(),
         platform: Platform::Android.as_ref().to_string(),
         platform_store: Some(PlatformStore::GooglePlay.as_ref().to_string()),

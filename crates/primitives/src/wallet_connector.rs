@@ -53,6 +53,14 @@ pub enum WalletConnectionMethods {
     SuiSignTransaction,
     #[serde(rename = "sui_signAndExecuteTransaction")]
     SuiSignAndExecuteTransaction,
+    #[serde(rename = "ton_sendMessage")]
+    TonSendMessage,
+    #[serde(rename = "ton_signData")]
+    TonSignData,
+    #[serde(rename = "sendTransfer")]
+    BtcSendTransfer,
+    #[serde(rename = "signMessage")]
+    BtcSignMessage,
 }
 
 #[derive(Debug, Serialize)]

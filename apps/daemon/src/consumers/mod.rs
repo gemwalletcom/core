@@ -7,6 +7,7 @@ pub mod fetch_nft_assets_addresses_consumer;
 pub mod fetch_token_addresses_consumer;
 pub mod notifications;
 pub mod rewards_consumer;
+pub mod rewards_redemption_consumer;
 pub mod store_charts_consumer;
 pub mod store_prices_consumer;
 pub mod store_transactions_consumer;
@@ -21,6 +22,7 @@ pub use assets_addresses_consumer::AssetsAddressesConsumer;
 use cacher::CacherClient;
 pub use fetch_assets_consumer::FetchAssetsConsumer;
 use pricer::PriceClient;
+use primitives::ConfigKey;
 use settings::Settings;
 use settings_chain::ChainProviders;
 use storage::Database;
@@ -30,7 +32,8 @@ pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
     AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, PricesPayload,
-    QueueName, RewardsNotificationPayload, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload,
+    QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload,
+    TransactionsPayload,
 };
 use tokio::sync::Mutex;
 
@@ -40,7 +43,15 @@ use crate::consumers::{
     fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
 };
 use crate::pusher::Pusher;
+use gem_client::ReqwestClient;
+use gem_evm::rpc::EthereumClient;
+use gem_jsonrpc::JsonRpcClient;
+use gem_rewards::{EvmClientProvider, TransferRedemptionService, WalletConfig};
+use primitives::{ChainType, EVMChain};
 use settings::service_user_agent;
+use settings_chain::ProviderFactory;
+use std::collections::HashMap;
+use std::str::FromStr;
 
 pub async fn run_consumer_fetch_assets(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::FetchAssets;
@@ -68,9 +79,7 @@ pub async fn run_consumer_store_transactions(settings: Settings, database: Datab
         database,
         stream_producer,
         pusher,
-        config: StoreTransactionsConsumerConfig {
-            min_transaction_amount_usd: settings.daemon.transactions.amount.min,
-        },
+        config: StoreTransactionsConsumerConfig {},
     };
     streamer::run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
 }
@@ -173,7 +182,7 @@ pub async fn run_consumer_store_prices(settings: Settings, database: Database) -
     let stream_reader = StreamReader::new(config).await?;
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(database.clone(), cacher_client);
-    let ttl_seconds = settings.pricer.outdated as i64;
+    let ttl_seconds = database.client()?.config().get_config_duration(ConfigKey::PricerOutdated)?.as_secs() as i64;
     let consumer = StorePricesConsumer::new(database, price_client, ttl_seconds);
     streamer::run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, consumer, ConsumerConfig::default()).await
 }
@@ -204,4 +213,52 @@ pub async fn run_consumer_rewards(settings: Settings, database: Database) -> Res
         ConsumerConfig::default(),
     )
     .await
+}
+
+pub async fn run_rewards_redemption_consumer(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let queue = QueueName::RewardsRedemptions;
+    let name = queue.to_string();
+    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+    let stream_reader = StreamReader::new(config).await?;
+
+    let wallets = parse_rewards_wallets(&settings)?;
+    let client_provider = create_evm_client_provider(settings.clone());
+    let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
+    let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service);
+
+    streamer::run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, bool>(
+        &name,
+        stream_reader,
+        queue,
+        consumer,
+        ConsumerConfig::default(),
+    )
+    .await
+}
+
+fn parse_rewards_wallets(settings: &Settings) -> Result<HashMap<ChainType, WalletConfig>, Box<dyn Error + Send + Sync>> {
+    let mut wallets = HashMap::new();
+
+    for (chain_type_name, wallet_config) in &settings.rewards.wallets {
+        let chain_type = ChainType::from_str(chain_type_name).map_err(|_| format!("Invalid chain type: {}", chain_type_name))?;
+        wallets.insert(
+            chain_type,
+            WalletConfig {
+                key: wallet_config.key.clone(),
+                address: wallet_config.address.clone(),
+            },
+        );
+    }
+
+    Ok(wallets)
+}
+
+fn create_evm_client_provider(settings: Settings) -> EvmClientProvider {
+    Arc::new(move |chain: EVMChain| {
+        let chain_config = ProviderFactory::get_chain_config(chain.to_chain(), &settings);
+        let reqwest_client = gem_client::builder().build().ok()?;
+        let client = ReqwestClient::new(chain_config.url.clone(), reqwest_client);
+        let rpc_client = JsonRpcClient::new(client);
+        Some(EthereumClient::new(rpc_client, chain))
+    })
 }

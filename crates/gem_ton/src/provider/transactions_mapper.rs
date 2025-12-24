@@ -244,8 +244,7 @@ mod tests {
 
     #[test]
     fn test_transaction_with_null_values() {
-        let transaction_json = include_str!("../../testdata/transaction_null_values.json");
-        let transaction: TransactionMessage = serde_json::from_str(transaction_json).unwrap();
+        let transaction: TransactionMessage = serde_json::from_str(include_str!("../../testdata/transaction_null_values.json")).unwrap();
 
         assert_eq!(transaction.hash, "MhO9bk6+qCMfveyGBQYvoklath4SA7F/LegdwACJAvg=");
         assert_eq!(transaction.out_msgs.len(), 2);

@@ -7,11 +7,13 @@ publish = false
 [features]
 default = []
 rpc = ["dep:chain_traits", "dep:gem_client"]
+signer = ["dep:signer", "dep:sha2", "dep:hex"]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 primitives = { path = "../primitives" }
 gem_client = { path = "../gem_client", optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
@@ -21,6 +23,11 @@ futures = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 num-bigint = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
+
+# Optional signer dependencies
+signer = { path = "../signer", optional = true }
+sha2 = { workspace = true, optional = true }
+hex = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

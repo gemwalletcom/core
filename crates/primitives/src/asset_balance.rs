@@ -60,6 +60,7 @@ pub struct Balance {
     pub locked: BigUint,
     pub staked: BigUint,
     pub pending: BigUint,
+    pub pending_unconfirmed: BigUint,
     pub rewards: BigUint,
     pub reserved: BigUint,
     pub withdrawable: BigUint,
@@ -85,6 +86,22 @@ impl Balance {
             locked: BigUint::from(0u32),
             staked: BigUint::from(0u32),
             pending: BigUint::from(0u32),
+            pending_unconfirmed: BigUint::from(0u32),
+            rewards: BigUint::from(0u32),
+            reserved: BigUint::from(0u32),
+            withdrawable: BigUint::from(0u32),
+            metadata: None,
+        }
+    }
+
+    pub fn with_pending_unconfirmed(available: BigUint, pending_unconfirmed: BigUint) -> Self {
+        Self {
+            available,
+            pending_unconfirmed,
+            frozen: BigUint::from(0u32),
+            locked: BigUint::from(0u32),
+            staked: BigUint::from(0u32),
+            pending: BigUint::from(0u32),
             rewards: BigUint::from(0u32),
             reserved: BigUint::from(0u32),
             withdrawable: BigUint::from(0u32),
@@ -100,6 +117,7 @@ impl Balance {
             locked: BigUint::from(0u32),
             staked: BigUint::from(0u32),
             pending: BigUint::from(0u32),
+            pending_unconfirmed: BigUint::from(0u32),
             rewards: BigUint::from(0u32),
             withdrawable: BigUint::from(0u32),
             metadata: None,
@@ -117,6 +135,7 @@ impl Balance {
             locked: BigUint::from(0u32),
             staked,
             pending,
+            pending_unconfirmed: BigUint::from(0u32),
             rewards: rewards.unwrap_or(BigUint::from(0u32)),
             reserved: BigUint::from(0u32),
             withdrawable: BigUint::from(0u32),

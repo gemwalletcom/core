@@ -19,6 +19,7 @@ pub struct GemBalance {
     pub locked: GemBigUint,
     pub staked: GemBigUint,
     pub pending: GemBigUint,
+    pub pending_unconfirmed: GemBigUint,
     pub rewards: GemBigUint,
     pub reserved: GemBigUint,
     pub withdrawable: GemBigUint,

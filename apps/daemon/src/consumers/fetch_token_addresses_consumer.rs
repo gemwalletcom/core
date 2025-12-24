@@ -3,10 +3,10 @@ use primitives::{AssetId, AssetIdVecExt, AssetVecExt};
 use std::error::Error;
 
 use async_trait::async_trait;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use settings_chain::ChainProviders;
 use storage::Database;
-use storage::models::AssetAddress;
+use storage::models::AssetAddressRow;
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
 pub struct FetchTokenAddressesConsumer {
@@ -31,7 +31,7 @@ impl FetchTokenAddressesConsumer {
 impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer {
     async fn should_process(&self, payload: ChainAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.cacher
-            .can_process_now(&format!("fetch_token_addresses:{}:{}", payload.value.chain, payload.value.address), 30 * 86400)
+            .can_process_cached(CacheKey::FetchTokenAddresses(payload.value.chain.as_ref(), &payload.value.address))
             .await
     }
 
@@ -43,14 +43,14 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
 
         for asset in all_assets {
             if asset.balance.available == BigUint::ZERO {
-                zero_balance_addresses.push(AssetAddress::new(
+                zero_balance_addresses.push(AssetAddressRow::new(
                     asset.asset_id.chain.to_string(),
                     asset.asset_id.to_string(),
                     payload.value.address.clone(),
                     None,
                 ));
             } else {
-                non_zero_addresses.push(AssetAddress::new(
+                non_zero_addresses.push(AssetAddressRow::new(
                     payload.value.chain.to_string(),
                     asset.asset_id.to_string(),
                     payload.value.address.clone(),

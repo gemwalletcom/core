@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use settings_chain::ChainProviders;
 use storage::Database;
 use streamer::{FetchAssetsPayload, consumer::MessageConsumer};
@@ -15,7 +15,7 @@ pub struct FetchAssetsConsumer {
 #[async_trait]
 impl MessageConsumer<FetchAssetsPayload, usize> for FetchAssetsConsumer {
     async fn should_process(&self, payload: FetchAssetsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        self.cacher.can_process_now(&format!("fetch_assets:{}", payload.asset_id), 30 * 86400).await
+        self.cacher.can_process_cached(CacheKey::FetchAssets(&payload.asset_id.to_string())).await
     }
 
     async fn process(&self, payload: FetchAssetsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {

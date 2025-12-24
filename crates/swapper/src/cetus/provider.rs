@@ -366,8 +366,7 @@ mod tests {
         let cetus_config = provider.get_clmm_config().unwrap();
         let sender_address = Address::from_str("0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1").unwrap();
 
-        let route_data = include_str!("test/route_data.json");
-        let route_data: RoutePoolData = serde_json::from_str(route_data).unwrap();
+        let route_data: RoutePoolData = serde_json::from_str(include_str!("test/route_data.json")).unwrap();
         let from_coin = SUI_COIN_TYPE_FULL;
         let a2b = from_coin == route_data.coin_a;
 

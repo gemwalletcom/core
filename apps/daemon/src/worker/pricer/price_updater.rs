@@ -3,7 +3,7 @@ use coingecko::{CoinGeckoClient, CoinMarket};
 use pricer::PriceClient;
 use std::collections::HashSet;
 use std::error::Error;
-use storage::models::{Chart, Price};
+use storage::models::{ChartRow, PriceRow};
 use streamer::{ChartsPayload, PricesPayload, StreamProducer, StreamProducerQueue};
 
 pub struct PriceUpdater {
@@ -39,13 +39,13 @@ impl PriceUpdater {
         self.update_prices(asset_ids).await
     }
 
-    fn map_coin_markets(coin_markets: Vec<CoinMarket>) -> Vec<Price> {
+    fn map_coin_markets(coin_markets: Vec<CoinMarket>) -> Vec<PriceRow> {
         coin_markets
             .into_iter()
             .flat_map(|x| Self::map_price_for_market(x.clone()))
-            .collect::<HashSet<Price>>()
+            .collect::<HashSet<PriceRow>>()
             .into_iter()
-            .collect::<Vec<Price>>()
+            .collect::<Vec<PriceRow>>()
     }
 
     pub async fn update_prices(&self, ids: Vec<String>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
@@ -55,7 +55,7 @@ impl PriceUpdater {
             let prices = Self::map_coin_markets(coin_markets);
 
             let prices_data = prices.iter().map(|p| p.as_price_data()).collect();
-            let charts_data = prices.iter().map(|p| Chart::from_price(p.clone()).as_chart_data()).collect();
+            let charts_data = prices.iter().map(|p| ChartRow::from_price(p.clone()).as_chart_data()).collect();
 
             self.stream_producer.publish_prices(PricesPayload::new(prices_data)).await?;
             self.stream_producer.publish_charts(ChartsPayload::new(charts_data)).await?;
@@ -73,9 +73,9 @@ impl PriceUpdater {
         self.price_client.delete_prices_updated_at_before(time.naive_utc())
     }
 
-    fn map_price_for_market(market: CoinMarket) -> Option<Price> {
+    fn map_price_for_market(market: CoinMarket) -> Option<PriceRow> {
         let last_updated_at = market.last_updated.map(|x: DateTime<Utc>| x.naive_utc())?;
-        Some(Price::new(
+        Some(PriceRow::new(
             market.id,
             market.current_price.unwrap_or_default(),
             market.price_change_percentage_24h.unwrap_or_default(),

@@ -1,23 +1,26 @@
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use number_formatter::BigNumberFormatter;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::time::Duration;
 
 use crate::{
-    CachedFiatQuoteData, FiatCacherClient, FiatConfig, FiatProvider, IPCheckClient,
+    CachedFiatQuoteData, FiatCacherClient, FiatProvider, IPCheckClient,
     error::FiatQuoteError,
     ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
 };
 use futures::future::join_all;
 use primitives::{
-    Asset, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteOldRequest,
-    FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
+    Asset, ConfigKey, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError,
+    FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
 };
 use reqwest::Client as RequestClient;
-use storage::{AssetFilter, Database};
-use streamer::{FiatWebhookPayload, StreamProducer};
+use storage::{
+    AssetFilter, Database,
+    models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
+};
+use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
     database: Database,
@@ -26,7 +29,6 @@ pub struct FiatClient {
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
     ip_check_client: IPCheckClient,
     stream_producer: StreamProducer,
-    config: FiatConfig,
 }
 
 impl FiatClient {
@@ -36,7 +38,6 @@ impl FiatClient {
         providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
         ip_check_client: IPCheckClient,
         stream_producer: StreamProducer,
-        config: FiatConfig,
     ) -> Self {
         Self {
             database,
@@ -45,7 +46,6 @@ impl FiatClient {
             providers,
             ip_check_client,
             stream_producer,
-            config,
         }
     }
 
@@ -91,19 +91,36 @@ impl FiatClient {
         webhook_data: serde_json::Value,
     ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.provider(provider_name)?;
-        let webhook = match provider.process_webhook(webhook_data.clone()).await {
+        let webhook = provider.process_webhook(webhook_data.clone()).await;
+
+        let (transaction_id, error) = match &webhook {
+            Ok(FiatWebhook::OrderId(order_id)) => (Some(order_id.clone()), None),
+            Ok(FiatWebhook::Transaction(tx)) => (Some(tx.provider_transaction_id.clone()), None),
+            Ok(FiatWebhook::None) => (None, None),
+            Err(e) => (None, Some(e.to_string())),
+        };
+        let webhook_row = NewFiatWebhookRow {
+            provider: provider_name.to_string(),
+            transaction_id,
+            payload: webhook_data.clone(),
+            error,
+        };
+        self.database.client()?.add_fiat_webhook(webhook_row)?;
+
+        let webhook = match webhook {
             Ok(result) => result,
             Err(e) => {
                 println!("Failed to decode webhook payload: {}, JSON payload: {}", e, webhook_data);
                 return Err(e);
             }
         };
+
         let payload = FiatWebhookPayload::new(provider.name(), webhook_data.clone(), webhook.clone());
         match webhook {
-            streamer::FiatWebhook::OrderId(_) | streamer::FiatWebhook::Transaction(_) => {
+            FiatWebhook::OrderId(_) | FiatWebhook::Transaction(_) => {
                 self.stream_producer.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await?;
             }
-            streamer::FiatWebhook::None => {}
+            FiatWebhook::None => {}
         }
         Ok(payload)
     }
@@ -159,8 +176,9 @@ impl FiatClient {
 
     pub async fn get_quotes_old(&self, request: FiatQuoteOldRequest) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
         let asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
+        let validate_subscription = self.database.client()?.config().get_config_bool(ConfigKey::FiatValidateSubscription)?;
 
-        if self.config.validate_subscription {
+        if validate_subscription {
             let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;
             if !is_subscribed {
                 let error = FiatQuoteError::AddressNotSubscribed(request.wallet_address.to_string());
@@ -348,10 +366,10 @@ impl FiatClient {
 
         let url = provider.get_quote_url(data).await?;
 
-        let db_quote = storage::models::FiatQuote::from_primitive(&quote.quote);
+        let db_quote = FiatQuoteRow::from_primitive(&quote.quote);
         self.database.client()?.add_fiat_quotes(vec![db_quote])?;
 
-        self.database.client()?.add_fiat_quote_request(storage::models::FiatQuoteRequest {
+        self.database.client()?.add_fiat_quote_request(FiatQuoteRequestRow {
             device_id: device.id,
             quote_id: quote_id.to_string(),
         })?;
@@ -360,9 +378,8 @@ impl FiatClient {
     }
 
     pub async fn get_ip_address(&self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
-        let key = format!("fiat_ip_resolver_ip_address:{ip_address}");
         self.cacher
-            .get_or_set_value(&key, || self.ip_check_client.get_ip_address(ip_address), Some(86400))
+            .get_or_set_cached(CacheKey::FiatIpCheck(ip_address), || self.ip_check_client.get_ip_address(ip_address))
             .await
     }
 

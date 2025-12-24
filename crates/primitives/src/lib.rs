@@ -2,6 +2,8 @@
 
 pub type UInt64 = u64;
 
+pub mod auth;
+pub use self::auth::{AuthMessage, AuthNonce, AuthPayload, AuthenticatedRequest};
 pub mod chain;
 pub use self::chain::Chain;
 pub mod chain_stake;
@@ -33,6 +35,10 @@ pub use self::price_feed::{PriceFeedId, PriceFeedProvider};
 pub mod asset;
 pub mod config;
 pub use self::config::{ConfigResponse, ConfigVersions, Release, SwapConfig};
+pub mod config_key;
+pub use self::config_key::ConfigKey;
+pub mod duration;
+pub use self::duration::parse_duration;
 pub mod currency;
 pub use self::asset::{Asset, AssetVecExt};
 pub mod asset_id;
@@ -113,7 +119,7 @@ pub use self::transaction_metadata_types::{
 pub mod wallet_connect_namespace;
 pub use self::wallet_connect_namespace::WalletConnectCAIP2;
 pub mod wallet_connect;
-pub use self::wallet_connect::{WCEthereumTransaction, WalletConnectRequest};
+pub use self::wallet_connect::{WCEthereumTransaction, WCTonMessage, WalletConnectRequest};
 pub mod account;
 pub use self::account::Account;
 pub mod wallet;
@@ -128,7 +134,7 @@ pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollec
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod rewards;
-pub use self::rewards::{Rewards, RewardsEvent, RewardsEventItem, RewardsReferralRequest};
+pub use self::rewards::{ReferralCode, RewardEvent, RewardEventType, RewardLevel, Rewards};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;
@@ -218,6 +224,8 @@ pub use self::secure_preferences::{Preferences, PreferencesExt, SecurePreference
 
 pub mod signer_error;
 pub use self::signer_error::SignerError;
+pub mod date_ext;
+pub use self::date_ext::NaiveDateTimeExt;
 pub mod number_incrementer;
 pub use self::number_incrementer::NumberIncrementer;
 pub mod chain_signer;
