@@ -104,17 +104,23 @@ impl NodeMonitor {
         let fallback_statuses = Self::fetch_statuses(chain_config.chain, fallback_urls).await;
         NodeTelemetry::log_status_debug(chain_config, &fallback_statuses);
 
-        if let Some(switch) = NodeSyncAnalyzer::select_best_node(&current_node.url, &fallback_statuses) {
-            let new_url = &switch.observation.url;
-            if new_url.url != current_node.url.url {
-                NodeService::update_node_domain(nodes, chain_config.chain, NodeDomain::new(new_url.clone(), chain_config.clone())).await;
-                metrics.set_node_host_current(chain_config.chain.as_ref(), &new_url.host());
-                metrics.add_node_switch(chain_config.chain.as_ref(), &current_node.url.host(), &new_url.host(), switch.reason.as_str());
+        let mut all_observations = vec![current_observation];
+        all_observations.extend(fallback_statuses);
 
-                NodeTelemetry::log_node_switch(chain_config, &current_node.url, &switch);
+        match NodeSyncAnalyzer::select_best_node(&current_node.url, &all_observations) {
+            Some(switch) => {
+                let new_url = &switch.observation.url;
+                if new_url.url != current_node.url.url {
+                    NodeService::update_node_domain(nodes, chain_config.chain, NodeDomain::new(new_url.clone(), chain_config.clone())).await;
+                    metrics.set_node_host_current(chain_config.chain.as_ref(), &new_url.host());
+                    metrics.add_node_switch(chain_config.chain.as_ref(), &current_node.url.host(), &new_url.host(), switch.reason.as_str());
+
+                    NodeTelemetry::log_node_switch(chain_config, &current_node.url, &switch);
+                }
             }
-        } else {
-            NodeTelemetry::log_no_candidate(chain_config, &fallback_statuses);
+            None => {
+                NodeTelemetry::log_no_candidate(chain_config, &all_observations);
+            }
         }
 
         Ok(())

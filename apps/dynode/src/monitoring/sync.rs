@@ -3,11 +3,11 @@ use std::time::Duration;
 use crate::config::Url;
 use primitives::{NodeStatusState, NodeSyncStatus};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NodeSwitchReason {
     BlockHeight,
     Latency,
-    Unknown,
+    CurrentNodeError { message: String },
 }
 
 impl NodeSwitchReason {
@@ -15,7 +15,7 @@ impl NodeSwitchReason {
         match self {
             Self::BlockHeight => "block_height",
             Self::Latency => "latency",
-            Self::Unknown => "unknown",
+            Self::CurrentNodeError { .. } => "current_node_error",
         }
     }
 }
@@ -47,9 +47,14 @@ impl NodeSyncAnalyzer {
     }
 
     pub fn select_best_node(current: &Url, observations: &[NodeStatusObservation]) -> Option<NodeSwitchResult> {
-        let current_status = observations.iter().find(|o| o.url == *current).and_then(|o| o.state.as_status());
+        let current_observation = observations.iter().find(|o| o.url == *current)?;
 
-        observations
+        let switch_reason = match &current_observation.state {
+            NodeStatusState::Error { message } => Some(NodeSwitchReason::CurrentNodeError { message: message.clone() }),
+            NodeStatusState::Healthy(_) => None,
+        };
+
+        let best_candidate = observations
             .iter()
             .filter(|observation| observation.url != *current)
             .filter_map(|observation| match observation.state.as_status() {
@@ -58,18 +63,29 @@ impl NodeSyncAnalyzer {
             })
             .max_by(|(left_observation, left_status), (right_observation, right_status)| {
                 Self::compare_candidates(left_observation, left_status, right_observation, right_status)
-            })
-            .map(|(observation, new_status)| NodeSwitchResult {
+            });
+
+        match (switch_reason, best_candidate) {
+            (Some(reason), Some((observation, _))) => Some(NodeSwitchResult {
                 observation: observation.clone(),
-                reason: Self::switch_reason(current_status, new_status),
-            })
+                reason,
+            }),
+            (None, Some((observation, new_status))) => {
+                let current_status = current_observation.state.as_status()?;
+                Some(NodeSwitchResult {
+                    observation: observation.clone(),
+                    reason: Self::switch_reason(current_status, new_status),
+                })
+            }
+            _ => None,
+        }
     }
 
-    fn switch_reason(current: Option<&NodeSyncStatus>, new: &NodeSyncStatus) -> NodeSwitchReason {
-        match current {
-            Some(curr) if Self::status_height(new) > Self::status_height(curr) => NodeSwitchReason::BlockHeight,
-            Some(_) => NodeSwitchReason::Latency,
-            None => NodeSwitchReason::Unknown,
+    fn switch_reason(current: &NodeSyncStatus, new: &NodeSyncStatus) -> NodeSwitchReason {
+        if Self::status_height(new) > Self::status_height(current) {
+            NodeSwitchReason::BlockHeight
+        } else {
+            NodeSwitchReason::Latency
         }
     }
 
@@ -162,12 +178,11 @@ mod tests {
     #[test]
     fn ignores_unhealthy_nodes() {
         let current = url("https://a");
-        let mut observations = vec![healthy_observation("https://b", Some(120), Some(120), 40)];
-        observations.push(NodeStatusObservation::new(
-            url("https://c"),
-            NodeStatusState::error("rpc error"),
-            Duration::from_millis(5),
-        ));
+        let observations = vec![
+            healthy_observation("https://a", Some(100), Some(100), 10),
+            healthy_observation("https://b", Some(120), Some(120), 40),
+            NodeStatusObservation::new(url("https://c"), NodeStatusState::error("rpc error"), Duration::from_millis(5)),
+        ];
 
         let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
         assert_eq!(result.observation.url.url, "https://b");
@@ -176,11 +191,42 @@ mod tests {
     #[test]
     fn reports_none_when_no_candidate() {
         let current = url("https://a");
-        let observations = vec![NodeStatusObservation::new(
-            url("https://b"),
-            NodeStatusState::error("rpc"),
-            Duration::from_millis(5),
-        )];
+        let observations = vec![
+            healthy_observation("https://a", Some(100), Some(100), 10),
+            NodeStatusObservation::new(url("https://b"), NodeStatusState::error("rpc"), Duration::from_millis(5)),
+        ];
+
+        assert!(NodeSyncAnalyzer::select_best_node(&current, &observations).is_none());
+    }
+
+    #[test]
+    fn switches_when_current_node_has_error() {
+        let current = url("https://a");
+        let observations = vec![
+            NodeStatusObservation::new(url("https://a"), NodeStatusState::error("connection failed"), Duration::from_millis(10)),
+            healthy_observation("https://b", Some(120), Some(120), 40),
+        ];
+
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
+        assert_eq!(result.observation.url.url, "https://b");
+        assert!(matches!(result.reason, NodeSwitchReason::CurrentNodeError { .. }));
+    }
+
+    #[test]
+    fn returns_none_when_current_node_not_found() {
+        let current = url("https://a");
+        let observations = vec![healthy_observation("https://b", Some(120), Some(120), 40)];
+
+        assert!(NodeSyncAnalyzer::select_best_node(&current, &observations).is_none());
+    }
+
+    #[test]
+    fn returns_none_when_current_has_error_and_no_healthy_candidates() {
+        let current = url("https://a");
+        let observations = vec![
+            NodeStatusObservation::new(url("https://a"), NodeStatusState::error("connection failed"), Duration::from_millis(10)),
+            NodeStatusObservation::new(url("https://b"), NodeStatusState::error("also failed"), Duration::from_millis(20)),
+        ];
 
         assert!(NodeSyncAnalyzer::select_best_node(&current, &observations).is_none());
     }
