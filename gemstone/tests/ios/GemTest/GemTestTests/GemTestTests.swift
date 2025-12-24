@@ -30,12 +30,6 @@ final class GemTestTests: XCTestCase {
         )
     }
 
-    func testGetEvmChainConfig() throws {
-        let config = Config().getEvmChainConfig(chain: "zksync")
-
-        XCTAssertFalse(config.isOpstack)
-    }
-
     func testCache() async throws {
         let cache = Cache<AlienTarget, Data>()
         let target = AlienTarget(

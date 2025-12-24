@@ -253,6 +253,7 @@ pub struct Chains {
     pub hypercore: Chain,
     pub monad: Chain,
     pub xlayer: Chain,
+    pub stable: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]

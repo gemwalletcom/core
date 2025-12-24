@@ -113,8 +113,6 @@ impl Swapper for UniswapV4 {
         let to_chain = request.to_asset.chain();
         let deployment = get_uniswap_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
-        _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
-
         let fee_tiers = self.get_tiers();
         let base_pair = get_base_pair(&evm_chain, false).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);

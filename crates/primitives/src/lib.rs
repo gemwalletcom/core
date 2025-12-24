@@ -6,6 +6,7 @@ pub mod auth;
 pub use self::auth::{AuthMessage, AuthNonce, AuthPayload, AuthenticatedRequest};
 pub mod chain;
 pub use self::chain::Chain;
+pub mod chain_config;
 pub mod chain_stake;
 pub use self::chain_stake::StakeChain;
 pub mod chain_type;

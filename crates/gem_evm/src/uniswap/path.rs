@@ -121,6 +121,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Ink => "0xF1815bd50389c46847f0Bda824eC8da914045D14",
         EVMChain::Monad => "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
         EVMChain::OpBNB | EVMChain::Plasma => "",
+        EVMChain::Stable => "0x8a2b28364102bea189d99a475c494330ef2bdd0b", // USDC.e (Stargate)
         _ => panic!("USDC is not configured for this chain"),
     };
 
@@ -145,6 +146,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Ink => "0x0200C29006150606B650577BBE7B6248F58470c1",
         EVMChain::Plasma => "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb", // USDT0
         EVMChain::Monad => "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",  // USDT0
+        EVMChain::Stable => "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", // USDT0
         EVMChain::Blast | EVMChain::World => "",                          // None
         _ => panic!("USDT is not configured for this chain"),
     };
