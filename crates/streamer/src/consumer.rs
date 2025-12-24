@@ -1,6 +1,7 @@
 use std::{
     error::Error,
     fmt::Display,
+    thread,
     time::{Duration, Instant},
 };
 
@@ -20,6 +21,15 @@ impl Default for ConsumerConfig {
         Self {
             timeout_on_error: Duration::from_secs(1),
             skip_on_error: true,
+        }
+    }
+}
+
+impl From<&settings::Consumer> for ConsumerConfig {
+    fn from(consumer: &settings::Consumer) -> Self {
+        Self {
+            timeout_on_error: consumer.error.timeout,
+            skip_on_error: consumer.error.skip,
         }
     }
 }
@@ -79,7 +89,9 @@ where
                         payload = payload.to_string(),
                         elapsed = DurationMs(start.elapsed())
                     );
-                    std::thread::sleep(config.timeout_on_error);
+                    if !config.timeout_on_error.is_zero() {
+                        thread::sleep(config.timeout_on_error);
+                    }
                     if config.skip_on_error { Ok(()) } else { Err(e) }
                 }
             }

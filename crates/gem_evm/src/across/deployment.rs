@@ -154,10 +154,7 @@ impl AcrossDeployment {
             ),
             (Chain::World, vec![AssetId::from_token(Chain::World, WETH_WORLD_CONTRACT)]),
             (Chain::Blast, vec![AssetId::from_token(Chain::Blast, WETH_BLAST_CONTRACT)]),
-            (
-                Chain::Ink,
-                vec![AssetId::from_token(Chain::Ink, WETH_INK_CONTRACT), USDT_INK_ASSET_ID.into()],
-            ),
+            (Chain::Ink, vec![AssetId::from_token(Chain::Ink, WETH_INK_CONTRACT), USDT_INK_ASSET_ID.into()]),
             (
                 Chain::Unichain,
                 vec![AssetId::from_token(Chain::Unichain, WETH_UNICHAIN_CONTRACT), USDC_UNICHAIN_ASSET_ID.into()],

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::chain_config::{get_chain_config, ChainConfig};
+use crate::chain_config::{ChainConfig, get_chain_config};
 use crate::{AssetId, AssetType, ChainType};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Ord, PartialOrd, Eq, Hash)]

@@ -17,6 +17,7 @@ pub struct Settings {
     pub api: API,
     pub parser: Parser,
     pub daemon: Daemon,
+    pub consumer: Consumer,
 
     pub fiat: Fiat,
     pub moonpay: MoonPay,
@@ -282,6 +283,20 @@ pub struct Parser {
 #[allow(unused)]
 pub struct Daemon {
     pub service: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Consumer {
+    pub error: ConsumerError,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct ConsumerError {
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
+    pub skip: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]

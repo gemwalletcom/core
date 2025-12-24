@@ -7174,6 +7174,7 @@ dependencies = [
  "primitives",
  "serde",
  "serde_json",
+ "settings",
  "strum",
  "tokio",
 ]
