@@ -54,7 +54,7 @@ where
     R: std::default::Default + std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
-    info_with_fields!("received", consumer = name, payload = payload.to_string());
+    info_with_fields!("processing", consumer = name, payload = payload.to_string());
     let start = Instant::now();
     let result = tokio::task::block_in_place(|| {
         tokio::runtime::Handle::current().block_on(async {
@@ -71,8 +71,9 @@ where
     match result {
         Ok(result) => {
             info_with_fields!(
-                "result",
+                "processed",
                 consumer = name,
+                payload = payload.to_string(),
                 result = format!("{:?}", result),
                 elapsed = DurationMs(start.elapsed())
             );
