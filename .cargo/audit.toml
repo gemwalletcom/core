@@ -1,0 +1,6 @@
+[advisories]
+ignore = [
+    # ruint::algorithms::div::reciprocal_mg10 OOB; only reachable if low-level algorithms are called directly.
+    # We only use ruint through alloy-primitives higher-level APIs.
+    "RUSTSEC-2025-0137",
+]
