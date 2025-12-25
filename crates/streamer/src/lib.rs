@@ -1,3 +1,4 @@
+pub mod connection;
 pub mod consumer;
 pub mod exchange;
 pub mod payload;
@@ -6,6 +7,7 @@ pub mod steam_producer_queue;
 pub mod stream_producer;
 pub mod stream_reader;
 
+pub use connection::StreamConnection;
 pub use consumer::ConsumerConfig;
 pub use consumer::run_consumer;
 pub use exchange::ExchangeName;

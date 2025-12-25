@@ -70,15 +70,24 @@ where
     });
     match result {
         Ok(result) => {
-            info_with_fields!("result", consumer = name, result = format!("{:?}", result), elapsed = DurationMs(start.elapsed()));
+            info_with_fields!(
+                "result",
+                consumer = name,
+                result = format!("{:?}", result),
+                elapsed = DurationMs(start.elapsed())
+            );
             Ok(())
         }
         Err(e) => {
-            error_with_fields!("error", &*e, consumer = name, payload = payload.to_string(), elapsed = DurationMs(start.elapsed()));
+            error_with_fields!(
+                "error",
+                &*e,
+                consumer = name,
+                payload = payload.to_string(),
+                elapsed = DurationMs(start.elapsed())
+            );
             if !config.timeout_on_error.is_zero() {
-                tokio::task::block_in_place(|| {
-                    tokio::runtime::Handle::current().block_on(tokio::time::sleep(config.timeout_on_error))
-                });
+                tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(tokio::time::sleep(config.timeout_on_error)));
             }
             if config.skip_on_error { Ok(()) } else { Err(e) }
         }

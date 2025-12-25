@@ -7,7 +7,7 @@ use cacher::{CacheKey, CacherClient};
 use primitives::Chain;
 use settings::Settings;
 use storage::Database;
-use streamer::{ChainAddressPayload, ConsumerConfig, QueueName, StreamProducer, StreamReader, StreamReaderConfig, consumer::MessageConsumer, run_consumer};
+use streamer::{ChainAddressPayload, ConsumerConfig, QueueName, StreamConnection, StreamProducer, StreamReader, consumer::MessageConsumer, run_consumer};
 
 pub struct FetchNftAssetsAddressesConsumer {
     #[allow(dead_code)]
@@ -19,12 +19,18 @@ pub struct FetchNftAssetsAddressesConsumer {
 }
 
 impl FetchNftAssetsAddressesConsumer {
-    pub async fn run(settings: Settings, database: Database, chain: Chain, consumer_config: ConsumerConfig) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn run(
+        settings: Settings,
+        database: Database,
+        chain: Chain,
+        reader_connection: &StreamConnection,
+        producer_connection: &StreamConnection,
+        consumer_config: ConsumerConfig,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let queue = QueueName::FetchNftAssociations;
         let name = format!("{}.{}", queue, chain.as_ref());
-        let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
-        let stream_reader = StreamReader::new(config).await?;
-        let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+        let stream_reader = StreamReader::from_connection(reader_connection, settings.rabbitmq.prefetch).await?;
+        let stream_producer = StreamProducer::from_connection(producer_connection).await?;
         let cacher = CacherClient::new(&settings.redis.url).await;
         let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
         let nft_client = NFTClient::new(database.clone(), nft_config);

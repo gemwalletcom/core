@@ -2,7 +2,7 @@ use std::error::Error;
 
 use lapin::{BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind, options::*, publisher_confirm::Confirmation, types::FieldTable};
 
-use crate::{ExchangeName, QueueName};
+use crate::{ExchangeName, QueueName, StreamConnection};
 
 const ROUTING_KEY_EXCHANGE_SUFFIX: &str = "_exchange";
 const MAX_QUEUE_BYTES: i64 = 1_000_000_000;
@@ -21,6 +21,11 @@ pub struct StreamProducer {
 impl StreamProducer {
     pub async fn new(url: &str, connection_name: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let connection = Connection::connect(url, ConnectionProperties::default().with_connection_name(connection_name.into())).await?;
+        let channel = connection.create_channel().await?;
+        Ok(Self { channel })
+    }
+
+    pub async fn from_connection(connection: &StreamConnection) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let channel = connection.create_channel().await?;
         Ok(Self { channel })
     }

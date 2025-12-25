@@ -4,7 +4,7 @@ use futures::StreamExt;
 use lapin::{Channel, Connection, ConnectionProperties, options::*, types::FieldTable};
 use serde::de::DeserializeOwned;
 
-use crate::QueueName;
+use crate::{QueueName, StreamConnection};
 
 pub struct StreamReaderConfig {
     pub url: String,
@@ -26,9 +26,13 @@ impl StreamReader {
     pub async fn new(config: StreamReaderConfig) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let connection = Connection::connect(&config.url, ConnectionProperties::default().with_connection_name(config.name.into())).await?;
         let channel = connection.create_channel().await?;
-
         channel.basic_qos(config.prefetch, BasicQosOptions { global: false }).await?;
+        Ok(Self { channel })
+    }
 
+    pub async fn from_connection(connection: &StreamConnection, prefetch: u16) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        let channel = connection.create_channel().await?;
+        channel.basic_qos(prefetch, BasicQosOptions { global: false }).await?;
         Ok(Self { channel })
     }
 
