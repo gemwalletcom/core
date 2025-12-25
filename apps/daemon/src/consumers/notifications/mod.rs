@@ -18,7 +18,8 @@ fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
     }
 }
 
-pub async fn run(settings: Settings, database: Database) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let settings = Arc::new(settings);
     let database = Arc::new(database);
 
