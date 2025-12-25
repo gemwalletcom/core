@@ -1,7 +1,6 @@
 use std::{
     error::Error,
     fmt::Display,
-    thread,
     time::{Duration, Instant},
 };
 
@@ -77,7 +76,9 @@ where
         Err(e) => {
             error_with_fields!("error", &*e, consumer = name, payload = payload.to_string(), elapsed = DurationMs(start.elapsed()));
             if !config.timeout_on_error.is_zero() {
-                thread::sleep(config.timeout_on_error);
+                tokio::task::block_in_place(|| {
+                    tokio::runtime::Handle::current().block_on(tokio::time::sleep(config.timeout_on_error))
+                });
             }
             if config.skip_on_error { Ok(()) } else { Err(e) }
         }
