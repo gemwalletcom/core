@@ -81,10 +81,7 @@ impl StreamReader {
                     match data {
                         Ok(obj) => match callback(obj) {
                             Ok(_) => self.ack(delivery_tag).await?,
-                            Err(e) => {
-                                self.nack(delivery_tag).await?;
-                                return Err(e);
-                            }
+                            Err(_) => self.nack_requeue(delivery_tag).await?,
                         },
                         Err(e) => {
                             println!("Consumer deserialization error: {}, payload: {:?}", e, String::from_utf8_lossy(&delivery.data));
@@ -116,6 +113,19 @@ impl StreamReader {
                 BasicNackOptions {
                     multiple: false,
                     requeue: false,
+                },
+            )
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+
+    async fn nack_requeue(&self, delivery_tag: u64) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.channel
+            .basic_nack(
+                delivery_tag,
+                BasicNackOptions {
+                    multiple: false,
+                    requeue: true,
                 },
             )
             .await
