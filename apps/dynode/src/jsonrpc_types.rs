@@ -46,13 +46,12 @@ pub struct JsonRpcErrorResponse {
 }
 
 impl JsonRpcErrorResponse {
-    pub fn new(message: &str, data: Option<Value>) -> Self {
+    pub fn new(message: &str) -> Self {
         Self {
             jsonrpc: default_jsonrpc_version(),
             error: JsonRpcError {
                 code: -32603,
                 message: message.to_string(),
-                data,
             },
             id: None,
         }
@@ -63,7 +62,6 @@ impl JsonRpcErrorResponse {
 pub struct JsonRpcError {
     pub code: i32,
     pub message: String,
-    pub data: Option<Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -296,13 +294,35 @@ mod tests {
             error: JsonRpcError {
                 code: -32602,
                 message: "Invalid params".to_string(),
-                data: None,
             },
             id: Some(456),
         });
 
         assert_eq!(success.id(), Some(123));
         assert_eq!(error.id(), Some(456));
+    }
+
+    #[test]
+    fn test_solana_block_cleaned_up_error() {
+        let response = r#"{
+            "jsonrpc": "2.0",
+            "error": {
+                "code": -32001,
+                "message": "Block 370142484 cleaned up, does not exist on node. First available block: 388259953"
+            },
+            "id": 1
+        }"#;
+
+        let result: JsonRpcResult = serde_json::from_str(response).unwrap();
+
+        match result {
+            JsonRpcResult::Error(error_response) => {
+                assert_eq!(error_response.error.code, -32001);
+                assert!(error_response.error.message.contains("cleaned up"));
+                assert_eq!(error_response.id, Some(1));
+            }
+            _ => panic!("Expected error response"),
+        }
     }
 
     #[test]

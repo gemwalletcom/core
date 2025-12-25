@@ -133,8 +133,26 @@ fn build_header_map(request: &Request<'_>) -> Result<HeaderMap, ErrorResponse> {
 }
 
 fn resolve_chain(path: &str) -> Option<Chain> {
-    let chain_str = path.trim_start_matches('/').split('/').next()?;
+    let chain_str = path
+        .split('?').next()?
+        .trim_start_matches('/')
+        .split('/').next()?;
     Chain::from_str(chain_str).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_chain() {
+        assert_eq!(resolve_chain("/solana"), Some(Chain::Solana));
+        assert_eq!(resolve_chain("/solana?dkey=abc123"), Some(Chain::Solana));
+        assert_eq!(resolve_chain("/solana/rpc?dkey=abc123"), Some(Chain::Solana));
+        assert_eq!(resolve_chain("/ethereum/v1/rpc"), Some(Chain::Ethereum));
+        assert_eq!(resolve_chain("/invalid"), None);
+        assert_eq!(resolve_chain(""), None);
+    }
 }
 
 #[rocket::main]
