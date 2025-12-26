@@ -1,7 +1,7 @@
 use std::fmt;
 use strum::{EnumIter, IntoEnumIterator};
 
-#[derive(Debug, Clone, EnumIter)]
+#[derive(Debug, Clone, PartialEq, EnumIter)]
 pub enum QueueName {
     // Process transactions, store and send notifications. Push assets to address_assets table and fetch new assets
     StoreTransactions,
@@ -52,6 +52,16 @@ pub enum QueueName {
 impl QueueName {
     pub fn all() -> Vec<QueueName> {
         QueueName::iter().collect()
+    }
+
+    pub fn chain_queues() -> Vec<QueueName> {
+        vec![
+            QueueName::FetchBlocks,
+            QueueName::FetchTokenAssociations,
+            QueueName::FetchCoinAssociations,
+            QueueName::FetchNftAssociations,
+            QueueName::FetchAddressTransactions,
+        ]
     }
 }
 

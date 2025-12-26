@@ -2,7 +2,7 @@ use std::error::Error;
 
 use primitives::{ChainAddress, Subscription};
 use storage::Database;
-use streamer::{ChainAddressPayload, ExchangeName, StreamProducer};
+use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue};
 
 #[derive(Clone)]
 pub struct SubscriptionsClient {
@@ -22,7 +22,7 @@ impl SubscriptionsClient {
             .into_iter()
             .map(|x| ChainAddressPayload::new(ChainAddress::new(x.chain, x.address)))
             .collect::<Vec<_>>();
-        self.stream_producer.publish_to_exchange_batch(ExchangeName::NewAddresses, &payload).await?;
+        self.stream_producer.publish_new_addresses(payload).await?;
         Ok(result?)
     }
 

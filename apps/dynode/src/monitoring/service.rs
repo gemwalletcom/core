@@ -14,7 +14,6 @@ use crate::proxy::proxy_request::ProxyRequest;
 use crate::proxy::response_builder::ResponseBuilder;
 use crate::proxy::{NodeDomain, ProxyResponse};
 use primitives::{Chain, ResponseError, response::ErrorDetail};
-use serde_json::json;
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -123,7 +122,7 @@ impl NodeService {
         let upstream_headers = ResponseBuilder::create_upstream_headers(host, request.elapsed());
 
         let response = match request.request_type() {
-            RequestType::JsonRpc(_) => serde_json::to_value(JsonRpcErrorResponse::new("Internal error", Some(json!(error_message))))?,
+            RequestType::JsonRpc(_) => serde_json::to_value(JsonRpcErrorResponse::new(error_message))?,
             RequestType::Regular { .. } => serde_json::to_value(ResponseError {
                 error: ErrorDetail {
                     message: error_message.to_string(),

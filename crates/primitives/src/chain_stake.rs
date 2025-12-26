@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString};
 use typeshare::typeshare;
 
-use crate::chain_config::StakeChainConfig;
 use crate::Chain;
+use crate::chain_config::StakeChainConfig;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
@@ -31,10 +31,7 @@ impl StakeChain {
     fn config(&self) -> &'static StakeChainConfig {
         let chain = self.chain();
         let config = chain.config();
-        config
-            .stake
-            .as_ref()
-            .unwrap_or_else(|| panic!("Missing stake config for {chain}"))
+        config.stake.as_ref().unwrap_or_else(|| panic!("Missing stake config for {chain}"))
     }
 
     pub fn chain(&self) -> Chain {

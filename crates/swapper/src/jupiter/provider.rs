@@ -215,7 +215,7 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
+    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
     use primitives::AssetId;
     use std::sync::Arc;
 
@@ -254,6 +254,10 @@ mod swap_integration_tests {
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data)?;
         assert_eq!(quote_response.input_mint, "So11111111111111111111111111111111111111112");
         assert_eq!(quote_response.output_mint, USDC_TOKEN_MINT);
+
+        let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        assert_eq!(quote_data.to, PROGRAM_ADDRESS);
+        assert!(!quote_data.data.is_empty());
 
         Ok(())
     }

@@ -9,7 +9,7 @@ use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
 use storage::models::{ConfigRow, FiatRateRow, RewardEventTypeRow, RewardRedemptionTypeRow, UpdateDeviceRow};
-use streamer::{ExchangeName, QueueName, StreamProducer};
+use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer};
 
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup", step = "init");
@@ -122,22 +122,46 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
 
     info_with_fields!("setup", step = "queues");
 
-    let queues = QueueName::all();
+    let chain_queues = QueueName::chain_queues();
+    let non_chain_queues: Vec<_> = QueueName::all().into_iter().filter(|q| !chain_queues.contains(q)).collect();
     let exchanges = ExchangeName::all();
+    let chains = Chain::all();
+
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "setup").await.unwrap();
-    let _ = stream_producer.declare_queues(queues.clone()).await;
+    let _ = stream_producer.declare_queues(non_chain_queues).await;
     let _ = stream_producer.declare_exchanges(exchanges.clone()).await;
-    let _ = stream_producer
-        .bind_exchange(
-            ExchangeName::NewAddresses.clone(),
-            vec![
-                QueueName::FetchTokenAssociations,
-                QueueName::FetchCoinAssociations,
-                QueueName::FetchAddressTransactions,
-                QueueName::FetchNftAssociations,
-            ],
-        )
-        .await;
+    info_with_fields!(
+        "setup",
+        step = "queue exchanges for chain-based consumers",
+        queues = format!("{:?}", chain_queues.iter().map(|q| q.to_string()).collect::<Vec<_>>()),
+        chains = format!("{:?}", chains)
+    );
+    for queue in &chain_queues {
+        let exchange_name = format!("{}_exchange", queue);
+        let _ = stream_producer.declare_exchange(&exchange_name, ExchangeKind::Topic).await;
+        for chain in &chains {
+            let _ = stream_producer.bind_queue_routing_key(queue.clone(), chain.as_ref()).await;
+        }
+    }
+
+    for exchange in &exchanges {
+        let exchange_queues = exchange.queues();
+        if exchange_queues.is_empty() {
+            continue;
+        }
+        info_with_fields!(
+            "setup",
+            step = "exchange bindings",
+            exchange = exchange.to_string(),
+            queues = format!("{:?}", exchange_queues.iter().map(|q| q.to_string()).collect::<Vec<_>>())
+        );
+        for queue in &exchange_queues {
+            for chain in &chains {
+                let queue_name = format!("{}.{}", queue, chain.as_ref());
+                let _ = stream_producer.bind_queue(&queue_name, &exchange.to_string(), chain.as_ref()).await;
+            }
+        }
+    }
 
     info_with_fields!("setup", step = "complete");
     Ok(())

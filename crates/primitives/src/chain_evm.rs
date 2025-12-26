@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::chain_config::EvmChainConfig;
 use crate::Chain;
+use crate::chain_config::EvmChainConfig;
 
 pub use crate::chain_config::ChainStack;
 
@@ -47,10 +47,7 @@ impl EVMChain {
     fn config(&self) -> &'static EvmChainConfig {
         let chain = self.to_chain();
         let config = chain.config();
-        config
-            .evm
-            .as_ref()
-            .unwrap_or_else(|| panic!("Missing EVM config for {chain}"))
+        config.evm.as_ref().unwrap_or_else(|| panic!("Missing EVM config for {chain}"))
     }
 
     pub fn all() -> Vec<Self> {

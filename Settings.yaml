@@ -231,6 +231,11 @@ pusher:
 daemon:
   service: ""
 
+consumer:
+  error:
+    timeout: 0s
+    skip: true
+
 api:
   service: ""
 

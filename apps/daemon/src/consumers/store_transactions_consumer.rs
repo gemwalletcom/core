@@ -113,7 +113,11 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let transactions_count = self.store_transactions(transactions_map.into_values().collect()).await?;
         let _ = self.stream_producer.publish_fetch_assets(fetch_assets_payload).await;
         let _ = self.stream_producer.publish_notifications_transactions(notifications_payload).await;
-        let _ = self.stream_producer.publish_store_assets_addresses_associations(address_assets_payload).await;
+        let assets_addresses: Vec<_> = address_assets_payload.into_iter().flat_map(|p| p.values).collect();
+        let _ = self
+            .stream_producer
+            .publish_store_assets_addresses_associations(AssetsAddressPayload::new(assets_addresses))
+            .await;
         Ok(transactions_count)
     }
 }
