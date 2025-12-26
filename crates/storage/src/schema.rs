@@ -715,7 +715,6 @@ diesel::table! {
         chain -> Varchar,
         #[max_length = 256]
         address -> Varchar,
-        updated_at -> Timestamp,
         created_at -> Timestamp,
         wallet_index -> Int4,
     }
@@ -797,7 +796,6 @@ diesel::table! {
         asset_id -> Varchar,
         #[max_length = 256]
         address -> Varchar,
-        created_at -> Timestamp,
     }
 }
 
