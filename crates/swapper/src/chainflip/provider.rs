@@ -138,7 +138,7 @@ fn parse_min_amount(message: &str, decimals: u32) -> Option<String> {
 }
 
 fn normalize_token(token: &str, decimals: u32) -> Option<String> {
-    let cleaned = token.replace(',', "").replace('_', "");
+    let cleaned = token.replace([',', '_'], "");
     if cleaned.is_empty() {
         return None;
     }

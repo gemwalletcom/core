@@ -289,7 +289,7 @@ fn extract_numeric_token(message: &str) -> Option<String> {
 }
 
 fn normalize_token(token: &str, decimals: u32) -> Option<String> {
-    let cleaned = token.replace(',', "").replace('_', "");
+    let cleaned = token.replace([',', '_'], "");
     if cleaned.is_empty() {
         return None;
     }
