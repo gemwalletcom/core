@@ -53,5 +53,8 @@ pub async fn redeem_rewards(
     request: Authenticated<RedemptionRequest>,
     client: &State<Mutex<RewardsRedemptionClient>>,
 ) -> Result<ApiResponse<RedemptionResult>, ApiError> {
-    Ok(client.lock().await.redeem(&address.0, &request.data.id, request.auth.device.id).await?.into())
+    if !address.0.eq_ignore_ascii_case(&request.auth.address) {
+        return Err(ApiError::BadRequest("Address mismatch".to_string()));
+    }
+    Ok(client.lock().await.redeem(&request.auth.address, &request.data.id, request.auth.device.id).await?.into())
 }
