@@ -250,7 +250,7 @@ impl RewardsRepository for DatabaseClient {
         RewardsStore::add_referral(
             self,
             NewRewardReferralRow {
-                referrer_username: referral_code.to_string(),
+                referrer_username: referrer.username.clone(),
                 referred_username: referred.username.clone(),
                 referred_device_id: device_id,
                 referred_ip_address: ip_address.to_string(),
