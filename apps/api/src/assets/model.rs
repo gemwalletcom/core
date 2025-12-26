@@ -1,6 +1,11 @@
 use primitives::Chain;
 use std::str::FromStr;
 
+const MAX_QUERY_LENGTH: usize = 500;
+const MAX_LIMIT: usize = 500;
+const MAX_OFFSET: usize = 10_000;
+const DEFAULT_LIMIT: usize = 50;
+
 pub struct SearchRequest {
     pub query: String,
     pub chains: Vec<String>,
@@ -10,7 +15,11 @@ pub struct SearchRequest {
 }
 
 impl SearchRequest {
-    pub fn new(query: &str, chains: Option<&str>, tags: Option<&str>, limit: Option<usize>, offset: Option<usize>) -> Self {
+    pub fn new(query: &str, chains: Option<&str>, tags: Option<&str>, limit: Option<usize>, offset: Option<usize>) -> Result<Self, &'static str> {
+        if query.len() > MAX_QUERY_LENGTH {
+            return Err("Query too long");
+        }
+
         let chains = chains
             .unwrap_or_default()
             .split(',')
@@ -25,13 +34,13 @@ impl SearchRequest {
             .map(|x| x.to_string())
             .collect::<Vec<String>>();
 
-        Self {
+        Ok(Self {
             query: query.to_string(),
             chains,
             tags,
-            limit: limit.unwrap_or(50),
-            offset: offset.unwrap_or(0),
-        }
+            limit: limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT),
+            offset: offset.unwrap_or(0).min(MAX_OFFSET),
+        })
     }
 
     pub fn rank_threshold(&self) -> u32 {
@@ -45,24 +54,30 @@ mod tests {
 
     #[test]
     fn rank_threshold() {
-        assert_eq!(SearchRequest::new("BTC", None, None, None, None).rank_threshold(), 15);
-        assert_eq!(SearchRequest::new("USDT", None, None, None, None).rank_threshold(), 15);
-        assert_eq!(SearchRequest::new("ethereum", None, None, None, None).rank_threshold(), 5);
+        assert_eq!(SearchRequest::new("BTC", None, None, None, None).unwrap().rank_threshold(), 15);
+        assert_eq!(SearchRequest::new("USDT", None, None, None, None).unwrap().rank_threshold(), 15);
+        assert_eq!(SearchRequest::new("ethereum", None, None, None, None).unwrap().rank_threshold(), 5);
     }
 
     #[test]
     fn new() {
-        let request = SearchRequest::new("test", Some("ethereum,bitcoin"), Some("defi,nft"), Some(100), Some(10));
+        let request = SearchRequest::new("test", Some("ethereum,bitcoin"), Some("defi,nft"), Some(100), Some(10)).unwrap();
         assert_eq!(request.query, "test");
         assert_eq!(request.chains, vec!["ethereum", "bitcoin"]);
         assert_eq!(request.tags, vec!["defi", "nft"]);
         assert_eq!(request.limit, 100);
         assert_eq!(request.offset, 10);
 
-        let default_request = SearchRequest::new("query", None, None, None, None);
+        let default_request = SearchRequest::new("query", None, None, None, None).unwrap();
         assert!(default_request.chains.is_empty());
         assert!(default_request.tags.is_empty());
         assert_eq!(default_request.limit, 50);
         assert_eq!(default_request.offset, 0);
+    }
+
+    #[test]
+    fn query_too_long() {
+        let long_query = "a".repeat(MAX_QUERY_LENGTH + 1);
+        assert!(SearchRequest::new(&long_query, None, None, None, None).is_err());
     }
 }

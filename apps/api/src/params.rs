@@ -1,8 +1,12 @@
 use primitives::currency::Currency;
-use primitives::{Chain, FiatQuoteType};
+use primitives::{Chain, ChartPeriod, FiatQuoteType};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::request::FromParam;
 use std::str::FromStr;
+
+const MAX_ADDRESS_LENGTH: usize = 256;
+const MAX_ASSET_ID_LENGTH: usize = 128;
+const MAX_DEVICE_ID_LENGTH: usize = 32;
 
 pub struct ChainParam(pub Chain);
 
@@ -43,5 +47,71 @@ impl<'r> FromFormField<'r> for CurrencyParam {
 impl CurrencyParam {
     pub fn as_string(&self) -> String {
         self.0.as_ref().to_string()
+    }
+}
+
+pub struct AddressParam(pub String);
+
+impl<'r> FromParam<'r> for AddressParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        if param.is_empty() || param.len() > MAX_ADDRESS_LENGTH {
+            return Err(param);
+        }
+        Ok(AddressParam(param.to_string()))
+    }
+}
+
+impl<'r> FromFormField<'r> for AddressParam {
+    fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
+        if field.value.is_empty() || field.value.len() > MAX_ADDRESS_LENGTH {
+            return Err(form::Error::validation(format!("Invalid address: {}", field.value)).into());
+        }
+        Ok(AddressParam(field.value.to_string()))
+    }
+}
+
+pub struct AssetIdParam(pub String);
+
+impl<'r> FromParam<'r> for AssetIdParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        if param.is_empty() || param.len() > MAX_ASSET_ID_LENGTH {
+            return Err(param);
+        }
+        Ok(AssetIdParam(param.to_string()))
+    }
+}
+
+pub struct DeviceIdParam(pub String);
+
+impl<'r> FromParam<'r> for DeviceIdParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        if param.is_empty() || param.len() > MAX_DEVICE_ID_LENGTH {
+            return Err(param);
+        }
+        Ok(DeviceIdParam(param.to_string()))
+    }
+}
+
+pub struct ChartPeriodParam(pub ChartPeriod);
+
+impl<'r> FromParam<'r> for ChartPeriodParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        ChartPeriod::new(param.to_string()).map(ChartPeriodParam).ok_or(param)
+    }
+}
+
+impl<'r> FromFormField<'r> for ChartPeriodParam {
+    fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
+        ChartPeriod::new(field.value.to_string())
+            .map(ChartPeriodParam)
+            .ok_or_else(|| form::Error::validation(format!("Invalid period: {}", field.value)).into())
     }
 }

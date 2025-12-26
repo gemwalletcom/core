@@ -1,7 +1,7 @@
 mod client;
 
 use crate::metrics::{metrics_fiat_quote_url, metrics_fiat_quotes};
-use crate::params::{CurrencyParam, FiatQuoteTypeParam};
+use crate::params::{AddressParam, AssetIdParam, CurrencyParam, FiatQuoteTypeParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use client::FiatQuotesClient;
 pub use fiat::{FiatProviderFactory, IPAddressInfo, IPCheckClient};
@@ -14,12 +14,12 @@ const DEBUG_FIAT_IP: &str = "64.94.85.118";
 
 #[get("/fiat/quotes/<asset_id>?<fiat_amount>&<crypto_value>&<type>&<currency>&<wallet_address>&<ip_address>&<provider>")]
 pub async fn get_fiat_quotes(
-    asset_id: &str,
+    asset_id: AssetIdParam,
     fiat_amount: Option<f64>,
     crypto_value: Option<&str>,
     r#type: &str,
     currency: CurrencyParam,
-    wallet_address: &str,
+    wallet_address: AddressParam,
     ip_address: Option<&str>,
     provider: Option<&str>,
     ip: std::net::IpAddr,
@@ -31,12 +31,12 @@ pub async fn get_fiat_quotes(
         .lock()
         .await
         .get_quotes_old(
-            asset_id,
+            &asset_id.0,
             fiat_amount,
             crypto_value,
             quote_type,
             &currency.as_string(),
-            wallet_address,
+            &wallet_address.0,
             &ip_addr,
             provider,
         )
@@ -47,7 +47,7 @@ pub async fn get_fiat_quotes(
 #[get("/fiat/quotes/<quote_type>/<asset_id>?<amount>&<currency>&<ip_address>&<provider>")]
 pub async fn get_fiat_quotes_by_type(
     quote_type: FiatQuoteTypeParam,
-    asset_id: &str,
+    asset_id: AssetIdParam,
     amount: f64,
     currency: CurrencyParam,
     ip_address: Option<&str>,
@@ -57,7 +57,7 @@ pub async fn get_fiat_quotes_by_type(
 ) -> Result<ApiResponse<FiatQuotes>, ApiError> {
     let ip_addr = ip_address.unwrap_or(&ip.to_string()).to_string();
     let request = FiatQuoteRequest {
-        asset_id: asset_id.to_string(),
+        asset_id: asset_id.0,
         quote_type: quote_type.0,
         amount,
         currency: currency.as_string(),
@@ -83,10 +83,10 @@ pub async fn get_fiat_quote_url(
 
 #[get("/fiat/on_ramp/quotes/<asset_id>?<amount>&<currency>&<wallet_address>&<ip_address>&<provider>")]
 pub async fn get_fiat_on_ramp_quotes(
-    asset_id: &str,
+    asset_id: AssetIdParam,
     amount: f64,
     currency: &str,
-    wallet_address: &str,
+    wallet_address: AddressParam,
     ip_address: Option<&str>,
     provider: Option<&str>,
     ip: std::net::IpAddr,
@@ -96,7 +96,16 @@ pub async fn get_fiat_on_ramp_quotes(
     Ok(client
         .lock()
         .await
-        .get_quotes_old(asset_id, Some(amount), None, FiatQuoteType::Buy, currency, wallet_address, &ip_addr, provider)
+        .get_quotes_old(
+            &asset_id.0,
+            Some(amount),
+            None,
+            FiatQuoteType::Buy,
+            currency,
+            &wallet_address.0,
+            &ip_addr,
+            provider,
+        )
         .await?
         .into())
 }

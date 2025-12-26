@@ -5,6 +5,7 @@ pub use client::RewardsClient;
 pub use redemption_client::RewardsRedemptionClient;
 
 use crate::auth::Authenticated;
+use crate::params::AddressParam;
 use crate::responders::{ApiError, ApiResponse};
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
 use primitives::{ReferralCode, RewardEvent, Rewards};
@@ -12,13 +13,13 @@ use rocket::{State, get, post};
 use tokio::sync::Mutex;
 
 #[get("/rewards/<address>")]
-pub async fn get_rewards(address: &str, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
-    Ok(client.lock().await.get_rewards(address)?.into())
+pub async fn get_rewards(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
+    Ok(client.lock().await.get_rewards(&address.0)?.into())
 }
 
 #[get("/rewards/<address>/events")]
-pub async fn get_rewards_events(address: &str, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
-    Ok(client.lock().await.get_rewards_events(address)?.into())
+pub async fn get_rewards_events(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
+    Ok(client.lock().await.get_rewards_events(&address.0)?.into())
 }
 
 #[post("/rewards/referrals/create", format = "json", data = "<request>")]
@@ -48,9 +49,9 @@ pub async fn use_referral_code(
 
 #[post("/rewards/<address>/redeem", format = "json", data = "<request>")]
 pub async fn redeem_rewards(
-    address: &str,
+    address: AddressParam,
     request: Authenticated<RedemptionRequest>,
     client: &State<Mutex<RewardsRedemptionClient>>,
 ) -> Result<ApiResponse<RedemptionResult>, ApiError> {
-    Ok(client.lock().await.redeem(address, &request.data.id, request.auth.device.id).await?.into())
+    Ok(client.lock().await.redeem(&address.0, &request.data.id, request.auth.device.id).await?.into())
 }

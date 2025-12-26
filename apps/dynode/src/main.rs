@@ -133,10 +133,7 @@ fn build_header_map(request: &Request<'_>) -> Result<HeaderMap, ErrorResponse> {
 }
 
 fn resolve_chain(path: &str) -> Option<Chain> {
-    let chain_str = path
-        .split('?').next()?
-        .trim_start_matches('/')
-        .split('/').next()?;
+    let chain_str = path.split('?').next()?.trim_start_matches('/').split('/').next()?;
     Chain::from_str(chain_str).ok()
 }
 

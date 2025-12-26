@@ -1,3 +1,4 @@
+use crate::params::{AssetIdParam, ChartPeriodParam};
 use crate::responders::{ApiError, ApiResponse};
 use pricer::ChartClient;
 use pricer::price_client::PriceClient;
@@ -5,9 +6,13 @@ use primitives::{AssetIdVecExt, AssetMarketPrice, AssetPrices, AssetPricesReques
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 
 #[get("/prices/<asset_id>?<currency>")]
-pub async fn get_price(asset_id: &str, currency: Option<&str>, price_client: &State<Mutex<PriceClient>>) -> Result<ApiResponse<AssetMarketPrice>, ApiError> {
+pub async fn get_price(
+    asset_id: AssetIdParam,
+    currency: Option<&str>,
+    price_client: &State<Mutex<PriceClient>>,
+) -> Result<ApiResponse<AssetMarketPrice>, ApiError> {
     let currency = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
-    Ok(price_client.lock().await.get_asset_price(asset_id, currency).await?.into())
+    Ok(price_client.lock().await.get_asset_price(&asset_id.0, currency).await?.into())
 }
 
 #[post("/prices", format = "json", data = "<request>")]
@@ -24,20 +29,20 @@ pub async fn get_fiat_rates(price_client: &State<Mutex<PriceClient>>) -> Result<
 
 #[get("/charts/<asset_id>?<period>&<currency>")]
 pub async fn get_charts(
-    asset_id: &str,
-    period: Option<&str>,
+    asset_id: AssetIdParam,
+    period: Option<ChartPeriodParam>,
     currency: Option<&str>,
     charts_client: &State<Mutex<ChartClient>>,
     price_client: &State<Mutex<PriceClient>>,
 ) -> Result<ApiResponse<Charts>, ApiError> {
-    let period = ChartPeriod::new(period.unwrap_or_default().to_string()).unwrap_or(ChartPeriod::Day);
+    let period = period.map(|p| p.0).unwrap_or(ChartPeriod::Day);
     let currency_value = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
 
-    let coin_id = charts_client.lock().await.get_coin_id(asset_id)?;
+    let coin_id = charts_client.lock().await.get_coin_id(&asset_id.0)?;
 
     let prices = charts_client.lock().await.get_charts_prices(&coin_id, period, currency_value).await?;
 
-    let asset_price = price_client.lock().await.get_asset_price(asset_id, currency_value).await?;
+    let asset_price = price_client.lock().await.get_asset_price(&asset_id.0, currency_value).await?;
 
     let response = Charts {
         price: asset_price.price,
