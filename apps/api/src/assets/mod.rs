@@ -2,7 +2,7 @@ pub mod cilent;
 mod filter;
 mod model;
 
-use crate::params::{AssetIdParam, DeviceIdParam};
+use crate::params::{AssetIdParam, DeviceIdParam, SearchQueryParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use cilent::{AssetsClient, SearchClient};
 pub use model::SearchRequest;
@@ -42,14 +42,14 @@ pub async fn add_asset(
 
 #[get("/assets/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_assets_search(
-    query: &str,
+    query: SearchQueryParam,
     chains: Option<&str>,
     tags: Option<&str>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<SearchClient>>,
 ) -> Result<ApiResponse<Vec<AssetBasic>>, ApiError> {
-    let request = SearchRequest::new(query, chains, tags, limit, offset).map_err(|e| ApiError::BadRequest(e.to_string()))?;
+    let request = SearchRequest::new(&query.0, chains, tags, limit, offset);
     Ok(client.lock().await.get_assets_search(&request).await?.into())
 }
 
@@ -65,14 +65,14 @@ pub async fn get_assets_by_device_id(
 
 #[get("/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_search(
-    query: &str,
+    query: SearchQueryParam,
     chains: Option<&str>,
     tags: Option<&str>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<SearchClient>>,
 ) -> Result<ApiResponse<SearchResponse>, ApiError> {
-    let request = SearchRequest::new(query, chains, tags, limit, offset).map_err(|e| ApiError::BadRequest(e.to_string()))?;
+    let request = SearchRequest::new(&query.0, chains, tags, limit, offset);
 
     let search_client = client.lock().await;
     let assets = search_client.get_assets_search(&request).await?;

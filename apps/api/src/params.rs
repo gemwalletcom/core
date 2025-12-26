@@ -7,6 +7,7 @@ use std::str::FromStr;
 const MAX_ADDRESS_LENGTH: usize = 256;
 const MAX_ASSET_ID_LENGTH: usize = 128;
 const MAX_DEVICE_ID_LENGTH: usize = 32;
+const MAX_SEARCH_QUERY_LENGTH: usize = 128;
 
 pub struct ChainParam(pub Chain);
 
@@ -113,5 +114,16 @@ impl<'r> FromFormField<'r> for ChartPeriodParam {
         ChartPeriod::new(field.value.to_string())
             .map(ChartPeriodParam)
             .ok_or_else(|| form::Error::validation(format!("Invalid period: {}", field.value)).into())
+    }
+}
+
+pub struct SearchQueryParam(pub String);
+
+impl<'r> FromFormField<'r> for SearchQueryParam {
+    fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
+        if field.value.is_empty() || field.value.len() > MAX_SEARCH_QUERY_LENGTH {
+            return Err(form::Error::validation(format!("Invalid query length: {}", field.value.len())).into());
+        }
+        Ok(SearchQueryParam(field.value.to_string()))
     }
 }
