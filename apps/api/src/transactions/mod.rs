@@ -1,10 +1,8 @@
 pub mod client;
-use crate::params::DeviceIdParam;
+use crate::params::{DeviceIdParam, TransactionIdParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use client::TransactionsClient;
-use primitives::Transaction;
-use primitives::TransactionsFetchOption;
-use primitives::TransactionsResponse;
+use primitives::{Transaction, TransactionsFetchOption, TransactionsResponse};
 use rocket::{State, get, tokio::sync::Mutex};
 
 #[get("/transactions/device/<device_id>?<wallet_index>&<asset_id>&<from_timestamp>")]
@@ -40,6 +38,6 @@ pub async fn get_transactions_by_device_id_v2(
 }
 
 #[get("/transactions/<id>")]
-pub async fn get_transaction_by_id(id: &str, client: &State<Mutex<TransactionsClient>>) -> Result<ApiResponse<Transaction>, ApiError> {
-    Ok(client.lock().await.get_transaction_by_id(id)?.into())
+pub async fn get_transaction_by_id(id: TransactionIdParam, client: &State<Mutex<TransactionsClient>>) -> Result<ApiResponse<Transaction>, ApiError> {
+    Ok(client.lock().await.get_transaction_by_id(&id.0)?.into())
 }

@@ -1,5 +1,5 @@
 use primitives::currency::Currency;
-use primitives::{Chain, ChartPeriod, FiatQuoteType};
+use primitives::{Chain, ChartPeriod, FiatQuoteType, TransactionId};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::request::FromParam;
 use std::str::FromStr;
@@ -24,6 +24,16 @@ impl<'r> FromFormField<'r> for ChainParam {
         Chain::from_str(field.value)
             .map(ChainParam)
             .map_err(|_| form::Error::validation(format!("Invalid chain: {}", field.value)).into())
+    }
+}
+
+pub struct TransactionIdParam(pub TransactionId);
+
+impl<'r> FromParam<'r> for TransactionIdParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        TransactionId::from_str(param).map(TransactionIdParam).map_err(|_| param)
     }
 }
 

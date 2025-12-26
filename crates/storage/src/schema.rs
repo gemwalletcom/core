@@ -755,16 +755,15 @@ diesel::table! {
 
 diesel::table! {
     transactions (id) {
-        #[max_length = 256]
-        id -> Varchar,
+        id -> Int8,
         #[max_length = 16]
         chain -> Varchar,
+        #[max_length = 128]
+        hash -> Varchar,
         #[max_length = 256]
         from_address -> Nullable<Varchar>,
         #[max_length = 256]
         to_address -> Nullable<Varchar>,
-        #[max_length = 256]
-        contract -> Nullable<Varchar>,
         #[max_length = 256]
         memo -> Nullable<Varchar>,
         #[max_length = 16]
@@ -779,19 +778,16 @@ diesel::table! {
         utxo_inputs -> Nullable<Jsonb>,
         utxo_outputs -> Nullable<Jsonb>,
         fee_asset_id -> Varchar,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
         metadata -> Nullable<Jsonb>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
     }
 }
 
 diesel::table! {
     transactions_addresses (id) {
         id -> Int4,
-        #[max_length = 32]
-        chain_id -> Varchar,
-        #[max_length = 256]
-        transaction_id -> Varchar,
+        transaction_id -> Int8,
         #[max_length = 256]
         asset_id -> Varchar,
         #[max_length = 256]
@@ -884,7 +880,6 @@ diesel::joinable!(support -> devices (device_id));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions -> transactions_types (kind));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
-diesel::joinable!(transactions_addresses -> chains (chain_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -943,4 +938,9 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions_addresses,
     transactions_types,
     usernames,
+);
+
+diesel::allow_columns_to_appear_in_same_group_by_clause!(
+    transactions_addresses::address,
+    transactions::chain,
 );

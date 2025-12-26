@@ -1,1 +1,1 @@
-drop table transactions_addresses;
+DROP TABLE transactions_addresses;

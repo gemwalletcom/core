@@ -4,7 +4,6 @@ use std::{collections::HashMap, error::Error};
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, ConfigKey, Transaction, TransactionId};
 use storage::Database;
-use storage::models;
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
 use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
@@ -143,23 +142,7 @@ impl StoreTransactionsConsumer {
         }
 
         for chunk in transactions.chunks(TRANSACTION_BATCH_SIZE) {
-            let transactions_to_store: Vec<models::TransactionRow> = chunk.iter().map(|tx| models::TransactionRow::from_primitive(tx.clone())).collect();
-
-            let transaction_addresses_to_store: Vec<models::TransactionAddressesRow> = chunk
-                .iter()
-                .flat_map(|tx| models::TransactionAddressesRow::from_primitive(tx.clone()))
-                .collect::<HashSet<_>>()
-                .into_iter()
-                .collect();
-
-            if transactions_to_store.is_empty() || transaction_addresses_to_store.is_empty() {
-                continue;
-            }
-
-            self.database
-                .client()?
-                .transactions()
-                .add_transactions(transactions_to_store, transaction_addresses_to_store)?;
+            self.database.client()?.transactions().add_transactions(chunk.to_vec())?;
         }
 
         Ok(transactions.len())
