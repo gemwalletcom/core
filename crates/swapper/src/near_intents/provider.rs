@@ -12,6 +12,7 @@ use alloy_primitives::U256;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use gem_sui::{SuiClient, build_transfer_message_bytes};
+use number_formatter::BigNumberFormatter;
 use primitives::{Chain, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
@@ -241,20 +242,62 @@ where
         })
     }
 
-    fn extract_quote(response: QuoteResponseResult) -> Result<QuoteResponse, SwapperError> {
+    fn extract_quote(response: QuoteResponseResult, from_decimals: u32) -> Result<QuoteResponse, SwapperError> {
         match response {
             QuoteResponseResult::Ok(quote) => Ok(*quote),
-            QuoteResponseResult::Err(error) => Err(map_quote_error(&error)),
+            QuoteResponseResult::Err(error) => Err(map_quote_error(&error, from_decimals)),
         }
     }
 }
 
-fn map_quote_error(error: &QuoteResponseError) -> SwapperError {
+fn map_quote_error(error: &QuoteResponseError, from_decimals: u32) -> SwapperError {
     let lower = error.message.to_ascii_lowercase();
     if lower.contains("too low") {
-        SwapperError::InputAmountError { min_amount: None }
+        SwapperError::InputAmountError {
+            min_amount: parse_min_amount(&error.message, from_decimals),
+        }
     } else {
         SwapperError::ComputeQuoteError(format!("Near Intents quote error: {}", error.message))
+    }
+}
+
+fn parse_min_amount(message: &str, decimals: u32) -> Option<String> {
+    let marker = "try at least ";
+    let lower = message.to_ascii_lowercase();
+    let start = lower.find(marker)? + marker.len();
+    let tail = message.get(start..)?;
+    let token = extract_numeric_token(tail)?;
+    normalize_token(&token, decimals)
+}
+
+fn extract_numeric_token(message: &str) -> Option<String> {
+    let mut current = String::new();
+
+    for ch in message.chars() {
+        if ch.is_ascii_digit() || ch == '.' || ch == ',' || ch == '_' {
+            current.push(ch);
+        } else if !current.is_empty() {
+            return Some(current);
+        }
+    }
+
+    if current.is_empty() {
+        None
+    } else {
+        Some(current)
+    }
+}
+
+fn normalize_token(token: &str, decimals: u32) -> Option<String> {
+    let cleaned = token.replace(',', "").replace('_', "");
+    if cleaned.is_empty() {
+        return None;
+    }
+
+    if cleaned.contains('.') {
+        BigNumberFormatter::value_from_amount(&cleaned, decimals).ok()
+    } else {
+        Some(cleaned)
     }
 }
 
@@ -279,7 +322,7 @@ where
 
         let amount = Self::resolve_quote_amount(request, &mode)?;
         let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
-        let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
+        let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, request.from_asset.decimals)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
 
         let eta = response.quote.time_estimate;
@@ -309,7 +352,7 @@ where
         let request_deposit_mode = quote_request.deposit_mode.clone();
         quote_request.dry = false;
 
-        let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
+        let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, quote.request.from_asset.decimals)?;
         let QuoteResponse {
             quote_request: _,
             quote: near_quote,
@@ -448,7 +491,12 @@ mod tests {
         match decoded {
             QuoteResponseResult::Err(err) => {
                 assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
-                assert!(matches!(map_quote_error(&err), SwapperError::InputAmountError { .. }));
+                match map_quote_error(&err, 6) {
+                    SwapperError::InputAmountError { min_amount } => {
+                        assert_eq!(min_amount, Some("8516130".to_string()));
+                    }
+                    _ => panic!("expected InputAmountError"),
+                }
             }
             QuoteResponseResult::Ok(_) => panic!("expected error variant"),
         }

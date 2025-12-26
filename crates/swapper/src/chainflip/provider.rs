@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
+use number_formatter::BigNumberFormatter;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
@@ -113,6 +114,42 @@ fn get_best_quote(mut quotes: Vec<QuoteResponse>, fee_bps: u32) -> (BigUint, u32
     )
 }
 
+fn map_chainflip_quote_error(error: SwapperError, from_decimals: u32) -> SwapperError {
+    match error {
+        SwapperError::ComputeQuoteError(message) => {
+            let lower = message.to_ascii_lowercase();
+            if lower.contains("expected amount is below minimum swap amount") {
+                SwapperError::InputAmountError {
+                    min_amount: parse_min_amount(&message, from_decimals),
+                }
+            } else {
+                SwapperError::ComputeQuoteError(message)
+            }
+        }
+        other => other,
+    }
+}
+
+fn parse_min_amount(message: &str, decimals: u32) -> Option<String> {
+    let open = message.rfind('(')?;
+    let close = message[open + 1..].find(')')? + open + 1;
+    let token = message[open + 1..close].trim();
+    normalize_token(token, decimals)
+}
+
+fn normalize_token(token: &str, decimals: u32) -> Option<String> {
+    let cleaned = token.replace(',', "").replace('_', "");
+    if cleaned.is_empty() {
+        return None;
+    }
+
+    if cleaned.contains('.') {
+        BigNumberFormatter::value_from_amount(&cleaned, decimals).ok()
+    } else {
+        Some(cleaned)
+    }
+}
+
 #[async_trait]
 impl<CX, BR> Swapper for ChainflipProvider<CX, BR>
 where
@@ -155,7 +192,10 @@ where
             broker_commission_bps: Some(fee_bps),
         };
 
-        let quotes = self.chainflip_client.get_quote(&quote_request).await?;
+        let quotes = match self.chainflip_client.get_quote(&quote_request).await {
+            Ok(quotes) => quotes,
+            Err(err) => return Err(map_chainflip_quote_error(err, request.from_asset.decimals)),
+        };
         if quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
@@ -309,6 +349,32 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_chainflip_min_amount_error_normalization() {
+        let message = "expected amount is below minimum swap amount (68000000)".to_string();
+        let err = map_chainflip_quote_error(SwapperError::ComputeQuoteError(message), 6);
+
+        match err {
+            SwapperError::InputAmountError { min_amount } => {
+                assert_eq!(min_amount, Some("68000000".to_string()));
+            }
+            _ => panic!("expected InputAmountError"),
+        }
+    }
+
+    #[test]
+    fn test_chainflip_min_amount_error_decimal_value() {
+        let message = "expected amount is below minimum swap amount (1.23)".to_string();
+        let err = map_chainflip_quote_error(SwapperError::ComputeQuoteError(message), 6);
+
+        match err {
+            SwapperError::InputAmountError { min_amount } => {
+                assert_eq!(min_amount, Some("1230000".to_string()));
+            }
+            _ => panic!("expected InputAmountError"),
+        }
+    }
 
     #[test]
     fn test_best_quote() {

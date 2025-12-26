@@ -72,9 +72,15 @@ where
                 .find(|address| address.chain == from_asset.chain.long_name())
                 .ok_or(SwapperError::InvalidRoute)?;
 
-            if from_inbound_address.dust_threshold > value {
+            let min_amount = if from_inbound_address.dust_threshold > from_inbound_address.outbound_fee {
+                from_inbound_address.dust_threshold.clone()
+            } else {
+                from_inbound_address.outbound_fee.clone()
+            };
+
+            if min_amount > value {
                 return Err(SwapperError::InputAmountError {
-                    min_amount: Some(from_inbound_address.dust_threshold.to_string()),
+                    min_amount: Some(min_amount.to_string()),
                 });
             }
         }
@@ -204,6 +210,7 @@ where
 mod swap_integration_tests {
     use super::*;
     use crate::{SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, testkit::mock_quote};
+    use num_bigint::BigInt;
     use std::sync::Arc;
 
     #[tokio::test]
@@ -241,6 +248,51 @@ mod swap_integration_tests {
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         assert!(quote.eta_in_seconds.is_some());
         assert!(!quote.data.routes.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_thorchain_quote_rejects_below_outbound_fee() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let provider = Arc::new(NativeProvider::default());
+        let swapper = ThorChain::new(provider.clone());
+
+        let from_asset = SwapperQuoteAsset::from(Chain::Xrp.as_asset_id());
+        let to_asset = SwapperQuoteAsset::from(Chain::Thorchain.as_asset_id());
+        let mut request = mock_quote(from_asset, to_asset);
+
+        let inbound_addresses = swapper.swap_client.get_inbound_addresses().await?;
+        let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
+        let from_inbound_address = inbound_addresses
+            .iter()
+            .find(|address| address.chain == from_asset.chain.long_name())
+            .ok_or(SwapperError::InvalidRoute)?;
+
+        let expected_min_amount = if from_inbound_address.dust_threshold > from_inbound_address.outbound_fee {
+            from_inbound_address.dust_threshold.clone()
+        } else {
+            from_inbound_address.outbound_fee.clone()
+        };
+
+        let adjusted_amount = if expected_min_amount > BigInt::from(1) {
+            expected_min_amount.clone() - BigInt::from(1)
+        } else {
+            BigInt::from(0)
+        };
+
+        request.value = swapper.value_to(adjusted_amount.to_string(), from_asset.decimals as i32).to_string();
+        let value = swapper.value_from(request.value.clone(), from_asset.decimals as i32);
+        if value >= expected_min_amount {
+            return Ok(());
+        }
+
+        let err = swapper.fetch_quote(&request).await.expect_err("expected error");
+        match err {
+            SwapperError::InputAmountError { min_amount } => {
+                assert_eq!(min_amount, Some(expected_min_amount.to_string()));
+            }
+            _ => panic!("expected InputAmountError"),
+        }
 
         Ok(())
     }
