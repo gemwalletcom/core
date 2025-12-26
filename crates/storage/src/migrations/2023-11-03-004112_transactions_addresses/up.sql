@@ -7,6 +7,4 @@ CREATE TABLE transactions_addresses
     UNIQUE (transaction_id, address, asset_id)
 );
 
-CREATE INDEX transactions_addresses_transaction_id_idx ON transactions_addresses (transaction_id);
-CREATE INDEX transactions_addresses_asset_id_idx ON transactions_addresses (asset_id);
 CREATE INDEX transactions_addresses_address_idx ON transactions_addresses (address);

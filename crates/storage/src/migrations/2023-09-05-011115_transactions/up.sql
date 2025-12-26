@@ -28,6 +28,4 @@ CREATE TABLE transactions
 SELECT diesel_manage_updated_at('transactions');
 
 CREATE INDEX transactions_created_at_idx ON transactions (created_at DESC);
-CREATE INDEX transactions_hash_idx ON transactions (hash);
-CREATE INDEX transactions_chain_idx ON transactions (chain);
 CREATE INDEX transactions_asset_id_idx ON transactions (asset_id);
