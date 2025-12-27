@@ -18,7 +18,6 @@ use crate::{
     SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     asset::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_USDC},
-    config::EVM_REFERRAL_ADDRESS,
 };
 
 use super::{
@@ -28,7 +27,6 @@ use super::{
 
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
-const BUILDER_FEE_BPS: u32 = 10; // 1bp = 10 tenths of bp
 
 #[derive(Debug)]
 pub struct HyperCoreSpot {
@@ -120,6 +118,7 @@ impl Swapper for HyperCoreSpot {
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+        let client = self.client()?;
         let meta = self.load_spot_meta().await?;
         let from_token = self.resolve_token(&meta, &request.from_asset)?;
         let to_token = self.resolve_token(&meta, &request.to_asset)?;
@@ -188,8 +187,8 @@ impl Swapper for HyperCoreSpot {
                         &size_str,
                         false,
                         Some(Builder {
-                            builder_address: EVM_REFERRAL_ADDRESS.to_lowercase().to_string(),
-                            fee: BUILDER_FEE_BPS,
+                            builder_address: client.config.builder_address.clone(),
+                            fee: client.config.max_builder_fee_bps,
                         }),
                     ))
                     .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
