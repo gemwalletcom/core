@@ -49,6 +49,8 @@ use solana_primitives::{
 use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
 
 const DEFAULT_SOLANA_COMPUTE_LIMIT: u64 = 200_000;
+const SOL_NATIVE_DECIMALS: u32 = 9;
+const SOL_RELAYER_FEE_LAMPORTS: u64 = 5_000;
 
 struct PoolState {
     token_config: TokenConfig,
@@ -372,10 +374,10 @@ impl Across {
     ) -> U256 {
         if Self::is_solana_destination(request) {
             if let Some(sol_usd_price) = sol_price {
-                let sol_fee_amount = U256::from(5000_u64);
-                Self::calculate_fee_in_token(&sol_fee_amount, sol_usd_price, 6)
+                let sol_fee_lamports = U256::from(SOL_RELAYER_FEE_LAMPORTS);
+                Self::calculate_fee_in_token_with_native_decimals(&sol_fee_lamports, sol_usd_price, cost_config.decimals, SOL_NATIVE_DECIMALS)
             } else {
-                U256::from(5000)
+                U256::ZERO
             }
         } else {
             let relayer_calc = RelayerFeeCalculator::default();
@@ -684,8 +686,19 @@ impl Across {
     }
 
     pub fn calculate_fee_in_token(fee_in_wei: &U256, token_price: &BigInt, token_decimals: u32) -> U256 {
-        let fee = BigInt::from_bytes_le(Sign::Plus, &fee_in_wei.to_le_bytes::<32>());
-        let fee_in_token = fee * token_price * BigInt::from(10_u64.pow(token_decimals)) / BigInt::from(10_u64.pow(8)) / BigInt::from(10_u64.pow(18));
+        Self::calculate_fee_in_token_with_native_decimals(fee_in_wei, token_price, token_decimals, 18)
+    }
+
+    fn calculate_fee_in_token_with_native_decimals(
+        fee_in_native: &U256,
+        token_price: &BigInt,
+        token_decimals: u32,
+        native_decimals: u32,
+    ) -> U256 {
+        let fee = BigInt::from_bytes_le(Sign::Plus, &fee_in_native.to_le_bytes::<32>());
+        let fee_in_token = fee * token_price * BigInt::from(10_u64.pow(token_decimals))
+            / BigInt::from(10_u64.pow(8))
+            / BigInt::from(10_u64.pow(native_decimals));
         U256::from_le_slice(&fee_in_token.to_bytes_le().1)
     }
 
