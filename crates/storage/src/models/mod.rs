@@ -58,6 +58,6 @@ pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow, ScanAddressTyp
 pub use self::subscription::{SubscriptionAddressExcludeRow, SubscriptionRow};
 pub use self::support::SupportRow;
 pub use self::tag::{AssetTagRow, TagRow};
-pub use self::transaction::{TransactionRow, TransactionTypeRow};
-pub use self::transaction_addresses::{AddressChainIdResultRow, TransactionAddressesRow};
+pub use self::transaction::{NewTransactionRow, TransactionRow, TransactionTypeRow};
+pub use self::transaction_addresses::{AddressChainIdResultRow, NewTransactionAddressesRow, TransactionAddressesRow};
 pub use self::username::UsernameRow;

@@ -1,6 +1,10 @@
 use primitives::Chain;
 use std::str::FromStr;
 
+const MAX_LIMIT: usize = 500;
+const MAX_OFFSET: usize = 10_000;
+const DEFAULT_LIMIT: usize = 50;
+
 pub struct SearchRequest {
     pub query: String,
     pub chains: Vec<String>,
@@ -29,8 +33,8 @@ impl SearchRequest {
             query: query.to_string(),
             chains,
             tags,
-            limit: limit.unwrap_or(50),
-            offset: offset.unwrap_or(0),
+            limit: limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT),
+            offset: offset.unwrap_or(0).min(MAX_OFFSET),
         }
     }
 

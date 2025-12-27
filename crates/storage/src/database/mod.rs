@@ -18,6 +18,7 @@ pub mod prices;
 pub mod prices_dex;
 pub mod releases;
 pub mod rewards;
+pub mod rewards_redemptions;
 pub mod scan_addresses;
 pub mod subscriptions;
 pub mod support;
@@ -36,10 +37,11 @@ pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 use crate::{
     AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, ConfigRepository, DevicesRepository,
     FiatRepository, LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository,
-    PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, ScanAddressesRepository, SubscriptionsRepository,
-    SupportRepository, TagRepository, TransactionsRepository,
+    PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRedemptionsRepository, RewardsRepository, ScanAddressesRepository,
+    SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
 };
-use rewards::{RewardsEventTypesStore, RewardsRedemptionOptionsStore, RewardsRedemptionTypesStore};
+use rewards::RewardsEventTypesStore;
+use rewards_redemptions::RewardsRedemptionTypesStore;
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
     let manager = ConnectionManager::<PgConnection>::new(database_url);
@@ -131,15 +133,15 @@ impl DatabaseClient {
         self
     }
 
+    pub fn rewards_redemptions(&mut self) -> &mut dyn RewardsRedemptionsRepository {
+        self
+    }
+
     pub fn reward_event_types(&mut self) -> &mut dyn RewardsEventTypesStore {
         self
     }
 
     pub fn reward_redemption_types(&mut self) -> &mut dyn RewardsRedemptionTypesStore {
-        self
-    }
-
-    pub fn redemption_options(&mut self) -> &mut dyn RewardsRedemptionOptionsStore {
         self
     }
 

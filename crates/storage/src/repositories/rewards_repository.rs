@@ -1,12 +1,12 @@
-use crate::database::rewards::{RedemptionUpdate, RewardsStore};
+use crate::database::rewards::RewardsStore;
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, ReferralAttemptRow, RewardRedemptionRow, RewardsRow, UsernameRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, ReferralAttemptRow, RewardsRow, UsernameRow};
+use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
-use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption};
-use primitives::{Device, RewardEvent, RewardEventType, Rewards};
+use primitives::{Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
     !username.eq_ignore_ascii_case(address)
@@ -34,7 +34,8 @@ pub trait RewardsRepository {
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
-    fn use_referral_code(
+    fn validate_referral_use(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<(), DatabaseError>;
+    fn create_referral_use(
         &mut self,
         address: &str,
         referral_code: &str,
@@ -52,12 +53,9 @@ pub trait RewardsRepository {
         reason: &str,
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
-    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
-    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
-    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
-    fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError>;
+    fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
+    fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -72,7 +70,7 @@ impl RewardsRepository for DatabaseClient {
         };
 
         let options = if rewards.is_enabled {
-            RewardsRepository::get_redemption_options(self)?
+            RewardsRedemptionsRepository::get_redemption_options(self)?
         } else {
             vec![]
         };
@@ -187,14 +185,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(RewardsStore::get_rewards(self, code).is_ok())
     }
 
-    fn use_referral_code(
-        &mut self,
-        address: &str,
-        referral_code: &str,
-        device_id: i32,
-        ip_address: &str,
-        invite_event: RewardEventType,
-    ) -> Result<Vec<i32>, DatabaseError> {
+    fn validate_referral_use(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<(), DatabaseError> {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
         let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
 
@@ -202,7 +193,7 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Rewards are not enabled for this referral code".into()));
         }
 
-        let referred = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
+        if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
             let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
             let rewards = RewardsStore::get_rewards(self, &username.username)?;
             if !rewards.is_enabled {
@@ -211,7 +202,34 @@ impl RewardsRepository for DatabaseClient {
             if rewards.referrer_username.is_some() {
                 return Err(DatabaseError::Internal("Already used a referral code".into()));
             }
-            username
+            if referrer.username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
+                return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
+            }
+        }
+
+        if SubscriptionsStore::get_device_subscription_address_exists(self, device_id, &referrer.address)? {
+            return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
+        }
+
+        if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
+            return Err(DatabaseError::Internal("Device already used a referral code".into()));
+        }
+
+        Ok(())
+    }
+
+    fn create_referral_use(
+        &mut self,
+        address: &str,
+        referral_code: &str,
+        device_id: i32,
+        ip_address: &str,
+        invite_event: RewardEventType,
+    ) -> Result<Vec<i32>, DatabaseError> {
+        let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
+
+        let referred = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
+            UsernamesStore::get_username(self, UsernameLookup::Address(address))?
         } else {
             let username = UsernamesStore::create_username(
                 self,
@@ -235,22 +253,10 @@ impl RewardsRepository for DatabaseClient {
             username
         };
 
-        if referrer.username == referred.username || referrer.address.eq_ignore_ascii_case(&referred.address) {
-            return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
-        }
-
-        if SubscriptionsStore::get_device_subscription_address_exists(self, device_id, &referrer.address)? {
-            return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
-        }
-
-        if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
-            return Err(DatabaseError::Internal("Device already used a referral code".into()));
-        }
-
         RewardsStore::add_referral(
             self,
             NewRewardReferralRow {
-                referrer_username: referral_code.to_string(),
+                referrer_username: referrer.username.clone(),
                 referred_username: referred.username.clone(),
                 referred_device_id: device_id,
                 referred_ip_address: ip_address.to_string(),
@@ -305,55 +311,41 @@ impl RewardsRepository for DatabaseClient {
         Ok(SubscriptionsStore::get_first_subscription_date(self, addresses)?)
     }
 
-    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError> {
-        let redemption_option = RewardsStore::get_redemption_option(self, option_id)?;
-        let rewards = RewardsStore::get_rewards(self, username)?;
-
-        if rewards.points < redemption_option.option.points {
-            return Err(DatabaseError::Internal("Not enough points".into()));
-        }
-
-        if redemption_option.option.remaining == Some(0) {
-            return Err(DatabaseError::Internal("Redemption option is no longer available".into()));
-        }
-
-        let redemption_id = RewardsStore::add_redemption(
-            self,
-            username,
-            redemption_option.option.points,
-            NewRewardRedemptionRow {
-                username: username.to_string(),
-                option_id: option_id.to_string(),
-                device_id,
-                status: RedemptionStatus::Pending.as_ref().to_string(),
-            },
-        )?;
-
-        let option = redemption_option.as_primitive();
-        let redemption_row = RewardsStore::get_redemption(self, redemption_id)?;
-        Ok(redemption_row.as_primitive(option))
-    }
-
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {
         let username = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
         Ok(username.address)
     }
 
-    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError> {
-        Ok(RewardsStore::get_redemption(self, redemption_id)?)
+    fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {
+        Ok(RewardsStore::count_referrals_since(self, referrer_username, since)?)
     }
 
-    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError> {
-        Ok(RewardsStore::update_redemption(self, redemption_id, updates)?)
-    }
+    fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError> {
+        let current = now();
+        let limit = 10;
 
-    fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOption>, DatabaseError> {
-        let results = RewardsStore::get_redemption_options(self)?;
-        Ok(results.into_iter().map(|r| r.as_primitive()).collect())
-    }
+        let map_entry = |(username, referrals): (String, i64)| ReferralLeader {
+            username,
+            referrals: referrals as i32,
+            points: referrals as i32 * RewardEventType::InviteNew.points(),
+        };
 
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError> {
-        Ok(RewardsStore::get_redemption_option(self, id)?.as_primitive())
+        let daily = RewardsStore::get_top_referrers_since(self, current.days_ago(1), limit)?
+            .into_iter()
+            .map(map_entry)
+            .collect();
+
+        let weekly = RewardsStore::get_top_referrers_since(self, current.days_ago(7), limit)?
+            .into_iter()
+            .map(map_entry)
+            .collect();
+
+        let monthly = RewardsStore::get_top_referrers_since(self, current.days_ago(30), limit)?
+            .into_iter()
+            .map(map_entry)
+            .collect();
+
+        Ok(ReferralLeaderboard { daily, weekly, monthly })
     }
 }
 

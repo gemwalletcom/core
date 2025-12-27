@@ -92,11 +92,21 @@ download_bundle() {
     echo "Localization update for ${1} complete"
 }
 
+check_localization() {
+    matches=$(grep -rE '\*\* %[^*]+ \*\*' Packages/Localization --include="*.strings" 2>/dev/null || true)
+    if [ -n "$matches" ]; then
+        echo "⚠️  Found '** %@ **' pattern in localization files:"
+        echo "$matches"
+        exit 1
+    fi
+}
+
 case $1 in
   "ios")
     download_bundle "ios" "$ios_data" $2 $mobile_project_id
     download_bundle "ios_plist" "$ios_plist_data" $2 $mobile_project_id
     download_bundle "ios_widget" "$ios_widget_data" "Packages/Localization/WidgetSources/Resources" $mobile_project_id
+    check_localization
   ;;
   "android")
     download_bundle "android" "$android_data" $2 $mobile_project_id

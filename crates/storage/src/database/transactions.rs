@@ -3,15 +3,11 @@ use chrono::DateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use diesel::upsert::excluded;
-use primitives::TransactionsFetchOption;
+use primitives::{Transaction, TransactionsFetchOption};
 
 pub(crate) trait TransactionsStore {
-    fn get_transaction_by_id(&mut self, transaction_id: &str) -> Result<TransactionRow, diesel::result::Error>;
-    fn add_transactions(
-        &mut self,
-        transactions_values: Vec<TransactionRow>,
-        addresses_values: Vec<TransactionAddressesRow>,
-    ) -> Result<bool, diesel::result::Error>;
+    fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, diesel::result::Error>;
+    fn add_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, diesel::result::Error>;
     fn get_transactions_by_device_id(
         &mut self,
         _device_id: &str,
@@ -19,71 +15,68 @@ pub(crate) trait TransactionsStore {
         chains: Vec<String>,
         options: TransactionsFetchOption,
     ) -> Result<Vec<TransactionRow>, diesel::result::Error>;
-    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<crate::models::AddressChainIdResultRow>, diesel::result::Error>;
+    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error>;
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error>;
-    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<String>, diesel::result::Error>;
-    fn delete_transactions_by_ids(&mut self, ids: Vec<String>) -> Result<usize, diesel::result::Error>;
+    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, diesel::result::Error>;
+    fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, diesel::result::Error>;
     fn add_transactions_types(&mut self, values: Vec<TransactionTypeRow>) -> Result<usize, diesel::result::Error>;
 }
 
 impl TransactionsStore for DatabaseClient {
-    fn get_transaction_by_id(&mut self, transaction_id: &str) -> Result<TransactionRow, diesel::result::Error> {
-        use crate::schema::transactions::dsl::*;
-        transactions
-            .find(transaction_id)
+    fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, diesel::result::Error> {
+        use crate::schema::transactions::dsl;
+        dsl::transactions
+            .filter(dsl::chain.eq(chain))
+            .filter(dsl::hash.eq(hash))
             .select(TransactionRow::as_select())
             .first(&mut self.connection)
     }
 
-    fn add_transactions(
-        &mut self,
-        transactions_values: Vec<TransactionRow>,
-        addresses_values: Vec<TransactionAddressesRow>,
-    ) -> Result<bool, diesel::result::Error> {
+    fn add_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions::dsl;
+
         self.connection
             .build_transaction()
             .read_write()
             .run::<_, diesel::result::Error, _>(|conn: &mut diesel::pg::PgConnection| {
-                use crate::schema::transactions::dsl::*;
-                let query1 = diesel::insert_into(transactions)
-                    .values(transactions_values)
-                    .on_conflict(crate::schema::transactions::id)
-                    .do_update()
-                    .set((
-                        from_address.eq(excluded(from_address)),
-                        to_address.eq(excluded(to_address)),
-                        value.eq(excluded(value)),
-                        kind.eq(excluded(kind)),
-                        state.eq(excluded(state)),
-                        fee.eq(excluded(fee)),
-                        fee_asset_id.eq(excluded(fee_asset_id)),
-                        memo.eq(excluded(memo)),
-                        metadata.eq(excluded(metadata)),
-                        utxo_inputs.eq(excluded(utxo_inputs)),
-                        utxo_outputs.eq(excluded(utxo_outputs)),
-                    ))
-                    .execute(conn);
+                let mut total_addresses = 0usize;
 
-                if let Some(error) = query1.err() {
-                    return Err(error);
+                for transaction in transactions {
+                    let new_transaction = NewTransactionRow::from_primitive(transaction.clone());
+
+                    let inserted: TransactionRow = diesel::insert_into(dsl::transactions)
+                        .values(&new_transaction)
+                        .on_conflict((dsl::chain, dsl::hash))
+                        .do_update()
+                        .set((
+                            dsl::from_address.eq(excluded(dsl::from_address)),
+                            dsl::to_address.eq(excluded(dsl::to_address)),
+                            dsl::value.eq(excluded(dsl::value)),
+                            dsl::kind.eq(excluded(dsl::kind)),
+                            dsl::state.eq(excluded(dsl::state)),
+                            dsl::fee.eq(excluded(dsl::fee)),
+                            dsl::fee_asset_id.eq(excluded(dsl::fee_asset_id)),
+                            dsl::memo.eq(excluded(dsl::memo)),
+                            dsl::metadata.eq(excluded(dsl::metadata)),
+                            dsl::utxo_inputs.eq(excluded(dsl::utxo_inputs)),
+                            dsl::utxo_outputs.eq(excluded(dsl::utxo_outputs)),
+                        ))
+                        .returning(TransactionRow::as_select())
+                        .get_result(conn)?;
+
+                    let addresses = NewTransactionAddressesRow::from_transaction(inserted.id, &transaction);
+
+                    if !addresses.is_empty() {
+                        use crate::schema::transactions_addresses::dsl as addr_dsl;
+                        total_addresses += diesel::insert_into(addr_dsl::transactions_addresses)
+                            .values(&addresses)
+                            .on_conflict((addr_dsl::transaction_id, addr_dsl::address, addr_dsl::asset_id))
+                            .do_nothing()
+                            .execute(conn)?;
+                    }
                 }
 
-                use crate::schema::transactions_addresses::dsl::*;
-                let query2 = diesel::insert_into(transactions_addresses)
-                    .values(&addresses_values)
-                    .on_conflict((
-                        crate::schema::transactions_addresses::transaction_id,
-                        crate::schema::transactions_addresses::address,
-                        crate::schema::transactions_addresses::asset_id,
-                    ))
-                    .do_nothing()
-                    .execute(conn);
-
-                if let Some(error) = query2.err() {
-                    return Err(error);
-                }
-
-                Ok(true)
+                Ok(total_addresses)
             })
     }
 
@@ -99,7 +92,7 @@ impl TransactionsStore for DatabaseClient {
         let mut query = transactions
             .into_boxed()
             .inner_join(transactions_addresses::table)
-            .filter(transactions_addresses::chain_id.eq_any(chains.clone()))
+            .filter(chain.eq_any(chains.clone()))
             .filter(transactions_addresses::address.eq_any(addresses));
 
         if let Some(_asset_id) = options.asset_id {
@@ -119,10 +112,13 @@ impl TransactionsStore for DatabaseClient {
     }
 
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error> {
+        use crate::schema::transactions::dsl as tx_dsl;
         use crate::schema::transactions_addresses::dsl::*;
+
         transactions_addresses
-            .select((address, chain_id))
-            .group_by((address, chain_id))
+            .inner_join(tx_dsl::transactions)
+            .select((address, tx_dsl::chain))
+            .group_by((address, tx_dsl::chain))
             .having(count(address).gt(min_count))
             .order_by(count(address).desc())
             .limit(limit)
@@ -136,7 +132,7 @@ impl TransactionsStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<String>, diesel::result::Error> {
+    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         use crate::schema::transactions_addresses::dsl as addr;
 
@@ -148,7 +144,7 @@ impl TransactionsStore for DatabaseClient {
             .load(&mut self.connection)
     }
 
-    fn delete_transactions_by_ids(&mut self, ids: Vec<String>) -> Result<usize, diesel::result::Error> {
+    fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         diesel::delete(transactions.filter(id.eq_any(ids))).execute(&mut self.connection)
     }

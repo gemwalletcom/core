@@ -56,4 +56,16 @@ impl IpSecurityClient {
         self.cacher.increment_cached(CacheKey::ReferralWeeklyLimit(ip_address)).await?;
         Ok(())
     }
+
+    pub async fn check_username_creation_limit(&self, ip_address: &str, limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if self.cacher.get_cached_counter(CacheKey::UsernameCreationPerIp(ip_address)).await? >= limit {
+            return Err(crate::RewardsError::Username("Too many usernames created from this IP".to_string()).into());
+        }
+        Ok(())
+    }
+
+    pub async fn record_username_creation(&self, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.cacher.increment_cached(CacheKey::UsernameCreationPerIp(ip_address)).await?;
+        Ok(())
+    }
 }

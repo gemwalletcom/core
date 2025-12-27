@@ -23,15 +23,14 @@ impl FetchNftAssetsAddressesConsumer {
         settings: Settings,
         database: Database,
         chain: Chain,
-        reader_connection: &StreamConnection,
-        producer_connection: &StreamConnection,
+        connection: &StreamConnection,
+        cacher: CacherClient,
         consumer_config: ConsumerConfig,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let queue = QueueName::FetchNftAssociations;
         let name = format!("{}.{}", queue, chain.as_ref());
-        let stream_reader = StreamReader::from_connection(reader_connection, settings.rabbitmq.prefetch).await?;
-        let stream_producer = StreamProducer::from_connection(producer_connection).await?;
-        let cacher = CacherClient::new(&settings.redis.url).await;
+        let stream_reader = StreamReader::from_connection(connection, settings.rabbitmq.prefetch).await?;
+        let stream_producer = StreamProducer::from_connection(connection).await?;
         let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
         let nft_client = NFTClient::new(database.clone(), nft_config);
         let nft_client = Arc::new(Mutex::new(nft_client));

@@ -26,14 +26,14 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
 
     async fn process(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
-        let redemption = client.rewards().get_redemption(payload.redemption_id)?;
+        let redemption = client.rewards_redemptions().get_redemption(payload.redemption_id)?;
 
         if redemption.status == RedemptionStatus::Completed.as_ref() {
             return Ok(true);
         }
 
         let recipient_address = client.rewards().get_address_by_username(&redemption.username)?;
-        let option = client.rewards().get_redemption_option(&redemption.option_id)?;
+        let option = client.rewards_redemptions().get_redemption_option(&redemption.option_id)?;
 
         let asset = option.asset.map(|asset| RedemptionAsset {
             asset,
@@ -49,7 +49,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
                     RedemptionUpdate::Status(RedemptionStatus::Completed.as_ref().to_string()),
                 ];
 
-                client.rewards().update_redemption(payload.redemption_id, updates)?;
+                client.rewards_redemptions().update_redemption(payload.redemption_id, updates)?;
                 Ok(true)
             }
             Err(e) => {
@@ -58,7 +58,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
                     RedemptionUpdate::Error(e.to_string()),
                 ];
 
-                client.rewards().update_redemption(payload.redemption_id, updates)?;
+                client.rewards_redemptions().update_redemption(payload.redemption_id, updates)?;
                 Ok(false)
             }
         }

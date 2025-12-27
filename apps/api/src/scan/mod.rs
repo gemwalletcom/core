@@ -1,3 +1,4 @@
+use crate::params::AddressParam;
 use crate::responders::{ApiError, ApiResponse};
 use primitives::{ScanAddress, ScanTransaction, ScanTransactionPayload, response::ResponseResultNew};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
@@ -23,7 +24,7 @@ pub async fn scan_transaction_v2(request: Json<ScanTransactionPayload>, client: 
 }
 
 #[get("/scan/address/<address>")]
-pub async fn get_scan_address(address: &str, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ResponseResultNew<Vec<ScanAddress>>>, ApiError> {
-    let scan_addresses = client.lock().await.get_scan_address(address).await?;
+pub async fn get_scan_address(address: AddressParam, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ResponseResultNew<Vec<ScanAddress>>>, ApiError> {
+    let scan_addresses = client.lock().await.get_scan_address(&address.0).await?;
     Ok(ResponseResultNew::new(scan_addresses).into())
 }

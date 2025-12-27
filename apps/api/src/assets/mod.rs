@@ -2,6 +2,7 @@ pub mod cilent;
 mod filter;
 mod model;
 
+use crate::params::{AssetIdParam, DeviceIdParam, SearchQueryParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use cilent::{AssetsClient, SearchClient};
 pub use model::SearchRequest;
@@ -9,8 +10,8 @@ use primitives::{Asset, AssetBasic, AssetFull, AssetId, SearchResponse};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 
 #[get("/assets/<asset_id>")]
-pub async fn get_asset(asset_id: &str, client: &State<Mutex<AssetsClient>>) -> Result<ApiResponse<AssetFull>, ApiError> {
-    Ok(client.lock().await.get_asset_full(asset_id)?.into())
+pub async fn get_asset(asset_id: AssetIdParam, client: &State<Mutex<AssetsClient>>) -> Result<ApiResponse<AssetFull>, ApiError> {
+    Ok(client.lock().await.get_asset_full(&asset_id.0)?.into())
 }
 
 #[post("/assets", format = "json", data = "<asset_ids>")]
@@ -41,37 +42,37 @@ pub async fn add_asset(
 
 #[get("/assets/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_assets_search(
-    query: &str,
+    query: SearchQueryParam,
     chains: Option<&str>,
     tags: Option<&str>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<SearchClient>>,
 ) -> Result<ApiResponse<Vec<AssetBasic>>, ApiError> {
-    let request = SearchRequest::new(query, chains, tags, limit, offset);
+    let request = SearchRequest::new(&query.0, chains, tags, limit, offset);
     Ok(client.lock().await.get_assets_search(&request).await?.into())
 }
 
 #[get("/assets/device/<device_id>?<wallet_index>&<from_timestamp>")]
 pub async fn get_assets_by_device_id(
-    device_id: &str,
+    device_id: DeviceIdParam,
     wallet_index: i32,
     from_timestamp: Option<u32>,
     client: &State<Mutex<AssetsClient>>,
 ) -> Result<ApiResponse<Vec<AssetId>>, ApiError> {
-    Ok(client.lock().await.get_assets_by_device_id(device_id, wallet_index, from_timestamp)?.into())
+    Ok(client.lock().await.get_assets_by_device_id(&device_id.0, wallet_index, from_timestamp)?.into())
 }
 
 #[get("/search?<query>&<chains>&<tags>&<limit>&<offset>")]
 pub async fn get_search(
-    query: &str,
+    query: SearchQueryParam,
     chains: Option<&str>,
     tags: Option<&str>,
     limit: Option<usize>,
     offset: Option<usize>,
     client: &State<Mutex<SearchClient>>,
 ) -> Result<ApiResponse<SearchResponse>, ApiError> {
-    let request = SearchRequest::new(query, chains, tags, limit, offset);
+    let request = SearchRequest::new(&query.0, chains, tags, limit, offset);
 
     let search_client = client.lock().await;
     let assets = search_client.get_assets_search(&request).await?;

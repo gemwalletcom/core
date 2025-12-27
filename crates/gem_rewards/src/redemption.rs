@@ -1,8 +1,8 @@
 use primitives::rewards::{RedemptionResponse, RedemptionResult};
-use storage::{DatabaseClient, DatabaseError, RewardsRepository};
+use storage::{DatabaseClient, DatabaseError, RewardsRedemptionsRepository};
 
 pub fn redeem_points(database: &mut DatabaseClient, username: &str, option_id: &str, device_id: i32) -> Result<RedemptionResponse, DatabaseError> {
-    let redemption = RewardsRepository::add_redemption(database, username, option_id, device_id)?;
+    let redemption = RewardsRedemptionsRepository::add_redemption(database, username, option_id, device_id)?;
 
     Ok(RedemptionResponse {
         result: RedemptionResult {

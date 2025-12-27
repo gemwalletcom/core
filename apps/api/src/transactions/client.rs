@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use primitives::{Transaction, TransactionsFetchOption, TransactionsResponse};
+use primitives::{Transaction, TransactionId, TransactionsFetchOption, TransactionsResponse};
 use storage::Database;
 
 #[derive(Clone)]
@@ -51,7 +51,12 @@ impl TransactionsClient {
         Ok(TransactionsResponse::new(transactions, address_names))
     }
 
-    pub fn get_transaction_by_id(&self, id: &str) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.transactions().get_transaction_by_id(id)?.as_primitive(vec![]))
+    pub fn get_transaction_by_id(&self, id: &TransactionId) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .database
+            .client()?
+            .transactions()
+            .get_transaction_by_id(id.chain.as_ref(), &id.hash)?
+            .as_primitive(vec![]))
     }
 }

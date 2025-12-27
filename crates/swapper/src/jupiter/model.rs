@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteRequest {
@@ -22,36 +23,11 @@ pub struct QuoteResponse {
     pub swap_mode: String,
     pub slippage_bps: u32,
     pub computed_auto_slippage: Option<u32>,
-    pub platform_fee: PlatformFee,
+    pub platform_fee: Value,
     pub price_impact_pct: String,
-    pub route_plan: Vec<Route>,
+    pub route_plan: Value,
     pub context_slot: i64,
     pub time_taken: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PlatformFee {
-    pub amount: String,
-    pub fee_bps: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Route {
-    pub swap_info: RouteSwapInfo,
-    pub percent: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RouteSwapInfo {
-    pub amm_key: String,
-    pub label: String,
-    pub input_mint: String,
-    pub output_mint: String,
-    pub in_amount: String,
-    pub out_amount: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

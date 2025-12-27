@@ -1,17 +1,8 @@
 use crate::DatabaseClient;
-use crate::models::{
-    AssetRow, NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, RedemptionOptionFull, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow,
-    RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
-};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow, RewardReferralRow, RewardsRow};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
-
-#[derive(Debug, Clone)]
-pub enum RedemptionUpdate {
-    Status(String),
-    TransactionId(String),
-    Error(String),
-}
 
 pub trait RewardsEventTypesStore {
     fn add_reward_event_types(&mut self, event_types: Vec<RewardEventTypeRow>) -> Result<usize, DieselError>;
@@ -27,34 +18,6 @@ impl RewardsEventTypesStore for DatabaseClient {
     }
 }
 
-pub trait RewardsRedemptionTypesStore {
-    fn add_reward_redemption_types(&mut self, redemption_types: Vec<RewardRedemptionTypeRow>) -> Result<usize, DieselError>;
-}
-
-impl RewardsRedemptionTypesStore for DatabaseClient {
-    fn add_reward_redemption_types(&mut self, redemption_types: Vec<RewardRedemptionTypeRow>) -> Result<usize, DieselError> {
-        use crate::schema::rewards_redemptions_types::dsl;
-        diesel::insert_into(dsl::rewards_redemptions_types)
-            .values(&redemption_types)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-}
-
-pub trait RewardsRedemptionOptionsStore {
-    fn add_redemption_options(&mut self, options: Vec<RewardRedemptionOptionRow>) -> Result<usize, DieselError>;
-}
-
-impl RewardsRedemptionOptionsStore for DatabaseClient {
-    fn add_redemption_options(&mut self, options: Vec<RewardRedemptionOptionRow>) -> Result<usize, DieselError> {
-        use crate::schema::rewards_redemption_options::dsl;
-        diesel::insert_into(dsl::rewards_redemption_options)
-            .values(&options)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
-}
-
 pub(crate) trait RewardsStore {
     fn get_rewards(&mut self, username: &str) -> Result<RewardsRow, DieselError>;
     fn create_rewards(&mut self, rewards: RewardsRow) -> Result<RewardsRow, DieselError>;
@@ -64,11 +27,8 @@ pub(crate) trait RewardsStore {
     fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, DieselError>;
     fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, DieselError>;
     fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, DieselError>;
-    fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, DieselError>;
-    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DieselError>;
-    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DieselError>;
-    fn get_redemption_options(&mut self) -> Result<Vec<RedemptionOptionFull>, DieselError>;
-    fn get_redemption_option(&mut self, id: &str) -> Result<RedemptionOptionFull, DieselError>;
+    fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn get_top_referrers_since(&mut self, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64)>, DieselError>;
 }
 
 impl RewardsStore for DatabaseClient {
@@ -164,84 +124,27 @@ impl RewardsStore for DatabaseClient {
             .load(&mut self.connection)
     }
 
-    fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, DieselError> {
-        use crate::schema::{rewards, rewards_redemption_options, rewards_redemptions};
-        use diesel::Connection;
-
-        if points <= 0 {
-            return Err(DieselError::RollbackTransaction);
-        }
-
-        self.connection.transaction(|conn| {
-            let rows_updated = diesel::update(
-                rewards_redemption_options::table.filter(
-                    rewards_redemption_options::id
-                        .eq(&redemption.option_id)
-                        .and(rewards_redemption_options::remaining.is_null().or(rewards_redemption_options::remaining.gt(0))),
-                ),
-            )
-            .set(rewards_redemption_options::remaining.eq(rewards_redemption_options::remaining - 1))
-            .execute(conn)?;
-
-            if rows_updated == 0 {
-                return Err(DieselError::NotFound);
-            }
-
-            diesel::update(rewards::table.filter(rewards::username.eq(username).and(rewards::points.ge(points))))
-                .set(rewards::points.eq(rewards::points - points))
-                .returning(rewards::username)
-                .get_result::<String>(conn)?;
-
-            diesel::insert_into(rewards_redemptions::table)
-                .values(&redemption)
-                .returning(rewards_redemptions::id)
-                .get_result(conn)
-        })
+    fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_referrals::dsl;
+        dsl::rewards_referrals
+            .filter(dsl::referrer_username.eq(referrer_username))
+            .filter(dsl::created_at.ge(since))
+            .count()
+            .get_result(&mut self.connection)
     }
 
-    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DieselError> {
-        use crate::schema::rewards_redemptions::dsl;
+    fn get_top_referrers_since(&mut self, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64)>, DieselError> {
+        use crate::schema::{rewards, rewards_referrals};
+        use diesel::dsl::count_star;
 
-        if updates.is_empty() {
-            return Ok(());
-        }
-
-        for update in updates {
-            let target = dsl::rewards_redemptions.find(redemption_id);
-            match update {
-                RedemptionUpdate::Status(value) => diesel::update(target).set(dsl::status.eq(value)).execute(&mut self.connection)?,
-                RedemptionUpdate::TransactionId(value) => diesel::update(target).set(dsl::transaction_id.eq(value)).execute(&mut self.connection)?,
-                RedemptionUpdate::Error(value) => diesel::update(target).set(dsl::error.eq(value)).execute(&mut self.connection)?,
-            };
-        }
-
-        Ok(())
-    }
-
-    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DieselError> {
-        use crate::schema::rewards_redemptions::dsl;
-        dsl::rewards_redemptions
-            .filter(dsl::id.eq(redemption_id))
-            .select(RewardRedemptionRow::as_select())
-            .first(&mut self.connection)
-    }
-
-    fn get_redemption_options(&mut self) -> Result<Vec<RedemptionOptionFull>, DieselError> {
-        use crate::schema::{assets, rewards_redemption_options};
-        rewards_redemption_options::table
-            .left_join(assets::table.on(rewards_redemption_options::asset_id.eq(assets::id.nullable())))
-            .select((RewardRedemptionOptionRow::as_select(), Option::<AssetRow>::as_select()))
-            .load::<(RewardRedemptionOptionRow, Option<AssetRow>)>(&mut self.connection)
-            .map(|results| results.into_iter().map(|(option, asset)| RedemptionOptionFull::new(option, asset)).collect())
-    }
-
-    fn get_redemption_option(&mut self, id: &str) -> Result<RedemptionOptionFull, DieselError> {
-        use crate::schema::{assets, rewards_redemption_options};
-        rewards_redemption_options::table
-            .filter(rewards_redemption_options::id.eq(id))
-            .left_join(assets::table.on(rewards_redemption_options::asset_id.eq(assets::id.nullable())))
-            .select((RewardRedemptionOptionRow::as_select(), Option::<AssetRow>::as_select()))
-            .first::<(RewardRedemptionOptionRow, Option<AssetRow>)>(&mut self.connection)
-            .map(|(option, asset)| RedemptionOptionFull::new(option, asset))
+        rewards_referrals::table
+            .inner_join(rewards::table.on(rewards_referrals::referrer_username.eq(rewards::username)))
+            .filter(rewards::is_enabled.eq(true))
+            .filter(rewards_referrals::created_at.ge(since))
+            .group_by(rewards_referrals::referrer_username)
+            .select((rewards_referrals::referrer_username, count_star()))
+            .order_by(count_star().desc())
+            .limit(limit)
+            .load(&mut self.connection)
     }
 }

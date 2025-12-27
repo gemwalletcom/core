@@ -1,13 +1,12 @@
-use crate::DatabaseError;
-
 use crate::DatabaseClient;
+use crate::DatabaseError;
 use crate::database::transactions::TransactionsStore;
-use crate::models::{AddressChainIdResultRow, TransactionAddressesRow, TransactionRow, TransactionTypeRow};
-use primitives::TransactionsFetchOption;
+use crate::models::{AddressChainIdResultRow, TransactionRow, TransactionTypeRow};
+use primitives::{Transaction, TransactionsFetchOption};
 
 pub trait TransactionsRepository {
-    fn get_transaction_by_id(&mut self, _id: &str) -> Result<TransactionRow, DatabaseError>;
-    fn add_transactions(&mut self, transactions_values: Vec<TransactionRow>, addresses_values: Vec<TransactionAddressesRow>) -> Result<bool, DatabaseError>;
+    fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, DatabaseError>;
+    fn add_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, DatabaseError>;
     fn get_transactions_by_device_id(
         &mut self,
         _device_id: &str,
@@ -17,18 +16,18 @@ pub trait TransactionsRepository {
     ) -> Result<Vec<TransactionRow>, DatabaseError>;
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, DatabaseError>;
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, DatabaseError>;
-    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<String>, DatabaseError>;
-    fn delete_transactions_by_ids(&mut self, ids: Vec<String>) -> Result<usize, DatabaseError>;
+    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, DatabaseError>;
+    fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, DatabaseError>;
     fn add_transactions_types(&mut self, values: Vec<TransactionTypeRow>) -> Result<usize, DatabaseError>;
 }
 
 impl TransactionsRepository for DatabaseClient {
-    fn get_transaction_by_id(&mut self, _id: &str) -> Result<TransactionRow, DatabaseError> {
-        Ok(TransactionsStore::get_transaction_by_id(self, _id)?)
+    fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, DatabaseError> {
+        Ok(TransactionsStore::get_transaction_by_id(self, chain, hash)?)
     }
 
-    fn add_transactions(&mut self, transactions_values: Vec<TransactionRow>, addresses_values: Vec<TransactionAddressesRow>) -> Result<bool, DatabaseError> {
-        Ok(TransactionsStore::add_transactions(self, transactions_values, addresses_values)?)
+    fn add_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, DatabaseError> {
+        Ok(TransactionsStore::add_transactions(self, transactions)?)
     }
 
     fn get_transactions_by_device_id(
@@ -49,11 +48,11 @@ impl TransactionsRepository for DatabaseClient {
         Ok(TransactionsStore::delete_transactions_addresses(self, addresses)?)
     }
 
-    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<String>, DatabaseError> {
+    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, DatabaseError> {
         Ok(TransactionsStore::get_transactions_without_addresses(self, limit)?)
     }
 
-    fn delete_transactions_by_ids(&mut self, ids: Vec<String>) -> Result<usize, DatabaseError> {
+    fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, DatabaseError> {
         Ok(TransactionsStore::delete_transactions_by_ids(self, ids)?)
     }
 

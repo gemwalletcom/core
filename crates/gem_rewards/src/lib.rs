@@ -7,7 +7,7 @@ mod transfer_provider;
 mod transfer_redemption_service;
 
 pub use abuseipdb_client::{AbuseIPDBClient, AbuseIPDBData};
-pub use error::RewardsError;
+pub use error::{RewardsError, RewardsRedemptionError};
 pub use ip_security_client::IpSecurityClient;
 pub use redemption::redeem_points;
 pub use redemption_service::{RedemptionAsset, RedemptionRequest, RedemptionResult, RedemptionService};
