@@ -18,6 +18,7 @@ use crate::{
     SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     asset::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_USDC},
+    error::INVALID_AMOUNT,
 };
 
 use super::{
@@ -153,11 +154,11 @@ impl Swapper for HyperCoreSpot {
         let token_decimals: u32 = to_token
             .wei_decimals
             .try_into()
-            .map_err(|_| SwapperError::ComputeQuoteError("invalid amount precision".into()))?;
+            .map_err(|_| SwapperError::ComputeQuoteError(format!("{} precision: {}", INVALID_AMOUNT, to_token.wei_decimals)))?;
 
         let output_amount_str = format_decimal(&output_amount);
         let token_units = BigNumberFormatter::value_from_amount_biguint(&output_amount_str, token_decimals)
-            .map_err(|err| SwapperError::ComputeQuoteError(format!("invalid amount: {err}")))?;
+            .map_err(|err| SwapperError::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT)))?;
         let scaled_units = scale_units(token_units, token_decimals, request.to_asset.decimals)?;
         let to_value = scaled_units.to_string();
 

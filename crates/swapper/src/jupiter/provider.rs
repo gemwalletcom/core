@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider,
-    SwapperQuoteData, SwapperSlippageMode,
+    SwapperQuoteData, SwapperSlippageMode, error::INVALID_ADDRESS,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -48,7 +48,7 @@ where
     pub fn get_asset_address(&self, asset_id: &str) -> Result<String, SwapperError> {
         get_pubkey_by_str(asset_id)
             .map(|x| x.to_string())
-            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("Invalid address {asset_id}")))
+            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("{}: {asset_id}", INVALID_ADDRESS)))
     }
 
     fn get_fee_mint(&self, mode: &SwapperMode, input: &str, output: &str) -> String {

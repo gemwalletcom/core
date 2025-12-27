@@ -5,7 +5,7 @@ use gem_evm::uniswap::{
     path::TokenPair,
 };
 
-use crate::{Route, SwapperError, eth_address, uniswap::swap_route::RouteData};
+use crate::{Route, SwapperError, error::INVALID_ADDRESS, eth_address, uniswap::swap_route::RouteData};
 
 // return (currency0, currency1)
 fn sort_addresses(token_in: &Address, token_out: &Address) -> (Address, Address) {
@@ -95,7 +95,7 @@ impl TryFrom<&Route> for PathKey {
             .output
             .token_id
             .as_ref()
-            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("Invalid address {}", value.output)))?;
+            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("{}: {}", INVALID_ADDRESS, value.output)))?;
         let currency = eth_address::parse_str(token_id)?;
 
         let route_data: RouteData = serde_json::from_str(&value.route_data).map_err(|_| SwapperError::InvalidRoute)?;

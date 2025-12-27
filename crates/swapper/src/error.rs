@@ -5,6 +5,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use typeshare::typeshare;
 
+pub const INVALID_AMOUNT: &str = "Invalid amount";
+pub const INVALID_ADDRESS: &str = "Invalid address";
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "snake_case", tag = "type", content = "message")]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -43,10 +46,6 @@ impl std::fmt::Display for SwapperError {
 impl std::error::Error for SwapperError {}
 
 impl SwapperError {
-    /// Standard messages for legacy invalid input errors that now map to compute/transaction failures.
-    pub const INVALID_AMOUNT_MESSAGE: &'static str = "Invalid amount";
-    pub const INVALID_ADDRESS_MESSAGE: &'static str = "Invalid address";
-
     pub fn into_transaction_error(self) -> Self {
         match self {
             SwapperError::ComputeQuoteError(msg) => SwapperError::TransactionError(msg),
@@ -84,13 +83,13 @@ impl From<ClientError> for SwapperError {
 
 impl From<alloy_primitives::AddressError> for SwapperError {
     fn from(err: alloy_primitives::AddressError) -> Self {
-        Self::ComputeQuoteError(format!("Invalid address: {err}"))
+        Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))
     }
 }
 
 impl From<sui_types::AddressParseError> for SwapperError {
     fn from(err: sui_types::AddressParseError) -> Self {
-        Self::ComputeQuoteError(format!("Invalid address: {err}"))
+        Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))
     }
 }
 
@@ -114,24 +113,24 @@ impl From<alloy_sol_types::Error> for SwapperError {
 
 impl From<alloy_primitives::ruint::ParseError> for SwapperError {
     fn from(err: alloy_primitives::ruint::ParseError) -> Self {
-        Self::ComputeQuoteError(format!("Invalid amount: {err}"))
+        Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
     }
 }
 
 impl From<std::num::ParseIntError> for SwapperError {
     fn from(err: std::num::ParseIntError) -> Self {
-        Self::ComputeQuoteError(format!("Invalid amount: {err}"))
+        Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
     }
 }
 
 impl From<num_bigint::ParseBigIntError> for SwapperError {
     fn from(err: num_bigint::ParseBigIntError) -> Self {
-        Self::ComputeQuoteError(format!("Invalid amount: {err}"))
+        Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
     }
 }
 
 impl From<number_formatter::NumberFormatterError> for SwapperError {
     fn from(err: number_formatter::NumberFormatterError) -> Self {
-        Self::ComputeQuoteError(format!("Invalid amount: {err}"))
+        Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
     }
 }

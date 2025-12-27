@@ -2,6 +2,7 @@ use crate::{
     SwapperError,
     alien::RpcProvider,
     client_factory::create_client_with_chain,
+    error::INVALID_ADDRESS,
     eth_address,
     models::{ApprovalType, Permit2ApprovalData},
 };
@@ -53,11 +54,11 @@ where
     let owner: Address = owner
         .as_str()
         .parse()
-        .map_err(|_| SwapperError::TransactionError(format!("Invalid address {owner}")))?;
+        .map_err(|_| SwapperError::TransactionError(format!("{}: {owner}", INVALID_ADDRESS)))?;
     let spender: Address = spender
         .as_str()
         .parse()
-        .map_err(|_| SwapperError::TransactionError(format!("Invalid address {spender}")))?;
+        .map_err(|_| SwapperError::TransactionError(format!("{}: {spender}", INVALID_ADDRESS)))?;
     let allowance_data = IERC20::allowanceCall { owner, spender }.abi_encode();
     let allowance_call = EthereumRpc::Call(TransactionObject::new_call(&token, allowance_data), BlockParameter::Latest);
 
