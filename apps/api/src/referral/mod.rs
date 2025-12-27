@@ -12,6 +12,16 @@ use primitives::{ReferralCode, ReferralLeaderboard, RewardEvent, Rewards};
 use rocket::{State, get, post};
 use tokio::sync::Mutex;
 
+#[get("/rewards/leaderboard")]
+pub async fn get_rewards_leaderboard(client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<ReferralLeaderboard>, ApiError> {
+    Ok(client.lock().await.get_rewards_leaderboard()?.into())
+}
+
+#[get("/rewards/redemptions/<code>")]
+pub async fn get_rewards_redemption_option(code: String, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
+    Ok(client.lock().await.get_rewards_redemption_option(&code)?.into())
+}
+
 #[get("/rewards/<address>")]
 pub async fn get_rewards(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
     Ok(client.lock().await.get_rewards(&address.0)?.into())
@@ -20,11 +30,6 @@ pub async fn get_rewards(address: AddressParam, client: &State<Mutex<RewardsClie
 #[get("/rewards/<address>/events")]
 pub async fn get_rewards_events(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
     Ok(client.lock().await.get_rewards_events(&address.0)?.into())
-}
-
-#[get("/rewards/leaderboard")]
-pub async fn get_rewards_leaderboard(client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<ReferralLeaderboard>, ApiError> {
-    Ok(client.lock().await.get_rewards_leaderboard()?.into())
 }
 
 #[post("/rewards/referrals/create", format = "json", data = "<request>")]
@@ -59,11 +64,6 @@ pub async fn use_referral_code(
         .use_referral_code(&request.auth, &request.data.code, &ip.to_string())
         .await?;
     Ok(true.into())
-}
-
-#[get("/rewards/redemptions/<code>")]
-pub async fn get_rewards_redemption_option(code: String, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
-    Ok(client.lock().await.get_rewards_redemption_option(&code)?.into())
 }
 
 #[post("/rewards/<address>/redeem", format = "json", data = "<request>")]
