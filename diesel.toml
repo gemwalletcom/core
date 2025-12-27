@@ -4,7 +4,6 @@
 [print_schema]
 file = "crates/storage/src/schema.rs"
 custom_type_derives = ["diesel::query_builder::QueryId"]
-patch_file = "crates/storage/src/schema.patch"
 
 [migrations_directory]
 dir = "crates/storage/src/migrations"

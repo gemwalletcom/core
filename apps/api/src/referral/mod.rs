@@ -8,7 +8,7 @@ use crate::auth::Authenticated;
 use crate::params::AddressParam;
 use crate::responders::{ApiError, ApiResponse};
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
-use primitives::{ReferralCode, RewardEvent, Rewards};
+use primitives::{ReferralCode, ReferralLeaderboard, RewardEvent, Rewards};
 use rocket::{State, get, post};
 use tokio::sync::Mutex;
 
@@ -20,6 +20,11 @@ pub async fn get_rewards(address: AddressParam, client: &State<Mutex<RewardsClie
 #[get("/rewards/<address>/events")]
 pub async fn get_rewards_events(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
     Ok(client.lock().await.get_rewards_events(&address.0)?.into())
+}
+
+#[get("/rewards/leaderboard")]
+pub async fn get_rewards_leaderboard(client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<ReferralLeaderboard>, ApiError> {
+    Ok(client.lock().await.get_rewards_leaderboard()?.into())
 }
 
 #[post("/rewards/referrals/create", format = "json", data = "<request>")]

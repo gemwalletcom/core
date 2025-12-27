@@ -200,6 +200,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 fiat::get_ip_address,
                 referral::get_rewards,
                 referral::get_rewards_events,
+                referral::get_rewards_leaderboard,
                 referral::create_referral,
                 referral::use_referral_code,
                 referral::redeem_rewards,

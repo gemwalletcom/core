@@ -1,8 +1,13 @@
 use chrono::{Duration, NaiveDateTime, Utc};
 
+pub fn now() -> NaiveDateTime {
+    Utc::now().naive_utc()
+}
+
 pub trait NaiveDateTimeExt {
     fn is_within_days(&self, days: i64) -> bool;
     fn is_older_than_days(&self, days: i64) -> bool;
+    fn days_ago(&self, days: i64) -> NaiveDateTime;
 }
 
 impl NaiveDateTimeExt for NaiveDateTime {
@@ -12,6 +17,10 @@ impl NaiveDateTimeExt for NaiveDateTime {
 
     fn is_older_than_days(&self, days: i64) -> bool {
         !self.is_within_days(days)
+    }
+
+    fn days_ago(&self, days: i64) -> NaiveDateTime {
+        *self - Duration::days(days)
     }
 }
 

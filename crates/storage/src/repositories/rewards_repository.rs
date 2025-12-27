@@ -5,8 +5,8 @@ use crate::models::{NewRewardEventRow, NewRewardReferralRow, ReferralAttemptRow,
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
-use chrono::{NaiveDateTime, Utc};
-use primitives::{Device, RewardEvent, RewardEventType, Rewards};
+use chrono::NaiveDateTime;
+use primitives::{Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
     !username.eq_ignore_ascii_case(address)
@@ -53,7 +53,8 @@ pub trait RewardsRepository {
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
-    fn count_referrals_since_days(&mut self, referrer_username: &str, days: i64) -> Result<i64, DatabaseError>;
+    fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
+    fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -306,9 +307,36 @@ impl RewardsRepository for DatabaseClient {
         Ok(username.address)
     }
 
-    fn count_referrals_since_days(&mut self, referrer_username: &str, days: i64) -> Result<i64, DatabaseError> {
-        let since = Utc::now().naive_utc() - chrono::Duration::days(days);
+    fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {
         Ok(RewardsStore::count_referrals_since(self, referrer_username, since)?)
+    }
+
+    fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError> {
+        let current = now();
+        let limit = 10;
+
+        let map_entry = |(username, referrals): (String, i64)| ReferralLeader {
+            username,
+            referrals: referrals as i32,
+            points: referrals as i32 * RewardEventType::InviteNew.points(),
+        };
+
+        let daily = RewardsStore::get_top_referrers_since(self, current.days_ago(1), limit)?
+            .into_iter()
+            .map(map_entry)
+            .collect();
+
+        let weekly = RewardsStore::get_top_referrers_since(self, current.days_ago(7), limit)?
+            .into_iter()
+            .map(map_entry)
+            .collect();
+
+        let monthly = RewardsStore::get_top_referrers_since(self, current.days_ago(30), limit)?
+            .into_iter()
+            .map(map_entry)
+            .collect();
+
+        Ok(ReferralLeaderboard { daily, weekly, monthly })
     }
 }
 

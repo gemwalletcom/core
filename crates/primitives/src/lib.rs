@@ -135,7 +135,7 @@ pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollec
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod rewards;
-pub use self::rewards::{ReferralCode, RewardEvent, RewardEventType, RewardLevel, Rewards};
+pub use self::rewards::{ReferralCode, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, RewardLevel, Rewards};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;
@@ -226,7 +226,7 @@ pub use self::secure_preferences::{Preferences, PreferencesExt, SecurePreference
 pub mod signer_error;
 pub use self::signer_error::SignerError;
 pub mod date_ext;
-pub use self::date_ext::NaiveDateTimeExt;
+pub use self::date_ext::{NaiveDateTimeExt, now};
 pub mod number_incrementer;
 pub use self::number_incrementer::NumberIncrementer;
 pub mod chain_signer;

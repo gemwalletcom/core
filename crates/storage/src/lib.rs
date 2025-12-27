@@ -4,6 +4,8 @@ pub mod models;
 pub mod repositories;
 pub mod schema;
 
+diesel::allow_columns_to_appear_in_same_group_by_clause!(schema::transactions_addresses::address, schema::transactions::chain,);
+
 pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},

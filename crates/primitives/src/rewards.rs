@@ -139,3 +139,21 @@ pub struct RedemptionResponse {
     pub result: RedemptionResult,
     pub redemption_id: i32,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralLeader {
+    pub username: String,
+    pub referrals: i32,
+    pub points: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralLeaderboard {
+    pub daily: Vec<ReferralLeader>,
+    pub weekly: Vec<ReferralLeader>,
+    pub monthly: Vec<ReferralLeader>,
+}

@@ -28,6 +28,7 @@ pub(crate) trait RewardsStore {
     fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, DieselError>;
     fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, DieselError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn get_top_referrers_since(&mut self, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64)>, DieselError>;
 }
 
 impl RewardsStore for DatabaseClient {
@@ -130,5 +131,20 @@ impl RewardsStore for DatabaseClient {
             .filter(dsl::created_at.ge(since))
             .count()
             .get_result(&mut self.connection)
+    }
+
+    fn get_top_referrers_since(&mut self, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64)>, DieselError> {
+        use crate::schema::{rewards, rewards_referrals};
+        use diesel::dsl::count_star;
+
+        rewards_referrals::table
+            .inner_join(rewards::table.on(rewards_referrals::referrer_username.eq(rewards::username)))
+            .filter(rewards::is_enabled.eq(true))
+            .filter(rewards_referrals::created_at.ge(since))
+            .group_by(rewards_referrals::referrer_username)
+            .select((rewards_referrals::referrer_username, count_star()))
+            .order_by(count_star().desc())
+            .limit(limit)
+            .load(&mut self.connection)
     }
 }

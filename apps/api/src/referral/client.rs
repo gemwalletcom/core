@@ -1,5 +1,5 @@
 use gem_rewards::{IpSecurityClient, RewardsError};
-use primitives::{ConfigKey, NaiveDateTimeExt, RewardEvent, RewardEventType, Rewards};
+use primitives::{ConfigKey, NaiveDateTimeExt, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
@@ -32,6 +32,10 @@ impl RewardsClient {
 
     pub fn get_rewards_events(&mut self, address: &str) -> Result<Vec<RewardEvent>, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self.database.client()?.rewards().get_reward_events_by_address(address)?)
+    }
+
+    pub fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self.database.client()?.rewards().get_rewards_leaderboard()?)
     }
 
     pub async fn create_referral(&mut self, address: &str, code: &str, ip_address: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
@@ -112,14 +116,16 @@ impl RewardsClient {
             return Err(RewardsError::Referral(format!("Country {} not eligible", country)).into());
         }
 
+        let current = now();
+
         let per_user_daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerUserDaily)?;
-        let per_user_daily_count = client.rewards().count_referrals_since_days(referrer_code, 1)?;
+        let per_user_daily_count = client.rewards().count_referrals_since(referrer_code, current.days_ago(1))?;
         if per_user_daily_count >= per_user_daily_limit {
             return Err(RewardsError::Referral("Referrer daily limit reached".to_string()).into());
         }
 
         let per_user_weekly_limit = client.config().get_config_i64(ConfigKey::ReferralPerUserWeekly)?;
-        let per_user_weekly_count = client.rewards().count_referrals_since_days(referrer_code, 7)?;
+        let per_user_weekly_count = client.rewards().count_referrals_since(referrer_code, current.days_ago(7))?;
         if per_user_weekly_count >= per_user_weekly_limit {
             return Err(RewardsError::Referral("Referrer weekly limit reached".to_string()).into());
         }
