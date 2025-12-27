@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use bigdecimal::{BigDecimal, Zero};
 use gem_hypercore::{
-    core::actions::agent::order::{PlaceOrder, make_market_order},
+    core::actions::agent::order::{Builder, PlaceOrder, make_market_order},
     models::{
         spot::{OrderbookResponse, SpotMarket, SpotMeta},
         token::SpotToken,
@@ -27,6 +27,8 @@ use super::{
 
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
+const BUILDER_ADDRESS: &str = "0x0d9dab1a248f63b0a48965ba8435e4de7497a3dc";
+const BUILDER_FEE_BPS: u32 = 10; // 1bp = 10 tenths of bp
 
 #[derive(Debug)]
 pub struct HyperCoreSpot {
@@ -179,8 +181,18 @@ impl Swapper for HyperCoreSpot {
                 routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
-                    route_data: serde_json::to_string(&make_market_order(asset_index, side.is_buy(), &limit_price, &size_str, false, None))
-                        .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
+                    route_data: serde_json::to_string(&make_market_order(
+                        asset_index,
+                        side.is_buy(),
+                        &limit_price,
+                        &size_str,
+                        false,
+                        Some(Builder {
+                            builder_address: BUILDER_ADDRESS.to_string(),
+                            fee: BUILDER_FEE_BPS,
+                        }),
+                    ))
+                    .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
                     gas_limit: None,
                 }],
             },

@@ -55,10 +55,33 @@ impl HyperCoreSigner {
         if let TransactionInputType::Swap(from_asset, to_asset, _) = &input.input_type
             && is_spot_swap(from_asset.chain(), to_asset.chain())
         {
-            let order: PlaceOrder = serde_json::from_str(&swap_data.data.data)?;
-            let nonce = Self::timestamp_ms();
-            let signature = self.sign_place_order(order, nonce, private_key)?;
-            return Ok(vec![signature]);
+            let hl_order = extract_hyperliquid_order(&input.metadata)?;
+            let agent_key = hex::decode(&hl_order.agent_private_key).map_err(|_| SignerError::InvalidInput("Invalid agent private key".to_string()))?;
+            let builder = get_builder(BUILDER_ADDRESS, hl_order.builder_fee_bps as i32).ok();
+
+            let mut order: PlaceOrder = serde_json::from_str(&swap_data.data.data)?;
+            order.builder = builder.clone();
+
+            let mut timestamp_incrementer = NumberIncrementer::new(Self::timestamp_ms());
+            let mut transactions = Vec::new();
+
+            if hl_order.approve_referral_required {
+                transactions.push(self.sign_set_referrer(private_key, REFERRAL_CODE, timestamp_incrementer.next_val())?);
+            }
+            if hl_order.approve_agent_required {
+                transactions.push(self.sign_approve_agent(&hl_order.agent_address, private_key, timestamp_incrementer.next_val())?);
+            }
+            if hl_order.approve_builder_required {
+                transactions.push(self.sign_approve_builder_address(
+                    private_key,
+                    BUILDER_ADDRESS,
+                    hl_order.builder_fee_bps,
+                    timestamp_incrementer.next_val(),
+                )?);
+            }
+
+            transactions.push(self.sign_place_order(order, timestamp_incrementer.next_val(), &agent_key)?);
+            return Ok(transactions);
         }
 
         let signature = self.sign_typed_action(&swap_data.data.data, private_key)?;
