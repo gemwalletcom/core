@@ -8,6 +8,9 @@ pub enum CacheKey<'a> {
     ReferralWeeklyLimit(&'a str),
     ReferralUseDailyLimit,
 
+    // Username keys
+    UsernameCreationPerIp(&'a str),
+
     // Device keys
     InactiveDeviceObserver(&'a str),
 
@@ -36,6 +39,7 @@ impl CacheKey<'_> {
             Self::ReferralDailyLimit(ip_address) => format!("referral:ip_daily:{}", ip_address),
             Self::ReferralWeeklyLimit(ip_address) => format!("referral:ip_weekly:{}", ip_address),
             Self::ReferralUseDailyLimit => "referral:use_daily".to_string(),
+            Self::UsernameCreationPerIp(ip_address) => format!("username:ip:{}", ip_address),
             Self::InactiveDeviceObserver(device_id) => format!("device:inactive_observer:{}", device_id),
             Self::FetchCoinAddresses(chain, address) => format!("fetch:coin_addresses:{}:{}", chain, address),
             Self::FetchTokenAddresses(chain, address) => format!("fetch:token_addresses:{}:{}", chain, address),
@@ -55,6 +59,7 @@ impl CacheKey<'_> {
             Self::ReferralDailyLimit(_) => SECONDS_PER_DAY,
             Self::ReferralWeeklyLimit(_) => 7 * SECONDS_PER_DAY,
             Self::ReferralUseDailyLimit => SECONDS_PER_DAY,
+            Self::UsernameCreationPerIp(_) => 30 * SECONDS_PER_DAY,
             Self::InactiveDeviceObserver(_) => 30 * SECONDS_PER_DAY,
             Self::FetchCoinAddresses(_, _) => 7 * SECONDS_PER_DAY,
             Self::FetchTokenAddresses(_, _) => 30 * SECONDS_PER_DAY,

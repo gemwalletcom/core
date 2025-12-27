@@ -23,8 +23,17 @@ pub async fn get_rewards_events(address: AddressParam, client: &State<Mutex<Rewa
 }
 
 #[post("/rewards/referrals/create", format = "json", data = "<request>")]
-pub async fn create_referral(request: Authenticated<ReferralCode>, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
-    Ok(client.lock().await.create_referral(&request.auth.address, &request.data.code).await?.into())
+pub async fn create_referral(
+    request: Authenticated<ReferralCode>,
+    ip: std::net::IpAddr,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<Rewards>, ApiError> {
+    Ok(client
+        .lock()
+        .await
+        .create_referral(&request.auth.address, &request.data.code, &ip.to_string())
+        .await?
+        .into())
 }
 
 #[allow(dead_code)]
@@ -56,5 +65,10 @@ pub async fn redeem_rewards(
     if !address.0.eq_ignore_ascii_case(&request.auth.address) {
         return Err(ApiError::BadRequest("Address mismatch".to_string()));
     }
-    Ok(client.lock().await.redeem(&request.auth.address, &request.data.id, request.auth.device.id).await?.into())
+    Ok(client
+        .lock()
+        .await
+        .redeem(&request.auth.address, &request.data.id, request.auth.device.id)
+        .await?
+        .into())
 }

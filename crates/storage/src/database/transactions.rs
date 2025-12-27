@@ -1,4 +1,4 @@
-use crate::{models::*, schema::transactions_addresses, DatabaseClient};
+use crate::{DatabaseClient, models::*, schema::transactions_addresses};
 use chrono::DateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;

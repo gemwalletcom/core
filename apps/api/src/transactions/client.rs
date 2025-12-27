@@ -52,6 +52,11 @@ impl TransactionsClient {
     }
 
     pub fn get_transaction_by_id(&self, id: &TransactionId) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.transactions().get_transaction_by_id(id.chain.as_ref(), &id.hash)?.as_primitive(vec![]))
+        Ok(self
+            .database
+            .client()?
+            .transactions()
+            .get_transaction_by_id(id.chain.as_ref(), &id.hash)?
+            .as_primitive(vec![]))
     }
 }

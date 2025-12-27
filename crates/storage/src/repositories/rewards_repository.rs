@@ -1,11 +1,11 @@
-use crate::database::rewards::{RedemptionUpdate, RewardsStore};
+use crate::database::rewards::RewardsStore;
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, ReferralAttemptRow, RewardRedemptionRow, RewardsRow, UsernameRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, ReferralAttemptRow, RewardsRow, UsernameRow};
+use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
-use chrono::NaiveDateTime;
-use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption};
+use chrono::{NaiveDateTime, Utc};
 use primitives::{Device, RewardEvent, RewardEventType, Rewards};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
@@ -52,12 +52,8 @@ pub trait RewardsRepository {
         reason: &str,
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
-    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
-    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
-    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
-    fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError>;
+    fn count_referrals_since_days(&mut self, referrer_username: &str, days: i64) -> Result<i64, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -72,7 +68,7 @@ impl RewardsRepository for DatabaseClient {
         };
 
         let options = if rewards.is_enabled {
-            RewardsRepository::get_redemption_options(self)?
+            RewardsRedemptionsRepository::get_redemption_options(self)?
         } else {
             vec![]
         };
@@ -305,55 +301,14 @@ impl RewardsRepository for DatabaseClient {
         Ok(SubscriptionsStore::get_first_subscription_date(self, addresses)?)
     }
 
-    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError> {
-        let redemption_option = RewardsStore::get_redemption_option(self, option_id)?;
-        let rewards = RewardsStore::get_rewards(self, username)?;
-
-        if rewards.points < redemption_option.option.points {
-            return Err(DatabaseError::Internal("Not enough points".into()));
-        }
-
-        if redemption_option.option.remaining == Some(0) {
-            return Err(DatabaseError::Internal("Redemption option is no longer available".into()));
-        }
-
-        let redemption_id = RewardsStore::add_redemption(
-            self,
-            username,
-            redemption_option.option.points,
-            NewRewardRedemptionRow {
-                username: username.to_string(),
-                option_id: option_id.to_string(),
-                device_id,
-                status: RedemptionStatus::Pending.as_ref().to_string(),
-            },
-        )?;
-
-        let option = redemption_option.as_primitive();
-        let redemption_row = RewardsStore::get_redemption(self, redemption_id)?;
-        Ok(redemption_row.as_primitive(option))
-    }
-
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {
         let username = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
         Ok(username.address)
     }
 
-    fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError> {
-        Ok(RewardsStore::get_redemption(self, redemption_id)?)
-    }
-
-    fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError> {
-        Ok(RewardsStore::update_redemption(self, redemption_id, updates)?)
-    }
-
-    fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOption>, DatabaseError> {
-        let results = RewardsStore::get_redemption_options(self)?;
-        Ok(results.into_iter().map(|r| r.as_primitive()).collect())
-    }
-
-    fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError> {
-        Ok(RewardsStore::get_redemption_option(self, id)?.as_primitive())
+    fn count_referrals_since_days(&mut self, referrer_username: &str, days: i64) -> Result<i64, DatabaseError> {
+        let since = Utc::now().naive_utc() - chrono::Duration::days(days);
+        Ok(RewardsStore::count_referrals_since(self, referrer_username, since)?)
     }
 }
 

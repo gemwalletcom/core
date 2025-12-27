@@ -940,7 +940,4 @@ diesel::allow_tables_to_appear_in_same_query!(
     usernames,
 );
 
-diesel::allow_columns_to_appear_in_same_group_by_clause!(
-    transactions_addresses::address,
-    transactions::chain,
-);
+diesel::allow_columns_to_appear_in_same_group_by_clause!(transactions_addresses::address, transactions::chain,);

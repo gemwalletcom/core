@@ -7,7 +7,7 @@ pub mod schema;
 pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},
-    rewards::RedemptionUpdate,
+    rewards_redemptions::RedemptionUpdate,
 };
 pub use self::error::DatabaseError;
 pub use self::models::{RewardRedemptionOptionRow, ScanAddressTypeRow};
@@ -18,8 +18,9 @@ pub use self::repositories::{
     migrations_repository::MigrationsRepository, nft_repository::NftRepository, nodes_repository::NodesRepository,
     parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository,
     prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
-    rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository,
-    support_repository::SupportRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository,
+    rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository,
+    subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository, tag_repository::TagRepository,
+    transactions_repository::TransactionsRepository,
 };
 pub use diesel::OptionalExtension;
 

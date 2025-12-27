@@ -34,8 +34,12 @@ impl RewardsClient {
         Ok(self.database.client()?.rewards().get_reward_events_by_address(address)?)
     }
 
-    pub async fn create_referral(&mut self, address: &str, code: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn create_referral(&mut self, address: &str, code: &str, ip_address: &str) -> Result<Rewards, Box<dyn std::error::Error + Send + Sync>> {
+        let limit = self.database.client()?.config().get_config_i64(ConfigKey::UsernameCreationPerIp)?;
+        self.ip_security_client.check_username_creation_limit(ip_address, limit).await?;
+
         let (rewards, event_id) = self.database.client()?.rewards().create_reward(address, code)?;
+        self.ip_security_client.record_username_creation(ip_address).await?;
         self.publish_events(vec![event_id]).await?;
         Ok(rewards)
     }
@@ -67,7 +71,7 @@ impl RewardsClient {
 
         let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address).await?;
 
-        if let Err(err) = self.check_referral_eligibility(ip_address, is_ip_eligible, &country).await {
+        if let Err(err) = self.check_referral_eligibility(code, ip_address, is_ip_eligible, &country).await {
             self.add_referral_attempt(code, &auth.address, &country, auth.device.id, ip_address, &err.to_string())?;
             return Err(err);
         }
@@ -92,6 +96,7 @@ impl RewardsClient {
 
     async fn check_referral_eligibility(
         &mut self,
+        referrer_code: &str,
         ip_address: &str,
         is_ip_eligible: bool,
         country: &str,
@@ -100,15 +105,28 @@ impl RewardsClient {
             return Err(RewardsError::Referral("IP not eligible".to_string()).into());
         }
 
-        let ineligible_countries = self.database.client()?.config().get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?;
+        let mut client = self.database.client()?;
 
+        let ineligible_countries = client.config().get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?;
         if ineligible_countries.contains(&country.to_string()) {
             return Err(RewardsError::Referral(format!("Country {} not eligible", country)).into());
         }
 
-        let daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
-        let weekly_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
-        let global_daily_limit = self.database.client()?.config().get_config_i64(ConfigKey::ReferralUseDailyLimit)?;
+        let per_user_daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerUserDaily)?;
+        let per_user_daily_count = client.rewards().count_referrals_since_days(referrer_code, 1)?;
+        if per_user_daily_count >= per_user_daily_limit {
+            return Err(RewardsError::Referral("Referrer daily limit reached".to_string()).into());
+        }
+
+        let per_user_weekly_limit = client.config().get_config_i64(ConfigKey::ReferralPerUserWeekly)?;
+        let per_user_weekly_count = client.rewards().count_referrals_since_days(referrer_code, 7)?;
+        if per_user_weekly_count >= per_user_weekly_limit {
+            return Err(RewardsError::Referral("Referrer weekly limit reached".to_string()).into());
+        }
+
+        let daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
+        let weekly_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
+        let global_daily_limit = client.config().get_config_i64(ConfigKey::ReferralUseDailyLimit)?;
         self.ip_security_client
             .check_rate_limits(ip_address, daily_limit, weekly_limit, global_daily_limit)
             .await?;
