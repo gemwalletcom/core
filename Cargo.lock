@@ -7504,6 +7504,7 @@ dependencies = [
  "sui-transaction-builder",
  "tokio",
  "tracing",
+ "typeshare",
 ]
 
 [[package]]
