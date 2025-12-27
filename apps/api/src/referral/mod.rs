@@ -7,7 +7,7 @@ pub use redemption_client::RewardsRedemptionClient;
 use crate::auth::Authenticated;
 use crate::params::AddressParam;
 use crate::responders::{ApiError, ApiResponse};
-use primitives::rewards::{RedemptionRequest, RedemptionResult};
+use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{ReferralCode, ReferralLeaderboard, RewardEvent, Rewards};
 use rocket::{State, get, post};
 use tokio::sync::Mutex;
@@ -59,6 +59,11 @@ pub async fn use_referral_code(
         .use_referral_code(&request.auth, &request.data.code, &ip.to_string())
         .await?;
     Ok(true.into())
+}
+
+#[get("/rewards/redemptions/<code>")]
+pub async fn get_rewards_redemption_option(code: String, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
+    Ok(client.lock().await.get_rewards_redemption_option(&code)?.into())
 }
 
 #[post("/rewards/<address>/redeem", format = "json", data = "<request>")]

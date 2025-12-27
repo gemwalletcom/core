@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use gem_rewards::{IpSecurityClient, RewardsError};
+use primitives::rewards::RewardRedemptionOption;
 use primitives::{ConfigKey, NaiveDateTimeExt, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
@@ -38,6 +39,10 @@ impl RewardsClient {
 
     pub fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, Box<dyn Error + Send + Sync>> {
         Ok(self.database.client()?.rewards().get_rewards_leaderboard()?)
+    }
+
+    pub fn get_rewards_redemption_option(&mut self, code: &str) -> Result<RewardRedemptionOption, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.client()?.rewards_redemptions().get_redemption_option(code)?)
     }
 
     pub async fn create_referral(&mut self, address: &str, code: &str, ip_address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
