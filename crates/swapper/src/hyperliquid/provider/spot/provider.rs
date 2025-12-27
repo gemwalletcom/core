@@ -18,6 +18,7 @@ use crate::{
     SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     asset::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_USDC},
+    config::EVM_REFERRAL_ADDRESS,
 };
 
 use super::{
@@ -27,7 +28,6 @@ use super::{
 
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
-const BUILDER_ADDRESS: &str = "0x0d9dab1a248f63b0a48965ba8435e4de7497a3dc";
 const BUILDER_FEE_BPS: u32 = 10; // 1bp = 10 tenths of bp
 
 #[derive(Debug)]
@@ -188,7 +188,7 @@ impl Swapper for HyperCoreSpot {
                         &size_str,
                         false,
                         Some(Builder {
-                            builder_address: BUILDER_ADDRESS.to_string(),
+                            builder_address: EVM_REFERRAL_ADDRESS.to_lowercase().to_string(),
                             fee: BUILDER_FEE_BPS,
                         }),
                     ))
