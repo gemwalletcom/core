@@ -58,24 +58,12 @@ impl RewardsClient {
             return Err(RewardsError::Referral("Referral code does not exist".to_string()).into());
         }
 
-        let first_subscription_date = self.database.client()?.rewards().get_first_subscription_date(vec![auth.address.clone()])?;
+        self.check_referrer_limits(code)?;
 
-        let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
-        let is_new_subscription = first_subscription_date
-            .map(|date| date.is_within_days(REFERRAL_ELIGIBILITY_DAYS))
-            .unwrap_or(true);
-
-        let is_new_user = is_new_device && is_new_subscription;
-
-        let invite_event = if is_new_user {
-            RewardEventType::InviteNew
-        } else {
-            RewardEventType::InviteExisting
-        };
+        let invite_event = self.validate_referral_usage(auth, code)?;
 
         let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address).await?;
-
-        if let Err(err) = self.check_referral_eligibility(code, ip_address, is_ip_eligible, &country).await {
+        if let Err(err) = self.check_ip_eligibility(ip_address, is_ip_eligible, &country).await {
             self.add_referral_attempt(code, &auth.address, &country, auth.device.id, ip_address, &err.to_string())?;
             return Err(err);
         }
@@ -84,7 +72,7 @@ impl RewardsClient {
             .database
             .client()?
             .rewards()
-            .use_referral_code(&auth.address, code, auth.device.id, ip_address, invite_event)
+            .create_referral_use(&auth.address, code, auth.device.id, ip_address, invite_event)
         {
             Ok(ids) => ids,
             Err(err) => {
@@ -98,24 +86,8 @@ impl RewardsClient {
         Ok(())
     }
 
-    async fn check_referral_eligibility(
-        &mut self,
-        referrer_code: &str,
-        ip_address: &str,
-        is_ip_eligible: bool,
-        country: &str,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        if !is_ip_eligible {
-            return Err(RewardsError::Referral("IP not eligible".to_string()).into());
-        }
-
+    fn check_referrer_limits(&mut self, referrer_code: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut client = self.database.client()?;
-
-        let ineligible_countries = client.config().get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?;
-        if ineligible_countries.contains(&country.to_string()) {
-            return Err(RewardsError::Referral(format!("Country {} not eligible", country)).into());
-        }
-
         let current = now();
 
         let per_user_daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerUserDaily)?;
@@ -128,6 +100,39 @@ impl RewardsClient {
         let per_user_weekly_count = client.rewards().count_referrals_since(referrer_code, current.days_ago(7))?;
         if per_user_weekly_count >= per_user_weekly_limit {
             return Err(RewardsError::Referral("Referrer weekly limit reached".to_string()).into());
+        }
+
+        Ok(())
+    }
+
+    fn validate_referral_usage(&mut self, auth: &VerifiedAuth, code: &str) -> Result<RewardEventType, Box<dyn std::error::Error + Send + Sync>> {
+        let first_subscription_date = self.database.client()?.rewards().get_first_subscription_date(vec![auth.address.clone()])?;
+
+        let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
+        let is_new_subscription = first_subscription_date
+            .map(|date| date.is_within_days(REFERRAL_ELIGIBILITY_DAYS))
+            .unwrap_or(true);
+        let is_new_user = is_new_device && is_new_subscription;
+
+        self.database.client()?.rewards().validate_referral_use(&auth.address, code, auth.device.id)?;
+
+        Ok(if is_new_user {
+            RewardEventType::InviteNew
+        } else {
+            RewardEventType::InviteExisting
+        })
+    }
+
+    async fn check_ip_eligibility(&mut self, ip_address: &str, is_ip_eligible: bool, country: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        if !is_ip_eligible {
+            return Err(RewardsError::Referral("IP not eligible".to_string()).into());
+        }
+
+        let mut client = self.database.client()?;
+
+        let ineligible_countries = client.config().get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?;
+        if ineligible_countries.contains(&country.to_string()) {
+            return Err(RewardsError::Referral(format!("Country {} not eligible", country)).into());
         }
 
         let daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;

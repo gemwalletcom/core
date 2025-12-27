@@ -34,7 +34,8 @@ pub trait RewardsRepository {
     fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
-    fn use_referral_code(
+    fn validate_referral_use(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<(), DatabaseError>;
+    fn create_referral_use(
         &mut self,
         address: &str,
         referral_code: &str,
@@ -184,14 +185,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(RewardsStore::get_rewards(self, code).is_ok())
     }
 
-    fn use_referral_code(
-        &mut self,
-        address: &str,
-        referral_code: &str,
-        device_id: i32,
-        ip_address: &str,
-        invite_event: RewardEventType,
-    ) -> Result<Vec<i32>, DatabaseError> {
+    fn validate_referral_use(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<(), DatabaseError> {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
         let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
 
@@ -199,7 +193,7 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Internal("Rewards are not enabled for this referral code".into()));
         }
 
-        let referred = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
+        if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
             let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
             let rewards = RewardsStore::get_rewards(self, &username.username)?;
             if !rewards.is_enabled {
@@ -208,7 +202,34 @@ impl RewardsRepository for DatabaseClient {
             if rewards.referrer_username.is_some() {
                 return Err(DatabaseError::Internal("Already used a referral code".into()));
             }
-            username
+            if referrer.username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
+                return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
+            }
+        }
+
+        if SubscriptionsStore::get_device_subscription_address_exists(self, device_id, &referrer.address)? {
+            return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
+        }
+
+        if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
+            return Err(DatabaseError::Internal("Device already used a referral code".into()));
+        }
+
+        Ok(())
+    }
+
+    fn create_referral_use(
+        &mut self,
+        address: &str,
+        referral_code: &str,
+        device_id: i32,
+        ip_address: &str,
+        invite_event: RewardEventType,
+    ) -> Result<Vec<i32>, DatabaseError> {
+        let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
+
+        let referred = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
+            UsernamesStore::get_username(self, UsernameLookup::Address(address))?
         } else {
             let username = UsernamesStore::create_username(
                 self,
@@ -231,18 +252,6 @@ impl RewardsRepository for DatabaseClient {
             )?;
             username
         };
-
-        if referrer.username == referred.username || referrer.address.eq_ignore_ascii_case(&referred.address) {
-            return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
-        }
-
-        if SubscriptionsStore::get_device_subscription_address_exists(self, device_id, &referrer.address)? {
-            return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
-        }
-
-        if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
-            return Err(DatabaseError::Internal("Device already used a referral code".into()));
-        }
 
         RewardsStore::add_referral(
             self,
