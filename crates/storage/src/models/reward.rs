@@ -196,7 +196,6 @@ impl RedemptionOptionFull {
 pub struct ReferralAttemptRow {
     pub referrer_username: String,
     pub referred_address: String,
-    pub country_code: String,
     pub device_id: i32,
     pub referred_ip_address: String,
     pub reason: String,

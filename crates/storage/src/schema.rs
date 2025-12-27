@@ -656,8 +656,6 @@ diesel::table! {
         referrer_username -> Varchar,
         #[max_length = 256]
         referred_address -> Varchar,
-        #[max_length = 2]
-        country_code -> Varchar,
         device_id -> Int4,
         #[max_length = 45]
         referred_ip_address -> Varchar,

@@ -47,7 +47,6 @@ pub trait RewardsRepository {
         &mut self,
         referrer_username: &str,
         referred_address: &str,
-        country_code: &str,
         device_id: i32,
         ip_address: &str,
         reason: &str,
@@ -288,7 +287,6 @@ impl RewardsRepository for DatabaseClient {
         &mut self,
         referrer_username: &str,
         referred_address: &str,
-        country_code: &str,
         device_id: i32,
         ip_address: &str,
         reason: &str,
@@ -298,7 +296,6 @@ impl RewardsRepository for DatabaseClient {
             ReferralAttemptRow {
                 referrer_username: referrer_username.to_string(),
                 referred_address: referred_address.to_string(),
-                country_code: country_code.to_string(),
                 device_id,
                 referred_ip_address: ip_address.to_string(),
                 reason: reason.to_string(),
