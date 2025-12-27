@@ -17,19 +17,19 @@ pub async fn get_rewards_leaderboard(client: &State<Mutex<RewardsClient>>) -> Re
     Ok(client.lock().await.get_rewards_leaderboard()?.into())
 }
 
-#[get("/rewards/redemptions/<code>")]
+#[get("/rewards/redemptions/<code>", rank = 1)]
 pub async fn get_rewards_redemption_option(code: String, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
     Ok(client.lock().await.get_rewards_redemption_option(&code)?.into())
-}
-
-#[get("/rewards/<address>")]
-pub async fn get_rewards(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
-    Ok(client.lock().await.get_rewards(&address.0)?.into())
 }
 
 #[get("/rewards/<address>/events")]
 pub async fn get_rewards_events(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
     Ok(client.lock().await.get_rewards_events(&address.0)?.into())
+}
+
+#[get("/rewards/<address>")]
+pub async fn get_rewards(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
+    Ok(client.lock().await.get_rewards(&address.0)?.into())
 }
 
 #[post("/rewards/referrals/create", format = "json", data = "<request>")]
