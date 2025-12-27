@@ -33,7 +33,7 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
                 })
             }
             TransactionInputType::Swap(from_asset, to_asset, _) => {
-                if is_spot_swap(from_asset.chain(), to_asset.chain()) {
+                let order = if is_spot_swap(from_asset.chain(), to_asset.chain()) {
                     let cache = HyperCoreCache::new(self.preferences.clone(), self.config.clone());
 
                     let (agent_required, referral_required, builder_required, _, agent_address, agent_private_key) = get_approvals_and_credentials(
@@ -47,23 +47,21 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
                     )
                     .await?;
 
-                    let order = Some(HyperliquidOrder {
+                    Some(HyperliquidOrder {
                         approve_agent_required: agent_required,
                         approve_referral_required: referral_required,
                         approve_builder_required: builder_required,
                         builder_fee_bps: self.config.max_builder_fee_bps,
                         agent_address,
                         agent_private_key,
-                    });
+                    })
+                } else {
+                    None
+                };
 
-                    return Ok(TransactionLoadData {
-                        fee: TransactionFee::new_from_fee(BigInt::from(0)),
-                        metadata: TransactionLoadMetadata::Hyperliquid { order },
-                    });
-                }
                 Ok(TransactionLoadData {
                     fee: TransactionFee::new_from_fee(BigInt::from(0)),
-                    metadata: TransactionLoadMetadata::Hyperliquid { order: None },
+                    metadata: TransactionLoadMetadata::Hyperliquid { order },
                 })
             }
             TransactionInputType::Perpetual(_, perpetual_type) => {
