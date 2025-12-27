@@ -7466,6 +7466,7 @@ dependencies = [
  "base64",
  "bcs",
  "bigdecimal",
+ "borsh",
  "bs58",
  "chrono",
  "futures",

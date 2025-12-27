@@ -34,6 +34,7 @@ number_formatter = { path = "../number_formatter" }
 reqwest = { workspace = true, optional = true }
 
 bcs.workspace = true
+borsh.workspace = true
 sui-types = { workspace = true }
 sui-transaction-builder = { workspace = true }
 
