@@ -6,6 +6,7 @@ use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepos
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
+use primitives::rewards::RewardRedemptionType;
 use primitives::{Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
@@ -69,7 +70,8 @@ impl RewardsRepository for DatabaseClient {
         };
 
         let options = if rewards.is_enabled {
-            RewardsRedemptionsRepository::get_redemption_options(self)?
+            let types: Vec<_> = vec![RewardRedemptionType::Asset].iter().map(|t| t.as_ref().to_string()).collect();
+            RewardsRedemptionsRepository::get_redemption_options(self, &types)?
         } else {
             vec![]
         };

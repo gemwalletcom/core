@@ -23,6 +23,7 @@ impl RewardLevel {
 #[strum(serialize_all = "camelCase")]
 pub enum RewardRedemptionType {
     Asset,
+    GiftAsset,
 }
 
 impl RewardRedemptionType {
