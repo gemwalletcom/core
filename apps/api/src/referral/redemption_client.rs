@@ -5,8 +5,8 @@ use storage::Database;
 use streamer::{StreamProducer, StreamProducerQueue};
 
 pub struct RewardsRedemptionClient {
-    database: Database,
-    stream_producer: StreamProducer,
+    pub database: Database,
+    pub stream_producer: StreamProducer,
 }
 
 impl RewardsRedemptionClient {

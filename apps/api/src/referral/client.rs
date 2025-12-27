@@ -6,6 +6,9 @@ use storage::Database;
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 use crate::auth::VerifiedAuth;
+use crate::referral::RewardsRedemptionClient;
+
+const GIFT_CODE_PREFIX: &str = "GIFT-";
 
 const REFERRAL_ELIGIBILITY_DAYS: i64 = 7;
 
@@ -56,6 +59,10 @@ impl RewardsClient {
     }
 
     pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if code.starts_with(GIFT_CODE_PREFIX) && code.len() >= 16 {
+            return self.process_gift_code(auth, code).await;
+        }
+
         if !self.database.client()?.rewards().referral_code_exists(code)? {
             return Err(RewardsError::Referral("Referral code does not exist".to_string()).into());
         }
@@ -70,6 +77,12 @@ impl RewardsClient {
                 Err(e)
             }
         }
+    }
+
+    async fn process_gift_code(&mut self, auth: &VerifiedAuth, code: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let mut redemption_client = RewardsRedemptionClient::new(self.database.clone(), self.stream_producer.clone());
+        redemption_client.redeem(&auth.address, code, auth.device.id).await?;
+        Ok(())
     }
 
     async fn process_referral(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
