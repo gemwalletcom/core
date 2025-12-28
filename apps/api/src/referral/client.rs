@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use gem_rewards::{IpSecurityClient, RewardsError};
+use gem_rewards::{IpCheckConfig, IpSecurityClient, RewardsError};
 use primitives::rewards::RewardRedemptionOption;
 use primitives::{ConfigKey, NaiveDateTimeExt, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 use storage::Database;
@@ -81,7 +81,13 @@ impl RewardsClient {
         self.check_referrer_limits(code)?;
         let invite_event = self.validate_referral_usage(auth, code)?;
 
-        let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address).await?;
+        let mut client = self.database.client()?;
+        let ip_check_config = IpCheckConfig {
+            confidence_score_threshold: client.config().get_config_i64(ConfigKey::ReferralIpConfidenceScoreThreshold)?,
+            ineligible_usage_types: client.config().get_config_vec_string(ConfigKey::ReferralIpIneligibleUsageTypes)?,
+        };
+
+        let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address, &ip_check_config).await?;
 
         self.check_ip_eligibility(ip_address, is_ip_eligible, &country).await?;
         self.database

@@ -19,6 +19,10 @@ pub enum ConfigKey {
     RedemptionPerUserDaily,
     RedemptionPerUserWeekly,
 
+    // Referral IP
+    ReferralIpConfidenceScoreThreshold,
+    ReferralIpIneligibleUsageTypes,
+
     // Fiat
     FiatValidateSubscription,
 
@@ -56,6 +60,8 @@ impl ConfigKey {
             Self::UsernameCreationPerIp => "10",
             Self::RedemptionPerUserDaily => "1",
             Self::RedemptionPerUserWeekly => "3",
+            Self::ReferralIpConfidenceScoreThreshold => "10",
+            Self::ReferralIpIneligibleUsageTypes => r#"["Data Center", "Web Hosting", "Transit", "Content Delivery Network"]"#,
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
             Self::AlerterPriceIncreasePercent => "8.0",
