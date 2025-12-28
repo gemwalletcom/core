@@ -14,6 +14,7 @@ pub struct RewardsRow {
     pub points: i32,
     pub referrer_username: Option<String>,
     pub referral_count: i32,
+    pub device_id: i32,
 }
 
 #[derive(Debug, Queryable, Selectable, Clone)]

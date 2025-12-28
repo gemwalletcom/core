@@ -32,7 +32,7 @@ pub trait RewardsRepository {
     fn get_reward_events_by_address(&mut self, address: &str) -> Result<Vec<RewardEvent>, DatabaseError>;
     fn get_reward_event(&mut self, event_id: i32) -> Result<RewardEvent, DatabaseError>;
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
-    fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError>;
+    fn create_reward(&mut self, address: &str, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
     fn validate_referral_use(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<(), DatabaseError>;
@@ -103,7 +103,7 @@ impl RewardsRepository for DatabaseClient {
         self.get_devices_by_address(&username.address)
     }
 
-    fn create_reward(&mut self, address: &str, username: &str) -> Result<(Rewards, i32), DatabaseError> {
+    fn create_reward(&mut self, address: &str, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError> {
         validate_username(username)?;
 
         if UsernamesStore::username_exists(self, UsernameLookup::Username(username))? {
@@ -138,6 +138,7 @@ impl RewardsRepository for DatabaseClient {
                     points: 0,
                     referrer_username: None,
                     referral_count: 0,
+                    device_id,
                 },
             )?;
         }
@@ -249,6 +250,7 @@ impl RewardsRepository for DatabaseClient {
                     points: 0,
                     referrer_username: None,
                     referral_count: 0,
+                    device_id,
                 },
             )?;
             username

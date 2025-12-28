@@ -19,6 +19,7 @@ CREATE TABLE rewards (
     points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
     referrer_username VARCHAR(64) REFERENCES usernames(username) ON DELETE SET NULL ON UPDATE CASCADE,
     referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
+    device_id INTEGER NOT NULL REFERENCES devices(id),
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );
