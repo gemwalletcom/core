@@ -33,13 +33,13 @@ const BLOCKED_USAGE_KEYWORDS: [&str; 4] = ["Data Center", "Web Hosting", "Transi
 
 impl AbuseIPDBData {
     pub fn is_suspicious(&self) -> bool {
-        if self.abuse_confidence_score >= 10 {
+        if self.abuse_confidence_score > 10 {
             return true;
         }
         if self.is_tor {
             return true;
         }
-        if self.total_reports > 0 {
+        if self.total_reports > 5 {
             return true;
         }
         if let Some(usage_type) = &self.usage_type {
