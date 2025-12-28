@@ -16,13 +16,13 @@ fn has_custom_username(username: &str, address: &str) -> bool {
 fn validate_username(username: &str) -> Result<(), DatabaseError> {
     let len = username.len();
     if len < 4 {
-        return Err(DatabaseError::Internal("Username must be at least 4 characters".into()));
+        return Err(DatabaseError::Error("Username must be at least 4 characters".into()));
     }
     if len > 16 {
-        return Err(DatabaseError::Internal("Username must be at most 16 characters".into()));
+        return Err(DatabaseError::Error("Username must be at most 16 characters".into()));
     }
     if !username.chars().all(|c| c.is_ascii_alphanumeric()) {
-        return Err(DatabaseError::Internal("Username must contain only letters and digits".into()));
+        return Err(DatabaseError::Error("Username must contain only letters and digits".into()));
     }
     Ok(())
 }
@@ -107,17 +107,17 @@ impl RewardsRepository for DatabaseClient {
         validate_username(username)?;
 
         if UsernamesStore::username_exists(self, UsernameLookup::Username(username))? {
-            return Err(DatabaseError::Internal("Username already taken".into()));
+            return Err(DatabaseError::Error("Username already taken".into()));
         }
 
         if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
             let existing = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
             if has_custom_username(&existing.username, &existing.address) {
-                return Err(DatabaseError::Internal("Address already has a username".into()));
+                return Err(DatabaseError::Error("Address already has a username".into()));
             }
             let existing_rewards = RewardsStore::get_rewards(self, &existing.username)?;
             if !existing_rewards.is_enabled {
-                return Err(DatabaseError::Internal("Rewards are not enabled for this user".into()));
+                return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
             }
             UsernamesStore::update_username(self, address, username)?;
         } else {
@@ -161,20 +161,20 @@ impl RewardsRepository for DatabaseClient {
         let existing = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
 
         if !has_custom_username(&existing.username, &existing.address) {
-            return Err(DatabaseError::Internal("No custom username to change".into()));
+            return Err(DatabaseError::Error("No custom username to change".into()));
         }
 
         if existing.username.eq_ignore_ascii_case(new_username) {
-            return Err(DatabaseError::Internal("New username is the same as current".into()));
+            return Err(DatabaseError::Error("New username is the same as current".into()));
         }
 
         if UsernamesStore::username_exists(self, UsernameLookup::Username(new_username))? {
-            return Err(DatabaseError::Internal("Username already taken".into()));
+            return Err(DatabaseError::Error("Username already taken".into()));
         }
 
         let rewards = RewardsStore::get_rewards(self, &existing.username)?;
         if !rewards.is_enabled {
-            return Err(DatabaseError::Internal("Rewards are not enabled for this user".into()));
+            return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
         }
 
         UsernamesStore::change_username(self, &existing.username, new_username)?;
@@ -191,29 +191,29 @@ impl RewardsRepository for DatabaseClient {
         let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
 
         if !referrer_rewards.is_enabled {
-            return Err(DatabaseError::Internal("Rewards are not enabled for this referral code".into()));
+            return Err(DatabaseError::Error(format!("Rewards are not enabled for referral code: {}", referral_code)));
         }
 
         if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
             let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
             let rewards = RewardsStore::get_rewards(self, &username.username)?;
             if !rewards.is_enabled {
-                return Err(DatabaseError::Internal("Rewards are not enabled for this user".into()));
+                return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
             }
             if rewards.referrer_username.is_some() {
-                return Err(DatabaseError::Internal("Already used a referral code".into()));
+                return Err(DatabaseError::Error("Already used a referral code".into()));
             }
             if referrer.username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
-                return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
+                return Err(DatabaseError::Error("Cannot use your own referral code".into()));
             }
         }
 
         if SubscriptionsStore::get_device_subscription_address_exists(self, device_id, &referrer.address)? {
-            return Err(DatabaseError::Internal("Cannot use your own referral code".into()));
+            return Err(DatabaseError::Error("Cannot use your own referral code".into()));
         }
 
         if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
-            return Err(DatabaseError::Internal("Device already used a referral code".into()));
+            return Err(DatabaseError::Error("Device already used a referral code".into()));
         }
 
         Ok(())

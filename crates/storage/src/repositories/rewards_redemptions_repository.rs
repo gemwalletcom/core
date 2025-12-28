@@ -20,11 +20,11 @@ impl RewardsRedemptionsRepository for DatabaseClient {
         let rewards = RewardsStore::get_rewards(self, username)?;
 
         if rewards.points < redemption_option.option.points {
-            return Err(DatabaseError::Internal("Not enough points".into()));
+            return Err(DatabaseError::Error("Not enough points".into()));
         }
 
         if redemption_option.option.remaining == Some(0) {
-            return Err(DatabaseError::Internal("Redemption option is no longer available".into()));
+            return Err(DatabaseError::Error("Redemption option is no longer available".into()));
         }
 
         let redemption_id = RewardsRedemptionsStore::add_redemption(
