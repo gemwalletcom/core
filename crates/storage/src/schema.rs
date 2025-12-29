@@ -574,7 +574,6 @@ diesel::table! {
         #[max_length = 64]
         referrer_username -> Nullable<Varchar>,
         referral_count -> Int4,
-        device_id -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -677,6 +676,35 @@ diesel::table! {
         #[max_length = 45]
         referred_ip_address -> Varchar,
         updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    rewards_risk_signals (id) {
+        id -> Int4,
+        #[max_length = 64]
+        fingerprint -> Varchar,
+        #[max_length = 64]
+        username -> Varchar,
+        device_id -> Int4,
+        #[max_length = 16]
+        device_platform -> Varchar,
+        #[max_length = 32]
+        device_os -> Varchar,
+        #[max_length = 64]
+        device_model -> Varchar,
+        #[max_length = 16]
+        device_locale -> Varchar,
+        #[max_length = 45]
+        ip_address -> Varchar,
+        #[max_length = 2]
+        ip_country_code -> Varchar,
+        #[max_length = 64]
+        ip_usage_type -> Varchar,
+        #[max_length = 128]
+        ip_isp -> Varchar,
+        ip_abuse_score -> Int4,
         created_at -> Timestamp,
     }
 }
@@ -870,6 +898,8 @@ diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id))
 diesel::joinable!(rewards_referral_attempts -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));
+diesel::joinable!(rewards_risk_signals -> devices (device_id));
+diesel::joinable!(rewards_risk_signals -> rewards (username));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
@@ -927,6 +957,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     rewards_redemptions_types,
     rewards_referral_attempts,
     rewards_referrals,
+    rewards_risk_signals,
     scan_addresses,
     scan_addresses_types,
     subscriptions,

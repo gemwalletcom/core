@@ -3420,6 +3420,7 @@ dependencies = [
  "alloy-primitives",
  "cacher",
  "chain_traits",
+ "chrono",
  "gem_client",
  "gem_evm",
  "num-traits",
@@ -3427,6 +3428,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "sha2",
  "storage",
  "tokio",
 ]

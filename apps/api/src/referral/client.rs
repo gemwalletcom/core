@@ -1,9 +1,9 @@
 use std::error::Error;
 
-use gem_rewards::{IpCheckConfig, IpSecurityClient, RewardsError};
+use gem_rewards::{IpCheckConfig, IpSecurityClient, RewardsError, RiskScoreConfig, RiskScoringInput, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
 use primitives::{ConfigKey, NaiveDateTimeExt, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
-use storage::Database;
+use storage::{Database, RiskSignalsRepository};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 use crate::auth::VerifiedAuth;
@@ -67,34 +67,105 @@ impl RewardsClient {
 
         match self.process_referral(auth, code, ip_address).await {
             Ok(()) => Ok(()),
-            Err(e) => {
+            Err((risk_signal_id, e)) => {
                 self.database
                     .client()?
                     .rewards()
-                    .add_referral_attempt(code, &auth.address, auth.device.id, ip_address, &e.to_string())?;
+                    .add_referral_attempt(code, &auth.address, auth.device.id, risk_signal_id, &e.to_string())?;
                 Err(e)
             }
         }
     }
 
-    async fn process_referral(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.check_referrer_limits(code)?;
-        let invite_event = self.validate_referral_usage(auth, code)?;
+    async fn process_referral(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), (Option<i32>, Box<dyn Error + Send + Sync>)> {
+        self.check_referrer_limits(code).map_err(|e| (None, e))?;
+        let invite_event = self.validate_referral_usage(auth, code).map_err(|e| (None, e))?;
 
-        let mut client = self.database.client()?;
+        let mut client = self.database.client().map_err(|e| (None, e.into()))?;
         let ip_check_config = IpCheckConfig {
-            confidence_score_threshold: client.config().get_config_i64(ConfigKey::ReferralIpConfidenceScoreThreshold)?,
-            ineligible_usage_types: client.config().get_config_vec_string(ConfigKey::ReferralIpIneligibleUsageTypes)?,
+            confidence_score_threshold: client
+                .config()
+                .get_config_i64(ConfigKey::ReferralIpConfidenceScoreThreshold)
+                .map_err(|e| (None, e.into()))?,
+            ineligible_usage_types: client
+                .config()
+                .get_config_vec_string(ConfigKey::ReferralIpIneligibleUsageTypes)
+                .map_err(|e| (None, e.into()))?,
         };
 
-        let (is_ip_eligible, country) = self.ip_security_client.check_eligibility(ip_address, &ip_check_config).await?;
+        let ip_result = self.ip_security_client.check_ip(ip_address, &ip_check_config).await.map_err(|e| (None, e))?;
 
-        self.check_ip_eligibility(ip_address, is_ip_eligible, &country).await?;
-        self.database
-            .client()?
+        let is_ip_eligible = !ip_result.is_suspicious(&ip_check_config);
+        Self::check_ip_eligibility(&mut client, ip_address, is_ip_eligible, &ip_result.country_code).map_err(|e| (None, e))?;
+
+        let risk_score_config = RiskScoreConfig {
+            fingerprint_match_score: client
+                .config()
+                .get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch)
+                .map_err(|e| (None, e.into()))? as i32,
+            ip_reuse_score: client
+                .config()
+                .get_config_i64(ConfigKey::ReferralRiskScoreIpReuse)
+                .map_err(|e| (None, e.into()))? as i32,
+            isp_model_match_score: client
+                .config()
+                .get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch)
+                .map_err(|e| (None, e.into()))? as i32,
+            device_id_reuse_score: client
+                .config()
+                .get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse)
+                .map_err(|e| (None, e.into()))? as i32,
+            max_allowed_score: client
+                .config()
+                .get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed)
+                .map_err(|e| (None, e.into()))? as i32,
+        };
+
+        let lookback_days = client
+            .config()
+            .get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)
+            .map_err(|e| (None, e.into()))?;
+        let since = now().days_ago(lookback_days);
+
+        let scoring_input = RiskScoringInput {
+            username: auth.address.clone(),
+            device_id: auth.device.id,
+            device_platform: auth.device.platform.clone(),
+            device_os: auth.device.os.clone().unwrap_or_default(),
+            device_model: auth.device.model.clone().unwrap_or_default(),
+            device_locale: auth.device.locale.clone(),
+            ip_result,
+        };
+
+        let signal_input = scoring_input.to_signal_input();
+        let fingerprint = signal_input.generate_fingerprint();
+        let existing_signals = client
+            .get_matching_risk_signals(
+                &fingerprint,
+                &signal_input.ip_address,
+                &signal_input.ip_isp,
+                &signal_input.device_model,
+                signal_input.device_id,
+                since,
+            )
+            .map_err(|e| (None, e.into()))?;
+
+        let risk_result = evaluate_risk(&scoring_input, &existing_signals, &risk_score_config);
+        let risk_signal_id = client.add_risk_signal(risk_result.signal).map_err(|e| (None, e.into()))?;
+
+        if !risk_result.score_result.is_allowed {
+            return Err((
+                Some(risk_signal_id),
+                RewardsError::Referral("Unable to verify referral eligibility".to_string()).into(),
+            ));
+        }
+
+        let event_ids = client
             .rewards()
-            .create_referral_use(&auth.address, code, auth.device.id, ip_address, invite_event)?;
-        self.ip_security_client.record_referral_usage(ip_address).await?;
+            .create_referral_use(&auth.address, code, auth.device.id, risk_signal_id, invite_event)
+            .map_err(|e| (Some(risk_signal_id), e.into()))?;
+
+        self.publish_events(event_ids).await.map_err(|e| (Some(risk_signal_id), e))?;
 
         Ok(())
     }
@@ -131,12 +202,15 @@ impl RewardsClient {
         })
     }
 
-    async fn check_ip_eligibility(&mut self, ip_address: &str, is_ip_eligible: bool, country: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+    fn check_ip_eligibility(
+        client: &mut storage::DatabaseClient,
+        ip_address: &str,
+        is_ip_eligible: bool,
+        country: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
         if !is_ip_eligible {
             return Err(RewardsError::Referral(format!("IP not eligible, country: {}", country)).into());
         }
-
-        let mut client = self.database.client()?;
 
         if client
             .config()
@@ -146,12 +220,22 @@ impl RewardsClient {
             return Err(RewardsError::Referral(format!("Country not eligible: {}", country)).into());
         }
 
-        let daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
-        let weekly_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
+        let current = now();
+
         let global_daily_limit = client.config().get_config_i64(ConfigKey::ReferralUseDailyLimit)?;
-        self.ip_security_client
-            .check_rate_limits(ip_address, daily_limit, weekly_limit, global_daily_limit)
-            .await?;
+        if client.count_signals_since(None, current.days_ago(1))? >= global_daily_limit {
+            return Err(RewardsError::Referral("Global daily limit exceeded".to_string()).into());
+        }
+
+        let daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpDaily)?;
+        if client.count_signals_since(Some(ip_address), current.days_ago(1))? >= daily_limit {
+            return Err(RewardsError::Referral("Daily limit exceeded".to_string()).into());
+        }
+
+        let weekly_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpWeekly)?;
+        if client.count_signals_since(Some(ip_address), current.days_ago(7))? >= weekly_limit {
+            return Err(RewardsError::Referral("Weekly limit exceeded".to_string()).into());
+        }
 
         Ok(())
     }

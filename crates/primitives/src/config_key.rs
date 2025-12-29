@@ -23,6 +23,14 @@ pub enum ConfigKey {
     ReferralIpConfidenceScoreThreshold,
     ReferralIpIneligibleUsageTypes,
 
+    // Referral Risk Scoring
+    ReferralRiskScoreFingerprintMatch,
+    ReferralRiskScoreIpReuse,
+    ReferralRiskScoreIspModelMatch,
+    ReferralRiskScoreDeviceIdReuse,
+    ReferralRiskScoreMaxAllowed,
+    ReferralRiskScoreLookbackDays,
+
     // Fiat
     FiatValidateSubscription,
 
@@ -62,6 +70,12 @@ impl ConfigKey {
             Self::RedemptionPerUserWeekly => "3",
             Self::ReferralIpConfidenceScoreThreshold => "10",
             Self::ReferralIpIneligibleUsageTypes => r#"["Data Center", "Web Hosting", "Transit", "Content Delivery Network"]"#,
+            Self::ReferralRiskScoreFingerprintMatch => "100",
+            Self::ReferralRiskScoreIpReuse => "50",
+            Self::ReferralRiskScoreIspModelMatch => "30",
+            Self::ReferralRiskScoreDeviceIdReuse => "100",
+            Self::ReferralRiskScoreMaxAllowed => "50",
+            Self::ReferralRiskScoreLookbackDays => "90",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
             Self::AlerterPriceIncreasePercent => "8.0",

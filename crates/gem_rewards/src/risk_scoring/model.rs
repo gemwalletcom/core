@@ -1,0 +1,89 @@
+use sha2::{Digest, Sha256};
+
+#[derive(Debug, Clone)]
+pub struct RiskScoreConfig {
+    pub fingerprint_match_score: i32,
+    pub ip_reuse_score: i32,
+    pub isp_model_match_score: i32,
+    pub device_id_reuse_score: i32,
+    pub max_allowed_score: i32,
+}
+
+impl Default for RiskScoreConfig {
+    fn default() -> Self {
+        Self {
+            fingerprint_match_score: 100,
+            ip_reuse_score: 50,
+            isp_model_match_score: 30,
+            device_id_reuse_score: 100,
+            max_allowed_score: 50,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RiskSignalInput {
+    pub username: String,
+    pub device_id: i32,
+    pub device_platform: String,
+    pub device_os: String,
+    pub device_model: String,
+    pub device_locale: String,
+    pub ip_address: String,
+    pub ip_country_code: String,
+    pub ip_usage_type: String,
+    pub ip_isp: String,
+    pub ip_abuse_score: i32,
+}
+
+impl RiskSignalInput {
+    pub fn generate_fingerprint(&self) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(&self.device_model);
+        hasher.update(&self.device_locale);
+        hasher.update(&self.ip_isp);
+        hasher.update(&self.ip_country_code);
+        format!("{:x}", hasher.finalize())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RiskScoreResult {
+    pub score: i32,
+    pub is_allowed: bool,
+    pub fingerprint: String,
+    pub breakdown: RiskScoreBreakdown,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct RiskScoreBreakdown {
+    pub abuse_score: i32,
+    pub fingerprint_match_score: i32,
+    pub ip_reuse_score: i32,
+    pub isp_model_match_score: i32,
+    pub device_id_reuse_score: i32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fingerprint_generation() {
+        let input = RiskSignalInput {
+            username: "user1".to_string(),
+            device_id: 1,
+            device_platform: "iOS".to_string(),
+            device_os: "18.0".to_string(),
+            device_model: "iPhone15,2".to_string(),
+            device_locale: "en-US".to_string(),
+            ip_address: "192.168.1.1".to_string(),
+            ip_country_code: "US".to_string(),
+            ip_usage_type: "Fixed Line ISP".to_string(),
+            ip_isp: "Comcast".to_string(),
+            ip_abuse_score: 0,
+        };
+        let fingerprint = input.generate_fingerprint();
+        assert_eq!(fingerprint.len(), 64);
+    }
+}

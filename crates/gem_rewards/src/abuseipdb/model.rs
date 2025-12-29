@@ -18,6 +18,8 @@ pub struct AbuseIPDBData {
     pub abuse_confidence_score: i64,
     pub country_code: String,
     pub usage_type: Option<String>,
+    pub isp: Option<String>,
+    pub domain: Option<String>,
     pub is_tor: bool,
     pub total_reports: i64,
 }
@@ -36,6 +38,8 @@ impl AbuseIPDBData {
             confidence_score: self.abuse_confidence_score,
             is_tor: self.is_tor,
             is_blocked,
+            usage_type: self.usage_type.clone().unwrap_or_default(),
+            isp: self.isp.clone().unwrap_or_default(),
         }
     }
 }

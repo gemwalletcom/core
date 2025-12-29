@@ -18,6 +18,7 @@ pub mod prices_repository;
 pub mod releases_repository;
 pub mod rewards_redemptions_repository;
 pub mod rewards_repository;
+pub mod risk_signals_repository;
 pub mod scan_addresses_repository;
 pub mod subscriptions_repository;
 pub mod support_repository;

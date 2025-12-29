@@ -31,35 +31,6 @@ impl IpSecurityClient {
         Ok((!ip_result.is_suspicious(config), ip_result.country_code))
     }
 
-    pub async fn check_rate_limits(
-        &self,
-        ip_address: &str,
-        daily_limit: i64,
-        weekly_limit: i64,
-        global_daily_limit: i64,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if self.cacher.get_cached_counter(CacheKey::ReferralUseDailyLimit).await? >= global_daily_limit {
-            return Err(crate::RewardsError::Referral("Global daily limit exceeded".to_string()).into());
-        }
-
-        if self.cacher.get_cached_counter(CacheKey::ReferralDailyLimit(ip_address)).await? >= daily_limit {
-            return Err(crate::RewardsError::Referral("Daily limit exceeded".to_string()).into());
-        }
-
-        if self.cacher.get_cached_counter(CacheKey::ReferralWeeklyLimit(ip_address)).await? >= weekly_limit {
-            return Err(crate::RewardsError::Referral("Weekly limit exceeded".to_string()).into());
-        }
-
-        Ok(())
-    }
-
-    pub async fn record_referral_usage(&self, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.cacher.increment_cached(CacheKey::ReferralUseDailyLimit).await?;
-        self.cacher.increment_cached(CacheKey::ReferralDailyLimit(ip_address)).await?;
-        self.cacher.increment_cached(CacheKey::ReferralWeeklyLimit(ip_address)).await?;
-        Ok(())
-    }
-
     pub async fn check_username_creation_limit(&self, ip_address: &str, limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
         if self.cacher.get_cached_counter(CacheKey::UsernameCreationPerIp(ip_address)).await? >= limit {
             return Err(crate::RewardsError::Username("Too many usernames created from this IP".to_string()).into());

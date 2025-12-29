@@ -11,6 +11,8 @@ pub struct IpCheckResult {
     pub confidence_score: i64,
     pub is_tor: bool,
     pub is_blocked: bool,
+    pub usage_type: String,
+    pub isp: String,
 }
 
 impl IpCheckResult {

@@ -27,6 +27,30 @@ fn validate_username(username: &str) -> Result<(), DatabaseError> {
     Ok(())
 }
 
+fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, device_id: i32) -> Result<UsernameRow, DatabaseError> {
+    let username = UsernamesStore::create_username(
+        client,
+        UsernameRow {
+            username: address.to_string(),
+            address: address.to_string(),
+            is_verified: false,
+        },
+    )?;
+    RewardsStore::create_rewards(
+        client,
+        RewardsRow {
+            username: address.to_string(),
+            is_enabled: true,
+            level: None,
+            points: 0,
+            referrer_username: None,
+            referral_count: 0,
+            device_id,
+        },
+    )?;
+    Ok(username)
+}
+
 pub trait RewardsRepository {
     fn get_reward_by_address(&mut self, address: &str) -> Result<Rewards, DatabaseError>;
     fn get_reward_events_by_address(&mut self, address: &str) -> Result<Vec<RewardEvent>, DatabaseError>;
@@ -41,7 +65,7 @@ pub trait RewardsRepository {
         address: &str,
         referral_code: &str,
         device_id: i32,
-        ip_address: &str,
+        risk_signal_id: i32,
         invite_event: RewardEventType,
     ) -> Result<Vec<i32>, DatabaseError>;
     fn add_referral_attempt(
@@ -49,7 +73,7 @@ pub trait RewardsRepository {
         referrer_username: &str,
         referred_address: &str,
         device_id: i32,
-        ip_address: &str,
+        risk_signal_id: Option<i32>,
         reason: &str,
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
@@ -225,7 +249,7 @@ impl RewardsRepository for DatabaseClient {
         address: &str,
         referral_code: &str,
         device_id: i32,
-        ip_address: &str,
+        risk_signal_id: i32,
         invite_event: RewardEventType,
     ) -> Result<Vec<i32>, DatabaseError> {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
@@ -233,27 +257,7 @@ impl RewardsRepository for DatabaseClient {
         let referred = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
             UsernamesStore::get_username(self, UsernameLookup::Address(address))?
         } else {
-            let username = UsernamesStore::create_username(
-                self,
-                UsernameRow {
-                    username: address.to_string(),
-                    address: address.to_string(),
-                    is_verified: false,
-                },
-            )?;
-            RewardsStore::create_rewards(
-                self,
-                RewardsRow {
-                    username: address.to_string(),
-                    is_enabled: true,
-                    level: None,
-                    points: 0,
-                    referrer_username: None,
-                    referral_count: 0,
-                    device_id,
-                },
-            )?;
-            username
+            create_username_and_rewards(self, address, device_id)?
         };
 
         RewardsStore::add_referral(
@@ -262,7 +266,7 @@ impl RewardsRepository for DatabaseClient {
                 referrer_username: referrer.username.clone(),
                 referred_username: referred.username.clone(),
                 referred_device_id: device_id,
-                referred_ip_address: ip_address.to_string(),
+                risk_signal_id: Some(risk_signal_id),
             },
         )?;
 
@@ -292,7 +296,7 @@ impl RewardsRepository for DatabaseClient {
         referrer_username: &str,
         referred_address: &str,
         device_id: i32,
-        ip_address: &str,
+        risk_signal_id: Option<i32>,
         reason: &str,
     ) -> Result<(), DatabaseError> {
         RewardsStore::add_referral_attempt(
@@ -301,7 +305,7 @@ impl RewardsRepository for DatabaseClient {
                 referrer_username: referrer_username.to_string(),
                 referred_address: referred_address.to_string(),
                 device_id,
-                referred_ip_address: ip_address.to_string(),
+                risk_signal_id,
                 reason: reason.to_string(),
             },
         )?;
@@ -324,24 +328,28 @@ impl RewardsRepository for DatabaseClient {
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError> {
         let current = now();
         let limit = 10;
+        let invite_types: Vec<String> = vec![RewardEventType::InviteNew, RewardEventType::InviteExisting]
+            .into_iter()
+            .map(|t| t.as_ref().to_string())
+            .collect();
 
-        let map_entry = |(username, referrals): (String, i64)| ReferralLeader {
+        let map_entry = |(username, referrals, points): (String, i64, i64)| ReferralLeader {
             username,
             referrals: referrals as i32,
-            points: referrals as i32 * RewardEventType::InviteNew.points(),
+            points: points as i32,
         };
 
-        let daily = RewardsStore::get_top_referrers_since(self, current.days_ago(1), limit)?
+        let daily = RewardsStore::get_top_referrers_since(self, invite_types.clone(), current.days_ago(1), limit)?
             .into_iter()
             .map(map_entry)
             .collect();
 
-        let weekly = RewardsStore::get_top_referrers_since(self, current.days_ago(7), limit)?
+        let weekly = RewardsStore::get_top_referrers_since(self, invite_types.clone(), current.days_ago(7), limit)?
             .into_iter()
             .map(map_entry)
             .collect();
 
-        let monthly = RewardsStore::get_top_referrers_since(self, current.days_ago(30), limit)?
+        let monthly = RewardsStore::get_top_referrers_since(self, invite_types, current.days_ago(30), limit)?
             .into_iter()
             .map(map_entry)
             .collect();

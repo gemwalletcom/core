@@ -1,5 +1,8 @@
 use crate::DatabaseClient;
-use crate::models::{NewRewardEventRow, NewRewardReferralRow, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow, RewardReferralRow, RewardsRow};
+use crate::models::{
+    NewRewardEventRow, NewRewardReferralRow, NewRiskSignalRow, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow, RewardReferralRow, RewardsRow,
+    RiskSignalRow,
+};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -28,7 +31,7 @@ pub(crate) trait RewardsStore {
     fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, DieselError>;
     fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, DieselError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
-    fn get_top_referrers_since(&mut self, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64)>, DieselError>;
+    fn get_top_referrers_since(&mut self, event_types: Vec<String>, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64, i64)>, DieselError>;
 }
 
 impl RewardsStore for DatabaseClient {
@@ -133,18 +136,82 @@ impl RewardsStore for DatabaseClient {
             .get_result(&mut self.connection)
     }
 
-    fn get_top_referrers_since(&mut self, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64)>, DieselError> {
-        use crate::schema::{rewards, rewards_referrals};
-        use diesel::dsl::count_star;
+    fn get_top_referrers_since(&mut self, event_types: Vec<String>, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64, i64)>, DieselError> {
+        use crate::schema::{rewards, rewards_events, rewards_events_types};
+        use diesel::dsl::{count_star, sum};
 
-        rewards_referrals::table
-            .inner_join(rewards::table.on(rewards_referrals::referrer_username.eq(rewards::username)))
+        rewards_events::table
+            .inner_join(rewards::table.on(rewards_events::username.eq(rewards::username)))
+            .inner_join(rewards_events_types::table.on(rewards_events::event_type.eq(rewards_events_types::id)))
             .filter(rewards::is_enabled.eq(true))
-            .filter(rewards_referrals::created_at.ge(since))
-            .group_by(rewards_referrals::referrer_username)
-            .select((rewards_referrals::referrer_username, count_star()))
-            .order_by(count_star().desc())
+            .filter(rewards_events::event_type.eq_any(event_types))
+            .filter(rewards_events::created_at.ge(since))
+            .group_by(rewards_events::username)
+            .select((rewards_events::username, count_star(), sum(rewards_events_types::points).assume_not_null()))
+            .order_by(sum(rewards_events_types::points).desc())
             .limit(limit)
             .load(&mut self.connection)
+    }
+}
+
+pub(crate) trait RiskSignalsStore {
+    fn add_risk_signal(&mut self, signal: NewRiskSignalRow) -> Result<i32, DieselError>;
+    fn get_matching_risk_signals(
+        &mut self,
+        fingerprint: &str,
+        ip_address: &str,
+        ip_isp: &str,
+        device_model: &str,
+        device_id: i32,
+        since: NaiveDateTime,
+    ) -> Result<Vec<RiskSignalRow>, DieselError>;
+    fn count_signals_since(&mut self, ip_address: Option<&str>, since: NaiveDateTime) -> Result<i64, DieselError>;
+}
+
+impl RiskSignalsStore for DatabaseClient {
+    fn add_risk_signal(&mut self, signal: NewRiskSignalRow) -> Result<i32, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        diesel::insert_into(dsl::rewards_risk_signals)
+            .values(&signal)
+            .returning(dsl::id)
+            .get_result(&mut self.connection)
+    }
+
+    fn get_matching_risk_signals(
+        &mut self,
+        fingerprint: &str,
+        ip_address: &str,
+        ip_isp: &str,
+        device_model: &str,
+        device_id: i32,
+        since: NaiveDateTime,
+    ) -> Result<Vec<RiskSignalRow>, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::created_at.ge(since))
+            .filter(
+                dsl::fingerprint
+                    .eq(fingerprint)
+                    .or(dsl::ip_address.eq(ip_address))
+                    .or(dsl::ip_isp.eq(ip_isp).and(dsl::device_model.eq(device_model)))
+                    .or(dsl::device_id.eq(device_id)),
+            )
+            .order(dsl::created_at.desc())
+            .limit(100)
+            .select(RiskSignalRow::as_select())
+            .load(&mut self.connection)
+    }
+
+    fn count_signals_since(&mut self, ip_address: Option<&str>, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+
+        let mut query = dsl::rewards_risk_signals.filter(dsl::created_at.ge(since)).into_boxed();
+
+        if let Some(ip) = ip_address {
+            query = query.filter(dsl::ip_address.eq(ip));
+        }
+
+        query.count().get_result(&mut self.connection)
     }
 }
