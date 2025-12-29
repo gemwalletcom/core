@@ -24,7 +24,7 @@ pub struct RewardReferralRow {
     pub referrer_username: String,
     pub referred_username: String,
     pub referred_device_id: i32,
-    pub risk_signal_id: Option<i32>,
+    pub risk_signal_id: i32,
     pub created_at: NaiveDateTime,
 }
 
@@ -34,7 +34,7 @@ pub struct NewRewardReferralRow {
     pub referrer_username: String,
     pub referred_username: String,
     pub referred_device_id: i32,
-    pub risk_signal_id: Option<i32>,
+    pub risk_signal_id: i32,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, Clone)]
@@ -219,6 +219,7 @@ pub struct RiskSignalRow {
     pub ip_usage_type: String,
     pub ip_isp: String,
     pub ip_abuse_score: i32,
+    pub risk_score: i32,
     pub created_at: NaiveDateTime,
 }
 
@@ -237,4 +238,5 @@ pub struct NewRiskSignalRow {
     pub ip_usage_type: String,
     pub ip_isp: String,
     pub ip_abuse_score: i32,
+    pub risk_score: i32,
 }

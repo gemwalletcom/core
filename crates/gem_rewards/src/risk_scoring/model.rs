@@ -48,7 +48,7 @@ impl RiskSignalInput {
 }
 
 #[derive(Debug, Clone)]
-pub struct RiskScoreResult {
+pub struct RiskScore {
     pub score: i32,
     pub is_allowed: bool,
     pub fingerprint: String,

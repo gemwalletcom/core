@@ -31,15 +31,12 @@ CREATE TABLE rewards_referrals (
     referrer_username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON DELETE CASCADE ON UPDATE CASCADE,
     referred_username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON DELETE CASCADE ON UPDATE CASCADE UNIQUE,
     referred_device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
-    referred_ip_address VARCHAR(45) NOT NULL,
-    updated_at timestamp NOT NULL default current_timestamp,
+    risk_signal_id INT NOT NULL REFERENCES rewards_risk_signals(id),
     created_at timestamp NOT NULL default current_timestamp
 );
 
 CREATE INDEX rewards_referrals_referrer_idx ON rewards_referrals(referrer_username);
 CREATE INDEX rewards_referrals_referred_device_id_idx ON rewards_referrals(referred_device_id);
-
-SELECT diesel_manage_updated_at('rewards_referrals');
 
 CREATE TABLE rewards_events_types (
     id VARCHAR(64) PRIMARY KEY,

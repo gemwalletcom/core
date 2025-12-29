@@ -153,7 +153,7 @@ impl RewardsClient {
         let risk_result = evaluate_risk(&scoring_input, &existing_signals, &risk_score_config);
         let risk_signal_id = client.add_risk_signal(risk_result.signal).map_err(|e| (None, e.into()))?;
 
-        if !risk_result.score_result.is_allowed {
+        if !risk_result.score.is_allowed {
             return Err((
                 Some(risk_signal_id),
                 RewardsError::Referral("Unable to verify referral eligibility".to_string()).into(),

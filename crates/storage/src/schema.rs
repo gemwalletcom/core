@@ -574,6 +574,7 @@ diesel::table! {
         #[max_length = 64]
         referrer_username -> Nullable<Varchar>,
         referral_count -> Int4,
+        device_id -> Int4,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -657,8 +658,7 @@ diesel::table! {
         #[max_length = 256]
         referred_address -> Varchar,
         device_id -> Int4,
-        #[max_length = 45]
-        referred_ip_address -> Varchar,
+        risk_signal_id -> Nullable<Int4>,
         #[max_length = 256]
         reason -> Varchar,
         created_at -> Timestamp,
@@ -673,9 +673,7 @@ diesel::table! {
         #[max_length = 64]
         referred_username -> Varchar,
         referred_device_id -> Int4,
-        #[max_length = 45]
-        referred_ip_address -> Varchar,
-        updated_at -> Timestamp,
+        risk_signal_id -> Int4,
         created_at -> Timestamp,
     }
 }
@@ -705,6 +703,7 @@ diesel::table! {
         #[max_length = 128]
         ip_isp -> Varchar,
         ip_abuse_score -> Int4,
+        risk_score -> Int4,
         created_at -> Timestamp,
     }
 }

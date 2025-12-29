@@ -1,7 +1,7 @@
 use crate::model::IpCheckResult;
 use storage::models::{NewRiskSignalRow, RiskSignalRow};
 
-use super::model::{RiskScoreConfig, RiskScoreResult, RiskSignalInput};
+use super::model::{RiskScore, RiskScoreConfig, RiskSignalInput};
 use super::scoring::calculate_risk_score;
 
 #[derive(Debug, Clone)]
@@ -33,17 +33,17 @@ impl RiskScoringInput {
     }
 }
 
-pub struct RiskScoringResult {
-    pub score_result: RiskScoreResult,
+pub struct RiskResult {
+    pub score: RiskScore,
     pub signal: NewRiskSignalRow,
 }
 
-pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow], config: &RiskScoreConfig) -> RiskScoringResult {
+pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow], config: &RiskScoreConfig) -> RiskResult {
     let signal_input = input.to_signal_input();
-    let score_result = calculate_risk_score(&signal_input, existing_signals, config);
+    let score = calculate_risk_score(&signal_input, existing_signals, config);
 
     let signal = NewRiskSignalRow {
-        fingerprint: score_result.fingerprint.clone(),
+        fingerprint: score.fingerprint.clone(),
         username: signal_input.username,
         device_id: signal_input.device_id,
         device_platform: signal_input.device_platform,
@@ -55,9 +55,10 @@ pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow
         ip_usage_type: signal_input.ip_usage_type,
         ip_isp: signal_input.ip_isp,
         ip_abuse_score: signal_input.ip_abuse_score,
+        risk_score: score.score,
     };
 
-    RiskScoringResult { score_result, signal }
+    RiskResult { score, signal }
 }
 
 #[cfg(test)]
@@ -91,8 +92,8 @@ mod tests {
         let config = RiskScoreConfig::default();
         let result = evaluate_risk(&input, &[], &config);
 
-        assert_eq!(result.score_result.score, 0);
-        assert!(result.score_result.is_allowed);
+        assert_eq!(result.score.score, 0);
+        assert!(result.score.is_allowed);
         assert_eq!(result.signal.username, "user1");
         assert_eq!(result.signal.device_model, "iPhone15,2");
     }
@@ -104,8 +105,8 @@ mod tests {
         let config = RiskScoreConfig::default();
         let result = evaluate_risk(&input, &[], &config);
 
-        assert_eq!(result.score_result.score, 60);
-        assert!(!result.score_result.is_allowed);
+        assert_eq!(result.score.score, 60);
+        assert!(!result.score.is_allowed);
     }
 
     #[test]

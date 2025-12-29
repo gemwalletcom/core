@@ -15,7 +15,8 @@ CREATE TABLE rewards_risk_signals (
     ip_country_code VARCHAR(2) NOT NULL,
     ip_usage_type VARCHAR(64) NOT NULL,
     ip_isp VARCHAR(128) NOT NULL,
-    ip_abuse_score INT NOT NULL DEFAULT 0,
+    ip_abuse_score INT NOT NULL,
+    risk_score INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );
 

@@ -1,8 +1,8 @@
 use storage::models::RiskSignalRow;
 
-use super::model::{RiskScoreBreakdown, RiskScoreConfig, RiskScoreResult, RiskSignalInput};
+use super::model::{RiskScore, RiskScoreBreakdown, RiskScoreConfig, RiskSignalInput};
 
-pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSignalRow], config: &RiskScoreConfig) -> RiskScoreResult {
+pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSignalRow], config: &RiskScoreConfig) -> RiskScore {
     let fingerprint = input.generate_fingerprint();
     let mut breakdown = RiskScoreBreakdown {
         abuse_score: input.ip_abuse_score,
@@ -51,7 +51,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         + breakdown.isp_model_match_score
         + breakdown.device_id_reuse_score;
 
-    RiskScoreResult {
+    RiskScore {
         score,
         is_allowed: score < config.max_allowed_score,
         fingerprint,
@@ -94,6 +94,7 @@ mod tests {
             ip_usage_type: "Fixed Line ISP".to_string(),
             ip_isp: isp.to_string(),
             ip_abuse_score: 0,
+            risk_score: 0,
             created_at: chrono::Utc::now().naive_utc(),
         }
     }

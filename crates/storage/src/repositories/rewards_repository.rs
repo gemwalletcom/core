@@ -266,7 +266,7 @@ impl RewardsRepository for DatabaseClient {
                 referrer_username: referrer.username.clone(),
                 referred_username: referred.username.clone(),
                 referred_device_id: device_id,
-                risk_signal_id: Some(risk_signal_id),
+                risk_signal_id,
             },
         )?;
 
