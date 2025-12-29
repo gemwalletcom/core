@@ -6,6 +6,11 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
     let fingerprint = input.generate_fingerprint();
     let mut breakdown = RiskScoreBreakdown {
         abuse_score: input.ip_abuse_score,
+        ineligible_ip_type_score: if config.ineligible_ip_types.iter().any(|t| input.ip_usage_type.contains(t)) {
+            config.ineligible_ip_type_score
+        } else {
+            0
+        },
         ..Default::default()
     };
 
@@ -49,7 +54,8 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         + breakdown.fingerprint_match_score
         + breakdown.ip_reuse_score
         + breakdown.isp_model_match_score
-        + breakdown.device_id_reuse_score;
+        + breakdown.device_id_reuse_score
+        + breakdown.ineligible_ip_type_score;
 
     RiskScore {
         score,

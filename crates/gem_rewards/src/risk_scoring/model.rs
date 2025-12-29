@@ -6,6 +6,8 @@ pub struct RiskScoreConfig {
     pub ip_reuse_score: i32,
     pub isp_model_match_score: i32,
     pub device_id_reuse_score: i32,
+    pub ineligible_ip_type_score: i32,
+    pub ineligible_ip_types: Vec<String>,
     pub max_allowed_score: i32,
 }
 
@@ -16,6 +18,13 @@ impl Default for RiskScoreConfig {
             ip_reuse_score: 50,
             isp_model_match_score: 30,
             device_id_reuse_score: 100,
+            ineligible_ip_type_score: 100,
+            ineligible_ip_types: vec![
+                "Data Center".to_string(),
+                "Web Hosting".to_string(),
+                "Transit".to_string(),
+                "Content Delivery Network".to_string(),
+            ],
             max_allowed_score: 50,
         }
     }
@@ -62,6 +71,7 @@ pub struct RiskScoreBreakdown {
     pub ip_reuse_score: i32,
     pub isp_model_match_score: i32,
     pub device_id_reuse_score: i32,
+    pub ineligible_ip_type_score: i32,
 }
 
 #[cfg(test)]

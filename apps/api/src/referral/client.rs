@@ -92,6 +92,11 @@ impl RewardsClient {
         let mut client = self.database.client().map_err(|e| (None, e))?;
         let ip_result = self.ip_security_client.check_ip(ip_address).await.map_err(|e| (None, e))?;
 
+        let ineligible_ip_types = client
+            .config()
+            .get_config_vec_string(ConfigKey::ReferralIpIneligibleUsageTypes)
+            .map_err(|e| (None, e.into()))?;
+
         let risk_score_config = RiskScoreConfig {
             fingerprint_match_score: client
                 .config()
@@ -109,6 +114,11 @@ impl RewardsClient {
                 .config()
                 .get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse)
                 .map_err(|e| (None, e.into()))? as i32,
+            ineligible_ip_type_score: client
+                .config()
+                .get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)
+                .map_err(|e| (None, e.into()))? as i32,
+            ineligible_ip_types,
             max_allowed_score: client
                 .config()
                 .get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed)
@@ -204,22 +214,6 @@ impl RewardsClient {
         let tor_allowed = client.config().get_config_bool(ConfigKey::ReferralIpTorAllowed).map_err(|e| e.to_string())?;
         if !tor_allowed && input.ip_result.is_tor {
             return Err("tor".to_string());
-        }
-
-        let confidence_threshold = client
-            .config()
-            .get_config_i64(ConfigKey::ReferralIpConfidenceScoreThreshold)
-            .map_err(|e| e.to_string())?;
-        if input.ip_result.confidence_score >= confidence_threshold {
-            return Err("abuse_score".to_string());
-        }
-
-        let ineligible_usage_types = client
-            .config()
-            .get_config_vec_string(ConfigKey::ReferralIpIneligibleUsageTypes)
-            .map_err(|e| e.to_string())?;
-        if ineligible_usage_types.iter().any(|t| input.ip_result.usage_type.contains(t)) {
-            return Err("usage_type".to_string());
         }
 
         let ineligible_countries = client

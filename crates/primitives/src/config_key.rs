@@ -29,6 +29,7 @@ pub enum ConfigKey {
     ReferralRiskScoreIpReuse,
     ReferralRiskScoreIspModelMatch,
     ReferralRiskScoreDeviceIdReuse,
+    ReferralRiskScoreIneligibleIpType,
     ReferralRiskScoreMaxAllowed,
     ReferralRiskScoreLookbackDays,
 
@@ -76,6 +77,7 @@ impl ConfigKey {
             Self::ReferralRiskScoreIpReuse => "50",
             Self::ReferralRiskScoreIspModelMatch => "30",
             Self::ReferralRiskScoreDeviceIdReuse => "100",
+            Self::ReferralRiskScoreIneligibleIpType => "100",
             Self::ReferralRiskScoreMaxAllowed => "50",
             Self::ReferralRiskScoreLookbackDays => "90",
             Self::FiatValidateSubscription => "false",
