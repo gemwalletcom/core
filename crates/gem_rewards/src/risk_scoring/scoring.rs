@@ -15,7 +15,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
     let mut device_id_matched = false;
 
     for signal in existing_signals {
-        if signal.username == input.username {
+        if signal.referrer_username == input.username {
             continue;
         }
 
@@ -79,11 +79,11 @@ mod tests {
         }
     }
 
-    fn create_signal(username: &str, fingerprint: &str, ip: &str, isp: &str, model: &str, device_id: i32) -> RiskSignalRow {
+    fn create_signal(referrer_username: &str, fingerprint: &str, ip: &str, isp: &str, model: &str, device_id: i32) -> RiskSignalRow {
         RiskSignalRow {
             id: 1,
             fingerprint: fingerprint.to_string(),
-            username: username.to_string(),
+            referrer_username: referrer_username.to_string(),
             device_id,
             device_platform: "iOS".to_string(),
             device_os: "18.0".to_string(),

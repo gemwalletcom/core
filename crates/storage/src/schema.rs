@@ -684,7 +684,7 @@ diesel::table! {
         #[max_length = 64]
         fingerprint -> Varchar,
         #[max_length = 64]
-        username -> Varchar,
+        referrer_username -> Varchar,
         device_id -> Int4,
         #[max_length = 16]
         device_platform -> Varchar,
@@ -901,7 +901,7 @@ diesel::joinable!(rewards_referral_attempts -> rewards_risk_signals (risk_signal
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));
 diesel::joinable!(rewards_referrals -> rewards_risk_signals (risk_signal_id));
 diesel::joinable!(rewards_risk_signals -> devices (device_id));
-diesel::joinable!(rewards_risk_signals -> rewards (username));
+diesel::joinable!(rewards_risk_signals -> rewards (referrer_username));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));

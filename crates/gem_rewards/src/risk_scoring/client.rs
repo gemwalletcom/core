@@ -44,7 +44,7 @@ pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow
 
     let signal = NewRiskSignalRow {
         fingerprint: score.fingerprint.clone(),
-        username: signal_input.username,
+        referrer_username: signal_input.username,
         device_id: signal_input.device_id,
         device_platform: signal_input.device_platform,
         device_os: signal_input.device_os,
@@ -94,7 +94,7 @@ mod tests {
 
         assert_eq!(result.score.score, 0);
         assert!(result.score.is_allowed);
-        assert_eq!(result.signal.username, "user1");
+        assert_eq!(result.signal.referrer_username, "user1");
         assert_eq!(result.signal.device_model, "iPhone15,2");
     }
 

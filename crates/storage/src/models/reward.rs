@@ -208,7 +208,7 @@ pub struct ReferralAttemptRow {
 pub struct RiskSignalRow {
     pub id: i32,
     pub fingerprint: String,
-    pub username: String,
+    pub referrer_username: String,
     pub device_id: i32,
     pub device_platform: String,
     pub device_os: String,
@@ -227,7 +227,7 @@ pub struct RiskSignalRow {
 #[diesel(table_name = crate::schema::rewards_risk_signals)]
 pub struct NewRiskSignalRow {
     pub fingerprint: String,
-    pub username: String,
+    pub referrer_username: String,
     pub device_id: i32,
     pub device_platform: String,
     pub device_os: String,

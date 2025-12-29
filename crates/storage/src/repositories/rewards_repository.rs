@@ -58,8 +58,8 @@ pub trait RewardsRepository {
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, address: &str, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
-    fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError>;
-    fn validate_referral_use(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<(), DatabaseError>;
+    fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
+    fn validate_referral_use(&mut self, address: &str, referrer_username: &str, device_id: i32) -> Result<(), DatabaseError>;
     fn create_referral_use(
         &mut self,
         address: &str,
@@ -207,16 +207,20 @@ impl RewardsRepository for DatabaseClient {
         self.get_reward_by_address(address)
     }
 
-    fn referral_code_exists(&mut self, code: &str) -> Result<bool, DatabaseError> {
-        Ok(RewardsStore::get_rewards(self, code).is_ok())
+    fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError> {
+        match UsernamesStore::get_username(self, UsernameLookup::Username(code)) {
+            Ok(username) => Ok(Some(username.username)),
+            Err(diesel::result::Error::NotFound) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
     }
 
-    fn validate_referral_use(&mut self, address: &str, referral_code: &str, device_id: i32) -> Result<(), DatabaseError> {
-        let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
-        let referrer_rewards = RewardsStore::get_rewards(self, &referrer.username)?;
+    fn validate_referral_use(&mut self, address: &str, referrer_username: &str, device_id: i32) -> Result<(), DatabaseError> {
+        let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referrer_username))?;
+        let referrer_rewards = RewardsStore::get_rewards(self, referrer_username)?;
 
         if !referrer_rewards.is_enabled {
-            return Err(DatabaseError::Error(format!("Rewards are not enabled for referral code: {}", referral_code)));
+            return Err(DatabaseError::Error(format!("Rewards are not enabled for referral code: {}", referrer_username)));
         }
 
         if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
@@ -228,7 +232,7 @@ impl RewardsRepository for DatabaseClient {
             if rewards.referrer_username.is_some() {
                 return Err(DatabaseError::Error("Already used a referral code".into()));
             }
-            if referrer.username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
+            if referrer_username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
                 return Err(DatabaseError::Error("Cannot use your own referral code".into()));
             }
         }
