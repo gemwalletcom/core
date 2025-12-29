@@ -25,19 +25,12 @@ pub struct AbuseIPDBData {
 }
 
 impl AbuseIPDBData {
-    pub fn as_ip_check_result(&self, ineligible_usage_types: &[String]) -> IpCheckResult {
-        let is_blocked = self
-            .usage_type
-            .as_ref()
-            .map(|usage| ineligible_usage_types.iter().any(|t| usage.contains(t)))
-            .unwrap_or(false);
-
+    pub fn as_ip_check_result(&self) -> IpCheckResult {
         IpCheckResult {
             ip_address: self.ip_address.clone(),
             country_code: self.country_code.clone(),
             confidence_score: self.abuse_confidence_score,
             is_tor: self.is_tor,
-            is_blocked,
             usage_type: self.usage_type.clone().unwrap_or_default(),
             isp: self.isp.clone().unwrap_or_default(),
         }

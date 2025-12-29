@@ -3,7 +3,7 @@ use std::error::Error;
 use cacher::{CacheKey, CacherClient};
 
 use crate::abuseipdb::AbuseIPDBClient;
-use crate::model::{IpCheckConfig, IpCheckResult};
+use crate::model::IpCheckResult;
 
 #[derive(Clone)]
 pub struct IpSecurityClient {
@@ -16,19 +16,14 @@ impl IpSecurityClient {
         Self { abuseipdb_client, cacher }
     }
 
-    pub async fn check_ip(&self, ip_address: &str, config: &IpCheckConfig) -> Result<IpCheckResult, Box<dyn Error + Send + Sync>> {
+    pub async fn check_ip(&self, ip_address: &str) -> Result<IpCheckResult, Box<dyn Error + Send + Sync>> {
         let ip_data = self
             .cacher
             .get_or_set_cached(CacheKey::ReferralIpCheck(ip_address), || async {
                 self.abuseipdb_client.check_ip(ip_address).await
             })
             .await?;
-        Ok(ip_data.as_ip_check_result(&config.ineligible_usage_types))
-    }
-
-    pub async fn check_eligibility(&self, ip_address: &str, config: &IpCheckConfig) -> Result<(bool, String), Box<dyn Error + Send + Sync>> {
-        let ip_result = self.check_ip(ip_address, config).await?;
-        Ok((!ip_result.is_suspicious(config), ip_result.country_code))
+        Ok(ip_data.as_ip_check_result())
     }
 
     pub async fn check_username_creation_limit(&self, ip_address: &str, limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {

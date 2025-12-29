@@ -22,6 +22,7 @@ pub enum ConfigKey {
     // Referral IP
     ReferralIpConfidenceScoreThreshold,
     ReferralIpIneligibleUsageTypes,
+    ReferralIpTorAllowed,
 
     // Referral Risk Scoring
     ReferralRiskScoreFingerprintMatch,
@@ -70,6 +71,7 @@ impl ConfigKey {
             Self::RedemptionPerUserWeekly => "3",
             Self::ReferralIpConfidenceScoreThreshold => "10",
             Self::ReferralIpIneligibleUsageTypes => r#"["Data Center", "Web Hosting", "Transit", "Content Delivery Network"]"#,
+            Self::ReferralIpTorAllowed => "false",
             Self::ReferralRiskScoreFingerprintMatch => "100",
             Self::ReferralRiskScoreIpReuse => "50",
             Self::ReferralRiskScoreIspModelMatch => "30",

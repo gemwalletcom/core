@@ -94,7 +94,7 @@ impl RewardsRepository for DatabaseClient {
         };
 
         let options = if rewards.is_enabled {
-            let types: Vec<_> = vec![RewardRedemptionType::Asset].iter().map(|t| t.as_ref().to_string()).collect();
+            let types: Vec<_> = [RewardRedemptionType::Asset].iter().map(|t| t.as_ref().to_string()).collect();
             RewardsRedemptionsRepository::get_redemption_options(self, &types)?
         } else {
             vec![]
@@ -220,7 +220,10 @@ impl RewardsRepository for DatabaseClient {
         let referrer_rewards = RewardsStore::get_rewards(self, referrer_username)?;
 
         if !referrer_rewards.is_enabled {
-            return Err(DatabaseError::Error(format!("Rewards are not enabled for referral code: {}", referrer_username)));
+            return Err(DatabaseError::Error(format!(
+                "Rewards are not enabled for referral code: {}",
+                referrer_username
+            )));
         }
 
         if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {

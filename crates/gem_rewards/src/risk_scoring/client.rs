@@ -79,7 +79,6 @@ mod tests {
                 country_code: "US".to_string(),
                 confidence_score: 0,
                 is_tor: false,
-                is_blocked: false,
                 usage_type: "Fixed Line ISP".to_string(),
                 isp: "Comcast".to_string(),
             },
