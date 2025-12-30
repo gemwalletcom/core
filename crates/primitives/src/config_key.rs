@@ -37,6 +37,10 @@ pub enum ConfigKey {
     ReferralRiskScoreVerifiedUserReduction,
     ReferralRiskScoreMaxAllowed,
     ReferralRiskScoreLookbackDays,
+    ReferralRiskScoreSameReferrerPatternThreshold,
+    ReferralRiskScoreSameReferrerPatternPenalty,
+    ReferralRiskScoreSameReferrerFingerprintThreshold,
+    ReferralRiskScoreSameReferrerFingerprintPenalty,
 
     // Fiat
     FiatValidateSubscription,
@@ -90,6 +94,10 @@ impl ConfigKey {
             Self::ReferralRiskScoreVerifiedUserReduction => "20",
             Self::ReferralRiskScoreMaxAllowed => "60",
             Self::ReferralRiskScoreLookbackDays => "90",
+            Self::ReferralRiskScoreSameReferrerPatternThreshold => "3",
+            Self::ReferralRiskScoreSameReferrerPatternPenalty => "40",
+            Self::ReferralRiskScoreSameReferrerFingerprintThreshold => "2",
+            Self::ReferralRiskScoreSameReferrerFingerprintPenalty => "60",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
             Self::AlerterPriceIncreasePercent => "8.0",

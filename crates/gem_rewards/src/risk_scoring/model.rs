@@ -2,18 +2,22 @@ use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone)]
 pub struct RiskScoreConfig {
-    pub fingerprint_match_score: i32,
-    pub ip_reuse_score: i32,
-    pub isp_model_match_score: i32,
-    pub device_id_reuse_score: i32,
-    pub ineligible_ip_type_score: i32,
+    pub fingerprint_match_score: i64,
+    pub ip_reuse_score: i64,
+    pub isp_model_match_score: i64,
+    pub device_id_reuse_score: i64,
+    pub ineligible_ip_type_score: i64,
     pub blocked_ip_types: Vec<String>,
-    pub blocked_ip_type_penalty: i32,
-    pub max_abuse_score: i32,
+    pub blocked_ip_type_penalty: i64,
+    pub max_abuse_score: i64,
     pub penalty_isps: Vec<String>,
-    pub isp_penalty_score: i32,
-    pub verified_user_reduction: i32,
-    pub max_allowed_score: i32,
+    pub isp_penalty_score: i64,
+    pub verified_user_reduction: i64,
+    pub max_allowed_score: i64,
+    pub same_referrer_pattern_threshold: i64,
+    pub same_referrer_pattern_penalty: i64,
+    pub same_referrer_fingerprint_threshold: i64,
+    pub same_referrer_fingerprint_penalty: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -31,6 +35,10 @@ impl Default for RiskScoreConfig {
             isp_penalty_score: 30,
             verified_user_reduction: 30,
             max_allowed_score: 60,
+            same_referrer_pattern_threshold: 3,
+            same_referrer_pattern_penalty: 40,
+            same_referrer_fingerprint_threshold: 2,
+            same_referrer_fingerprint_penalty: 60,
         }
     }
 }
@@ -47,7 +55,7 @@ pub struct RiskSignalInput {
     pub ip_country_code: String,
     pub ip_usage_type: String,
     pub ip_isp: String,
-    pub ip_abuse_score: i32,
+    pub ip_abuse_score: i64,
     pub referrer_verified: bool,
 }
 
@@ -64,7 +72,7 @@ impl RiskSignalInput {
 
 #[derive(Debug, Clone)]
 pub struct RiskScore {
-    pub score: i32,
+    pub score: i64,
     pub is_allowed: bool,
     pub fingerprint: String,
     pub breakdown: RiskScoreBreakdown,
@@ -72,13 +80,15 @@ pub struct RiskScore {
 
 #[derive(Debug, Clone, Default)]
 pub struct RiskScoreBreakdown {
-    pub abuse_score: i32,
-    pub fingerprint_match_score: i32,
-    pub ip_reuse_score: i32,
-    pub isp_model_match_score: i32,
-    pub device_id_reuse_score: i32,
-    pub ineligible_ip_type_score: i32,
-    pub verified_user_reduction: i32,
+    pub abuse_score: i64,
+    pub fingerprint_match_score: i64,
+    pub ip_reuse_score: i64,
+    pub isp_model_match_score: i64,
+    pub device_id_reuse_score: i64,
+    pub ineligible_ip_type_score: i64,
+    pub verified_user_reduction: i64,
+    pub same_referrer_pattern_score: i64,
+    pub same_referrer_fingerprint_score: i64,
 }
 
 #[cfg(test)]

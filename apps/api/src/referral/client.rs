@@ -94,7 +94,7 @@ impl RewardsClient {
         let mut client = self.database.client().map_err(to_err)?;
         let ip_result = self.ip_security_client.check_ip(ip_address).await.map_err(to_err)?;
 
-        let risk_score_config = Self::load_risk_score_config(client.config(), to_err)?;
+        let risk_score_config = Self::load_risk_score_config(client.config()).map_err(|e| to_err(e.into()))?;
         let lookback_days = client
             .config()
             .get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)
@@ -216,36 +216,24 @@ impl RewardsClient {
         Ok(())
     }
 
-    fn load_risk_score_config(
-        config: &mut dyn storage::ConfigRepository,
-        to_err: impl Fn(Box<dyn Error + Send + Sync>) -> (Option<i32>, Box<dyn Error + Send + Sync>),
-    ) -> Result<RiskScoreConfig, (Option<i32>, Box<dyn Error + Send + Sync>)> {
-        let blocked_ip_types = config.get_config_vec_string(ConfigKey::ReferralBlockedIpTypes).map_err(|e| to_err(e.into()))?;
-        let blocked_ip_type_penalty = config.get_config_i64(ConfigKey::ReferralBlockedIpTypePenalty).map_err(|e| to_err(e.into()))? as i32;
-        let max_abuse_score = config.get_config_i64(ConfigKey::ReferralMaxAbuseScore).map_err(|e| to_err(e.into()))? as i32;
-        let penalty_isps = config.get_config_vec_string(ConfigKey::ReferralPenaltyIsps).map_err(|e| to_err(e.into()))?;
-        let isp_penalty_score = config.get_config_i64(ConfigKey::ReferralIspPenaltyScore).map_err(|e| to_err(e.into()))? as i32;
-        let verified_user_reduction = config
-            .get_config_i64(ConfigKey::ReferralRiskScoreVerifiedUserReduction)
-            .map_err(|e| to_err(e.into()))? as i32;
-
+    fn load_risk_score_config(config: &mut dyn storage::ConfigRepository) -> Result<RiskScoreConfig, storage::DatabaseError> {
         Ok(RiskScoreConfig {
-            fingerprint_match_score: config
-                .get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch)
-                .map_err(|e| to_err(e.into()))? as i32,
-            ip_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIpReuse).map_err(|e| to_err(e.into()))? as i32,
-            isp_model_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch).map_err(|e| to_err(e.into()))? as i32,
-            device_id_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse).map_err(|e| to_err(e.into()))? as i32,
-            ineligible_ip_type_score: config
-                .get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)
-                .map_err(|e| to_err(e.into()))? as i32,
-            blocked_ip_types,
-            blocked_ip_type_penalty,
-            max_abuse_score,
-            penalty_isps,
-            isp_penalty_score,
-            verified_user_reduction,
-            max_allowed_score: config.get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed).map_err(|e| to_err(e.into()))? as i32,
+            fingerprint_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch)?,
+            ip_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIpReuse)?,
+            isp_model_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch)?,
+            device_id_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse)?,
+            ineligible_ip_type_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)?,
+            blocked_ip_types: config.get_config_vec_string(ConfigKey::ReferralBlockedIpTypes)?,
+            blocked_ip_type_penalty: config.get_config_i64(ConfigKey::ReferralBlockedIpTypePenalty)?,
+            max_abuse_score: config.get_config_i64(ConfigKey::ReferralMaxAbuseScore)?,
+            penalty_isps: config.get_config_vec_string(ConfigKey::ReferralPenaltyIsps)?,
+            isp_penalty_score: config.get_config_i64(ConfigKey::ReferralIspPenaltyScore)?,
+            verified_user_reduction: config.get_config_i64(ConfigKey::ReferralRiskScoreVerifiedUserReduction)?,
+            max_allowed_score: config.get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed)?,
+            same_referrer_pattern_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerPatternThreshold)?,
+            same_referrer_pattern_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerPatternPenalty)?,
+            same_referrer_fingerprint_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintThreshold)?,
+            same_referrer_fingerprint_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintPenalty)?,
         })
     }
 

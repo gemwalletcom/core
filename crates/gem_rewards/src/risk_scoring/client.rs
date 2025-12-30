@@ -29,7 +29,7 @@ impl RiskScoringInput {
             ip_country_code: self.ip_result.country_code.clone(),
             ip_usage_type: self.ip_result.usage_type.clone(),
             ip_isp: self.ip_result.isp.clone(),
-            ip_abuse_score: self.ip_result.confidence_score as i32,
+            ip_abuse_score: self.ip_result.confidence_score as i64,
             referrer_verified: self.referrer_verified,
         }
     }
@@ -56,8 +56,8 @@ pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow
         ip_country_code: signal_input.ip_country_code,
         ip_usage_type: signal_input.ip_usage_type,
         ip_isp: signal_input.ip_isp,
-        ip_abuse_score: signal_input.ip_abuse_score,
-        risk_score: score.score,
+        ip_abuse_score: signal_input.ip_abuse_score as i32,
+        risk_score: score.score as i32,
     };
 
     RiskResult { score, signal }

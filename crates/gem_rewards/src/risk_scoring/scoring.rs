@@ -30,8 +30,18 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
     let mut isp_model_matched = false;
     let mut device_id_matched = false;
 
+    let mut same_referrer_pattern_count = 0;
+    let mut same_referrer_fingerprint_count = 0;
+
     for signal in existing_signals {
         if signal.referrer_username == input.username {
+            if signal.fingerprint == fingerprint {
+                same_referrer_fingerprint_count += 1;
+            }
+
+            if signal.ip_isp == input.ip_isp && signal.device_model == input.device_model && signal.device_platform == input.device_platform {
+                same_referrer_pattern_count += 1;
+            }
             continue;
         }
 
@@ -61,12 +71,22 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         }
     }
 
+    if same_referrer_fingerprint_count >= config.same_referrer_fingerprint_threshold {
+        breakdown.same_referrer_fingerprint_score = config.same_referrer_fingerprint_penalty;
+    }
+
+    if same_referrer_pattern_count >= config.same_referrer_pattern_threshold {
+        breakdown.same_referrer_pattern_score = config.same_referrer_pattern_penalty;
+    }
+
     let score = (breakdown.abuse_score
         + breakdown.fingerprint_match_score
         + breakdown.ip_reuse_score
         + breakdown.isp_model_match_score
         + breakdown.device_id_reuse_score
         + breakdown.ineligible_ip_type_score
+        + breakdown.same_referrer_pattern_score
+        + breakdown.same_referrer_fingerprint_score
         - breakdown.verified_user_reduction)
         .max(0);
 
@@ -280,5 +300,103 @@ mod tests {
         assert_eq!(result.breakdown.verified_user_reduction, 30);
         assert_eq!(result.score, 0);
         assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn same_referrer_pattern_below_threshold() {
+        let signals = [
+            create_signal("user1", "fp1", "10.0.0.1", "Comcast", "iPhone15,2", 2),
+            create_signal("user1", "fp2", "10.0.0.2", "Comcast", "iPhone15,2", 3),
+        ];
+        let result = calculate_risk_score(&create_test_input(), &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.same_referrer_pattern_score, 0);
+        assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn same_referrer_pattern_at_threshold() {
+        let signals = [
+            create_signal("user1", "fp1", "10.0.0.1", "Comcast", "iPhone15,2", 2),
+            create_signal("user1", "fp2", "10.0.0.2", "Comcast", "iPhone15,2", 3),
+            create_signal("user1", "fp3", "10.0.0.3", "Comcast", "iPhone15,2", 4),
+        ];
+        let result = calculate_risk_score(&create_test_input(), &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.same_referrer_pattern_score, 40);
+        assert_eq!(result.score, 40);
+    }
+
+    #[test]
+    fn same_referrer_fingerprint_at_threshold() {
+        let input = create_test_input();
+        let fingerprint = input.generate_fingerprint();
+        let signals = [
+            create_signal("user1", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2),
+            create_signal("user1", &fingerprint, "10.0.0.2", "Comcast", "iPhone15,2", 3),
+        ];
+
+        let result = calculate_risk_score(&input, &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.same_referrer_fingerprint_score, 60);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn same_referrer_both_patterns() {
+        let input = create_test_input();
+        let fingerprint = input.generate_fingerprint();
+        let signals = [
+            create_signal("user1", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2),
+            create_signal("user1", &fingerprint, "10.0.0.2", "Comcast", "iPhone15,2", 3),
+            create_signal("user1", &fingerprint, "10.0.0.3", "Comcast", "iPhone15,2", 4),
+        ];
+
+        let result = calculate_risk_score(&input, &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.score, 100);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn same_referrer_different_platform_ignored() {
+        let mut signal = create_signal("user1", "fp1", "10.0.0.1", "Comcast", "iPhone15,2", 2);
+        signal.device_platform = "android".to_string();
+        let signals = [
+            signal,
+            create_signal("user1", "fp2", "10.0.0.2", "Comcast", "iPhone15,2", 3),
+            create_signal("user1", "fp3", "10.0.0.3", "Comcast", "iPhone15,2", 4),
+        ];
+
+        let result = calculate_risk_score(&create_test_input(), &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.same_referrer_pattern_score, 0);
+    }
+
+    #[test]
+    fn fraud_multiple_devices_same_fingerprint() {
+        let input = RiskSignalInput {
+            username: "referrer1".to_string(),
+            device_model: "TestDevice X".to_string(),
+            device_platform: "android".to_string(),
+            ip_isp: "Test Mobile ISP".to_string(),
+            ip_country_code: "XX".to_string(),
+            device_locale: "en".to_string(),
+            ..create_test_input()
+        };
+
+        let fingerprint = input.generate_fingerprint();
+        let signals: Vec<_> = (0..3)
+            .map(|i| {
+                let mut s = create_signal("referrer1", &fingerprint, "10.20.30.40", "Test Mobile ISP", "TestDevice X", 100 + i);
+                s.device_platform = "android".to_string();
+                s
+            })
+            .collect();
+
+        let result = calculate_risk_score(&input, &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.score, 100);
+        assert!(!result.is_allowed);
     }
 }
