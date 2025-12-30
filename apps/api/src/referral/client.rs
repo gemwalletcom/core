@@ -94,30 +94,11 @@ impl RewardsClient {
         let mut client = self.database.client().map_err(to_err)?;
         let ip_result = self.ip_security_client.check_ip(ip_address).await.map_err(to_err)?;
 
-        let config = client.config();
-        let blocked_ip_types = config.get_config_vec_string(ConfigKey::ReferralBlockedIpTypes).map_err(|e| to_err(e.into()))?;
-        let blocked_ip_type_penalty = config.get_config_i64(ConfigKey::ReferralBlockedIpTypePenalty).map_err(|e| to_err(e.into()))? as i32;
-        let max_abuse_score = config.get_config_i64(ConfigKey::ReferralMaxAbuseScore).map_err(|e| to_err(e.into()))? as i32;
-        let penalty_isps = config.get_config_vec_string(ConfigKey::ReferralPenaltyIsps).map_err(|e| to_err(e.into()))?;
-        let isp_penalty_score = config.get_config_i64(ConfigKey::ReferralIspPenaltyScore).map_err(|e| to_err(e.into()))? as i32;
-        let verified_user_reduction = config.get_config_i64(ConfigKey::ReferralRiskScoreVerifiedUserReduction).map_err(|e| to_err(e.into()))? as i32;
-
-        let risk_score_config = RiskScoreConfig {
-            fingerprint_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch).map_err(|e| to_err(e.into()))? as i32,
-            ip_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIpReuse).map_err(|e| to_err(e.into()))? as i32,
-            isp_model_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch).map_err(|e| to_err(e.into()))? as i32,
-            device_id_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse).map_err(|e| to_err(e.into()))? as i32,
-            ineligible_ip_type_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType).map_err(|e| to_err(e.into()))? as i32,
-            blocked_ip_types,
-            blocked_ip_type_penalty,
-            max_abuse_score,
-            penalty_isps,
-            isp_penalty_score,
-            verified_user_reduction,
-            max_allowed_score: config.get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed).map_err(|e| to_err(e.into()))? as i32,
-        };
-
-        let lookback_days = config.get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays).map_err(|e| to_err(e.into()))?;
+        let risk_score_config = Self::load_risk_score_config(client.config(), to_err)?;
+        let lookback_days = client
+            .config()
+            .get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)
+            .map_err(|e| to_err(e.into()))?;
         let since = now().days_ago(lookback_days);
 
         let referrer_verified = client.rewards().is_verified_by_username(referrer_username).map_err(|e| to_err(e.into()))?;
@@ -140,7 +121,14 @@ impl RewardsClient {
         }
 
         let existing_signals = client
-            .get_matching_risk_signals(&fingerprint, &signal_input.ip_address, &signal_input.ip_isp, &signal_input.device_model, signal_input.device_id, since)
+            .get_matching_risk_signals(
+                &fingerprint,
+                &signal_input.ip_address,
+                &signal_input.ip_isp,
+                &signal_input.device_model,
+                signal_input.device_id,
+                since,
+            )
             .map_err(|e| to_err(e.into()))?;
 
         let risk_result = evaluate_risk(&scoring_input, &existing_signals, &risk_score_config);
@@ -196,45 +184,69 @@ impl RewardsClient {
     }
 
     fn check_ip_eligibility(client: &mut storage::DatabaseClient, input: &RiskScoringInput) -> Result<(), String> {
-        let tor_allowed = client.config().get_config_bool(ConfigKey::ReferralIpTorAllowed).map_err(|e| e.to_string())?;
-        if !tor_allowed && input.ip_result.is_tor {
-            return Err("tor".to_string());
+        let to_str_err = |e: storage::DatabaseError| e.to_string();
+
+        if !client.config().get_config_bool(ConfigKey::ReferralIpTorAllowed).map_err(to_str_err)? && input.ip_result.is_tor {
+            return Err(ConfigKey::ReferralIpTorAllowed.as_ref().to_string());
         }
 
-        let ineligible_countries = client
+        if client
             .config()
             .get_config_vec_string(ConfigKey::ReferralIneligibleCountries)
-            .map_err(|e| e.to_string())?;
-        if ineligible_countries.contains(&input.ip_result.country_code) {
-            return Err("country".to_string());
-        }
-
-        let current = now();
-
-        let global_daily_limit = client.config().get_config_i64(ConfigKey::ReferralUseDailyLimit).map_err(|e| e.to_string())?;
-        if client.count_signals_since(None, current.days_ago(1)).map_err(|e| e.to_string())? >= global_daily_limit {
-            return Err("global_daily_limit".to_string());
-        }
-
-        let daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpDaily).map_err(|e| e.to_string())?;
-        if client
-            .count_signals_since(Some(&input.ip_result.ip_address), current.days_ago(1))
-            .map_err(|e| e.to_string())?
-            >= daily_limit
+            .map_err(to_str_err)?
+            .contains(&input.ip_result.country_code)
         {
-            return Err("ip_daily_limit".to_string());
+            return Err(ConfigKey::ReferralIneligibleCountries.as_ref().to_string());
         }
 
-        let weekly_limit = client.config().get_config_i64(ConfigKey::ReferralPerIpWeekly).map_err(|e| e.to_string())?;
-        if client
-            .count_signals_since(Some(&input.ip_result.ip_address), current.days_ago(7))
-            .map_err(|e| e.to_string())?
-            >= weekly_limit
-        {
-            return Err("ip_weekly_limit".to_string());
-        }
+        Self::check_limit(client, ConfigKey::ReferralUseDailyLimit, None, 1)?;
+        Self::check_limit(client, ConfigKey::ReferralPerIpDaily, Some(&input.ip_result.ip_address), 1)?;
+        Self::check_limit(client, ConfigKey::ReferralPerIpWeekly, Some(&input.ip_result.ip_address), 7)?;
 
         Ok(())
+    }
+
+    fn check_limit(client: &mut storage::DatabaseClient, key: ConfigKey, ip_address: Option<&str>, days_back: i64) -> Result<(), String> {
+        let to_str_err = |e: storage::DatabaseError| e.to_string();
+        let limit = client.config().get_config_i64(key.clone()).map_err(to_str_err)?;
+        let count = client.count_signals_since(ip_address, now().days_ago(days_back)).map_err(to_str_err)?;
+        if count >= limit {
+            return Err(key.as_ref().to_string());
+        }
+        Ok(())
+    }
+
+    fn load_risk_score_config(
+        config: &mut dyn storage::ConfigRepository,
+        to_err: impl Fn(Box<dyn Error + Send + Sync>) -> (Option<i32>, Box<dyn Error + Send + Sync>),
+    ) -> Result<RiskScoreConfig, (Option<i32>, Box<dyn Error + Send + Sync>)> {
+        let blocked_ip_types = config.get_config_vec_string(ConfigKey::ReferralBlockedIpTypes).map_err(|e| to_err(e.into()))?;
+        let blocked_ip_type_penalty = config.get_config_i64(ConfigKey::ReferralBlockedIpTypePenalty).map_err(|e| to_err(e.into()))? as i32;
+        let max_abuse_score = config.get_config_i64(ConfigKey::ReferralMaxAbuseScore).map_err(|e| to_err(e.into()))? as i32;
+        let penalty_isps = config.get_config_vec_string(ConfigKey::ReferralPenaltyIsps).map_err(|e| to_err(e.into()))?;
+        let isp_penalty_score = config.get_config_i64(ConfigKey::ReferralIspPenaltyScore).map_err(|e| to_err(e.into()))? as i32;
+        let verified_user_reduction = config
+            .get_config_i64(ConfigKey::ReferralRiskScoreVerifiedUserReduction)
+            .map_err(|e| to_err(e.into()))? as i32;
+
+        Ok(RiskScoreConfig {
+            fingerprint_match_score: config
+                .get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch)
+                .map_err(|e| to_err(e.into()))? as i32,
+            ip_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIpReuse).map_err(|e| to_err(e.into()))? as i32,
+            isp_model_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch).map_err(|e| to_err(e.into()))? as i32,
+            device_id_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse).map_err(|e| to_err(e.into()))? as i32,
+            ineligible_ip_type_score: config
+                .get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)
+                .map_err(|e| to_err(e.into()))? as i32,
+            blocked_ip_types,
+            blocked_ip_type_penalty,
+            max_abuse_score,
+            penalty_isps,
+            isp_penalty_score,
+            verified_user_reduction,
+            max_allowed_score: config.get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed).map_err(|e| to_err(e.into()))? as i32,
+        })
     }
 
     async fn publish_events(&self, event_ids: Vec<i32>) -> Result<(), Box<dyn Error + Send + Sync>> {
