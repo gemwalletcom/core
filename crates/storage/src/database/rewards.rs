@@ -204,9 +204,13 @@ impl RiskSignalsStore for DatabaseClient {
     }
 
     fn count_signals_since(&mut self, ip_address: Option<&str>, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_referrals;
         use crate::schema::rewards_risk_signals::dsl;
 
-        let mut query = dsl::rewards_risk_signals.filter(dsl::created_at.ge(since)).into_boxed();
+        let mut query = dsl::rewards_risk_signals
+            .inner_join(rewards_referrals::table.on(rewards_referrals::risk_signal_id.eq(dsl::id)))
+            .filter(dsl::created_at.ge(since))
+            .into_boxed();
 
         if let Some(ip) = ip_address {
             query = query.filter(dsl::ip_address.eq(ip));
