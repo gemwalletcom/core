@@ -86,50 +86,41 @@ impl RewardsClient {
         referrer_username: &str,
         ip_address: &str,
     ) -> Result<(), (Option<i32>, Box<dyn Error + Send + Sync>)> {
-        self.check_referrer_limits(referrer_username).map_err(|e| (None, e))?;
-        let invite_event = self.validate_referral_usage(auth, referrer_username).map_err(|e| (None, e))?;
+        let to_err = |e: Box<dyn Error + Send + Sync>| (None, e);
 
-        let mut client = self.database.client().map_err(|e| (None, e))?;
-        let ip_result = self.ip_security_client.check_ip(ip_address).await.map_err(|e| (None, e))?;
+        self.check_referrer_limits(referrer_username).map_err(to_err)?;
+        let invite_event = self.validate_referral_usage(auth, referrer_username).map_err(to_err)?;
 
-        let ineligible_ip_types = client
-            .config()
-            .get_config_vec_string(ConfigKey::ReferralIpIneligibleUsageTypes)
-            .map_err(|e| (None, e.into()))?;
+        let mut client = self.database.client().map_err(to_err)?;
+        let ip_result = self.ip_security_client.check_ip(ip_address).await.map_err(to_err)?;
+
+        let config = client.config();
+        let blocked_ip_types = config.get_config_vec_string(ConfigKey::ReferralBlockedIpTypes).map_err(|e| to_err(e.into()))?;
+        let blocked_ip_type_penalty = config.get_config_i64(ConfigKey::ReferralBlockedIpTypePenalty).map_err(|e| to_err(e.into()))? as i32;
+        let max_abuse_score = config.get_config_i64(ConfigKey::ReferralMaxAbuseScore).map_err(|e| to_err(e.into()))? as i32;
+        let penalty_isps = config.get_config_vec_string(ConfigKey::ReferralPenaltyIsps).map_err(|e| to_err(e.into()))?;
+        let isp_penalty_score = config.get_config_i64(ConfigKey::ReferralIspPenaltyScore).map_err(|e| to_err(e.into()))? as i32;
+        let verified_user_reduction = config.get_config_i64(ConfigKey::ReferralRiskScoreVerifiedUserReduction).map_err(|e| to_err(e.into()))? as i32;
 
         let risk_score_config = RiskScoreConfig {
-            fingerprint_match_score: client
-                .config()
-                .get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch)
-                .map_err(|e| (None, e.into()))? as i32,
-            ip_reuse_score: client
-                .config()
-                .get_config_i64(ConfigKey::ReferralRiskScoreIpReuse)
-                .map_err(|e| (None, e.into()))? as i32,
-            isp_model_match_score: client
-                .config()
-                .get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch)
-                .map_err(|e| (None, e.into()))? as i32,
-            device_id_reuse_score: client
-                .config()
-                .get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse)
-                .map_err(|e| (None, e.into()))? as i32,
-            ineligible_ip_type_score: client
-                .config()
-                .get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)
-                .map_err(|e| (None, e.into()))? as i32,
-            ineligible_ip_types,
-            max_allowed_score: client
-                .config()
-                .get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed)
-                .map_err(|e| (None, e.into()))? as i32,
+            fingerprint_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch).map_err(|e| to_err(e.into()))? as i32,
+            ip_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIpReuse).map_err(|e| to_err(e.into()))? as i32,
+            isp_model_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch).map_err(|e| to_err(e.into()))? as i32,
+            device_id_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse).map_err(|e| to_err(e.into()))? as i32,
+            ineligible_ip_type_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType).map_err(|e| to_err(e.into()))? as i32,
+            blocked_ip_types,
+            blocked_ip_type_penalty,
+            max_abuse_score,
+            penalty_isps,
+            isp_penalty_score,
+            verified_user_reduction,
+            max_allowed_score: config.get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed).map_err(|e| to_err(e.into()))? as i32,
         };
 
-        let lookback_days = client
-            .config()
-            .get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)
-            .map_err(|e| (None, e.into()))?;
+        let lookback_days = config.get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays).map_err(|e| to_err(e.into()))?;
         let since = now().days_ago(lookback_days);
+
+        let referrer_verified = client.rewards().is_verified_by_username(referrer_username).map_err(|e| to_err(e.into()))?;
 
         let scoring_input = RiskScoringInput {
             username: referrer_username.to_string(),
@@ -139,27 +130,21 @@ impl RewardsClient {
             device_model: auth.device.model.clone().unwrap_or_default(),
             device_locale: auth.device.locale.clone(),
             ip_result,
+            referrer_verified,
         };
 
         let signal_input = scoring_input.to_signal_input();
         let fingerprint = signal_input.generate_fingerprint();
+        if let Err(reason) = Self::check_ip_eligibility(&mut client, &scoring_input) {
+            return Err((None, RewardsError::Referral(reason).into()));
+        }
+
         let existing_signals = client
-            .get_matching_risk_signals(
-                &fingerprint,
-                &signal_input.ip_address,
-                &signal_input.ip_isp,
-                &signal_input.device_model,
-                signal_input.device_id,
-                since,
-            )
-            .map_err(|e| (None, e.into()))?;
+            .get_matching_risk_signals(&fingerprint, &signal_input.ip_address, &signal_input.ip_isp, &signal_input.device_model, signal_input.device_id, since)
+            .map_err(|e| to_err(e.into()))?;
 
         let risk_result = evaluate_risk(&scoring_input, &existing_signals, &risk_score_config);
-        let risk_signal_id = client.add_risk_signal(risk_result.signal).map_err(|e| (None, e.into()))?;
-
-        if let Err(reason) = Self::check_ip_eligibility(&mut client, &scoring_input) {
-            return Err((Some(risk_signal_id), RewardsError::Referral(reason).into()));
-        }
+        let risk_signal_id = client.add_risk_signal(risk_result.signal).map_err(|e| to_err(e.into()))?;
 
         if !risk_result.score.is_allowed {
             return Err((Some(risk_signal_id), RewardsError::Referral("risk_score".to_string()).into()));

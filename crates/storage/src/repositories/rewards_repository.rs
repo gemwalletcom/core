@@ -46,6 +46,7 @@ fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, devic
             referrer_username: None,
             referral_count: 0,
             device_id,
+            verified: false,
         },
     )?;
     Ok(username)
@@ -78,6 +79,7 @@ pub trait RewardsRepository {
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
+    fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
 }
@@ -106,6 +108,7 @@ impl RewardsRepository for DatabaseClient {
             points: rewards.points,
             used_referral_code: rewards.referrer_username,
             is_enabled: rewards.is_enabled,
+            verified: rewards.verified,
             redemption_options: options,
         })
     }
@@ -163,6 +166,7 @@ impl RewardsRepository for DatabaseClient {
                     referrer_username: None,
                     referral_count: 0,
                     device_id,
+                    verified: false,
                 },
             )?;
         }
@@ -326,6 +330,11 @@ impl RewardsRepository for DatabaseClient {
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {
         let username = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
         Ok(username.address)
+    }
+
+    fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError> {
+        let rewards = RewardsStore::get_rewards(self, username)?;
+        Ok(rewards.verified)
     }
 
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {

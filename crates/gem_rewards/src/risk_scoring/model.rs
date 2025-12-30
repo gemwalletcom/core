@@ -7,7 +7,12 @@ pub struct RiskScoreConfig {
     pub isp_model_match_score: i32,
     pub device_id_reuse_score: i32,
     pub ineligible_ip_type_score: i32,
-    pub ineligible_ip_types: Vec<String>,
+    pub blocked_ip_types: Vec<String>,
+    pub blocked_ip_type_penalty: i32,
+    pub max_abuse_score: i32,
+    pub penalty_isps: Vec<String>,
+    pub isp_penalty_score: i32,
+    pub verified_user_reduction: i32,
     pub max_allowed_score: i32,
 }
 
@@ -19,13 +24,13 @@ impl Default for RiskScoreConfig {
             isp_model_match_score: 30,
             device_id_reuse_score: 100,
             ineligible_ip_type_score: 100,
-            ineligible_ip_types: vec![
-                "Data Center".to_string(),
-                "Web Hosting".to_string(),
-                "Transit".to_string(),
-                "Content Delivery Network".to_string(),
-            ],
-            max_allowed_score: 50,
+            blocked_ip_types: vec!["Data Center".to_string(), "Web Hosting".to_string(), "Transit".to_string()],
+            blocked_ip_type_penalty: 100,
+            max_abuse_score: 60,
+            penalty_isps: vec![],
+            isp_penalty_score: 30,
+            verified_user_reduction: 30,
+            max_allowed_score: 60,
         }
     }
 }
@@ -43,6 +48,7 @@ pub struct RiskSignalInput {
     pub ip_usage_type: String,
     pub ip_isp: String,
     pub ip_abuse_score: i32,
+    pub referrer_verified: bool,
 }
 
 impl RiskSignalInput {
@@ -72,6 +78,7 @@ pub struct RiskScoreBreakdown {
     pub isp_model_match_score: i32,
     pub device_id_reuse_score: i32,
     pub ineligible_ip_type_score: i32,
+    pub verified_user_reduction: i32,
 }
 
 #[cfg(test)]
@@ -92,6 +99,7 @@ mod tests {
             ip_usage_type: "Fixed Line ISP".to_string(),
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
+            referrer_verified: false,
         };
         let fingerprint = input.generate_fingerprint();
         assert_eq!(fingerprint.len(), 64);

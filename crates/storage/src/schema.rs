@@ -575,6 +575,7 @@ diesel::table! {
         referrer_username -> Nullable<Varchar>,
         referral_count -> Int4,
         device_id -> Int4,
+        verified -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -741,6 +742,7 @@ diesel::table! {
         chain -> Varchar,
         #[max_length = 256]
         address -> Varchar,
+        updated_at -> Timestamp,
         created_at -> Timestamp,
         wallet_index -> Int4,
     }

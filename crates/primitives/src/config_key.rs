@@ -21,7 +21,11 @@ pub enum ConfigKey {
 
     // Referral IP
     ReferralIpConfidenceScoreThreshold,
-    ReferralIpIneligibleUsageTypes,
+    ReferralBlockedIpTypes,
+    ReferralBlockedIpTypePenalty,
+    ReferralMaxAbuseScore,
+    ReferralPenaltyIsps,
+    ReferralIspPenaltyScore,
     ReferralIpTorAllowed,
 
     // Referral Risk Scoring
@@ -30,6 +34,7 @@ pub enum ConfigKey {
     ReferralRiskScoreIspModelMatch,
     ReferralRiskScoreDeviceIdReuse,
     ReferralRiskScoreIneligibleIpType,
+    ReferralRiskScoreVerifiedUserReduction,
     ReferralRiskScoreMaxAllowed,
     ReferralRiskScoreLookbackDays,
 
@@ -71,14 +76,19 @@ impl ConfigKey {
             Self::RedemptionPerUserDaily => "1",
             Self::RedemptionPerUserWeekly => "3",
             Self::ReferralIpConfidenceScoreThreshold => "10",
-            Self::ReferralIpIneligibleUsageTypes => r#"["Data Center", "Web Hosting", "Transit", "Content Delivery Network"]"#,
+            Self::ReferralBlockedIpTypes => r#"["Data Center", "Web Hosting", "Transit"]"#,
+            Self::ReferralBlockedIpTypePenalty => "100",
+            Self::ReferralMaxAbuseScore => "60",
+            Self::ReferralPenaltyIsps => r#"[]"#,
+            Self::ReferralIspPenaltyScore => "30",
             Self::ReferralIpTorAllowed => "false",
             Self::ReferralRiskScoreFingerprintMatch => "100",
             Self::ReferralRiskScoreIpReuse => "50",
             Self::ReferralRiskScoreIspModelMatch => "30",
             Self::ReferralRiskScoreDeviceIdReuse => "100",
             Self::ReferralRiskScoreIneligibleIpType => "100",
-            Self::ReferralRiskScoreMaxAllowed => "50",
+            Self::ReferralRiskScoreVerifiedUserReduction => "20",
+            Self::ReferralRiskScoreMaxAllowed => "60",
             Self::ReferralRiskScoreLookbackDays => "90",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",

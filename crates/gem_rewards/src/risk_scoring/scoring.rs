@@ -4,13 +4,24 @@ use super::model::{RiskScore, RiskScoreBreakdown, RiskScoreConfig, RiskSignalInp
 
 pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSignalRow], config: &RiskScoreConfig) -> RiskScore {
     let fingerprint = input.generate_fingerprint();
+
+    let is_penalty_isp = config.penalty_isps.iter().any(|isp| input.ip_isp.contains(isp));
+    let is_blocked_type = config.blocked_ip_types.iter().any(|t| input.ip_usage_type.contains(t));
+
     let mut breakdown = RiskScoreBreakdown {
-        abuse_score: input.ip_abuse_score,
-        ineligible_ip_type_score: if config.ineligible_ip_types.iter().any(|t| input.ip_usage_type.contains(t)) {
-            config.ineligible_ip_type_score
+        abuse_score: if is_blocked_type {
+            input.ip_abuse_score
+        } else {
+            input.ip_abuse_score.min(config.max_abuse_score)
+        },
+        ineligible_ip_type_score: if is_blocked_type {
+            config.blocked_ip_type_penalty
+        } else if is_penalty_isp {
+            config.isp_penalty_score
         } else {
             0
         },
+        verified_user_reduction: if input.referrer_verified { config.verified_user_reduction } else { 0 },
         ..Default::default()
     };
 
@@ -50,12 +61,14 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         }
     }
 
-    let score = breakdown.abuse_score
+    let score = (breakdown.abuse_score
         + breakdown.fingerprint_match_score
         + breakdown.ip_reuse_score
         + breakdown.isp_model_match_score
         + breakdown.device_id_reuse_score
-        + breakdown.ineligible_ip_type_score;
+        + breakdown.ineligible_ip_type_score
+        - breakdown.verified_user_reduction)
+        .max(0);
 
     RiskScore {
         score,
@@ -82,6 +95,7 @@ mod tests {
             ip_usage_type: "Fixed Line ISP".to_string(),
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
+            referrer_verified: false,
         }
     }
 
@@ -118,11 +132,12 @@ mod tests {
     #[test]
     fn high_abuse_score() {
         let mut input = create_test_input();
-        input.ip_abuse_score = 60;
+        input.ip_usage_type = "Data Center".to_string();
+        input.ip_abuse_score = 70;
         let config = RiskScoreConfig::default();
         let result = calculate_risk_score(&input, &[], &config);
 
-        assert_eq!(result.score, 60);
+        assert_eq!(result.score, 170);
         assert!(!result.is_allowed);
     }
 
@@ -142,7 +157,8 @@ mod tests {
     #[test]
     fn ip_reuse() {
         let input = create_test_input();
-        let config = RiskScoreConfig::default();
+        let mut config = RiskScoreConfig::default();
+        config.max_allowed_score = 40;
 
         let existing = create_signal("other_user", "different", "192.168.1.1", "Verizon", "Pixel 8", 2);
         let result = calculate_risk_score(&input, &[existing], &config);
@@ -200,5 +216,69 @@ mod tests {
         assert_eq!(result.breakdown.fingerprint_match_score, 100);
         assert_eq!(result.breakdown.isp_model_match_score, 0);
         assert_eq!(result.score, 100);
+    }
+
+    #[test]
+    fn default_ip_type_limits_abuse_score() {
+        let mut input = create_test_input();
+        input.ip_usage_type = "Fixed Line ISP".to_string();
+        input.ip_abuse_score = 80;
+        let result = calculate_risk_score(&input, &[], &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.abuse_score, 60);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn blocked_ip_type_gets_full_abuse_score() {
+        let mut input = create_test_input();
+        input.ip_usage_type = "Data Center/Web Hosting/Transit".to_string();
+        input.ip_abuse_score = 60;
+        let result = calculate_risk_score(&input, &[], &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.abuse_score, 60);
+        assert_eq!(result.breakdown.ineligible_ip_type_score, 100);
+    }
+
+    #[test]
+    fn penalty_isp_adds_points() {
+        let mut input = create_test_input();
+        input.ip_isp = "SuspiciousISP Inc".to_string();
+        input.ip_abuse_score = 25;
+        let mut config = RiskScoreConfig::default();
+        config.penalty_isps = vec!["SuspiciousISP".to_string()];
+        config.max_allowed_score = 50;
+        let result = calculate_risk_score(&input, &[], &config);
+
+        assert_eq!(result.breakdown.abuse_score, 25);
+        assert_eq!(result.breakdown.ineligible_ip_type_score, 30);
+        assert_eq!(result.score, 55);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn verified_user_reduces_score() {
+        let mut input = create_test_input();
+        input.ip_abuse_score = 60;
+        input.referrer_verified = true;
+        let config = RiskScoreConfig::default();
+        let result = calculate_risk_score(&input, &[], &config);
+
+        assert_eq!(result.breakdown.abuse_score, 60);
+        assert_eq!(result.breakdown.verified_user_reduction, 30);
+        assert_eq!(result.score, 30);
+        assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn verified_user_score_cannot_go_negative() {
+        let mut input = create_test_input();
+        input.referrer_verified = true;
+        let config = RiskScoreConfig::default();
+        let result = calculate_risk_score(&input, &[], &config);
+
+        assert_eq!(result.breakdown.verified_user_reduction, 30);
+        assert_eq!(result.score, 0);
+        assert!(result.is_allowed);
     }
 }

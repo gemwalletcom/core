@@ -13,6 +13,7 @@ pub struct RiskScoringInput {
     pub device_model: String,
     pub device_locale: String,
     pub ip_result: IpCheckResult,
+    pub referrer_verified: bool,
 }
 
 impl RiskScoringInput {
@@ -29,6 +30,7 @@ impl RiskScoringInput {
             ip_usage_type: self.ip_result.usage_type.clone(),
             ip_isp: self.ip_result.isp.clone(),
             ip_abuse_score: self.ip_result.confidence_score as i32,
+            referrer_verified: self.referrer_verified,
         }
     }
 }
@@ -82,6 +84,7 @@ mod tests {
                 usage_type: "Fixed Line ISP".to_string(),
                 isp: "Comcast".to_string(),
             },
+            referrer_verified: false,
         }
     }
 

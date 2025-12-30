@@ -68,6 +68,7 @@ pub struct Rewards {
     pub points: i32,
     pub used_referral_code: Option<String>,
     pub is_enabled: bool,
+    pub verified: bool,
     pub redemption_options: Vec<RewardRedemptionOption>,
     //pub level: Option<RewardLevel>,
 }
