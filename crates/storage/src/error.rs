@@ -26,3 +26,40 @@ impl From<diesel::result::Error> for DatabaseError {
         }
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum ReferralValidationError {
+    CodeDoesNotExist,
+    AlreadyUsed,
+    DeviceAlreadyUsed,
+    CannotReferSelf,
+    RewardsNotEnabled(String),
+    Database(DatabaseError),
+}
+
+impl fmt::Display for ReferralValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ReferralValidationError::CodeDoesNotExist => write!(f, "Referral code does not exist"),
+            ReferralValidationError::AlreadyUsed => write!(f, "Already used a referral code"),
+            ReferralValidationError::DeviceAlreadyUsed => write!(f, "Device already used a referral code"),
+            ReferralValidationError::CannotReferSelf => write!(f, "Cannot use your own referral code"),
+            ReferralValidationError::RewardsNotEnabled(user) => write!(f, "Rewards are not enabled for {}", user),
+            ReferralValidationError::Database(e) => write!(f, "{}", e),
+        }
+    }
+}
+
+impl Error for ReferralValidationError {}
+
+impl From<DatabaseError> for ReferralValidationError {
+    fn from(error: DatabaseError) -> Self {
+        ReferralValidationError::Database(error)
+    }
+}
+
+impl From<diesel::result::Error> for ReferralValidationError {
+    fn from(error: diesel::result::Error) -> Self {
+        ReferralValidationError::Database(error.into())
+    }
+}

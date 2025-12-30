@@ -11,7 +11,7 @@ pub use self::database::{
     assets::{AssetFilter, AssetUpdate},
     rewards_redemptions::RedemptionUpdate,
 };
-pub use self::error::DatabaseError;
+pub use self::error::{DatabaseError, ReferralValidationError};
 pub use self::models::{RewardRedemptionOptionRow, ScanAddressTypeRow};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
