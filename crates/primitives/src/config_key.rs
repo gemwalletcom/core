@@ -25,7 +25,7 @@ pub enum ConfigKey {
     ReferralBlockedIpTypePenalty,
     ReferralMaxAbuseScore,
     ReferralPenaltyIsps,
-    ReferralIspPenaltyScore,
+    ReferralPenaltyIspsScore,
     ReferralIpTorAllowed,
 
     // Referral Risk Scoring
@@ -84,7 +84,7 @@ impl ConfigKey {
             Self::ReferralBlockedIpTypePenalty => "100",
             Self::ReferralMaxAbuseScore => "60",
             Self::ReferralPenaltyIsps => r#"[]"#,
-            Self::ReferralIspPenaltyScore => "30",
+            Self::ReferralPenaltyIspsScore => "30",
             Self::ReferralIpTorAllowed => "false",
             Self::ReferralRiskScoreFingerprintMatch => "100",
             Self::ReferralRiskScoreIpReuse => "50",

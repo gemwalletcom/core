@@ -270,7 +270,7 @@ impl RewardsClient {
             blocked_ip_type_penalty: config.get_config_i64(ConfigKey::ReferralBlockedIpTypePenalty)?,
             max_abuse_score: config.get_config_i64(ConfigKey::ReferralMaxAbuseScore)?,
             penalty_isps: config.get_config_vec_string(ConfigKey::ReferralPenaltyIsps)?,
-            isp_penalty_score: config.get_config_i64(ConfigKey::ReferralIspPenaltyScore)?,
+            isp_penalty_score: config.get_config_i64(ConfigKey::ReferralPenaltyIspsScore)?,
             verified_user_reduction: config.get_config_i64(ConfigKey::ReferralRiskScoreVerifiedUserReduction)?,
             max_allowed_score: config.get_config_i64(ConfigKey::ReferralRiskScoreMaxAllowed)?,
             same_referrer_pattern_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerPatternThreshold)?,
