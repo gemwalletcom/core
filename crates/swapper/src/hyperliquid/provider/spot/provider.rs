@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use bigdecimal::{BigDecimal, Zero};
 use gem_hypercore::{
-    core::actions::agent::order::{PlaceOrder, make_market_order},
+    core::actions::agent::order::{Builder, PlaceOrder, make_market_order},
     models::{
         spot::{OrderbookResponse, SpotMarket, SpotMeta},
         token::SpotToken,
@@ -118,6 +118,7 @@ impl Swapper for HyperCoreSpot {
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+        let client = self.client()?;
         let meta = self.load_spot_meta().await?;
         let from_token = self.resolve_token(&meta, &request.from_asset)?;
         let to_token = self.resolve_token(&meta, &request.to_asset)?;
@@ -179,8 +180,18 @@ impl Swapper for HyperCoreSpot {
                 routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
-                    route_data: serde_json::to_string(&make_market_order(asset_index, side.is_buy(), &limit_price, &size_str, false, None))
-                        .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
+                    route_data: serde_json::to_string(&make_market_order(
+                        asset_index,
+                        side.is_buy(),
+                        &limit_price,
+                        &size_str,
+                        false,
+                        Some(Builder {
+                            builder_address: client.config.builder_address.clone(),
+                            fee: client.config.max_builder_fee_bps,
+                        }),
+                    ))
+                    .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
                     gas_limit: None,
                 }],
             },
