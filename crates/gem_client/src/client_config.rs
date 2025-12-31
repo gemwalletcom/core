@@ -8,6 +8,5 @@ pub fn builder() -> reqwest::ClientBuilder {
         .pool_max_idle_per_host(20)
         .tcp_keepalive(Duration::from_secs(60))
         .gzip(true)
-        .brotli(true)
         .deflate(true)
 }
