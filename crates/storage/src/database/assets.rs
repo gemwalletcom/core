@@ -31,7 +31,6 @@ pub(crate) trait AssetsStore {
     fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(AssetRow, Option<PriceRow>)>, diesel::result::Error>;
     fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error>;
     fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error>;
-    fn add_chains(&mut self, values: Vec<String>) -> Result<usize, diesel::result::Error>;
 }
 
 impl AssetsStore for DatabaseClient {
@@ -135,18 +134,5 @@ impl AssetsStore for DatabaseClient {
 
     fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error> {
         Ok((std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() / 3600) as i32)
-    }
-
-    fn add_chains(&mut self, values: Vec<String>) -> Result<usize, diesel::result::Error> {
-        let chain_values = values
-            .iter()
-            .map(|chain_id| crate::models::ChainRow { id: chain_id.clone() })
-            .collect::<Vec<_>>();
-
-        use crate::schema::chains::dsl::*;
-        diesel::insert_into(chains)
-            .values(chain_values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
     }
 }

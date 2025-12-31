@@ -212,6 +212,7 @@ pub struct RiskSignalRow {
     pub referrer_username: String,
     pub device_id: i32,
     pub device_platform: String,
+    pub device_platform_store: String,
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
@@ -221,6 +222,7 @@ pub struct RiskSignalRow {
     pub ip_isp: String,
     pub ip_abuse_score: i32,
     pub risk_score: i32,
+    pub metadata: Option<serde_json::Value>,
     pub created_at: NaiveDateTime,
 }
 
@@ -231,6 +233,7 @@ pub struct NewRiskSignalRow {
     pub referrer_username: String,
     pub device_id: i32,
     pub device_platform: String,
+    pub device_platform_store: String,
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
@@ -240,4 +243,5 @@ pub struct NewRiskSignalRow {
     pub ip_isp: String,
     pub ip_abuse_score: i32,
     pub risk_score: i32,
+    pub metadata: Option<serde_json::Value>,
 }

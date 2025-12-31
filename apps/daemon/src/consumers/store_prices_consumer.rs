@@ -3,7 +3,7 @@ use pricer::PriceClient;
 use primitives::AssetId;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use storage::Database;
+use storage::{Database, PricesRepository};
 use storage::models::PriceRow;
 use streamer::{PricesPayload, consumer::MessageConsumer};
 
@@ -58,7 +58,7 @@ impl MessageConsumer<PricesPayload, usize> for StorePricesConsumer {
 
     async fn process(&self, payload: PricesPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let prices: Vec<PriceRow> = payload.prices.iter().map(|p| PriceRow::from_price_data(p.clone())).collect();
-        self.database.client()?.prices().set_prices(prices.clone())?;
+        self.database.prices()?.set_prices(prices.clone())?;
 
         self.update_prices_cache(prices).await?;
 

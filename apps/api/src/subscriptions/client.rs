@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::{ChainAddress, Subscription};
-use storage::Database;
+use storage::{Database, SubscriptionsRepository};
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue};
 
 #[derive(Clone)]
@@ -16,7 +16,7 @@ impl SubscriptionsClient {
     }
 
     pub async fn add_subscriptions(&self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let result = self.database.client()?.subscriptions().add_subscriptions(subscriptions.clone(), device_id);
+        let result = self.database.subscriptions()?.add_subscriptions(subscriptions.clone(), device_id);
         let payload = subscriptions
             .clone()
             .into_iter()
@@ -27,10 +27,10 @@ impl SubscriptionsClient {
     }
 
     pub async fn get_subscriptions_by_device_id(&self, device_id: &str) -> Result<Vec<Subscription>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.subscriptions().get_subscriptions_by_device_id(device_id, None)?)
+        Ok(self.database.subscriptions()?.get_subscriptions_by_device_id(device_id, None)?)
     }
 
     pub async fn delete_subscriptions(&self, device_id: &str, subscriptions: Vec<Subscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.subscriptions().delete_subscriptions(subscriptions, device_id)?)
+        Ok(self.database.subscriptions()?.delete_subscriptions(subscriptions, device_id)?)
     }
 }

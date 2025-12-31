@@ -7,7 +7,7 @@ use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::NaiveDateTime;
 use primitives::rewards::RewardRedemptionType;
-use primitives::{Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
+use primitives::{Chain, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
     !username.eq_ignore_ascii_case(address)
@@ -60,7 +60,7 @@ pub trait RewardsRepository {
     fn create_reward(&mut self, address: &str, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
-    fn validate_referral_use(&mut self, address: &str, referrer_username: &str, device_id: i32) -> Result<(), ReferralValidationError>;
+    fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32) -> Result<(), ReferralValidationError>;
     fn create_referral_use(
         &mut self,
         address: &str,
@@ -219,7 +219,7 @@ impl RewardsRepository for DatabaseClient {
         }
     }
 
-    fn validate_referral_use(&mut self, address: &str, referrer_username: &str, device_id: i32) -> Result<(), ReferralValidationError> {
+    fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32) -> Result<(), ReferralValidationError> {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referrer_username))?;
         let referrer_rewards = RewardsStore::get_rewards(self, referrer_username)?;
 
@@ -227,22 +227,19 @@ impl RewardsRepository for DatabaseClient {
             return Err(ReferralValidationError::RewardsNotEnabled(referrer_username.to_string()));
         }
 
-        if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
-            let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
-            let rewards = RewardsStore::get_rewards(self, &username.username)?;
-            if !rewards.is_enabled {
-                return Err(ReferralValidationError::RewardsNotEnabled(username.username.clone()));
-            }
-            if rewards.referrer_username.is_some() {
-                return Err(ReferralValidationError::AlreadyUsed);
-            }
-            if referrer_username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
-                return Err(ReferralValidationError::CannotReferSelf);
-            }
-        }
+        let device_subscriptions = SubscriptionsStore::get_device_addresses(self, device_id, Chain::Ethereum.as_ref())?;
 
-        if SubscriptionsStore::get_device_subscription_address_exists(self, device_id, &referrer.address)? {
-            return Err(ReferralValidationError::CannotReferSelf);
+        for address in &device_subscriptions {
+            if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
+                let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+                let rewards = RewardsStore::get_rewards(self, &username.username)?;
+                if rewards.referrer_username.is_some() {
+                    return Err(ReferralValidationError::AlreadyUsed);
+                }
+                if referrer_username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
+                    return Err(ReferralValidationError::CannotReferSelf);
+                }
+            }
         }
 
         if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {

@@ -9,6 +9,7 @@ pub struct RiskScoringInput {
     pub username: String,
     pub device_id: i32,
     pub device_platform: String,
+    pub device_platform_store: String,
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
@@ -22,6 +23,7 @@ impl RiskScoringInput {
             username: self.username.clone(),
             device_id: self.device_id,
             device_platform: self.device_platform.clone(),
+            device_platform_store: self.device_platform_store.clone(),
             device_os: self.device_os.clone(),
             device_model: self.device_model.clone(),
             device_locale: self.device_locale.clone(),
@@ -49,6 +51,7 @@ pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow
         referrer_username: signal_input.username,
         device_id: signal_input.device_id,
         device_platform: signal_input.device_platform,
+        device_platform_store: signal_input.device_platform_store,
         device_os: signal_input.device_os,
         device_model: signal_input.device_model,
         device_locale: signal_input.device_locale,
@@ -58,6 +61,7 @@ pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow
         ip_isp: signal_input.ip_isp,
         ip_abuse_score: signal_input.ip_abuse_score as i32,
         risk_score: score.score as i32,
+        metadata: Some(score.breakdown.to_metadata_json()),
     };
 
     RiskResult { score, signal }
@@ -73,6 +77,7 @@ mod tests {
             username: "user1".to_string(),
             device_id: 1,
             device_platform: "iOS".to_string(),
+            device_platform_store: "appStore".to_string(),
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),

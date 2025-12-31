@@ -5,7 +5,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use cacher::{CacheKey, CacherClient};
 use settings_chain::ChainProviders;
-use storage::Database;
+use storage::{AssetsAddressesRepository, AssetsRepository, Database};
 use storage::models::AssetAddressRow;
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
@@ -60,7 +60,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
         }
 
         let asset_ids: Vec<_> = non_zero_addresses.iter().flat_map(|x| AssetId::new(&x.asset_id)).collect();
-        let existing_ids = self.database.client()?.assets().get_assets(asset_ids.ids())?.ids();
+        let existing_ids = self.database.assets()?.get_assets(asset_ids.ids())?.ids();
 
         let missing_ids: Vec<_> = asset_ids.into_iter().filter(|id| !existing_ids.contains(id)).collect();
         let existing_addresses: Vec<_> = non_zero_addresses
@@ -70,13 +70,11 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
 
         let _ = self
             .database
-            .client()?
-            .assets_addresses()
+            .assets_addresses()?
             .delete_assets_addresses(zero_balance_addresses.into_iter().map(|x| x.as_primitive()).collect());
         let _ = self
             .database
-            .client()?
-            .assets_addresses()
+            .assets_addresses()?
             .add_assets_addresses(existing_addresses.iter().map(|x| x.as_primitive()).collect());
 
         self.stream_producer.publish_fetch_assets(missing_ids).await?;

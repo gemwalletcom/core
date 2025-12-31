@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, SearchIndexClient, sanitize_index_primary_id};
-use storage::Database;
+use storage::{Database, PricesRepository, TagRepository};
 
 pub struct AssetsIndexUpdater {
     database: Database,
@@ -17,8 +17,8 @@ impl AssetsIndexUpdater {
     }
 
     pub async fn update(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let prices = self.database.client()?.prices().get_prices_assets_list()?;
-        let assets_tags = self.database.client()?.tag().get_assets_tags()?;
+        let prices = self.database.prices()?.get_prices_assets_list()?;
+        let assets_tags = self.database.tag()?.get_assets_tags()?;
         let assets_tags_map: HashMap<String, Vec<String>> = assets_tags.into_iter().fold(HashMap::new(), |mut acc, tag| {
             acc.entry(tag.asset_id).or_default().push(tag.tag_id);
             acc
