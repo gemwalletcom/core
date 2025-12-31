@@ -3,7 +3,7 @@ use std::error::Error;
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
 use primitives::{ConfigKey, NaiveDateTimeExt, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
-use storage::{Database, ReferralValidationError, RiskSignalsRepository};
+use storage::{ConfigRepository, Database, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 use crate::auth::VerifiedAuth;
@@ -25,7 +25,7 @@ struct ReferralLimitsConfig {
 }
 
 pub struct RewardsClient {
-    database: Database,
+    db: Database,
     stream_producer: StreamProducer,
     ip_security_client: IpSecurityClient,
 }
@@ -33,14 +33,14 @@ pub struct RewardsClient {
 impl RewardsClient {
     pub fn new(database: Database, stream_producer: StreamProducer, ip_security_client: IpSecurityClient) -> Self {
         Self {
-            database,
+            db: database,
             stream_producer,
             ip_security_client,
         }
     }
 
     pub fn get_rewards(&mut self, address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        match self.database.client()?.rewards().get_reward_by_address(address) {
+        match self.db.rewards()?.get_reward_by_address(address) {
             Ok(rewards) => Ok(rewards),
             Err(storage::DatabaseError::NotFound) => Ok(Rewards::default()),
             Err(e) => Err(e.into()),
@@ -48,22 +48,22 @@ impl RewardsClient {
     }
 
     pub fn get_rewards_events(&mut self, address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.rewards().get_reward_events_by_address(address)?)
+        Ok(self.db.rewards()?.get_reward_events_by_address(address)?)
     }
 
     pub fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.rewards().get_rewards_leaderboard()?)
+        Ok(self.db.rewards()?.get_rewards_leaderboard()?)
     }
 
     pub fn get_rewards_redemption_option(&mut self, code: &str) -> Result<RewardRedemptionOption, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.rewards_redemptions().get_redemption_option(code)?)
+        Ok(self.db.rewards_redemptions()?.get_redemption_option(code)?)
     }
 
     pub async fn create_referral(&mut self, address: &str, code: &str, device_id: i32, ip_address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        let limit = self.database.client()?.config().get_config_i64(ConfigKey::UsernameCreationPerIp)?;
+        let limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerIp)?;
         self.ip_security_client.check_username_creation_limit(ip_address, limit).await?;
 
-        let (rewards, event_id) = self.database.client()?.rewards().create_reward(address, code, device_id)?;
+        let (rewards, event_id) = self.db.rewards()?.create_reward(address, code, device_id)?;
         self.ip_security_client.record_username_creation(ip_address).await?;
         self.publish_events(vec![event_id]).await?;
         Ok(rewards)
@@ -71,39 +71,35 @@ impl RewardsClient {
 
     #[allow(dead_code)]
     pub fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.rewards().change_username(address, new_username)?)
+        Ok(self.db.rewards()?.change_username(address, new_username)?)
     }
 
     pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         let referrer_username = self
-            .database
-            .client()?
-            .rewards()
+            .db
+            .rewards()?
             .get_referrer_username(code)?
             .ok_or(ReferralValidationError::CodeDoesNotExist)?;
 
         match self.validate_and_score_referral(auth, &referrer_username, ip_address).await {
             ReferralProcessResult::Success(risk_signal_id, invite_event) => {
-                self.database
-                    .client()?
-                    .rewards()
+                self.db
+                    .rewards()?
                     .create_referral_use(&auth.address, &referrer_username, auth.device.id, risk_signal_id, invite_event)?;
                 Ok(())
             }
             ReferralProcessResult::Failed(error) => {
-                if let Ok(mut client) = self.database.client() {
-                    let _ = client
-                        .rewards()
-                        .add_referral_attempt(&referrer_username, &auth.address, auth.device.id, None, &error.to_string());
-                }
+                let _ = self
+                    .db
+                    .rewards()?
+                    .add_referral_attempt(&referrer_username, &auth.address, auth.device.id, None, &error.to_string());
                 Err(RewardsError::Referral(error.user_message()).into())
             }
             ReferralProcessResult::RiskScoreExceeded(risk_signal_id, error) => {
-                if let Ok(mut client) = self.database.client() {
-                    let _ = client
-                        .rewards()
-                        .add_referral_attempt(&referrer_username, &auth.address, auth.device.id, Some(risk_signal_id), &error.to_string());
-                }
+                let _ = self
+                    .db
+                    .rewards()?
+                    .add_referral_attempt(&referrer_username, &auth.address, auth.device.id, Some(risk_signal_id), &error.to_string());
                 Err(RewardsError::Referral(error.user_message()).into())
             }
         }
@@ -124,7 +120,7 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let mut client = match self.database.client() {
+        let mut client = match self.db.client() {
             Ok(c) => c,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
@@ -150,6 +146,7 @@ impl RewardsClient {
             username: referrer_username.to_string(),
             device_id: auth.device.id,
             device_platform: auth.device.platform.clone(),
+            device_platform_store: auth.device.platform_store.clone().map(|ps| ps.to_string()).unwrap_or_default(),
             device_os: auth.device.os.clone().unwrap_or_default(),
             device_model: auth.device.model.clone().unwrap_or_default(),
             device_locale: auth.device.locale.clone(),
@@ -223,15 +220,14 @@ impl RewardsClient {
 
     fn check_referrer_limits(&mut self, referrer_code: &str) -> Result<(), ReferralError> {
         let current = now();
-        let mut client = self.database.client()?;
 
-        let daily_limit = client.config().get_config_i64(ConfigKey::ReferralPerUserDaily)?;
-        if client.rewards().count_referrals_since(referrer_code, current.days_ago(1))? >= daily_limit {
+        let daily_limit = self.db.config()?.get_config_i64(ConfigKey::ReferralPerUserDaily)?;
+        if self.db.rewards()?.count_referrals_since(referrer_code, current.days_ago(1))? >= daily_limit {
             return Err(ReferralError::ReferrerLimitReached("daily".to_string()));
         }
 
-        let weekly_limit = client.config().get_config_i64(ConfigKey::ReferralPerUserWeekly)?;
-        if client.rewards().count_referrals_since(referrer_code, current.days_ago(7))? >= weekly_limit {
+        let weekly_limit = self.db.config()?.get_config_i64(ConfigKey::ReferralPerUserWeekly)?;
+        if self.db.rewards()?.count_referrals_since(referrer_code, current.days_ago(7))? >= weekly_limit {
             return Err(ReferralError::ReferrerLimitReached("weekly".to_string()));
         }
 
@@ -239,13 +235,12 @@ impl RewardsClient {
     }
 
     fn validate_referral_usage(&mut self, auth: &VerifiedAuth, referrer_username: &str) -> Result<RewardEventType, ReferralError> {
-        let mut client = self.database.client()?;
-        let first_subscription_date = client.rewards().get_first_subscription_date(vec![auth.address.clone()])?;
+        let first_subscription_date = self.db.rewards()?.get_first_subscription_date(vec![auth.address.clone()])?;
 
         let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
         let is_new_subscription = first_subscription_date.map(|d| d.is_within_days(REFERRAL_ELIGIBILITY_DAYS)).unwrap_or(true);
 
-        client.rewards().validate_referral_use(&auth.address, referrer_username, auth.device.id)?;
+        self.db.rewards()?.validate_referral_use(referrer_username, auth.device.id)?;
 
         Ok(if is_new_device && is_new_subscription {
             RewardEventType::InviteNew

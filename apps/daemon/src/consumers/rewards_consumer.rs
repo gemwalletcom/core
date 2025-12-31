@@ -3,7 +3,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use localizer::LanguageLocalizer;
 use primitives::{Device, GorushNotification, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType};
-use storage::Database;
+use storage::{Database, RewardsRepository};
 use streamer::{NotificationsPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
 pub struct RewardsConsumer {
@@ -24,10 +24,8 @@ impl MessageConsumer<RewardsNotificationPayload, usize> for RewardsConsumer {
     }
 
     async fn process(&self, payload: RewardsNotificationPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let mut client = self.database.client()?;
-
-        let event = client.rewards().get_reward_event(payload.event_id)?;
-        let devices = client.rewards().get_reward_event_devices(payload.event_id)?;
+        let event = self.database.rewards()?.get_reward_event(payload.event_id)?;
+        let devices = self.database.rewards()?.get_reward_event_devices(payload.event_id)?;
 
         let notifications: Vec<GorushNotification> = devices
             .into_iter()

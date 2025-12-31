@@ -2,6 +2,7 @@ pub mod assets_addresses_repository;
 pub mod assets_links_repository;
 pub mod assets_repository;
 pub mod assets_types_repository;
+pub mod chains_repository;
 pub mod charts_repository;
 pub mod config_repository;
 pub mod devices_repository;

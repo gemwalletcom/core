@@ -2,7 +2,7 @@ use std::error::Error;
 
 use cacher::CacherClient;
 use primitives::{AssetId, AssetTag, Markets, MarketsAssets};
-use storage::Database;
+use storage::{Database, PricesRepository, TagRepository};
 
 #[derive(Clone)]
 pub struct MarketsClient {
@@ -26,20 +26,19 @@ impl MarketsClient {
     }
 
     pub async fn get_asset_ids_for_prices_ids(&self, price_ids: Vec<String>) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.client()?.prices().get_prices_assets_for_price_ids(price_ids.clone())?;
+        let assets = self.database.prices()?.get_prices_assets_for_price_ids(price_ids.clone())?;
         let asset_map: std::collections::HashMap<_, _> = assets.into_iter().map(|asset| (asset.price_id, asset.asset_id)).collect();
         Ok(price_ids.into_iter().filter_map(|price_id| asset_map.get(&price_id).cloned()).collect())
     }
 
     pub fn set_asset_ids_for_tag(&self, tag: AssetTag, asset_ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.tag().set_assets_tags_for_tag(tag.as_ref(), asset_ids)?)
+        Ok(self.database.tag()?.set_assets_tags_for_tag(tag.as_ref(), asset_ids)?)
     }
 
     pub fn get_asset_ids_for_tag(&self, tag: AssetTag) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
-            .client()?
-            .tag()
+            .tag()?
             .get_assets_tags_for_tag(tag.as_ref())?
             .into_iter()
             .flat_map(|x| AssetId::new(x.asset_id.as_str()))

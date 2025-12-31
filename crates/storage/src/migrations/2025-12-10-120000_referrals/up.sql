@@ -33,6 +33,7 @@ CREATE TABLE rewards_risk_signals (
     referrer_username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON DELETE CASCADE ON UPDATE CASCADE,
     device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     device_platform VARCHAR(16) NOT NULL,
+    device_platform_store VARCHAR(32) NOT NULL,
     device_os VARCHAR(32) NOT NULL,
     device_model VARCHAR(64) NOT NULL,
     device_locale VARCHAR(16) NOT NULL,

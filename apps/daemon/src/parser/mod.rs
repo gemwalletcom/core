@@ -37,7 +37,7 @@ impl Parser {
 
     pub async fn start(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
         loop {
-            let state = self.database.client()?.parser_state().get_parser_state(self.chain.as_ref())?;
+            let state = self.database.parser_state()?.get_parser_state(self.chain.as_ref())?;
             let timeout = cmp::max(Duration::from_millis(state.timeout_latest_block as u64), self.options.timeout);
 
             if !state.is_enabled {
@@ -51,16 +51,16 @@ impl Parser {
                     let latest_block_i64 = latest_block as i64;
                     let _ = self
                         .database
-                        .client()
+                        .parser_state()
                         .ok()
-                        .and_then(|mut c| c.parser_state().set_parser_state_latest_block(self.chain.as_ref(), latest_block_i64).ok());
+                        .and_then(|mut c| c.set_parser_state_latest_block(self.chain.as_ref(), latest_block_i64).ok());
                     // initial start
                     if state.current_block == 0 {
                         let _ = self
                             .database
-                            .client()
+                            .parser_state()
                             .ok()
-                            .and_then(|mut c| c.parser_state().set_parser_state_current_block(self.chain.as_ref(), latest_block_i64).ok());
+                            .and_then(|mut c| c.set_parser_state_current_block(self.chain.as_ref(), latest_block_i64).ok());
                     }
                     if next_current_block >= latest_block_i64 {
                         info_with_fields!(
@@ -85,7 +85,7 @@ impl Parser {
 
             loop {
                 let start = Instant::now();
-                let state = self.database.client()?.parser_state().get_parser_state(self.chain.as_ref())?;
+                let state = self.database.parser_state()?.get_parser_state(self.chain.as_ref())?;
                 let start_block = state.current_block + 1;
                 let end_block = cmp::min(start_block + state.parallel_blocks as i64 - 1, state.latest_block - state.await_blocks as i64);
                 let next_blocks: Vec<u64> = (start_block..=end_block).map(|b| b as u64).collect();
@@ -102,8 +102,7 @@ impl Parser {
                     self.stream_producer.publish_blocks(self.chain, &next_blocks).await?;
                     let _ = self
                         .database
-                        .client()?
-                        .parser_state()
+                        .parser_state()?
                         .set_parser_state_current_block(self.chain.as_ref(), end_block);
 
                     info_with_fields!(
@@ -120,8 +119,7 @@ impl Parser {
                     Ok(result) => {
                         let _ = self
                             .database
-                            .client()?
-                            .parser_state()
+                            .parser_state()?
                             .set_parser_state_current_block(self.chain.as_ref(), end_block);
 
                         info_with_fields!(
@@ -170,8 +168,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
         vec![chain]
     } else {
         database
-            .client()?
-            .parser_state()
+            .parser_state()?
             .get_parser_states()
             .unwrap()
             .into_iter()

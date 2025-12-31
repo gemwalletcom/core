@@ -690,6 +690,8 @@ diesel::table! {
         #[max_length = 16]
         device_platform -> Varchar,
         #[max_length = 32]
+        device_platform_store -> Varchar,
+        #[max_length = 32]
         device_os -> Varchar,
         #[max_length = 64]
         device_model -> Varchar,

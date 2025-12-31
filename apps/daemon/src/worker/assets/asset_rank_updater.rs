@@ -1,7 +1,6 @@
 use primitives::asset_score::AssetRank;
 use std::error::Error;
-use storage::AssetUpdate;
-use storage::Database;
+use storage::{AssetUpdate, AssetsRepository, Database};
 
 pub struct AssetRankUpdater {
     database: Database,
@@ -24,7 +23,7 @@ impl AssetRankUpdater {
     }
 
     pub async fn update_suspicious_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.client()?.assets().get_assets_all()?;
+        let assets = self.database.assets()?.get_assets_all()?;
         let asset_ids: Vec<String> = assets
             .into_iter()
             .filter(|x| is_suspicious(x.score.rank, &x.asset.name, &x.asset.symbol))
@@ -32,7 +31,7 @@ impl AssetRankUpdater {
             .collect();
 
         let updates = vec![AssetUpdate::Rank(AssetRank::Fraudulent.threshold()), AssetUpdate::IsEnabled(false)];
-        Ok(self.database.client()?.assets().update_assets(asset_ids, updates)?)
+        Ok(self.database.assets()?.update_assets(asset_ids, updates)?)
     }
 }
 

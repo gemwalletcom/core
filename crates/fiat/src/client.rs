@@ -16,8 +16,9 @@ use primitives::{
     FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
 };
 use reqwest::Client as RequestClient;
+use storage::database::devices::DevicesStore;
 use storage::{
-    AssetFilter, Database,
+    AssetFilter, AssetsRepository, ConfigRepository, Database, SubscriptionsRepository,
     models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
 };
 use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer};
@@ -62,7 +63,7 @@ impl FiatClient {
     }
 
     pub async fn get_on_ramp_assets(&self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.client()?.assets().get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?;
+        let assets = self.database.assets()?.get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>(),
@@ -70,7 +71,7 @@ impl FiatClient {
     }
 
     pub async fn get_off_ramp_assets(&self) -> Result<FiatAssets, Box<dyn Error + Send + Sync>> {
-        let assets = self.database.client()?.assets().get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?;
+        let assets = self.database.assets()?.get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?;
         Ok(FiatAssets {
             version: assets.clone().len() as u32,
             asset_ids: assets.into_iter().map(|x| x.asset.id.to_string()).collect::<Vec<String>>(),
@@ -78,7 +79,7 @@ impl FiatClient {
     }
 
     pub async fn get_fiat_providers_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.fiat().get_fiat_providers_countries()?)
+        Ok(self.database.fiat()?.get_fiat_providers_countries()?.into_iter().map(|r| r.as_primitive()).collect())
     }
 
     pub async fn get_order_status(&self, provider_name: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
@@ -105,7 +106,7 @@ impl FiatClient {
             payload: webhook_data.clone(),
             error,
         };
-        self.database.client()?.add_fiat_webhook(webhook_row)?;
+        self.database.fiat()?.add_fiat_webhook(webhook_row)?;
 
         let webhook = match webhook {
             Ok(result) => result,
@@ -130,9 +131,8 @@ impl FiatClient {
         asset_id: &str,
         quote_type: &FiatQuoteType,
     ) -> Result<(FiatMappingMap, Vec<PrimitiveFiatProvider>), Box<dyn Error + Send + Sync>> {
-        let mut db = self.database.client()?;
-        let fiat_assets = db.fiat().get_fiat_assets_for_asset_id(asset_id)?;
-        let providers = db.fiat().get_fiat_providers()?.into_iter().map(|p| p.as_primitive()).collect();
+        let fiat_assets = self.database.fiat()?.get_fiat_assets_for_asset_id(asset_id)?;
+        let providers = self.database.fiat()?.get_fiat_providers()?.into_iter().map(|p| p.as_primitive()).collect();
 
         let map: FiatMappingMap = fiat_assets
             .into_iter()
@@ -171,12 +171,12 @@ impl FiatClient {
     }
 
     pub async fn get_asset(&self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.assets().get_asset(asset_id)?)
+        Ok(self.database.assets()?.get_asset(asset_id)?)
     }
 
     pub async fn get_quotes_old(&self, request: FiatQuoteOldRequest) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
-        let validate_subscription = self.database.client()?.config().get_config_bool(ConfigKey::FiatValidateSubscription)?;
+        let asset = self.database.assets()?.get_asset(&request.asset_id)?;
+        let validate_subscription = self.database.config()?.get_config_bool(ConfigKey::FiatValidateSubscription)?;
 
         if validate_subscription {
             let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;
@@ -231,7 +231,7 @@ impl FiatClient {
     }
 
     pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        let _asset = self.database.client()?.assets().get_asset(&request.asset_id)?;
+        let _asset = self.database.assets()?.get_asset(&request.asset_id)?;
 
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
         let ip_address_info = match self.get_ip_address(&request.ip_address).await {
@@ -351,7 +351,8 @@ impl FiatClient {
         ip_address: &str,
         device_id: &str,
     ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
-        let device = self.database.client()?.get_device(device_id)?;
+        let mut client = self.database.client()?;
+        let device = DevicesStore::get_device(&mut client, device_id)?;
 
         let quote = self.fiat_cacher.get_quote(quote_id).await?;
         let provider = self.provider(&quote.quote.provider.id)?;
@@ -361,15 +362,15 @@ impl FiatClient {
             asset_symbol: quote.asset_symbol,
             wallet_address: wallet_address.to_string(),
             ip_address: ip_address.to_string(),
-            locale: device.locale,
+            locale: device.locale.clone(),
         };
 
         let url = provider.get_quote_url(data).await?;
 
         let db_quote = FiatQuoteRow::from_primitive(&quote.quote);
-        self.database.client()?.add_fiat_quotes(vec![db_quote])?;
+        self.database.fiat()?.add_fiat_quotes(vec![db_quote])?;
 
-        self.database.client()?.add_fiat_quote_request(FiatQuoteRequestRow {
+        self.database.fiat()?.add_fiat_quote_request(FiatQuoteRequestRow {
             device_id: device.id,
             quote_id: quote_id.to_string(),
         })?;
@@ -384,11 +385,7 @@ impl FiatClient {
     }
 
     fn is_address_subscribed(&self, asset: &Asset, wallet_address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .database
-            .client()?
-            .subscriptions()
-            .get_subscription_address_exists(asset.chain, wallet_address)?)
+        Ok(self.database.subscriptions()?.get_subscription_address_exists(asset.chain, wallet_address)?)
     }
 
     fn check_asset_limits_old(request: &FiatQuoteOldRequest, mapping: &FiatMapping) -> Result<(), FiatQuoteError> {
