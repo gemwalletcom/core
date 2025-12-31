@@ -107,6 +107,7 @@ mod tests {
             username: "user1".to_string(),
             device_id: 1,
             device_platform: "iOS".to_string(),
+            device_platform_store: "appStore".to_string(),
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),
@@ -126,6 +127,7 @@ mod tests {
             referrer_username: referrer_username.to_string(),
             device_id,
             device_platform: "iOS".to_string(),
+            device_platform_store: "appStore".to_string(),
             device_os: "18.0".to_string(),
             device_model: model.to_string(),
             device_locale: "en-US".to_string(),
@@ -362,6 +364,7 @@ mod tests {
     fn same_referrer_different_platform_ignored() {
         let mut signal = create_signal("user1", "fp1", "10.0.0.1", "Comcast", "iPhone15,2", 2);
         signal.device_platform = "android".to_string();
+        signal.device_platform_store = "googlePlay".to_string();
         let signals = [
             signal,
             create_signal("user1", "fp2", "10.0.0.2", "Comcast", "iPhone15,2", 3),
@@ -379,6 +382,7 @@ mod tests {
             username: "referrer1".to_string(),
             device_model: "TestDevice X".to_string(),
             device_platform: "android".to_string(),
+            device_platform_store: "googlePlay".to_string(),
             ip_isp: "Test Mobile ISP".to_string(),
             ip_country_code: "XX".to_string(),
             device_locale: "en".to_string(),
@@ -390,6 +394,7 @@ mod tests {
             .map(|i| {
                 let mut s = create_signal("referrer1", &fingerprint, "10.20.30.40", "Test Mobile ISP", "TestDevice X", 100 + i);
                 s.device_platform = "android".to_string();
+                s.device_platform_store = "googlePlay".to_string();
                 s
             })
             .collect();
