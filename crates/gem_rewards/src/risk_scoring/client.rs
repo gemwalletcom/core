@@ -29,7 +29,7 @@ impl RiskScoringInput {
             ip_country_code: self.ip_result.country_code.clone(),
             ip_usage_type: self.ip_result.usage_type.clone(),
             ip_isp: self.ip_result.isp.clone(),
-            ip_abuse_score: self.ip_result.confidence_score as i64,
+            ip_abuse_score: self.ip_result.confidence_score,
             referrer_verified: self.referrer_verified,
         }
     }

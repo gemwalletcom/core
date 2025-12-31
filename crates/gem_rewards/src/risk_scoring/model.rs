@@ -18,6 +18,7 @@ pub struct RiskScoreConfig {
     pub same_referrer_pattern_penalty: i64,
     pub same_referrer_fingerprint_threshold: i64,
     pub same_referrer_fingerprint_penalty: i64,
+    pub lookback_days: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -39,6 +40,7 @@ impl Default for RiskScoreConfig {
             same_referrer_pattern_penalty: 40,
             same_referrer_fingerprint_threshold: 2,
             same_referrer_fingerprint_penalty: 60,
+            lookback_days: 30,
         }
     }
 }
