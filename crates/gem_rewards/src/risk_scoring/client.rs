@@ -61,6 +61,7 @@ pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow
         ip_isp: signal_input.ip_isp,
         ip_abuse_score: signal_input.ip_abuse_score as i32,
         risk_score: score.score as i32,
+        metadata: Some(score.breakdown.to_metadata_json()),
     };
 
     RiskResult { score, signal }

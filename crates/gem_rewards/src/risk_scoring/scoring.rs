@@ -137,6 +137,7 @@ mod tests {
             ip_isp: isp.to_string(),
             ip_abuse_score: 0,
             risk_score: 0,
+            metadata: None,
             created_at: chrono::Utc::now().naive_utc(),
         }
     }

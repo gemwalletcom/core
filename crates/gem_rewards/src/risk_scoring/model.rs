@@ -81,17 +81,36 @@ pub struct RiskScore {
     pub breakdown: RiskScoreBreakdown,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct RiskScoreBreakdown {
+    #[serde(skip_serializing_if = "is_zero")]
     pub abuse_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub fingerprint_match_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub ip_reuse_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub isp_model_match_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub device_id_reuse_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub ineligible_ip_type_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub verified_user_reduction: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub same_referrer_pattern_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub same_referrer_fingerprint_score: i64,
+}
+
+fn is_zero(value: &i64) -> bool {
+    *value == 0
+}
+
+impl RiskScoreBreakdown {
+    pub fn to_metadata_json(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap_or(serde_json::Value::Null)
+    }
 }
 
 #[cfg(test)]
