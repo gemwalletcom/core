@@ -16,6 +16,8 @@ pub struct RewardsRow {
     pub referral_count: i32,
     pub device_id: i32,
     pub verified: bool,
+    pub comment: Option<String>,
+    pub disable_reason: Option<String>,
 }
 
 #[derive(Debug, Queryable, Selectable, Clone)]

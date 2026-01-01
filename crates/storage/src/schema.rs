@@ -576,6 +576,10 @@ diesel::table! {
         referral_count -> Int4,
         device_id -> Int4,
         verified -> Bool,
+        #[max_length = 512]
+        comment -> Nullable<Varchar>,
+        #[max_length = 256]
+        disable_reason -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

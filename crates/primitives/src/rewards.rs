@@ -70,7 +70,7 @@ pub struct Rewards {
     pub is_enabled: bool,
     pub verified: bool,
     pub redemption_options: Vec<RewardRedemptionOption>,
-    //pub level: Option<RewardLevel>,
+    pub disable_reason: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

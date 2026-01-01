@@ -47,6 +47,8 @@ fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, devic
             referral_count: 0,
             device_id,
             verified: false,
+            comment: None,
+            disable_reason: None,
         },
     )?;
     Ok(username)
@@ -102,6 +104,12 @@ impl RewardsRepository for DatabaseClient {
             vec![]
         };
 
+        let disable_reason = if !rewards.is_enabled {
+            rewards.disable_reason.clone()
+        } else {
+            None
+        };
+
         Ok(Rewards {
             code,
             referral_count: rewards.referral_count,
@@ -110,6 +118,7 @@ impl RewardsRepository for DatabaseClient {
             is_enabled: rewards.is_enabled,
             verified: rewards.verified,
             redemption_options: options,
+            disable_reason,
         })
     }
 
@@ -167,6 +176,8 @@ impl RewardsRepository for DatabaseClient {
                     referral_count: 0,
                     device_id,
                     verified: false,
+                    comment: None,
+                    disable_reason: None,
                 },
             )?;
         }

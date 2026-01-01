@@ -21,6 +21,8 @@ CREATE TABLE rewards (
     referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
     device_id INTEGER NOT NULL REFERENCES devices(id),
     verified BOOLEAN NOT NULL DEFAULT false,
+    comment VARCHAR(512),
+    disable_reason VARCHAR(256),
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );
