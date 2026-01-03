@@ -4,8 +4,8 @@ use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{Chain, asset_score::AssetRank};
 use settings::{Settings, service_user_agent};
 use settings_chain::ProviderFactory;
-use storage::{AssetsRepository, Database, PerpetualsRepository};
 use storage::{AssetUpdate, models::PerpetualRow};
+use storage::{AssetsRepository, Database, PerpetualsRepository};
 
 pub struct PerpetualUpdater {
     settings: Settings,

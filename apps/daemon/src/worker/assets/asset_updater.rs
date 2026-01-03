@@ -4,8 +4,8 @@ use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_co
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, Chain, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::{AssetUpdate, AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
 use storage::models::price::{NewPriceRow, PriceAssetRow};
+use storage::{AssetUpdate, AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
 
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,

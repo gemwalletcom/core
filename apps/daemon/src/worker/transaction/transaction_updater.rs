@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
-use storage::{Database, SubscriptionsRepository, TransactionsRepository};
 use storage::models::SubscriptionAddressExcludeRow;
+use storage::{Database, SubscriptionsRepository, TransactionsRepository};
 
 pub struct TransactionUpdater {
     database: Database,

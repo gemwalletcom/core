@@ -3,8 +3,8 @@ use prices_dex::providers::pyth::client::PythClient;
 use prices_dex::{AssetPriceFeed, DexAssetPrice, JupiterProvider, PriceChainAssetsProvider, PriceFeedProvider, PythProvider};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use storage::{AssetsRepository, Database, PricesDexRepository};
 use storage::models::{PriceDexAssetRow, PriceDexRow};
+use storage::{AssetsRepository, Database, PricesDexRepository};
 
 pub struct PricesDexUpdater {
     provider_type: PriceFeedProvider,

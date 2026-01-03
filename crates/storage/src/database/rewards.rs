@@ -161,11 +161,7 @@ impl RewardsStore for DatabaseClient {
 
         self.connection.transaction(|conn| {
             diesel::update(rewards::table.filter(rewards::username.eq(username)))
-                .set((
-                    rewards::is_enabled.eq(false),
-                    rewards::disable_reason.eq(reason),
-                    rewards::comment.eq(comment),
-                ))
+                .set((rewards::is_enabled.eq(false), rewards::disable_reason.eq(reason), rewards::comment.eq(comment)))
                 .execute(conn)?;
 
             let event_id = diesel::insert_into(rewards_events::table)

@@ -5,8 +5,8 @@ use std::error::Error;
 use async_trait::async_trait;
 use cacher::{CacheKey, CacherClient};
 use settings_chain::ChainProviders;
-use storage::{AssetsAddressesRepository, AssetsRepository, Database};
 use storage::models::AssetAddressRow;
+use storage::{AssetsAddressesRepository, AssetsRepository, Database};
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
 pub struct FetchTokenAddressesConsumer {

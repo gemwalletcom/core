@@ -64,8 +64,14 @@ impl RewardsClient {
             Some(u) => u,
             None => {
                 return Ok(ReferralAllowance {
-                    daily: ReferralQuota { limit: daily_limit, available: 0 },
-                    weekly: ReferralQuota { limit: weekly_limit, available: 0 },
+                    daily: ReferralQuota {
+                        limit: daily_limit,
+                        available: 0,
+                    },
+                    weekly: ReferralQuota {
+                        limit: weekly_limit,
+                        available: 0,
+                    },
                 });
             }
         };

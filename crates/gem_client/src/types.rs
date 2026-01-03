@@ -44,7 +44,15 @@ where
         Ok(value) => Ok(value),
         Err(error) => {
             validate_http_status(response)?;
-            Err(ClientError::Serialization(format!("Failed to deserialize response: {error}")))
+            let preview_bytes = if response.data.len() > 256 {
+                &response.data[..256]
+            } else {
+                &response.data
+            };
+            let body_preview = String::from_utf8_lossy(preview_bytes);
+            Err(ClientError::Serialization(format!(
+                "Failed to deserialize response: {error}. Response body: {body_preview}"
+            )))
         }
     }
 }

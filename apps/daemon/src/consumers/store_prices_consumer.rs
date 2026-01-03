@@ -3,8 +3,8 @@ use pricer::PriceClient;
 use primitives::AssetId;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
-use storage::{Database, PricesRepository};
 use storage::models::PriceRow;
+use storage::{Database, PricesRepository};
 use streamer::{PricesPayload, consumer::MessageConsumer};
 
 pub struct StorePricesConsumer {

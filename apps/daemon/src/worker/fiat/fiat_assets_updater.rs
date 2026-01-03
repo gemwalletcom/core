@@ -2,8 +2,8 @@ use chrono::{Duration, Utc};
 use fiat::{FiatProvider, model::FiatProviderAsset};
 use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{AssetTag, Diff, FiatProviderName, currency::Currency};
-use storage::{AssetsRepository, Database, TagRepository};
 use storage::{AssetFilter, AssetUpdate};
+use storage::{AssetsRepository, Database, TagRepository};
 
 pub struct FiatAssetsUpdater {
     database: Database,
