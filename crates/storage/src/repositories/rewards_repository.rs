@@ -81,6 +81,7 @@ pub trait RewardsRepository {
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
+    fn get_username_by_address(&mut self, address: &str) -> Result<Option<String>, DatabaseError>;
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
@@ -104,11 +105,7 @@ impl RewardsRepository for DatabaseClient {
             vec![]
         };
 
-        let disable_reason = if !rewards.is_enabled {
-            rewards.disable_reason.clone()
-        } else {
-            None
-        };
+        let disable_reason = if !rewards.is_enabled { rewards.disable_reason.clone() } else { None };
 
         Ok(Rewards {
             code,
@@ -119,6 +116,7 @@ impl RewardsRepository for DatabaseClient {
             verified: rewards.verified,
             redemption_options: options,
             disable_reason,
+            referral_allowance: Default::default(),
         })
     }
 
@@ -335,6 +333,14 @@ impl RewardsRepository for DatabaseClient {
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {
         let username = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
         Ok(username.address)
+    }
+
+    fn get_username_by_address(&mut self, address: &str) -> Result<Option<String>, DatabaseError> {
+        match UsernamesStore::get_username(self, UsernameLookup::Address(address)) {
+            Ok(username) => Ok(Some(username.username)),
+            Err(diesel::result::Error::NotFound) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
     }
 
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError> {

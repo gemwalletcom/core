@@ -71,6 +71,23 @@ pub struct Rewards {
     pub verified: bool,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
+    pub referral_allowance: ReferralAllowance,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralAllowance {
+    pub daily: ReferralQuota,
+    pub weekly: ReferralQuota,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralQuota {
+    pub limit: i32,
+    pub available: i32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -9,6 +9,8 @@ pub enum ConfigKey {
     ReferralPerIpWeekly,
     ReferralPerUserDaily,
     ReferralPerUserWeekly,
+    ReferralPerVerifiedUserDaily,
+    ReferralPerVerifiedUserWeekly,
     ReferralUseDailyLimit,
     ReferralIneligibleCountries,
 
@@ -74,6 +76,8 @@ impl ConfigKey {
             Self::ReferralPerIpWeekly => "10",
             Self::ReferralPerUserDaily => "5",
             Self::ReferralPerUserWeekly => "15",
+            Self::ReferralPerVerifiedUserDaily => "10",
+            Self::ReferralPerVerifiedUserWeekly => "30",
             Self::ReferralUseDailyLimit => "1000",
             Self::ReferralIneligibleCountries => "[]",
             Self::UsernameCreationPerIp => "10",

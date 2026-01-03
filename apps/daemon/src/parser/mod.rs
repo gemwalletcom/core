@@ -100,10 +100,7 @@ impl Parser {
                     && remaining > queue_behind_blocks as i64
                 {
                     self.stream_producer.publish_blocks(self.chain, &next_blocks).await?;
-                    let _ = self
-                        .database
-                        .parser_state()?
-                        .set_parser_state_current_block(self.chain.as_ref(), end_block);
+                    let _ = self.database.parser_state()?.set_parser_state_current_block(self.chain.as_ref(), end_block);
 
                     info_with_fields!(
                         "block add to queue",
@@ -117,10 +114,7 @@ impl Parser {
 
                 match self.parse_blocks(next_blocks.clone()).await {
                     Ok(result) => {
-                        let _ = self
-                            .database
-                            .parser_state()?
-                            .set_parser_state_current_block(self.chain.as_ref(), end_block);
+                        let _ = self.database.parser_state()?.set_parser_state_current_block(self.chain.as_ref(), end_block);
 
                         info_with_fields!(
                             "block complete",

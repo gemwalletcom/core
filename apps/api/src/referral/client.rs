@@ -2,7 +2,7 @@ use std::error::Error;
 
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
-use primitives::{ConfigKey, NaiveDateTimeExt, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
+use primitives::{ConfigKey, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, Rewards, now};
 use storage::{ConfigRepository, Database, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
@@ -40,11 +40,50 @@ impl RewardsClient {
     }
 
     pub fn get_rewards(&mut self, address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        match self.db.rewards()?.get_reward_by_address(address) {
-            Ok(rewards) => Ok(rewards),
-            Err(storage::DatabaseError::NotFound) => Ok(Rewards::default()),
-            Err(e) => Err(e.into()),
-        }
+        let mut rewards = match self.db.rewards()?.get_reward_by_address(address) {
+            Ok(r) => r,
+            Err(storage::DatabaseError::NotFound) => return Ok(Rewards::default()),
+            Err(e) => return Err(e.into()),
+        };
+
+        rewards.referral_allowance = self.calculate_referral_allowance(address, rewards.verified)?;
+        Ok(rewards)
+    }
+
+    fn calculate_referral_allowance(&mut self, address: &str, is_verified: bool) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
+        let (daily_key, weekly_key) = if is_verified {
+            (ConfigKey::ReferralPerVerifiedUserDaily, ConfigKey::ReferralPerVerifiedUserWeekly)
+        } else {
+            (ConfigKey::ReferralPerUserDaily, ConfigKey::ReferralPerUserWeekly)
+        };
+
+        let daily_limit = self.db.config()?.get_config_i64(daily_key)? as i32;
+        let weekly_limit = self.db.config()?.get_config_i64(weekly_key)? as i32;
+
+        let username = match self.db.rewards()?.get_username_by_address(address)? {
+            Some(u) => u,
+            None => {
+                return Ok(ReferralAllowance {
+                    daily: ReferralQuota { limit: daily_limit, available: 0 },
+                    weekly: ReferralQuota { limit: weekly_limit, available: 0 },
+                });
+            }
+        };
+
+        let current = now();
+        let daily_used = self.db.rewards()?.count_referrals_since(&username, current.days_ago(1))? as i32;
+        let weekly_used = self.db.rewards()?.count_referrals_since(&username, current.days_ago(7))? as i32;
+
+        Ok(ReferralAllowance {
+            daily: ReferralQuota {
+                limit: daily_limit,
+                available: (daily_limit - daily_used).max(0),
+            },
+            weekly: ReferralQuota {
+                limit: weekly_limit,
+                available: (weekly_limit - weekly_used).max(0),
+            },
+        })
     }
 
     pub fn get_rewards_events(&mut self, address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
@@ -75,11 +114,12 @@ impl RewardsClient {
     }
 
     pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let referrer_username = self
-            .db
-            .rewards()?
-            .get_referrer_username(code)?
-            .ok_or(ReferralValidationError::CodeDoesNotExist)?;
+        let locale = &auth.device.locale;
+
+        let referrer_username = self.db.rewards()?.get_referrer_username(code)?.ok_or_else(|| {
+            let error = ReferralError::from(ReferralValidationError::CodeDoesNotExist);
+            RewardsError::Referral(error.localize(locale))
+        })?;
 
         match self.validate_and_score_referral(auth, &referrer_username, ip_address).await {
             ReferralProcessResult::Success(risk_signal_id, invite_event) => {
@@ -93,14 +133,14 @@ impl RewardsClient {
                     .db
                     .rewards()?
                     .add_referral_attempt(&referrer_username, &auth.address, auth.device.id, None, &error.to_string());
-                Err(RewardsError::Referral(error.user_message()).into())
+                Err(RewardsError::Referral(error.localize(locale)).into())
             }
             ReferralProcessResult::RiskScoreExceeded(risk_signal_id, error) => {
                 let _ = self
                     .db
                     .rewards()?
                     .add_referral_attempt(&referrer_username, &auth.address, auth.device.id, Some(risk_signal_id), &error.to_string());
-                Err(RewardsError::Referral(error.user_message()).into())
+                Err(RewardsError::Referral(error.localize(locale)).into())
             }
         }
     }
@@ -218,16 +258,24 @@ impl RewardsClient {
         ReferralProcessResult::Success(risk_signal_id, invite_event)
     }
 
-    fn check_referrer_limits(&mut self, referrer_code: &str) -> Result<(), ReferralError> {
+    fn check_referrer_limits(&mut self, referrer_username: &str) -> Result<(), ReferralError> {
+        let is_verified = self.db.rewards()?.is_verified_by_username(referrer_username)?;
+
+        let (daily_key, weekly_key) = if is_verified {
+            (ConfigKey::ReferralPerVerifiedUserDaily, ConfigKey::ReferralPerVerifiedUserWeekly)
+        } else {
+            (ConfigKey::ReferralPerUserDaily, ConfigKey::ReferralPerUserWeekly)
+        };
+
         let current = now();
 
-        let daily_limit = self.db.config()?.get_config_i64(ConfigKey::ReferralPerUserDaily)?;
-        if self.db.rewards()?.count_referrals_since(referrer_code, current.days_ago(1))? >= daily_limit {
+        let daily_limit = self.db.config()?.get_config_i64(daily_key)?;
+        if self.db.rewards()?.count_referrals_since(referrer_username, current.days_ago(1))? >= daily_limit {
             return Err(ReferralError::ReferrerLimitReached("daily".to_string()));
         }
 
-        let weekly_limit = self.db.config()?.get_config_i64(ConfigKey::ReferralPerUserWeekly)?;
-        if self.db.rewards()?.count_referrals_since(referrer_code, current.days_ago(7))? >= weekly_limit {
+        let weekly_limit = self.db.config()?.get_config_i64(weekly_key)?;
+        if self.db.rewards()?.count_referrals_since(referrer_username, current.days_ago(7))? >= weekly_limit {
             return Err(ReferralError::ReferrerLimitReached("weekly".to_string()));
         }
 

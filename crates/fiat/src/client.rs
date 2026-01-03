@@ -79,7 +79,13 @@ impl FiatClient {
     }
 
     pub async fn get_fiat_providers_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.fiat()?.get_fiat_providers_countries()?.into_iter().map(|r| r.as_primitive()).collect())
+        Ok(self
+            .database
+            .fiat()?
+            .get_fiat_providers_countries()?
+            .into_iter()
+            .map(|r| r.as_primitive())
+            .collect())
     }
 
     pub async fn get_order_status(&self, provider_name: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {

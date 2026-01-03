@@ -7,6 +7,7 @@ edition = "2021"
 primitives = { path = "../primitives" }
 storage = { path = "../storage" }
 cacher = { path = "../cacher" }
+localizer = { path = "../localizer" }
 gem_evm = { path = "../gem_evm", features = ["rpc", "reqwest", "signer"] }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
 chain_traits = { path = "../chain_traits" }

@@ -1,7 +1,8 @@
 use std::error::Error;
 use std::fmt;
 
-use primitives::ConfigKey;
+use localizer::LanguageLocalizer;
+use primitives::{ConfigKey, Localize};
 use storage::{DatabaseError, ReferralValidationError};
 
 #[derive(Debug)]
@@ -55,6 +56,24 @@ impl ReferralError {
             Self::RiskScoreExceeded { .. } | Self::IpTorNotAllowed | Self::IpCountryIneligible(_) | Self::LimitReached(_) | Self::Database(_) => {
                 "Unable to verify referral eligibility".to_string()
             }
+        }
+    }
+}
+
+impl Localize for ReferralError {
+    fn localize(&self, locale: &str) -> String {
+        let localizer = LanguageLocalizer::new_with_language(locale);
+        match self {
+            Self::Validation(ReferralValidationError::CodeDoesNotExist) => localizer.rewards_error_referral_code_not_exist(),
+            Self::Validation(ReferralValidationError::AlreadyUsed) => localizer.rewards_error_referral_already_used(),
+            Self::Validation(ReferralValidationError::DeviceAlreadyUsed) => localizer.rewards_error_referral_device_already_used(),
+            Self::Validation(ReferralValidationError::CannotReferSelf) => localizer.rewards_error_referral_cannot_refer_self(),
+            Self::Validation(ReferralValidationError::RewardsNotEnabled(_)) => localizer.rewards_error_referral_rewards_not_enabled(),
+            Self::Validation(ReferralValidationError::Database(_)) => localizer.errors_generic(),
+            Self::ReferrerLimitReached(_) => localizer.rewards_error_referral_referrer_limit_reached(),
+            Self::IpCountryIneligible(country) => localizer.rewards_error_referral_country_ineligible(country),
+            Self::RiskScoreExceeded { .. } | Self::IpTorNotAllowed | Self::LimitReached(_) => localizer.rewards_error_referral_limit_reached(),
+            Self::Database(_) => localizer.errors_generic(),
         }
     }
 }

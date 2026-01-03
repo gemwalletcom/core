@@ -3423,6 +3423,7 @@ dependencies = [
  "chrono",
  "gem_client",
  "gem_evm",
+ "localizer",
  "num-traits",
  "primitives",
  "reqwest",
