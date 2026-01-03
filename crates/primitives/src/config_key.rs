@@ -44,12 +44,12 @@ pub enum ConfigKey {
     ReferralRiskScoreSameReferrerFingerprintThreshold,
     ReferralRiskScoreSameReferrerFingerprintPenalty,
 
-    // Rewards Abuse Detection
-    RewardsAbuseDisableThreshold,
-    RewardsAbuseAttemptPenalty,
-    RewardsAbuseVerifiedThresholdMultiplier,
-    RewardsAbuseLookbackDays,
-    RewardsAbuseMinReferralsToEvaluate,
+    // Referral Abuse Detection
+    ReferralAbuseDisableThreshold,
+    ReferralAbuseAttemptPenalty,
+    ReferralAbuseVerifiedThresholdMultiplier,
+    ReferralAbuseLookbackDays,
+    ReferralAbuseMinReferralsToEvaluate,
 
     // Fiat
     FiatValidateSubscription,
@@ -109,11 +109,11 @@ impl ConfigKey {
             Self::ReferralRiskScoreSameReferrerPatternPenalty => "40",
             Self::ReferralRiskScoreSameReferrerFingerprintThreshold => "2",
             Self::ReferralRiskScoreSameReferrerFingerprintPenalty => "60",
-            Self::RewardsAbuseDisableThreshold => "200",
-            Self::RewardsAbuseAttemptPenalty => "15",
-            Self::RewardsAbuseVerifiedThresholdMultiplier => "2",
-            Self::RewardsAbuseLookbackDays => "3",
-            Self::RewardsAbuseMinReferralsToEvaluate => "3",
+            Self::ReferralAbuseDisableThreshold => "200",
+            Self::ReferralAbuseAttemptPenalty => "15",
+            Self::ReferralAbuseVerifiedThresholdMultiplier => "2",
+            Self::ReferralAbuseLookbackDays => "3",
+            Self::ReferralAbuseMinReferralsToEvaluate => "3",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
             Self::AlerterPriceIncreasePercent => "8.0",

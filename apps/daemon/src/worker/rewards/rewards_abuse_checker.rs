@@ -90,11 +90,11 @@ impl RewardsAbuseChecker {
 
     fn load_config(config: &mut dyn ConfigRepository) -> Result<AbuseDetectionConfig, storage::DatabaseError> {
         Ok(AbuseDetectionConfig {
-            disable_threshold: config.get_config_i64(ConfigKey::RewardsAbuseDisableThreshold)?,
-            attempt_penalty: config.get_config_i64(ConfigKey::RewardsAbuseAttemptPenalty)?,
-            verified_threshold_multiplier: config.get_config_f64(ConfigKey::RewardsAbuseVerifiedThresholdMultiplier)?,
-            lookback_days: config.get_config_i64(ConfigKey::RewardsAbuseLookbackDays)?,
-            min_referrals_to_evaluate: config.get_config_i64(ConfigKey::RewardsAbuseMinReferralsToEvaluate)?,
+            disable_threshold: config.get_config_i64(ConfigKey::ReferralAbuseDisableThreshold)?,
+            attempt_penalty: config.get_config_i64(ConfigKey::ReferralAbuseAttemptPenalty)?,
+            verified_threshold_multiplier: config.get_config_f64(ConfigKey::ReferralAbuseVerifiedThresholdMultiplier)?,
+            lookback_days: config.get_config_i64(ConfigKey::ReferralAbuseLookbackDays)?,
+            min_referrals_to_evaluate: config.get_config_i64(ConfigKey::ReferralAbuseMinReferralsToEvaluate)?,
         })
     }
 }
