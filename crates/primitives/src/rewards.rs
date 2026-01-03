@@ -41,6 +41,7 @@ pub enum RewardEventType {
     InviteNew,
     InviteExisting,
     Joined,
+    Disabled,
 }
 
 impl RewardEventType {
@@ -54,6 +55,7 @@ impl RewardEventType {
             Self::InviteNew => 100,
             Self::InviteExisting => 10,
             Self::Joined => 10,
+            Self::Disabled => 0,
         }
     }
 }

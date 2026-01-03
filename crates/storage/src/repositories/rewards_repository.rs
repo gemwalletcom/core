@@ -85,6 +85,7 @@ pub trait RewardsRepository {
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
+    fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -382,6 +383,10 @@ impl RewardsRepository for DatabaseClient {
             .collect();
 
         Ok(ReferralLeaderboard { daily, weekly, monthly })
+    }
+
+    fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError> {
+        Ok(RewardsStore::disable_rewards(self, username, reason, comment)?)
     }
 }
 

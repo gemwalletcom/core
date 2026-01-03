@@ -274,4 +274,12 @@ impl LanguageLocalizer {
     pub fn rewards_error_referral_country_ineligible(&self, country: &str) -> String {
         fl!(self.loader.as_ref(), "rewards_error_referral_country_ineligible", value = country)
     }
+
+    pub fn notification_rewards_disabled_title(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_rewards_disabled_title")
+    }
+
+    pub fn notification_rewards_disabled_description(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_rewards_disabled_description")
+    }
 }

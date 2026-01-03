@@ -32,6 +32,7 @@ pub(crate) trait RewardsStore {
     fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, DieselError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn get_top_referrers_since(&mut self, event_types: Vec<String>, since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64, i64)>, DieselError>;
+    fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DieselError>;
 }
 
 impl RewardsStore for DatabaseClient {
@@ -152,6 +153,32 @@ impl RewardsStore for DatabaseClient {
             .limit(limit)
             .load(&mut self.connection)
     }
+
+    fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DieselError> {
+        use crate::schema::{rewards, rewards_events};
+        use diesel::Connection;
+        use primitives::RewardEventType;
+
+        self.connection.transaction(|conn| {
+            diesel::update(rewards::table.filter(rewards::username.eq(username)))
+                .set((
+                    rewards::is_enabled.eq(false),
+                    rewards::disable_reason.eq(reason),
+                    rewards::comment.eq(comment),
+                ))
+                .execute(conn)?;
+
+            let event_id = diesel::insert_into(rewards_events::table)
+                .values(NewRewardEventRow {
+                    username: username.to_string(),
+                    event_type: RewardEventType::Disabled.as_ref().to_string(),
+                })
+                .returning(rewards_events::id)
+                .get_result(conn)?;
+
+            Ok(event_id)
+        })
+    }
 }
 
 pub(crate) trait RiskSignalsStore {
@@ -166,6 +193,9 @@ pub(crate) trait RiskSignalsStore {
         since: NaiveDateTime,
     ) -> Result<Vec<RiskSignalRow>, DieselError>;
     fn count_signals_since(&mut self, ip_address: Option<&str>, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn sum_risk_scores_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_attempts_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn get_referrer_usernames_with_referrals(&mut self, since: NaiveDateTime, min_referrals: i64) -> Result<Vec<String>, DieselError>;
 }
 
 impl RiskSignalsStore for DatabaseClient {
@@ -217,5 +247,41 @@ impl RiskSignalsStore for DatabaseClient {
         }
 
         query.count().get_result(&mut self.connection)
+    }
+
+    fn sum_risk_scores_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::sum;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::referrer_username.eq(referrer_username))
+            .filter(dsl::created_at.ge(since))
+            .select(sum(dsl::risk_score))
+            .first::<Option<i64>>(&mut self.connection)
+            .map(|s| s.unwrap_or(0))
+    }
+
+    fn count_attempts_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_referral_attempts::dsl;
+
+        dsl::rewards_referral_attempts
+            .filter(dsl::referrer_username.eq(referrer_username))
+            .filter(dsl::created_at.ge(since))
+            .count()
+            .get_result(&mut self.connection)
+    }
+
+    fn get_referrer_usernames_with_referrals(&mut self, since: NaiveDateTime, min_referrals: i64) -> Result<Vec<String>, DieselError> {
+        use crate::schema::{rewards, rewards_referrals};
+        use diesel::dsl::count_star;
+
+        rewards_referrals::table
+            .inner_join(rewards::table.on(rewards_referrals::referrer_username.eq(rewards::username)))
+            .filter(rewards::is_enabled.eq(true))
+            .filter(rewards_referrals::created_at.ge(since))
+            .group_by(rewards_referrals::referrer_username)
+            .having(count_star().ge(min_referrals))
+            .select(rewards_referrals::referrer_username)
+            .load(&mut self.connection)
     }
 }
