@@ -27,6 +27,7 @@ pub enum ReferralError {
     Validation(ReferralValidationError),
     ReferrerLimitReached(String),
     RiskScoreExceeded { score: i64, max_allowed: i64 },
+    DuplicateAttempt,
     IpTorNotAllowed,
     IpCountryIneligible(String),
     LimitReached(ConfigKey),
@@ -39,6 +40,7 @@ impl fmt::Display for ReferralError {
             ReferralError::Validation(e) => write!(f, "{}", e),
             ReferralError::ReferrerLimitReached(period) => write!(f, "Referrer {} limit reached", period),
             ReferralError::RiskScoreExceeded { score, max_allowed } => write!(f, "risk_score: {} (max allowed: {})", score, max_allowed),
+            ReferralError::DuplicateAttempt => write!(f, "duplicate_attempt"),
             ReferralError::IpTorNotAllowed => write!(f, "ip_tor_not_allowed"),
             ReferralError::IpCountryIneligible(country) => write!(f, "ip_country_ineligible: {}", country),
             ReferralError::LimitReached(key) => write!(f, "limit_reached: {}", key.as_ref()),
@@ -48,17 +50,6 @@ impl fmt::Display for ReferralError {
 }
 
 impl Error for ReferralError {}
-
-impl ReferralError {
-    pub fn user_message(&self) -> String {
-        match self {
-            Self::Validation(_) | Self::ReferrerLimitReached(_) => self.to_string(),
-            Self::RiskScoreExceeded { .. } | Self::IpTorNotAllowed | Self::IpCountryIneligible(_) | Self::LimitReached(_) | Self::Database(_) => {
-                "Unable to verify referral eligibility".to_string()
-            }
-        }
-    }
-}
 
 impl Localize for ReferralError {
     fn localize(&self, locale: &str) -> String {
@@ -72,7 +63,9 @@ impl Localize for ReferralError {
             Self::Validation(ReferralValidationError::Database(_)) => localizer.errors_generic(),
             Self::ReferrerLimitReached(_) => localizer.rewards_error_referral_referrer_limit_reached(),
             Self::IpCountryIneligible(country) => localizer.rewards_error_referral_country_ineligible(country),
-            Self::RiskScoreExceeded { .. } | Self::IpTorNotAllowed | Self::LimitReached(_) => localizer.rewards_error_referral_limit_reached(),
+            Self::RiskScoreExceeded { .. } | Self::DuplicateAttempt | Self::IpTorNotAllowed | Self::LimitReached(_) => {
+                localizer.rewards_error_referral_limit_reached()
+            }
             Self::Database(_) => localizer.errors_generic(),
         }
     }

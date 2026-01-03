@@ -179,6 +179,7 @@ impl RewardsStore for DatabaseClient {
 
 pub(crate) trait RiskSignalsStore {
     fn add_risk_signal(&mut self, signal: NewRiskSignalRow) -> Result<i32, DieselError>;
+    fn has_fingerprint_for_referrer(&mut self, fingerprint: &str, referrer_username: &str, since: NaiveDateTime) -> Result<bool, DieselError>;
     fn get_matching_risk_signals(
         &mut self,
         fingerprint: &str,
@@ -201,6 +202,19 @@ impl RiskSignalsStore for DatabaseClient {
             .values(&signal)
             .returning(dsl::id)
             .get_result(&mut self.connection)
+    }
+
+    fn has_fingerprint_for_referrer(&mut self, fingerprint: &str, referrer_username: &str, since: NaiveDateTime) -> Result<bool, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::exists;
+
+        diesel::select(exists(
+            dsl::rewards_risk_signals
+                .filter(dsl::fingerprint.eq(fingerprint))
+                .filter(dsl::referrer_username.eq(referrer_username))
+                .filter(dsl::created_at.ge(since)),
+        ))
+        .get_result(&mut self.connection)
     }
 
     fn get_matching_risk_signals(

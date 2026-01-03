@@ -203,6 +203,10 @@ impl RewardsClient {
         let signal_input = scoring_input.to_signal_input();
         let fingerprint = signal_input.generate_fingerprint();
 
+        if client.has_fingerprint_for_referrer(&fingerprint, referrer_username, since).unwrap_or(false) {
+            return ReferralProcessResult::Failed(ReferralError::DuplicateAttempt);
+        }
+
         if !limits_config.tor_allowed && scoring_input.ip_result.is_tor {
             return ReferralProcessResult::Failed(ReferralError::IpTorNotAllowed);
         }

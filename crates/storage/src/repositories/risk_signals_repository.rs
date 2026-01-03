@@ -5,6 +5,7 @@ use chrono::NaiveDateTime;
 
 pub trait RiskSignalsRepository {
     fn add_risk_signal(&mut self, signal: NewRiskSignalRow) -> Result<i32, DatabaseError>;
+    fn has_fingerprint_for_referrer(&mut self, fingerprint: &str, referrer_username: &str, since: NaiveDateTime) -> Result<bool, DatabaseError>;
     fn get_matching_risk_signals(
         &mut self,
         fingerprint: &str,
@@ -23,6 +24,10 @@ pub trait RiskSignalsRepository {
 impl RiskSignalsRepository for DatabaseClient {
     fn add_risk_signal(&mut self, signal: NewRiskSignalRow) -> Result<i32, DatabaseError> {
         Ok(RiskSignalsStore::add_risk_signal(self, signal)?)
+    }
+
+    fn has_fingerprint_for_referrer(&mut self, fingerprint: &str, referrer_username: &str, since: NaiveDateTime) -> Result<bool, DatabaseError> {
+        Ok(RiskSignalsStore::has_fingerprint_for_referrer(self, fingerprint, referrer_username, since)?)
     }
 
     fn get_matching_risk_signals(
