@@ -55,16 +55,18 @@ impl RewardsAbuseChecker {
         let abuse_score = calculate_abuse_score(risk_score_sum, attempt_count, referral_count, config);
         let threshold = calculate_abuse_threshold(config, is_verified);
 
+        let abuse_percent = (abuse_score / threshold * 100.0).min(100.0);
+
         info_with_fields!(
             "abuse evaluation",
             username = username,
             verified = is_verified.to_string(),
             referrals = referral_count.to_string(),
             attempts = attempt_count.to_string(),
-            risk_scores = risk_score_sum.to_string(),
+            risk_score = risk_score_sum.to_string(),
+            abuse_threshold = format!("{:.0}", threshold),
             abuse_score = format!("{:.0}", abuse_score),
-            threshold = format!("{:.0}", threshold),
-            will_disable = (abuse_score >= threshold).to_string()
+            abuse_percent = format!("{:.0}%", abuse_percent)
         );
 
         if abuse_score >= threshold {
