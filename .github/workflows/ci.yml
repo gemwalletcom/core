@@ -42,3 +42,6 @@ jobs:
       - name: Check gemstone dependencies
         run: |
           cargo tree --package gemstone | grep -i reqwest && exit 1 || echo "✓ No reqwest dependencies found in gemstone"
+
+      - name: Show sccache stats
+        run: sccache --show-stats
