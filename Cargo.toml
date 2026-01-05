@@ -54,13 +54,14 @@ serde = { version = "1.0.226", features = ["derive"] }
 serde_json = { version = "1.0.145", features = ["preserve_order"] }
 serde_urlencoded = { version = "0.7.1" }
 
-tokio = { version = "1.48.0", features = ["macros", "rt-multi-thread"] }
-reqwest = { version = "0.12.23", features = [
+tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
+reqwest = { version = "0.13.1", features = [
     "json",
     "gzip",
     "brotli",
     "deflate",
     "http2",
+    "query",
 ] }
 
 url = { version = "2.5.7" }
