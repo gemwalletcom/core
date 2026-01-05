@@ -30,7 +30,15 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Show sccache cache size
-        run: du -sh /sccache
+        run: |
+          cache_dir="${SCCACHE_DIR:-${RUNNER_TEMP:-/tmp}/sccache}"
+          if [ -d "$cache_dir" ]; then
+            du -sh "$cache_dir"
+          elif [ -d "$HOME/.cache/sccache" ]; then
+            du -sh "$HOME/.cache/sccache"
+          else
+            echo "sccache cache dir not found (checked $cache_dir and $HOME/.cache/sccache)"
+          fi
 
       - name: Install just
         uses: extractions/setup-just@v2
