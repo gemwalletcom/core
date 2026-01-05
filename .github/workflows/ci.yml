@@ -29,6 +29,9 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
 
+      - name: Show sccache cache size
+        run: du -sh /sccache
+
       - name: Install just
         uses: extractions/setup-just@v2
 
@@ -42,6 +45,3 @@ jobs:
       - name: Check gemstone dependencies
         run: |
           cargo tree --package gemstone | grep -i reqwest && exit 1 || echo "✓ No reqwest dependencies found in gemstone"
-
-      - name: Show sccache stats
-        run: sccache --show-stats
