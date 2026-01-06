@@ -2,10 +2,12 @@ use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone)]
 pub struct RiskScoreConfig {
-    pub fingerprint_match_score: i64,
+    pub fingerprint_match_penalty_per_referrer: i64,
+    pub fingerprint_match_max_penalty: i64,
     pub ip_reuse_score: i64,
     pub isp_model_match_score: i64,
-    pub device_id_reuse_score: i64,
+    pub device_id_reuse_penalty_per_referrer: i64,
+    pub device_id_reuse_max_penalty: i64,
     pub ineligible_ip_type_score: i64,
     pub blocked_ip_types: Vec<String>,
     pub blocked_ip_type_penalty: i64,
@@ -34,10 +36,12 @@ pub struct RiskScoreConfig {
 impl Default for RiskScoreConfig {
     fn default() -> Self {
         Self {
-            fingerprint_match_score: 100,
+            fingerprint_match_penalty_per_referrer: 50,
+            fingerprint_match_max_penalty: 200,
             ip_reuse_score: 50,
             isp_model_match_score: 30,
-            device_id_reuse_score: 100,
+            device_id_reuse_penalty_per_referrer: 50,
+            device_id_reuse_max_penalty: 200,
             ineligible_ip_type_score: 100,
             blocked_ip_types: vec!["Data Center".to_string(), "Web Hosting".to_string(), "Transit".to_string()],
             blocked_ip_type_penalty: 100,

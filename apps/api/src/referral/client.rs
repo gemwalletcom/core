@@ -332,10 +332,12 @@ impl RewardsClient {
 
     fn load_risk_score_config(config: &mut dyn storage::ConfigRepository) -> Result<RiskScoreConfig, storage::DatabaseError> {
         Ok(RiskScoreConfig {
-            fingerprint_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch)?,
+            fingerprint_match_penalty_per_referrer: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatchPerReferrer)?,
+            fingerprint_match_max_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatchMaxPenalty)?,
             ip_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIpReuse)?,
             isp_model_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch)?,
-            device_id_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse)?,
+            device_id_reuse_penalty_per_referrer: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReusePerReferrer)?,
+            device_id_reuse_max_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuseMaxPenalty)?,
             ineligible_ip_type_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)?,
             blocked_ip_types: config.get_config_vec_string(ConfigKey::ReferralBlockedIpTypes)?,
             blocked_ip_type_penalty: config.get_config_i64(ConfigKey::ReferralBlockedIpTypePenalty)?,

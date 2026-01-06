@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use storage::models::RiskSignalRow;
 
 use super::model::{RiskScore, RiskScoreBreakdown, RiskScoreConfig, RiskSignalInput};
@@ -35,10 +37,10 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         ..Default::default()
     };
 
-    let mut fingerprint_matched = false;
+    let mut fingerprint_referrers: HashSet<&str> = HashSet::new();
+    let mut device_id_referrers: HashSet<&str> = HashSet::new();
     let mut ip_matched = false;
     let mut isp_model_matched = false;
-    let mut device_id_matched = false;
 
     let mut same_referrer_pattern_count = 0;
     let mut same_referrer_fingerprint_count = 0;
@@ -60,30 +62,38 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
             continue;
         }
 
-        if !fingerprint_matched && signal.fingerprint == fingerprint {
-            breakdown.fingerprint_match_score = config.fingerprint_match_score;
-            fingerprint_matched = true;
-            isp_model_matched = true;
+        // Scaled penalties (count unique referrers)
+        if signal.fingerprint == fingerprint {
+            fingerprint_referrers.insert(&signal.referrer_username);
         }
 
+        if signal.device_id == input.device_id {
+            device_id_referrers.insert(&signal.referrer_username);
+        }
+
+        // Binary penalties (first match triggers full penalty)
         if !ip_matched && signal.ip_address == input.ip_address {
-            breakdown.ip_reuse_score = config.ip_reuse_score;
             ip_matched = true;
         }
 
         if !isp_model_matched && signal.ip_isp == input.ip_isp && signal.device_model == input.device_model {
-            breakdown.isp_model_match_score = config.isp_model_match_score;
             isp_model_matched = true;
         }
+    }
 
-        if !device_id_matched && signal.device_id == input.device_id {
-            breakdown.device_id_reuse_score = config.device_id_reuse_score;
-            device_id_matched = true;
-        }
+    // Scaled penalties with caps
+    let fingerprint_penalty = fingerprint_referrers.len() as i64 * config.fingerprint_match_penalty_per_referrer;
+    breakdown.fingerprint_match_score = fingerprint_penalty.min(config.fingerprint_match_max_penalty);
 
-        if fingerprint_matched && ip_matched && isp_model_matched && device_id_matched {
-            break;
-        }
+    let device_id_penalty = device_id_referrers.len() as i64 * config.device_id_reuse_penalty_per_referrer;
+    breakdown.device_id_reuse_score = device_id_penalty.min(config.device_id_reuse_max_penalty);
+
+    // Binary penalties
+    if ip_matched {
+        breakdown.ip_reuse_score = config.ip_reuse_score;
+    }
+    if isp_model_matched && fingerprint_referrers.is_empty() {
+        breakdown.isp_model_match_score = config.isp_model_match_score;
     }
 
     if same_referrer_fingerprint_count >= config.same_referrer_fingerprint_threshold {
@@ -200,11 +210,53 @@ mod tests {
         let config = RiskScoreConfig::default();
         let fingerprint = input.generate_fingerprint();
 
+        // 1 referrer * 50 per referrer = 50
         let existing = create_signal("other_user", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2);
         let result = calculate_risk_score(&input, &[existing], 0, &config);
 
-        assert_eq!(result.score, 100);
+        assert_eq!(result.score, 50);
+        assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn fingerprint_match_scales_with_referrers() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+        let fingerprint = input.generate_fingerprint();
+
+        // 2 referrers * 50 = 100
+        let signals = vec![
+            create_signal("referrer_a", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2),
+            create_signal("referrer_b", &fingerprint, "10.0.0.2", "Comcast", "iPhone15,2", 3),
+        ];
+        let result = calculate_risk_score(&input, &signals, 0, &config);
+
+        assert_eq!(result.breakdown.fingerprint_match_score, 100);
         assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn fingerprint_match_capped() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+        let fingerprint = input.generate_fingerprint();
+
+        // 5 referrers * 50 = 250, but capped at 200
+        let signals: Vec<_> = (0..5)
+            .map(|i| {
+                create_signal(
+                    &format!("referrer_{}", i),
+                    &fingerprint,
+                    &format!("10.0.0.{}", i),
+                    "Comcast",
+                    "iPhone15,2",
+                    10 + i,
+                )
+            })
+            .collect();
+        let result = calculate_risk_score(&input, &signals, 0, &config);
+
+        assert_eq!(result.breakdown.fingerprint_match_score, 200);
     }
 
     #[test]
@@ -237,11 +289,42 @@ mod tests {
         let input = create_test_input();
         let config = RiskScoreConfig::default();
 
+        // 1 referrer * 50 per referrer = 50
         let existing = create_signal("other_user", "different", "10.0.0.1", "Verizon", "Pixel 8", 1);
         let result = calculate_risk_score(&input, &[existing], 0, &config);
 
-        assert_eq!(result.score, 100);
+        assert_eq!(result.score, 50);
+        assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn device_id_reuse_scales_with_referrers() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 2 referrers * 50 = 100
+        let signals = vec![
+            create_signal("referrer_a", "fp1", "10.0.0.1", "Verizon", "Pixel 8", 1),
+            create_signal("referrer_b", "fp2", "10.0.0.2", "AT&T", "Galaxy S23", 1),
+        ];
+        let result = calculate_risk_score(&input, &signals, 0, &config);
+
+        assert_eq!(result.breakdown.device_id_reuse_score, 100);
         assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn device_id_reuse_capped() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 5 referrers * 50 = 250, but capped at 200
+        let signals: Vec<_> = (0..5)
+            .map(|i| create_signal(&format!("referrer_{}", i), &format!("fp{}", i), &format!("10.0.0.{}", i), "ISP", "Model", 1))
+            .collect();
+        let result = calculate_risk_score(&input, &signals, 0, &config);
+
+        assert_eq!(result.breakdown.device_id_reuse_score, 200);
     }
 
     #[test]
@@ -263,12 +346,13 @@ mod tests {
         let config = RiskScoreConfig::default();
         let fingerprint = input.generate_fingerprint();
 
+        // When fingerprint matches, isp_model is not counted (fingerprint is more specific)
         let existing = create_signal("other_user", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2);
         let result = calculate_risk_score(&input, &[existing], 0, &config);
 
-        assert_eq!(result.breakdown.fingerprint_match_score, 100);
+        assert_eq!(result.breakdown.fingerprint_match_score, 50);
         assert_eq!(result.breakdown.isp_model_match_score, 0);
-        assert_eq!(result.score, 100);
+        assert_eq!(result.score, 50);
     }
 
     #[test]
