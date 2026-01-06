@@ -19,6 +19,10 @@ pub struct RiskScoreConfig {
     pub same_referrer_fingerprint_threshold: i64,
     pub same_referrer_fingerprint_penalty: i64,
     pub lookback_days: i64,
+    pub high_risk_platform_stores: Vec<String>,
+    pub high_risk_platform_store_penalty: i64,
+    pub high_risk_countries: Vec<String>,
+    pub high_risk_country_penalty: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -41,6 +45,10 @@ impl Default for RiskScoreConfig {
             same_referrer_fingerprint_threshold: 2,
             same_referrer_fingerprint_penalty: 60,
             lookback_days: 30,
+            high_risk_platform_stores: vec![],
+            high_risk_platform_store_penalty: 20,
+            high_risk_countries: vec![],
+            high_risk_country_penalty: 15,
         }
     }
 }
@@ -101,6 +109,10 @@ pub struct RiskScoreBreakdown {
     pub same_referrer_pattern_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub same_referrer_fingerprint_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub platform_store_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub country_score: i64,
 }
 
 fn is_zero(value: &i64) -> bool {

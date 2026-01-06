@@ -1,4 +1,4 @@
-use crate::database::rewards::RiskSignalsStore;
+use crate::database::rewards::{AbusePatterns, RiskSignalsStore};
 use crate::models::{NewRiskSignalRow, RiskSignalRow};
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
@@ -19,6 +19,11 @@ pub trait RiskSignalsRepository {
     fn sum_risk_scores_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn count_attempts_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn get_referrer_usernames_with_referrals(&mut self, since: NaiveDateTime, min_referrals: i64) -> Result<Vec<String>, DatabaseError>;
+    fn count_unique_countries_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DatabaseError>;
+    fn count_unique_referrers_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DatabaseError>;
+    fn count_unique_referrers_for_fingerprint(&mut self, fingerprint: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
+    fn count_unique_devices_for_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DatabaseError>;
 }
 
 impl RiskSignalsRepository for DatabaseClient {
@@ -64,5 +69,25 @@ impl RiskSignalsRepository for DatabaseClient {
 
     fn get_referrer_usernames_with_referrals(&mut self, since: NaiveDateTime, min_referrals: i64) -> Result<Vec<String>, DatabaseError> {
         Ok(RiskSignalsStore::get_referrer_usernames_with_referrals(self, since, min_referrals)?)
+    }
+
+    fn count_unique_countries_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DatabaseError> {
+        Ok(RiskSignalsStore::count_unique_countries_for_device(self, device_id, since)?)
+    }
+
+    fn count_unique_referrers_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DatabaseError> {
+        Ok(RiskSignalsStore::count_unique_referrers_for_device(self, device_id, since)?)
+    }
+
+    fn count_unique_referrers_for_fingerprint(&mut self, fingerprint: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {
+        Ok(RiskSignalsStore::count_unique_referrers_for_fingerprint(self, fingerprint, since)?)
+    }
+
+    fn count_unique_devices_for_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {
+        Ok(RiskSignalsStore::count_unique_devices_for_ip(self, ip_address, since)?)
+    }
+
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DatabaseError> {
+        Ok(RiskSignalsStore::get_abuse_patterns_for_referrer(self, referrer_username, since)?)
     }
 }

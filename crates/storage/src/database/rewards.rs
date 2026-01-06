@@ -6,6 +6,15 @@ use crate::models::{
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
+use std::collections::HashSet;
+
+#[derive(Debug, Clone, Default)]
+pub struct AbusePatterns {
+    pub max_countries_per_device: i64,
+    pub max_referrers_per_device: i64,
+    pub max_referrers_per_fingerprint: i64,
+    pub max_devices_per_ip: i64,
+}
 
 pub trait RewardsEventTypesStore {
     fn add_reward_event_types(&mut self, event_types: Vec<RewardEventTypeRow>) -> Result<usize, DieselError>;
@@ -193,6 +202,11 @@ pub(crate) trait RiskSignalsStore {
     fn sum_risk_scores_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn count_attempts_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn get_referrer_usernames_with_referrals(&mut self, since: NaiveDateTime, min_referrals: i64) -> Result<Vec<String>, DieselError>;
+    fn count_unique_countries_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_unique_referrers_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_unique_referrers_for_fingerprint(&mut self, fingerprint: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_unique_devices_for_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DieselError>;
 }
 
 impl RiskSignalsStore for DatabaseClient {
@@ -277,6 +291,7 @@ impl RiskSignalsStore for DatabaseClient {
         dsl::rewards_referral_attempts
             .filter(dsl::referrer_username.eq(referrer_username))
             .filter(dsl::created_at.ge(since))
+            .filter(dsl::risk_signal_id.is_not_null())
             .count()
             .get_result(&mut self.connection)
     }
@@ -293,5 +308,101 @@ impl RiskSignalsStore for DatabaseClient {
             .having(count_star().ge(min_referrals))
             .select(rewards_referrals::referrer_username)
             .load(&mut self.connection)
+    }
+
+    fn count_unique_countries_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::device_id.eq(device_id))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::ip_country_code).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_unique_referrers_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::device_id.eq(device_id))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::referrer_username).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_unique_referrers_for_fingerprint(&mut self, fingerprint: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::fingerprint.eq(fingerprint))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::referrer_username).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_unique_devices_for_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::ip_address.eq(ip_address))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::device_id).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+
+        let signals: Vec<RiskSignalRow> = dsl::rewards_risk_signals
+            .filter(dsl::referrer_username.eq(referrer_username))
+            .filter(dsl::created_at.ge(since))
+            .select(RiskSignalRow::as_select())
+            .load(&mut self.connection)?;
+
+        if signals.is_empty() {
+            return Ok(AbusePatterns::default());
+        }
+
+        let unique_devices: HashSet<i32> = signals.iter().map(|s| s.device_id).collect();
+        let unique_fingerprints: HashSet<&str> = signals.iter().map(|s| s.fingerprint.as_str()).collect();
+        let unique_ips: HashSet<&str> = signals.iter().map(|s| s.ip_address.as_str()).collect();
+
+        let mut max_countries_per_device: i64 = 0;
+        let mut max_referrers_per_device: i64 = 0;
+        let mut max_referrers_per_fingerprint: i64 = 0;
+        let mut max_devices_per_ip: i64 = 0;
+
+        for device_id in unique_devices {
+            let countries = self.count_unique_countries_for_device(device_id, since)?;
+            max_countries_per_device = max_countries_per_device.max(countries);
+
+            let referrers = self.count_unique_referrers_for_device(device_id, since)?;
+            max_referrers_per_device = max_referrers_per_device.max(referrers);
+        }
+
+        for fingerprint in unique_fingerprints {
+            let referrers = self.count_unique_referrers_for_fingerprint(fingerprint, since)?;
+            max_referrers_per_fingerprint = max_referrers_per_fingerprint.max(referrers);
+        }
+
+        for ip_address in unique_ips {
+            let devices = self.count_unique_devices_for_ip(ip_address, since)?;
+            max_devices_per_ip = max_devices_per_ip.max(devices);
+        }
+
+        Ok(AbusePatterns {
+            max_countries_per_device,
+            max_referrers_per_device,
+            max_referrers_per_fingerprint,
+            max_devices_per_ip,
+        })
     }
 }

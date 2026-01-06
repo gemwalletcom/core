@@ -336,6 +336,10 @@ impl RewardsClient {
             same_referrer_fingerprint_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintThreshold)?,
             same_referrer_fingerprint_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintPenalty)?,
             lookback_days: config.get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)?,
+            high_risk_platform_stores: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskPlatformStores)?,
+            high_risk_platform_store_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskPlatformStorePenalty)?,
+            high_risk_countries: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskCountries)?,
+            high_risk_country_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskCountryPenalty)?,
         })
     }
 
