@@ -9,6 +9,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
     let is_blocked_type = config.blocked_ip_types.iter().any(|t| input.ip_usage_type.contains(t));
     let is_high_risk_platform_store = config.high_risk_platform_stores.iter().any(|s| s == &input.device_platform_store);
     let is_high_risk_country = config.high_risk_countries.iter().any(|c| c == &input.ip_country_code);
+    let is_high_risk_locale = config.high_risk_locales.iter().any(|l| l == &input.device_locale);
 
     let mut breakdown = RiskScoreBreakdown {
         abuse_score: if is_blocked_type {
@@ -30,6 +31,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
             0
         },
         country_score: if is_high_risk_country { config.high_risk_country_penalty } else { 0 },
+        locale_score: if is_high_risk_locale { config.high_risk_locale_penalty } else { 0 },
         ..Default::default()
     };
 
@@ -97,6 +99,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         + breakdown.same_referrer_fingerprint_score
         + breakdown.platform_store_score
         + breakdown.country_score
+        + breakdown.locale_score
         + breakdown.verified_user_reduction)
         .max(0);
 

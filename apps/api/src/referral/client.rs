@@ -340,6 +340,8 @@ impl RewardsClient {
             high_risk_platform_store_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskPlatformStorePenalty)?,
             high_risk_countries: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskCountries)?,
             high_risk_country_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskCountryPenalty)?,
+            high_risk_locales: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskLocales)?,
+            high_risk_locale_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskLocalePenalty)?,
         })
     }
 

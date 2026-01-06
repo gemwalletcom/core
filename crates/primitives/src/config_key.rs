@@ -47,6 +47,8 @@ pub enum ConfigKey {
     ReferralRiskScoreHighRiskPlatformStorePenalty,
     ReferralRiskScoreHighRiskCountries,
     ReferralRiskScoreHighRiskCountryPenalty,
+    ReferralRiskScoreHighRiskLocales,
+    ReferralRiskScoreHighRiskLocalePenalty,
 
     // Referral Abuse Detection
     ReferralAbuseDisableThreshold,
@@ -125,6 +127,8 @@ impl ConfigKey {
             Self::ReferralRiskScoreHighRiskPlatformStorePenalty => "20",
             Self::ReferralRiskScoreHighRiskCountries => "[]",
             Self::ReferralRiskScoreHighRiskCountryPenalty => "15",
+            Self::ReferralRiskScoreHighRiskLocales => "[]",
+            Self::ReferralRiskScoreHighRiskLocalePenalty => "10",
             Self::ReferralAbuseDisableThreshold => "200",
             Self::ReferralAbuseAttemptPenalty => "15",
             Self::ReferralAbuseVerifiedThresholdMultiplier => "2",

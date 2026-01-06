@@ -23,6 +23,8 @@ pub struct RiskScoreConfig {
     pub high_risk_platform_store_penalty: i64,
     pub high_risk_countries: Vec<String>,
     pub high_risk_country_penalty: i64,
+    pub high_risk_locales: Vec<String>,
+    pub high_risk_locale_penalty: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -49,6 +51,8 @@ impl Default for RiskScoreConfig {
             high_risk_platform_store_penalty: 20,
             high_risk_countries: vec![],
             high_risk_country_penalty: 15,
+            high_risk_locales: vec![],
+            high_risk_locale_penalty: 10,
         }
     }
 }
@@ -113,6 +117,8 @@ pub struct RiskScoreBreakdown {
     pub platform_store_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub country_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub locale_score: i64,
 }
 
 fn is_zero(value: &i64) -> bool {
