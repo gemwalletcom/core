@@ -4,14 +4,15 @@ use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
 use primitives::AssetId;
-use tokio::try_join;
 
 use crate::provider::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldProviderClient, YieldTransaction};
 
 use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
 
 const SECONDS_PER_YEAR: f64 = 31_536_000.0;
-const APY_LOOKBACK_SECONDS: u64 = 7 * 24 * 60 * 60;
+
+// Base chain has ~2 second block time, 7 days lookback
+const LOOKBACK_BLOCKS: u64 = 7 * 24 * 60 * 60 / 2;
 
 #[derive(Clone)]
 pub struct YoYieldProvider {
@@ -33,46 +34,6 @@ impl YoYieldProvider {
             .copied()
             .find(|vault| vault.asset_id() == *asset_id)
             .ok_or_else(|| YieldError::new(format!("unsupported asset {}", asset_id)))
-    }
-
-    async fn performance_apy(&self, vault: YoVault) -> Result<Option<f64>, YieldError> {
-        let latest_block = self.gateway.latest_block_number().await?;
-        let latest_timestamp = self.gateway.block_timestamp(latest_block).await?;
-        let target_timestamp = latest_timestamp.saturating_sub(APY_LOOKBACK_SECONDS);
-        let lookback_block = self.find_block_before(target_timestamp, latest_block).await?;
-        let (latest_price, lookback_price) = try_join!(self.share_price_at_block(vault, latest_block), self.share_price_at_block(vault, lookback_block))?;
-        let lookback_timestamp = self.gateway.block_timestamp(lookback_block).await?;
-        let elapsed = latest_timestamp.saturating_sub(lookback_timestamp);
-        Ok(annualize_growth(latest_price, lookback_price, elapsed))
-    }
-
-    async fn share_price_at_block(&self, vault: YoVault, block_number: u64) -> Result<U256, YieldError> {
-        let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
-        self.gateway.convert_to_assets_at_block(vault.yo_token, one_share, block_number).await
-    }
-
-    async fn find_block_before(&self, target_timestamp: u64, latest_block: u64) -> Result<u64, YieldError> {
-        let mut low = 0;
-        let mut high = latest_block;
-        let mut candidate = latest_block;
-
-        while low <= high {
-            let mid = (low + high) / 2;
-            let mid_timestamp = self.gateway.block_timestamp(mid).await?;
-
-            if mid_timestamp > target_timestamp {
-                if mid == 0 {
-                    candidate = 0;
-                    break;
-                }
-                high = mid - 1;
-            } else {
-                candidate = mid;
-                low = mid + 1;
-            }
-        }
-
-        Ok(candidate)
     }
 }
 
@@ -100,7 +61,9 @@ impl YieldProviderClient for YoYieldProvider {
         let mut results = Vec::new();
 
         for vault in self.vaults.iter().copied().filter(|vault| vault.asset_id() == *asset_id) {
-            let apy = self.performance_apy(vault).await?;
+            let data = self.gateway.fetch_position_data(vault, Address::ZERO, LOOKBACK_BLOCKS).await?;
+            let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
+            let apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
             results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy));
         }
 
@@ -140,13 +103,13 @@ impl YieldProviderClient for YoYieldProvider {
         let owner = parse_address(&request.wallet_address)?;
         let mut details = YieldPosition::new(request.asset_id.clone(), self.provider(), vault.yo_token, vault.asset_token);
 
-        let share_balance = self.gateway.balance_of(vault.yo_token, owner).await?;
-        details.vault_balance_value = Some(share_balance.to_string());
+        let data = self.gateway.fetch_position_data(vault, owner, LOOKBACK_BLOCKS).await?;
 
-        let asset_balance = self.gateway.balance_of(vault.asset_token, owner).await?;
-        details.asset_balance_value = Some(asset_balance.to_string());
+        details.vault_balance_value = Some(data.share_balance.to_string());
+        details.asset_balance_value = Some(data.asset_balance.to_string());
 
-        details.apy = self.performance_apy(vault).await?;
+        let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
+        details.apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
 
         Ok(details)
     }

@@ -3,7 +3,6 @@ pub const EVERSTAKE_STATS_PATH: &str = "/api/v1/stats";
 pub const EVERSTAKE_VALIDATORS_QUEUE_PATH: &str = "/api/v1/validators/queue";
 
 use super::{EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting, models::AccountState};
-use crate::multicall3::{IMulticall3, create_call3, decode_call3_return};
 
 use alloy_primitives::Address;
 use gem_client::Client;
@@ -34,26 +33,34 @@ pub async fn get_everstake_staking_apy() -> Result<Option<f64>, Box<dyn Error + 
 pub async fn get_everstake_account_state<C: Client + Clone>(client: &EthereumClient<C>, address: &str) -> Result<AccountState, Box<dyn Error + Sync + Send>> {
     let account = Address::from_str(address).map_err(|e| Box::new(e) as Box<dyn Error + Sync + Send>)?;
     let staker = account;
+    let accounting: Address = EVERSTAKE_ACCOUNTING_ADDRESS.parse().unwrap();
 
-    let calls = vec![
-        create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::depositedBalanceOfCall { account }),
-        create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::pendingBalanceOfCall { account }),
-        create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::pendingDepositedBalanceOfCall { account }),
-        create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::withdrawRequestCall { staker }),
-        create_call3(EVERSTAKE_ACCOUNTING_ADDRESS, IAccounting::restakedRewardOfCall { account }),
-    ];
+    let mut batch = client.multicall();
+    let h_deposited = batch.add(accounting, IAccounting::depositedBalanceOfCall { account });
+    let h_pending = batch.add(accounting, IAccounting::pendingBalanceOfCall { account });
+    let h_pending_deposited = batch.add(accounting, IAccounting::pendingDepositedBalanceOfCall { account });
+    let h_withdraw = batch.add(accounting, IAccounting::withdrawRequestCall { staker });
+    let h_restaked = batch.add(accounting, IAccounting::restakedRewardOfCall { account });
 
-    let call_count = calls.len();
-    let multicall_results = client.multicall3(calls).await?;
-    if multicall_results.len() != call_count {
-        return Err("Unexpected number of multicall results".into());
-    }
+    let results = batch.execute().await.map_err(|e| e.to_string())?;
 
-    let deposited_balance = decode_balance_result::<IAccounting::depositedBalanceOfCall>(&multicall_results[0]);
-    let pending_balance = decode_balance_result::<IAccounting::pendingBalanceOfCall>(&multicall_results[1]);
-    let pending_deposited_balance = decode_balance_result::<IAccounting::pendingDepositedBalanceOfCall>(&multicall_results[2]);
-    let withdraw_request = decode_call3_return::<IAccounting::withdrawRequestCall>(&multicall_results[3])?;
-    let restaked_reward = decode_balance_result::<IAccounting::restakedRewardOfCall>(&multicall_results[4]);
+    let deposited_balance = results
+        .decode::<IAccounting::depositedBalanceOfCall>(&h_deposited)
+        .map(u256_to_biguint)
+        .unwrap_or_else(|_| BigUint::zero());
+    let pending_balance = results
+        .decode::<IAccounting::pendingBalanceOfCall>(&h_pending)
+        .map(u256_to_biguint)
+        .unwrap_or_else(|_| BigUint::zero());
+    let pending_deposited_balance = results
+        .decode::<IAccounting::pendingDepositedBalanceOfCall>(&h_pending_deposited)
+        .map(u256_to_biguint)
+        .unwrap_or_else(|_| BigUint::zero());
+    let withdraw_request = results.decode::<IAccounting::withdrawRequestCall>(&h_withdraw)?;
+    let restaked_reward = results
+        .decode::<IAccounting::restakedRewardOfCall>(&h_restaked)
+        .map(u256_to_biguint)
+        .unwrap_or_else(|_| BigUint::zero());
 
     Ok(AccountState {
         deposited_balance,
@@ -64,21 +71,8 @@ pub async fn get_everstake_account_state<C: Client + Clone>(client: &EthereumCli
     })
 }
 
-fn decode_balance_result<T: alloy_sol_types::SolCall>(result: &IMulticall3::Result) -> BigUint
-where
-    T::Return: Into<alloy_primitives::U256>,
-{
-    if result.success {
-        decode_call3_return::<T>(result)
-            .map(|value| {
-                let value: alloy_primitives::U256 = value.into();
-                let bytes = value.to_be_bytes::<32>();
-                BigUint::from_bytes_be(&bytes)
-            })
-            .unwrap_or(BigUint::zero())
-    } else {
-        BigUint::zero()
-    }
+fn u256_to_biguint(value: alloy_primitives::U256) -> BigUint {
+    BigUint::from_bytes_be(&value.to_be_bytes::<32>())
 }
 
 #[cfg(all(test, feature = "rpc", feature = "reqwest", feature = "chain_integration_tests"))]

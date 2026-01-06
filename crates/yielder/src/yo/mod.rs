@@ -4,7 +4,7 @@ mod error;
 mod provider;
 mod vault;
 
-pub use client::{YoGatewayClient, YoProvider};
+pub use client::{PositionData, YoGatewayClient, YoProvider};
 pub use contract::IYoGateway;
 pub use error::YieldError;
 pub use provider::YoYieldProvider;

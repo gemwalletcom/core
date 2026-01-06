@@ -2,7 +2,7 @@ use alloy_primitives::{Address, U256, hex};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_client::Client;
-use gem_evm::{jsonrpc::TransactionObject, rpc::EthereumClient};
+use gem_evm::{jsonrpc::TransactionObject, multicall3::IMulticall3, rpc::EthereumClient};
 use num_traits::ToPrimitive;
 use primitives::Chain;
 use serde_json::json;
@@ -13,6 +13,21 @@ alloy_sol_types::sol! {
     interface IYoVaultToken {
         function convertToAssets(uint256 shares) external view returns (uint256 assets);
     }
+
+    interface IERC20 {
+        function balanceOf(address account) external view returns (uint256);
+    }
+}
+
+/// Result from fetching position data via multicall
+#[derive(Debug, Clone)]
+pub struct PositionData {
+    pub share_balance: U256,
+    pub asset_balance: U256,
+    pub latest_price: U256,
+    pub latest_timestamp: u64,
+    pub lookback_price: U256,
+    pub lookback_timestamp: u64,
 }
 
 #[async_trait]
@@ -41,6 +56,9 @@ pub trait YoProvider: Send + Sync {
     async fn convert_to_assets_at_block(&self, yo_vault: Address, shares: U256, block_number: u64) -> Result<U256, YieldError>;
     async fn latest_block_number(&self) -> Result<u64, YieldError>;
     async fn block_timestamp(&self, block_number: u64) -> Result<u64, YieldError>;
+
+    /// Fetch position data including balances and historical prices for APY calculation
+    async fn fetch_position_data(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError>;
 }
 
 #[derive(Debug, Clone)]
@@ -304,5 +322,35 @@ where
             .timestamp
             .to_u64()
             .ok_or_else(|| YieldError::new(format!("yo gateway failed to parse timestamp for block {block_number}")))
+    }
+
+    async fn fetch_position_data(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError> {
+        let latest_block = self.latest_block_number().await?;
+        let lookback_block = latest_block.saturating_sub(lookback_blocks);
+        let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
+        let multicall_addr: Address = gem_evm::multicall3::deployment_by_chain_stack(self.ethereum_client.chain.chain_stack())
+            .parse()
+            .unwrap();
+
+        let mut latest_batch = self.ethereum_client.multicall();
+        let share_bal = latest_batch.add(vault.yo_token, IERC20::balanceOfCall { account: owner });
+        let asset_bal = latest_batch.add(vault.asset_token, IERC20::balanceOfCall { account: owner });
+        let latest_price = latest_batch.add(vault.yo_token, IYoVaultToken::convertToAssetsCall { shares: one_share });
+        let latest_ts = latest_batch.add(multicall_addr, IMulticall3::getCurrentBlockTimestampCall {});
+
+        let mut lookback_batch = self.ethereum_client.multicall();
+        let lookback_price = lookback_batch.add(vault.yo_token, IYoVaultToken::convertToAssetsCall { shares: one_share });
+        let lookback_ts = lookback_batch.add(multicall_addr, IMulticall3::getCurrentBlockTimestampCall {});
+
+        let (latest, lookback) = tokio::try_join!(latest_batch.at_block(latest_block).execute(), lookback_batch.at_block(lookback_block).execute())?;
+
+        Ok(PositionData {
+            share_balance: latest.decode::<IERC20::balanceOfCall>(&share_bal)?,
+            asset_balance: latest.decode::<IERC20::balanceOfCall>(&asset_bal)?,
+            latest_price: latest.decode::<IYoVaultToken::convertToAssetsCall>(&latest_price)?,
+            latest_timestamp: latest.decode::<IMulticall3::getCurrentBlockTimestampCall>(&latest_ts)?.to::<u64>(),
+            lookback_price: lookback.decode::<IYoVaultToken::convertToAssetsCall>(&lookback_price)?,
+            lookback_timestamp: lookback.decode::<IMulticall3::getCurrentBlockTimestampCall>(&lookback_ts)?.to::<u64>(),
+        })
     }
 }

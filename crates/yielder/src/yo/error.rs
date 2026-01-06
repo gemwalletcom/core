@@ -32,3 +32,9 @@ impl From<String> for YieldError {
         YieldError::new(value)
     }
 }
+
+impl From<gem_evm::multicall3::Multicall3Error> for YieldError {
+    fn from(e: gem_evm::multicall3::Multicall3Error) -> Self {
+        YieldError::new(e.to_string())
+    }
+}
