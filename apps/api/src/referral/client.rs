@@ -298,7 +298,7 @@ impl RewardsClient {
         let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
         let is_new_subscription = first_subscription_date.map(|d| d.is_within_days(REFERRAL_ELIGIBILITY_DAYS)).unwrap_or(true);
 
-        self.db.rewards()?.validate_referral_use(referrer_username, auth.device.id)?;
+        self.db.rewards()?.validate_referral_use(referrer_username, auth.device.id, REFERRAL_ELIGIBILITY_DAYS)?;
 
         Ok(if is_new_device && is_new_subscription {
             RewardEventType::InviteNew

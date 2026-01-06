@@ -30,9 +30,9 @@ impl From<diesel::result::Error> for DatabaseError {
 #[derive(Debug, Clone)]
 pub enum ReferralValidationError {
     CodeDoesNotExist,
-    AlreadyUsed,
     DeviceAlreadyUsed,
     CannotReferSelf,
+    EligibilityExpired(i64),
     RewardsNotEnabled(String),
     Database(DatabaseError),
 }
@@ -41,9 +41,9 @@ impl fmt::Display for ReferralValidationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ReferralValidationError::CodeDoesNotExist => write!(f, "Referral code does not exist"),
-            ReferralValidationError::AlreadyUsed => write!(f, "You already have a username and cannot apply a referral code"),
             ReferralValidationError::DeviceAlreadyUsed => write!(f, "This device has already been used to apply a referral code"),
             ReferralValidationError::CannotReferSelf => write!(f, "Cannot use your own referral code"),
+            ReferralValidationError::EligibilityExpired(days) => write!(f, "eligibility_expired: {} days", days),
             ReferralValidationError::RewardsNotEnabled(user) => write!(f, "Rewards are not enabled for {}", user),
             ReferralValidationError::Database(e) => write!(f, "{}", e),
         }

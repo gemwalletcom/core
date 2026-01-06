@@ -1,7 +1,7 @@
 use crate::database::rewards::RewardsStore;
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEventRow, NewRewardReferralRow, ReferralAttemptRow, RewardsRow, UsernameRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, ReferralAttemptRow, UsernameRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
@@ -38,7 +38,7 @@ fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, devic
     )?;
     RewardsStore::create_rewards(
         client,
-        RewardsRow {
+        NewRewardsRow {
             username: address.to_string(),
             is_enabled: true,
             level: None,
@@ -62,7 +62,7 @@ pub trait RewardsRepository {
     fn create_reward(&mut self, address: &str, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
-    fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32) -> Result<(), ReferralValidationError>;
+    fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError>;
     fn create_referral_use(
         &mut self,
         address: &str,
@@ -166,7 +166,7 @@ impl RewardsRepository for DatabaseClient {
             )?;
             RewardsStore::create_rewards(
                 self,
-                RewardsRow {
+                NewRewardsRow {
                     username: username.to_string(),
                     is_enabled: true,
                     level: None,
@@ -229,7 +229,7 @@ impl RewardsRepository for DatabaseClient {
         }
     }
 
-    fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32) -> Result<(), ReferralValidationError> {
+    fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError> {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referrer_username))?;
         let referrer_rewards = RewardsStore::get_rewards(self, referrer_username)?;
 
@@ -243,8 +243,8 @@ impl RewardsRepository for DatabaseClient {
             if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
                 let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
                 let rewards = RewardsStore::get_rewards(self, &username.username)?;
-                if rewards.referrer_username.is_some() {
-                    return Err(ReferralValidationError::AlreadyUsed);
+                if rewards.created_at.is_older_than_days(eligibility_days) {
+                    return Err(ReferralValidationError::EligibilityExpired(eligibility_days));
                 }
                 if referrer_username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
                     return Err(ReferralValidationError::CannotReferSelf);

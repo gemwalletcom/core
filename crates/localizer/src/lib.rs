@@ -271,6 +271,10 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "rewards_error_referral_referrer_limit_reached")
     }
 
+    pub fn rewards_error_referral_eligibility_expired(&self, days: i64) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_eligibility_expired", value = days)
+    }
+
     pub fn rewards_error_referral_country_ineligible(&self, country: &str) -> String {
         fl!(self.loader.as_ref(), "rewards_error_referral_country_ineligible", value = country)
     }

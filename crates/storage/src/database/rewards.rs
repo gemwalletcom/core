@@ -1,7 +1,7 @@
 use crate::DatabaseClient;
 use crate::models::{
-    NewRewardEventRow, NewRewardReferralRow, NewRiskSignalRow, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow, RewardReferralRow, RewardsRow,
-    RiskSignalRow,
+    NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow, RewardReferralRow,
+    RewardsRow, RiskSignalRow,
 };
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
@@ -32,7 +32,7 @@ impl RewardsEventTypesStore for DatabaseClient {
 
 pub(crate) trait RewardsStore {
     fn get_rewards(&mut self, username: &str) -> Result<RewardsRow, DieselError>;
-    fn create_rewards(&mut self, rewards: RewardsRow) -> Result<RewardsRow, DieselError>;
+    fn create_rewards(&mut self, rewards: NewRewardsRow) -> Result<RewardsRow, DieselError>;
     fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), DieselError>;
     fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, DieselError>;
     fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), DieselError>;
@@ -53,7 +53,7 @@ impl RewardsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn create_rewards(&mut self, rewards: RewardsRow) -> Result<RewardsRow, DieselError> {
+    fn create_rewards(&mut self, rewards: NewRewardsRow) -> Result<RewardsRow, DieselError> {
         use crate::schema::rewards::dsl;
         diesel::insert_into(dsl::rewards)
             .values(&rewards)
