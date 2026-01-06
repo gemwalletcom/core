@@ -20,6 +20,8 @@ pub struct RiskScoreConfig {
     pub same_referrer_fingerprint_penalty: i64,
     pub same_referrer_device_model_threshold: i64,
     pub same_referrer_device_model_penalty: i64,
+    pub device_model_ring_threshold: i64,
+    pub device_model_ring_penalty_per_member: i64,
     pub lookback_days: i64,
     pub high_risk_platform_stores: Vec<String>,
     pub high_risk_platform_store_penalty: i64,
@@ -50,6 +52,8 @@ impl Default for RiskScoreConfig {
             same_referrer_fingerprint_penalty: 60,
             same_referrer_device_model_threshold: 3,
             same_referrer_device_model_penalty: 50,
+            device_model_ring_threshold: 2,
+            device_model_ring_penalty_per_member: 40,
             lookback_days: 30,
             high_risk_platform_stores: vec![],
             high_risk_platform_store_penalty: 20,
@@ -70,6 +74,7 @@ pub struct RiskSignalInput {
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
+    pub device_currency: String,
     pub ip_address: String,
     pub ip_country_code: String,
     pub ip_usage_type: String,
@@ -120,6 +125,8 @@ pub struct RiskScoreBreakdown {
     #[serde(skip_serializing_if = "is_zero")]
     pub same_referrer_device_model_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
+    pub device_model_ring_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub platform_store_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub country_score: i64,
@@ -151,6 +158,7 @@ mod tests {
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),
+            device_currency: "USD".to_string(),
             ip_address: "192.168.1.1".to_string(),
             ip_country_code: "US".to_string(),
             ip_usage_type: "Fixed Line ISP".to_string(),

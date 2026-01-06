@@ -23,6 +23,13 @@ pub trait RiskSignalsRepository {
     fn count_unique_referrers_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn count_unique_referrers_for_fingerprint(&mut self, fingerprint: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn count_unique_devices_for_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
+    fn count_unique_referrers_for_device_model_pattern(
+        &mut self,
+        device_model: &str,
+        device_platform: &str,
+        device_locale: &str,
+        since: NaiveDateTime,
+    ) -> Result<i64, DatabaseError>;
     fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DatabaseError>;
 }
 
@@ -85,6 +92,22 @@ impl RiskSignalsRepository for DatabaseClient {
 
     fn count_unique_devices_for_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {
         Ok(RiskSignalsStore::count_unique_devices_for_ip(self, ip_address, since)?)
+    }
+
+    fn count_unique_referrers_for_device_model_pattern(
+        &mut self,
+        device_model: &str,
+        device_platform: &str,
+        device_locale: &str,
+        since: NaiveDateTime,
+    ) -> Result<i64, DatabaseError> {
+        Ok(RiskSignalsStore::count_unique_referrers_for_device_model_pattern(
+            self,
+            device_model,
+            device_platform,
+            device_locale,
+            since,
+        )?)
     }
 
     fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DatabaseError> {

@@ -206,6 +206,13 @@ pub(crate) trait RiskSignalsStore {
     fn count_unique_referrers_for_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn count_unique_referrers_for_fingerprint(&mut self, fingerprint: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn count_unique_devices_for_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_unique_referrers_for_device_model_pattern(
+        &mut self,
+        device_model: &str,
+        device_platform: &str,
+        device_locale: &str,
+        since: NaiveDateTime,
+    ) -> Result<i64, DieselError>;
     fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DieselError>;
 }
 
@@ -355,6 +362,26 @@ impl RiskSignalsStore for DatabaseClient {
             .filter(dsl::ip_address.eq(ip_address))
             .filter(dsl::created_at.ge(since))
             .select(count(dsl::device_id).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_unique_referrers_for_device_model_pattern(
+        &mut self,
+        device_model: &str,
+        device_platform: &str,
+        device_locale: &str,
+        since: NaiveDateTime,
+    ) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::device_model.eq(device_model))
+            .filter(dsl::device_platform.eq(device_platform))
+            .filter(dsl::device_locale.eq(device_locale))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::referrer_username).aggregate_distinct())
             .first(&mut self.connection)
     }
 

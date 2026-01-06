@@ -39,6 +39,7 @@ CREATE TABLE rewards_risk_signals (
     device_os VARCHAR(32) NOT NULL,
     device_model VARCHAR(64) NOT NULL,
     device_locale VARCHAR(16) NOT NULL,
+    device_currency VARCHAR(8) NOT NULL,
     ip_address VARCHAR(45) NOT NULL,
     ip_country_code VARCHAR(2) NOT NULL,
     ip_usage_type VARCHAR(64) NOT NULL,

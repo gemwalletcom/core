@@ -701,6 +701,8 @@ diesel::table! {
         device_model -> Varchar,
         #[max_length = 16]
         device_locale -> Varchar,
+        #[max_length = 8]
+        device_currency -> Varchar,
         #[max_length = 45]
         ip_address -> Varchar,
         #[max_length = 2]

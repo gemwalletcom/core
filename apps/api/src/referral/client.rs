@@ -196,6 +196,7 @@ impl RewardsClient {
             device_os: auth.device.os.clone().unwrap_or_default(),
             device_model: auth.device.model.clone().unwrap_or_default(),
             device_locale: auth.device.locale.clone(),
+            device_currency: auth.device.currency.clone(),
             ip_result,
             referrer_verified,
         };
@@ -251,7 +252,17 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let risk_result = evaluate_risk(&scoring_input, &existing_signals, &risk_score_config);
+        let device_model_ring_count = match client.count_unique_referrers_for_device_model_pattern(
+            &signal_input.device_model,
+            &signal_input.device_platform,
+            &signal_input.device_locale,
+            since,
+        ) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+
+        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, &risk_score_config);
         let risk_signal_id = match client.add_risk_signal(risk_result.signal) {
             Ok(id) => id,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
@@ -339,6 +350,8 @@ impl RewardsClient {
             same_referrer_fingerprint_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintPenalty)?,
             same_referrer_device_model_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerDeviceModelThreshold)?,
             same_referrer_device_model_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerDeviceModelPenalty)?,
+            device_model_ring_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceModelRingThreshold)?,
+            device_model_ring_penalty_per_member: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceModelRingPenaltyPerMember)?,
             lookback_days: config.get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)?,
             high_risk_platform_stores: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskPlatformStores)?,
             high_risk_platform_store_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskPlatformStorePenalty)?,

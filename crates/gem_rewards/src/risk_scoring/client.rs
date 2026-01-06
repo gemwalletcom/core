@@ -13,6 +13,7 @@ pub struct RiskScoringInput {
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
+    pub device_currency: String,
     pub ip_result: IpCheckResult,
     pub referrer_verified: bool,
 }
@@ -27,6 +28,7 @@ impl RiskScoringInput {
             device_os: self.device_os.clone(),
             device_model: self.device_model.clone(),
             device_locale: self.device_locale.clone(),
+            device_currency: self.device_currency.clone(),
             ip_address: self.ip_result.ip_address.clone(),
             ip_country_code: self.ip_result.country_code.clone(),
             ip_usage_type: self.ip_result.usage_type.clone(),
@@ -42,9 +44,9 @@ pub struct RiskResult {
     pub signal: NewRiskSignalRow,
 }
 
-pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow], config: &RiskScoreConfig) -> RiskResult {
+pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow], device_model_ring_count: i64, config: &RiskScoreConfig) -> RiskResult {
     let signal_input = input.to_signal_input();
-    let score = calculate_risk_score(&signal_input, existing_signals, config);
+    let score = calculate_risk_score(&signal_input, existing_signals, device_model_ring_count, config);
 
     let signal = NewRiskSignalRow {
         fingerprint: score.fingerprint.clone(),
@@ -55,6 +57,7 @@ pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow
         device_os: signal_input.device_os,
         device_model: signal_input.device_model,
         device_locale: signal_input.device_locale,
+        device_currency: signal_input.device_currency,
         ip_address: signal_input.ip_address,
         ip_country_code: signal_input.ip_country_code,
         ip_usage_type: signal_input.ip_usage_type,
@@ -81,6 +84,7 @@ mod tests {
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),
+            device_currency: "USD".to_string(),
             ip_result: IpCheckResult {
                 ip_address: "192.168.1.1".to_string(),
                 country_code: "US".to_string(),
@@ -97,7 +101,7 @@ mod tests {
     fn evaluate_clean_user() {
         let input = create_test_input();
         let config = RiskScoreConfig::default();
-        let result = evaluate_risk(&input, &[], &config);
+        let result = evaluate_risk(&input, &[], 0, &config);
 
         assert_eq!(result.score.score, 0);
         assert!(result.score.is_allowed);
@@ -110,7 +114,7 @@ mod tests {
         let mut input = create_test_input();
         input.ip_result.confidence_score = 60;
         let config = RiskScoreConfig::default();
-        let result = evaluate_risk(&input, &[], &config);
+        let result = evaluate_risk(&input, &[], 0, &config);
 
         assert_eq!(result.score.score, 60);
         assert!(!result.score.is_allowed);
@@ -120,7 +124,7 @@ mod tests {
     fn signal_populated_correctly() {
         let input = create_test_input();
         let config = RiskScoreConfig::default();
-        let result = evaluate_risk(&input, &[], &config);
+        let result = evaluate_risk(&input, &[], 0, &config);
 
         assert_eq!(result.signal.ip_address, "192.168.1.1");
         assert_eq!(result.signal.ip_isp, "Comcast");
