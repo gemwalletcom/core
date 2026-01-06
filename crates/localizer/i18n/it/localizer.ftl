@@ -45,4 +45,4 @@ errors_generic = Si è verificato un errore imprevisto. Riprova più tardi.
 rewards_error_referral_country_ineligible = Al momento i referral non sono disponibili per il tuo Paese: {$value}.
 notification_rewards_disabled_title = Codice di riferimento disattivato
 notification_rewards_disabled_description = Questo codice di riferimento è stato disattivato a causa di ripetute violazioni dei termini del nostro programma di riferimento.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = I codici di riferimento devono essere applicati entro {$value} giorni dalla creazione del tuo nome utente.

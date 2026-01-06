@@ -45,4 +45,4 @@ errors_generic = حدث خطأ غير متوقع. يرجى المحاولة مر
 rewards_error_referral_country_ineligible = خدمة الإحالات غير متاحة حاليًا لبلدك: {$value}.
 notification_rewards_disabled_title = تم تعطيل رمز الإحالة
 notification_rewards_disabled_description = تم تعطيل رمز الإحالة هذا بسبب الانتهاكات المتكررة لشروط برنامج الإحالة الخاص بنا.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = يجب تطبيق رموز الإحالة في غضون {$value} أيام من إنشاء اسم المستخدم الخاص بك.

@@ -45,4 +45,4 @@ errors_generic = Terjadi kesalahan yang tidak terduga. Silakan coba lagi nanti.
 rewards_error_referral_country_ineligible = Saat ini, program rujukan tidak tersedia untuk negara Anda: {$value}.
 notification_rewards_disabled_title = Kode referensi dinonaktifkan
 notification_rewards_disabled_description = Kode referensi ini telah dinonaktifkan karena pelanggaran berulang terhadap ketentuan program referensi kami.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = Kode referensi harus diterapkan dalam {$value} hari-hari untuk membuat nama pengguna Anda.

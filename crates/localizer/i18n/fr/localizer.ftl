@@ -45,4 +45,4 @@ errors_generic = Une erreur inattendue s'est produite. Veuillez réessayer plus 
 rewards_error_referral_country_ineligible = Les parrainages ne sont actuellement pas disponibles pour votre pays : {$value}.
 notification_rewards_disabled_title = Code de parrainage désactivé
 notification_rewards_disabled_description = Ce code de parrainage a été désactivé en raison de violations répétées des conditions de notre programme de parrainage.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = Les codes de parrainage doivent être appliqués dans les {$value} jours de création de votre nom d'utilisateur.

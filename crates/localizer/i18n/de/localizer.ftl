@@ -45,4 +45,4 @@ errors_generic = Es ist ein unerwarteter Fehler aufgetreten. Bitte versuchen Sie
 rewards_error_referral_country_ineligible = Für Ihr Land sind derzeit keine Überweisungen möglich: {$value}Die
 notification_rewards_disabled_title = Empfehlungscode deaktiviert
 notification_rewards_disabled_description = Dieser Empfehlungscode wurde aufgrund wiederholter Verstöße gegen die Bedingungen unseres Empfehlungsprogramms deaktiviert.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = Empfehlungscodes müssen innerhalb von {$value} Tage bis zur Erstellung Ihres Benutzernamens.

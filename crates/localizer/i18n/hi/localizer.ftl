@@ -45,4 +45,4 @@ errors_generic = एक अप्रत्याशित त्रुटि उ
 rewards_error_referral_country_ineligible = आपके देश के लिए फिलहाल रेफरल उपलब्ध नहीं हैं: {$value}.
 notification_rewards_disabled_title = रेफरल कोड निष्क्रिय कर दिया गया है
 notification_rewards_disabled_description = हमारे रेफरल प्रोग्राम की शर्तों के बार-बार उल्लंघन के कारण इस रेफरल कोड को निष्क्रिय कर दिया गया है।
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = रेफरल कोड को इसके भीतर लागू किया जाना चाहिए {$value} अपना यूजरनेम बनाने में लगने वाले दिन।

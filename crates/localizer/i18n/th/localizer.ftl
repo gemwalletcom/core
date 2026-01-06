@@ -45,4 +45,4 @@ errors_generic = เกิดข้อผิดพลาดที่ไม่ค
 rewards_error_referral_country_ineligible = ขณะนี้ยังไม่สามารถให้บริการส่งต่อผู้ป่วยสำหรับประเทศของคุณได้: {$value}-
 notification_rewards_disabled_title = รหัสแนะนำถูกปิดใช้งานแล้ว
 notification_rewards_disabled_description = รหัสแนะนำนี้ถูกปิดใช้งานเนื่องจากมีการละเมิดข้อกำหนดของโปรแกรมแนะนำเพื่อนของเราซ้ำหลายครั้ง
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = ต้องใช้รหัสแนะนำภายใน {$value} ใช้เวลาหลายวันในการสร้างชื่อผู้ใช้ของคุณ

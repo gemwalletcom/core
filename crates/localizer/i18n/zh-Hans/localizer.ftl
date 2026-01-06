@@ -45,4 +45,4 @@ errors_generic = 发生意外错误，请稍后重试。
 rewards_error_referral_country_ineligible = 目前您所在的国家/地区无法进行转诊： {$value}。
 notification_rewards_disabled_title = 推荐码已停用
 notification_rewards_disabled_description = 由于多次违反我们的推荐计划条款，此推荐码已被禁用。
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = 推荐码必须在有效期内使用。 {$value} 创建用户名所需天数。

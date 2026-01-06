@@ -45,4 +45,4 @@ errors_generic = אירעה שגיאה בלתי צפויה. אנא נסה שוב
 rewards_error_referral_country_ineligible = הפניות אינן זמינות כעת עבור המדינה שלך: {$value}.
 notification_rewards_disabled_title = קוד ההפניה הושבת
 notification_rewards_disabled_description = קוד הפניה זה הושבת עקב הפרות חוזרות ונשנות של תנאי תוכנית ההפניות שלנו.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = יש להחיל קודי הפניה בתוך {$value} ימים של יצירת שם המשתמש שלך.

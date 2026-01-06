@@ -45,4 +45,4 @@ errors_generic = 予期しないエラーが発生しました。しばらくし
 rewards_error_referral_country_ineligible = 現在、あなたの国では紹介はご利用いただけません: {$value}。
 notification_rewards_disabled_title = 紹介コードが無効になりました
 notification_rewards_disabled_description = この紹介コードは、紹介プログラムの規約を繰り返し違反したため無効になりました。
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = 紹介コードは、 {$value} ユーザー名を作成してから数日経過します。

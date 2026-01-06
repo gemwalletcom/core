@@ -45,4 +45,4 @@ errors_generic = Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin
 rewards_error_referral_country_ineligible = Şu anda ülkeniz için yönlendirme hizmeti mevcut değil: {$value}.
 notification_rewards_disabled_title = Yönlendirme kodu devre dışı bırakıldı.
 notification_rewards_disabled_description = Bu yönlendirme kodu, yönlendirme programı şartlarımızın tekrar tekrar ihlal edilmesi nedeniyle devre dışı bırakılmıştır.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = Sevk kodları şu süre içinde uygulanmalıdır: {$value} Kullanıcı adınızı oluşturmanızın üzerinden geçen günler.

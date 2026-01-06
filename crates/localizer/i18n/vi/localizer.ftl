@@ -45,4 +45,4 @@ errors_generic = Đã xảy ra lỗi không mong muốn. Vui lòng thử lại s
 rewards_error_referral_country_ineligible = Hiện tại, dịch vụ giới thiệu chưa khả dụng cho quốc gia của bạn: {$value}.
 notification_rewards_disabled_title = Mã giới thiệu đã bị vô hiệu hóa
 notification_rewards_disabled_description = Mã giới thiệu này đã bị vô hiệu hóa do vi phạm nhiều lần các điều khoản của chương trình giới thiệu.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = Mã giới thiệu phải được áp dụng trong vòng... {$value} ngày tạo tên người dùng của bạn.

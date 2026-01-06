@@ -45,4 +45,4 @@ errors_generic = Wystąpił nieoczekiwany błąd. Spróbuj ponownie później.
 rewards_error_referral_country_ineligible = Polecenia są obecnie niedostępne dla Twojego kraju: {$value}.
 notification_rewards_disabled_title = Kod polecający został dezaktywowany
 notification_rewards_disabled_description = Ten kod polecający został wyłączony z powodu powtarzających się naruszeń warunków naszego programu poleceń.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = Kody polecające muszą zostać zastosowane w ciągu {$value} dni od utworzenia nazwy użytkownika.

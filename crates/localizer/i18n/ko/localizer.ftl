@@ -45,4 +45,4 @@ errors_generic = 예기치 않은 오류가 발생했습니다. 나중에 다시
 rewards_error_referral_country_ineligible = 현재 귀하의 국가에서는 추천 서비스를 이용하실 수 없습니다. {$value}.
 notification_rewards_disabled_title = 추천 코드가 비활성화되었습니다.
 notification_rewards_disabled_description = 이 추천 코드는 추천 프로그램 약관을 반복적으로 위반하여 사용이 중단되었습니다.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = 추천 코드는 반드시 다음 기간 내에 적용해야 합니다. {$value} 사용자 이름을 만드는 데 며칠이 걸립니다.

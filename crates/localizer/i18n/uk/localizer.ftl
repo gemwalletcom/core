@@ -45,4 +45,4 @@ errors_generic = Сталася неочікувана помилка. Будь 
 rewards_error_referral_country_ineligible = Наразі реферали для вашої країни недоступні: {$value}.
 notification_rewards_disabled_title = Реферальний код деактивовано
 notification_rewards_disabled_description = Цей реферальний код було вимкнено через неодноразові порушення умов нашої реферальної програми.
-rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+rewards_error_referral_eligibility_expired = Реферальні коди необхідно застосувати протягом {$value} днів створення вашого імені користувача.
