@@ -298,7 +298,9 @@ impl RewardsClient {
         let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
         let is_new_subscription = first_subscription_date.map(|d| d.is_within_days(REFERRAL_ELIGIBILITY_DAYS)).unwrap_or(true);
 
-        self.db.rewards()?.validate_referral_use(referrer_username, auth.device.id, REFERRAL_ELIGIBILITY_DAYS)?;
+        self.db
+            .rewards()?
+            .validate_referral_use(referrer_username, auth.device.id, REFERRAL_ELIGIBILITY_DAYS)?;
 
         Ok(if is_new_device && is_new_subscription {
             RewardEventType::InviteNew
@@ -335,6 +337,8 @@ impl RewardsClient {
             same_referrer_pattern_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerPatternPenalty)?,
             same_referrer_fingerprint_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintThreshold)?,
             same_referrer_fingerprint_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintPenalty)?,
+            same_referrer_device_model_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerDeviceModelThreshold)?,
+            same_referrer_device_model_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerDeviceModelPenalty)?,
             lookback_days: config.get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)?,
             high_risk_platform_stores: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskPlatformStores)?,
             high_risk_platform_store_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskPlatformStorePenalty)?,

@@ -42,6 +42,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
 
     let mut same_referrer_pattern_count = 0;
     let mut same_referrer_fingerprint_count = 0;
+    let mut same_referrer_device_model_count = 0;
 
     for signal in existing_signals {
         if signal.referrer_username == input.username {
@@ -51,6 +52,10 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
 
             if signal.ip_isp == input.ip_isp && signal.device_model == input.device_model && signal.device_platform == input.device_platform {
                 same_referrer_pattern_count += 1;
+            }
+
+            if signal.device_model == input.device_model && signal.device_platform == input.device_platform {
+                same_referrer_device_model_count += 1;
             }
             continue;
         }
@@ -89,6 +94,10 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         breakdown.same_referrer_pattern_score = config.same_referrer_pattern_penalty;
     }
 
+    if same_referrer_device_model_count >= config.same_referrer_device_model_threshold {
+        breakdown.same_referrer_device_model_score = config.same_referrer_device_model_penalty;
+    }
+
     let score = (breakdown.abuse_score
         + breakdown.fingerprint_match_score
         + breakdown.ip_reuse_score
@@ -97,6 +106,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         + breakdown.ineligible_ip_type_score
         + breakdown.same_referrer_pattern_score
         + breakdown.same_referrer_fingerprint_score
+        + breakdown.same_referrer_device_model_score
         + breakdown.platform_store_score
         + breakdown.country_score
         + breakdown.locale_score
@@ -340,7 +350,8 @@ mod tests {
         let result = calculate_risk_score(&create_test_input(), &signals, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_pattern_score, 40);
-        assert_eq!(result.score, 40);
+        assert_eq!(result.breakdown.same_referrer_device_model_score, 50);
+        assert_eq!(result.score, 90);
     }
 
     #[test]
@@ -370,7 +381,10 @@ mod tests {
 
         let result = calculate_risk_score(&input, &signals, &RiskScoreConfig::default());
 
-        assert_eq!(result.score, 100);
+        assert_eq!(result.breakdown.same_referrer_pattern_score, 40);
+        assert_eq!(result.breakdown.same_referrer_fingerprint_score, 60);
+        assert_eq!(result.breakdown.same_referrer_device_model_score, 50);
+        assert_eq!(result.score, 150);
         assert!(!result.is_allowed);
     }
 
@@ -415,7 +429,65 @@ mod tests {
 
         let result = calculate_risk_score(&input, &signals, &RiskScoreConfig::default());
 
-        assert_eq!(result.score, 100);
+        assert_eq!(result.breakdown.same_referrer_pattern_score, 40);
+        assert_eq!(result.breakdown.same_referrer_fingerprint_score, 60);
+        assert_eq!(result.breakdown.same_referrer_device_model_score, 50);
+        assert_eq!(result.score, 150);
         assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn same_referrer_device_model_below_threshold() {
+        let signals = [
+            create_signal("user1", "fp1", "10.0.0.1", "ISP_A", "iPhone15,2", 2),
+            create_signal("user1", "fp2", "10.0.0.2", "ISP_B", "iPhone15,2", 3),
+        ];
+        let result = calculate_risk_score(&create_test_input(), &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.same_referrer_device_model_score, 0);
+        assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn same_referrer_device_model_at_threshold() {
+        let signals = [
+            create_signal("user1", "fp1", "10.0.0.1", "ISP_A", "iPhone15,2", 2),
+            create_signal("user1", "fp2", "10.0.0.2", "ISP_B", "iPhone15,2", 3),
+            create_signal("user1", "fp3", "10.0.0.3", "ISP_C", "iPhone15,2", 4),
+        ];
+        let result = calculate_risk_score(&create_test_input(), &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.same_referrer_device_model_score, 50);
+        assert_eq!(result.breakdown.same_referrer_pattern_score, 0);
+        assert_eq!(result.score, 50);
+    }
+
+    #[test]
+    fn same_referrer_device_model_vpn_rotation_detected() {
+        let input = RiskSignalInput {
+            username: "abuser".to_string(),
+            device_model: "INFINIX X6525".to_string(),
+            device_platform: "android".to_string(),
+            device_platform_store: "googlePlay".to_string(),
+            device_locale: "in".to_string(),
+            ..create_test_input()
+        };
+
+        let signals: Vec<_> = [("Comcast", "US"), ("AT&T", "US"), ("Sky Broadband", "GB"), ("BT", "GB"), ("Charter", "US")]
+            .iter()
+            .enumerate()
+            .map(|(i, (isp, _country))| {
+                let mut s = create_signal("abuser", &format!("fp{}", i), &format!("10.0.0.{}", i), isp, "INFINIX X6525", 100 + i as i32);
+                s.device_platform = "android".to_string();
+                s.device_platform_store = "googlePlay".to_string();
+                s
+            })
+            .collect();
+
+        let result = calculate_risk_score(&input, &signals, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.same_referrer_device_model_score, 50);
+        assert_eq!(result.breakdown.same_referrer_pattern_score, 0);
+        assert_eq!(result.score, 50);
     }
 }
