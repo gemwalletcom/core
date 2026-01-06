@@ -23,7 +23,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         } else {
             0
         },
-        verified_user_reduction: if input.referrer_verified { config.verified_user_reduction } else { 0 },
+        verified_user_reduction: if input.referrer_verified { -config.verified_user_reduction } else { 0 },
         platform_store_score: if is_high_risk_platform_store {
             config.high_risk_platform_store_penalty
         } else {
@@ -97,7 +97,7 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         + breakdown.same_referrer_fingerprint_score
         + breakdown.platform_store_score
         + breakdown.country_score
-        - breakdown.verified_user_reduction)
+        + breakdown.verified_user_reduction)
         .max(0);
 
     RiskScore {
@@ -298,7 +298,7 @@ mod tests {
         let result = calculate_risk_score(&input, &[], &config);
 
         assert_eq!(result.breakdown.abuse_score, 60);
-        assert_eq!(result.breakdown.verified_user_reduction, 30);
+        assert_eq!(result.breakdown.verified_user_reduction, -30);
         assert_eq!(result.score, 30);
         assert!(result.is_allowed);
     }
@@ -310,7 +310,7 @@ mod tests {
         let config = RiskScoreConfig::default();
         let result = calculate_risk_score(&input, &[], &config);
 
-        assert_eq!(result.breakdown.verified_user_reduction, 30);
+        assert_eq!(result.breakdown.verified_user_reduction, -30);
         assert_eq!(result.score, 0);
         assert!(result.is_allowed);
     }
