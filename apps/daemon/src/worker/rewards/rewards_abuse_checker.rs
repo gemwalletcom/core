@@ -66,14 +66,13 @@ impl RewardsAbuseChecker {
 
         let mut disabled_count = 0;
         for eval in evaluations {
-            if eval.abuse_score >= eval.threshold {
-                if let Some(event_id) = self.disable_user(&eval)? {
+            if eval.abuse_score >= eval.threshold
+                && let Some(event_id) = self.disable_user(&eval)? {
                     self.stream_producer
                         .publish_rewards_events(vec![RewardsNotificationPayload::new(event_id)])
                         .await?;
                     disabled_count += 1;
                 }
-            }
         }
 
         Ok(disabled_count)
