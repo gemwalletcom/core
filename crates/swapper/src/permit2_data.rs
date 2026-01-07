@@ -96,7 +96,7 @@ pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle, contract: &
         primary_type: "PermitSingle".into(),
         message: data,
     };
-    let json = serde_json::to_string(&message).map_err(|_| SwapperError::ABIError("failed to serialize EIP712 message to JSON".into()))?;
+    let json = serde_json::to_string(&message).map_err(|_| SwapperError::TransactionError("failed to serialize EIP712 message to JSON".into()))?;
     Ok(json)
 }
 
