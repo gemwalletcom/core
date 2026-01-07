@@ -5,6 +5,7 @@ use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 #[strum(serialize_all = "camelCase")]
 pub enum ConfigKey {
     // Referral
+    ReferralPerDeviceDaily,
     ReferralPerIpDaily,
     ReferralPerIpWeekly,
     ReferralPerUserDaily,
@@ -99,6 +100,7 @@ impl ConfigKey {
 
     pub fn default_value(&self) -> &'static str {
         match self {
+            Self::ReferralPerDeviceDaily => "2",
             Self::ReferralPerIpDaily => "3",
             Self::ReferralPerIpWeekly => "10",
             Self::ReferralPerUserDaily => "5",

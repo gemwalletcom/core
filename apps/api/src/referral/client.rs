@@ -20,6 +20,7 @@ struct ReferralLimitsConfig {
     tor_allowed: bool,
     ineligible_countries: Vec<String>,
     daily_limit: i64,
+    device_daily_limit: i64,
     ip_daily_limit: i64,
     ip_weekly_limit: i64,
 }
@@ -224,6 +225,14 @@ impl RewardsClient {
             return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralUseDailyLimit));
         }
 
+        let device_daily_count = match client.count_signals_for_device_id(scoring_input.device_id, now().days_ago(1)) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+        if device_daily_count >= limits_config.device_daily_limit {
+            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerDeviceDaily));
+        }
+
         let ip_daily_count = match client.count_signals_since(Some(&scoring_input.ip_result.ip_address), now().days_ago(1)) {
             Ok(count) => count,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
@@ -325,6 +334,7 @@ impl RewardsClient {
             tor_allowed: config.get_config_bool(ConfigKey::ReferralIpTorAllowed)?,
             ineligible_countries: config.get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?,
             daily_limit: config.get_config_i64(ConfigKey::ReferralUseDailyLimit)?,
+            device_daily_limit: config.get_config_i64(ConfigKey::ReferralPerDeviceDaily)?,
             ip_daily_limit: config.get_config_i64(ConfigKey::ReferralPerIpDaily)?,
             ip_weekly_limit: config.get_config_i64(ConfigKey::ReferralPerIpWeekly)?,
         })
