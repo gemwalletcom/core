@@ -72,6 +72,7 @@ pub struct YieldDetailsRequest {
 
 #[derive(Debug, Clone)]
 pub struct YieldPosition {
+    pub name: String,
     pub asset_id: AssetId,
     pub provider: YieldProvider,
     pub vault_token_address: String,
@@ -83,8 +84,9 @@ pub struct YieldPosition {
 }
 
 impl YieldPosition {
-    pub fn new(asset_id: AssetId, provider: YieldProvider, share_token: Address, asset_token: Address) -> Self {
+    pub fn new(name: impl Into<String>, asset_id: AssetId, provider: YieldProvider, share_token: Address, asset_token: Address) -> Self {
         Self {
+            name: name.into(),
             asset_id,
             provider,
             vault_token_address: share_token.to_string(),

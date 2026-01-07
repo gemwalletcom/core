@@ -33,6 +33,7 @@ pub type GemYieldPosition = CorePosition;
 
 #[uniffi::remote(Record)]
 pub struct GemYieldPosition {
+    pub name: String,
     pub asset_id: AssetId,
     pub provider: GemYieldProvider,
     pub vault_token_address: String,

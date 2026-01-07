@@ -101,7 +101,7 @@ impl YieldProviderClient for YoYieldProvider {
     async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
         let vault = self.find_vault(&request.asset_id)?;
         let owner = parse_address(&request.wallet_address)?;
-        let mut details = YieldPosition::new(request.asset_id.clone(), self.provider(), vault.yo_token, vault.asset_token);
+        let mut details = YieldPosition::new(vault.name, request.asset_id.clone(), self.provider(), vault.yo_token, vault.asset_token);
 
         let data = self.gateway.fetch_position_data(vault, owner, LOOKBACK_BLOCKS).await?;
 
