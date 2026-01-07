@@ -20,6 +20,7 @@ struct ReferralLimitsConfig {
     tor_allowed: bool,
     ineligible_countries: Vec<String>,
     daily_limit: i64,
+    device_daily_limit: i64,
     ip_daily_limit: i64,
     ip_weekly_limit: i64,
 }
@@ -196,6 +197,7 @@ impl RewardsClient {
             device_os: auth.device.os.clone().unwrap_or_default(),
             device_model: auth.device.model.clone().unwrap_or_default(),
             device_locale: auth.device.locale.clone(),
+            device_currency: auth.device.currency.clone(),
             ip_result,
             referrer_verified,
         };
@@ -221,6 +223,14 @@ impl RewardsClient {
         };
         if daily_count >= limits_config.daily_limit {
             return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralUseDailyLimit));
+        }
+
+        let device_daily_count = match client.count_signals_for_device_id(scoring_input.device_id, now().days_ago(1)) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+        if device_daily_count >= limits_config.device_daily_limit {
+            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerDeviceDaily));
         }
 
         let ip_daily_count = match client.count_signals_since(Some(&scoring_input.ip_result.ip_address), now().days_ago(1)) {
@@ -251,7 +261,17 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let risk_result = evaluate_risk(&scoring_input, &existing_signals, &risk_score_config);
+        let device_model_ring_count = match client.count_unique_referrers_for_device_model_pattern(
+            &signal_input.device_model,
+            &signal_input.device_platform,
+            &signal_input.device_locale,
+            since,
+        ) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+
+        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, &risk_score_config);
         let risk_signal_id = match client.add_risk_signal(risk_result.signal) {
             Ok(id) => id,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
@@ -298,7 +318,9 @@ impl RewardsClient {
         let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
         let is_new_subscription = first_subscription_date.map(|d| d.is_within_days(REFERRAL_ELIGIBILITY_DAYS)).unwrap_or(true);
 
-        self.db.rewards()?.validate_referral_use(referrer_username, auth.device.id)?;
+        self.db
+            .rewards()?
+            .validate_referral_use(referrer_username, auth.device.id, REFERRAL_ELIGIBILITY_DAYS)?;
 
         Ok(if is_new_device && is_new_subscription {
             RewardEventType::InviteNew
@@ -312,6 +334,7 @@ impl RewardsClient {
             tor_allowed: config.get_config_bool(ConfigKey::ReferralIpTorAllowed)?,
             ineligible_countries: config.get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?,
             daily_limit: config.get_config_i64(ConfigKey::ReferralUseDailyLimit)?,
+            device_daily_limit: config.get_config_i64(ConfigKey::ReferralPerDeviceDaily)?,
             ip_daily_limit: config.get_config_i64(ConfigKey::ReferralPerIpDaily)?,
             ip_weekly_limit: config.get_config_i64(ConfigKey::ReferralPerIpWeekly)?,
         })
@@ -319,10 +342,12 @@ impl RewardsClient {
 
     fn load_risk_score_config(config: &mut dyn storage::ConfigRepository) -> Result<RiskScoreConfig, storage::DatabaseError> {
         Ok(RiskScoreConfig {
-            fingerprint_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatch)?,
+            fingerprint_match_penalty_per_referrer: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatchPerReferrer)?,
+            fingerprint_match_max_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreFingerprintMatchMaxPenalty)?,
             ip_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIpReuse)?,
             isp_model_match_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIspModelMatch)?,
-            device_id_reuse_score: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuse)?,
+            device_id_reuse_penalty_per_referrer: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReusePerReferrer)?,
+            device_id_reuse_max_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceIdReuseMaxPenalty)?,
             ineligible_ip_type_score: config.get_config_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)?,
             blocked_ip_types: config.get_config_vec_string(ConfigKey::ReferralBlockedIpTypes)?,
             blocked_ip_type_penalty: config.get_config_i64(ConfigKey::ReferralBlockedIpTypePenalty)?,
@@ -335,7 +360,17 @@ impl RewardsClient {
             same_referrer_pattern_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerPatternPenalty)?,
             same_referrer_fingerprint_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintThreshold)?,
             same_referrer_fingerprint_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerFingerprintPenalty)?,
+            same_referrer_device_model_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerDeviceModelThreshold)?,
+            same_referrer_device_model_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerDeviceModelPenalty)?,
+            device_model_ring_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceModelRingThreshold)?,
+            device_model_ring_penalty_per_member: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceModelRingPenaltyPerMember)?,
             lookback_days: config.get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)?,
+            high_risk_platform_stores: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskPlatformStores)?,
+            high_risk_platform_store_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskPlatformStorePenalty)?,
+            high_risk_countries: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskCountries)?,
+            high_risk_country_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskCountryPenalty)?,
+            high_risk_locales: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskLocales)?,
+            high_risk_locale_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskLocalePenalty)?,
         })
     }
 

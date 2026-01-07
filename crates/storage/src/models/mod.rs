@@ -51,7 +51,7 @@ pub use self::price_alert::{NewPriceAlertRow, PriceAlertRow};
 pub use self::price_dex::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};
 pub use self::release::ReleaseRow;
 pub use self::reward::{
-    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, NewRiskSignalRow, RedemptionOptionFull, ReferralAttemptRow, RewardEventRow,
+    NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, RedemptionOptionFull, ReferralAttemptRow, RewardEventRow,
     RewardEventTypeRow, RewardLevelTypeRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
     RiskSignalRow,
 };

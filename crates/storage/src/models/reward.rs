@@ -4,10 +4,26 @@ use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOp
 use primitives::{Asset, RewardEvent, RewardEventType, RewardLevel};
 use std::str::FromStr;
 
-#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
+#[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardsRow {
+    pub username: String,
+    pub is_enabled: bool,
+    pub level: Option<String>,
+    pub points: i32,
+    pub referrer_username: Option<String>,
+    pub referral_count: i32,
+    pub device_id: i32,
+    pub verified: bool,
+    pub comment: Option<String>,
+    pub disable_reason: Option<String>,
+    pub created_at: NaiveDateTime,
+}
+
+#[derive(Debug, Insertable, Clone)]
+#[diesel(table_name = crate::schema::rewards)]
+pub struct NewRewardsRow {
     pub username: String,
     pub is_enabled: bool,
     pub level: Option<String>,
@@ -218,6 +234,7 @@ pub struct RiskSignalRow {
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
+    pub device_currency: String,
     pub ip_address: String,
     pub ip_country_code: String,
     pub ip_usage_type: String,
@@ -239,6 +256,7 @@ pub struct NewRiskSignalRow {
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
+    pub device_currency: String,
     pub ip_address: String,
     pub ip_country_code: String,
     pub ip_usage_type: String,

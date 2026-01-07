@@ -247,10 +247,6 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "rewards_error_referral_code_not_exist")
     }
 
-    pub fn rewards_error_referral_already_used(&self) -> String {
-        fl!(self.loader.as_ref(), "rewards_error_referral_already_used")
-    }
-
     pub fn rewards_error_referral_device_already_used(&self) -> String {
         fl!(self.loader.as_ref(), "rewards_error_referral_device_already_used")
     }
@@ -269,6 +265,10 @@ impl LanguageLocalizer {
 
     pub fn rewards_error_referral_referrer_limit_reached(&self) -> String {
         fl!(self.loader.as_ref(), "rewards_error_referral_referrer_limit_reached")
+    }
+
+    pub fn rewards_error_referral_eligibility_expired(&self, days: i64) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_eligibility_expired", value = days)
     }
 
     pub fn rewards_error_referral_country_ineligible(&self, country: &str) -> String {

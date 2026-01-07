@@ -2,10 +2,12 @@ use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone)]
 pub struct RiskScoreConfig {
-    pub fingerprint_match_score: i64,
+    pub fingerprint_match_penalty_per_referrer: i64,
+    pub fingerprint_match_max_penalty: i64,
     pub ip_reuse_score: i64,
     pub isp_model_match_score: i64,
-    pub device_id_reuse_score: i64,
+    pub device_id_reuse_penalty_per_referrer: i64,
+    pub device_id_reuse_max_penalty: i64,
     pub ineligible_ip_type_score: i64,
     pub blocked_ip_types: Vec<String>,
     pub blocked_ip_type_penalty: i64,
@@ -18,16 +20,28 @@ pub struct RiskScoreConfig {
     pub same_referrer_pattern_penalty: i64,
     pub same_referrer_fingerprint_threshold: i64,
     pub same_referrer_fingerprint_penalty: i64,
+    pub same_referrer_device_model_threshold: i64,
+    pub same_referrer_device_model_penalty: i64,
+    pub device_model_ring_threshold: i64,
+    pub device_model_ring_penalty_per_member: i64,
     pub lookback_days: i64,
+    pub high_risk_platform_stores: Vec<String>,
+    pub high_risk_platform_store_penalty: i64,
+    pub high_risk_countries: Vec<String>,
+    pub high_risk_country_penalty: i64,
+    pub high_risk_locales: Vec<String>,
+    pub high_risk_locale_penalty: i64,
 }
 
 impl Default for RiskScoreConfig {
     fn default() -> Self {
         Self {
-            fingerprint_match_score: 100,
+            fingerprint_match_penalty_per_referrer: 50,
+            fingerprint_match_max_penalty: 200,
             ip_reuse_score: 50,
             isp_model_match_score: 30,
-            device_id_reuse_score: 100,
+            device_id_reuse_penalty_per_referrer: 50,
+            device_id_reuse_max_penalty: 200,
             ineligible_ip_type_score: 100,
             blocked_ip_types: vec!["Data Center".to_string(), "Web Hosting".to_string(), "Transit".to_string()],
             blocked_ip_type_penalty: 100,
@@ -40,7 +54,17 @@ impl Default for RiskScoreConfig {
             same_referrer_pattern_penalty: 40,
             same_referrer_fingerprint_threshold: 2,
             same_referrer_fingerprint_penalty: 60,
+            same_referrer_device_model_threshold: 3,
+            same_referrer_device_model_penalty: 50,
+            device_model_ring_threshold: 2,
+            device_model_ring_penalty_per_member: 40,
             lookback_days: 30,
+            high_risk_platform_stores: vec![],
+            high_risk_platform_store_penalty: 20,
+            high_risk_countries: vec![],
+            high_risk_country_penalty: 15,
+            high_risk_locales: vec![],
+            high_risk_locale_penalty: 10,
         }
     }
 }
@@ -54,6 +78,7 @@ pub struct RiskSignalInput {
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
+    pub device_currency: String,
     pub ip_address: String,
     pub ip_country_code: String,
     pub ip_usage_type: String,
@@ -101,6 +126,16 @@ pub struct RiskScoreBreakdown {
     pub same_referrer_pattern_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub same_referrer_fingerprint_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub same_referrer_device_model_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub device_model_ring_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub platform_store_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub country_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub locale_score: i64,
 }
 
 fn is_zero(value: &i64) -> bool {
@@ -127,6 +162,7 @@ mod tests {
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),
+            device_currency: "USD".to_string(),
             ip_address: "192.168.1.1".to_string(),
             ip_country_code: "US".to_string(),
             ip_usage_type: "Fixed Line ISP".to_string(),
