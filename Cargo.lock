@@ -9110,7 +9110,7 @@ dependencies = [
  "gem_jsonrpc",
  "num-traits",
  "primitives",
- "reqwest",
+ "reqwest 0.13.1",
  "serde_json",
  "tokio",
 ]

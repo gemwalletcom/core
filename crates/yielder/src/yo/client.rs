@@ -2,33 +2,17 @@ use alloy_primitives::{Address, U256, hex};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_client::Client;
-use gem_evm::{jsonrpc::TransactionObject, multicall3::IMulticall3, rpc::EthereumClient};
+use gem_evm::contracts::IERC20;
+use gem_evm::multicall3::IMulticall3;
+use gem_evm::{jsonrpc::TransactionObject, rpc::EthereumClient};
 use num_traits::ToPrimitive;
 use primitives::Chain;
 use serde_json::json;
 
-use super::{YO_GATEWAY_BASE_MAINNET, YoVault, contract::IYoGateway, error::YieldError};
-
-alloy_sol_types::sol! {
-    interface IYoVaultToken {
-        function convertToAssets(uint256 shares) external view returns (uint256 assets);
-    }
-
-    interface IERC20 {
-        function balanceOf(address account) external view returns (uint256);
-    }
-}
-
-/// Result from fetching position data via multicall
-#[derive(Debug, Clone)]
-pub struct PositionData {
-    pub share_balance: U256,
-    pub asset_balance: U256,
-    pub latest_price: U256,
-    pub latest_timestamp: u64,
-    pub lookback_price: U256,
-    pub lookback_timestamp: u64,
-}
+use super::contract::{IYoGateway, IYoVaultToken};
+use super::error::YieldError;
+use super::model::PositionData;
+use super::{YO_GATEWAY_BASE_MAINNET, YoVault};
 
 #[async_trait]
 pub trait YoProvider: Send + Sync {
@@ -272,13 +256,7 @@ where
     }
 
     async fn balance_of(&self, token: Address, owner: Address) -> Result<U256, YieldError> {
-        alloy_sol_types::sol! {
-            interface IERC20Balance {
-                function balanceOf(address account) external view returns (uint256);
-            }
-        }
-
-        let call = IERC20Balance::balanceOfCall { account: owner }.abi_encode();
+        let call = IERC20::balanceOfCall { account: owner }.abi_encode();
         let payload = hex::encode_prefixed(call);
         let params = json!([
             {

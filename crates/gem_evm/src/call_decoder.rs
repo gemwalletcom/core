@@ -111,6 +111,7 @@ impl From<IERC20Calls> for DecodedCall {
             IERC20Calls::name(_) => ("name", vec![]),
             IERC20Calls::symbol(_) => ("symbol", vec![]),
             IERC20Calls::decimals(_) => ("decimals", vec![]),
+            IERC20Calls::balanceOf(balance_of) => ("balanceOf", vec![("account", "address", balance_of.account.to_string())]),
             IERC20Calls::allowance(allowance) => (
                 "allowance",
                 vec![

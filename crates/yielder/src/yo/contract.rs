@@ -1,6 +1,10 @@
 use alloy_sol_types::sol;
 
 sol! {
+    interface IYoVaultToken {
+        function convertToAssets(uint256 shares) external view returns (uint256 assets);
+    }
+
     interface IYoGateway {
         function quoteConvertToShares(address yoVault, uint256 assets) external view returns (uint256 shares);
 

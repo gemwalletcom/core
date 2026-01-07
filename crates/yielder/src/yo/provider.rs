@@ -5,7 +5,8 @@ use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
 use primitives::AssetId;
 
-use crate::provider::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldProviderClient, YieldTransaction};
+use crate::models::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldTransaction};
+use crate::provider::YieldProviderClient;
 
 use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
 

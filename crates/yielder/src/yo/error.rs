@@ -1,5 +1,7 @@
 use std::{error::Error, fmt};
 
+use gem_evm::multicall3::Multicall3Error;
+
 #[derive(Debug, Clone)]
 pub struct YieldError(String);
 
@@ -33,8 +35,8 @@ impl From<String> for YieldError {
     }
 }
 
-impl From<gem_evm::multicall3::Multicall3Error> for YieldError {
-    fn from(e: gem_evm::multicall3::Multicall3Error) -> Self {
+impl From<Multicall3Error> for YieldError {
+    fn from(e: Multicall3Error) -> Self {
         YieldError::new(e.to_string())
     }
 }

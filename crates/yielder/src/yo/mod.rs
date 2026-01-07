@@ -1,11 +1,13 @@
 mod client;
 mod contract;
 mod error;
+mod model;
 mod provider;
 mod vault;
 
-pub use client::{PositionData, YoGatewayClient, YoProvider};
-pub use contract::IYoGateway;
+pub use client::{YoGatewayClient, YoProvider};
+pub use contract::{IYoGateway, IYoVaultToken};
+pub use model::PositionData;
 pub use error::YieldError;
 pub use provider::YoYieldProvider;
 pub use vault::{YO_USD, YoVault, vaults};

@@ -17,6 +17,7 @@ pub mod siwe;
 pub mod wallet_connect;
 
 use alien::AlienError;
+use yielder::YieldError;
 
 uniffi::setup_scaffolding!("gemstone");
 static LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -107,8 +108,8 @@ impl From<std::string::FromUtf8Error> for GemstoneError {
         Self::AnyError { msg: error.to_string() }
     }
 }
-impl From<yielder::yo::YieldError> for GemstoneError {
-    fn from(error: yielder::yo::YieldError) -> Self {
+impl From<YieldError> for GemstoneError {
+    fn from(error: YieldError) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }
