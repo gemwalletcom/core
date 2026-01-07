@@ -4,9 +4,8 @@ use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_co
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, Chain, LinkType};
 use std::collections::HashSet;
 use std::error::Error;
-use storage::AssetUpdate;
-use storage::Database;
 use storage::models::price::{NewPriceRow, PriceAssetRow};
+use storage::{AssetUpdate, AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
 
 pub struct AssetUpdater {
     coin_gecko_client: CoinGeckoClient,
@@ -26,8 +25,7 @@ impl AssetUpdater {
     pub async fn update_existing_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let ids = self
             .database
-            .client()?
-            .prices()
+            .prices()?
             .get_prices()?
             .into_iter()
             .map(|x| x.id)
@@ -53,7 +51,7 @@ impl AssetUpdater {
         let ids = native_assets.iter().map(|x| x.price_id.clone()).collect();
         let _ = self.update_assets_ids(ids).await;
 
-        Ok(self.database.client()?.prices().set_prices_assets(native_assets)?)
+        Ok(self.database.prices()?.set_prices_assets(native_assets)?)
     }
 
     pub async fn update_trending_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -82,7 +80,7 @@ impl AssetUpdater {
                     let result = self.get_assets_from_coin_info(coin_info.clone());
                     let asset_links = self.get_asset_links(coin_info.clone());
 
-                    let _ = self.database.client()?.prices().add_prices(vec![NewPriceRow::new(coin.clone())]);
+                    let _ = self.database.prices()?.add_prices(vec![NewPriceRow::new(coin.clone())]);
 
                     let values = result
                         .clone()
@@ -90,7 +88,7 @@ impl AssetUpdater {
                         .map(|(asset, _)| PriceAssetRow::new(asset.id.to_string(), coin.clone()))
                         .collect::<Vec<_>>();
 
-                    let _ = self.database.client()?.prices().set_prices_assets(values);
+                    let _ = self.database.prices()?.set_prices_assets(values);
 
                     if result.is_empty() {
                         if let Some(chain) = COINGECKO_CHAIN_MAP.get(&coin) {
@@ -266,18 +264,17 @@ impl AssetUpdater {
         let properties = AssetProperties::default(asset.id.clone());
         let asset_id = asset.id.to_string();
         let asset_basic = AssetBasic::new(asset, properties, score.clone());
-        let _ = self.database.client()?.assets().add_assets(vec![asset_basic]);
+        let _ = self.database.assets()?.add_assets(vec![asset_basic]);
         let _ = self
             .database
-            .client()?
-            .assets()
+            .assets()?
             .update_assets(vec![asset_id.clone()], vec![AssetUpdate::Rank(score.rank)]);
         let _ = self.update_links(&asset_id, asset_links).await;
         Ok(())
     }
 
     pub async fn update_links(&self, asset_id: &str, asset_links: Vec<AssetLink>) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let _ = self.database.client()?.assets_links().add_assets_links(asset_id, asset_links);
+        let _ = self.database.assets_links()?.add_assets_links(asset_id, asset_links);
         Ok(())
     }
 }

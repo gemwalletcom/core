@@ -238,4 +238,48 @@ impl LanguageLocalizer {
     pub fn notification_reward_joined_description(&self) -> String {
         fl!(self.loader.as_ref(), "notification_rewards_joined_description")
     }
+
+    pub fn errors_generic(&self) -> String {
+        fl!(self.loader.as_ref(), "errors_generic")
+    }
+
+    pub fn rewards_error_referral_code_not_exist(&self) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_code_not_exist")
+    }
+
+    pub fn rewards_error_referral_device_already_used(&self) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_device_already_used")
+    }
+
+    pub fn rewards_error_referral_cannot_refer_self(&self) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_cannot_refer_self")
+    }
+
+    pub fn rewards_error_referral_rewards_not_enabled(&self) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_rewards_not_enabled")
+    }
+
+    pub fn rewards_error_referral_limit_reached(&self) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_limit_reached")
+    }
+
+    pub fn rewards_error_referral_referrer_limit_reached(&self) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_referrer_limit_reached")
+    }
+
+    pub fn rewards_error_referral_eligibility_expired(&self, days: i64) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_eligibility_expired", value = days)
+    }
+
+    pub fn rewards_error_referral_country_ineligible(&self, country: &str) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_referral_country_ineligible", value = country)
+    }
+
+    pub fn notification_rewards_disabled_title(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_rewards_disabled_title")
+    }
+
+    pub fn notification_rewards_disabled_description(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_rewards_disabled_description")
+    }
 }

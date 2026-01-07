@@ -2,6 +2,9 @@
 
 pub type UInt64 = u64;
 
+pub mod localize;
+pub use self::localize::Localize;
+
 pub mod auth;
 pub use self::auth::{AuthMessage, AuthNonce, AuthPayload, AuthenticatedRequest};
 pub mod chain;
@@ -135,7 +138,9 @@ pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollec
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod rewards;
-pub use self::rewards::{ReferralCode, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, RewardLevel, Rewards};
+pub use self::rewards::{
+    ReferralAllowance, ReferralCode, ReferralLeader, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, RewardLevel, Rewards,
+};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;

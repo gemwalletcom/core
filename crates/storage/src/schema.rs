@@ -574,6 +574,12 @@ diesel::table! {
         #[max_length = 64]
         referrer_username -> Nullable<Varchar>,
         referral_count -> Int4,
+        device_id -> Int4,
+        verified -> Bool,
+        #[max_length = 512]
+        comment -> Nullable<Varchar>,
+        #[max_length = 256]
+        disable_reason -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -656,11 +662,8 @@ diesel::table! {
         referrer_username -> Varchar,
         #[max_length = 256]
         referred_address -> Varchar,
-        #[max_length = 2]
-        country_code -> Varchar,
         device_id -> Int4,
-        #[max_length = 45]
-        referred_ip_address -> Varchar,
+        risk_signal_id -> Nullable<Int4>,
         #[max_length = 256]
         reason -> Varchar,
         created_at -> Timestamp,
@@ -675,9 +678,42 @@ diesel::table! {
         #[max_length = 64]
         referred_username -> Varchar,
         referred_device_id -> Int4,
+        risk_signal_id -> Int4,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    rewards_risk_signals (id) {
+        id -> Int4,
+        #[max_length = 64]
+        fingerprint -> Varchar,
+        #[max_length = 64]
+        referrer_username -> Varchar,
+        device_id -> Int4,
+        #[max_length = 16]
+        device_platform -> Varchar,
+        #[max_length = 32]
+        device_platform_store -> Varchar,
+        #[max_length = 32]
+        device_os -> Varchar,
+        #[max_length = 64]
+        device_model -> Varchar,
+        #[max_length = 16]
+        device_locale -> Varchar,
+        #[max_length = 8]
+        device_currency -> Varchar,
         #[max_length = 45]
-        referred_ip_address -> Varchar,
-        updated_at -> Timestamp,
+        ip_address -> Varchar,
+        #[max_length = 2]
+        ip_country_code -> Varchar,
+        #[max_length = 64]
+        ip_usage_type -> Varchar,
+        #[max_length = 128]
+        ip_isp -> Varchar,
+        ip_abuse_score -> Int4,
+        risk_score -> Int4,
+        metadata -> Nullable<Jsonb>,
         created_at -> Timestamp,
     }
 }
@@ -860,6 +896,7 @@ diesel::joinable!(prices_assets -> prices (price_id));
 diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
+diesel::joinable!(rewards -> devices (device_id));
 diesel::joinable!(rewards -> rewards_levels_types (level));
 diesel::joinable!(rewards_events -> rewards_events_types (event_type));
 diesel::joinable!(rewards_events -> usernames (username));
@@ -870,7 +907,11 @@ diesel::joinable!(rewards_redemptions -> rewards (username));
 diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
 diesel::joinable!(rewards_referral_attempts -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
+diesel::joinable!(rewards_referral_attempts -> rewards_risk_signals (risk_signal_id));
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));
+diesel::joinable!(rewards_referrals -> rewards_risk_signals (risk_signal_id));
+diesel::joinable!(rewards_risk_signals -> devices (device_id));
+diesel::joinable!(rewards_risk_signals -> rewards (referrer_username));
 diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
@@ -928,6 +969,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     rewards_redemptions_types,
     rewards_referral_attempts,
     rewards_referrals,
+    rewards_risk_signals,
     scan_addresses,
     scan_addresses_types,
     subscriptions,

@@ -3,8 +3,8 @@ use prices_dex::providers::pyth::client::PythClient;
 use prices_dex::{AssetPriceFeed, DexAssetPrice, JupiterProvider, PriceChainAssetsProvider, PriceFeedProvider, PythProvider};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use storage::Database;
 use storage::models::{PriceDexAssetRow, PriceDexRow};
+use storage::{AssetsRepository, Database, PricesDexRepository};
 
 pub struct PricesDexUpdater {
     provider_type: PriceFeedProvider,
@@ -34,13 +34,13 @@ impl PricesDexUpdater {
     }
 
     pub async fn update_prices(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let feed_ids = self.database.client()?.prices_dex().get_feed_ids_by_provider(self.provider_type.clone())?;
+        let feed_ids = self.database.prices_dex()?.get_feed_ids_by_provider(self.provider_type.clone())?;
         let prices = self.provider.get_assets_prices(feed_ids).await?;
         self.save_prices(prices)
     }
 
     fn validate_asset_ids(&self, asset_ids: Vec<String>) -> Result<HashSet<String>, Box<dyn std::error::Error + Send + Sync>> {
-        let existing_assets = self.database.client()?.assets().get_assets_basic(asset_ids)?;
+        let existing_assets = self.database.assets()?.get_assets_basic(asset_ids)?;
         Ok(existing_assets.into_iter().map(|a| a.asset.id.to_string()).collect())
     }
 
@@ -60,14 +60,14 @@ impl PricesDexUpdater {
             .map(|feed| PriceDexRow::new(feed.get_id(), self.provider_type.as_ref().to_string(), 0.0, chrono::Utc::now().naive_utc()))
             .collect();
 
-        self.database.client()?.prices_dex().add_prices_dex(feed_records)?;
+        self.database.prices_dex()?.add_prices_dex(feed_records)?;
 
         let asset_records: Vec<PriceDexAssetRow> = valid_feeds
             .iter()
             .map(|feed| PriceDexAssetRow::new(feed.asset_id.to_string(), feed.get_id()))
             .collect();
 
-        self.database.client()?.prices_dex().set_prices_dex_assets(asset_records)?;
+        self.database.prices_dex()?.set_prices_dex_assets(asset_records)?;
 
         info_with_fields!(
             "save_feeds",
@@ -107,7 +107,7 @@ impl PricesDexUpdater {
             })
             .collect();
 
-        self.database.client()?.prices_dex().set_prices_dex(values.clone())?;
+        self.database.prices_dex()?.set_prices_dex(values.clone())?;
 
         Ok(values.len())
     }

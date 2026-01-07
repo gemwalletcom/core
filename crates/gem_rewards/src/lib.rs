@@ -1,4 +1,7 @@
-mod abuseipdb_client;
+mod model;
+mod risk_scoring;
+
+mod abuseipdb;
 mod error;
 mod ip_security_client;
 mod redemption;
@@ -6,10 +9,12 @@ mod redemption_service;
 mod transfer_provider;
 mod transfer_redemption_service;
 
-pub use abuseipdb_client::{AbuseIPDBClient, AbuseIPDBData};
-pub use error::{RewardsError, RewardsRedemptionError};
+pub use abuseipdb::{AbuseIPDBClient, AbuseIPDBData};
+pub use error::{ReferralError, RewardsError, RewardsRedemptionError};
 pub use ip_security_client::IpSecurityClient;
+pub use model::IpCheckResult;
 pub use redemption::redeem_points;
 pub use redemption_service::{RedemptionAsset, RedemptionRequest, RedemptionResult, RedemptionService};
+pub use risk_scoring::{evaluate_risk, RiskResult, RiskScoreConfig, RiskScoringInput, RiskSignalInput};
 pub use transfer_provider::{EvmClientProvider, WalletConfig};
 pub use transfer_redemption_service::TransferRedemptionService;

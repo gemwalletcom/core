@@ -1,7 +1,7 @@
 use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
 
-pub(crate) trait SupportStore {
+pub trait SupportStore {
     fn add_support_device(&mut self, value: SupportRow) -> Result<SupportRow, diesel::result::Error>;
     fn get_support_device(&mut self, support_id_param: &str) -> Result<DeviceRow, diesel::result::Error>;
     fn get_support(&mut self, support_id_param: &str) -> Result<SupportRow, diesel::result::Error>;
@@ -44,30 +44,5 @@ impl SupportStore for DatabaseClient {
             .set(unread.eq(unread_value))
             .returning(SupportRow::as_returning())
             .get_result(&mut self.connection)
-    }
-}
-
-impl DatabaseClient {
-    pub fn add_support_device(&mut self, support_id: &str, device_id: i32) -> Result<SupportRow, diesel::result::Error> {
-        SupportStore::add_support_device(
-            self,
-            SupportRow {
-                support_id: support_id.to_string(),
-                device_id,
-                unread: 0,
-            },
-        )
-    }
-
-    pub fn get_support_device(&mut self, support_device_id: &str) -> Result<DeviceRow, diesel::result::Error> {
-        SupportStore::get_support_device(self, support_device_id)
-    }
-
-    pub fn get_support(&mut self, support_device_id: &str) -> Result<SupportRow, diesel::result::Error> {
-        SupportStore::get_support(self, support_device_id)
-    }
-
-    pub fn support_update_unread(&mut self, support_device_id: &str, unread_value: i32) -> Result<SupportRow, diesel::result::Error> {
-        SupportStore::support_update_unread(self, support_device_id, unread_value)
     }
 }

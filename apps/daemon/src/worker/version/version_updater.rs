@@ -1,7 +1,7 @@
 use gem_tracing::info_with_fields;
 use primitives::{PlatformStore, config::Release};
 use std::error::Error;
-use storage::Database;
+use storage::{Database, ReleasesRepository};
 
 use super::model::{GitHubRepository, ITunesLookupResponse, SamsungStoreDetail};
 
@@ -52,7 +52,7 @@ impl VersionClient {
 
     fn set_release(&self, release: Release) -> Result<Release, Box<dyn Error + Send + Sync>> {
         let releases = storage::models::ReleaseRow::from_primitive(release.clone()).clone();
-        let _ = self.database.client()?.releases().update_release(releases)?;
+        let _ = self.database.releases()?.update_release(releases)?;
         Ok(release)
     }
 

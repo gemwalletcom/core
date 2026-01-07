@@ -12,14 +12,15 @@ use settings::Settings;
 use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
+use storage::ConfigRepository;
 
 pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
 
-    let assets_update_interval = database.client()?.config().get_config_duration(ConfigKey::SearchAssetsUpdateInterval)?;
-    let perpetuals_update_interval = database.client()?.config().get_config_duration(ConfigKey::SearchPerpetualsUpdateInterval)?;
-    let nfts_update_interval = database.client()?.config().get_config_duration(ConfigKey::SearchNftsUpdateInterval)?;
+    let assets_update_interval = database.config()?.get_config_duration(ConfigKey::SearchAssetsUpdateInterval)?;
+    let perpetuals_update_interval = database.config()?.get_config_duration(ConfigKey::SearchPerpetualsUpdateInterval)?;
+    let nfts_update_interval = database.config()?.get_config_duration(ConfigKey::SearchNftsUpdateInterval)?;
 
     let assets_index_updater = run_job("Update assets index", assets_update_interval, {
         let database = database.clone();

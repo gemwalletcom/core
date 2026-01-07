@@ -36,6 +36,7 @@ pub enum WorkerService {
     Search,
     Nft,
     Scan,
+    Rewards,
 }
 
 #[derive(Debug, Clone, AsRefStr)]

@@ -3,7 +3,7 @@ use rocket::futures::future;
 use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget};
 use std::error::Error;
 use std::sync::Arc;
-use storage::Database;
+use storage::{Database, ScanAddressesRepository};
 
 #[derive(Clone)]
 pub struct ScanClient {
@@ -40,7 +40,7 @@ impl ScanClient {
             (payload.origin.asset_id.chain, payload.origin.address.as_str()),
             (payload.target.asset_id.chain, payload.target.address.as_str()),
         ];
-        let addresses = self.database.client()?.scan_addresses().get_scan_addresses(&queries)?;
+        let addresses = self.database.scan_addresses()?.get_scan_addresses(&queries)?;
         let is_malicious = addresses.iter().any(|address| address.is_fraudulent);
         let is_memo_required = addresses.iter().any(|address| address.is_memo_required);
 
@@ -87,11 +87,7 @@ impl ScanClient {
     }
 
     pub async fn get_scan_address(&self, address: &str) -> Result<Vec<primitives::ScanAddress>, Box<dyn Error + Send + Sync>> {
-        let scan_addresses = self
-            .database
-            .client()?
-            .scan_addresses()
-            .get_scan_addresses_by_addresses(vec![address.to_string()])?;
+        let scan_addresses = self.database.scan_addresses()?.get_scan_addresses_by_addresses(vec![address.to_string()])?;
         Ok(scan_addresses.into_iter().map(|addr| addr.as_scan_address_primitive()).collect())
     }
 }

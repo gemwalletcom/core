@@ -8,7 +8,13 @@ use primitives::{
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
+use storage::database::rewards::RewardsEventTypesStore;
+use storage::database::rewards_redemptions::RewardsRedemptionTypesStore;
 use storage::models::{ConfigRow, FiatRateRow, RewardEventTypeRow, RewardRedemptionTypeRow, UpdateDeviceRow};
+use storage::{
+    AssetsRepository, AssetsTypesRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NftRepository, PricesDexRepository,
+    ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, TagRepository, TransactionsRepository,
+};
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer};
 
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -16,7 +22,7 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
 
     let postgres_url = settings.postgres.url.as_str();
     let database: Database = Database::new(postgres_url, settings.postgres.pool);
-    database.client()?.migrations().run_migrations().unwrap();
+    database.migrations()?.run_migrations().unwrap();
     info_with_fields!("setup", step = "postgres migrations complete");
 
     let chains = Chain::all();
@@ -24,31 +30,28 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     info_with_fields!("setup", step = "chains", chains = format!("{:?}", chains));
 
     info_with_fields!("setup", step = "add chains");
-    let _ = database
-        .client()?
-        .assets()
-        .add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
+    let _ = database.chains()?.add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
 
     info_with_fields!("setup", step = "parser state");
     for chain in chains.clone() {
-        let _ = database.client()?.parser_state().add_parser_state(chain.as_ref());
+        let _ = database.parser_state()?.add_parser_state(chain.as_ref());
     }
 
     info_with_fields!("setup", step = "assets_types");
 
     let assets_types = AssetType::all();
-    let _ = database.client()?.assets_types().add_assets_types(assets_types);
+    let _ = database.assets_types()?.add_assets_types(assets_types);
 
     info_with_fields!("setup", step = "assets");
     let assets = chains.into_iter().map(|x| Asset::from_chain(x).as_basic_primitive()).collect::<Vec<_>>();
-    let _ = database.client()?.assets().add_assets(assets);
+    let _ = database.assets()?.add_assets(assets);
 
     info_with_fields!("setup", step = "fiat providers");
     let providers = FiatProviderName::all()
         .into_iter()
         .map(storage::models::FiatProviderRow::from_primitive)
         .collect::<Vec<_>>();
-    let _ = database.client()?.fiat().add_fiat_providers(providers);
+    let _ = database.fiat()?.add_fiat_providers(providers);
 
     info_with_fields!("setup", step = "releases");
 
@@ -61,32 +64,36 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
         })
         .collect::<Vec<_>>();
 
-    let _ = database.client()?.releases().add_releases(releases);
+    let _ = database.releases()?.add_releases(releases);
 
     info_with_fields!("setup", step = "nft types");
     let types = NFTType::all().into_iter().map(storage::models::NftTypeRow::from_primitive).collect::<Vec<_>>();
-    let _ = database.client()?.nft().add_nft_types(types);
+    let _ = database.nft()?.add_nft_types(types);
 
     info_with_fields!("setup", step = "link types");
-    let _ = database.client()?.link_types().add_link_types(LinkType::all());
+    let link_types = LinkType::all()
+        .into_iter()
+        .map(storage::models::LinkTypeRow::from_primitive)
+        .collect::<Vec<_>>();
+    let _ = database.link_types()?.add_link_types(link_types);
 
     info_with_fields!("setup", step = "scan address types");
     let address_types = AddressType::all()
         .into_iter()
         .map(storage::models::ScanAddressTypeRow::from_primitive)
         .collect::<Vec<_>>();
-    let _ = database.client()?.scan_addresses().add_scan_address_types(address_types);
+    let _ = database.scan_addresses()?.add_scan_address_types(address_types);
 
     info_with_fields!("setup", step = "transaction types");
     let address_types = TransactionType::all()
         .into_iter()
         .map(storage::models::TransactionTypeRow::from_primitive)
         .collect::<Vec<_>>();
-    let _ = database.client()?.transactions().add_transactions_types(address_types);
+    let _ = database.transactions()?.add_transactions_types(address_types);
 
     info_with_fields!("setup", step = "assets tags");
     let assets_tags = AssetTag::all().into_iter().map(storage::models::TagRow::from_primitive).collect::<Vec<_>>();
-    let _ = database.client()?.tag().add_tags(assets_tags);
+    let _ = database.tag()?.add_tags(assets_tags);
 
     info_with_fields!("setup", step = "prices dex providers");
     let providers = PriceFeedProvider::all()
@@ -94,22 +101,22 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
         .enumerate()
         .map(|(index, p)| storage::models::PriceDexProviderRow::new(p.as_ref().to_string(), index as i32))
         .collect::<Vec<_>>();
-    let _ = database.client()?.prices_dex().add_prices_dex_providers(providers);
+    let _ = database.prices_dex()?.add_prices_dex_providers(providers);
 
     info_with_fields!("setup", step = "reward event types");
     let event_types = RewardEventType::all().into_iter().map(RewardEventTypeRow::from_primitive).collect::<Vec<_>>();
-    let _ = database.client()?.reward_event_types().add_reward_event_types(event_types);
+    let _ = database.reward_event_types()?.add_reward_event_types(event_types);
 
     info_with_fields!("setup", step = "reward redemption types");
     let redemption_types = RewardRedemptionType::all()
         .into_iter()
         .map(RewardRedemptionTypeRow::from_primitive)
         .collect::<Vec<_>>();
-    let _ = database.client()?.reward_redemption_types().add_reward_redemption_types(redemption_types);
+    let _ = database.reward_redemption_types()?.add_reward_redemption_types(redemption_types);
 
     info_with_fields!("setup", step = "config");
     let configs = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect::<Vec<_>>();
-    let _ = database.client()?.config().add_config(configs);
+    let _ = database.config()?.add_config(configs);
 
     info_with_fields!(
         "setup",
@@ -182,7 +189,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     };
 
     info_with_fields!("setup_dev", step = "add rate", currency = "USD");
-    let _ = database.client()?.set_fiat_rates(vec![fiat_rate.clone()]).expect("Failed to add currency");
+    let _ = database.fiat()?.set_fiat_rates(vec![fiat_rate.clone()]).expect("Failed to add currency");
 
     info_with_fields!("setup_dev", step = "add devices");
 
@@ -216,10 +223,10 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         model: Some("Pixel 9".to_string()),
     };
 
-    let _ = database.client()?.add_device(ios_device).expect("Failed to add iOS device");
+    let _ = database.devices()?.add_device(ios_device).expect("Failed to add iOS device");
     info_with_fields!("setup_dev", step = "device added", device_id = "test");
 
-    let _ = database.client()?.add_device(android_device).expect("Failed to add Android device");
+    let _ = database.devices()?.add_device(android_device).expect("Failed to add Android device");
     info_with_fields!("setup_dev", step = "device added", device_id = "test-android");
 
     info_with_fields!("setup_dev", step = "add subscription");
@@ -231,8 +238,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     };
 
     let result = database
-        .client()?
-        .subscriptions()
+        .subscriptions()?
         .add_subscriptions(vec![subscription], "test")
         .expect("Failed to add subscription");
     info_with_fields!("setup_dev", step = "subscription added", count = result);

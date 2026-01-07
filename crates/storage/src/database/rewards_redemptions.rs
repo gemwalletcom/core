@@ -29,7 +29,7 @@ pub(crate) trait RewardsRedemptionsStore {
     fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, DieselError>;
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DieselError>;
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DieselError>;
-    fn get_redemption_options(&mut self) -> Result<Vec<RedemptionOptionFull>, DieselError>;
+    fn get_redemption_options(&mut self, types: &[String]) -> Result<Vec<RedemptionOptionFull>, DieselError>;
     fn get_redemption_option(&mut self, id: &str) -> Result<RedemptionOptionFull, DieselError>;
     fn count_redemptions_since(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
 }
@@ -39,7 +39,7 @@ impl RewardsRedemptionsStore for DatabaseClient {
         use crate::schema::{rewards, rewards_redemption_options, rewards_redemptions};
         use diesel::Connection;
 
-        if points <= 0 {
+        if points < 0 {
             return Err(DieselError::RollbackTransaction);
         }
 
@@ -58,10 +58,12 @@ impl RewardsRedemptionsStore for DatabaseClient {
                 return Err(DieselError::NotFound);
             }
 
-            diesel::update(rewards::table.filter(rewards::username.eq(username).and(rewards::points.ge(points))))
-                .set(rewards::points.eq(rewards::points - points))
-                .returning(rewards::username)
-                .get_result::<String>(conn)?;
+            if points > 0 {
+                diesel::update(rewards::table.filter(rewards::username.eq(username).and(rewards::points.ge(points))))
+                    .set(rewards::points.eq(rewards::points - points))
+                    .returning(rewards::username)
+                    .get_result::<String>(conn)?;
+            }
 
             diesel::insert_into(rewards_redemptions::table)
                 .values(&redemption)
@@ -97,9 +99,10 @@ impl RewardsRedemptionsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn get_redemption_options(&mut self) -> Result<Vec<RedemptionOptionFull>, DieselError> {
+    fn get_redemption_options(&mut self, types: &[String]) -> Result<Vec<RedemptionOptionFull>, DieselError> {
         use crate::schema::{assets, rewards_redemption_options};
         rewards_redemption_options::table
+            .filter(rewards_redemption_options::redemption_type.eq_any(types))
             .left_join(assets::table.on(rewards_redemption_options::asset_id.eq(assets::id.nullable())))
             .select((RewardRedemptionOptionRow::as_select(), Option::<AssetRow>::as_select()))
             .load::<(RewardRedemptionOptionRow, Option<AssetRow>)>(&mut self.connection)

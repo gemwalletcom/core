@@ -9,7 +9,7 @@ pub trait RewardsRedemptionsRepository {
     fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError>;
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
-    fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
+    fn get_redemption_options(&mut self, types: &[String]) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
     fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError>;
     fn count_redemptions_since_days(&mut self, username: &str, days: i64) -> Result<i64, DatabaseError>;
 }
@@ -20,11 +20,11 @@ impl RewardsRedemptionsRepository for DatabaseClient {
         let rewards = RewardsStore::get_rewards(self, username)?;
 
         if rewards.points < redemption_option.option.points {
-            return Err(DatabaseError::Internal("Not enough points".into()));
+            return Err(DatabaseError::Error("Not enough points".into()));
         }
 
         if redemption_option.option.remaining == Some(0) {
-            return Err(DatabaseError::Internal("Redemption option is no longer available".into()));
+            return Err(DatabaseError::Error("Redemption option is no longer available".into()));
         }
 
         let redemption_id = RewardsRedemptionsStore::add_redemption(
@@ -52,8 +52,8 @@ impl RewardsRedemptionsRepository for DatabaseClient {
         Ok(RewardsRedemptionsStore::update_redemption(self, redemption_id, updates)?)
     }
 
-    fn get_redemption_options(&mut self) -> Result<Vec<RewardRedemptionOption>, DatabaseError> {
-        let results = RewardsRedemptionsStore::get_redemption_options(self)?;
+    fn get_redemption_options(&mut self, types: &[String]) -> Result<Vec<RewardRedemptionOption>, DatabaseError> {
+        let results = RewardsRedemptionsStore::get_redemption_options(self, types)?;
         Ok(results.into_iter().map(|r| r.as_primitive()).collect())
     }
 

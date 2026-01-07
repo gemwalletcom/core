@@ -131,7 +131,7 @@ pub struct SearchQueryParam(pub String);
 
 impl<'r> FromFormField<'r> for SearchQueryParam {
     fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
-        if field.value.is_empty() || field.value.len() > MAX_SEARCH_QUERY_LENGTH {
+        if field.value.len() > MAX_SEARCH_QUERY_LENGTH {
             return Err(form::Error::validation(format!("Invalid query length: {}", field.value.len())).into());
         }
         Ok(SearchQueryParam(field.value.to_string()))

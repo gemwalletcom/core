@@ -1,3 +1,4 @@
+use crate::database::devices::DevicesStore;
 use crate::database::support::SupportStore;
 use crate::models::SupportRow;
 use crate::{DatabaseClient, DatabaseError};
@@ -11,7 +12,7 @@ pub trait SupportRepository {
 
 impl SupportRepository for DatabaseClient {
     fn add_support_device(&mut self, support_id: &str, device_id: &str) -> Result<SupportDevice, DatabaseError> {
-        let device = self.get_device(device_id)?;
+        let device = DevicesStore::get_device(self, device_id)?;
         let support = SupportStore::add_support_device(
             self,
             SupportRow {

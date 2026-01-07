@@ -1,5 +1,5 @@
 use std::error::Error;
-use storage::Database;
+use storage::{Database, DevicesRepository};
 
 pub struct DeviceUpdater {
     database: Database,
@@ -11,6 +11,6 @@ impl DeviceUpdater {
     }
 
     pub async fn update(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.devices().delete_devices_subscriptions_after_days(120)?)
+        Ok(self.database.devices()?.delete_devices_subscriptions_after_days(120)?)
     }
 }

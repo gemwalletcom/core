@@ -62,6 +62,7 @@ async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
         WorkerService::Search => worker::search::jobs(settings).await.unwrap(),
         WorkerService::Nft => worker::nft::jobs(settings).await,
         WorkerService::Scan => worker::scan::jobs(settings).await,
+        WorkerService::Rewards => worker::rewards::jobs(settings).await,
     };
     let _ = futures::future::join_all(services).await;
 }

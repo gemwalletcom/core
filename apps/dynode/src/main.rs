@@ -137,21 +137,6 @@ fn resolve_chain(path: &str) -> Option<Chain> {
     Chain::from_str(chain_str).ok()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_resolve_chain() {
-        assert_eq!(resolve_chain("/solana"), Some(Chain::Solana));
-        assert_eq!(resolve_chain("/solana?dkey=abc123"), Some(Chain::Solana));
-        assert_eq!(resolve_chain("/solana/rpc?dkey=abc123"), Some(Chain::Solana));
-        assert_eq!(resolve_chain("/ethereum/v1/rpc"), Some(Chain::Ethereum));
-        assert_eq!(resolve_chain("/invalid"), None);
-        assert_eq!(resolve_chain(""), None);
-    }
-}
-
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let (config, chains) = load_config()?;
@@ -204,4 +189,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     rocket::tokio::try_join!(proxy_server.launch(), metrics_server.launch())?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_chain() {
+        assert_eq!(resolve_chain("/solana"), Some(Chain::Solana));
+        assert_eq!(resolve_chain("/solana?dkey=abc123"), Some(Chain::Solana));
+        assert_eq!(resolve_chain("/solana/rpc?dkey=abc123"), Some(Chain::Solana));
+        assert_eq!(resolve_chain("/ethereum/v1/rpc"), Some(Chain::Ethereum));
+        assert_eq!(resolve_chain("/invalid"), None);
+        assert_eq!(resolve_chain(""), None);
+    }
 }

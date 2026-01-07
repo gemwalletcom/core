@@ -1,5 +1,5 @@
 use search_index::{PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
-use storage::Database;
+use storage::{AssetsRepository, Database, PerpetualsRepository};
 
 pub struct PerpetualsIndexUpdater {
     database: Database,
@@ -15,9 +15,9 @@ impl PerpetualsIndexUpdater {
     }
 
     pub async fn update(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let perpetuals = self.database.client()?.perpetuals().perpetuals_all()?;
+        let perpetuals = self.database.perpetuals()?.perpetuals_all()?;
         let asset_ids = perpetuals.iter().map(|p| p.asset_id.to_string()).collect::<Vec<_>>();
-        let assets = self.database.client()?.assets().get_assets(asset_ids)?;
+        let assets = self.database.assets()?.get_assets(asset_ids)?;
 
         let assets_map = assets.into_iter().map(|a| (a.id.to_string(), a)).collect::<std::collections::HashMap<_, _>>();
 
