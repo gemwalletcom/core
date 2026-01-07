@@ -1,7 +1,7 @@
 use crate::database::rewards::RewardsStore;
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, ReferralAttemptRow, UsernameRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, UsernameRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
@@ -30,7 +30,7 @@ fn validate_username(username: &str) -> Result<(), DatabaseError> {
 fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, device_id: i32) -> Result<UsernameRow, DatabaseError> {
     let username = UsernamesStore::create_username(
         client,
-        UsernameRow {
+        NewUsernameRow {
             username: address.to_string(),
             address: address.to_string(),
             is_verified: false,
@@ -158,7 +158,7 @@ impl RewardsRepository for DatabaseClient {
         } else {
             UsernamesStore::create_username(
                 self,
-                UsernameRow {
+                NewUsernameRow {
                     username: username.to_string(),
                     address: address.to_string(),
                     is_verified: false,

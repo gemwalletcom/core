@@ -1,5 +1,5 @@
 use crate::DatabaseClient;
-use crate::models::UsernameRow;
+use crate::models::{NewUsernameRow, UsernameRow};
 use diesel::prelude::*;
 
 pub enum UsernameLookup<'a> {
@@ -10,7 +10,7 @@ pub enum UsernameLookup<'a> {
 pub(crate) trait UsernamesStore {
     fn get_username(&mut self, lookup: UsernameLookup) -> Result<UsernameRow, diesel::result::Error>;
     fn username_exists(&mut self, lookup: UsernameLookup) -> Result<bool, diesel::result::Error>;
-    fn create_username(&mut self, username: UsernameRow) -> Result<UsernameRow, diesel::result::Error>;
+    fn create_username(&mut self, username: NewUsernameRow) -> Result<UsernameRow, diesel::result::Error>;
     fn update_username(&mut self, address: &str, new_username: &str) -> Result<UsernameRow, diesel::result::Error>;
     fn change_username(&mut self, old_username: &str, new_username: &str) -> Result<(), diesel::result::Error>;
 }
@@ -38,7 +38,7 @@ impl UsernamesStore for DatabaseClient {
         }
     }
 
-    fn create_username(&mut self, username: UsernameRow) -> Result<UsernameRow, diesel::result::Error> {
+    fn create_username(&mut self, username: NewUsernameRow) -> Result<UsernameRow, diesel::result::Error> {
         use crate::schema::usernames::dsl;
         diesel::insert_into(dsl::usernames)
             .values(&username)
