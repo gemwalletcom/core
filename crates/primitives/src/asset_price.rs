@@ -36,6 +36,10 @@ pub struct AssetMarket {
     pub circulating_supply: Option<f64>,
     pub total_supply: Option<f64>,
     pub max_supply: Option<f64>,
+    pub all_time_high: Option<f64>,
+    pub all_time_high_date: Option<DateTime<Utc>>,
+    pub all_time_low: Option<f64>,
+    pub all_time_low_date: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

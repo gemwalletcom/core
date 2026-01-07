@@ -5,6 +5,7 @@ pub mod fiat;
 pub mod nft;
 pub mod pricer;
 pub mod prices_dex;
+pub mod rewards;
 pub mod scan;
 pub mod search;
 pub mod transaction;

@@ -8,6 +8,7 @@ use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use storage::Database;
+use storage::database::devices::DevicesStore;
 use storage::models::DeviceRow;
 
 fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
@@ -55,7 +56,7 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
         let Ok(mut db_client) = database.client() else {
             return error_outcome(req, Status::InternalServerError, "Database error");
         };
-        let Ok(device) = db_client.get_device(&body.auth.device_id) else {
+        let Ok(device) = DevicesStore::get_device(&mut db_client, &body.auth.device_id) else {
             return error_outcome(req, Status::Unauthorized, "Device not found");
         };
 

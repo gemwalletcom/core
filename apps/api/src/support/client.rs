@@ -1,6 +1,6 @@
 use primitives::SupportDevice;
 use std::error::Error;
-use storage::Database;
+use storage::{Database, SupportRepository};
 
 #[derive(Clone)]
 pub struct SupportClient {
@@ -13,10 +13,10 @@ impl SupportClient {
     }
 
     pub fn add_support_device(&self, support_id: &str, device_id: &str) -> Result<SupportDevice, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.support().add_support_device(support_id, device_id)?)
+        Ok(self.database.support()?.add_support_device(support_id, device_id)?)
     }
 
     pub fn get_support_device(&self, support_id: &str) -> Result<SupportDevice, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.support().get_support(support_id)?)
+        Ok(self.database.support()?.get_support(support_id)?)
     }
 }

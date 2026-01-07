@@ -1,6 +1,6 @@
 use primitives::{ChartPeriod, ChartValue, DEFAULT_FIAT_CURRENCY};
 use std::error::Error;
-use storage::Database;
+use storage::{ChartsRepository, Database, PricesRepository};
 
 #[derive(Clone)]
 pub struct ChartClient {
@@ -13,16 +13,15 @@ impl ChartClient {
     }
 
     pub fn get_coin_id(&self, asset_id: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.client()?.prices().get_coin_id(asset_id)?)
+        Ok(self.database.prices()?.get_coin_id(asset_id)?)
     }
 
     pub async fn get_charts_prices(&self, coin_id: &str, period: ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
-        let mut db = self.database.client()?;
-        let base_rate = db.fiat().get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
-        let rate = db.fiat().get_fiat_rate(currency)?;
+        let base_rate = self.database.fiat()?.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?.as_primitive();
+        let rate = self.database.fiat()?.get_fiat_rate(currency)?.as_primitive();
         let rate_multiplier = rate.multiplier(base_rate.rate);
 
-        let charts = db.charts().get_charts(coin_id.to_string(), &period)?;
+        let charts = self.database.charts()?.get_charts(coin_id.to_string(), &period)?;
         let prices = charts
             .into_iter()
             .map(|x| ChartValue {

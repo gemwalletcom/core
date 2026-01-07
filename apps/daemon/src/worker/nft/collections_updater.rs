@@ -3,10 +3,7 @@ use std::str::FromStr;
 use ::nft::provider::get_image_mime_type;
 use ::nft::providers::opensea::{model::Collection, OpenSeaClient};
 use primitives::{Chain, LinkType};
-use storage::{
-    models::{nft_collection::UpdateNftCollectionImageUrl, NftCollection, NftLink},
-    DatabaseClient,
-};
+use storage::{Database, models::{nft_collection::UpdateNftCollectionImageUrl, NftCollection, NftLink}};
 
 pub struct OpenSeaUpdater {
     database: Database,
@@ -20,7 +17,7 @@ impl OpenSeaUpdater {
     }
 
     pub async fn update_collections(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let collections = self.database.client()?.nft().get_nft_collections_all()?;
+        let collections = self.database.nft()?.get_nft_collections_all()?;
 
         for collection in collections.clone() {
             let chain = Chain::from_str(collection.chain.as_str())?;
@@ -39,7 +36,7 @@ impl OpenSeaUpdater {
                             image_preview_mime_type: Some(image_preview_mime_type),
                         };
 
-                        self.database.update_nft_collection_image_url(update)?;
+                        self.database.nft()?.update_nft_collection_image_url(update)?;
                     }
 
                     println!("Updating collection: {}", collection.name);
@@ -82,7 +79,7 @@ impl OpenSeaUpdater {
                 url: format!("https://instagram.com/{}", opensea_collection.instagram_username),
             });
         }
-        self.database.add_nft_collections_links(links.clone())?;
+        self.database.nft()?.add_nft_collections_links(links.clone())?;
         Ok(())
     }
 }

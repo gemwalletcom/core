@@ -7,14 +7,19 @@ pub use redemption_client::RewardsRedemptionClient;
 use crate::auth::Authenticated;
 use crate::params::AddressParam;
 use crate::responders::{ApiError, ApiResponse};
-use primitives::rewards::{RedemptionRequest, RedemptionResult};
+use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{ReferralCode, ReferralLeaderboard, RewardEvent, Rewards};
 use rocket::{State, get, post};
 use tokio::sync::Mutex;
 
-#[get("/rewards/<address>")]
-pub async fn get_rewards(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
-    Ok(client.lock().await.get_rewards(&address.0)?.into())
+#[get("/rewards/leaderboard")]
+pub async fn get_rewards_leaderboard(client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<ReferralLeaderboard>, ApiError> {
+    Ok(client.lock().await.get_rewards_leaderboard()?.into())
+}
+
+#[get("/rewards/redemptions/<code>", rank = 1)]
+pub async fn get_rewards_redemption_option(code: String, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
+    Ok(client.lock().await.get_rewards_redemption_option(&code)?.into())
 }
 
 #[get("/rewards/<address>/events")]
@@ -22,9 +27,9 @@ pub async fn get_rewards_events(address: AddressParam, client: &State<Mutex<Rewa
     Ok(client.lock().await.get_rewards_events(&address.0)?.into())
 }
 
-#[get("/rewards/leaderboard")]
-pub async fn get_rewards_leaderboard(client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<ReferralLeaderboard>, ApiError> {
-    Ok(client.lock().await.get_rewards_leaderboard()?.into())
+#[get("/rewards/<address>")]
+pub async fn get_rewards(address: AddressParam, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
+    Ok(client.lock().await.get_rewards(&address.0)?.into())
 }
 
 #[post("/rewards/referrals/create", format = "json", data = "<request>")]
@@ -36,7 +41,7 @@ pub async fn create_referral(
     Ok(client
         .lock()
         .await
-        .create_referral(&request.auth.address, &request.data.code, &ip.to_string())
+        .create_referral(&request.auth.address, &request.data.code, request.auth.device.id, &ip.to_string())
         .await?
         .into())
 }

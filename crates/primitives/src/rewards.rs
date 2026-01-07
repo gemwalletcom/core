@@ -23,6 +23,7 @@ impl RewardLevel {
 #[strum(serialize_all = "camelCase")]
 pub enum RewardRedemptionType {
     Asset,
+    GiftAsset,
 }
 
 impl RewardRedemptionType {
@@ -40,6 +41,7 @@ pub enum RewardEventType {
     InviteNew,
     InviteExisting,
     Joined,
+    Disabled,
 }
 
 impl RewardEventType {
@@ -53,6 +55,7 @@ impl RewardEventType {
             Self::InviteNew => 100,
             Self::InviteExisting => 10,
             Self::Joined => 10,
+            Self::Disabled => 0,
         }
     }
 }
@@ -67,8 +70,26 @@ pub struct Rewards {
     pub points: i32,
     pub used_referral_code: Option<String>,
     pub is_enabled: bool,
+    pub verified: bool,
     pub redemption_options: Vec<RewardRedemptionOption>,
-    //pub level: Option<RewardLevel>,
+    pub disable_reason: Option<String>,
+    pub referral_allowance: ReferralAllowance,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralAllowance {
+    pub daily: ReferralQuota,
+    pub weekly: ReferralQuota,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralQuota {
+    pub limit: i32,
+    pub available: i32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

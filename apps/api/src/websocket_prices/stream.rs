@@ -59,9 +59,9 @@ impl Stream {
                     }
                 }
                 // new websocket message
-                Some(message) = stream.next() => {
+                message = stream.next() => {
                     match message {
-                        Ok(message) => {
+                        Some(Ok(message)) => {
                             match observer.handle_ws_message(message.clone(), &mut redis_connection, &mut stream).await {
                                 Ok(_) => { }
                                 Err(e) => {
@@ -69,8 +69,11 @@ impl Stream {
                                 }
                             }
                         }
-                        Err(e) => {
+                        Some(Err(e)) => {
                             eprintln!("WebSocket stream error: {e:?}");
+                        }
+                        None => {
+                            break;
                         }
                     }
                 }

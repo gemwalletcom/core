@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, ConfigKey, Transaction, TransactionId};
-use storage::Database;
+use storage::{AssetsRepository, ConfigRepository, Database, SubscriptionsRepository, TransactionsRepository};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
 use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
@@ -27,10 +27,10 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let transactions = payload.transactions;
         let is_notify_devices = !payload.blocks.is_empty();
 
-        let min_amount = self.database.client()?.config().get_config_f64(ConfigKey::TransactionsMinAmountUsd)?;
+        let min_amount = self.database.config()?.get_config_f64(ConfigKey::TransactionsMinAmountUsd)?;
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
-        let subscriptions = self.database.client()?.subscriptions().get_subscriptions(chain, addresses)?;
+        let subscriptions = self.database.subscriptions()?.get_subscriptions(chain, addresses)?;
 
         let subscription_addresses: HashSet<_> = subscriptions.iter().map(|s| &s.subscription.address).collect();
 
@@ -126,7 +126,7 @@ impl StoreTransactionsConsumer {
         &self,
         assets_ids: Vec<AssetId>,
     ) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
-        let assets_with_prices = self.database.client()?.assets().get_assets_with_prices(assets_ids.ids().clone())?;
+        let assets_with_prices = self.database.assets()?.get_assets_with_prices(assets_ids.ids().clone())?;
 
         let missing_assets_ids = assets_ids
             .into_iter()
@@ -142,7 +142,7 @@ impl StoreTransactionsConsumer {
         }
 
         for chunk in transactions.chunks(TRANSACTION_BATCH_SIZE) {
-            self.database.client()?.transactions().add_transactions(chunk.to_vec())?;
+            self.database.transactions()?.add_transactions(chunk.to_vec())?;
         }
 
         Ok(transactions.len())

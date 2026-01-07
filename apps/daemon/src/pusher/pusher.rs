@@ -6,7 +6,7 @@ use primitives::{
     AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
     Subscription, Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
 };
-use storage::Database;
+use storage::{Database, ScanAddressesRepository};
 
 use api_connector::pusher::model::Message;
 
@@ -20,8 +20,7 @@ impl Pusher {
     }
 
     pub fn get_address(&self, chain: Chain, address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let mut client = self.database.client()?;
-        let result = client.scan_addresses().get_scan_address(chain, address);
+        let result = self.database.scan_addresses()?.get_scan_address(chain, address);
         match result {
             Ok(address) => Ok(address.name.unwrap_or_default()),
             Err(_) => Ok(AddressFormatter::short(chain, address)),
