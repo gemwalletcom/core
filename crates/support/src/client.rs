@@ -2,6 +2,7 @@ use crate::ChatwootWebhookPayload;
 use localizer::LanguageLocalizer;
 use primitives::{Device, GorushNotification, PushNotification, PushNotificationTypes, push_notification::PushNotificationSupport};
 use std::error::Error;
+use storage::database::support::SupportStore;
 use storage::{Database, OptionalExtension};
 use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 
@@ -18,7 +19,7 @@ impl SupportClient {
     pub fn get_device(&self, support_device_id: &str) -> Result<Option<Device>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
-            .client()?
+            .support()?
             .get_support_device(support_device_id)
             .optional()?
             .map(|d| d.as_primitive()))
@@ -50,7 +51,7 @@ impl SupportClient {
 
     fn update_unread(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
         if let Some(unread) = payload.get_unread() {
-            self.database.client()?.support().support_update_unread(support_device_id, unread)?;
+            SupportStore::support_update_unread(&mut self.database.client()?, support_device_id, unread)?;
         }
         Ok(())
     }

@@ -3,7 +3,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use cacher::{CacheKey, CacherClient};
 use settings_chain::ChainProviders;
-use storage::Database;
+use storage::{AssetsRepository, Database};
 use streamer::{FetchAssetsPayload, consumer::MessageConsumer};
 
 pub struct FetchAssetsConsumer {
@@ -21,7 +21,7 @@ impl MessageConsumer<FetchAssetsPayload, usize> for FetchAssetsConsumer {
     async fn process(&self, payload: FetchAssetsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         if let Some(token_id) = payload.asset_id.token_id {
             let asset = self.providers.get_token_data(payload.asset_id.chain, token_id.to_string()).await?;
-            return Ok(self.database.client()?.assets().add_assets(vec![asset.as_basic_primitive()])?);
+            return Ok(self.database.assets()?.add_assets(vec![asset.as_basic_primitive()])?);
         }
         Ok(0)
     }

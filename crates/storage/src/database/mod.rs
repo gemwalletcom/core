@@ -3,6 +3,7 @@ pub mod assets_addresses;
 pub mod assets_links;
 pub mod assets_types;
 
+pub mod chains;
 pub mod charts;
 pub mod config;
 pub mod devices;
@@ -35,8 +36,8 @@ pub type PgPool = Pool<ConnectionManager<PgConnection>>;
 pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 use crate::{
-    AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChartsRepository, ConfigRepository, DevicesRepository,
-    FiatRepository, LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository,
+    AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChainsRepository, ChartsRepository, ConfigRepository,
+    DevicesRepository, FiatRepository, LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository,
     PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRedemptionsRepository, RewardsRepository, ScanAddressesRepository,
     SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
 };
@@ -74,6 +75,10 @@ impl DatabaseClient {
     }
 
     pub fn assets_types(&mut self) -> &mut dyn AssetsTypesRepository {
+        self
+    }
+
+    pub fn chains(&mut self) -> &mut dyn ChainsRepository {
         self
     }
 

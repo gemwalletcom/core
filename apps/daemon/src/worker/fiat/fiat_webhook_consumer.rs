@@ -6,6 +6,7 @@ use fiat::FiatProviderFactory;
 use gem_tracing::{error_with_fields, info_with_fields};
 use settings::Settings;
 use storage::Database;
+use storage::models::FiatTransactionRow;
 use streamer::consumer::MessageConsumer;
 use streamer::{FiatWebhook, FiatWebhookPayload};
 
@@ -59,7 +60,7 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                     status = format!("{:?}", transaction.status)
                 );
 
-                match self.database.client()?.fiat().add_fiat_transaction(transaction) {
+                match self.database.fiat()?.add_fiat_transaction(FiatTransactionRow::from_primitive(transaction)) {
                     Ok(_) => return Ok(true),
                     Err(e) => {
                         error_with_fields!("add_fiat_transaction", &e, provider = provider.name().id());

@@ -1,5 +1,5 @@
 use search_index::{NFTDocument, NFTS_INDEX_NAME, SearchIndexClient};
-use storage::Database;
+use storage::{Database, NftRepository};
 
 pub struct NftsIndexUpdater {
     database: Database,
@@ -15,7 +15,7 @@ impl NftsIndexUpdater {
     }
 
     pub async fn update(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let collections = self.database.client()?.nft().get_nft_collections_all()?;
+        let collections = self.database.nft()?.get_nft_collections_all()?;
 
         let documents: Vec<NFTDocument> = collections
             .into_iter()

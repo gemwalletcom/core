@@ -18,7 +18,6 @@ pub trait AssetsRepository {
     fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceMetadata>, DatabaseError>;
     fn get_swap_assets(&mut self) -> Result<Vec<String>, DatabaseError>;
     fn get_swap_assets_version(&mut self) -> Result<i32, DatabaseError>;
-    fn add_chains(&mut self, values: Vec<String>) -> Result<usize, DatabaseError>;
 }
 
 impl AssetsRepository for DatabaseClient {
@@ -108,9 +107,5 @@ impl AssetsRepository for DatabaseClient {
 
     fn get_swap_assets_version(&mut self) -> Result<i32, DatabaseError> {
         Ok(AssetsStore::get_swap_assets_version(self)?)
-    }
-
-    fn add_chains(&mut self, values: Vec<String>) -> Result<usize, DatabaseError> {
-        Ok(AssetsStore::add_chains(self, values)?)
     }
 }

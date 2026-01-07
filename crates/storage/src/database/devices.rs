@@ -15,7 +15,7 @@ pub enum DeviceFilter {
     CreatedBetween { start: NaiveDateTime, end: NaiveDateTime },
 }
 
-pub(crate) trait DevicesStore {
+pub trait DevicesStore {
     fn add_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error>;
     fn get_device_by_id(&mut self, id: i32) -> Result<DeviceRow, diesel::result::Error>;
     fn get_device(&mut self, device_id: &str) -> Result<DeviceRow, diesel::result::Error>;
@@ -114,32 +114,5 @@ impl DevicesStore for DatabaseClient {
         }
 
         query.select(DeviceRow::as_select()).load(&mut self.connection)
-    }
-}
-
-// Public methods for backward compatibility
-impl DatabaseClient {
-    pub fn get_device(&mut self, device_id: &str) -> Result<DeviceRow, diesel::result::Error> {
-        DevicesStore::get_device(self, device_id)
-    }
-
-    pub fn get_device_by_id(&mut self, id: i32) -> Result<DeviceRow, diesel::result::Error> {
-        DevicesStore::get_device_by_id(self, id)
-    }
-
-    pub fn add_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error> {
-        DevicesStore::add_device(self, device)
-    }
-
-    pub fn update_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error> {
-        DevicesStore::update_device(self, device)
-    }
-
-    pub fn delete_device(&mut self, device_id: &str) -> Result<usize, diesel::result::Error> {
-        DevicesStore::delete_device(self, device_id)
-    }
-
-    pub fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
-        DevicesStore::delete_devices_subscriptions_after_days(self, days)
     }
 }

@@ -48,6 +48,10 @@ impl AssetPriceInfo {
             circulating_supply: self.market.circulating_supply,
             total_supply: self.market.total_supply,
             max_supply: self.market.max_supply,
+            all_time_high: self.market.all_time_high.map(|x| x * rate),
+            all_time_high_date: self.market.all_time_high_date,
+            all_time_low: self.market.all_time_low.map(|x| x * rate),
+            all_time_low_date: self.market.all_time_low_date,
         }
     }
 }

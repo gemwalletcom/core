@@ -4,7 +4,7 @@ use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOp
 use primitives::{Asset, RewardEvent, RewardEventType, RewardLevel};
 use std::str::FromStr;
 
-#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
+#[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardsRow {
@@ -14,6 +14,26 @@ pub struct RewardsRow {
     pub points: i32,
     pub referrer_username: Option<String>,
     pub referral_count: i32,
+    pub device_id: i32,
+    pub verified: bool,
+    pub comment: Option<String>,
+    pub disable_reason: Option<String>,
+    pub created_at: NaiveDateTime,
+}
+
+#[derive(Debug, Insertable, Clone)]
+#[diesel(table_name = crate::schema::rewards)]
+pub struct NewRewardsRow {
+    pub username: String,
+    pub is_enabled: bool,
+    pub level: Option<String>,
+    pub points: i32,
+    pub referrer_username: Option<String>,
+    pub referral_count: i32,
+    pub device_id: i32,
+    pub verified: bool,
+    pub comment: Option<String>,
+    pub disable_reason: Option<String>,
 }
 
 #[derive(Debug, Queryable, Selectable, Clone)]
@@ -23,7 +43,7 @@ pub struct RewardReferralRow {
     pub referrer_username: String,
     pub referred_username: String,
     pub referred_device_id: i32,
-    pub referred_ip_address: String,
+    pub risk_signal_id: i32,
     pub created_at: NaiveDateTime,
 }
 
@@ -33,7 +53,7 @@ pub struct NewRewardReferralRow {
     pub referrer_username: String,
     pub referred_username: String,
     pub referred_device_id: i32,
-    pub referred_ip_address: String,
+    pub risk_signal_id: i32,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, Clone)]
@@ -196,8 +216,52 @@ impl RedemptionOptionFull {
 pub struct ReferralAttemptRow {
     pub referrer_username: String,
     pub referred_address: String,
-    pub country_code: String,
     pub device_id: i32,
-    pub referred_ip_address: String,
+    pub risk_signal_id: Option<i32>,
     pub reason: String,
+}
+
+#[derive(Debug, Queryable, Selectable, Clone)]
+#[diesel(table_name = crate::schema::rewards_risk_signals)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct RiskSignalRow {
+    pub id: i32,
+    pub fingerprint: String,
+    pub referrer_username: String,
+    pub device_id: i32,
+    pub device_platform: String,
+    pub device_platform_store: String,
+    pub device_os: String,
+    pub device_model: String,
+    pub device_locale: String,
+    pub device_currency: String,
+    pub ip_address: String,
+    pub ip_country_code: String,
+    pub ip_usage_type: String,
+    pub ip_isp: String,
+    pub ip_abuse_score: i32,
+    pub risk_score: i32,
+    pub metadata: Option<serde_json::Value>,
+    pub created_at: NaiveDateTime,
+}
+
+#[derive(Debug, Insertable, Clone)]
+#[diesel(table_name = crate::schema::rewards_risk_signals)]
+pub struct NewRiskSignalRow {
+    pub fingerprint: String,
+    pub referrer_username: String,
+    pub device_id: i32,
+    pub device_platform: String,
+    pub device_platform_store: String,
+    pub device_os: String,
+    pub device_model: String,
+    pub device_locale: String,
+    pub device_currency: String,
+    pub ip_address: String,
+    pub ip_country_code: String,
+    pub ip_usage_type: String,
+    pub ip_isp: String,
+    pub ip_abuse_score: i32,
+    pub risk_score: i32,
+    pub metadata: Option<serde_json::Value>,
 }

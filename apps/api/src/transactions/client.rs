@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::{Transaction, TransactionId, TransactionsFetchOption, TransactionsResponse};
-use storage::Database;
+use storage::{Database, ScanAddressesRepository, SubscriptionsRepository, TransactionsRepository};
 
 #[derive(Clone)]
 pub struct TransactionsClient {
@@ -19,19 +19,14 @@ impl TransactionsClient {
         options: TransactionsFetchOption,
     ) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {
         let wallet_index = options.wallet_index;
-        let subscriptions = self
-            .database
-            .client()?
-            .subscriptions()
-            .get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
+        let subscriptions = self.database.subscriptions()?.get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
 
         let addresses = subscriptions.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
         let chains = subscriptions.clone().into_iter().map(|x| x.chain.as_ref().to_string()).collect::<Vec<String>>();
 
         let transactions = self
             .database
-            .client()?
-            .transactions()
+            .transactions()?
             .get_transactions_by_device_id(device_id, addresses.clone(), chains.clone(), options)?
             .into_iter()
             .map(|x| x.as_primitive(addresses.clone()).finalize(addresses.clone()))
@@ -41,8 +36,7 @@ impl TransactionsClient {
 
         let address_names = self
             .database
-            .client()?
-            .scan_addresses()
+            .scan_addresses()?
             .get_scan_addresses_by_addresses(scan_addresses.clone())?
             .into_iter()
             .flat_map(|x| x.as_primitive())
@@ -54,8 +48,7 @@ impl TransactionsClient {
     pub fn get_transaction_by_id(&self, id: &TransactionId) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
-            .client()?
-            .transactions()
+            .transactions()?
             .get_transaction_by_id(id.chain.as_ref(), &id.hash)?
             .as_primitive(vec![]))
     }

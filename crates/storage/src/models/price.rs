@@ -143,6 +143,10 @@ impl PriceRow {
             circulating_supply: Some(self.circulating_supply),
             total_supply: Some(self.total_supply),
             max_supply: Some(self.max_supply),
+            all_time_high: Some(self.all_time_high),
+            all_time_high_date: self.all_time_high_date.map(|d| d.and_utc()),
+            all_time_low: Some(self.all_time_low),
+            all_time_low_date: self.all_time_low_date.map(|d| d.and_utc()),
         }
     }
 

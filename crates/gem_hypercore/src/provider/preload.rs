@@ -9,6 +9,7 @@ use primitives::{
     TransactionLoadMetadata, TransactionPreloadInput, perpetual::PerpetualType,
 };
 
+use crate::is_spot_swap;
 use crate::provider::preload_cache::HyperCoreCache;
 use crate::provider::preload_mapper::{calculate_fee_amount, get_approvals_and_credentials};
 use crate::rpc::client::HyperCoreClient;
@@ -24,12 +25,43 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
             TransactionInputType::Transfer(_)
             | TransactionInputType::TransferNft(_, _)
             | TransactionInputType::Account(_, _)
-            | TransactionInputType::Swap(_, _, _)
             | TransactionInputType::Stake(_, _) => {
                 // Only signature is required
                 Ok(TransactionLoadData {
                     fee: TransactionFee::new_from_fee(BigInt::from(0)),
                     metadata: TransactionLoadMetadata::Hyperliquid { order: None },
+                })
+            }
+            TransactionInputType::Swap(from_asset, to_asset, _) => {
+                let order = if is_spot_swap(from_asset.chain(), to_asset.chain()) {
+                    let cache = HyperCoreCache::new(self.preferences.clone(), self.config.clone());
+
+                    let (agent_required, referral_required, builder_required, _, agent_address, agent_private_key) = get_approvals_and_credentials(
+                        &cache,
+                        &input.sender_address,
+                        self.secure_preferences.clone(),
+                        self.get_extra_agents(&input.sender_address),
+                        self.get_referral(&input.sender_address),
+                        self.get_builder_fee(&input.sender_address, &self.config.builder_address),
+                        self.get_user_fees(&input.sender_address),
+                    )
+                    .await?;
+
+                    Some(HyperliquidOrder {
+                        approve_agent_required: agent_required,
+                        approve_referral_required: referral_required,
+                        approve_builder_required: builder_required,
+                        builder_fee_bps: self.config.max_builder_fee_bps,
+                        agent_address,
+                        agent_private_key,
+                    })
+                } else {
+                    None
+                };
+
+                Ok(TransactionLoadData {
+                    fee: TransactionFee::new_from_fee(BigInt::from(0)),
+                    metadata: TransactionLoadMetadata::Hyperliquid { order },
                 })
             }
             TransactionInputType::Perpetual(_, perpetual_type) => {
