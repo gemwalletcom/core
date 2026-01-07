@@ -105,7 +105,7 @@ pem-rfc7468 = { version = "1.0.0", features = ["std"] }
 sui-types = { package = "sui-sdk-types", version = "0.1.0", features = [
     "serde",
 ] }
-sui-transaction-builder = { package = "sui-transaction-builder", version = "0.1.0" }
+sui-transaction-builder = { package = "sui-transaction-builder", version = "0.2.1" }
 k256 = { version = "0.13.4", features = ["ecdsa", "sha256"] }
 
 uniffi = { version = "0.30.0" }
