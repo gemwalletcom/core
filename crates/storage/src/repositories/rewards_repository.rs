@@ -108,8 +108,6 @@ impl RewardsRepository for DatabaseClient {
             vec![]
         };
 
-        let disable_reason = rewards.disable_reason.clone();
-
         let pending_verification_after = RewardsStore::get_referral_by_username(self, &username.username)
             .ok()
             .flatten()
@@ -132,7 +130,7 @@ impl RewardsRepository for DatabaseClient {
             is_enabled: rewards.is_enabled,
             verified: rewards.verified,
             redemption_options: options,
-            disable_reason,
+            disable_reason: rewards.disable_reason.clone(),
             referral_allowance: Default::default(),
             pending_verification_after,
         })

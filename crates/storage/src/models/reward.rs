@@ -46,6 +46,7 @@ pub struct RewardReferralRow {
     pub referred_device_id: i32,
     pub risk_signal_id: i32,
     pub verified_at: Option<NaiveDateTime>,
+    pub updated_at: NaiveDateTime,
     pub created_at: NaiveDateTime,
 }
 
