@@ -46,3 +46,5 @@ rewards_error_referral_country_ineligible = הפניות אינן זמינות �
 notification_rewards_disabled_title = קוד ההפניה הושבת
 notification_rewards_disabled_description = קוד הפניה זה הושבת עקב הפרות חוזרות ונשנות של תנאי תוכנית ההפניות שלנו.
 rewards_error_referral_eligibility_expired = יש להחיל קודי הפניה בתוך {$value} ימים של יצירת שם המשתמש שלך.
+notification_reward_pending_title = 💎 הפניה חדשה
+notification_reward_pending_description = מישהו השתמש בקוד ההפניה שלך. ממתין לאימות.

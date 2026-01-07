@@ -40,10 +40,12 @@ pub struct NewRewardsRow {
 #[diesel(table_name = crate::schema::rewards_referrals)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardReferralRow {
+    pub id: i32,
     pub referrer_username: String,
     pub referred_username: String,
     pub referred_device_id: i32,
     pub risk_signal_id: i32,
+    pub verified_at: Option<NaiveDateTime>,
     pub created_at: NaiveDateTime,
 }
 

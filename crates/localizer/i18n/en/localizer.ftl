@@ -46,3 +46,5 @@ rewards_error_referral_country_ineligible = Referrals are currently unavailable 
 notification_rewards_disabled_title = Referral code deactivated
 notification_rewards_disabled_description = This referral code has been disabled due to repeated violations of our referral program terms.
 rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
+notification_reward_pending_title = 💎 New Referral
+notification_reward_pending_description = Someone used your referral code. Pending verification.

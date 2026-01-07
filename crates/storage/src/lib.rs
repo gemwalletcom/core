@@ -11,7 +11,7 @@ diesel::allow_columns_to_appear_in_same_group_by_clause!(schema::transactions_ad
 pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},
-    rewards::AbusePatterns,
+    rewards::{AbusePatterns, ReferralUpdate},
     rewards_redemptions::RedemptionUpdate,
 };
 pub use self::error::{DatabaseError, ReferralValidationError};

@@ -61,6 +61,10 @@ fn reward_notification_content(localizer: &LanguageLocalizer, event: RewardEvent
             localizer.notification_reward_title(event.points()),
             localizer.notification_reward_create_username_description(),
         ),
+        RewardEventType::InvitePending => (
+            localizer.notification_reward_pending_title(),
+            localizer.notification_reward_pending_description(),
+        ),
         RewardEventType::InviteNew | RewardEventType::InviteExisting => (
             localizer.notification_reward_title(event.points()),
             localizer.notification_reward_invite_description(),

@@ -679,6 +679,7 @@ diesel::table! {
         referred_username -> Varchar,
         referred_device_id -> Int4,
         risk_signal_id -> Int4,
+        verified_at -> Nullable<Timestamp>,
         created_at -> Timestamp,
     }
 }

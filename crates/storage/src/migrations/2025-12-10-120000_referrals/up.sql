@@ -61,6 +61,7 @@ CREATE TABLE rewards_referrals (
     referred_username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON DELETE CASCADE ON UPDATE CASCADE UNIQUE,
     referred_device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     risk_signal_id INT NOT NULL REFERENCES rewards_risk_signals(id),
+    verified_at TIMESTAMP,
     created_at timestamp NOT NULL default current_timestamp
 );
 

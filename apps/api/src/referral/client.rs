@@ -2,7 +2,7 @@ use std::error::Error;
 
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
-use primitives::{ConfigKey, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, Rewards, now};
+use primitives::{ConfigKey, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, now};
 use storage::{ConfigRepository, Database, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
@@ -11,7 +11,7 @@ use crate::auth::VerifiedAuth;
 const REFERRAL_ELIGIBILITY_DAYS: i64 = 7;
 
 enum ReferralProcessResult {
-    Success(i32, RewardEventType),
+    Success(i32),
     Failed(ReferralError),
     RiskScoreExceeded(i32, ReferralError),
 }
@@ -129,10 +129,12 @@ impl RewardsClient {
         })?;
 
         match self.validate_and_score_referral(auth, &referrer_username, ip_address).await {
-            ReferralProcessResult::Success(risk_signal_id, invite_event) => {
-                self.db
+            ReferralProcessResult::Success(risk_signal_id) => {
+                let event_ids = self
+                    .db
                     .rewards()?
-                    .create_referral_use(&auth.address, &referrer_username, auth.device.id, risk_signal_id, invite_event)?;
+                    .use_or_verify_referral(&referrer_username, &auth.address, auth.device.id, risk_signal_id)?;
+                self.publish_events(event_ids).await?;
                 Ok(())
             }
             ReferralProcessResult::Failed(error) => {
@@ -157,10 +159,9 @@ impl RewardsClient {
             return ReferralProcessResult::Failed(e);
         }
 
-        let invite_event = match self.validate_referral_usage(auth, referrer_username) {
-            Ok(event) => event,
-            Err(e) => return ReferralProcessResult::Failed(e),
-        };
+        if let Err(e) = self.validate_referral_usage(auth, referrer_username) {
+            return ReferralProcessResult::Failed(e);
+        }
 
         let ip_result = match self.ip_security_client.check_ip(ip_address).await {
             Ok(result) => result,
@@ -182,7 +183,7 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let since = now().days_ago(risk_score_config.lookback_days);
+        let since = now().ago(risk_score_config.lookback);
 
         let referrer_verified = match client.rewards().is_verified_by_username(referrer_username) {
             Ok(verified) => verified,
@@ -285,7 +286,7 @@ impl RewardsClient {
             return ReferralProcessResult::RiskScoreExceeded(risk_signal_id, error);
         }
 
-        ReferralProcessResult::Success(risk_signal_id, invite_event)
+        ReferralProcessResult::Success(risk_signal_id)
     }
 
     fn check_referrer_limits(&mut self, referrer_username: &str) -> Result<(), ReferralError> {
@@ -312,21 +313,11 @@ impl RewardsClient {
         Ok(())
     }
 
-    fn validate_referral_usage(&mut self, auth: &VerifiedAuth, referrer_username: &str) -> Result<RewardEventType, ReferralError> {
-        let first_subscription_date = self.db.rewards()?.get_first_subscription_date(vec![auth.address.clone()])?;
-
-        let is_new_device = auth.device.created_at.is_within_days(REFERRAL_ELIGIBILITY_DAYS);
-        let is_new_subscription = first_subscription_date.map(|d| d.is_within_days(REFERRAL_ELIGIBILITY_DAYS)).unwrap_or(true);
-
+    fn validate_referral_usage(&mut self, auth: &VerifiedAuth, referrer_username: &str) -> Result<(), ReferralError> {
         self.db
             .rewards()?
             .validate_referral_use(referrer_username, auth.device.id, REFERRAL_ELIGIBILITY_DAYS)?;
-
-        Ok(if is_new_device && is_new_subscription {
-            RewardEventType::InviteNew
-        } else {
-            RewardEventType::InviteExisting
-        })
+        Ok(())
     }
 
     fn load_referral_limits_config(config: &mut dyn storage::ConfigRepository) -> Result<ReferralLimitsConfig, storage::DatabaseError> {
@@ -364,7 +355,7 @@ impl RewardsClient {
             same_referrer_device_model_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreSameReferrerDeviceModelPenalty)?,
             device_model_ring_threshold: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceModelRingThreshold)?,
             device_model_ring_penalty_per_member: config.get_config_i64(ConfigKey::ReferralRiskScoreDeviceModelRingPenaltyPerMember)?,
-            lookback_days: config.get_config_i64(ConfigKey::ReferralRiskScoreLookbackDays)?,
+            lookback: config.get_config_duration(ConfigKey::ReferralRiskScoreLookback)?,
             high_risk_platform_stores: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskPlatformStores)?,
             high_risk_platform_store_penalty: config.get_config_i64(ConfigKey::ReferralRiskScoreHighRiskPlatformStorePenalty)?,
             high_risk_countries: config.get_config_vec_string(ConfigKey::ReferralRiskScoreHighRiskCountries)?,
