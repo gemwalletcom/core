@@ -36,29 +36,29 @@ pub async fn get_everstake_account_state<C: Client + Clone>(client: &EthereumCli
     let accounting: Address = EVERSTAKE_ACCOUNTING_ADDRESS.parse().unwrap();
 
     let mut batch = client.multicall();
-    let h_deposited = batch.add(accounting, IAccounting::depositedBalanceOfCall { account });
-    let h_pending = batch.add(accounting, IAccounting::pendingBalanceOfCall { account });
-    let h_pending_deposited = batch.add(accounting, IAccounting::pendingDepositedBalanceOfCall { account });
-    let h_withdraw = batch.add(accounting, IAccounting::withdrawRequestCall { staker });
-    let h_restaked = batch.add(accounting, IAccounting::restakedRewardOfCall { account });
+    let deposited = batch.add(accounting, IAccounting::depositedBalanceOfCall { account });
+    let pending = batch.add(accounting, IAccounting::pendingBalanceOfCall { account });
+    let pending_deposited = batch.add(accounting, IAccounting::pendingDepositedBalanceOfCall { account });
+    let withdraw = batch.add(accounting, IAccounting::withdrawRequestCall { staker });
+    let restaked = batch.add(accounting, IAccounting::restakedRewardOfCall { account });
 
     let results = batch.execute().await.map_err(|e| e.to_string())?;
 
     let deposited_balance = results
-        .decode::<IAccounting::depositedBalanceOfCall>(&h_deposited)
+        .decode::<IAccounting::depositedBalanceOfCall>(&deposited)
         .map(u256_to_biguint)
         .unwrap_or_else(|_| BigUint::zero());
     let pending_balance = results
-        .decode::<IAccounting::pendingBalanceOfCall>(&h_pending)
+        .decode::<IAccounting::pendingBalanceOfCall>(&pending)
         .map(u256_to_biguint)
         .unwrap_or_else(|_| BigUint::zero());
     let pending_deposited_balance = results
-        .decode::<IAccounting::pendingDepositedBalanceOfCall>(&h_pending_deposited)
+        .decode::<IAccounting::pendingDepositedBalanceOfCall>(&pending_deposited)
         .map(u256_to_biguint)
         .unwrap_or_else(|_| BigUint::zero());
-    let withdraw_request = results.decode::<IAccounting::withdrawRequestCall>(&h_withdraw)?;
+    let withdraw_request = results.decode::<IAccounting::withdrawRequestCall>(&withdraw)?;
     let restaked_reward = results
-        .decode::<IAccounting::restakedRewardOfCall>(&h_restaked)
+        .decode::<IAccounting::restakedRewardOfCall>(&restaked)
         .map(u256_to_biguint)
         .unwrap_or_else(|_| BigUint::zero());
 
