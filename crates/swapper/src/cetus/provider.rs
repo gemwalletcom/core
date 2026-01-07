@@ -6,7 +6,7 @@ use futures::join;
 use num_bigint::BigInt;
 use num_traits::{FromBytes, ToBytes, ToPrimitive};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
-use sui_transaction_builder::{Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder, unresolved::Input};
+use sui_transaction_builder::{Function, ObjectInput, TransactionBuilder as ProgrammableTransactionBuilder};
 use sui_types::{Address, Identifier, TypeTag};
 
 use super::{
@@ -119,17 +119,17 @@ where
         let type_args = vec![TypeTag::from_str(&pool.coin_a_address)?, TypeTag::from_str(&pool.coin_b_address)?];
 
         let arguments = vec![
-            ptb.input(Input::shared(pool_obj.id, pool_obj.shared_version, false)),
-            ptb.input(Serialized(&a2b)),
-            ptb.input(Serialized(&buy_amount_in)),
-            ptb.input(Serialized(&amount.to_u64().unwrap_or(0))),
+            ptb.object(ObjectInput::shared(pool_obj.id, pool_obj.shared_version, false)),
+            ptb.pure(&a2b),
+            ptb.pure(&buy_amount_in),
+            ptb.pure(&amount.to_u64().unwrap_or(0)),
         ];
         let function = Function::new(
             Address::from_str(CETUS_ROUTER_PACKAGE_ID)?,
             Identifier::from_str("fetcher_script")?,
             Identifier::from_str("calculate_swap_result")?,
-            type_args,
-        );
+        )
+        .with_type_args(type_args);
 
         ptb.move_call(function, arguments);
 
@@ -311,11 +311,11 @@ where
             swap_partner: cetus_config.partner.clone(),
         };
 
-        // Build tx
-        let mut ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets)
-            .map_err(|e| SwapperError::TransactionError(format!("Failed to build swap transaction: {e}")))?;
-
-        let tx = gem_sui::tx::prefill_tx(ptb.clone());
+        let tx = {
+            let ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets)
+                .map_err(|e| SwapperError::TransactionError(format!("Failed to build swap transaction: {e}")))?;
+            gem_sui::tx::prefill_tx(ptb)
+        };
 
         // Estimate gas_budget
         let tx_kind = tx.kind.clone();
@@ -332,8 +332,10 @@ where
             .map(|x| x.to_input())
             .collect::<Vec<_>>();
 
+        let mut ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &swap_params, &all_coin_assets)
+            .map_err(|e| SwapperError::TransactionError(format!("Failed to build swap transaction: {e}")))?;
         gem_sui::tx::fill_tx(&mut ptb, sender_address, gas_price, gas_budget, coin_refs);
-        let tx = ptb.finish().map_err(|e| SwapperError::TransactionError(e.to_string()))?;
+        let tx = ptb.try_build().map_err(|e| SwapperError::TransactionError(e.to_string()))?;
         let tx_output = TxOutput::from_tx(&tx).unwrap();
 
         Ok(SwapperQuoteData::new_contract(
@@ -398,8 +400,10 @@ mod tests {
             },
         ];
 
-        let mut ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &params, &all_coins).unwrap();
-        let tx = gem_sui::tx::prefill_tx(ptb.clone());
+        let tx = {
+            let ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &params, &all_coins).unwrap();
+            gem_sui::tx::prefill_tx(ptb)
+        };
 
         let expected_kind = "AAkACAAvaFkAAAAAAQHapGKSYyw8TY8x8j6g+bNqKP82d+loSYDkQ4QDpno9jy4FGAAAAAAAAQEBUeiDunwLVmomy8ipTNM+sKvUGKd8weYK0i/ZsfKc0qv7mnEWAAAAAAEBAQixh1tlQchH8F7XHQTLz6ZuToYZvzuJI7B8W1QJQzNmHn5DHgAAAAABAAEBAAgAL2hZAAAAAAAI3l0zAAAAAAAAEK8zG6gyf7s1scT+/wAAAAABAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAQAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgRjb2luBHplcm8BB9ujRnLjDLBlsfk+OrVTGHaP1v72bBWULJ98uEbi+QDnBHVzZGMEVVNEQwAAAgABAQAAADpaqQ/6M9CRANe2lB6hwP/mq2bncGLd0mMgwbBzqrsQDnBvb2xfc2NyaXB0X3YyFXN3YXBfYjJhX3dpdGhfcGFydG5lcgIH26NGcuMMsGWx+T46tVMYdo/W/vZsFZQsn3y4RuL5AOcEdXNkYwRVU0RDAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgNzdWkDU1VJAAoBAQABAgABAwACAAACAQABBAABBQABBgABBwABCAA=";
         let expected_decoded: TransactionKind = decode_transaction(expected_kind).unwrap();
@@ -413,9 +417,10 @@ mod tests {
             storage_rebate: 14363316,
         };
         let gas_budget = GasBudgetCalculator::gas_budget(&gas_used);
+        let mut ptb = TransactionBuilder::build_swap_transaction(&cetus_config, &params, &all_coins).unwrap();
         gem_sui::tx::fill_tx(&mut ptb, sender_address, 750, gas_budget, all_coins.iter().map(|x| x.to_input()).collect());
 
-        let tx = ptb.finish().expect("Failed to build tx");
+        let tx = ptb.try_build().expect("Failed to build tx");
         let tx_output = TxOutput::from_tx(&tx).unwrap();
         let expected_tx = "AAAJAAgAL2hZAAAAAAEB2qRikmMsPE2PMfI+oPmzaij/NnfpaEmA5EOEA6Z6PY8uBRgAAAAAAAEBAVHog7p8C1ZqJsvIqUzTPrCr1BinfMHmCtIv2bHynNKr+5pxFgAAAAABAQEIsYdbZUHIR/Be1x0Ey8+mbk6GGb87iSOwfFtUCUMzZh5+Qx4AAAAAAQABAQAIAC9oWQAAAAAACN5dMwAAAAAAABCvMxuoMn+7NbHE/v8AAAAAAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgEAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEY29pbgR6ZXJvAQfbo0Zy4wywZbH5Pjq1Uxh2j9b+9mwVlCyffLhG4vkA5wR1c2RjBFVTREMAAAIAAQEAAAA6WqkP+jPQkQDXtpQeocD/5qtm53Bi3dJjIMGwc6q7EA5wb29sX3NjcmlwdF92MhVzd2FwX2IyYV93aXRoX3BhcnRuZXICB9ujRnLjDLBlsfk+OrVTGHaP1v72bBWULJ98uEbi+QDnBHVzZGMEVVNEQwAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIDc3VpA1NVSQAKAQEAAQIAAQMAAgAAAgEAAQQAAQUAAQYAAQcAAQgAqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6EC8WyAUCZ0gLUhiJWHUV5A0Q2ye/UmtRa4w4Qh5fosQ+Il10ceAAAAACA0OFre4GX55ePHjlikxbwgC6amVlPjoneYZeKqSQLRKtj9eZDQ50mX7AlWvhYza5RRzClYbvIkVI1F6DOskmhzJddHHgAAAAAgAQUVwujMoqGWQ1H+T/jFIOV5DzYLyA5euLdj6znzhtWpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoe4CAAAAAAAAtLE6AAAAAAAA";
         let expected_decoded: Transaction = decode_transaction(expected_tx).unwrap();

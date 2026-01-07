@@ -4,8 +4,8 @@ use num_traits::ToPrimitive;
 use std::error::Error;
 use std::str::FromStr;
 
-use sui_transaction_builder::{Function, Serialized, TransactionBuilder as ProgrammableTransactionBuilder, unresolved::Input};
-use sui_types::{Address, Argument, Identifier, TypeTag};
+use sui_transaction_builder::{Argument, Function, ObjectInput, TransactionBuilder as ProgrammableTransactionBuilder};
+use sui_types::{Address, Identifier, TypeTag};
 
 use super::models::{CetusConfig, SwapParams};
 
@@ -42,8 +42,8 @@ impl TransactionBuilder {
             ObjectId::from(SUI_FRAMEWORK_PACKAGE_ID).into(),
             Identifier::from_str(MODULE_COIN)?,
             Identifier::from_str(FUNCTION_ZERO)?,
-            vec![TypeTag::from_str(coin_type)?],
-        );
+        )
+        .with_type_args(vec![TypeTag::from_str(coin_type)?]);
         let target_coin = ptb.move_call(function, vec![]);
 
         Ok(BuildCoinResult {
@@ -88,7 +88,7 @@ impl TransactionBuilder {
                 let results = CoinAssist::select_coins_gte(coin_assets, amount);
                 let target_coin = &results.0[0];
                 return Ok(BuildCoinResult {
-                    target_coin: ptb.input(Input::owned(target_coin.coin_object_id, target_coin.version, target_coin.digest)),
+                    target_coin: ptb.object(ObjectInput::owned(target_coin.coin_object_id, target_coin.version, target_coin.digest)),
                     remain_coins: results.1,
                     is_mint_zero_coin: false,
                     target_coin_amount: target_coin.balance.to_string(),
@@ -96,8 +96,12 @@ impl TransactionBuilder {
                 });
             }
             // split gas coin
-            let amount_argument = ptb.input(Serialized(&amount.to_u64().unwrap_or(0)));
-            let target_coin = ptb.split_coins(ptb.gas(), vec![amount_argument]);
+            let amount_argument = ptb.pure(&amount.to_u64().unwrap_or(0));
+            let gas = ptb.gas();
+            let mut split_results = ptb.split_coins(gas, vec![amount_argument]);
+            let target_coin = split_results
+                .pop()
+                .expect("split_coins should return one argument");
             return Ok(BuildCoinResult {
                 target_coin,
                 remain_coins: vec![],
@@ -128,14 +132,14 @@ impl TransactionBuilder {
         let primary_coin = coins_iter.next().unwrap();
         let merge_coins: Vec<_> = coins_iter.collect();
 
-        let mut target_coin = ptb.input(Input::owned(primary_coin.coin_object_id, primary_coin.version, primary_coin.digest));
+        let mut target_coin = ptb.object(ObjectInput::owned(primary_coin.coin_object_id, primary_coin.version, primary_coin.digest));
         let mut original_splited_coin = None;
 
         // Merge additional coins if any
         if !merge_coins.is_empty() {
             let merge_coin_args: Vec<Argument> = merge_coins
                 .iter()
-                .map(|coin| ptb.input(Input::owned(coin.coin_object_id, coin.version, coin.digest)))
+                .map(|coin| ptb.object(ObjectInput::owned(coin.coin_object_id, coin.version, coin.digest)))
                 .collect::<Vec<_>>();
 
             ptb.merge_coins(target_coin, merge_coin_args);
@@ -144,8 +148,11 @@ impl TransactionBuilder {
         // Split coin if needed
         if fix_amount && total_selected_amount > *amount {
             original_splited_coin = Some(primary_coin.coin_object_id);
-            let amount_arg = ptb.input(Serialized(&amount.to_u64().unwrap_or(0)));
-            target_coin = ptb.split_coins(target_coin, vec![amount_arg]);
+            let amount_arg = ptb.pure(&amount.to_u64().unwrap_or(0));
+            let mut split_results = ptb.split_coins(target_coin, vec![amount_arg]);
+            target_coin = split_results
+                .pop()
+                .expect("split_coins should return one argument");
         }
 
         Ok(BuildCoinResult {
@@ -180,16 +187,16 @@ impl TransactionBuilder {
 
         // Add global config
         let global_config = cetus_config.global_config.clone();
-        args.push(ptb.input(Input::shared(global_config.id, global_config.shared_version, true)));
+        args.push(ptb.object(ObjectInput::shared(global_config.id, global_config.shared_version, true)));
 
         // Add pool object
         let pool_obj = params.pool_object_shared.clone();
-        args.push(ptb.input(Input::shared(pool_obj.id, pool_obj.shared_version, true)));
+        args.push(ptb.object(ObjectInput::shared(pool_obj.id, pool_obj.shared_version, true)));
 
         // Add swap partner if needed
         if has_swap_partner {
             let partner_obj = params.swap_partner.clone().unwrap();
-            args.push(ptb.input(Input::shared(partner_obj.id, partner_obj.shared_version, true)));
+            args.push(ptb.object(ObjectInput::shared(partner_obj.id, partner_obj.shared_version, true)));
         }
 
         // Add coin inputs
@@ -197,27 +204,27 @@ impl TransactionBuilder {
         args.push(primary_coin_input_b.target_coin);
 
         // Add by_amount_in
-        args.push(ptb.input(Serialized(&params.by_amount_in)));
+        args.push(ptb.pure(&params.by_amount_in));
 
         // Add amount
-        args.push(ptb.input(Serialized(&params.amount.to_u64().unwrap_or(0))));
+        args.push(ptb.pure(&params.amount.to_u64().unwrap_or(0)));
 
         // Add amount_limit
-        args.push(ptb.input(Serialized(&params.amount_limit.to_u64().unwrap_or(0))));
+        args.push(ptb.pure(&params.amount_limit.to_u64().unwrap_or(0)));
 
         // Add sqrt_price_limit
-        args.push(ptb.input(Serialized(&sqrt_price_limit)));
+        args.push(ptb.pure(&sqrt_price_limit));
 
         // Add clock
-        args.push(ptb.input(sui_clock_object_input()));
+        args.push(ptb.object(sui_clock_object_input()));
 
         // Make the move call
         let function = Function::new(
             cetus_config.router,
             Identifier::from_str(MODULE_POOL_SCRIPT_V2)?,
             Identifier::from_str(function_name)?,
-            type_arguments,
-        );
+        )
+        .with_type_args(type_arguments);
         ptb.move_call(function, args);
 
         Ok(())

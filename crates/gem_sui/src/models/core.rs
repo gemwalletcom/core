@@ -1,7 +1,7 @@
 use base64::{Engine as _, engine::general_purpose};
 use bcs;
 use std::error::Error;
-use sui_transaction_builder::unresolved::Input;
+use sui_transaction_builder::ObjectInput;
 use sui_types::Transaction;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -19,8 +19,8 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn to_input(&self) -> Input {
-        Input::owned(self.object_id.parse().unwrap(), self.version, self.digest.parse().unwrap())
+    pub fn to_input(&self) -> ObjectInput {
+        ObjectInput::owned(self.object_id.parse().unwrap(), self.version, self.digest.parse().unwrap())
     }
 }
 
