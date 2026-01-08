@@ -111,15 +111,7 @@ impl RewardsRepository for DatabaseClient {
             .ok()
             .flatten()
             .filter(|r| r.verified_at.is_none())
-            .and_then(|pending| {
-                let delay = self.config().get_config_duration(ConfigKey::ReferralVerificationDelay).ok()?;
-                if delay.as_secs() > 0 {
-                    let verification_after = pending.created_at + ChronoDuration::seconds(delay.as_secs() as i64);
-                    Some(verification_after.and_utc())
-                } else {
-                    None
-                }
-            });
+            .and_then(|pending| self.get_referral_verification_date(pending.created_at).ok().flatten());
 
         Ok(Rewards {
             code,
@@ -363,8 +355,8 @@ impl RewardsRepository for DatabaseClient {
         device_id: i32,
         risk_signal_id: i32,
     ) -> Result<Vec<i32>, DatabaseError> {
-        let verification_delay = self.config().get_config_duration(ConfigKey::ReferralVerificationDelay)?;
-        let verified_at = if verification_delay.as_secs() == 0 { Some(now()) } else { None };
+        let verification_date = self.get_referral_verification_date(now())?;
+        let verified_at = if verification_date.is_none() { Some(now()) } else { None };
 
         let username = match UsernamesStore::get_username(self, UsernameLookup::Address(referred_address)) {
             Ok(u) => u,
@@ -408,6 +400,16 @@ impl RewardsRepository for DatabaseClient {
 }
 
 impl DatabaseClient {
+    fn get_referral_verification_date(&mut self, created_at: NaiveDateTime) -> Result<Option<chrono::DateTime<chrono::Utc>>, DatabaseError> {
+        let delay = self.config().get_config_duration(ConfigKey::ReferralVerificationDelay)?;
+        if delay.as_secs() > 0 {
+            let verification_after = created_at + ChronoDuration::seconds(delay.as_secs() as i64);
+            Ok(Some(verification_after.and_utc()))
+        } else {
+            Ok(None)
+        }
+    }
+
     fn add_new_referral(
         &mut self,
         referrer_username: &str,
