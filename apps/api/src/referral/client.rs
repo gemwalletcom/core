@@ -8,8 +8,6 @@ use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 use crate::auth::VerifiedAuth;
 
-const REFERRAL_ELIGIBILITY_DAYS: i64 = 7;
-
 enum ReferralProcessResult {
     Success(i32),
     Failed(ReferralError),
@@ -314,9 +312,26 @@ impl RewardsClient {
     }
 
     fn validate_referral_usage(&mut self, auth: &VerifiedAuth, referrer_username: &str) -> Result<(), ReferralError> {
+        let eligibility = self.db.config()?.get_config_duration(ConfigKey::ReferralEligibility)?;
+        let eligibility_days = (eligibility.as_secs() / 86400) as i64;
+        let eligibility_cutoff = now().ago(eligibility);
+
         self.db
             .rewards()?
-            .validate_referral_use(referrer_username, auth.device.id, REFERRAL_ELIGIBILITY_DAYS)?;
+            .validate_referral_use(referrer_username, auth.device.id, eligibility_days)?;
+
+        let first_subscription_date = self
+            .db
+            .rewards()?
+            .get_first_subscription_date(vec![auth.address.clone()])?;
+
+        let is_new_device = auth.device.created_at > eligibility_cutoff;
+        let is_new_subscription = first_subscription_date.map(|d| d > eligibility_cutoff).unwrap_or(true);
+
+        if !is_new_device || !is_new_subscription {
+            return Err(ReferralValidationError::EligibilityExpired(eligibility_days).into());
+        }
+
         Ok(())
     }
 
