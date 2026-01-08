@@ -7584,8 +7584,6 @@ dependencies = [
  "serde_urlencoded",
  "solana-primitives",
  "strum",
- "sui-sdk-types",
- "sui-transaction-builder",
  "tokio",
  "tracing",
 ]
