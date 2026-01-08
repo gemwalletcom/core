@@ -38,6 +38,7 @@ impl RewardRedemptionType {
 #[strum(serialize_all = "camelCase")]
 pub enum RewardEventType {
     CreateUsername,
+    InvitePending,
     InviteNew,
     InviteExisting,
     Joined,
@@ -52,6 +53,7 @@ impl RewardEventType {
     pub fn points(&self) -> i32 {
         match self {
             Self::CreateUsername => 25,
+            Self::InvitePending => 0,
             Self::InviteNew => 100,
             Self::InviteExisting => 10,
             Self::Joined => 10,
@@ -74,6 +76,7 @@ pub struct Rewards {
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
     pub referral_allowance: ReferralAllowance,
+    pub pending_verification_after: Option<DateTime<Utc>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]

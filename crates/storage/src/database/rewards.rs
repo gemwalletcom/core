@@ -8,6 +8,11 @@ use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use std::collections::HashSet;
 
+#[derive(Debug, Clone)]
+pub enum ReferralUpdate {
+    VerifiedAt(NaiveDateTime),
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct AbusePatterns {
     pub max_countries_per_device: i64,
@@ -35,6 +40,8 @@ pub(crate) trait RewardsStore {
     fn create_rewards(&mut self, rewards: NewRewardsRow) -> Result<RewardsRow, DieselError>;
     fn add_referral(&mut self, referral: NewRewardReferralRow) -> Result<(), DieselError>;
     fn get_referral_by_referred_device_id(&mut self, referred_device_id: i32) -> Result<Option<RewardReferralRow>, DieselError>;
+    fn get_referral_by_username(&mut self, username: &str) -> Result<Option<RewardReferralRow>, DieselError>;
+    fn update_referral(&mut self, referral_id: i32, update: ReferralUpdate) -> Result<(), DieselError>;
     fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), DieselError>;
     fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, DieselError>;
     fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, DieselError>;
@@ -183,6 +190,26 @@ impl RewardsStore for DatabaseClient {
 
             Ok(event_id)
         })
+    }
+
+    fn get_referral_by_username(&mut self, username: &str) -> Result<Option<RewardReferralRow>, DieselError> {
+        use crate::schema::rewards_referrals::dsl;
+        dsl::rewards_referrals
+            .filter(dsl::referred_username.eq(username))
+            .first(&mut self.connection)
+            .optional()
+    }
+
+    fn update_referral(&mut self, referral_id: i32, update: ReferralUpdate) -> Result<(), DieselError> {
+        use crate::schema::rewards_referrals::dsl;
+        match update {
+            ReferralUpdate::VerifiedAt(timestamp) => {
+                diesel::update(dsl::rewards_referrals.find(referral_id))
+                    .set(dsl::verified_at.eq(timestamp))
+                    .execute(&mut self.connection)?;
+            }
+        }
+        Ok(())
     }
 }
 

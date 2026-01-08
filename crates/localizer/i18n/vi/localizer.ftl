@@ -46,3 +46,5 @@ rewards_error_referral_country_ineligible = Hiện tại, dịch vụ giới thi
 notification_rewards_disabled_title = Mã giới thiệu đã bị vô hiệu hóa
 notification_rewards_disabled_description = Mã giới thiệu này đã bị vô hiệu hóa do vi phạm nhiều lần các điều khoản của chương trình giới thiệu.
 rewards_error_referral_eligibility_expired = Mã giới thiệu phải được áp dụng trong vòng... {$value} ngày tạo tên người dùng của bạn.
+notification_reward_pending_title = 💎 Người giới thiệu mới
+notification_reward_pending_description = Ai đó đã sử dụng mã giới thiệu của bạn. Đang chờ xác minh.

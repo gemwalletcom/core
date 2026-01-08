@@ -46,3 +46,5 @@ rewards_error_referral_country_ineligible = 目前您所在的國家無法進行
 notification_rewards_disabled_title = 推薦碼已停用
 notification_rewards_disabled_description = 由於多次違反我們的建議計畫條款，此推薦碼已被停用。
 rewards_error_referral_eligibility_expired = 推薦碼必須在有效期限內使用。 {$value} 建立使用者名稱所需天數。
+notification_reward_pending_title = 💎 新推薦
+notification_reward_pending_description = 有人使用了您的推薦碼。正在等待驗證。

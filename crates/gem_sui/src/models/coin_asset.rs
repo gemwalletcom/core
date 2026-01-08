@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_bigint_from_str, deserialize_u64_from_str, serialize_bigint, serialize_u64};
-use sui_transaction_builder::unresolved::Input;
+use sui_transaction_builder::ObjectInput;
 use sui_types::{Address, Digest};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,8 +17,8 @@ pub struct CoinAsset {
 }
 
 impl CoinAsset {
-    pub fn to_input(&self) -> Input {
-        Input::owned(self.coin_object_id, self.version, self.digest)
+    pub fn to_input(&self) -> ObjectInput {
+        ObjectInput::owned(self.coin_object_id, self.version, self.digest)
     }
 }
 

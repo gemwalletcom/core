@@ -1,13 +1,14 @@
-use crate::database::rewards::RewardsStore;
+use crate::database::rewards::{ReferralUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, ReferralAttemptRow, UsernameRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, UsernameRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
+use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
 use primitives::rewards::RewardRedemptionType;
-use primitives::{Chain, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
+use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 
 fn has_custom_username(username: &str, address: &str) -> bool {
     !username.eq_ignore_ascii_case(address)
@@ -30,7 +31,7 @@ fn validate_username(username: &str) -> Result<(), DatabaseError> {
 fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, device_id: i32) -> Result<UsernameRow, DatabaseError> {
     let username = UsernamesStore::create_username(
         client,
-        UsernameRow {
+        NewUsernameRow {
             username: address.to_string(),
             address: address.to_string(),
             is_verified: false,
@@ -63,14 +64,6 @@ pub trait RewardsRepository {
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
     fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError>;
-    fn create_referral_use(
-        &mut self,
-        address: &str,
-        referral_code: &str,
-        device_id: i32,
-        risk_signal_id: i32,
-        invite_event: RewardEventType,
-    ) -> Result<Vec<i32>, DatabaseError>;
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
@@ -86,6 +79,14 @@ pub trait RewardsRepository {
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
     fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError>;
+
+    fn use_or_verify_referral(
+        &mut self,
+        referrer_username: &str,
+        referred_address: &str,
+        device_id: i32,
+        risk_signal_id: i32,
+    ) -> Result<Vec<i32>, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -94,7 +95,7 @@ impl RewardsRepository for DatabaseClient {
         let rewards = RewardsStore::get_rewards(self, &username.username)?;
 
         let code = if has_custom_username(&username.username, &username.address) {
-            Some(username.username)
+            Some(username.username.clone())
         } else {
             None
         };
@@ -106,7 +107,11 @@ impl RewardsRepository for DatabaseClient {
             vec![]
         };
 
-        let disable_reason = if !rewards.is_enabled { rewards.disable_reason.clone() } else { None };
+        let pending_verification_after = RewardsStore::get_referral_by_username(self, &username.username)
+            .ok()
+            .flatten()
+            .filter(|r| r.verified_at.is_none())
+            .and_then(|pending| self.get_referral_verification_date(pending.created_at).ok().flatten());
 
         Ok(Rewards {
             code,
@@ -116,8 +121,9 @@ impl RewardsRepository for DatabaseClient {
             is_enabled: rewards.is_enabled,
             verified: rewards.verified,
             redemption_options: options,
-            disable_reason,
+            disable_reason: rewards.disable_reason.clone(),
             referral_allowance: Default::default(),
+            pending_verification_after,
         })
     }
 
@@ -158,7 +164,7 @@ impl RewardsRepository for DatabaseClient {
         } else {
             UsernamesStore::create_username(
                 self,
-                UsernameRow {
+                NewUsernameRow {
                     username: username.to_string(),
                     address: address.to_string(),
                     is_verified: false,
@@ -259,53 +265,6 @@ impl RewardsRepository for DatabaseClient {
         Ok(())
     }
 
-    fn create_referral_use(
-        &mut self,
-        address: &str,
-        referral_code: &str,
-        device_id: i32,
-        risk_signal_id: i32,
-        invite_event: RewardEventType,
-    ) -> Result<Vec<i32>, DatabaseError> {
-        let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referral_code))?;
-
-        let referred = if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
-            UsernamesStore::get_username(self, UsernameLookup::Address(address))?
-        } else {
-            create_username_and_rewards(self, address, device_id)?
-        };
-
-        RewardsStore::add_referral(
-            self,
-            NewRewardReferralRow {
-                referrer_username: referrer.username.clone(),
-                referred_username: referred.username.clone(),
-                referred_device_id: device_id,
-                risk_signal_id,
-            },
-        )?;
-
-        let invite_event_id = RewardsStore::add_event(
-            self,
-            NewRewardEventRow {
-                username: referrer.username.clone(),
-                event_type: invite_event.as_ref().to_string(),
-            },
-            invite_event.points(),
-        )?;
-
-        let joined_event_id = RewardsStore::add_event(
-            self,
-            NewRewardEventRow {
-                username: referred.username.clone(),
-                event_type: RewardEventType::Joined.as_ref().to_string(),
-            },
-            RewardEventType::Joined.points(),
-        )?;
-
-        Ok(vec![invite_event_id, joined_event_id])
-    }
-
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
@@ -387,6 +346,140 @@ impl RewardsRepository for DatabaseClient {
 
     fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError> {
         Ok(RewardsStore::disable_rewards(self, username, reason, comment)?)
+    }
+
+    fn use_or_verify_referral(
+        &mut self,
+        referrer_username: &str,
+        referred_address: &str,
+        device_id: i32,
+        risk_signal_id: i32,
+    ) -> Result<Vec<i32>, DatabaseError> {
+        let verification_date = self.get_referral_verification_date(now())?;
+        let verified_at = if verification_date.is_none() { Some(now()) } else { None };
+
+        let username = match UsernamesStore::get_username(self, UsernameLookup::Address(referred_address)) {
+            Ok(u) => u,
+            Err(_) => {
+                let referred = create_username_and_rewards(self, referred_address, device_id)?;
+                return self.add_referral_with_events(
+                    referrer_username,
+                    &referred.username,
+                    device_id,
+                    risk_signal_id,
+                    verified_at,
+                );
+            }
+        };
+
+        match RewardsStore::get_referral_by_username(self, &username.username)? {
+            Some(referral) if referral.verified_at.is_none() => {
+                if referral.referrer_username != referrer_username {
+                    return Err(DatabaseError::Error("Referral code does not match pending referral".to_string()));
+                }
+
+                if referral.referred_device_id != device_id {
+                    return Err(DatabaseError::Error("Must verify from same device".to_string()));
+                }
+
+                RewardsStore::update_referral(self, referral.id, ReferralUpdate::VerifiedAt(now()))?;
+                self.add_referral_verified_events(&referral.referrer_username, &username.username)
+            }
+            Some(_) => Err(DatabaseError::Error("Referral already verified".to_string())),
+            None => {
+                self.add_referral_with_events(
+                    referrer_username,
+                    &username.username,
+                    device_id,
+                    risk_signal_id,
+                    verified_at,
+                )
+            }
+        }
+    }
+}
+
+impl DatabaseClient {
+    fn get_referral_verification_date(&mut self, created_at: NaiveDateTime) -> Result<Option<chrono::DateTime<chrono::Utc>>, DatabaseError> {
+        let delay = self.config().get_config_duration(ConfigKey::ReferralVerificationDelay)?;
+        if delay.as_secs() > 0 {
+            let verification_after = created_at + ChronoDuration::seconds(delay.as_secs() as i64);
+            Ok(Some(verification_after.and_utc()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn add_new_referral(
+        &mut self,
+        referrer_username: &str,
+        referred_username: &str,
+        device_id: i32,
+        risk_signal_id: i32,
+        verified_at: Option<NaiveDateTime>,
+    ) -> Result<(), DatabaseError> {
+        RewardsStore::add_referral(
+            self,
+            NewRewardReferralRow {
+                referrer_username: referrer_username.to_string(),
+                referred_username: referred_username.to_string(),
+                referred_device_id: device_id,
+                risk_signal_id,
+                verified_at,
+            },
+        )?;
+        Ok(())
+    }
+
+    fn add_referral_verified_events(&mut self, referrer_username: &str, referred_username: &str) -> Result<Vec<i32>, DatabaseError> {
+        let referrer_event_id = RewardsStore::add_event(
+            self,
+            NewRewardEventRow {
+                username: referrer_username.to_string(),
+                event_type: RewardEventType::InviteNew.as_ref().to_string(),
+            },
+            RewardEventType::InviteNew.points(),
+        )?;
+
+        let referred_event_id = RewardsStore::add_event(
+            self,
+            NewRewardEventRow {
+                username: referred_username.to_string(),
+                event_type: RewardEventType::Joined.as_ref().to_string(),
+            },
+            RewardEventType::Joined.points(),
+        )?;
+
+        Ok(vec![referrer_event_id, referred_event_id])
+    }
+
+    fn add_referral_pending_events(&mut self, referrer_username: &str) -> Result<Vec<i32>, DatabaseError> {
+        let event_id = RewardsStore::add_event(
+            self,
+            NewRewardEventRow {
+                username: referrer_username.to_string(),
+                event_type: RewardEventType::InvitePending.as_ref().to_string(),
+            },
+            RewardEventType::InvitePending.points(),
+        )?;
+        Ok(vec![event_id])
+    }
+
+    fn add_referral_with_events(
+        &mut self,
+        referrer_username: &str,
+        referred_username: &str,
+        device_id: i32,
+        risk_signal_id: i32,
+        verified_at: Option<NaiveDateTime>,
+    ) -> Result<Vec<i32>, DatabaseError> {
+        self.add_new_referral(referrer_username, referred_username, device_id, risk_signal_id, verified_at)?;
+
+        if verified_at.is_some() {
+            self.add_referral_verified_events(referrer_username, referred_username)
+        } else {
+            self.add_referral_pending_events(referrer_username)
+        }
     }
 }
 

@@ -46,3 +46,5 @@ rewards_error_referral_country_ineligible = Al momento i referral non sono dispo
 notification_rewards_disabled_title = Codice di riferimento disattivato
 notification_rewards_disabled_description = Questo codice di riferimento è stato disattivato a causa di ripetute violazioni dei termini del nostro programma di riferimento.
 rewards_error_referral_eligibility_expired = I codici di riferimento devono essere applicati entro {$value} giorni dalla creazione del tuo nome utente.
+notification_reward_pending_title = 💎 Nuovo referral
+notification_reward_pending_description = Qualcuno ha utilizzato il tuo codice di riferimento. In attesa di verifica.

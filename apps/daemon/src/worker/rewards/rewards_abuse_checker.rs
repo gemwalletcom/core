@@ -8,7 +8,7 @@ struct AbuseDetectionConfig {
     disable_threshold: i64,
     attempt_penalty: i64,
     verified_threshold_multiplier: f64,
-    lookback_days: i64,
+    lookback: std::time::Duration,
     min_referrals_to_evaluate: i64,
     country_rotation_threshold: i64,
     country_rotation_penalty: i64,
@@ -45,7 +45,7 @@ impl RewardsAbuseChecker {
     pub async fn check(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
         let config = Self::load_config(client.config())?;
-        let since = now().days_ago(config.lookback_days);
+        let since = now().ago(config.lookback);
 
         let usernames = client.get_referrer_usernames_with_referrals(since, config.min_referrals_to_evaluate)?;
 
@@ -67,12 +67,13 @@ impl RewardsAbuseChecker {
         let mut disabled_count = 0;
         for eval in evaluations {
             if eval.abuse_score >= eval.threshold
-                && let Some(event_id) = self.disable_user(&eval)? {
-                    self.stream_producer
-                        .publish_rewards_events(vec![RewardsNotificationPayload::new(event_id)])
-                        .await?;
-                    disabled_count += 1;
-                }
+                && let Some(event_id) = self.disable_user(&eval)?
+            {
+                self.stream_producer
+                    .publish_rewards_events(vec![RewardsNotificationPayload::new(event_id)])
+                    .await?;
+                disabled_count += 1;
+            }
         }
 
         Ok(disabled_count)
@@ -82,7 +83,7 @@ impl RewardsAbuseChecker {
         let mut client = self.database.client()?;
 
         let is_verified = client.rewards().is_verified_by_username(username)?;
-        let since = now().days_ago(config.lookback_days);
+        let since = now().ago(config.lookback);
 
         let referral_count = client.rewards().count_referrals_since(username, since)?;
         let attempt_count = client.count_attempts_for_referrer(username, since)?;
@@ -161,7 +162,7 @@ impl RewardsAbuseChecker {
             disable_threshold: config.get_config_i64(ConfigKey::ReferralAbuseDisableThreshold)?,
             attempt_penalty: config.get_config_i64(ConfigKey::ReferralAbuseAttemptPenalty)?,
             verified_threshold_multiplier: config.get_config_f64(ConfigKey::ReferralAbuseVerifiedThresholdMultiplier)?,
-            lookback_days: config.get_config_i64(ConfigKey::ReferralAbuseLookbackDays)?,
+            lookback: config.get_config_duration(ConfigKey::ReferralAbuseLookback)?,
             min_referrals_to_evaluate: config.get_config_i64(ConfigKey::ReferralAbuseMinReferralsToEvaluate)?,
             country_rotation_threshold: config.get_config_i64(ConfigKey::ReferralAbuseCountryRotationThreshold)?,
             country_rotation_penalty: config.get_config_i64(ConfigKey::ReferralAbuseCountryRotationPenalty)?,
@@ -218,7 +219,7 @@ mod tests {
             disable_threshold: 200,
             attempt_penalty: 15,
             verified_threshold_multiplier: 2.0,
-            lookback_days: 7,
+            lookback: std::time::Duration::from_secs(7 * 86400),
             min_referrals_to_evaluate: 2,
             country_rotation_threshold: 2,
             country_rotation_penalty: 50,

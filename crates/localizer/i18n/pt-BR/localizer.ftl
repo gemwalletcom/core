@@ -46,3 +46,5 @@ rewards_error_referral_country_ineligible = No momento, não há encaminhamentos
 notification_rewards_disabled_title = Código de indicação desativado
 notification_rewards_disabled_description = Este código de indicação foi desativado devido a repetidas violações dos termos do nosso programa de indicações.
 rewards_error_referral_eligibility_expired = Os códigos de referência devem ser aplicados dentro de {$value} dias para criar seu nome de usuário.
+notification_reward_pending_title = 💎 Nova Indicação
+notification_reward_pending_description = Alguém usou seu código de indicação. Aguardando verificação.

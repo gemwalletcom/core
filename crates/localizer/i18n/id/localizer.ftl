@@ -46,3 +46,5 @@ rewards_error_referral_country_ineligible = Saat ini, program rujukan tidak ters
 notification_rewards_disabled_title = Kode referensi dinonaktifkan
 notification_rewards_disabled_description = Kode referensi ini telah dinonaktifkan karena pelanggaran berulang terhadap ketentuan program referensi kami.
 rewards_error_referral_eligibility_expired = Kode referensi harus diterapkan dalam {$value} hari-hari untuk membuat nama pengguna Anda.
+notification_reward_pending_title = 💎 Referensi Baru
+notification_reward_pending_description = Seseorang telah menggunakan kode referensi Anda. Sedang dalam proses verifikasi.

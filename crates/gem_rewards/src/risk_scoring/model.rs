@@ -1,4 +1,5 @@
 use sha2::{Digest, Sha256};
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct RiskScoreConfig {
@@ -24,7 +25,7 @@ pub struct RiskScoreConfig {
     pub same_referrer_device_model_penalty: i64,
     pub device_model_ring_threshold: i64,
     pub device_model_ring_penalty_per_member: i64,
-    pub lookback_days: i64,
+    pub lookback: Duration,
     pub high_risk_platform_stores: Vec<String>,
     pub high_risk_platform_store_penalty: i64,
     pub high_risk_countries: Vec<String>,
@@ -58,7 +59,7 @@ impl Default for RiskScoreConfig {
             same_referrer_device_model_penalty: 50,
             device_model_ring_threshold: 2,
             device_model_ring_penalty_per_member: 40,
-            lookback_days: 30,
+            lookback: Duration::from_secs(30 * 86400),
             high_risk_platform_stores: vec![],
             high_risk_platform_store_penalty: 20,
             high_risk_countries: vec![],

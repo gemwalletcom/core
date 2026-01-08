@@ -46,3 +46,5 @@ rewards_error_referral_country_ineligible = 현재 귀하의 국가에서는 추
 notification_rewards_disabled_title = 추천 코드가 비활성화되었습니다.
 notification_rewards_disabled_description = 이 추천 코드는 추천 프로그램 약관을 반복적으로 위반하여 사용이 중단되었습니다.
 rewards_error_referral_eligibility_expired = 추천 코드는 반드시 다음 기간 내에 적용해야 합니다. {$value} 사용자 이름을 만드는 데 며칠이 걸립니다.
+notification_reward_pending_title = 💎 신규 추천
+notification_reward_pending_description = 누군가 당신의 추천 코드를 사용했습니다. 확인 중입니다.
