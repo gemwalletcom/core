@@ -7,6 +7,7 @@ pub enum CacheKey<'a> {
 
     // Username keys
     UsernameCreationPerIp(&'a str),
+    UsernameCreationPerDevice(i32),
 
     // Device keys
     InactiveDeviceObserver(&'a str),
@@ -34,6 +35,7 @@ impl CacheKey<'_> {
         match self {
             Self::ReferralIpCheck(ip_address) => format!("referral:ip_check:{}", ip_address),
             Self::UsernameCreationPerIp(ip_address) => format!("username:ip:{}", ip_address),
+            Self::UsernameCreationPerDevice(device_id) => format!("username:device:{}", device_id),
             Self::InactiveDeviceObserver(device_id) => format!("device:inactive_observer:{}", device_id),
             Self::FetchCoinAddresses(chain, address) => format!("fetch:coin_addresses:{}:{}", chain, address),
             Self::FetchTokenAddresses(chain, address) => format!("fetch:token_addresses:{}:{}", chain, address),
@@ -51,6 +53,7 @@ impl CacheKey<'_> {
         match self {
             Self::ReferralIpCheck(_) => 30 * SECONDS_PER_DAY,
             Self::UsernameCreationPerIp(_) => 30 * SECONDS_PER_DAY,
+            Self::UsernameCreationPerDevice(_) => 30 * SECONDS_PER_DAY,
             Self::InactiveDeviceObserver(_) => 30 * SECONDS_PER_DAY,
             Self::FetchCoinAddresses(_, _) => 7 * SECONDS_PER_DAY,
             Self::FetchTokenAddresses(_, _) => 30 * SECONDS_PER_DAY,

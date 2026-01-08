@@ -37,4 +37,16 @@ impl IpSecurityClient {
         self.cacher.increment_cached(CacheKey::UsernameCreationPerIp(ip_address)).await?;
         Ok(())
     }
+
+    pub async fn check_username_creation_device_limit(&self, device_id: i32, limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if self.cacher.get_cached_counter(CacheKey::UsernameCreationPerDevice(device_id)).await? >= limit {
+            return Err(crate::RewardsError::Username("Too many usernames created from this device".to_string()).into());
+        }
+        Ok(())
+    }
+
+    pub async fn record_username_creation_device(&self, device_id: i32) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.cacher.increment_cached(CacheKey::UsernameCreationPerDevice(device_id)).await?;
+        Ok(())
+    }
 }

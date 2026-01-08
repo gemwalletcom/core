@@ -19,6 +19,7 @@ pub enum ConfigKey {
 
     // Username
     UsernameCreationPerIp,
+    UsernameCreationPerDevice,
 
     // Redemption
     RedemptionPerUserDaily,
@@ -114,6 +115,7 @@ impl ConfigKey {
             Self::ReferralVerificationDelay => "24h",
             Self::ReferralEligibility => "7d",
             Self::UsernameCreationPerIp => "10",
+            Self::UsernameCreationPerDevice => "1",
             Self::RedemptionPerUserDaily => "1",
             Self::RedemptionPerUserWeekly => "3",
             Self::ReferralIpConfidenceScoreThreshold => "10",

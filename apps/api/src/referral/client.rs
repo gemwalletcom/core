@@ -104,11 +104,15 @@ impl RewardsClient {
     }
 
     pub async fn create_referral(&mut self, address: &str, code: &str, device_id: i32, ip_address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        let limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerIp)?;
-        self.ip_security_client.check_username_creation_limit(ip_address, limit).await?;
+        let ip_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerIp)?;
+        self.ip_security_client.check_username_creation_limit(ip_address, ip_limit).await?;
+
+        let device_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerDevice)?;
+        self.ip_security_client.check_username_creation_device_limit(device_id, device_limit).await?;
 
         let (rewards, event_id) = self.db.rewards()?.create_reward(address, code, device_id)?;
         self.ip_security_client.record_username_creation(ip_address).await?;
+        self.ip_security_client.record_username_creation_device(device_id).await?;
         self.publish_events(vec![event_id]).await?;
         Ok(rewards)
     }
