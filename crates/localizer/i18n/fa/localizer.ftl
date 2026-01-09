@@ -48,3 +48,4 @@ notification_rewards_disabled_description = این کد ارجاع به دلیل
 rewards_error_referral_eligibility_expired = کدهای ارجاع باید در داخل اعمال شوند {$value} روزهایی که نام کاربری خود را ایجاد کرده‌اید.
 notification_reward_pending_title = 💎 معرف جدید
 notification_reward_pending_description = شخصی از کد معرف شما استفاده کرده است. در انتظار تأیید.
+rewards_error_username_daily_limit_reached = محدودیت ایجاد نام کاربری روزانه به پایان رسیده است. لطفاً فردا دوباره امتحان کنید.

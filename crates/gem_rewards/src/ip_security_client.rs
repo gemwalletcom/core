@@ -1,9 +1,11 @@
 use std::error::Error;
 
 use cacher::{CacheKey, CacherClient};
+use primitives::ConfigKey;
 
 use crate::abuseipdb::AbuseIPDBClient;
 use crate::model::IpCheckResult;
+use crate::UsernameError;
 
 #[derive(Clone)]
 pub struct IpSecurityClient {
@@ -26,26 +28,45 @@ impl IpSecurityClient {
         Ok(ip_data.as_ip_check_result())
     }
 
-    pub async fn check_username_creation_limit(&self, ip_address: &str, limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if self.cacher.get_cached_counter(CacheKey::UsernameCreationPerIp(ip_address)).await? >= limit {
-            return Err(crate::RewardsError::Username("Too many usernames created from this IP".to_string()).into());
+    pub async fn check_username_creation_pre_limits(
+        &self,
+        ip_address: &str,
+        device_id: i32,
+        global_daily_limit: i64,
+        ip_limit: i64,
+        device_limit: i64,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let global_count = self.cacher.get_cached_counter(CacheKey::UsernameCreationGlobalDaily).await?;
+        if global_count >= global_daily_limit {
+            return Err(UsernameError::LimitReached(ConfigKey::UsernameCreationGlobalDailyLimit).into());
         }
+
+        let ip_count = self.cacher.get_cached_counter(CacheKey::UsernameCreationPerIp(ip_address)).await?;
+        if ip_count >= ip_limit {
+            return Err(UsernameError::LimitReached(ConfigKey::UsernameCreationPerIp).into());
+        }
+
+        let device_count = self.cacher.get_cached_counter(CacheKey::UsernameCreationPerDevice(device_id)).await?;
+        if device_count >= device_limit {
+            return Err(UsernameError::LimitReached(ConfigKey::UsernameCreationPerDevice).into());
+        }
+
         Ok(())
     }
 
-    pub async fn record_username_creation(&self, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn check_username_creation_country_limit(&self, country_code: &str, country_daily_limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let country_count = self.cacher.get_cached_counter(CacheKey::UsernameCreationPerCountryDaily(country_code)).await?;
+        if country_count >= country_daily_limit {
+            return Err(UsernameError::LimitReached(ConfigKey::UsernameCreationPerCountryDailyLimit).into());
+        }
+
+        Ok(())
+    }
+
+    pub async fn record_username_creation(&self, country_code: &str, ip_address: &str, device_id: i32) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.cacher.increment_cached(CacheKey::UsernameCreationGlobalDaily).await?;
+        self.cacher.increment_cached(CacheKey::UsernameCreationPerCountryDaily(country_code)).await?;
         self.cacher.increment_cached(CacheKey::UsernameCreationPerIp(ip_address)).await?;
-        Ok(())
-    }
-
-    pub async fn check_username_creation_device_limit(&self, device_id: i32, limit: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if self.cacher.get_cached_counter(CacheKey::UsernameCreationPerDevice(device_id)).await? >= limit {
-            return Err(crate::RewardsError::Username("Too many usernames created from this device".to_string()).into());
-        }
-        Ok(())
-    }
-
-    pub async fn record_username_creation_device(&self, device_id: i32) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.cacher.increment_cached(CacheKey::UsernameCreationPerDevice(device_id)).await?;
         Ok(())
     }

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, evaluate_risk};
+use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
 use primitives::{ConfigKey, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, now};
 use storage::{ConfigRepository, Database, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository};
@@ -103,16 +103,47 @@ impl RewardsClient {
         Ok(self.db.rewards_redemptions()?.get_redemption_option(code)?)
     }
 
-    pub async fn create_referral(&mut self, address: &str, code: &str, device_id: i32, ip_address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
+    pub async fn create_username(
+        &mut self,
+        address: &str,
+        code: &str,
+        device_id: i32,
+        ip_address: &str,
+        locale: &str,
+    ) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
+        let global_daily_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationGlobalDailyLimit)?;
         let ip_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerIp)?;
-        self.ip_security_client.check_username_creation_limit(ip_address, ip_limit).await?;
-
         let device_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerDevice)?;
-        self.ip_security_client.check_username_creation_device_limit(device_id, device_limit).await?;
+
+        self.ip_security_client
+            .check_username_creation_pre_limits(ip_address, device_id, global_daily_limit, ip_limit, device_limit)
+            .await
+            .map_err(|e| {
+                if let Some(username_error) = e.downcast_ref::<UsernameError>() {
+                    RewardsError::Username(username_error.localize(locale))
+                } else {
+                    RewardsError::Username(e.to_string())
+                }
+            })?;
+
+        let ip_result = self.ip_security_client.check_ip(ip_address).await?;
+
+        let country_daily_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerCountryDailyLimit)?;
+        self.ip_security_client
+            .check_username_creation_country_limit(&ip_result.country_code, country_daily_limit)
+            .await
+            .map_err(|e| {
+                if let Some(username_error) = e.downcast_ref::<UsernameError>() {
+                    RewardsError::Username(username_error.localize(locale))
+                } else {
+                    RewardsError::Username(e.to_string())
+                }
+            })?;
 
         let (rewards, event_id) = self.db.rewards()?.create_reward(address, code, device_id)?;
-        self.ip_security_client.record_username_creation(ip_address).await?;
-        self.ip_security_client.record_username_creation_device(device_id).await?;
+        self.ip_security_client
+            .record_username_creation(&ip_result.country_code, ip_address, device_id)
+            .await?;
         self.publish_events(vec![event_id]).await?;
         Ok(rewards)
     }
@@ -320,14 +351,9 @@ impl RewardsClient {
         let eligibility_days = (eligibility.as_secs() / 86400) as i64;
         let eligibility_cutoff = now().ago(eligibility);
 
-        self.db
-            .rewards()?
-            .validate_referral_use(referrer_username, auth.device.id, eligibility_days)?;
+        self.db.rewards()?.validate_referral_use(referrer_username, auth.device.id, eligibility_days)?;
 
-        let first_subscription_date = self
-            .db
-            .rewards()?
-            .get_first_subscription_date(vec![auth.address.clone()])?;
+        let first_subscription_date = self.db.rewards()?.get_first_subscription_date(vec![auth.address.clone()])?;
 
         let is_new_device = auth.device.created_at > eligibility_cutoff;
         let is_new_subscription = first_subscription_date.map(|d| d > eligibility_cutoff).unwrap_or(true);

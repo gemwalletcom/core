@@ -20,6 +20,8 @@ pub enum ConfigKey {
     // Username
     UsernameCreationPerIp,
     UsernameCreationPerDevice,
+    UsernameCreationGlobalDailyLimit,
+    UsernameCreationPerCountryDailyLimit,
 
     // Redemption
     RedemptionPerUserDaily,
@@ -116,6 +118,8 @@ impl ConfigKey {
             Self::ReferralEligibility => "7d",
             Self::UsernameCreationPerIp => "10",
             Self::UsernameCreationPerDevice => "1",
+            Self::UsernameCreationGlobalDailyLimit => "1000",
+            Self::UsernameCreationPerCountryDailyLimit => "100",
             Self::RedemptionPerUserDaily => "1",
             Self::RedemptionPerUserWeekly => "3",
             Self::ReferralIpConfidenceScoreThreshold => "10",

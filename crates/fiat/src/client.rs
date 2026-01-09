@@ -4,10 +4,10 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::time::Duration;
 
+use crate::ip_check_client::{IPAddressInfo, IPCheckClient};
 use crate::{
-    CachedFiatQuoteData, FiatCacherClient, FiatProvider, IPCheckClient,
+    CachedFiatQuoteData, FiatCacherClient, FiatProvider,
     error::FiatQuoteError,
-    ip_check_client::IPAddressInfo,
     model::{FiatMapping, FiatMappingMap},
 };
 use futures::future::join_all;

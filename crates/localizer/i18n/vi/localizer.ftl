@@ -48,3 +48,4 @@ notification_rewards_disabled_description = Mã giới thiệu này đã bị v�
 rewards_error_referral_eligibility_expired = Mã giới thiệu phải được áp dụng trong vòng... {$value} ngày tạo tên người dùng của bạn.
 notification_reward_pending_title = 💎 Người giới thiệu mới
 notification_reward_pending_description = Ai đó đã sử dụng mã giới thiệu của bạn. Đang chờ xác minh.
+rewards_error_username_daily_limit_reached = Đã đạt đến giới hạn tạo tên người dùng mỗi ngày. Vui lòng thử lại vào ngày mai.

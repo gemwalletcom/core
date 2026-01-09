@@ -283,6 +283,10 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "rewards_error_referral_country_ineligible", value = country)
     }
 
+    pub fn rewards_error_username_daily_limit_reached(&self) -> String {
+        fl!(self.loader.as_ref(), "rewards_error_username_daily_limit_reached")
+    }
+
     pub fn notification_rewards_disabled_title(&self) -> String {
         fl!(self.loader.as_ref(), "notification_rewards_disabled_title")
     }

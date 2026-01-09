@@ -48,3 +48,4 @@ notification_rewards_disabled_description = Bu yönlendirme kodu, yönlendirme p
 rewards_error_referral_eligibility_expired = Sevk kodları şu süre içinde uygulanmalıdır: {$value} Kullanıcı adınızı oluşturmanızın üzerinden geçen günler.
 notification_reward_pending_title = 💎 Yeni Referans
 notification_reward_pending_description = Birisi sizin referans kodunuzu kullandı. Doğrulama bekleniyor.
+rewards_error_username_daily_limit_reached = Günlük kullanıcı adı oluşturma limitine ulaşıldı. Lütfen yarın tekrar deneyin.

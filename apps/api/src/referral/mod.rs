@@ -41,7 +41,13 @@ pub async fn create_referral(
     Ok(client
         .lock()
         .await
-        .create_referral(&request.auth.address, &request.data.code, request.auth.device.id, &ip.to_string())
+        .create_username(
+            &request.auth.address,
+            &request.data.code,
+            request.auth.device.id,
+            &ip.to_string(),
+            &request.auth.device.locale,
+        )
         .await?
         .into())
 }

@@ -362,13 +362,7 @@ impl RewardsRepository for DatabaseClient {
             Ok(u) => u,
             Err(_) => {
                 let referred = create_username_and_rewards(self, referred_address, device_id)?;
-                return self.add_referral_with_events(
-                    referrer_username,
-                    &referred.username,
-                    device_id,
-                    risk_signal_id,
-                    verified_at,
-                );
+                return self.add_referral_with_events(referrer_username, &referred.username, device_id, risk_signal_id, verified_at);
             }
         };
 
@@ -386,15 +380,7 @@ impl RewardsRepository for DatabaseClient {
                 self.add_referral_verified_events(&referral.referrer_username, &username.username)
             }
             Some(_) => Err(DatabaseError::Error("Referral already verified".to_string())),
-            None => {
-                self.add_referral_with_events(
-                    referrer_username,
-                    &username.username,
-                    device_id,
-                    risk_signal_id,
-                    verified_at,
-                )
-            }
+            None => self.add_referral_with_events(referrer_username, &username.username, device_id, risk_signal_id, verified_at),
         }
     }
 }

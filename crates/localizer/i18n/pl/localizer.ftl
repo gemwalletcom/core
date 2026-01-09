@@ -48,3 +48,4 @@ notification_rewards_disabled_description = Ten kod polecający został wyłącz
 rewards_error_referral_eligibility_expired = Kody polecające muszą zostać zastosowane w ciągu {$value} dni od utworzenia nazwy użytkownika.
 notification_reward_pending_title = 💎 Nowe polecenie
 notification_reward_pending_description = Ktoś użył Twojego kodu polecającego. Oczekuje na weryfikację.
+rewards_error_username_daily_limit_reached = Osiągnięto dzienny limit tworzenia nazw użytkowników. Spróbuj ponownie jutro.

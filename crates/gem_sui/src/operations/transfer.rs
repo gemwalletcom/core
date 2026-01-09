@@ -22,9 +22,7 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error 
         let amount = ptb.pure(&input.amount);
         let gas = ptb.gas();
         let mut split_results = ptb.split_coins(gas, vec![amount]);
-        let split_result = split_results
-            .pop()
-            .expect("split_coins should return one argument");
+        let split_result = split_results.pop().expect("split_coins should return one argument");
         let recipient_argument = ptb.pure(&recipient);
 
         ptb.transfer_objects(vec![split_result], recipient_argument);
@@ -49,12 +47,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
         return Err("tokens vector is empty".into());
     }
 
-    let mut coins_inputs: Vec<Argument> = input
-        .tokens
-        .clone()
-        .into_iter()
-        .map(|x| ptb.object(x.object.to_input()))
-        .collect();
+    let mut coins_inputs: Vec<Argument> = input.tokens.clone().into_iter().map(|x| ptb.object(x.object.to_input())).collect();
 
     // Get first coin
     let first_coin = coins_inputs.remove(0);
@@ -67,9 +60,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
     // Split and transfer
     let amount = ptb.pure(&input.amount);
     let mut split_results = ptb.split_coins(first_coin, vec![amount]);
-    let split_result = split_results
-        .pop()
-        .expect("split_coins should return one argument");
+    let split_result = split_results.pop().expect("split_coins should return one argument");
     let recipient_argument = ptb.pure(&recipient);
     ptb.transfer_objects(vec![split_result], recipient_argument);
 
