@@ -21,7 +21,7 @@ env:
   RUSTC_WRAPPER: "sccache"
 
 jobs:
-  build_android:
+  android:
     runs-on: ubuntu-latest
     env:
       ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.1.13356709
@@ -41,7 +41,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709'
+          packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709 system-images;android-31;default;x86_64 emulator'
 
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
@@ -63,3 +63,20 @@ jobs:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: just build-android
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Android Instrumented Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          arch: x86_64
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            cd gemstone/android
+            ./gradlew connectedDebugAndroidTest
