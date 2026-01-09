@@ -38,6 +38,14 @@ impl RewardsClient {
         }
     }
 
+    fn map_username_error(&self, error: Box<dyn Error + Send + Sync>, locale: &str) -> RewardsError {
+        if let Some(username_error) = error.downcast_ref::<UsernameError>() {
+            RewardsError::Username(username_error.localize(locale))
+        } else {
+            RewardsError::Username(error.to_string())
+        }
+    }
+
     pub fn get_rewards(&mut self, address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
         let mut rewards = match self.db.rewards()?.get_reward_by_address(address) {
             Ok(r) => r,
@@ -114,31 +122,29 @@ impl RewardsClient {
         let global_daily_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationGlobalDailyLimit)?;
         let ip_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerIp)?;
         let device_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerDevice)?;
+        let country_daily_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerCountryDailyLimit)?;
+        let ineligible_countries = self.db.config()?.get_config_vec_string(ConfigKey::ReferralIneligibleCountries)?;
+        let blocked_ip_types = self.db.config()?.get_config_vec_string(ConfigKey::ReferralBlockedIpTypes)?;
 
         self.ip_security_client
-            .check_username_creation_pre_limits(ip_address, device_id, global_daily_limit, ip_limit, device_limit)
+            .check_username_creation_limits(ip_address, device_id, global_daily_limit, ip_limit, device_limit)
             .await
-            .map_err(|e| {
-                if let Some(username_error) = e.downcast_ref::<UsernameError>() {
-                    RewardsError::Username(username_error.localize(locale))
-                } else {
-                    RewardsError::Username(e.to_string())
-                }
-            })?;
+            .map_err(|e| self.map_username_error(e, locale))?;
 
         let ip_result = self.ip_security_client.check_ip(ip_address).await?;
 
-        let country_daily_limit = self.db.config()?.get_config_i64(ConfigKey::UsernameCreationPerCountryDailyLimit)?;
         self.ip_security_client
             .check_username_creation_country_limit(&ip_result.country_code, country_daily_limit)
             .await
-            .map_err(|e| {
-                if let Some(username_error) = e.downcast_ref::<UsernameError>() {
-                    RewardsError::Username(username_error.localize(locale))
-                } else {
-                    RewardsError::Username(e.to_string())
-                }
-            })?;
+            .map_err(|e| self.map_username_error(e, locale))?;
+
+        self.ip_security_client
+            .check_username_creation_country_eligibility(&ip_result.country_code, &ineligible_countries)
+            .map_err(|e| self.map_username_error(e, locale))?;
+
+        self.ip_security_client
+            .check_username_creation_ip_type(&ip_result.usage_type, &blocked_ip_types)
+            .map_err(|e| self.map_username_error(e, locale))?;
 
         let (rewards, event_id) = self.db.rewards()?.create_reward(address, code, device_id)?;
         self.ip_security_client
@@ -153,7 +159,7 @@ impl RewardsClient {
         Ok(self.db.rewards()?.change_username(address, new_username)?)
     }
 
-    pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn use_referral_code(&mut self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
         let locale = &auth.device.locale;
 
         let referrer_username = self.db.rewards()?.get_referrer_username(code)?.ok_or_else(|| {
@@ -163,12 +169,11 @@ impl RewardsClient {
 
         match self.validate_and_score_referral(auth, &referrer_username, ip_address).await {
             ReferralProcessResult::Success(risk_signal_id) => {
-                let event_ids = self
+                let events = self
                     .db
                     .rewards()?
                     .use_or_verify_referral(&referrer_username, &auth.address, auth.device.id, risk_signal_id)?;
-                self.publish_events(event_ids).await?;
-                Ok(())
+                Ok(events)
             }
             ReferralProcessResult::Failed(error) => {
                 let _ = self

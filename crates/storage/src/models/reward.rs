@@ -81,6 +81,7 @@ impl RewardEventTypeRow {
 #[diesel(table_name = crate::schema::rewards_events)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardEventRow {
+    pub id: i32,
     pub username: String,
     pub event_type: String,
     pub created_at: NaiveDateTime,

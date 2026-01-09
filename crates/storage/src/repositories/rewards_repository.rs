@@ -86,7 +86,7 @@ pub trait RewardsRepository {
         referred_address: &str,
         device_id: i32,
         risk_signal_id: i32,
-    ) -> Result<Vec<i32>, DatabaseError>;
+    ) -> Result<Vec<RewardEvent>, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -187,7 +187,7 @@ impl RewardsRepository for DatabaseClient {
             )?;
         }
 
-        let event_id = RewardsStore::add_event(
+        let event = RewardsStore::add_event(
             self,
             NewRewardEventRow {
                 username: username.to_string(),
@@ -197,7 +197,7 @@ impl RewardsRepository for DatabaseClient {
         )?;
 
         let rewards = self.get_reward_by_address(address)?;
-        Ok((rewards, event_id))
+        Ok((rewards, event.id))
     }
 
     fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError> {
@@ -354,7 +354,7 @@ impl RewardsRepository for DatabaseClient {
         referred_address: &str,
         device_id: i32,
         risk_signal_id: i32,
-    ) -> Result<Vec<i32>, DatabaseError> {
+    ) -> Result<Vec<RewardEvent>, DatabaseError> {
         let verification_date = self.get_referral_verification_date(now())?;
         let verified_at = if verification_date.is_none() { Some(now()) } else { None };
 
@@ -417,8 +417,8 @@ impl DatabaseClient {
         Ok(())
     }
 
-    fn add_referral_verified_events(&mut self, referrer_username: &str, referred_username: &str) -> Result<Vec<i32>, DatabaseError> {
-        let referrer_event_id = RewardsStore::add_event(
+    fn add_referral_verified_events(&mut self, referrer_username: &str, referred_username: &str) -> Result<Vec<RewardEvent>, DatabaseError> {
+        let referrer_event = RewardsStore::add_event(
             self,
             NewRewardEventRow {
                 username: referrer_username.to_string(),
@@ -427,7 +427,7 @@ impl DatabaseClient {
             RewardEventType::InviteNew.points(),
         )?;
 
-        let referred_event_id = RewardsStore::add_event(
+        let referred_event = RewardsStore::add_event(
             self,
             NewRewardEventRow {
                 username: referred_username.to_string(),
@@ -436,11 +436,11 @@ impl DatabaseClient {
             RewardEventType::Joined.points(),
         )?;
 
-        Ok(vec![referrer_event_id, referred_event_id])
+        Ok(vec![referrer_event.as_primitive(), referred_event.as_primitive()])
     }
 
-    fn add_referral_pending_events(&mut self, referrer_username: &str) -> Result<Vec<i32>, DatabaseError> {
-        let event_id = RewardsStore::add_event(
+    fn add_referral_pending_events(&mut self, referrer_username: &str) -> Result<Vec<RewardEvent>, DatabaseError> {
+        let event = RewardsStore::add_event(
             self,
             NewRewardEventRow {
                 username: referrer_username.to_string(),
@@ -448,7 +448,7 @@ impl DatabaseClient {
             },
             RewardEventType::InvitePending.points(),
         )?;
-        Ok(vec![event_id])
+        Ok(vec![event.as_primitive()])
     }
 
     fn add_referral_with_events(
@@ -458,7 +458,7 @@ impl DatabaseClient {
         device_id: i32,
         risk_signal_id: i32,
         verified_at: Option<NaiveDateTime>,
-    ) -> Result<Vec<i32>, DatabaseError> {
+    ) -> Result<Vec<RewardEvent>, DatabaseError> {
         self.add_new_referral(referrer_username, referred_username, device_id, risk_signal_id, verified_at)?;
 
         if verified_at.is_some() {

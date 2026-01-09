@@ -43,7 +43,7 @@ pub(crate) trait RewardsStore {
     fn get_referral_by_username(&mut self, username: &str) -> Result<Option<RewardReferralRow>, DieselError>;
     fn update_referral(&mut self, referral_id: i32, update: ReferralUpdate) -> Result<(), DieselError>;
     fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), DieselError>;
-    fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, DieselError>;
+    fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<RewardEventRow, DieselError>;
     fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, DieselError>;
     fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, DieselError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
@@ -104,7 +104,7 @@ impl RewardsStore for DatabaseClient {
         Ok(())
     }
 
-    fn add_event(&mut self, event: NewRewardEventRow, points: i32) -> Result<i32, DieselError> {
+    fn add_event(&mut self, new_event: NewRewardEventRow, points: i32) -> Result<RewardEventRow, DieselError> {
         use crate::schema::{rewards, rewards_events};
         use diesel::Connection;
 
@@ -113,17 +113,17 @@ impl RewardsStore for DatabaseClient {
         }
 
         self.connection.transaction(|conn| {
-            let event_id = diesel::insert_into(rewards_events::table)
-                .values(&event)
-                .returning(rewards_events::id)
+            let event = diesel::insert_into(rewards_events::table)
+                .values(&new_event)
+                .returning(RewardEventRow::as_returning())
                 .get_result(conn)?;
 
-            diesel::update(rewards::table.filter(rewards::username.eq(&event.username)))
+            diesel::update(rewards::table.filter(rewards::username.eq(&new_event.username)))
                 .set(rewards::points.eq(rewards::points + points))
                 .returning(rewards::username)
                 .get_result::<String>(conn)?;
 
-            Ok(event_id)
+            Ok(event)
         })
     }
 

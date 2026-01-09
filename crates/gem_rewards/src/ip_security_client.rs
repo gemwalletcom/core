@@ -28,7 +28,7 @@ impl IpSecurityClient {
         Ok(ip_data.as_ip_check_result())
     }
 
-    pub async fn check_username_creation_pre_limits(
+    pub async fn check_username_creation_limits(
         &self,
         ip_address: &str,
         device_id: i32,
@@ -60,6 +60,21 @@ impl IpSecurityClient {
             return Err(UsernameError::LimitReached(ConfigKey::UsernameCreationPerCountryDailyLimit).into());
         }
 
+        Ok(())
+    }
+
+    pub fn check_username_creation_country_eligibility(&self, country_code: &str, ineligible_countries: &[String]) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if ineligible_countries.contains(&country_code.to_string()) {
+            return Err(UsernameError::LimitReached(ConfigKey::ReferralIneligibleCountries).into());
+        }
+        Ok(())
+    }
+
+    pub fn check_username_creation_ip_type(&self, usage_type: &str, blocked_ip_types: &[String]) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let is_blocked = blocked_ip_types.iter().any(|t| usage_type.contains(t));
+        if is_blocked {
+            return Err(UsernameError::LimitReached(ConfigKey::ReferralBlockedIpTypes).into());
+        }
         Ok(())
     }
 
