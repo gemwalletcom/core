@@ -29,7 +29,6 @@ class MockPreferences : GemPreferences {
     override fun remove(key: String) {}
 }
 
-// Simulating a custom app exception (e.g., BlockchainError.DustError)
 sealed class CustomAppException : Exception() {
     class DustError(override val message: String) : CustomAppException()
 }
@@ -90,14 +89,15 @@ class GemstoneTest {
     /**
      * Test 3: Custom exceptions must be wrapped to avoid native crash.
      *
-     * WARNING: Throwing custom exceptions directly causes native crash.
-     * This is the root cause of production crashes like:
-     * UnexpectedUniFFICallbackError(reason: "...BlockchainError$DustError")
+     * Throwing custom exceptions directly causes native crash
+     * like UnexpectedUniFFICallbackError(reason: "...BlockchainError$DustError")
+     * We need to wrap them with Error or Exception type defined in UniFFI or StandardException.
      */
     @Test
     fun testProviderWrapsCustomException() = runBlocking {
         val errorMessage = "Amount too small"
         val provider = MockProvider {
+            // Custom exceptions must be wrapped to avoid native crash
             try {
                 throw CustomAppException.DustError(errorMessage)
             } catch (e: CustomAppException) {
