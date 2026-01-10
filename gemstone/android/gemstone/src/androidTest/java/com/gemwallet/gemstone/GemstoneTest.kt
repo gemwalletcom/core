@@ -33,6 +33,16 @@ sealed class CustomAppException : Exception() {
     class DustError(override val message: String) : CustomAppException()
 }
 
+/**
+ * Mock fee estimator for testing GatewayException.PlatformException.
+ */
+class MockFeeEstimator(
+    private val onGetFee: suspend (Chain, GemTransactionLoadInput) -> GemTransactionLoadFee? = { _, _ -> null }
+) : GemGatewayEstimateFee {
+    override suspend fun getFee(chain: Chain, input: GemTransactionLoadInput): GemTransactionLoadFee? = onGetFee(chain, input)
+    override suspend fun getFeeData(chain: Chain, input: GemTransactionLoadInput): String? = null
+}
+
 @RunWith(AndroidJUnit4::class)
 class GemstoneTest {
 
@@ -91,25 +101,45 @@ class GemstoneTest {
      *
      * Throwing custom exceptions directly causes native crash
      * like UnexpectedUniFFICallbackError(reason: "...BlockchainError$DustError")
-     * We need to wrap them with Error or Exception type defined in UniFFI or StandardException.
+     * Use GatewayException.PlatformException to wrap custom exceptions, allowing
+     * clients to distinguish them from network errors.
      */
     @Test
-    fun testProviderWrapsCustomException() = runBlocking {
+    fun testFeeEstimatorThrowsPlatformException() = runBlocking {
         val errorMessage = "Amount too small"
-        val provider = MockProvider {
+        val feeEstimator = MockFeeEstimator { _, _ ->
             // Custom exceptions must be wrapped to avoid native crash
             try {
                 throw CustomAppException.DustError(errorMessage)
             } catch (e: CustomAppException) {
-                throw AlienException.RequestException("${e::class.simpleName}: ${e.message}")
+                throw GatewayException.PlatformException("${e::class.simpleName}: ${e.message}")
             }
         }
-        val gateway = createGateway(provider)
+        val gateway = createGateway(MockProvider())
+        val asset = GemAsset(
+            id = "ethereum",
+            chain = "ethereum",
+            tokenId = null,
+            name = "Ethereum",
+            symbol = "ETH",
+            decimals = 18,
+            assetType = GemAssetType.NATIVE
+        )
+        val input = GemTransactionLoadInput(
+            inputType = GemTransactionInputType.Transfer(asset),
+            senderAddress = "0x1234",
+            destinationAddress = "0x5678",
+            value = "1000000000000000000",
+            gasPrice = GemGasPriceType.Regular("20000000000"),
+            memo = null,
+            isMaxValue = false,
+            metadata = GemTransactionLoadMetadata.None
+        )
 
         try {
-            gateway.getBalanceCoin("ethereum", "0x1234")
-            fail("Expected GatewayException.NetworkException to be thrown")
-        } catch (e: GatewayException.NetworkException) {
+            gateway.getFee("ethereum", input, feeEstimator)
+            fail("Expected GatewayException.PlatformException to be thrown")
+        } catch (e: GatewayException.PlatformException) {
             assertTrue(e.msg.contains(errorMessage))
         }
     }
