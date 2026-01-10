@@ -51,7 +51,7 @@ class GemstoneTest {
     }
 
     /**
-     * Test 1: UniFFI-defined exception is caught correctly.
+     * Test 1: UniFFI-defined exception (AlienException) is caught as GatewayException.
      */
     @Test
     fun testProviderThrowsAlienException() = runBlocking {
@@ -61,14 +61,17 @@ class GemstoneTest {
 
         try {
             gateway.getBalanceCoin("ethereum", "0x1234")
-            fail("Expected GatewayException")
+            fail("Expected GatewayException.NetworkException to be thrown")
         } catch (e: GatewayException.NetworkException) {
             assertTrue(e.msg.contains(errorMessage))
         }
     }
 
     /**
-     * Test 2: Standard Java exception is wrapped and caught.
+     * Test 2: Standard Java exception becomes InternalException.
+     *
+     * Note: Unlike AlienException which is properly mapped to GatewayException,
+     * standard Java exceptions result in InternalException with UnexpectedUniFFICallbackError.
      */
     @Test
     fun testProviderThrowsStandardException() = runBlocking {
@@ -78,11 +81,9 @@ class GemstoneTest {
 
         try {
             gateway.getBalanceCoin("ethereum", "0x1234")
-            fail("Expected exception")
-        } catch (e: GatewayException.NetworkException) {
-            assertTrue(e.msg.contains(errorMessage))
+            fail("Expected InternalException to be thrown")
         } catch (e: InternalException) {
-            assertTrue(e.message?.contains(errorMessage) == true)
+            assertTrue(e.message?.contains(errorMessage) ?: false)
         }
     }
 
@@ -107,7 +108,7 @@ class GemstoneTest {
 
         try {
             gateway.getBalanceCoin("ethereum", "0x1234")
-            fail("Expected GatewayException")
+            fail("Expected GatewayException.NetworkException to be thrown")
         } catch (e: GatewayException.NetworkException) {
             assertTrue(e.msg.contains(errorMessage))
         }
