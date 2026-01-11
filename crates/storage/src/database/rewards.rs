@@ -227,6 +227,7 @@ pub(crate) trait RiskSignalsStore {
     ) -> Result<Vec<RiskSignalRow>, DieselError>;
     fn count_signals_since(&mut self, ip_address: Option<&str>, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn count_signals_for_device_id(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_signals_for_country(&mut self, country_code: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn sum_risk_scores_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn count_attempts_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn get_referrer_usernames_with_referrals(&mut self, since: NaiveDateTime, min_referrals: i64) -> Result<Vec<String>, DieselError>;
@@ -313,6 +314,16 @@ impl RiskSignalsStore for DatabaseClient {
 
         dsl::rewards_risk_signals
             .filter(dsl::device_id.eq(device_id))
+            .filter(dsl::created_at.ge(since))
+            .count()
+            .get_result(&mut self.connection)
+    }
+
+    fn count_signals_for_country(&mut self, country_code: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::ip_country_code.eq(country_code))
             .filter(dsl::created_at.ge(since))
             .count()
             .get_result(&mut self.connection)

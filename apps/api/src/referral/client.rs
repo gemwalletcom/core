@@ -21,6 +21,7 @@ struct ReferralLimitsConfig {
     device_daily_limit: i64,
     ip_daily_limit: i64,
     ip_weekly_limit: i64,
+    country_daily_limit: i64,
 }
 
 pub struct RewardsClient {
@@ -288,6 +289,14 @@ impl RewardsClient {
             return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerIpWeekly));
         }
 
+        let country_daily_count = match client.count_signals_for_country(&scoring_input.ip_result.country_code, now().days_ago(1)) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+        if country_daily_count >= limits_config.country_daily_limit {
+            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerCountryDaily));
+        }
+
         let existing_signals = match client.get_matching_risk_signals(
             &fingerprint,
             &signal_input.ip_address,
@@ -378,6 +387,7 @@ impl RewardsClient {
             device_daily_limit: config.get_config_i64(ConfigKey::ReferralPerDeviceDaily)?,
             ip_daily_limit: config.get_config_i64(ConfigKey::ReferralPerIpDaily)?,
             ip_weekly_limit: config.get_config_i64(ConfigKey::ReferralPerIpWeekly)?,
+            country_daily_limit: config.get_config_i64(ConfigKey::ReferralPerCountryDaily)?,
         })
     }
 
