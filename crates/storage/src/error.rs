@@ -27,6 +27,36 @@ impl From<diesel::result::Error> for DatabaseError {
     }
 }
 
+impl From<std::num::ParseIntError> for DatabaseError {
+    fn from(error: std::num::ParseIntError) -> Self {
+        DatabaseError::Error(error.to_string())
+    }
+}
+
+impl From<std::num::ParseFloatError> for DatabaseError {
+    fn from(error: std::num::ParseFloatError) -> Self {
+        DatabaseError::Error(error.to_string())
+    }
+}
+
+impl From<std::str::ParseBoolError> for DatabaseError {
+    fn from(error: std::str::ParseBoolError) -> Self {
+        DatabaseError::Error(error.to_string())
+    }
+}
+
+impl From<serde_json::Error> for DatabaseError {
+    fn from(error: serde_json::Error) -> Self {
+        DatabaseError::Error(error.to_string())
+    }
+}
+
+impl From<r2d2::Error> for DatabaseError {
+    fn from(error: r2d2::Error) -> Self {
+        DatabaseError::Error(error.to_string())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum ReferralValidationError {
     CodeDoesNotExist,

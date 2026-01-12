@@ -4,10 +4,11 @@ use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow, UsernameRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
+use crate::sql_types::RewardStatus;
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
-use primitives::rewards::{ReferralActivation, ReferralCodeActivation, RewardRedemptionType, RewardStatus};
+use primitives::rewards::{ReferralActivation, ReferralCodeActivation, RewardRedemptionType};
 use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
 
 fn validate_username(username: &str) -> Result<(), DatabaseError> {
@@ -37,7 +38,7 @@ fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, devic
         client,
         NewRewardsRow {
             username: address.to_string(),
-            status: RewardStatus::Unverified.as_ref().to_string(),
+            status: RewardStatus::UNVERIFIED,
             level: None,
             points: 0,
             referrer_username: None,
@@ -97,7 +98,7 @@ impl RewardsRepository for DatabaseClient {
             None
         };
 
-        let status = rewards.status();
+        let status = *rewards.status;
         let options = if status.is_enabled() {
             let types: Vec<_> = [RewardRedemptionType::Asset].iter().map(|t| t.as_ref().to_string()).collect();
             RewardsRedemptionsRepository::get_redemption_options(self, &types)?
@@ -154,7 +155,7 @@ impl RewardsRepository for DatabaseClient {
                 return Err(DatabaseError::Error("Address already has a username".into()));
             }
             let existing_rewards = RewardsStore::get_rewards(self, &existing.username)?;
-            if !existing_rewards.status().is_enabled() {
+            if !existing_rewards.status.is_enabled() {
                 return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
             }
             UsernamesStore::update_username(self, address, username)?;
@@ -171,7 +172,7 @@ impl RewardsRepository for DatabaseClient {
                 self,
                 NewRewardsRow {
                     username: username.to_string(),
-                    status: RewardStatus::Unverified.as_ref().to_string(),
+                    status: RewardStatus::UNVERIFIED,
                     level: None,
                     points: 0,
                     referrer_username: None,
@@ -215,7 +216,7 @@ impl RewardsRepository for DatabaseClient {
         }
 
         let rewards = RewardsStore::get_rewards(self, &existing.username)?;
-        if !rewards.status().is_enabled() {
+        if !rewards.status.is_enabled() {
             return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
         }
 
@@ -236,7 +237,7 @@ impl RewardsRepository for DatabaseClient {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referrer_username))?;
         let referrer_rewards = RewardsStore::get_rewards(self, referrer_username)?;
 
-        if !referrer_rewards.status().is_enabled() {
+        if !referrer_rewards.status.is_enabled() {
             return Err(ReferralValidationError::RewardsNotEnabled(referrer_username.to_string()));
         }
 
@@ -302,7 +303,7 @@ impl RewardsRepository for DatabaseClient {
 
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError> {
         let rewards = RewardsStore::get_rewards(self, username)?;
-        Ok(rewards.status().is_verified())
+        Ok(rewards.status.is_verified())
     }
 
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {

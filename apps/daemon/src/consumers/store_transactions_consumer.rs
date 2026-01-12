@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, ConfigKey, Transaction, TransactionId};
-use storage::{AssetsRepository, ConfigRepository, Database, SubscriptionsRepository, TransactionsRepository};
+use storage::{AssetsRepository, ConfigCacher, Database, SubscriptionsRepository, TransactionsRepository};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
 use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
@@ -12,6 +12,7 @@ const TRANSACTION_BATCH_SIZE: usize = 100;
 
 pub struct StoreTransactionsConsumer {
     pub database: Database,
+    pub config_cacher: ConfigCacher,
     pub stream_producer: StreamProducer,
     pub pusher: Pusher,
     pub config: StoreTransactionsConsumerConfig,
@@ -27,7 +28,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let transactions = payload.transactions;
         let is_notify_devices = !payload.blocks.is_empty();
 
-        let min_amount = self.database.config()?.get_config_f64(ConfigKey::TransactionsMinAmountUsd)?;
+        let min_amount = self.config_cacher.get_f64(ConfigKey::TransactionsMinAmountUsd)?;
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
         let subscriptions = self.database.subscriptions()?.get_subscriptions(chain, addresses)?;

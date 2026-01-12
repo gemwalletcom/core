@@ -16,16 +16,17 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
-use storage::{ConfigRepository, Database};
+use storage::{ConfigCacher, Database};
 use streamer::StreamProducer;
 
 pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let config = ConfigCacher::new(database.clone());
 
-    let pricer_timer = database.config()?.get_config_duration(ConfigKey::PricerTimer)?;
-    let pricer_outdated = database.config()?.get_config_duration(ConfigKey::PricerOutdated)?;
+    let pricer_timer = config.get_duration(ConfigKey::PricerTimer)?;
+    let pricer_outdated = config.get_duration(ConfigKey::PricerOutdated)?;
 
     let clean_updated_assets = run_job("Clean outdated assets", Duration::from_secs(86400), {
         let cacher_client = cacher_client.clone();

@@ -1,27 +1,28 @@
 use pricer::PriceAlertClient;
 use pricer::price_alert_client::PriceAlertRules;
 use primitives::ConfigKey;
-use storage::{ConfigRepository, Database};
+use storage::{ConfigCacher, Database};
 use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 
 pub struct PriceAlertSender {
-    database: Database,
+    config: ConfigCacher,
     price_alert_client: PriceAlertClient,
     stream_producer: StreamProducer,
 }
 
 impl PriceAlertSender {
     pub fn new(database: Database, price_alert_client: PriceAlertClient, stream_producer: StreamProducer) -> Self {
+        let config = ConfigCacher::new(database);
         Self {
-            database,
+            config,
             price_alert_client,
             stream_producer,
         }
     }
 
     pub async fn run_observer(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let price_increase = self.database.config()?.get_config_f64(ConfigKey::AlerterPriceIncreasePercent)?;
-        let price_decrease = self.database.config()?.get_config_f64(ConfigKey::AlerterPriceDecreasePercent)?;
+        let price_increase = self.config.get_f64(ConfigKey::AlerterPriceIncreasePercent)?;
+        let price_decrease = self.config.get_f64(ConfigKey::AlerterPriceDecreasePercent)?;
 
         let rules = PriceAlertRules {
             price_change_increase: price_increase,

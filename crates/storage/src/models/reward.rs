@@ -1,15 +1,17 @@
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use diesel::prelude::*;
-use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption, RewardRedemptionType, RewardStatus};
+use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption, RewardRedemptionType};
 use primitives::{Asset, RewardEvent, RewardEventType, RewardLevel};
 use std::str::FromStr;
+
+use crate::sql_types::RewardStatus;
 
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardsRow {
     pub username: String,
-    pub status: String,
+    pub status: RewardStatus,
     pub level: Option<String>,
     pub points: i32,
     pub referrer_username: Option<String>,
@@ -21,17 +23,11 @@ pub struct RewardsRow {
     pub created_at: NaiveDateTime,
 }
 
-impl RewardsRow {
-    pub fn status(&self) -> RewardStatus {
-        RewardStatus::from_str(&self.status).unwrap_or(RewardStatus::Unverified)
-    }
-}
-
 #[derive(Debug, Insertable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
 pub struct NewRewardsRow {
     pub username: String,
-    pub status: String,
+    pub status: RewardStatus,
     pub level: Option<String>,
     pub points: i32,
     pub referrer_username: Option<String>,

@@ -1,12 +1,12 @@
-use crate::DatabaseClient;
 use crate::models::{
     NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, ReferralAttemptRow, RewardEventRow, RewardEventTypeRow, RewardReferralRow,
     RewardsRow, RiskSignalRow,
 };
+use crate::sql_types::RewardStatus;
+use crate::DatabaseClient;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
-use primitives::RewardStatus;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
@@ -161,7 +161,7 @@ impl RewardsStore for DatabaseClient {
         rewards_events::table
             .inner_join(rewards::table.on(rewards_events::username.eq(rewards::username)))
             .inner_join(rewards_events_types::table.on(rewards_events::event_type.eq(rewards_events_types::id)))
-            .filter(rewards::status.ne(RewardStatus::Disabled.as_ref()))
+            .filter(rewards::status.ne(RewardStatus::DISABLED))
             .filter(rewards_events::event_type.eq_any(event_types))
             .filter(rewards_events::created_at.ge(since))
             .group_by(rewards_events::username)
@@ -179,7 +179,7 @@ impl RewardsStore for DatabaseClient {
         self.connection.transaction(|conn| {
             diesel::update(rewards::table.filter(rewards::username.eq(username)))
                 .set((
-                    rewards::status.eq(RewardStatus::Disabled.as_ref()),
+                    rewards::status.eq(RewardStatus::DISABLED),
                     rewards::disable_reason.eq(reason),
                     rewards::comment.eq(comment),
                 ))
@@ -363,7 +363,7 @@ impl RiskSignalsStore for DatabaseClient {
 
         rewards_referrals::table
             .inner_join(rewards::table.on(rewards_referrals::referrer_username.eq(rewards::username)))
-            .filter(rewards::status.ne(RewardStatus::Disabled.as_ref()))
+            .filter(rewards::status.ne(RewardStatus::DISABLED))
             .filter(rewards_referrals::created_at.ge(since))
             .group_by(rewards_referrals::referrer_username)
             .having(count_star().ge(min_referrals))

@@ -1,10 +1,14 @@
 use std::error::Error;
 
+mod config_cacher;
 pub mod database;
 pub mod error;
 pub mod models;
 pub mod repositories;
 pub mod schema;
+pub mod sql_types;
+
+pub use config_cacher::ConfigCacher;
 
 diesel::allow_columns_to_appear_in_same_group_by_clause!(schema::transactions_addresses::address, schema::transactions::chain,);
 
@@ -64,10 +68,6 @@ impl Database {
     }
 
     pub fn charts(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
-    pub fn config(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 

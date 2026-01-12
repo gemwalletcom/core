@@ -18,13 +18,14 @@ use primitives::{
 use reqwest::Client as RequestClient;
 use storage::database::devices::DevicesStore;
 use storage::{
-    AssetFilter, AssetsRepository, ConfigRepository, Database, SubscriptionsRepository,
+    AssetFilter, AssetsRepository, ConfigCacher, Database, SubscriptionsRepository,
     models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
 };
 use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
     database: Database,
+    config: ConfigCacher,
     cacher: CacherClient,
     fiat_cacher: FiatCacherClient,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
@@ -40,8 +41,10 @@ impl FiatClient {
         ip_check_client: IPCheckClient,
         stream_producer: StreamProducer,
     ) -> Self {
+        let config = ConfigCacher::new(database.clone());
         Self {
             database,
+            config,
             cacher: cacher.clone(),
             fiat_cacher: FiatCacherClient::new(cacher),
             providers,
@@ -182,7 +185,7 @@ impl FiatClient {
 
     pub async fn get_quotes_old(&self, request: FiatQuoteOldRequest) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
         let asset = self.database.assets()?.get_asset(&request.asset_id)?;
-        let validate_subscription = self.database.config()?.get_config_bool(ConfigKey::FiatValidateSubscription)?;
+        let validate_subscription = self.config.get_bool(ConfigKey::FiatValidateSubscription)?;
 
         if validate_subscription {
             let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;

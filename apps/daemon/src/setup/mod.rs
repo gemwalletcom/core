@@ -116,7 +116,7 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
 
     info_with_fields!("setup", step = "config");
     let configs = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect::<Vec<_>>();
-    let _ = database.config()?.add_config(configs);
+    let _ = database.client()?.add_config(configs);
 
     info_with_fields!(
         "setup",
