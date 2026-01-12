@@ -1,4 +1,4 @@
-CREATE TYPE nft_type AS ENUM ('ERC721', 'ERC1155', 'SPL', 'JETTON');
+CREATE TYPE nft_type AS ENUM ('erc721', 'erc1155', 'spl', 'jetton');
 
 CREATE TABLE nft_collections (
     id VARCHAR(512) PRIMARY KEY NOT NULL,
@@ -44,7 +44,7 @@ SELECT diesel_manage_updated_at('nft_collections_links');
 CREATE TABLE nft_assets (
     id VARCHAR(512) PRIMARY KEY NOT NULL,
 
-    collection_id VARCHAR(64) NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
+    collection_id VARCHAR(512) NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
     chain VARCHAR(64) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
 
     name VARCHAR(1024) NOT NULL,
