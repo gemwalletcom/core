@@ -27,3 +27,14 @@ SELECT diesel_manage_updated_at('transactions');
 
 CREATE INDEX transactions_created_at_idx ON transactions (created_at DESC);
 CREATE INDEX transactions_asset_id_idx ON transactions (asset_id);
+
+CREATE TABLE transactions_addresses
+(
+    id             SERIAL PRIMARY KEY,
+    transaction_id BIGINT       NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+    asset_id       VARCHAR(256) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
+    address        VARCHAR(256) NOT NULL,
+    UNIQUE (transaction_id, address, asset_id)
+);
+
+CREATE INDEX transactions_addresses_address_idx ON transactions_addresses (address);

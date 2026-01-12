@@ -1,5 +1,5 @@
 CREATE TYPE platform AS ENUM ('ios', 'android');
-CREATE TYPE platform_store AS ENUM ('app_store', 'google_play', 'fdroid', 'huawei', 'solana_store', 'samsung_store', 'apk_universal', 'local');
+CREATE TYPE platform_store AS ENUM ('appStore', 'googlePlay', 'fdroid', 'huawei', 'solanaStore', 'samsungStore', 'apkUniversal', 'local');
 
 CREATE TABLE devices (
     id SERIAL PRIMARY KEY,
