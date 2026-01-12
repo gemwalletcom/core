@@ -1,5 +1,11 @@
 // @generated automatically by Diesel CLI.
 
+pub mod sql_types {
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "reward_status"))]
+    pub struct RewardStatus;
+}
+
 diesel::table! {
     assets (id) {
         #[max_length = 128]
@@ -564,11 +570,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::RewardStatus;
+
     rewards (username) {
         #[max_length = 64]
         username -> Varchar,
-        #[max_length = 32]
-        status -> Varchar,
+        status -> RewardStatus,
         #[max_length = 32]
         level -> Nullable<Varchar>,
         points -> Int4,
