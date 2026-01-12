@@ -567,7 +567,8 @@ diesel::table! {
     rewards (username) {
         #[max_length = 64]
         username -> Varchar,
-        is_enabled -> Bool,
+        #[max_length = 32]
+        status -> Varchar,
         #[max_length = 32]
         level -> Nullable<Varchar>,
         points -> Int4,
@@ -575,7 +576,7 @@ diesel::table! {
         referrer_username -> Nullable<Varchar>,
         referral_count -> Int4,
         device_id -> Int4,
-        verified -> Bool,
+        is_swap_complete -> Bool,
         #[max_length = 512]
         comment -> Nullable<Varchar>,
         #[max_length = 256]

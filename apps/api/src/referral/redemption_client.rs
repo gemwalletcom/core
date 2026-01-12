@@ -17,7 +17,7 @@ impl RewardsRedemptionClient {
     pub async fn redeem(&mut self, address: &str, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {
         let rewards = self.database.rewards()?.get_reward_by_address(address)?;
 
-        if !rewards.is_enabled {
+        if !rewards.status.is_enabled() {
             return Err(RewardsRedemptionError::NotEligible("Not eligible for rewards".to_string()).into());
         }
 

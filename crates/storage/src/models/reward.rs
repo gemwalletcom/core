@@ -1,6 +1,6 @@
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use diesel::prelude::*;
-use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption, RewardRedemptionType};
+use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption, RewardRedemptionType, RewardStatus};
 use primitives::{Asset, RewardEvent, RewardEventType, RewardLevel};
 use std::str::FromStr;
 
@@ -9,29 +9,35 @@ use std::str::FromStr;
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardsRow {
     pub username: String,
-    pub is_enabled: bool,
+    pub status: String,
     pub level: Option<String>,
     pub points: i32,
     pub referrer_username: Option<String>,
     pub referral_count: i32,
     pub device_id: i32,
-    pub verified: bool,
+    pub is_swap_complete: bool,
     pub comment: Option<String>,
     pub disable_reason: Option<String>,
     pub created_at: NaiveDateTime,
+}
+
+impl RewardsRow {
+    pub fn status(&self) -> RewardStatus {
+        RewardStatus::from_str(&self.status).unwrap_or(RewardStatus::Unverified)
+    }
 }
 
 #[derive(Debug, Insertable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
 pub struct NewRewardsRow {
     pub username: String,
-    pub is_enabled: bool,
+    pub status: String,
     pub level: Option<String>,
     pub points: i32,
     pub referrer_username: Option<String>,
     pub referral_count: i32,
     pub device_id: i32,
-    pub verified: bool,
+    pub is_swap_complete: bool,
     pub comment: Option<String>,
     pub disable_reason: Option<String>,
 }

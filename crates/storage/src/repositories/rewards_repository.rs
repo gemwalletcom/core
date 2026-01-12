@@ -1,18 +1,14 @@
 use crate::database::rewards::{ReferralUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
-use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, UsernameRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow, UsernameRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
-use primitives::rewards::RewardRedemptionType;
+use primitives::rewards::{ReferralActivation, ReferralCodeActivation, RewardRedemptionType, RewardStatus};
 use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
-
-fn has_custom_username(username: &str, address: &str) -> bool {
-    !username.eq_ignore_ascii_case(address)
-}
 
 fn validate_username(username: &str) -> Result<(), DatabaseError> {
     let len = username.len();
@@ -41,13 +37,13 @@ fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, devic
         client,
         NewRewardsRow {
             username: address.to_string(),
-            is_enabled: true,
+            status: RewardStatus::Unverified.as_ref().to_string(),
             level: None,
             points: 0,
             referrer_username: None,
             referral_count: 0,
             device_id,
-            verified: false,
+            is_swap_complete: false,
             comment: None,
             disable_reason: None,
         },
@@ -94,36 +90,37 @@ impl RewardsRepository for DatabaseClient {
         let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
         let rewards = RewardsStore::get_rewards(self, &username.username)?;
 
-        let code = if has_custom_username(&username.username, &username.address) {
+        let has_custom_code = username.has_custom_username();
+        let code = if has_custom_code {
             Some(username.username.clone())
         } else {
             None
         };
 
-        let options = if rewards.is_enabled {
+        let status = rewards.status();
+        let options = if status.is_enabled() {
             let types: Vec<_> = [RewardRedemptionType::Asset].iter().map(|t| t.as_ref().to_string()).collect();
             RewardsRedemptionsRepository::get_redemption_options(self, &types)?
         } else {
             vec![]
         };
 
-        let pending_verification_after = RewardsStore::get_referral_by_username(self, &username.username)
-            .ok()
-            .flatten()
-            .filter(|r| r.verified_at.is_none())
-            .and_then(|pending| self.get_referral_verification_date(pending.created_at).ok().flatten());
+        let referral_code_activation = self.build_referral_code_activation(has_custom_code, rewards.is_swap_complete)?;
+        let referral_activation = self.build_referral_activation(&username.username, &rewards)?;
 
         Ok(Rewards {
             code,
             referral_count: rewards.referral_count,
             points: rewards.points,
             used_referral_code: rewards.referrer_username,
-            is_enabled: rewards.is_enabled,
-            verified: rewards.verified,
+            status,
+            is_enabled: status.is_enabled(),
+            verified: status.is_verified(),
             redemption_options: options,
             disable_reason: rewards.disable_reason.clone(),
             referral_allowance: Default::default(),
-            pending_verification_after,
+            referral_code_activation,
+            referral_activation,
         })
     }
 
@@ -153,11 +150,11 @@ impl RewardsRepository for DatabaseClient {
 
         if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
             let existing = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
-            if has_custom_username(&existing.username, &existing.address) {
+            if existing.has_custom_username() {
                 return Err(DatabaseError::Error("Address already has a username".into()));
             }
             let existing_rewards = RewardsStore::get_rewards(self, &existing.username)?;
-            if !existing_rewards.is_enabled {
+            if !existing_rewards.status().is_enabled() {
                 return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
             }
             UsernamesStore::update_username(self, address, username)?;
@@ -174,13 +171,13 @@ impl RewardsRepository for DatabaseClient {
                 self,
                 NewRewardsRow {
                     username: username.to_string(),
-                    is_enabled: true,
+                    status: RewardStatus::Unverified.as_ref().to_string(),
                     level: None,
                     points: 0,
                     referrer_username: None,
                     referral_count: 0,
                     device_id,
-                    verified: false,
+                    is_swap_complete: false,
                     comment: None,
                     disable_reason: None,
                 },
@@ -205,7 +202,7 @@ impl RewardsRepository for DatabaseClient {
 
         let existing = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
 
-        if !has_custom_username(&existing.username, &existing.address) {
+        if !existing.has_custom_username() {
             return Err(DatabaseError::Error("No custom username to change".into()));
         }
 
@@ -218,7 +215,7 @@ impl RewardsRepository for DatabaseClient {
         }
 
         let rewards = RewardsStore::get_rewards(self, &existing.username)?;
-        if !rewards.is_enabled {
+        if !rewards.status().is_enabled() {
             return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
         }
 
@@ -239,7 +236,7 @@ impl RewardsRepository for DatabaseClient {
         let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referrer_username))?;
         let referrer_rewards = RewardsStore::get_rewards(self, referrer_username)?;
 
-        if !referrer_rewards.is_enabled {
+        if !referrer_rewards.status().is_enabled() {
             return Err(ReferralValidationError::RewardsNotEnabled(referrer_username.to_string()));
         }
 
@@ -305,7 +302,7 @@ impl RewardsRepository for DatabaseClient {
 
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError> {
         let rewards = RewardsStore::get_rewards(self, username)?;
-        Ok(rewards.verified)
+        Ok(rewards.status().is_verified())
     }
 
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {
@@ -396,6 +393,38 @@ impl DatabaseClient {
         }
     }
 
+    fn build_referral_code_activation(&mut self, has_custom_code: bool, is_swap_complete: bool) -> Result<Option<ReferralCodeActivation>, DatabaseError> {
+        if !has_custom_code {
+            return Ok(None);
+        }
+
+        let swap_amount = self.config().get_config_i64(ConfigKey::ReferralCodeActivationSwapAmount)? as i32;
+        Ok(Some(ReferralCodeActivation {
+            swap_completed: is_swap_complete,
+            swap_amount,
+        }))
+    }
+
+    fn build_referral_activation(&mut self, username: &str, rewards: &RewardsRow) -> Result<Option<ReferralActivation>, DatabaseError> {
+        if rewards.referrer_username.is_none() {
+            return Ok(None);
+        }
+
+        let swap_amount = self.config().get_config_i64(ConfigKey::ReferralCodeActivationSwapAmount)? as i32;
+        let referral = RewardsStore::get_referral_by_username(self, username)?;
+        let verify_completed = referral.as_ref().map(|r| r.verified_at.is_some()).unwrap_or(false);
+        let verify_after = referral
+            .filter(|r| r.verified_at.is_none())
+            .and_then(|pending| self.get_referral_verification_date(pending.created_at).ok().flatten());
+
+        Ok(Some(ReferralActivation {
+            verify_completed,
+            verify_after,
+            swap_completed: rewards.is_swap_complete,
+            swap_amount,
+        }))
+    }
+
     fn add_new_referral(
         &mut self,
         referrer_username: &str,
@@ -473,12 +502,20 @@ impl DatabaseClient {
 mod tests {
     use super::*;
 
+    fn username_row(username: &str, address: &str) -> UsernameRow {
+        UsernameRow {
+            username: username.to_string(),
+            address: address.to_string(),
+            is_verified: false,
+        }
+    }
+
     #[test]
     fn test_has_custom_username() {
-        assert!(has_custom_username("alice", "0x1234567890abcdef"));
-        assert!(!has_custom_username("0x1234567890abcdef", "0x1234567890abcdef"));
-        assert!(!has_custom_username("0xABCDEF", "0xabcdef"));
-        assert!(!has_custom_username("0xabcdef", "0xABCDEF"));
+        assert!(username_row("alice", "0x1234567890abcdef").has_custom_username());
+        assert!(!username_row("0x1234567890abcdef", "0x1234567890abcdef").has_custom_username());
+        assert!(!username_row("0xABCDEF", "0xabcdef").has_custom_username());
+        assert!(!username_row("0xabcdef", "0xABCDEF").has_custom_username());
     }
 
     #[test]

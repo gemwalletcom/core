@@ -17,6 +17,7 @@ pub enum ConfigKey {
     ReferralIneligibleCountries,
     ReferralVerificationDelay,
     ReferralEligibility,
+    ReferralCodeActivationSwapAmount,
 
     // Username
     UsernameCreationPerIp,
@@ -118,6 +119,7 @@ impl ConfigKey {
             Self::ReferralIneligibleCountries => "[]",
             Self::ReferralVerificationDelay => "24h",
             Self::ReferralEligibility => "7d",
+            Self::ReferralCodeActivationSwapAmount => "10",
             Self::UsernameCreationPerIp => "10",
             Self::UsernameCreationPerDevice => "1",
             Self::UsernameCreationGlobalDailyLimit => "1000",

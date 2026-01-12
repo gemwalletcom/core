@@ -2,6 +2,8 @@ CREATE TABLE rewards_levels_types (
     id VARCHAR(32) PRIMARY KEY
 );
 
+CREATE TYPE reward_status AS ENUM ('unverified', 'pending', 'verified', 'trusted', 'disabled');
+
 CREATE TABLE usernames (
     username VARCHAR(64) PRIMARY KEY,
     address VARCHAR(256) NOT NULL UNIQUE,
@@ -14,13 +16,13 @@ SELECT diesel_manage_updated_at('usernames');
 
 CREATE TABLE rewards (
     username VARCHAR(64) PRIMARY KEY REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
-    is_enabled BOOLEAN NOT NULL DEFAULT true,
+    status reward_status NOT NULL,
     level VARCHAR(32) REFERENCES rewards_levels_types(id),
     points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
     referrer_username VARCHAR(64) REFERENCES usernames(username) ON DELETE SET NULL ON UPDATE CASCADE,
     referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
     device_id INTEGER NOT NULL REFERENCES devices(id),
-    verified BOOLEAN NOT NULL DEFAULT false,
+    is_swap_complete BOOLEAN NOT NULL DEFAULT false,
     comment VARCHAR(512),
     disable_reason VARCHAR(256),
     updated_at timestamp NOT NULL default current_timestamp,

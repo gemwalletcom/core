@@ -54,7 +54,7 @@ impl RewardsClient {
             Err(e) => return Err(e.into()),
         };
 
-        rewards.referral_allowance = self.calculate_referral_allowance(address, rewards.verified)?;
+        rewards.referral_allowance = self.calculate_referral_allowance(address, rewards.status.is_verified())?;
         Ok(rewards)
     }
 
