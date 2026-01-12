@@ -111,15 +111,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    assets_types (id) {
-        #[max_length = 32]
-        id -> Varchar,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
     chains (id) {
         #[max_length = 32]
         id -> Varchar,
@@ -336,15 +327,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    link_types (id) {
-        #[max_length = 32]
-        id -> Varchar,
-        #[max_length = 255]
-        name -> Varchar,
-    }
-}
-
-diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::NftType;
 
@@ -434,13 +416,6 @@ diesel::table! {
         reviewed -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    nft_types (id) {
-        #[max_length = 32]
-        id -> Varchar,
     }
 }
 
@@ -649,21 +624,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    rewards_events_types (id) {
-        #[max_length = 64]
-        id -> Varchar,
-        points -> Int4,
-    }
-}
-
-diesel::table! {
-    rewards_levels_types (id) {
-        #[max_length = 32]
-        id -> Varchar,
-    }
-}
-
-diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::RewardRedemptionType;
 
@@ -700,13 +660,6 @@ diesel::table! {
         error -> Nullable<Varchar>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    rewards_redemptions_types (id) {
-        #[max_length = 32]
-        id -> Varchar,
     }
 }
 
@@ -793,13 +746,6 @@ diesel::table! {
         is_memo_required -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    scan_addresses_types (id) {
-        #[max_length = 32]
-        id -> Varchar,
     }
 }
 
@@ -893,15 +839,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    transactions_types (id) {
-        #[max_length = 32]
-        id -> Varchar,
-        #[max_length = 255]
-        name -> Varchar,
-    }
-}
-
-diesel::table! {
     usernames (username) {
         #[max_length = 64]
         username -> Varchar,
@@ -980,7 +917,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     assets_addresses,
     assets_links,
     assets_tags,
-    assets_types,
     chains,
     charts,
     charts_daily,
@@ -995,12 +931,10 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_rates,
     fiat_transactions,
     fiat_webhooks,
-    link_types,
     nft_assets,
     nft_collections,
     nft_collections_links,
     nft_reports,
-    nft_types,
     nodes,
     parser_state,
     perpetuals,
@@ -1014,22 +948,17 @@ diesel::allow_tables_to_appear_in_same_query!(
     releases,
     rewards,
     rewards_events,
-    rewards_events_types,
-    rewards_levels_types,
     rewards_redemption_options,
     rewards_redemptions,
-    rewards_redemptions_types,
     rewards_referral_attempts,
     rewards_referrals,
     rewards_risk_signals,
     scan_addresses,
-    scan_addresses_types,
     subscriptions,
     subscriptions_addresses_exclude,
     support,
     tags,
     transactions,
     transactions_addresses,
-    transactions_types,
     usernames,
 );
