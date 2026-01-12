@@ -19,12 +19,11 @@ pub use self::database::{
     rewards_redemptions::RedemptionUpdate,
 };
 pub use self::error::{DatabaseError, ReferralValidationError};
-pub use self::models::{RewardRedemptionOptionRow, ScanAddressTypeRow};
+pub use self::models::RewardRedemptionOptionRow;
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
-    assets_types_repository::AssetsTypesRepository, chains_repository::ChainsRepository, charts_repository::ChartsRepository,
-    config_repository::ConfigRepository, devices_repository::DevicesRepository, fiat_repository::FiatRepository, link_types_repository::LinkTypesRepository,
-    migrations_repository::MigrationsRepository, nft_repository::NftRepository, nodes_repository::NodesRepository,
+    chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository, devices_repository::DevicesRepository,
+    fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository, nodes_repository::NodesRepository,
     parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository,
     prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
     rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, risk_signals_repository::RiskSignalsRepository,
@@ -59,10 +58,6 @@ impl Database {
         self.client()
     }
 
-    pub fn assets_types(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
     pub fn chains(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
@@ -76,10 +71,6 @@ impl Database {
     }
 
     pub fn fiat(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
-    pub fn link_types(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 
@@ -120,14 +111,6 @@ impl Database {
     }
 
     pub fn rewards_redemptions(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
-    pub fn reward_event_types(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
-    pub fn reward_redemption_types(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 

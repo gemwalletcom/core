@@ -1,35 +1,22 @@
+use crate::models::{AssetRow, NewRewardRedemptionRow, RedemptionOptionFull, RewardRedemptionOptionRow, RewardRedemptionRow};
+use crate::sql_types::{RedemptionStatus, RewardRedemptionType};
 use crate::DatabaseClient;
-use crate::models::{AssetRow, NewRewardRedemptionRow, RedemptionOptionFull, RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 
 #[derive(Debug, Clone)]
 pub enum RedemptionUpdate {
-    Status(String),
+    Status(RedemptionStatus),
     TransactionId(String),
     Error(String),
-}
-
-pub trait RewardsRedemptionTypesStore {
-    fn add_reward_redemption_types(&mut self, redemption_types: Vec<RewardRedemptionTypeRow>) -> Result<usize, DieselError>;
-}
-
-impl RewardsRedemptionTypesStore for DatabaseClient {
-    fn add_reward_redemption_types(&mut self, redemption_types: Vec<RewardRedemptionTypeRow>) -> Result<usize, DieselError> {
-        use crate::schema::rewards_redemptions_types::dsl;
-        diesel::insert_into(dsl::rewards_redemptions_types)
-            .values(&redemption_types)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
-    }
 }
 
 pub(crate) trait RewardsRedemptionsStore {
     fn add_redemption(&mut self, username: &str, points: i32, redemption: NewRewardRedemptionRow) -> Result<i32, DieselError>;
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DieselError>;
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DieselError>;
-    fn get_redemption_options(&mut self, types: &[String]) -> Result<Vec<RedemptionOptionFull>, DieselError>;
+    fn get_redemption_options(&mut self, types: &[RewardRedemptionType]) -> Result<Vec<RedemptionOptionFull>, DieselError>;
     fn get_redemption_option(&mut self, id: &str) -> Result<RedemptionOptionFull, DieselError>;
     fn count_redemptions_since(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
 }
@@ -99,7 +86,7 @@ impl RewardsRedemptionsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn get_redemption_options(&mut self, types: &[String]) -> Result<Vec<RedemptionOptionFull>, DieselError> {
+    fn get_redemption_options(&mut self, types: &[RewardRedemptionType]) -> Result<Vec<RedemptionOptionFull>, DieselError> {
         use crate::schema::{assets, rewards_redemption_options};
         rewards_redemption_options::table
             .filter(rewards_redemption_options::redemption_type.eq_any(types))

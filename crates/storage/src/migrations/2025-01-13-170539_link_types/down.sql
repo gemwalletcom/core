@@ -1,1 +1,1 @@
-drop table link_types;
+DROP TYPE IF EXISTS link_type;

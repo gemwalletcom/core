@@ -1,2 +1,2 @@
-drop table nft_assets;
-drop table nft_types;
+DROP TABLE IF EXISTS nft_assets;
+DROP TYPE IF EXISTS nft_type;

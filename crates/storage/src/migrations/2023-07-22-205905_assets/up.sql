@@ -2,7 +2,7 @@ CREATE TABLE assets (
     id VARCHAR(128) PRIMARY KEY,
     chain VARCHAR(32) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     token_id VARCHAR(128),
-    asset_type VARCHAR(16) NOT NULL REFERENCES assets_types (id) ON DELETE CASCADE,
+    asset_type asset_type NOT NULL,
     name VARCHAR(64) NOT NULL,
     symbol VARCHAR(16) NOT NULL,
     decimals INTEGER NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE assets (
     is_swappable boolean NOT NULL default false,
     is_stakeable boolean NOT NULL default false,
     staking_apr float,
-    
+
     UNIQUE(id)
 );
 

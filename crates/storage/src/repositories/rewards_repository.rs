@@ -4,12 +4,12 @@ use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow, UsernameRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
-use crate::sql_types::RewardStatus;
+use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus};
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
-use primitives::rewards::{ReferralActivation, ReferralCodeActivation, RewardRedemptionType};
-use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, RewardEventType, Rewards, now};
+use primitives::rewards::{ReferralActivation, ReferralCodeActivation};
+use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, now};
 
 fn validate_username(username: &str) -> Result<(), DatabaseError> {
     let len = username.len();
@@ -38,7 +38,7 @@ fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, devic
         client,
         NewRewardsRow {
             username: address.to_string(),
-            status: RewardStatus::UNVERIFIED,
+            status: RewardStatus::Unverified,
             level: None,
             points: 0,
             referrer_username: None,
@@ -100,7 +100,7 @@ impl RewardsRepository for DatabaseClient {
 
         let status = *rewards.status;
         let options = if status.is_enabled() {
-            let types: Vec<_> = [RewardRedemptionType::Asset].iter().map(|t| t.as_ref().to_string()).collect();
+            let types = [RewardRedemptionType::Asset];
             RewardsRedemptionsRepository::get_redemption_options(self, &types)?
         } else {
             vec![]
@@ -172,7 +172,7 @@ impl RewardsRepository for DatabaseClient {
                 self,
                 NewRewardsRow {
                     username: username.to_string(),
-                    status: RewardStatus::UNVERIFIED,
+                    status: RewardStatus::Unverified,
                     level: None,
                     points: 0,
                     referrer_username: None,
@@ -189,7 +189,7 @@ impl RewardsRepository for DatabaseClient {
             self,
             NewRewardEventRow {
                 username: username.to_string(),
-                event_type: RewardEventType::CreateUsername.as_ref().to_string(),
+                event_type: RewardEventType::CreateUsername,
             },
             RewardEventType::CreateUsername.points(),
         )?;
@@ -313,10 +313,7 @@ impl RewardsRepository for DatabaseClient {
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError> {
         let current = now();
         let limit = 10;
-        let invite_types: Vec<String> = vec![RewardEventType::InviteNew, RewardEventType::InviteExisting]
-            .into_iter()
-            .map(|t| t.as_ref().to_string())
-            .collect();
+        let invite_types = [RewardEventType::InviteNew, RewardEventType::InviteExisting];
 
         let map_entry = |(username, referrals, points): (String, i64, i64)| ReferralLeader {
             username,
@@ -324,17 +321,17 @@ impl RewardsRepository for DatabaseClient {
             points: points as i32,
         };
 
-        let daily = RewardsStore::get_top_referrers_since(self, invite_types.clone(), current.days_ago(1), limit)?
+        let daily = RewardsStore::get_top_referrers_since(self, &invite_types, current.days_ago(1), limit)?
             .into_iter()
             .map(map_entry)
             .collect();
 
-        let weekly = RewardsStore::get_top_referrers_since(self, invite_types.clone(), current.days_ago(7), limit)?
+        let weekly = RewardsStore::get_top_referrers_since(self, &invite_types, current.days_ago(7), limit)?
             .into_iter()
             .map(map_entry)
             .collect();
 
-        let monthly = RewardsStore::get_top_referrers_since(self, invite_types, current.days_ago(30), limit)?
+        let monthly = RewardsStore::get_top_referrers_since(self, &invite_types, current.days_ago(30), limit)?
             .into_iter()
             .map(map_entry)
             .collect();
@@ -452,7 +449,7 @@ impl DatabaseClient {
             self,
             NewRewardEventRow {
                 username: referrer_username.to_string(),
-                event_type: RewardEventType::InviteNew.as_ref().to_string(),
+                event_type: RewardEventType::InviteNew,
             },
             RewardEventType::InviteNew.points(),
         )?;
@@ -461,7 +458,7 @@ impl DatabaseClient {
             self,
             NewRewardEventRow {
                 username: referred_username.to_string(),
-                event_type: RewardEventType::Joined.as_ref().to_string(),
+                event_type: RewardEventType::Joined,
             },
             RewardEventType::Joined.points(),
         )?;
@@ -474,7 +471,7 @@ impl DatabaseClient {
             self,
             NewRewardEventRow {
                 username: referrer_username.to_string(),
-                event_type: RewardEventType::InvitePending.as_ref().to_string(),
+                event_type: RewardEventType::InvitePending,
             },
             RewardEventType::InvitePending.points(),
         )?;

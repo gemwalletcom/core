@@ -1,12 +1,10 @@
 pub mod asset;
 pub mod asset_address;
-pub mod asset_type;
 pub mod chain;
 pub mod chart;
 pub mod config;
 pub mod device;
 pub mod fiat;
-pub mod link;
 pub mod nft_asset;
 pub mod nft_collection;
 pub mod nft_link;
@@ -29,7 +27,6 @@ pub mod username;
 
 pub use self::asset::{AssetLinkRow, AssetRow};
 pub use self::asset_address::AssetAddressRow;
-pub use self::asset_type::AssetTypeRow;
 pub use self::chain::ChainRow;
 pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};
 pub use self::config::ConfigRow;
@@ -38,8 +35,7 @@ pub use self::fiat::{
     FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow,
     NewFiatWebhookRow,
 };
-pub use self::link::LinkTypeRow;
-pub use self::nft_asset::{NftAssetRow, NftTypeRow};
+pub use self::nft_asset::NftAssetRow;
 pub use self::nft_collection::NftCollectionRow;
 pub use self::nft_link::NftLinkRow;
 pub use self::nft_report::NewNftReportRow;
@@ -52,13 +48,12 @@ pub use self::price_dex::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};
 pub use self::release::ReleaseRow;
 pub use self::reward::{
     NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, RedemptionOptionFull, ReferralAttemptRow, RewardEventRow,
-    RewardEventTypeRow, RewardLevelTypeRow, RewardRedemptionOptionRow, RewardRedemptionRow, RewardRedemptionTypeRow, RewardReferralRow, RewardsRow,
-    RiskSignalRow,
+    RewardRedemptionOptionRow, RewardRedemptionRow, RewardReferralRow, RewardsRow, RiskSignalRow,
 };
-pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow, ScanAddressTypeRow};
+pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow};
 pub use self::subscription::{SubscriptionAddressExcludeRow, SubscriptionRow};
 pub use self::support::SupportRow;
 pub use self::tag::{AssetTagRow, TagRow};
-pub use self::transaction::{NewTransactionRow, TransactionRow, TransactionTypeRow};
+pub use self::transaction::{NewTransactionRow, TransactionRow};
 pub use self::transaction_addresses::{AddressChainIdResultRow, NewTransactionAddressesRow, TransactionAddressesRow};
 pub use self::username::{NewUsernameRow, UsernameRow};

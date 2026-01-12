@@ -2,8 +2,8 @@ CREATE TABLE assets_links (
     id SERIAL PRIMARY KEY,
 
     asset_id VARCHAR(128) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
-    
-    link_type VARCHAR(128) NOT NULL REFERENCES link_types (id) ON DELETE CASCADE,
+
+    link_type link_type NOT NULL,
 
     url VARCHAR(256) NOT NULL,
 

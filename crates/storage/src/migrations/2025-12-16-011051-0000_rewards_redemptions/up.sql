@@ -1,10 +1,9 @@
-CREATE TABLE rewards_redemptions_types (
-    id VARCHAR(32) PRIMARY KEY
-);
+CREATE TYPE reward_redemption_type AS ENUM ('asset', 'giftAsset');
+CREATE TYPE redemption_status AS ENUM ('pending', 'completed', 'failed');
 
 CREATE TABLE rewards_redemption_options (
     id VARCHAR(64) PRIMARY KEY,
-    redemption_type VARCHAR(32) NOT NULL REFERENCES rewards_redemptions_types(id) ON DELETE CASCADE,
+    redemption_type reward_redemption_type NOT NULL,
     points INT NOT NULL,
     asset_id VARCHAR(128) REFERENCES assets(id) ON DELETE CASCADE,
     value VARCHAR(64) NOT NULL,
@@ -21,7 +20,7 @@ CREATE TABLE rewards_redemptions (
     option_id VARCHAR(64) NOT NULL REFERENCES rewards_redemption_options(id) ON DELETE CASCADE,
     device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     transaction_id VARCHAR(512),
-    status VARCHAR(32) NOT NULL,
+    status redemption_status NOT NULL,
     error VARCHAR(1024),
     updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp

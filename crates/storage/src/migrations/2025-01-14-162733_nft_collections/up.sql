@@ -2,7 +2,7 @@ CREATE TABLE nft_collections (
     id VARCHAR(512) PRIMARY KEY NOT NULL,
 
     chain VARCHAR(64) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
-    
+
     name VARCHAR(1024) NOT NULL,
     description VARCHAR(4096) NOT NULL,
     symbol VARCHAR(128),
@@ -26,8 +26,8 @@ CREATE TABLE nft_collections_links (
     id SERIAL PRIMARY KEY,
 
     collection_id VARCHAR(128) NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
-    
-    link_type VARCHAR(32) NOT NULL REFERENCES link_types (id) ON DELETE CASCADE,
+
+    link_type link_type NOT NULL,
 
     url VARCHAR(256) NOT NULL,
 

@@ -1,10 +1,9 @@
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use diesel::prelude::*;
-use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption, RewardRedemptionType};
-use primitives::{Asset, RewardEvent, RewardEventType, RewardLevel};
-use std::str::FromStr;
+use primitives::rewards::{RewardRedemption, RewardRedemptionOption};
+use primitives::{Asset, RewardEvent};
 
-use crate::sql_types::RewardStatus;
+use crate::sql_types::{RedemptionStatus, RewardEventType, RewardRedemptionType, RewardStatus};
 
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
@@ -62,36 +61,19 @@ pub struct NewRewardReferralRow {
     pub verified_at: Option<NaiveDateTime>,
 }
 
-#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
-#[diesel(table_name = crate::schema::rewards_events_types)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct RewardEventTypeRow {
-    pub id: String,
-    pub points: i32,
-}
-
-impl RewardEventTypeRow {
-    pub fn from_primitive(event: RewardEventType) -> Self {
-        Self {
-            id: event.as_ref().to_string(),
-            points: event.points(),
-        }
-    }
-}
-
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards_events)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardEventRow {
     pub id: i32,
     pub username: String,
-    pub event_type: String,
+    pub event_type: RewardEventType,
     pub created_at: NaiveDateTime,
 }
 
 impl RewardEventRow {
     pub fn as_primitive(&self) -> RewardEvent {
-        let event = RewardEventType::from_str(&self.event_type).unwrap();
+        let event = self.event_type.0.clone();
         RewardEvent {
             points: event.points(),
             event,
@@ -104,37 +86,7 @@ impl RewardEventRow {
 #[diesel(table_name = crate::schema::rewards_events)]
 pub struct NewRewardEventRow {
     pub username: String,
-    pub event_type: String,
-}
-
-#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
-#[diesel(table_name = crate::schema::rewards_levels_types)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct RewardLevelTypeRow {
-    pub id: String,
-}
-
-impl RewardLevelTypeRow {
-    pub fn from_primitive(level: RewardLevel) -> Self {
-        Self {
-            id: level.as_ref().to_string(),
-        }
-    }
-}
-
-#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
-#[diesel(table_name = crate::schema::rewards_redemptions_types)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct RewardRedemptionTypeRow {
-    pub id: String,
-}
-
-impl RewardRedemptionTypeRow {
-    pub fn from_primitive(redemption_type: RewardRedemptionType) -> Self {
-        Self {
-            id: redemption_type.as_ref().to_string(),
-        }
-    }
+    pub event_type: RewardEventType,
 }
 
 #[derive(Debug, Queryable, Selectable, Clone)]
@@ -146,7 +98,7 @@ pub struct RewardRedemptionRow {
     pub option_id: String,
     pub device_id: i32,
     pub transaction_id: Option<String>,
-    pub status: String,
+    pub status: RedemptionStatus,
     pub error: Option<String>,
     pub updated_at: NaiveDateTime,
     pub created_at: NaiveDateTime,
@@ -157,7 +109,7 @@ impl RewardRedemptionRow {
         RewardRedemption {
             id: self.id,
             option,
-            status: RedemptionStatus::from_str(&self.status).unwrap_or(RedemptionStatus::Pending),
+            status: *self.status,
             transaction_id: self.transaction_id.clone(),
             created_at: Utc.from_utc_datetime(&self.created_at),
         }
@@ -170,7 +122,7 @@ pub struct NewRewardRedemptionRow {
     pub username: String,
     pub option_id: String,
     pub device_id: i32,
-    pub status: String,
+    pub status: RedemptionStatus,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, Clone)]
@@ -178,7 +130,7 @@ pub struct NewRewardRedemptionRow {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RewardRedemptionOptionRow {
     pub id: String,
-    pub redemption_type: String,
+    pub redemption_type: RewardRedemptionType,
     pub points: i32,
     pub asset_id: Option<String>,
     pub value: String,
@@ -191,7 +143,7 @@ impl RewardRedemptionOptionRow {
     pub fn as_primitive(&self, asset: Option<Asset>) -> RewardRedemptionOption {
         RewardRedemptionOption {
             id: self.id.clone(),
-            redemption_type: RewardRedemptionType::from_str(&self.redemption_type).unwrap(),
+            redemption_type: *self.redemption_type,
             points: self.points,
             asset,
             value: self.value.clone(),

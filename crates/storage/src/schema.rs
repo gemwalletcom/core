@@ -2,11 +2,46 @@
 
 pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "address_type"))]
+    pub struct AddressType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "asset_type"))]
+    pub struct AssetType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "link_type"))]
+    pub struct LinkType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "nft_type"))]
+    pub struct NftType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "redemption_status"))]
+    pub struct RedemptionStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "reward_event_type"))]
+    pub struct RewardEventType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "reward_redemption_type"))]
+    pub struct RewardRedemptionType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "reward_status"))]
     pub struct RewardStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "transaction_type"))]
+    pub struct TransactionType;
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::AssetType;
+
     assets (id) {
         #[max_length = 128]
         id -> Varchar,
@@ -14,8 +49,7 @@ diesel::table! {
         chain -> Varchar,
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
-        #[max_length = 16]
-        asset_type -> Varchar,
+        asset_type -> AssetType,
         #[max_length = 64]
         name -> Varchar,
         #[max_length = 16]
@@ -50,12 +84,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::LinkType;
+
     assets_links (id) {
         id -> Int4,
         #[max_length = 128]
         asset_id -> Varchar,
-        #[max_length = 128]
-        link_type -> Varchar,
+        link_type -> LinkType,
         #[max_length = 256]
         url -> Varchar,
         updated_at -> Timestamp,
@@ -309,6 +345,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::NftType;
+
     nft_assets (id) {
         #[max_length = 512]
         id -> Varchar,
@@ -328,8 +367,7 @@ diesel::table! {
         resource_url -> Nullable<Varchar>,
         #[max_length = 64]
         resource_mime_type -> Nullable<Varchar>,
-        #[max_length = 32]
-        token_type -> Varchar,
+        token_type -> NftType,
         #[max_length = 512]
         token_id -> Varchar,
         #[max_length = 512]
@@ -368,12 +406,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::LinkType;
+
     nft_collections_links (id) {
         id -> Int4,
         #[max_length = 128]
         collection_id -> Varchar,
-        #[max_length = 32]
-        link_type -> Varchar,
+        link_type -> LinkType,
         #[max_length = 256]
         url -> Varchar,
         updated_at -> Timestamp,
@@ -595,12 +635,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::RewardEventType;
+
     rewards_events (id) {
         id -> Int4,
         #[max_length = 64]
         username -> Varchar,
-        #[max_length = 64]
-        event_type -> Varchar,
+        event_type -> RewardEventType,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -622,11 +664,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::RewardRedemptionType;
+
     rewards_redemption_options (id) {
         #[max_length = 64]
         id -> Varchar,
-        #[max_length = 32]
-        redemption_type -> Varchar,
+        redemption_type -> RewardRedemptionType,
         points -> Int4,
         #[max_length = 128]
         asset_id -> Nullable<Varchar>,
@@ -639,6 +683,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::RedemptionStatus;
+
     rewards_redemptions (id) {
         id -> Int4,
         #[max_length = 64]
@@ -648,8 +695,7 @@ diesel::table! {
         device_id -> Int4,
         #[max_length = 512]
         transaction_id -> Nullable<Varchar>,
-        #[max_length = 32]
-        status -> Varchar,
+        status -> RedemptionStatus,
         #[max_length = 1024]
         error -> Nullable<Varchar>,
         updated_at -> Timestamp,
@@ -730,6 +776,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::AddressType;
+
     scan_addresses (id) {
         id -> Int4,
         chain -> Varchar,
@@ -738,8 +787,7 @@ diesel::table! {
         #[max_length = 128]
         name -> Nullable<Varchar>,
         #[sql_name = "type"]
-        #[max_length = 32]
-        type_ -> Nullable<Varchar>,
+        type_ -> AddressType,
         is_verified -> Bool,
         is_fraudulent -> Bool,
         is_memo_required -> Bool,
@@ -801,6 +849,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::TransactionType;
+
     transactions (id) {
         id -> Int8,
         #[max_length = 16]
@@ -815,8 +866,7 @@ diesel::table! {
         memo -> Nullable<Varchar>,
         #[max_length = 16]
         state -> Varchar,
-        #[max_length = 16]
-        kind -> Varchar,
+        kind -> TransactionType,
         #[max_length = 256]
         value -> Nullable<Varchar>,
         asset_id -> Varchar,
@@ -863,12 +913,10 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(assets -> assets_types (asset_type));
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_addresses -> assets (asset_id));
 diesel::joinable!(assets_addresses -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
-diesel::joinable!(assets_links -> link_types (link_type));
 diesel::joinable!(assets_tags -> assets (asset_id));
 diesel::joinable!(assets_tags -> tags (tag_id));
 diesel::joinable!(charts -> prices (coin_id));
@@ -887,9 +935,7 @@ diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
 diesel::joinable!(fiat_webhooks -> fiat_providers (provider));
 diesel::joinable!(nft_assets -> chains (chain));
 diesel::joinable!(nft_assets -> nft_collections (collection_id));
-diesel::joinable!(nft_assets -> nft_types (token_type));
 diesel::joinable!(nft_collections -> chains (chain));
-diesel::joinable!(nft_collections_links -> link_types (link_type));
 diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
 diesel::joinable!(nft_reports -> devices (device_id));
 diesel::joinable!(nft_reports -> nft_assets (asset_id));
@@ -908,11 +954,8 @@ diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
 diesel::joinable!(rewards -> devices (device_id));
-diesel::joinable!(rewards -> rewards_levels_types (level));
-diesel::joinable!(rewards_events -> rewards_events_types (event_type));
 diesel::joinable!(rewards_events -> usernames (username));
 diesel::joinable!(rewards_redemption_options -> assets (asset_id));
-diesel::joinable!(rewards_redemption_options -> rewards_redemptions_types (redemption_type));
 diesel::joinable!(rewards_redemptions -> devices (device_id));
 diesel::joinable!(rewards_redemptions -> rewards (username));
 diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
@@ -924,13 +967,11 @@ diesel::joinable!(rewards_referrals -> rewards_risk_signals (risk_signal_id));
 diesel::joinable!(rewards_risk_signals -> devices (device_id));
 diesel::joinable!(rewards_risk_signals -> rewards (referrer_username));
 diesel::joinable!(scan_addresses -> chains (chain));
-diesel::joinable!(scan_addresses -> scan_addresses_types (type_));
 diesel::joinable!(subscriptions -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
 diesel::joinable!(support -> devices (device_id));
 diesel::joinable!(transactions -> chains (chain));
-diesel::joinable!(transactions -> transactions_types (kind));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 

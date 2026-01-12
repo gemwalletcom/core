@@ -1,8 +1,5 @@
-CREATE TABLE rewards_levels_types (
-    id VARCHAR(32) PRIMARY KEY
-);
-
 CREATE TYPE reward_status AS ENUM ('unverified', 'pending', 'verified', 'trusted', 'disabled');
+CREATE TYPE reward_event_type AS ENUM ('createUsername', 'invitePending', 'inviteNew', 'inviteExisting', 'joined', 'disabled');
 
 CREATE TABLE usernames (
     username VARCHAR(64) PRIMARY KEY,
@@ -17,7 +14,7 @@ SELECT diesel_manage_updated_at('usernames');
 CREATE TABLE rewards (
     username VARCHAR(64) PRIMARY KEY REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
     status reward_status NOT NULL,
-    level VARCHAR(32) REFERENCES rewards_levels_types(id),
+    level VARCHAR(32),
     points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
     referrer_username VARCHAR(64) REFERENCES usernames(username) ON DELETE SET NULL ON UPDATE CASCADE,
     referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
@@ -73,15 +70,10 @@ CREATE INDEX rewards_referrals_referred_device_id_idx ON rewards_referrals(refer
 
 SELECT diesel_manage_updated_at('rewards_referrals');
 
-CREATE TABLE rewards_events_types (
-    id VARCHAR(64) PRIMARY KEY,
-    points INT NOT NULL
-);
-
 CREATE TABLE rewards_events (
     id SERIAL PRIMARY KEY,
     username VARCHAR(64) NOT NULL REFERENCES usernames(username) ON DELETE CASCADE ON UPDATE CASCADE,
-    event_type VARCHAR(64) NOT NULL REFERENCES rewards_events_types(id) ON DELETE CASCADE,
+    event_type reward_event_type NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

@@ -1,4 +1,1 @@
-CREATE TABLE link_types (
-    id VARCHAR(32) PRIMARY KEY NOT NULL,
-    name VARCHAR(255) NOT NULL default ''
-);
+CREATE TYPE link_type AS ENUM ('x', 'discord', 'reddit', 'telegram', 'github', 'youtube', 'facebook', 'website', 'coingecko', 'opensea', 'instagram', 'magiceden', 'coinmarketcap', 'tiktok');
