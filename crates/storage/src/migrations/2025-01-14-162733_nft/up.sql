@@ -1,4 +1,3 @@
-CREATE TYPE link_type AS ENUM ('x', 'discord', 'reddit', 'telegram', 'github', 'youtube', 'facebook', 'website', 'coingecko', 'opensea', 'instagram', 'magiceden', 'coinmarketcap', 'tiktok');
 CREATE TYPE nft_type AS ENUM ('ERC721', 'ERC1155', 'SPL', 'JETTON');
 
 CREATE TABLE nft_collections (

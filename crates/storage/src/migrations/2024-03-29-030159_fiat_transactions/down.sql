@@ -1,1 +1,0 @@
-drop table fiat_transactions;

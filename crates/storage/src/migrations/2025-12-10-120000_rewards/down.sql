@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS rewards_referral_attempts;
 DROP TABLE IF EXISTS rewards_events;
 DROP TABLE IF EXISTS rewards_referrals;
 DROP TABLE IF EXISTS rewards_risk_signals;

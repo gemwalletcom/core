@@ -1,2 +1,7 @@
+DROP TABLE IF EXISTS assets_addresses;
+DROP TABLE IF EXISTS assets_links;
+DROP TABLE IF EXISTS assets_tags;
+DROP TABLE IF EXISTS tags;
 DROP TABLE IF EXISTS assets;
+DROP TYPE IF EXISTS link_type;
 DROP TYPE IF EXISTS asset_type;
