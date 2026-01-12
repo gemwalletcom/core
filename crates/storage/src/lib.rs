@@ -23,7 +23,7 @@ pub use self::models::RewardRedemptionOptionRow;
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
     chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository, devices_repository::DevicesRepository,
-    fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository, nodes_repository::NodesRepository,
+    fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
     parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository,
     prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
     rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, risk_signals_repository::RiskSignalsRepository,
@@ -83,10 +83,6 @@ impl Database {
     }
 
     pub fn nft(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
-    pub fn nodes(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 

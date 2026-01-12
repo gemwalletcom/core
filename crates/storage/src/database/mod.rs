@@ -9,7 +9,6 @@ pub mod devices;
 pub mod fiat;
 pub mod migrations;
 pub mod nft;
-pub mod nodes;
 pub mod parser_state;
 pub mod perpetuals;
 pub mod price_alerts;
@@ -35,7 +34,7 @@ pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 use crate::{
     AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository,
-    FiatRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository, PriceAlertsRepository,
+    FiatRepository, MigrationsRepository, NftRepository, ParserStateRepository, PerpetualsRepository, PriceAlertsRepository,
     PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRedemptionsRepository, RewardsRepository, ScanAddressesRepository,
     SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
 };
@@ -99,10 +98,6 @@ impl DatabaseClient {
     }
 
     pub fn nft(&mut self) -> &mut dyn NftRepository {
-        self
-    }
-
-    pub fn nodes(&mut self) -> &mut dyn NodesRepository {
         self
     }
 

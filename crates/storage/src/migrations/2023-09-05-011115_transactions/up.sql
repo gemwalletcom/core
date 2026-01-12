@@ -1,4 +1,5 @@
 CREATE TYPE transaction_type AS ENUM ('transfer', 'transferNFT', 'swap', 'tokenApproval', 'stakeDelegate', 'stakeUndelegate', 'stakeRewards', 'stakeRedelegate', 'stakeWithdraw', 'stakeFreeze', 'stakeUnfreeze', 'assetActivation', 'smartContractCall', 'perpetualOpenPosition', 'perpetualClosePosition', 'perpetualModifyPosition');
+CREATE TYPE transaction_state AS ENUM ('pending', 'confirmed', 'failed', 'reverted');
 
 CREATE TABLE transactions
 (
@@ -8,7 +9,7 @@ CREATE TABLE transactions
     from_address VARCHAR(256),
     to_address   VARCHAR(256),
     memo         VARCHAR(256),
-    state        VARCHAR(16)  NOT NULL,
+    state        transaction_state NOT NULL,
     kind         transaction_type NOT NULL,
     value        VARCHAR(256),
     asset_id     VARCHAR      NOT NULL REFERENCES assets (id) ON DELETE CASCADE,

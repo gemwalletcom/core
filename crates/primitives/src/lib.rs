@@ -90,6 +90,8 @@ pub mod transaction_type;
 pub use self::transaction_type::TransactionType;
 pub mod transaction_state;
 pub use self::transaction_state::TransactionState;
+pub mod username_status;
+pub use self::username_status::UsernameStatus;
 pub mod recent_activity_type;
 pub use self::recent_activity_type::RecentActivityType;
 pub mod transaction_direction;

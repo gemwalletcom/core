@@ -18,6 +18,14 @@ pub mod sql_types {
     pub struct NftType;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "platform"))]
+    pub struct Platform;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "platform_store"))]
+    pub struct PlatformStore;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "redemption_status"))]
     pub struct RedemptionStatus;
 
@@ -34,8 +42,16 @@ pub mod sql_types {
     pub struct RewardStatus;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "transaction_state"))]
+    pub struct TransactionState;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "transaction_type"))]
     pub struct TransactionType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "username_status"))]
+    pub struct UsernameStatus;
 }
 
 diesel::table! {
@@ -160,15 +176,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::Platform;
+    use super::sql_types::PlatformStore;
+
     devices (id) {
         id -> Int4,
         #[max_length = 32]
         device_id -> Varchar,
         is_push_enabled -> Bool,
-        #[max_length = 8]
-        platform -> Varchar,
-        #[max_length = 32]
-        platform_store -> Nullable<Varchar>,
+        platform -> Platform,
+        platform_store -> PlatformStore,
         #[max_length = 256]
         token -> Varchar,
         #[max_length = 8]
@@ -182,9 +200,9 @@ diesel::table! {
         subscriptions_version -> Int4,
         is_price_alerts_enabled -> Bool,
         #[max_length = 64]
-        os -> Nullable<Varchar>,
+        os -> Varchar,
         #[max_length = 128]
-        model -> Nullable<Varchar>,
+        model -> Varchar,
     }
 }
 
@@ -420,19 +438,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    nodes (id) {
-        id -> Int4,
-        chain -> Varchar,
-        url -> Varchar,
-        status -> Varchar,
-        priority -> Int4,
-        updated_at -> Nullable<Timestamp>,
-        created_at -> Nullable<Timestamp>,
-        node_type -> Varchar,
-    }
-}
-
-diesel::table! {
     parser_state (chain) {
         chain -> Varchar,
         current_block -> Int8,
@@ -573,9 +578,11 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::PlatformStore;
+
     releases (platform_store) {
-        #[max_length = 32]
-        platform_store -> Varchar,
+        platform_store -> PlatformStore,
         #[max_length = 32]
         version -> Varchar,
         upgrade_required -> Bool,
@@ -796,6 +803,7 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
+    use super::sql_types::TransactionState;
     use super::sql_types::TransactionType;
 
     transactions (id) {
@@ -810,8 +818,7 @@ diesel::table! {
         to_address -> Nullable<Varchar>,
         #[max_length = 256]
         memo -> Nullable<Varchar>,
-        #[max_length = 16]
-        state -> Varchar,
+        state -> TransactionState,
         kind -> TransactionType,
         #[max_length = 256]
         value -> Nullable<Varchar>,
@@ -839,12 +846,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::UsernameStatus;
+
     usernames (username) {
         #[max_length = 64]
         username -> Varchar,
         #[max_length = 256]
         address -> Varchar,
-        is_verified -> Bool,
+        status -> UsernameStatus,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -877,7 +887,6 @@ diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
 diesel::joinable!(nft_reports -> devices (device_id));
 diesel::joinable!(nft_reports -> nft_assets (asset_id));
 diesel::joinable!(nft_reports -> nft_collections (collection_id));
-diesel::joinable!(nodes -> chains (chain));
 diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(perpetuals -> assets (asset_id));
 diesel::joinable!(perpetuals_assets -> assets (asset_id));
@@ -935,7 +944,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     nft_collections,
     nft_collections_links,
     nft_reports,
-    nodes,
     parser_state,
     perpetuals,
     perpetuals_assets,

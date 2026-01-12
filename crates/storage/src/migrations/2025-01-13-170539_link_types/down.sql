@@ -1,1 +1,0 @@
-DROP TYPE IF EXISTS link_type;

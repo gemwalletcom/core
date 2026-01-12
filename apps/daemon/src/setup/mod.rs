@@ -1,6 +1,7 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
-use primitives::{Asset, AssetTag, Chain, ConfigKey, FiatProviderName, Platform, PlatformStore, Subscription};
+use primitives::{Asset, AssetTag, Chain, ConfigKey, FiatProviderName, PlatformStore as PrimitivePlatformStore, Subscription};
+use storage::sql_types::{Platform, PlatformStore};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
@@ -44,10 +45,10 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
 
     info_with_fields!("setup", step = "releases");
 
-    let releases = PlatformStore::all()
+    let releases = PrimitivePlatformStore::all()
         .into_iter()
         .map(|x| storage::models::ReleaseRow {
-            platform_store: x.as_ref().to_string(),
+            platform_store: x.into(),
             version: "1.0.0".to_string(),
             upgrade_required: false,
         })
@@ -148,8 +149,8 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
 
     let ios_device = UpdateDeviceRow {
         device_id: "test".to_string(),
-        platform: Platform::IOS.as_ref().to_string(),
-        platform_store: Some(PlatformStore::AppStore.as_ref().to_string()),
+        platform: Platform::IOS,
+        platform_store: PlatformStore::AppStore,
         token: "test_token".to_string(),
         locale: "en".to_string(),
         currency: fiat_rate.id.clone(),
@@ -157,14 +158,14 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         is_price_alerts_enabled: true,
         version: "1.0.0".to_string(),
         subscriptions_version: 1,
-        os: Some("iOS 18".to_string()),
-        model: Some("iPhone 16".to_string()),
+        os: "iOS 18".to_string(),
+        model: "iPhone 16".to_string(),
     };
 
     let android_device = UpdateDeviceRow {
         device_id: "test-android".to_string(),
-        platform: Platform::Android.as_ref().to_string(),
-        platform_store: Some(PlatformStore::GooglePlay.as_ref().to_string()),
+        platform: Platform::Android,
+        platform_store: PlatformStore::GooglePlay,
         token: "test_token_android".to_string(),
         locale: "en".to_string(),
         currency: fiat_rate.id.clone(),
@@ -172,8 +173,8 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         is_price_alerts_enabled: true,
         version: "1.0.0".to_string(),
         subscriptions_version: 1,
-        os: Some("Android 15".to_string()),
-        model: Some("Pixel 9".to_string()),
+        os: "Android 15".to_string(),
+        model: "Pixel 9".to_string(),
     };
 
     let _ = database.devices()?.add_device(ios_device).expect("Failed to add iOS device");

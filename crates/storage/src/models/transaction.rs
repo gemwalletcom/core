@@ -2,10 +2,10 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetId, Chain, Transaction, TransactionDirection, TransactionId, TransactionState, TransactionUtxoInput};
+use primitives::{AssetId, Chain, Transaction, TransactionDirection, TransactionId, TransactionUtxoInput};
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::TransactionType;
+use crate::sql_types::{TransactionState, TransactionType};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::transactions)]
@@ -17,7 +17,7 @@ pub struct TransactionRow {
     pub from_address: Option<String>,
     pub to_address: Option<String>,
     pub memo: Option<String>,
-    pub state: String,
+    pub state: TransactionState,
     pub kind: TransactionType,
     pub value: Option<String>,
     pub asset_id: String,
@@ -38,7 +38,7 @@ pub struct NewTransactionRow {
     pub from_address: Option<String>,
     pub to_address: Option<String>,
     pub memo: Option<String>,
-    pub state: String,
+    pub state: TransactionState,
     pub kind: TransactionType,
     pub value: Option<String>,
     pub asset_id: String,
@@ -80,7 +80,7 @@ impl TransactionRow {
             to: to_address.clone(),
             contract: None,
             transaction_type,
-            state: TransactionState::new(self.state.as_str()).unwrap(),
+            state: self.state.0.clone(),
             block_number: None,
             sequence: None,
             fee: self.fee.clone().unwrap(),
@@ -132,7 +132,7 @@ impl NewTransactionRow {
             from_address,
             to_address,
             kind: transaction.transaction_type.into(),
-            state: transaction.state.to_string(),
+            state: transaction.state.into(),
             utxo_inputs,
             utxo_outputs,
             metadata,

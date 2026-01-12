@@ -9,9 +9,9 @@ use crate::{PlatformStore, platform::Platform};
 pub struct Device {
     pub id: String,
     pub platform: Platform,
-    pub os: Option<String>,
-    pub model: Option<String>,
-    pub platform_store: Option<PlatformStore>,
+    pub platform_store: PlatformStore,
+    pub os: String,
+    pub model: String,
     pub token: String,
     pub locale: String,
     pub version: String,

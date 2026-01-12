@@ -1,1 +1,1 @@
-drop table assets_links;
+DROP TABLE IF EXISTS assets_links;

@@ -1,1 +1,2 @@
-drop table assets;
+DROP TABLE IF EXISTS assets;
+DROP TYPE IF EXISTS asset_type;

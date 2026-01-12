@@ -9,7 +9,9 @@ use primitives::rewards::{
 };
 use primitives::scan::AddressType as PrimitiveAddressType;
 use primitives::{
-    AssetType as PrimitiveAssetType, LinkType as PrimitiveLinkType, TransactionType as PrimitiveTransactionType,
+    AssetType as PrimitiveAssetType, LinkType as PrimitiveLinkType, Platform as PrimitivePlatform,
+    PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState,
+    TransactionType as PrimitiveTransactionType, UsernameStatus as PrimitiveUsernameStatus,
 };
 use serde::{Deserialize, Serialize};
 use std::io::Write;
@@ -18,8 +20,10 @@ use std::str::FromStr;
 
 use crate::schema::sql_types::{
     AddressType as AddressTypeSql, AssetType as AssetTypeSql, LinkType as LinkTypeSql, NftType as NftTypeSql,
-    RedemptionStatus as RedemptionStatusSql, RewardEventType as RewardEventTypeSql,
-    RewardRedemptionType as RewardRedemptionTypeSql, RewardStatus as RewardStatusSql, TransactionType as TransactionTypeSql,
+    Platform as PlatformSql, PlatformStore as PlatformStoreSql, RedemptionStatus as RedemptionStatusSql,
+    RewardEventType as RewardEventTypeSql, RewardRedemptionType as RewardRedemptionTypeSql,
+    RewardStatus as RewardStatusSql, TransactionState as TransactionStateSql, TransactionType as TransactionTypeSql,
+    UsernameStatus as UsernameStatusSql,
 };
 
 macro_rules! diesel_enum {
@@ -100,4 +104,20 @@ diesel_enum!(AddressType, PrimitiveAddressType, AddressTypeSql, [
 
 diesel_enum!(RewardEventType, PrimitiveRewardEventType, RewardEventTypeSql, [
     CreateUsername, InvitePending, InviteNew, InviteExisting, Joined, Disabled
+]);
+
+diesel_enum!(TransactionState, PrimitiveTransactionState, TransactionStateSql, [
+    Pending, Confirmed, Failed, Reverted
+]);
+
+diesel_enum!(UsernameStatus, PrimitiveUsernameStatus, UsernameStatusSql, [
+    Unverified, Verified
+]);
+
+diesel_enum!(Platform, PrimitivePlatform, PlatformSql, [
+    IOS, Android
+]);
+
+diesel_enum!(PlatformStore, PrimitivePlatformStore, PlatformStoreSql, [
+    AppStore, GooglePlay, Fdroid, Huawei, SolanaStore, SamsungStore, ApkUniversal, Local
 ]);

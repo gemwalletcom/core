@@ -1,10 +1,11 @@
 CREATE TYPE reward_status AS ENUM ('unverified', 'pending', 'verified', 'trusted', 'disabled');
 CREATE TYPE reward_event_type AS ENUM ('createUsername', 'invitePending', 'inviteNew', 'inviteExisting', 'joined', 'disabled');
+CREATE TYPE username_status AS ENUM ('unverified', 'verified');
 
 CREATE TABLE usernames (
     username VARCHAR(64) PRIMARY KEY,
     address VARCHAR(256) NOT NULL UNIQUE,
-    is_verified BOOLEAN NOT NULL DEFAULT false,
+    status username_status NOT NULL DEFAULT 'unverified',
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

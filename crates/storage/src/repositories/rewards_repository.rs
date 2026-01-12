@@ -4,7 +4,7 @@ use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow, UsernameRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::repositories::subscriptions_repository::SubscriptionsRepository;
-use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus};
+use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, UsernameStatus};
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
@@ -31,7 +31,7 @@ fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, devic
         NewUsernameRow {
             username: address.to_string(),
             address: address.to_string(),
-            is_verified: false,
+            status: UsernameStatus::Unverified,
         },
     )?;
     RewardsStore::create_rewards(
@@ -165,7 +165,7 @@ impl RewardsRepository for DatabaseClient {
                 NewUsernameRow {
                     username: username.to_string(),
                     address: address.to_string(),
-                    is_verified: false,
+                    status: UsernameStatus::Unverified,
                 },
             )?;
             RewardsStore::create_rewards(
@@ -504,7 +504,7 @@ mod tests {
         UsernameRow {
             username: username.to_string(),
             address: address.to_string(),
-            is_verified: false,
+            status: UsernameStatus::Unverified,
         }
     }
 
