@@ -25,7 +25,7 @@ impl Error for RewardsError {}
 #[derive(Debug)]
 pub enum ReferralError {
     Validation(ReferralValidationError),
-    ReferrerLimitReached(String),
+    ReferrerLimitReached(ConfigKey),
     RiskScoreExceeded { score: i64, max_allowed: i64 },
     DuplicateAttempt,
     IpTorNotAllowed,
@@ -38,7 +38,7 @@ impl fmt::Display for ReferralError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ReferralError::Validation(e) => write!(f, "{}", e),
-            ReferralError::ReferrerLimitReached(period) => write!(f, "Referrer {} limit reached", period),
+            ReferralError::ReferrerLimitReached(key) => write!(f, "referrer_limit_reached: {}", key.as_ref()),
             ReferralError::RiskScoreExceeded { score, max_allowed } => write!(f, "risk_score: {} (max allowed: {})", score, max_allowed),
             ReferralError::DuplicateAttempt => write!(f, "duplicate_attempt"),
             ReferralError::IpTorNotAllowed => write!(f, "ip_tor_not_allowed"),

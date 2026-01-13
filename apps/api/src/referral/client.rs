@@ -343,22 +343,22 @@ impl RewardsClient {
 
         let cooldown = self.config.get_duration(ConfigKey::ReferralCooldown)?;
         if self.db.rewards()?.count_referrals_since(referrer_username, current.ago(cooldown))? >= 1 {
-            return Err(ReferralError::ReferrerLimitReached("cooldown".to_string()));
+            return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralCooldown));
         }
 
         let hourly_limit = self.config.get_i64(ConfigKey::ReferralPerUserHourly)? * multiplier;
         if self.db.rewards()?.count_referrals_since(referrer_username, current.hours_ago(1))? >= hourly_limit {
-            return Err(ReferralError::ReferrerLimitReached("hourly".to_string()));
+            return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralPerUserHourly));
         }
 
         let daily_limit = self.config.get_i64(ConfigKey::ReferralPerUserDaily)? * multiplier;
         if self.db.rewards()?.count_referrals_since(referrer_username, current.days_ago(1))? >= daily_limit {
-            return Err(ReferralError::ReferrerLimitReached("daily".to_string()));
+            return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralPerUserDaily));
         }
 
         let weekly_limit = self.config.get_i64(ConfigKey::ReferralPerUserWeekly)? * multiplier;
         if self.db.rewards()?.count_referrals_since(referrer_username, current.days_ago(7))? >= weekly_limit {
-            return Err(ReferralError::ReferrerLimitReached("weekly".to_string()));
+            return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralPerUserWeekly));
         }
 
         Ok(())
