@@ -18,6 +18,10 @@ pub mod sql_types {
     pub struct NftType;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "notification_type"))]
+    pub struct NotificationType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "platform"))]
     pub struct Platform;
 
@@ -60,10 +64,6 @@ pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "wallet_type"))]
     pub struct WalletType;
-
-    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
-    #[diesel(postgres_type(name = "notification_type"))]
-    pub struct NotificationType;
 }
 
 diesel::table! {
@@ -941,6 +941,7 @@ diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
 diesel::joinable!(nft_reports -> devices (device_id));
 diesel::joinable!(nft_reports -> nft_assets (asset_id));
 diesel::joinable!(nft_reports -> nft_collections (collection_id));
+diesel::joinable!(notifications -> wallets (wallet_id));
 diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(perpetuals -> assets (asset_id));
 diesel::joinable!(perpetuals_assets -> assets (asset_id));
@@ -974,11 +975,10 @@ diesel::joinable!(support -> devices (device_id));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
+diesel::joinable!(usernames -> wallets (wallet_id));
 diesel::joinable!(wallets_subscriptions -> chains (chain));
 diesel::joinable!(wallets_subscriptions -> devices (device_id));
 diesel::joinable!(wallets_subscriptions -> wallets (wallet_id));
-diesel::joinable!(notifications -> wallets (wallet_id));
-diesel::joinable!(usernames -> wallets (wallet_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
