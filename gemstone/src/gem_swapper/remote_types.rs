@@ -109,6 +109,7 @@ pub enum SwapperProvider {
     PancakeswapV3,
     Aerodrome,
     PancakeswapAptosV2,
+    Panora,
     Thorchain,
     Jupiter,
     Across,

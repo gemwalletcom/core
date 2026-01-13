@@ -92,6 +92,7 @@ impl GemSwapper {
             Box::new(pancakeswap_aptos::PancakeSwapAptos::new(rpc_provider.clone())),
             Box::new(provider_factory::new_stonfi_v2(rpc_provider.clone())),
             Box::new(provider_factory::new_mayan(rpc_provider.clone())),
+            Box::new(provider_factory::new_panora(rpc_provider.clone())),
             Box::new(near_intents::NearIntents::new(rpc_provider.clone())),
             Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
             Box::new(provider_factory::new_cetus_aggregator(rpc_provider.clone())),
