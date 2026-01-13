@@ -1,31 +1,45 @@
 use std::error::Error;
+use std::sync::Arc;
 
 use cacher::{CacheKey, CacherClient};
-use primitives::ConfigKey;
+use primitives::{ConfigKey, IpUsageType};
 
-use crate::abuseipdb::AbuseIPDBClient;
+use crate::ip_check_provider::IpCheckProvider;
 use crate::model::IpCheckResult;
 use crate::UsernameError;
 
 #[derive(Clone)]
 pub struct IpSecurityClient {
-    abuseipdb_client: AbuseIPDBClient,
+    providers: Vec<Arc<dyn IpCheckProvider>>,
     cacher: CacherClient,
 }
 
 impl IpSecurityClient {
-    pub fn new(abuseipdb_client: AbuseIPDBClient, cacher: CacherClient) -> Self {
-        Self { abuseipdb_client, cacher }
+    pub fn new(providers: Vec<Arc<dyn IpCheckProvider>>, cacher: CacherClient) -> Self {
+        Self { providers, cacher }
     }
 
     pub async fn check_ip(&self, ip_address: &str) -> Result<IpCheckResult, Box<dyn Error + Send + Sync>> {
-        let ip_data = self
-            .cacher
+        self.cacher
             .get_or_set_cached(CacheKey::ReferralIpCheck(ip_address), || async {
-                self.abuseipdb_client.check_ip(ip_address).await
+                self.check_ip_with_fallback(ip_address).await
             })
-            .await?;
-        Ok(ip_data.as_ip_check_result())
+            .await
+    }
+
+    async fn check_ip_with_fallback(&self, ip_address: &str) -> Result<IpCheckResult, Box<dyn Error + Send + Sync>> {
+        let mut last_error: Option<Box<dyn Error + Send + Sync>> = None;
+
+        for provider in &self.providers {
+            match provider.check_ip(ip_address).await {
+                Ok(result) => return Ok(result),
+                Err(e) => {
+                    last_error = Some(e);
+                }
+            }
+        }
+
+        Err(last_error.unwrap_or_else(|| "No IP check providers configured".into()))
     }
 
     pub async fn check_username_creation_limits(
@@ -70,9 +84,8 @@ impl IpSecurityClient {
         Ok(())
     }
 
-    pub fn check_username_creation_ip_type(&self, usage_type: &str, blocked_ip_types: &[String]) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let is_blocked = blocked_ip_types.iter().any(|t| usage_type.contains(t));
-        if is_blocked {
+    pub fn check_username_creation_ip_type(&self, usage_type: IpUsageType, blocked_ip_types: &[IpUsageType]) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if blocked_ip_types.contains(&usage_type) {
             return Err(UsernameError::LimitReached(ConfigKey::ReferralBlockedIpTypes).into());
         }
         Ok(())

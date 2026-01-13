@@ -2,7 +2,9 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use localizer::LanguageLocalizer;
-use primitives::{Device, GorushNotification, NotificationRewardsMetadata, NotificationType, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType};
+use primitives::{
+    Device, GorushNotification, NotificationRewardsMetadata, NotificationType, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType,
+};
 use storage::{Database, NewNotificationRow, NotificationType as StorageNotificationType, NotificationsRepository, RewardsRepository};
 use streamer::{NotificationsPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 

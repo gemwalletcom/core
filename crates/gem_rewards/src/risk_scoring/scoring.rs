@@ -6,17 +6,24 @@ use storage::models::RiskSignalRow;
 
 use super::model::{RiskScore, RiskScoreBreakdown, RiskScoreConfig, RiskSignalInput};
 
-pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSignalRow], device_model_ring_count: i64, ip_abuser_count: i64, config: &RiskScoreConfig) -> RiskScore {
+pub fn calculate_risk_score(
+    input: &RiskSignalInput,
+    existing_signals: &[RiskSignalRow],
+    device_model_ring_count: i64,
+    ip_abuser_count: i64,
+    config: &RiskScoreConfig,
+) -> RiskScore {
     let fingerprint = input.generate_fingerprint();
 
     let is_penalty_isp = config.penalty_isps.iter().any(|isp| input.ip_isp.contains(isp));
-    let is_blocked_type = config.blocked_ip_types.iter().any(|t| input.ip_usage_type.contains(t));
+    let is_blocked_type = config.blocked_ip_types.contains(&input.ip_usage_type);
     let is_high_risk_platform_store = config.high_risk_platform_stores.iter().any(|s| s == &input.device_platform_store);
     let is_high_risk_country = config.high_risk_countries.iter().any(|c| c == &input.ip_country_code);
     let is_high_risk_locale = config.high_risk_locales.iter().any(|l| l == &input.device_locale);
-    let is_high_risk_device_model = config.high_risk_device_models.iter().any(|pattern| {
-        Regex::new(pattern).map(|re| re.is_match(&input.device_model)).unwrap_or(false)
-    });
+    let is_high_risk_device_model = config
+        .high_risk_device_models
+        .iter()
+        .any(|pattern| Regex::new(pattern).map(|re| re.is_match(&input.device_model)).unwrap_or(false));
 
     let mut breakdown = RiskScoreBreakdown {
         abuse_score: if is_blocked_type {
@@ -39,7 +46,11 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
         },
         country_score: if is_high_risk_country { config.high_risk_country_penalty } else { 0 },
         locale_score: if is_high_risk_locale { config.high_risk_locale_penalty } else { 0 },
-        high_risk_device_model_score: if is_high_risk_device_model { config.high_risk_device_model_penalty } else { 0 },
+        high_risk_device_model_score: if is_high_risk_device_model {
+            config.high_risk_device_model_penalty
+        } else {
+            0
+        },
         ..Default::default()
     };
 
@@ -163,7 +174,10 @@ pub fn calculate_risk_score(input: &RiskSignalInput, existing_signals: &[RiskSig
 fn count_signals_in_recent_window(signals: &[&RiskSignalRow], window: Duration) -> (i64, f64) {
     let now = chrono::Utc::now().naive_utc();
     let window_secs = window.as_secs() as i64;
-    let recent: Vec<_> = signals.iter().filter(|s| now.signed_duration_since(s.created_at).num_seconds() <= window_secs).collect();
+    let recent: Vec<_> = signals
+        .iter()
+        .filter(|s| now.signed_duration_since(s.created_at).num_seconds() <= window_secs)
+        .collect();
     let count = recent.len() as i64;
     if count <= 1 {
         return (count, 1.0);
@@ -191,7 +205,7 @@ mod tests {
             device_currency: "USD".to_string(),
             ip_address: "192.168.1.1".to_string(),
             ip_country_code: "US".to_string(),
-            ip_usage_type: "Fixed Line ISP".to_string(),
+            ip_usage_type: IpUsageType::Isp,
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
             referrer_verified: false,
@@ -212,7 +226,7 @@ mod tests {
             device_currency: "USD".to_string(),
             ip_address: ip.to_string(),
             ip_country_code: "US".to_string(),
-            ip_usage_type: "Fixed Line ISP".to_string(),
+            ip_usage_type: IpUsageType::Isp.to_string(),
             ip_isp: isp.to_string(),
             ip_abuse_score: 0,
             risk_score: 0,
@@ -234,7 +248,7 @@ mod tests {
     #[test]
     fn high_abuse_score() {
         let mut input = create_test_input();
-        input.ip_usage_type = "Data Center".to_string();
+        input.ip_usage_type = IpUsageType::DataCenter;
         input.ip_abuse_score = 70;
         let config = RiskScoreConfig::default();
         let result = calculate_risk_score(&input, &[], 0, 0, &config);
@@ -397,7 +411,7 @@ mod tests {
     #[test]
     fn default_ip_type_limits_abuse_score() {
         let mut input = create_test_input();
-        input.ip_usage_type = "Fixed Line ISP".to_string();
+        input.ip_usage_type = IpUsageType::Isp;
         input.ip_abuse_score = 80;
         let result = calculate_risk_score(&input, &[], 0, 0, &RiskScoreConfig::default());
 
@@ -408,7 +422,7 @@ mod tests {
     #[test]
     fn blocked_ip_type_gets_full_abuse_score() {
         let mut input = create_test_input();
-        input.ip_usage_type = "Data Center/Web Hosting/Transit".to_string();
+        input.ip_usage_type = IpUsageType::DataCenter;
         input.ip_abuse_score = 60;
         let result = calculate_risk_score(&input, &[], 0, 0, &RiskScoreConfig::default());
 
@@ -685,9 +699,17 @@ mod tests {
     fn velocity_scales_with_count_and_speed() {
         // More signals and tighter span = higher penalty
         let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120)];
-        let score2 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score;
-        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120), create_recent_signal("user1", 180)];
-        let score3 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score;
+        let score2 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
+            .breakdown
+            .velocity_score;
+        let signals = vec![
+            create_recent_signal("user1", 60),
+            create_recent_signal("user1", 120),
+            create_recent_signal("user1", 180),
+        ];
+        let score3 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
+            .breakdown
+            .velocity_score;
         assert!(score3 > score2);
         assert!(score2 > 0);
     }
@@ -696,11 +718,23 @@ mod tests {
     fn velocity_faster_spam_higher_penalty() {
         // Same count but tighter time = higher penalty
         // 3 signals in 120s span: multiplier=1.6, penalty=300*1.6=480
-        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120), create_recent_signal("user1", 180)];
-        let slow = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score;
+        let signals = vec![
+            create_recent_signal("user1", 60),
+            create_recent_signal("user1", 120),
+            create_recent_signal("user1", 180),
+        ];
+        let slow = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
+            .breakdown
+            .velocity_score;
         // 3 signals in 20s span: multiplier=1+(300-20)/300=1.93, penalty=300*1.93=579
-        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 70), create_recent_signal("user1", 80)];
-        let fast = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score;
+        let signals = vec![
+            create_recent_signal("user1", 60),
+            create_recent_signal("user1", 70),
+            create_recent_signal("user1", 80),
+        ];
+        let fast = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
+            .breakdown
+            .velocity_score;
         assert!(fast > slow);
     }
 
@@ -710,10 +744,20 @@ mod tests {
         input.referrer_verified = true;
         // Verified user threshold=5 (10/2), 4 signals - no penalty
         let signals: Vec<_> = (0..4).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert_eq!(calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score, 0);
+        assert_eq!(
+            calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default())
+                .breakdown
+                .velocity_score,
+            0
+        );
         // 5 signals triggers penalty
         let signals: Vec<_> = (0..5).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert!(calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score > 0);
+        assert!(
+            calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default())
+                .breakdown
+                .velocity_score
+                > 0
+        );
     }
 
     #[test]

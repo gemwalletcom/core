@@ -1,3 +1,4 @@
+use primitives::IpUsageType;
 use sha2::{Digest, Sha256};
 use std::time::Duration;
 
@@ -10,7 +11,7 @@ pub struct RiskScoreConfig {
     pub device_id_reuse_penalty_per_referrer: i64,
     pub device_id_reuse_max_penalty: i64,
     pub ineligible_ip_type_score: i64,
-    pub blocked_ip_types: Vec<String>,
+    pub blocked_ip_types: Vec<IpUsageType>,
     pub blocked_ip_type_penalty: i64,
     pub max_abuse_score: i64,
     pub penalty_isps: Vec<String>,
@@ -53,7 +54,7 @@ impl Default for RiskScoreConfig {
             device_id_reuse_penalty_per_referrer: 50,
             device_id_reuse_max_penalty: 200,
             ineligible_ip_type_score: 100,
-            blocked_ip_types: vec!["Data Center".to_string(), "Web Hosting".to_string(), "Transit".to_string()],
+            blocked_ip_types: vec![IpUsageType::DataCenter, IpUsageType::Hosting],
             blocked_ip_type_penalty: 100,
             max_abuse_score: 60,
             penalty_isps: vec![],
@@ -100,7 +101,7 @@ pub struct RiskSignalInput {
     pub device_currency: String,
     pub ip_address: String,
     pub ip_country_code: String,
-    pub ip_usage_type: String,
+    pub ip_usage_type: IpUsageType,
     pub ip_isp: String,
     pub ip_abuse_score: i64,
     pub referrer_verified: bool,
@@ -190,12 +191,11 @@ mod tests {
             device_currency: "USD".to_string(),
             ip_address: "192.168.1.1".to_string(),
             ip_country_code: "US".to_string(),
-            ip_usage_type: "Fixed Line ISP".to_string(),
+            ip_usage_type: IpUsageType::Isp,
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
             referrer_verified: false,
         };
-        let fingerprint = input.generate_fingerprint();
-        assert_eq!(fingerprint.len(), 64);
+        assert_eq!(input.generate_fingerprint().len(), 64);
     }
 }

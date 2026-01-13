@@ -246,6 +246,8 @@ pub mod notification_type;
 pub use self::notification_type::NotificationType;
 pub mod notification;
 pub use self::notification::{Notification, NotificationRewardsMetadata};
+pub mod ip_usage_type;
+pub use self::ip_usage_type::IpUsageType;
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;
