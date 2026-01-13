@@ -19,6 +19,7 @@ mod scan;
 mod status;
 mod subscriptions;
 mod support;
+mod wallets;
 mod swap;
 mod transactions;
 mod webhooks;
@@ -52,6 +53,7 @@ use storage::Database;
 use streamer::StreamProducer;
 use subscriptions::SubscriptionsClient;
 use support::SupportClient;
+use wallets::WalletsClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
 use webhooks::WebhooksClient;
@@ -79,6 +81,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let transactions_client = TransactionsClient::new(database.clone());
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "api").await.unwrap();
     let subscriptions_client = SubscriptionsClient::new(database.clone(), stream_producer.clone());
+    let wallets_client = WalletsClient::new(database.clone(), stream_producer.clone());
     let metrics_client = MetricsClient::new(database.clone());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
@@ -132,6 +135,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(fiat_ip_check_client))
         .manage(Mutex::new(rewards_client))
         .manage(Mutex::new(redemption_client))
+        .manage(Mutex::new(wallets_client))
         .manage(auth_client)
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
@@ -213,6 +217,9 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 transactions::get_transactions_by_device_id_v2,
                 nft::get_nft_assets_v2,
                 scan::scan_transaction_v2,
+                wallets::get_subscriptions,
+                wallets::add_subscriptions,
+                wallets::delete_subscriptions,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])

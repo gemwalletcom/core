@@ -23,6 +23,7 @@ pub mod tag;
 pub mod transaction;
 pub mod transaction_addresses;
 pub mod username;
+pub mod wallet;
 
 pub use self::asset::{AssetLinkRow, AssetRow};
 pub use self::asset_address::AssetAddressRow;
@@ -55,3 +56,4 @@ pub use self::tag::{AssetTagRow, TagRow};
 pub use self::transaction::{NewTransactionRow, TransactionRow};
 pub use self::transaction_addresses::{AddressChainIdResultRow, NewTransactionAddressesRow, TransactionAddressesRow};
 pub use self::username::{NewUsernameRow, UsernameRow};
+pub use self::wallet::{WalletRow, WalletSubscriptionRow};

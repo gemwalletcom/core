@@ -129,7 +129,11 @@ pub use self::wallet_connect::{WCEthereumTransaction, WCTonMessage, WalletConnec
 pub mod account;
 pub use self::account::Account;
 pub mod wallet;
-pub use self::wallet::{Wallet, WalletId, WalletType};
+pub use self::wallet::Wallet;
+pub mod wallet_type;
+pub use self::wallet_type::WalletType;
+pub mod wallet_id;
+pub use self::wallet_id::WalletId;
 pub mod wallet_connector;
 pub use self::wallet_connector::{
     WCPairingProposal, WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,

@@ -1,4 +1,4 @@
-use crate::Account;
+use crate::{Account, WalletType};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -25,21 +25,4 @@ pub struct Wallet {
     #[serde(rename = "imageUrl")]
     pub image_url: Option<String>,
     pub source: WalletSource,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
-#[serde(rename_all = "camelCase")]
-#[allow(non_camel_case_types)]
-pub enum WalletType {
-    multicoin,
-    single,
-    private_key,
-    view,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable, Hashable")]
-pub struct WalletId {
-    pub id: String,
 }

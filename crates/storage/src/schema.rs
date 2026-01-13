@@ -860,6 +860,30 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    wallets (id) {
+        #[max_length = 128]
+        id -> Varchar,
+        wallet_type -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    wallets_subscriptions (id) {
+        id -> Int4,
+        #[max_length = 128]
+        wallet_id -> Varchar,
+        device_id -> Int4,
+        wallet_index -> Int4,
+        #[max_length = 32]
+        chain -> Varchar,
+        #[max_length = 256]
+        address -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_addresses -> assets (asset_id));
 diesel::joinable!(assets_addresses -> chains (chain));
@@ -920,6 +944,8 @@ diesel::joinable!(support -> devices (device_id));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
+diesel::joinable!(wallets_subscriptions -> wallets (wallet_id));
+diesel::joinable!(wallets_subscriptions -> chains (chain));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -969,4 +995,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions,
     transactions_addresses,
     usernames,
+    wallets,
+    wallets_subscriptions,
 );

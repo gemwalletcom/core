@@ -107,7 +107,7 @@ impl ConfigKey {
 
     pub fn default_value(&self) -> &'static str {
         match self {
-            Self::ReferralPerDeviceDaily => "2",
+            Self::ReferralPerDeviceDaily => "1",
             Self::ReferralPerIpDaily => "3",
             Self::ReferralPerIpWeekly => "10",
             Self::ReferralPerCountryDaily => "100",

@@ -22,3 +22,4 @@ pub mod subscriptions_repository;
 pub mod support_repository;
 pub mod tag_repository;
 pub mod transactions_repository;
+pub mod wallets_repository;

@@ -28,7 +28,7 @@ pub use self::repositories::{
     prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
     rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, risk_signals_repository::RiskSignalsRepository,
     scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository,
-    tag_repository::TagRepository, transactions_repository::TransactionsRepository,
+    tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
 };
 pub use diesel::OptionalExtension;
 
@@ -131,6 +131,10 @@ impl Database {
     }
 
     pub fn transactions(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
+        self.client()
+    }
+
+    pub fn wallets(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 }
