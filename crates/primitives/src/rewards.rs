@@ -53,8 +53,8 @@ impl RewardStatus {
 
     pub fn is_verified(&self) -> bool {
         match self {
-            Self::Unverified | Self::Verified | Self::Trusted => true,
-            Self::Pending | Self::Disabled => false,
+            Self::Verified | Self::Trusted => true,
+            Self::Unverified | Self::Pending | Self::Disabled => false,
         }
     }
 
