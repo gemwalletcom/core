@@ -3,6 +3,7 @@ use std::str::FromStr;
 use strum::{AsRefStr, Display};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, AsRefStr, Display)]
+#[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
 pub enum IpUsageType {
     DataCenter,
