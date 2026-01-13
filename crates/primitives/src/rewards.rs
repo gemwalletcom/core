@@ -129,6 +129,9 @@ pub struct Rewards {
     pub is_enabled: bool,
     #[typeshare(skip)]
     pub verified: bool,
+    #[typeshare(skip)]
+    #[serde(skip)]
+    pub created_at: chrono::NaiveDateTime,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
     pub referral_allowance: ReferralAllowance,

@@ -1,10 +1,12 @@
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 use crate::Chain;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct ChainAddress {
     pub chain: Chain,
     pub address: String,

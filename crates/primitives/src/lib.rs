@@ -99,7 +99,7 @@ pub use self::transaction_direction::TransactionDirection;
 pub mod subscription;
 pub mod support;
 pub mod transaction_utxo;
-pub use self::subscription::{DeviceSubscription, Subscription};
+pub use self::subscription::{DeviceSubscription, Subscription, WalletIdType, WalletSubscription, WalletSubscriptionChains};
 pub use self::support::{NewSupportDevice, SupportDevice};
 pub use self::transaction_utxo::TransactionUtxoInput;
 pub mod address_formatter;
@@ -129,7 +129,11 @@ pub use self::wallet_connect::{WCEthereumTransaction, WCTonMessage, WalletConnec
 pub mod account;
 pub use self::account::Account;
 pub mod wallet;
-pub use self::wallet::{Wallet, WalletId, WalletType};
+pub use self::wallet::{Wallet, WalletSource};
+pub mod wallet_type;
+pub use self::wallet_type::WalletType;
+pub mod wallet_id;
+pub use self::wallet_id::WalletId;
 pub mod wallet_connector;
 pub use self::wallet_connector::{
     WCPairingProposal, WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,
@@ -238,6 +242,10 @@ pub mod number_incrementer;
 pub use self::number_incrementer::NumberIncrementer;
 pub mod chain_signer;
 pub use self::chain_signer::ChainSigner;
+pub mod notification_type;
+pub use self::notification_type::NotificationType;
+pub mod notification;
+pub use self::notification::Notification;
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

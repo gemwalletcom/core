@@ -20,3 +20,4 @@ sha2 = { workspace = true }
 chrono = { workspace = true }
 tokio = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }
+regex = { workspace = true }

@@ -55,7 +55,11 @@ impl ConfigCacher {
         if let Some(value) = self.get_cached(&key) {
             return Ok(value);
         }
-        let value = self.database.client().map_err(|e| DatabaseError::Error(e.to_string()))?.get_config(key.clone())?;
+        let value = self
+            .database
+            .client()
+            .map_err(|e| DatabaseError::Error(e.to_string()))?
+            .get_config(key.clone())?;
         self.set_cached(key, value.clone());
         Ok(value)
     }

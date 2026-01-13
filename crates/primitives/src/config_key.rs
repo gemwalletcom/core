@@ -11,8 +11,10 @@ pub enum ConfigKey {
     ReferralPerCountryDaily,
     ReferralPerUserDaily,
     ReferralPerUserWeekly,
-    ReferralPerVerifiedUserDaily,
-    ReferralPerVerifiedUserWeekly,
+    ReferralPerUserHourly,
+    ReferralVerifiedMultiplier,
+    ReferralTrustedMultiplier,
+    ReferralCooldown,
     ReferralUseDailyLimit,
     ReferralIneligibleCountries,
     ReferralVerificationDelay,
@@ -28,6 +30,8 @@ pub enum ConfigKey {
     // Redemption
     RedemptionPerUserDaily,
     RedemptionPerUserWeekly,
+    RedemptionMinAccountAge,
+    RedemptionCooldownAfterReferral,
 
     // Referral IP
     ReferralIpConfidenceScoreThreshold,
@@ -63,6 +67,8 @@ pub enum ConfigKey {
     ReferralRiskScoreHighRiskCountryPenalty,
     ReferralRiskScoreHighRiskLocales,
     ReferralRiskScoreHighRiskLocalePenalty,
+    ReferralRiskScoreHighRiskDeviceModels,
+    ReferralRiskScoreHighRiskDeviceModelPenalty,
 
     // Referral Abuse Detection
     ReferralAbuseDisableThreshold,
@@ -78,6 +84,9 @@ pub enum ConfigKey {
     ReferralAbuseRingPenalty,
     ReferralAbuseDeviceFarmingThreshold,
     ReferralAbuseDeviceFarmingPenalty,
+    ReferralAbuseVelocityWindow,
+    ReferralAbuseVelocityDivisor,
+    ReferralAbuseVelocityPenaltyPerSignal,
 
     // Fiat
     FiatValidateSubscription,
@@ -107,14 +116,16 @@ impl ConfigKey {
 
     pub fn default_value(&self) -> &'static str {
         match self {
-            Self::ReferralPerDeviceDaily => "2",
+            Self::ReferralPerDeviceDaily => "1",
             Self::ReferralPerIpDaily => "3",
             Self::ReferralPerIpWeekly => "10",
             Self::ReferralPerCountryDaily => "100",
             Self::ReferralPerUserDaily => "5",
             Self::ReferralPerUserWeekly => "15",
-            Self::ReferralPerVerifiedUserDaily => "10",
-            Self::ReferralPerVerifiedUserWeekly => "30",
+            Self::ReferralPerUserHourly => "2",
+            Self::ReferralVerifiedMultiplier => "2",
+            Self::ReferralTrustedMultiplier => "3",
+            Self::ReferralCooldown => "1m",
             Self::ReferralUseDailyLimit => "1000",
             Self::ReferralIneligibleCountries => "[]",
             Self::ReferralVerificationDelay => "24h",
@@ -126,6 +137,8 @@ impl ConfigKey {
             Self::UsernameCreationPerCountryDailyLimit => "100",
             Self::RedemptionPerUserDaily => "1",
             Self::RedemptionPerUserWeekly => "3",
+            Self::RedemptionMinAccountAge => "1h",
+            Self::RedemptionCooldownAfterReferral => "1m",
             Self::ReferralIpConfidenceScoreThreshold => "10",
             Self::ReferralBlockedIpTypes => r#"["Data Center", "Web Hosting", "Transit"]"#,
             Self::ReferralBlockedIpTypePenalty => "100",
@@ -157,6 +170,8 @@ impl ConfigKey {
             Self::ReferralRiskScoreHighRiskCountryPenalty => "15",
             Self::ReferralRiskScoreHighRiskLocales => "[]",
             Self::ReferralRiskScoreHighRiskLocalePenalty => "10",
+            Self::ReferralRiskScoreHighRiskDeviceModels => r#"["sdk_gphone", "(?i)emulator", "(?i)simulator"]"#,
+            Self::ReferralRiskScoreHighRiskDeviceModelPenalty => "50",
             Self::ReferralAbuseDisableThreshold => "200",
             Self::ReferralAbuseAttemptPenalty => "15",
             Self::ReferralAbuseVerifiedThresholdMultiplier => "2",
@@ -169,6 +184,9 @@ impl ConfigKey {
             Self::ReferralAbuseRingPenalty => "80",
             Self::ReferralAbuseDeviceFarmingThreshold => "5",
             Self::ReferralAbuseDeviceFarmingPenalty => "10",
+            Self::ReferralAbuseVelocityWindow => "5m",
+            Self::ReferralAbuseVelocityDivisor => "2",
+            Self::ReferralAbuseVelocityPenaltyPerSignal => "100",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
             Self::AlerterPriceIncreasePercent => "8.0",

@@ -18,6 +18,10 @@ pub mod sql_types {
     pub struct NftType;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "notification_type"))]
+    pub struct NotificationType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "platform"))]
     pub struct Platform;
 
@@ -52,6 +56,14 @@ pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "username_status"))]
     pub struct UsernameStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "wallet_source"))]
+    pub struct WalletSource;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "wallet_type"))]
+    pub struct WalletType;
 }
 
 diesel::table! {
@@ -351,7 +363,7 @@ diesel::table! {
     nft_assets (id) {
         #[max_length = 512]
         id -> Varchar,
-        #[max_length = 64]
+        #[max_length = 512]
         collection_id -> Varchar,
         #[max_length = 64]
         chain -> Varchar,
@@ -432,6 +444,21 @@ diesel::table! {
         #[max_length = 1024]
         reason -> Nullable<Varchar>,
         reviewed -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::NotificationType;
+
+    notifications (id) {
+        id -> Int4,
+        wallet_id -> Int4,
+        notification_type -> NotificationType,
+        is_read -> Bool,
+        metadata -> Nullable<Jsonb>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -675,8 +702,7 @@ diesel::table! {
         id -> Int4,
         #[max_length = 64]
         referrer_username -> Varchar,
-        #[max_length = 256]
-        referred_address -> Varchar,
+        wallet_id -> Int4,
         device_id -> Int4,
         risk_signal_id -> Nullable<Int4>,
         #[max_length = 256]
@@ -852,10 +878,37 @@ diesel::table! {
     usernames (username) {
         #[max_length = 64]
         username -> Varchar,
-        #[max_length = 256]
-        address -> Varchar,
+        wallet_id -> Int4,
         status -> UsernameStatus,
         updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::WalletType;
+    use super::sql_types::WalletSource;
+
+    wallets (id) {
+        id -> Int4,
+        #[max_length = 128]
+        identifier -> Varchar,
+        wallet_type -> WalletType,
+        source -> WalletSource,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    wallets_subscriptions (id) {
+        id -> Int4,
+        wallet_id -> Int4,
+        device_id -> Int4,
+        #[max_length = 32]
+        chain -> Varchar,
+        #[max_length = 256]
+        address -> Varchar,
         created_at -> Timestamp,
     }
 }
@@ -887,6 +940,7 @@ diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
 diesel::joinable!(nft_reports -> devices (device_id));
 diesel::joinable!(nft_reports -> nft_assets (asset_id));
 diesel::joinable!(nft_reports -> nft_collections (collection_id));
+diesel::joinable!(notifications -> wallets (wallet_id));
 diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(perpetuals -> assets (asset_id));
 diesel::joinable!(perpetuals_assets -> assets (asset_id));
@@ -908,6 +962,7 @@ diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id))
 diesel::joinable!(rewards_referral_attempts -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
 diesel::joinable!(rewards_referral_attempts -> rewards_risk_signals (risk_signal_id));
+diesel::joinable!(rewards_referral_attempts -> wallets (wallet_id));
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));
 diesel::joinable!(rewards_referrals -> rewards_risk_signals (risk_signal_id));
 diesel::joinable!(rewards_risk_signals -> devices (device_id));
@@ -920,6 +975,10 @@ diesel::joinable!(support -> devices (device_id));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
+diesel::joinable!(usernames -> wallets (wallet_id));
+diesel::joinable!(wallets_subscriptions -> chains (chain));
+diesel::joinable!(wallets_subscriptions -> devices (device_id));
+diesel::joinable!(wallets_subscriptions -> wallets (wallet_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -944,6 +1003,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     nft_collections,
     nft_collections_links,
     nft_reports,
+    notifications,
     parser_state,
     perpetuals,
     perpetuals_assets,
@@ -969,4 +1029,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions,
     transactions_addresses,
     usernames,
+    wallets,
+    wallets_subscriptions,
 );

@@ -48,7 +48,8 @@ pub struct PushNotificationPayloadType {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationTransaction {
-    pub wallet_index: i32,
+    pub wallet_index: Option<i32>,
+    pub wallet_id: String,
     pub asset_id: String,
     #[typeshare(skip)]
     pub transaction_id: String,
@@ -78,4 +79,6 @@ pub struct PushNotificationSupport {}
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct PushNotificationReward {}
+pub struct PushNotificationReward {
+    pub wallet_id: String,
+}
