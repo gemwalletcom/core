@@ -1,15 +1,15 @@
 use crate::database::rewards::{ReferralUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
+use crate::database::wallets::WalletsStore;
 use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow, UsernameRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
-use crate::repositories::subscriptions_repository::SubscriptionsRepository;
 use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, UsernameStatus};
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
 use primitives::rewards::{ReferralActivation, ReferralCodeActivation};
-use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, now};
+use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletIdType, now};
 
 fn validate_username(username: &str) -> Result<(), DatabaseError> {
     let len = username.len();
@@ -25,19 +25,20 @@ fn validate_username(username: &str) -> Result<(), DatabaseError> {
     Ok(())
 }
 
-fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, device_id: i32) -> Result<UsernameRow, DatabaseError> {
+fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, device_id: i32) -> Result<UsernameRow, DatabaseError> {
+    let placeholder_username = format!("wallet_{}", wallet_id);
     let username = UsernamesStore::create_username(
         client,
         NewUsernameRow {
-            username: address.to_string(),
-            address: address.to_string(),
+            username: placeholder_username.clone(),
+            wallet_id,
             status: UsernameStatus::Unverified,
         },
     )?;
     RewardsStore::create_rewards(
         client,
         NewRewardsRow {
-            username: address.to_string(),
+            username: placeholder_username,
             status: RewardStatus::Unverified,
             level: None,
             points: 0,
@@ -53,25 +54,26 @@ fn create_username_and_rewards(client: &mut DatabaseClient, address: &str, devic
 }
 
 pub trait RewardsRepository {
-    fn get_reward_by_address(&mut self, address: &str) -> Result<Rewards, DatabaseError>;
-    fn get_reward_events_by_address(&mut self, address: &str) -> Result<Vec<RewardEvent>, DatabaseError>;
+    fn get_reward_by_wallet_id(&mut self, wallet_id: i32) -> Result<Rewards, DatabaseError>;
+    fn get_reward_events_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<RewardEvent>, DatabaseError>;
     fn get_reward_event(&mut self, event_id: i32) -> Result<RewardEvent, DatabaseError>;
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
-    fn create_reward(&mut self, address: &str, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError>;
-    fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError>;
+    fn create_reward(&mut self, wallet_id: i32, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError>;
+    fn change_username(&mut self, wallet_id: i32, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
     fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError>;
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
-        referred_address: &str,
+        referred_wallet_id: i32,
         device_id: i32,
         risk_signal_id: Option<i32>,
         reason: &str,
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
+    fn get_wallet_id_by_username(&mut self, username: &str) -> Result<i32, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
-    fn get_username_by_address(&mut self, address: &str) -> Result<Option<String>, DatabaseError>;
+    fn get_username_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<String>, DatabaseError>;
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
@@ -80,15 +82,15 @@ pub trait RewardsRepository {
     fn use_or_verify_referral(
         &mut self,
         referrer_username: &str,
-        referred_address: &str,
+        referred_wallet_id: i32,
         device_id: i32,
         risk_signal_id: i32,
     ) -> Result<Vec<RewardEvent>, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
-    fn get_reward_by_address(&mut self, address: &str) -> Result<Rewards, DatabaseError> {
-        let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+    fn get_reward_by_wallet_id(&mut self, wallet_id: i32) -> Result<Rewards, DatabaseError> {
+        let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id))?;
         let rewards = RewardsStore::get_rewards(self, &username.username)?;
 
         let has_custom_code = username.has_custom_username();
@@ -125,8 +127,8 @@ impl RewardsRepository for DatabaseClient {
         })
     }
 
-    fn get_reward_events_by_address(&mut self, address: &str) -> Result<Vec<RewardEvent>, DatabaseError> {
-        let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+    fn get_reward_events_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<RewardEvent>, DatabaseError> {
+        let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id))?;
         let events = RewardsStore::get_events(self, &username.username)?;
         Ok(events.iter().map(|e| e.as_primitive()).collect())
     }
@@ -139,32 +141,33 @@ impl RewardsRepository for DatabaseClient {
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError> {
         let event = RewardsStore::get_event(self, event_id)?;
         let username = UsernamesStore::get_username(self, UsernameLookup::Username(&event.username))?;
-        self.get_devices_by_address(&username.address)
+        let devices = WalletsStore::get_devices_by_wallet_id(self, username.wallet_id)?;
+        Ok(devices.into_iter().map(|d| d.as_primitive()).collect())
     }
 
-    fn create_reward(&mut self, address: &str, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError> {
+    fn create_reward(&mut self, wallet_id: i32, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError> {
         validate_username(username)?;
 
         if UsernamesStore::username_exists(self, UsernameLookup::Username(username))? {
             return Err(DatabaseError::Error("Username already taken".into()));
         }
 
-        if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
-            let existing = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+        if UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet_id))? {
+            let existing = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id))?;
             if existing.has_custom_username() {
-                return Err(DatabaseError::Error("Address already has a username".into()));
+                return Err(DatabaseError::Error("Wallet already has a username".into()));
             }
             let existing_rewards = RewardsStore::get_rewards(self, &existing.username)?;
             if !existing_rewards.status.is_enabled() {
                 return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
             }
-            UsernamesStore::update_username(self, address, username)?;
+            UsernamesStore::update_username(self, wallet_id, username)?;
         } else {
             UsernamesStore::create_username(
                 self,
                 NewUsernameRow {
                     username: username.to_string(),
-                    address: address.to_string(),
+                    wallet_id,
                     status: UsernameStatus::Unverified,
                 },
             )?;
@@ -194,14 +197,14 @@ impl RewardsRepository for DatabaseClient {
             RewardEventType::CreateUsername.points(),
         )?;
 
-        let rewards = self.get_reward_by_address(address)?;
+        let rewards = self.get_reward_by_wallet_id(wallet_id)?;
         Ok((rewards, event.id))
     }
 
-    fn change_username(&mut self, address: &str, new_username: &str) -> Result<Rewards, DatabaseError> {
+    fn change_username(&mut self, wallet_id: i32, new_username: &str) -> Result<Rewards, DatabaseError> {
         validate_username(new_username)?;
 
-        let existing = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
+        let existing = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id))?;
 
         if !existing.has_custom_username() {
             return Err(DatabaseError::Error("No custom username to change".into()));
@@ -222,7 +225,7 @@ impl RewardsRepository for DatabaseClient {
 
         UsernamesStore::change_username(self, &existing.username, new_username)?;
 
-        self.get_reward_by_address(address)
+        self.get_reward_by_wallet_id(wallet_id)
     }
 
     fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError> {
@@ -244,14 +247,17 @@ impl RewardsRepository for DatabaseClient {
         let device_subscriptions = SubscriptionsStore::get_device_addresses(self, device_id, Chain::Ethereum.as_ref())?;
 
         for address in &device_subscriptions {
-            if UsernamesStore::username_exists(self, UsernameLookup::Address(address))? {
-                let username = UsernamesStore::get_username(self, UsernameLookup::Address(address))?;
-                let rewards = RewardsStore::get_rewards(self, &username.username)?;
-                if rewards.created_at.is_older_than_days(eligibility_days) {
-                    return Err(ReferralValidationError::EligibilityExpired(eligibility_days));
-                }
-                if referrer_username == username.username || referrer.address.eq_ignore_ascii_case(&username.address) {
-                    return Err(ReferralValidationError::CannotReferSelf);
+            let wallet_identifier = WalletIdType::Multicoin(address.clone()).id();
+            if let Ok(wallet) = WalletsStore::get_wallet(self, &wallet_identifier) {
+                if UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet.id))? {
+                    let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet.id))?;
+                    let rewards = RewardsStore::get_rewards(self, &username.username)?;
+                    if rewards.created_at.is_older_than_days(eligibility_days) {
+                        return Err(ReferralValidationError::EligibilityExpired(eligibility_days));
+                    }
+                    if referrer_username == username.username || referrer.wallet_id == username.wallet_id {
+                        return Err(ReferralValidationError::CannotReferSelf);
+                    }
                 }
             }
         }
@@ -266,16 +272,17 @@ impl RewardsRepository for DatabaseClient {
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
-        referred_address: &str,
+        referred_wallet_id: i32,
         device_id: i32,
         risk_signal_id: Option<i32>,
         reason: &str,
     ) -> Result<(), DatabaseError> {
+        let wallet = WalletsStore::get_wallet_by_id(self, referred_wallet_id)?;
         RewardsStore::add_referral_attempt(
             self,
             ReferralAttemptRow {
                 referrer_username: referrer_username.to_string(),
-                referred_address: referred_address.to_string(),
+                referred_address: wallet.wallet_id.id(),
                 device_id,
                 risk_signal_id,
                 reason: reason.to_string(),
@@ -288,13 +295,19 @@ impl RewardsRepository for DatabaseClient {
         Ok(SubscriptionsStore::get_first_subscription_date(self, addresses)?)
     }
 
-    fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {
+    fn get_wallet_id_by_username(&mut self, username: &str) -> Result<i32, DatabaseError> {
         let username = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
-        Ok(username.address)
+        Ok(username.wallet_id)
     }
 
-    fn get_username_by_address(&mut self, address: &str) -> Result<Option<String>, DatabaseError> {
-        match UsernamesStore::get_username(self, UsernameLookup::Address(address)) {
+    fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {
+        let username_row = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
+        let wallet = WalletsStore::get_wallet_by_id(self, username_row.wallet_id)?;
+        Ok(wallet.wallet_id.address().to_string())
+    }
+
+    fn get_username_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<String>, DatabaseError> {
+        match UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id)) {
             Ok(username) => Ok(Some(username.username)),
             Err(diesel::result::Error::NotFound) => Ok(None),
             Err(e) => Err(e.into()),
@@ -346,17 +359,17 @@ impl RewardsRepository for DatabaseClient {
     fn use_or_verify_referral(
         &mut self,
         referrer_username: &str,
-        referred_address: &str,
+        referred_wallet_id: i32,
         device_id: i32,
         risk_signal_id: i32,
     ) -> Result<Vec<RewardEvent>, DatabaseError> {
         let verification_date = self.get_referral_verification_date(now())?;
         let verified_at = if verification_date.is_none() { Some(now()) } else { None };
 
-        let username = match UsernamesStore::get_username(self, UsernameLookup::Address(referred_address)) {
+        let username = match UsernamesStore::get_username(self, UsernameLookup::WalletId(referred_wallet_id)) {
             Ok(u) => u,
             Err(_) => {
-                let referred = create_username_and_rewards(self, referred_address, device_id)?;
+                let referred = create_username_and_rewards(self, referred_wallet_id, device_id)?;
                 return self.add_referral_with_events(referrer_username, &referred.username, device_id, risk_signal_id, verified_at);
             }
         };
@@ -500,20 +513,20 @@ impl DatabaseClient {
 mod tests {
     use super::*;
 
-    fn username_row(username: &str, address: &str) -> UsernameRow {
+    fn username_row(username: &str, wallet_id: i32) -> UsernameRow {
         UsernameRow {
             username: username.to_string(),
-            address: address.to_string(),
+            wallet_id,
             status: UsernameStatus::Unverified,
         }
     }
 
     #[test]
     fn test_has_custom_username() {
-        assert!(username_row("alice", "0x1234567890abcdef").has_custom_username());
-        assert!(!username_row("0x1234567890abcdef", "0x1234567890abcdef").has_custom_username());
-        assert!(!username_row("0xABCDEF", "0xabcdef").has_custom_username());
-        assert!(!username_row("0xabcdef", "0xABCDEF").has_custom_username());
+        assert!(username_row("alice", 1).has_custom_username());
+        assert!(username_row("user1234", 1).has_custom_username());
+        assert!(!username_row("0x1234567890abcdef1234567890abcdef12345678", 1).has_custom_username());
+        assert!(!username_row("wallet_1", 1).has_custom_username());
     }
 
     #[test]

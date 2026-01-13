@@ -2,8 +2,8 @@ use std::error::Error;
 
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
-use primitives::{ConfigKey, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, now};
-use storage::{ConfigCacher, Database, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository};
+use primitives::{ConfigKey, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletIdType, now};
+use storage::{ConfigCacher, Database, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletsRepository};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 use crate::auth::VerifiedAuth;
@@ -50,24 +50,30 @@ impl RewardsClient {
         }
     }
 
-    pub fn get_rewards(&self, address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        let mut rewards = match self.db.rewards()?.get_reward_by_address(address) {
+    pub fn get_rewards(&self, wallet_identifier: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
+        let wallet = match self.db.wallets()?.get_wallet(wallet_identifier) {
+            Ok(w) => w,
+            Err(storage::DatabaseError::NotFound) => return Ok(Rewards::default()),
+            Err(e) => return Err(e.into()),
+        };
+
+        let mut rewards = match self.db.rewards()?.get_reward_by_wallet_id(wallet.id) {
             Ok(r) => r,
             Err(storage::DatabaseError::NotFound) => return Ok(Rewards::default()),
             Err(e) => return Err(e.into()),
         };
 
-        rewards.referral_allowance = self.calculate_referral_allowance(address, rewards.status.is_verified())?;
+        rewards.referral_allowance = self.calculate_referral_allowance(wallet.id, rewards.status.is_verified())?;
         Ok(rewards)
     }
 
-    fn calculate_referral_allowance(&self, address: &str, is_verified: bool) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
+    fn calculate_referral_allowance(&self, wallet_id: i32, is_verified: bool) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
         let multiplier = if is_verified { self.config.get_i32(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
 
         let daily_limit = self.config.get_i32(ConfigKey::ReferralPerUserDaily)? * multiplier;
         let weekly_limit = self.config.get_i32(ConfigKey::ReferralPerUserWeekly)? * multiplier;
 
-        let username = match self.db.rewards()?.get_username_by_address(address)? {
+        let username = match self.db.rewards()?.get_username_by_wallet_id(wallet_id)? {
             Some(u) => u,
             None => {
                 return Ok(ReferralAllowance {
@@ -99,8 +105,9 @@ impl RewardsClient {
         })
     }
 
-    pub fn get_rewards_events(&self, address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
-        Ok(self.db.rewards()?.get_reward_events_by_address(address)?)
+    pub fn get_rewards_events(&self, wallet_identifier: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
+        let wallet = self.db.wallets()?.get_wallet(wallet_identifier)?;
+        Ok(self.db.rewards()?.get_reward_events_by_wallet_id(wallet.id)?)
     }
 
     pub fn get_rewards_leaderboard(&self) -> Result<ReferralLeaderboard, Box<dyn Error + Send + Sync>> {
@@ -113,12 +120,14 @@ impl RewardsClient {
 
     pub async fn create_username(
         &self,
-        address: &str,
+        wallet_identifier: &str,
         code: &str,
         device_id: i32,
         ip_address: &str,
         locale: &str,
     ) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
+        let wallet = self.db.wallets()?.get_wallet(wallet_identifier)?;
+
         let global_daily_limit = self.config.get_i64(ConfigKey::UsernameCreationGlobalDailyLimit)?;
         let ip_limit = self.config.get_i64(ConfigKey::UsernameCreationPerIp)?;
         let device_limit = self.config.get_i64(ConfigKey::UsernameCreationPerDevice)?;
@@ -146,7 +155,7 @@ impl RewardsClient {
             .check_username_creation_ip_type(&ip_result.usage_type, &blocked_ip_types)
             .map_err(|e| self.map_username_error(e, locale))?;
 
-        let (rewards, event_id) = self.db.rewards()?.create_reward(address, code, device_id)?;
+        let (rewards, event_id) = self.db.rewards()?.create_reward(wallet.id, code, device_id)?;
         self.ip_security_client
             .record_username_creation(&ip_result.country_code, ip_address, device_id)
             .await?;
@@ -155,12 +164,15 @@ impl RewardsClient {
     }
 
     #[allow(dead_code)]
-    pub fn change_username(&self, address: &str, new_username: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        Ok(self.db.rewards()?.change_username(address, new_username)?)
+    pub fn change_username(&self, wallet_identifier: &str, new_username: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
+        let wallet = self.db.wallets()?.get_wallet(wallet_identifier)?;
+        Ok(self.db.rewards()?.change_username(wallet.id, new_username)?)
     }
 
     pub async fn use_referral_code(&self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
         let locale = &auth.device.locale;
+        let wallet_identifier = WalletIdType::Multicoin(auth.address.clone()).id();
+        let wallet = self.db.wallets()?.get_wallet(&wallet_identifier)?;
 
         let referrer_username = self.db.rewards()?.get_referrer_username(code)?.ok_or_else(|| {
             let error = ReferralError::from(ReferralValidationError::CodeDoesNotExist);
@@ -172,21 +184,21 @@ impl RewardsClient {
                 let events = self
                     .db
                     .rewards()?
-                    .use_or_verify_referral(&referrer_username, &auth.address, auth.device.id, risk_signal_id)?;
+                    .use_or_verify_referral(&referrer_username, wallet.id, auth.device.id, risk_signal_id)?;
                 Ok(events)
             }
             ReferralProcessResult::Failed(error) => {
                 let _ = self
                     .db
                     .rewards()?
-                    .add_referral_attempt(&referrer_username, &auth.address, auth.device.id, None, &error.to_string());
+                    .add_referral_attempt(&referrer_username, wallet.id, auth.device.id, None, &error.to_string());
                 Err(RewardsError::Referral(error.localize(locale)).into())
             }
             ReferralProcessResult::RiskScoreExceeded(risk_signal_id, error) => {
                 let _ = self
                     .db
                     .rewards()?
-                    .add_referral_attempt(&referrer_username, &auth.address, auth.device.id, Some(risk_signal_id), &error.to_string());
+                    .add_referral_attempt(&referrer_username, wallet.id, auth.device.id, Some(risk_signal_id), &error.to_string());
                 Err(RewardsError::Referral(error.localize(locale)).into())
             }
         }

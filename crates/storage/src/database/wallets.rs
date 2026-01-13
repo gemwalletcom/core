@@ -7,14 +7,35 @@ use primitives::Chain;
 use std::collections::HashMap;
 
 pub trait WalletsStore {
+    fn get_wallet(&mut self, identifier: &str) -> Result<WalletRow, DatabaseError>;
+    fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError>;
     fn get_wallets(&mut self, identifiers: Vec<String>) -> Result<Vec<WalletRow>, DatabaseError>;
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError>;
     fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<(WalletRow, WalletSubscriptionRow)>, DatabaseError>;
+    fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, DatabaseError>;
     fn add_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
     fn delete_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
 }
 
 impl WalletsStore for DatabaseClient {
+    fn get_wallet(&mut self, identifier: &str) -> Result<WalletRow, DatabaseError> {
+        let result = wallets::table
+            .filter(wallets::identifier.eq(identifier))
+            .select(WalletRow::as_select())
+            .first(&mut self.connection)?;
+
+        Ok(result)
+    }
+
+    fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError> {
+        let result = wallets::table
+            .filter(wallets::id.eq(id))
+            .select(WalletRow::as_select())
+            .first(&mut self.connection)?;
+
+        Ok(result)
+    }
+
     fn get_wallets(&mut self, identifiers: Vec<String>) -> Result<Vec<WalletRow>, DatabaseError> {
         let result = wallets::table
             .filter(wallets::identifier.eq_any(identifiers))
@@ -40,6 +61,17 @@ impl WalletsStore for DatabaseClient {
             .inner_join(devices::table)
             .filter(devices::device_id.eq(device_id))
             .select((WalletRow::as_select(), WalletSubscriptionRow::as_select()))
+            .load(&mut self.connection)?;
+
+        Ok(results)
+    }
+
+    fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, DatabaseError> {
+        let results = wallets_subscriptions::table
+            .inner_join(devices::table)
+            .filter(wallets_subscriptions::wallet_id.eq(wallet_id))
+            .select(DeviceRow::as_select())
+            .distinct()
             .load(&mut self.connection)?;
 
         Ok(results)

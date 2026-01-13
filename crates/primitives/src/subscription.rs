@@ -61,6 +61,15 @@ impl WalletIdType {
             WalletIdType::View(_, _) => WalletType::View,
         }
     }
+
+    pub fn address(&self) -> &str {
+        match self {
+            WalletIdType::Multicoin(address)
+            | WalletIdType::Single(_, address)
+            | WalletIdType::PrivateKey(_, address)
+            | WalletIdType::View(_, address) => address,
+        }
+    }
 }
 
 impl fmt::Display for WalletIdType {

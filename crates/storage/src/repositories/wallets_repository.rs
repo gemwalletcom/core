@@ -5,6 +5,8 @@ use primitives::Chain;
 use std::collections::HashMap;
 
 pub trait WalletsRepository {
+    fn get_wallet(&mut self, identifier: &str) -> Result<WalletRow, DatabaseError>;
+    fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError>;
     fn get_wallets(&mut self, identifiers: Vec<String>) -> Result<Vec<WalletRow>, DatabaseError>;
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError>;
     fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<(WalletRow, WalletSubscriptionRow)>, DatabaseError>;
@@ -13,6 +15,14 @@ pub trait WalletsRepository {
 }
 
 impl WalletsRepository for DatabaseClient {
+    fn get_wallet(&mut self, identifier: &str) -> Result<WalletRow, DatabaseError> {
+        WalletsStore::get_wallet(self, identifier)
+    }
+
+    fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError> {
+        WalletsStore::get_wallet_by_id(self, id)
+    }
+
     fn get_wallets(&mut self, identifiers: Vec<String>) -> Result<Vec<WalletRow>, DatabaseError> {
         WalletsStore::get_wallets(self, identifiers)
     }

@@ -1,7 +1,7 @@
 use gem_rewards::{RewardsRedemptionError, redeem_points};
 use primitives::{ConfigKey, NaiveDateTimeExt, now};
 use primitives::rewards::{RedemptionResult, Rewards};
-use storage::{ConfigCacher, Database, RewardsRedemptionsRepository, RewardsRepository};
+use storage::{ConfigCacher, Database, RewardsRedemptionsRepository, RewardsRepository, WalletsRepository};
 use streamer::{StreamProducer, StreamProducerQueue};
 
 pub struct RewardsRedemptionClient {
@@ -20,8 +20,9 @@ impl RewardsRedemptionClient {
         }
     }
 
-    pub async fn redeem(&self, address: &str, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {
-        let rewards = self.database.rewards()?.get_reward_by_address(address)?;
+    pub async fn redeem(&self, wallet_identifier: &str, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {
+        let wallet = self.database.wallets()?.get_wallet(wallet_identifier)?;
+        let rewards = self.database.rewards()?.get_reward_by_wallet_id(wallet.id)?;
 
         if !rewards.status.is_enabled() {
             return Err(RewardsRedemptionError::NotEligible("Not eligible for rewards".to_string()).into());

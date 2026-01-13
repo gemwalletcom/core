@@ -10,6 +10,7 @@ mod metrics;
 mod model;
 mod name;
 mod nft;
+mod notifications;
 mod params;
 mod price_alerts;
 mod prices;
@@ -41,6 +42,7 @@ use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
 use name_resolver::NameProviderFactory;
+use notifications::NotificationsClient;
 use name_resolver::client::Client as NameClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
@@ -110,6 +112,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let ip_security_client = IpSecurityClient::new(abuseipdb_client, cacher_client.clone());
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client);
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
+    let notifications_client = NotificationsClient::new(database.clone());
 
     rocket::build()
         .manage(database)
@@ -136,6 +139,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(rewards_client))
         .manage(Mutex::new(redemption_client))
         .manage(Mutex::new(wallets_client))
+        .manage(Mutex::new(notifications_client))
         .manage(auth_client)
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
@@ -209,6 +213,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 referral::create_referral,
                 referral::use_referral_code,
                 referral::redeem_rewards,
+                notifications::get_notifications,
+                notifications::mark_notifications_read,
             ],
         )
         .mount(

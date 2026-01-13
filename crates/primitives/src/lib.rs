@@ -242,6 +242,10 @@ pub mod number_incrementer;
 pub use self::number_incrementer::NumberIncrementer;
 pub mod chain_signer;
 pub use self::chain_signer::ChainSigner;
+pub mod notification_type;
+pub use self::notification_type::NotificationType;
+pub mod notification;
+pub use self::notification::Notification;
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

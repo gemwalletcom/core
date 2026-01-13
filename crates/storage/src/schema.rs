@@ -60,6 +60,10 @@ pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "wallet_type"))]
     pub struct WalletType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "notification_type"))]
+    pub struct NotificationType;
 }
 
 diesel::table! {
@@ -440,6 +444,21 @@ diesel::table! {
         #[max_length = 1024]
         reason -> Nullable<Varchar>,
         reviewed -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::NotificationType;
+
+    notifications (id) {
+        id -> Int4,
+        wallet_id -> Int4,
+        notification_type -> NotificationType,
+        is_read -> Bool,
+        metadata -> Nullable<Jsonb>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
@@ -860,8 +879,7 @@ diesel::table! {
     usernames (username) {
         #[max_length = 64]
         username -> Varchar,
-        #[max_length = 256]
-        address -> Varchar,
+        wallet_id -> Int4,
         status -> UsernameStatus,
         updated_at -> Timestamp,
         created_at -> Timestamp,
@@ -959,6 +977,8 @@ diesel::joinable!(transactions_addresses -> transactions (transaction_id));
 diesel::joinable!(wallets_subscriptions -> chains (chain));
 diesel::joinable!(wallets_subscriptions -> devices (device_id));
 diesel::joinable!(wallets_subscriptions -> wallets (wallet_id));
+diesel::joinable!(notifications -> wallets (wallet_id));
+diesel::joinable!(usernames -> wallets (wallet_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -983,6 +1003,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     nft_collections,
     nft_collections_links,
     nft_reports,
+    notifications,
     parser_state,
     perpetuals,
     perpetuals_assets,
