@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
     id("com.gemwallet.cargo-ndk")
+    id("signing")
 }
 
 android {
@@ -76,6 +77,26 @@ afterEvaluate {
                 groupId = "com.gemwallet.gemstone"
                 artifactId = "gemstone"
                 version = System.getenv("VER_NAME") ?: "1.0.0"
+                pom {
+                    name.set("Gemstone")
+                    description.set("Gem Wallet Core Android library")
+                    url.set("https://github.com/gemwalletcom/core")
+                    licenses {
+                        license {
+                            name.set("MIT")
+                            url.set("https://opensource.org/licenses/MIT")
+                        }
+                    }
+                    scm {
+                        url.set("https://github.com/gemwalletcom/core")
+                    }
+                    developers {
+                        developer {
+                            id.set("gemwallet")
+                            name.set("Gem Wallet")
+                        }
+                    }
+                }
             }
             create<MavenPublication>("debug") {
                 from(components["debug"])
@@ -85,6 +106,11 @@ afterEvaluate {
             }
         }
     }
+}
+
+signing {
+    useInMemoryPgpKeys(System.getenv("MVN_SIGNING_KEY"), System.getenv("MVN_SIGNING_PASSPHRASE"))
+    sign(publishing.publications["release"])
 }
 
 publishing {
