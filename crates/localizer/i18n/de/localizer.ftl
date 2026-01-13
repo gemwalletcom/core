@@ -48,3 +48,4 @@ notification_rewards_disabled_description = Dieser Empfehlungscode wurde aufgrun
 rewards_error_referral_eligibility_expired = Empfehlungscodes müssen innerhalb von {$value} Tage bis zur Erstellung Ihres Benutzernamens.
 notification_reward_pending_title = 💎 Neue Empfehlung
 notification_reward_pending_description = Jemand hat Ihren Empfehlungscode verwendet. Überprüfung ausstehend.
+rewards_error_username_daily_limit_reached = Das tägliche Limit für die Erstellung von Benutzernamen ist erreicht. Bitte versuchen Sie es morgen erneut.

@@ -48,3 +48,4 @@ notification_rewards_disabled_description = קוד הפניה זה הושבת ע
 rewards_error_referral_eligibility_expired = יש להחיל קודי הפניה בתוך {$value} ימים של יצירת שם המשתמש שלך.
 notification_reward_pending_title = 💎 הפניה חדשה
 notification_reward_pending_description = מישהו השתמש בקוד ההפניה שלך. ממתין לאימות.
+rewards_error_username_daily_limit_reached = הגעת למגבלת יצירת שמות משתמש יומית. אנא נסה שוב מחר.

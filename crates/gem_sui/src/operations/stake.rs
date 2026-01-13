@@ -30,9 +30,7 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Er
     let stake_amount = ptb.pure(&input.stake_amount);
     let gas = ptb.gas();
     let mut split_results = ptb.split_coins(gas, vec![stake_amount]);
-    let split_result = split_results
-        .pop()
-        .expect("split_coins should return one argument");
+    let split_result = split_results.pop().expect("split_coins should return one argument");
 
     // move call request_add_stake
     let function = Function::new(

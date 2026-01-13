@@ -87,13 +87,13 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
     let search_client = SearchClient::new(&search_index_client);
     let swap_client = SwapClient::new(database.clone());
-    let providers = FiatProviderFactory::new_providers(settings_clone.clone());
-    let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
+    let fiat_providers = FiatProviderFactory::new_providers(settings_clone.clone());
+    let fiat_ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
     let fiat_client = FiatClient::new(
         database.clone(),
         cacher_client.clone(),
-        providers,
-        ip_check_client.clone(),
+        fiat_providers,
+        fiat_ip_check_client.clone(),
         stream_producer.clone(),
     );
     let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client);
@@ -129,7 +129,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
         .manage(Mutex::new(support_client))
-        .manage(Mutex::new(ip_check_client))
+        .manage(Mutex::new(fiat_ip_check_client))
         .manage(Mutex::new(rewards_client))
         .manage(Mutex::new(redemption_client))
         .manage(auth_client)

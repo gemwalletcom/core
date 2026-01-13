@@ -1,3 +1,4 @@
+use crate::sql_types::UsernameStatus;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -7,7 +8,17 @@ use serde::{Deserialize, Serialize};
 pub struct UsernameRow {
     pub username: String,
     pub address: String,
-    pub is_verified: bool,
+    pub status: UsernameStatus,
+}
+
+impl UsernameRow {
+    pub fn has_custom_username(&self) -> bool {
+        !self.username.eq_ignore_ascii_case(&self.address)
+    }
+
+    pub fn is_verified(&self) -> bool {
+        self.status.is_verified()
+    }
 }
 
 #[derive(Debug, Insertable, Clone)]
@@ -16,5 +27,5 @@ pub struct UsernameRow {
 pub struct NewUsernameRow {
     pub username: String,
     pub address: String,
-    pub is_verified: bool,
+    pub status: UsernameStatus,
 }

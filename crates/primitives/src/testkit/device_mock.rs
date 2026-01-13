@@ -1,13 +1,13 @@
-use crate::{Device, Platform};
+use crate::{Device, Platform, PlatformStore};
 
 impl Device {
     pub fn mock() -> Self {
         Self {
             id: "test-device-id".to_string(),
             platform: Platform::IOS,
-            os: Some("iOS 17.0".to_string()),
-            model: Some("iPhone 15".to_string()),
-            platform_store: None,
+            platform_store: PlatformStore::AppStore,
+            os: "iOS 17.0".to_string(),
+            model: "iPhone 15".to_string(),
             token: "test-token-123".to_string(),
             locale: "en".to_string(),
             version: "1.0.0".to_string(),

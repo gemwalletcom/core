@@ -1,19 +1,14 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
-use primitives::rewards::RewardRedemptionType;
-use primitives::{
-    AddressType, Asset, AssetTag, AssetType, Chain, ConfigKey, FiatProviderName, LinkType, NFTType, Platform, PlatformStore, RewardEventType, Subscription,
-    TransactionType,
-};
+use primitives::{Asset, AssetTag, Chain, ConfigKey, FiatProviderName, PlatformStore as PrimitivePlatformStore, Subscription};
+use storage::sql_types::{Platform, PlatformStore};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::database::rewards::RewardsEventTypesStore;
-use storage::database::rewards_redemptions::RewardsRedemptionTypesStore;
-use storage::models::{ConfigRow, FiatRateRow, RewardEventTypeRow, RewardRedemptionTypeRow, UpdateDeviceRow};
+use storage::models::{ConfigRow, FiatRateRow, UpdateDeviceRow};
 use storage::{
-    AssetsRepository, AssetsTypesRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NftRepository, PricesDexRepository,
-    ReleasesRepository, ScanAddressesRepository, SubscriptionsRepository, TagRepository, TransactionsRepository,
+    AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, PricesDexRepository, ReleasesRepository,
+    SubscriptionsRepository, TagRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer};
 
@@ -37,11 +32,6 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
         let _ = database.parser_state()?.add_parser_state(chain.as_ref());
     }
 
-    info_with_fields!("setup", step = "assets_types");
-
-    let assets_types = AssetType::all();
-    let _ = database.assets_types()?.add_assets_types(assets_types);
-
     info_with_fields!("setup", step = "assets");
     let assets = chains.into_iter().map(|x| Asset::from_chain(x).as_basic_primitive()).collect::<Vec<_>>();
     let _ = database.assets()?.add_assets(assets);
@@ -55,41 +45,16 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
 
     info_with_fields!("setup", step = "releases");
 
-    let releases = PlatformStore::all()
+    let releases = PrimitivePlatformStore::all()
         .into_iter()
         .map(|x| storage::models::ReleaseRow {
-            platform_store: x.as_ref().to_string(),
+            platform_store: x.into(),
             version: "1.0.0".to_string(),
             upgrade_required: false,
         })
         .collect::<Vec<_>>();
 
     let _ = database.releases()?.add_releases(releases);
-
-    info_with_fields!("setup", step = "nft types");
-    let types = NFTType::all().into_iter().map(storage::models::NftTypeRow::from_primitive).collect::<Vec<_>>();
-    let _ = database.nft()?.add_nft_types(types);
-
-    info_with_fields!("setup", step = "link types");
-    let link_types = LinkType::all()
-        .into_iter()
-        .map(storage::models::LinkTypeRow::from_primitive)
-        .collect::<Vec<_>>();
-    let _ = database.link_types()?.add_link_types(link_types);
-
-    info_with_fields!("setup", step = "scan address types");
-    let address_types = AddressType::all()
-        .into_iter()
-        .map(storage::models::ScanAddressTypeRow::from_primitive)
-        .collect::<Vec<_>>();
-    let _ = database.scan_addresses()?.add_scan_address_types(address_types);
-
-    info_with_fields!("setup", step = "transaction types");
-    let address_types = TransactionType::all()
-        .into_iter()
-        .map(storage::models::TransactionTypeRow::from_primitive)
-        .collect::<Vec<_>>();
-    let _ = database.transactions()?.add_transactions_types(address_types);
 
     info_with_fields!("setup", step = "assets tags");
     let assets_tags = AssetTag::all().into_iter().map(storage::models::TagRow::from_primitive).collect::<Vec<_>>();
@@ -103,20 +68,9 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
         .collect::<Vec<_>>();
     let _ = database.prices_dex()?.add_prices_dex_providers(providers);
 
-    info_with_fields!("setup", step = "reward event types");
-    let event_types = RewardEventType::all().into_iter().map(RewardEventTypeRow::from_primitive).collect::<Vec<_>>();
-    let _ = database.reward_event_types()?.add_reward_event_types(event_types);
-
-    info_with_fields!("setup", step = "reward redemption types");
-    let redemption_types = RewardRedemptionType::all()
-        .into_iter()
-        .map(RewardRedemptionTypeRow::from_primitive)
-        .collect::<Vec<_>>();
-    let _ = database.reward_redemption_types()?.add_reward_redemption_types(redemption_types);
-
     info_with_fields!("setup", step = "config");
     let configs = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect::<Vec<_>>();
-    let _ = database.config()?.add_config(configs);
+    let _ = database.client()?.add_config(configs);
 
     info_with_fields!(
         "setup",
@@ -195,8 +149,8 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
 
     let ios_device = UpdateDeviceRow {
         device_id: "test".to_string(),
-        platform: Platform::IOS.as_ref().to_string(),
-        platform_store: Some(PlatformStore::AppStore.as_ref().to_string()),
+        platform: Platform::IOS,
+        platform_store: PlatformStore::AppStore,
         token: "test_token".to_string(),
         locale: "en".to_string(),
         currency: fiat_rate.id.clone(),
@@ -204,14 +158,14 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         is_price_alerts_enabled: true,
         version: "1.0.0".to_string(),
         subscriptions_version: 1,
-        os: Some("iOS 18".to_string()),
-        model: Some("iPhone 16".to_string()),
+        os: "iOS 18".to_string(),
+        model: "iPhone 16".to_string(),
     };
 
     let android_device = UpdateDeviceRow {
         device_id: "test-android".to_string(),
-        platform: Platform::Android.as_ref().to_string(),
-        platform_store: Some(PlatformStore::GooglePlay.as_ref().to_string()),
+        platform: Platform::Android,
+        platform_store: PlatformStore::GooglePlay,
         token: "test_token_android".to_string(),
         locale: "en".to_string(),
         currency: fiat_rate.id.clone(),
@@ -219,8 +173,8 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         is_price_alerts_enabled: true,
         version: "1.0.0".to_string(),
         subscriptions_version: 1,
-        os: Some("Android 15".to_string()),
-        model: Some("Pixel 9".to_string()),
+        os: "Android 15".to_string(),
+        model: "Pixel 9".to_string(),
     };
 
     let _ = database.devices()?.add_device(ios_device).expect("Failed to add iOS device");

@@ -48,3 +48,4 @@ notification_rewards_disabled_description = 이 추천 코드는 추천 프로�
 rewards_error_referral_eligibility_expired = 추천 코드는 반드시 다음 기간 내에 적용해야 합니다. {$value} 사용자 이름을 만드는 데 며칠이 걸립니다.
 notification_reward_pending_title = 💎 신규 추천
 notification_reward_pending_description = 누군가 당신의 추천 코드를 사용했습니다. 확인 중입니다.
+rewards_error_username_daily_limit_reached = 일일 사용자 이름 생성 한도에 도달했습니다. 내일 다시 시도해 주세요.

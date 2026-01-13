@@ -1,7 +1,7 @@
 use gem_tracing::info_with_fields;
 use primitives::{ConfigKey, NaiveDateTimeExt, now};
 use std::error::Error;
-use storage::{AbusePatterns, ConfigRepository, Database, RiskSignalsRepository};
+use storage::{AbusePatterns, ConfigCacher, Database, RiskSignalsRepository};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 struct AbuseDetectionConfig {
@@ -34,17 +34,19 @@ struct AbuseEvaluation {
 
 pub struct RewardsAbuseChecker {
     database: Database,
+    config: ConfigCacher,
     stream_producer: StreamProducer,
 }
 
 impl RewardsAbuseChecker {
     pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
-        Self { database, stream_producer }
+        let config = ConfigCacher::new(database.clone());
+        Self { database, config, stream_producer }
     }
 
     pub async fn check(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
-        let config = Self::load_config(client.config())?;
+        let config = self.load_config()?;
         let since = now().ago(config.lookback);
 
         let usernames = client.get_referrer_usernames_with_referrals(since, config.min_referrals_to_evaluate)?;
@@ -157,20 +159,20 @@ impl RewardsAbuseChecker {
         Ok(Some(event_id))
     }
 
-    fn load_config(config: &mut dyn ConfigRepository) -> Result<AbuseDetectionConfig, storage::DatabaseError> {
+    fn load_config(&self) -> Result<AbuseDetectionConfig, storage::DatabaseError> {
         Ok(AbuseDetectionConfig {
-            disable_threshold: config.get_config_i64(ConfigKey::ReferralAbuseDisableThreshold)?,
-            attempt_penalty: config.get_config_i64(ConfigKey::ReferralAbuseAttemptPenalty)?,
-            verified_threshold_multiplier: config.get_config_f64(ConfigKey::ReferralAbuseVerifiedThresholdMultiplier)?,
-            lookback: config.get_config_duration(ConfigKey::ReferralAbuseLookback)?,
-            min_referrals_to_evaluate: config.get_config_i64(ConfigKey::ReferralAbuseMinReferralsToEvaluate)?,
-            country_rotation_threshold: config.get_config_i64(ConfigKey::ReferralAbuseCountryRotationThreshold)?,
-            country_rotation_penalty: config.get_config_i64(ConfigKey::ReferralAbuseCountryRotationPenalty)?,
-            ring_referrers_per_device_threshold: config.get_config_i64(ConfigKey::ReferralAbuseRingReferrersPerDeviceThreshold)?,
-            ring_referrers_per_fingerprint_threshold: config.get_config_i64(ConfigKey::ReferralAbuseRingReferrersPerFingerprintThreshold)?,
-            ring_penalty: config.get_config_i64(ConfigKey::ReferralAbuseRingPenalty)?,
-            device_farming_threshold: config.get_config_i64(ConfigKey::ReferralAbuseDeviceFarmingThreshold)?,
-            device_farming_penalty: config.get_config_i64(ConfigKey::ReferralAbuseDeviceFarmingPenalty)?,
+            disable_threshold: self.config.get_i64(ConfigKey::ReferralAbuseDisableThreshold)?,
+            attempt_penalty: self.config.get_i64(ConfigKey::ReferralAbuseAttemptPenalty)?,
+            verified_threshold_multiplier: self.config.get_f64(ConfigKey::ReferralAbuseVerifiedThresholdMultiplier)?,
+            lookback: self.config.get_duration(ConfigKey::ReferralAbuseLookback)?,
+            min_referrals_to_evaluate: self.config.get_i64(ConfigKey::ReferralAbuseMinReferralsToEvaluate)?,
+            country_rotation_threshold: self.config.get_i64(ConfigKey::ReferralAbuseCountryRotationThreshold)?,
+            country_rotation_penalty: self.config.get_i64(ConfigKey::ReferralAbuseCountryRotationPenalty)?,
+            ring_referrers_per_device_threshold: self.config.get_i64(ConfigKey::ReferralAbuseRingReferrersPerDeviceThreshold)?,
+            ring_referrers_per_fingerprint_threshold: self.config.get_i64(ConfigKey::ReferralAbuseRingReferrersPerFingerprintThreshold)?,
+            ring_penalty: self.config.get_i64(ConfigKey::ReferralAbuseRingPenalty)?,
+            device_farming_threshold: self.config.get_i64(ConfigKey::ReferralAbuseDeviceFarmingThreshold)?,
+            device_farming_penalty: self.config.get_i64(ConfigKey::ReferralAbuseDeviceFarmingPenalty)?,
         })
     }
 }

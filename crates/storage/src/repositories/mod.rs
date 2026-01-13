@@ -1,16 +1,13 @@
 pub mod assets_addresses_repository;
 pub mod assets_links_repository;
 pub mod assets_repository;
-pub mod assets_types_repository;
 pub mod chains_repository;
 pub mod charts_repository;
 pub mod config_repository;
 pub mod devices_repository;
 pub mod fiat_repository;
-pub mod link_types_repository;
 pub mod migrations_repository;
 pub mod nft_repository;
-pub mod nodes_repository;
 pub mod parser_state_repository;
 pub mod perpetuals_repository;
 pub mod price_alerts_repository;

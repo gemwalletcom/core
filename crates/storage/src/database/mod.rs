@@ -1,17 +1,14 @@
 pub mod assets;
 pub mod assets_addresses;
 pub mod assets_links;
-pub mod assets_types;
 
 pub mod chains;
 pub mod charts;
 pub mod config;
 pub mod devices;
 pub mod fiat;
-pub mod link_types;
 pub mod migrations;
 pub mod nft;
-pub mod nodes;
 pub mod parser_state;
 pub mod perpetuals;
 pub mod price_alerts;
@@ -36,13 +33,11 @@ pub type PgPool = Pool<ConnectionManager<PgConnection>>;
 pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 use crate::{
-    AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChainsRepository, ChartsRepository, ConfigRepository,
-    DevicesRepository, FiatRepository, LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository,
-    PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRedemptionsRepository, RewardsRepository, ScanAddressesRepository,
+    AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository,
+    FiatRepository, MigrationsRepository, NftRepository, ParserStateRepository, PerpetualsRepository, PriceAlertsRepository,
+    PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRedemptionsRepository, RewardsRepository, ScanAddressesRepository,
     SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
 };
-use rewards::RewardsEventTypesStore;
-use rewards_redemptions::RewardsRedemptionTypesStore;
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
     let manager = ConnectionManager::<PgConnection>::new(database_url);
@@ -74,10 +69,6 @@ impl DatabaseClient {
         self
     }
 
-    pub fn assets_types(&mut self) -> &mut dyn AssetsTypesRepository {
-        self
-    }
-
     pub fn chains(&mut self) -> &mut dyn ChainsRepository {
         self
     }
@@ -98,10 +89,6 @@ impl DatabaseClient {
         self
     }
 
-    pub fn link_types(&mut self) -> &mut dyn LinkTypesRepository {
-        self
-    }
-
     pub fn migrations(&mut self) -> &mut dyn MigrationsRepository {
         self
     }
@@ -111,10 +98,6 @@ impl DatabaseClient {
     }
 
     pub fn nft(&mut self) -> &mut dyn NftRepository {
-        self
-    }
-
-    pub fn nodes(&mut self) -> &mut dyn NodesRepository {
         self
     }
 
@@ -139,14 +122,6 @@ impl DatabaseClient {
     }
 
     pub fn rewards_redemptions(&mut self) -> &mut dyn RewardsRedemptionsRepository {
-        self
-    }
-
-    pub fn reward_event_types(&mut self) -> &mut dyn RewardsEventTypesStore {
-        self
-    }
-
-    pub fn reward_redemption_types(&mut self) -> &mut dyn RewardsRedemptionTypesStore {
         self
     }
 

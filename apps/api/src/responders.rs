@@ -78,7 +78,7 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
             }
         }
 
-        ApiError::InternalServerError(format!("Service error: {}", error))
+        ApiError::InternalServerError(format!("{}", error))
     }
 }
 

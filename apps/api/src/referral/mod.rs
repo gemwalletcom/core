@@ -41,7 +41,13 @@ pub async fn create_referral(
     Ok(client
         .lock()
         .await
-        .create_referral(&request.auth.address, &request.data.code, request.auth.device.id, &ip.to_string())
+        .create_username(
+            &request.auth.address,
+            &request.data.code,
+            request.auth.device.id,
+            &ip.to_string(),
+            &request.auth.device.locale,
+        )
         .await?
         .into())
 }
@@ -57,13 +63,13 @@ pub async fn use_referral_code(
     request: Authenticated<ReferralCode>,
     ip: std::net::IpAddr,
     client: &State<Mutex<RewardsClient>>,
-) -> Result<ApiResponse<bool>, ApiError> {
-    client
+) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
+    let events = client
         .lock()
         .await
         .use_referral_code(&request.auth, &request.data.code, &ip.to_string())
         .await?;
-    Ok(true.into())
+    Ok(events.into())
 }
 
 #[post("/rewards/<address>/redeem", format = "json", data = "<request>")]

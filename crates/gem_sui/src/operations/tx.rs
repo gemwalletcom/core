@@ -38,7 +38,6 @@ pub fn fill_tx(ptb: &mut TransactionBuilder, sender_address: Address, gas_price:
     ptb.add_gas_objects(gas_objects);
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

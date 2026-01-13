@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use gem_rewards::{RedemptionAsset, RedemptionRequest, RedemptionService};
-use primitives::rewards::RedemptionStatus;
+use primitives::rewards::RedemptionStatus as PrimitiveRedemptionStatus;
 use std::error::Error;
 use std::sync::Arc;
+use storage::sql_types::RedemptionStatus;
 use storage::{Database, RedemptionUpdate, RewardsRedemptionsRepository, RewardsRepository};
 use streamer::RewardsRedemptionPayload;
 use streamer::consumer::MessageConsumer;
@@ -27,7 +28,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
     async fn process(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let redemption = self.database.rewards_redemptions()?.get_redemption(payload.redemption_id)?;
 
-        if redemption.status == RedemptionStatus::Completed.as_ref() {
+        if *redemption.status == PrimitiveRedemptionStatus::Completed {
             return Ok(true);
         }
 
@@ -45,7 +46,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
             Ok(result) => {
                 let updates = vec![
                     RedemptionUpdate::TransactionId(result.transaction_id),
-                    RedemptionUpdate::Status(RedemptionStatus::Completed.as_ref().to_string()),
+                    RedemptionUpdate::Status(RedemptionStatus::Completed),
                 ];
 
                 self.database.rewards_redemptions()?.update_redemption(payload.redemption_id, updates)?;
@@ -53,7 +54,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
             }
             Err(e) => {
                 let updates = vec![
-                    RedemptionUpdate::Status(RedemptionStatus::Failed.as_ref().to_string()),
+                    RedemptionUpdate::Status(RedemptionStatus::Failed),
                     RedemptionUpdate::Error(e.to_string()),
                 ];
 

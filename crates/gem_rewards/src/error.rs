@@ -113,3 +113,27 @@ impl fmt::Display for RewardsRedemptionError {
 }
 
 impl Error for RewardsRedemptionError {}
+
+#[derive(Debug)]
+pub enum UsernameError {
+    LimitReached(ConfigKey),
+}
+
+impl fmt::Display for UsernameError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UsernameError::LimitReached(key) => write!(f, "Username creation limit reached: {}", key.as_ref()),
+        }
+    }
+}
+
+impl Error for UsernameError {}
+
+impl Localize for UsernameError {
+    fn localize(&self, locale: &str) -> String {
+        let localizer = LanguageLocalizer::new_with_language(locale);
+        match self {
+            Self::LimitReached(_) => localizer.rewards_error_username_daily_limit_reached(),
+        }
+    }
+}

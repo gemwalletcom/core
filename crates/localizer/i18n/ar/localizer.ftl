@@ -48,3 +48,4 @@ notification_rewards_disabled_description = تم تعطيل رمز الإحال�
 rewards_error_referral_eligibility_expired = يجب تطبيق رموز الإحالة في غضون {$value} أيام من إنشاء اسم المستخدم الخاص بك.
 notification_reward_pending_title = 💎 إحالة جديدة
 notification_reward_pending_description = تم استخدام رمز الإحالة الخاص بك. جارٍ التحقق.
+rewards_error_username_daily_limit_reached = تم الوصول إلى الحد الأقصى اليومي لإنشاء أسماء المستخدمين. يرجى المحاولة مرة أخرى غداً.

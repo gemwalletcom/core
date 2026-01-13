@@ -48,3 +48,4 @@ notification_rewards_disabled_description = この紹介コードは、紹介プ
 rewards_error_referral_eligibility_expired = 紹介コードは、 {$value} ユーザー名を作成してから数日経過します。
 notification_reward_pending_title = 💎 新規紹介
 notification_reward_pending_description = 誰かがあなたの紹介コードを使用しました。確認待ちです。
+rewards_error_username_daily_limit_reached = 1日のユーザー名作成数の上限に達しました。明日もう一度お試しください。

@@ -48,3 +48,4 @@ notification_rewards_disabled_description = Este código de referencia ha sido d
 rewards_error_referral_eligibility_expired = Los códigos de referencia deben aplicarse dentro de {$value} Días de crear tu nombre de usuario.
 notification_reward_pending_title = 💎 Nueva referencia
 notification_reward_pending_description = Alguien usó tu código de referencia. Pendiente de verificación.
+rewards_error_username_daily_limit_reached = Se ha alcanzado el límite diario de creación de nombres de usuario. Inténtalo de nuevo mañana.

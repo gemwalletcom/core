@@ -1,1 +1,0 @@
-drop table prices_assets;

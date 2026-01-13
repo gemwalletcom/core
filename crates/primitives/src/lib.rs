@@ -90,6 +90,8 @@ pub mod transaction_type;
 pub use self::transaction_type::TransactionType;
 pub mod transaction_state;
 pub use self::transaction_state::TransactionState;
+pub mod username_status;
+pub use self::username_status::UsernameStatus;
 pub mod recent_activity_type;
 pub use self::recent_activity_type::RecentActivityType;
 pub mod transaction_direction;
@@ -139,7 +141,7 @@ pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod rewards;
 pub use self::rewards::{
-    ReferralAllowance, ReferralCode, ReferralLeader, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, RewardLevel, Rewards,
+    ReferralAllowance, ReferralCode, ReferralLeader, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, RewardLevel, RewardStatus, Rewards,
 };
 pub mod tag;
 pub use self::tag::AssetTag;

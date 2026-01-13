@@ -26,7 +26,7 @@ use pricer::PriceClient;
 use primitives::ConfigKey;
 use settings::Settings;
 use settings_chain::ChainProviders;
-use storage::{ConfigRepository, Database};
+use storage::{ConfigCacher, Database};
 pub use store_charts_consumer::StoreChartsConsumer;
 pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
@@ -131,6 +131,7 @@ pub async fn run_consumer_store_transactions(settings: Settings) -> Result<(), B
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
     let consumer = StoreTransactionsConsumer {
         database: database.clone(),
+        config_cacher: ConfigCacher::new(database.clone()),
         stream_producer,
         pusher: Pusher::new(database.clone()),
         config: StoreTransactionsConsumerConfig {},
@@ -254,7 +255,8 @@ pub async fn run_consumer_store_prices(settings: Settings) -> Result<(), Box<dyn
     let stream_reader = StreamReader::new(config).await?;
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(database.clone(), cacher_client);
-    let ttl_seconds = database.config()?.get_config_duration(ConfigKey::PricerOutdated)?.as_secs() as i64;
+    let config = ConfigCacher::new(database.clone());
+    let ttl_seconds = config.get_duration(ConfigKey::PricerOutdated)?.as_secs() as i64;
     let consumer = StorePricesConsumer::new(database, price_client, ttl_seconds);
     run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer)).await
 }

@@ -59,7 +59,7 @@ mod chain_integration_tests {
         let request = TransactionStateRequest::new_id(TEST_TRANSACTION_ID.to_string());
         let update = bitcoin_client.get_transaction_status(request).await.unwrap();
 
-        println!("State: {}", update.state);
+        println!("State: {:?}", update.state);
         assert!(update.state == TransactionState::Confirmed);
     }
 

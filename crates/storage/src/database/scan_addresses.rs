@@ -7,7 +7,6 @@ pub(crate) trait ScanAddressesStore {
     fn get_scan_address(&mut self, _chain: Chain, value: &str) -> Result<ScanAddressRow, diesel::result::Error>;
     fn get_scan_addresses(&mut self, queries: &[(Chain, &str)]) -> Result<Vec<ScanAddressRow>, diesel::result::Error>;
     fn get_scan_addresses_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<ScanAddressRow>, diesel::result::Error>;
-    fn add_scan_address_types(&mut self, values: Vec<ScanAddressTypeRow>) -> Result<usize, diesel::result::Error>;
     fn add_scan_addresses(&mut self, values: Vec<NewScanAddressRow>) -> Result<usize, diesel::result::Error>;
 }
 
@@ -42,14 +41,6 @@ impl ScanAddressesStore for DatabaseClient {
             .filter(address.eq_any(addresses))
             .select(ScanAddressRow::as_select())
             .load(&mut self.connection)
-    }
-
-    fn add_scan_address_types(&mut self, values: Vec<ScanAddressTypeRow>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::scan_addresses_types::dsl::*;
-        diesel::insert_into(scan_addresses_types)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
     }
 
     fn add_scan_addresses(&mut self, values: Vec<NewScanAddressRow>) -> Result<usize, diesel::result::Error> {

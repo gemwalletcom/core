@@ -36,6 +36,44 @@ impl RewardRedemptionType {
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
+pub enum RewardStatus {
+    Unverified,
+    Pending,
+    Verified,
+    Trusted,
+    Disabled,
+}
+
+impl RewardStatus {
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect()
+    }
+
+    pub fn is_verified(&self) -> bool {
+        match self {
+            Self::Unverified | Self::Verified | Self::Trusted => true,
+            Self::Pending | Self::Disabled => false,
+        }
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            Self::Unverified | Self::Pending | Self::Verified | Self::Trusted => true,
+            Self::Disabled => false,
+        }
+    }
+}
+
+impl Default for RewardStatus {
+    fn default() -> Self {
+        Self::Unverified
+    }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
+#[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
 pub enum RewardEventType {
     CreateUsername,
     InvitePending,
@@ -65,18 +103,40 @@ impl RewardEventType {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
+pub struct ReferralCodeActivation {
+    pub swap_completed: bool,
+    pub swap_amount: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralActivation {
+    pub verify_completed: bool,
+    pub verify_after: Option<DateTime<Utc>>,
+    pub swap_completed: bool,
+    pub swap_amount: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
 #[derive(Default)]
 pub struct Rewards {
     pub code: Option<String>,
     pub referral_count: i32,
     pub points: i32,
     pub used_referral_code: Option<String>,
+    pub status: RewardStatus,
+    #[typeshare(skip)]
     pub is_enabled: bool,
+    #[typeshare(skip)]
     pub verified: bool,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
     pub referral_allowance: ReferralAllowance,
-    pub pending_verification_after: Option<DateTime<Utc>>,
+    pub referral_code_activation: Option<ReferralCodeActivation>,
+    pub referral_activation: Option<ReferralActivation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]

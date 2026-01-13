@@ -48,3 +48,4 @@ notification_rewards_disabled_description = This referral code has been disabled
 rewards_error_referral_eligibility_expired = Referral codes must be applied within {$value} days of creating your username.
 notification_reward_pending_title = 💎 New Referral
 notification_reward_pending_description = Someone used your referral code. Pending verification.
+rewards_error_username_daily_limit_reached = Daily username creation limit has been reached. Please try again tomorrow.

@@ -48,3 +48,4 @@ notification_rewards_disabled_description = 由於多次違反我們的建議計
 rewards_error_referral_eligibility_expired = 推薦碼必須在有效期限內使用。 {$value} 建立使用者名稱所需天數。
 notification_reward_pending_title = 💎 新推薦
 notification_reward_pending_description = 有人使用了您的推薦碼。正在等待驗證。
+rewards_error_username_daily_limit_reached = 每日使用者名稱建立數量已達上限，請明日再試。

@@ -2,15 +2,21 @@ use crate::alien::AlienError;
 use gem_jsonrpc::types::{ERROR_CLIENT_ERROR, JsonRpcError};
 use std::{error::Error, fmt::Display};
 
+/// Errors that can occur during gateway operations.
 #[derive(Debug, Clone, uniffi::Error)]
 pub enum GatewayError {
+    /// Network-related errors such as timeouts, connection failures, or HTTP errors.
     NetworkError { msg: String },
+    /// Non-network errors from platform code (Kotlin/Swift), allowing clients to
+    /// distinguish and map back to original error types (e.g., BlockchainError.DustError).
+    PlatformError { msg: String },
 }
 
 impl Display for GatewayError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NetworkError { msg: message } => write!(f, "Network error: {}", message),
+            Self::NetworkError { msg } => write!(f, "Network error: {}", msg),
+            Self::PlatformError { msg } => write!(f, "Platform error: {}", msg),
         }
     }
 }
@@ -72,9 +78,8 @@ mod tests {
         let mapped = map_network_error(Box::new(error));
 
         match mapped {
-            GatewayError::NetworkError { msg } => {
-                assert_eq!(msg, "HTTP error: status 404");
-            }
+            GatewayError::NetworkError { msg } => assert_eq!(msg, "HTTP error: status 404"),
+            GatewayError::PlatformError { .. } => panic!("Expected NetworkError"),
         }
     }
 
@@ -88,6 +93,7 @@ mod tests {
 
         match mapped {
             GatewayError::NetworkError { msg } => assert_eq!(msg, "HTTP error: status 404"),
+            GatewayError::PlatformError { .. } => panic!("Expected NetworkError"),
         }
     }
 }
