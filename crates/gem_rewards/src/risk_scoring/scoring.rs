@@ -227,7 +227,7 @@ mod tests {
             device_currency: "USD".to_string(),
             ip_address: ip.to_string(),
             ip_country_code: "US".to_string(),
-            ip_usage_type: IpUsageType::Isp.to_string(),
+            ip_usage_type: IpUsageType::Isp.into(),
             ip_isp: isp.to_string(),
             ip_abuse_score: 0,
             risk_score: 0,
