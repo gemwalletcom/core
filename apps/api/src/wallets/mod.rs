@@ -2,11 +2,11 @@ pub mod client;
 use crate::params::DeviceIdParam;
 use crate::responders::{ApiError, ApiResponse};
 pub use client::WalletsClient;
-use primitives::WalletSubscription;
+use primitives::{WalletSubscription, WalletSubscriptionChains};
 use rocket::{State, delete, get, post, serde::json::Json, tokio::sync::Mutex};
 
 #[get("/subscriptions/<device_id>")]
-pub async fn get_subscriptions(device_id: DeviceIdParam, client: &State<Mutex<WalletsClient>>) -> Result<ApiResponse<Vec<WalletSubscription>>, ApiError> {
+pub async fn get_subscriptions(device_id: DeviceIdParam, client: &State<Mutex<WalletsClient>>) -> Result<ApiResponse<Vec<WalletSubscriptionChains>>, ApiError> {
     Ok(client.lock().await.get_subscriptions(&device_id.0).await?.into())
 }
 

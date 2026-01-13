@@ -1,4 +1,4 @@
-use crate::sql_types::{ChainRow, WalletSource, WalletType};
+use crate::sql_types::{ChainRow, WalletIdTypeRow, WalletSource, WalletType};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct WalletRow {
     pub id: i32,
-    pub identifier: String,
+    #[diesel(column_name = identifier)]
+    pub wallet_id: WalletIdTypeRow,
     pub wallet_type: WalletType,
     pub source: WalletSource,
 }

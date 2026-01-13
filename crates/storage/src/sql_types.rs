@@ -206,3 +206,41 @@ macro_rules! diesel_varchar {
 }
 
 diesel_varchar!(ChainRow, Chain);
+
+macro_rules! diesel_varchar_display {
+    ($wrapper:ident, $inner:ty) => {
+        #[derive(Debug, Clone, Serialize, Deserialize, AsExpression, FromSqlRow)]
+        #[serde(transparent)]
+        #[diesel(sql_type = diesel::sql_types::Varchar)]
+        pub struct $wrapper(pub $inner);
+
+        impl Deref for $wrapper {
+            type Target = $inner;
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+
+        impl From<$inner> for $wrapper {
+            fn from(v: $inner) -> Self {
+                Self(v)
+            }
+        }
+
+        impl FromSql<diesel::sql_types::Varchar, Pg> for $wrapper {
+            fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+                let s = std::str::from_utf8(bytes.as_bytes())?;
+                Ok(Self(<$inner>::from_str(s).map_err(|e| format!("Invalid {}: {}", stringify!($wrapper), e))?))
+            }
+        }
+
+        impl ToSql<diesel::sql_types::Varchar, Pg> for $wrapper {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+                out.write_all(self.0.to_string().as_bytes())?;
+                Ok(serialize::IsNull::No)
+            }
+        }
+    };
+}
+
+diesel_varchar_display!(WalletIdTypeRow, primitives::WalletIdType);

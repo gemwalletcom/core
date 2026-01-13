@@ -1,4 +1,6 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
+use std::str::FromStr;
 use typeshare::typeshare;
 
 use crate::chain::Chain;
@@ -44,39 +46,11 @@ impl<'de> Deserialize<'de> for WalletIdType {
 
 impl WalletIdType {
     pub fn id(&self) -> String {
-        match self {
-            WalletIdType::Multicoin(address) => format!("{}_{}", WalletType::Multicoin.as_ref(), address),
-            WalletIdType::Single(chain, address)
-            | WalletIdType::PrivateKey(chain, address)
-            | WalletIdType::View(chain, address) => format!("{}_{}_{}", self.wallet_type().as_ref(), chain.as_ref(), address),
-        }
+        self.to_string()
     }
 
     pub fn from_id(id: &str) -> Option<Self> {
-        let parts: Vec<&str> = id.splitn(2, '_').collect();
-        if parts.len() != 2 {
-            return None;
-        }
-        let wallet_type: WalletType = parts[0].parse().ok()?;
-        let rest = parts[1];
-
-        match wallet_type {
-            WalletType::Multicoin => Some(WalletIdType::Multicoin(rest.to_string())),
-            WalletType::Single | WalletType::PrivateKey | WalletType::View => {
-                let chain_parts: Vec<&str> = rest.splitn(2, '_').collect();
-                if chain_parts.len() != 2 {
-                    return None;
-                }
-                let chain: Chain = chain_parts[0].parse().ok()?;
-                let address = chain_parts[1].to_string();
-                match wallet_type {
-                    WalletType::Single => Some(WalletIdType::Single(chain, address)),
-                    WalletType::PrivateKey => Some(WalletIdType::PrivateKey(chain, address)),
-                    WalletType::View => Some(WalletIdType::View(chain, address)),
-                    _ => None,
-                }
-            }
-        }
+        id.parse().ok()
     }
 
     pub fn wallet_type(&self) -> WalletType {
@@ -89,6 +63,48 @@ impl WalletIdType {
     }
 }
 
+impl fmt::Display for WalletIdType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            WalletIdType::Multicoin(address) => write!(f, "{}_{}", WalletType::Multicoin.as_ref(), address),
+            WalletIdType::Single(chain, address)
+            | WalletIdType::PrivateKey(chain, address)
+            | WalletIdType::View(chain, address) => write!(f, "{}_{}_{}", self.wallet_type().as_ref(), chain.as_ref(), address),
+        }
+    }
+}
+
+impl FromStr for WalletIdType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.splitn(2, '_').collect();
+        if parts.len() != 2 {
+            return Err(format!("invalid wallet id: {}", s));
+        }
+        let wallet_type: WalletType = parts[0].parse().map_err(|_| format!("invalid wallet type: {}", parts[0]))?;
+        let rest = parts[1];
+
+        match wallet_type {
+            WalletType::Multicoin => Ok(WalletIdType::Multicoin(rest.to_string())),
+            WalletType::Single | WalletType::PrivateKey | WalletType::View => {
+                let chain_parts: Vec<&str> = rest.splitn(2, '_').collect();
+                if chain_parts.len() != 2 {
+                    return Err(format!("invalid wallet id format: {}", s));
+                }
+                let chain: Chain = chain_parts[0].parse().map_err(|_| format!("invalid chain: {}", chain_parts[0]))?;
+                let address = chain_parts[1].to_string();
+                match wallet_type {
+                    WalletType::Single => Ok(WalletIdType::Single(chain, address)),
+                    WalletType::PrivateKey => Ok(WalletIdType::PrivateKey(chain, address)),
+                    WalletType::View => Ok(WalletIdType::View(chain, address)),
+                    _ => Err(format!("invalid wallet type: {}", s)),
+                }
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct WalletSubscription {
@@ -96,6 +112,14 @@ pub struct WalletSubscription {
     pub wallet_id: WalletIdType,
     pub source: WalletSource,
     pub subscriptions: Vec<ChainAddress>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+pub struct WalletSubscriptionChains {
+    #[typeshare(serialized_as = "String")]
+    pub wallet_id: WalletIdType,
+    pub chains: Vec<Chain>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 
-use primitives::{Chain, ChainAddress, WalletIdType, WalletSource, WalletSubscription};
+use primitives::{Chain, WalletIdType, WalletSource, WalletSubscription, WalletSubscriptionChains};
 use storage::models::NewWalletRow;
 use storage::sql_types::WalletType;
 use storage::{Database, WalletsRepository};
@@ -18,30 +18,16 @@ impl WalletsClient {
         Self { database, stream_producer }
     }
 
-    pub async fn get_subscriptions(&self, device_id: &str) -> Result<Vec<WalletSubscription>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_subscriptions(&self, device_id: &str) -> Result<Vec<WalletSubscriptionChains>, Box<dyn Error + Send + Sync>> {
         let rows = self.database.wallets()?.get_subscriptions(device_id)?;
 
-        let result = rows.into_iter().fold(
-            HashMap::<String, (WalletIdType, WalletSource, Vec<ChainAddress>)>::new(),
-            |mut acc, (wallet_row, subscription_row)| {
-                let chain_address = ChainAddress::new(subscription_row.chain.0, subscription_row.address);
-                acc.entry(wallet_row.identifier.clone())
-                    .or_insert_with(|| {
-                        let wallet_id =
-                            WalletIdType::from_id(&wallet_row.identifier).unwrap_or(WalletIdType::Multicoin(wallet_row.identifier.clone()));
-                        let source = wallet_row.source.0.clone();
-                        (wallet_id, source, Vec::new())
-                    })
-                    .2
-                    .push(chain_address);
-                acc
-            },
-        );
+        let result = rows.into_iter().fold(HashMap::<String, (WalletIdType, Vec<Chain>)>::new(), |mut acc, (wallet_row, subscription_row)| {
+            let wallet_id = wallet_row.wallet_id.0.clone();
+            acc.entry(wallet_id.id()).or_insert((wallet_id, Vec::new())).1.push(subscription_row.chain.0);
+            acc
+        });
 
-        Ok(result
-            .into_values()
-            .map(|(wallet_id, source, subscriptions)| WalletSubscription { wallet_id, source, subscriptions })
-            .collect())
+        Ok(result.into_values().map(|(wallet_id, chains)| WalletSubscriptionChains { wallet_id, chains }).collect())
     }
 
     pub async fn add_subscriptions(&self, device_id: &str, wallet_subscriptions: Vec<WalletSubscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -51,7 +37,7 @@ impl WalletsClient {
         let mut wallet_ids: HashMap<String, i32> = store
             .get_wallets(identifiers)?
             .into_iter()
-            .map(|x| (x.identifier, x.id))
+            .map(|x| (x.wallet_id.id(), x.id))
             .collect();
 
         let new_wallets: Vec<NewWalletRow> = wallet_subscriptions
@@ -67,7 +53,7 @@ impl WalletsClient {
         if !new_wallets.is_empty() {
             let new_identifiers: Vec<String> = new_wallets.iter().map(|x| x.identifier.clone()).collect();
             store.create_wallets(new_wallets)?;
-            wallet_ids.extend(store.get_wallets(new_identifiers)?.into_iter().map(|x| (x.identifier, x.id)));
+            wallet_ids.extend(store.get_wallets(new_identifiers)?.into_iter().map(|x| (x.wallet_id.id(), x.id)));
         }
 
         let subscriptions: Vec<(String, Vec<(Chain, String)>)> = wallet_subscriptions
@@ -101,7 +87,7 @@ impl WalletsClient {
         let wallet_ids: HashMap<String, i32> = store
             .get_wallets(identifiers)?
             .into_iter()
-            .map(|x| (x.identifier, x.id))
+            .map(|x| (x.wallet_id.id(), x.id))
             .collect();
 
         let subscriptions: Vec<(String, Vec<(Chain, String)>)> = wallet_subscriptions
