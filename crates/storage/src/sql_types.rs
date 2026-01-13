@@ -165,7 +165,7 @@ diesel_enum!(WalletType, PrimitiveWalletType, WalletTypeSql, [Multicoin, Single,
 
 diesel_enum!(WalletSource, PrimitiveWalletSource, WalletSourceSql, [Create, Import]);
 
-diesel_enum!(NotificationType, PrimitiveNotificationType, NotificationTypeSql, [ReferralJoined, RewardsEnabled]);
+diesel_enum!(NotificationType, PrimitiveNotificationType, NotificationTypeSql, [ReferralJoined, RewardsEnabled, RewardsCodeDisabled]);
 
 macro_rules! diesel_varchar {
     ($wrapper:ident, $inner:ty) => {

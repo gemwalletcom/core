@@ -178,7 +178,7 @@ impl RewardsClient {
             source: WalletSource::Import,
         })?;
 
-        let referrer_username = self.db.rewards()?.get_referrer_username(code)?.ok_or_else(|| {
+        let referrer_username = self.db.rewards()?.get_referral_code(code)?.ok_or_else(|| {
             let error = ReferralError::from(ReferralValidationError::CodeDoesNotExist);
             RewardsError::Referral(error.localize(locale))
         })?;

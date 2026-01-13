@@ -19,8 +19,8 @@ pub use self::database::{
     rewards_redemptions::RedemptionUpdate,
 };
 pub use self::error::{DatabaseError, ReferralValidationError};
-pub use self::models::{NewWalletRow, RewardRedemptionOptionRow};
-pub use self::sql_types::{WalletSource, WalletType};
+pub use self::models::{NewNotificationRow, NewWalletRow, RewardRedemptionOptionRow};
+pub use self::sql_types::{NotificationType, WalletSource, WalletType};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
     chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository, devices_repository::DevicesRepository,

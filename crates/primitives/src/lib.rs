@@ -245,7 +245,7 @@ pub use self::chain_signer::ChainSigner;
 pub mod notification_type;
 pub use self::notification_type::NotificationType;
 pub mod notification;
-pub use self::notification::Notification;
+pub use self::notification::{Notification, NotificationRewardsMetadata};
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

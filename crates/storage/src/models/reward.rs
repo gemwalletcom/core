@@ -75,6 +75,7 @@ impl RewardEventRow {
     pub fn as_primitive(&self) -> RewardEvent {
         let event = self.event_type.0;
         RewardEvent {
+            username: self.username.clone(),
             points: event.points(),
             event,
             created_at: Utc.from_utc_datetime(&self.created_at),

@@ -166,6 +166,9 @@ pub struct ReferralCode {
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct RewardEvent {
+    #[typeshare(skip)]
+    #[serde(skip)]
+    pub username: String,
     pub event: RewardEventType,
     pub points: i32,
     pub created_at: DateTime<Utc>,

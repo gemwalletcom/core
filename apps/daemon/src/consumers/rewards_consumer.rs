@@ -2,19 +2,13 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use localizer::LanguageLocalizer;
-use primitives::{Device, GorushNotification, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType};
-use storage::{Database, RewardsRepository};
+use primitives::{Device, GorushNotification, NotificationRewardsMetadata, NotificationType, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType};
+use storage::{Database, NewNotificationRow, NotificationType as StorageNotificationType, NotificationsRepository, RewardsRepository};
 use streamer::{NotificationsPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
 pub struct RewardsConsumer {
     database: Database,
     stream_producer: StreamProducer,
-}
-
-impl RewardsConsumer {
-    pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
-        Self { database, stream_producer }
-    }
 }
 
 #[async_trait]
@@ -26,6 +20,8 @@ impl MessageConsumer<RewardsNotificationPayload, usize> for RewardsConsumer {
     async fn process(&self, payload: RewardsNotificationPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let event = self.database.rewards()?.get_reward_event(payload.event_id)?;
         let devices = self.database.rewards()?.get_reward_event_devices(payload.event_id)?;
+
+        self.create_in_app_notification(&event)?;
 
         let notifications: Vec<GorushNotification> = devices
             .into_iter()
@@ -42,6 +38,38 @@ impl MessageConsumer<RewardsNotificationPayload, usize> for RewardsConsumer {
             .publish_notifications_rewards(NotificationsPayload::new(notifications))
             .await?;
         Ok(count)
+    }
+}
+
+impl RewardsConsumer {
+    pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
+        Self { database, stream_producer }
+    }
+
+    fn create_in_app_notification(&self, event: &primitives::RewardEvent) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let (notification_type, metadata, username) = match event.event {
+            RewardEventType::Joined => {
+                let Some(referrer) = self.database.rewards()?.get_referrer_username(&event.username)? else {
+                    return Ok(());
+                };
+                let metadata = NotificationRewardsMetadata {
+                    username: event.username.clone(),
+                    points: event.points,
+                };
+                (NotificationType::ReferralJoined, serde_json::to_value(metadata).ok(), referrer)
+            }
+            RewardEventType::Disabled => (NotificationType::RewardsCodeDisabled, None, event.username.clone()),
+            _ => return Ok(()),
+        };
+
+        let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&username)?;
+        let notification = NewNotificationRow {
+            wallet_id,
+            notification_type: StorageNotificationType::from(notification_type),
+            metadata,
+        };
+        self.database.notifications()?.create_notifications(vec![notification])?;
+        Ok(())
     }
 }
 
