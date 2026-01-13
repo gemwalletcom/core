@@ -47,26 +47,26 @@ impl RewardsConsumer {
     }
 
     fn create_in_app_notification(&self, event: &primitives::RewardEvent) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let (notification_type, metadata, username) = match event.event {
+        let (notification_type, username) = match event.event {
             RewardEventType::Joined => {
                 let Some(referrer) = self.database.rewards()?.get_referrer_username(&event.username)? else {
                     return Ok(());
                 };
-                let metadata = NotificationRewardsMetadata {
-                    username: event.username.clone(),
-                    points: event.points,
-                };
-                (NotificationType::ReferralJoined, serde_json::to_value(metadata).ok(), referrer)
+                (NotificationType::ReferralJoined, referrer)
             }
-            RewardEventType::Disabled => (NotificationType::RewardsCodeDisabled, None, event.username.clone()),
+            RewardEventType::Disabled => (NotificationType::RewardsCodeDisabled, event.username.clone()),
             _ => return Ok(()),
         };
 
         let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&username)?;
+        let metadata = NotificationRewardsMetadata {
+            username: event.username.clone(),
+            points: event.points,
+        };
         let notification = NewNotificationRow {
             wallet_id,
             notification_type: StorageNotificationType::from(notification_type),
-            metadata,
+            metadata: serde_json::to_value(metadata).ok(),
         };
         self.database.notifications()?.create_notifications(vec![notification])?;
         Ok(())
