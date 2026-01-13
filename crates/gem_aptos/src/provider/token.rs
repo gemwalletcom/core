@@ -23,7 +23,7 @@ impl<C: Client> ChainToken for AptosClient<C> {
         match token_id_kind(&token_id) {
         Some(TokenIdKind::CoinLegacy) => {
             let parts: Vec<&str> = token_id.split("::").collect();
-            if parts.len() < 2 {
+            if parts.len() < 3 {
                 return Err("Invalid token ID format".into());
             }
 
