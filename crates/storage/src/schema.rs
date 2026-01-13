@@ -58,6 +58,10 @@ pub mod sql_types {
     pub struct UsernameStatus;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "ip_usage_type"))]
+    pub struct IpUsageType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "wallet_source"))]
     pub struct WalletSource;
 
@@ -750,8 +754,7 @@ diesel::table! {
         ip_address -> Varchar,
         #[max_length = 2]
         ip_country_code -> Varchar,
-        #[max_length = 64]
-        ip_usage_type -> Varchar,
+        ip_usage_type -> crate::schema::sql_types::IpUsageType,
         #[max_length = 128]
         ip_isp -> Varchar,
         ip_abuse_score -> Int4,

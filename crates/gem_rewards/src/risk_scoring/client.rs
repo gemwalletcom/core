@@ -66,7 +66,7 @@ pub fn evaluate_risk(
         device_currency: signal_input.device_currency,
         ip_address: signal_input.ip_address,
         ip_country_code: signal_input.ip_country_code,
-        ip_usage_type: signal_input.ip_usage_type.to_string(),
+        ip_usage_type: signal_input.ip_usage_type.into(),
         ip_isp: signal_input.ip_isp,
         ip_abuse_score: signal_input.ip_abuse_score as i32,
         risk_score: score.score as i32,

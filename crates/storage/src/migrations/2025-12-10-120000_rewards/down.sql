@@ -7,3 +7,4 @@ DROP TABLE IF EXISTS usernames;
 DROP TYPE IF EXISTS username_status;
 DROP TYPE IF EXISTS reward_event_type;
 DROP TYPE IF EXISTS reward_status;
+DROP TYPE IF EXISTS ip_usage_type;
