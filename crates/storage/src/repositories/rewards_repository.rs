@@ -116,6 +116,7 @@ impl RewardsRepository for DatabaseClient {
             status,
             is_enabled: status.is_enabled(),
             verified: status.is_verified(),
+            created_at: rewards.created_at,
             redemption_options: options,
             disable_reason: rewards.disable_reason.clone(),
             referral_allowance: Default::default(),

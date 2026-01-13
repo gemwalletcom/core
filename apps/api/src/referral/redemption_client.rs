@@ -1,6 +1,6 @@
 use gem_rewards::{RewardsRedemptionError, redeem_points};
-use primitives::ConfigKey;
-use primitives::rewards::RedemptionResult;
+use primitives::{ConfigKey, NaiveDateTimeExt, now};
+use primitives::rewards::{RedemptionResult, Rewards};
 use storage::{ConfigCacher, Database, RewardsRedemptionsRepository, RewardsRepository};
 use streamer::{StreamProducer, StreamProducerQueue};
 
@@ -27,9 +27,9 @@ impl RewardsRedemptionClient {
             return Err(RewardsRedemptionError::NotEligible("Not eligible for rewards".to_string()).into());
         }
 
-        let username = rewards.code.ok_or(RewardsRedemptionError::NoUsername)?;
+        let username = rewards.code.clone().ok_or(RewardsRedemptionError::NoUsername)?;
 
-        self.check_redemption_limits(&username)?;
+        self.check_redemption_limits(&username, &rewards)?;
 
         let response = redeem_points(&mut self.database.client()?, &username, id, device_id)?;
         self.stream_producer
@@ -39,7 +39,18 @@ impl RewardsRedemptionClient {
         Ok(response.result)
     }
 
-    fn check_redemption_limits(&self, username: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn check_redemption_limits(&self, username: &str, rewards: &Rewards) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let current = now();
+
+        if rewards.created_at > current.ago(self.config.get_duration(ConfigKey::RedemptionMinAccountAge)?) {
+            return Err(RewardsRedemptionError::AccountTooNew.into());
+        }
+
+        let cooldown_since = current.ago(self.config.get_duration(ConfigKey::RedemptionCooldownAfterReferral)?);
+        if self.database.rewards()?.count_referrals_since(username, cooldown_since)? > 0 {
+            return Err(RewardsRedemptionError::CooldownNotElapsed.into());
+        }
+
         let daily_limit = self.config.get_i64(ConfigKey::RedemptionPerUserDaily)?;
         let daily_count = self.database.rewards_redemptions()?.count_redemptions_since_days(username, 1)?;
         if daily_count >= daily_limit {

@@ -19,6 +19,7 @@ pub struct AbusePatterns {
     pub max_referrers_per_device: i64,
     pub max_referrers_per_fingerprint: i64,
     pub max_devices_per_ip: i64,
+    pub signals_in_velocity_window: i64,
 }
 
 pub(crate) trait RewardsStore {
@@ -230,7 +231,7 @@ pub(crate) trait RiskSignalsStore {
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DieselError>;
-    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DieselError>;
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError>;
 }
 
 impl RiskSignalsStore for DatabaseClient {
@@ -422,7 +423,7 @@ impl RiskSignalsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DieselError> {
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError> {
         use crate::schema::rewards_risk_signals::dsl;
 
         let signals: Vec<RiskSignalRow> = dsl::rewards_risk_signals
@@ -462,11 +463,35 @@ impl RiskSignalsStore for DatabaseClient {
             max_devices_per_ip = max_devices_per_ip.max(devices);
         }
 
+        let max_signals_in_velocity_window = calculate_max_signals_in_window(&signals, velocity_window_secs);
+
         Ok(AbusePatterns {
             max_countries_per_device,
             max_referrers_per_device,
             max_referrers_per_fingerprint,
             max_devices_per_ip,
+            signals_in_velocity_window: max_signals_in_velocity_window,
         })
     }
+}
+
+fn calculate_max_signals_in_window(signals: &[RiskSignalRow], window_secs: i64) -> i64 {
+    if signals.is_empty() {
+        return 0;
+    }
+
+    let mut timestamps: Vec<_> = signals.iter().map(|s| s.created_at).collect();
+    timestamps.sort();
+
+    let mut max_count: i64 = 1;
+    let mut left = 0;
+
+    for right in 0..timestamps.len() {
+        while timestamps[right].signed_duration_since(timestamps[left]).num_seconds() > window_secs {
+            left += 1;
+        }
+        max_count = max_count.max((right - left + 1) as i64);
+    }
+
+    max_count
 }

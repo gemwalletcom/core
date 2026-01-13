@@ -32,7 +32,7 @@ pub trait RiskSignalsRepository {
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DatabaseError>;
-    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DatabaseError>;
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DatabaseError>;
 }
 
 impl RiskSignalsRepository for DatabaseClient {
@@ -120,7 +120,7 @@ impl RiskSignalsRepository for DatabaseClient {
         )?)
     }
 
-    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<AbusePatterns, DatabaseError> {
-        Ok(RiskSignalsStore::get_abuse_patterns_for_referrer(self, referrer_username, since)?)
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DatabaseError> {
+        Ok(RiskSignalsStore::get_abuse_patterns_for_referrer(self, referrer_username, since, velocity_window_secs)?)
     }
 }

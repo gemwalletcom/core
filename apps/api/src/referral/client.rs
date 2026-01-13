@@ -62,14 +62,10 @@ impl RewardsClient {
     }
 
     fn calculate_referral_allowance(&self, address: &str, is_verified: bool) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
-        let (daily_key, weekly_key) = if is_verified {
-            (ConfigKey::ReferralPerVerifiedUserDaily, ConfigKey::ReferralPerVerifiedUserWeekly)
-        } else {
-            (ConfigKey::ReferralPerUserDaily, ConfigKey::ReferralPerUserWeekly)
-        };
+        let multiplier = if is_verified { self.config.get_i32(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
 
-        let daily_limit = self.config.get_i32(daily_key)?;
-        let weekly_limit = self.config.get_i32(weekly_key)?;
+        let daily_limit = self.config.get_i32(ConfigKey::ReferralPerUserDaily)? * multiplier;
+        let weekly_limit = self.config.get_i32(ConfigKey::ReferralPerUserWeekly)? * multiplier;
 
         let username = match self.db.rewards()?.get_username_by_address(address)? {
             Some(u) => u,
@@ -341,21 +337,26 @@ impl RewardsClient {
 
     fn check_referrer_limits(&self, referrer_username: &str) -> Result<(), ReferralError> {
         let is_verified = self.db.rewards()?.is_verified_by_username(referrer_username)?;
-
-        let (daily_key, weekly_key) = if is_verified {
-            (ConfigKey::ReferralPerVerifiedUserDaily, ConfigKey::ReferralPerVerifiedUserWeekly)
-        } else {
-            (ConfigKey::ReferralPerUserDaily, ConfigKey::ReferralPerUserWeekly)
-        };
+        let multiplier = if is_verified { self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
 
         let current = now();
 
-        let daily_limit = self.config.get_i64(daily_key)?;
+        let cooldown = self.config.get_duration(ConfigKey::ReferralCooldown)?;
+        if self.db.rewards()?.count_referrals_since(referrer_username, current.ago(cooldown))? >= 1 {
+            return Err(ReferralError::ReferrerLimitReached("cooldown".to_string()));
+        }
+
+        let hourly_limit = self.config.get_i64(ConfigKey::ReferralPerUserHourly)? * multiplier;
+        if self.db.rewards()?.count_referrals_since(referrer_username, current.hours_ago(1))? >= hourly_limit {
+            return Err(ReferralError::ReferrerLimitReached("hourly".to_string()));
+        }
+
+        let daily_limit = self.config.get_i64(ConfigKey::ReferralPerUserDaily)? * multiplier;
         if self.db.rewards()?.count_referrals_since(referrer_username, current.days_ago(1))? >= daily_limit {
             return Err(ReferralError::ReferrerLimitReached("daily".to_string()));
         }
 
-        let weekly_limit = self.config.get_i64(weekly_key)?;
+        let weekly_limit = self.config.get_i64(ConfigKey::ReferralPerUserWeekly)? * multiplier;
         if self.db.rewards()?.count_referrals_since(referrer_username, current.days_ago(7))? >= weekly_limit {
             return Err(ReferralError::ReferrerLimitReached("weekly".to_string()));
         }
@@ -425,6 +426,13 @@ impl RewardsClient {
             high_risk_country_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskCountryPenalty)?,
             high_risk_locales: self.config.get_vec_string(ConfigKey::ReferralRiskScoreHighRiskLocales)?,
             high_risk_locale_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskLocalePenalty)?,
+            high_risk_device_models: self.config.get_vec_string(ConfigKey::ReferralRiskScoreHighRiskDeviceModels)?,
+            high_risk_device_model_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskDeviceModelPenalty)?,
+            velocity_window: self.config.get_duration(ConfigKey::ReferralAbuseVelocityWindow)?,
+            velocity_divisor: self.config.get_i64(ConfigKey::ReferralAbuseVelocityDivisor)?,
+            velocity_penalty: self.config.get_i64(ConfigKey::ReferralAbuseVelocityPenaltyPerSignal)?,
+            referral_per_user_daily: self.config.get_i64(ConfigKey::ReferralPerUserDaily)?,
+            verified_multiplier: self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?,
         })
     }
 
