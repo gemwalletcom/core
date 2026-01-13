@@ -47,6 +47,10 @@ impl Yielder {
         self.providers.iter().flat_map(|provider| provider.yields(asset_id)).collect()
     }
 
+    pub fn is_yield_available(&self, asset_id: &AssetId) -> bool {
+        self.providers.iter().any(|provider| !provider.yields(asset_id).is_empty())
+    }
+
     pub async fn yields_for_asset_with_apy(&self, asset_id: &AssetId) -> Result<Vec<Yield>, YieldError> {
         let mut yields = Vec::new();
         for provider in &self.providers {

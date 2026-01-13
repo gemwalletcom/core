@@ -107,7 +107,11 @@ impl YieldProviderClient for YoYieldProvider {
         let data = self.gateway.fetch_position_data(vault, owner, LOOKBACK_BLOCKS).await?;
 
         details.vault_balance_value = Some(data.share_balance.to_string());
-        details.asset_balance_value = Some(data.asset_balance.to_string());
+
+        // Calculate asset value from shares: share_balance * latest_price / one_share
+        let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
+        let asset_value = data.share_balance.saturating_mul(data.latest_price) / one_share;
+        details.asset_balance_value = Some(asset_value.to_string());
 
         let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
         details.apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);

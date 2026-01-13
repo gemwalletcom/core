@@ -38,6 +38,10 @@ impl GemYielder {
         self.yielder.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
     }
 
+    pub fn is_yield_available(&self, asset_id: &AssetId) -> bool {
+        self.yielder.is_yield_available(asset_id)
+    }
+
     pub async fn deposit(&self, provider: String, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
         let provider = provider.parse::<YieldProvider>()?;
         self.yielder.deposit(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
