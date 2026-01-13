@@ -39,6 +39,8 @@ pub struct RiskScoreConfig {
     pub velocity_penalty: i64,
     pub referral_per_user_daily: i64,
     pub verified_multiplier: i64,
+    pub ip_history_penalty_per_abuser: i64,
+    pub ip_history_max_penalty: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -80,6 +82,8 @@ impl Default for RiskScoreConfig {
             velocity_penalty: 100,
             referral_per_user_daily: 5,
             verified_multiplier: 2,
+            ip_history_penalty_per_abuser: 30,
+            ip_history_max_penalty: 150,
         }
     }
 }
@@ -155,6 +159,8 @@ pub struct RiskScoreBreakdown {
     pub high_risk_device_model_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub velocity_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub ip_history_score: i64,
 }
 
 fn is_zero(value: &i64) -> bool {

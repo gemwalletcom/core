@@ -334,7 +334,12 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, &risk_score_config);
+        let ip_abuser_count = match client.count_disabled_users_by_ip(&signal_input.ip_address, since) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+
+        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, ip_abuser_count, &risk_score_config);
         let risk_signal_id = match client.add_risk_signal(risk_result.signal) {
             Ok(id) => id,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
@@ -444,6 +449,8 @@ impl RewardsClient {
             high_risk_locale_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskLocalePenalty)?,
             high_risk_device_models: self.config.get_vec_string(ConfigKey::ReferralRiskScoreHighRiskDeviceModels)?,
             high_risk_device_model_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskDeviceModelPenalty)?,
+            ip_history_penalty_per_abuser: self.config.get_i64(ConfigKey::ReferralRiskScoreIpHistoryPenaltyPerAbuser)?,
+            ip_history_max_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreIpHistoryMaxPenalty)?,
             velocity_window: self.config.get_duration(ConfigKey::ReferralAbuseVelocityWindow)?,
             velocity_divisor: self.config.get_i64(ConfigKey::ReferralAbuseVelocityDivisor)?,
             velocity_penalty: self.config.get_i64(ConfigKey::ReferralAbuseVelocityPenaltyPerSignal)?,
