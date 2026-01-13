@@ -10,6 +10,7 @@ pub trait WalletsStore {
     fn get_wallet(&mut self, identifier: &str) -> Result<WalletRow, DatabaseError>;
     fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError>;
     fn get_wallets(&mut self, identifiers: Vec<String>) -> Result<Vec<WalletRow>, DatabaseError>;
+    fn create_wallet(&mut self, wallet: NewWalletRow) -> Result<WalletRow, DatabaseError>;
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError>;
     fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<(WalletRow, WalletSubscriptionRow)>, DatabaseError>;
     fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, DatabaseError>;
@@ -41,6 +42,15 @@ impl WalletsStore for DatabaseClient {
             .filter(wallets::identifier.eq_any(identifiers))
             .select(WalletRow::as_select())
             .load(&mut self.connection)?;
+
+        Ok(result)
+    }
+
+    fn create_wallet(&mut self, wallet: NewWalletRow) -> Result<WalletRow, DatabaseError> {
+        let result = diesel::insert_into(wallets::table)
+            .values(&wallet)
+            .returning(WalletRow::as_returning())
+            .get_result(&mut self.connection)?;
 
         Ok(result)
     }

@@ -702,8 +702,7 @@ diesel::table! {
         id -> Int4,
         #[max_length = 64]
         referrer_username -> Varchar,
-        #[max_length = 256]
-        referred_address -> Varchar,
+        wallet_id -> Int4,
         device_id -> Int4,
         risk_signal_id -> Nullable<Int4>,
         #[max_length = 256]
@@ -963,6 +962,7 @@ diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id))
 diesel::joinable!(rewards_referral_attempts -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
 diesel::joinable!(rewards_referral_attempts -> rewards_risk_signals (risk_signal_id));
+diesel::joinable!(rewards_referral_attempts -> wallets (wallet_id));
 diesel::joinable!(rewards_referrals -> devices (referred_device_id));
 diesel::joinable!(rewards_referrals -> rewards_risk_signals (risk_signal_id));
 diesel::joinable!(rewards_risk_signals -> devices (device_id));

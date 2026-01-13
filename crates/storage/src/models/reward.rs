@@ -174,7 +174,7 @@ impl RedemptionOptionFull {
 #[diesel(table_name = crate::schema::rewards_referral_attempts)]
 pub struct ReferralAttemptRow {
     pub referrer_username: String,
-    pub referred_address: String,
+    pub wallet_id: i32,
     pub device_id: i32,
     pub risk_signal_id: Option<i32>,
     pub reason: String,

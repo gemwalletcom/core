@@ -9,6 +9,7 @@ pub trait WalletsRepository {
     fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError>;
     fn get_wallets(&mut self, identifiers: Vec<String>) -> Result<Vec<WalletRow>, DatabaseError>;
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError>;
+    fn get_or_create_wallet(&mut self, wallet: NewWalletRow) -> Result<WalletRow, DatabaseError>;
     fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<(WalletRow, WalletSubscriptionRow)>, DatabaseError>;
     fn add_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
     fn delete_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
@@ -29,6 +30,14 @@ impl WalletsRepository for DatabaseClient {
 
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError> {
         WalletsStore::create_wallets(self, wallets)
+    }
+
+    fn get_or_create_wallet(&mut self, wallet: NewWalletRow) -> Result<WalletRow, DatabaseError> {
+        match WalletsStore::get_wallet(self, &wallet.identifier) {
+            Ok(existing) => Ok(existing),
+            Err(DatabaseError::NotFound) => WalletsStore::create_wallet(self, wallet),
+            Err(e) => Err(e),
+        }
     }
 
     fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<(WalletRow, WalletSubscriptionRow)>, DatabaseError> {

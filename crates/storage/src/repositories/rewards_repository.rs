@@ -272,17 +272,16 @@ impl RewardsRepository for DatabaseClient {
     fn add_referral_attempt(
         &mut self,
         referrer_username: &str,
-        referred_wallet_id: i32,
+        wallet_id: i32,
         device_id: i32,
         risk_signal_id: Option<i32>,
         reason: &str,
     ) -> Result<(), DatabaseError> {
-        let wallet = WalletsStore::get_wallet_by_id(self, referred_wallet_id)?;
         RewardsStore::add_referral_attempt(
             self,
             ReferralAttemptRow {
                 referrer_username: referrer_username.to_string(),
-                referred_address: wallet.wallet_id.id(),
+                wallet_id,
                 device_id,
                 risk_signal_id,
                 reason: reason.to_string(),
