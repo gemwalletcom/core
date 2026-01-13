@@ -245,7 +245,7 @@ impl Transaction {
             to,
             contract: self.contract.clone(),
             transaction_type: self.transaction_type.clone(),
-            state: self.state.clone(),
+            state: self.state,
             block_number: self.block_number.clone(),
             sequence: self.sequence.clone(),
             fee: self.fee.clone(),

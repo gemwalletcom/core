@@ -80,7 +80,7 @@ impl TransactionRow {
             to: to_address.clone(),
             contract: None,
             transaction_type,
-            state: self.state.0.clone(),
+            state: self.state.0,
             block_number: None,
             sequence: None,
             fee: self.fee.clone().unwrap(),
