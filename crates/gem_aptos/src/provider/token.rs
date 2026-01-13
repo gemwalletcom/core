@@ -5,8 +5,8 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::Asset;
 
-use super::token_mapper::{map_fungible_asset_metadata, map_token_data};
-use crate::models::{CoinInfo, Metadata};
+use super::token_mapper::map_token_data;
+use crate::models::CoinInfo;
 use crate::rpc::client::AptosClient;
 
 const FUNGIBLE_ASSET_METADATA_TYPE: &str = "0x1::fungible_asset::Metadata";
@@ -35,9 +35,9 @@ impl<C: Client> ChainToken for AptosClient<C> {
         }
         Some(TokenIdKind::FungibleAsset) => {
             let resource = self
-                .get_account_resource::<Metadata>(token_id.clone(), FUNGIBLE_ASSET_METADATA_TYPE)
+                .get_account_resource::<CoinInfo>(token_id.clone(), FUNGIBLE_ASSET_METADATA_TYPE)
                 .await?;
-            map_fungible_asset_metadata(&resource, &token_id)
+            map_token_data(&resource, &token_id)
         }
         None => Err("Invalid token ID format".into()),
         }
