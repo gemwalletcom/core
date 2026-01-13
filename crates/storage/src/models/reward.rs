@@ -73,7 +73,7 @@ pub struct RewardEventRow {
 
 impl RewardEventRow {
     pub fn as_primitive(&self) -> RewardEvent {
-        let event = self.event_type.0.clone();
+        let event = self.event_type.0;
         RewardEvent {
             points: event.points(),
             event,

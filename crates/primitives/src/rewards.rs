@@ -36,7 +36,9 @@ impl RewardRedemptionType {
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
+#[derive(Default)]
 pub enum RewardStatus {
+    #[default]
     Unverified,
     Pending,
     Verified,
@@ -64,11 +66,6 @@ impl RewardStatus {
     }
 }
 
-impl Default for RewardStatus {
-    fn default() -> Self {
-        Self::Unverified
-    }
-}
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]

@@ -48,7 +48,7 @@ impl DeviceRow {
         Device {
             id: self.device_id.clone(),
             platform: self.platform.0.clone(),
-            platform_store: self.platform_store.0.clone(),
+            platform_store: self.platform_store.0,
             os: self.os.clone(),
             model: self.model.clone(),
             token: self.token.clone(),
