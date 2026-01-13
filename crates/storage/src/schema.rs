@@ -52,6 +52,14 @@ pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "username_status"))]
     pub struct UsernameStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "wallet_source"))]
+    pub struct WalletSource;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "wallet_type"))]
+    pub struct WalletType;
 }
 
 diesel::table! {
@@ -351,7 +359,7 @@ diesel::table! {
     nft_assets (id) {
         #[max_length = 512]
         id -> Varchar,
-        #[max_length = 64]
+        #[max_length = 512]
         collection_id -> Varchar,
         #[max_length = 64]
         chain -> Varchar,
@@ -861,10 +869,16 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::WalletType;
+    use super::sql_types::WalletSource;
+
     wallets (id) {
+        id -> Int4,
         #[max_length = 128]
-        id -> Varchar,
-        wallet_type -> Varchar,
+        identifier -> Varchar,
+        wallet_type -> WalletType,
+        source -> WalletSource,
         created_at -> Timestamp,
     }
 }
@@ -872,10 +886,8 @@ diesel::table! {
 diesel::table! {
     wallets_subscriptions (id) {
         id -> Int4,
-        #[max_length = 128]
-        wallet_id -> Varchar,
+        wallet_id -> Int4,
         device_id -> Int4,
-        wallet_index -> Int4,
         #[max_length = 32]
         chain -> Varchar,
         #[max_length = 256]
@@ -944,8 +956,9 @@ diesel::joinable!(support -> devices (device_id));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
-diesel::joinable!(wallets_subscriptions -> wallets (wallet_id));
 diesel::joinable!(wallets_subscriptions -> chains (chain));
+diesel::joinable!(wallets_subscriptions -> devices (device_id));
+diesel::joinable!(wallets_subscriptions -> wallets (wallet_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,

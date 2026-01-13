@@ -1,8 +1,8 @@
+use crate::DatabaseClient;
 use crate::models::{
     NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, ReferralAttemptRow, RewardEventRow, RewardReferralRow, RewardsRow, RiskSignalRow,
 };
 use crate::sql_types::{RewardEventType, RewardStatus};
-use crate::DatabaseClient;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

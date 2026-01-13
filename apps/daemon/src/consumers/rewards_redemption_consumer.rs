@@ -53,10 +53,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
                 Ok(true)
             }
             Err(e) => {
-                let updates = vec![
-                    RedemptionUpdate::Status(RedemptionStatus::Failed),
-                    RedemptionUpdate::Error(e.to_string()),
-                ];
+                let updates = vec![RedemptionUpdate::Status(RedemptionStatus::Failed), RedemptionUpdate::Error(e.to_string())];
 
                 self.database.rewards_redemptions()?.update_redemption(payload.redemption_id, updates)?;
                 Ok(false)

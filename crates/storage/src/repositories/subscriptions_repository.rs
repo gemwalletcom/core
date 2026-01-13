@@ -31,7 +31,7 @@ impl SubscriptionsRepository for DatabaseClient {
             self,
             values
                 .into_iter()
-                .map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id))
+                .map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id, 0))
                 .collect(),
         )?)
     }
@@ -64,7 +64,7 @@ impl SubscriptionsRepository for DatabaseClient {
             self,
             values
                 .into_iter()
-                .map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id))
+                .map(|x| crate::models::SubscriptionRow::from_primitive(x, device.id, 0))
                 .collect(),
         )?)
     }

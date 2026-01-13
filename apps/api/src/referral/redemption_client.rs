@@ -13,7 +13,11 @@ pub struct RewardsRedemptionClient {
 impl RewardsRedemptionClient {
     pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
         let config = ConfigCacher::new(database.clone());
-        Self { database, config, stream_producer }
+        Self {
+            database,
+            config,
+            stream_producer,
+        }
     }
 
     pub async fn redeem(&self, address: &str, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {

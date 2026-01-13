@@ -19,9 +19,9 @@ mod scan;
 mod status;
 mod subscriptions;
 mod support;
-mod wallets;
 mod swap;
 mod transactions;
+mod wallets;
 mod webhooks;
 mod websocket_prices;
 
@@ -53,9 +53,9 @@ use storage::Database;
 use streamer::StreamProducer;
 use subscriptions::SubscriptionsClient;
 use support::SupportClient;
-use wallets::WalletsClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
+use wallets::WalletsClient;
 use webhooks::WebhooksClient;
 use websocket_prices::PriceObserverConfig;
 

@@ -1,20 +1,22 @@
-CREATE TYPE wallet_type AS ENUM ('phrase', 'single', 'view');
+CREATE TYPE wallet_type AS ENUM ('multicoin', 'single', 'privateKey', 'view');
+CREATE TYPE wallet_source AS ENUM ('create', 'import');
 
 CREATE TABLE wallets (
-    id VARCHAR(128) PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
+    identifier VARCHAR(128) UNIQUE NOT NULL,
     wallet_type wallet_type NOT NULL,
+    source wallet_source NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );
 
 CREATE TABLE wallets_subscriptions (
     id SERIAL PRIMARY KEY,
-    wallet_id VARCHAR(128) NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+    wallet_id INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
     device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
-    wallet_index INTEGER NOT NULL,
     chain VARCHAR(32) NOT NULL REFERENCES chains(id) ON DELETE CASCADE,
     address VARCHAR(256) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    UNIQUE(wallet_id, device_id, wallet_index, chain, address)
+    UNIQUE(wallet_id, device_id, chain, address)
 );
 
 CREATE INDEX wallets_subscriptions_wallet_id_idx ON wallets_subscriptions (wallet_id);

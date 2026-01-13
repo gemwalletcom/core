@@ -99,7 +99,7 @@ pub use self::transaction_direction::TransactionDirection;
 pub mod subscription;
 pub mod support;
 pub mod transaction_utxo;
-pub use self::subscription::{DeviceSubscription, Subscription};
+pub use self::subscription::{DeviceSubscription, Subscription, WalletIdType, WalletSubscription};
 pub use self::support::{NewSupportDevice, SupportDevice};
 pub use self::transaction_utxo::TransactionUtxoInput;
 pub mod address_formatter;
@@ -129,7 +129,7 @@ pub use self::wallet_connect::{WCEthereumTransaction, WCTonMessage, WalletConnec
 pub mod account;
 pub use self::account::Account;
 pub mod wallet;
-pub use self::wallet::Wallet;
+pub use self::wallet::{Wallet, WalletSource};
 pub mod wallet_type;
 pub use self::wallet_type::WalletType;
 pub mod wallet_id;

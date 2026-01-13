@@ -17,6 +17,9 @@ struct AbuseDetectionConfig {
     ring_penalty: i64,
     device_farming_threshold: i64,
     device_farming_penalty: i64,
+    velocity_window: std::time::Duration,
+    velocity_threshold: i64,
+    velocity_penalty: i64,
 }
 
 struct AbuseEvaluation {
@@ -41,7 +44,11 @@ pub struct RewardsAbuseChecker {
 impl RewardsAbuseChecker {
     pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
         let config = ConfigCacher::new(database.clone());
-        Self { database, config, stream_producer }
+        Self {
+            database,
+            config,
+            stream_producer,
+        }
     }
 
     pub async fn check(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
