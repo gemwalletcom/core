@@ -48,9 +48,10 @@ impl MessageConsumer<RewardsNotificationPayload, usize> for RewardsConsumer {
 fn create_notification(device: Device, event: RewardEventType) -> GorushNotification {
     let localizer = LanguageLocalizer::new_with_language(&device.locale);
     let (title, message) = reward_notification_content(&localizer, event);
+    // TODO: Pass wallet_id from reward event once available
     let data = PushNotification {
         notification_type: PushNotificationTypes::Rewards,
-        data: serde_json::to_value(PushNotificationReward {}).ok(),
+        data: serde_json::to_value(PushNotificationReward { wallet_id: String::new() }).ok(),
     };
     GorushNotification::from_device(device, title, message, data)
 }
