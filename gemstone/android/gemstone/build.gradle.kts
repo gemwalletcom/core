@@ -106,11 +106,11 @@ afterEvaluate {
             }
         }
     }
-}
 
-signing {
-    useInMemoryPgpKeys(System.getenv("MVN_SIGNING_KEY"), System.getenv("MVN_SIGNING_PASSPHRASE"))
-    sign(publishing.publications["release"])
+    signing {
+        useInMemoryPgpKeys(System.getenv("MVN_SIGNING_KEY"), System.getenv("MVN_SIGNING_PASSPHRASE"))
+        sign(publishing.publications["release"])
+    }
 }
 
 publishing {

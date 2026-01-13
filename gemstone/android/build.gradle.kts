@@ -5,13 +5,20 @@ plugins {
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
+val localProps = rootDir.resolve("local.properties").takeIf { it.isFile }?.inputStream()?.use { stream ->
+    java.util.Properties().apply { load(stream) }
+}
+
+val sonatypeUsername = localProps?.getProperty("sonatype.username") ?: System.getenv("SONATYPE_USERNAME")
+val sonatypePassword = localProps?.getProperty("sonatype.password") ?: System.getenv("SONATYPE_PASSWORD")
+
 nexusPublishing {
     repositories {
         sonatype {
             nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
             snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
-            username.set(System.getenv("SONATYPE_USERNAME"))
-            password.set(System.getenv("SONATYPE_PASSWORD"))
+            username.set(sonatypeUsername)
+            password.set(sonatypePassword)
         }
     }
 }
