@@ -133,12 +133,7 @@ impl RewardsClient {
         let device_limit = self.config.get_i64(ConfigKey::UsernameCreationPerDevice)?;
         let country_daily_limit = self.config.get_i64(ConfigKey::UsernameCreationPerCountryDailyLimit)?;
         let ineligible_countries = self.config.get_vec_string(ConfigKey::ReferralIneligibleCountries)?;
-        let blocked_ip_types: Vec<IpUsageType> = self
-            .config
-            .get_vec_string(ConfigKey::ReferralBlockedIpTypes)?
-            .iter()
-            .filter_map(|s| s.parse().ok())
-            .collect();
+        let blocked_ip_types: Vec<IpUsageType> = self.config.get_vec(ConfigKey::ReferralBlockedIpTypes)?;
 
         self.ip_security_client
             .check_username_creation_limits(ip_address, device_id, global_daily_limit, ip_limit, device_limit)
@@ -430,12 +425,7 @@ impl RewardsClient {
             device_id_reuse_penalty_per_referrer: self.config.get_i64(ConfigKey::ReferralRiskScoreDeviceIdReusePerReferrer)?,
             device_id_reuse_max_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreDeviceIdReuseMaxPenalty)?,
             ineligible_ip_type_score: self.config.get_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)?,
-            blocked_ip_types: self
-                .config
-                .get_vec_string(ConfigKey::ReferralBlockedIpTypes)?
-                .iter()
-                .filter_map(|s| s.parse().ok())
-                .collect(),
+            blocked_ip_types: self.config.get_vec(ConfigKey::ReferralBlockedIpTypes)?,
             blocked_ip_type_penalty: self.config.get_i64(ConfigKey::ReferralBlockedIpTypePenalty)?,
             max_abuse_score: self.config.get_i64(ConfigKey::ReferralMaxAbuseScore)?,
             penalty_isps: self.config.get_vec_string(ConfigKey::ReferralPenaltyIsps)?,

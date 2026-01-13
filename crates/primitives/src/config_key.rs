@@ -142,7 +142,7 @@ impl ConfigKey {
             Self::RedemptionMinAccountAge => "1h",
             Self::RedemptionCooldownAfterReferral => "1m",
             Self::ReferralIpConfidenceScoreThreshold => "10",
-            Self::ReferralBlockedIpTypes => r#"["Data Center", "Web Hosting", "Transit"]"#,
+            Self::ReferralBlockedIpTypes => r#"["dataCenter", "hosting"]"#,
             Self::ReferralBlockedIpTypePenalty => "100",
             Self::ReferralMaxAbuseScore => "60",
             Self::ReferralPenaltyIsps => r#"[]"#,

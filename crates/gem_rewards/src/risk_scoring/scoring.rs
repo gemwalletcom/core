@@ -192,6 +192,7 @@ fn count_signals_in_recent_window(signals: &[&RiskSignalRow], window: Duration) 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::IpUsageType;
 
     fn create_test_input() -> RiskSignalInput {
         RiskSignalInput {
