@@ -1,8 +1,12 @@
+use hex::encode;
+use num_traits::ToPrimitive;
 use primitives::{ChainSigner, SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
-use serde_json::Value;
+use serde_json::{Value, from_str};
+use std::str::from_utf8;
 
 use super::{
-    AccountAddress, EntryFunction, EntryFunctionPayload, build_raw_transaction, build_submit_transaction, expiration_timestamp_secs, sign_raw_transaction,
+    AccountAddress, EntryFunction, EntryFunctionPayload, build_raw_transaction, build_submit_transaction, expiration_timestamp_secs,
+    sign_message as sign_aptos_message, sign_raw_transaction,
 };
 use super::abi::{PANORA_ROUTER_ENTRY_PARAMS, PANORA_ROUTER_FUNCTION, PANORA_ROUTER_MODULE};
 
@@ -84,7 +88,7 @@ impl ChainSigner for AptosChainSigner {
         };
 
         let payload_str = swap_data.data.data.as_str();
-        let payload: EntryFunctionPayload = serde_json::from_str(payload_str)?;
+        let payload: EntryFunctionPayload = from_str(payload_str)?;
         let abi = resolve_payload_abi(&payload);
         let entry_function = payload.to_entry_function(abi)?;
         let max_gas_amount = resolve_max_gas_amount(input);
@@ -99,12 +103,25 @@ impl ChainSigner for AptosChainSigner {
             _ => return Err(SignerError::InvalidInput("Missing Aptos stake payload".to_string())),
         };
 
-        let payload: EntryFunctionPayload = serde_json::from_str(payload_str)?;
+        let payload: EntryFunctionPayload = from_str(payload_str)?;
         let abi = resolve_payload_abi(&payload);
         let entry_function = payload.to_entry_function(abi)?;
 
         let signed = self.sign_entry_function(payload, entry_function, input, private_key, DEFAULT_MAX_GAS_AMOUNT)?;
         Ok(vec![signed])
+    }
+
+    fn sign_message(&self, message: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
+        let (signature, _) = sign_aptos_message(message, private_key)?;
+        Ok(format!("0x{}", encode(signature)))
+    }
+
+    fn sign_data(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+        let (payload, max_gas_amount) = resolve_generic_payload(input)?;
+        let abi = resolve_payload_abi(&payload);
+        let entry_function = payload.to_entry_function(abi)?;
+
+        self.sign_entry_function(payload, entry_function, input, private_key, max_gas_amount)
     }
 }
 
@@ -158,6 +175,34 @@ fn resolve_payload_abi(payload: &EntryFunctionPayload) -> Option<&'static [&'sta
         DELEGATION_POOL_ADD_STAKE | DELEGATION_POOL_UNLOCK | DELEGATION_POOL_WITHDRAW => Some(&STAKE_ENTRY_PARAMS),
         _ => None,
     }
+}
+
+fn resolve_generic_payload(input: &TransactionLoadInput) -> Result<(EntryFunctionPayload, u64), SignerError> {
+    let (data, gas_limit) = match &input.input_type {
+        TransactionInputType::Generic(_, _, extra) => (extra.data.as_ref(), extra.gas_limit.as_ref()),
+        _ => return Err(SignerError::InvalidInput("Expected Aptos generic input".to_string())),
+    };
+
+    let payload_str = if let Some(bytes) = data {
+        if bytes.is_empty() {
+            return Err(SignerError::InvalidInput("Missing Aptos payload data".to_string()));
+        }
+        from_utf8(bytes).map_err(|_| SignerError::InvalidInput("Aptos payload must be valid UTF-8".to_string()))?.to_string()
+    } else if let TransactionLoadMetadata::Aptos { data: Some(payload), .. } = &input.metadata {
+        payload.clone()
+    } else {
+        return Err(SignerError::InvalidInput("Missing Aptos payload data".to_string()));
+    };
+
+    let max_gas_amount = match gas_limit {
+        Some(limit) => limit
+            .to_u64()
+            .ok_or_else(|| SignerError::InvalidInput("Invalid Aptos gas limit".to_string()))?,
+        None => DEFAULT_MAX_GAS_AMOUNT,
+    };
+
+    let payload: EntryFunctionPayload = from_str(&payload_str)?;
+    Ok((payload, max_gas_amount))
 }
 
 fn is_panora_router(function_id: &str) -> bool {

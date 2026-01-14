@@ -1,5 +1,7 @@
 use crate::models::{SubmitTransactionRequest, TransactionSignature};
+use hex::encode;
 use primitives::SignerError;
+use signer::Signer;
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 use std::time::SystemTime;
@@ -7,6 +9,7 @@ use std::time::SystemTime;
 use super::{AccountAddress, EntryFunction, EntryFunctionPayload};
 
 const RAW_TRANSACTION_SALT: &[u8] = b"APTOS::RawTransaction";
+const MESSAGE_SALT: &[u8] = b"APTOS::Message";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Script {
@@ -67,8 +70,17 @@ pub fn sign_raw_transaction(raw_tx: &RawTransaction, private_key: &[u8]) -> Resu
     preimage.extend_from_slice(&raw_tx_bytes);
     let digest = sha3_256(&preimage);
 
-    signer::Signer::sign_ed25519_with_public_key(&digest, private_key)
-        .map_err(|err| SignerError::InvalidInput(err.to_string()))
+    Signer::sign_ed25519_with_public_key(&digest, private_key).map_err(|err| SignerError::InvalidInput(err.to_string()))
+}
+
+pub fn sign_message(message: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), SignerError> {
+    let seed = sha3_256(MESSAGE_SALT);
+    let mut preimage = Vec::with_capacity(seed.len() + message.len());
+    preimage.extend_from_slice(&seed);
+    preimage.extend_from_slice(message);
+    let digest = sha3_256(&preimage);
+
+    Signer::sign_ed25519_with_public_key(&digest, private_key).map_err(|err| SignerError::InvalidInput(err.to_string()))
 }
 
 pub fn build_submit_transaction(
@@ -113,5 +125,5 @@ fn sha3_256(input: &[u8]) -> [u8; 32] {
 }
 
 fn format_hex(value: &[u8]) -> String {
-    format!("0x{}", hex::encode(value))
+    format!("0x{}", encode(value))
 }
