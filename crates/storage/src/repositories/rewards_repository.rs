@@ -488,6 +488,7 @@ impl DatabaseClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::UsernameRow;
 
     fn username_row(username: &str, wallet_id: i32) -> UsernameRow {
         UsernameRow {
