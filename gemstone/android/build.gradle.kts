@@ -5,6 +5,8 @@ plugins {
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
+group = "com.gemwallet.gemstone"
+
 val localProps = rootDir.resolve("local.properties").takeIf { it.isFile }?.inputStream()?.use { stream ->
     java.util.Properties().apply { load(stream) }
 }
