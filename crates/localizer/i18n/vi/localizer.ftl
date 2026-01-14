@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = Mã giới thiệu phải được 
 notification_reward_pending_title = 💎 Người giới thiệu mới
 notification_reward_pending_description = Ai đó đã sử dụng mã giới thiệu của bạn. Đang chờ xác minh.
 rewards_error_username_daily_limit_reached = Đã đạt đến giới hạn tạo tên người dùng mỗi ngày. Vui lòng thử lại vào ngày mai.
+notification_price_alert_target_title = 🎯 {$symbol} at {$price}
+notification_price_alert_target_description = {$change} — the target you set has been reached.

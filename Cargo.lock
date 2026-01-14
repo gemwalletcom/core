@@ -5578,6 +5578,7 @@ version = "1.0.0"
 dependencies = [
  "cacher",
  "chrono",
+ "gem_tracing",
  "localizer",
  "number_formatter",
  "primitives",

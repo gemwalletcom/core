@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = रेफरल कोड को �
 notification_reward_pending_title = 💎 नया रेफरल
 notification_reward_pending_description = किसी ने आपका रेफरल कोड इस्तेमाल किया है। सत्यापन की प्रक्रिया जारी है।
 rewards_error_username_daily_limit_reached = उपयोगकर्ता नाम बनाने की दैनिक सीमा पूरी हो चुकी है। कृपया कल फिर प्रयास करें।
+notification_price_alert_target_title = 🎯 {$symbol} at {$price}
+notification_price_alert_target_description = {$change} — the target you set has been reached.

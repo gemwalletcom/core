@@ -1,16 +1,18 @@
 use chrono::{Duration, Utc};
+use gem_tracing::info_with_fields;
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{
-    Asset, DEFAULT_FIAT_CURRENCY, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PushNotification,
-    PushNotificationAsset, PushNotificationTypes,
+    Asset, DEFAULT_FIAT_CURRENCY, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PriceData,
+    PushNotification, PushNotificationAsset, PushNotificationTypes,
 };
 use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration as StdDuration;
 use storage::{AssetsRepository, Database, PriceAlertsRepository};
 
-#[allow(dead_code)]
+const DEFAULT_RANK: i32 = 1000;
+
 #[derive(Clone)]
 pub struct PriceAlertClient {
     database: Database,
@@ -23,13 +25,49 @@ pub struct PriceAlertNotification {
     pub price: Price,
     pub alert_type: PriceAlertType,
     pub price_alert: PriceAlert,
+    pub milestone: Option<f64>,
 }
 
 #[derive(Clone, Debug)]
 pub struct PriceAlertRules {
-    pub price_change_increase: f64,
-    pub price_change_decrease: f64,
     pub notification_cooldown: StdDuration,
+    pub price_change_threshold: f64,
+    pub rank_divisor: f64,
+    pub milestones: Vec<f64>,
+}
+
+struct AlertResult {
+    alert_type: PriceAlertType,
+    milestone: Option<f64>,
+}
+
+impl PriceAlertRules {
+    fn calculate_threshold(&self, rank: i32) -> f64 {
+        let rank = if rank > 0 { rank } else { DEFAULT_RANK };
+        self.price_change_threshold * (1.0 + (rank as f64).ln() / self.rank_divisor)
+    }
+
+    fn find_crossed_milestone(&self, price_24h_ago: f64, current_price: f64) -> Option<f64> {
+        if current_price <= price_24h_ago {
+            return None;
+        }
+
+        for &milestone in &self.milestones {
+            if price_24h_ago < milestone && current_price >= milestone {
+                return Some(milestone);
+            }
+        }
+
+        None
+    }
+}
+
+fn calculate_price_24h_ago(current_price: f64, change_percent: f64) -> f64 {
+    let divisor = 1.0 + change_percent / 100.0;
+    if divisor <= 0.0 {
+        return current_price;
+    }
+    current_price / divisor
 }
 
 impl PriceAlertClient {
@@ -65,102 +103,155 @@ impl PriceAlertClient {
         let mut results: Vec<PriceAlertNotification> = Vec::new();
         let mut price_alert_ids: HashSet<String> = HashSet::new();
 
-        for (price_alert, price, device) in price_alerts {
-            if let Some(alert) = self.get_price_alert_type(&price_alert, price, rules.clone()) {
-                let notification = self.price_alert_notification(device, price, price_alert.clone(), alert)?;
+        for (price_alert, price_data, device) in price_alerts {
+            if let Some(alert_result) = self.get_price_alert_type(&price_alert, &price_data, &rules) {
+                let notification =
+                    self.price_alert_notification(device, &price_data, price_alert.clone(), alert_result.alert_type, alert_result.milestone)?;
                 price_alert_ids.insert(price_alert.id());
                 results.push(notification);
             }
         }
+
         self.database
             .price_alerts()?
             .update_price_alerts_set_notified_at(price_alert_ids.into_iter().collect(), now.naive_utc())?;
         Ok(results)
     }
 
-    fn get_price_alert_type(&self, price_alert: &primitives::PriceAlert, price: primitives::Price, rules: PriceAlertRules) -> Option<PriceAlertType> {
-        if let Some(price_alert_price) = price_alert.price {
+    fn get_price_alert_type(&self, price_alert: &PriceAlert, price_data: &PriceData, rules: &PriceAlertRules) -> Option<AlertResult> {
+        // User-defined price target
+        if let Some(target_price) = price_alert.price {
             let direction = price_alert.price_direction.clone()?;
-            let current_price = price.price;
-            return match direction {
-                PriceAlertDirection::Up if current_price >= price_alert_price => Some(PriceAlertType::PriceUp),
-                PriceAlertDirection::Down if current_price <= price_alert_price => Some(PriceAlertType::PriceDown),
+            let alert_type = match direction {
+                PriceAlertDirection::Up if price_data.price >= target_price => Some(PriceAlertType::PriceUp),
+                PriceAlertDirection::Down if price_data.price <= target_price => Some(PriceAlertType::PriceDown),
                 _ => None,
             };
-        } else if let Some(price_alert_percent) = price_alert.price_percent_change {
-            let direction = price_alert.price_direction.clone()?;
-            let price_change_percentage_24h = price.price_change_percentage_24h;
-            return match direction {
-                PriceAlertDirection::Up if price_change_percentage_24h >= price_alert_percent => Some(PriceAlertType::PricePercentChangeUp),
-                PriceAlertDirection::Down if price_change_percentage_24h <= -price_alert_percent => Some(PriceAlertType::PricePercentChangeDown),
-                _ => None,
-            };
-        } else if price.price_change_percentage_24h > rules.price_change_increase {
-            return Some(PriceAlertType::PriceChangesUp);
-        } else if price.price_change_percentage_24h < -rules.price_change_decrease {
-            return Some(PriceAlertType::PriceChangesDown);
+            return alert_type.map(|t| AlertResult { alert_type: t, milestone: None });
         }
+
+        // User-defined percent change
+        if let Some(target_percent) = price_alert.price_percent_change {
+            let direction = price_alert.price_direction.clone()?;
+            let alert_type = match direction {
+                PriceAlertDirection::Up if price_data.price_change_percentage_24h >= target_percent => Some(PriceAlertType::PricePercentChangeUp),
+                PriceAlertDirection::Down if price_data.price_change_percentage_24h <= -target_percent => Some(PriceAlertType::PricePercentChangeDown),
+                _ => None,
+            };
+            return alert_type.map(|t| AlertResult { alert_type: t, milestone: None });
+        }
+
+        // All-time high check
+        if price_data.all_time_high > 0.0 && price_data.price > price_data.all_time_high {
+            return Some(AlertResult {
+                alert_type: PriceAlertType::AllTimeHigh,
+                milestone: None,
+            });
+        }
+
+        // Price milestone check
+        let price_24h_ago = calculate_price_24h_ago(price_data.price, price_data.price_change_percentage_24h);
+        if let Some(milestone) = rules.find_crossed_milestone(price_24h_ago, price_data.price) {
+            return Some(AlertResult {
+                alert_type: PriceAlertType::PriceMilestone,
+                milestone: Some(milestone),
+            });
+        }
+
+        // Dynamic threshold based on rank
+        let threshold = rules.calculate_threshold(price_data.market_cap_rank);
+        if price_data.price_change_percentage_24h > threshold {
+            return Some(AlertResult {
+                alert_type: PriceAlertType::PriceChangesUp,
+                milestone: None,
+            });
+        }
+        if price_data.price_change_percentage_24h < -threshold {
+            return Some(AlertResult {
+                alert_type: PriceAlertType::PriceChangesDown,
+                milestone: None,
+            });
+        }
+
         None
     }
 
     fn price_alert_notification(
         &self,
-        device: primitives::Device,
-        price: primitives::Price,
+        device: Device,
+        price_data: &PriceData,
         price_alert: PriceAlert,
         alert_type: PriceAlertType,
+        milestone: Option<f64>,
     ) -> Result<PriceAlertNotification, Box<dyn Error + Send + Sync>> {
         let asset = self.database.assets()?.get_asset(&price_alert.asset_id.to_string())?;
         let base_rate = self.database.fiat()?.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
         let rate = self.database.fiat()?.get_fiat_rate(&device.currency)?;
+
+        let price = Price::new(price_data.price, price_data.price_change_percentage_24h, price_data.last_updated_at);
         let price = price.new_with_rate(base_rate.rate, rate.rate);
 
-        let notification = PriceAlertNotification {
+        Ok(PriceAlertNotification {
             device,
             asset,
             price,
             alert_type,
             price_alert,
-        };
-        Ok(notification)
+            milestone,
+        })
     }
 
     pub fn get_notifications_for_price_alerts(&self, notifications: Vec<PriceAlertNotification>) -> Vec<GorushNotification> {
         let mut results = vec![];
-
         let formatter = NumberFormatter::new();
 
-        for price_alert in notifications {
-            if !price_alert.device.can_receive_price_alerts() {
+        for alert in notifications {
+            if !alert.device.can_receive_price_alerts() {
                 continue;
             }
-            let price = formatter.currency(price_alert.price.price, &price_alert.device.currency);
-            if price.is_none() {
-                println!("Unknown currency symbol: {}", &price_alert.device.currency);
-                continue;
-            }
-            let price_change = formatter.percent(price_alert.price.price_change_percentage_24h, price_alert.device.locale.as_str());
 
-            let language_localizer = LanguageLocalizer::new_with_language(&price_alert.device.locale);
-            let notification_message: LanguageNotification = match price_alert.alert_type {
-                PriceAlertType::PriceChangesUp | PriceAlertType::PriceUp | PriceAlertType::PricePercentChangeUp => {
-                    language_localizer.price_alert_up(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
+            let price = match formatter.currency(alert.price.price, &alert.device.currency) {
+                Some(p) => p,
+                None => {
+                    info_with_fields!("unknown_currency_symbol", currency = &alert.device.currency);
+                    continue;
                 }
-                PriceAlertType::PriceChangesDown | PriceAlertType::PriceDown | PriceAlertType::PricePercentChangeDown => {
-                    language_localizer.price_alert_down(&price_alert.asset.full_name(), price.unwrap().as_str(), price_change.as_str())
+            };
+
+            let change = formatter.percent(alert.price.price_change_percentage_24h, alert.device.locale.as_str());
+            let localizer = LanguageLocalizer::new_with_language(&alert.device.locale);
+
+            let message: LanguageNotification = match alert.alert_type {
+                PriceAlertType::PriceUp | PriceAlertType::PriceDown => {
+                    localizer.price_alert_target(&alert.asset.full_name(), &price, &change)
                 }
-                PriceAlertType::AllTimeHigh => language_localizer.price_alert_all_time_high(&price_alert.asset.name, price.unwrap().as_str()),
+                PriceAlertType::PriceChangesUp | PriceAlertType::PricePercentChangeUp => {
+                    localizer.price_alert_up(&alert.asset.full_name(), &price, &change)
+                }
+                PriceAlertType::PriceChangesDown | PriceAlertType::PricePercentChangeDown => {
+                    localizer.price_alert_down(&alert.asset.full_name(), &price, &change)
+                }
+                PriceAlertType::AllTimeHigh => localizer.price_alert_all_time_high(&alert.asset.name, &price),
+                PriceAlertType::PriceMilestone => {
+                    let milestone_price = alert
+                        .milestone
+                        .and_then(|m| formatter.currency(m, &alert.device.currency))
+                        .unwrap_or_else(|| price.clone());
+                    localizer.price_alert_milestone(&alert.asset.full_name(), &milestone_price, &change)
+                }
             };
-            let price_alert_data = PushNotificationAsset {
-                asset_id: price_alert.asset.id.to_string(),
-            };
+
             let data = PushNotification {
-                data: serde_json::to_value(&price_alert_data).ok(),
+                data: serde_json::to_value(&PushNotificationAsset {
+                    asset_id: alert.asset.id.to_string(),
+                })
+                .ok(),
                 notification_type: PushNotificationTypes::PriceAlert,
             };
-            let notification = GorushNotification::from_device(price_alert.device.clone(), notification_message.title, notification_message.description, data);
-            results.push(notification);
+
+            results.push(GorushNotification::from_device(alert.device.clone(), message.title, message.description, data));
         }
+
         results
     }
 }

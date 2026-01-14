@@ -97,10 +97,11 @@ pub enum ConfigKey {
     TransactionsMinAmountUsd,
 
     // Alerter
-    AlerterPriceIncreasePercent,
-    AlerterPriceDecreasePercent,
     AlerterInterval,
     AlerterNotificationCooldown,
+    AlerterPriceChangeThreshold,
+    AlerterRankDivisor,
+    AlerterMilestones,
 
     // Pricer
     PricerTimer,
@@ -194,10 +195,11 @@ impl ConfigKey {
             Self::ReferralAbuseVelocityPenaltyPerSignal => "100",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
-            Self::AlerterPriceIncreasePercent => "8.0",
-            Self::AlerterPriceDecreasePercent => "10.0",
             Self::AlerterInterval => "60s",
             Self::AlerterNotificationCooldown => "24h",
+            Self::AlerterPriceChangeThreshold => "5.0",
+            Self::AlerterRankDivisor => "5.0",
+            Self::AlerterMilestones => "[1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000]",
             Self::PricerTimer => "60s",
             Self::PricerOutdated => "7d",
             Self::SearchAssetsUpdateInterval => "30m",
