@@ -1,4 +1,4 @@
-CREATE TYPE notification_type AS ENUM ('referralJoined', 'rewardsEnabled');
+CREATE TYPE notification_type AS ENUM ('referralJoined', 'rewardsEnabled', 'rewardsCodeDisabled');
 
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,

@@ -69,6 +69,8 @@ pub enum ConfigKey {
     ReferralRiskScoreHighRiskLocalePenalty,
     ReferralRiskScoreHighRiskDeviceModels,
     ReferralRiskScoreHighRiskDeviceModelPenalty,
+    ReferralRiskScoreIpHistoryPenaltyPerAbuser,
+    ReferralRiskScoreIpHistoryMaxPenalty,
 
     // Referral Abuse Detection
     ReferralAbuseDisableThreshold,
@@ -98,6 +100,7 @@ pub enum ConfigKey {
     AlerterPriceIncreasePercent,
     AlerterPriceDecreasePercent,
     AlerterInterval,
+    AlerterNotificationCooldown,
 
     // Pricer
     PricerTimer,
@@ -140,7 +143,7 @@ impl ConfigKey {
             Self::RedemptionMinAccountAge => "1h",
             Self::RedemptionCooldownAfterReferral => "1m",
             Self::ReferralIpConfidenceScoreThreshold => "10",
-            Self::ReferralBlockedIpTypes => r#"["Data Center", "Web Hosting", "Transit"]"#,
+            Self::ReferralBlockedIpTypes => r#"["dataCenter", "hosting"]"#,
             Self::ReferralBlockedIpTypePenalty => "100",
             Self::ReferralMaxAbuseScore => "60",
             Self::ReferralPenaltyIsps => r#"[]"#,
@@ -172,6 +175,8 @@ impl ConfigKey {
             Self::ReferralRiskScoreHighRiskLocalePenalty => "10",
             Self::ReferralRiskScoreHighRiskDeviceModels => r#"["sdk_gphone", "(?i)emulator", "(?i)simulator"]"#,
             Self::ReferralRiskScoreHighRiskDeviceModelPenalty => "50",
+            Self::ReferralRiskScoreIpHistoryPenaltyPerAbuser => "30",
+            Self::ReferralRiskScoreIpHistoryMaxPenalty => "150",
             Self::ReferralAbuseDisableThreshold => "200",
             Self::ReferralAbuseAttemptPenalty => "15",
             Self::ReferralAbuseVerifiedThresholdMultiplier => "2",
@@ -192,6 +197,7 @@ impl ConfigKey {
             Self::AlerterPriceIncreasePercent => "8.0",
             Self::AlerterPriceDecreasePercent => "10.0",
             Self::AlerterInterval => "60s",
+            Self::AlerterNotificationCooldown => "24h",
             Self::PricerTimer => "60s",
             Self::PricerOutdated => "7d",
             Self::SearchAssetsUpdateInterval => "30m",

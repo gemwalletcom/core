@@ -232,6 +232,7 @@ pub(crate) trait RiskSignalsStore {
         since: NaiveDateTime,
     ) -> Result<i64, DieselError>;
     fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError>;
+    fn count_disabled_users_by_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
 }
 
 impl RiskSignalsStore for DatabaseClient {
@@ -472,6 +473,20 @@ impl RiskSignalsStore for DatabaseClient {
             max_devices_per_ip,
             signals_in_velocity_window: max_signals_in_velocity_window,
         })
+    }
+
+    fn count_disabled_users_by_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::{rewards, rewards_risk_signals};
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        rewards_risk_signals::table
+            .inner_join(rewards::table.on(rewards_risk_signals::referrer_username.eq(rewards::username)))
+            .filter(rewards_risk_signals::ip_address.eq(ip_address))
+            .filter(rewards_risk_signals::created_at.ge(since))
+            .filter(rewards::status.eq(RewardStatus::Disabled))
+            .select(count(rewards_risk_signals::referrer_username).aggregate_distinct())
+            .first(&mut self.connection)
     }
 }
 

@@ -1,6 +1,7 @@
 CREATE TYPE reward_status AS ENUM ('unverified', 'pending', 'verified', 'trusted', 'disabled');
 CREATE TYPE reward_event_type AS ENUM ('createUsername', 'invitePending', 'inviteNew', 'inviteExisting', 'joined', 'disabled');
 CREATE TYPE username_status AS ENUM ('unverified', 'verified');
+CREATE TYPE ip_usage_type AS ENUM ('dataCenter', 'hosting', 'isp', 'mobile', 'business', 'education', 'government', 'unknown');
 
 CREATE TABLE usernames (
     username VARCHAR(64) PRIMARY KEY,
@@ -42,7 +43,7 @@ CREATE TABLE rewards_risk_signals (
     device_currency VARCHAR(8) NOT NULL,
     ip_address VARCHAR(45) NOT NULL,
     ip_country_code VARCHAR(2) NOT NULL,
-    ip_usage_type VARCHAR(64) NOT NULL,
+    ip_usage_type ip_usage_type NOT NULL,
     ip_isp VARCHAR(128) NOT NULL,
     ip_abuse_score INT NOT NULL,
     risk_score INT NOT NULL,

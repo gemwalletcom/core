@@ -9,4 +9,5 @@ use typeshare::typeshare;
 pub enum NotificationType {
     ReferralJoined,
     RewardsEnabled,
+    RewardsCodeDisabled,
 }

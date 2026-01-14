@@ -169,4 +169,4 @@ build-android: bindgen-kotlin
 
 publish-android:
     #!/usr/bin/env bash
-    cd android && touch local.properties && ./gradlew publishReleasePublicationToGPRRepository
+    cd android && touch local.properties && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository publishReleasePublicationToGPRRepository

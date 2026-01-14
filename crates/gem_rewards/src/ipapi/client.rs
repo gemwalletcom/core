@@ -2,18 +2,18 @@ use std::error::Error;
 
 use async_trait::async_trait;
 
-use super::model::AbuseIPDBResponse;
+use super::model::IpApiResponse;
 use crate::ip_check_provider::IpCheckProvider;
 use crate::model::IpCheckResult;
 
 #[derive(Clone)]
-pub struct AbuseIPDBClient {
+pub struct IpApiClient {
     client: reqwest::Client,
     url: String,
     api_key: String,
 }
 
-impl AbuseIPDBClient {
+impl IpApiClient {
     pub fn new(url: String, api_key: String) -> Self {
         Self {
             client: reqwest::Client::new(),
@@ -24,24 +24,22 @@ impl AbuseIPDBClient {
 }
 
 #[async_trait]
-impl IpCheckProvider for AbuseIPDBClient {
+impl IpCheckProvider for IpApiClient {
     fn name(&self) -> &'static str {
-        "abuseipdb"
+        "ipapi"
     }
 
     async fn check_ip(&self, ip_address: &str) -> Result<IpCheckResult, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/api/v2/check", self.url);
+        let url = format!("{}/", self.url);
         let response = self
             .client
             .get(&url)
-            .header("Key", &self.api_key)
-            .header("Accept", "application/json")
-            .query(&[("ipAddress", ip_address)])
+            .query(&[("q", ip_address), ("key", &self.api_key)])
             .send()
             .await?
-            .json::<AbuseIPDBResponse>()
+            .json::<IpApiResponse>()
             .await?;
 
-        Ok(response.data.as_ip_check_result())
+        Ok(response.as_ip_check_result())
     }
 }

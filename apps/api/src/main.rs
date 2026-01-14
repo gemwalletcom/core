@@ -37,7 +37,7 @@ use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::FiatProviderFactory;
 use gem_auth::AuthClient;
-use gem_rewards::{AbuseIPDBClient, IpSecurityClient};
+use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
 use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
@@ -108,8 +108,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
-    let abuseipdb_client = AbuseIPDBClient::new(settings.rewards.abuseipdb.url.clone(), settings.rewards.abuseipdb.key.secret.clone());
-    let ip_security_client = IpSecurityClient::new(abuseipdb_client, cacher_client.clone());
+    let ip_check_providers: Vec<Arc<dyn IpCheckProvider>> = vec![
+        Arc::new(AbuseIPDBClient::new(settings.ip.abuseipdb.url.clone(), settings.ip.abuseipdb.key.secret.clone())),
+        Arc::new(IpApiClient::new(settings.ip.ipapi.url.clone(), settings.ip.ipapi.key.secret.clone())),
+    ];
+    let ip_security_client = IpSecurityClient::new(ip_check_providers, cacher_client.clone());
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client);
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());

@@ -12,3 +12,11 @@ pub struct Notification {
     pub metadata: Option<serde_json::Value>,
     pub created_at: NaiveDateTime,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable, Equatable")]
+#[serde(rename_all = "camelCase")]
+pub struct NotificationRewardsMetadata {
+    pub username: String,
+    pub points: i32,
+}

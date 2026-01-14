@@ -3409,6 +3409,7 @@ name = "gem_rewards"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
+ "async-trait",
  "cacher",
  "chain_traits",
  "chrono",
