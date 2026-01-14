@@ -4,16 +4,6 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
-    inputs:
-      target:
-        description: "Container to build"
-        required: false
-        default: all
-        type: choice
-        options:
-          - all
-          - core
-          - dynode
 
 permissions:
   contents: read
@@ -63,7 +53,6 @@ jobs:
           password: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
 
       - name: Build and push core
-        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'core' }}
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -80,7 +69,6 @@ jobs:
             ${{ env.CORE_IMAGE }}:${{ github.sha }}
 
       - name: Build and push dynode
-        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.target == 'all' || github.event.inputs.target == 'dynode' }}
         uses: docker/build-push-action@v6
         with:
           context: .
