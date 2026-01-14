@@ -25,34 +25,6 @@ fn validate_username(username: &str) -> Result<(), DatabaseError> {
     Ok(())
 }
 
-fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, device_id: i32) -> Result<UsernameRow, DatabaseError> {
-    let placeholder_username = format!("wallet_{}", wallet_id);
-    let username = UsernamesStore::create_username(
-        client,
-        NewUsernameRow {
-            username: placeholder_username.clone(),
-            wallet_id,
-            status: UsernameStatus::Unverified,
-        },
-    )?;
-    RewardsStore::create_rewards(
-        client,
-        NewRewardsRow {
-            username: placeholder_username,
-            status: RewardStatus::Unverified,
-            level: None,
-            points: 0,
-            referrer_username: None,
-            referral_count: 0,
-            device_id,
-            is_swap_complete: false,
-            comment: None,
-            disable_reason: None,
-        },
-    )?;
-    Ok(username)
-}
-
 pub trait RewardsRepository {
     fn get_reward_by_wallet_id(&mut self, wallet_id: i32) -> Result<Rewards, DatabaseError>;
     fn get_reward_events_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<RewardEvent>, DatabaseError>;
@@ -370,15 +342,15 @@ impl RewardsRepository for DatabaseClient {
         let verification_date = self.get_referral_verification_date(now())?;
         let verified_at = if verification_date.is_none() { Some(now()) } else { None };
 
-        let username = match UsernamesStore::get_username(self, UsernameLookup::WalletId(referred_wallet_id)) {
-            Ok(u) => u,
+        let referred_identifier = match UsernamesStore::get_username(self, UsernameLookup::WalletId(referred_wallet_id)) {
+            Ok(u) => u.username,
             Err(_) => {
-                let referred = create_username_and_rewards(self, referred_wallet_id, device_id)?;
-                return self.add_referral_with_events(referrer_username, &referred.username, device_id, risk_signal_id, verified_at);
+                let wallet = WalletsStore::get_wallet_by_id(self, referred_wallet_id)?;
+                wallet.wallet_id.address().to_string()
             }
         };
 
-        match RewardsStore::get_referral_by_username(self, &username.username)? {
+        match RewardsStore::get_referral_by_username(self, &referred_identifier)? {
             Some(referral) if referral.verified_at.is_none() => {
                 if referral.referrer_username != referrer_username {
                     return Err(DatabaseError::Error("Referral code does not match pending referral".to_string()));
@@ -389,10 +361,10 @@ impl RewardsRepository for DatabaseClient {
                 }
 
                 RewardsStore::update_referral(self, referral.id, ReferralUpdate::VerifiedAt(now()))?;
-                self.add_referral_verified_events(&referral.referrer_username, &username.username)
+                self.add_referral_verified_events(&referral.referrer_username, &referred_identifier)
             }
             Some(_) => Err(DatabaseError::Error("Referral already verified".to_string())),
-            None => self.add_referral_with_events(referrer_username, &username.username, device_id, risk_signal_id, verified_at),
+            None => self.add_referral_with_events(referrer_username, &referred_identifier, device_id, risk_signal_id, verified_at),
         }
     }
 }
