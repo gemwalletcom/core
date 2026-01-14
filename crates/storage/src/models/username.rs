@@ -14,7 +14,7 @@ pub struct UsernameRow {
 impl UsernameRow {
     pub fn has_custom_username(&self) -> bool {
         let len = self.username.len();
-        len >= 4 && len <= 16 && self.username.chars().all(|c| c.is_ascii_alphanumeric())
+        (4..=16).contains(&len) && self.username.chars().all(|c| c.is_ascii_alphanumeric())
     }
 
     pub fn is_verified(&self) -> bool {
