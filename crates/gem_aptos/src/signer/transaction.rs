@@ -1,4 +1,4 @@
-use crate::models::{SubmitTransactionBcsRequest, SubmitTransactionRequest, TransactionSignature};
+use crate::models::SubmitTransactionBcsRequest;
 use hex::encode;
 use primitives::SignerError;
 use signer::Signer;
@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 use std::time::SystemTime;
 
-use super::{AccountAddress, EntryFunction, EntryFunctionPayload};
+use super::{AccountAddress, EntryFunction};
 
 const RAW_TRANSACTION_SALT: &[u8] = b"APTOS::RawTransaction";
 const MESSAGE_SALT: &[u8] = b"APTOS::Message";
@@ -98,31 +98,6 @@ pub fn sign_message(message: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<
     Signer::sign_ed25519_with_public_key(&preimage, private_key).map_err(|err| SignerError::InvalidInput(err.to_string()))
 }
 
-pub fn build_submit_transaction(
-    raw_tx: RawTransaction,
-    payload: &EntryFunctionPayload,
-    signature: Vec<u8>,
-    public_key: Vec<u8>,
-) -> Result<String, SignerError> {
-    let signature = TransactionSignature {
-        signature_type: "ed25519_signature".to_string(),
-        public_key: Some(format_hex(&public_key)),
-        signature: Some(format_hex(&signature)),
-    };
-
-    let request = SubmitTransactionRequest {
-        sender: raw_tx.sender.to_hex(),
-        sequence_number: raw_tx.sequence_number.to_string(),
-        max_gas_amount: raw_tx.max_gas_amount.to_string(),
-        gas_unit_price: raw_tx.gas_unit_price.to_string(),
-        expiration_timestamp_secs: raw_tx.expiration_timestamp_secs.to_string(),
-        payload: payload.to_transaction_payload(),
-        signature,
-    };
-
-    serde_json::to_string(&request).map_err(|err| SignerError::InvalidInput(err.to_string()))
-}
-
 pub fn build_submit_transaction_bcs(
     raw_tx: RawTransaction,
     signature: Vec<u8>,
@@ -161,10 +136,6 @@ fn sha3_256(input: &[u8]) -> [u8; 32] {
     output
 }
 
-fn format_hex(value: &[u8]) -> String {
-    format!("0x{}", encode(value))
-}
-
 fn ensure_length(input: Vec<u8>, expected: usize, label: &str) -> Result<Vec<u8>, SignerError> {
     if input.len() != expected {
         return Err(SignerError::InvalidInput(format!(
@@ -178,6 +149,7 @@ fn ensure_length(input: Vec<u8>, expected: usize, label: &str) -> Result<Vec<u8>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::signer::EntryFunctionPayload;
     use ed25519_dalek::{Signature, SigningKey, Verifier};
     use serde_json::Value;
 

@@ -101,17 +101,6 @@ pub struct TransactionResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SubmitTransactionRequest {
-    pub sender: String,
-    pub sequence_number: String,
-    pub max_gas_amount: String,
-    pub gas_unit_price: String,
-    pub expiration_timestamp_secs: String,
-    pub payload: TransactionPayload,
-    pub signature: TransactionSignature,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubmitTransactionBcsRequest {
     pub bcs: String,
     #[serde(rename = "bcsEncoding")]

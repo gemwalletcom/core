@@ -76,16 +76,13 @@ impl<C: Client> AptosClient<C> {
                 return self.submit_transaction_bcs(bcs).await;
             }
 
-            let response = self
-                .client
-                .post::<serde_json::Value, TransactionResponse>("/v1/transactions", &json_value, None)
-                .await?;
-
-            if let Some(message) = &response.message {
-                return Err(Box::new(std::io::Error::other(message.clone())));
+            if let Some(bcs) = json_value.as_str() {
+                return self.submit_transaction_bcs(bcs).await;
             }
 
-            return Ok(response);
+            return Err(Box::new(std::io::Error::other(
+                "Unsupported Aptos submit payload: expected BCS wrapper",
+            )));
         }
 
         self.submit_transaction_bcs(data).await
