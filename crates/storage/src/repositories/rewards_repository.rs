@@ -11,6 +11,18 @@ use chrono::NaiveDateTime;
 use primitives::rewards::{ReferralActivation, ReferralCodeActivation};
 use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletIdType, now};
 
+fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, address: &str, device_id: i32) -> Result<RewardsRow, DatabaseError> {
+    UsernamesStore::create_username(
+        client,
+        NewUsernameRow {
+            username: address.to_string(),
+            wallet_id,
+            status: UsernameStatus::Unverified,
+        },
+    )?;
+    Ok(RewardsStore::create_rewards(client, NewRewardsRow::new(address.to_string(), device_id))?)
+}
+
 fn validate_username(username: &str) -> Result<(), DatabaseError> {
     let len = username.len();
     if len < 4 {
@@ -344,10 +356,12 @@ impl RewardsRepository for DatabaseClient {
 
         let referred_identifier = match UsernamesStore::get_username(self, UsernameLookup::WalletId(referred_wallet_id)) {
             Ok(u) => u.username,
-            Err(_) => {
+            Err(diesel::result::Error::NotFound) => {
                 let wallet = WalletsStore::get_wallet_by_id(self, referred_wallet_id)?;
-                wallet.wallet_id.address().to_string()
+                let address = wallet.wallet_id.address().to_string();
+                create_username_and_rewards(self, referred_wallet_id, &address, device_id)?.username
             }
+            Err(e) => return Err(e.into()),
         };
 
         match RewardsStore::get_referral_by_username(self, &referred_identifier)? {
