@@ -10,7 +10,7 @@ prefix = ''
 "BigInt" = "String"
 "BigUint" = "String"
 "DateTime" = "Date"
-"Value" = "TransactionMetadata" # Fix later to be adjustable
+"Value" = "AnyCodableValue" # Fix later to be adjustable
 
 [kotlin.type_mappings]
 "Date" = "Long"

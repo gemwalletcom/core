@@ -17,7 +17,6 @@ pub(crate) trait NftStore {
     fn get_nft_collection_links(&mut self, collection_id: &str) -> Result<Vec<NftLinkRow>, diesel::result::Error>;
     fn add_nft_collections(&mut self, values: Vec<NftCollectionRow>) -> Result<usize, diesel::result::Error>;
     fn update_nft_collection_image_url(&mut self, update: UpdateNftCollectionImageUrlRow) -> Result<usize, diesel::result::Error>;
-    fn add_nft_types(&mut self, values: Vec<NftTypeRow>) -> Result<usize, diesel::result::Error>;
     fn add_nft_collections_links(&mut self, values: Vec<NftLinkRow>) -> Result<usize, diesel::result::Error>;
     fn add_nft_report(&mut self, report: NewNftReportRow) -> Result<usize, diesel::result::Error>;
 }
@@ -93,15 +92,6 @@ impl NftStore for DatabaseClient {
         use crate::schema::nft_collections::dsl::*;
         diesel::update(nft_collections.find(update.id.clone()))
             .set(update)
-            .execute(&mut self.connection)
-    }
-
-    // nft types
-    fn add_nft_types(&mut self, values: Vec<NftTypeRow>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::nft_types::dsl::*;
-        diesel::insert_into(nft_types)
-            .values(values)
-            .on_conflict_do_nothing()
             .execute(&mut self.connection)
     }
 

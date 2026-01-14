@@ -9,13 +9,14 @@ use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use storage::ConfigRepository;
+use storage::ConfigCacher;
 use streamer::StreamProducer;
 
 pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+    let config = ConfigCacher::new(database.clone());
 
-    let alerter_interval = database.config()?.get_config_duration(ConfigKey::AlerterInterval)?;
+    let alerter_interval = config.get_duration(ConfigKey::AlerterInterval)?;
 
     let price_alerts_job = run_job("Price Alerts", alerter_interval, {
         let settings = Arc::new(settings.clone());

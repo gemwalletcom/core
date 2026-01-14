@@ -90,6 +90,8 @@ pub mod transaction_type;
 pub use self::transaction_type::TransactionType;
 pub mod transaction_state;
 pub use self::transaction_state::TransactionState;
+pub mod username_status;
+pub use self::username_status::UsernameStatus;
 pub mod recent_activity_type;
 pub use self::recent_activity_type::RecentActivityType;
 pub mod transaction_direction;
@@ -97,7 +99,7 @@ pub use self::transaction_direction::TransactionDirection;
 pub mod subscription;
 pub mod support;
 pub mod transaction_utxo;
-pub use self::subscription::{DeviceSubscription, Subscription};
+pub use self::subscription::{DeviceSubscription, Subscription, WalletIdType, WalletSubscription, WalletSubscriptionChains};
 pub use self::support::{NewSupportDevice, SupportDevice};
 pub use self::transaction_utxo::TransactionUtxoInput;
 pub mod address_formatter;
@@ -127,7 +129,11 @@ pub use self::wallet_connect::{WCEthereumTransaction, WCTonMessage, WalletConnec
 pub mod account;
 pub use self::account::Account;
 pub mod wallet;
-pub use self::wallet::{Wallet, WalletId, WalletType};
+pub use self::wallet::{Wallet, WalletSource};
+pub mod wallet_type;
+pub use self::wallet_type::WalletType;
+pub mod wallet_id;
+pub use self::wallet_id::WalletId;
 pub mod wallet_connector;
 pub use self::wallet_connector::{
     WCPairingProposal, WalletConnection, WalletConnectionEvents, WalletConnectionMethods, WalletConnectionSession, WalletConnectionSessionAppMetadata,
@@ -139,7 +145,7 @@ pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod rewards;
 pub use self::rewards::{
-    ReferralAllowance, ReferralCode, ReferralLeader, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, RewardLevel, Rewards,
+    ReferralAllowance, ReferralCode, ReferralLeader, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, RewardLevel, RewardStatus, Rewards,
 };
 pub mod tag;
 pub use self::tag::AssetTag;
@@ -231,11 +237,17 @@ pub use self::secure_preferences::{Preferences, PreferencesExt, SecurePreference
 pub mod signer_error;
 pub use self::signer_error::SignerError;
 pub mod date_ext;
-pub use self::date_ext::{NaiveDateTimeExt, now};
+pub use self::date_ext::{DurationExt, NaiveDateTimeExt, now};
 pub mod number_incrementer;
 pub use self::number_incrementer::NumberIncrementer;
 pub mod chain_signer;
 pub use self::chain_signer::ChainSigner;
+pub mod notification_type;
+pub use self::notification_type::NotificationType;
+pub mod notification;
+pub use self::notification::{Notification, NotificationRewardsMetadata};
+pub mod ip_usage_type;
+pub use self::ip_usage_type::IpUsageType;
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

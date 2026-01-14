@@ -19,7 +19,6 @@ pub(crate) trait TransactionsStore {
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error>;
     fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, diesel::result::Error>;
     fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, diesel::result::Error>;
-    fn add_transactions_types(&mut self, values: Vec<TransactionTypeRow>) -> Result<usize, diesel::result::Error>;
 }
 
 impl TransactionsStore for DatabaseClient {
@@ -147,13 +146,5 @@ impl TransactionsStore for DatabaseClient {
     fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         diesel::delete(transactions.filter(id.eq_any(ids))).execute(&mut self.connection)
-    }
-
-    fn add_transactions_types(&mut self, values: Vec<TransactionTypeRow>) -> Result<usize, diesel::result::Error> {
-        use crate::schema::transactions_types::dsl::*;
-        diesel::insert_into(transactions_types)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
     }
 }

@@ -2,6 +2,7 @@ pub mod chain;
 pub mod docs;
 pub mod node;
 pub mod public;
+pub mod rewards;
 pub mod social;
 pub mod stake;
 pub mod swap_config;
@@ -19,6 +20,7 @@ use std::{collections::HashMap, str::FromStr};
 use {
     docs::{DocsUrl, get_docs_url},
     public::{ASSETS_URL, PublicUrl, get_public_url},
+    rewards::{RewardsUrl, get_rewards_url},
     social::{SocialUrl, get_social_url, get_social_url_deeplink},
     stake::{StakeChainConfig, get_stake_config},
     swap_config::{SwapConfig, get_swap_config},
@@ -51,6 +53,10 @@ impl Config {
 
     fn get_docs_url(&self, item: DocsUrl) -> String {
         get_docs_url(item)
+    }
+
+    fn get_rewards_url(&self, item: RewardsUrl, locale: Option<String>) -> String {
+        get_rewards_url(item, locale)
     }
 
     fn get_social_url(&self, item: SocialUrl) -> Option<String> {

@@ -46,3 +46,6 @@ rewards_error_referral_country_ineligible = Les parrainages ne sont actuellement
 notification_rewards_disabled_title = Code de parrainage désactivé
 notification_rewards_disabled_description = Ce code de parrainage a été désactivé en raison de violations répétées des conditions de notre programme de parrainage.
 rewards_error_referral_eligibility_expired = Les codes de parrainage doivent être appliqués dans les {$value} jours de création de votre nom d'utilisateur.
+notification_reward_pending_title = 💎 Nouvelle recommandation
+notification_reward_pending_description = Quelqu'un a utilisé votre code de parrainage. Vérification en cours.
+rewards_error_username_daily_limit_reached = La limite quotidienne de création de noms d'utilisateur a été atteinte. Veuillez réessayer demain.

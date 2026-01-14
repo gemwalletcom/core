@@ -1,15 +1,16 @@
 use crate::database::rewards::RewardsStore;
 use crate::database::rewards_redemptions::{RedemptionUpdate, RewardsRedemptionsStore};
 use crate::models::{NewRewardRedemptionRow, RewardRedemptionRow};
+use crate::sql_types::{RedemptionStatus, RewardRedemptionType};
 use crate::{DatabaseClient, DatabaseError};
 use chrono::Utc;
-use primitives::rewards::{RedemptionStatus, RewardRedemption, RewardRedemptionOption};
+use primitives::rewards::{RewardRedemption, RewardRedemptionOption};
 
 pub trait RewardsRedemptionsRepository {
     fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError>;
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
-    fn get_redemption_options(&mut self, types: &[String]) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
+    fn get_redemption_options(&mut self, types: &[RewardRedemptionType]) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
     fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError>;
     fn count_redemptions_since_days(&mut self, username: &str, days: i64) -> Result<i64, DatabaseError>;
 }
@@ -35,7 +36,7 @@ impl RewardsRedemptionsRepository for DatabaseClient {
                 username: username.to_string(),
                 option_id: option_id.to_string(),
                 device_id,
-                status: RedemptionStatus::Pending.as_ref().to_string(),
+                status: RedemptionStatus::Pending,
             },
         )?;
 
@@ -52,7 +53,7 @@ impl RewardsRedemptionsRepository for DatabaseClient {
         Ok(RewardsRedemptionsStore::update_redemption(self, redemption_id, updates)?)
     }
 
-    fn get_redemption_options(&mut self, types: &[String]) -> Result<Vec<RewardRedemptionOption>, DatabaseError> {
+    fn get_redemption_options(&mut self, types: &[RewardRedemptionType]) -> Result<Vec<RewardRedemptionOption>, DatabaseError> {
         let results = RewardsRedemptionsStore::get_redemption_options(self, types)?;
         Ok(results.into_iter().map(|r| r.as_primitive()).collect())
     }

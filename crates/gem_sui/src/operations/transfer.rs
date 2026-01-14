@@ -1,8 +1,8 @@
 use crate::models::*;
 use std::error::Error;
 use std::str::FromStr;
-use sui_transaction_builder::{Serialized, TransactionBuilder, unresolved::Input};
-use sui_types::{Address, Argument};
+use sui_transaction_builder::{Argument, ObjectInput, TransactionBuilder};
+use sui_types::Address;
 
 pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.amount) {
@@ -14,23 +14,23 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error 
 
     let mut ptb = TransactionBuilder::new();
     if input.send_max {
-        let recipient_argument = ptb.input(Serialized(&recipient));
+        let recipient_argument = ptb.pure(&recipient);
+        let gas = ptb.gas();
 
-        ptb.transfer_objects(vec![ptb.gas()], recipient_argument);
+        ptb.transfer_objects(vec![gas], recipient_argument);
     } else {
-        let amount = ptb.input(Serialized(&input.amount));
-        let Argument::Result(idx) = ptb.split_coins(ptb.gas(), vec![amount]) else {
-            panic!("split_coins should always give a Argument::Result")
-        };
-        let split_result = Argument::NestedResult(idx, 0);
-        let recipient_argument = ptb.input(Serialized(&recipient));
+        let amount = ptb.pure(&input.amount);
+        let gas = ptb.gas();
+        let mut split_results = ptb.split_coins(gas, vec![amount]);
+        let split_result = split_results.pop().expect("split_coins should return one argument");
+        let recipient_argument = ptb.pure(&recipient);
 
         ptb.transfer_objects(vec![split_result], recipient_argument);
     }
 
     let coins = input.coins.iter().map(|x| x.object.to_input()).collect::<Vec<_>>();
     super::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, coins);
-    let tx = ptb.finish()?;
+    let tx = ptb.try_build()?;
 
     TxOutput::from_tx(&tx)
 }
@@ -47,7 +47,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
         return Err("tokens vector is empty".into());
     }
 
-    let mut coins_inputs: Vec<Argument> = input.tokens.clone().into_iter().map(|x| ptb.input(x.object.to_input())).collect();
+    let mut coins_inputs: Vec<Argument> = input.tokens.clone().into_iter().map(|x| ptb.object(x.object.to_input())).collect();
 
     // Get first coin
     let first_coin = coins_inputs.remove(0);
@@ -58,15 +58,13 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
     }
 
     // Split and transfer
-    let amount = ptb.input(Serialized(&input.amount));
-    let Argument::Result(idx) = ptb.split_coins(first_coin, vec![amount]) else {
-        panic!("self.command should always give a Argument::Result")
-    };
-    let split_result = Argument::NestedResult(idx, 0);
-    let recipient_argument = ptb.input(Serialized(&recipient));
+    let amount = ptb.pure(&input.amount);
+    let mut split_results = ptb.split_coins(first_coin, vec![amount]);
+    let split_result = split_results.pop().expect("split_coins should return one argument");
+    let recipient_argument = ptb.pure(&recipient);
     ptb.transfer_objects(vec![split_result], recipient_argument);
 
-    let gas_coin = Input::immutable(
+    let gas_coin = ObjectInput::immutable(
         input.gas_coin.object.object_id.parse().unwrap(),
         input.gas_coin.object.version,
         input.gas_coin.object.digest.parse().unwrap(),
@@ -74,7 +72,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
 
     super::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
 
-    let tx = ptb.finish()?;
+    let tx = ptb.try_build()?;
     TxOutput::from_tx(&tx)
 }
 

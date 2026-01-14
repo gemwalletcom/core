@@ -46,3 +46,6 @@ rewards_error_referral_country_ineligible = 目前您所在的国家/地区无�
 notification_rewards_disabled_title = 推荐码已停用
 notification_rewards_disabled_description = 由于多次违反我们的推荐计划条款，此推荐码已被禁用。
 rewards_error_referral_eligibility_expired = 推荐码必须在有效期内使用。 {$value} 创建用户名所需天数。
+notification_reward_pending_title = 💎 新推荐
+notification_reward_pending_description = 有人使用了您的推荐码。正在等待验证。
+rewards_error_username_daily_limit_reached = 每日用户名创建数量已达上限，请明日再试。

@@ -151,8 +151,10 @@ impl Pusher {
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
         let message = self.message(localizer, transaction.clone(), subscription.clone(), assets.clone())?;
 
+        // TODO: Pass wallet_id from subscription once v2 subscriptions migration is complete
         let notification_transaction = PushNotificationTransaction {
-            wallet_index: subscription.wallet_index,
+            wallet_index: Some(subscription.wallet_index),
+            wallet_id: String::new(),
             transaction_id: transaction.id.to_string(),
             transaction: transaction.clone(),
             asset_id: transaction.asset_id.to_string(),

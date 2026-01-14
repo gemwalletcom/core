@@ -1,1 +1,1 @@
-drop table releases;
+DROP TABLE IF EXISTS releases;

@@ -10,6 +10,7 @@ mod metrics;
 mod model;
 mod name;
 mod nft;
+mod notifications;
 mod params;
 mod price_alerts;
 mod prices;
@@ -21,6 +22,7 @@ mod subscriptions;
 mod support;
 mod swap;
 mod transactions;
+mod wallets;
 mod webhooks;
 mod websocket_prices;
 
@@ -35,11 +37,12 @@ use config::ConfigClient;
 use devices::DevicesClient;
 use fiat::FiatProviderFactory;
 use gem_auth::AuthClient;
-use gem_rewards::{AbuseIPDBClient, IpSecurityClient};
+use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
 use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
 use name_resolver::NameProviderFactory;
+use notifications::NotificationsClient;
 use name_resolver::client::Client as NameClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
@@ -54,6 +57,7 @@ use subscriptions::SubscriptionsClient;
 use support::SupportClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
+use wallets::WalletsClient;
 use webhooks::WebhooksClient;
 use websocket_prices::PriceObserverConfig;
 
@@ -79,6 +83,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let transactions_client = TransactionsClient::new(database.clone());
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "api").await.unwrap();
     let subscriptions_client = SubscriptionsClient::new(database.clone(), stream_producer.clone());
+    let wallets_client = WalletsClient::new(database.clone(), stream_producer.clone());
     let metrics_client = MetricsClient::new(database.clone());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
@@ -87,13 +92,13 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
     let search_client = SearchClient::new(&search_index_client);
     let swap_client = SwapClient::new(database.clone());
-    let providers = FiatProviderFactory::new_providers(settings_clone.clone());
-    let ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
+    let fiat_providers = FiatProviderFactory::new_providers(settings_clone.clone());
+    let fiat_ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
     let fiat_client = FiatClient::new(
         database.clone(),
         cacher_client.clone(),
-        providers,
-        ip_check_client.clone(),
+        fiat_providers,
+        fiat_ip_check_client.clone(),
         stream_producer.clone(),
     );
     let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client);
@@ -103,10 +108,14 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
-    let abuseipdb_client = AbuseIPDBClient::new(settings.rewards.abuseipdb.url.clone(), settings.rewards.abuseipdb.key.secret.clone());
-    let ip_security_client = IpSecurityClient::new(abuseipdb_client, cacher_client.clone());
+    let ip_check_providers: Vec<Arc<dyn IpCheckProvider>> = vec![
+        Arc::new(AbuseIPDBClient::new(settings.ip.abuseipdb.url.clone(), settings.ip.abuseipdb.key.secret.clone())),
+        Arc::new(IpApiClient::new(settings.ip.ipapi.url.clone(), settings.ip.ipapi.key.secret.clone())),
+    ];
+    let ip_security_client = IpSecurityClient::new(ip_check_providers, cacher_client.clone());
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client);
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
+    let notifications_client = NotificationsClient::new(database.clone());
 
     rocket::build()
         .manage(database)
@@ -129,9 +138,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
         .manage(Mutex::new(support_client))
-        .manage(Mutex::new(ip_check_client))
+        .manage(Mutex::new(fiat_ip_check_client))
         .manage(Mutex::new(rewards_client))
         .manage(Mutex::new(redemption_client))
+        .manage(Mutex::new(wallets_client))
+        .manage(Mutex::new(notifications_client))
         .manage(auth_client)
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
@@ -205,6 +216,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 referral::create_referral,
                 referral::use_referral_code,
                 referral::redeem_rewards,
+                notifications::get_notifications,
+                notifications::mark_notifications_read,
             ],
         )
         .mount(
@@ -213,6 +226,9 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 transactions::get_transactions_by_device_id_v2,
                 nft::get_nft_assets_v2,
                 scan::scan_transaction_v2,
+                wallets::get_subscriptions,
+                wallets::add_subscriptions,
+                wallets::delete_subscriptions,
             ],
         )
         .mount(settings.metrics.path, routes![metrics::get_metrics])

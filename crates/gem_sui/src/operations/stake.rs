@@ -5,8 +5,8 @@ use crate::{
 };
 
 use std::{error::Error, str::FromStr};
-use sui_transaction_builder::{Function, Serialized, TransactionBuilder, unresolved::Input};
-use sui_types::{Address, Argument, Identifier};
+use sui_transaction_builder::{Function, ObjectInput, TransactionBuilder};
+use sui_types::{Address, Identifier};
 
 pub static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
 pub static SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
@@ -27,23 +27,21 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Er
     let mut ptb = TransactionBuilder::new();
 
     // split new coin to stake
-    let stake_amount = ptb.input(Serialized(&input.stake_amount));
-    let Argument::Result(idx) = ptb.split_coins(ptb.gas(), vec![stake_amount]) else {
-        panic!("split_coins should always give a Argument::Result");
-    };
-    let split_result = Argument::NestedResult(idx, 0);
+    let stake_amount = ptb.pure(&input.stake_amount);
+    let gas = ptb.gas();
+    let mut split_results = ptb.split_coins(gas, vec![stake_amount]);
+    let split_result = split_results.pop().expect("split_coins should return one argument");
 
     // move call request_add_stake
     let function = Function::new(
         ObjectId::from(SUI_SYSTEM_PACKAGE_ID).into(),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_ADD_STAKE).unwrap(),
-        vec![],
     );
 
     // Get system state object
-    let sys_state = ptb.input(sui_system_state_object_input());
-    let validator_argument = ptb.input(Serialized(&validator));
+    let sys_state = ptb.object(sui_system_state_object_input());
+    let validator_argument = ptb.pure(&validator);
 
     crate::tx::fill_tx(
         &mut ptb,
@@ -54,7 +52,7 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Er
     );
     ptb.move_call(function, vec![sys_state, split_result, validator_argument]);
 
-    let tx = ptb.finish()?;
+    let tx = ptb.try_build()?;
     TxOutput::from_tx(&tx)
 }
 
@@ -62,12 +60,12 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + 
     let mut ptb = TransactionBuilder::new();
 
     let sender = Address::from_str(&input.sender)?;
-    let staked_sui = ptb.input(Input::owned(
+    let staked_sui = ptb.object(ObjectInput::owned(
         input.staked_sui.object_id.parse().unwrap(),
         input.staked_sui.version,
         input.staked_sui.digest.parse().unwrap(),
     ));
-    let gas_coin = Input::owned(
+    let gas_coin = ObjectInput::owned(
         input.gas_coin.object.object_id.parse().unwrap(),
         input.gas_coin.object.version,
         input.gas_coin.object.digest.parse().unwrap(),
@@ -76,16 +74,15 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + 
         ObjectId::from(SUI_SYSTEM_PACKAGE_ID).into(),
         Identifier::new(SUI_SYSTEM_ID).unwrap(),
         Identifier::new(SUI_REQUEST_WITHDRAW_STAKE).unwrap(),
-        vec![],
     );
 
     // Get system state object
-    let sys_state = ptb.input(sui_system_state_object_input());
+    let sys_state = ptb.object(sui_system_state_object_input());
 
     ptb.move_call(function, vec![sys_state, staked_sui]);
 
     crate::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
-    let tx = ptb.finish()?;
+    let tx = ptb.try_build()?;
     TxOutput::from_tx(&tx)
 }
 

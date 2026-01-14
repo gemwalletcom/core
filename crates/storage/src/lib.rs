@@ -1,31 +1,36 @@
 use std::error::Error;
 
+mod config_cacher;
 pub mod database;
 pub mod error;
 pub mod models;
 pub mod repositories;
 pub mod schema;
+pub mod sql_types;
+
+pub use config_cacher::ConfigCacher;
 
 diesel::allow_columns_to_appear_in_same_group_by_clause!(schema::transactions_addresses::address, schema::transactions::chain,);
 
 pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},
-    rewards::AbusePatterns,
+    rewards::{AbusePatterns, ReferralUpdate},
     rewards_redemptions::RedemptionUpdate,
 };
 pub use self::error::{DatabaseError, ReferralValidationError};
-pub use self::models::{RewardRedemptionOptionRow, ScanAddressTypeRow};
+pub use self::models::{NewNotificationRow, NewWalletRow, RewardRedemptionOptionRow};
+pub use self::sql_types::{NotificationType, WalletSource, WalletType};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
-    assets_types_repository::AssetsTypesRepository, chains_repository::ChainsRepository, charts_repository::ChartsRepository,
-    config_repository::ConfigRepository, devices_repository::DevicesRepository, fiat_repository::FiatRepository, link_types_repository::LinkTypesRepository,
-    migrations_repository::MigrationsRepository, nft_repository::NftRepository, nodes_repository::NodesRepository,
-    parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository,
-    prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
-    rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, risk_signals_repository::RiskSignalsRepository,
-    scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository,
-    tag_repository::TagRepository, transactions_repository::TransactionsRepository,
+    chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository, devices_repository::DevicesRepository,
+    fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
+    notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
+    price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
+    releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
+    risk_signals_repository::RiskSignalsRepository, scan_addresses_repository::ScanAddressesRepository,
+    subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository, tag_repository::TagRepository,
+    transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
 };
 pub use diesel::OptionalExtension;
 
@@ -55,10 +60,6 @@ impl Database {
         self.client()
     }
 
-    pub fn assets_types(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
     pub fn chains(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
@@ -67,19 +68,11 @@ impl Database {
         self.client()
     }
 
-    pub fn config(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
     pub fn devices(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 
     pub fn fiat(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
-    pub fn link_types(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 
@@ -95,7 +88,7 @@ impl Database {
         self.client()
     }
 
-    pub fn nodes(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
+    pub fn notifications(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 
@@ -123,14 +116,6 @@ impl Database {
         self.client()
     }
 
-    pub fn reward_event_types(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
-    pub fn reward_redemption_types(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
     pub fn releases(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
@@ -152,6 +137,10 @@ impl Database {
     }
 
     pub fn transactions(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
+        self.client()
+    }
+
+    pub fn wallets(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 }

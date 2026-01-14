@@ -40,6 +40,7 @@ pub struct Settings {
     pub assets: Assets,
     pub sentry: Option<Sentry>,
     pub rewards: Rewards,
+    pub ip: Ip,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -416,7 +417,6 @@ pub struct Sentry {
 pub struct Rewards {
     #[serde(default)]
     pub wallets: HashMap<String, RewardsWallet>,
-    pub abuseipdb: AbuseIPDB,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -428,7 +428,21 @@ pub struct RewardsWallet {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
+pub struct Ip {
+    pub abuseipdb: AbuseIPDB,
+    pub ipapi: IpApi,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
 pub struct AbuseIPDB {
+    pub url: String,
+    pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct IpApi {
     pub url: String,
     pub key: KeySecret,
 }
