@@ -112,6 +112,13 @@ pub struct SubmitTransactionRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubmitTransactionBcsRequest {
+    pub bcs: String,
+    #[serde(rename = "bcsEncoding")]
+    pub bcs_encoding: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionBroadcast {
     pub hash: String,
 }

@@ -5,7 +5,7 @@ use serde_json::{Value, from_str};
 use std::str::from_utf8;
 
 use super::{
-    AccountAddress, EntryFunction, EntryFunctionPayload, build_raw_transaction, build_submit_transaction, expiration_timestamp_secs,
+    AccountAddress, EntryFunction, EntryFunctionPayload, build_raw_transaction, build_submit_transaction_bcs, expiration_timestamp_secs,
     sign_message as sign_aptos_message, sign_raw_transaction,
 };
 use super::abi::{PANORA_ROUTER_ENTRY_PARAMS, PANORA_ROUTER_FUNCTION, PANORA_ROUTER_MODULE};
@@ -89,7 +89,7 @@ impl ChainSigner for AptosChainSigner {
 
         let payload_str = swap_data.data.data.as_str();
         let payload: EntryFunctionPayload = from_str(payload_str)?;
-        let abi = resolve_payload_abi(&payload);
+        let (payload, abi) = prepare_payload(payload)?;
         let entry_function = payload.to_entry_function(abi)?;
         let max_gas_amount = resolve_max_gas_amount(input);
 
@@ -104,7 +104,7 @@ impl ChainSigner for AptosChainSigner {
         };
 
         let payload: EntryFunctionPayload = from_str(payload_str)?;
-        let abi = resolve_payload_abi(&payload);
+        let (payload, abi) = prepare_payload(payload)?;
         let entry_function = payload.to_entry_function(abi)?;
 
         let signed = self.sign_entry_function(payload, entry_function, input, private_key, DEFAULT_MAX_GAS_AMOUNT)?;
@@ -118,7 +118,7 @@ impl ChainSigner for AptosChainSigner {
 
     fn sign_data(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
         let (payload, max_gas_amount) = resolve_generic_payload(input)?;
-        let abi = resolve_payload_abi(&payload);
+        let (payload, abi) = prepare_payload(payload)?;
         let entry_function = payload.to_entry_function(abi)?;
 
         self.sign_entry_function(payload, entry_function, input, private_key, max_gas_amount)
@@ -140,7 +140,7 @@ impl AptosChainSigner {
 
     fn sign_entry_function(
         &self,
-        payload: EntryFunctionPayload,
+        _payload: EntryFunctionPayload,
         entry_function: EntryFunction,
         input: &TransactionLoadInput,
         private_key: &[u8],
@@ -162,19 +162,37 @@ impl AptosChainSigner {
         );
         let (signature, public_key) = sign_raw_transaction(&raw_tx, private_key)?;
 
-        build_submit_transaction(raw_tx, &payload, signature, public_key)
+        build_submit_transaction_bcs(raw_tx, signature, public_key)
     }
 }
 
 fn resolve_payload_abi(payload: &EntryFunctionPayload) -> Option<&'static [&'static str]> {
-    if is_panora_router(&payload.function) {
-        return Some(&PANORA_ROUTER_ENTRY_PARAMS);
-    }
-
     match payload.function.as_str() {
         DELEGATION_POOL_ADD_STAKE | DELEGATION_POOL_UNLOCK | DELEGATION_POOL_WITHDRAW => Some(&STAKE_ENTRY_PARAMS),
         _ => None,
     }
+}
+
+fn prepare_payload(payload: EntryFunctionPayload) -> Result<(EntryFunctionPayload, Option<&'static [&'static str]>), SignerError> {
+    if is_panora_router(&payload.function) {
+        return prepare_panora_payload(payload);
+    }
+
+    let abi = resolve_payload_abi(&payload);
+    Ok((payload, abi))
+}
+
+fn prepare_panora_payload(mut payload: EntryFunctionPayload) -> Result<(EntryFunctionPayload, Option<&'static [&'static str]>), SignerError> {
+    let expected = PANORA_ROUTER_ENTRY_PARAMS.len();
+    let before_len = payload.arguments.len();
+    if before_len + 1 == expected {
+        payload.arguments.insert(0, Value::Null);
+    }
+    if payload.arguments.len() != expected {
+        return Err(SignerError::InvalidInput("Aptos ABI length does not match arguments".to_string()));
+    }
+
+    Ok((payload, Some(&PANORA_ROUTER_ENTRY_PARAMS)))
 }
 
 fn resolve_generic_payload(input: &TransactionLoadInput) -> Result<(EntryFunctionPayload, u64), SignerError> {

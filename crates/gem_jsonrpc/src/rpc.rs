@@ -167,7 +167,7 @@ where
                     _ => return Err(ClientError::Serialization("Expected string body for text/plain content-type".to_string())),
                 }
             }
-            Some(ContentType::ApplicationXBinary) => {
+            Some(ContentType::ApplicationXBinary) | Some(ContentType::ApplicationAptosBcs) => {
                 let json_value = serde_json::to_value(body)?;
                 match json_value {
                     serde_json::Value::String(s) => hex::decode(&s).map_err(|e| ClientError::Serialization(format!("Failed to decode hex string: {e}")))?,
