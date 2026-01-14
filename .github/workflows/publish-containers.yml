@@ -36,6 +36,19 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set cache config
+        id: cache
+        run: |
+          if [ -z "$RUNNER_ENVIRONMENT" ] || [ "$RUNNER_ENVIRONMENT" = "self-hosted" ]; then
+            echo "from=type=local,src=/tmp/.buildx-cache" >> $GITHUB_OUTPUT
+            echo "to=type=local,dest=/tmp/.buildx-cache-new,mode=max" >> $GITHUB_OUTPUT
+            echo "local=true" >> $GITHUB_OUTPUT
+          else
+            echo "from=type=gha,scope=build" >> $GITHUB_OUTPUT
+            echo "to=type=gha,scope=build,mode=max" >> $GITHUB_OUTPUT
+            echo "local=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -58,8 +71,8 @@ jobs:
           target: core
           push: true
           platforms: linux/amd64
-          cache-from: type=gha,scope=build
-          cache-to: type=gha,scope=build,mode=max
+          cache-from: ${{ steps.cache.outputs.from }}
+          cache-to: ${{ steps.cache.outputs.to }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
@@ -75,9 +88,16 @@ jobs:
           target: dynode
           push: true
           platforms: linux/amd64
-          cache-from: type=gha,scope=build
+          cache-from: ${{ steps.cache.outputs.from }}
+          cache-to: ${{ steps.cache.outputs.to }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ${{ env.DYNODE_IMAGE }}:latest
             ${{ env.DYNODE_IMAGE }}:${{ github.sha }}
+
+      - name: Update local cache
+        if: steps.cache.outputs.local == 'true'
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
