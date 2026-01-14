@@ -5,6 +5,7 @@ use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable, Equatable")]
+#[serde(rename_all = "camelCase")]
 pub struct Notification {
     pub wallet_id: String,
     pub notification_type: NotificationType,
