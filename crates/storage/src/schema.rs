@@ -10,6 +10,10 @@ pub mod sql_types {
     pub struct AssetType;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "ip_usage_type"))]
+    pub struct IpUsageType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "link_type"))]
     pub struct LinkType;
 
@@ -727,6 +731,9 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::IpUsageType;
+
     rewards_risk_signals (id) {
         id -> Int4,
         #[max_length = 64]
@@ -750,8 +757,7 @@ diesel::table! {
         ip_address -> Varchar,
         #[max_length = 2]
         ip_country_code -> Varchar,
-        #[max_length = 64]
-        ip_usage_type -> Varchar,
+        ip_usage_type -> IpUsageType,
         #[max_length = 128]
         ip_isp -> Varchar,
         ip_abuse_score -> Int4,

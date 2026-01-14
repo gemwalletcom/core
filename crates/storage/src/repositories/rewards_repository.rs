@@ -60,7 +60,7 @@ pub trait RewardsRepository {
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
     fn create_reward(&mut self, wallet_id: i32, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, wallet_id: i32, new_username: &str) -> Result<Rewards, DatabaseError>;
-    fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
+    fn get_referral_code(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
     fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError>;
     fn add_referral_attempt(
         &mut self,
@@ -72,6 +72,7 @@ pub trait RewardsRepository {
     ) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
     fn get_wallet_id_by_username(&mut self, username: &str) -> Result<i32, DatabaseError>;
+    fn get_referrer_username(&mut self, referred_username: &str) -> Result<Option<String>, DatabaseError>;
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
     fn get_username_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<String>, DatabaseError>;
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError>;
@@ -228,7 +229,7 @@ impl RewardsRepository for DatabaseClient {
         self.get_reward_by_wallet_id(wallet_id)
     }
 
-    fn get_referrer_username(&mut self, code: &str) -> Result<Option<String>, DatabaseError> {
+    fn get_referral_code(&mut self, code: &str) -> Result<Option<String>, DatabaseError> {
         match UsernamesStore::get_username(self, UsernameLookup::Username(code)) {
             Ok(username) => Ok(Some(username.username)),
             Err(diesel::result::Error::NotFound) => Ok(None),
@@ -297,6 +298,11 @@ impl RewardsRepository for DatabaseClient {
     fn get_wallet_id_by_username(&mut self, username: &str) -> Result<i32, DatabaseError> {
         let username = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
         Ok(username.wallet_id)
+    }
+
+    fn get_referrer_username(&mut self, referred_username: &str) -> Result<Option<String>, DatabaseError> {
+        let referral = RewardsStore::get_referral_by_username(self, referred_username)?;
+        Ok(referral.map(|r| r.referrer_username))
     }
 
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {

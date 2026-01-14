@@ -2,7 +2,7 @@ use std::error::Error;
 
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
-use primitives::{ConfigKey, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletIdType, now};
+use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletIdType, now};
 use storage::{ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource, WalletType, WalletsRepository};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
@@ -133,7 +133,7 @@ impl RewardsClient {
         let device_limit = self.config.get_i64(ConfigKey::UsernameCreationPerDevice)?;
         let country_daily_limit = self.config.get_i64(ConfigKey::UsernameCreationPerCountryDailyLimit)?;
         let ineligible_countries = self.config.get_vec_string(ConfigKey::ReferralIneligibleCountries)?;
-        let blocked_ip_types = self.config.get_vec_string(ConfigKey::ReferralBlockedIpTypes)?;
+        let blocked_ip_types: Vec<IpUsageType> = self.config.get_vec(ConfigKey::ReferralBlockedIpTypes)?;
 
         self.ip_security_client
             .check_username_creation_limits(ip_address, device_id, global_daily_limit, ip_limit, device_limit)
@@ -152,7 +152,7 @@ impl RewardsClient {
             .map_err(|e| self.map_username_error(e, locale))?;
 
         self.ip_security_client
-            .check_username_creation_ip_type(&ip_result.usage_type, &blocked_ip_types)
+            .check_username_creation_ip_type(ip_result.usage_type, &blocked_ip_types)
             .map_err(|e| self.map_username_error(e, locale))?;
 
         let (rewards, event_id) = self.db.rewards()?.create_reward(wallet.id, code, device_id)?;
@@ -178,7 +178,7 @@ impl RewardsClient {
             source: WalletSource::Import,
         })?;
 
-        let referrer_username = self.db.rewards()?.get_referrer_username(code)?.ok_or_else(|| {
+        let referrer_username = self.db.rewards()?.get_referral_code(code)?.ok_or_else(|| {
             let error = ReferralError::from(ReferralValidationError::CodeDoesNotExist);
             RewardsError::Referral(error.localize(locale))
         })?;
@@ -334,7 +334,12 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, &risk_score_config);
+        let ip_abuser_count = match client.count_disabled_users_by_ip(&signal_input.ip_address, since) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+
+        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, ip_abuser_count, &risk_score_config);
         let risk_signal_id = match client.add_risk_signal(risk_result.signal) {
             Ok(id) => id,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
@@ -420,7 +425,7 @@ impl RewardsClient {
             device_id_reuse_penalty_per_referrer: self.config.get_i64(ConfigKey::ReferralRiskScoreDeviceIdReusePerReferrer)?,
             device_id_reuse_max_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreDeviceIdReuseMaxPenalty)?,
             ineligible_ip_type_score: self.config.get_i64(ConfigKey::ReferralRiskScoreIneligibleIpType)?,
-            blocked_ip_types: self.config.get_vec_string(ConfigKey::ReferralBlockedIpTypes)?,
+            blocked_ip_types: self.config.get_vec(ConfigKey::ReferralBlockedIpTypes)?,
             blocked_ip_type_penalty: self.config.get_i64(ConfigKey::ReferralBlockedIpTypePenalty)?,
             max_abuse_score: self.config.get_i64(ConfigKey::ReferralMaxAbuseScore)?,
             penalty_isps: self.config.get_vec_string(ConfigKey::ReferralPenaltyIsps)?,
@@ -444,6 +449,8 @@ impl RewardsClient {
             high_risk_locale_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskLocalePenalty)?,
             high_risk_device_models: self.config.get_vec_string(ConfigKey::ReferralRiskScoreHighRiskDeviceModels)?,
             high_risk_device_model_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskDeviceModelPenalty)?,
+            ip_history_penalty_per_abuser: self.config.get_i64(ConfigKey::ReferralRiskScoreIpHistoryPenaltyPerAbuser)?,
+            ip_history_max_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreIpHistoryMaxPenalty)?,
             velocity_window: self.config.get_duration(ConfigKey::ReferralAbuseVelocityWindow)?,
             velocity_divisor: self.config.get_i64(ConfigKey::ReferralAbuseVelocityDivisor)?,
             velocity_penalty: self.config.get_i64(ConfigKey::ReferralAbuseVelocityPenaltyPerSignal)?,

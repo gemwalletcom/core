@@ -9,10 +9,10 @@ use primitives::rewards::{
 };
 use primitives::scan::AddressType as PrimitiveAddressType;
 use primitives::{
-    AssetType as PrimitiveAssetType, Chain, LinkType as PrimitiveLinkType, NotificationType as PrimitiveNotificationType,
-    Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState,
-    TransactionType as PrimitiveTransactionType, UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource,
-    WalletType as PrimitiveWalletType,
+    AssetType as PrimitiveAssetType, Chain, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType,
+    NotificationType as PrimitiveNotificationType, Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore,
+    TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
+    UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType,
 };
 use serde::{Deserialize, Serialize};
 use std::io::Write;
@@ -20,8 +20,8 @@ use std::ops::Deref;
 use std::str::FromStr;
 
 use crate::schema::sql_types::{
-    AddressType as AddressTypeSql, AssetType as AssetTypeSql, LinkType as LinkTypeSql, NftType as NftTypeSql,
-    NotificationType as NotificationTypeSql, Platform as PlatformSql, PlatformStore as PlatformStoreSql,
+    AddressType as AddressTypeSql, AssetType as AssetTypeSql, IpUsageType as IpUsageTypeSql, LinkType as LinkTypeSql,
+    NftType as NftTypeSql, NotificationType as NotificationTypeSql, Platform as PlatformSql, PlatformStore as PlatformStoreSql,
     RedemptionStatus as RedemptionStatusSql, RewardEventType as RewardEventTypeSql, RewardRedemptionType as RewardRedemptionTypeSql,
     RewardStatus as RewardStatusSql, TransactionState as TransactionStateSql, TransactionType as TransactionTypeSql,
     UsernameStatus as UsernameStatusSql, WalletSource as WalletSourceSql, WalletType as WalletTypeSql,
@@ -165,7 +165,9 @@ diesel_enum!(WalletType, PrimitiveWalletType, WalletTypeSql, [Multicoin, Single,
 
 diesel_enum!(WalletSource, PrimitiveWalletSource, WalletSourceSql, [Create, Import]);
 
-diesel_enum!(NotificationType, PrimitiveNotificationType, NotificationTypeSql, [ReferralJoined, RewardsEnabled]);
+diesel_enum!(NotificationType, PrimitiveNotificationType, NotificationTypeSql, [ReferralJoined, RewardsEnabled, RewardsCodeDisabled]);
+
+diesel_enum!(IpUsageType, PrimitiveIpUsageType, IpUsageTypeSql, [DataCenter, Hosting, Isp, Mobile, Business, Education, Government, Unknown]);
 
 macro_rules! diesel_varchar {
     ($wrapper:ident, $inner:ty) => {

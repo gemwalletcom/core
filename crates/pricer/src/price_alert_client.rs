@@ -7,6 +7,7 @@ use primitives::{
 };
 use std::collections::HashSet;
 use std::error::Error;
+use std::time::Duration as StdDuration;
 use storage::{AssetsRepository, Database, PriceAlertsRepository};
 
 #[allow(dead_code)]
@@ -28,6 +29,7 @@ pub struct PriceAlertNotification {
 pub struct PriceAlertRules {
     pub price_change_increase: f64,
     pub price_change_decrease: f64,
+    pub notification_cooldown: StdDuration,
 }
 
 impl PriceAlertClient {
@@ -56,7 +58,8 @@ impl PriceAlertClient {
 
     pub async fn get_devices_to_alert(&self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
         let now = Utc::now();
-        let after_notified_at = now - Duration::days(1);
+        let cooldown = Duration::seconds(rules.notification_cooldown.as_secs() as i64);
+        let after_notified_at = now - cooldown;
         let price_alerts = self.database.price_alerts()?.get_price_alerts(after_notified_at.naive_utc())?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();

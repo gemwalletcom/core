@@ -4,8 +4,8 @@ use primitives::{
     asset_constants::{
         AAVE_ETH_ASSET_ID, ARB_ARB_ASSET_ID, CBBTC_BASE_ASSET_ID, CBBTC_ETH_ASSET_ID, DAI_ETH_ASSET_ID, LINK_ETH_ASSET_ID, OP_OP_ASSET_ID, UNI_ETH_ASSET_ID,
         USDC_ARB_ASSET_ID, USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID,
-        USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDC_SUI_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID,
-        USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, WBTC_ETH_ASSET_ID,
+        USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDC_SUI_ASSET_ID, USDT_APTOS_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID,
+        USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, WBTC_ETH_ASSET_ID,
     },
 };
 use std::{collections::HashMap, sync::LazyLock};
@@ -59,7 +59,7 @@ pub const NEAR_INTENTS_BERA_NATIVE: &str = "nep141:bera.omft.near";
 pub const NEAR_INTENTS_GNOSIS_NATIVE: &str = "nep141:gnosis.omft.near";
 pub const NEAR_INTENTS_GNOSIS_USDC: &str = "nep141:gnosis-0x2a22f9c3b484c3629090feed35f17ff8f88f76f0.omft.near";
 pub const NEAR_INTENTS_APT_NATIVE: &str = "nep141:aptos.omft.near";
-// pub const NEAR_INTENTS_APT_USDT: &str = "nep141:aptos-88cb7619440a914fe6400149a12b443c3ac21d59.omft.near"; // Requires Fungible Asset transfer support
+pub const NEAR_INTENTS_APT_USDT: &str = "nep141:aptos-88cb7619440a914fe6400149a12b443c3ac21d59.omft.near";
 pub const NEAR_INTENTS_ZEC_NATIVE: &str = "nep141:zec.omft.near";
 pub const NEAR_INTENTS_STELLAR_NATIVE: &str = "nep245:v2_1.omni.hot.tg:1100_111bzQBB5v7AhLyPMDwS8uJgQV24KaAPXtwyVWu2KXbbfQU6NXRCz";
 
@@ -180,7 +180,13 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
     map.insert(Chain::Xrp, HashMap::from([("xrp".to_string(), NEAR_INTENTS_XRP_NATIVE)]));
     map.insert(Chain::Cardano, HashMap::from([("cardano".to_string(), NEAR_INTENTS_CARDANO_NATIVE)]));
     map.insert(Chain::Berachain, HashMap::from([("berachain".to_string(), NEAR_INTENTS_BERA_NATIVE)]));
-    map.insert(Chain::Aptos, HashMap::from([("aptos".to_string(), NEAR_INTENTS_APT_NATIVE)]));
+    map.insert(
+        Chain::Aptos,
+        HashMap::from([
+            ("aptos".to_string(), NEAR_INTENTS_APT_NATIVE),
+            (asset_key(USDT_APTOS_ASSET_ID), NEAR_INTENTS_APT_USDT),
+        ]),
+    );
     map.insert(Chain::Zcash, HashMap::from([("zcash".to_string(), NEAR_INTENTS_ZEC_NATIVE)]));
 
     map.insert(
