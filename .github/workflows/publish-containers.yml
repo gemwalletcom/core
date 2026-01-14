@@ -39,16 +39,7 @@ jobs:
             echo "to=type=gha,mode=max" >> $GITHUB_OUTPUT
           fi
 
-          
-      - name: Create/use persistent builder (self-hosted)
-        if: steps.cache.outputs.is_self_hosted == 'true'
-        run: |
-          docker buildx inspect gem-builder >/dev/null 2>&1 || \
-            docker buildx create --name gem-builder --driver docker-container --use
-          docker buildx use gem-builder
-
-      - name: Set up Docker Buildx (GitHub-hosted)
-        if: steps.cache.outputs.is_self_hosted != 'true'
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
