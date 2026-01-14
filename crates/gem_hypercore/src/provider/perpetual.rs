@@ -5,7 +5,7 @@ use chain_traits::{ChainAddressStatus, ChainPerpetual};
 use futures::try_join;
 use gem_client::Client;
 use primitives::{
-    ChartCandleStick, ChartPeriod,
+    ChartCandleStick, ChartPeriod, Portfolio,
     perpetual::{PerpetualData, PerpetualPositionsSummary},
 };
 
@@ -48,6 +48,10 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
 
         let candlesticks = self.get_candlesticks(&symbol, interval, start_time, end_time).await?;
         Ok(map_candlesticks(candlesticks))
+    }
+
+    async fn get_portfolio(&self, address: String) -> Result<Portfolio, Box<dyn Error + Sync + Send>> {
+        self.get_portfolio(&address).await
     }
 }
 

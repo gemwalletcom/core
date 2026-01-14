@@ -3,6 +3,7 @@ use crate::models::{
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
     order::{OpenOrder, PerpetualFill},
+    portfolio::{HypercorePortfolioTimeframeData, parse_portfolio_response},
     position::AssetPositions,
     referral::Referral,
     spot::{OrderbookResponse, SpotMeta, SpotMetaRaw},
@@ -10,6 +11,7 @@ use crate::models::{
 };
 use chain_traits::ChainTraits;
 use gem_client::{CONTENT_TYPE, Client, ContentType};
+use primitives::portfolio::Portfolio;
 use std::{
     collections::HashMap,
     error::Error,
@@ -251,6 +253,16 @@ impl<C: Client> HyperCoreClient<C> {
         }))
         .await
     }
+
+    pub async fn get_portfolio(&self, user: &str) -> Result<Portfolio, Box<dyn Error + Send + Sync>> {
+        let raw: Vec<(String, HypercorePortfolioTimeframeData)> = self
+            .info(json!({
+                "type": "portfolio",
+                "user": user
+            }))
+            .await?;
+        Ok(parse_portfolio_response(raw))
+    }
 }
 
 impl<C: Client> ChainTraits for HyperCoreClient<C> {}
@@ -277,5 +289,24 @@ mod tests {
         let hash = client.get_tx_hash_by_nonce(user, nonce).await.unwrap();
 
         assert_eq!(hash, "0x610840f41a814c016281042c3882980202c800d9b5846ad304d0ec46d98525ec");
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_get_portfolio() {
+        let url = "https://api.hyperliquid.xyz";
+        let client = HyperCoreClient::new(ReqwestClient::new(url.to_string(), reqwest::Client::new()));
+        let user = "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F";
+
+        let portfolio = client.get_portfolio(user).await.unwrap();
+
+        assert!(portfolio.day.is_some());
+        assert!(portfolio.week.is_some());
+        assert!(portfolio.month.is_some());
+        assert!(portfolio.all_time.is_some());
+
+        let day = portfolio.day.unwrap();
+        assert!(!day.account_value_history.is_empty());
+        assert!(!day.pnl_history.is_empty());
     }
 }

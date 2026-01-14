@@ -392,6 +392,17 @@ impl GemGateway {
         Ok(candlesticks)
     }
 
+    pub async fn get_portfolio(&self, chain: Chain, address: String) -> Result<GemPortfolio, GatewayError> {
+        let portfolio = self
+            .provider(chain)
+            .await?
+            .get_portfolio(address)
+            .await
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
+
+        Ok(portfolio)
+    }
+
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<GemAsset, GatewayError> {
         self.provider(chain)
             .await?
