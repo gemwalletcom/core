@@ -249,8 +249,8 @@ impl RewardsRepository for DatabaseClient {
 
         for address in &device_subscriptions {
             let wallet_identifier = WalletIdType::Multicoin(address.clone()).id();
-            if let Ok(wallet) = WalletsStore::get_wallet(self, &wallet_identifier) {
-                if UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet.id))? {
+            if let Ok(wallet) = WalletsStore::get_wallet(self, &wallet_identifier)
+                && UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet.id))? {
                     let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet.id))?;
                     let rewards = RewardsStore::get_rewards(self, &username.username)?;
                     if rewards.created_at.is_older_than_days(eligibility_days) {
@@ -260,7 +260,6 @@ impl RewardsRepository for DatabaseClient {
                         return Err(ReferralValidationError::CannotReferSelf);
                     }
                 }
-            }
         }
 
         if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
