@@ -100,6 +100,7 @@ pub enum ConfigKey {
     AlerterPriceIncreasePercent,
     AlerterPriceDecreasePercent,
     AlerterInterval,
+    AlerterNotificationCooldown,
 
     // Pricer
     PricerTimer,
@@ -196,6 +197,7 @@ impl ConfigKey {
             Self::AlerterPriceIncreasePercent => "8.0",
             Self::AlerterPriceDecreasePercent => "10.0",
             Self::AlerterInterval => "60s",
+            Self::AlerterNotificationCooldown => "24h",
             Self::PricerTimer => "60s",
             Self::PricerOutdated => "7d",
             Self::SearchAssetsUpdateInterval => "30m",
