@@ -9,9 +9,10 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json \
+    --package api --package daemon --package dynode
 COPY . .
-RUN cargo build --release --bin api --bin daemon --bin dynode && \
+RUN cargo build --release --package api --package daemon --package dynode && \
     cp target/release/api target/release/daemon target/release/dynode /app/
 
 # Shared runtime base
