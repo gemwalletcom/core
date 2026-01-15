@@ -47,7 +47,7 @@ jobs:
           file: ./Dockerfile
           target: core
           push: ${{ github.event_name != 'pull_request' }}
-          platforms: linux/arm64
+          platforms: linux/amd64
           cache-from: type=registry,ref=${{ env.BUILDER_CACHE }}
           cache-to: type=registry,ref=${{ env.BUILDER_CACHE }},mode=max
           labels: |
@@ -63,7 +63,7 @@ jobs:
           file: ./Dockerfile
           target: dynode
           push: ${{ github.event_name != 'pull_request' }}
-          platforms: linux/arm64
+          platforms: linux/amd64
           cache-from: type=registry,ref=${{ env.BUILDER_CACHE }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}

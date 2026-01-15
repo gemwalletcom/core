@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM lukemathwalker/cargo-chef:latest-rust-1.92.0-bookworm AS chef
 WORKDIR /app
+ENV CARGO_INCREMENTAL=0
 
 FROM chef AS planner
 COPY . .
@@ -10,17 +11,18 @@ FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/app/target,sharing=locked \
     cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/app/target,sharing=locked \
     cargo build --release --bin api --bin daemon --bin dynode && \
-    cp /app/target/release/api /app/api && \
-    cp /app/target/release/daemon /app/daemon && \
-    cp /app/target/release/dynode /app/dynode
+    cp target/release/api target/release/daemon target/release/dynode /app/
 
 # Shared runtime base
 FROM debian:bookworm-slim AS runtime-base
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
