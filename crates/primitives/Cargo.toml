@@ -16,3 +16,4 @@ strum = { workspace = true }
 url = { workspace = true }
 num-bigint = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
+hex = { workspace = true }

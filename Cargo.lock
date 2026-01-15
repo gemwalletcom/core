@@ -3164,18 +3164,24 @@ name = "gem_aptos"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "bcs",
  "chain_primitives",
  "chain_traits",
  "chrono",
+ "ed25519-dalek",
  "futures",
  "gem_client",
+ "gem_hash",
+ "hex",
  "num-bigint",
+ "num-traits",
  "primitives",
  "reqwest 0.13.1",
  "serde",
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
 ]
 
@@ -3322,6 +3328,7 @@ dependencies = [
 name = "gem_hash"
 version = "1.0.0"
 dependencies = [
+ "sha3",
  "tiny-keccak",
 ]
 
@@ -5619,6 +5626,7 @@ name = "primitives"
 version = "1.0.0"
 dependencies = [
  "chrono",
+ "hex",
  "num-bigint",
  "serde",
  "serde_json",
@@ -6409,9 +6417,9 @@ checksum = "48fd7bd8a6377e15ad9d42a8ec25371b94ddc67abe7c8b9127bec79bebaaae18"
 
 [[package]]
 name = "rust-embed"
-version = "8.9.0"
+version = "8.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "947d7f3fad52b283d261c4c99a084937e2fe492248cb9a68a8435a861b8798ca"
+checksum = "04113cb9355a377d83f06ef1f0a45b8ab8cd7d8b1288160717d66df5c7988d27"
 dependencies = [
  "rust-embed-impl",
  "rust-embed-utils",
