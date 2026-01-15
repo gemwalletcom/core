@@ -22,6 +22,14 @@ struct PanoraSwapSummaryEventData {
     output_token_amount: String,
 }
 
+fn map_token_address_to_asset_id(chain: Chain, token_address: &str) -> AssetId {
+    if token_address == APTOS_NATIVE_METADATA_ADDRESS || token_address == APTOS_NATIVE_COIN {
+        chain.as_asset_id()
+    } else {
+        AssetId::from_token(chain, token_address)
+    }
+}
+
 pub fn map_transaction_broadcast(response: &TransactionResponse) -> Result<String, Box<dyn Error + Sync + Send>> {
     if let Some(message) = &response.message {
         return Err(message.clone().into());
@@ -76,16 +84,8 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Eve
         .and_then(|e| e.data.clone())
         .and_then(|data| serde_json::from_value::<PanoraSwapSummaryEventData>(data).ok())
     {
-        let map_panora_asset = |token_address: &str| {
-            if token_address == APTOS_NATIVE_METADATA_ADDRESS || token_address == APTOS_NATIVE_COIN {
-                chain.as_asset_id()
-            } else {
-                AssetId::from_token(chain, token_address)
-            }
-        };
-
-        let from_asset = map_panora_asset(&summary.input_token_address);
-        let to_asset = map_panora_asset(&summary.output_token_address);
+        let from_asset = map_token_address_to_asset_id(chain, &summary.input_token_address);
+        let to_asset = map_token_address_to_asset_id(chain, &summary.output_token_address);
 
         let balance_diffs = vec![
             BalanceDiff {

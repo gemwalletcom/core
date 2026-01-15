@@ -63,43 +63,17 @@ impl<C: Client> AptosClient<C> {
         Ok(self.client.get(&format!("/v1/accounts/{}", address)).await?)
     }
 
-    pub async fn submit_transaction(&self, data: &str) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
-        if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(data) {
-            if let Some(bcs) = json_value.get("bcs").and_then(|value| value.as_str()) {
-                if let Some(encoding) = json_value.get("bcsEncoding").and_then(|value| value.as_str())
-                    && encoding != "hex" {
-                        return Err(Box::new(std::io::Error::other(format!(
-                            "Unsupported Aptos BCS encoding: {encoding}"
-                        ))));
-                    }
-                return self.submit_transaction_bcs(bcs).await;
-            }
-
-            if let Some(bcs) = json_value.as_str() {
-                return self.submit_transaction_bcs(bcs).await;
-            }
-
-            return Err(Box::new(std::io::Error::other(
-                "Unsupported Aptos submit payload: expected BCS wrapper",
-            )));
-        }
-
-        self.submit_transaction_bcs(data).await
-    }
-
-    async fn submit_transaction_bcs(&self, bcs_hex: &str) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
-        let trimmed = bcs_hex.trim();
-        if trimmed.is_empty() {
+    pub async fn submit_transaction(&self, bcs_bytes: Vec<u8>) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
+        if bcs_bytes.is_empty() {
             return Err(Box::new(std::io::Error::other("Empty Aptos BCS payload")));
         }
-        let hex_value = trimmed.strip_prefix("0x").unwrap_or(trimmed).to_string();
         let headers = HashMap::from([(
             CONTENT_TYPE.to_string(),
             ContentType::ApplicationAptosBcs.as_str().to_string(),
         )]);
         let response = self
             .client
-            .post::<String, TransactionResponse>("/v1/transactions", &hex_value, Some(headers))
+            .post::<Vec<u8>, TransactionResponse>("/v1/transactions", &bcs_bytes, Some(headers))
             .await?;
 
         if let Some(message) = &response.message {

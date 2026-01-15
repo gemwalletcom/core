@@ -3171,6 +3171,7 @@ dependencies = [
  "ed25519-dalek",
  "futures",
  "gem_client",
+ "gem_hash",
  "hex",
  "num-bigint",
  "num-traits",
@@ -3180,7 +3181,6 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
- "sha3",
  "signer",
  "tokio",
 ]
@@ -3328,6 +3328,7 @@ dependencies = [
 name = "gem_hash"
 version = "1.0.0"
 dependencies = [
+ "sha3",
  "tiny-keccak",
 ]
 

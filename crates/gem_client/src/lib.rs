@@ -14,7 +14,7 @@ pub mod query;
 
 pub use content_type::{ContentType, CONTENT_TYPE};
 pub use query::build_path_with_query;
-pub use types::{deserialize_response, ClientError, Response};
+pub use types::{decode_json_byte_array, deserialize_response, ClientError, Response};
 
 #[cfg(feature = "reqwest")]
 pub use reqwest_client::ReqwestClient;

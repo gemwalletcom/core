@@ -1,5 +1,4 @@
 use super::address::AccountAddress;
-use hex::FromHex;
 use num_bigint::BigUint;
 use primitives::SignerError;
 use serde::{Deserialize, Serialize};
@@ -91,7 +90,7 @@ pub(crate) fn parse_function_id(function_id: &str) -> Result<(ModuleId, String),
     if parts.len() != 3 {
         return Err(SignerError::InvalidInput("Invalid Aptos function id".to_string()));
     }
-    let address = AccountAddress::from_hex(parts[0])?;
+    let address = AccountAddress::from_str(parts[0])?;
     let module = parts[1].to_string();
     let function = parts[2].to_string();
 
@@ -142,7 +141,7 @@ fn parse_struct_tag(value: &str) -> Result<StructTag, SignerError> {
         return Err(SignerError::InvalidInput("Invalid Aptos struct tag".to_string()));
     }
 
-    let address = AccountAddress::from_hex(parts[0])?;
+    let address = AccountAddress::from_str(parts[0])?;
     let module = parts[1].to_string();
     let name = parts[2].to_string();
     let type_args = if let Some(args) = args {
@@ -322,13 +321,13 @@ fn parse_hex_bytes(value: &str) -> Result<Vec<u8>, SignerError> {
     } else {
         hex_str.to_string()
     };
-    Vec::from_hex(padded.as_bytes()).map_err(|_| SignerError::InvalidInput("Invalid hex bytes".to_string()))
+    hex::decode(padded).map_err(|_| SignerError::InvalidInput("Invalid hex bytes".to_string()))
 }
 
 fn parse_address(value: &Value) -> Result<AccountAddress, SignerError> {
     match value {
-        Value::String(text) => AccountAddress::from_hex(text),
-        Value::Number(number) => AccountAddress::from_hex(&number.to_string()),
+        Value::String(text) => AccountAddress::from_str(text),
+        Value::Number(number) => AccountAddress::from_str(&number.to_string()),
         _ => Err(SignerError::InvalidInput("Invalid Aptos address argument".to_string())),
     }
 }

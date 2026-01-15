@@ -16,6 +16,7 @@ const APTOS_TRANSFER_FUNCTION: &str = "0x1::aptos_account::transfer";
 const APTOS_TRANSFER_COINS_FUNCTION: &str = "0x1::aptos_account::transfer_coins";
 const FUNGIBLE_TRANSFER_FUNCTION: &str = "0x1::primary_fungible_store::transfer";
 const OBJECT_CORE_TYPE: &str = "0x1::object::ObjectCore";
+const ENTRY_FUNCTION_PAYLOAD_TYPE: &str = "entry_function_payload";
 
 const DELEGATION_POOL_ADD_STAKE: &str = "0x1::delegation_pool::add_stake";
 const DELEGATION_POOL_UNLOCK: &str = "0x1::delegation_pool::unlock";
@@ -29,7 +30,7 @@ pub struct AptosChainSigner;
 impl ChainSigner for AptosChainSigner {
     fn sign_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
         let payload = EntryFunctionPayload {
-            payload_type: "entry_function_payload".to_string(),
+            payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
             function: APTOS_TRANSFER_FUNCTION.to_string(),
             type_arguments: Vec::new(),
             arguments: vec![
@@ -50,7 +51,7 @@ impl ChainSigner for AptosChainSigner {
 
         if token_id.contains("::") {
             let payload = EntryFunctionPayload {
-                payload_type: "entry_function_payload".to_string(),
+                payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
                 function: APTOS_TRANSFER_COINS_FUNCTION.to_string(),
                 type_arguments: vec![token_id.to_string()],
                 arguments: vec![
@@ -62,7 +63,7 @@ impl ChainSigner for AptosChainSigner {
         }
 
         let payload = EntryFunctionPayload {
-            payload_type: "entry_function_payload".to_string(),
+            payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
             function: FUNGIBLE_TRANSFER_FUNCTION.to_string(),
             type_arguments: vec![OBJECT_CORE_TYPE.to_string()],
             arguments: vec![
@@ -146,7 +147,7 @@ impl AptosChainSigner {
         private_key: &[u8],
         max_gas_amount: u64,
     ) -> Result<String, SignerError> {
-        let sender = AccountAddress::from_hex(&input.sender_address)?;
+        let sender = AccountAddress::from_str(&input.sender_address)?;
         let sequence = sequence_from_metadata(&input.metadata)?;
         let gas_unit_price = gas_unit_price(input)?;
         let expiration = expiration_timestamp_secs()?;

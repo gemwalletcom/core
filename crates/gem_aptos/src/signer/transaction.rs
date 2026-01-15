@@ -1,9 +1,9 @@
 use crate::models::SubmitTransactionBcsRequest;
+use gem_hash::sha3::sha3_256;
 use hex::encode;
 use primitives::SignerError;
 use signer::Signer;
 use serde::{Deserialize, Serialize};
-use sha3::{Digest, Sha3_256};
 use std::time::SystemTime;
 
 use super::{AccountAddress, EntryFunction};
@@ -127,15 +127,6 @@ pub fn expiration_timestamp_secs() -> Result<u64, SignerError> {
     Ok(now.as_secs() + 3_600)
 }
 
-fn sha3_256(input: &[u8]) -> [u8; 32] {
-    let mut hasher = Sha3_256::new();
-    hasher.update(input);
-    let result = hasher.finalize();
-    let mut output = [0u8; 32];
-    output.copy_from_slice(&result);
-    output
-}
-
 fn ensure_length(input: Vec<u8>, expected: usize, label: &str) -> Result<Vec<u8>, SignerError> {
     if input.len() != expected {
         return Err(SignerError::InvalidInput(format!(
@@ -167,7 +158,7 @@ mod tests {
             .to_entry_function(Some(&["address", "u64"]))
             .expect("entry function");
         build_raw_transaction(
-            AccountAddress::from_hex("0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef").unwrap(),
+            AccountAddress::from_str("0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef").unwrap(),
             1,
             entry_function,
             1500,

@@ -140,6 +140,11 @@ impl Client for ReqwestClient {
                             s.into_bytes()
                         }
                     }
+                    serde_json::Value::Array(values)
+                        if matches!(content_type, Some(ContentType::ApplicationXBinary) | Some(ContentType::ApplicationAptosBcs)) =>
+                    {
+                        crate::decode_json_byte_array(values)?
+                    }
                     _ => {
                         return Err(ClientError::Serialization(
                             "Expected string body for text/plain or binary content-type".to_string(),

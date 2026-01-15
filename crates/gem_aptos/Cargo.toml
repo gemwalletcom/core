@@ -25,8 +25,8 @@ num-bigint = { workspace = true }
 bcs = { workspace = true }
 hex = { workspace = true }
 num-traits = { workspace = true }
-sha3 = { version = "0.10.8" }
 signer = { path = "../signer" }
+gem_hash = { path = "../gem_hash" }
 
 # Dependencies for RPC client & mapper
 async-trait = { workspace = true, optional = true }
