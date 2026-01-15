@@ -316,8 +316,10 @@ mod tests {
     #[test]
     fn ip_reuse() {
         let input = create_test_input();
-        let mut config = RiskScoreConfig::default();
-        config.max_allowed_score = 40;
+        let config = RiskScoreConfig {
+            max_allowed_score: 40,
+            ..Default::default()
+        };
 
         let existing = create_signal("other_user", "different", "192.168.1.1", "Verizon", "Pixel 8", 2);
         let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
@@ -436,9 +438,11 @@ mod tests {
         let mut input = create_test_input();
         input.ip_isp = "SuspiciousISP Inc".to_string();
         input.ip_abuse_score = 25;
-        let mut config = RiskScoreConfig::default();
-        config.penalty_isps = vec!["SuspiciousISP".to_string()];
-        config.max_allowed_score = 50;
+        let config = RiskScoreConfig {
+            penalty_isps: vec!["SuspiciousISP".to_string()],
+            max_allowed_score: 50,
+            ..Default::default()
+        };
         let result = calculate_risk_score(&input, &[], 0, 0, &config);
 
         assert_eq!(result.breakdown.abuse_score, 25);

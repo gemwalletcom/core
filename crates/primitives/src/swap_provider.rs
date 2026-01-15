@@ -11,7 +11,6 @@ pub enum SwapProvider {
     UniswapV4,
     PancakeswapV3,
     Aerodrome,
-    PancakeswapAptosV2,
     Panora,
     Thorchain,
     Jupiter,
@@ -21,7 +20,6 @@ pub enum SwapProvider {
     Cetus,
     StonfiV2,
     Mayan,
-    Reservoir,
     Chainflip,
     NearIntents,
     CetusAggregator,
@@ -42,7 +40,7 @@ impl SwapProvider {
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
-            Self::PancakeswapV3 | Self::PancakeswapAptosV2 => "PancakeSwap",
+            Self::PancakeswapV3 => "PancakeSwap",
             Self::Aerodrome => "Aerodrome",
             Self::Panora => "Panora",
             Self::Thorchain => "THORChain",
@@ -53,7 +51,6 @@ impl SwapProvider {
             Self::Cetus | Self::CetusAggregator => "Cetus",
             Self::StonfiV2 => "STON.fi",
             Self::Mayan => "Mayan",
-            Self::Reservoir => "Reservoir",
             Self::Chainflip => "Chainflip",
             Self::NearIntents => "NEAR Intents",
             Self::Relay => "Relay",
@@ -67,7 +64,6 @@ impl SwapProvider {
             Self::UniswapV3 => "Uniswap v3",
             Self::UniswapV4 => "Uniswap v4",
             Self::PancakeswapV3 => "PancakeSwap v3",
-            Self::PancakeswapAptosV2 => "PancakeSwap v2",
             Self::Panora => "Panora",
             Self::Across => "Across v3",
             Self::Oku => "Oku",
@@ -77,7 +73,6 @@ impl SwapProvider {
             | Self::Wagmi
             | Self::Cetus
             | Self::Mayan
-            | Self::Reservoir
             | Self::Chainflip
             | Self::NearIntents
             | Self::CetusAggregator

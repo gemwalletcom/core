@@ -35,7 +35,6 @@ impl ProviderType {
             SwapperProvider::UniswapV3
             | SwapperProvider::UniswapV4
             | SwapperProvider::PancakeswapV3
-            | SwapperProvider::PancakeswapAptosV2
             | SwapperProvider::Panora
             | SwapperProvider::Jupiter
             | SwapperProvider::Oku
@@ -43,7 +42,6 @@ impl ProviderType {
             | SwapperProvider::Cetus
             | SwapperProvider::CetusAggregator
             | SwapperProvider::StonfiV2
-            | SwapperProvider::Reservoir
             | SwapperProvider::Aerodrome
             | SwapperProvider::Orca => SwapProviderMode::OnChain,
             SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapProviderMode::CrossChain,

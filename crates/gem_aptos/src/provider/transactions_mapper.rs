@@ -9,6 +9,9 @@ use num_bigint::{BigInt, BigUint};
 use primitives::{AssetId, Chain, SwapProvider, Transaction as PrimitivesTransaction, TransactionState, TransactionType};
 use std::error::Error;
 
+const PANORA_SWAP_EVENT: &str = "panora_swap";
+const PANORA_SWAP_EVENT_ADDRESS: &str = "0x1c3206329806286fd2223647c9f9b130e66baeb6d7224a18c1f642ffe48f3b4c";
+
 pub fn map_transaction_broadcast(response: &TransactionResponse) -> Result<String, Box<dyn Error + Sync + Send>> {
     if let Some(message) = &response.message {
         return Err(message.clone().into());
@@ -93,9 +96,9 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Eve
         },
     ];
 
-    let provider = events.iter().find(|e| e.event_type.contains("Swap")).and_then(|e| {
-        if e.event_type.contains("pancakeswap") || e.event_type.contains("0xc7efb4076dbe143cbcd98cfaaa929ecfc8f299203dfff63b95ccb6bfe19850fa") {
-            Some(SwapProvider::PancakeswapAptosV2.id().to_owned())
+    let provider = events.iter().find(|e| e.event_type.contains(PANORA_SWAP_EVENT)).and_then(|e| {
+        if e.event_type.contains(PANORA_SWAP_EVENT_ADDRESS) {
+            Some(SwapProvider::Panora.id().to_owned())
         } else {
             None
         }
