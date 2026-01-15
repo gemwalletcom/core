@@ -15,6 +15,10 @@ pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider
     ProxyProvider::new_cetus_aggregator(rpc_provider)
 }
 
+pub fn new_panora(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
+    ProxyProvider::new_panora(rpc_provider)
+}
+
 pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
     ProxyProvider::new_mayan(rpc_provider)
 }

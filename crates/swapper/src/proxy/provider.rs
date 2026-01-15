@@ -114,6 +114,10 @@ impl ProxyProvider<RpcClient> {
         )
     }
 
+    pub fn new_panora(rpc_provider: Arc<dyn RpcProvider>) -> Self {
+        Self::new_with_path(SwapperProvider::Panora, "panora", vec![SwapperChainAsset::All(Chain::Aptos)], rpc_provider)
+    }
+
     pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         let assets = vec![
             SwapperChainAsset::Assets(

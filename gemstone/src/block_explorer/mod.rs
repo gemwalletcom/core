@@ -52,14 +52,13 @@ impl Explorer {
             SwapperProvider::UniswapV3
             | SwapperProvider::UniswapV4
             | SwapperProvider::PancakeswapV3
-            | SwapperProvider::PancakeswapAptosV2
+            | SwapperProvider::Panora
             | SwapperProvider::Jupiter
             | SwapperProvider::Oku
             | SwapperProvider::Wagmi
             | SwapperProvider::Cetus
             | SwapperProvider::CetusAggregator
             | SwapperProvider::StonfiV2
-            | SwapperProvider::Reservoir
             | SwapperProvider::Aerodrome
             | SwapperProvider::Hyperliquid
             | SwapperProvider::Orca => get_block_explorer(self.chain, explorer_name),
