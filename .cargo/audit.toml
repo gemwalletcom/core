@@ -3,6 +3,4 @@ ignore = [
     # ruint::algorithms::div::reciprocal_mg10 OOB; only reachable if low-level algorithms are called directly.
     # We only use ruint through alloy-primitives higher-level APIs.
     "RUSTSEC-2025-0137",
-    # rkyv OOM UB in Arc/Rc from_value; rust_decimal pulls rkyv but we do not enable/use the rkyv feature.
-    "RUSTSEC-2026-0001",
 ]

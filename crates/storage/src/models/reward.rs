@@ -37,6 +37,23 @@ pub struct NewRewardsRow {
     pub disable_reason: Option<String>,
 }
 
+impl NewRewardsRow {
+    pub fn new(username: String, device_id: i32) -> Self {
+        Self {
+            username,
+            status: RewardStatus::Unverified,
+            level: None,
+            points: 0,
+            referrer_username: None,
+            referral_count: 0,
+            device_id,
+            is_swap_complete: false,
+            comment: None,
+            disable_reason: None,
+        }
+    }
+}
+
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards_referrals)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

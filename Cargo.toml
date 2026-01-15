@@ -114,8 +114,8 @@ alloy-primitives = { version = "1.5.2", features = ["k256"] }
 alloy-sol-types = { version = "1.5.2", features = ["eip712-serde"] }
 alloy-dyn-abi = { version = "1.5.2", features = ["eip712"] }
 alloy-json-abi = { version = "1.5.2" }
-alloy-signer = { version = "1.4.0" }
-alloy-signer-local = { version = "1.4.0" }
-alloy-network = { version = "1.4.0" }
-alloy-consensus = { version = "1.4.0" }
+alloy-signer = { version = "1.4.3" }
+alloy-signer-local = { version = "1.4.3" }
+alloy-network = { version = "1.4.3" }
+alloy-consensus = { version = "1.4.3" }
 alloy-rlp = { version = "0.3.12" }

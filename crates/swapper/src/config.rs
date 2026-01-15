@@ -32,6 +32,7 @@ pub struct ReferralFees {
     pub ton: ReferralFee,
     pub tron: ReferralFee,
     pub near: ReferralFee,
+    pub aptos: ReferralFee,
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -51,6 +52,7 @@ impl ReferralFees {
             ton: ReferralFee::default(),
             tron: ReferralFee::default(),
             near: ReferralFee::default(),
+            aptos: ReferralFee::default(),
         }
     }
 
@@ -68,6 +70,7 @@ impl ReferralFees {
             &mut self.ton,
             &mut self.tron,
             &mut self.near,
+            &mut self.aptos,
         ]
         .into_iter()
     }
@@ -120,6 +123,10 @@ pub fn get_swap_config() -> Config {
             },
             near: ReferralFee {
                 address: "0x0d9dab1a248f63b0a48965ba8435e4de7497a3dc".into(),
+                bps: DEFAULT_SWAP_FEE_BPS,
+            },
+            aptos: ReferralFee {
+                address: "0xc09d385527743bb03ed7847bb9180b5ff2263d38d5a93f1c9b3068f8505f6488".into(),
                 bps: DEFAULT_SWAP_FEE_BPS,
             },
         },

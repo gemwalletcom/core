@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use gem_client::{Client, ClientError, ContentType, Response, deserialize_response};
+use gem_client::{Client, ClientError, ContentType, Response, decode_json_byte_array, deserialize_response};
 use primitives::Chain;
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json;
@@ -167,10 +167,11 @@ where
                     _ => return Err(ClientError::Serialization("Expected string body for text/plain content-type".to_string())),
                 }
             }
-            Some(ContentType::ApplicationXBinary) => {
+            Some(ContentType::ApplicationXBinary) | Some(ContentType::ApplicationAptosBcs) => {
                 let json_value = serde_json::to_value(body)?;
                 match json_value {
                     serde_json::Value::String(s) => hex::decode(&s).map_err(|e| ClientError::Serialization(format!("Failed to decode hex string: {e}")))?,
+                    serde_json::Value::Array(values) => decode_json_byte_array(values)?,
                     _ => return Err(ClientError::Serialization("Expected hex string body for binary content-type".to_string())),
                 }
             }

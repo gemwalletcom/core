@@ -1,21 +1,25 @@
 mod device_updater;
 mod observers;
+
 use cacher::CacherClient;
 use device_updater::DeviceUpdater;
 use job_runner::run_job;
 use observers::InactiveDevicesObserver;
+use primitives::ConfigKey;
 use settings::Settings;
+use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
+use storage::ConfigCacher;
 use streamer::StreamProducer;
 
-pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
+pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+    let config = ConfigCacher::new(database.clone());
     let cacher_client = CacherClient::new(settings.redis.url.as_str()).await;
 
-    let device_updater = run_job("device updater", Duration::from_secs(86400), {
+    let device_updater = run_job("device updater", config.get_duration(ConfigKey::DeviceTimerUpdater)?, {
         let database = database.clone();
         move || {
             let device_updater = DeviceUpdater::new(database.clone());
@@ -23,7 +27,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    let inactive_devices_observer = run_job("inactive devices observer", Duration::from_secs(86400), {
+    let inactive_devices_observer = run_job("inactive devices observer", config.get_duration(ConfigKey::DeviceTimerInactiveObserver)?, {
         let settings = Arc::new(settings.clone());
         let database = database.clone();
         let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "inactive_devices_observer").await.unwrap();
@@ -33,5 +37,5 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    vec![Box::pin(device_updater), Box::pin(inactive_devices_observer)]
+    Ok(vec![Box::pin(device_updater), Box::pin(inactive_devices_observer)])
 }

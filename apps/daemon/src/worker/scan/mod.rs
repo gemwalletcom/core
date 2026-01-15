@@ -1,17 +1,20 @@
 mod validator_scanner;
 
 use job_runner::run_job;
+use primitives::ConfigKey;
 use settings::{Settings, service_user_agent};
 use settings_chain::ChainProviders;
+use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
-use std::time::Duration;
+use storage::ConfigCacher;
 use validator_scanner::ValidatorScanner;
 
-pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
+pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+    let config = ConfigCacher::new(database.clone());
 
-    let update_validators = run_job("Update chain validators", Duration::from_secs(86400), {
+    let update_validators = run_job("Update chain validators", config.get_duration(ConfigKey::ScanTimerUpdateValidators)?, {
         let settings = settings.clone();
         let database = database.clone();
         move || {
@@ -24,7 +27,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    let update_validators_static_assets = run_job("Update validators from static assets", Duration::from_secs(3600), {
+    let update_validators_static_assets = run_job("Update validators from static assets", config.get_duration(ConfigKey::ScanTimerUpdateValidatorsStatic)?, {
         let settings = settings.clone();
         let database = database.clone();
         move || {
@@ -41,5 +44,5 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    vec![Box::pin(update_validators), Box::pin(update_validators_static_assets)]
+    Ok(vec![Box::pin(update_validators), Box::pin(update_validators_static_assets)])
 }

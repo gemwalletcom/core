@@ -63,7 +63,7 @@ impl RewardsConsumer {
         let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&username)?;
         let metadata = NotificationRewardsMetadata {
             username: event.username.clone(),
-            points: event.points,
+            points: Some(event.points),
         };
         let notification = NewNotificationRow {
             wallet_id,
