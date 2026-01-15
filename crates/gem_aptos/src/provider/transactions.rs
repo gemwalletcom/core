@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactions;
-use serde::Deserialize;
 use std::error::Error;
 
 use gem_client::Client;
