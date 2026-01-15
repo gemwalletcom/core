@@ -66,13 +66,12 @@ impl<C: Client> AptosClient<C> {
     pub async fn submit_transaction(&self, data: &str) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
         if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(data) {
             if let Some(bcs) = json_value.get("bcs").and_then(|value| value.as_str()) {
-                if let Some(encoding) = json_value.get("bcsEncoding").and_then(|value| value.as_str()) {
-                    if encoding != "hex" {
+                if let Some(encoding) = json_value.get("bcsEncoding").and_then(|value| value.as_str())
+                    && encoding != "hex" {
                         return Err(Box::new(std::io::Error::other(format!(
                             "Unsupported Aptos BCS encoding: {encoding}"
                         ))));
                     }
-                }
                 return self.submit_transaction_bcs(bcs).await;
             }
 
