@@ -3,6 +3,8 @@ name: Publish Containers
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -17,6 +19,7 @@ env:
   DOCKER_BUILDKIT: 1
   CORE_IMAGE: ghcr.io/gemwalletcom/core
   DYNODE_IMAGE: ghcr.io/gemwalletcom/dynode
+  BUILDER_CACHE: ghcr.io/gemwalletcom/core:buildcache
 
 jobs:
   build:
@@ -25,19 +28,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Configure cache
-        id: cache
-        run: |
-          if [ -z "$RUNNER_ENVIRONMENT" ] || [ "$RUNNER_ENVIRONMENT" = "self-hosted" ]; then
-            echo "is_self_hosted=true" >> $GITHUB_OUTPUT
-            echo "from=type=local,src=/tmp/.buildx-cache" >> $GITHUB_OUTPUT
-            echo "to=type=local,dest=/tmp/.buildx-cache-new,mode=max" >> $GITHUB_OUTPUT
-          else
-            echo "is_self_hosted=false" >> $GITHUB_OUTPUT
-            echo "from=type=gha" >> $GITHUB_OUTPUT
-            echo "to=type=gha,mode=max" >> $GITHUB_OUTPUT
-          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -55,10 +45,10 @@ jobs:
           context: .
           file: ./Dockerfile
           target: core
-          push: true
-          platforms: linux/amd64
-          cache-from: ${{ steps.cache.outputs.from }}
-          cache-to: ${{ steps.cache.outputs.to }}
+          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/arm64
+          cache-from: type=registry,ref=${{ env.BUILDER_CACHE }}
+          cache-to: type=registry,ref=${{ env.BUILDER_CACHE }},mode=max
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
@@ -71,18 +61,11 @@ jobs:
           context: .
           file: ./Dockerfile
           target: dynode
-          push: true
-          platforms: linux/amd64
-          cache-from: ${{ steps.cache.outputs.from }}
-          cache-to: ${{ steps.cache.outputs.to }}
+          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/arm64
+          cache-from: type=registry,ref=${{ env.BUILDER_CACHE }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ${{ env.DYNODE_IMAGE }}:latest
             ${{ env.DYNODE_IMAGE }}:${{ github.sha }}
-
-      - name: Update local cache
-        if: steps.cache.outputs.is_self_hosted == 'true'
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

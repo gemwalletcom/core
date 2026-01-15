@@ -1,22 +1,35 @@
 # syntax=docker/dockerfile:1
-FROM rust:1.92.0-bookworm AS builder
+FROM lukemathwalker/cargo-chef:latest-rust-1.92.0-bookworm AS chef
 WORKDIR /app
 
+FROM chef AS planner
 COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
-    --mount=type=cache,target=/app/target,sharing=locked,id=rust-target \
+    cargo chef cook --release --recipe-path recipe.json
+COPY . .
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
     cargo build --release --bin api --bin daemon --bin dynode && \
     cp /app/target/release/api /app/api && \
     cp /app/target/release/daemon /app/daemon && \
     cp /app/target/release/dynode /app/dynode
 
+# Shared runtime base
+FROM debian:bookworm-slim AS runtime-base
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Core runtime image
-FROM debian:bookworm AS core
+FROM runtime-base AS core
 WORKDIR /app
-RUN apt-get update && apt-get install -y \
-    openssl ca-certificates libpq-dev postgresql curl \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev postgresql \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/api /app/
 COPY --from=builder /app/daemon /app/
@@ -24,11 +37,8 @@ COPY --from=builder /app/Settings.yaml /app/
 CMD ["sh", "-c", "/app/${BINARY}"]
 
 # Dynode runtime image
-FROM debian:bookworm AS dynode
+FROM runtime-base AS dynode
 WORKDIR /app
-RUN apt-get update && apt-get install -y \
-    openssl ca-certificates curl \
-    && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/dynode /app/
 COPY --from=builder /app/apps/dynode/config.yml /app/
 CMD ["/app/dynode"]
