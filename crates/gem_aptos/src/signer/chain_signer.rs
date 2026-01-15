@@ -4,11 +4,11 @@ use primitives::{ChainSigner, SignerError, TransactionInputType, TransactionLoad
 use serde_json::{Value, from_str};
 use std::str::from_utf8;
 
+use super::abi::{PANORA_ROUTER_ENTRY_PARAMS, PANORA_ROUTER_FUNCTION, PANORA_ROUTER_MODULE};
 use super::{
     AccountAddress, EntryFunction, EntryFunctionPayload, build_raw_transaction, build_submit_transaction_bcs, expiration_timestamp_secs,
     sign_message as sign_aptos_message, sign_raw_transaction,
 };
-use super::abi::{PANORA_ROUTER_ENTRY_PARAMS, PANORA_ROUTER_FUNCTION, PANORA_ROUTER_MODULE};
 
 const APTOS_CHAIN_ID: u8 = 1;
 const DEFAULT_MAX_GAS_AMOUNT: u64 = 1500;
@@ -33,10 +33,7 @@ impl ChainSigner for AptosChainSigner {
             payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
             function: APTOS_TRANSFER_FUNCTION.to_string(),
             type_arguments: Vec::new(),
-            arguments: vec![
-                Value::String(input.destination_address.clone()),
-                Value::String(input.value.clone()),
-            ],
+            arguments: vec![Value::String(input.destination_address.clone()), Value::String(input.value.clone())],
         };
 
         self.sign_payload(payload, Some(&STAKE_ENTRY_PARAMS), input, private_key, DEFAULT_MAX_GAS_AMOUNT)
@@ -54,10 +51,7 @@ impl ChainSigner for AptosChainSigner {
                 payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
                 function: APTOS_TRANSFER_COINS_FUNCTION.to_string(),
                 type_arguments: vec![token_id.to_string()],
-                arguments: vec![
-                    Value::String(input.destination_address.clone()),
-                    Value::String(input.value.clone()),
-                ],
+                arguments: vec![Value::String(input.destination_address.clone()), Value::String(input.value.clone())],
             };
             return self.sign_payload(payload, Some(&STAKE_ENTRY_PARAMS), input, private_key, DEFAULT_MAX_GAS_AMOUNT);
         }
@@ -73,13 +67,7 @@ impl ChainSigner for AptosChainSigner {
             ],
         };
 
-        self.sign_payload(
-            payload,
-            Some(&["address", "address", "u64"]),
-            input,
-            private_key,
-            DEFAULT_MAX_GAS_AMOUNT,
-        )
+        self.sign_payload(payload, Some(&["address", "address", "u64"]), input, private_key, DEFAULT_MAX_GAS_AMOUNT)
     }
 
     fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
@@ -147,20 +135,12 @@ impl AptosChainSigner {
         private_key: &[u8],
         max_gas_amount: u64,
     ) -> Result<String, SignerError> {
-        let sender = AccountAddress::from_str(&input.sender_address)?;
+        let sender = AccountAddress::from_hex(&input.sender_address)?;
         let sequence = sequence_from_metadata(&input.metadata)?;
         let gas_unit_price = gas_unit_price(input)?;
         let expiration = expiration_timestamp_secs()?;
 
-        let raw_tx = build_raw_transaction(
-            sender,
-            sequence,
-            entry_function,
-            max_gas_amount,
-            gas_unit_price,
-            expiration,
-            APTOS_CHAIN_ID,
-        );
+        let raw_tx = build_raw_transaction(sender, sequence, entry_function, max_gas_amount, gas_unit_price, expiration, APTOS_CHAIN_ID);
         let (signature, public_key) = sign_raw_transaction(&raw_tx, private_key)?;
 
         build_submit_transaction_bcs(raw_tx, signature, public_key)
@@ -206,7 +186,9 @@ fn resolve_generic_payload(input: &TransactionLoadInput) -> Result<(EntryFunctio
         if bytes.is_empty() {
             return Err(SignerError::InvalidInput("Missing Aptos payload data".to_string()));
         }
-        from_utf8(bytes).map_err(|_| SignerError::InvalidInput("Aptos payload must be valid UTF-8".to_string()))?.to_string()
+        from_utf8(bytes)
+            .map_err(|_| SignerError::InvalidInput("Aptos payload must be valid UTF-8".to_string()))?
+            .to_string()
     } else if let TransactionLoadMetadata::Aptos { data: Some(payload), .. } = &input.metadata {
         payload.clone()
     } else {
@@ -214,9 +196,7 @@ fn resolve_generic_payload(input: &TransactionLoadInput) -> Result<(EntryFunctio
     };
 
     let max_gas_amount = match gas_limit {
-        Some(limit) => limit
-            .to_u64()
-            .ok_or_else(|| SignerError::InvalidInput("Invalid Aptos gas limit".to_string()))?,
+        Some(limit) => limit.to_u64().ok_or_else(|| SignerError::InvalidInput("Invalid Aptos gas limit".to_string()))?,
         None => DEFAULT_MAX_GAS_AMOUNT,
     };
 
@@ -251,8 +231,9 @@ fn gas_unit_price(input: &TransactionLoadInput) -> Result<u64, SignerError> {
 fn resolve_max_gas_amount(input: &TransactionLoadInput) -> u64 {
     if let TransactionInputType::Swap(_, _, swap_data) = &input.input_type
         && let Some(limit) = &swap_data.data.gas_limit
-            && let Ok(parsed) = limit.parse::<u64>() {
-                return parsed;
-            }
+        && let Ok(parsed) = limit.parse::<u64>()
+    {
+        return parsed;
+    }
     DEFAULT_MAX_GAS_AMOUNT
 }

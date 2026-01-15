@@ -1,6 +1,6 @@
 use crate::signer::AccountAddress;
-use serde::ser::{SerializeSeq, Serializer};
 use serde::Serialize;
+use serde::ser::{SerializeSeq, Serializer};
 
 #[derive(Clone, Debug)]
 pub(crate) enum MoveValue {

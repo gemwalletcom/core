@@ -7,6 +7,7 @@ use gem_client::Client;
 use primitives::BroadcastOptions;
 
 use super::transactions_mapper::map_transaction_broadcast;
+use crate::models::SubmitTransactionBcsRequest;
 use crate::{provider::transactions_mapper::map_transactions, rpc::client::AptosClient};
 
 #[async_trait]
@@ -26,18 +27,11 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
     }
 }
 
-#[derive(Deserialize)]
-struct BcsWrapper {
-    bcs: String,
-    #[serde(rename = "bcsEncoding")]
-    bcs_encoding: String,
-}
-
 fn extract_bcs_bytes(data: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    let wrapper = serde_json::from_str::<BcsWrapper>(data)
+    let req = serde_json::from_str::<SubmitTransactionBcsRequest>(data)
         .map_err(|err| Box::new(std::io::Error::other(format!("Unsupported Aptos submit payload: {err}"))) as Box<dyn Error + Send + Sync>)?;
 
-    primitives::decode_hex(&wrapper.bcs).map_err(|err| std::io::Error::other(format!("Invalid Aptos BCS hex: {err}")).into())
+    primitives::decode_hex(&req.bcs).map_err(|err| std::io::Error::other(format!("Invalid Aptos BCS hex: {err}")).into())
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]

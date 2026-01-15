@@ -9,7 +9,7 @@ const ADDRESS_LENGTH: usize = 32;
 pub struct AccountAddress([u8; ADDRESS_LENGTH]);
 
 impl AccountAddress {
-    pub fn from_str(value: &str) -> Result<Self, SignerError> {
+    pub fn from_hex(value: &str) -> Result<Self, SignerError> {
         <Self as FromStr>::from_str(value)
     }
 
@@ -38,8 +38,7 @@ impl FromStr for AccountAddress {
         if stripped.is_empty() {
             return Err(SignerError::InvalidInput("Empty Aptos address".to_string()));
         }
-        let bytes = primitives::decode_hex(value)
-            .map_err(|_| SignerError::InvalidInput("Invalid Aptos address hex".to_string()))?;
+        let bytes = primitives::decode_hex(value).map_err(|_| SignerError::InvalidInput("Invalid Aptos address hex".to_string()))?;
         Self::from_bytes(&bytes)
     }
 }
@@ -56,7 +55,7 @@ mod tests {
 
     #[test]
     fn parse_address_short_hex() {
-        let address = AccountAddress::from_str("0x1").unwrap();
+        let address = AccountAddress::from_hex("0x1").unwrap();
         assert_eq!(address.to_string(), format!("0x{}", "00".repeat(31) + "01"));
     }
 }

@@ -32,7 +32,7 @@ pub(crate) fn parse_function_id(function_id: &str) -> Result<(ModuleId, String),
     if parts.len() != 3 {
         return Err(SignerError::InvalidInput("Invalid Aptos function id".to_string()));
     }
-    let address = AccountAddress::from_str(parts[0])?;
+    let address = AccountAddress::from_hex(parts[0])?;
     let module = parts[1].to_string();
     let function = parts[2].to_string();
 
@@ -83,7 +83,7 @@ fn parse_struct_tag(value: &str) -> Result<StructTag, SignerError> {
         return Err(SignerError::InvalidInput("Invalid Aptos struct tag".to_string()));
     }
 
-    let address = AccountAddress::from_str(parts[0])?;
+    let address = AccountAddress::from_hex(parts[0])?;
     let module = parts[1].to_string();
     let name = parts[2].to_string();
     let type_args = if let Some(args) = args {
@@ -256,8 +256,8 @@ fn parse_hex_bytes(value: &str) -> Result<Vec<u8>, SignerError> {
 
 fn parse_address(value: &Value) -> Result<AccountAddress, SignerError> {
     match value {
-        Value::String(text) => AccountAddress::from_str(text),
-        Value::Number(number) => AccountAddress::from_str(&number.to_string()),
+        Value::String(text) => AccountAddress::from_hex(text),
+        Value::Number(number) => AccountAddress::from_hex(&number.to_string()),
         _ => Err(SignerError::InvalidInput("Invalid Aptos address argument".to_string())),
     }
 }
@@ -276,8 +276,7 @@ fn parse_bool(value: &Value) -> Result<bool, SignerError> {
 }
 
 fn parse_numeric_string(value: &Value, label: &str) -> Result<String, SignerError> {
-    let input: NumericInput = serde_json::from_value(value.clone())
-        .map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))?;
+    let input: NumericInput = serde_json::from_value(value.clone()).map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))?;
     Ok(input.as_string())
 }
 
@@ -288,8 +287,7 @@ fn parse_u8(value: &Value) -> Result<u8, SignerError> {
 
 fn parse_u8_from_str(text: &str) -> Result<u8, SignerError> {
     if text.trim().starts_with("0x") {
-        let bytes =
-            primitives::decode_hex(text).map_err(|_| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()))?;
+        let bytes = primitives::decode_hex(text).map_err(|_| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()))?;
         if bytes.len() != 1 {
             return Err(SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()));
         }
@@ -351,12 +349,10 @@ fn parse_big_uint_from_str(text: &str, label: &str) -> Result<BigUint, SignerErr
         if stripped.is_empty() {
             return Err(SignerError::InvalidInput(format!("Invalid Aptos {label} argument")));
         }
-        let bytes =
-            primitives::decode_hex(trimmed).map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))?;
+        let bytes = primitives::decode_hex(trimmed).map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))?;
         Ok(BigUint::from_bytes_be(&bytes))
     } else {
-        BigUint::parse_bytes(trimmed.as_bytes(), 10)
-            .ok_or_else(|| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))
+        BigUint::parse_bytes(trimmed.as_bytes(), 10).ok_or_else(|| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))
     }
 }
 

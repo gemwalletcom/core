@@ -1,7 +1,4 @@
-use crate::models::{
-    Ed25519Authenticator, RawTransaction, SignedTransaction, SubmitTransactionBcsRequest, TransactionAuthenticator,
-    TransactionPayloadBCS,
-};
+use crate::models::{Ed25519Authenticator, RawTransaction, SignedTransaction, SubmitTransactionBcsRequest, TransactionAuthenticator, TransactionPayloadBCS};
 use gem_hash::sha3::sha3_256;
 use hex::encode;
 use primitives::SignerError;
@@ -34,8 +31,7 @@ pub fn build_raw_transaction(
 }
 
 pub fn sign_raw_transaction(raw_tx: &RawTransaction, private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), SignerError> {
-    let raw_tx_bytes = bcs::to_bytes(raw_tx)
-        .map_err(|err| SignerError::InvalidInput(format!("Failed to encode Aptos transaction: {err}")))?;
+    let raw_tx_bytes = bcs::to_bytes(raw_tx).map_err(|err| SignerError::InvalidInput(format!("Failed to encode Aptos transaction: {err}")))?;
     let seed = sha3_256(RAW_TRANSACTION_SALT);
     let mut preimage = Vec::with_capacity(seed.len() + raw_tx_bytes.len());
     preimage.extend_from_slice(&seed);
@@ -53,11 +49,7 @@ pub fn sign_message(message: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<
     Signer::sign_ed25519_with_public_key(&preimage, private_key).map_err(|err| SignerError::InvalidInput(err.to_string()))
 }
 
-pub fn build_submit_transaction_bcs(
-    raw_tx: RawTransaction,
-    signature: Vec<u8>,
-    public_key: Vec<u8>,
-) -> Result<String, SignerError> {
+pub fn build_submit_transaction_bcs(raw_tx: RawTransaction, signature: Vec<u8>, public_key: Vec<u8>) -> Result<String, SignerError> {
     let signed = SignedTransaction {
         raw_tx,
         authenticator: TransactionAuthenticator::Ed25519(Ed25519Authenticator {
@@ -65,8 +57,7 @@ pub fn build_submit_transaction_bcs(
             signature: ensure_length(signature, 64, "signature")?,
         }),
     };
-    let bcs_bytes = bcs::to_bytes(&signed)
-        .map_err(|err| SignerError::InvalidInput(format!("Failed to encode Aptos signed transaction: {err}")))?;
+    let bcs_bytes = bcs::to_bytes(&signed).map_err(|err| SignerError::InvalidInput(format!("Failed to encode Aptos signed transaction: {err}")))?;
     let request = SubmitTransactionBcsRequest {
         bcs: encode(bcs_bytes),
         bcs_encoding: "hex".to_string(),
@@ -109,11 +100,9 @@ mod tests {
                 Value::String("100".to_string()),
             ],
         };
-        let entry_function = payload
-            .to_entry_function(Some(&["address", "u64"]))
-            .expect("entry function");
+        let entry_function = payload.to_entry_function(Some(&["address", "u64"])).expect("entry function");
         build_raw_transaction(
-            AccountAddress::from_str("0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef").unwrap(),
+            AccountAddress::from_hex("0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef").unwrap(),
             1,
             entry_function,
             1500,
@@ -138,10 +127,7 @@ mod tests {
         let signing_key = SigningKey::from_bytes(&private_key.try_into().unwrap());
         assert_eq!(public_key, signing_key.verifying_key().to_bytes().to_vec());
         let signature = Signature::from_bytes(&signature.try_into().unwrap());
-        signing_key
-            .verifying_key()
-            .verify(&preimage, &signature)
-            .expect("signature should verify");
+        signing_key.verifying_key().verify(&preimage, &signature).expect("signature should verify");
     }
 
     #[test]

@@ -30,28 +30,18 @@ impl EntryFunctionPayload {
 
     pub fn to_entry_function(&self, abi: Option<&[&str]>) -> Result<EntryFunction, SignerError> {
         if self.payload_type != ENTRY_FUNCTION_PAYLOAD_TYPE {
-            return Err(SignerError::InvalidInput(format!(
-                "Unsupported Aptos payload type: {}",
-                self.payload_type
-            )));
+            return Err(SignerError::InvalidInput(format!("Unsupported Aptos payload type: {}", self.payload_type)));
         }
 
         let (module, function) = parse_function_id(&self.function)?;
-        let ty_args = self
-            .type_arguments
-            .iter()
-            .map(|arg| parse_type_tag(arg))
-            .collect::<Result<Vec<_>, _>>()?;
+        let ty_args = self.type_arguments.iter().map(|arg| parse_type_tag(arg)).collect::<Result<Vec<_>, _>>()?;
 
         let arg_types = match abi {
             Some(abi_types) => {
                 if abi_types.len() != self.arguments.len() {
                     return Err(SignerError::InvalidInput("Aptos ABI length does not match arguments".to_string()));
                 }
-                abi_types
-                    .iter()
-                    .map(|arg| parse_type_tag(arg))
-                    .collect::<Result<Vec<_>, _>>()?
+                abi_types.iter().map(|arg| parse_type_tag(arg)).collect::<Result<Vec<_>, _>>()?
             }
             None => infer_type_tags(&self.arguments)?,
         };
