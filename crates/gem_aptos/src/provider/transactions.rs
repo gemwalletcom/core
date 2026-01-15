@@ -34,24 +34,10 @@ struct BcsWrapper {
 }
 
 fn extract_bcs_bytes(data: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    let wrapper = serde_json::from_str::<BcsWrapper>(data).map_err(|err| {
-        Box::new(std::io::Error::other(format!(
-            "Unsupported Aptos submit payload: {err}"
-        ))) as Box<dyn Error + Send + Sync>
-    })?;
+    let wrapper = serde_json::from_str::<BcsWrapper>(data)
+        .map_err(|err| Box::new(std::io::Error::other(format!("Unsupported Aptos submit payload: {err}"))) as Box<dyn Error + Send + Sync>)?;
 
-    if wrapper.bcs_encoding != "hex" {
-        return Err(Box::new(std::io::Error::other(format!(
-            "Unsupported Aptos BCS encoding: {}",
-            wrapper.bcs_encoding
-        ))));
-    }
-
-    decode_bcs_hex(&wrapper.bcs)
-}
-
-fn decode_bcs_hex(data: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    primitives::decode_hex(data).map_err(|err| std::io::Error::other(format!("Invalid Aptos BCS hex: {err}")).into())
+    primitives::decode_hex(&wrapper.bcs).map_err(|err| std::io::Error::other(format!("Invalid Aptos BCS hex: {err}")).into())
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
