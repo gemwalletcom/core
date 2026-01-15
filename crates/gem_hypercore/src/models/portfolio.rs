@@ -1,33 +1,42 @@
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 use primitives::portfolio::{Portfolio, PortfolioDataPoint, PortfolioTimeframeData};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(from = "(i64, String)")]
+pub struct HypercoreDataPoint {
+    pub timestamp_ms: i64,
+    pub value: String,
+}
+
+impl From<(i64, String)> for HypercoreDataPoint {
+    fn from((timestamp_ms, value): (i64, String)) -> Self {
+        Self { timestamp_ms, value }
+    }
+}
+
+impl From<HypercoreDataPoint> for PortfolioDataPoint {
+    fn from(point: HypercoreDataPoint) -> Self {
+        Self {
+            date: DateTime::from_timestamp_millis(point.timestamp_ms).unwrap_or_else(Utc::now),
+            value: point.value,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HypercorePortfolioTimeframeData {
-    pub account_value_history: Vec<(i64, String)>,
-    pub pnl_history: Vec<(i64, String)>,
+    pub account_value_history: Vec<HypercoreDataPoint>,
+    pub pnl_history: Vec<HypercoreDataPoint>,
     pub vlm: String,
-}
-
-fn timestamp_to_datetime(timestamp_ms: i64) -> DateTime<Utc> {
-    Utc.timestamp_millis_opt(timestamp_ms).single().unwrap_or_else(Utc::now)
-}
-
-fn map_data_points(data: Vec<(i64, String)>) -> Vec<PortfolioDataPoint> {
-    data.into_iter()
-        .map(|(timestamp, value)| PortfolioDataPoint {
-            date: timestamp_to_datetime(timestamp),
-            value,
-        })
-        .collect()
 }
 
 impl From<HypercorePortfolioTimeframeData> for PortfolioTimeframeData {
     fn from(data: HypercorePortfolioTimeframeData) -> Self {
         Self {
-            account_value_history: map_data_points(data.account_value_history),
-            pnl_history: map_data_points(data.pnl_history),
+            account_value_history: data.account_value_history.into_iter().map(Into::into).collect(),
+            pnl_history: data.pnl_history.into_iter().map(Into::into).collect(),
             volume: data.vlm,
         }
     }
