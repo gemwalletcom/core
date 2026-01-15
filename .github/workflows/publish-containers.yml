@@ -47,8 +47,8 @@ jobs:
           target: core
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: ${{ runner.environment == 'self-hosted' && 'type=local,src=/tmp/.buildx-cache' || 'type=gha' }}
+          cache-to: ${{ runner.environment == 'self-hosted' && 'type=local,dest=/tmp/.buildx-cache,mode=max' || 'type=gha,mode=max' }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
@@ -63,7 +63,7 @@ jobs:
           target: dynode
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64
-          cache-from: type=gha
+          cache-from: ${{ runner.environment == 'self-hosted' && 'type=local,src=/tmp/.buildx-cache' || 'type=gha' }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
