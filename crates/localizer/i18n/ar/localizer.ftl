@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = يجب تطبيق رموز الإح
 notification_reward_pending_title = 💎 إحالة جديدة
 notification_reward_pending_description = تم استخدام رمز الإحالة الخاص بك. جارٍ التحقق.
 rewards_error_username_daily_limit_reached = تم الوصول إلى الحد الأقصى اليومي لإنشاء أسماء المستخدمين. يرجى المحاولة مرة أخرى غداً.
+notification_price_alert_target_title = 🎯 {$symbol} في {$price}
+notification_price_alert_target_description = {$change} — لقد تم تحقيق الهدف الذي حددته.

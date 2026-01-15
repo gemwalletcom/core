@@ -1,13 +1,13 @@
 use crate::DatabaseError;
 use chrono::NaiveDateTime;
-use primitives::{Device, DevicePriceAlert, Price, PriceAlert, PriceAlerts};
+use primitives::{Device, DevicePriceAlert, PriceAlert, PriceAlerts, PriceData};
 
 use crate::DatabaseClient;
 use crate::database::devices::DevicesStore;
 use crate::database::price_alerts::PriceAlertsStore;
 
 pub trait PriceAlertsRepository {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price, Device)>, DatabaseError>;
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, PriceData, Device)>, DatabaseError>;
     fn get_price_alerts_for_device_id(&mut self, device_id: &str, asset_id: Option<&str>) -> Result<Vec<DevicePriceAlert>, DatabaseError>;
     fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, DatabaseError>;
     fn delete_price_alerts(&mut self, device_id: &str, ids: Vec<String>) -> Result<usize, DatabaseError>;
@@ -15,11 +15,11 @@ pub trait PriceAlertsRepository {
 }
 
 impl PriceAlertsRepository for DatabaseClient {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, Price, Device)>, DatabaseError> {
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, PriceData, Device)>, DatabaseError> {
         let results = PriceAlertsStore::get_price_alerts(self, after_notified_at)?;
         Ok(results
             .into_iter()
-            .map(|(alert, price, device)| (alert.as_primitive(), price.as_primitive(), device.as_primitive()))
+            .map(|(alert, price, device)| (alert.as_primitive(), price.as_price_data(), device.as_primitive()))
             .collect())
     }
 

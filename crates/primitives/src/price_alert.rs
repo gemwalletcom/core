@@ -59,7 +59,7 @@ pub enum PriceAlertDirection {
     Down,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum PriceAlertType {
     PriceChangesUp,
     PriceChangesDown,
@@ -68,6 +68,7 @@ pub enum PriceAlertType {
     PricePercentChangeUp,
     PricePercentChangeDown,
     AllTimeHigh,
+    PriceMilestone,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

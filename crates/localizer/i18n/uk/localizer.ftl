@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = Реферальні коди не�
 notification_reward_pending_title = 💎 Нове реферале
 notification_reward_pending_description = Хтось використав ваш реферальний код. Очікує підтвердження.
 rewards_error_username_daily_limit_reached = Досягнуто щоденного ліміту створення імен користувачів. Будь ласка, спробуйте ще раз завтра.
+notification_price_alert_target_title = 🎯 {$symbol} о {$price}
+notification_price_alert_target_description = {$change} — the target you set has been reached.

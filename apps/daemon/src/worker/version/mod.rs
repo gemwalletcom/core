@@ -2,15 +2,18 @@ mod model;
 mod version_updater;
 
 use job_runner::run_job;
+use primitives::ConfigKey;
 use settings::Settings;
+use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
-use std::time::Duration;
+use storage::ConfigCacher;
 use version_updater::VersionClient;
 
-pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
+pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
-    let update_store_versions = run_job("update store versions", Duration::from_secs(43200), {
+    let config = ConfigCacher::new(database.clone());
+    let update_store_versions = run_job("update store versions", config.get_duration(ConfigKey::VersionTimerUpdateStoreVersions)?, {
         let database = database.clone();
         move || {
             let database = database.clone();
@@ -19,5 +22,5 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
         }
     });
 
-    vec![Box::pin(update_store_versions)]
+    Ok(vec![Box::pin(update_store_versions)])
 }

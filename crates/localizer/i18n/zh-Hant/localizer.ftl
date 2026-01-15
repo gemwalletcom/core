@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = 推薦碼必須在有效期限內�
 notification_reward_pending_title = 💎 新推薦
 notification_reward_pending_description = 有人使用了您的推薦碼。正在等待驗證。
 rewards_error_username_daily_limit_reached = 每日使用者名稱建立數量已達上限，請明日再試。
+notification_price_alert_target_title = 🎯 {$symbol} 在 {$price}
+notification_price_alert_target_description = {$change} — 您所設定的目標已達成。
