@@ -1,3 +1,4 @@
+use primitives::IpUsageType;
 use sha2::{Digest, Sha256};
 use std::time::Duration;
 
@@ -10,7 +11,7 @@ pub struct RiskScoreConfig {
     pub device_id_reuse_penalty_per_referrer: i64,
     pub device_id_reuse_max_penalty: i64,
     pub ineligible_ip_type_score: i64,
-    pub blocked_ip_types: Vec<String>,
+    pub blocked_ip_types: Vec<IpUsageType>,
     pub blocked_ip_type_penalty: i64,
     pub max_abuse_score: i64,
     pub penalty_isps: Vec<String>,
@@ -32,6 +33,15 @@ pub struct RiskScoreConfig {
     pub high_risk_country_penalty: i64,
     pub high_risk_locales: Vec<String>,
     pub high_risk_locale_penalty: i64,
+    pub high_risk_device_models: Vec<String>,
+    pub high_risk_device_model_penalty: i64,
+    pub velocity_window: Duration,
+    pub velocity_divisor: i64,
+    pub velocity_penalty: i64,
+    pub referral_per_user_daily: i64,
+    pub verified_multiplier: i64,
+    pub ip_history_penalty_per_abuser: i64,
+    pub ip_history_max_penalty: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -44,7 +54,7 @@ impl Default for RiskScoreConfig {
             device_id_reuse_penalty_per_referrer: 50,
             device_id_reuse_max_penalty: 200,
             ineligible_ip_type_score: 100,
-            blocked_ip_types: vec!["Data Center".to_string(), "Web Hosting".to_string(), "Transit".to_string()],
+            blocked_ip_types: vec![IpUsageType::DataCenter, IpUsageType::Hosting],
             blocked_ip_type_penalty: 100,
             max_abuse_score: 60,
             penalty_isps: vec![],
@@ -66,6 +76,15 @@ impl Default for RiskScoreConfig {
             high_risk_country_penalty: 15,
             high_risk_locales: vec![],
             high_risk_locale_penalty: 10,
+            high_risk_device_models: vec!["sdk_gphone".to_string(), "(?i)emulator".to_string(), "(?i)simulator".to_string()],
+            high_risk_device_model_penalty: 50,
+            velocity_window: Duration::from_secs(300),
+            velocity_divisor: 2,
+            velocity_penalty: 100,
+            referral_per_user_daily: 5,
+            verified_multiplier: 2,
+            ip_history_penalty_per_abuser: 30,
+            ip_history_max_penalty: 150,
         }
     }
 }
@@ -82,7 +101,7 @@ pub struct RiskSignalInput {
     pub device_currency: String,
     pub ip_address: String,
     pub ip_country_code: String,
-    pub ip_usage_type: String,
+    pub ip_usage_type: IpUsageType,
     pub ip_isp: String,
     pub ip_abuse_score: i64,
     pub referrer_verified: bool,
@@ -137,6 +156,12 @@ pub struct RiskScoreBreakdown {
     pub country_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub locale_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub high_risk_device_model_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub velocity_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub ip_history_score: i64,
 }
 
 fn is_zero(value: &i64) -> bool {
@@ -166,12 +191,11 @@ mod tests {
             device_currency: "USD".to_string(),
             ip_address: "192.168.1.1".to_string(),
             ip_country_code: "US".to_string(),
-            ip_usage_type: "Fixed Line ISP".to_string(),
+            ip_usage_type: IpUsageType::Isp,
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
             referrer_verified: false,
         };
-        let fingerprint = input.generate_fingerprint();
-        assert_eq!(fingerprint.len(), 64);
+        assert_eq!(input.generate_fingerprint().len(), 64);
     }
 }

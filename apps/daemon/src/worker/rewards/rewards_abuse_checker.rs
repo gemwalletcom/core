@@ -17,6 +17,11 @@ struct AbuseDetectionConfig {
     ring_penalty: i64,
     device_farming_threshold: i64,
     device_farming_penalty: i64,
+    velocity_window: std::time::Duration,
+    velocity_divisor: i64,
+    velocity_penalty: i64,
+    referral_per_user_daily: i64,
+    verified_multiplier: i64,
 }
 
 struct AbuseEvaluation {
@@ -41,7 +46,11 @@ pub struct RewardsAbuseChecker {
 impl RewardsAbuseChecker {
     pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
         let config = ConfigCacher::new(database.clone());
-        Self { database, config, stream_producer }
+        Self {
+            database,
+            config,
+            stream_producer,
+        }
     }
 
     pub async fn check(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -86,13 +95,14 @@ impl RewardsAbuseChecker {
 
         let is_verified = client.rewards().is_verified_by_username(username)?;
         let since = now().ago(config.lookback);
+        let velocity_window_secs = config.velocity_window.as_secs() as i64;
 
         let referral_count = client.rewards().count_referrals_since(username, since)?;
         let attempt_count = client.count_attempts_for_referrer(username, since)?;
         let risk_score_sum = client.sum_risk_scores_for_referrer(username, since)?;
 
-        let patterns = client.get_abuse_patterns_for_referrer(username, since)?;
-        let pattern_penalty = calculate_pattern_penalty(&patterns, config);
+        let patterns = client.get_abuse_patterns_for_referrer(username, since, velocity_window_secs)?;
+        let pattern_penalty = calculate_pattern_penalty(&patterns, config, is_verified);
 
         let abuse_score = calculate_abuse_score(risk_score_sum, attempt_count, referral_count, config) + pattern_penalty;
         let threshold = calculate_abuse_threshold(config, is_verified);
@@ -124,6 +134,7 @@ impl RewardsAbuseChecker {
             referrers_per_device = eval.patterns.max_referrers_per_device.to_string(),
             referrers_per_fingerprint = eval.patterns.max_referrers_per_fingerprint.to_string(),
             devices_per_ip = eval.patterns.max_devices_per_ip.to_string(),
+            velocity_burst = eval.patterns.signals_in_velocity_window.to_string(),
             pattern_penalty = format!("{:.0}", eval.pattern_penalty),
             abuse_threshold = format!("{:.0}", eval.threshold),
             abuse_score = format!("{:.0}", eval.abuse_score),
@@ -143,7 +154,7 @@ impl RewardsAbuseChecker {
 
         let reason = "Auto-disabled due to abuse detection";
         let comment = format!(
-            "abuse_score={:.0}, threshold={:.0}, risk_scores={}, attempts={}, referrals={}, countries/device={}, referrers/device={}, referrers/fingerprint={}, devices/ip={}",
+            "abuse_score={:.0}, threshold={:.0}, risk_scores={}, attempts={}, referrals={}, countries/device={}, referrers/device={}, referrers/fingerprint={}, devices/ip={}, velocity_burst={}",
             eval.abuse_score,
             eval.threshold,
             eval.risk_score,
@@ -152,7 +163,8 @@ impl RewardsAbuseChecker {
             eval.patterns.max_countries_per_device,
             eval.patterns.max_referrers_per_device,
             eval.patterns.max_referrers_per_fingerprint,
-            eval.patterns.max_devices_per_ip
+            eval.patterns.max_devices_per_ip,
+            eval.patterns.signals_in_velocity_window
         );
         let event_id = client.rewards().disable_rewards(&eval.username, reason, &comment)?;
 
@@ -173,6 +185,11 @@ impl RewardsAbuseChecker {
             ring_penalty: self.config.get_i64(ConfigKey::ReferralAbuseRingPenalty)?,
             device_farming_threshold: self.config.get_i64(ConfigKey::ReferralAbuseDeviceFarmingThreshold)?,
             device_farming_penalty: self.config.get_i64(ConfigKey::ReferralAbuseDeviceFarmingPenalty)?,
+            velocity_window: self.config.get_duration(ConfigKey::ReferralAbuseVelocityWindow)?,
+            velocity_divisor: self.config.get_i64(ConfigKey::ReferralAbuseVelocityDivisor)?,
+            velocity_penalty: self.config.get_i64(ConfigKey::ReferralAbuseVelocityPenaltyPerSignal)?,
+            referral_per_user_daily: self.config.get_i64(ConfigKey::ReferralPerUserDaily)?,
+            verified_multiplier: self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?,
         })
     }
 }
@@ -192,7 +209,7 @@ fn calculate_abuse_threshold(config: &AbuseDetectionConfig, is_verified: bool) -
     }
 }
 
-fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionConfig) -> f64 {
+fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionConfig, is_verified: bool) -> f64 {
     let mut penalty = 0.0;
 
     if patterns.max_countries_per_device >= config.country_rotation_threshold {
@@ -207,6 +224,14 @@ fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionCo
 
     if patterns.max_devices_per_ip >= config.device_farming_threshold {
         penalty += config.device_farming_penalty as f64;
+    }
+
+    let multiplier = if is_verified { config.verified_multiplier } else { 1 };
+    let daily_limit = config.referral_per_user_daily * multiplier;
+    let velocity_threshold = daily_limit / config.velocity_divisor.max(1);
+    if patterns.signals_in_velocity_window >= velocity_threshold {
+        let over_threshold = patterns.signals_in_velocity_window - velocity_threshold + 1;
+        penalty += (over_threshold * config.velocity_penalty) as f64;
     }
 
     penalty
@@ -230,6 +255,11 @@ mod tests {
             ring_penalty: 80,
             device_farming_threshold: 5,
             device_farming_penalty: 10,
+            velocity_window: std::time::Duration::from_secs(300),
+            velocity_divisor: 2,
+            velocity_penalty: 100,
+            referral_per_user_daily: 5,
+            verified_multiplier: 2,
         }
     }
 
@@ -257,51 +287,39 @@ mod tests {
             max_referrers_per_device: 1,
             max_referrers_per_fingerprint: 1,
             max_devices_per_ip: 2,
+            signals_in_velocity_window: 0,
         };
 
-        assert_eq!(calculate_pattern_penalty(&base, &config), 0.0);
-        assert_eq!(
-            calculate_pattern_penalty(
-                &AbusePatterns {
-                    max_countries_per_device: 2,
-                    ..base
-                },
-                &config
-            ),
-            50.0
-        );
-        assert_eq!(
-            calculate_pattern_penalty(
-                &AbusePatterns {
-                    max_referrers_per_device: 2,
-                    ..base
-                },
-                &config
-            ),
-            80.0
-        );
-        assert_eq!(
-            calculate_pattern_penalty(
-                &AbusePatterns {
-                    max_referrers_per_fingerprint: 2,
-                    ..base
-                },
-                &config
-            ),
-            80.0
-        );
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_devices_per_ip: 5, ..base }, &config), 10.0);
+        assert_eq!(calculate_pattern_penalty(&base, &config, false), 0.0);
+        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_countries_per_device: 2, ..base }, &config, false), 50.0);
+        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_referrers_per_device: 2, ..base }, &config, false), 80.0);
+        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_referrers_per_fingerprint: 2, ..base }, &config, false), 80.0);
+        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_devices_per_ip: 5, ..base }, &config, false), 10.0);
+
+        // Normal user: daily_limit=5, divisor=2, velocity_threshold=2
+        // 1 signal doesn't trigger, 2 signals trigger: (2-2+1)*100 = 100
+        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 1, ..base }, &config, false), 0.0);
+        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 2, ..base }, &config, false), 100.0);
+
+        // Verified user: daily_limit=10, divisor=2, velocity_threshold=5
+        // 4 signals don't trigger, 5 signals trigger: (5-5+1)*100 = 100
+        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 4, ..base }, &config, true), 0.0);
+        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 5, ..base }, &config, true), 100.0);
+
+        // Combined: 50 + 80 + 10 + (5-2+1)*100 = 540
         assert_eq!(
             calculate_pattern_penalty(
                 &AbusePatterns {
                     max_countries_per_device: 5,
                     max_referrers_per_device: 4,
                     max_referrers_per_fingerprint: 3,
-                    max_devices_per_ip: 10
+                    max_devices_per_ip: 10,
+                    signals_in_velocity_window: 5,
                 },
-                &config
+                &config,
+                false
             ),
-            140.0
+            540.0
         );
     }
 }

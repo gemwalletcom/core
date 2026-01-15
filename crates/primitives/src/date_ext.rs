@@ -19,6 +19,7 @@ pub trait NaiveDateTimeExt {
     fn is_within_days(&self, days: i64) -> bool;
     fn is_older_than_days(&self, days: i64) -> bool;
     fn days_ago(&self, days: i64) -> NaiveDateTime;
+    fn hours_ago(&self, hours: i64) -> NaiveDateTime;
     fn ago(&self, duration: StdDuration) -> NaiveDateTime;
     fn is_within_duration(&self, duration: StdDuration) -> bool;
 }
@@ -39,6 +40,10 @@ impl NaiveDateTimeExt for NaiveDateTime {
 
     fn days_ago(&self, days: i64) -> NaiveDateTime {
         *self - Duration::days(days)
+    }
+
+    fn hours_ago(&self, hours: i64) -> NaiveDateTime {
+        *self - Duration::hours(hours)
     }
 
     fn ago(&self, duration: StdDuration) -> NaiveDateTime {

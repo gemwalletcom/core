@@ -19,16 +19,18 @@ pub use self::database::{
     rewards_redemptions::RedemptionUpdate,
 };
 pub use self::error::{DatabaseError, ReferralValidationError};
-pub use self::models::RewardRedemptionOptionRow;
+pub use self::models::{NewNotificationRow, NewWalletRow, RewardRedemptionOptionRow};
+pub use self::sql_types::{NotificationType, WalletSource, WalletType};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
     chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository, devices_repository::DevicesRepository,
     fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
-    parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository,
-    prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
-    rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, risk_signals_repository::RiskSignalsRepository,
-    scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository,
-    tag_repository::TagRepository, transactions_repository::TransactionsRepository,
+    notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
+    price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
+    releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
+    risk_signals_repository::RiskSignalsRepository, scan_addresses_repository::ScanAddressesRepository,
+    subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository, tag_repository::TagRepository,
+    transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
 };
 pub use diesel::OptionalExtension;
 
@@ -86,6 +88,10 @@ impl Database {
         self.client()
     }
 
+    pub fn notifications(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
+        self.client()
+    }
+
     pub fn parser_state(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
@@ -131,6 +137,10 @@ impl Database {
     }
 
     pub fn transactions(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
+        self.client()
+    }
+
+    pub fn wallets(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 }

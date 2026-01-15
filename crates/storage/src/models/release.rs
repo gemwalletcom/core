@@ -15,7 +15,7 @@ pub struct ReleaseRow {
 impl ReleaseRow {
     pub fn as_primitive(&self) -> Release {
         Release {
-            store: self.platform_store.0.clone(),
+            store: self.platform_store.0,
             version: self.version.clone(),
             upgrade_required: self.upgrade_required,
         }

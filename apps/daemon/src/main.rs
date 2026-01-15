@@ -54,15 +54,15 @@ async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
         WorkerService::Alerter => worker::alerter::jobs(settings).await.unwrap(),
         WorkerService::Pricer => worker::pricer::jobs(settings).await.unwrap(),
         WorkerService::PricesDex => worker::prices_dex::jobs(settings).await,
-        WorkerService::Fiat => worker::fiat::jobs(settings).await,
-        WorkerService::Assets => worker::assets::jobs(settings).await,
-        WorkerService::Version => worker::version::jobs(settings).await,
-        WorkerService::Transaction => worker::transaction::jobs(settings).await,
-        WorkerService::Device => worker::device::jobs(settings).await,
+        WorkerService::Fiat => worker::fiat::jobs(settings).await.unwrap(),
+        WorkerService::Assets => worker::assets::jobs(settings).await.unwrap(),
+        WorkerService::Version => worker::version::jobs(settings).await.unwrap(),
+        WorkerService::Transaction => worker::transaction::jobs(settings).await.unwrap(),
+        WorkerService::Device => worker::device::jobs(settings).await.unwrap(),
         WorkerService::Search => worker::search::jobs(settings).await.unwrap(),
         WorkerService::Nft => worker::nft::jobs(settings).await,
-        WorkerService::Scan => worker::scan::jobs(settings).await,
-        WorkerService::Rewards => worker::rewards::jobs(settings).await,
+        WorkerService::Scan => worker::scan::jobs(settings).await.unwrap(),
+        WorkerService::Rewards => worker::rewards::jobs(settings).await.unwrap(),
     };
     let _ = futures::future::join_all(services).await;
 }

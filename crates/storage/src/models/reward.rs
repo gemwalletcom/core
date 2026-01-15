@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use primitives::rewards::{RewardRedemption, RewardRedemptionOption};
 use primitives::{Asset, RewardEvent};
 
-use crate::sql_types::{RedemptionStatus, RewardEventType, RewardRedemptionType, RewardStatus};
+use crate::sql_types::{IpUsageType, RedemptionStatus, RewardEventType, RewardRedemptionType, RewardStatus};
 
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
@@ -35,6 +35,23 @@ pub struct NewRewardsRow {
     pub is_swap_complete: bool,
     pub comment: Option<String>,
     pub disable_reason: Option<String>,
+}
+
+impl NewRewardsRow {
+    pub fn new(username: String, device_id: i32) -> Self {
+        Self {
+            username,
+            status: RewardStatus::Unverified,
+            level: None,
+            points: 0,
+            referrer_username: None,
+            referral_count: 0,
+            device_id,
+            is_swap_complete: false,
+            comment: None,
+            disable_reason: None,
+        }
+    }
 }
 
 #[derive(Debug, Queryable, Selectable, Clone)]
@@ -73,8 +90,9 @@ pub struct RewardEventRow {
 
 impl RewardEventRow {
     pub fn as_primitive(&self) -> RewardEvent {
-        let event = self.event_type.0.clone();
+        let event = self.event_type.0;
         RewardEvent {
+            username: self.username.clone(),
             points: event.points(),
             event,
             created_at: Utc.from_utc_datetime(&self.created_at),
@@ -174,7 +192,7 @@ impl RedemptionOptionFull {
 #[diesel(table_name = crate::schema::rewards_referral_attempts)]
 pub struct ReferralAttemptRow {
     pub referrer_username: String,
-    pub referred_address: String,
+    pub wallet_id: i32,
     pub device_id: i32,
     pub risk_signal_id: Option<i32>,
     pub reason: String,
@@ -196,7 +214,7 @@ pub struct RiskSignalRow {
     pub device_currency: String,
     pub ip_address: String,
     pub ip_country_code: String,
-    pub ip_usage_type: String,
+    pub ip_usage_type: IpUsageType,
     pub ip_isp: String,
     pub ip_abuse_score: i32,
     pub risk_score: i32,
@@ -218,7 +236,7 @@ pub struct NewRiskSignalRow {
     pub device_currency: String,
     pub ip_address: String,
     pub ip_country_code: String,
-    pub ip_usage_type: String,
+    pub ip_usage_type: IpUsageType,
     pub ip_isp: String,
     pub ip_abuse_score: i32,
     pub risk_score: i32,

@@ -1,11 +1,11 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::{Asset, AssetTag, Chain, ConfigKey, FiatProviderName, PlatformStore as PrimitivePlatformStore, Subscription};
-use storage::sql_types::{Platform, PlatformStore};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
 use storage::models::{ConfigRow, FiatRateRow, UpdateDeviceRow};
+use storage::sql_types::{Platform, PlatformStore};
 use storage::{
     AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, PricesDexRepository, ReleasesRepository,
     SubscriptionsRepository, TagRepository,

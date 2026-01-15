@@ -7,13 +7,14 @@ use serde::{Deserialize, Serialize};
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct UsernameRow {
     pub username: String,
-    pub address: String,
+    pub wallet_id: i32,
     pub status: UsernameStatus,
 }
 
 impl UsernameRow {
     pub fn has_custom_username(&self) -> bool {
-        !self.username.eq_ignore_ascii_case(&self.address)
+        let len = self.username.len();
+        (4..=16).contains(&len) && self.username.chars().all(|c| c.is_ascii_alphanumeric())
     }
 
     pub fn is_verified(&self) -> bool {
@@ -26,6 +27,6 @@ impl UsernameRow {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewUsernameRow {
     pub username: String,
-    pub address: String,
+    pub wallet_id: i32,
     pub status: UsernameStatus,
 }

@@ -19,6 +19,6 @@ gem_client = { path = "../../crates/gem_client" }
 metrics = { path = "../../crates/metrics" }
 settings_chain = { path = "../../crates/settings_chain" }
 
-regex = { version = "1.12.1" }
+regex = { workspace = true }
 moka = { version = "0.12.11", features = ["future"] }
 url = { workspace = true }

@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = Les codes de parrainage doivent êt
 notification_reward_pending_title = 💎 Nouvelle recommandation
 notification_reward_pending_description = Quelqu'un a utilisé votre code de parrainage. Vérification en cours.
 rewards_error_username_daily_limit_reached = La limite quotidienne de création de noms d'utilisateur a été atteinte. Veuillez réessayer demain.
+notification_price_alert_target_title = 🎯 {$symbol} à {$price}
+notification_price_alert_target_description = {$change} — L’objectif que vous vous étiez fixé a été atteint.

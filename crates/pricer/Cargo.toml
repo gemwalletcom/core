@@ -12,3 +12,4 @@ number_formatter = { path = "../number_formatter" }
 storage = { path = "../storage" }
 localizer = { path = "../../crates/localizer" }
 cacher = { path = "../../crates/cacher" }
+gem_tracing = { path = "../tracing" }

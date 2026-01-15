@@ -275,7 +275,13 @@ sentry:
 
 rewards:
   wallets: {}
+
+ip:
   abuseipdb:
     url: https://api.abuseipdb.com
+    key:
+      secret: ""
+  ipapi:
+    url: https://api.ipapi.is
     key:
       secret: ""

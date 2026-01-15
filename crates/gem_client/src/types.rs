@@ -1,4 +1,5 @@
 use serde::de::DeserializeOwned;
+use serde_json::Value;
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -13,6 +14,20 @@ pub enum ClientError {
     Timeout,
     Http { status: u16, len: usize },
     Serialization(String),
+}
+
+pub fn decode_json_byte_array(values: Vec<Value>) -> Result<Vec<u8>, ClientError> {
+    let mut bytes = Vec::with_capacity(values.len());
+    for value in values {
+        let byte = value
+            .as_u64()
+            .ok_or_else(|| ClientError::Serialization("Expected byte array for binary content-type".to_string()))?;
+        if byte > u8::MAX as u64 {
+            return Err(ClientError::Serialization("Binary body byte out of range".to_string()));
+        }
+        bytes.push(byte as u8);
+    }
+    Ok(bytes)
 }
 
 impl fmt::Display for ClientError {

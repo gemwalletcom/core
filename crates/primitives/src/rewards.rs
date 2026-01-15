@@ -36,7 +36,9 @@ impl RewardRedemptionType {
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
+#[derive(Default)]
 pub enum RewardStatus {
+    #[default]
     Unverified,
     Pending,
     Verified,
@@ -51,8 +53,8 @@ impl RewardStatus {
 
     pub fn is_verified(&self) -> bool {
         match self {
-            Self::Unverified | Self::Verified | Self::Trusted => true,
-            Self::Pending | Self::Disabled => false,
+            Self::Verified | Self::Trusted => true,
+            Self::Unverified | Self::Pending | Self::Disabled => false,
         }
     }
 
@@ -64,11 +66,6 @@ impl RewardStatus {
     }
 }
 
-impl Default for RewardStatus {
-    fn default() -> Self {
-        Self::Unverified
-    }
-}
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
@@ -132,6 +129,9 @@ pub struct Rewards {
     pub is_enabled: bool,
     #[typeshare(skip)]
     pub verified: bool,
+    #[typeshare(skip)]
+    #[serde(skip)]
+    pub created_at: chrono::NaiveDateTime,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
     pub referral_allowance: ReferralAllowance,
@@ -166,6 +166,9 @@ pub struct ReferralCode {
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct RewardEvent {
+    #[typeshare(skip)]
+    #[serde(skip)]
+    pub username: String,
     pub event: RewardEventType,
     pub points: i32,
     pub created_at: DateTime<Utc>,
@@ -182,8 +185,8 @@ pub struct RewardRedemption {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumString, AsRefStr, PartialEq)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumString, EnumIter, AsRefStr, PartialEq)]
+#[typeshare(swift = "Equatable, Hashable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
 pub enum RedemptionStatus {

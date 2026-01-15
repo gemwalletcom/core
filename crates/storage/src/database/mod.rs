@@ -9,6 +9,7 @@ pub mod devices;
 pub mod fiat;
 pub mod migrations;
 pub mod nft;
+pub mod notifications;
 pub mod parser_state;
 pub mod perpetuals;
 pub mod price_alerts;
@@ -23,6 +24,7 @@ pub mod support;
 pub mod tag;
 pub mod transactions;
 pub mod usernames;
+pub mod wallets;
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
@@ -32,11 +34,15 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 pub type PgPool = Pool<ConnectionManager<PgConnection>>;
 pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
-use crate::{
-    AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository,
-    FiatRepository, MigrationsRepository, NftRepository, ParserStateRepository, PerpetualsRepository, PriceAlertsRepository,
-    PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRedemptionsRepository, RewardsRepository, ScanAddressesRepository,
-    SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
+use crate::repositories::{
+    assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
+    chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository, devices_repository::DevicesRepository,
+    fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
+    notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
+    price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
+    releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
+    scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository,
+    tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
 };
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
@@ -101,6 +107,10 @@ impl DatabaseClient {
         self
     }
 
+    pub fn notifications(&mut self) -> &mut dyn NotificationsRepository {
+        self
+    }
+
     pub fn parser_state(&mut self) -> &mut dyn ParserStateRepository {
         self
     }
@@ -146,6 +156,10 @@ impl DatabaseClient {
     }
 
     pub fn transactions(&mut self) -> &mut dyn TransactionsRepository {
+        self
+    }
+
+    pub fn wallets(&mut self) -> &mut dyn WalletsRepository {
         self
     }
 }

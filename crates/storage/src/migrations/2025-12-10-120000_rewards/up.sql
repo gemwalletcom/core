@@ -1,10 +1,11 @@
 CREATE TYPE reward_status AS ENUM ('unverified', 'pending', 'verified', 'trusted', 'disabled');
 CREATE TYPE reward_event_type AS ENUM ('createUsername', 'invitePending', 'inviteNew', 'inviteExisting', 'joined', 'disabled');
 CREATE TYPE username_status AS ENUM ('unverified', 'verified');
+CREATE TYPE ip_usage_type AS ENUM ('dataCenter', 'hosting', 'isp', 'mobile', 'business', 'education', 'government', 'unknown');
 
 CREATE TABLE usernames (
     username VARCHAR(64) PRIMARY KEY,
-    address VARCHAR(256) NOT NULL UNIQUE,
+    wallet_id INTEGER NOT NULL UNIQUE REFERENCES wallets(id) ON DELETE CASCADE,
     status username_status NOT NULL DEFAULT 'unverified',
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
@@ -42,7 +43,7 @@ CREATE TABLE rewards_risk_signals (
     device_currency VARCHAR(8) NOT NULL,
     ip_address VARCHAR(45) NOT NULL,
     ip_country_code VARCHAR(2) NOT NULL,
-    ip_usage_type VARCHAR(64) NOT NULL,
+    ip_usage_type ip_usage_type NOT NULL,
     ip_isp VARCHAR(128) NOT NULL,
     ip_abuse_score INT NOT NULL,
     risk_score INT NOT NULL,
@@ -86,7 +87,7 @@ SELECT diesel_manage_updated_at('rewards_events');
 CREATE TABLE rewards_referral_attempts (
     id SERIAL PRIMARY KEY,
     referrer_username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON UPDATE CASCADE ON DELETE CASCADE,
-    referred_address VARCHAR(256) NOT NULL,
+    wallet_id INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
     device_id INTEGER NOT NULL REFERENCES devices(id),
     risk_signal_id INT NULL REFERENCES rewards_risk_signals(id) ON DELETE SET NULL,
     reason VARCHAR(256) NOT NULL,

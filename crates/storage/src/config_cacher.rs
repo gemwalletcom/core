@@ -3,6 +3,7 @@ use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
 use primitives::ConfigKey;
+use serde::de::DeserializeOwned;
 
 use crate::repositories::config_repository::ConfigRepository;
 use crate::{Database, DatabaseError};
@@ -55,7 +56,11 @@ impl ConfigCacher {
         if let Some(value) = self.get_cached(&key) {
             return Ok(value);
         }
-        let value = self.database.client().map_err(|e| DatabaseError::Error(e.to_string()))?.get_config(key.clone())?;
+        let value = self
+            .database
+            .client()
+            .map_err(|e| DatabaseError::Error(e.to_string()))?
+            .get_config(key.clone())?;
         self.set_cached(key, value.clone());
         Ok(value)
     }
@@ -82,6 +87,10 @@ impl ConfigCacher {
     }
 
     pub fn get_vec_string(&self, key: ConfigKey) -> Result<Vec<String>, DatabaseError> {
+        self.get_vec(key)
+    }
+
+    pub fn get_vec<T: DeserializeOwned>(&self, key: ConfigKey) -> Result<Vec<T>, DatabaseError> {
         Ok(serde_json::from_str(&self.get(key)?)?)
     }
 }

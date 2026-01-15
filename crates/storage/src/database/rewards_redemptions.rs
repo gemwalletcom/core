@@ -1,6 +1,6 @@
+use crate::DatabaseClient;
 use crate::models::{AssetRow, NewRewardRedemptionRow, RedemptionOptionFull, RewardRedemptionOptionRow, RewardRedemptionRow};
 use crate::sql_types::{RedemptionStatus, RewardRedemptionType};
-use crate::DatabaseClient;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

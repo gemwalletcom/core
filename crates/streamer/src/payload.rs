@@ -1,5 +1,6 @@
 use primitives::{
-    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, PriceData, Transaction,
+    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, PriceData, Subscription,
+    Transaction,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -179,6 +180,18 @@ impl ChainAddressPayload {
 impl fmt::Display for ChainAddressPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "chain: {}, address: {}", self.value.chain, self.value.address)
+    }
+}
+
+impl From<Subscription> for ChainAddressPayload {
+    fn from(subscription: Subscription) -> Self {
+        Self::new(ChainAddress::new(subscription.chain, subscription.address))
+    }
+}
+
+impl From<ChainAddress> for ChainAddressPayload {
+    fn from(chain_address: ChainAddress) -> Self {
+        Self::new(chain_address)
     }
 }
 

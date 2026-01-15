@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = Sevk kodları şu süre içinde uyg
 notification_reward_pending_title = 💎 Yeni Referans
 notification_reward_pending_description = Birisi sizin referans kodunuzu kullandı. Doğrulama bekleniyor.
 rewards_error_username_daily_limit_reached = Günlük kullanıcı adı oluşturma limitine ulaşıldı. Lütfen yarın tekrar deneyin.
+notification_price_alert_target_title = 🎯 {$symbol} de {$price}
+notification_price_alert_target_description = {$change} — the target you set has been reached.

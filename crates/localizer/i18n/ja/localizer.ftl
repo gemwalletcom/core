@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = 紹介コードは、 {$value} ユ�
 notification_reward_pending_title = 💎 新規紹介
 notification_reward_pending_description = 誰かがあなたの紹介コードを使用しました。確認待ちです。
 rewards_error_username_daily_limit_reached = 1日のユーザー名作成数の上限に達しました。明日もう一度お試しください。
+notification_price_alert_target_title = 🎯 {$symbol} で {$price}
+notification_price_alert_target_description = {$change} — 設定した目標が達成されました。

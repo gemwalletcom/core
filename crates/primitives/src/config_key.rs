@@ -11,8 +11,10 @@ pub enum ConfigKey {
     ReferralPerCountryDaily,
     ReferralPerUserDaily,
     ReferralPerUserWeekly,
-    ReferralPerVerifiedUserDaily,
-    ReferralPerVerifiedUserWeekly,
+    ReferralPerUserHourly,
+    ReferralVerifiedMultiplier,
+    ReferralTrustedMultiplier,
+    ReferralCooldown,
     ReferralUseDailyLimit,
     ReferralIneligibleCountries,
     ReferralVerificationDelay,
@@ -28,6 +30,8 @@ pub enum ConfigKey {
     // Redemption
     RedemptionPerUserDaily,
     RedemptionPerUserWeekly,
+    RedemptionMinAccountAge,
+    RedemptionCooldownAfterReferral,
 
     // Referral IP
     ReferralIpConfidenceScoreThreshold,
@@ -63,6 +67,10 @@ pub enum ConfigKey {
     ReferralRiskScoreHighRiskCountryPenalty,
     ReferralRiskScoreHighRiskLocales,
     ReferralRiskScoreHighRiskLocalePenalty,
+    ReferralRiskScoreHighRiskDeviceModels,
+    ReferralRiskScoreHighRiskDeviceModelPenalty,
+    ReferralRiskScoreIpHistoryPenaltyPerAbuser,
+    ReferralRiskScoreIpHistoryMaxPenalty,
 
     // Referral Abuse Detection
     ReferralAbuseDisableThreshold,
@@ -78,6 +86,9 @@ pub enum ConfigKey {
     ReferralAbuseRingPenalty,
     ReferralAbuseDeviceFarmingThreshold,
     ReferralAbuseDeviceFarmingPenalty,
+    ReferralAbuseVelocityWindow,
+    ReferralAbuseVelocityDivisor,
+    ReferralAbuseVelocityPenaltyPerSignal,
 
     // Fiat
     FiatValidateSubscription,
@@ -86,13 +97,56 @@ pub enum ConfigKey {
     TransactionsMinAmountUsd,
 
     // Alerter
-    AlerterPriceIncreasePercent,
-    AlerterPriceDecreasePercent,
     AlerterInterval,
+    AlerterNotificationCooldown,
+    AlerterPriceChangeThreshold,
+    AlerterRankDivisor,
+    AlerterMilestones,
 
-    // Pricer
-    PricerTimer,
-    PricerOutdated,
+    // Price
+    PriceTimerTopMarketCap,
+    PriceTimerHighMarketCap,
+    PriceTimerLowMarketCap,
+    PriceTimerFiatRates,
+    PriceTimerChartsHourly,
+    PriceTimerChartsDaily,
+    PriceTimerMarkets,
+    PriceTimerCleanOutdated,
+    PriceTimerCleanupCharts,
+    PriceOutdated,
+
+    // Assets
+    AssetsTimerUpdateExisting,
+    AssetsTimerUpdateAll,
+    AssetsTimerUpdateNative,
+    AssetsTimerUpdateTrending,
+    AssetsTimerUpdateRecentlyAdded,
+    AssetsTimerUpdateSuspicious,
+    AssetsTimerUpdateStakingApy,
+    AssetsTimerUpdatePerpetuals,
+
+    // Fiat
+    FiatTimerUpdateAssets,
+    FiatTimerUpdateProviderCountries,
+    FiatTimerUpdateBuyableAssets,
+    FiatTimerUpdateTrending,
+
+    // Scan
+    ScanTimerUpdateValidators,
+    ScanTimerUpdateValidatorsStatic,
+
+    // Rewards
+    RewardsTimerAbuseChecker,
+
+    // Device
+    DeviceTimerUpdater,
+    DeviceTimerInactiveObserver,
+
+    // Version
+    VersionTimerUpdateStoreVersions,
+
+    // Transaction
+    TransactionTimerUpdater,
 
     // Search
     SearchAssetsUpdateInterval,
@@ -107,14 +161,16 @@ impl ConfigKey {
 
     pub fn default_value(&self) -> &'static str {
         match self {
-            Self::ReferralPerDeviceDaily => "2",
+            Self::ReferralPerDeviceDaily => "1",
             Self::ReferralPerIpDaily => "3",
             Self::ReferralPerIpWeekly => "10",
             Self::ReferralPerCountryDaily => "100",
             Self::ReferralPerUserDaily => "5",
             Self::ReferralPerUserWeekly => "15",
-            Self::ReferralPerVerifiedUserDaily => "10",
-            Self::ReferralPerVerifiedUserWeekly => "30",
+            Self::ReferralPerUserHourly => "2",
+            Self::ReferralVerifiedMultiplier => "2",
+            Self::ReferralTrustedMultiplier => "3",
+            Self::ReferralCooldown => "1m",
             Self::ReferralUseDailyLimit => "1000",
             Self::ReferralIneligibleCountries => "[]",
             Self::ReferralVerificationDelay => "24h",
@@ -126,8 +182,10 @@ impl ConfigKey {
             Self::UsernameCreationPerCountryDailyLimit => "100",
             Self::RedemptionPerUserDaily => "1",
             Self::RedemptionPerUserWeekly => "3",
+            Self::RedemptionMinAccountAge => "1h",
+            Self::RedemptionCooldownAfterReferral => "1m",
             Self::ReferralIpConfidenceScoreThreshold => "10",
-            Self::ReferralBlockedIpTypes => r#"["Data Center", "Web Hosting", "Transit"]"#,
+            Self::ReferralBlockedIpTypes => r#"["dataCenter", "hosting"]"#,
             Self::ReferralBlockedIpTypePenalty => "100",
             Self::ReferralMaxAbuseScore => "60",
             Self::ReferralPenaltyIsps => r#"[]"#,
@@ -157,6 +215,10 @@ impl ConfigKey {
             Self::ReferralRiskScoreHighRiskCountryPenalty => "15",
             Self::ReferralRiskScoreHighRiskLocales => "[]",
             Self::ReferralRiskScoreHighRiskLocalePenalty => "10",
+            Self::ReferralRiskScoreHighRiskDeviceModels => r#"["sdk_gphone", "(?i)emulator", "(?i)simulator"]"#,
+            Self::ReferralRiskScoreHighRiskDeviceModelPenalty => "50",
+            Self::ReferralRiskScoreIpHistoryPenaltyPerAbuser => "30",
+            Self::ReferralRiskScoreIpHistoryMaxPenalty => "150",
             Self::ReferralAbuseDisableThreshold => "200",
             Self::ReferralAbuseAttemptPenalty => "15",
             Self::ReferralAbuseVerifiedThresholdMultiplier => "2",
@@ -169,13 +231,45 @@ impl ConfigKey {
             Self::ReferralAbuseRingPenalty => "80",
             Self::ReferralAbuseDeviceFarmingThreshold => "5",
             Self::ReferralAbuseDeviceFarmingPenalty => "10",
+            Self::ReferralAbuseVelocityWindow => "5m",
+            Self::ReferralAbuseVelocityDivisor => "2",
+            Self::ReferralAbuseVelocityPenaltyPerSignal => "100",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
-            Self::AlerterPriceIncreasePercent => "8.0",
-            Self::AlerterPriceDecreasePercent => "10.0",
             Self::AlerterInterval => "60s",
-            Self::PricerTimer => "60s",
-            Self::PricerOutdated => "7d",
+            Self::AlerterNotificationCooldown => "24h",
+            Self::AlerterPriceChangeThreshold => "5.0",
+            Self::AlerterRankDivisor => "5.0",
+            Self::AlerterMilestones => "[1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000]",
+            Self::PriceTimerTopMarketCap => "60s",
+            Self::PriceTimerHighMarketCap => "3m",
+            Self::PriceTimerLowMarketCap => "10m",
+            Self::PriceTimerFiatRates => "6m",
+            Self::PriceTimerChartsHourly => "60s",
+            Self::PriceTimerChartsDaily => "6m",
+            Self::PriceTimerMarkets => "1h",
+            Self::PriceTimerCleanOutdated => "1d",
+            Self::PriceTimerCleanupCharts => "1d",
+            Self::PriceOutdated => "7d",
+            Self::AssetsTimerUpdateExisting => "1d",
+            Self::AssetsTimerUpdateAll => "1d",
+            Self::AssetsTimerUpdateNative => "1d",
+            Self::AssetsTimerUpdateTrending => "1h",
+            Self::AssetsTimerUpdateRecentlyAdded => "1h",
+            Self::AssetsTimerUpdateSuspicious => "1h",
+            Self::AssetsTimerUpdateStakingApy => "1d",
+            Self::AssetsTimerUpdatePerpetuals => "1h",
+            Self::FiatTimerUpdateAssets => "1h",
+            Self::FiatTimerUpdateProviderCountries => "1h",
+            Self::FiatTimerUpdateBuyableAssets => "1h",
+            Self::FiatTimerUpdateTrending => "1h",
+            Self::ScanTimerUpdateValidators => "1d",
+            Self::ScanTimerUpdateValidatorsStatic => "1h",
+            Self::RewardsTimerAbuseChecker => "60s",
+            Self::DeviceTimerUpdater => "1d",
+            Self::DeviceTimerInactiveObserver => "1d",
+            Self::VersionTimerUpdateStoreVersions => "12h",
+            Self::TransactionTimerUpdater => "1d",
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",
             Self::SearchNftsUpdateInterval => "30m",

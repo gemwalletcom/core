@@ -1,7 +1,8 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::str::FromStr;
 
-use gem_client::Client;
+use gem_client::{Client, ContentType, CONTENT_TYPE};
 use num_bigint::BigUint;
 use primitives::chain::Chain;
 use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
@@ -62,11 +63,17 @@ impl<C: Client> AptosClient<C> {
         Ok(self.client.get(&format!("/v1/accounts/{}", address)).await?)
     }
 
-    pub async fn submit_transaction(&self, data: &str) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
-        let json_value: serde_json::Value = serde_json::from_str(data)?;
+    pub async fn submit_transaction(&self, bcs_bytes: Vec<u8>) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
+        if bcs_bytes.is_empty() {
+            return Err(Box::new(std::io::Error::other("Empty Aptos BCS payload")));
+        }
+        let headers = HashMap::from([(
+            CONTENT_TYPE.to_string(),
+            ContentType::ApplicationAptosBcs.as_str().to_string(),
+        )]);
         let response = self
             .client
-            .post::<serde_json::Value, TransactionResponse>("/v1/transactions", &json_value, None)
+            .post::<Vec<u8>, TransactionResponse>("/v1/transactions", &bcs_bytes, Some(headers))
             .await?;
 
         if let Some(message) = &response.message {

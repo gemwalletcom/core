@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = 추천 코드는 반드시 다음 �
 notification_reward_pending_title = 💎 신규 추천
 notification_reward_pending_description = 누군가 당신의 추천 코드를 사용했습니다. 확인 중입니다.
 rewards_error_username_daily_limit_reached = 일일 사용자 이름 생성 한도에 도달했습니다. 내일 다시 시도해 주세요.
+notification_price_alert_target_title = 🎯 {$symbol} ~에 {$price}
+notification_price_alert_target_description = {$change} — 설정하신 목표를 달성했습니다.

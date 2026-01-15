@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = יש להחיל קודי הפניה
 notification_reward_pending_title = 💎 הפניה חדשה
 notification_reward_pending_description = מישהו השתמש בקוד ההפניה שלך. ממתין לאימות.
 rewards_error_username_daily_limit_reached = הגעת למגבלת יצירת שמות משתמש יומית. אנא נסה שוב מחר.
+notification_price_alert_target_title = 🎯 {$symbol} בְּ- {$price}
+notification_price_alert_target_description = {$change} — the target you set has been reached.

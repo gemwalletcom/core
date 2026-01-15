@@ -167,6 +167,10 @@ build-android: bindgen-kotlin
     rm -rf ~/.m2/repository/com/gemwallet/gemstone/gemstone
     cd android && touch local.properties && ./gradlew publishDebugPublicationToMavenLocal
 
-publish-android:
+publish-android-gpr:
     #!/usr/bin/env bash
     cd android && touch local.properties && ./gradlew publishReleasePublicationToGPRRepository
+
+publish-android-maven:
+    #!/usr/bin/env bash
+    cd android && touch local.properties && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
