@@ -23,7 +23,7 @@ impl NotificationRow {
             notification_type: self.notification_type.0.clone(),
             is_read: self.is_read,
             metadata: self.metadata.clone(),
-            created_at: self.created_at,
+            created_at: self.created_at.and_utc(),
         }
     }
 }

@@ -72,7 +72,15 @@ jobs:
           just bindgen-kotlin
 
       - name: Publish to Github Packages
-        run: just publish-android
+        run: just publish-android-gpr
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Maven Central
+        run: just publish-android-maven
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          MVN_SIGNING_KEY: ${{ secrets.MVN_SIGNING_KEY }}
+          MVN_SIGNING_PASSPHRASE: ${{ secrets.MVN_SIGNING_PASSPHRASE }}

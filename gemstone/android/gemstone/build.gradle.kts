@@ -1,5 +1,11 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+fun isSigningEnabled(): Boolean {
+    val signingKey = System.getenv("MVN_SIGNING_KEY")
+    val signingPassphrase = System.getenv("MVN_SIGNING_PASSPHRASE")
+    return !signingKey.isNullOrBlank() && !signingPassphrase.isNullOrBlank()
+}
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
@@ -107,9 +113,11 @@ afterEvaluate {
         }
     }
 
-    signing {
-        useInMemoryPgpKeys(System.getenv("MVN_SIGNING_KEY"), System.getenv("MVN_SIGNING_PASSPHRASE"))
-        sign(publishing.publications["release"])
+    if (isSigningEnabled()) {
+        signing {
+            useInMemoryPgpKeys(System.getenv("MVN_SIGNING_KEY"), System.getenv("MVN_SIGNING_PASSPHRASE"))
+            sign(publishing.publications["release"])
+        }
     }
 }
 

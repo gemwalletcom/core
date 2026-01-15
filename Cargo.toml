@@ -107,7 +107,7 @@ sui-types = { package = "sui-sdk-types", version = "0.2.1", features = [
 ] }
 k256 = { version = "0.13.4", features = ["ecdsa", "sha256"] }
 
-uniffi = { version = "0.30.0" }
+uniffi = { version = "0.31.0" }
 regex = { version = "1.12.2" }
 
 alloy-primitives = { version = "1.5.2", features = ["k256"] }
