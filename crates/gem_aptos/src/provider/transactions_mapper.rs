@@ -11,6 +11,16 @@ use std::error::Error;
 
 const PANORA_SWAP_EVENT: &str = "panora_swap";
 const PANORA_SWAP_EVENT_ADDRESS: &str = "0x1c3206329806286fd2223647c9f9b130e66baeb6d7224a18c1f642ffe48f3b4c";
+const PANORA_SWAP_SUMMARY_EVENT: &str = "PanoraSwapSummaryEvent";
+const APTOS_NATIVE_METADATA_ADDRESS: &str = "0xa";
+
+#[derive(serde::Deserialize)]
+struct PanoraSwapSummaryEventData {
+    input_token_address: String,
+    input_token_amount: String,
+    output_token_address: String,
+    output_token_amount: String,
+}
 
 pub fn map_transaction_broadcast(response: &TransactionResponse) -> Result<String, Box<dyn Error + Sync + Send>> {
     if let Some(message) = &response.message {
@@ -59,6 +69,57 @@ fn extract_meta(transaction: &Transaction) -> Option<TransactionMeta> {
 
 fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Event>, chain: Chain) -> Option<PrimitivesTransaction> {
     let meta = extract_meta(&transaction)?;
+
+    if let Some(summary) = events
+        .iter()
+        .find(|e| e.event_type.contains(PANORA_SWAP_EVENT_ADDRESS) && e.event_type.contains(PANORA_SWAP_SUMMARY_EVENT))
+        .and_then(|e| e.data.clone())
+        .and_then(|data| serde_json::from_value::<PanoraSwapSummaryEventData>(data).ok())
+    {
+        let map_panora_asset = |token_address: &str| {
+            if token_address == APTOS_NATIVE_METADATA_ADDRESS || token_address == APTOS_NATIVE_COIN {
+                chain.as_asset_id()
+            } else {
+                AssetId::from_token(chain, token_address)
+            }
+        };
+
+        let from_asset = map_panora_asset(&summary.input_token_address);
+        let to_asset = map_panora_asset(&summary.output_token_address);
+
+        let balance_diffs = vec![
+            BalanceDiff {
+                asset_id: from_asset,
+                from_value: None,
+                to_value: None,
+                diff: -BigInt::parse_bytes(summary.input_token_amount.as_bytes(), 10)?,
+            },
+            BalanceDiff {
+                asset_id: to_asset,
+                from_value: None,
+                to_value: None,
+                diff: BigInt::parse_bytes(summary.output_token_amount.as_bytes(), 10)?,
+            },
+        ];
+
+        let swap = SwapMapper::map_swap(
+            &balance_diffs,
+            &BigUint::from(0u8),
+            &chain.as_asset_id(),
+            Some(SwapProvider::Panora.id().to_owned()),
+        )?;
+        let metadata = serde_json::to_value(&swap).ok();
+        let to = meta.sender.clone();
+
+        return Some(build_transaction(
+            meta,
+            chain.as_asset_id(),
+            to,
+            swap.from_value,
+            TransactionType::Swap,
+            metadata,
+        ));
+    }
 
     let withdraw_event = events.iter().find(|e| e.event_type == FUNGIBLE_ASSET_WITHDRAW_EVENT)?;
     let deposit_event = events.iter().find(|e| e.event_type == FUNGIBLE_ASSET_DEPOSIT_EVENT)?;
@@ -149,7 +210,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
     let meta = extract_meta(&transaction)?;
     let asset_id = chain.as_asset_id();
 
-    if events.iter().any(|e| e.event_type.contains("Swap")) {
+    if events.iter().any(|e| e.event_type.contains("PanoraSwap")) {
         return map_swap_transaction(transaction, events, chain);
     }
 
@@ -263,30 +324,30 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_swap_pancakeswap() {
-        let transaction: Transaction = serde_json::from_str(include_str!("../../testdata/transaction_swap_pancakeswap.json")).unwrap();
+    fn test_map_transaction_swap_panora() {
+        let transaction: Transaction = serde_json::from_str(include_str!("../../testdata/transaction_swap_panora.json")).unwrap();
 
         let result = map_transaction(transaction);
 
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.id.to_string(), "aptos_0x0a91279f5e94dd678c2a1655856270fc7635c9c98bdb0b923ab2d50ad656ad7b");
-        assert_eq!(tx.from, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
-        assert_eq!(tx.to, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
+        assert_eq!(tx.id.to_string(), "aptos_0xf1c24162c08b6b8b452c00adad1836d72949902a8701611479d4e49fec0a9e3c");
+        assert_eq!(tx.from, "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef");
+        assert_eq!(tx.to, "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef");
         assert_eq!(tx.state, TransactionState::Confirmed);
         assert_eq!(tx.transaction_type, TransactionType::Swap);
-        assert_eq!(tx.fee, "5700");
+        assert_eq!(tx.fee, "142600");
         assert!(tx.metadata.is_some());
 
         let metadata: primitives::TransactionSwapMetadata = serde_json::from_value(tx.metadata.unwrap()).unwrap();
-        assert_eq!(metadata.from_asset, Chain::Aptos.as_asset_id());
-        assert_eq!(metadata.from_value, "100000000");
         assert_eq!(
-            metadata.to_asset.token_id.unwrap(),
-            "0x159df6b7689437016108a019fd5bef736bac692b6d4a1f10c941f6fbb9a74ca6::oft::CakeOFT"
+            metadata.from_asset,
+            AssetId::from_token(Chain::Aptos, "0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b")
         );
-        assert_eq!(metadata.to_value, "117926015");
-        assert_eq!(metadata.provider.unwrap(), "pancakeswap_aptos_v2");
+        assert_eq!(metadata.from_value, "2346314");
+        assert_eq!(metadata.to_asset, Chain::Aptos.as_asset_id());
+        assert_eq!(metadata.to_value, "120590251");
+        assert_eq!(metadata.provider.unwrap(), "panora");
     }
 
     #[test]
