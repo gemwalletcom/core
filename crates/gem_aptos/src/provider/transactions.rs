@@ -30,7 +30,7 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
 struct BcsWrapper {
     bcs: String,
     #[serde(rename = "bcsEncoding")]
-    bcs_encoding: Option<String>,
+    bcs_encoding: String,
 }
 
 fn extract_bcs_bytes(data: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
@@ -40,25 +40,18 @@ fn extract_bcs_bytes(data: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>
         ))) as Box<dyn Error + Send + Sync>
     })?;
 
-    if let Some(encoding) = wrapper.bcs_encoding.as_deref()
-        && encoding != "hex" {
-            return Err(Box::new(std::io::Error::other(format!(
-                "Unsupported Aptos BCS encoding: {encoding}"
-            ))));
-        }
+    if wrapper.bcs_encoding != "hex" {
+        return Err(Box::new(std::io::Error::other(format!(
+            "Unsupported Aptos BCS encoding: {}",
+            wrapper.bcs_encoding
+        ))));
+    }
 
     decode_bcs_hex(&wrapper.bcs)
 }
 
 fn decode_bcs_hex(data: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    let trimmed = data.trim();
-    if trimmed.is_empty() {
-        return Err(Box::new(std::io::Error::other("Empty Aptos BCS payload")));
-    }
-    let hex_value = trimmed.strip_prefix("0x").unwrap_or(trimmed);
-    let bytes =
-        hex::decode(hex_value).map_err(|err| std::io::Error::other(format!("Invalid Aptos BCS hex: {err}")))?;
-    Ok(bytes)
+    primitives::decode_hex(data).map_err(|err| std::io::Error::other(format!("Invalid Aptos BCS hex: {err}")).into())
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]

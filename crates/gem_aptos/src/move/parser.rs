@@ -1,86 +1,28 @@
-use super::address::AccountAddress;
+use crate::signer::AccountAddress;
 use num_bigint::BigUint;
+use num_traits::ToPrimitive;
 use primitives::SignerError;
-use serde::{Deserialize, Serialize};
-use serde::ser::{SerializeSeq, Serializer};
+use serde::Deserialize;
 use serde_json::Value;
+
+use super::types::{ModuleId, StructTag, TypeTag};
+use super::values::MoveValue;
 
 const OPTION_MODULE: &str = "option";
 const OPTION_STRUCT: &str = "Option";
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ModuleId {
-    pub address: AccountAddress,
-    pub name: String,
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum NumericInput {
+    Number(serde_json::Number),
+    String(String),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct StructTag {
-    pub address: AccountAddress,
-    pub module: String,
-    pub name: String,
-    pub type_args: Vec<TypeTag>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TypeTag {
-    Bool,
-    U8,
-    U64,
-    U128,
-    Address,
-    Signer,
-    Vector(Box<TypeTag>),
-    Struct(Box<StructTag>),
-    U16,
-    U32,
-    U256,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct EntryFunction {
-    pub module: ModuleId,
-    pub function: String,
-    pub ty_args: Vec<TypeTag>,
-    pub args: Vec<Vec<u8>>,
-}
-
-#[derive(Clone, Debug)]
-enum MoveValue {
-    Bool(bool),
-    U8(u8),
-    U16(u16),
-    U32(u32),
-    U64(u64),
-    U128(u128),
-    U256([u8; 32]),
-    Address(AccountAddress),
-    Signer(AccountAddress),
-    Vector(Vec<MoveValue>),
-}
-
-impl Serialize for MoveValue {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+impl NumericInput {
+    fn as_string(&self) -> String {
         match self {
-            MoveValue::Bool(value) => serializer.serialize_bool(*value),
-            MoveValue::U8(value) => serializer.serialize_u8(*value),
-            MoveValue::U16(value) => serializer.serialize_u16(*value),
-            MoveValue::U32(value) => serializer.serialize_u32(*value),
-            MoveValue::U64(value) => serializer.serialize_u64(*value),
-            MoveValue::U128(value) => serializer.serialize_u128(*value),
-            MoveValue::U256(value) => value.serialize(serializer),
-            MoveValue::Address(value) => value.serialize(serializer),
-            MoveValue::Signer(value) => value.serialize(serializer),
-            MoveValue::Vector(values) => {
-                let mut seq = serializer.serialize_seq(Some(values.len()))?;
-                for value in values {
-                    seq.serialize_element(value)?;
-                }
-                seq.end()
-            }
+            NumericInput::Number(number) => number.to_string(),
+            NumericInput::String(value) => value.clone(),
         }
     }
 }
@@ -276,7 +218,8 @@ fn parse_move_value(value: &Value, arg_type: &TypeTag) -> Result<MoveValue, Sign
 fn parse_struct(value: &Value, tag: &StructTag) -> Result<MoveValue, SignerError> {
     if is_option_struct(tag) {
         let inner = tag
-            .type_args.first()
+            .type_args
+            .first()
             .ok_or_else(|| SignerError::InvalidInput("Option type missing inner type".to_string()))?;
         if value.is_null() {
             return Ok(MoveValue::Vector(Vec::new()));
@@ -295,10 +238,7 @@ fn is_option_struct(tag: &StructTag) -> bool {
 fn parse_vector(value: &Value, inner: &TypeTag) -> Result<MoveValue, SignerError> {
     match value {
         Value::Array(values) => {
-            let parsed = values
-                .iter()
-                .map(|entry| parse_move_value(entry, inner))
-                .collect::<Result<Vec<_>, _>>()?;
+            let parsed = values.iter().map(|entry| parse_move_value(entry, inner)).collect::<Result<Vec<_>, _>>()?;
             Ok(MoveValue::Vector(parsed))
         }
         Value::String(text) if matches!(inner, TypeTag::U8) => {
@@ -311,17 +251,7 @@ fn parse_vector(value: &Value, inner: &TypeTag) -> Result<MoveValue, SignerError
 }
 
 fn parse_hex_bytes(value: &str) -> Result<Vec<u8>, SignerError> {
-    let trimmed = value.trim();
-    let hex_str = trimmed.strip_prefix("0x").unwrap_or(trimmed);
-    if hex_str.is_empty() {
-        return Ok(Vec::new());
-    }
-    let padded = if hex_str.len() % 2 == 1 {
-        format!("0{}", hex_str)
-    } else {
-        hex_str.to_string()
-    };
-    hex::decode(padded).map_err(|_| SignerError::InvalidInput("Invalid hex bytes".to_string()))
+    primitives::decode_hex(value).map_err(|_| SignerError::InvalidInput("Invalid hex bytes".to_string()))
 }
 
 fn parse_address(value: &Value) -> Result<AccountAddress, SignerError> {
@@ -345,88 +275,55 @@ fn parse_bool(value: &Value) -> Result<bool, SignerError> {
     }
 }
 
+fn parse_numeric_string(value: &Value, label: &str) -> Result<String, SignerError> {
+    let input: NumericInput = serde_json::from_value(value.clone())
+        .map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))?;
+    Ok(input.as_string())
+}
+
 fn parse_u8(value: &Value) -> Result<u8, SignerError> {
-    match value {
-        Value::Number(number) => number
-            .as_u64()
-            .and_then(|num| u8::try_from(num).ok())
-            .ok_or_else(|| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string())),
-        Value::String(text) => parse_u8_from_str(text),
-        _ => Err(SignerError::InvalidInput("Invalid Aptos u8 argument".to_string())),
-    }
+    let text = parse_numeric_string(value, "u8")?;
+    parse_u8_from_str(&text)
 }
 
 fn parse_u8_from_str(text: &str) -> Result<u8, SignerError> {
-    let trimmed = text.trim();
-    if trimmed.starts_with("0x") {
-        u8::from_str_radix(trimmed.trim_start_matches("0x"), 16)
-            .map_err(|_| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()))
+    if text.trim().starts_with("0x") {
+        let bytes =
+            primitives::decode_hex(text).map_err(|_| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()))?;
+        if bytes.len() != 1 {
+            return Err(SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()));
+        }
+        Ok(bytes[0])
     } else {
-        trimmed
+        text.trim()
             .parse::<u8>()
             .map_err(|_| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()))
     }
 }
 
 fn parse_u16(value: &Value) -> Result<u16, SignerError> {
-    match value {
-        Value::Number(number) => number
-            .as_u64()
-            .and_then(|num| u16::try_from(num).ok())
-            .ok_or_else(|| SignerError::InvalidInput("Invalid Aptos u16 argument".to_string())),
-        Value::String(text) => parse_unsigned_from_str::<u16>(text, "u16"),
-        _ => Err(SignerError::InvalidInput("Invalid Aptos u16 argument".to_string())),
-    }
+    let text = parse_numeric_string(value, "u16")?;
+    parse_unsigned_from_str::<u16>(&text, "u16")
 }
 
 fn parse_u32(value: &Value) -> Result<u32, SignerError> {
-    match value {
-        Value::Number(number) => number
-            .as_u64()
-            .and_then(|num| u32::try_from(num).ok())
-            .ok_or_else(|| SignerError::InvalidInput("Invalid Aptos u32 argument".to_string())),
-        Value::String(text) => parse_unsigned_from_str::<u32>(text, "u32"),
-        _ => Err(SignerError::InvalidInput("Invalid Aptos u32 argument".to_string())),
-    }
+    let text = parse_numeric_string(value, "u32")?;
+    parse_unsigned_from_str::<u32>(&text, "u32")
 }
 
 fn parse_u64(value: &Value) -> Result<u64, SignerError> {
-    match value {
-        Value::Number(number) => number
-            .as_u64()
-            .ok_or_else(|| SignerError::InvalidInput("Invalid Aptos u64 argument".to_string())),
-        Value::String(text) => parse_unsigned_from_str::<u64>(text, "u64"),
-        _ => Err(SignerError::InvalidInput("Invalid Aptos u64 argument".to_string())),
-    }
+    let text = parse_numeric_string(value, "u64")?;
+    parse_unsigned_from_str::<u64>(&text, "u64")
 }
 
 fn parse_u128(value: &Value) -> Result<u128, SignerError> {
-    match value {
-        Value::Number(number) => number
-            .as_u64()
-            .map(u128::from)
-            .ok_or_else(|| SignerError::InvalidInput("Invalid Aptos u128 argument".to_string())),
-        Value::String(text) => parse_unsigned_from_str::<u128>(text, "u128"),
-        _ => Err(SignerError::InvalidInput("Invalid Aptos u128 argument".to_string())),
-    }
+    let text = parse_numeric_string(value, "u128")?;
+    parse_unsigned_from_str::<u128>(&text, "u128")
 }
 
 fn parse_u256(value: &Value) -> Result<[u8; 32], SignerError> {
-    let text = match value {
-        Value::Number(number) => number.to_string(),
-        Value::String(text) => text.clone(),
-        _ => return Err(SignerError::InvalidInput("Invalid Aptos u256 argument".to_string())),
-    };
-
-    let trimmed = text.trim();
-    let (radix, digits) = if trimmed.starts_with("0x") {
-        (16, trimmed.trim_start_matches("0x"))
-    } else {
-        (10, trimmed)
-    };
-
-    let value = BigUint::parse_bytes(digits.as_bytes(), radix)
-        .ok_or_else(|| SignerError::InvalidInput("Invalid Aptos u256 argument".to_string()))?;
+    let text = parse_numeric_string(value, "u256")?;
+    let value = parse_big_uint_from_str(&text, "u256")?;
     let mut bytes = value.to_bytes_le();
     if bytes.len() > 32 {
         return Err(SignerError::InvalidInput("Aptos u256 argument too large".to_string()));
@@ -439,16 +336,27 @@ fn parse_u256(value: &Value) -> Result<[u8; 32], SignerError> {
 
 fn parse_unsigned_from_str<T>(text: &str, label: &str) -> Result<T, SignerError>
 where
-    T: std::str::FromStr + num_traits::Num,
+    T: TryFrom<u128>,
 {
+    let value = parse_big_uint_from_str(text, label)?
+        .to_u128()
+        .ok_or_else(|| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))?;
+    T::try_from(value).map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))
+}
+
+fn parse_big_uint_from_str(text: &str, label: &str) -> Result<BigUint, SignerError> {
     let trimmed = text.trim();
     if trimmed.starts_with("0x") {
-        T::from_str_radix(trimmed.trim_start_matches("0x"), 16)
-            .map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))
+        let stripped = primitives::strip_0x(trimmed);
+        if stripped.is_empty() {
+            return Err(SignerError::InvalidInput(format!("Invalid Aptos {label} argument")));
+        }
+        let bytes =
+            primitives::decode_hex(trimmed).map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))?;
+        Ok(BigUint::from_bytes_be(&bytes))
     } else {
-        trimmed
-            .parse::<T>()
-            .map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))
+        BigUint::parse_bytes(trimmed.as_bytes(), 10)
+            .ok_or_else(|| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))
     }
 }
 

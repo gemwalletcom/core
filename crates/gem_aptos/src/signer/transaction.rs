@@ -1,62 +1,17 @@
-use crate::models::SubmitTransactionBcsRequest;
+use crate::models::{
+    Ed25519Authenticator, RawTransaction, SignedTransaction, SubmitTransactionBcsRequest, TransactionAuthenticator,
+    TransactionPayloadBCS,
+};
 use gem_hash::sha3::sha3_256;
 use hex::encode;
 use primitives::SignerError;
 use signer::Signer;
-use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
 use super::{AccountAddress, EntryFunction};
 
 const RAW_TRANSACTION_SALT: &[u8] = b"APTOS::RawTransaction";
 const MESSAGE_SALT: &[u8] = b"APTOS::Message";
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Script {
-    pub code: Vec<u8>,
-    pub ty_args: Vec<super::TypeTag>,
-    pub args: Vec<Vec<u8>>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DeprecatedPayload {
-    pub modules: Vec<Vec<u8>>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TransactionPayloadBCS {
-    Script(Script),
-    ModuleBundle(DeprecatedPayload),
-    EntryFunction(EntryFunction),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RawTransaction {
-    pub sender: AccountAddress,
-    pub sequence_number: u64,
-    pub payload: TransactionPayloadBCS,
-    pub max_gas_amount: u64,
-    pub gas_unit_price: u64,
-    pub expiration_timestamp_secs: u64,
-    pub chain_id: u8,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Ed25519Authenticator {
-    pub public_key: Vec<u8>,
-    pub signature: Vec<u8>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TransactionAuthenticator {
-    Ed25519(Ed25519Authenticator),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SignedTransaction {
-    pub raw_tx: RawTransaction,
-    pub authenticator: TransactionAuthenticator,
-}
 
 pub fn build_raw_transaction(
     sender: AccountAddress,

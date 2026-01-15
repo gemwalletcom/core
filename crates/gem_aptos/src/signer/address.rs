@@ -1,6 +1,7 @@
 use primitives::SignerError;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::str::FromStr;
 
 const ADDRESS_LENGTH: usize = 32;
 
@@ -9,14 +10,7 @@ pub struct AccountAddress([u8; ADDRESS_LENGTH]);
 
 impl AccountAddress {
     pub fn from_str(value: &str) -> Result<Self, SignerError> {
-        let trimmed = value.trim();
-        let hex_str = trimmed.strip_prefix("0x").unwrap_or(trimmed);
-        if hex_str.is_empty() {
-            return Err(SignerError::InvalidInput("Empty Aptos address".to_string()));
-        }
-        let padded = if hex_str.len() % 2 == 1 { format!("0{hex_str}") } else { hex_str.to_string() };
-        let bytes = hex::decode(padded).map_err(|_| SignerError::InvalidInput("Invalid Aptos address hex".to_string()))?;
-        Self::from_bytes(&bytes)
+        <Self as FromStr>::from_str(value)
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, SignerError> {
@@ -36,9 +30,23 @@ impl AccountAddress {
     }
 }
 
+impl FromStr for AccountAddress {
+    type Err = SignerError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        let stripped = primitives::strip_0x(value);
+        if stripped.is_empty() {
+            return Err(SignerError::InvalidInput("Empty Aptos address".to_string()));
+        }
+        let bytes = primitives::decode_hex(value)
+            .map_err(|_| SignerError::InvalidInput("Invalid Aptos address hex".to_string()))?;
+        Self::from_bytes(&bytes)
+    }
+}
+
 impl fmt::Display for AccountAddress {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "0x{}", hex::encode(self.0))
+        write!(f, "0x{}", ::hex::encode(self.0))
     }
 }
 
