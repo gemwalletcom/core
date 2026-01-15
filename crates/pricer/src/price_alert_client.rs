@@ -52,13 +52,7 @@ impl PriceAlertRules {
             return None;
         }
 
-        for &milestone in &self.milestones {
-            if price_24h_ago < milestone && current_price >= milestone {
-                return Some(milestone);
-            }
-        }
-
-        None
+        self.milestones.iter().find(|&&milestone| price_24h_ago < milestone && current_price >= milestone).copied()
     }
 }
 
