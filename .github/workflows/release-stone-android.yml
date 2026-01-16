@@ -10,15 +10,27 @@ on:
       ref_name:
         description: "github ref name (tag)"
         required: true
+      publish_gpr:
+        description: "Publish to Github Packages"
+        required: true
+        default: true
+        type: boolean
+      publish_sonatype:
+        description: "Publish to Maven Central"
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   publish_gpr:
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.publish_gpr == 'true' }}
     uses: ./.github/workflows/publish-android.yml
     with:
       ref_name: ${{ github.event.inputs.ref_name || github.ref_name }}
       publish_target: gpr
 
   publish_sonatype:
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.publish_sonatype == 'true' }}
     uses: ./.github/workflows/publish-android.yml
     with:
       ref_name: ${{ github.event.inputs.ref_name || github.ref_name }}
