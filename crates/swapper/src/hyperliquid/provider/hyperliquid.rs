@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
+use primitives::{Chain, swap::SwapResult};
+
 use crate::{
     FetchQuoteData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     alien::RpcProvider,
@@ -74,7 +76,7 @@ impl Swapper for Hyperliquid {
         Err(SwapperError::NotSupportedPair)
     }
 
-    async fn get_swap_result(&self, chain: primitives::Chain, transaction_hash: &str) -> Result<primitives::swap::SwapResult, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         self.bridge.get_swap_result(chain, transaction_hash).await
     }
 }

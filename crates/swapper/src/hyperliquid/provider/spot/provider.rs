@@ -10,6 +10,7 @@ use gem_hypercore::{
     },
     rpc::client::HyperCoreClient,
 };
+use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::Chain;
 
@@ -29,7 +30,7 @@ const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
 const MIN_QUOTE_AMOUNT: i64 = 10;
 
-fn compute_actual_from(use_max_amount: bool, amount_str: &str, decimals: u32) -> Result<Option<num_bigint::BigUint>, SwapperError> {
+fn compute_actual_from(use_max_amount: bool, amount_str: &str, decimals: u32) -> Result<Option<BigUint>, SwapperError> {
     if !use_max_amount {
         return Ok(None);
     }
@@ -158,11 +159,7 @@ impl Swapper for HyperCoreSpot {
                     return Err(SwapperError::InvalidAmount("amount too small after rounding".to_string()));
                 }
                 let result = simulate_sell(&rounded_input, &orderbook.levels[0])?;
-                let actual_from = compute_actual_from(
-                    request.options.use_max_amount,
-                    &format_decimal(&rounded_input),
-                    request.from_asset.decimals,
-                )?;
+                let actual_from = compute_actual_from(request.options.use_max_amount, &format_decimal(&rounded_input), request.from_asset.decimals)?;
                 (result.amount_out, result.limit_price, rounded_input, actual_from)
             }
             SpotSide::Buy => {
