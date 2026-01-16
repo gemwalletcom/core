@@ -65,6 +65,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Validate version
+        run: |
+          if [ -z "${VER_NAME}" ]; then
+            echo "VER_NAME is empty"
+            exit 1
+          fi
+
       - name: Build Android Bindings
         run: |
           just install-android-targets
