@@ -27,6 +27,7 @@ use super::{
 
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
+const MIN_QUOTE_AMOUNT: i64 = 10;
 
 fn compute_actual_from(use_max_amount: bool, amount_str: &str, decimals: u32) -> Result<Option<num_bigint::BigUint>, SwapperError> {
     if !use_max_amount {
@@ -178,6 +179,15 @@ impl Swapper for HyperCoreSpot {
                 (rounded_output.clone(), result.limit_price, rounded_output, actual_from)
             }
         };
+
+        // Check minimum USD value (quote token is USDC)
+        let quote_amount = match side {
+            SpotSide::Sell => &output_amount,
+            SpotSide::Buy => &amount_in,
+        };
+        if quote_amount < &BigDecimal::from(MIN_QUOTE_AMOUNT) {
+            return Err(SwapperError::InputAmountTooSmall);
+        }
 
         let token_decimals: u32 = to_token
             .wei_decimals
