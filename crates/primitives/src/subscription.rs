@@ -64,10 +64,9 @@ impl WalletIdType {
 
     pub fn address(&self) -> &str {
         match self {
-            WalletIdType::Multicoin(address)
-            | WalletIdType::Single(_, address)
-            | WalletIdType::PrivateKey(_, address)
-            | WalletIdType::View(_, address) => address,
+            WalletIdType::Multicoin(address) | WalletIdType::Single(_, address) | WalletIdType::PrivateKey(_, address) | WalletIdType::View(_, address) => {
+                address
+            }
         }
     }
 }
@@ -76,9 +75,9 @@ impl fmt::Display for WalletIdType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             WalletIdType::Multicoin(address) => write!(f, "{}_{}", WalletType::Multicoin.as_ref(), address),
-            WalletIdType::Single(chain, address)
-            | WalletIdType::PrivateKey(chain, address)
-            | WalletIdType::View(chain, address) => write!(f, "{}_{}_{}", self.wallet_type().as_ref(), chain.as_ref(), address),
+            WalletIdType::Single(chain, address) | WalletIdType::PrivateKey(chain, address) | WalletIdType::View(chain, address) => {
+                write!(f, "{}_{}_{}", self.wallet_type().as_ref(), chain.as_ref(), address)
+            }
         }
     }
 }
@@ -162,7 +161,10 @@ mod tests {
     fn test_wallet_id_type_wallet_type() {
         assert_eq!(WalletIdType::Multicoin("0x123".to_string()).wallet_type(), WalletType::Multicoin);
         assert_eq!(WalletIdType::Single(Chain::Ethereum, "0x456".to_string()).wallet_type(), WalletType::Single);
-        assert_eq!(WalletIdType::PrivateKey(Chain::Bitcoin, "bc1".to_string()).wallet_type(), WalletType::PrivateKey);
+        assert_eq!(
+            WalletIdType::PrivateKey(Chain::Bitcoin, "bc1".to_string()).wallet_type(),
+            WalletType::PrivateKey
+        );
         assert_eq!(WalletIdType::View(Chain::Ethereum, "0x789".to_string()).wallet_type(), WalletType::View);
     }
 

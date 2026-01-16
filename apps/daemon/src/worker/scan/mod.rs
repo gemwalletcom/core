@@ -27,22 +27,26 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_validators_static_assets = run_job("Update validators from static assets", config.get_duration(ConfigKey::ScanTimerUpdateValidatorsStatic)?, {
-        let settings = settings.clone();
-        let database = database.clone();
-        move || {
-            let validator_scanner = ValidatorScanner::new(
-                ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_static_assets"))),
-                database.clone(),
-                &settings.assets.url,
-            );
-            async move {
-                validator_scanner
-                    .update_validators_from_static_assets("Update validators from static assets")
-                    .await
+    let update_validators_static_assets = run_job(
+        "Update validators from static assets",
+        config.get_duration(ConfigKey::ScanTimerUpdateValidatorsStatic)?,
+        {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
+                let validator_scanner = ValidatorScanner::new(
+                    ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_static_assets"))),
+                    database.clone(),
+                    &settings.assets.url,
+                );
+                async move {
+                    validator_scanner
+                        .update_validators_from_static_assets("Update validators from static assets")
+                        .await
+                }
             }
-        }
-    });
+        },
+    );
 
     Ok(vec![Box::pin(update_validators), Box::pin(update_validators_static_assets)])
 }

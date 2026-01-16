@@ -291,20 +291,93 @@ mod tests {
         };
 
         assert_eq!(calculate_pattern_penalty(&base, &config, false), 0.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_countries_per_device: 2, ..base }, &config, false), 50.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_referrers_per_device: 2, ..base }, &config, false), 80.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_referrers_per_fingerprint: 2, ..base }, &config, false), 80.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_devices_per_ip: 5, ..base }, &config, false), 10.0);
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    max_countries_per_device: 2,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            50.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    max_referrers_per_device: 2,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            80.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    max_referrers_per_fingerprint: 2,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            80.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(&AbusePatterns { max_devices_per_ip: 5, ..base }, &config, false),
+            10.0
+        );
 
         // Normal user: daily_limit=5, divisor=2, velocity_threshold=2
         // 1 signal doesn't trigger, 2 signals trigger: (2-2+1)*100 = 100
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 1, ..base }, &config, false), 0.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 2, ..base }, &config, false), 100.0);
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 1,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            0.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 2,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            100.0
+        );
 
         // Verified user: daily_limit=10, divisor=2, velocity_threshold=5
         // 4 signals don't trigger, 5 signals trigger: (5-5+1)*100 = 100
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 4, ..base }, &config, true), 0.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 5, ..base }, &config, true), 100.0);
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 4,
+                    ..base
+                },
+                &config,
+                true
+            ),
+            0.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 5,
+                    ..base
+                },
+                &config,
+                true
+            ),
+            100.0
+        );
 
         // Combined: 50 + 80 + 10 + (5-2+1)*100 = 540
         assert_eq!(

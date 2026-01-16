@@ -32,7 +32,12 @@ pub trait RiskSignalsRepository {
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DatabaseError>;
-    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DatabaseError>;
+    fn get_abuse_patterns_for_referrer(
+        &mut self,
+        referrer_username: &str,
+        since: NaiveDateTime,
+        velocity_window_secs: i64,
+    ) -> Result<AbusePatterns, DatabaseError>;
     fn count_disabled_users_by_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
 }
 
@@ -121,8 +126,18 @@ impl RiskSignalsRepository for DatabaseClient {
         )?)
     }
 
-    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DatabaseError> {
-        Ok(RiskSignalsStore::get_abuse_patterns_for_referrer(self, referrer_username, since, velocity_window_secs)?)
+    fn get_abuse_patterns_for_referrer(
+        &mut self,
+        referrer_username: &str,
+        since: NaiveDateTime,
+        velocity_window_secs: i64,
+    ) -> Result<AbusePatterns, DatabaseError> {
+        Ok(RiskSignalsStore::get_abuse_patterns_for_referrer(
+            self,
+            referrer_username,
+            since,
+            velocity_window_secs,
+        )?)
     }
 
     fn count_disabled_users_by_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {

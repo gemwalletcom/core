@@ -1,6 +1,6 @@
 use gem_rewards::{RewardsRedemptionError, redeem_points};
-use primitives::{ConfigKey, NaiveDateTimeExt, now};
 use primitives::rewards::{RedemptionResult, Rewards};
+use primitives::{ConfigKey, NaiveDateTimeExt, now};
 use storage::{ConfigCacher, Database, RewardsRedemptionsRepository, RewardsRepository, WalletsRepository};
 use streamer::{StreamProducer, StreamProducerQueue};
 

@@ -32,6 +32,9 @@ pub enum ConfigKey {
     RedemptionPerUserWeekly,
     RedemptionMinAccountAge,
     RedemptionCooldownAfterReferral,
+    RedemptionRetryMaxRetries,
+    RedemptionRetryDelay,
+    RedemptionRetryErrors,
 
     // Referral IP
     ReferralIpConfidenceScoreThreshold,
@@ -184,6 +187,9 @@ impl ConfigKey {
             Self::RedemptionPerUserWeekly => "3",
             Self::RedemptionMinAccountAge => "1h",
             Self::RedemptionCooldownAfterReferral => "1m",
+            Self::RedemptionRetryMaxRetries => "1",
+            Self::RedemptionRetryDelay => "15s",
+            Self::RedemptionRetryErrors => r#"["transaction gas price below minimum"]"#,
             Self::ReferralIpConfidenceScoreThreshold => "10",
             Self::ReferralBlockedIpTypes => r#"["dataCenter", "hosting"]"#,
             Self::ReferralBlockedIpTypePenalty => "100",

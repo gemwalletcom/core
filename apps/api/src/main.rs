@@ -42,8 +42,8 @@ use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::MetricsClient;
 use model::APIService;
 use name_resolver::NameProviderFactory;
-use notifications::NotificationsClient;
 use name_resolver::client::Client as NameClient;
+use notifications::NotificationsClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket, catchers, routes};
@@ -109,7 +109,10 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
     let ip_check_providers: Vec<Arc<dyn IpCheckProvider>> = vec![
-        Arc::new(AbuseIPDBClient::new(settings.ip.abuseipdb.url.clone(), settings.ip.abuseipdb.key.secret.clone())),
+        Arc::new(AbuseIPDBClient::new(
+            settings.ip.abuseipdb.url.clone(),
+            settings.ip.abuseipdb.key.secret.clone(),
+        )),
         Arc::new(IpApiClient::new(settings.ip.ipapi.url.clone(), settings.ip.ipapi.key.secret.clone())),
     ];
     let ip_security_client = IpSecurityClient::new(ip_check_providers, cacher_client.clone());

@@ -96,7 +96,12 @@ impl LanguageLocalizer {
 
     pub fn price_alert_milestone(&self, symbol: &str, milestone: &str, change: &str) -> LanguageNotification {
         LanguageNotification {
-            title: fl!(self.loader.as_ref(), "notification_price_alert_milestone_title", symbol = symbol, milestone = milestone),
+            title: fl!(
+                self.loader.as_ref(),
+                "notification_price_alert_milestone_title",
+                symbol = symbol,
+                milestone = milestone
+            ),
             description: fl!(self.loader.as_ref(), "notification_price_alert_milestone_description", change = change),
         }
     }

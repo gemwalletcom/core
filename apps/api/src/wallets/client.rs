@@ -21,24 +21,26 @@ impl WalletsClient {
     pub async fn get_subscriptions(&self, device_id: &str) -> Result<Vec<WalletSubscriptionChains>, Box<dyn Error + Send + Sync>> {
         let rows = self.database.wallets()?.get_subscriptions(device_id)?;
 
-        let result = rows.into_iter().fold(HashMap::<String, (WalletIdType, Vec<Chain>)>::new(), |mut acc, (wallet_row, subscription_row)| {
-            let wallet_id = wallet_row.wallet_id.0.clone();
-            acc.entry(wallet_id.id()).or_insert((wallet_id, Vec::new())).1.push(subscription_row.chain.0);
-            acc
-        });
+        let result = rows.into_iter().fold(
+            HashMap::<String, (WalletIdType, Vec<Chain>)>::new(),
+            |mut acc, (wallet_row, subscription_row)| {
+                let wallet_id = wallet_row.wallet_id.0.clone();
+                acc.entry(wallet_id.id()).or_insert((wallet_id, Vec::new())).1.push(subscription_row.chain.0);
+                acc
+            },
+        );
 
-        Ok(result.into_values().map(|(wallet_id, chains)| WalletSubscriptionChains { wallet_id, chains }).collect())
+        Ok(result
+            .into_values()
+            .map(|(wallet_id, chains)| WalletSubscriptionChains { wallet_id, chains })
+            .collect())
     }
 
     pub async fn add_subscriptions(&self, device_id: &str, wallet_subscriptions: Vec<WalletSubscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let mut store = self.database.wallets()?;
 
         let identifiers: Vec<String> = wallet_subscriptions.iter().map(|x| x.wallet_id.id()).collect();
-        let mut wallet_ids: HashMap<String, i32> = store
-            .get_wallets(identifiers)?
-            .into_iter()
-            .map(|x| (x.wallet_id.id(), x.id))
-            .collect();
+        let mut wallet_ids: HashMap<String, i32> = store.get_wallets(identifiers)?.into_iter().map(|x| (x.wallet_id.id(), x.id)).collect();
 
         let new_wallets: Vec<NewWalletRow> = wallet_subscriptions
             .iter()
@@ -84,11 +86,7 @@ impl WalletsClient {
         let mut store = self.database.wallets()?;
 
         let identifiers: Vec<String> = wallet_subscriptions.iter().map(|x| x.wallet_id.id()).collect();
-        let wallet_ids: HashMap<String, i32> = store
-            .get_wallets(identifiers)?
-            .into_iter()
-            .map(|x| (x.wallet_id.id(), x.id))
-            .collect();
+        let wallet_ids: HashMap<String, i32> = store.get_wallets(identifiers)?.into_iter().map(|x| (x.wallet_id.id(), x.id)).collect();
 
         let subscriptions: Vec<(String, Vec<(Chain, String)>)> = wallet_subscriptions
             .into_iter()
