@@ -173,4 +173,4 @@ publish-android-gpr:
 
 publish-android-maven:
     #!/usr/bin/env bash
-    cd android && touch local.properties && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
+    cd android && touch local.properties && ./gradlew publishReleasePublicationToSonatypeRepository closeAndReleaseSonatypeStagingRepository
