@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, str::FromStr};
+use std::str::FromStr;
 
 use bigdecimal::{BigDecimal, Zero};
 use gem_hypercore::models::spot::OrderbookLevel;
@@ -14,33 +14,24 @@ pub(super) struct SimulationResult {
 pub(super) fn simulate_sell(amount: &BigDecimal, bids: &[OrderbookLevel]) -> Result<SimulationResult, SwapperError> {
     let mut remaining = amount.clone();
     let mut quote_total = BigDecimal::zero();
-    let mut min_price_used: Option<BigDecimal> = None;
+    let mut min_price: Option<BigDecimal> = None;
 
     for level in bids {
         let level_size = parse_decimal(&level.sz)?;
         let price = parse_decimal(&level.px)?;
-
         if level_size <= BigDecimal::zero() {
             continue;
         }
 
-        let trade_size = match remaining.cmp(&level_size) {
-            Ordering::Greater => level_size.clone(),
-            _ => remaining.clone(),
-        };
-
+        let trade_size = remaining.clone().min(level_size);
         quote_total += &trade_size * &price;
         remaining -= &trade_size;
-        min_price_used = match min_price_used {
-            Some(current) if price < current => Some(price.clone()),
-            Some(current) => Some(current),
-            None => Some(price.clone()),
-        };
+        min_price = Some(min_price.map_or(price.clone(), |p| p.min(price.clone())));
 
         if remaining <= BigDecimal::zero() {
             return Ok(SimulationResult {
                 amount_out: quote_total,
-                limit_price: min_price_used.unwrap_or(price),
+                limit_price: min_price.unwrap(),
             });
         }
     }
@@ -51,31 +42,24 @@ pub(super) fn simulate_sell(amount: &BigDecimal, bids: &[OrderbookLevel]) -> Res
 pub(super) fn simulate_buy(amount: &BigDecimal, asks: &[OrderbookLevel]) -> Result<SimulationResult, SwapperError> {
     let mut remaining_quote = amount.clone();
     let mut base_total = BigDecimal::zero();
-    let mut max_price_used: Option<BigDecimal> = None;
+    let mut max_price: Option<BigDecimal> = None;
 
     for level in asks {
         let level_size = parse_decimal(&level.sz)?;
         let price = parse_decimal(&level.px)?;
-
         if level_size <= BigDecimal::zero() || price <= BigDecimal::zero() {
             continue;
         }
 
         let level_quote = &level_size * &price;
-
         if remaining_quote > level_quote {
             base_total += &level_size;
             remaining_quote -= level_quote;
-            max_price_used = match max_price_used {
-                Some(current) if price > current => Some(price.clone()),
-                Some(current) => Some(current),
-                None => Some(price.clone()),
-            };
+            max_price = Some(max_price.map_or(price.clone(), |p| p.max(price.clone())));
         } else {
-            let partial_base = &remaining_quote / &price;
-            base_total += &partial_base;
+            base_total += &remaining_quote / &price;
+            max_price = Some(max_price.map_or(price.clone(), |p| p.max(price.clone())));
             remaining_quote = BigDecimal::zero();
-            max_price_used = Some(max_price_used.map_or_else(|| price.clone(), |current| current.max(price.clone())));
             break;
         }
     }
@@ -86,7 +70,7 @@ pub(super) fn simulate_buy(amount: &BigDecimal, asks: &[OrderbookLevel]) -> Resu
 
     Ok(SimulationResult {
         amount_out: base_total,
-        limit_price: max_price_used.unwrap(),
+        limit_price: max_price.unwrap(),
     })
 }
 

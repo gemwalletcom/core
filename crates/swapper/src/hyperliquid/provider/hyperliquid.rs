@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
+use primitives::{Chain, swap::SwapResult};
+
 use crate::{
     FetchQuoteData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     alien::RpcProvider,
@@ -36,12 +38,7 @@ impl Hyperliquid {
     fn is_bridge_request(request: &QuoteRequest) -> bool {
         let from_id = request.from_asset.asset_id();
         let to_id = request.to_asset.asset_id();
-
         (from_id == HYPERCORE_HYPE.id && to_id == HYPEREVM_HYPE.id) || (from_id == HYPEREVM_HYPE.id && to_id == HYPERCORE_HYPE.id)
-    }
-
-    fn is_bridge_quote(quote: &Quote) -> bool {
-        Self::is_bridge_request(&quote.request)
     }
 }
 
@@ -73,15 +70,13 @@ impl Swapper for Hyperliquid {
         if Self::is_spot_request(&quote.request) {
             return self.spot.fetch_quote_data(quote, data).await;
         }
-
-        if Self::is_bridge_quote(quote) {
+        if Self::is_bridge_request(&quote.request) {
             return self.bridge.fetch_quote_data(quote, data).await;
         }
-
         Err(SwapperError::NotSupportedPair)
     }
 
-    async fn get_swap_result(&self, chain: primitives::Chain, transaction_hash: &str) -> Result<primitives::swap::SwapResult, SwapperError> {
+    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         self.bridge.get_swap_result(chain, transaction_hash).await
     }
 }
