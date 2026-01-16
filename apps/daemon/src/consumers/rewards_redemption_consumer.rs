@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use gem_rewards::{RedemptionAsset, RedemptionRequest, RedemptionService};
+use gem_tracing::info_with_fields;
 use primitives::rewards::RedemptionStatus as PrimitiveRedemptionStatus;
 use std::error::Error;
 use std::sync::Arc;
@@ -61,6 +62,9 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
         let recipient_address = self.database.rewards()?.get_address_by_username(&redemption.username)?;
         let option = self.database.rewards_redemptions()?.get_redemption_option(&redemption.option_id)?;
 
+        let asset_id = option.asset.as_ref().map(|a| a.id.to_string());
+        let value = option.value.clone();
+
         let asset = option.asset.map(|asset| RedemptionAsset {
             asset,
             value: option.value.clone(),
@@ -71,15 +75,30 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
         match self.process_with_retry(request).await {
             Ok(transaction_id) => {
                 let updates = vec![
-                    RedemptionUpdate::TransactionId(transaction_id),
+                    RedemptionUpdate::TransactionId(transaction_id.clone()),
                     RedemptionUpdate::Status(RedemptionStatus::Completed),
                 ];
                 self.database.rewards_redemptions()?.update_redemption(payload.redemption_id, updates)?;
+                info_with_fields!(
+                    "redemption completed",
+                    id = payload.redemption_id,
+                    asset = asset_id.as_deref().unwrap_or("none"),
+                    value = value,
+                    tx_id = transaction_id
+                );
                 Ok(true)
             }
             Err(e) => {
-                let updates = vec![RedemptionUpdate::Status(RedemptionStatus::Failed), RedemptionUpdate::Error(e.to_string())];
+                let error_msg = e.to_string();
+                let updates = vec![RedemptionUpdate::Status(RedemptionStatus::Failed), RedemptionUpdate::Error(error_msg.clone())];
                 self.database.rewards_redemptions()?.update_redemption(payload.redemption_id, updates)?;
+                info_with_fields!(
+                    "redemption failed",
+                    id = payload.redemption_id,
+                    asset = asset_id.as_deref().unwrap_or("none"),
+                    value = value,
+                    error = error_msg
+                );
                 Ok(false)
             }
         }
