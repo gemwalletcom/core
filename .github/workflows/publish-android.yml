@@ -11,6 +11,11 @@ on:
         description: "Publish target: gpr or sonatype"
         required: true
         type: string
+      release_sonatype:
+        description: "Release Sonatype staging repository"
+        required: false
+        default: false
+        type: boolean
     secrets:
       SONATYPE_USERNAME:
         required: false
@@ -92,7 +97,11 @@ jobs:
             exit 1
           fi
           export MVN_SIGNING_KEY="$(printf '%s' "$MVN_SIGNING_KEY" | base64 --decode)"
-          just publish-android-maven
+          if [ "${{ inputs.release_sonatype }}" = "true" ]; then
+            just publish-android-maven-release
+          else
+            just publish-android-maven
+          fi
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

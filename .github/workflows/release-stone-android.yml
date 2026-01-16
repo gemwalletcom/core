@@ -17,7 +17,12 @@ on:
         type: boolean
       publish_sonatype:
         description: "Publish to Maven Central"
-        required: true
+        required: false
+        default: true
+        type: boolean
+      release_sonatype:
+        description: "Release Sonatype staging repository"
+        required: false
         default: true
         type: boolean
 
@@ -35,6 +40,7 @@ jobs:
     with:
       ref_name: ${{ github.event.inputs.ref_name || github.ref_name }}
       publish_target: sonatype
+      release_sonatype: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.release_sonatype == 'true' }}
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
