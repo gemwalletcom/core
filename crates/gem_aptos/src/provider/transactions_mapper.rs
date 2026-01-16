@@ -1,4 +1,4 @@
-use crate::models::{Transaction, TransactionResponse};
+use crate::models::{DelegationPoolAddStakeData, DelegationPoolUnlockStakeData, Event, Transaction, TransactionResponse};
 use crate::{
     APTOS_NATIVE_COIN, DELEGATION_POOL_ADD_STAKE_EVENT, DELEGATION_POOL_UNLOCK_STAKE_EVENT, FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT,
     STAKE_DEPOSIT_EVENT,
@@ -75,7 +75,7 @@ fn extract_meta(transaction: &Transaction) -> Option<TransactionMeta> {
     })
 }
 
-fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Event>, chain: Chain) -> Option<PrimitivesTransaction> {
+fn map_swap_transaction(transaction: Transaction, events: Vec<Event>, chain: Chain) -> Option<PrimitivesTransaction> {
     let meta = extract_meta(&transaction)?;
 
     if let Some(summary) = events
@@ -210,14 +210,14 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
     let meta = extract_meta(&transaction)?;
     let asset_id = chain.as_asset_id();
 
-    if events.iter().any(|e| e.event_type.contains("PanoraSwap")) {
+    if events.iter().any(|e| e.event_type.contains("Swap")) {
         return map_swap_transaction(transaction, events, chain);
     }
 
     for event in &events {
         match event.event_type.as_str() {
             DELEGATION_POOL_ADD_STAKE_EVENT => {
-                let data: crate::models::DelegationPoolAddStakeData = serde_json::from_value(event.data.clone()?).ok()?;
+                let data: DelegationPoolAddStakeData = serde_json::from_value(event.data.clone()?).ok()?;
                 return Some(build_transaction(
                     meta,
                     asset_id,
@@ -228,7 +228,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
                 ));
             }
             DELEGATION_POOL_UNLOCK_STAKE_EVENT => {
-                let data: crate::models::DelegationPoolUnlockStakeData = serde_json::from_value(event.data.clone()?).ok()?;
+                let data: DelegationPoolUnlockStakeData = serde_json::from_value(event.data.clone()?).ok()?;
                 return Some(build_transaction(
                     meta,
                     asset_id,

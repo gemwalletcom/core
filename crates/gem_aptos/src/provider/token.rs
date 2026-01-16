@@ -21,25 +21,23 @@ enum TokenIdKind {
 impl<C: Client> ChainToken for AptosClient<C> {
     async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Sync + Send>> {
         match token_id_kind(&token_id) {
-        Some(TokenIdKind::CoinLegacy) => {
-            let parts: Vec<&str> = token_id.split("::").collect();
-            if parts.len() < 3 {
-                return Err("Invalid token ID format".into());
+            Some(TokenIdKind::CoinLegacy) => {
+                let parts: Vec<&str> = token_id.split("::").collect();
+                if parts.len() < 3 {
+                    return Err("Invalid token ID format".into());
+                }
+
+                let address = parts[0];
+                let resource_type = format!("0x1::coin::CoinInfo<{}>", token_id);
+
+                let resource = self.get_account_resource::<CoinInfo>(address.to_string(), &resource_type).await?;
+                map_token_data(&resource, &token_id)
             }
-
-            let address = parts[0];
-            let resource_type = format!("0x1::coin::CoinInfo<{}>", token_id);
-
-            let resource = self.get_account_resource::<CoinInfo>(address.to_string(), &resource_type).await?;
-            map_token_data(&resource, &token_id)
-        }
-        Some(TokenIdKind::FungibleAsset) => {
-            let resource = self
-                .get_account_resource::<CoinInfo>(token_id.clone(), FUNGIBLE_ASSET_METADATA_TYPE)
-                .await?;
-            map_token_data(&resource, &token_id)
-        }
-        None => Err("Invalid token ID format".into()),
+            Some(TokenIdKind::FungibleAsset) => {
+                let resource = self.get_account_resource::<CoinInfo>(token_id.clone(), FUNGIBLE_ASSET_METADATA_TYPE).await?;
+                map_token_data(&resource, &token_id)
+            }
+            None => Err("Invalid token ID format".into()),
         }
     }
 

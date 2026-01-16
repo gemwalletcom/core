@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::str::FromStr;
 
-use gem_client::{Client, ContentType, CONTENT_TYPE};
+use gem_client::{CONTENT_TYPE, Client, ContentType};
 use num_bigint::BigUint;
 use primitives::chain::Chain;
 use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
@@ -12,7 +12,6 @@ use crate::models::{
     Account, Block, DelegationPoolStake, GasFee, Ledger, ReconfigurationState, Resource, ResourceData, StakingConfig, Transaction, TransactionPayload,
     TransactionResponse, TransactionSignature, TransactionSimulation, ValidatorSet,
 };
-pub type AccountResource<T> = Resource<T>;
 
 #[derive(Debug)]
 pub struct AptosClient<C: Client> {
@@ -26,7 +25,7 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub fn get_chain(&self) -> Chain {
-        Chain::Aptos
+        self.chain
     }
 
     pub async fn get_ledger(&self) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
@@ -47,7 +46,7 @@ impl<C: Client> AptosClient<C> {
         &self,
         address: String,
         resource: &str,
-    ) -> Result<AccountResource<T>, Box<dyn Error + Send + Sync>> {
+    ) -> Result<Resource<T>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v1/accounts/{}/resource/{}", address, resource)).await?)
     }
 
@@ -64,13 +63,7 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub async fn submit_transaction(&self, bcs_bytes: Vec<u8>) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
-        if bcs_bytes.is_empty() {
-            return Err(Box::new(std::io::Error::other("Empty Aptos BCS payload")));
-        }
-        let headers = HashMap::from([(
-            CONTENT_TYPE.to_string(),
-            ContentType::ApplicationAptosBcs.as_str().to_string(),
-        )]);
+        let headers = HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationAptosBcs.as_str().to_string())]);
         let response = self
             .client
             .post::<Vec<u8>, TransactionResponse>("/v1/transactions", &bcs_bytes, Some(headers))
@@ -81,10 +74,6 @@ impl<C: Client> AptosClient<C> {
         }
 
         Ok(response)
-    }
-
-    pub async fn get_resources(&self, address: &str) -> Result<Vec<Resource<ResourceData>>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v1/accounts/{}/resources", address)).await?)
     }
 
     pub async fn get_transaction_by_hash(&self, hash: &str) -> Result<Transaction, Box<dyn Error + Send + Sync>> {

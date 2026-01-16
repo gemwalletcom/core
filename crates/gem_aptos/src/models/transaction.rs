@@ -1,4 +1,4 @@
-use super::super::constants::{FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
+use crate::{FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_option_u64_from_str, deserialize_u64_from_str};
 
