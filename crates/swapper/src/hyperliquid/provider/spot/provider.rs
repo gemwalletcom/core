@@ -30,11 +30,11 @@ const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
 const MIN_QUOTE_AMOUNT: i64 = 10;
 
-fn compute_actual_from(use_max_amount: bool, amount_str: &str, decimals: u32) -> Result<Option<BigUint>, SwapperError> {
+fn compute_actual_from(use_max_amount: bool, amount: &str, decimals: u32) -> Result<Option<BigUint>, SwapperError> {
     if !use_max_amount {
         return Ok(None);
     }
-    BigNumberFormatter::value_from_amount_biguint(amount_str, decimals)
+    BigNumberFormatter::value_from_amount_biguint(amount, decimals)
         .map(Some)
         .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))
 }
@@ -152,7 +152,7 @@ impl Swapper for HyperCoreSpot {
         }
 
         // Round to sz_decimals before simulation to ensure quote matches execution.
-        let (output_amount, base_limit_price, size_rounded, actual_from_value) = match side {
+        let (raw_output, base_limit_price, size_rounded, actual_from_value) = match side {
             SpotSide::Sell => {
                 let rounded_input = round_size_down(&amount_in, base_token.sz_decimals);
                 if rounded_input <= BigDecimal::zero() {
@@ -179,20 +179,23 @@ impl Swapper for HyperCoreSpot {
 
         // Check minimum USD value (quote token is USDC)
         let quote_amount = match side {
-            SpotSide::Sell => &output_amount,
+            SpotSide::Sell => &raw_output,
             SpotSide::Buy => &amount_in,
         };
         if quote_amount < &BigDecimal::from(MIN_QUOTE_AMOUNT) {
             return Err(SwapperError::InputAmountTooSmall);
         }
 
+        let builder_fee = client.config.max_builder_fee_bps;
+        let fee_factor = BigDecimal::from(100_000 - builder_fee as i64) / BigDecimal::from(100_000);
+        let output_amount = &raw_output * fee_factor;
+
         let token_decimals: u32 = to_token
             .wei_decimals
             .try_into()
             .map_err(|_| SwapperError::InvalidAmount("invalid amount precision".to_string()))?;
 
-        let output_amount_str = format_decimal(&output_amount);
-        let token_units = BigNumberFormatter::value_from_amount_biguint(&output_amount_str, token_decimals)
+        let token_units = BigNumberFormatter::value_from_amount_biguint(&format_decimal(&output_amount), token_decimals)
             .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?;
         let scaled_units = scale_units(token_units, token_decimals, request.to_asset.decimals)?;
         let to_value = scaled_units.to_string();
@@ -201,7 +204,7 @@ impl Swapper for HyperCoreSpot {
         let limit_price = apply_slippage(&base_limit_price, side, request.options.slippage.bps, price_decimals)?;
         let limit_price = format_decimal_with_scale(&limit_price, price_decimals);
 
-        let size_str = format_order_size(&size_rounded, base_token.sz_decimals);
+        let order_size = format_order_size(&size_rounded, base_token.sz_decimals);
 
         let asset_index = spot_asset_index(market.index);
 
@@ -221,7 +224,7 @@ impl Swapper for HyperCoreSpot {
                         asset_index,
                         side.is_buy(),
                         &limit_price,
-                        &size_str,
+                        &order_size,
                         false,
                         Some(Builder {
                             builder_address: client.config.builder_address.clone(),
