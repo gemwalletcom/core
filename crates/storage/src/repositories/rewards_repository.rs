@@ -2,7 +2,7 @@ use crate::database::rewards::{ReferralUpdate, RewardsStore};
 use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::database::wallets::WalletsStore;
-use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow, UsernameRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, UsernameStatus};
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
@@ -10,6 +10,18 @@ use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
 use primitives::rewards::{ReferralActivation, ReferralCodeActivation};
 use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletIdType, now};
+
+fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, address: &str, device_id: i32) -> Result<RewardsRow, DatabaseError> {
+    UsernamesStore::create_username(
+        client,
+        NewUsernameRow {
+            username: address.to_string(),
+            wallet_id,
+            status: UsernameStatus::Unverified,
+        },
+    )?;
+    Ok(RewardsStore::create_rewards(client, NewRewardsRow::new(address.to_string(), device_id))?)
+}
 
 fn validate_username(username: &str) -> Result<(), DatabaseError> {
     let len = username.len();
@@ -23,34 +35,6 @@ fn validate_username(username: &str) -> Result<(), DatabaseError> {
         return Err(DatabaseError::Error("Username must contain only letters and digits".into()));
     }
     Ok(())
-}
-
-fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, device_id: i32) -> Result<UsernameRow, DatabaseError> {
-    let placeholder_username = format!("wallet_{}", wallet_id);
-    let username = UsernamesStore::create_username(
-        client,
-        NewUsernameRow {
-            username: placeholder_username.clone(),
-            wallet_id,
-            status: UsernameStatus::Unverified,
-        },
-    )?;
-    RewardsStore::create_rewards(
-        client,
-        NewRewardsRow {
-            username: placeholder_username,
-            status: RewardStatus::Unverified,
-            level: None,
-            points: 0,
-            referrer_username: None,
-            referral_count: 0,
-            device_id,
-            is_swap_complete: false,
-            comment: None,
-            disable_reason: None,
-        },
-    )?;
-    Ok(username)
 }
 
 pub trait RewardsRepository {
@@ -370,15 +354,17 @@ impl RewardsRepository for DatabaseClient {
         let verification_date = self.get_referral_verification_date(now())?;
         let verified_at = if verification_date.is_none() { Some(now()) } else { None };
 
-        let username = match UsernamesStore::get_username(self, UsernameLookup::WalletId(referred_wallet_id)) {
-            Ok(u) => u,
-            Err(_) => {
-                let referred = create_username_and_rewards(self, referred_wallet_id, device_id)?;
-                return self.add_referral_with_events(referrer_username, &referred.username, device_id, risk_signal_id, verified_at);
+        let referred_identifier = match UsernamesStore::get_username(self, UsernameLookup::WalletId(referred_wallet_id)) {
+            Ok(u) => u.username,
+            Err(diesel::result::Error::NotFound) => {
+                let wallet = WalletsStore::get_wallet_by_id(self, referred_wallet_id)?;
+                let address = wallet.wallet_id.address().to_string();
+                create_username_and_rewards(self, referred_wallet_id, &address, device_id)?.username
             }
+            Err(e) => return Err(e.into()),
         };
 
-        match RewardsStore::get_referral_by_username(self, &username.username)? {
+        match RewardsStore::get_referral_by_username(self, &referred_identifier)? {
             Some(referral) if referral.verified_at.is_none() => {
                 if referral.referrer_username != referrer_username {
                     return Err(DatabaseError::Error("Referral code does not match pending referral".to_string()));
@@ -389,10 +375,10 @@ impl RewardsRepository for DatabaseClient {
                 }
 
                 RewardsStore::update_referral(self, referral.id, ReferralUpdate::VerifiedAt(now()))?;
-                self.add_referral_verified_events(&referral.referrer_username, &username.username)
+                self.add_referral_verified_events(&referral.referrer_username, &referred_identifier)
             }
             Some(_) => Err(DatabaseError::Error("Referral already verified".to_string())),
-            None => self.add_referral_with_events(referrer_username, &username.username, device_id, risk_signal_id, verified_at),
+            None => self.add_referral_with_events(referrer_username, &referred_identifier, device_id, risk_signal_id, verified_at),
         }
     }
 }
@@ -516,6 +502,7 @@ impl DatabaseClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::UsernameRow;
 
     fn username_row(username: &str, wallet_id: i32) -> UsernameRow {
         UsernameRow {

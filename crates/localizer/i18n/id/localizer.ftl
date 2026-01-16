@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = Kode referensi harus diterapkan dal
 notification_reward_pending_title = 💎 Referensi Baru
 notification_reward_pending_description = Seseorang telah menggunakan kode referensi Anda. Sedang dalam proses verifikasi.
 rewards_error_username_daily_limit_reached = Batas pembuatan nama pengguna harian telah tercapai. Silakan coba lagi besok.
+notification_price_alert_target_title = 🎯 {$symbol} pada {$price}
+notification_price_alert_target_description = {$change} — the target you set has been reached.

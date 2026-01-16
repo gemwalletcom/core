@@ -49,3 +49,7 @@ rewards_error_referral_eligibility_expired = Referral codes must be applied with
 notification_reward_pending_title = 💎 New Referral
 notification_reward_pending_description = Someone used your referral code. Pending verification.
 rewards_error_username_daily_limit_reached = Daily username creation limit has been reached. Please try again tomorrow.
+notification_price_alert_target_title = 🎯 {$symbol} at {$price}
+notification_price_alert_target_description = {$change} — the target you set has been reached.
+notification_price_alert_milestone_title = 🎉 {$symbol} reached {$milestone}
+notification_price_alert_milestone_description = {$change} — a significant milestone has been reached.

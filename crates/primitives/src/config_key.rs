@@ -97,14 +97,56 @@ pub enum ConfigKey {
     TransactionsMinAmountUsd,
 
     // Alerter
-    AlerterPriceIncreasePercent,
-    AlerterPriceDecreasePercent,
     AlerterInterval,
     AlerterNotificationCooldown,
+    AlerterPriceChangeThreshold,
+    AlerterRankDivisor,
+    AlerterMilestones,
 
-    // Pricer
-    PricerTimer,
-    PricerOutdated,
+    // Price
+    PriceTimerTopMarketCap,
+    PriceTimerHighMarketCap,
+    PriceTimerLowMarketCap,
+    PriceTimerFiatRates,
+    PriceTimerChartsHourly,
+    PriceTimerChartsDaily,
+    PriceTimerMarkets,
+    PriceTimerCleanOutdated,
+    PriceTimerCleanupCharts,
+    PriceOutdated,
+
+    // Assets
+    AssetsTimerUpdateExisting,
+    AssetsTimerUpdateAll,
+    AssetsTimerUpdateNative,
+    AssetsTimerUpdateTrending,
+    AssetsTimerUpdateRecentlyAdded,
+    AssetsTimerUpdateSuspicious,
+    AssetsTimerUpdateStakingApy,
+    AssetsTimerUpdatePerpetuals,
+
+    // Fiat
+    FiatTimerUpdateAssets,
+    FiatTimerUpdateProviderCountries,
+    FiatTimerUpdateBuyableAssets,
+    FiatTimerUpdateTrending,
+
+    // Scan
+    ScanTimerUpdateValidators,
+    ScanTimerUpdateValidatorsStatic,
+
+    // Rewards
+    RewardsTimerAbuseChecker,
+
+    // Device
+    DeviceTimerUpdater,
+    DeviceTimerInactiveObserver,
+
+    // Version
+    VersionTimerUpdateStoreVersions,
+
+    // Transaction
+    TransactionTimerUpdater,
 
     // Search
     SearchAssetsUpdateInterval,
@@ -194,12 +236,40 @@ impl ConfigKey {
             Self::ReferralAbuseVelocityPenaltyPerSignal => "100",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
-            Self::AlerterPriceIncreasePercent => "8.0",
-            Self::AlerterPriceDecreasePercent => "10.0",
             Self::AlerterInterval => "60s",
             Self::AlerterNotificationCooldown => "24h",
-            Self::PricerTimer => "60s",
-            Self::PricerOutdated => "7d",
+            Self::AlerterPriceChangeThreshold => "5.0",
+            Self::AlerterRankDivisor => "5.0",
+            Self::AlerterMilestones => "[1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000]",
+            Self::PriceTimerTopMarketCap => "60s",
+            Self::PriceTimerHighMarketCap => "3m",
+            Self::PriceTimerLowMarketCap => "10m",
+            Self::PriceTimerFiatRates => "6m",
+            Self::PriceTimerChartsHourly => "60s",
+            Self::PriceTimerChartsDaily => "6m",
+            Self::PriceTimerMarkets => "1h",
+            Self::PriceTimerCleanOutdated => "1d",
+            Self::PriceTimerCleanupCharts => "1d",
+            Self::PriceOutdated => "7d",
+            Self::AssetsTimerUpdateExisting => "1d",
+            Self::AssetsTimerUpdateAll => "1d",
+            Self::AssetsTimerUpdateNative => "1d",
+            Self::AssetsTimerUpdateTrending => "1h",
+            Self::AssetsTimerUpdateRecentlyAdded => "1h",
+            Self::AssetsTimerUpdateSuspicious => "1h",
+            Self::AssetsTimerUpdateStakingApy => "1d",
+            Self::AssetsTimerUpdatePerpetuals => "1h",
+            Self::FiatTimerUpdateAssets => "1h",
+            Self::FiatTimerUpdateProviderCountries => "1h",
+            Self::FiatTimerUpdateBuyableAssets => "1h",
+            Self::FiatTimerUpdateTrending => "1h",
+            Self::ScanTimerUpdateValidators => "1d",
+            Self::ScanTimerUpdateValidatorsStatic => "1h",
+            Self::RewardsTimerAbuseChecker => "60s",
+            Self::DeviceTimerUpdater => "1d",
+            Self::DeviceTimerInactiveObserver => "1d",
+            Self::VersionTimerUpdateStoreVersions => "12h",
+            Self::TransactionTimerUpdater => "1d",
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",
             Self::SearchNftsUpdateInterval => "30m",

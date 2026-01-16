@@ -49,3 +49,5 @@ rewards_error_referral_eligibility_expired = ต้องใช้รหัส�
 notification_reward_pending_title = 💎 แนะนำเพื่อนใหม่
 notification_reward_pending_description = มีคนใช้รหัสแนะนำของคุณแล้ว กำลังรอการตรวจสอบ
 rewards_error_username_daily_limit_reached = เนื่องจากได้สร้างชื่อผู้ใช้รายวันครบจำนวนที่กำหนดแล้ว โปรดลองใหม่ในวันพรุ่งนี้
+notification_price_alert_target_title = 🎯 {$symbol} ที่ {$price}
+notification_price_alert_target_description = {$change} — the target you set has been reached.

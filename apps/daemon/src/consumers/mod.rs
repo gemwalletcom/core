@@ -256,7 +256,7 @@ pub async fn run_consumer_store_prices(settings: Settings) -> Result<(), Box<dyn
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(database.clone(), cacher_client);
     let config = ConfigCacher::new(database.clone());
-    let ttl_seconds = config.get_duration(ConfigKey::PricerOutdated)?.as_secs() as i64;
+    let ttl_seconds = config.get_duration(ConfigKey::PriceOutdated)?.as_secs() as i64;
     let consumer = StorePricesConsumer::new(database, price_client, ttl_seconds);
     run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer)).await
 }
