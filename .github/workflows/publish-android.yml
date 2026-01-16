@@ -80,6 +80,8 @@ jobs:
         if: ${{ inputs.publish_target == 'sonatype' }}
         run: just publish-android-maven
         env:
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           MVN_SIGNING_KEY: ${{ secrets.MVN_SIGNING_KEY }}
