@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -27,12 +28,12 @@ pub fn decode_hex(value: &str) -> Result<Vec<u8>, HexError> {
     if stripped.is_empty() {
         return Ok(vec![]);
     }
-    let normalized = if stripped.len() % 2 == 1 {
-        format!("0{stripped}")
+    let normalized: Cow<str> = if stripped.len() % 2 == 1 {
+        Cow::Owned(format!("0{stripped}"))
     } else {
-        stripped.to_string()
+        Cow::Borrowed(stripped)
     };
-    Ok(hex::decode(normalized)?)
+    Ok(hex::decode(&*normalized)?)
 }
 
 #[cfg(test)]
