@@ -29,7 +29,6 @@ pub fn map_node_status(ledger: &Ledger) -> Result<NodeSyncStatus, Box<dyn Error 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::Transaction;
 
     #[test]
     fn test_map_transaction_state_success() {

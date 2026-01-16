@@ -1,4 +1,4 @@
-use primitives::SignerError;
+use primitives::{SignerError, decode_hex};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -34,11 +34,7 @@ impl FromStr for AccountAddress {
     type Err = SignerError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let stripped = primitives::strip_0x(value);
-        if stripped.is_empty() {
-            return Err(SignerError::InvalidInput("Empty Aptos address".to_string()));
-        }
-        let bytes = primitives::decode_hex(value).map_err(|_| SignerError::InvalidInput("Invalid Aptos address hex".to_string()))?;
+        let bytes = decode_hex(value)?;
         Self::from_bytes(&bytes)
     }
 }
