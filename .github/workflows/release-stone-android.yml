@@ -11,76 +11,20 @@ on:
         description: "github ref name (tag)"
         required: true
 
-env:
-  CARGO_TERM_COLOR: always
-  SCCACHE_GHA_ENABLED: "true"
-  RUSTC_WRAPPER: "sccache"
-  BUILD_MODE: "release"
-
 jobs:
   publish_gpr:
-    runs-on: ubuntu-latest
-    env:
-      ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.1.13356709
-      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.1.13356709
-    defaults:
-      run:
-        working-directory: gemstone
-    steps:
-      - name: Set version tag
-        working-directory: .
-        run: |
-          if [ -n "${{ github.event.inputs.ref_name }}" ]; then
-            echo "VER_NAME=${{ github.event.inputs.ref_name }}" >> $GITHUB_ENV
-          elif [ "${{ github.ref_type }}" = "tag" ]; then
-            echo "VER_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
-          else
-            echo "No ref_name provided and not running on a tag"
-            exit 1
-          fi
+    uses: ./.github/workflows/publish-android.yml
+    with:
+      ref_name: ${{ github.event.inputs.ref_name || github.ref_name }}
+      publish_target: gpr
 
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.VER_NAME }}
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: "17"
-          distribution: "zulu"
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709'
-
-      - name: Restore cargo cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Install just
-        uses: extractions/setup-just@v2
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Build Android Bindings
-        run: |
-          just install-android-targets
-          just bindgen-kotlin
-
-      - name: Publish to Github Packages
-        run: just publish-android-gpr
-        env:
-          GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish to Maven Central
-        run: just publish-android-maven
-        env:
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          MVN_SIGNING_KEY: ${{ secrets.MVN_SIGNING_KEY }}
-          MVN_SIGNING_PASSPHRASE: ${{ secrets.MVN_SIGNING_PASSPHRASE }}
+  publish_sonatype:
+    uses: ./.github/workflows/publish-android.yml
+    with:
+      ref_name: ${{ github.event.inputs.ref_name || github.ref_name }}
+      publish_target: sonatype
+    secrets:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      MVN_SIGNING_KEY: ${{ secrets.MVN_SIGNING_KEY }}
+      MVN_SIGNING_PASSPHRASE: ${{ secrets.MVN_SIGNING_PASSPHRASE }}
