@@ -78,7 +78,13 @@ jobs:
 
       - name: Publish to Maven Central
         if: ${{ inputs.publish_target == 'sonatype' }}
-        run: just publish-android-maven
+        run: |
+          if [ -z "${MVN_SIGNING_KEY}" ]; then
+            echo "MVN_SIGNING_KEY is empty"
+            exit 1
+          fi
+          export MVN_SIGNING_KEY="$(printf '%s' "$MVN_SIGNING_KEY" | base64 --decode)"
+          just publish-android-maven
         env:
           GITHUB_USER: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
