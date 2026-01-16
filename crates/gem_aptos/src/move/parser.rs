@@ -1,7 +1,7 @@
 use crate::signer::AccountAddress;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use primitives::{SignerError, decode_hex, strip_0x};
+use primitives::{SignerError, decode_hex};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -251,7 +251,7 @@ fn parse_vector(value: &Value, inner: &TypeTag) -> Result<MoveValue, SignerError
 }
 
 fn parse_hex_bytes(value: &str) -> Result<Vec<u8>, SignerError> {
-    decode_hex(value).map_err(|_| SignerError::InvalidInput("Invalid hex bytes".to_string()))
+    Ok(decode_hex(value)?)
 }
 
 fn parse_address(value: &Value) -> Result<AccountAddress, SignerError> {
@@ -287,7 +287,7 @@ fn parse_u8(value: &Value) -> Result<u8, SignerError> {
 
 fn parse_u8_from_str(text: &str) -> Result<u8, SignerError> {
     if text.trim().starts_with("0x") {
-        let bytes = decode_hex(text).map_err(|_| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()))?;
+        let bytes = decode_hex(text)?;
         if bytes.len() != 1 {
             return Err(SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()));
         }
@@ -345,11 +345,7 @@ where
 fn parse_big_uint_from_str(text: &str, label: &str) -> Result<BigUint, SignerError> {
     let trimmed = text.trim();
     if trimmed.starts_with("0x") {
-        let stripped = strip_0x(trimmed);
-        if stripped.is_empty() {
-            return Err(SignerError::InvalidInput(format!("Invalid Aptos {label} argument")));
-        }
-        let bytes = decode_hex(trimmed).map_err(|_| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))?;
+        let bytes = decode_hex(trimmed)?;
         Ok(BigUint::from_bytes_be(&bytes))
     } else {
         BigUint::parse_bytes(trimmed.as_bytes(), 10).ok_or_else(|| SignerError::InvalidInput(format!("Invalid Aptos {label} argument")))
