@@ -165,13 +165,20 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
                 let bytes_vec = hex::decode(s.strip_prefix("0x").unwrap_or(s)).map_err(|e| format!("Invalid hex string for bytes type: {s}, error: {e}"))?;
                 Ok(EIP712TypedValue::Bytes { value: bytes_vec })
             }
-            // Wildcard for uint<N>, bytes<N>, and structs
+            // Wildcard for uint<N>, int<N>, bytes<N>, and structs
             other_type_name => {
                 if other_type_name.starts_with("uint") {
                     let value_str = match json_value {
                         Value::Number(n) => n.to_string(),
                         Value::String(s) => s.clone(),
                         _ => return Err(format!("Expected number or string for uint type '{other_type_name}', got: {json_value:?}")),
+                    };
+                    Ok(EIP712TypedValue::Uint256 { value: value_str })
+                } else if other_type_name.starts_with("int") {
+                    let value_str = match json_value {
+                        Value::Number(n) => n.to_string(),
+                        Value::String(s) => s.clone(),
+                        _ => return Err(format!("Expected number or string for int type '{other_type_name}', got: {json_value:?}")),
                     };
                     Ok(EIP712TypedValue::Uint256 { value: value_str })
                 } else if other_type_name.starts_with("bytes") {
