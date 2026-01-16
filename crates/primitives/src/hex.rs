@@ -18,13 +18,8 @@ impl From<hex::FromHexError> for HexError {
     }
 }
 
-fn strip_0x(value: &str) -> &str {
-    let trimmed = value.trim();
-    trimmed.strip_prefix("0x").unwrap_or(trimmed)
-}
-
 pub fn decode_hex(value: &str) -> Result<Vec<u8>, HexError> {
-    let stripped = strip_0x(value);
+    let stripped = value.trim().strip_prefix("0x").unwrap_or(value.trim());
     if stripped.is_empty() {
         return Ok(vec![]);
     }
