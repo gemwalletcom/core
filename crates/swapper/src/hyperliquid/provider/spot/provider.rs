@@ -21,8 +21,8 @@ use crate::{
 };
 
 use super::{
-    math::{SpotSide, apply_slippage, format_decimal, format_decimal_with_scale, format_order_size, scale_units, spot_asset_index},
-    simulator::{SimulationResult, simulate_buy, simulate_sell},
+    math::{SpotSide, apply_slippage, format_decimal, format_decimal_with_scale, format_order_size, round_size_down, scale_units, spot_asset_index},
+    simulator::{simulate_buy, simulate_sell},
 };
 
 const PAIR_BASE_SYMBOL: &str = "HYPE";
@@ -140,12 +140,43 @@ impl Swapper for HyperCoreSpot {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let SimulationResult {
-            amount_out: output_amount,
-            limit_price: base_limit_price,
-        } = match side {
-            SpotSide::Sell => simulate_sell(&amount_in, &orderbook.levels[0])?,
-            SpotSide::Buy => simulate_buy(&amount_in, &orderbook.levels[1])?,
+        // Round to sz_decimals before simulation to ensure quote matches execution.
+        let (output_amount, base_limit_price, size_rounded, actual_from_value) = match side {
+            SpotSide::Sell => {
+                let rounded_input = round_size_down(&amount_in, base_token.sz_decimals);
+                if rounded_input <= BigDecimal::zero() {
+                    return Err(SwapperError::InvalidAmount("amount too small after rounding".to_string()));
+                }
+                let result = simulate_sell(&rounded_input, &orderbook.levels[0])?;
+                let actual_from = if request.options.use_max_amount {
+                    let rounded_str = format_decimal(&rounded_input);
+                    Some(
+                        BigNumberFormatter::value_from_amount_biguint(&rounded_str, request.from_asset.decimals)
+                            .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?,
+                    )
+                } else {
+                    None
+                };
+                (result.amount_out, result.limit_price, rounded_input, actual_from)
+            }
+            SpotSide::Buy => {
+                let result = simulate_buy(&amount_in, &orderbook.levels[1])?;
+                let rounded_output = round_size_down(&result.amount_out, base_token.sz_decimals);
+                if rounded_output <= BigDecimal::zero() {
+                    return Err(SwapperError::InvalidAmount("output too small after rounding".to_string()));
+                }
+                let actual_from = if request.options.use_max_amount {
+                    let estimated_quote_amount = &rounded_output * &result.limit_price;
+                    let quote_str = format_decimal(&estimated_quote_amount);
+                    Some(
+                        BigNumberFormatter::value_from_amount_biguint(&quote_str, request.from_asset.decimals)
+                            .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?,
+                    )
+                } else {
+                    None
+                };
+                (rounded_output.clone(), result.limit_price, rounded_output, actual_from)
+            }
         };
 
         let token_decimals: u32 = to_token
@@ -163,16 +194,15 @@ impl Swapper for HyperCoreSpot {
         let limit_price = apply_slippage(&base_limit_price, side, request.options.slippage.bps, price_decimals)?;
         let limit_price = format_decimal_with_scale(&limit_price, price_decimals);
 
-        let size_value = match side {
-            SpotSide::Sell => amount_in.clone(),
-            SpotSide::Buy => output_amount.clone(),
-        };
-        let size_str = format_order_size(&size_value, base_token.sz_decimals)?;
+        let size_str = format_order_size(&size_rounded, base_token.sz_decimals);
 
         let asset_index = spot_asset_index(market.index);
 
+        // Adjust from_value for use_max_amount to reflect actual swapped amount after sz_decimals rounding.
+        let from_value = actual_from_value.map(|v| v.to_string()).unwrap_or_else(|| request.value.clone());
+
         let quote = Quote {
-            from_value: request.value.clone(),
+            from_value,
             to_value,
             data: ProviderData {
                 provider: self.provider.clone(),
@@ -263,8 +293,7 @@ mod tests {
         let expected_size = format_order_size(
             &BigDecimal::from_str(&BigNumberFormatter::value(&quote.from_value, quote.request.from_asset.decimals as i32).unwrap()).unwrap(),
             HYPE_SIZE_DECIMALS,
-        )
-        .unwrap();
+        );
         assert_eq!(order.orders[0].size, expected_size);
         assert_eq!(order.orders[0].size.split('.').nth(1).unwrap().len(), HYPE_SIZE_DECIMALS as usize);
 
