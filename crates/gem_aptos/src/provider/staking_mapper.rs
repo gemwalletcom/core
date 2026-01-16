@@ -2,10 +2,7 @@ use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 
-use crate::models::{DelegationPoolStake, ValidatorInfo, ValidatorSet};
-
-#[cfg(test)]
-use crate::models::StakingConfig;
+use crate::models::{DelegationPoolStake, StakingConfig, ValidatorInfo, ValidatorSet};
 
 pub fn map_validators(validator_set: ValidatorSet, apy: f64, pool_address: &str, commission: f64) -> Vec<DelegationValidator> {
     validator_set
@@ -84,7 +81,7 @@ pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, lockup_secs: 
         .collect()
 }
 
-pub fn calculate_apy(staking_config: &crate::models::StakingConfig) -> f64 {
+pub fn calculate_apy(staking_config: &StakingConfig) -> f64 {
     if staking_config.rewards_rate_denominator == 0 {
         return 0.0;
     }

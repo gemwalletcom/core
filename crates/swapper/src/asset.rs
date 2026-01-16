@@ -373,6 +373,15 @@ pub static HYPERCORE_SPOT_USDC: LazyLock<Asset> = LazyLock::new(|| {
         AssetType::TOKEN,
     )
 });
+pub static HYPERCORE_SPOT_UBTC: LazyLock<Asset> = LazyLock::new(|| {
+    Asset::new(
+        AssetId::from(Chain::HyperCore, Some("UBTC::0x8f254b963e8468305d409b33aa137c67::197".to_string())),
+        "Bitcoin".to_string(),
+        "UBTC".to_string(),
+        10,
+        AssetType::TOKEN,
+    )
+});
 // HyperEvm
 pub static HYPEREVM_HYPE: LazyLock<Asset> = LazyLock::new(|| Asset::from_chain(Chain::Hyperliquid));
 pub static HYPEREVM_USDC: LazyLock<Asset> =

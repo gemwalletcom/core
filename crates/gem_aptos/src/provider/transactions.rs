@@ -3,7 +3,7 @@ use chain_traits::ChainTransactions;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::BroadcastOptions;
+use primitives::{BroadcastOptions, Transaction, decode_hex};
 
 use super::transactions_mapper::map_transaction_broadcast;
 use crate::models::SubmitTransactionBcsRequest;
@@ -17,11 +17,11 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
         map_transaction_broadcast(&result)
     }
 
-    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(map_transactions(self.get_block_transactions(block).await?.transactions))
     }
 
-    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(map_transactions(self.get_transactions_by_address(_address).await?))
     }
 }
@@ -30,7 +30,7 @@ fn extract_bcs_bytes(data: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>
     let req = serde_json::from_str::<SubmitTransactionBcsRequest>(data)
         .map_err(|err| Box::new(std::io::Error::other(format!("Unsupported Aptos submit payload: {err}"))) as Box<dyn Error + Send + Sync>)?;
 
-    primitives::decode_hex(&req.bcs).map_err(|err| std::io::Error::other(format!("Invalid Aptos BCS hex: {err}")).into())
+    decode_hex(&req.bcs).map_err(|err| std::io::Error::other(format!("Invalid Aptos BCS hex: {err}")).into())
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
