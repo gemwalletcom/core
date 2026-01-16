@@ -28,6 +28,15 @@ use super::{
 const PAIR_BASE_SYMBOL: &str = "HYPE";
 const PAIR_QUOTE_SYMBOL: &str = "USDC";
 
+fn compute_actual_from(use_max_amount: bool, amount_str: &str, decimals: u32) -> Result<Option<num_bigint::BigUint>, SwapperError> {
+    if !use_max_amount {
+        return Ok(None);
+    }
+    BigNumberFormatter::value_from_amount_biguint(amount_str, decimals)
+        .map(Some)
+        .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))
+}
+
 #[derive(Debug)]
 pub struct HyperCoreSpot {
     provider: ProviderType,
@@ -148,15 +157,11 @@ impl Swapper for HyperCoreSpot {
                     return Err(SwapperError::InvalidAmount("amount too small after rounding".to_string()));
                 }
                 let result = simulate_sell(&rounded_input, &orderbook.levels[0])?;
-                let actual_from = if request.options.use_max_amount {
-                    let rounded_str = format_decimal(&rounded_input);
-                    Some(
-                        BigNumberFormatter::value_from_amount_biguint(&rounded_str, request.from_asset.decimals)
-                            .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?,
-                    )
-                } else {
-                    None
-                };
+                let actual_from = compute_actual_from(
+                    request.options.use_max_amount,
+                    &format_decimal(&rounded_input),
+                    request.from_asset.decimals,
+                )?;
                 (result.amount_out, result.limit_price, rounded_input, actual_from)
             }
             SpotSide::Buy => {
@@ -165,16 +170,11 @@ impl Swapper for HyperCoreSpot {
                 if rounded_output <= BigDecimal::zero() {
                     return Err(SwapperError::InvalidAmount("output too small after rounding".to_string()));
                 }
-                let actual_from = if request.options.use_max_amount {
-                    let estimated_quote_amount = &rounded_output * &result.limit_price;
-                    let quote_str = format_decimal(&estimated_quote_amount);
-                    Some(
-                        BigNumberFormatter::value_from_amount_biguint(&quote_str, request.from_asset.decimals)
-                            .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?,
-                    )
-                } else {
-                    None
-                };
+                let actual_from = compute_actual_from(
+                    request.options.use_max_amount,
+                    &format_decimal(&(&rounded_output * &result.limit_price)),
+                    request.from_asset.decimals,
+                )?;
                 (rounded_output.clone(), result.limit_price, rounded_output, actual_from)
             }
         };
