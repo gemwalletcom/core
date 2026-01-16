@@ -1,9 +1,9 @@
-use std::{str::FromStr, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
-use primitives::AssetId;
+use primitives::{AssetId, Chain};
 
 use crate::models::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldTransaction};
 use crate::provider::YieldProviderClient;
@@ -12,20 +12,27 @@ use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, v
 
 const SECONDS_PER_YEAR: f64 = 31_536_000.0;
 
-// Base chain has ~2 second block time, 7 days lookback
-const LOOKBACK_BLOCKS: u64 = 7 * 24 * 60 * 60 / 2;
+fn lookback_blocks_for_chain(chain: Chain) -> u64 {
+    match chain {
+        // Base chain has ~2 second block time, 7 days lookback
+        Chain::Base => 7 * 24 * 60 * 60 / 2,
+        // Ethereum has ~12 second block time, 7 days lookback
+        Chain::Ethereum => 7 * 24 * 60 * 60 / 12,
+        _ => 7 * 24 * 60 * 60 / 12, // Default to Ethereum-like
+    }
+}
 
 #[derive(Clone)]
 pub struct YoYieldProvider {
     vaults: Vec<YoVault>,
-    gateway: Arc<dyn YoProvider>,
+    gateways: HashMap<Chain, Arc<dyn YoProvider>>,
 }
 
 impl YoYieldProvider {
-    pub fn new(gateway: Arc<dyn YoProvider>) -> Self {
+    pub fn new(gateways: HashMap<Chain, Arc<dyn YoProvider>>) -> Self {
         Self {
             vaults: vaults().to_vec(),
-            gateway,
+            gateways,
         }
     }
 
@@ -35,6 +42,12 @@ impl YoYieldProvider {
             .copied()
             .find(|vault| vault.asset_id() == *asset_id)
             .ok_or_else(|| YieldError::new(format!("unsupported asset {}", asset_id)))
+    }
+
+    fn gateway_for_chain(&self, chain: Chain) -> Result<&Arc<dyn YoProvider>, YieldError> {
+        self.gateways
+            .get(&chain)
+            .ok_or_else(|| YieldError::new(format!("no gateway configured for chain {:?}", chain)))
     }
 }
 
@@ -62,7 +75,9 @@ impl YieldProviderClient for YoYieldProvider {
         let mut results = Vec::new();
 
         for vault in self.vaults.iter().copied().filter(|vault| vault.asset_id() == *asset_id) {
-            let data = self.gateway.fetch_position_data(vault, Address::ZERO, LOOKBACK_BLOCKS).await?;
+            let gateway = self.gateway_for_chain(vault.chain)?;
+            let lookback_blocks = lookback_blocks_for_chain(vault.chain);
+            let data = gateway.fetch_position_data(vault, Address::ZERO, lookback_blocks).await?;
             let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
             let apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
             results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy));
@@ -73,38 +88,38 @@ impl YieldProviderClient for YoYieldProvider {
 
     async fn deposit(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
         let vault = self.find_vault(asset_id)?;
+        let gateway = self.gateway_for_chain(vault.chain)?;
         let wallet = parse_address(wallet_address)?;
         let receiver = wallet;
         let amount = parse_value(value)?;
         let min_shares = U256::from(0);
         let partner_id = YO_PARTNER_ID_GEM;
 
-        let tx = self
-            .gateway
-            .build_deposit_transaction(wallet, vault.yo_token, amount, min_shares, receiver, partner_id);
+        let tx = gateway.build_deposit_transaction(wallet, vault.yo_token, amount, min_shares, receiver, partner_id);
         Ok(convert_transaction(vault, tx))
     }
 
     async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
         let vault = self.find_vault(asset_id)?;
+        let gateway = self.gateway_for_chain(vault.chain)?;
         let wallet = parse_address(wallet_address)?;
         let receiver = wallet;
         let shares = parse_value(value)?;
         let min_assets = U256::from(0);
         let partner_id = YO_PARTNER_ID_GEM;
 
-        let tx = self
-            .gateway
-            .build_redeem_transaction(wallet, vault.yo_token, shares, min_assets, receiver, partner_id);
+        let tx = gateway.build_redeem_transaction(wallet, vault.yo_token, shares, min_assets, receiver, partner_id);
         Ok(convert_transaction(vault, tx))
     }
 
     async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
         let vault = self.find_vault(&request.asset_id)?;
+        let gateway = self.gateway_for_chain(vault.chain)?;
+        let lookback_blocks = lookback_blocks_for_chain(vault.chain);
         let owner = parse_address(&request.wallet_address)?;
         let mut details = YieldPosition::new(vault.name, request.asset_id.clone(), self.provider(), vault.yo_token, vault.asset_token);
 
-        let data = self.gateway.fetch_position_data(vault, owner, LOOKBACK_BLOCKS).await?;
+        let data = gateway.fetch_position_data(vault, owner, lookback_blocks).await?;
 
         details.vault_balance_value = Some(data.share_balance.to_string());
 
