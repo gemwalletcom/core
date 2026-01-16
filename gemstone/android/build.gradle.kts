@@ -16,6 +16,7 @@ val sonatypeUsername = localProps?.getProperty("sonatype.username") ?: System.ge
 val sonatypePassword = localProps?.getProperty("sonatype.password") ?: System.getenv("SONATYPE_PASSWORD")
 
 nexusPublishing {
+    packageGroup.set(group.toString())
     repositories {
         sonatype {
             nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
