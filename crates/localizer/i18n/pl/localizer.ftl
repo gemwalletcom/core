@@ -49,5 +49,5 @@ rewards_error_referral_eligibility_expired = Kody polecające muszą zostać zas
 notification_reward_pending_title = 💎 Nowe polecenie
 notification_reward_pending_description = Ktoś użył Twojego kodu polecającego. Oczekuje na weryfikację.
 rewards_error_username_daily_limit_reached = Osiągnięto dzienny limit tworzenia nazw użytkowników. Spróbuj ponownie jutro.
-notification_price_alert_target_title = 🎯 {$symbol} Na {$price}
-notification_price_alert_target_description = {$change} — the target you set has been reached.
+notification_price_alert_target_title = 🎯 {$symbol} osiągnięty {$price}
+notification_price_alert_target_description = Teraz w {$price} ({$change}).

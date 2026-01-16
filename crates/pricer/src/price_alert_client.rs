@@ -41,6 +41,16 @@ struct AlertResult {
     milestone: Option<f64>,
 }
 
+impl AlertResult {
+    fn new(alert_type: PriceAlertType) -> Self {
+        Self { alert_type, milestone: None }
+    }
+
+    fn with_milestone(alert_type: PriceAlertType, milestone: f64) -> Self {
+        Self { alert_type, milestone: Some(milestone) }
+    }
+}
+
 impl PriceAlertRules {
     fn calculate_threshold(&self, rank: i32) -> f64 {
         let rank = if rank > 0 { rank } else { DEFAULT_RANK };
@@ -123,10 +133,7 @@ impl PriceAlertClient {
                 PriceAlertDirection::Down if price_data.price <= target_price => Some(PriceAlertType::PriceDown),
                 _ => None,
             };
-            return alert_type.map(|t| AlertResult {
-                alert_type: t,
-                milestone: None,
-            });
+            return alert_type.map(AlertResult::new);
         }
 
         // User-defined percent change
@@ -137,42 +144,27 @@ impl PriceAlertClient {
                 PriceAlertDirection::Down if price_data.price_change_percentage_24h <= -target_percent => Some(PriceAlertType::PricePercentChangeDown),
                 _ => None,
             };
-            return alert_type.map(|t| AlertResult {
-                alert_type: t,
-                milestone: None,
-            });
+            return alert_type.map(AlertResult::new);
         }
 
         // All-time high check
         if price_data.all_time_high > 0.0 && price_data.price > price_data.all_time_high {
-            return Some(AlertResult {
-                alert_type: PriceAlertType::AllTimeHigh,
-                milestone: None,
-            });
+            return Some(AlertResult::new(PriceAlertType::AllTimeHigh));
         }
 
         // Price milestone check
         let price_24h_ago = calculate_price_24h_ago(price_data.price, price_data.price_change_percentage_24h);
         if let Some(milestone) = rules.find_crossed_milestone(price_24h_ago, price_data.price) {
-            return Some(AlertResult {
-                alert_type: PriceAlertType::PriceMilestone,
-                milestone: Some(milestone),
-            });
+            return Some(AlertResult::with_milestone(PriceAlertType::PriceMilestone, milestone));
         }
 
         // Dynamic threshold based on rank
         let threshold = rules.calculate_threshold(price_data.market_cap_rank);
         if price_data.price_change_percentage_24h > threshold {
-            return Some(AlertResult {
-                alert_type: PriceAlertType::PriceChangesUp,
-                milestone: None,
-            });
+            return Some(AlertResult::new(PriceAlertType::PriceChangesUp));
         }
         if price_data.price_change_percentage_24h < -threshold {
-            return Some(AlertResult {
-                alert_type: PriceAlertType::PriceChangesDown,
-                milestone: None,
-            });
+            return Some(AlertResult::new(PriceAlertType::PriceChangesDown));
         }
 
         None
@@ -235,7 +227,7 @@ impl PriceAlertClient {
                         .milestone
                         .and_then(|m| formatter.currency(m, &alert.device.currency))
                         .unwrap_or_else(|| price.clone());
-                    localizer.price_alert_milestone(&alert.asset.full_name(), &milestone_price, &change)
+                    localizer.price_alert_target(&alert.asset.full_name(), &milestone_price, &change)
                 }
             };
 

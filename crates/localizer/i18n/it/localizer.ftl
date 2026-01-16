@@ -49,5 +49,5 @@ rewards_error_referral_eligibility_expired = I codici di riferimento devono esse
 notification_reward_pending_title = 💎 Nuovo referral
 notification_reward_pending_description = Qualcuno ha utilizzato il tuo codice di riferimento. In attesa di verifica.
 rewards_error_username_daily_limit_reached = È stato raggiunto il limite giornaliero di creazione di nomi utente. Riprova domani.
-notification_price_alert_target_title = 🎯 {$symbol} A {$price}
-notification_price_alert_target_description = {$change} — the target you set has been reached.
+notification_price_alert_target_title = 🎯 {$symbol} raggiunto {$price}
+notification_price_alert_target_description = Adesso a {$price} ({$change}).
