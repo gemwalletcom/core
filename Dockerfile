@@ -19,14 +19,14 @@ RUN cargo build --release --package api --package daemon --package dynode && \
 FROM debian:bookworm-slim AS runtime-base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl ca-certificates curl \
+    openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Core runtime image
 FROM runtime-base AS core
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev postgresql \
+    libpq5 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/api /app/
 COPY --from=builder /app/daemon /app/
