@@ -256,7 +256,7 @@ impl RewardsClient {
         let scoring_input = RiskScoringInput {
             username: referrer_username.to_string(),
             device_id: auth.device.id,
-            device_platform: auth.device.platform.as_ref().to_string(),
+            device_platform: *auth.device.platform,
             device_platform_store: auth.device.platform_store.as_ref().to_string(),
             device_os: auth.device.os.clone(),
             device_model: auth.device.model.clone(),
@@ -335,7 +335,7 @@ impl RewardsClient {
 
         let device_model_ring_count = match client.count_unique_referrers_for_device_model_pattern(
             &signal_input.device_model,
-            &signal_input.device_platform,
+            signal_input.device_platform,
             &signal_input.device_locale,
             since,
         ) {

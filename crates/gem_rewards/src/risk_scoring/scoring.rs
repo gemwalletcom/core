@@ -69,11 +69,11 @@ pub fn calculate_risk_score(
                 same_referrer_fingerprint_count += 1;
             }
 
-            if signal.ip_isp == input.ip_isp && signal.device_model == input.device_model && signal.device_platform == input.device_platform {
+            if signal.ip_isp == input.ip_isp && signal.device_model == input.device_model && *signal.device_platform == input.device_platform {
                 same_referrer_pattern_count += 1;
             }
 
-            if signal.device_model == input.device_model && signal.device_platform == input.device_platform {
+            if signal.device_model == input.device_model && *signal.device_platform == input.device_platform {
                 same_referrer_device_model_count += 1;
             }
             continue;
@@ -192,13 +192,13 @@ fn count_signals_in_recent_window(signals: &[&RiskSignalRow], window: Duration) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::IpUsageType;
+    use primitives::{IpUsageType, Platform};
 
     fn create_test_input() -> RiskSignalInput {
         RiskSignalInput {
             username: "user1".to_string(),
             device_id: 1,
-            device_platform: "iOS".to_string(),
+            device_platform: Platform::IOS,
             device_platform_store: "appStore".to_string(),
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
@@ -219,7 +219,7 @@ mod tests {
             fingerprint: fingerprint.to_string(),
             referrer_username: referrer_username.to_string(),
             device_id,
-            device_platform: "iOS".to_string(),
+            device_platform: Platform::IOS.into(),
             device_platform_store: "appStore".to_string(),
             device_os: "18.0".to_string(),
             device_model: model.to_string(),
@@ -540,7 +540,7 @@ mod tests {
     #[test]
     fn same_referrer_different_platform_ignored() {
         let mut signal = create_signal("user1", "fp1", "10.0.0.1", "Comcast", "iPhone15,2", 2);
-        signal.device_platform = "android".to_string();
+        signal.device_platform = Platform::Android.into();
         signal.device_platform_store = "googlePlay".to_string();
         let signals = [
             signal,
@@ -558,7 +558,7 @@ mod tests {
         let input = RiskSignalInput {
             username: "referrer1".to_string(),
             device_model: "TestDevice X".to_string(),
-            device_platform: "android".to_string(),
+            device_platform: Platform::Android,
             device_platform_store: "googlePlay".to_string(),
             ip_isp: "Test Mobile ISP".to_string(),
             ip_country_code: "XX".to_string(),
@@ -570,7 +570,7 @@ mod tests {
         let signals: Vec<_> = (0..3)
             .map(|i| {
                 let mut s = create_signal("referrer1", &fingerprint, "10.20.30.40", "Test Mobile ISP", "TestDevice X", 100 + i);
-                s.device_platform = "android".to_string();
+                s.device_platform = Platform::Android.into();
                 s.device_platform_store = "googlePlay".to_string();
                 s
             })
@@ -616,7 +616,7 @@ mod tests {
         let input = RiskSignalInput {
             username: "abuser".to_string(),
             device_model: "INFINIX X6525".to_string(),
-            device_platform: "android".to_string(),
+            device_platform: Platform::Android,
             device_platform_store: "googlePlay".to_string(),
             device_locale: "in".to_string(),
             ..create_test_input()
@@ -627,7 +627,7 @@ mod tests {
             .enumerate()
             .map(|(i, (isp, _country))| {
                 let mut s = create_signal("abuser", &format!("fp{}", i), &format!("10.0.0.{}", i), isp, "INFINIX X6525", 100 + i as i32);
-                s.device_platform = "android".to_string();
+                s.device_platform = Platform::Android.into();
                 s.device_platform_store = "googlePlay".to_string();
                 s
             })

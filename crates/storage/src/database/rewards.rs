@@ -2,7 +2,8 @@ use crate::DatabaseClient;
 use crate::models::{
     NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, ReferralAttemptRow, RewardEventRow, RewardReferralRow, RewardsRow, RiskSignalRow,
 };
-use crate::sql_types::{RewardEventType, RewardStatus};
+use crate::sql_types::{Platform, RewardEventType, RewardStatus};
+use primitives::Platform as PrimitivePlatform;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
@@ -227,7 +228,7 @@ pub(crate) trait RiskSignalsStore {
     fn count_unique_referrers_for_device_model_pattern(
         &mut self,
         device_model: &str,
-        device_platform: &str,
+        device_platform: PrimitivePlatform,
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DieselError>;
@@ -412,7 +413,7 @@ impl RiskSignalsStore for DatabaseClient {
     fn count_unique_referrers_for_device_model_pattern(
         &mut self,
         device_model: &str,
-        device_platform: &str,
+        device_platform: PrimitivePlatform,
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DieselError> {
@@ -422,7 +423,7 @@ impl RiskSignalsStore for DatabaseClient {
 
         dsl::rewards_risk_signals
             .filter(dsl::device_model.eq(device_model))
-            .filter(dsl::device_platform.eq(device_platform))
+            .filter(dsl::device_platform.eq(Platform::from(device_platform)))
             .filter(dsl::device_locale.eq(device_locale))
             .filter(dsl::created_at.ge(since))
             .select(count(dsl::referrer_username).aggregate_distinct())
