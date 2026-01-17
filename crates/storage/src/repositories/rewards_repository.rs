@@ -9,7 +9,7 @@ use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
 use primitives::rewards::{ReferralActivation, ReferralCodeActivation};
-use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletIdType, now};
+use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
 
 fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, address: &str, device_id: i32) -> Result<RewardsRow, DatabaseError> {
     UsernamesStore::create_username(
@@ -232,7 +232,7 @@ impl RewardsRepository for DatabaseClient {
         let device_subscriptions = SubscriptionsStore::get_device_addresses(self, device_id, Chain::Ethereum.as_ref())?;
 
         for address in &device_subscriptions {
-            let wallet_identifier = WalletIdType::Multicoin(address.clone()).id();
+            let wallet_identifier = WalletId::Multicoin(address.clone()).id();
             if let Ok(wallet) = WalletsStore::get_wallet(self, &wallet_identifier)
                 && UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet.id))?
             {

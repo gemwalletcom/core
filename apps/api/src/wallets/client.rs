@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 
-use primitives::{Chain, WalletIdType, WalletSource, WalletSubscription, WalletSubscriptionChains};
+use primitives::{Chain, WalletId, WalletSource, WalletSubscription, WalletSubscriptionChains};
 use storage::models::NewWalletRow;
 use storage::sql_types::WalletType;
 use storage::{Database, WalletsRepository};
@@ -22,7 +22,7 @@ impl WalletsClient {
         let rows = self.database.wallets()?.get_subscriptions(device_id)?;
 
         let result = rows.into_iter().fold(
-            HashMap::<String, (WalletIdType, Vec<Chain>)>::new(),
+            HashMap::<String, (WalletId, Vec<Chain>)>::new(),
             |mut acc, (wallet_row, subscription_row)| {
                 let wallet_id = wallet_row.wallet_id.0.clone();
                 acc.entry(wallet_id.id()).or_insert((wallet_id, Vec::new())).1.push(subscription_row.chain.0);

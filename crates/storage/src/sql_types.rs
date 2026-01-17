@@ -263,4 +263,4 @@ macro_rules! diesel_varchar_display {
     };
 }
 
-diesel_varchar_display!(WalletIdTypeRow, primitives::WalletIdType);
+diesel_varchar_display!(WalletIdRow, primitives::WalletId);

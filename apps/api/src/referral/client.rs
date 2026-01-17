@@ -3,7 +3,7 @@ use std::error::Error;
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
 use primitives::{
-    ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletIdType, now,
+    ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletId, now,
 };
 use storage::{
     ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource,
@@ -180,7 +180,7 @@ impl RewardsClient {
 
     pub async fn use_referral_code(&self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
         let locale = &auth.device.locale;
-        let wallet_identifier = WalletIdType::Multicoin(auth.address.clone()).id();
+        let wallet_identifier = WalletId::Multicoin(auth.address.clone()).id();
         let wallet = self.db.wallets()?.get_or_create_wallet(NewWalletRow {
             identifier: wallet_identifier,
             wallet_type: WalletType::Multicoin,
