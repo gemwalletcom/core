@@ -49,5 +49,5 @@ rewards_error_referral_eligibility_expired = 推荐码必须在有效期内使�
 notification_reward_pending_title = 💎 新推荐
 notification_reward_pending_description = 有人使用了您的推荐码。正在等待验证。
 rewards_error_username_daily_limit_reached = 每日用户名创建数量已达上限，请明日再试。
-notification_price_alert_target_title = 🎯 {$symbol} 在 {$price}
-notification_price_alert_target_description = {$change} — 您设定的目标已达成。
+notification_price_alert_target_title = 🎯 {$symbol} 达到 {$price}
+notification_price_alert_target_description = 现在在 {$price} （{$change}）。

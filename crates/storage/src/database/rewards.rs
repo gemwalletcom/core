@@ -231,7 +231,12 @@ pub(crate) trait RiskSignalsStore {
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DieselError>;
-    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError>;
+    fn get_abuse_patterns_for_referrer(
+        &mut self,
+        referrer_username: &str,
+        since: NaiveDateTime,
+        velocity_window_secs: i64,
+    ) -> Result<AbusePatterns, DieselError>;
     fn count_disabled_users_by_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
 }
 
@@ -424,7 +429,12 @@ impl RiskSignalsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError> {
+    fn get_abuse_patterns_for_referrer(
+        &mut self,
+        referrer_username: &str,
+        since: NaiveDateTime,
+        velocity_window_secs: i64,
+    ) -> Result<AbusePatterns, DieselError> {
         use crate::schema::rewards_risk_signals::dsl;
 
         let signals: Vec<RiskSignalRow> = dsl::rewards_risk_signals

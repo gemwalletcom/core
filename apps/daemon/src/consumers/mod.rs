@@ -26,7 +26,7 @@ use pricer::PriceClient;
 use primitives::ConfigKey;
 use settings::Settings;
 use settings_chain::ChainProviders;
-use storage::{ConfigCacher, Database};
+use storage::{ConfigCacher, ConfigRepository, Database};
 pub use store_charts_consumer::StoreChartsConsumer;
 pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
@@ -287,6 +287,11 @@ pub async fn run_consumer_rewards(settings: Settings) -> Result<(), Box<dyn Erro
 
 pub async fn run_rewards_redemption_consumer(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let retry_config = rewards_redemption_consumer::RedemptionRetryConfig {
+        max_retries: database.client()?.get_config_i64(ConfigKey::RedemptionRetryMaxRetries).unwrap_or(1) as u32,
+        delay: database.client()?.get_config_duration(ConfigKey::RedemptionRetryDelay).unwrap_or(std::time::Duration::from_secs(15)),
+        errors: database.client()?.get_config_vec_string(ConfigKey::RedemptionRetryErrors).unwrap_or_default(),
+    };
     let queue = QueueName::RewardsRedemptions;
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
@@ -294,7 +299,7 @@ pub async fn run_rewards_redemption_consumer(settings: Settings) -> Result<(), B
     let wallets = parse_rewards_wallets(&settings)?;
     let client_provider = create_evm_client_provider(settings.clone());
     let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
-    let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service);
+    let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service, retry_config);
     let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, bool>(
         &name,

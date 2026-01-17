@@ -14,8 +14,18 @@ pub trait WalletsStore {
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError>;
     fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<(WalletRow, WalletSubscriptionRow)>, DatabaseError>;
     fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, DatabaseError>;
-    fn add_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
-    fn delete_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
+    fn add_subscriptions(
+        &mut self,
+        device_id: &str,
+        wallet_ids: HashMap<String, i32>,
+        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
+    ) -> Result<usize, DatabaseError>;
+    fn delete_subscriptions(
+        &mut self,
+        device_id: &str,
+        wallet_ids: HashMap<String, i32>,
+        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
+    ) -> Result<usize, DatabaseError>;
 }
 
 impl WalletsStore for DatabaseClient {
@@ -87,7 +97,12 @@ impl WalletsStore for DatabaseClient {
         Ok(results)
     }
 
-    fn add_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError> {
+    fn add_subscriptions(
+        &mut self,
+        device_id: &str,
+        wallet_ids: HashMap<String, i32>,
+        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
+    ) -> Result<usize, DatabaseError> {
         let device: DeviceRow = devices::table
             .filter(devices::device_id.eq(device_id))
             .select(DeviceRow::as_select())
@@ -97,7 +112,8 @@ impl WalletsStore for DatabaseClient {
             .into_iter()
             .filter_map(|(wallet_identifier, addresses)| {
                 wallet_ids.get(&wallet_identifier).map(|&wallet_id| {
-                    addresses.into_iter()
+                    addresses
+                        .into_iter()
                         .map(|(chain, address)| NewWalletSubscriptionRow {
                             wallet_id,
                             device_id: device.id,
@@ -112,14 +128,24 @@ impl WalletsStore for DatabaseClient {
 
         let count = diesel::insert_into(wallets_subscriptions::table)
             .values(&rows)
-            .on_conflict((wallets_subscriptions::wallet_id, wallets_subscriptions::device_id, wallets_subscriptions::chain, wallets_subscriptions::address))
+            .on_conflict((
+                wallets_subscriptions::wallet_id,
+                wallets_subscriptions::device_id,
+                wallets_subscriptions::chain,
+                wallets_subscriptions::address,
+            ))
             .do_nothing()
             .execute(&mut self.connection)?;
 
         Ok(count)
     }
 
-    fn delete_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError> {
+    fn delete_subscriptions(
+        &mut self,
+        device_id: &str,
+        wallet_ids: HashMap<String, i32>,
+        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
+    ) -> Result<usize, DatabaseError> {
         let device: DeviceRow = devices::table
             .filter(devices::device_id.eq(device_id))
             .select(DeviceRow::as_select())
@@ -128,7 +154,9 @@ impl WalletsStore for DatabaseClient {
         let to_delete: Vec<_> = subscriptions
             .into_iter()
             .filter_map(|(wallet_identifier, addresses)| {
-                wallet_ids.get(&wallet_identifier).map(|&wallet_id| addresses.into_iter().map(move |(chain, address)| (wallet_id, chain, address)))
+                wallet_ids
+                    .get(&wallet_identifier)
+                    .map(|&wallet_id| addresses.into_iter().map(move |(chain, address)| (wallet_id, chain, address)))
             })
             .flatten()
             .collect();

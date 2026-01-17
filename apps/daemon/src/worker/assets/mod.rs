@@ -48,21 +48,29 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_tranding_assets = run_job("Update CoinGecko Trending assets", config.get_duration(ConfigKey::AssetsTimerUpdateTrending)?, {
-        let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
-        move || {
-            let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
-            async move { asset_updater.update_trending_assets().await }
-        }
-    });
+    let update_tranding_assets = run_job(
+        "Update CoinGecko Trending assets",
+        config.get_duration(ConfigKey::AssetsTimerUpdateTrending)?,
+        {
+            let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
+            move || {
+                let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
+                async move { asset_updater.update_trending_assets().await }
+            }
+        },
+    );
 
-    let update_recently_added_assets = run_job("Update CoinGecko recently added assets", config.get_duration(ConfigKey::AssetsTimerUpdateRecentlyAdded)?, {
-        let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
-        move || {
-            let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
-            async move { asset_updater.update_recently_added_assets().await }
-        }
-    });
+    let update_recently_added_assets = run_job(
+        "Update CoinGecko recently added assets",
+        config.get_duration(ConfigKey::AssetsTimerUpdateRecentlyAdded)?,
+        {
+            let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
+            move || {
+                let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
+                async move { asset_updater.update_recently_added_assets().await }
+            }
+        },
+    );
 
     let update_suspicious_assets = run_job("Update suspicious asset ranks", config.get_duration(ConfigKey::AssetsTimerUpdateSuspicious)?, {
         let database = database.clone();

@@ -2,8 +2,13 @@ use std::error::Error;
 
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
-use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletIdType, now};
-use storage::{ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource, WalletType, WalletsRepository};
+use primitives::{
+    ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletIdType, now,
+};
+use storage::{
+    ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource,
+    WalletType, WalletsRepository,
+};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 use crate::auth::VerifiedAuth;
@@ -68,7 +73,11 @@ impl RewardsClient {
     }
 
     fn calculate_referral_allowance(&self, wallet_id: i32, is_verified: bool) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
-        let multiplier = if is_verified { self.config.get_i32(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
+        let multiplier = if is_verified {
+            self.config.get_i32(ConfigKey::ReferralVerifiedMultiplier)?
+        } else {
+            1
+        };
 
         let daily_limit = self.config.get_i32(ConfigKey::ReferralPerUserDaily)? * multiplier;
         let weekly_limit = self.config.get_i32(ConfigKey::ReferralPerUserWeekly)? * multiplier;
@@ -358,7 +367,11 @@ impl RewardsClient {
 
     fn check_referrer_limits(&self, referrer_username: &str) -> Result<(), ReferralError> {
         let is_verified = self.db.rewards()?.is_verified_by_username(referrer_username)?;
-        let multiplier = if is_verified { self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
+        let multiplier = if is_verified {
+            self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?
+        } else {
+            1
+        };
 
         let current = now();
 

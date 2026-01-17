@@ -49,5 +49,5 @@ rewards_error_referral_eligibility_expired = کدهای ارجاع باید در
 notification_reward_pending_title = 💎 معرف جدید
 notification_reward_pending_description = شخصی از کد معرف شما استفاده کرده است. در انتظار تأیید.
 rewards_error_username_daily_limit_reached = محدودیت ایجاد نام کاربری روزانه به پایان رسیده است. لطفاً فردا دوباره امتحان کنید.
-notification_price_alert_target_title = 🎯 {$symbol} در {$price}
-notification_price_alert_target_description = {$change} — the target you set has been reached.
+notification_price_alert_target_title = 🎯 {$symbol} رسیده {$price}
+notification_price_alert_target_description = اکنون در {$price} ({$change}).

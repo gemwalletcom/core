@@ -83,10 +83,5 @@ pub async fn redeem_rewards(
     if !wallet.0.address().eq_ignore_ascii_case(&request.auth.address) {
         return Err(ApiError::BadRequest("Address mismatch".to_string()));
     }
-    Ok(client
-        .lock()
-        .await
-        .redeem(&wallet.id(), &request.data.id, request.auth.device.id)
-        .await?
-        .into())
+    Ok(client.lock().await.redeem(&wallet.id(), &request.data.id, request.auth.device.id).await?.into())
 }

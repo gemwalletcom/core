@@ -11,7 +11,7 @@ use gem_hypercore::{
     rpc::client::HyperCoreClient,
 };
 use num_bigint::BigUint;
-use number_formatter::BigNumberFormatter;
+use number_formatter::{BigNumberFormatter, NumberFormatterError};
 use primitives::Chain;
 
 use crate::{
@@ -28,13 +28,11 @@ use super::{
 
 const MIN_QUOTE_AMOUNT: i64 = 10;
 
-fn compute_actual_from(use_max_amount: bool, amount: &str, decimals: u32) -> Result<Option<BigUint>, SwapperError> {
+fn compute_actual_from(use_max_amount: bool, amount: &str, decimals: u32) -> Result<Option<BigUint>, NumberFormatterError> {
     if !use_max_amount {
         return Ok(None);
     }
-    BigNumberFormatter::value_from_amount_biguint(amount, decimals)
-        .map(Some)
-        .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))
+    BigNumberFormatter::value_from_amount_biguint(amount, decimals).map(Some)
 }
 
 #[derive(Debug)]

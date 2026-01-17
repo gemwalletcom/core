@@ -40,4 +40,3 @@ pub struct NewWalletSubscriptionRow {
     pub chain: ChainRow,
     pub address: String,
 }
-
