@@ -1,4 +1,5 @@
-use crate::cache::{CacheProvider, CachedResponse, RequestCache};
+use crate::cache::{CacheProvider, RequestCache};
+use crate::proxy::CachedResponse;
 use crate::config::{ChainConfig, HeadersConfig, Url};
 use crate::jsonrpc_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
 use crate::metrics::Metrics;

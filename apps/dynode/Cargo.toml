@@ -20,5 +20,4 @@ metrics = { path = "../../crates/metrics" }
 settings_chain = { path = "../../crates/settings_chain" }
 
 regex = { workspace = true }
-moka = { version = "0.12.12", features = ["future"] }
 url = { workspace = true }

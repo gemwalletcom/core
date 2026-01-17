@@ -1,5 +1,6 @@
-use reqwest::StatusCode;
 use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
+use reqwest::StatusCode;
+use std::time::Duration;
 
 use super::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
 
@@ -22,7 +23,7 @@ impl ProxyResponse {
 pub struct ResponseBuilder;
 
 impl ResponseBuilder {
-    pub fn create_upstream_headers(upstream_host: Option<&str>, latency: std::time::Duration) -> HeaderMap {
+    pub fn create_upstream_headers(upstream_host: Option<&str>, latency: Duration) -> HeaderMap {
         let mut headers = HeaderMap::new();
 
         if let Some(host) = upstream_host {
@@ -60,7 +61,7 @@ impl ResponseBuilder {
         Ok(ProxyResponse::new(status, headers, data))
     }
 
-    pub fn build_cached_with_headers(cached: crate::cache::CachedResponse, additional_headers: HeaderMap) -> ProxyResponse {
+    pub fn build_cached_with_headers(cached: super::CachedResponse, additional_headers: HeaderMap) -> ProxyResponse {
         let mut headers = HeaderMap::new();
 
         let content_header = if cached.content_type == JSON_CONTENT_TYPE {
