@@ -463,7 +463,7 @@ diesel::table! {
         notification_type -> NotificationType,
         is_read -> Bool,
         metadata -> Nullable<Jsonb>,
-        updated_at -> Timestamp,
+        read_at -> Nullable<Timestamp>,
         created_at -> Timestamp,
     }
 }

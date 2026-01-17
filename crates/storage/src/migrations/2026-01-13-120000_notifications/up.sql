@@ -6,7 +6,7 @@ CREATE TABLE notifications (
     notification_type notification_type NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT false,
     metadata JSONB,
-    updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    read_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );
 

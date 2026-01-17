@@ -41,7 +41,7 @@ impl NotificationsStore for DatabaseClient {
         let count = diesel::update(notifications::table)
             .filter(notifications::wallet_id.eq_any(wallet_ids_by_device_id(device_id)))
             .filter(notifications::is_read.eq(false))
-            .set((notifications::is_read.eq(true), notifications::updated_at.eq(diesel::dsl::now)))
+            .set((notifications::is_read.eq(true), notifications::read_at.eq(diesel::dsl::now)))
             .execute(&mut self.connection)?;
 
         Ok(count)
