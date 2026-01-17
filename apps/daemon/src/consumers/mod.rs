@@ -26,7 +26,7 @@ use pricer::PriceClient;
 use primitives::ConfigKey;
 use settings::Settings;
 use settings_chain::ChainProviders;
-use storage::{ConfigCacher, ConfigRepository, Database};
+use storage::{ConfigCacher, Database};
 pub use store_charts_consumer::StoreChartsConsumer;
 pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
@@ -288,10 +288,11 @@ pub async fn run_consumer_rewards(settings: Settings) -> Result<(), Box<dyn Erro
 
 pub async fn run_rewards_redemption_consumer(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let config = ConfigCacher::new(database.clone());
     let retry_config = rewards_redemption_consumer::RedemptionRetryConfig {
-        max_retries: database.client()?.get_config_i64(ConfigKey::RedemptionRetryMaxRetries).unwrap_or(1) as u32,
-        delay: database.client()?.get_config_duration(ConfigKey::RedemptionRetryDelay).unwrap_or(std::time::Duration::from_secs(15)),
-        errors: database.client()?.get_config_vec_string(ConfigKey::RedemptionRetryErrors).unwrap_or_default(),
+        max_retries: config.get_i64(ConfigKey::RedemptionRetryMaxRetries)? as u32,
+        delay: config.get_duration(ConfigKey::RedemptionRetryDelay)?,
+        errors: config.get_vec_string(ConfigKey::RedemptionRetryErrors)?,
     };
     let queue = QueueName::RewardsRedemptions;
     let name = queue.to_string();
