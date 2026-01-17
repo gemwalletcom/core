@@ -103,10 +103,7 @@ mod tests {
 
         let tx_url = explorer.get_transaction_url(&explorers[1].name(), "813d80363c09b1c4d3f0c6ce3382a048b320edefb573a8aedbc7ddd4c65cf7e4");
 
-        assert_eq!(
-            tx_url,
-            "https://mempool.space/tx/813d80363c09b1c4d3f0c6ce3382a048b320edefb573a8aedbc7ddd4c65cf7e4"
-        );
+        assert_eq!(tx_url, "https://mempool.space/tx/813d80363c09b1c4d3f0c6ce3382a048b320edefb573a8aedbc7ddd4c65cf7e4");
     }
 
     #[test]
@@ -124,14 +121,8 @@ mod tests {
         let token_url = explorer.get_token_url(&explorers[0].name(), "0xdac17f958d2ee523a2206206994597c13d831ec7");
 
         assert_eq!(account_url, "https://etherscan.io/address/0x1f9090aae28b8a3dceadf281b0f12828e676c326");
-        assert_eq!(
-            tx_url,
-            "https://etherscan.io/tx/0xfd96a9ee20a7440bf65a5b8ecf7f884289ed78e28f82d45343a70f459e7a42a0"
-        );
-        assert_eq!(
-            token_url,
-            Some("https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7".to_string())
-        );
+        assert_eq!(tx_url, "https://etherscan.io/tx/0xfd96a9ee20a7440bf65a5b8ecf7f884289ed78e28f82d45343a70f459e7a42a0");
+        assert_eq!(token_url, Some("https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7".to_string()));
     }
 
     #[test]
@@ -146,19 +137,14 @@ mod tests {
 
         let explorer = Explorer::new(chain.as_ref());
         let account_url = explorer.get_address_url(&explorers[0].name(), "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs");
-        let token_url = explorer
-            .get_token_url(&explorers[0].name(), "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs")
-            .unwrap();
+        let token_url = explorer.get_token_url(&explorers[0].name(), "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs").unwrap();
 
         assert_eq!(account_url, "https://tonviewer.com/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs");
         assert_eq!(token_url, account_url);
 
         let tx_url = explorer.get_transaction_url(&explorers[0].name(), "cefe5c6d145976c434280648fae28dfdfee58002e8c4e36195550ed6cdb22aa0");
 
-        assert_eq!(
-            tx_url,
-            "https://tonviewer.com/transaction/cefe5c6d145976c434280648fae28dfdfee58002e8c4e36195550ed6cdb22aa0"
-        );
+        assert_eq!(tx_url, "https://tonviewer.com/transaction/cefe5c6d145976c434280648fae28dfdfee58002e8c4e36195550ed6cdb22aa0");
     }
 
     #[test]
@@ -191,9 +177,7 @@ mod tests {
             "https://solscan.io/tx/58UdzFXAz6Vk58jEM6UsWmNb7kcJ1YvR2nQmkp8YQSW2gabmGra1u67SEjNZzTHCyuAn8NqzcQcn6qBLKx7uhVK7"
         );
         assert_eq!(
-            explorer
-                .get_token_url(&explorers[1].name(), "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",)
-                .unwrap(),
+            explorer.get_token_url(&explorers[1].name(), "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",).unwrap(),
             "https://solana.fm/address/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
         );
     }
@@ -213,14 +197,8 @@ mod tests {
             .get_token_url(&explorers[0].name(), "ibc/0025F8A87464A471E66B234C4F93AEC5B4DA3D42D7986451A059273426290DD5")
             .unwrap();
 
-        assert_eq!(
-            account_url,
-            "https://www.mintscan.io/cosmos/address/cosmos1fxygpgus4nd5jmfl5j7fh5y8hyy53z8u95dzx7"
-        );
-        assert_eq!(
-            tx_url,
-            "https://www.mintscan.io/cosmos/tx/CFB4B38D75DB9D9055A7D4A2A76C67B8A27C37124C4E5663BEE104589E726763"
-        );
+        assert_eq!(account_url, "https://www.mintscan.io/cosmos/address/cosmos1fxygpgus4nd5jmfl5j7fh5y8hyy53z8u95dzx7");
+        assert_eq!(tx_url, "https://www.mintscan.io/cosmos/tx/CFB4B38D75DB9D9055A7D4A2A76C67B8A27C37124C4E5663BEE104589E726763");
         assert_eq!(
             asset_url,
             "https://www.mintscan.io/cosmos/assets/ibc/0025F8A87464A471E66B234C4F93AEC5B4DA3D42D7986451A059273426290DD5"
@@ -239,14 +217,8 @@ mod tests {
         let account_url = explorer.get_address_url(&explorers[0].name(), "noble17w8y9eujrz4m08nn0h349s5h2rs8uz5hqe02z4");
         let tx_url = explorer.get_transaction_url(&explorers[0].name(), "22F0B4F48A85925A668D64134B7377476DC5BAE3CF7CC38AFC0E17E5F7D90001");
 
-        assert_eq!(
-            account_url,
-            "https://www.mintscan.io/noble/address/noble17w8y9eujrz4m08nn0h349s5h2rs8uz5hqe02z4"
-        );
-        assert_eq!(
-            tx_url,
-            "https://www.mintscan.io/noble/tx/22F0B4F48A85925A668D64134B7377476DC5BAE3CF7CC38AFC0E17E5F7D90001"
-        );
+        assert_eq!(account_url, "https://www.mintscan.io/noble/address/noble17w8y9eujrz4m08nn0h349s5h2rs8uz5hqe02z4");
+        assert_eq!(tx_url, "https://www.mintscan.io/noble/tx/22F0B4F48A85925A668D64134B7377476DC5BAE3CF7CC38AFC0E17E5F7D90001");
     }
 
     #[test]
@@ -316,10 +288,7 @@ mod tests {
         let tx_url = explorer.get_transaction_url(&explorers[0].name(), "FF82C517ECFDCA71A6CD3501063D76995C67509B2AFC012D2BCE61C130C05E98");
 
         assert_eq!(account_url, "https://runescan.io/address/thor166n4w5039meulfa3p6ydg60ve6ueac7tlt0jws");
-        assert_eq!(
-            tx_url,
-            "https://runescan.io/tx/FF82C517ECFDCA71A6CD3501063D76995C67509B2AFC012D2BCE61C130C05E98"
-        );
+        assert_eq!(tx_url, "https://runescan.io/tx/FF82C517ECFDCA71A6CD3501063D76995C67509B2AFC012D2BCE61C130C05E98");
     }
 
     #[test]
@@ -333,10 +302,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(
-            tx_url.url,
-            "https://runescan.io/tx/0299923c9a0a40e3a296058ac2c5c3a7b41f91803ea36ad9645492ccca0f8631"
-        );
+        assert_eq!(tx_url.url, "https://runescan.io/tx/0299923c9a0a40e3a296058ac2c5c3a7b41f91803ea36ad9645492ccca0f8631");
 
         let explorer = Explorer::new(Chain::Solana.as_ref());
         let tx_url = explorer
@@ -357,9 +323,7 @@ mod tests {
     fn test_near_intents_swap_url() {
         let explorer = Explorer::new(Chain::Near.as_ref());
         let tx_hash = "aec8de30ed03c5e6f9d0dc90ae39d865f1b4f6f77c990f2ad16c93e873ea67de";
-        let url = explorer
-            .get_transaction_swap_url("Near", tx_hash, SwapperProvider::NearIntents.as_ref())
-            .expect("swap url");
+        let url = explorer.get_transaction_swap_url("Near", tx_hash, SwapperProvider::NearIntents.as_ref()).expect("swap url");
 
         assert_eq!(url.name, "NEAR Intents");
         assert_eq!(

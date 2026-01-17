@@ -10,9 +10,8 @@ use primitives::rewards::{
 use primitives::scan::AddressType as PrimitiveAddressType;
 use primitives::{
     AssetType as PrimitiveAssetType, Chain, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType, NotificationType as PrimitiveNotificationType,
-    Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState,
-    TransactionType as PrimitiveTransactionType, UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource,
-    WalletType as PrimitiveWalletType,
+    Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
+    UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType,
 };
 use serde::{Deserialize, Serialize};
 use std::io::Write;
@@ -22,9 +21,8 @@ use std::str::FromStr;
 use crate::schema::sql_types::{
     AddressType as AddressTypeSql, AssetType as AssetTypeSql, IpUsageType as IpUsageTypeSql, LinkType as LinkTypeSql, NftType as NftTypeSql,
     NotificationType as NotificationTypeSql, Platform as PlatformSql, PlatformStore as PlatformStoreSql, RedemptionStatus as RedemptionStatusSql,
-    RewardEventType as RewardEventTypeSql, RewardRedemptionType as RewardRedemptionTypeSql, RewardStatus as RewardStatusSql,
-    TransactionState as TransactionStateSql, TransactionType as TransactionTypeSql, UsernameStatus as UsernameStatusSql, WalletSource as WalletSourceSql,
-    WalletType as WalletTypeSql,
+    RewardEventType as RewardEventTypeSql, RewardRedemptionType as RewardRedemptionTypeSql, RewardStatus as RewardStatusSql, TransactionState as TransactionStateSql,
+    TransactionType as TransactionTypeSql, UsernameStatus as UsernameStatusSql, WalletSource as WalletSourceSql, WalletType as WalletTypeSql,
 };
 
 macro_rules! diesel_enum {
@@ -68,12 +66,7 @@ macro_rules! diesel_enum {
     };
 }
 
-diesel_enum!(
-    RewardStatus,
-    PrimitiveRewardStatus,
-    RewardStatusSql,
-    [Unverified, Pending, Verified, Trusted, Disabled]
-);
+diesel_enum!(RewardStatus, PrimitiveRewardStatus, RewardStatusSql, [Unverified, Pending, Verified, Trusted, Disabled]);
 
 diesel_enum!(RewardRedemptionType, PrimitiveRewardRedemptionType, RewardRedemptionTypeSql, [Asset, GiftAsset]);
 
@@ -143,12 +136,7 @@ diesel_enum!(
     [CreateUsername, InvitePending, InviteNew, InviteExisting, Joined, Disabled]
 );
 
-diesel_enum!(
-    TransactionState,
-    PrimitiveTransactionState,
-    TransactionStateSql,
-    [Pending, Confirmed, Failed, Reverted]
-);
+diesel_enum!(TransactionState, PrimitiveTransactionState, TransactionStateSql, [Pending, Confirmed, Failed, Reverted]);
 
 diesel_enum!(UsernameStatus, PrimitiveUsernameStatus, UsernameStatusSql, [Unverified, Verified]);
 
@@ -208,9 +196,7 @@ macro_rules! diesel_varchar {
         impl FromSql<diesel::sql_types::Varchar, Pg> for $wrapper {
             fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
                 let s = std::str::from_utf8(bytes.as_bytes())?;
-                Ok(Self(
-                    <$inner>::from_str(s).map_err(|e| format!("Invalid {}: {}", stringify!($wrapper), e))?,
-                ))
+                Ok(Self(<$inner>::from_str(s).map_err(|e| format!("Invalid {}: {}", stringify!($wrapper), e))?))
             }
         }
 
@@ -248,9 +234,7 @@ macro_rules! diesel_varchar_display {
         impl FromSql<diesel::sql_types::Varchar, Pg> for $wrapper {
             fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
                 let s = std::str::from_utf8(bytes.as_bytes())?;
-                Ok(Self(
-                    <$inner>::from_str(s).map_err(|e| format!("Invalid {}: {}", stringify!($wrapper), e))?,
-                ))
+                Ok(Self(<$inner>::from_str(s).map_err(|e| format!("Invalid {}: {}", stringify!($wrapper), e))?))
             }
         }
 

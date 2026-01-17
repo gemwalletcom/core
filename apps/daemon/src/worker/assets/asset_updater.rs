@@ -132,10 +132,7 @@ impl AssetUpdater {
                     }
                     let token_id = format_token_id(chain, contract_address)?;
                     let decimals = platform.decimal_place.unwrap_or_default();
-                    let asset_id = AssetId {
-                        chain,
-                        token_id: token_id.into(),
-                    };
+                    let asset_id = AssetId { chain, token_id: token_id.into() };
                     let asset = Asset::new(asset_id, coin_info.clone().name, coin_info.clone().symbol.to_uppercase(), decimals, asset_type);
                     Some(asset)
                 } else {
@@ -205,15 +202,7 @@ impl AssetUpdater {
             results.push(AssetLink::new(&format!("https://x.com/{value}"), LinkType::X));
         }
 
-        if let Some(value) = links
-            .clone()
-            .homepage
-            .into_iter()
-            .filter(|x| !x.is_empty())
-            .collect::<Vec<_>>()
-            .first()
-            .cloned()
-        {
+        if let Some(value) = links.clone().homepage.into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().first().cloned() {
             let exclude_domains = ["https://t.me"];
             if !value.is_empty() && !exclude_domains.iter().any(|&domain| value.contains(domain)) {
                 results.push(AssetLink::new(&value, LinkType::Website));
@@ -266,10 +255,7 @@ impl AssetUpdater {
         let asset_id = asset.id.to_string();
         let asset_basic = AssetBasic::new(asset, properties, score.clone());
         let _ = self.database.assets()?.add_assets(vec![asset_basic]);
-        let _ = self
-            .database
-            .assets()?
-            .update_assets(vec![asset_id.clone()], vec![AssetUpdate::Rank(score.rank)]);
+        let _ = self.database.assets()?.update_assets(vec![asset_id.clone()], vec![AssetUpdate::Rank(score.rank)]);
         let _ = self.update_links(&asset_id, asset_links).await;
         Ok(())
     }

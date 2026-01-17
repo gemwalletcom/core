@@ -15,8 +15,7 @@ use number_formatter::{BigNumberFormatter, NumberFormatterError};
 use primitives::Chain;
 
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset,
-    SwapperQuoteData,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     asset::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_UBTC, HYPERCORE_SPOT_USDC},
 };
@@ -248,13 +247,7 @@ impl Swapper for HyperCoreSpot {
         let order: PlaceOrder = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let order_json = serde_json::to_string(&order).map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?;
 
-        Ok(SwapperQuoteData::new_contract(
-            "".to_string(),
-            quote.request.value.clone(),
-            order_json,
-            None,
-            None,
-        ))
+        Ok(SwapperQuoteData::new_contract("".to_string(), quote.request.value.clone(), order_json, None, None))
     }
 }
 

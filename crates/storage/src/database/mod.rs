@@ -37,12 +37,12 @@ pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 use crate::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
     chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository, devices_repository::DevicesRepository,
-    fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
-    notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
-    price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
-    releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
-    scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository,
-    tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
+    fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository, notifications_repository::NotificationsRepository,
+    parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository,
+    prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
+    rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository,
+    subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository,
+    wallets_repository::WalletsRepository,
 };
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {

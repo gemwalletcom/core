@@ -84,24 +84,15 @@ impl FiatAssetRow {
     }
 
     pub fn unsupported_countries(&self) -> HashMap<String, Vec<String>> {
-        self.unsupported_countries
-            .as_ref()
-            .and_then(|v| serde_json::from_value(v.clone()).ok())
-            .unwrap_or_default()
+        self.unsupported_countries.as_ref().and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or_default()
     }
 
     pub fn buy_limits(&self) -> Vec<FiatAssetLimits> {
-        self.buy_limits
-            .as_ref()
-            .and_then(|v| serde_json::from_value(v.clone()).ok())
-            .unwrap_or_default()
+        self.buy_limits.as_ref().and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or_default()
     }
 
     pub fn sell_limits(&self) -> Vec<FiatAssetLimits> {
-        self.sell_limits
-            .as_ref()
-            .and_then(|v| serde_json::from_value(v.clone()).ok())
-            .unwrap_or_default()
+        self.sell_limits.as_ref().and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or_default()
     }
 }
 

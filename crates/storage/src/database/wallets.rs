@@ -14,18 +14,8 @@ pub trait WalletsStore {
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError>;
     fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<(WalletRow, WalletSubscriptionRow)>, DatabaseError>;
     fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, DatabaseError>;
-    fn add_subscriptions(
-        &mut self,
-        device_id: &str,
-        wallet_ids: HashMap<String, i32>,
-        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
-    ) -> Result<usize, DatabaseError>;
-    fn delete_subscriptions(
-        &mut self,
-        device_id: &str,
-        wallet_ids: HashMap<String, i32>,
-        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
-    ) -> Result<usize, DatabaseError>;
+    fn add_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
+    fn delete_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
 }
 
 impl WalletsStore for DatabaseClient {
@@ -39,10 +29,7 @@ impl WalletsStore for DatabaseClient {
     }
 
     fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError> {
-        let result = wallets::table
-            .filter(wallets::id.eq(id))
-            .select(WalletRow::as_select())
-            .first(&mut self.connection)?;
+        let result = wallets::table.filter(wallets::id.eq(id)).select(WalletRow::as_select()).first(&mut self.connection)?;
 
         Ok(result)
     }
@@ -97,12 +84,7 @@ impl WalletsStore for DatabaseClient {
         Ok(results)
     }
 
-    fn add_subscriptions(
-        &mut self,
-        device_id: &str,
-        wallet_ids: HashMap<String, i32>,
-        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
-    ) -> Result<usize, DatabaseError> {
+    fn add_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError> {
         let device: DeviceRow = devices::table
             .filter(devices::device_id.eq(device_id))
             .select(DeviceRow::as_select())
@@ -140,12 +122,7 @@ impl WalletsStore for DatabaseClient {
         Ok(count)
     }
 
-    fn delete_subscriptions(
-        &mut self,
-        device_id: &str,
-        wallet_ids: HashMap<String, i32>,
-        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
-    ) -> Result<usize, DatabaseError> {
+    fn delete_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError> {
         let device: DeviceRow = devices::table
             .filter(devices::device_id.eq(device_id))
             .select(DeviceRow::as_select())

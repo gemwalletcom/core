@@ -21,19 +21,15 @@ impl WalletsClient {
     pub async fn get_subscriptions(&self, device_id: &str) -> Result<Vec<WalletSubscriptionChains>, Box<dyn Error + Send + Sync>> {
         let rows = self.database.wallets()?.get_subscriptions(device_id)?;
 
-        let result = rows.into_iter().fold(
-            HashMap::<String, (WalletId, Vec<Chain>)>::new(),
-            |mut acc, (wallet_row, subscription_row)| {
+        let result = rows
+            .into_iter()
+            .fold(HashMap::<String, (WalletId, Vec<Chain>)>::new(), |mut acc, (wallet_row, subscription_row)| {
                 let wallet_id = wallet_row.wallet_id.0.clone();
                 acc.entry(wallet_id.id()).or_insert((wallet_id, Vec::new())).1.push(subscription_row.chain.0);
                 acc
-            },
-        );
+            });
 
-        Ok(result
-            .into_values()
-            .map(|(wallet_id, chains)| WalletSubscriptionChains { wallet_id, chains })
-            .collect())
+        Ok(result.into_values().map(|(wallet_id, chains)| WalletSubscriptionChains { wallet_id, chains }).collect())
     }
 
     pub async fn add_subscriptions(&self, device_id: &str, wallet_subscriptions: Vec<WalletSubscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {

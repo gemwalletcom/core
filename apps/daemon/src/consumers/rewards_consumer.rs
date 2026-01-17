@@ -2,9 +2,7 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use localizer::LanguageLocalizer;
-use primitives::{
-    Device, GorushNotification, NotificationRewardsMetadata, NotificationType, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType,
-};
+use primitives::{Device, GorushNotification, NotificationRewardsMetadata, NotificationType, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType};
 use storage::{Database, NewNotificationRow, NotificationType as StorageNotificationType, NotificationsRepository, RewardsRepository};
 use streamer::{NotificationsPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
@@ -36,9 +34,7 @@ impl MessageConsumer<RewardsNotificationPayload, usize> for RewardsConsumer {
         }
 
         let count = notifications.len();
-        self.stream_producer
-            .publish_notifications_rewards(NotificationsPayload::new(notifications))
-            .await?;
+        self.stream_producer.publish_notifications_rewards(NotificationsPayload::new(notifications)).await?;
         Ok(count)
     }
 }
@@ -92,21 +88,9 @@ fn reward_notification_content(localizer: &LanguageLocalizer, event: RewardEvent
             localizer.notification_reward_title(event.points()),
             localizer.notification_reward_create_username_description(),
         ),
-        RewardEventType::InvitePending => (
-            localizer.notification_reward_pending_title(),
-            localizer.notification_reward_pending_description(),
-        ),
-        RewardEventType::InviteNew | RewardEventType::InviteExisting => (
-            localizer.notification_reward_title(event.points()),
-            localizer.notification_reward_invite_description(),
-        ),
-        RewardEventType::Joined => (
-            localizer.notification_reward_title(event.points()),
-            localizer.notification_reward_joined_description(),
-        ),
-        RewardEventType::Disabled => (
-            localizer.notification_rewards_disabled_title(),
-            localizer.notification_rewards_disabled_description(),
-        ),
+        RewardEventType::InvitePending => (localizer.notification_reward_pending_title(), localizer.notification_reward_pending_description()),
+        RewardEventType::InviteNew | RewardEventType::InviteExisting => (localizer.notification_reward_title(event.points()), localizer.notification_reward_invite_description()),
+        RewardEventType::Joined => (localizer.notification_reward_title(event.points()), localizer.notification_reward_joined_description()),
+        RewardEventType::Disabled => (localizer.notification_rewards_disabled_title(), localizer.notification_rewards_disabled_description()),
     }
 }

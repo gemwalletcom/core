@@ -64,10 +64,7 @@ async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut last_printed_block_opt: Option<u64> = None;
     let mut block_data: HashMap<u64, Vec<SourceFeeDetail>> = HashMap::new();
-    println!(
-        "gas-bench: with history blocks: {}, reward percentiles: {:?}",
-        args.blocks, args.reward_percentiles
-    );
+    println!("gas-bench: with history blocks: {}, reward percentiles: {:?}", args.blocks, args.reward_percentiles);
 
     loop {
         ticker.tick().await;

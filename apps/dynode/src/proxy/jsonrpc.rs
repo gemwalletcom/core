@@ -1,7 +1,7 @@
 use crate::cache::{CacheProvider, RequestCache};
-use crate::proxy::CachedResponse;
 use crate::jsonrpc_types::{JsonRpcCall, JsonRpcRequest, JsonRpcResponse, JsonRpcResult};
 use crate::metrics::Metrics;
+use crate::proxy::CachedResponse;
 use crate::proxy::constants::JSON_CONTENT_TYPE;
 use crate::proxy::proxy_request::ProxyRequest;
 use crate::proxy::request_builder::RequestBuilder;
@@ -46,12 +46,7 @@ impl JsonRpcHandler {
         if let Some(_ttl) = cache.should_cache_call(&request.chain, call) {
             if let Some(cached) = cache.get(&request.chain, &cache_key).await {
                 metrics.add_cache_hit(request.chain.as_ref(), &call.method);
-                info_with_fields!(
-                    "Cache HIT",
-                    chain = request.chain.as_ref(),
-                    host = request.host.as_str(),
-                    method = call.method.as_str()
-                );
+                info_with_fields!("Cache HIT", chain = request.chain.as_ref(), host = request.host.as_str(), method = call.method.as_str());
 
                 let result = serde_json::from_slice(&cached.body).unwrap_or_default();
                 let response = JsonRpcResult::Success(JsonRpcResponse {

@@ -6,8 +6,8 @@ use std::str::from_utf8;
 
 use super::abi::{PANORA_ROUTER_ENTRY_PARAMS, PANORA_ROUTER_FUNCTION, PANORA_ROUTER_MODULE};
 use super::{
-    AccountAddress, EntryFunction, EntryFunctionPayload, build_raw_transaction, build_submit_transaction_bcs, expiration_timestamp_secs,
-    sign_message as sign_aptos_message, sign_raw_transaction,
+    AccountAddress, EntryFunction, EntryFunctionPayload, build_raw_transaction, build_submit_transaction_bcs, expiration_timestamp_secs, sign_message as sign_aptos_message,
+    sign_raw_transaction,
 };
 
 const APTOS_CHAIN_ID: u8 = 1;
@@ -41,10 +41,7 @@ impl ChainSigner for AptosChainSigner {
 
     fn sign_token_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
         let asset = input.input_type.get_asset();
-        let token_id = asset
-            .token_id
-            .as_ref()
-            .ok_or_else(|| SignerError::InvalidInput("Missing Aptos token id".to_string()))?;
+        let token_id = asset.token_id.as_ref().ok_or_else(|| SignerError::InvalidInput("Missing Aptos token id".to_string()))?;
 
         if token_id.contains("::") {
             let payload = EntryFunctionPayload {

@@ -99,10 +99,7 @@ mod chain_integration_tests {
             assert!(balance.balance.available > BigUint::from(0u32));
         }
 
-        assert!(
-            balances.first().unwrap().balance.available > BigUint::from(0u32),
-            "USDT balance should be greater than 0"
-        );
+        assert!(balances.first().unwrap().balance.available > BigUint::from(0u32), "USDT balance should be greater than 0");
 
         Ok(())
     }

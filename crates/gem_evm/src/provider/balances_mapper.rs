@@ -6,10 +6,7 @@ use serde_serializers::biguint_from_hex_str;
 use std::error::Error;
 
 pub fn map_balance_coin(balance_hex: String, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Send + Sync>> {
-    Ok(AssetBalance::new_balance(
-        chain.as_asset_id(),
-        Balance::coin_balance(biguint_from_hex_str(&balance_hex)?),
-    ))
+    Ok(AssetBalance::new_balance(chain.as_asset_id(), Balance::coin_balance(biguint_from_hex_str(&balance_hex)?)))
 }
 
 pub fn map_balance_tokens(balance_data: Vec<String>, token_ids: Vec<String>, chain: Chain) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
@@ -21,10 +18,7 @@ pub fn map_balance_tokens(balance_data: Vec<String>, token_ids: Vec<String>, cha
         .into_iter()
         .zip(token_ids)
         .map(|(balance_hex, token_id)| {
-            let asset_id = primitives::AssetId {
-                chain,
-                token_id: Some(token_id),
-            };
+            let asset_id = primitives::AssetId { chain, token_id: Some(token_id) };
             let balance = serde_serializers::biguint_from_hex_str(&balance_hex)?;
             Ok(AssetBalance::new_balance(asset_id, Balance::coin_balance(balance)))
         })

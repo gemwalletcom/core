@@ -45,13 +45,7 @@ pub struct RiskResult {
     pub signal: NewRiskSignalRow,
 }
 
-pub fn evaluate_risk(
-    input: &RiskScoringInput,
-    existing_signals: &[RiskSignalRow],
-    device_model_ring_count: i64,
-    ip_abuser_count: i64,
-    config: &RiskScoreConfig,
-) -> RiskResult {
+pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow], device_model_ring_count: i64, ip_abuser_count: i64, config: &RiskScoreConfig) -> RiskResult {
     let signal_input = input.to_signal_input();
     let score = calculate_risk_score(&signal_input, existing_signals, device_model_ring_count, ip_abuser_count, config);
 

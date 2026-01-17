@@ -28,10 +28,7 @@ impl PushNotification {
     pub fn new_buy_asset(asset_id: AssetId) -> Self {
         Self {
             notification_type: PushNotificationTypes::BuyAsset,
-            data: serde_json::to_value(PushNotificationAsset {
-                asset_id: asset_id.to_string(),
-            })
-            .ok(),
+            data: serde_json::to_value(PushNotificationAsset { asset_id: asset_id.to_string() }).ok(),
         }
     }
 }

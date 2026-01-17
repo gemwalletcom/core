@@ -100,10 +100,7 @@ mod tests {
                 },
             }],
             send_max: true,
-            gas: Gas {
-                budget: 25_000_000,
-                price: 750,
-            },
+            gas: Gas { budget: 25_000_000, price: 750 },
         };
 
         let output = encode_transfer(&input).unwrap();
@@ -142,10 +139,7 @@ mod tests {
                     },
                 },
             ],
-            gas: Gas {
-                budget: 25_000_000,
-                price: 750,
-            },
+            gas: Gas { budget: 25_000_000, price: 750 },
             gas_coin: Coin {
                 coin_type: SUI_COIN_TYPE.into(),
                 balance: 100000000,

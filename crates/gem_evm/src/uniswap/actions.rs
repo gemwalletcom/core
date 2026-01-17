@@ -40,11 +40,7 @@ pub fn encode_action_data(action: &V4Action) -> Vec<u8> {
         V4Action::SWAP_EXACT_IN(params) => params.abi_encode(),
         V4Action::SWAP_EXACT_OUT_SINGLE(params) => params.abi_encode(),
         V4Action::SWAP_EXACT_OUT(params) => params.abi_encode(),
-        V4Action::SETTLE {
-            currency,
-            amount,
-            payer_is_user,
-        } => (currency.to_owned(), amount.to_owned(), payer_is_user.to_owned()).abi_encode(),
+        V4Action::SETTLE { currency, amount, payer_is_user } => (currency.to_owned(), amount.to_owned(), payer_is_user.to_owned()).abi_encode(),
         V4Action::SETTLE_ALL { currency, max_amount } => (currency.to_owned(), max_amount.to_owned()).abi_encode(),
         V4Action::TAKE { currency, recipient, amount } => (currency.to_owned(), recipient.to_owned(), amount.to_owned()).abi_encode(),
         V4Action::TAKE_ALL { currency, min_amount } => (currency.to_owned(), min_amount.to_owned()).abi_encode(),
@@ -75,11 +71,7 @@ pub fn decode_action_data(data: &[u8]) -> Result<Vec<V4Action>, alloy_sol_types:
             SWAP_EXACT_OUT_ACTION => V4Action::SWAP_EXACT_OUT(<IV4Router::ExactOutputParams as SolValue>::abi_decode(action_data_slice)?),
             SETTLE_ACTION => {
                 let (currency, amount, payer_is_user) = <(Address, U256, bool) as SolValue>::abi_decode(action_data_slice)?;
-                V4Action::SETTLE {
-                    currency,
-                    amount,
-                    payer_is_user,
-                }
+                V4Action::SETTLE { currency, amount, payer_is_user }
             }
             SETTLE_ALL_ACTION => {
                 let (currency, max_amount) = <(Address, U256) as SolValue>::abi_decode(action_data_slice)?;

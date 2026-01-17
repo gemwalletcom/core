@@ -112,10 +112,7 @@ mod tests {
                         "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDXSrcUs6yh6vSKrAi1IfpC6eB2ZwoCahNCXdBfn76Kfg35ZkUm4Dl6OeRysXE26nNgky3Ei9W8GElwuKbUNB9CQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAX1eEJ5Ueb/dix/IMPlhpv/ubGMU7MhDs5fLp4r4KwFQBAgIAAQwCAAAAAQAAAAAAAAA="
                     )
                 );
-                assert_eq!(
-                    parsed_data.get("feePayer").and_then(|v| v.as_str()),
-                    Some("7GgpgQLnhfBw9ukjQuTNhbrEJMmPNV5c9iaPUpXm1dKM")
-                );
+                assert_eq!(parsed_data.get("feePayer").and_then(|v| v.as_str()), Some("7GgpgQLnhfBw9ukjQuTNhbrEJMmPNV5c9iaPUpXm1dKM"));
             }
             _ => panic!("Expected SignTransaction action"),
         }

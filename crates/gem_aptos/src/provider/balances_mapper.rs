@@ -63,10 +63,7 @@ mod tests {
     #[test]
     fn test_map_balance_tokens() {
         let balances = vec![
-            (
-                "0x159df6b7689437016108a019fd5bef736bac692b6d4a1f10c941f6fbb9a74ca6::oft::CakeOFT".to_string(),
-                25379808,
-            ),
+            ("0x159df6b7689437016108a019fd5bef736bac692b6d4a1f10c941f6fbb9a74ca6::oft::CakeOFT".to_string(), 25379808),
             (APTOS_NATIVE_COIN.to_string(), 1000000),
         ];
 

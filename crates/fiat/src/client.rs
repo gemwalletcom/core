@@ -12,8 +12,8 @@ use crate::{
 };
 use futures::future::join_all;
 use primitives::{
-    Asset, ConfigKey, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError,
-    FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
+    Asset, ConfigKey, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteOldRequest,
+    FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
 };
 use reqwest::Client as RequestClient;
 use storage::database::devices::DevicesStore;
@@ -82,24 +82,14 @@ impl FiatClient {
     }
 
     pub async fn get_fiat_providers_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .database
-            .fiat()?
-            .get_fiat_providers_countries()?
-            .into_iter()
-            .map(|r| r.as_primitive())
-            .collect())
+        Ok(self.database.fiat()?.get_fiat_providers_countries()?.into_iter().map(|r| r.as_primitive()).collect())
     }
 
     pub async fn get_order_status(&self, provider_name: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         self.provider(provider_name)?.get_order_status(order_id).await
     }
 
-    pub async fn process_and_publish_webhook(
-        &self,
-        provider_name: &str,
-        webhook_data: serde_json::Value,
-    ) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn process_and_publish_webhook(&self, provider_name: &str, webhook_data: serde_json::Value) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.provider(provider_name)?;
         let webhook = provider.process_webhook(webhook_data.clone()).await;
 
@@ -135,11 +125,7 @@ impl FiatClient {
         Ok(payload)
     }
 
-    fn get_fiat_mapping(
-        &self,
-        asset_id: &str,
-        quote_type: &FiatQuoteType,
-    ) -> Result<(FiatMappingMap, Vec<PrimitiveFiatProvider>), Box<dyn Error + Send + Sync>> {
+    fn get_fiat_mapping(&self, asset_id: &str, quote_type: &FiatQuoteType) -> Result<(FiatMappingMap, Vec<PrimitiveFiatProvider>), Box<dyn Error + Send + Sync>> {
         let fiat_assets = self.database.fiat()?.get_fiat_assets_for_asset_id(asset_id)?;
         let providers = self.database.fiat()?.get_fiat_providers()?.into_iter().map(|p| p.as_primitive()).collect();
 
@@ -353,13 +339,7 @@ impl FiatClient {
         Ok(FiatQuotes { quotes, errors })
     }
 
-    pub async fn get_quote_url(
-        &self,
-        quote_id: &str,
-        wallet_address: &str,
-        ip_address: &str,
-        device_id: &str,
-    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+    pub async fn get_quote_url(&self, quote_id: &str, wallet_address: &str, ip_address: &str, device_id: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
         let device = DevicesStore::get_device(&mut client, device_id)?;
 
@@ -444,22 +424,12 @@ impl FiatClient {
         sort_fn: fn(&primitives::FiatQuoteOld, &primitives::FiatQuoteOld, &[PrimitiveFiatProvider]) -> std::cmp::Ordering,
     ) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>>
     where
-        F: Fn(
-                &dyn FiatProvider,
-                FiatQuoteOldRequest,
-                FiatMapping,
-            ) -> futures::future::BoxFuture<'_, Result<primitives::FiatQuoteOld, Box<dyn Error + Send + Sync>>>
-            + Send
-            + Sync,
+        F: Fn(&dyn FiatProvider, FiatQuoteOldRequest, FiatMapping) -> futures::future::BoxFuture<'_, Result<primitives::FiatQuoteOld, Box<dyn Error + Send + Sync>>> + Send + Sync,
     {
         let providers = self.get_providers_for_request(&request);
         let futures = providers.into_iter().filter_map(|provider| {
             let provider_id = provider.name().id().to_string();
-            let countries = countries
-                .iter()
-                .filter(|x| x.provider == provider_id)
-                .map(|x| x.alpha2.clone())
-                .collect::<HashSet<_>>();
+            let countries = countries.iter().filter(|x| x.provider == provider_id).map(|x| x.alpha2.clone()).collect::<HashSet<_>>();
 
             fiat_mapping_map.get(&provider_id).map(|mapping| {
                 let quote_fn = &quote_fn;
@@ -518,13 +488,7 @@ fn precision(val: f64, precision: usize) -> f64 {
     format!("{val:.precision$}").parse::<f64>().unwrap()
 }
 
-fn sort_by_priority_then_amount(
-    a_provider_id: &str,
-    b_provider_id: &str,
-    a_amount: f64,
-    b_amount: f64,
-    providers: &[PrimitiveFiatProvider],
-) -> std::cmp::Ordering {
+fn sort_by_priority_then_amount(a_provider_id: &str, b_provider_id: &str, a_amount: f64, b_amount: f64, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
     sort_by_priority_then_amount_order(a_provider_id, b_provider_id, a_amount, b_amount, providers, false)
 }
 
@@ -656,10 +620,7 @@ mod tests {
         let paybis = FiatQuote::mock("paybis");
 
         let mut quotes = [
-            FiatQuote {
-                crypto_amount: 0.0773,
-                ..moonpay
-            },
+            FiatQuote { crypto_amount: 0.0773, ..moonpay },
             FiatQuote {
                 crypto_amount: 0.0759,
                 ..mercuryo
@@ -668,10 +629,7 @@ mod tests {
                 crypto_amount: 0.07505,
                 ..transak
             },
-            FiatQuote {
-                crypto_amount: 0.07721,
-                ..paybis
-            },
+            FiatQuote { crypto_amount: 0.07721, ..paybis },
         ];
 
         quotes.sort_by(|a, b| sort_quotes_by_crypto_amount_desc(a, b, &providers));

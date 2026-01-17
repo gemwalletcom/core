@@ -24,12 +24,7 @@ pub async fn get_block_transactions(
     transaction_type: Option<&str>,
     client: &State<Mutex<ChainClient>>,
 ) -> Result<ApiResponse<Vec<Transaction>>, ApiError> {
-    Ok(client
-        .lock()
-        .await
-        .get_block_transactions(chain.0, block_number, transaction_type)
-        .await?
-        .into())
+    Ok(client.lock().await.get_block_transactions(chain.0, block_number, transaction_type).await?.into())
 }
 
 #[get("/chain/blocks/<chain>/<block_number>/finalize?<address>&<transaction_type>")]

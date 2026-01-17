@@ -4,9 +4,8 @@ use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::{
-    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction,
-    TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest,
-    TransactionUpdate, UTXO,
+    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction, TransactionFee,
+    TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
 pub trait ChainTraits:

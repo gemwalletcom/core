@@ -70,9 +70,7 @@ impl BigNumberFormatter {
         let multiplier_decimal = BigDecimal::from(multiplier);
         let scaled_value = big_decimal * multiplier_decimal;
         let scaled_string = scaled_value.with_scale(0).to_string();
-        scaled_string
-            .parse::<BigUint>()
-            .map_err(|_| NumberFormatterError::ConversionError(scaled_string))
+        scaled_string.parse::<BigUint>().map_err(|_| NumberFormatterError::ConversionError(scaled_string))
     }
 
     pub fn decimal_to_string(value: &BigDecimal, max_scale: u32) -> String {

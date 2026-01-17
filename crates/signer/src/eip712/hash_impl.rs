@@ -7,8 +7,8 @@ use std::collections::BTreeSet;
 
 use super::data::{TypeField, TypedData};
 use super::parse::{
-    ADDR_LENGTH, MAX_WORD_BYTES, adjust_signed_value, base_type_name, left_pad, parse_array_type, parse_fixed_bytes_size, parse_int_value, parse_numeric_bits,
-    parse_uint_value, right_pad,
+    ADDR_LENGTH, MAX_WORD_BYTES, adjust_signed_value, base_type_name, left_pad, parse_array_type, parse_fixed_bytes_size, parse_int_value, parse_numeric_bits, parse_uint_value,
+    right_pad,
 };
 
 const PREFIX_PERSONAL_MESSAGE: &[u8] = b"\x19\x01";
@@ -91,11 +91,7 @@ fn encode_value(type_name: &str, value: Option<&Value>, types: &std::collections
                 }
             }
             Some(other) => {
-                return Err(SignerError::invalid_input(format!(
-                    "Expected array for type '{ty}', got {}",
-                    other,
-                    ty = type_name
-                )));
+                return Err(SignerError::invalid_input(format!("Expected array for type '{ty}', got {}", other, ty = type_name)));
             }
         }
 

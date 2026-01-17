@@ -1,7 +1,6 @@
 use crate::models::{DelegationPoolAddStakeData, DelegationPoolUnlockStakeData, Event, Transaction, TransactionResponse};
 use crate::{
-    APTOS_NATIVE_COIN, DELEGATION_POOL_ADD_STAKE_EVENT, DELEGATION_POOL_UNLOCK_STAKE_EVENT, FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT,
-    STAKE_DEPOSIT_EVENT,
+    APTOS_NATIVE_COIN, DELEGATION_POOL_ADD_STAKE_EVENT, DELEGATION_POOL_UNLOCK_STAKE_EVENT, FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, STAKE_DEPOSIT_EVENT,
 };
 use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::DateTime;
@@ -56,11 +55,7 @@ struct TransactionMeta {
 fn extract_meta(transaction: &Transaction) -> Option<TransactionMeta> {
     let hash = transaction.hash.clone().unwrap_or_default();
     let sender = transaction.sender.clone().unwrap_or_default();
-    let state = if transaction.success {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Failed
-    };
+    let state = if transaction.success { TransactionState::Confirmed } else { TransactionState::Failed };
     let gas_used = BigUint::from(transaction.gas_used.unwrap_or_default());
     let gas_unit_price = BigUint::from(transaction.gas_unit_price.unwrap_or_default());
     let fee = (gas_used * gas_unit_price).to_string();
@@ -102,23 +97,11 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<Event>, chain: Cha
             },
         ];
 
-        let swap = SwapMapper::map_swap(
-            &balance_diffs,
-            &BigUint::from(0u8),
-            &chain.as_asset_id(),
-            Some(SwapProvider::Panora.id().to_owned()),
-        )?;
+        let swap = SwapMapper::map_swap(&balance_diffs, &BigUint::from(0u8), &chain.as_asset_id(), Some(SwapProvider::Panora.id().to_owned()))?;
         let metadata = serde_json::to_value(&swap).ok();
         let to = meta.sender.clone();
 
-        return Some(build_transaction(
-            meta,
-            chain.as_asset_id(),
-            to,
-            swap.from_value,
-            TransactionType::Swap,
-            metadata,
-        ));
+        return Some(build_transaction(meta, chain.as_asset_id(), to, swap.from_value, TransactionType::Swap, metadata));
     }
 
     let withdraw_event = events.iter().find(|e| e.event_type == FUNGIBLE_ASSET_WITHDRAW_EVENT)?;
@@ -169,14 +152,7 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<Event>, chain: Cha
     let metadata = serde_json::to_value(&swap).ok();
     let to = meta.sender.clone();
 
-    Some(build_transaction(
-        meta,
-        chain.as_asset_id(),
-        to,
-        swap.from_value,
-        TransactionType::Swap,
-        metadata,
-    ))
+    Some(build_transaction(meta, chain.as_asset_id(), to, swap.from_value, TransactionType::Swap, metadata))
 }
 
 fn build_transaction(

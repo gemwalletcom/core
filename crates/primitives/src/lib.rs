@@ -111,9 +111,7 @@ pub use self::address_status::AddressStatus;
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;
-pub use self::push_notification::{
-    PushNotification, PushNotificationAsset, PushNotificationReward, PushNotificationSupport, PushNotificationTransaction, PushNotificationTypes,
-};
+pub use self::push_notification::{PushNotification, PushNotificationAsset, PushNotificationReward, PushNotificationSupport, PushNotificationTransaction, PushNotificationTypes};
 pub mod gorush;
 pub use self::gorush::{FailedNotification, GorushNotification, GorushNotifications, PushErrorLog};
 pub mod scan;
@@ -121,9 +119,7 @@ pub use self::scan::{AddressType, ScanAddress, ScanAddressTarget, ScanTransactio
 pub mod hex;
 pub use self::hex::{HexError, decode_hex};
 pub mod transaction_metadata_types;
-pub use self::transaction_metadata_types::{
-    TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionResourceTypeMetadata, TransactionSwapMetadata,
-};
+pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionResourceTypeMetadata, TransactionSwapMetadata};
 pub mod wallet_connect_namespace;
 pub use self::wallet_connect_namespace::WalletConnectCAIP2;
 pub mod wallet_connect;
@@ -146,9 +142,7 @@ pub use self::nft::{MIME_TYPE_PNG, NFTAsset, NFTAssetId, NFTAttribute, NFTCollec
 pub mod price_alert;
 pub use self::price_alert::{DevicePriceAlert, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts};
 pub mod rewards;
-pub use self::rewards::{
-    ReferralAllowance, ReferralCode, ReferralLeader, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, RewardLevel, RewardStatus, Rewards,
-};
+pub use self::rewards::{ReferralAllowance, ReferralCode, ReferralLeader, ReferralLeaderboard, ReferralQuota, RewardEvent, RewardEventType, RewardLevel, RewardStatus, Rewards};
 pub mod tag;
 pub use self::tag::AssetTag;
 pub mod chain_cosmos;

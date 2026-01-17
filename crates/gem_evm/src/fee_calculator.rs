@@ -29,12 +29,7 @@ impl FeeCalculator {
         Self
     }
 
-    pub fn calculate_min_priority_fee(
-        &self,
-        gas_used_ratios: &[f64],
-        base_fee: &BigInt,
-        default_min_priority_fee: u64,
-    ) -> Result<u64, Box<dyn std::error::Error + Sync + Send>> {
+    pub fn calculate_min_priority_fee(&self, gas_used_ratios: &[f64], base_fee: &BigInt, default_min_priority_fee: u64) -> Result<u64, Box<dyn std::error::Error + Sync + Send>> {
         if gas_used_ratios.is_empty() || base_fee == &BigInt::from(0) {
             return Ok(default_min_priority_fee);
         }
@@ -141,18 +136,9 @@ mod tests {
         let default_fee = 1_000_000_000;
         let base_fee = BigInt::from(20_000_000_000u64);
 
-        assert_eq!(
-            calculator.calculate_min_priority_fee(&[0.9, 0.95, 1.0], &base_fee, default_fee).unwrap(),
-            1_000_000_000
-        );
-        assert_eq!(
-            calculator.calculate_min_priority_fee(&[0.7, 0.8, 0.75], &base_fee, default_fee).unwrap(),
-            500_000_000
-        );
-        assert_eq!(
-            calculator.calculate_min_priority_fee(&[0.1, 0.2, 0.3], &base_fee, default_fee).unwrap(),
-            100_000_000
-        );
+        assert_eq!(calculator.calculate_min_priority_fee(&[0.9, 0.95, 1.0], &base_fee, default_fee).unwrap(), 1_000_000_000);
+        assert_eq!(calculator.calculate_min_priority_fee(&[0.7, 0.8, 0.75], &base_fee, default_fee).unwrap(), 500_000_000);
+        assert_eq!(calculator.calculate_min_priority_fee(&[0.1, 0.2, 0.3], &base_fee, default_fee).unwrap(), 100_000_000);
         assert_eq!(calculator.calculate_min_priority_fee(&[], &base_fee, default_fee).unwrap(), 1_000_000_000);
     }
 
@@ -162,9 +148,7 @@ mod tests {
         let fee_history = create_test_fee_history();
         let priorities = [FeePriority::Slow, FeePriority::Normal, FeePriority::Fast];
 
-        let result = calculator
-            .calculate_priority_fees(&fee_history, &priorities, BigInt::from(100_000_000))
-            .unwrap();
+        let result = calculator.calculate_priority_fees(&fee_history, &priorities, BigInt::from(100_000_000)).unwrap();
 
         assert_eq!(result.len(), 3);
 
@@ -213,11 +197,7 @@ mod tests {
             oldest_block: 0,
         };
 
-        assert!(
-            calculator
-                .calculate_priority_fees(&empty_history, &[FeePriority::Slow], BigInt::from(100))
-                .is_err()
-        );
+        assert!(calculator.calculate_priority_fees(&empty_history, &[FeePriority::Slow], BigInt::from(100)).is_err());
         assert!(
             calculator
                 .calculate_priority_fees(&create_test_fee_history(), &[FeePriority::Slow, FeePriority::Normal], BigInt::from(100))

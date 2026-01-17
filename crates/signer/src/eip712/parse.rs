@@ -125,9 +125,7 @@ pub fn adjust_signed_value(number: I256, bits: usize) -> Result<U256, SignerErro
     if number.is_negative() {
         let abs = number.unsigned_abs();
         let modulus = U256::from(1u64) << bits;
-        modulus
-            .checked_sub(abs)
-            .ok_or_else(|| SignerError::invalid_input("Failed to encode signed integer"))
+        modulus.checked_sub(abs).ok_or_else(|| SignerError::invalid_input("Failed to encode signed integer"))
     } else {
         Ok(number.unsigned_abs())
     }

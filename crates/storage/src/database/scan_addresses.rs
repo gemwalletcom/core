@@ -45,9 +45,6 @@ impl ScanAddressesStore for DatabaseClient {
 
     fn add_scan_addresses(&mut self, values: Vec<NewScanAddressRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::scan_addresses::dsl::*;
-        diesel::insert_into(scan_addresses)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(scan_addresses).values(values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 }

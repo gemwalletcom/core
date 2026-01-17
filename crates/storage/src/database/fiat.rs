@@ -51,10 +51,7 @@ impl FiatStore for DatabaseClient {
 
     fn add_fiat_providers(&mut self, values: Vec<FiatProviderRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_providers::dsl::*;
-        diesel::insert_into(fiat_providers)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(fiat_providers).values(values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn add_fiat_providers_countries(&mut self, values: Vec<FiatProviderCountryRow>) -> Result<usize, diesel::result::Error> {
@@ -176,10 +173,7 @@ impl FiatStore for DatabaseClient {
 
     fn get_fiat_quote(&mut self, quote_id: &str) -> Result<FiatQuoteRow, diesel::result::Error> {
         use crate::schema::fiat_quotes::dsl::*;
-        fiat_quotes
-            .filter(id.eq(quote_id))
-            .select(FiatQuoteRow::as_select())
-            .first(&mut self.connection)
+        fiat_quotes.filter(id.eq(quote_id)).select(FiatQuoteRow::as_select()).first(&mut self.connection)
     }
 
     fn add_fiat_quote_request(&mut self, request: FiatQuoteRequestRow) -> Result<usize, diesel::result::Error> {

@@ -1,12 +1,10 @@
 use crate::DatabaseClient;
-use crate::models::{
-    NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, ReferralAttemptRow, RewardEventRow, RewardReferralRow, RewardsRow, RiskSignalRow,
-};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, ReferralAttemptRow, RewardEventRow, RewardReferralRow, RewardsRow, RiskSignalRow};
 use crate::sql_types::{Platform, RewardEventType, RewardStatus};
-use primitives::Platform as PrimitivePlatform;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
+use primitives::Platform as PrimitivePlatform;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
@@ -42,10 +40,7 @@ pub(crate) trait RewardsStore {
 impl RewardsStore for DatabaseClient {
     fn get_rewards(&mut self, username: &str) -> Result<RewardsRow, DieselError> {
         use crate::schema::rewards::dsl;
-        dsl::rewards
-            .filter(dsl::username.eq(username))
-            .select(RewardsRow::as_select())
-            .first(&mut self.connection)
+        dsl::rewards.filter(dsl::username.eq(username)).select(RewardsRow::as_select()).first(&mut self.connection)
     }
 
     fn create_rewards(&mut self, rewards: NewRewardsRow) -> Result<RewardsRow, DieselError> {
@@ -86,9 +81,7 @@ impl RewardsStore for DatabaseClient {
 
     fn add_referral_attempt(&mut self, attempt: ReferralAttemptRow) -> Result<(), DieselError> {
         use crate::schema::rewards_referral_attempts::dsl;
-        diesel::insert_into(dsl::rewards_referral_attempts)
-            .values(&attempt)
-            .execute(&mut self.connection)?;
+        diesel::insert_into(dsl::rewards_referral_attempts).values(&attempt).execute(&mut self.connection)?;
         Ok(())
     }
 
@@ -163,11 +156,7 @@ impl RewardsStore for DatabaseClient {
 
         self.connection.transaction(|conn| {
             diesel::update(rewards::table.filter(rewards::username.eq(username)))
-                .set((
-                    rewards::status.eq(RewardStatus::Disabled),
-                    rewards::disable_reason.eq(reason),
-                    rewards::comment.eq(comment),
-                ))
+                .set((rewards::status.eq(RewardStatus::Disabled), rewards::disable_reason.eq(reason), rewards::comment.eq(comment)))
                 .execute(conn)?;
 
             let event_id = diesel::insert_into(rewards_events::table)
@@ -184,10 +173,7 @@ impl RewardsStore for DatabaseClient {
 
     fn get_referral_by_username(&mut self, username: &str) -> Result<Option<RewardReferralRow>, DieselError> {
         use crate::schema::rewards_referrals::dsl;
-        dsl::rewards_referrals
-            .filter(dsl::referred_username.eq(username))
-            .first(&mut self.connection)
-            .optional()
+        dsl::rewards_referrals.filter(dsl::referred_username.eq(username)).first(&mut self.connection).optional()
     }
 
     fn update_referral(&mut self, referral_id: i32, update: ReferralUpdate) -> Result<(), DieselError> {
@@ -232,12 +218,7 @@ pub(crate) trait RiskSignalsStore {
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DieselError>;
-    fn get_abuse_patterns_for_referrer(
-        &mut self,
-        referrer_username: &str,
-        since: NaiveDateTime,
-        velocity_window_secs: i64,
-    ) -> Result<AbusePatterns, DieselError>;
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError>;
     fn count_disabled_users_by_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
 }
 
@@ -430,12 +411,7 @@ impl RiskSignalsStore for DatabaseClient {
             .first(&mut self.connection)
     }
 
-    fn get_abuse_patterns_for_referrer(
-        &mut self,
-        referrer_username: &str,
-        since: NaiveDateTime,
-        velocity_window_secs: i64,
-    ) -> Result<AbusePatterns, DieselError> {
+    fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError> {
         use crate::schema::rewards_risk_signals::dsl;
 
         let signals: Vec<RiskSignalRow> = dsl::rewards_risk_signals

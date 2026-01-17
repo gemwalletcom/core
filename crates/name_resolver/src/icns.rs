@@ -21,14 +21,8 @@ pub struct Record {
 const RESOLVER: &str = "osmo1xk0s8xgktn9x5vwcgtjdxqzadg88fgn33p8u9cnpdxwemvxscvast52cdd";
 
 // https://github.com/satoshilabs/slips/blob/master/slip-0173.md
-static DOMAIN_MAP: LazyLock<HashMap<&'static str, Chain>> = LazyLock::new(|| {
-    HashMap::from([
-        ("cosmos", Chain::Cosmos),
-        ("osmo", Chain::Osmosis),
-        ("celestia", Chain::Celestia),
-        ("sei", Chain::Sei),
-    ])
-});
+static DOMAIN_MAP: LazyLock<HashMap<&'static str, Chain>> =
+    LazyLock::new(|| HashMap::from([("cosmos", Chain::Cosmos), ("osmo", Chain::Osmosis), ("celestia", Chain::Celestia), ("sei", Chain::Sei)]));
 
 pub struct IcnsClient {
     api_url: String,

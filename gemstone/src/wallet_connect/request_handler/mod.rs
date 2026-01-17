@@ -18,8 +18,8 @@ pub struct WalletConnectRequestHandler;
 
 impl WalletConnectRequestHandler {
     pub fn parse_request(request: WalletConnectRequest) -> Result<WalletConnectAction, String> {
-        let method = serde_json::from_value::<WalletConnectionMethods>(serde_json::Value::String(request.method.clone()))
-            .map_err(|_| format!("Unsupported method: {}", request.method))?;
+        let method =
+            serde_json::from_value::<WalletConnectionMethods>(serde_json::Value::String(request.method.clone())).map_err(|_| format!("Unsupported method: {}", request.method))?;
         let params = serde_json::from_str::<Value>(&request.params).map_err(|e| format!("Failed to parse params: {}", e))?;
 
         let domain = &request.domain;

@@ -7,8 +7,7 @@ use storage::Database;
 use storage::models::{ConfigRow, FiatRateRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
-    AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, PricesDexRepository, ReleasesRepository,
-    SubscriptionsRepository, TagRepository,
+    AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, PricesDexRepository, ReleasesRepository, SubscriptionsRepository, TagRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer};
 
@@ -191,10 +190,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         address: "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string(),
     };
 
-    let result = database
-        .subscriptions()?
-        .add_subscriptions(vec![subscription], "test")
-        .expect("Failed to add subscription");
+    let result = database.subscriptions()?.add_subscriptions(vec![subscription], "test").expect("Failed to add subscription");
     info_with_fields!("setup_dev", step = "subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "complete");

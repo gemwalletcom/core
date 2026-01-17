@@ -39,18 +39,10 @@ pub fn calculate_risk_score(
             0
         },
         verified_user_reduction: if input.referrer_verified { -config.verified_user_reduction } else { 0 },
-        platform_store_score: if is_high_risk_platform_store {
-            config.high_risk_platform_store_penalty
-        } else {
-            0
-        },
+        platform_store_score: if is_high_risk_platform_store { config.high_risk_platform_store_penalty } else { 0 },
         country_score: if is_high_risk_country { config.high_risk_country_penalty } else { 0 },
         locale_score: if is_high_risk_locale { config.high_risk_locale_penalty } else { 0 },
-        high_risk_device_model_score: if is_high_risk_device_model {
-            config.high_risk_device_model_penalty
-        } else {
-            0
-        },
+        high_risk_device_model_score: if is_high_risk_device_model { config.high_risk_device_model_penalty } else { 0 },
         ..Default::default()
     };
 
@@ -174,10 +166,7 @@ pub fn calculate_risk_score(
 fn count_signals_in_recent_window(signals: &[&RiskSignalRow], window: Duration) -> (i64, f64) {
     let now = chrono::Utc::now().naive_utc();
     let window_secs = window.as_secs() as i64;
-    let recent: Vec<_> = signals
-        .iter()
-        .filter(|s| now.signed_duration_since(s.created_at).num_seconds() <= window_secs)
-        .collect();
+    let recent: Vec<_> = signals.iter().filter(|s| now.signed_duration_since(s.created_at).num_seconds() <= window_secs).collect();
     let count = recent.len() as i64;
     if count <= 1 {
         return (count, 1.0);
@@ -297,16 +286,7 @@ mod tests {
 
         // 5 referrers * 50 = 250, but capped at 200
         let signals: Vec<_> = (0..5)
-            .map(|i| {
-                create_signal(
-                    &format!("referrer_{}", i),
-                    &fingerprint,
-                    &format!("10.0.0.{}", i),
-                    "Comcast",
-                    "iPhone15,2",
-                    10 + i,
-                )
-            })
+            .map(|i| create_signal(&format!("referrer_{}", i), &fingerprint, &format!("10.0.0.{}", i), "Comcast", "iPhone15,2", 10 + i))
             .collect();
         let result = calculate_risk_score(&input, &signals, 0, 0, &config);
 
@@ -707,11 +687,7 @@ mod tests {
         let score2 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
-        let signals = vec![
-            create_recent_signal("user1", 60),
-            create_recent_signal("user1", 120),
-            create_recent_signal("user1", 180),
-        ];
+        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120), create_recent_signal("user1", 180)];
         let score3 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
@@ -723,20 +699,12 @@ mod tests {
     fn velocity_faster_spam_higher_penalty() {
         // Same count but tighter time = higher penalty
         // 3 signals in 120s span: multiplier=1.6, penalty=300*1.6=480
-        let signals = vec![
-            create_recent_signal("user1", 60),
-            create_recent_signal("user1", 120),
-            create_recent_signal("user1", 180),
-        ];
+        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120), create_recent_signal("user1", 180)];
         let slow = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
         // 3 signals in 20s span: multiplier=1+(300-20)/300=1.93, penalty=300*1.93=579
-        let signals = vec![
-            create_recent_signal("user1", 60),
-            create_recent_signal("user1", 70),
-            create_recent_signal("user1", 80),
-        ];
+        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 70), create_recent_signal("user1", 80)];
         let fast = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
@@ -749,20 +717,10 @@ mod tests {
         input.referrer_verified = true;
         // Verified user threshold=5 (10/2), 4 signals - no penalty
         let signals: Vec<_> = (0..4).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert_eq!(
-            calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default())
-                .breakdown
-                .velocity_score,
-            0
-        );
+        assert_eq!(calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score, 0);
         // 5 signals triggers penalty
         let signals: Vec<_> = (0..5).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert!(
-            calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default())
-                .breakdown
-                .velocity_score
-                > 0
-        );
+        assert!(calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score > 0);
     }
 
     #[test]

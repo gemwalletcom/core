@@ -57,8 +57,7 @@ fn test_get_unread() {
     let payload: ChatwootWebhookPayload = serde_json::from_str(r#"{"event": "test", "conversation": {"meta": {"sender": {}}, "unread_count": 3}}"#).unwrap();
     assert_eq!(payload.get_unread(), Some(3));
 
-    let payload: ChatwootWebhookPayload =
-        serde_json::from_str(r#"{"event": "test", "unread_count": 2, "conversation": {"meta": {"sender": {}}, "unread_count": 10}}"#).unwrap();
+    let payload: ChatwootWebhookPayload = serde_json::from_str(r#"{"event": "test", "unread_count": 2, "conversation": {"meta": {"sender": {}}, "unread_count": 10}}"#).unwrap();
     assert_eq!(payload.get_unread(), Some(2));
 }
 

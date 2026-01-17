@@ -63,9 +63,7 @@ impl CacheRule {
             return false;
         };
 
-        self.params
-            .iter()
-            .all(|(key, expected)| object.get(key).map(|actual| actual == expected).unwrap_or(false))
+        self.params.iter().all(|(key, expected)| object.get(key).map(|actual| actual == expected).unwrap_or(false))
     }
 }
 

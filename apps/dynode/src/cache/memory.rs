@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use super::types::CacheEntry;
 use super::CacheProvider;
+use super::types::CacheEntry;
 
 #[derive(Debug, Clone)]
 pub struct MemoryCache {
@@ -21,10 +21,7 @@ impl MemoryCache {
         for chain_name in config.rules.keys() {
             caches.insert(chain_name.clone(), Arc::new(RwLock::new(HashMap::new())));
         }
-        Self {
-            caches: Arc::new(caches),
-            config,
-        }
+        Self { caches: Arc::new(caches), config }
     }
 
     fn max_size_per_chain(&self) -> usize {
@@ -95,9 +92,7 @@ impl CacheProvider for MemoryCache {
     }
 
     fn should_cache(&self, chain: &Chain, path: &str, method: &str, body: Option<&[u8]>) -> Option<u64> {
-        self.get_cache_rules(chain)
-            .iter()
-            .find_map(|rule| rule.matches_path(path, method, body))
+        self.get_cache_rules(chain).iter().find_map(|rule| rule.matches_path(path, method, body))
     }
 
     fn should_cache_request(&self, chain: &Chain, request_type: &RequestType) -> Option<u64> {
@@ -123,9 +118,7 @@ impl CacheProvider for MemoryCache {
     }
 
     fn should_cache_call(&self, chain: &Chain, call: &JsonRpcCall) -> Option<u64> {
-        self.get_cache_rules(chain)
-            .iter()
-            .find_map(|rule| rule.matches_rpc_method(&call.method))
+        self.get_cache_rules(chain).iter().find_map(|rule| rule.matches_rpc_method(&call.method))
     }
 }
 
@@ -258,10 +251,7 @@ mod tests {
         let mut config = create_test_config();
         let mut aptos_rules = Vec::new();
         let mut params = HashMap::new();
-        params.insert(
-            "function".to_string(),
-            serde_json::json!("0x1::delegation_pool::operator_commission_percentage"),
-        );
+        params.insert("function".to_string(), serde_json::json!("0x1::delegation_pool::operator_commission_percentage"));
 
         aptos_rules.push(CacheRule {
             path: Some("/v1/view".to_string()),

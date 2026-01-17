@@ -8,12 +8,7 @@ use std::error::Error;
 pub fn map_native_balance(account: &Account) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let chain = Chain::Stellar;
     let reserved_amount = chain.account_activation_fee().unwrap_or(0) as u64;
-    let native_balance = account
-        .balances
-        .iter()
-        .find(|b| b.asset_type == "native")
-        .map(|b| b.balance.clone())
-        .unwrap_or_default();
+    let native_balance = account.balances.iter().find(|b| b.asset_type == "native").map(|b| b.balance.clone()).unwrap_or_default();
 
     let balance_stroops_str = BigNumberFormatter::value_from_amount(&native_balance, STELLAR_DECIMALS)?;
     let balance_decimal = BigNumberFormatter::big_decimal_value(&balance_stroops_str, 0).unwrap_or_default();
@@ -25,10 +20,7 @@ pub fn map_native_balance(account: &Account) -> Result<AssetBalance, Box<dyn Err
     let available_biguint = available.parse::<BigUint>().unwrap_or_default();
     let reserved_biguint = reserved_str.parse::<BigUint>().unwrap_or_default();
 
-    Ok(AssetBalance::new_balance(
-        chain.as_asset_id(),
-        Balance::with_reserved(available_biguint, reserved_biguint),
-    ))
+    Ok(AssetBalance::new_balance(chain.as_asset_id(), Balance::with_reserved(available_biguint, reserved_biguint)))
 }
 
 pub fn map_token_balances(account: &Account, token_ids: Vec<String>, chain: Chain) -> Vec<AssetBalance> {

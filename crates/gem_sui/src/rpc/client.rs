@@ -105,10 +105,7 @@ impl<C: Client + Clone> SuiClient<C> {
     }
 
     pub async fn get_latest_block(&self) -> Result<u64, Box<dyn Error + Send + Sync>> {
-        let result = self
-            .client
-            .call::<String>("sui_getLatestCheckpointSequenceNumber", serde_json::json!([]))
-            .await?;
+        let result = self.client.call::<String>("sui_getLatestCheckpointSequenceNumber", serde_json::json!([])).await?;
         Ok(result.parse().unwrap_or(0))
     }
 

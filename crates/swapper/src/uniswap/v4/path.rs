@@ -9,11 +9,7 @@ use crate::{Route, SwapperError, eth_address, uniswap::swap_route::RouteData};
 
 // return (currency0, currency1)
 fn sort_addresses(token_in: &Address, token_out: &Address) -> (Address, Address) {
-    if token_in.0 < token_out.0 {
-        (*token_in, *token_out)
-    } else {
-        (*token_out, *token_in)
-    }
+    if token_in.0 < token_out.0 { (*token_in, *token_out) } else { (*token_out, *token_in) }
 }
 
 pub fn build_pool_key(token_in: &Address, token_out: &Address, fee_tier: &FeeTier) -> (PoolKey, bool) {

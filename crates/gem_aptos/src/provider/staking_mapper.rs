@@ -24,13 +24,7 @@ pub fn map_validator(validator: &ValidatorInfo, apy: f64, commission: f64, is_ac
     }
 }
 
-fn map_delegation(
-    asset_id: &primitives::AssetId,
-    state: DelegationState,
-    balance: BigUint,
-    validator_id: &str,
-    completion_date: Option<DateTime<Utc>>,
-) -> DelegationBase {
+fn map_delegation(asset_id: &primitives::AssetId, state: DelegationState, balance: BigUint, validator_id: &str, completion_date: Option<DateTime<Utc>>) -> DelegationBase {
     DelegationBase {
         asset_id: asset_id.clone(),
         state,
@@ -67,13 +61,7 @@ pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, lockup_secs: 
             }
 
             if stake.inactive > BigUint::from(0u32) {
-                delegations.push(map_delegation(
-                    &asset_id,
-                    DelegationState::AwaitingWithdrawal,
-                    stake.inactive,
-                    &pool_address,
-                    None,
-                ));
+                delegations.push(map_delegation(&asset_id, DelegationState::AwaitingWithdrawal, stake.inactive, &pool_address, None));
             }
 
             delegations

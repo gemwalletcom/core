@@ -109,10 +109,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
     let support_client = SupportClient::new(database.clone());
     let ip_check_providers: Vec<Arc<dyn IpCheckProvider>> = vec![
-        Arc::new(AbuseIPDBClient::new(
-            settings.ip.abuseipdb.url.clone(),
-            settings.ip.abuseipdb.key.secret.clone(),
-        )),
+        Arc::new(AbuseIPDBClient::new(settings.ip.abuseipdb.url.clone(), settings.ip.abuseipdb.key.secret.clone())),
         Arc::new(IpApiClient::new(settings.ip.ipapi.url.clone(), settings.ip.ipapi.key.secret.clone())),
     ];
     let ip_security_client = IpSecurityClient::new(ip_check_providers, cacher_client.clone());

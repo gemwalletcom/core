@@ -21,12 +21,7 @@ pub struct NodeMonitor {
 }
 
 impl NodeMonitor {
-    pub fn new(
-        chains: HashMap<Chain, ChainConfig>,
-        nodes: Arc<RwLock<HashMap<Chain, NodeDomain>>>,
-        metrics: Arc<Metrics>,
-        monitoring_config: NodeMonitoringConfig,
-    ) -> Self {
+    pub fn new(chains: HashMap<Chain, ChainConfig>, nodes: Arc<RwLock<HashMap<Chain, NodeDomain>>>, metrics: Arc<Metrics>, monitoring_config: NodeMonitoringConfig) -> Self {
         Self {
             chains,
             nodes,

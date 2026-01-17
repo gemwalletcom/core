@@ -52,10 +52,7 @@ impl WalletId {
 
     pub fn address(&self) -> &str {
         match self {
-            WalletId::Multicoin(address)
-            | WalletId::Single(_, address)
-            | WalletId::PrivateKey(_, address)
-            | WalletId::View(_, address) => address,
+            WalletId::Multicoin(address) | WalletId::Single(_, address) | WalletId::PrivateKey(_, address) | WalletId::View(_, address) => address,
         }
     }
 

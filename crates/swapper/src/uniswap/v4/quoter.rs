@@ -26,12 +26,7 @@ pub fn build_quote_exact_single_request(token_in: &Address, v4_quoter: &str, amo
 pub fn build_quote_exact_requests(v4_quoter: &str, quote_params: &[Vec<(Vec<TokenPair>, IV4Quoter::QuoteExactParams)>]) -> Vec<Vec<EthereumRpc>> {
     quote_params
         .iter()
-        .map(|quote_array| {
-            quote_array
-                .iter()
-                .map(|x| build_quote_exact_request(v4_quoter, &x.1).clone())
-                .collect::<Vec<_>>()
-        })
+        .map(|quote_array| quote_array.iter().map(|x| build_quote_exact_request(v4_quoter, &x.1).clone()).collect::<Vec<_>>())
         .collect()
 }
 

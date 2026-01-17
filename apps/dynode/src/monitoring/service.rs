@@ -36,10 +36,7 @@ impl NodeService {
         request_config: RequestConfig,
         headers_config: HeadersConfig,
     ) -> Self {
-        let nodes = chains
-            .values()
-            .map(|c| (c.chain, NodeDomain::new(c.urls.first().unwrap().clone(), c.clone())))
-            .collect();
+        let nodes = chains.values().map(|c| (c.chain, NodeDomain::new(c.urls.first().unwrap().clone(), c.clone()))).collect();
 
         let http_client = gem_client::builder().timeout(Duration::from_millis(request_config.timeout)).build().unwrap();
         let cache = RequestCache::new(cache_config);
@@ -97,9 +94,7 @@ impl NodeService {
     }
 
     fn get_chain_config(&self, request: &ProxyRequest) -> Result<&ChainConfig, Box<dyn Error + Send + Sync>> {
-        self.chains
-            .get(&request.chain)
-            .ok_or_else(|| format!("Chain {} not configured", request.chain).into())
+        self.chains.get(&request.chain).ok_or_else(|| format!("Chain {} not configured", request.chain).into())
     }
 
     fn should_retry_response(&self, request: &ProxyRequest, response: &ProxyResponse) -> bool {

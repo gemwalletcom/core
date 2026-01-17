@@ -44,10 +44,7 @@ impl ScanClient {
         let is_malicious = addresses.iter().any(|address| address.is_fraudulent);
         let is_memo_required = addresses.iter().any(|address| address.is_memo_required);
 
-        Ok(ScanTransaction {
-            is_malicious,
-            is_memo_required,
-        })
+        Ok(ScanTransaction { is_malicious, is_memo_required })
     }
 
     pub async fn scan_address_providers(&self, target: AddressTarget) -> Result<Vec<ScanResult<AddressTarget>>, Box<dyn Error + Send + Sync>> {

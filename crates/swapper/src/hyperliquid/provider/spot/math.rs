@@ -72,9 +72,7 @@ pub(super) fn apply_slippage(limit_price: &BigDecimal, side: SpotSide, slippage_
         return Err(SwapperError::InvalidAmount("invalid limit price".to_string()));
     }
 
-    let limit_price_f64 = limit_price
-        .to_f64()
-        .ok_or_else(|| SwapperError::InvalidAmount("failed to convert price".to_string()))?;
+    let limit_price_f64 = limit_price.to_f64().ok_or_else(|| SwapperError::InvalidAmount("failed to convert price".to_string()))?;
 
     let slippage_fraction = slippage_bps as f64 / 10_000.0;
     let multiplier = if side.is_buy() { 1.0 + slippage_fraction } else { 1.0 - slippage_fraction };

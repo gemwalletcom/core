@@ -4,13 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::sanitize_index_primary_id;
 
 pub const PERPETUALS_INDEX_NAME: &str = "perpetuals";
-pub const PERPETUALS_FILTERS: &[&str] = &[
-    "perpetual.name",
-    "perpetual.identifier",
-    "perpetual.provider",
-    "perpetual.price",
-    "perpetual.volume24h",
-];
+pub const PERPETUALS_FILTERS: &[&str] = &["perpetual.name", "perpetual.identifier", "perpetual.provider", "perpetual.price", "perpetual.volume24h"];
 pub const PERPETUALS_SEARCH_ATTRIBUTES: &[&str] = &["perpetual.name", "perpetual.identifier", "perpetual.provider"];
 pub const PERPETUALS_RANKING_RULES: &[&str] = &["words", "typo", "perpetual.volume24h:desc", "proximity", "attribute", "exactness"];
 

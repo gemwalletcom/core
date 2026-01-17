@@ -37,17 +37,11 @@ impl AssetsRepository for DatabaseClient {
     }
 
     fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, DatabaseError> {
-        Ok(AssetsStore::upsert_assets(
-            self,
-            values.into_iter().map(AssetRow::from_primitive_default).collect(),
-        )?)
+        Ok(AssetsStore::upsert_assets(self, values.into_iter().map(AssetRow::from_primitive_default).collect())?)
     }
 
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetBasic>, DatabaseError> {
-        Ok(AssetsStore::get_assets_by_filter(self, filters)?
-            .into_iter()
-            .map(|x| x.as_basic_primitive())
-            .collect())
+        Ok(AssetsStore::get_assets_by_filter(self, filters)?.into_iter().map(|x| x.as_basic_primitive()).collect())
     }
 
     fn get_asset(&mut self, asset_id: &str) -> Result<Asset, DatabaseError> {
@@ -63,10 +57,7 @@ impl AssetsRepository for DatabaseClient {
         let asset = AssetsStore::get_asset(self, asset_id)?;
         let price = PricesStore::get_price(self, asset_id).optional()?;
         let market = price.as_ref().map(|x| x.as_market_primitive());
-        let links = AssetsLinksStore::get_asset_links(self, asset_id)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect();
+        let links = AssetsLinksStore::get_asset_links(self, asset_id)?.into_iter().map(|x| x.as_primitive()).collect();
         let tags = TagStore::get_assets_tags_for_asset(self, asset_id)?.into_iter().map(|x| x.tag_id).collect();
         let perpetuals = self.perpetuals().get_perpetuals_for_asset(asset.id.as_str())?;
         let perpetuals = perpetuals.into_iter().map(|x| x.as_basic()).collect();

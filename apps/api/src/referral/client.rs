@@ -2,12 +2,10 @@ use std::error::Error;
 
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
-use primitives::{
-    ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletId, now,
-};
+use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletId, now};
 use storage::{
-    ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource,
-    WalletType, WalletsRepository,
+    ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource, WalletType,
+    WalletsRepository,
 };
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
@@ -73,11 +71,7 @@ impl RewardsClient {
     }
 
     fn calculate_referral_allowance(&self, wallet_id: i32, is_verified: bool) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
-        let multiplier = if is_verified {
-            self.config.get_i32(ConfigKey::ReferralVerifiedMultiplier)?
-        } else {
-            1
-        };
+        let multiplier = if is_verified { self.config.get_i32(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
 
         let daily_limit = self.config.get_i32(ConfigKey::ReferralPerUserDaily)? * multiplier;
         let weekly_limit = self.config.get_i32(ConfigKey::ReferralPerUserWeekly)? * multiplier;
@@ -86,10 +80,7 @@ impl RewardsClient {
             Some(u) => u,
             None => {
                 return Ok(ReferralAllowance {
-                    daily: ReferralQuota {
-                        limit: daily_limit,
-                        available: 0,
-                    },
+                    daily: ReferralQuota { limit: daily_limit, available: 0 },
                     weekly: ReferralQuota {
                         limit: weekly_limit,
                         available: 0,
@@ -127,14 +118,7 @@ impl RewardsClient {
         Ok(self.db.rewards_redemptions()?.get_redemption_option(code)?)
     }
 
-    pub async fn create_username(
-        &self,
-        wallet_identifier: &str,
-        code: &str,
-        device_id: i32,
-        ip_address: &str,
-        locale: &str,
-    ) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
+    pub async fn create_username(&self, wallet_identifier: &str, code: &str, device_id: i32, ip_address: &str, locale: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
         let wallet = self.db.wallets()?.get_wallet(wallet_identifier)?;
 
         let global_daily_limit = self.config.get_i64(ConfigKey::UsernameCreationGlobalDailyLimit)?;
@@ -165,9 +149,7 @@ impl RewardsClient {
             .map_err(|e| self.map_username_error(e, locale))?;
 
         let (rewards, event_id) = self.db.rewards()?.create_reward(wallet.id, code, device_id)?;
-        self.ip_security_client
-            .record_username_creation(&ip_result.country_code, ip_address, device_id)
-            .await?;
+        self.ip_security_client.record_username_creation(&ip_result.country_code, ip_address, device_id).await?;
         self.publish_events(vec![event_id]).await?;
         Ok(rewards)
     }
@@ -194,10 +176,7 @@ impl RewardsClient {
 
         match self.validate_and_score_referral(auth, &referrer_username, ip_address).await {
             ReferralProcessResult::Success(risk_signal_id) => {
-                let events = self
-                    .db
-                    .rewards()?
-                    .use_or_verify_referral(&referrer_username, wallet.id, auth.device.id, risk_signal_id)?;
+                let events = self.db.rewards()?.use_or_verify_referral(&referrer_username, wallet.id, auth.device.id, risk_signal_id)?;
                 Ok(events)
             }
             ReferralProcessResult::Failed(error) => {
@@ -333,15 +312,11 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let device_model_ring_count = match client.count_unique_referrers_for_device_model_pattern(
-            &signal_input.device_model,
-            signal_input.device_platform,
-            &signal_input.device_locale,
-            since,
-        ) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
+        let device_model_ring_count =
+            match client.count_unique_referrers_for_device_model_pattern(&signal_input.device_model, signal_input.device_platform, &signal_input.device_locale, since) {
+                Ok(count) => count,
+                Err(e) => return ReferralProcessResult::Failed(e.into()),
+            };
 
         let ip_abuser_count = match client.count_disabled_users_by_ip(&signal_input.ip_address, since) {
             Ok(count) => count,
@@ -367,11 +342,7 @@ impl RewardsClient {
 
     fn check_referrer_limits(&self, referrer_username: &str) -> Result<(), ReferralError> {
         let is_verified = self.db.rewards()?.is_verified_by_username(referrer_username)?;
-        let multiplier = if is_verified {
-            self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?
-        } else {
-            1
-        };
+        let multiplier = if is_verified { self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
 
         let current = now();
 

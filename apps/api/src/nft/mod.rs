@@ -13,11 +13,7 @@ use std::io::Cursor;
 // by device
 
 #[get("/nft/assets/device/<device_id>?<wallet_index>")]
-pub async fn get_nft_assets_old(
-    device_id: DeviceIdParam,
-    wallet_index: i32,
-    client: &State<Mutex<NFTClient>>,
-) -> Result<ApiResponse<ResponseResultNew<Vec<NFTData>>>, ApiError> {
+pub async fn get_nft_assets_old(device_id: DeviceIdParam, wallet_index: i32, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<ResponseResultNew<Vec<NFTData>>>, ApiError> {
     Ok(ResponseResultNew::new(client.lock().await.get_nft_assets(&device_id.0, wallet_index).await?).into())
 }
 
@@ -29,11 +25,7 @@ pub async fn get_nft_assets_v2(device_id: DeviceIdParam, wallet_index: i32, clie
 // by address. mostly for testing purposes
 
 #[get("/nft/assets/chain/<chain>?<address>")]
-pub async fn get_nft_assets_by_chain(
-    chain: ChainParam,
-    address: AddressParam,
-    client: &State<Mutex<NFTClient>>,
-) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
+pub async fn get_nft_assets_by_chain(chain: ChainParam, address: AddressParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
     Ok(client.lock().await.get_nft_assets_by_chain(chain.0, &address.0).await?.into())
 }
 
@@ -85,12 +77,7 @@ pub async fn report_nft(request: Json<ReportNft>, client: &State<Mutex<NFTClient
     Ok(client
         .lock()
         .await
-        .report_nft(
-            &request.device_id,
-            request.collection_id.clone(),
-            request.asset_id.clone(),
-            request.reason.clone(),
-        )?
+        .report_nft(&request.device_id, request.collection_id.clone(), request.asset_id.clone(), request.reason.clone())?
         .into())
 }
 

@@ -7,8 +7,7 @@ use super::{
     mayan::{MayanClientStatus, MayanExplorer, wormhole_chain_id_to_chain},
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::evm::check_approval_erc20,
     asset::*,
@@ -106,12 +105,7 @@ impl ProxyProvider<RpcClient> {
     }
 
     pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(
-            SwapperProvider::CetusAggregator,
-            "cetus",
-            vec![SwapperChainAsset::All(Chain::Sui)],
-            rpc_provider,
-        )
+        Self::new_with_path(SwapperProvider::CetusAggregator, "cetus", vec![SwapperChainAsset::All(Chain::Sui)], rpc_provider)
     }
 
     pub fn new_panora(rpc_provider: Arc<dyn RpcProvider>) -> Self {
@@ -145,14 +139,8 @@ impl ProxyProvider<RpcClient> {
                 ],
             ),
             SwapperChainAsset::Assets(Chain::Sui, vec![SUI_USDC.id.clone(), SUI_SBUSDT.id.clone(), SUI_WAL.id.clone()]),
-            SwapperChainAsset::Assets(
-                Chain::SmartChain,
-                vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone(), SMARTCHAIN_WBTC.id.clone()],
-            ),
-            SwapperChainAsset::Assets(
-                Chain::Base,
-                vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone(), BASE_WBTC.id.clone(), BASE_USDS.id.clone()],
-            ),
+            SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone(), SMARTCHAIN_WBTC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone(), BASE_WBTC.id.clone(), BASE_USDS.id.clone()]),
             SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_USDC.id.clone(), POLYGON_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::AvalancheC, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
             SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),

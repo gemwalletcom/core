@@ -33,22 +33,12 @@ pub async fn get_rewards(wallet: MulticoinParam, client: &State<Mutex<RewardsCli
 }
 
 #[post("/rewards/referrals/create", format = "json", data = "<request>")]
-pub async fn create_referral(
-    request: Authenticated<ReferralCode>,
-    ip: std::net::IpAddr,
-    client: &State<Mutex<RewardsClient>>,
-) -> Result<ApiResponse<Rewards>, ApiError> {
+pub async fn create_referral(request: Authenticated<ReferralCode>, ip: std::net::IpAddr, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Rewards>, ApiError> {
     let wallet_identifier = WalletId::Multicoin(request.auth.address.clone()).id();
     Ok(client
         .lock()
         .await
-        .create_username(
-            &wallet_identifier,
-            &request.data.code,
-            request.auth.device.id,
-            &ip.to_string(),
-            &request.auth.device.locale,
-        )
+        .create_username(&wallet_identifier, &request.data.code, request.auth.device.id, &ip.to_string(), &request.auth.device.locale)
         .await?
         .into())
 }
@@ -66,11 +56,7 @@ pub async fn use_referral_code(
     ip: std::net::IpAddr,
     client: &State<Mutex<RewardsClient>>,
 ) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
-    let events = client
-        .lock()
-        .await
-        .use_referral_code(&request.auth, &request.data.code, &ip.to_string())
-        .await?;
+    let events = client.lock().await.use_referral_code(&request.auth, &request.data.code, &ip.to_string()).await?;
     Ok(events.into())
 }
 

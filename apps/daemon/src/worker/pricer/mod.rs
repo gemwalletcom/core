@@ -55,62 +55,50 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_prices_top_market_cap = run_job(
-        "Update prices top (top 500) market cap",
-        config.get_duration(ConfigKey::PriceTimerTopMarketCap)?,
-        {
-            let settings = Arc::new(settings.clone());
+    let update_prices_top_market_cap = run_job("Update prices top (top 500) market cap", config.get_duration(ConfigKey::PriceTimerTopMarketCap)?, {
+        let settings = Arc::new(settings.clone());
+        let cacher_client = cacher_client.clone();
+        let database = database.clone();
+        move || {
+            let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            move || {
-                let settings = Arc::clone(&settings);
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                async move {
-                    let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
-                    updater.update_prices_type(UpdatePrices::Top).await
-                }
+            async move {
+                let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
+                updater.update_prices_type(UpdatePrices::Top).await
             }
-        },
-    );
+        }
+    });
 
-    let update_prices_high_market_cap = run_job(
-        "Update prices high (500-2500) market cap",
-        config.get_duration(ConfigKey::PriceTimerHighMarketCap)?,
-        {
-            let settings = Arc::new(settings.clone());
+    let update_prices_high_market_cap = run_job("Update prices high (500-2500) market cap", config.get_duration(ConfigKey::PriceTimerHighMarketCap)?, {
+        let settings = Arc::new(settings.clone());
+        let cacher_client = cacher_client.clone();
+        let database = database.clone();
+        move || {
+            let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            move || {
-                let settings = Arc::clone(&settings);
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                async move {
-                    let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
-                    updater.update_prices_type(UpdatePrices::High).await
-                }
+            async move {
+                let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
+                updater.update_prices_type(UpdatePrices::High).await
             }
-        },
-    );
+        }
+    });
 
-    let update_prices_low_market_cap = run_job(
-        "Update prices low (2500...) market cap",
-        config.get_duration(ConfigKey::PriceTimerLowMarketCap)?,
-        {
-            let settings = Arc::new(settings.clone());
+    let update_prices_low_market_cap = run_job("Update prices low (2500...) market cap", config.get_duration(ConfigKey::PriceTimerLowMarketCap)?, {
+        let settings = Arc::new(settings.clone());
+        let cacher_client = cacher_client.clone();
+        let database = database.clone();
+        move || {
+            let settings = Arc::clone(&settings);
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            move || {
-                let settings = Arc::clone(&settings);
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                async move {
-                    let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
-                    updater.update_prices_type(UpdatePrices::Low).await
-                }
+            async move {
+                let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
+                updater.update_prices_type(UpdatePrices::Low).await
             }
-        },
-    );
+        }
+    });
 
     let update_hourly_charts_job = run_job("Aggregate hourly charts", config.get_duration(ConfigKey::PriceTimerChartsHourly)?, {
         let settings = Arc::new(settings.clone());

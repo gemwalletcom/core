@@ -47,7 +47,10 @@ impl AlertResult {
     }
 
     fn with_milestone(alert_type: PriceAlertType, milestone: f64) -> Self {
-        Self { alert_type, milestone: Some(milestone) }
+        Self {
+            alert_type,
+            milestone: Some(milestone),
+        }
     }
 }
 
@@ -62,10 +65,7 @@ impl PriceAlertRules {
             return None;
         }
 
-        self.milestones
-            .iter()
-            .find(|&&milestone| price_24h_ago < milestone && current_price >= milestone)
-            .copied()
+        self.milestones.iter().find(|&&milestone| price_24h_ago < milestone && current_price >= milestone).copied()
     }
 }
 
@@ -218,15 +218,10 @@ impl PriceAlertClient {
             let message: LanguageNotification = match alert.alert_type {
                 PriceAlertType::PriceUp | PriceAlertType::PriceDown => localizer.price_alert_target(&alert.asset.full_name(), &price, &change),
                 PriceAlertType::PriceChangesUp | PriceAlertType::PricePercentChangeUp => localizer.price_alert_up(&alert.asset.full_name(), &price, &change),
-                PriceAlertType::PriceChangesDown | PriceAlertType::PricePercentChangeDown => {
-                    localizer.price_alert_down(&alert.asset.full_name(), &price, &change)
-                }
+                PriceAlertType::PriceChangesDown | PriceAlertType::PricePercentChangeDown => localizer.price_alert_down(&alert.asset.full_name(), &price, &change),
                 PriceAlertType::AllTimeHigh => localizer.price_alert_all_time_high(&alert.asset.name, &price),
                 PriceAlertType::PriceMilestone => {
-                    let milestone_price = alert
-                        .milestone
-                        .and_then(|m| formatter.currency(m, &alert.device.currency))
-                        .unwrap_or_else(|| price.clone());
+                    let milestone_price = alert.milestone.and_then(|m| formatter.currency(m, &alert.device.currency)).unwrap_or_else(|| price.clone());
                     localizer.price_alert_target(&alert.asset.full_name(), &milestone_price, &change)
                 }
             };

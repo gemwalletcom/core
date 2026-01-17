@@ -3,8 +3,7 @@ mod tests {
     use std::env;
 
     use name_resolver::{
-        alldomains::AllDomainsClient, base::Basenames, client::NameClient, ens::ENSClient, hyperliquid::Hyperliquid, injective::InjectiveNameClient,
-        suins::SuinsClient,
+        alldomains::AllDomainsClient, base::Basenames, client::NameClient, ens::ENSClient, hyperliquid::Hyperliquid, injective::InjectiveNameClient, suins::SuinsClient,
     };
     use primitives::{Chain, node_config::get_nodes_for_chain};
     use settings::Settings;

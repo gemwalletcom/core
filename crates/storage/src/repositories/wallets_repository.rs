@@ -11,18 +11,8 @@ pub trait WalletsRepository {
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError>;
     fn get_or_create_wallet(&mut self, wallet: NewWalletRow) -> Result<WalletRow, DatabaseError>;
     fn get_subscriptions(&mut self, device_id: &str) -> Result<Vec<(WalletRow, WalletSubscriptionRow)>, DatabaseError>;
-    fn add_subscriptions(
-        &mut self,
-        device_id: &str,
-        wallet_ids: HashMap<String, i32>,
-        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
-    ) -> Result<usize, DatabaseError>;
-    fn delete_subscriptions(
-        &mut self,
-        device_id: &str,
-        wallet_ids: HashMap<String, i32>,
-        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
-    ) -> Result<usize, DatabaseError>;
+    fn add_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
+    fn delete_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError>;
 }
 
 impl WalletsRepository for DatabaseClient {
@@ -54,21 +44,11 @@ impl WalletsRepository for DatabaseClient {
         WalletsStore::get_subscriptions(self, device_id)
     }
 
-    fn add_subscriptions(
-        &mut self,
-        device_id: &str,
-        wallet_ids: HashMap<String, i32>,
-        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
-    ) -> Result<usize, DatabaseError> {
+    fn add_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError> {
         WalletsStore::add_subscriptions(self, device_id, wallet_ids, subscriptions)
     }
 
-    fn delete_subscriptions(
-        &mut self,
-        device_id: &str,
-        wallet_ids: HashMap<String, i32>,
-        subscriptions: Vec<(String, Vec<(Chain, String)>)>,
-    ) -> Result<usize, DatabaseError> {
+    fn delete_subscriptions(&mut self, device_id: &str, wallet_ids: HashMap<String, i32>, subscriptions: Vec<(String, Vec<(Chain, String)>)>) -> Result<usize, DatabaseError> {
         WalletsStore::delete_subscriptions(self, device_id, wallet_ids, subscriptions)
     }
 }

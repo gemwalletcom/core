@@ -24,7 +24,11 @@ pub struct RewardsRedemptionConsumer<S: RedemptionService> {
 
 impl<S: RedemptionService> RewardsRedemptionConsumer<S> {
     pub fn new(database: Database, redemption_service: Arc<S>, retry_config: RedemptionRetryConfig) -> Self {
-        Self { database, redemption_service, retry_config }
+        Self {
+            database,
+            redemption_service,
+            retry_config,
+        }
     }
 
     async fn process_with_retry(&self, request: RedemptionRequest) -> Result<String, Box<dyn Error + Send + Sync>> {

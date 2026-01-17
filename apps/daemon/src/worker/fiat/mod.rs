@@ -26,33 +26,25 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_fiat_provider_countries_job = run_job(
-        "Update providers countries",
-        config.get_duration(ConfigKey::FiatTimerUpdateProviderCountries)?,
-        {
-            let settings = Arc::new(settings.clone());
-            let database = database.clone();
-            move || {
-                let providers = FiatProviderFactory::new_providers((*settings).clone());
-                let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-                async move { fiat_assets_updater.update_fiat_countries("fiat_update_countries").await }
-            }
-        },
-    );
+    let update_fiat_provider_countries_job = run_job("Update providers countries", config.get_duration(ConfigKey::FiatTimerUpdateProviderCountries)?, {
+        let settings = Arc::new(settings.clone());
+        let database = database.clone();
+        move || {
+            let providers = FiatProviderFactory::new_providers((*settings).clone());
+            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+            async move { fiat_assets_updater.update_fiat_countries("fiat_update_countries").await }
+        }
+    });
 
-    let update_fiat_buyable_assets_job = run_job(
-        "Update fiat buyable/sellable assets",
-        config.get_duration(ConfigKey::FiatTimerUpdateBuyableAssets)?,
-        {
-            let settings = Arc::new(settings.clone());
-            let database = database.clone();
-            move || {
-                let providers = FiatProviderFactory::new_providers((*settings).clone());
-                let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-                async move { fiat_assets_updater.update_buyable_sellable_assets().await }
-            }
-        },
-    );
+    let update_fiat_buyable_assets_job = run_job("Update fiat buyable/sellable assets", config.get_duration(ConfigKey::FiatTimerUpdateBuyableAssets)?, {
+        let settings = Arc::new(settings.clone());
+        let database = database.clone();
+        move || {
+            let providers = FiatProviderFactory::new_providers((*settings).clone());
+            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+            async move { fiat_assets_updater.update_buyable_sellable_assets().await }
+        }
+    });
 
     let update_trending_fiat_assets_job = run_job("Update trending fiat assets", config.get_duration(ConfigKey::FiatTimerUpdateTrending)?, {
         let settings = Arc::new(settings.clone());

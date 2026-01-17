@@ -44,8 +44,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             .collect();
 
         let (existing_assets, missing_assets_ids) = self.get_existing_and_missing_assets(asset_ids).await?;
-        let existing_assets_map: HashMap<AssetId, primitives::AssetPriceMetadata> =
-            existing_assets.into_iter().map(|asset| (asset.asset.asset.id.clone(), asset)).collect();
+        let existing_assets_map: HashMap<AssetId, primitives::AssetPriceMetadata> = existing_assets.into_iter().map(|asset| (asset.asset.asset.id.clone(), asset)).collect();
 
         let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
         let mut fetch_assets_payload: Vec<AssetId> = Vec::new();
@@ -123,10 +122,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 }
 
 impl StoreTransactionsConsumer {
-    async fn get_existing_and_missing_assets(
-        &self,
-        assets_ids: Vec<AssetId>,
-    ) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
+    async fn get_existing_and_missing_assets(&self, assets_ids: Vec<AssetId>) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
         let assets_with_prices = self.database.assets()?.get_assets_with_prices(assets_ids.ids().clone())?;
 
         let missing_assets_ids = assets_ids

@@ -79,11 +79,7 @@ fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorTy
         let module_name = first_parts[1];
 
         let directory_paths: Vec<&str> = vec[1].split('/').collect();
-        let mut directory_paths_capitalized = directory_paths
-            .iter()
-            .filter(|x| !x.starts_with('.'))
-            .map(|&x| str_capitlize(x))
-            .collect::<Vec<_>>();
+        let mut directory_paths_capitalized = directory_paths.iter().filter(|x| !x.starts_with('.')).map(|&x| str_capitlize(x)).collect::<Vec<_>>();
 
         if directory_paths_capitalized.is_empty() {
             continue;
@@ -120,18 +116,9 @@ fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorTy
                     "{}.{}{}",
                     ANDROID_PACKAGE_PREFIX,
                     module_name,
-                    if directory_package.is_empty() {
-                        String::new()
-                    } else {
-                        format!(".{directory_package}")
-                    }
+                    if directory_package.is_empty() { String::new() } else { format!(".{directory_package}") }
                 );
-                generate_files(
-                    LANGUAGE_KOTLIN,
-                    input_path.as_str(),
-                    android_output_path.as_str(),
-                    Some(android_package_name.as_str()),
-                );
+                generate_files(LANGUAGE_KOTLIN, input_path.as_str(), android_output_path.as_str(), Some(android_package_name.as_str()));
             }
             GeneratorType::TypeScript => {
                 let ts_new_file_name = file_name(&file_path, LANG_TYPESCRIPT_EXT);
@@ -168,10 +155,7 @@ fn generate_files(language: &str, input_path: &str, output_path: &str, package_n
     }
 
     let mut command = Command::new("typeshare");
-    command
-        .arg(input_path)
-        .arg(format!("--lang={language}"))
-        .arg(format!("--output-file={output_path}"));
+    command.arg(input_path).arg(format!("--lang={language}")).arg(format!("--output-file={output_path}"));
 
     if let Some(package_name) = package_name {
         command.arg(format!("--java-package={package_name}"));

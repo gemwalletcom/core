@@ -45,10 +45,7 @@ mod tests {
         let address = "0x953cb34f310cdef2ec0351e8c20e87bd53bd3bce";
         let result = explorer.get_address_url(address);
 
-        assert_eq!(
-            result,
-            "https://app.hyperliquid.xyz/explorer/address/0x953cb34f310cdef2ec0351e8c20e87bd53bd3bce"
-        );
+        assert_eq!(result, "https://app.hyperliquid.xyz/explorer/address/0x953cb34f310cdef2ec0351e8c20e87bd53bd3bce");
     }
 
     #[test]

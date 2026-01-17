@@ -32,15 +32,14 @@ pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
-    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, PricesPayload,
-    QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamConnection, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload,
-    TransactionsPayload, run_consumer,
+    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, PricesPayload, QueueName,
+    RewardsNotificationPayload, RewardsRedemptionPayload, StreamConnection, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload,
+    run_consumer,
 };
 
 use crate::consumers::{
-    fetch_address_transactions_consumer::FetchAddressTransactionsConsumer, fetch_blocks_consumer::FetchBlocksConsumer,
-    fetch_coin_addresses_consumer::FetchCoinAddressesConsumer, fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer,
-    fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
+    fetch_address_transactions_consumer::FetchAddressTransactionsConsumer, fetch_blocks_consumer::FetchBlocksConsumer, fetch_coin_addresses_consumer::FetchCoinAddressesConsumer,
+    fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer, fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
 };
 use crate::pusher::Pusher;
 use gem_client::ReqwestClient;
@@ -138,8 +137,7 @@ pub async fn run_consumer_store_transactions(settings: Settings) -> Result<(), B
         pusher: Pusher::new(database.clone()),
         config: StoreTransactionsConsumerConfig {},
     };
-    run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer))
-        .await
+    run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer)).await
 }
 
 pub async fn run_consumer_fetch_address_transactions(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -151,15 +149,7 @@ pub async fn run_consumer_fetch_address_transactions(settings: Settings) -> Resu
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
             let consumer = FetchAddressTransactionsConsumer::new(runner.database, chain_providers(&runner.settings, &name), stream_producer, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchAddressTransactionsConsumer, usize>(
-                &name,
-                stream_reader,
-                queue,
-                Some(chain.as_ref()),
-                consumer,
-                runner.config,
-            )
-            .await
+            run_consumer::<ChainAddressPayload, FetchAddressTransactionsConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config).await
         })
         .await
 }
@@ -197,8 +187,7 @@ pub async fn run_consumer_fetch_token_associations(settings: Settings) -> Result
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
             let consumer = FetchTokenAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, stream_producer, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config)
-                .await
+            run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config).await
         })
         .await
 }
@@ -211,8 +200,7 @@ pub async fn run_consumer_fetch_coin_associations(settings: Settings) -> Result<
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let consumer = FetchCoinAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config)
-                .await
+            run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config).await
         })
         .await
 }
@@ -220,9 +208,7 @@ pub async fn run_consumer_fetch_coin_associations(settings: Settings) -> Result<
 pub async fn run_consumer_fetch_nft_associations(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     ChainConsumerRunner::new(settings, QueueName::FetchNftAssociations)
         .await?
-        .run(|runner, chain| async move {
-            FetchNftAssetsAddressesConsumer::run(runner.settings, runner.database, chain, &runner.connection, runner.cacher, runner.config).await
-        })
+        .run(|runner, chain| async move { FetchNftAssetsAddressesConsumer::run(runner.settings, runner.database, chain, &runner.connection, runner.cacher, runner.config).await })
         .await
 }
 
