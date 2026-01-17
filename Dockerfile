@@ -12,15 +12,12 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json \
     --package api --package daemon --package dynode
 COPY . .
-RUN cargo build --release --package api --package daemon --package dynode && \
-    cp target/release/api target/release/daemon target/release/dynode /app/
+RUN cargo build --release --package api --package daemon --package dynode && cp target/release/api target/release/daemon target/release/dynode /app/
 
 # Shared runtime base
 FROM debian:bookworm-slim AS runtime-base
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Core runtime image
 FROM runtime-base AS core
