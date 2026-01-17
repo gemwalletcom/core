@@ -1,11 +1,11 @@
 use primitives::currency::Currency;
-use primitives::{Chain, ChartPeriod, FiatQuoteType, TransactionId, WalletId};
+use primitives::{Chain, ChartPeriod, FiatQuoteType, NFTAssetId, NFTCollectionId, TransactionId, WalletId};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::request::FromParam;
 use std::str::FromStr;
 
 const MAX_ADDRESS_LENGTH: usize = 256;
-const MAX_ASSET_ID_LENGTH: usize = 128;
+const MAX_ASSET_ID_LENGTH: usize = 256;
 const MAX_DEVICE_ID_LENGTH: usize = 32;
 const MAX_SEARCH_QUERY_LENGTH: usize = 128;
 
@@ -111,6 +111,26 @@ impl<'r> FromParam<'r> for MulticoinParam {
         }
 
         Ok(MulticoinParam(WalletId::Multicoin(param.to_string())))
+    }
+}
+
+pub struct NftCollectionIdParam(pub NFTCollectionId);
+
+impl<'r> FromParam<'r> for NftCollectionIdParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        NFTCollectionId::from_id(param).map(NftCollectionIdParam).ok_or(param)
+    }
+}
+
+pub struct NftAssetIdParam(pub NFTAssetId);
+
+impl<'r> FromParam<'r> for NftAssetIdParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        NFTAssetId::from_id(param).map(NftAssetIdParam).ok_or(param)
     }
 }
 

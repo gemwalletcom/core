@@ -1,4 +1,4 @@
-use crate::params::{AddressParam, AssetIdParam, ChainParam, DeviceIdParam};
+use crate::params::{AddressParam, ChainParam, DeviceIdParam, NftAssetIdParam, NftCollectionIdParam};
 use crate::responders::{ApiError, ApiResponse};
 use ::nft::NFTClient;
 use primitives::{NFTAsset, NFTData, ReportNft, response::ResponseResultNew};
@@ -40,32 +40,32 @@ pub async fn get_nft_assets_by_chain(
 // collections
 
 #[put("/nft/collections/update/<collection_id>")]
-pub async fn update_nft_collection(collection_id: AssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
-    Ok(client.lock().await.update_collection(&collection_id.0).await?.into())
+pub async fn update_nft_collection(collection_id: NftCollectionIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
+    Ok(client.lock().await.update_collection(&collection_id.0.id()).await?.into())
 }
 
 // assets
 
 #[put("/nft/assets/update/<asset_id>")]
-pub async fn update_nft_asset(asset_id: AssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
-    Ok(client.lock().await.update_asset(&asset_id.0).await?.into())
+pub async fn update_nft_asset(asset_id: NftAssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
+    Ok(client.lock().await.update_asset(asset_id.0.as_ref()).await?.into())
 }
 
 #[get("/nft/assets/<asset_id>")]
-pub async fn get_nft_asset(asset_id: AssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<NFTAsset>, ApiError> {
-    Ok(client.lock().await.get_nft_asset(&asset_id.0)?.into())
+pub async fn get_nft_asset(asset_id: NftAssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<NFTAsset>, ApiError> {
+    Ok(client.lock().await.get_nft_asset(asset_id.0.as_ref())?.into())
 }
 
 // from db
 
 #[get("/nft/collections/<collection_id>")]
-pub async fn get_nft_collection(collection_id: AssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<NFTData>, ApiError> {
-    Ok(client.lock().await.get_nft_collection_data(&collection_id.0)?.into())
+pub async fn get_nft_collection(collection_id: NftCollectionIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<NFTData>, ApiError> {
+    Ok(client.lock().await.get_nft_collection_data(&collection_id.0.id())?.into())
 }
 
 #[get("/nft/assets/<asset_id>/image_preview")]
-pub async fn get_nft_asset_image_preview(asset_id: AssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ImageResponse, ApiError> {
-    let (image_data, content_type, upstream_headers) = client.lock().await.get_nft_asset_image(&asset_id.0).await?;
+pub async fn get_nft_asset_image_preview(asset_id: NftAssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ImageResponse, ApiError> {
+    let (image_data, content_type, upstream_headers) = client.lock().await.get_nft_asset_image(asset_id.0.as_ref()).await?;
     let content_type = ContentType::parse_flexible(content_type.as_ref().unwrap_or(&"image/png".to_string())).unwrap_or(ContentType::PNG);
     let cache_control = upstream_headers
         .get("cache-control")
