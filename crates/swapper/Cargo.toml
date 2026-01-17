@@ -54,7 +54,7 @@ bs58 = { workspace = true }
 solana-primitives = "0.2.1"
 bigdecimal.workspace = true
 rand.workspace = true
-tracing = "0.1.41"
+tracing = "0.1.44"
 
 [dev-dependencies]
 tokio.workspace = true
