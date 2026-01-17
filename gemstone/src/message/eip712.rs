@@ -44,6 +44,7 @@ impl GemEIP712Message {
             let value = match field.value {
                 EIP712TypedValue::Address { value } => value,
                 EIP712TypedValue::Uint256 { value } => value,
+                EIP712TypedValue::Int256 { value } => value,
                 EIP712TypedValue::String { value } => value,
                 EIP712TypedValue::Bool { value } => value.to_string(),
                 EIP712TypedValue::Bytes { value } => hex::encode_prefixed(&value),
