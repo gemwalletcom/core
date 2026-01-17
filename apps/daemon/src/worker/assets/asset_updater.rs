@@ -126,10 +126,11 @@ impl AssetUpdater {
             .into_iter()
             .flat_map(|(chain, platform)| {
                 if let (Some(asset_type), Some(platform)) = (chain.default_asset_type(), platform.clone()) {
-                    if platform.contract_address.is_empty() || platform.decimal_place.is_none() {
+                    let contract_address = platform.contract_address?;
+                    if contract_address.is_empty() || platform.decimal_place.is_none() {
                         return None;
                     }
-                    let token_id = format_token_id(chain, platform.contract_address)?;
+                    let token_id = format_token_id(chain, contract_address)?;
                     let decimals = platform.decimal_place.unwrap_or_default();
                     let asset_id = AssetId {
                         chain,
