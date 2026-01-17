@@ -14,6 +14,7 @@ use tokio;
 pub struct ConsumerConfig {
     pub timeout_on_error: Duration,
     pub skip_on_error: bool,
+    pub delay: Duration,
 }
 
 enum ProcessResult<R> {
@@ -83,6 +84,9 @@ where
                 result = format!("{:?}", value),
                 elapsed = DurationMs(start.elapsed())
             );
+            if !config.delay.is_zero() {
+                tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(tokio::time::sleep(config.delay)));
+            }
             Ok(())
         }
         ProcessResult::Skipped => {
