@@ -1,5 +1,5 @@
 use crate::model::IpCheckResult;
-use primitives::Platform;
+use primitives::{Platform, PlatformStore};
 use storage::models::{NewRiskSignalRow, RiskSignalRow};
 
 use super::model::{RiskScore, RiskScoreConfig, RiskSignalInput};
@@ -10,7 +10,7 @@ pub struct RiskScoringInput {
     pub username: String,
     pub device_id: i32,
     pub device_platform: Platform,
-    pub device_platform_store: String,
+    pub device_platform_store: PlatformStore,
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
@@ -25,7 +25,7 @@ impl RiskScoringInput {
             username: self.username.clone(),
             device_id: self.device_id,
             device_platform: self.device_platform,
-            device_platform_store: self.device_platform_store.clone(),
+            device_platform_store: self.device_platform_store,
             device_os: self.device_os.clone(),
             device_model: self.device_model.clone(),
             device_locale: self.device_locale.clone(),
@@ -60,7 +60,7 @@ pub fn evaluate_risk(
         referrer_username: signal_input.username,
         device_id: signal_input.device_id,
         device_platform: signal_input.device_platform.into(),
-        device_platform_store: signal_input.device_platform_store,
+        device_platform_store: signal_input.device_platform_store.into(),
         device_os: signal_input.device_os,
         device_model: signal_input.device_model,
         device_locale: signal_input.device_locale,
@@ -88,7 +88,7 @@ mod tests {
             username: "user1".to_string(),
             device_id: 1,
             device_platform: Platform::IOS,
-            device_platform_store: "appStore".to_string(),
+            device_platform_store: PlatformStore::AppStore,
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),

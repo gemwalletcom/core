@@ -732,8 +732,9 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
-    use super::sql_types::IpUsageType;
     use super::sql_types::Platform;
+    use super::sql_types::PlatformStore;
+    use super::sql_types::IpUsageType;
 
     rewards_risk_signals (id) {
         id -> Int4,
@@ -743,8 +744,7 @@ diesel::table! {
         referrer_username -> Varchar,
         device_id -> Int4,
         device_platform -> Platform,
-        #[max_length = 32]
-        device_platform_store -> Varchar,
+        device_platform_store -> PlatformStore,
         #[max_length = 32]
         device_os -> Varchar,
         #[max_length = 64]

@@ -257,7 +257,7 @@ impl RewardsClient {
             username: referrer_username.to_string(),
             device_id: auth.device.id,
             device_platform: *auth.device.platform,
-            device_platform_store: auth.device.platform_store.as_ref().to_string(),
+            device_platform_store: *auth.device.platform_store,
             device_os: auth.device.os.clone(),
             device_model: auth.device.model.clone(),
             device_locale: auth.device.locale.clone(),

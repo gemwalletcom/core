@@ -17,7 +17,7 @@ pub fn calculate_risk_score(
 
     let is_penalty_isp = config.penalty_isps.iter().any(|isp| input.ip_isp.contains(isp));
     let is_blocked_type = config.blocked_ip_types.contains(&input.ip_usage_type);
-    let is_high_risk_platform_store = config.high_risk_platform_stores.iter().any(|s| s == &input.device_platform_store);
+    let is_high_risk_platform_store = config.high_risk_platform_stores.iter().any(|s| s == input.device_platform_store.as_ref());
     let is_high_risk_country = config.high_risk_countries.iter().any(|c| c == &input.ip_country_code);
     let is_high_risk_locale = config.high_risk_locales.iter().any(|l| l == &input.device_locale);
     let is_high_risk_device_model = config
@@ -192,14 +192,14 @@ fn count_signals_in_recent_window(signals: &[&RiskSignalRow], window: Duration) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{IpUsageType, Platform};
+    use primitives::{IpUsageType, Platform, PlatformStore};
 
     fn create_test_input() -> RiskSignalInput {
         RiskSignalInput {
             username: "user1".to_string(),
             device_id: 1,
             device_platform: Platform::IOS,
-            device_platform_store: "appStore".to_string(),
+            device_platform_store: PlatformStore::AppStore,
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),
@@ -220,7 +220,7 @@ mod tests {
             referrer_username: referrer_username.to_string(),
             device_id,
             device_platform: Platform::IOS.into(),
-            device_platform_store: "appStore".to_string(),
+            device_platform_store: PlatformStore::AppStore.into(),
             device_os: "18.0".to_string(),
             device_model: model.to_string(),
             device_locale: "en-US".to_string(),
@@ -541,7 +541,7 @@ mod tests {
     fn same_referrer_different_platform_ignored() {
         let mut signal = create_signal("user1", "fp1", "10.0.0.1", "Comcast", "iPhone15,2", 2);
         signal.device_platform = Platform::Android.into();
-        signal.device_platform_store = "googlePlay".to_string();
+        signal.device_platform_store = PlatformStore::GooglePlay.into();
         let signals = [
             signal,
             create_signal("user1", "fp2", "10.0.0.2", "Comcast", "iPhone15,2", 3),
@@ -559,7 +559,7 @@ mod tests {
             username: "referrer1".to_string(),
             device_model: "TestDevice X".to_string(),
             device_platform: Platform::Android,
-            device_platform_store: "googlePlay".to_string(),
+            device_platform_store: PlatformStore::GooglePlay,
             ip_isp: "Test Mobile ISP".to_string(),
             ip_country_code: "XX".to_string(),
             device_locale: "en".to_string(),
@@ -571,7 +571,7 @@ mod tests {
             .map(|i| {
                 let mut s = create_signal("referrer1", &fingerprint, "10.20.30.40", "Test Mobile ISP", "TestDevice X", 100 + i);
                 s.device_platform = Platform::Android.into();
-                s.device_platform_store = "googlePlay".to_string();
+                s.device_platform_store = PlatformStore::GooglePlay.into();
                 s
             })
             .collect();
@@ -617,7 +617,7 @@ mod tests {
             username: "abuser".to_string(),
             device_model: "INFINIX X6525".to_string(),
             device_platform: Platform::Android,
-            device_platform_store: "googlePlay".to_string(),
+            device_platform_store: PlatformStore::GooglePlay,
             device_locale: "in".to_string(),
             ..create_test_input()
         };
@@ -628,7 +628,7 @@ mod tests {
             .map(|(i, (isp, _country))| {
                 let mut s = create_signal("abuser", &format!("fp{}", i), &format!("10.0.0.{}", i), isp, "INFINIX X6525", 100 + i as i32);
                 s.device_platform = Platform::Android.into();
-                s.device_platform_store = "googlePlay".to_string();
+                s.device_platform_store = PlatformStore::GooglePlay.into();
                 s
             })
             .collect();
