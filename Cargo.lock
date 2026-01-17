@@ -763,7 +763,6 @@ dependencies = [
  "primitives",
  "prometheus-client",
  "redis",
- "reqwest 0.13.1",
  "rocket",
  "rocket_ws",
  "search_index",
@@ -1657,7 +1656,6 @@ dependencies = [
  "redis",
  "serde",
  "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -2181,7 +2179,6 @@ dependencies = [
  "pricer",
  "prices_dex",
  "primitives",
- "rand 0.9.2",
  "reqwest 0.13.1",
  "search_index",
  "serde",
@@ -3287,10 +3284,8 @@ dependencies = [
  "chrono",
  "gem_bsc",
  "gem_client",
- "gem_hash",
  "gem_jsonrpc",
  "hex",
- "k256",
  "num-bigint",
  "num-traits",
  "primitives",
@@ -3302,7 +3297,6 @@ dependencies = [
  "signer",
  "tokio",
  "url",
- "uuid",
 ]
 
 [[package]]
@@ -3412,7 +3406,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "storage",
- "tokio",
 ]
 
 [[package]]
@@ -3584,7 +3577,6 @@ dependencies = [
  "gem_client",
  "gem_cosmos",
  "gem_evm",
- "gem_hash",
  "gem_hypercore",
  "gem_jsonrpc",
  "gem_near",
@@ -3602,7 +3594,6 @@ dependencies = [
  "reqwest 0.13.1",
  "serde",
  "serde_json",
- "serde_serializers",
  "signer",
  "sui-sdk-types",
  "swapper",
@@ -5554,14 +5545,12 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "chrono",
- "gem_client",
  "primitives",
  "reqwest 0.13.1",
  "serde",
  "serde_json",
  "serde_serializers",
  "settings",
- "strum",
  "tokio",
 ]
 
@@ -7359,7 +7348,6 @@ dependencies = [
  "diesel_migrations",
  "primitives",
  "r2d2",
- "redis",
  "serde",
  "serde_json",
 ]
@@ -7514,28 +7502,20 @@ dependencies = [
  "alloy-sol-types",
  "async-trait",
  "base64",
- "bcs",
  "bigdecimal",
  "bs58",
  "chrono",
  "futures",
- "gem_algorand",
  "gem_aptos",
- "gem_bitcoin",
- "gem_cardano",
  "gem_client",
  "gem_evm",
  "gem_hash",
  "gem_hypercore",
  "gem_jsonrpc",
- "gem_near",
- "gem_polkadot",
  "gem_solana",
- "gem_stellar",
  "gem_sui",
  "gem_ton",
  "gem_tron",
- "gem_xrp",
  "hex",
  "num-bigint",
  "num-integer",

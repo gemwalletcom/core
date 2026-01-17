@@ -6,7 +6,6 @@ edition = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-redis = { workspace = true }
 chrono = { workspace = true }
 r2d2 = { workspace = true }
 
