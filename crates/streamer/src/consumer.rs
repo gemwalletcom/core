@@ -39,7 +39,7 @@ pub async fn run_consumer<P, C, R>(
 where
     P: Clone + Send + Display + 'static,
     C: MessageConsumer<P, R> + Send + 'static,
-    R: std::default::Default + std::fmt::Debug,
+    R: std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
     info_with_fields!(

@@ -190,6 +190,7 @@ pub struct RewardRedemption {
 #[strum(serialize_all = "camelCase")]
 pub enum RedemptionStatus {
     Pending,
+    Processing,
     Completed,
     Failed,
 }

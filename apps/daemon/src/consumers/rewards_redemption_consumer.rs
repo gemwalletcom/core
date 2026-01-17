@@ -47,17 +47,18 @@ impl<S: RedemptionService> RewardsRedemptionConsumer<S> {
 }
 
 #[async_trait]
-impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for RewardsRedemptionConsumer<S> {
-    async fn should_process(&self, _payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        Ok(true)
+impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, PrimitiveRedemptionStatus> for RewardsRedemptionConsumer<S> {
+    async fn should_process(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let redemption = self.database.rewards_redemptions()?.get_redemption(payload.redemption_id)?;
+        Ok(*redemption.status == PrimitiveRedemptionStatus::Pending)
     }
 
-    async fn process(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn process(&self, payload: RewardsRedemptionPayload) -> Result<PrimitiveRedemptionStatus, Box<dyn Error + Send + Sync>> {
         let redemption = self.database.rewards_redemptions()?.get_redemption(payload.redemption_id)?;
 
-        if *redemption.status == PrimitiveRedemptionStatus::Completed {
-            return Ok(true);
-        }
+        self.database
+            .rewards_redemptions()?
+            .update_redemption(payload.redemption_id, vec![RedemptionUpdate::Status(RedemptionStatus::Processing)])?;
 
         let recipient_address = self.database.rewards()?.get_address_by_username(&redemption.username)?;
         let option = self.database.rewards_redemptions()?.get_redemption_option(&redemption.option_id)?;
@@ -86,7 +87,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
                     value = value,
                     tx_id = transaction_id
                 );
-                Ok(true)
+                Ok(PrimitiveRedemptionStatus::Completed)
             }
             Err(e) => {
                 let error_msg = e.to_string();
@@ -99,7 +100,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, bool> for R
                     value = value,
                     error = error_msg
                 );
-                Ok(false)
+                Ok(PrimitiveRedemptionStatus::Failed)
             }
         }
     }

@@ -47,6 +47,7 @@ use gem_client::ReqwestClient;
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::JsonRpcClient;
 use gem_rewards::{EvmClientProvider, TransferRedemptionService, WalletConfig};
+use primitives::rewards::RedemptionStatus;
 use primitives::{Chain, ChainType, EVMChain};
 use settings::service_user_agent;
 use settings_chain::ProviderFactory;
@@ -301,7 +302,7 @@ pub async fn run_rewards_redemption_consumer(settings: Settings) -> Result<(), B
     let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
     let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service, retry_config);
     let consumer_config = consumer_config(&settings.consumer);
-    run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, bool>(
+    run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, RedemptionStatus>(
         &name,
         stream_reader,
         queue,

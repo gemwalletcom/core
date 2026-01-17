@@ -77,7 +77,7 @@ diesel_enum!(
 
 diesel_enum!(RewardRedemptionType, PrimitiveRewardRedemptionType, RewardRedemptionTypeSql, [Asset, GiftAsset]);
 
-diesel_enum!(RedemptionStatus, PrimitiveRedemptionStatus, RedemptionStatusSql, [Pending, Completed, Failed]);
+diesel_enum!(RedemptionStatus, PrimitiveRedemptionStatus, RedemptionStatusSql, [Pending, Processing, Completed, Failed]);
 
 diesel_enum!(
     TransactionType,
