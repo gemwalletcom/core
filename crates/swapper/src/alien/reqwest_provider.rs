@@ -37,13 +37,6 @@ impl GenericRpcProvider for NativeProvider {
     type Error = AlienError;
 
     fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error> {
-        if chain == Chain::Solana {
-            if let Ok(url) = std::env::var("SOLANA_RPC_URL") {
-                if !url.is_empty() {
-                    return Ok(url);
-                }
-            }
-        }
         let nodes = get_nodes_for_chain(chain);
         if nodes.is_empty() {
             return Err(Self::Error::response_error(format!("not supported chain: {chain:?}")));
