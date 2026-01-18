@@ -3,7 +3,7 @@ use std::{collections::HashMap, str::FromStr, sync::Arc};
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
-use primitives::{AssetId, Chain};
+use primitives::{swap::ApprovalData, AssetId, Chain};
 
 use crate::models::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldTransaction};
 use crate::provider::YieldProviderClient;
@@ -95,8 +95,9 @@ impl YieldProviderClient for YoYieldProvider {
         let min_shares = U256::from(0);
         let partner_id = YO_PARTNER_ID_GEM;
 
+        let approval = gateway.check_token_allowance(vault.asset_token, wallet, amount).await?;
         let tx = gateway.build_deposit_transaction(wallet, vault.yo_token, amount, min_shares, receiver, partner_id);
-        Ok(convert_transaction(vault, tx))
+        Ok(convert_transaction(vault, tx, approval))
     }
 
     async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
@@ -109,7 +110,7 @@ impl YieldProviderClient for YoYieldProvider {
         let partner_id = YO_PARTNER_ID_GEM;
 
         let tx = gateway.build_redeem_transaction(wallet, vault.yo_token, shares, min_assets, receiver, partner_id);
-        Ok(convert_transaction(vault, tx))
+        Ok(convert_transaction(vault, tx, None))
     }
 
     async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
@@ -143,13 +144,14 @@ fn parse_value(value: &str) -> Result<U256, YieldError> {
     U256::from_str_radix(value, 10).map_err(|err| YieldError::new(format!("invalid value {value}: {err}")))
 }
 
-fn convert_transaction(vault: YoVault, tx: TransactionObject) -> YieldTransaction {
+fn convert_transaction(vault: YoVault, tx: TransactionObject, approval: Option<ApprovalData>) -> YieldTransaction {
     YieldTransaction {
         chain: vault.chain,
         from: tx.from.unwrap_or_default(),
         to: tx.to,
         data: tx.data,
         value: tx.value,
+        approval,
     }
 }
 

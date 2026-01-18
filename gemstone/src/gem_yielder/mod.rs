@@ -87,7 +87,7 @@ impl GemYielder {
             transaction,
             nonce,
             chain_id,
-            gas_limit: "200000".to_string(),
+            gas_limit: "350000".to_string(),
         })
     }
 
@@ -138,6 +138,8 @@ pub(crate) async fn prepare_yield_input(
                             provider_name: data.provider_name.clone(),
                             contract_address: transaction.to,
                             call_data: transaction.data,
+                            approval: transaction.approval,
+                            gas_limit: Some("350000".to_string()),
                         },
                     },
                     sender_address: input.sender_address,

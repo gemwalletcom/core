@@ -17,6 +17,8 @@ use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
 use primitives::stake_type::StakeData;
 #[cfg(feature = "rpc")]
+use primitives::yield_data::EvmYieldData;
+#[cfg(feature = "rpc")]
 use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 #[cfg(feature = "rpc")]
 use serde_serializers::bigint::bigint_from_hex_str;
@@ -66,13 +68,28 @@ impl<C: Client + Clone> EthereumClient<C> {
         let fee = self.calculate_fee(&input, &gas_limit).await?;
 
         let metadata = match &input.input_type {
-            TransactionInputType::Stake(_, _) | TransactionInputType::Yield(_, _, _) => match input.metadata {
+            TransactionInputType::Stake(_, _) => match input.metadata {
                 TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
                     nonce,
                     chain_id,
                     stake_data: Some(StakeData {
                         data: if params.data.is_empty() { None } else { Some(hex::encode(&params.data)) },
                         to: Some(params.to),
+                    }),
+                    yield_data: None,
+                },
+                _ => input.metadata,
+            },
+            TransactionInputType::Yield(_, _, yield_input) => match input.metadata {
+                TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
+                    nonce,
+                    chain_id,
+                    stake_data: None,
+                    yield_data: Some(EvmYieldData {
+                        contract_address: yield_input.contract_address.clone(),
+                        call_data: yield_input.call_data.clone(),
+                        approval: yield_input.approval.clone(),
+                        gas_limit: yield_input.gas_limit.clone(),
                     }),
                 },
                 _ => input.metadata,

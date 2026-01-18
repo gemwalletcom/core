@@ -1,6 +1,7 @@
 use primitives::AssetId;
 use yielder::{Yield, YieldPosition, YieldProvider, YieldTransaction};
 
+use crate::models::swap::GemApprovalData;
 pub use crate::models::transaction::GemYieldAction;
 
 pub type GemYieldProvider = YieldProvider;
@@ -37,6 +38,7 @@ pub struct GemYieldTransaction {
     pub to: String,
     pub data: String,
     pub value: Option<String>,
+    pub approval: Option<GemApprovalData>,
 }
 
 pub type GemYieldPosition = YieldPosition;

@@ -106,6 +106,8 @@ pub enum TransactionType {
     PerpetualOpenPosition,
     PerpetualClosePosition,
     PerpetualModifyPosition,
+    YieldDeposit,
+    YieldWithdraw,
 }
 
 pub type GemAccountDataType = AccountDataType;
@@ -131,6 +133,16 @@ pub type GemStakeData = StakeData;
 pub struct GemStakeData {
     pub data: Option<String>,
     pub to: Option<String>,
+}
+
+pub type GemEvmYieldData = primitives::EvmYieldData;
+
+#[uniffi::remote(Record)]
+pub struct GemEvmYieldData {
+    pub contract_address: String,
+    pub call_data: String,
+    pub approval: Option<GemApprovalData>,
+    pub gas_limit: Option<String>,
 }
 
 #[uniffi::remote(Record)]
@@ -266,6 +278,8 @@ pub struct GemYieldData {
     pub provider_name: String,
     pub contract_address: String,
     pub call_data: String,
+    pub approval: Option<GemApprovalData>,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -416,6 +430,7 @@ pub enum GemTransactionLoadMetadata {
         nonce: u64,
         chain_id: u64,
         stake_data: Option<GemStakeData>,
+        yield_data: Option<GemEvmYieldData>,
     },
     Near {
         sequence: u64,
@@ -500,7 +515,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin { utxos },
             TransactionLoadMetadata::Zcash { utxos, branch_id } => GemTransactionLoadMetadata::Zcash { utxos, branch_id },
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano { utxos },
-            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data },
+            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data, yield_data } => GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data, yield_data },
             TransactionLoadMetadata::Near { sequence, block_hash } => GemTransactionLoadMetadata::Near { sequence, block_hash },
             TransactionLoadMetadata::Stellar {
                 sequence,
@@ -596,7 +611,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin { utxos },
             GemTransactionLoadMetadata::Zcash { utxos, branch_id } => TransactionLoadMetadata::Zcash { utxos, branch_id },
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano { utxos },
-            GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => TransactionLoadMetadata::Evm { nonce, chain_id, stake_data },
+            GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data, yield_data } => TransactionLoadMetadata::Evm { nonce, chain_id, stake_data, yield_data },
             GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {
                 sequence,
@@ -872,6 +887,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
                     token: approval_data.token,
                     spender: approval_data.spender,
                     value: approval_data.value,
+                    gas_limit: approval_data.gas_limit,
                 },
             ),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset, metadata, extra.into()),
@@ -925,6 +941,8 @@ impl From<GemYieldData> for primitives::YieldData {
             provider_name: value.provider_name,
             contract_address: value.contract_address,
             call_data: value.call_data,
+            approval: value.approval,
+            gas_limit: value.gas_limit,
         }
     }
 }
@@ -935,6 +953,8 @@ impl From<primitives::YieldData> for GemYieldData {
             provider_name: value.provider_name,
             contract_address: value.contract_address,
             call_data: value.call_data,
+            approval: value.approval,
+            gas_limit: value.gas_limit,
         }
     }
 }

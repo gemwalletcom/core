@@ -5,6 +5,7 @@ use gem_client::Client;
 use gem_evm::contracts::IERC20;
 use gem_evm::multicall3::IMulticall3;
 use gem_evm::{jsonrpc::TransactionObject, rpc::EthereumClient};
+use primitives::swap::ApprovalData;
 
 use super::contract::{IYoGateway, IYoVaultToken};
 use super::error::YieldError;
@@ -33,6 +34,7 @@ pub trait YoProvider: Send + Sync {
         partner_id: u32,
     ) -> TransactionObject;
     async fn fetch_position_data(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError>;
+    async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YieldError>;
 }
 
 #[derive(Debug, Clone)]
@@ -159,5 +161,25 @@ where
             lookback_price,
             lookback_timestamp,
         })
+    }
+
+    async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YieldError> {
+        let spender = self.contract_address;
+
+        let mut batch = self.ethereum_client.multicall();
+        let allowance_call = batch.add(token, IERC20::allowanceCall { owner, spender });
+        let result = batch.execute().await?;
+        let allowance = result.decode::<IERC20::allowanceCall>(&allowance_call)?;
+
+        if allowance < amount {
+            Ok(Some(ApprovalData {
+                token: token.to_string(),
+                spender: spender.to_string(),
+                value: amount.to_string(),
+                gas_limit: Some("100000".to_string()),
+            }))
+        } else {
+            Ok(None)
+        }
     }
 }

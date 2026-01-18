@@ -23,6 +23,7 @@ pub async fn check_approval_tron(
             token: token_address.to_string(),
             spender: spender_address.to_string(),
             value: amount.to_string(),
+            gas_limit: Some("100000".to_string()),
         }));
     }
     Ok(ApprovalType::None)

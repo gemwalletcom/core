@@ -1,7 +1,7 @@
 use std::{fmt, str::FromStr};
 
 use alloy_primitives::Address;
-use primitives::{AssetId, Chain};
+use primitives::{swap::ApprovalData, AssetId, Chain};
 
 use crate::yo::YieldError;
 
@@ -61,6 +61,7 @@ pub struct YieldTransaction {
     pub to: String,
     pub data: String,
     pub value: Option<String>,
+    pub approval: Option<ApprovalData>,
 }
 
 #[derive(Debug, Clone)]

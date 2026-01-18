@@ -3,13 +3,14 @@ use typeshare::typeshare;
 
 use crate::{AssetId, Chain, SwapProvider};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct ApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

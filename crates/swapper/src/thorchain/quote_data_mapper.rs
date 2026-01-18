@@ -136,6 +136,7 @@ mod tests {
             token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string(),
             spender: "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string(),
             value: "2000".to_string(),
+            gas_limit: Some("100000".to_string()),
         });
 
         let result = map_quote_data(

@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::str::FromStr;
 
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, U256, hex};
 use alloy_sol_types::SolCall;
 use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
@@ -38,7 +38,7 @@ pub fn bigint_to_hex_string(value: &BigInt) -> String {
 }
 
 pub fn bytes_to_hex_string(data: &[u8]) -> String {
-    format!("0x{}", alloy_primitives::hex::encode(data))
+    format!("0x{}", hex::encode(data))
 }
 
 pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<TransactionLoadMetadata, Box<dyn std::error::Error + Send + Sync>> {
@@ -47,6 +47,7 @@ pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<Tr
         nonce,
         chain_id: chain_id.parse::<u64>()?,
         stake_data: None,
+        yield_data: None,
     })
 }
 
@@ -103,13 +104,13 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 match from_asset.id.token_subtype() {
                     AssetSubtype::NATIVE => Ok(TransactionParams::new(
                         swap_data.data.to.clone(),
-                        alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                        hex::decode(swap_data.data.data.clone())?,
                         BigInt::from_str_radix(&swap_data.data.value, 10)?,
                     )),
                     AssetSubtype::TOKEN => match swap_data.data.data_type {
                         SwapQuoteDataType::Contract => Ok(TransactionParams::new(
                             swap_data.data.to.clone(),
-                            alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                            hex::decode(swap_data.data.data.clone())?,
                             BigInt::ZERO,
                         )),
                         SwapQuoteDataType::Transfer => {
@@ -161,12 +162,20 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             _ => Err("Unsupported chain for staking".into()),
         },
         TransactionInputType::Yield(_, action, yield_data) => {
-            let call_data = alloy_primitives::hex::decode(&yield_data.call_data)?;
-            let tx_value = match action {
-                YieldAction::Deposit => BigInt::from(0),
-                YieldAction::Withdraw => BigInt::from(0),
-            };
-            Ok(TransactionParams::new(yield_data.contract_address.clone(), call_data, tx_value))
+            if let Some(approval) = &yield_data.approval {
+                Ok(TransactionParams::new(
+                    approval.token.clone(),
+                    encode_erc20_approve(&approval.spender)?,
+                    BigInt::from(0),
+                ))
+            } else {
+                let call_data = hex::decode(&yield_data.call_data)?;
+                let tx_value = match action {
+                    YieldAction::Deposit => BigInt::from(0),
+                    YieldAction::Withdraw => BigInt::from(0),
+                };
+                Ok(TransactionParams::new(yield_data.contract_address.clone(), call_data, tx_value))
+            }
         }
         _ => Err("Unsupported transfer type".into()),
     }
@@ -205,6 +214,14 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
                 } else {
                     Ok(BigInt::from(0))
                 }
+            } else {
+                Ok(BigInt::from(0))
+            }
+        }
+        TransactionInputType::Yield(_, _, yield_data) => {
+            // When there's an approval, add the yield deposit gas limit
+            if yield_data.approval.is_some() && yield_data.gas_limit.is_some() {
+                Ok(BigInt::from_str_radix(yield_data.gas_limit.as_ref().unwrap(), 10)?)
             } else {
                 Ok(BigInt::from(0))
             }
@@ -331,10 +348,16 @@ mod tests {
         let result = map_transaction_preload(nonce_hex, chain_id)?;
 
         match result {
-            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => {
+            TransactionLoadMetadata::Evm {
+                nonce,
+                chain_id,
+                stake_data,
+                yield_data,
+            } => {
                 assert_eq!(nonce, 10);
                 assert_eq!(chain_id, 1);
                 assert!(stake_data.is_none());
+                assert!(yield_data.is_none());
             }
             _ => panic!("Expected Evm variant"),
         }
