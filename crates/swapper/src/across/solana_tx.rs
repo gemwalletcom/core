@@ -1,41 +1,27 @@
 use super::DEFAULT_FILL_TIMEOUT;
-use crate::{
-    SwapperError, SwapperQuoteData,
-    alien::RpcProvider,
-    models::Quote,
-    solana::tx_builder,
-};
+use crate::{SwapperError, SwapperQuoteData, alien::RpcProvider, models::Quote, solana::tx_builder};
 use alloy_primitives::FixedBytes;
 use borsh::BorshSerialize;
-use gem_evm::across::{
-    contracts::V3SpokePoolInterface::V3RelayData,
-    deployment::AcrossDeployment,
-};
+use gem_evm::across::{contracts::V3SpokePoolInterface::V3RelayData, deployment::AcrossDeployment};
 use gem_hash::keccak;
 use sha2::{Digest, Sha256};
+use solana_primitives::instructions::token::TokenInstruction;
 use solana_primitives::{
     instructions::{associated_token::get_associated_token_address, program_ids},
-    types::{find_program_address, AccountMeta, Instruction as SolInstruction, Pubkey as SolanaPubkey},
+    types::{AccountMeta, Instruction as SolInstruction, Pubkey as SolanaPubkey, find_program_address},
 };
-use solana_primitives::instructions::token::TokenInstruction;
 use std::{str::FromStr, sync::Arc};
 
 const SVM_SPOKE_STATE_SEED: u64 = 0;
 const SVM_DELEGATE_SEED: &[u8] = b"delegate";
 const SVM_EVENT_AUTHORITY_SEED: &[u8] = b"__event_authority";
 
-pub async fn build_deposit_tx(
-    rpc_provider: Arc<dyn RpcProvider>,
-    quote: &Quote,
-    v3_relay_data: &V3RelayData,
-) -> Result<SwapperQuoteData, SwapperError> {
-    let depositor = SolanaPubkey::from_str(&quote.request.wallet_address)
-        .map_err(|_| SwapperError::InvalidAddress(quote.request.wallet_address.clone()))?;
+pub async fn build_deposit_tx(rpc_provider: Arc<dyn RpcProvider>, quote: &Quote, v3_relay_data: &V3RelayData) -> Result<SwapperQuoteData, SwapperError> {
+    let depositor = SolanaPubkey::from_str(&quote.request.wallet_address).map_err(|_| SwapperError::InvalidAddress(quote.request.wallet_address.clone()))?;
 
     let origin_chain = quote.request.from_asset.chain();
     let deployment = AcrossDeployment::deployment_by_chain(&origin_chain).ok_or(SwapperError::NotSupportedChain)?;
-    let spoke_pool_program = SolanaPubkey::from_str(deployment.spoke_pool)
-        .map_err(|_| SwapperError::InvalidAddress(deployment.spoke_pool.to_string()))?;
+    let spoke_pool_program = SolanaPubkey::from_str(deployment.spoke_pool).map_err(|_| SwapperError::InvalidAddress(deployment.spoke_pool.to_string()))?;
 
     let recipient = solana_pubkey_from_fixed_bytes(&v3_relay_data.recipient);
     let input_token = solana_pubkey_from_fixed_bytes(&v3_relay_data.inputToken);
@@ -50,10 +36,7 @@ pub async fn build_deposit_tx(
     let destination_chain_id = AcrossDeployment::deployment_by_chain(&quote.request.to_asset.chain())
         .ok_or(SwapperError::NotSupportedChain)?
         .chain_id;
-    let quote_timestamp = v3_relay_data
-        .fillDeadline
-        .checked_sub(DEFAULT_FILL_TIMEOUT)
-        .ok_or(SwapperError::InvalidRoute)?;
+    let quote_timestamp = v3_relay_data.fillDeadline.checked_sub(DEFAULT_FILL_TIMEOUT).ok_or(SwapperError::InvalidRoute)?;
     let fill_deadline = v3_relay_data.fillDeadline;
     let exclusivity_parameter = v3_relay_data.exclusivityDeadline;
     let exclusive_relayer = SolanaPubkey::new([0u8; 32]);
@@ -74,13 +57,13 @@ pub async fn build_deposit_tx(
         message: &message,
     };
     let seed_hash = deposit_seed_hash(&deposit_seed_data)?;
-    let (delegate, _) = find_program_address(&spoke_pool_program, &[SVM_DELEGATE_SEED, &seed_hash])
-        .map_err(|_| SwapperError::TransactionError("Failed to derive delegate PDA".into()))?;
+    let (delegate, _) =
+        find_program_address(&spoke_pool_program, &[SVM_DELEGATE_SEED, &seed_hash]).map_err(|_| SwapperError::TransactionError("Failed to derive delegate PDA".into()))?;
 
     let (state, _) = find_program_address(&spoke_pool_program, &[b"state", SVM_SPOKE_STATE_SEED.to_le_bytes().as_ref()])
         .map_err(|_| SwapperError::TransactionError("Failed to derive state PDA".into()))?;
-    let (event_authority, _) = find_program_address(&spoke_pool_program, &[SVM_EVENT_AUTHORITY_SEED])
-        .map_err(|_| SwapperError::TransactionError("Failed to derive event authority PDA".into()))?;
+    let (event_authority, _) =
+        find_program_address(&spoke_pool_program, &[SVM_EVENT_AUTHORITY_SEED]).map_err(|_| SwapperError::TransactionError("Failed to derive event authority PDA".into()))?;
 
     let depositor_token_account = get_associated_token_address(&depositor, &input_token);
     let vault = get_associated_token_address(&state, &input_token);
@@ -91,14 +74,7 @@ pub async fn build_deposit_tx(
         .and_then(|mapping| u8::try_from(mapping.capital_cost.decimals).ok())
         .ok_or_else(|| SwapperError::ComputeQuoteError("Unsupported token decimals".into()))?;
 
-    let approve_ix = approve_checked_instruction(
-        &depositor_token_account,
-        &input_token,
-        &delegate,
-        &depositor,
-        input_amount,
-        token_decimals,
-    );
+    let approve_ix = approve_checked_instruction(&depositor_token_account, &input_token, &delegate, &depositor, input_amount, token_decimals);
 
     let deposit_args = borsh_encode(&deposit_seed_data)?;
     let mut deposit_data = Vec::with_capacity(8 + deposit_args.len());
@@ -171,13 +147,7 @@ pub async fn build_deposit_tx(
         .await
         .map_err(SwapperError::TransactionError)?;
 
-    Ok(SwapperQuoteData::new_contract(
-        deployment.spoke_pool.to_string(),
-        "".to_string(),
-        tx_b64,
-        None,
-        None,
-    ))
+    Ok(SwapperQuoteData::new_contract(deployment.spoke_pool.to_string(), "".to_string(), tx_b64, None, None))
 }
 
 fn anchor_discriminator(name: &str) -> [u8; 8] {
@@ -220,14 +190,7 @@ fn solana_pubkey_from_fixed_bytes(bytes: &FixedBytes<32>) -> SolanaPubkey {
     SolanaPubkey::new(bytes.0)
 }
 
-fn approve_checked_instruction(
-    source: &SolanaPubkey,
-    mint: &SolanaPubkey,
-    delegate: &SolanaPubkey,
-    owner: &SolanaPubkey,
-    amount: u64,
-    decimals: u8,
-) -> SolInstruction {
+fn approve_checked_instruction(source: &SolanaPubkey, mint: &SolanaPubkey, delegate: &SolanaPubkey, owner: &SolanaPubkey, amount: u64, decimals: u8) -> SolInstruction {
     let accounts = vec![
         AccountMeta {
             pubkey: *source,

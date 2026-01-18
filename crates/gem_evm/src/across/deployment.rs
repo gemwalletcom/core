@@ -167,7 +167,7 @@ impl AcrossDeployment {
             (Chain::Monad, vec![USDC_MONAD_ASSET_ID.into(), USDT_MONAD_ASSET_ID.into()]),
             (Chain::SmartChain, vec![ETH_SMARTCHAIN_ASSET_ID.into()]),
             (Chain::Plasma, vec![USDT_PLASMA_ASSET_ID.into()]),
-            (Chain::Solana, vec![USDC_SOLANA_ASSET_ID.into()]),
+            (Chain::Solana, vec![USDC_SOLANA_ASSET_ID.into(), USDT_SOLANA_ASSET_ID.into()]),
         ])
     }
 
@@ -242,6 +242,7 @@ impl AcrossDeployment {
                     USDT_HYPEREVM_ASSET_ID.into(),
                     USDT_PLASMA_ASSET_ID.into(),
                     USDT_MONAD_ASSET_ID.into(),
+                    USDT_SOLANA_ASSET_ID.into(),
                 ]),
             },
             // USDT on BSC decimals are 18
