@@ -3,6 +3,7 @@ use crate::{
     alien::{RpcProvider, Target},
     client_factory::create_eth_client,
 };
+use gem_evm::across::deployment::AcrossDeployment;
 use primitives::{Chain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -47,6 +48,13 @@ impl DepositStatus {
 
 impl AcrossApi {
     pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<DepositStatus, SwapperError> {
+        if chain == Chain::Solana {
+            return self.deposit_status_solana(tx_hash).await;
+        }
+        self.deposit_status_evm(chain, tx_hash).await
+    }
+
+    async fn deposit_status_evm(&self, chain: Chain, tx_hash: &str) -> Result<DepositStatus, SwapperError> {
         let receipt = create_eth_client(self.provider.clone(), chain)?
             .get_transaction_receipt(tx_hash)
             .await
@@ -73,11 +81,20 @@ impl AcrossApi {
             deposit_id_hex
         };
 
-        let url = format!("{}/api/deposit/status?originChainId={}&depositId={}", self.url, chain.network_id(), &deposit_id);
+        let query = format!("originChainId={}&depositId={}", chain.network_id(), deposit_id);
+        self.fetch_deposit_status(&query).await
+    }
+
+    async fn deposit_status_solana(&self, tx_hash: &str) -> Result<DepositStatus, SwapperError> {
+        let deployment = AcrossDeployment::deployment_by_chain(&Chain::Solana).ok_or(SwapperError::NotSupportedChain)?;
+        let query = format!("originChainId={}&depositTxHash={}", deployment.chain_id, tx_hash);
+        self.fetch_deposit_status(&query).await
+    }
+
+    async fn fetch_deposit_status(&self, query: &str) -> Result<DepositStatus, SwapperError> {
+        let url = format!("{}/api/deposit/status?{}", self.url, query);
         let target = Target::get(&url);
         let response = self.provider.request(target).await?;
-        let status: DepositStatus = serde_json::from_slice(&response.data).map_err(SwapperError::from)?;
-
-        Ok(status)
+        serde_json::from_slice(&response.data).map_err(SwapperError::from)
     }
 }
