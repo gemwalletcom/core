@@ -64,7 +64,6 @@ where
             token: token.to_string(),
             spender: spender.to_string(),
             value: amount.to_string(),
-            gas_limit: Some("100000".to_string()),
         }));
     }
     Ok(ApprovalType::None)
@@ -219,7 +218,6 @@ mod tests {
                     token: token.clone(),
                     spender: permit2_contract.clone(),
                     value: amount.to_string(),
-                    gas_limit: Some("100000".to_string()),
                 }),
                 ApprovalType::Permit2(Permit2ApprovalData {
                     token: token.clone(),

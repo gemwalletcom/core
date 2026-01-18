@@ -176,7 +176,6 @@ where
                 token: token.to_string(),
                 spender: spender.to_string(),
                 value: amount.to_string(),
-                gas_limit: Some("100000".to_string()),
             }))
         } else {
             Ok(None)

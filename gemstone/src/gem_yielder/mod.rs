@@ -87,7 +87,7 @@ impl GemYielder {
             transaction,
             nonce,
             chain_id,
-            gas_limit: "350000".to_string(),
+            gas_limit: "300000".to_string(),
         })
     }
 

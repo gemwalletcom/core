@@ -14,7 +14,6 @@ pub struct GemApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
-    pub gas_limit: Option<String>,
 }
 
 #[uniffi::remote(Enum)]

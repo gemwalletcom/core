@@ -887,7 +887,6 @@ impl From<GemTransactionInputType> for TransactionInputType {
                     token: approval_data.token,
                     spender: approval_data.spender,
                     value: approval_data.value,
-                    gas_limit: approval_data.gas_limit,
                 },
             ),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset, metadata, extra.into()),
