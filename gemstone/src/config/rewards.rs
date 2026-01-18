@@ -71,17 +71,8 @@ mod tests {
         assert_eq!(get_rewards_url(RewardsUrl::Rewards, Some("en".to_string())), "https://gemwallet.com/rewards");
         assert_eq!(get_rewards_url(RewardsUrl::Rewards, None), "https://gemwallet.com/rewards");
         assert_eq!(get_rewards_url(RewardsUrl::Rewards, Some("ru".to_string())), "https://gemwallet.com/ru/rewards");
-        assert_eq!(
-            get_rewards_url(RewardsUrl::Rewards, Some("zh-Hans".to_string())),
-            "https://gemwallet.com/zh-cn/rewards"
-        );
-        assert_eq!(
-            get_rewards_url(RewardsUrl::Rewards, Some("zh-Hant".to_string())),
-            "https://gemwallet.com/zh-tw/rewards"
-        );
-        assert_eq!(
-            get_rewards_url(RewardsUrl::Rewards, Some("pt-BR".to_string())),
-            "https://gemwallet.com/pt-br/rewards"
-        );
+        assert_eq!(get_rewards_url(RewardsUrl::Rewards, Some("zh-Hans".to_string())), "https://gemwallet.com/zh-cn/rewards");
+        assert_eq!(get_rewards_url(RewardsUrl::Rewards, Some("zh-Hant".to_string())), "https://gemwallet.com/zh-tw/rewards");
+        assert_eq!(get_rewards_url(RewardsUrl::Rewards, Some("pt-BR".to_string())), "https://gemwallet.com/pt-br/rewards");
     }
 }

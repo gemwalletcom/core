@@ -19,10 +19,7 @@ impl ChainClient {
 
     pub async fn fetch_status(&self) -> NodeStatusObservation {
         let started_at = Instant::now();
-        let state = match ProviderFactory::new_provider(self.config.clone(), "dynode_fetch_status")
-            .get_node_status()
-            .await
-        {
+        let state = match ProviderFactory::new_provider(self.config.clone(), "dynode_fetch_status").get_node_status().await {
             Ok(status) => NodeStatusState::healthy(status),
             Err(err) => NodeStatusState::error(err.to_string()),
         };

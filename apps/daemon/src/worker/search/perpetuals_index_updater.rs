@@ -23,11 +23,7 @@ impl PerpetualsIndexUpdater {
 
         let documents: Vec<PerpetualDocument> = perpetuals
             .into_iter()
-            .filter_map(|perpetual| {
-                assets_map
-                    .get(&perpetual.asset_id.to_string())
-                    .map(|asset| (perpetual.clone(), asset.clone()).into())
-            })
+            .filter_map(|perpetual| assets_map.get(&perpetual.asset_id.to_string()).map(|asset| (perpetual.clone(), asset.clone()).into()))
             .collect();
 
         self.search_index.sync_documents(PERPETUALS_INDEX_NAME, documents, |doc| doc.id.clone()).await

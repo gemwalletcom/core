@@ -1,8 +1,6 @@
 use crate::currency::Currency;
 use crate::fiat_assets::FiatAssetLimits;
-use crate::{
-    Asset, Chain, FiatBuyQuote, FiatProvider, FiatQuote, FiatQuoteOld, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, PaymentType,
-};
+use crate::{Asset, Chain, FiatBuyQuote, FiatProvider, FiatQuote, FiatQuoteOld, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, PaymentType};
 
 impl FiatBuyQuote {
     pub fn mock() -> Self {

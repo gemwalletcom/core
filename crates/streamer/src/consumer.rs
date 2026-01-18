@@ -14,6 +14,7 @@ use tokio;
 pub struct ConsumerConfig {
     pub timeout_on_error: Duration,
     pub skip_on_error: bool,
+    pub delay: Duration,
 }
 
 enum ProcessResult<R> {
@@ -39,15 +40,10 @@ pub async fn run_consumer<P, C, R>(
 where
     P: Clone + Send + Display + 'static,
     C: MessageConsumer<P, R> + Send + 'static,
-    R: std::default::Default + std::fmt::Debug,
+    R: std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
-    info_with_fields!(
-        "running consumer",
-        consumer = name,
-        queue = queue_name.to_string(),
-        routing_key = routing_key.unwrap_or("")
-    );
+    info_with_fields!("running consumer", consumer = name, queue = queue_name.to_string(), routing_key = routing_key.unwrap_or(""));
     stream_reader
         .read::<P, _>(queue_name, routing_key, |payload| process_message(name, &consumer, &config, payload))
         .await
@@ -83,6 +79,9 @@ where
                 result = format!("{:?}", value),
                 elapsed = DurationMs(start.elapsed())
             );
+            if !config.delay.is_zero() {
+                tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(tokio::time::sleep(config.delay)));
+            }
             Ok(())
         }
         ProcessResult::Skipped => {
@@ -90,13 +89,7 @@ where
             Ok(())
         }
         ProcessResult::Error(e) => {
-            error_with_fields!(
-                "error",
-                &*e,
-                consumer = name,
-                payload = payload.to_string(),
-                elapsed = DurationMs(start.elapsed())
-            );
+            error_with_fields!("error", &*e, consumer = name, payload = payload.to_string(), elapsed = DurationMs(start.elapsed()));
             if !config.timeout_on_error.is_zero() {
                 tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(tokio::time::sleep(config.timeout_on_error)));
             }

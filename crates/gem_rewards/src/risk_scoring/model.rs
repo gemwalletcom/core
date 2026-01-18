@@ -1,4 +1,4 @@
-use primitives::IpUsageType;
+use primitives::{IpUsageType, Platform, PlatformStore};
 use sha2::{Digest, Sha256};
 use std::time::Duration;
 
@@ -93,8 +93,8 @@ impl Default for RiskScoreConfig {
 pub struct RiskSignalInput {
     pub username: String,
     pub device_id: i32,
-    pub device_platform: String,
-    pub device_platform_store: String,
+    pub device_platform: Platform,
+    pub device_platform_store: PlatformStore,
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
@@ -183,8 +183,8 @@ mod tests {
         let input = RiskSignalInput {
             username: "user1".to_string(),
             device_id: 1,
-            device_platform: "iOS".to_string(),
-            device_platform_store: "appStore".to_string(),
+            device_platform: Platform::IOS,
+            device_platform_store: PlatformStore::AppStore,
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),

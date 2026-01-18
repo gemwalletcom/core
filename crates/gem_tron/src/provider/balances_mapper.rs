@@ -41,12 +41,10 @@ pub fn map_metadata_from_usage(usage: &TronAccountUsage, votes: u32) -> BalanceM
 
 pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &TronAccountUsage) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let (bandwidth_frozen, energy_frozen) = account.frozen_v2.as_ref().map_or((0, 0), |frozen_list| {
-        frozen_list
-            .iter()
-            .fold((0u64, 0u64), |(bandwidth, energy), frozen| match frozen.frozen_type.as_deref() {
-                Some("ENERGY") => (bandwidth, energy + frozen.amount),
-                _ => (bandwidth + frozen.amount, energy),
-            })
+        frozen_list.iter().fold((0u64, 0u64), |(bandwidth, energy), frozen| match frozen.frozen_type.as_deref() {
+            Some("ENERGY") => (bandwidth, energy + frozen.amount),
+            _ => (bandwidth + frozen.amount, energy),
+        })
     });
     let votes: u64 = account.votes.as_ref().map_or(0, |votes| votes.iter().map(|vote| vote.vote_count).sum());
     let pending_amount: u64 = account
@@ -69,9 +67,7 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
 }
 
 pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
-    let owner_bytes = bs58::decode(address)
-        .into_vec()
-        .map_err(|e| format!("Invalid owner address {}: {}", address, e))?;
+    let owner_bytes = bs58::decode(address).into_vec().map_err(|e| format!("Invalid owner address {}: {}", address, e))?;
 
     if owner_bytes.len() != 25 || owner_bytes[0] != 0x41 {
         return Err(format!("Invalid TRON address format: {}", address).into());

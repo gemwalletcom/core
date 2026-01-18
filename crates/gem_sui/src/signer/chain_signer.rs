@@ -15,9 +15,9 @@ impl SuiChainSigner {
         match &input.input_type {
             TransactionInputType::Stake(_, stake_type) => match stake_type {
                 StakeType::Stake(_) | StakeType::Unstake(_) => Ok(()),
-                StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) => Err(SignerError::UnsupportedOperation(
-                    "Sui signer does not support this staking operation yet".to_string(),
-                )),
+                StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) => {
+                    Err(SignerError::UnsupportedOperation("Sui signer does not support this staking operation yet".to_string()))
+                }
                 StakeType::Freeze(_) => Err(SignerError::InvalidInput("Sui does not support freeze operations".to_string())),
             },
             _ => Err(SignerError::InvalidInput("Expected stake transaction".to_string())),
@@ -58,9 +58,7 @@ pub fn sign_from_metadata(input: &TransactionLoadInput, private_key: &[u8]) -> R
 }
 
 pub fn sign_message_bytes(message: &str, private_key: &[u8]) -> Result<String, SignerError> {
-    let (prefix, digest_hex) = message
-        .split_once('_')
-        .ok_or_else(|| SignerError::InvalidInput("Invalid Sui digest payload".to_string()))?;
+    let (prefix, digest_hex) = message.split_once('_').ok_or_else(|| SignerError::InvalidInput("Invalid Sui digest payload".to_string()))?;
 
     let digest = decode(digest_hex.trim_start_matches("0x")).map_err(|_| SignerError::InvalidInput("Invalid digest hex for Sui transaction".to_string()))?;
 

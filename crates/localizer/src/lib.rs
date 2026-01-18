@@ -66,12 +66,7 @@ impl LanguageLocalizer {
     pub fn price_alert_up(&self, symbol: &str, price: &str, price_change: &str) -> LanguageNotification {
         LanguageNotification {
             title: fl!(self.loader.as_ref(), "notification_price_alert_up_title", symbol = symbol),
-            description: fl!(
-                self.loader.as_ref(),
-                "notification_price_alert_up_description",
-                price = price,
-                price_change = price_change
-            ),
+            description: fl!(self.loader.as_ref(), "notification_price_alert_up_description", price = price, price_change = price_change),
         }
     }
 
@@ -90,26 +85,14 @@ impl LanguageLocalizer {
     pub fn price_alert_target(&self, symbol: &str, price: &str, change: &str) -> LanguageNotification {
         LanguageNotification {
             title: fl!(self.loader.as_ref(), "notification_price_alert_target_title", symbol = symbol, price = price),
-            description: fl!(self.loader.as_ref(), "notification_price_alert_target_description", change = change),
-        }
-    }
-
-    pub fn price_alert_milestone(&self, symbol: &str, milestone: &str, change: &str) -> LanguageNotification {
-        LanguageNotification {
-            title: fl!(self.loader.as_ref(), "notification_price_alert_milestone_title", symbol = symbol, milestone = milestone),
-            description: fl!(self.loader.as_ref(), "notification_price_alert_milestone_description", change = change),
+            description: fl!(self.loader.as_ref(), "notification_price_alert_target_description", price = price, change = change),
         }
     }
 
     pub fn price_alert_all_time_high(&self, symbol: &str, price: &str) -> LanguageNotification {
         LanguageNotification {
             title: fl!(self.loader.as_ref(), "notification_price_alert_all_time_high_title", symbol = symbol),
-            description: fl!(
-                self.loader.as_ref(),
-                "notification_price_alert_all_time_high_description",
-                symbol = symbol,
-                price = price
-            ),
+            description: fl!(self.loader.as_ref(), "notification_price_alert_all_time_high_description", symbol = symbol, price = price),
         }
     }
 
@@ -164,12 +147,7 @@ impl LanguageLocalizer {
 
     pub fn notification_unstake_title(&self, value: &str, validator: &str) -> String {
         if validator.len() < 12 {
-            fl!(
-                self.loader.as_ref(),
-                "notification_unstake_validator_title",
-                value = value,
-                validator = validator
-            )
+            fl!(self.loader.as_ref(), "notification_unstake_validator_title", value = value, validator = validator)
         } else {
             fl!(self.loader.as_ref(), "notification_unstake_title", value = value)
         }
@@ -177,12 +155,7 @@ impl LanguageLocalizer {
 
     pub fn notification_redelegate_title(&self, value: &str, validator: &str) -> String {
         if validator.len() < 12 {
-            fl!(
-                self.loader.as_ref(),
-                "notification_redelegate_validator_title",
-                value = value,
-                validator = validator
-            )
+            fl!(self.loader.as_ref(), "notification_redelegate_validator_title", value = value, validator = validator)
         } else {
             fl!(self.loader.as_ref(), "notification_redelegate_title", value = value)
         }
@@ -190,12 +163,7 @@ impl LanguageLocalizer {
 
     pub fn notification_withdraw_stake_title(&self, value: &str, validator: &str) -> String {
         if validator.len() < 12 {
-            fl!(
-                self.loader.as_ref(),
-                "notification_withdraw_stake_validator_title",
-                value = value,
-                validator = validator
-            )
+            fl!(self.loader.as_ref(), "notification_withdraw_stake_validator_title", value = value, validator = validator)
         } else {
             fl!(self.loader.as_ref(), "notification_withdraw_stake_title", value = value)
         }
@@ -206,21 +174,11 @@ impl LanguageLocalizer {
     }
 
     pub fn notification_swap_title(&self, from_symbol: &str, to_symbol: &str) -> String {
-        fl!(
-            self.loader.as_ref(),
-            "notification_swap_title",
-            from_symbol = from_symbol,
-            to_symbol = to_symbol
-        )
+        fl!(self.loader.as_ref(), "notification_swap_title", from_symbol = from_symbol, to_symbol = to_symbol)
     }
 
     pub fn notification_swap_description(&self, from_value: &str, to_value: &str) -> String {
-        fl!(
-            self.loader.as_ref(),
-            "notification_swap_description",
-            from_value = from_value,
-            to_value = to_value
-        )
+        fl!(self.loader.as_ref(), "notification_swap_description", from_value = from_value, to_value = to_value)
     }
 
     // onboarding

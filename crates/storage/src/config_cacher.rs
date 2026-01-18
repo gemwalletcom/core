@@ -33,11 +33,7 @@ impl ConfigCacher {
     fn get_cached(&self, key: &ConfigKey) -> Option<String> {
         let cache = self.cache.read().ok()?;
         let cached = cache.get(key)?;
-        if cached.expires_at > Instant::now() {
-            Some(cached.value.clone())
-        } else {
-            None
-        }
+        if cached.expires_at > Instant::now() { Some(cached.value.clone()) } else { None }
     }
 
     fn set_cached(&self, key: ConfigKey, value: String) {
@@ -56,11 +52,7 @@ impl ConfigCacher {
         if let Some(value) = self.get_cached(&key) {
             return Ok(value);
         }
-        let value = self
-            .database
-            .client()
-            .map_err(|e| DatabaseError::Error(e.to_string()))?
-            .get_config(key.clone())?;
+        let value = self.database.client().map_err(|e| DatabaseError::Error(e.to_string()))?.get_config(key.clone())?;
         self.set_cached(key, value.clone());
         Ok(value)
     }

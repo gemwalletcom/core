@@ -135,19 +135,11 @@ impl AcrossDeployment {
         HashMap::from([
             (
                 Chain::Ethereum,
-                vec![
-                    USDC_ETH_ASSET_ID.into(),
-                    USDT_ETH_ASSET_ID.into(),
-                    AssetId::from_token(Chain::Ethereum, WETH_ETH_CONTRACT),
-                ],
+                vec![USDC_ETH_ASSET_ID.into(), USDT_ETH_ASSET_ID.into(), AssetId::from_token(Chain::Ethereum, WETH_ETH_CONTRACT)],
             ),
             (
                 Chain::Optimism,
-                vec![
-                    USDT_OP_ASSET_ID.into(),
-                    USDC_OP_ASSET_ID.into(),
-                    AssetId::from_token(Chain::Optimism, WETH_OP_CONTRACT),
-                ],
+                vec![USDT_OP_ASSET_ID.into(), USDC_OP_ASSET_ID.into(), AssetId::from_token(Chain::Optimism, WETH_OP_CONTRACT)],
             ),
             (
                 Chain::Polygon,
@@ -159,25 +151,12 @@ impl AcrossDeployment {
             ),
             (
                 Chain::Arbitrum,
-                vec![
-                    USDT_ARB_ASSET_ID.into(),
-                    USDC_ARB_ASSET_ID.into(),
-                    AssetId::from_token(Chain::Arbitrum, WETH_ARB_CONTRACT),
-                ],
+                vec![USDT_ARB_ASSET_ID.into(), USDC_ARB_ASSET_ID.into(), AssetId::from_token(Chain::Arbitrum, WETH_ARB_CONTRACT)],
             ),
-            (
-                Chain::Base,
-                vec![AssetId::from_token(Chain::Base, WETH_BASE_CONTRACT), USDC_BASE_ASSET_ID.into()],
-            ),
+            (Chain::Base, vec![AssetId::from_token(Chain::Base, WETH_BASE_CONTRACT), USDC_BASE_ASSET_ID.into()]),
             (Chain::Hyperliquid, vec![USDC_HYPEREVM_ASSET_ID.into(), USDT_HYPEREVM_ASSET_ID.into()]),
-            (
-                Chain::Linea,
-                vec![USDT_LINEA_ASSET_ID.into(), AssetId::from_token(Chain::Linea, WETH_LINEA_CONTRACT)],
-            ),
-            (
-                Chain::ZkSync,
-                vec![AssetId::from_token(Chain::ZkSync, WETH_ZKSYNC_CONTRACT), USDT_ZKSYNC_ASSET_ID.into()],
-            ),
+            (Chain::Linea, vec![USDT_LINEA_ASSET_ID.into(), AssetId::from_token(Chain::Linea, WETH_LINEA_CONTRACT)]),
+            (Chain::ZkSync, vec![AssetId::from_token(Chain::ZkSync, WETH_ZKSYNC_CONTRACT), USDT_ZKSYNC_ASSET_ID.into()]),
             (Chain::World, vec![AssetId::from_token(Chain::World, WETH_WORLD_CONTRACT)]),
             (Chain::Blast, vec![AssetId::from_token(Chain::Blast, WETH_BLAST_CONTRACT)]),
             (Chain::Ink, vec![AssetId::from_token(Chain::Ink, WETH_INK_CONTRACT), USDT_INK_ASSET_ID.into()]),
@@ -335,12 +314,7 @@ impl AcrossDeployment {
                     cutoff: EtherConv::parse_ether("1000000"),
                     decimals: 18,
                 },
-                set: HashSet::from_iter([
-                    ACX_ARB_ASSET_ID.into(),
-                    ACX_ETH_ASSET_ID.into(),
-                    ACX_OP_ASSET_ID.into(),
-                    ACX_POLYGON_ASSET_ID.into(),
-                ]),
+                set: HashSet::from_iter([ACX_ARB_ASSET_ID.into(), ACX_ETH_ASSET_ID.into(), ACX_OP_ASSET_ID.into(), ACX_POLYGON_ASSET_ID.into()]),
             },
         ]
     }

@@ -94,13 +94,7 @@ impl StakingMapper {
         None
     }
 
-    fn parse_delegated_event(
-        chain: &Chain,
-        transaction: &Transaction,
-        reciept: &TransactionReciept,
-        log: &Log,
-        created_at: DateTime<Utc>,
-    ) -> Option<primitives::Transaction> {
+    fn parse_delegated_event(chain: &Chain, transaction: &Transaction, reciept: &TransactionReciept, log: &Log, created_at: DateTime<Utc>) -> Option<primitives::Transaction> {
         if log.topics.len() != 3 {
             return None;
         }
@@ -119,13 +113,7 @@ impl StakingMapper {
         )
     }
 
-    fn parse_undelegated_event(
-        chain: &Chain,
-        transaction: &Transaction,
-        reciept: &TransactionReciept,
-        log: &Log,
-        created_at: DateTime<Utc>,
-    ) -> Option<primitives::Transaction> {
+    fn parse_undelegated_event(chain: &Chain, transaction: &Transaction, reciept: &TransactionReciept, log: &Log, created_at: DateTime<Utc>) -> Option<primitives::Transaction> {
         if log.topics.len() != 3 {
             return None;
         }
@@ -145,13 +133,7 @@ impl StakingMapper {
         )
     }
 
-    fn parse_redelegated_event(
-        chain: &Chain,
-        transaction: &Transaction,
-        reciept: &TransactionReciept,
-        log: &Log,
-        created_at: DateTime<Utc>,
-    ) -> Option<primitives::Transaction> {
+    fn parse_redelegated_event(chain: &Chain, transaction: &Transaction, reciept: &TransactionReciept, log: &Log, created_at: DateTime<Utc>) -> Option<primitives::Transaction> {
         if log.topics.len() != 4 {
             return None;
         }
@@ -170,13 +152,7 @@ impl StakingMapper {
         )
     }
 
-    fn parse_claimed_event(
-        chain: &Chain,
-        transaction: &Transaction,
-        reciept: &TransactionReciept,
-        log: &Log,
-        created_at: DateTime<Utc>,
-    ) -> Option<primitives::Transaction> {
+    fn parse_claimed_event(chain: &Chain, transaction: &Transaction, reciept: &TransactionReciept, log: &Log, created_at: DateTime<Utc>) -> Option<primitives::Transaction> {
         if log.topics.len() != 3 {
             return None;
         }
@@ -399,8 +375,7 @@ mod tests {
                 "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(),
                 "0x00000000000000000000000051eD60604637989d19D29e43c5D94B098A0d1Af7".to_string(),
             ],
-            data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-                .to_string(),
+            data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000000de0b6b3a7640000".to_string(),
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -437,8 +412,7 @@ mod tests {
                 "0x0000000000000000000000005c38FF8Ca2b16099C086bF36546e99b13D152C4c".to_string(),
                 "0x000000000000000000000000a103B70852B1fE3eF3a0B60B818279F9D0D337d9".to_string(),
             ],
-            data: "0x0000000000000000000000000000000000000000000000000e539ee6df39e04c0000000000000000000000000000000000000000000000000e83bec8de346b99"
-                .to_string(),
+            data: "0x0000000000000000000000000000000000000000000000000e539ee6df39e04c0000000000000000000000000000000000000000000000000e83bec8de346b99".to_string(),
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -549,8 +523,7 @@ mod tests {
                 "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(),
                 "0x0000000000000000000000001234567890123456789012345678901234567890".to_string(),
             ],
-            data: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000"
-                .to_string(),
+            data: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000".to_string(),
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -567,8 +540,7 @@ mod tests {
             to: Some("0x1234567890123456789012345678901234567890".to_string()),
             value: BigUint::from(0u32),
             gas: 21000,
-            input: "0x982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000"
-                .to_string(),
+            input: "0x982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000".to_string(),
             block_number: BigUint::from(0x1234u32),
         };
 
@@ -579,8 +551,7 @@ mod tests {
                 "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(),
                 "0x0000000000000000000000001234567890123456789012345678901234567890".to_string(),
             ],
-            data: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000"
-                .to_string(),
+            data: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000".to_string(),
         };
 
         let receipt = create_test_receipt_with_log(log);

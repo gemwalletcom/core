@@ -7,10 +7,7 @@ pub fn map_coin_balance(balance: PolkadotAccountBalance) -> AssetBalance {
 
     AssetBalance::new_balance(
         Chain::Polkadot.as_asset_id(),
-        Balance::with_reserved(
-            BigUint::try_from(available).unwrap_or_default(),
-            BigUint::try_from(balance.reserved).unwrap_or_default(),
-        ),
+        Balance::with_reserved(BigUint::try_from(available).unwrap_or_default(), BigUint::try_from(balance.reserved).unwrap_or_default()),
     )
 }
 

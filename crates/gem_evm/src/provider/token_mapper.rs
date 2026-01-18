@@ -4,13 +4,7 @@ use crate::{
 };
 use primitives::{Asset, AssetId, Chain};
 
-pub fn map_token_data(
-    chain: Chain,
-    token_id: String,
-    name_hex: String,
-    symbol_hex: String,
-    decimals_hex: String,
-) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
+pub fn map_token_data(chain: Chain, token_id: String, name_hex: String, symbol_hex: String, decimals_hex: String) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
     let name = decode_abi_string(name_hex.trim_start_matches("0x"))?;
     let symbol = decode_abi_string(symbol_hex.trim_start_matches("0x"))?;
     let decimals = decode_abi_uint8(decimals_hex.trim_start_matches("0x"))?;
@@ -28,13 +22,7 @@ pub fn map_token_data(
         token_id: Some(token_id.clone()),
     };
 
-    Ok(Asset::new(
-        asset_id.clone(),
-        name,
-        symbol,
-        decimals.into(),
-        asset_id.chain.default_asset_type().unwrap(),
-    ))
+    Ok(Asset::new(asset_id.clone(), name, symbol, decimals.into(), asset_id.chain.default_asset_type().unwrap()))
 }
 
 pub fn map_is_token_address(token_id: &str) -> bool {

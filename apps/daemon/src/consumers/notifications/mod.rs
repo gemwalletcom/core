@@ -15,6 +15,7 @@ fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
     ConsumerConfig {
         timeout_on_error: consumer.error.timeout,
         skip_on_error: consumer.error.skip,
+        delay: consumer.delay,
     }
 }
 
@@ -54,13 +55,5 @@ async fn run_notifications_failed_consumer(settings: Arc<Settings>, database: Ar
     let consumer = NotificationsFailedConsumer::new((*database).clone());
 
     let consumer_config = consumer_config(&settings.consumer);
-    run_consumer::<NotificationsFailedPayload, NotificationsFailedConsumer, usize>(
-        &name,
-        stream_reader,
-        QueueName::NotificationsFailed,
-        None,
-        consumer,
-        consumer_config,
-    )
-    .await
+    run_consumer::<NotificationsFailedPayload, NotificationsFailedConsumer, usize>(&name, stream_reader, QueueName::NotificationsFailed, None, consumer, consumer_config).await
 }

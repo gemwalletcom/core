@@ -61,9 +61,7 @@ impl NodeSyncAnalyzer {
                 Some(status) if status.in_sync => Some((observation, status)),
                 _ => None,
             })
-            .max_by(|(left_observation, left_status), (right_observation, right_status)| {
-                Self::compare_candidates(left_observation, left_status, right_observation, right_status)
-            });
+            .max_by(|(left_observation, left_status), (right_observation, right_status)| Self::compare_candidates(left_observation, left_status, right_observation, right_status));
 
         match (switch_reason, best_candidate) {
             (Some(reason), Some((observation, _))) => Some(NodeSwitchResult {

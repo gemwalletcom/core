@@ -34,9 +34,7 @@ impl<C: Client + Clone> ChainTransactionLoad for EthereumClient<C> {
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
-        let fee_history = self
-            .get_fee_history(get_fee_history_blocks(self.chain), get_reward_percentiles().to_vec())
-            .await?;
+        let fee_history = self.get_fee_history(get_fee_history_blocks(self.chain), get_reward_percentiles().to_vec()).await?;
 
         map_transaction_fee_rates(self.chain, &fee_history)
     }
@@ -215,10 +213,7 @@ mod chain_integration_tests {
         };
         let metadata = client.get_transaction_preload(preload_input.clone()).await?;
 
-        let fee_rates = [FeeRate::new(
-            FeePriority::Normal,
-            GasPriceType::eip1559(BigInt::from(177554820), BigInt::from(100000000)),
-        )];
+        let fee_rates = [FeeRate::new(FeePriority::Normal, GasPriceType::eip1559(BigInt::from(177554820), BigInt::from(100000000)))];
 
         let gas_price = fee_rates.first().ok_or("No fee rates available")?.gas_price_type.clone();
 
@@ -258,10 +253,7 @@ mod chain_integration_tests {
         };
         let metadata = client.get_transaction_preload(preload_input.clone()).await?;
 
-        let fee_rates = [FeeRate::new(
-            FeePriority::Normal,
-            GasPriceType::eip1559(BigInt::from(177554820), BigInt::from(100000000)),
-        )];
+        let fee_rates = [FeeRate::new(FeePriority::Normal, GasPriceType::eip1559(BigInt::from(177554820), BigInt::from(100000000)))];
 
         let gas_price = fee_rates.first().ok_or("No fee rates available")?.gas_price_type.clone();
 

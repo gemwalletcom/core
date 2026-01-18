@@ -208,24 +208,11 @@ mod tests {
                 spender: "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".into(),
                 sig_deadline: 1730077393,
             },
-            signature: hex::decode(
-                "8f32d2e66506a4f424b1b23309ed75d338534d0912129a8aa3381fab4eb8032f160e0988f10f512b19a58c2a689416366c61cc0c483c3b5322dc91f8b60107671b",
-            )
-            .unwrap(),
+            signature: hex::decode("8f32d2e66506a4f424b1b23309ed75d338534d0912129a8aa3381fab4eb8032f160e0988f10f512b19a58c2a689416366c61cc0c483c3b5322dc91f8b60107671b").unwrap(),
         };
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
-        let commands = super::build_commands(
-            &request,
-            &token_in,
-            &token_out,
-            amount_in,
-            U256::from(6507936),
-            &path,
-            Some(permit2_data.into()),
-            false,
-        )
-        .unwrap();
+        let commands = super::build_commands(&request, &token_in, &token_out, amount_in, U256::from(6507936), &path, Some(permit2_data.into()), false).unwrap();
 
         assert_eq!(commands.len(), 2);
 
@@ -313,10 +300,7 @@ mod tests {
                 spender: "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".into(),
                 sig_deadline: 1730077302,
             },
-            signature: hex::decode(
-                "00e96ed0f5bf5cca62dc9d9753960d83c8be83224456559a1e93a66d972a019f6f328a470f8257d3950b4cb7cd0024d789b4fcd9e80c4eb43d82a38d9e5332f31b",
-            )
-            .unwrap(),
+            signature: hex::decode("00e96ed0f5bf5cca62dc9d9753960d83c8be83224456559a1e93a66d972a019f6f328a470f8257d3950b4cb7cd0024d789b4fcd9e80c4eb43d82a38d9e5332f31b").unwrap(),
         };
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
@@ -367,17 +351,7 @@ mod tests {
         let amount_in = U256::from_str(request.value.as_str()).unwrap();
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::ThreeThousand);
-        let commands = super::build_commands(
-            &request,
-            &token_in,
-            &token_out,
-            amount_in,
-            U256::from(244440440678888410_u64),
-            &path,
-            None,
-            true,
-        )
-        .unwrap();
+        let commands = super::build_commands(&request, &token_in, &token_out, amount_in, U256::from(244440440678888410_u64), &path, None, true).unwrap();
 
         assert_eq!(commands.len(), 3);
 

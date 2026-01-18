@@ -4,9 +4,7 @@ use num_bigint::BigInt;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{
-    FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
-};
+use primitives::{FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use crate::{provider::preload_mapper::map_transaction_preload, rpc::client::XRPClient};
 
@@ -30,10 +28,7 @@ impl<C: Client + Clone> ChainTransactionLoad for XRPClient<C> {
         let median_fee = fees.drops.median_fee;
 
         Ok(vec![
-            FeeRate::new(
-                FeePriority::Slow,
-                GasPriceType::regular(BigInt::from(std::cmp::max(minimum_fee, median_fee / 2))),
-            ),
+            FeeRate::new(FeePriority::Slow, GasPriceType::regular(BigInt::from(std::cmp::max(minimum_fee, median_fee / 2)))),
             FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(median_fee))),
             FeeRate::new(FeePriority::Fast, GasPriceType::regular(BigInt::from(median_fee * 2))),
         ])

@@ -115,9 +115,7 @@ impl Across {
             None => return false,
         };
 
-        AcrossDeployment::asset_mappings()
-            .into_iter()
-            .any(|x| x.set.contains(&from) && x.set.contains(&to))
+        AcrossDeployment::asset_mappings().into_iter().any(|x| x.set.contains(&from) && x.set.contains(&to))
     }
 
     fn decode_address_bytes32(addr: &Address) -> FixedBytes<32> {
@@ -580,13 +578,7 @@ impl Across {
         ]
     }
 
-    fn erc20_transfer_calls(
-        token: &Address,
-        user_address: &Address,
-        user_amount: &U256,
-        fee_address: &Address,
-        fee_amount: &U256,
-    ) -> Vec<multicall_handler::Call> {
+    fn erc20_transfer_calls(token: &Address, user_address: &Address, user_amount: &U256, fee_address: &Address, fee_amount: &U256) -> Vec<multicall_handler::Call> {
         let target = *token;
         let user_transfer = IERC20::transferCall {
             to: *user_address,
@@ -663,10 +655,7 @@ impl Across {
         .abi_encode();
 
         let tx = TransactionObject::new_call_to_value(ctx.destination_deployment.spoke_pool, &value, data);
-        let gas_limit = self
-            .estimate_gas_transaction(chain, tx)
-            .await
-            .unwrap_or_else(|_| U256::from(Self::get_default_fill_limit(chain)));
+        let gas_limit = self.estimate_gas_transaction(chain, tx).await.unwrap_or_else(|_| U256::from(Self::get_default_fill_limit(chain)));
         Ok((gas_limit, v3_relay_data))
     }
 
@@ -770,21 +759,12 @@ impl Swapper for Across {
 
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![
-            SwapperChainAsset::Assets(
-                Chain::Arbitrum,
-                vec![ARBITRUM_WETH.id.clone(), ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()],
-            ),
-            SwapperChainAsset::Assets(
-                Chain::Ethereum,
-                vec![ETHEREUM_WETH.id.clone(), ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone()],
-            ),
+            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_WETH.id.clone(), ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_WETH.id.clone(), ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone(), BASE_USDC.id.clone()]),
             SwapperChainAsset::Assets(Chain::Blast, vec![BLAST_WETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::Linea, vec![LINEA_WETH.id.clone(), LINEA_USDT.id.clone()]),
-            SwapperChainAsset::Assets(
-                Chain::Optimism,
-                vec![OPTIMISM_WETH.id.clone(), OPTIMISM_USDC.id.clone(), OPTIMISM_USDT.id.clone()],
-            ),
+            SwapperChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_WETH.id.clone(), OPTIMISM_USDC.id.clone(), OPTIMISM_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone(), ZKSYNC_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
@@ -1515,10 +1495,7 @@ mod tests {
             assert_eq!(result.from_tx_hash, tx_hash);
             assert_eq!(result.status, SwapStatus::Completed);
             assert_eq!(result.to_chain, Some(Chain::Linea));
-            assert_eq!(
-                result.to_tx_hash,
-                Some("0xcba653515ab00f5b3ebc16eb4d099e29611e1e59b3fd8f2800cf2302d175f9fe".to_string())
-            );
+            assert_eq!(result.to_tx_hash, Some("0xcba653515ab00f5b3ebc16eb4d099e29611e1e59b3fd8f2800cf2302d175f9fe".to_string()));
 
             Ok(())
         }

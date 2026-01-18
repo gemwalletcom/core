@@ -2,7 +2,7 @@ use bigdecimal::{BigDecimal, ToPrimitive};
 use num_bigint::{BigInt, BigUint};
 use std::str::FromStr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NumberFormatterError {
     InvalidNumber(String),
     ConversionError(String),
@@ -52,8 +52,8 @@ impl BigNumberFormatter {
         Ok(decimal.to_string())
     }
 
-    pub fn value_from_amount(amount: &str, decimals: u32) -> Result<String, String> {
-        let big_decimal = BigDecimal::from_str(amount).map_err(|_| "Invalid decimal number".to_string())?;
+    pub fn value_from_amount(amount: &str, decimals: u32) -> Result<String, NumberFormatterError> {
+        let big_decimal = BigDecimal::from_str(amount).map_err(|_| NumberFormatterError::InvalidNumber(amount.to_string()))?;
         let multiplier = BigInt::from(10).pow(decimals);
         let multiplier_decimal = BigDecimal::from(multiplier);
         let scaled_value = big_decimal * multiplier_decimal;
@@ -64,13 +64,13 @@ impl BigNumberFormatter {
         Self::value_from_amount(&amount.to_string(), decimals).ok()
     }
 
-    pub fn value_from_amount_biguint(amount: &str, decimals: u32) -> Result<BigUint, String> {
-        let big_decimal = BigDecimal::from_str(amount).map_err(|_| "Invalid decimal number".to_string())?;
+    pub fn value_from_amount_biguint(amount: &str, decimals: u32) -> Result<BigUint, NumberFormatterError> {
+        let big_decimal = BigDecimal::from_str(amount).map_err(|_| NumberFormatterError::InvalidNumber(amount.to_string()))?;
         let multiplier = BigInt::from(10).pow(decimals);
         let multiplier_decimal = BigDecimal::from(multiplier);
         let scaled_value = big_decimal * multiplier_decimal;
         let scaled_string = scaled_value.with_scale(0).to_string();
-        scaled_string.parse::<BigUint>().map_err(|_| "Cannot convert to BigUint".to_string())
+        scaled_string.parse::<BigUint>().map_err(|_| NumberFormatterError::ConversionError(scaled_string))
     }
 
     pub fn decimal_to_string(value: &BigDecimal, max_scale: u32) -> String {
@@ -125,7 +125,7 @@ mod tests {
         // Test case 2: Invalid input
         let result = BigNumberFormatter::value_from_amount("invalid", 3);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Invalid decimal number");
+        assert_eq!(result.unwrap_err(), NumberFormatterError::InvalidNumber("invalid".to_string()));
     }
 
     #[test]
@@ -163,6 +163,6 @@ mod tests {
         // Test case 3: Invalid input
         let result = BigNumberFormatter::value_from_amount_biguint("invalid", 3);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Invalid decimal number");
+        assert_eq!(result.unwrap_err(), NumberFormatterError::InvalidNumber("invalid".to_string()));
     }
 }

@@ -79,10 +79,7 @@ mod chain_integration_tests {
         assert!(!delegations.is_empty(), "Expected at least one delegation");
 
         for delegation in &delegations {
-            println!(
-                "State: {:?}, Balance: {}, Validator: {}",
-                delegation.state, delegation.balance, delegation.validator_id
-            );
+            println!("State: {:?}, Balance: {}, Validator: {}", delegation.state, delegation.balance, delegation.validator_id);
             if let Some(date) = delegation.completion_date {
                 println!("Completion date: {}", date);
             }

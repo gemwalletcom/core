@@ -53,13 +53,7 @@ impl BanxaClient {
         self.client.get(&url).headers(self.get_headers()).send().await?.json().await
     }
 
-    pub async fn get_quote_buy(
-        &self,
-        symbol: &str,
-        chain: &str,
-        fiat_currency: &str,
-        fiat_amount: f64,
-    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote_buy(&self, symbol: &str, chain: &str, fiat_currency: &str, fiat_amount: f64) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
         let fiat_amount_str = fiat_amount.to_string();
         let query = vec![
             ("paymentMethodId", "debit-credit-card"),

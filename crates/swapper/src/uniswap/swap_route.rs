@@ -23,13 +23,7 @@ pub fn get_intermediaries_by_array(token_in: &Address, token_out: &Address, arra
         .collect()
 }
 
-pub fn build_swap_route(
-    token_in: &AssetId,
-    intermediary: Option<&AssetId>,
-    token_out: &AssetId,
-    route_data: &RouteData,
-    gas_estimate: Option<String>,
-) -> Vec<Route> {
+pub fn build_swap_route(token_in: &AssetId, intermediary: Option<&AssetId>, token_out: &AssetId, route_data: &RouteData, gas_estimate: Option<String>) -> Vec<Route> {
     let data = serde_json::to_string(route_data).unwrap();
     if let Some(intermediary) = intermediary {
         vec![

@@ -12,7 +12,6 @@ futures = { workspace = true }
 chrono = { workspace = true }
 strum = { workspace = true }
 async-trait = { workspace = true }
-rand = { workspace = true }
 num-bigint = { workspace = true }
 
 gem_tracing = { path = "../../crates/tracing", features = ["sentry"] }

@@ -9,12 +9,8 @@ use primitives::ChainAddress;
 
 pub(crate) trait AssetsAddressesStore {
     fn add_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error>;
-    fn get_assets_by_addresses(
-        &mut self,
-        values: Vec<ChainAddress>,
-        from_timestamp: Option<u32>,
-        include_with_prices: bool,
-    ) -> Result<Vec<AssetAddressRow>, diesel::result::Error>;
+    fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_timestamp: Option<u32>, include_with_prices: bool)
+    -> Result<Vec<AssetAddressRow>, diesel::result::Error>;
     fn delete_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error>;
 }
 

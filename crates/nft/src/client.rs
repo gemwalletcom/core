@@ -40,12 +40,7 @@ impl NFTClient {
     pub async fn get_nft_assets(&self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
         let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|x| (x.chain, x.address)).collect();
-        Ok(self
-            .fetch_assets_for_addresses(addresses)
-            .await?
-            .into_iter()
-            .filter(|x| x.collection.is_verified)
-            .collect())
+        Ok(self.fetch_assets_for_addresses(addresses).await?.into_iter().filter(|x| x.collection.is_verified).collect())
     }
 
     pub async fn preload(&self, assets: Vec<NFTAssetId>) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
@@ -57,17 +52,8 @@ impl NFTClient {
 
     pub async fn preload_collections(&self, collection_ids: Vec<NFTCollectionId>) -> Result<Vec<NFTCollection>, Box<dyn Error + Send + Sync>> {
         let ids = collection_ids.iter().map(|x| x.id()).collect();
-        let existing_collection_ids: Vec<String> = self
-            .database
-            .nft()?
-            .get_nft_collections(ids)?
-            .into_iter()
-            .map(|collection| collection.id)
-            .collect();
-        let missing_collection_ids = collection_ids
-            .into_iter()
-            .filter(|id| !existing_collection_ids.contains(&id.id()))
-            .collect::<Vec<_>>();
+        let existing_collection_ids: Vec<String> = self.database.nft()?.get_nft_collections(ids)?.into_iter().map(|collection| collection.id).collect();
+        let missing_collection_ids = collection_ids.into_iter().filter(|id| !existing_collection_ids.contains(&id.id())).collect::<Vec<_>>();
 
         let mut collections = Vec::new();
         for collection_id in missing_collection_ids {
@@ -99,10 +85,7 @@ impl NFTClient {
     pub async fn preload_assets(&self, asset_ids: Vec<NFTAssetId>) -> Result<Vec<NFTAsset>, Box<dyn Error + Send + Sync>> {
         let ids = asset_ids.iter().map(|x| x.to_string()).collect();
         let existing_asset_ids: Vec<String> = self.database.nft()?.get_nft_assets(ids)?.into_iter().map(|x| x.id).collect();
-        let missing_asset_ids = asset_ids
-            .into_iter()
-            .filter(|id| !existing_asset_ids.contains(&id.to_string()))
-            .collect::<Vec<_>>();
+        let missing_asset_ids = asset_ids.into_iter().filter(|id| !existing_asset_ids.contains(&id.to_string())).collect::<Vec<_>>();
 
         let mut assets = Vec::new();
         for asset_id in missing_asset_ids {
@@ -111,12 +94,7 @@ impl NFTClient {
                 Err(e) => println!("nft preload asset error: {e}"),
             }
         }
-        let new_assets = assets
-            .clone()
-            .into_iter()
-            .clone()
-            .map(storage::models::NftAssetRow::from_primitive)
-            .collect::<Vec<_>>();
+        let new_assets = assets.clone().into_iter().clone().map(storage::models::NftAssetRow::from_primitive).collect::<Vec<_>>();
 
         self.database.nft()?.add_nft_assets(new_assets)?;
 
@@ -187,13 +165,7 @@ impl NFTClient {
         self.preload(asset_ids.clone()).await
     }
 
-    pub fn report_nft(
-        &self,
-        device_id: &str,
-        collection_id: String,
-        asset_id: Option<String>,
-        reason: Option<String>,
-    ) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    pub fn report_nft(&self, device_id: &str, collection_id: String, asset_id: Option<String>, reason: Option<String>) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
         let device = DevicesStore::get_device(&mut client, device_id)?;
         let report = storage::models::NewNftReportRow {

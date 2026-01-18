@@ -1,4 +1,4 @@
-use crate::sql_types::{ChainRow, WalletIdTypeRow, WalletSource, WalletType};
+use crate::sql_types::{ChainRow, WalletIdRow, WalletSource, WalletType};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct WalletRow {
     pub id: i32,
     #[diesel(column_name = identifier)]
-    pub wallet_id: WalletIdTypeRow,
+    pub wallet_id: WalletIdRow,
     pub wallet_type: WalletType,
     pub source: WalletSource,
 }
@@ -40,4 +40,3 @@ pub struct NewWalletSubscriptionRow {
     pub chain: ChainRow,
     pub address: String,
 }
-

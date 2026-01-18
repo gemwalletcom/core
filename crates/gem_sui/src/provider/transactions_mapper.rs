@@ -36,22 +36,21 @@ pub fn map_transaction(transaction: Digest) -> Option<Transaction> {
 
     // system & token transfer
     if transaction.events.is_empty() && (balance_changes.len() == 2 || balance_changes.len() == 3) {
-        let (from_change, to_change) =
-            if balance_changes.len() == 2 && balance_changes[0].coin_type == sui_coin_type && balance_changes[1].coin_type == sui_coin_type {
-                if balance_changes[0].amount < balance_changes[1].amount {
-                    (balance_changes[0].clone(), balance_changes[1].clone())
-                } else {
-                    (balance_changes[1].clone(), balance_changes[0].clone())
-                }
-            } else if balance_changes.len() == 3 && balance_changes[0].coin_type == sui_coin_type {
-                if balance_changes[1].amount < balance_changes[2].amount {
-                    (balance_changes[1].clone(), balance_changes[2].clone())
-                } else {
-                    (balance_changes[2].clone(), balance_changes[1].clone())
-                }
+        let (from_change, to_change) = if balance_changes.len() == 2 && balance_changes[0].coin_type == sui_coin_type && balance_changes[1].coin_type == sui_coin_type {
+            if balance_changes[0].amount < balance_changes[1].amount {
+                (balance_changes[0].clone(), balance_changes[1].clone())
             } else {
-                return None;
-            };
+                (balance_changes[1].clone(), balance_changes[0].clone())
+            }
+        } else if balance_changes.len() == 3 && balance_changes[0].coin_type == sui_coin_type {
+            if balance_changes[1].amount < balance_changes[2].amount {
+                (balance_changes[1].clone(), balance_changes[2].clone())
+            } else {
+                (balance_changes[2].clone(), balance_changes[1].clone())
+            }
+        } else {
+            return None;
+        };
 
         let asset_id = if from_change.coin_type == sui_coin_type {
             chain.as_asset_id()
@@ -106,20 +105,12 @@ pub fn map_transaction(transaction: Digest) -> Option<Transaction> {
 
     // swap
     if transaction.events.iter().any(|x| x.event_type.contains("Swap")) {
-        let owner_balance_changes = balance_changes
-            .iter()
-            .filter(|x| x.owner.get_address_owner() == owner)
-            .cloned()
-            .collect::<Vec<_>>();
+        let owner_balance_changes = balance_changes.iter().filter(|x| x.owner.get_address_owner() == owner).cloned().collect::<Vec<_>>();
         // TODO: Handle other swap providers
         let swap = match owner_balance_changes.len() {
             2 => map_swap_from_balance_changes(owner_balance_changes.clone(), &fee)?,
             3 => {
-                let owner_balance_changes_filtered = owner_balance_changes
-                    .iter()
-                    .filter(|x| x.coin_type != SUI_COIN_TYPE)
-                    .cloned()
-                    .collect::<Vec<_>>();
+                let owner_balance_changes_filtered = owner_balance_changes.iter().filter(|x| x.coin_type != SUI_COIN_TYPE).cloned().collect::<Vec<_>>();
                 map_swap_from_balance_changes(owner_balance_changes_filtered.clone(), &fee)?
             }
             _ => return None,

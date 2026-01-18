@@ -87,20 +87,12 @@ fn parse_struct_tag(value: &str) -> Result<StructTag, SignerError> {
     let module = parts[1].to_string();
     let name = parts[2].to_string();
     let type_args = if let Some(args) = args {
-        split_type_args(args)?
-            .into_iter()
-            .map(|arg| parse_type_tag(&arg))
-            .collect::<Result<Vec<_>, _>>()?
+        split_type_args(args)?.into_iter().map(|arg| parse_type_tag(&arg)).collect::<Result<Vec<_>, _>>()?
     } else {
         Vec::new()
     };
 
-    Ok(StructTag {
-        address,
-        module,
-        name,
-        type_args,
-    })
+    Ok(StructTag { address, module, name, type_args })
 }
 
 fn split_type_args(input: &str) -> Result<Vec<String>, SignerError> {
@@ -293,9 +285,7 @@ fn parse_u8_from_str(text: &str) -> Result<u8, SignerError> {
         }
         Ok(bytes[0])
     } else {
-        text.trim()
-            .parse::<u8>()
-            .map_err(|_| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()))
+        text.trim().parse::<u8>().map_err(|_| SignerError::InvalidInput("Invalid Aptos u8 argument".to_string()))
     }
 }
 

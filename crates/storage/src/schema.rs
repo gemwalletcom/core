@@ -463,7 +463,7 @@ diesel::table! {
         notification_type -> NotificationType,
         is_read -> Bool,
         metadata -> Nullable<Jsonb>,
-        updated_at -> Timestamp,
+        read_at -> Nullable<Timestamp>,
         created_at -> Timestamp,
     }
 }
@@ -732,6 +732,8 @@ diesel::table! {
 
 diesel::table! {
     use diesel::sql_types::*;
+    use super::sql_types::Platform;
+    use super::sql_types::PlatformStore;
     use super::sql_types::IpUsageType;
 
     rewards_risk_signals (id) {
@@ -741,10 +743,8 @@ diesel::table! {
         #[max_length = 64]
         referrer_username -> Varchar,
         device_id -> Int4,
-        #[max_length = 16]
-        device_platform -> Varchar,
-        #[max_length = 32]
-        device_platform_store -> Varchar,
+        device_platform -> Platform,
+        device_platform_store -> PlatformStore,
         #[max_length = 32]
         device_os -> Varchar,
         #[max_length = 64]

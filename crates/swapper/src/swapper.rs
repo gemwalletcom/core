@@ -1,7 +1,7 @@
 use crate::{
-    AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperProviderMode, SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents,
-    proxy::provider_factory, thorchain, uniswap,
+    AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
+    SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents, proxy::provider_factory, thorchain,
+    uniswap,
 };
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
@@ -104,12 +104,7 @@ impl GemSwapper {
     }
 
     pub fn supported_chains(&self) -> Vec<Chain> {
-        self.swappers
-            .iter()
-            .flat_map(|x| x.supported_chains())
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect()
+        self.swappers.iter().flat_map(|x| x.supported_chains()).collect::<HashSet<_>>().into_iter().collect()
     }
 
     pub fn supported_chains_for_from_asset(&self, asset_id: &AssetId) -> AssetList {
@@ -334,10 +329,7 @@ mod tests {
 
         let supported_assets = vec![
             SwapperChainAsset::All(Chain::Ethereum),
-            SwapperChainAsset::Assets(
-                Chain::Ethereum,
-                vec![AssetId::from_token(Chain::Ethereum, &asset_id_usdt.clone().token_id.unwrap())],
-            ),
+            SwapperChainAsset::Assets(Chain::Ethereum, vec![AssetId::from_token(Chain::Ethereum, &asset_id_usdt.clone().token_id.unwrap())]),
         ];
 
         assert!(GemSwapper::filter_supported_assets(supported_assets.clone(), asset_id_usdt.clone()));

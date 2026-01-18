@@ -43,12 +43,7 @@ impl GemstoneClient {
         Self { native_provider }
     }
 
-    pub async fn fetch_base_priority_fees(
-        &self,
-        blocks: u64,
-        reward_percentiles: Vec<u64>,
-        min_priority_fee: u64,
-    ) -> Result<GemstoneFeeData, Box<dyn Error + Send + Sync>> {
+    pub async fn fetch_base_priority_fees(&self, blocks: u64, reward_percentiles: Vec<u64>, min_priority_fee: u64) -> Result<GemstoneFeeData, Box<dyn Error + Send + Sync>> {
         let endpoint = self.native_provider.get_endpoint(Chain::Ethereum)?;
         let alien_client = new_alien_client(endpoint, self.native_provider.clone());
         let client = JsonRpcClient::new(alien_client);

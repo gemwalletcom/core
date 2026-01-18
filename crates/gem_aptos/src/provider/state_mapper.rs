@@ -4,11 +4,7 @@ use primitives::{NodeSyncStatus, TransactionChange, TransactionState, Transactio
 use std::error::Error;
 
 pub fn map_transaction_state(transaction: &Transaction) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-    let state = if transaction.success {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Reverted
-    };
+    let state = if transaction.success { TransactionState::Confirmed } else { TransactionState::Reverted };
 
     let mut changes = Vec::new();
 

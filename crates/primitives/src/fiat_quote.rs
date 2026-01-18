@@ -33,16 +33,7 @@ pub struct FiatQuote {
 }
 
 impl FiatQuote {
-    pub fn new(
-        id: String,
-        asset_id: String,
-        provider: FiatProvider,
-        quote_type: FiatQuoteType,
-        fiat_amount: f64,
-        fiat_currency: String,
-        crypto_amount: f64,
-        latency: u64,
-    ) -> Self {
+    pub fn new(id: String, asset_id: String, provider: FiatProvider, quote_type: FiatQuoteType, fiat_amount: f64, fiat_currency: String, crypto_amount: f64, latency: u64) -> Self {
         Self {
             id,
             asset_id,

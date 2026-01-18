@@ -17,7 +17,7 @@ pub fn calculate_risk_score(
 
     let is_penalty_isp = config.penalty_isps.iter().any(|isp| input.ip_isp.contains(isp));
     let is_blocked_type = config.blocked_ip_types.contains(&input.ip_usage_type);
-    let is_high_risk_platform_store = config.high_risk_platform_stores.iter().any(|s| s == &input.device_platform_store);
+    let is_high_risk_platform_store = config.high_risk_platform_stores.iter().any(|s| s == input.device_platform_store.as_ref());
     let is_high_risk_country = config.high_risk_countries.iter().any(|c| c == &input.ip_country_code);
     let is_high_risk_locale = config.high_risk_locales.iter().any(|l| l == &input.device_locale);
     let is_high_risk_device_model = config
@@ -39,18 +39,10 @@ pub fn calculate_risk_score(
             0
         },
         verified_user_reduction: if input.referrer_verified { -config.verified_user_reduction } else { 0 },
-        platform_store_score: if is_high_risk_platform_store {
-            config.high_risk_platform_store_penalty
-        } else {
-            0
-        },
+        platform_store_score: if is_high_risk_platform_store { config.high_risk_platform_store_penalty } else { 0 },
         country_score: if is_high_risk_country { config.high_risk_country_penalty } else { 0 },
         locale_score: if is_high_risk_locale { config.high_risk_locale_penalty } else { 0 },
-        high_risk_device_model_score: if is_high_risk_device_model {
-            config.high_risk_device_model_penalty
-        } else {
-            0
-        },
+        high_risk_device_model_score: if is_high_risk_device_model { config.high_risk_device_model_penalty } else { 0 },
         ..Default::default()
     };
 
@@ -69,11 +61,11 @@ pub fn calculate_risk_score(
                 same_referrer_fingerprint_count += 1;
             }
 
-            if signal.ip_isp == input.ip_isp && signal.device_model == input.device_model && signal.device_platform == input.device_platform {
+            if signal.ip_isp == input.ip_isp && signal.device_model == input.device_model && *signal.device_platform == input.device_platform {
                 same_referrer_pattern_count += 1;
             }
 
-            if signal.device_model == input.device_model && signal.device_platform == input.device_platform {
+            if signal.device_model == input.device_model && *signal.device_platform == input.device_platform {
                 same_referrer_device_model_count += 1;
             }
             continue;
@@ -174,10 +166,7 @@ pub fn calculate_risk_score(
 fn count_signals_in_recent_window(signals: &[&RiskSignalRow], window: Duration) -> (i64, f64) {
     let now = chrono::Utc::now().naive_utc();
     let window_secs = window.as_secs() as i64;
-    let recent: Vec<_> = signals
-        .iter()
-        .filter(|s| now.signed_duration_since(s.created_at).num_seconds() <= window_secs)
-        .collect();
+    let recent: Vec<_> = signals.iter().filter(|s| now.signed_duration_since(s.created_at).num_seconds() <= window_secs).collect();
     let count = recent.len() as i64;
     if count <= 1 {
         return (count, 1.0);
@@ -192,14 +181,14 @@ fn count_signals_in_recent_window(signals: &[&RiskSignalRow], window: Duration) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::IpUsageType;
+    use primitives::{IpUsageType, Platform, PlatformStore};
 
     fn create_test_input() -> RiskSignalInput {
         RiskSignalInput {
             username: "user1".to_string(),
             device_id: 1,
-            device_platform: "iOS".to_string(),
-            device_platform_store: "appStore".to_string(),
+            device_platform: Platform::IOS,
+            device_platform_store: PlatformStore::AppStore,
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),
@@ -219,8 +208,8 @@ mod tests {
             fingerprint: fingerprint.to_string(),
             referrer_username: referrer_username.to_string(),
             device_id,
-            device_platform: "iOS".to_string(),
-            device_platform_store: "appStore".to_string(),
+            device_platform: Platform::IOS.into(),
+            device_platform_store: PlatformStore::AppStore.into(),
             device_os: "18.0".to_string(),
             device_model: model.to_string(),
             device_locale: "en-US".to_string(),
@@ -297,16 +286,7 @@ mod tests {
 
         // 5 referrers * 50 = 250, but capped at 200
         let signals: Vec<_> = (0..5)
-            .map(|i| {
-                create_signal(
-                    &format!("referrer_{}", i),
-                    &fingerprint,
-                    &format!("10.0.0.{}", i),
-                    "Comcast",
-                    "iPhone15,2",
-                    10 + i,
-                )
-            })
+            .map(|i| create_signal(&format!("referrer_{}", i), &fingerprint, &format!("10.0.0.{}", i), "Comcast", "iPhone15,2", 10 + i))
             .collect();
         let result = calculate_risk_score(&input, &signals, 0, 0, &config);
 
@@ -540,8 +520,8 @@ mod tests {
     #[test]
     fn same_referrer_different_platform_ignored() {
         let mut signal = create_signal("user1", "fp1", "10.0.0.1", "Comcast", "iPhone15,2", 2);
-        signal.device_platform = "android".to_string();
-        signal.device_platform_store = "googlePlay".to_string();
+        signal.device_platform = Platform::Android.into();
+        signal.device_platform_store = PlatformStore::GooglePlay.into();
         let signals = [
             signal,
             create_signal("user1", "fp2", "10.0.0.2", "Comcast", "iPhone15,2", 3),
@@ -558,8 +538,8 @@ mod tests {
         let input = RiskSignalInput {
             username: "referrer1".to_string(),
             device_model: "TestDevice X".to_string(),
-            device_platform: "android".to_string(),
-            device_platform_store: "googlePlay".to_string(),
+            device_platform: Platform::Android,
+            device_platform_store: PlatformStore::GooglePlay,
             ip_isp: "Test Mobile ISP".to_string(),
             ip_country_code: "XX".to_string(),
             device_locale: "en".to_string(),
@@ -570,8 +550,8 @@ mod tests {
         let signals: Vec<_> = (0..3)
             .map(|i| {
                 let mut s = create_signal("referrer1", &fingerprint, "10.20.30.40", "Test Mobile ISP", "TestDevice X", 100 + i);
-                s.device_platform = "android".to_string();
-                s.device_platform_store = "googlePlay".to_string();
+                s.device_platform = Platform::Android.into();
+                s.device_platform_store = PlatformStore::GooglePlay.into();
                 s
             })
             .collect();
@@ -616,8 +596,8 @@ mod tests {
         let input = RiskSignalInput {
             username: "abuser".to_string(),
             device_model: "INFINIX X6525".to_string(),
-            device_platform: "android".to_string(),
-            device_platform_store: "googlePlay".to_string(),
+            device_platform: Platform::Android,
+            device_platform_store: PlatformStore::GooglePlay,
             device_locale: "in".to_string(),
             ..create_test_input()
         };
@@ -627,8 +607,8 @@ mod tests {
             .enumerate()
             .map(|(i, (isp, _country))| {
                 let mut s = create_signal("abuser", &format!("fp{}", i), &format!("10.0.0.{}", i), isp, "INFINIX X6525", 100 + i as i32);
-                s.device_platform = "android".to_string();
-                s.device_platform_store = "googlePlay".to_string();
+                s.device_platform = Platform::Android.into();
+                s.device_platform_store = PlatformStore::GooglePlay.into();
                 s
             })
             .collect();
@@ -707,11 +687,7 @@ mod tests {
         let score2 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
-        let signals = vec![
-            create_recent_signal("user1", 60),
-            create_recent_signal("user1", 120),
-            create_recent_signal("user1", 180),
-        ];
+        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120), create_recent_signal("user1", 180)];
         let score3 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
@@ -723,20 +699,12 @@ mod tests {
     fn velocity_faster_spam_higher_penalty() {
         // Same count but tighter time = higher penalty
         // 3 signals in 120s span: multiplier=1.6, penalty=300*1.6=480
-        let signals = vec![
-            create_recent_signal("user1", 60),
-            create_recent_signal("user1", 120),
-            create_recent_signal("user1", 180),
-        ];
+        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120), create_recent_signal("user1", 180)];
         let slow = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
         // 3 signals in 20s span: multiplier=1+(300-20)/300=1.93, penalty=300*1.93=579
-        let signals = vec![
-            create_recent_signal("user1", 60),
-            create_recent_signal("user1", 70),
-            create_recent_signal("user1", 80),
-        ];
+        let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 70), create_recent_signal("user1", 80)];
         let fast = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
@@ -749,20 +717,10 @@ mod tests {
         input.referrer_verified = true;
         // Verified user threshold=5 (10/2), 4 signals - no penalty
         let signals: Vec<_> = (0..4).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert_eq!(
-            calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default())
-                .breakdown
-                .velocity_score,
-            0
-        );
+        assert_eq!(calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score, 0);
         // 5 signals triggers penalty
         let signals: Vec<_> = (0..5).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert!(
-            calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default())
-                .breakdown
-                .velocity_score
-                > 0
-        );
+        assert!(calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score > 0);
     }
 
     #[test]

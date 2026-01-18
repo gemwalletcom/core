@@ -75,9 +75,6 @@ jobs:
         run: just install-android-targets
 
       - name: Build Android Bindings
-        env:
-          GITHUB_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: just build-android
 
       - name: Enable KVM

@@ -28,14 +28,7 @@ impl NodeTelemetry {
                 }
                 NodeStatusState::Error { message } => {
                     let latency = DurationMs(observation.latency);
-                    log_info_event(
-                        "Node check",
-                        chain,
-                        [("host", observation.url.host()), ("message", message.clone())],
-                        &latency,
-                        None,
-                        None,
-                    );
+                    log_info_event("Node check", chain, [("host", observation.url.host()), ("message", message.clone())], &latency, None, None);
                 }
             }
         }
@@ -145,9 +138,7 @@ fn log_error_event<I>(message: &'static str, err: &dyn Error, chain: &str, field
 where
     I: IntoIterator<Item = (&'static str, String)>,
 {
-    emit_event(message, chain, fields, latency, latest, current, |msg, slice| {
-        error_with_fields_impl(msg, err, slice)
-    });
+    emit_event(message, chain, fields, latency, latest, current, |msg, slice| error_with_fields_impl(msg, err, slice));
 }
 
 fn emit_event<I>(

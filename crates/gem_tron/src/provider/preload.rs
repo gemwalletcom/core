@@ -7,8 +7,8 @@ use num_bigint::BigInt;
 
 use gem_client::Client;
 use primitives::{
-    AssetSubtype, FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput,
-    TransactionLoadMetadata, TransactionPreloadInput,
+    AssetSubtype, FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput,
 };
 
 use crate::{
@@ -46,25 +46,21 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
         };
 
         let fee = match &input.input_type {
-            TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
-                match &asset.id.token_id {
-                    None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
-                    Some(token_id) => {
-                        self.estimate_token_transfer_fee(
-                            input.sender_address.clone(),
-                            input.destination_address.clone(),
-                            token_id.clone(),
-                            input.value.clone(),
-                            &chain_parameters,
-                            &account_usage,
-                        )
-                        .await?
-                    }
+            TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => match &asset.id.token_id {
+                None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
+                Some(token_id) => {
+                    self.estimate_token_transfer_fee(
+                        input.sender_address.clone(),
+                        input.destination_address.clone(),
+                        token_id.clone(),
+                        input.value.clone(),
+                        &chain_parameters,
+                        &account_usage,
+                    )
+                    .await?
                 }
-            }
-            TransactionInputType::Stake(_asset, stake_type) => {
-                TransactionFee::new_from_fee(calculate_stake_fee_rate(&chain_parameters, &account_usage, stake_type)?)
-            }
+            },
+            TransactionInputType::Stake(_asset, stake_type) => TransactionFee::new_from_fee(calculate_stake_fee_rate(&chain_parameters, &account_usage, stake_type)?),
             TransactionInputType::Swap(from_asset, _, swap_data) => match &from_asset.id.token_id {
                 None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
                 Some(token_id) => {

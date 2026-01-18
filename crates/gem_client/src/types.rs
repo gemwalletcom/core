@@ -71,10 +71,7 @@ where
 fn validate_http_status(response: &Response) -> Result<(), ClientError> {
     if let Some(status) = response.status {
         if !(200..400).contains(&status) {
-            return Err(ClientError::Http {
-                status,
-                len: response.data.len(),
-            });
+            return Err(ClientError::Http { status, len: response.data.len() });
         }
     }
     Ok(())

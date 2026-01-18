@@ -109,13 +109,7 @@ mod tests {
     fn test_response_to_json() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
 
-        let response = TonSignDataResponse::new(
-            "c2lnbmF0dXJl".to_string(),
-            "cHVibGljS2V5".to_string(),
-            1234567890,
-            "example.com".to_string(),
-            payload,
-        );
+        let response = TonSignDataResponse::new("c2lnbmF0dXJl".to_string(), "cHVibGljS2V5".to_string(), 1234567890, "example.com".to_string(), payload);
 
         let json = response.to_json().unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();

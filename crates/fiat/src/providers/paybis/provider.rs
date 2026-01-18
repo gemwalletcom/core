@@ -50,9 +50,7 @@ impl FiatProvider for PaybisClient {
     }
 
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
-        let quote = self
-            .get_buy_quote(request_map.asset_symbol.symbol, request.currency.to_uppercase(), request.amount)
-            .await?;
+        let quote = self.get_buy_quote(request_map.asset_symbol.symbol, request.currency.to_uppercase(), request.amount).await?;
 
         let payment_method = quote
             .payment_methods

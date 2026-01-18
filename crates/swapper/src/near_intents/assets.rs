@@ -2,10 +2,10 @@ use crate::{SwapperError, SwapperQuoteAsset, models::SwapperChainAsset};
 use primitives::{
     AssetId, Chain,
     asset_constants::{
-        AAVE_ETH_ASSET_ID, ARB_ARB_ASSET_ID, CBBTC_BASE_ASSET_ID, CBBTC_ETH_ASSET_ID, DAI_ETH_ASSET_ID, LINK_ETH_ASSET_ID, OP_OP_ASSET_ID, UNI_ETH_ASSET_ID,
-        USDC_ARB_ASSET_ID, USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID,
-        USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID, USDC_SUI_ASSET_ID, USDT_APTOS_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID,
-        USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, WBTC_ETH_ASSET_ID,
+        AAVE_ETH_ASSET_ID, ARB_ARB_ASSET_ID, CBBTC_BASE_ASSET_ID, CBBTC_ETH_ASSET_ID, DAI_ETH_ASSET_ID, LINK_ETH_ASSET_ID, OP_OP_ASSET_ID, UNI_ETH_ASSET_ID, USDC_ARB_ASSET_ID,
+        USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID, USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID,
+        USDC_SUI_ASSET_ID, USDT_APTOS_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID,
+        USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, WBTC_ETH_ASSET_ID,
     },
 };
 use std::{collections::HashMap, sync::LazyLock};
@@ -98,10 +98,7 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
 
     map.insert(
         Chain::Sui,
-        HashMap::from([
-            ("sui".to_string(), NEAR_INTENTS_SUI_NATIVE),
-            (asset_key(USDC_SUI_ASSET_ID), NEAR_INTENTS_SUI_USDC),
-        ]),
+        HashMap::from([("sui".to_string(), NEAR_INTENTS_SUI_NATIVE), (asset_key(USDC_SUI_ASSET_ID), NEAR_INTENTS_SUI_USDC)]),
     );
 
     map.insert(
@@ -162,18 +159,12 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
 
     map.insert(
         Chain::Ton,
-        HashMap::from([
-            ("ton".to_string(), NEAR_INTENTS_TON_NATIVE),
-            (asset_key(USDT_TON_ASSET_ID), NEAR_INTENTS_TON_USDT),
-        ]),
+        HashMap::from([("ton".to_string(), NEAR_INTENTS_TON_NATIVE), (asset_key(USDT_TON_ASSET_ID), NEAR_INTENTS_TON_USDT)]),
     );
 
     map.insert(
         Chain::Tron,
-        HashMap::from([
-            ("tron".to_string(), NEAR_INTENTS_TRON_NATIVE),
-            (asset_key(USDT_TRON_ASSET_ID), NEAR_INTENTS_TRON_USDT),
-        ]),
+        HashMap::from([("tron".to_string(), NEAR_INTENTS_TRON_NATIVE), (asset_key(USDT_TRON_ASSET_ID), NEAR_INTENTS_TRON_USDT)]),
     );
 
     map.insert(Chain::Doge, HashMap::from([("doge".to_string(), NEAR_INTENTS_DOGE_NATIVE)]));
@@ -182,10 +173,7 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
     map.insert(Chain::Berachain, HashMap::from([("berachain".to_string(), NEAR_INTENTS_BERA_NATIVE)]));
     map.insert(
         Chain::Aptos,
-        HashMap::from([
-            ("aptos".to_string(), NEAR_INTENTS_APT_NATIVE),
-            (asset_key(USDT_APTOS_ASSET_ID), NEAR_INTENTS_APT_USDT),
-        ]),
+        HashMap::from([("aptos".to_string(), NEAR_INTENTS_APT_NATIVE), (asset_key(USDT_APTOS_ASSET_ID), NEAR_INTENTS_APT_USDT)]),
     );
     map.insert(Chain::Zcash, HashMap::from([("zcash".to_string(), NEAR_INTENTS_ZEC_NATIVE)]));
 
@@ -264,11 +252,7 @@ mod tests {
     #[test]
     fn test_supported_assets_contains_near() {
         let supported = supported_assets();
-        assert!(
-            supported
-                .iter()
-                .any(|entry| matches!(entry, SwapperChainAsset::Assets(chain, _) if *chain == Chain::Near))
-        );
+        assert!(supported.iter().any(|entry| matches!(entry, SwapperChainAsset::Assets(chain, _) if *chain == Chain::Near)));
     }
 
     #[test]

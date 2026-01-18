@@ -33,8 +33,7 @@ pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};
 pub use self::config::ConfigRow;
 pub use self::device::{DeviceRow, UpdateDeviceRow};
 pub use self::fiat::{
-    FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow,
-    NewFiatWebhookRow,
+    FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow, NewFiatWebhookRow,
 };
 pub use self::nft_asset::NftAssetRow;
 pub use self::nft_collection::NftCollectionRow;

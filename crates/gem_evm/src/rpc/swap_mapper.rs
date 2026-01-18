@@ -136,13 +136,7 @@ impl SwapMapper {
         None
     }
 
-    pub fn try_map_uniswap_transaction(
-        chain: &Chain,
-        provider: &str,
-        from: &str,
-        input_bytes: &[u8],
-        transaction_reciept: &TransactionReciept,
-    ) -> Option<TransactionSwapMetadata> {
+    pub fn try_map_uniswap_transaction(chain: &Chain, provider: &str, from: &str, input_bytes: &[u8], transaction_reciept: &TransactionReciept) -> Option<TransactionSwapMetadata> {
         let execute_call = IUniversalRouter::executeCall::abi_decode(input_bytes).ok()?;
         let commands_vec = execute_call.commands;
         let inputs_vec = execute_call.inputs;
@@ -215,11 +209,7 @@ impl SwapMapper {
                             };
                             from_asset = Some(AssetId {
                                 chain: *chain,
-                                token_id: if from_token == Address::ZERO {
-                                    None
-                                } else {
-                                    Some(from_token.to_checksum(None))
-                                },
+                                token_id: if from_token == Address::ZERO { None } else { Some(from_token.to_checksum(None)) },
                             });
                             to_asset = Some(AssetId {
                                 chain: *chain,
@@ -406,7 +396,7 @@ mod tests {
             metadata.to_asset,
             AssetId {
                 chain: Chain::Base,
-                token_id: None,
+                token_id: None
             }
         );
         assert_eq!(metadata.to_value, "29020434785385862");

@@ -11,6 +11,7 @@ pub struct Notification {
     pub notification_type: NotificationType,
     pub is_read: bool,
     pub metadata: Option<serde_json::Value>,
+    pub read_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
 }
 

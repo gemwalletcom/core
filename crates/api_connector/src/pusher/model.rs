@@ -66,10 +66,7 @@ mod tests {
 
         let result = PushResult {
             response,
-            notifications: vec![
-                GorushNotification::mock_with("token1", "device1"),
-                GorushNotification::mock_with("token2", "device2"),
-            ],
+            notifications: vec![GorushNotification::mock_with("token1", "device1"), GorushNotification::mock_with("token2", "device2")],
         };
 
         let failures = result.failures();
@@ -103,10 +100,7 @@ mod tests {
 
         let result = PushResult {
             response,
-            notifications: vec![
-                GorushNotification::mock_with("token1", "device1"),
-                GorushNotification::mock_with("token2", "device2"),
-            ],
+            notifications: vec![GorushNotification::mock_with("token1", "device1"), GorushNotification::mock_with("token2", "device2")],
         };
 
         let failures = result.failures();

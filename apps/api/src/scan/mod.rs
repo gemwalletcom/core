@@ -10,10 +10,7 @@ pub use client::ScanClient;
 pub use providers::ScanProviderFactory;
 
 #[post("/scan/transaction", data = "<request>")]
-pub async fn scan_transaction(
-    request: Json<ScanTransactionPayload>,
-    client: &State<Mutex<ScanClient>>,
-) -> Result<ApiResponse<ResponseResultNew<ScanTransaction>>, ApiError> {
+pub async fn scan_transaction(request: Json<ScanTransactionPayload>, client: &State<Mutex<ScanClient>>) -> Result<ApiResponse<ResponseResultNew<ScanTransaction>>, ApiError> {
     let result: ScanTransaction = client.lock().await.get_scan_transaction(request.0).await?;
     Ok(ResponseResultNew::new(result).into())
 }

@@ -66,7 +66,6 @@ impl RewardStatus {
     }
 }
 
-
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
@@ -191,6 +190,7 @@ pub struct RewardRedemption {
 #[strum(serialize_all = "camelCase")]
 pub enum RedemptionStatus {
     Pending,
+    Processing,
     Completed,
     Failed,
 }
