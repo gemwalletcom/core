@@ -219,6 +219,14 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_reward_pending_description")
     }
 
+    pub fn notification_reward_redeemed_title(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_reward_redeemed_title")
+    }
+
+    pub fn notification_reward_redeemed_description(&self, points: i32) -> String {
+        fl!(self.loader.as_ref(), "notification_reward_redeemed_description", value = points.abs())
+    }
+
     pub fn errors_generic(&self) -> String {
         fl!(self.loader.as_ref(), "errors_generic")
     }
@@ -257,6 +265,10 @@ impl LanguageLocalizer {
 
     pub fn rewards_error_username_daily_limit_reached(&self) -> String {
         fl!(self.loader.as_ref(), "rewards_error_username_daily_limit_reached")
+    }
+
+    pub fn notification_rewards_enabled_description(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_rewards_enabled_description")
     }
 
     pub fn notification_rewards_disabled_title(&self) -> String {

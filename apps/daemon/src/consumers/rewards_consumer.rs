@@ -1,10 +1,9 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use localizer::LanguageLocalizer;
-use primitives::{Device, GorushNotification, NotificationRewardsMetadata, NotificationType, PushNotification, PushNotificationReward, PushNotificationTypes, RewardEventType};
-use storage::{Database, NewNotificationRow, NotificationType as StorageNotificationType, NotificationsRepository, RewardsRepository};
-use streamer::{NotificationsPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
+use primitives::{NotificationRewardsMetadata, NotificationType, RewardEventType};
+use storage::{Database, RewardsRepository};
+use streamer::{InAppNotificationPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue, consumer::MessageConsumer};
 
 pub struct RewardsConsumer {
     database: Database,
@@ -19,22 +18,9 @@ impl MessageConsumer<RewardsNotificationPayload, usize> for RewardsConsumer {
 
     async fn process(&self, payload: RewardsNotificationPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let event = self.database.rewards()?.get_reward_event(payload.event_id)?;
-        let devices = self.database.rewards()?.get_reward_event_devices(payload.event_id)?;
-
-        self.create_in_app_notification(&event)?;
-
-        let notifications: Vec<GorushNotification> = devices
-            .into_iter()
-            .filter(|d| d.can_receive_push_notification())
-            .map(|device| create_notification(device, event.event))
-            .collect();
-
-        if notifications.is_empty() {
-            return Ok(0);
-        }
-
+        let notifications = self.create_in_app_notification_payloads(&event)?;
         let count = notifications.len();
-        self.stream_producer.publish_notifications_rewards(NotificationsPayload::new(notifications)).await?;
+        self.stream_producer.publish_in_app_notifications(notifications).await?;
         Ok(count)
     }
 }
@@ -44,53 +30,37 @@ impl RewardsConsumer {
         Self { database, stream_producer }
     }
 
-    fn create_in_app_notification(&self, event: &primitives::RewardEvent) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let (notification_type, username) = match event.event {
-            RewardEventType::Joined => {
-                let Some(referrer) = self.database.rewards()?.get_referrer_username(&event.username)? else {
-                    return Ok(());
-                };
-                (NotificationType::ReferralJoined, referrer)
-            }
-            RewardEventType::Disabled => (NotificationType::RewardsCodeDisabled, event.username.clone()),
-            _ => return Ok(()),
-        };
-
-        let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&username)?;
+    fn create_in_app_notification_payloads(&self, event: &primitives::RewardEvent) -> Result<Vec<InAppNotificationPayload>, Box<dyn Error + Send + Sync>> {
         let metadata = NotificationRewardsMetadata {
             username: event.username.clone(),
             points: Some(event.points),
         };
-        let notification = NewNotificationRow {
-            wallet_id,
-            notification_type: StorageNotificationType::from(notification_type),
-            metadata: serde_json::to_value(metadata).ok(),
-        };
-        self.database.notifications()?.create_notifications(vec![notification])?;
-        Ok(())
-    }
-}
+        let metadata_value = serde_json::to_value(metadata).ok();
 
-fn create_notification(device: Device, event: RewardEventType) -> GorushNotification {
-    let localizer = LanguageLocalizer::new_with_language(&device.locale);
-    let (title, message) = reward_notification_content(&localizer, event);
-    // TODO: Pass wallet_id from reward event once available
-    let data = PushNotification {
-        notification_type: PushNotificationTypes::Rewards,
-        data: serde_json::to_value(PushNotificationReward { wallet_id: String::new() }).ok(),
-    };
-    GorushNotification::from_device(device, title, message, data)
-}
-
-fn reward_notification_content(localizer: &LanguageLocalizer, event: RewardEventType) -> (String, String) {
-    match event {
-        RewardEventType::CreateUsername => (
-            localizer.notification_reward_title(event.points()),
-            localizer.notification_reward_create_username_description(),
-        ),
-        RewardEventType::InvitePending => (localizer.notification_reward_pending_title(), localizer.notification_reward_pending_description()),
-        RewardEventType::InviteNew | RewardEventType::InviteExisting => (localizer.notification_reward_title(event.points()), localizer.notification_reward_invite_description()),
-        RewardEventType::Joined => (localizer.notification_reward_title(event.points()), localizer.notification_reward_joined_description()),
-        RewardEventType::Disabled => (localizer.notification_rewards_disabled_title(), localizer.notification_rewards_disabled_description()),
+        match event.event {
+            RewardEventType::CreateUsername => {
+                let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&event.username)?;
+                Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::RewardsCreateUsername, metadata_value)])
+            }
+            RewardEventType::InvitePending | RewardEventType::InviteNew | RewardEventType::InviteExisting => {
+                let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&event.username)?;
+                Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::RewardsInvite, metadata_value)])
+            }
+            RewardEventType::Joined => {
+                let Some(referrer) = self.database.rewards()?.get_referrer_username(&event.username)? else {
+                    return Ok(vec![]);
+                };
+                let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&referrer)?;
+                Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::ReferralJoined, metadata_value)])
+            }
+            RewardEventType::Disabled => {
+                let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&event.username)?;
+                Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::RewardsCodeDisabled, metadata_value)])
+            }
+            RewardEventType::Redeemed => {
+                let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&event.username)?;
+                Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::RewardsRedeemed, metadata_value)])
+            }
+        }
     }
 }

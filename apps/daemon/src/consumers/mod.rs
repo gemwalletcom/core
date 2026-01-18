@@ -32,9 +32,9 @@ pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
-    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, PricesPayload, QueueName,
-    RewardsNotificationPayload, RewardsRedemptionPayload, StreamConnection, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload,
-    run_consumer,
+    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, InAppNotificationPayload,
+    PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamConnection, StreamProducer, StreamReader, StreamReaderConfig,
+    SupportWebhookPayload, TransactionsPayload, run_consumer,
 };
 
 use crate::consumers::{
@@ -271,6 +271,18 @@ pub async fn run_consumer_rewards(settings: Settings) -> Result<(), Box<dyn Erro
     let consumer = rewards_consumer::RewardsConsumer::new(database, stream_producer);
     let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config).await
+}
+
+pub async fn run_consumer_in_app_notifications(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let queue = QueueName::NotificationsInApp;
+    let name = queue.to_string();
+    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+    let stream_reader = StreamReader::new(config).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let consumer = notifications::InAppNotificationsConsumer::new(database, stream_producer);
+    let consumer_config = consumer_config(&settings.consumer);
+    run_consumer::<InAppNotificationPayload, notifications::InAppNotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config).await
 }
 
 pub async fn run_rewards_redemption_consumer(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
