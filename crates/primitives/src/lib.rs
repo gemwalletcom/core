@@ -229,6 +229,8 @@ pub mod transaction_input_type;
 pub use self::transaction_input_type::{TransactionInputType, TransactionLoadData, TransactionLoadInput};
 pub mod transfer_data_extra;
 pub use self::transfer_data_extra::TransferDataExtra;
+pub mod yield_data;
+pub use self::yield_data::{YieldAction, YieldData};
 pub mod transaction_data_output;
 pub use self::transaction_data_output::{TransferDataOutputAction, TransferDataOutputType};
 pub mod broadcast_options;

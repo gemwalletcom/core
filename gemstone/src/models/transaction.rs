@@ -264,6 +264,8 @@ pub enum GemYieldAction {
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct GemYieldData {
     pub provider_name: String,
+    pub contract_address: String,
+    pub call_data: String,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -709,6 +711,11 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
+            TransactionInputType::Yield(asset, action, data) => GemTransactionInputType::Yield {
+                asset,
+                action: action.into(),
+                data: data.into(),
+            },
         }
     }
 }
@@ -871,7 +878,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
-            GemTransactionInputType::Yield { asset, .. } => TransactionInputType::Deposit(asset),
+            GemTransactionInputType::Yield { asset, action, data } => TransactionInputType::Yield(asset, action.into(), data.into()),
         }
     }
 }
@@ -890,6 +897,44 @@ impl From<FreezeData> for GemFreezeData {
         GemFreezeData {
             freeze_type: value.freeze_type,
             resource: value.resource,
+        }
+    }
+}
+
+impl From<GemYieldAction> for primitives::YieldAction {
+    fn from(value: GemYieldAction) -> Self {
+        match value {
+            GemYieldAction::Deposit => primitives::YieldAction::Deposit,
+            GemYieldAction::Withdraw => primitives::YieldAction::Withdraw,
+        }
+    }
+}
+
+impl From<primitives::YieldAction> for GemYieldAction {
+    fn from(value: primitives::YieldAction) -> Self {
+        match value {
+            primitives::YieldAction::Deposit => GemYieldAction::Deposit,
+            primitives::YieldAction::Withdraw => GemYieldAction::Withdraw,
+        }
+    }
+}
+
+impl From<GemYieldData> for primitives::YieldData {
+    fn from(value: GemYieldData) -> Self {
+        primitives::YieldData {
+            provider_name: value.provider_name,
+            contract_address: value.contract_address,
+            call_data: value.call_data,
+        }
+    }
+}
+
+impl From<primitives::YieldData> for GemYieldData {
+    fn from(value: primitives::YieldData) -> Self {
+        GemYieldData {
+            provider_name: value.provider_name,
+            contract_address: value.contract_address,
+            call_data: value.call_data,
         }
     }
 }

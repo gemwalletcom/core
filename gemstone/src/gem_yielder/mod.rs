@@ -6,6 +6,7 @@ use std::{collections::HashMap, sync::Arc};
 use crate::{
     GemstoneError,
     alien::{AlienProvider, AlienProviderWrapper},
+    models::{GemTransactionInputType, GemTransactionLoadInput, GemYieldData},
 };
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
@@ -30,10 +31,8 @@ impl std::fmt::Debug for GemYielder {
 impl GemYielder {
     #[uniffi::constructor]
     pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Result<Self, GemstoneError> {
-        let mut inner = Yielder::new();
-        let yo_provider = build_yo_provider(rpc_provider)?;
-        inner.add_provider_arc(yo_provider);
-        Ok(Self { yielder: inner })
+        let yielder = build_yielder(rpc_provider)?;
+        Ok(Self { yielder })
     }
 
     pub async fn yields_for_asset(&self, asset_id: &AssetId) -> Result<Vec<GemYield>, GemstoneError> {
@@ -63,17 +62,6 @@ impl GemYielder {
         self.yielder.positions(provider, &request).await.map_err(Into::into)
     }
 
-    /// Build a complete yield transaction with all data needed for signing.
-    /// This method combines the yield transaction building with metadata.
-    ///
-    /// # Arguments
-    /// * `action` - Whether to deposit or withdraw
-    /// * `provider` - The yield provider name (e.g., "yo")
-    /// * `asset` - The asset to deposit/withdraw
-    /// * `wallet_address` - The wallet address performing the action
-    /// * `value` - The amount to deposit/withdraw
-    /// * `nonce` - The transaction nonce from preload
-    /// * `chain_id` - The chain ID from preload
     pub async fn build_transaction(
         &self,
         action: GemYieldAction,
@@ -95,40 +83,75 @@ impl GemYielder {
             }
         };
 
-        // Default gas limit for yield operations (deposit/withdraw to ERC4626 vaults)
-        let gas_limit = "200000".to_string();
-
         Ok(GemYieldTransactionData {
             transaction,
             nonce,
             chain_id,
-            gas_limit,
+            gas_limit: "200000".to_string(),
         })
     }
+
 }
 
-fn build_yo_provider(rpc_provider: Arc<dyn AlienProvider>) -> Result<Arc<dyn YieldProviderClient>, GemstoneError> {
-    let wrapper = Arc::new(AlienProviderWrapper {
-        provider: rpc_provider.clone(),
-    });
-    let mut gateways: HashMap<Chain, Arc<dyn YoProvider>> = HashMap::new();
+pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yielder, GemstoneError> {
+    let wrapper = Arc::new(AlienProviderWrapper { provider: rpc_provider.clone() });
 
-    // Base gateway
-    let base_endpoint = rpc_provider.get_endpoint(Chain::Base)?;
-    let base_rpc_client = RpcClient::new(base_endpoint, wrapper.clone());
-    let base_jsonrpc_client = JsonRpcClient::new(base_rpc_client);
-    let base_ethereum_client = EthereumClient::new(base_jsonrpc_client, EVMChain::Base);
-    let base_gateway: Arc<dyn YoProvider> = Arc::new(YoGatewayClient::new(base_ethereum_client, YO_GATEWAY));
-    gateways.insert(Chain::Base, base_gateway);
+    let build_gateway = |chain: Chain, evm_chain: EVMChain| -> Result<Arc<dyn YoProvider>, GemstoneError> {
+        let endpoint = rpc_provider.get_endpoint(chain)?;
+        let rpc_client = RpcClient::new(endpoint, wrapper.clone());
+        let ethereum_client = EthereumClient::new(JsonRpcClient::new(rpc_client), evm_chain);
+        Ok(Arc::new(YoGatewayClient::new(ethereum_client, YO_GATEWAY)))
+    };
 
-    // Ethereum gateway
-    let eth_endpoint = rpc_provider.get_endpoint(Chain::Ethereum)?;
-    let eth_rpc_client = RpcClient::new(eth_endpoint, wrapper);
-    let eth_jsonrpc_client = JsonRpcClient::new(eth_rpc_client);
-    let eth_ethereum_client = EthereumClient::new(eth_jsonrpc_client, EVMChain::Ethereum);
-    let eth_gateway: Arc<dyn YoProvider> = Arc::new(YoGatewayClient::new(eth_ethereum_client, YO_GATEWAY));
-    gateways.insert(Chain::Ethereum, eth_gateway);
+    let gateways: HashMap<Chain, Arc<dyn YoProvider>> = HashMap::from([
+        (Chain::Base, build_gateway(Chain::Base, EVMChain::Base)?),
+        (Chain::Ethereum, build_gateway(Chain::Ethereum, EVMChain::Ethereum)?),
+    ]);
 
-    let provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways));
-    Ok(provider)
+    let yo_provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways));
+    let mut yielder = Yielder::new();
+    yielder.add_provider_arc(yo_provider);
+    Ok(yielder)
+}
+
+pub(crate) async fn prepare_yield_input(
+    yielder: &Yielder,
+    input: GemTransactionLoadInput,
+) -> Result<GemTransactionLoadInput, GemstoneError> {
+    match &input.input_type {
+        GemTransactionInputType::Yield { asset, action, data } => {
+            if data.contract_address.is_empty() || data.call_data.is_empty() {
+                let transaction = match action {
+                    GemYieldAction::Deposit => {
+                        yielder.deposit(YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?
+                    }
+                    GemYieldAction::Withdraw => {
+                        yielder.withdraw(YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?
+                    }
+                };
+
+                Ok(GemTransactionLoadInput {
+                    input_type: GemTransactionInputType::Yield {
+                        asset: asset.clone(),
+                        action: action.clone(),
+                        data: GemYieldData {
+                            provider_name: data.provider_name.clone(),
+                            contract_address: transaction.to,
+                            call_data: transaction.data,
+                        },
+                    },
+                    sender_address: input.sender_address,
+                    destination_address: input.destination_address,
+                    value: input.value,
+                    gas_price: input.gas_price,
+                    memo: input.memo,
+                    is_max_value: input.is_max_value,
+                    metadata: input.metadata,
+                })
+            } else {
+                Ok(input)
+            }
+        }
+        _ => Ok(input),
+    }
 }

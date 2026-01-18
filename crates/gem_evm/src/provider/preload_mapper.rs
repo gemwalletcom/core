@@ -8,8 +8,8 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
-    fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, YieldAction,
+    fee::FeePriority, fee::GasPriceType,
 };
 
 use crate::contracts::{IERC20, IERC721, IERC1155};
@@ -160,6 +160,14 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             }
             _ => Err("Unsupported chain for staking".into()),
         },
+        TransactionInputType::Yield(_, action, yield_data) => {
+            let call_data = alloy_primitives::hex::decode(&yield_data.call_data)?;
+            let tx_value = match action {
+                YieldAction::Deposit => BigInt::from(0),
+                YieldAction::Withdraw => BigInt::from(0),
+            };
+            Ok(TransactionParams::new(yield_data.contract_address.clone(), call_data, tx_value))
+        }
         _ => Err("Unsupported transfer type".into()),
     }
 }

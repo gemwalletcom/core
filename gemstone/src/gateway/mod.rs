@@ -10,6 +10,7 @@ use preferences::PreferencesWrapper;
 
 use crate::alien::{AlienProvider, new_alien_client};
 use crate::api_client::GemApiClient;
+use crate::gem_yielder::{build_yielder, prepare_yield_input};
 use crate::models::*;
 use crate::network::JsonRpcClient;
 use chain_traits::ChainTraits;
@@ -32,6 +33,7 @@ use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
 use primitives::{BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
+use yielder::Yielder;
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -46,6 +48,7 @@ pub struct GemGateway {
     pub preferences: Arc<dyn GemPreferences>,
     pub secure_preferences: Arc<dyn GemPreferences>,
     pub api_client: GemApiClient,
+    yielder: Option<Yielder>,
 }
 
 impl std::fmt::Debug for GemGateway {
@@ -150,11 +153,13 @@ impl GemGateway {
     #[uniffi::constructor]
     pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
         let api_client = GemApiClient::new(api_url, provider.clone());
+        let yielder = build_yielder(provider.clone()).ok();
         Self {
             provider,
             preferences,
             secure_preferences,
             api_client,
+            yielder,
         }
     }
 
@@ -341,6 +346,13 @@ impl GemGateway {
         input: GemTransactionLoadInput,
         provider: Arc<dyn GemGatewayEstimateFee>,
     ) -> Result<GemTransactionData, GatewayError> {
+        // Prepare yield input (builds contract_address and call_data if needed)
+        let input = if let Some(yielder) = &self.yielder {
+            prepare_yield_input(yielder, input).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?
+        } else {
+            input
+        };
+
         let fee = self.get_fee(chain, input.clone(), provider.clone()).await?;
 
         let load_data = self

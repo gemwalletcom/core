@@ -113,3 +113,9 @@ impl From<YieldError> for GemstoneError {
         Self::AnyError { msg: error.to_string() }
     }
 }
+
+impl From<gateway::GatewayError> for GemstoneError {
+    fn from(error: gateway::GatewayError) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}

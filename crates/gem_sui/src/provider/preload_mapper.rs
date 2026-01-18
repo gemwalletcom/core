@@ -40,7 +40,8 @@ fn get_gas_limit(input_type: &TransactionInputType) -> u64 {
         | TransactionInputType::Deposit(_)
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)
-        | TransactionInputType::Perpetual(_, _) => GAS_BUDGET,
+        | TransactionInputType::Perpetual(_, _)
+        | TransactionInputType::Yield(_, _, _) => GAS_BUDGET,
         TransactionInputType::Swap(_, _, _) => 50_000_000,
         TransactionInputType::Stake(_, _) => GAS_BUDGET,
     }

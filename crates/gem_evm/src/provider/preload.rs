@@ -65,8 +65,8 @@ impl<C: Client + Clone> EthereumClient<C> {
         let gas_limit = calculate_gas_limit_with_increase(gas_estimate);
         let fee = self.calculate_fee(&input, &gas_limit).await?;
 
-        let metadata = if let TransactionInputType::Stake(_, _) = &input.input_type {
-            match input.metadata {
+        let metadata = match &input.input_type {
+            TransactionInputType::Stake(_, _) | TransactionInputType::Yield(_, _, _) => match input.metadata {
                 TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
                     nonce,
                     chain_id,
@@ -76,9 +76,8 @@ impl<C: Client + Clone> EthereumClient<C> {
                     }),
                 },
                 _ => input.metadata,
-            }
-        } else {
-            input.metadata
+            },
+            _ => input.metadata,
         };
 
         Ok(TransactionLoadData { fee, metadata })
