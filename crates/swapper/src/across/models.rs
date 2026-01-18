@@ -7,7 +7,8 @@ use crate::config::ReferralFee;
 
 pub struct QuoteContext<'a> {
     pub from_amount: U256,
-    pub wallet_address: Address,
+    pub depositor: RelayRecipient,
+    pub evm_address: Address,
     pub from_chain: Chain,
     pub to_chain: Chain,
     pub input_is_native: bool,
@@ -18,7 +19,7 @@ pub struct QuoteContext<'a> {
     pub capital_cost: fees::CapitalCostConfig,
     pub referral_fee: ReferralFee,
     pub destination_deployment: AcrossDeployment,
-    pub destination_address: Option<&'a str>,
+    pub solana_destination_address: Option<&'a str>,
     pub output_token_decimals: u8,
 }
 

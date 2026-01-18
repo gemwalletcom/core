@@ -2,6 +2,9 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use solana_primitives::types::Pubkey;
 
 pub const MULTICALL_HANDLER: &str = "HaQe51FWtnmaEcuYEfPA7MRCXKrtqptat4oJdJ8zV5Be";
+pub const DEFAULT_SOLANA_COMPUTE_LIMIT: u64 = 200_000;
+pub const SOL_NATIVE_DECIMALS: u32 = 9;
+pub const SOL_RELAYER_FEE_LAMPORTS: u64 = 5_000;
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct CompiledIx {

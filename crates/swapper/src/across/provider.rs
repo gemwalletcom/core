@@ -4,7 +4,8 @@ use super::{
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
     models::{DestinationMessage, QuoteContext, RelayRecipient},
-    solana::{AcrossPlusMessage, CompiledIx, MULTICALL_HANDLER},
+    solana_tx,
+    solana::{AcrossPlusMessage, CompiledIx, DEFAULT_SOLANA_COMPUTE_LIMIT, MULTICALL_HANDLER, SOL_NATIVE_DECIMALS, SOL_RELAYER_FEE_LAMPORTS},
 };
 use crate::{
     SwapResult, Swapper, SwapperError, SwapperProvider, SwapperQuoteData,
@@ -48,10 +49,6 @@ use solana_primitives::{
 };
 use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
 
-const DEFAULT_SOLANA_COMPUTE_LIMIT: u64 = 200_000;
-const SOL_NATIVE_DECIMALS: u32 = 9;
-const SOL_RELAYER_FEE_LAMPORTS: u64 = 5_000;
-
 struct PoolState {
     token_config: TokenConfig,
     utilization_before: BigInt,
@@ -90,7 +87,16 @@ impl Across {
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
         if from_asset.chain == Chain::Solana {
-            return false;
+            if from_asset != &SOLANA_USDC.id {
+                return false;
+            }
+            let to_normalized = match eth_address::convert_native_to_weth(to_asset) {
+                Some(asset) => asset,
+                None => return false,
+            };
+            return AcrossDeployment::asset_mappings()
+                .into_iter()
+                .any(|mapping| mapping.set.contains(&to_normalized) && mapping.set.contains(&SOLANA_USDC.id));
         }
 
         if to_asset.chain == Chain::Solana {
@@ -170,6 +176,10 @@ impl Across {
         request.to_asset.chain() == Chain::Solana
     }
 
+    fn is_solana_origin(request: &QuoteRequest) -> bool {
+        request.from_asset.chain() == Chain::Solana
+    }
+
     fn get_output_asset(request: &QuoteRequest) -> Result<AssetId, SwapperError> {
         if Self::is_solana_destination(request) {
             Ok(request.to_asset.asset_id())
@@ -188,15 +198,22 @@ impl Across {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        if request.from_asset.chain() == Chain::Solana {
-            return Err(SwapperError::NotSupportedPair);
-        }
-
         let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
-        let wallet_address = eth_address::parse_str(&request.wallet_address)?;
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
-        let from_chain_evm = EVMChain::from_chain(from_chain).ok_or(SwapperError::NotSupportedChain)?;
+        let is_solana_origin = Self::is_solana_origin(request);
+        let depositor = if is_solana_origin {
+            let depositor_address =
+                SolanaPubkey::from_str(&request.wallet_address).map_err(|_| SwapperError::InvalidAddress(request.wallet_address.clone()))?;
+            RelayRecipient::Solana(depositor_address)
+        } else {
+            RelayRecipient::Evm(eth_address::parse_str(&request.wallet_address)?)
+        };
+        let evm_address = if is_solana_origin {
+            eth_address::parse_str(&request.destination_address)?
+        } else {
+            eth_address::parse_str(&request.wallet_address)?
+        };
 
         let _origin_deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let destination_deployment = AcrossDeployment::deployment_by_chain(&to_chain).ok_or(SwapperError::NotSupportedChain)?;
@@ -205,7 +222,11 @@ impl Across {
             return Err(SwapperError::NotSupportedPair);
         }
 
-        let input_asset = eth_address::convert_native_to_weth(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
+        let input_asset = if is_solana_origin {
+            request.from_asset.asset_id()
+        } else {
+            eth_address::convert_native_to_weth(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?
+        };
         let output_asset = Self::get_output_asset(request)?;
         let original_output_asset = request.to_asset.asset_id();
 
@@ -219,7 +240,8 @@ impl Across {
             .find(|asset| asset.chain == Chain::Ethereum)
             .cloned()
             .ok_or(SwapperError::NotSupportedPair)?;
-        let mainnet_token = eth_address::parse_or_weth_address(&mainnet_asset, from_chain_evm)?;
+        let mainnet_chain = EVMChain::from_chain(mainnet_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
+        let mainnet_token = eth_address::parse_or_weth_address(&mainnet_asset, mainnet_chain)?;
 
         let referral_fees = request.options.fee.clone().unwrap_or_default();
         let referral_fee = if to_chain == Chain::Solana {
@@ -237,7 +259,8 @@ impl Across {
 
         Ok(QuoteContext {
             from_amount,
-            wallet_address,
+            depositor,
+            evm_address,
             from_chain,
             to_chain,
             input_is_native: request.from_asset.is_native(),
@@ -248,7 +271,7 @@ impl Across {
             capital_cost: asset_mapping.capital_cost,
             referral_fee,
             destination_deployment,
-            destination_address: if to_chain == Chain::Solana {
+            solana_destination_address: if to_chain == Chain::Solana {
                 Some(request.destination_address.as_str())
             } else {
                 None
@@ -347,9 +370,10 @@ impl Across {
         message: &[u8],
     ) -> Result<V3RelayData, SwapperError> {
         let chain_id = Self::get_destination_chain_id(&ctx.to_chain)?;
+        let depositor = Self::recipient_to_fixed_bytes(&ctx.depositor)?;
 
         Ok(V3RelayData {
-            depositor: Self::decode_address_bytes32(&ctx.wallet_address),
+            depositor,
             recipient,
             exclusiveRelayer: FixedBytes::from([0u8; 32]),
             inputToken: Self::token_bytes32_for_asset(&ctx.input_asset)?,
@@ -410,7 +434,7 @@ impl Across {
             return Ok(DestinationMessage {
                 bytes: vec![],
                 referral_fee: U256::from(0),
-                recipient: RelayRecipient::Evm(ctx.wallet_address),
+                recipient: RelayRecipient::Evm(ctx.evm_address),
             });
         }
 
@@ -420,14 +444,14 @@ impl Across {
         let user_amount = amount - fee_amount;
 
         let calls = if ctx.original_output_asset.is_native() {
-            Self::unwrap_weth_calls(token, amount, &ctx.wallet_address, &user_amount, &fee_address, &fee_amount)
+            Self::unwrap_weth_calls(token, amount, &ctx.evm_address, &user_amount, &fee_address, &fee_amount)
         } else {
-            Self::erc20_transfer_calls(token, &ctx.wallet_address, &user_amount, &fee_address, &fee_amount)
+            Self::erc20_transfer_calls(token, &ctx.evm_address, &user_amount, &fee_address, &fee_amount)
         };
 
         let instructions = multicall_handler::Instructions {
             calls,
-            fallbackRecipient: ctx.wallet_address,
+            fallbackRecipient: ctx.evm_address,
         };
         let message = instructions.abi_encode();
         let multicall_address = eth_address::parse_str(ctx.destination_deployment.multicall_handler().as_str())?;
@@ -441,7 +465,7 @@ impl Across {
 
     fn build_solana_destination_message(&self, ctx: &QuoteContext<'_>, amount: &U256) -> Result<DestinationMessage, SwapperError> {
         let destination_address = ctx
-            .destination_address
+            .solana_destination_address
             .ok_or_else(|| SwapperError::InvalidAddress("Missing Solana destination address".into()))?;
         let user_account = SolanaPubkey::from_str(destination_address).map_err(|_| SwapperError::InvalidAddress(destination_address.into()))?;
 
@@ -650,7 +674,7 @@ impl Across {
         let data = V3SpokePoolInterface::fillRelayCall {
             relayData: v3_relay_data.clone(),
             repaymentChainId: U256::from(chain_id),
-            repaymentAddress: Self::decode_address_bytes32(&ctx.wallet_address),
+            repaymentAddress: Self::decode_address_bytes32(&ctx.evm_address),
         }
         .abi_encode();
 
@@ -844,6 +868,17 @@ impl Swapper for Across {
 
     async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_chain = quote.request.from_asset.chain();
+        if from_chain == Chain::Solana {
+            if quote.data.routes.is_empty() {
+                return Err(SwapperError::InvalidRoute);
+            }
+            let route = &quote.data.routes[0];
+            let route_data = HexDecode(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
+            let v3_relay_data = V3RelayData::abi_decode(&route_data).map_err(|_| SwapperError::InvalidRoute)?;
+
+            return solana_tx::build_deposit_tx(self.rpc_provider.clone(), quote, &v3_relay_data).await;
+        }
+
         let deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id = Self::get_destination_chain_id(&quote.request.to_asset.chain())?;
         let route = &quote.data.routes[0];
@@ -982,13 +1017,16 @@ mod tests {
         output_asset: AssetId,
         original_output_asset: AssetId,
         referral_fee: ReferralFee,
-        destination_address: Option<&'a str>,
+        solana_destination_address: Option<&'a str>,
         input_is_native: bool,
         output_token_decimals: u8,
     ) -> QuoteContext<'a> {
+        let depositor = RelayRecipient::Evm(Address::from_str(wallet_address).unwrap());
+
         QuoteContext {
             from_amount,
-            wallet_address: Address::from_str(wallet_address).unwrap(),
+            depositor,
+            evm_address: Address::from_str(wallet_address).unwrap(),
             from_chain,
             to_chain,
             input_is_native,
@@ -1004,7 +1042,7 @@ mod tests {
             },
             referral_fee,
             destination_deployment: AcrossDeployment::deployment_by_chain(&to_chain).unwrap(),
-            destination_address,
+            solana_destination_address,
             output_token_decimals,
         }
     }
@@ -1057,8 +1095,8 @@ mod tests {
         let solana_usdt = AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB");
         assert!(!Across::is_supported_pair(&usdc_eth, &solana_usdt));
 
-        assert!(!Across::is_supported_pair(&solana_usdc, &usdc_eth));
-        assert!(!Across::is_supported_pair(&solana_usdc, &usdc_arb));
+        assert!(Across::is_supported_pair(&solana_usdc, &usdc_eth));
+        assert!(Across::is_supported_pair(&solana_usdc, &usdc_arb));
         assert!(!Across::is_supported_pair(&weth_eth, &solana_usdc));
     }
 
@@ -1157,7 +1195,7 @@ mod tests {
         assert_eq!(destination_message.referral_fee, expected_fee);
 
         let instructions = multicall_handler::Instructions::abi_decode(&destination_message.bytes).unwrap();
-        assert_eq!(instructions.fallbackRecipient, ctx.wallet_address);
+        assert_eq!(instructions.fallbackRecipient, ctx.evm_address);
         assert_eq!(instructions.calls.len(), 3);
 
         let expected_withdraw = WETH9::withdrawCall { wad: amount }.abi_encode();
@@ -1456,6 +1494,45 @@ mod tests {
             let destination = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
             let from_asset: AssetId = USDC_ETH_ASSET_ID.into();
             let to_asset: AssetId = USDC_SOLANA_ASSET_ID.into();
+            let request = QuoteRequest {
+                from_asset: from_asset.into(),
+                to_asset: to_asset.into(),
+                wallet_address: wallet.into(),
+                destination_address: destination.into(),
+                value: "1000000".into(),
+                mode: SwapperMode::ExactIn,
+                options,
+            };
+
+            let now = SystemTime::now();
+            let quote = swap_provider.fetch_quote(&request).await?;
+            let elapsed = SystemTime::now().duration_since(now).unwrap();
+
+            println!("<== elapsed: {:?}", elapsed);
+            println!("<== quote: {:?}", quote);
+            assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+
+            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+            println!("<== quote_data: {:?}", quote_data);
+
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn test_across_quote_solana_usdc_to_eth_usdc() -> Result<(), SwapperError> {
+            let network_provider = Arc::new(NativeProvider::default());
+            let swap_provider = Across::boxed(network_provider.clone());
+            let options = Options {
+                slippage: 100.into(),
+                fee: None,
+                preferred_providers: vec![],
+                use_max_amount: false,
+            };
+
+            let wallet = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
+            let destination = "0x9b1fe00135e0ff09389bfaeff0c8f299ec818d4a";
+            let from_asset: AssetId = USDC_SOLANA_ASSET_ID.into();
+            let to_asset: AssetId = USDC_ETH_ASSET_ID.into();
             let request = QuoteRequest {
                 from_asset: from_asset.into(),
                 to_asset: to_asset.into(),

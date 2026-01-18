@@ -7529,6 +7529,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "serde_urlencoded",
+ "sha2",
  "solana-primitives",
  "strum",
  "tokio",

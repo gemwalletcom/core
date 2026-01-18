@@ -37,6 +37,7 @@ async-trait.workspace = true
 chrono.workspace = true
 alloy-primitives.workspace = true
 alloy-sol-types.workspace = true
+sha2.workspace = true
 hex.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
