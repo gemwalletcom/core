@@ -1,11 +1,21 @@
 use primitives::AssetId;
 use yielder::{Yield, YieldPosition, YieldProvider, YieldTransaction};
 
+pub use crate::models::transaction::GemYieldAction;
+
 pub type GemYieldProvider = YieldProvider;
 
 #[uniffi::remote(Enum)]
 pub enum GemYieldProvider {
     Yo,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemYieldTransactionData {
+    pub transaction: GemYieldTransaction,
+    pub nonce: u64,
+    pub chain_id: u64,
+    pub gas_limit: String,
 }
 
 pub type GemYield = Yield;

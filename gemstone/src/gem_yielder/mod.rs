@@ -62,6 +62,49 @@ impl GemYielder {
         };
         self.yielder.positions(provider, &request).await.map_err(Into::into)
     }
+
+    /// Build a complete yield transaction with all data needed for signing.
+    /// This method combines the yield transaction building with metadata.
+    ///
+    /// # Arguments
+    /// * `action` - Whether to deposit or withdraw
+    /// * `provider` - The yield provider name (e.g., "yo")
+    /// * `asset` - The asset to deposit/withdraw
+    /// * `wallet_address` - The wallet address performing the action
+    /// * `value` - The amount to deposit/withdraw
+    /// * `nonce` - The transaction nonce from preload
+    /// * `chain_id` - The chain ID from preload
+    pub async fn build_transaction(
+        &self,
+        action: GemYieldAction,
+        provider: String,
+        asset: AssetId,
+        wallet_address: String,
+        value: String,
+        nonce: u64,
+        chain_id: u64,
+    ) -> Result<GemYieldTransactionData, GemstoneError> {
+        let provider = provider.parse::<YieldProvider>()?;
+
+        let transaction = match action {
+            GemYieldAction::Deposit => {
+                self.yielder.deposit(provider, &asset, &wallet_address, &value).await?
+            }
+            GemYieldAction::Withdraw => {
+                self.yielder.withdraw(provider, &asset, &wallet_address, &value).await?
+            }
+        };
+
+        // Default gas limit for yield operations (deposit/withdraw to ERC4626 vaults)
+        let gas_limit = "200000".to_string();
+
+        Ok(GemYieldTransactionData {
+            transaction,
+            nonce,
+            chain_id,
+            gas_limit,
+        })
+    }
 }
 
 fn build_yo_provider(rpc_provider: Arc<dyn AlienProvider>) -> Result<Arc<dyn YieldProviderClient>, GemstoneError> {

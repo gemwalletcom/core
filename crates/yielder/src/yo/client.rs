@@ -70,6 +70,18 @@ impl<C: Client + Clone> YoGatewayClient<C> {
         }
         .abi_encode()
     }
+
+    async fn fetch_lookback_data(&self, yo_token: Address, one_share: U256, multicall_addr: Address, lookback_block: u64) -> Result<(U256, u64), YieldError> {
+        let mut lookback_batch = self.ethereum_client.multicall();
+        let lookback_price_call = lookback_batch.add(yo_token, IYoVaultToken::convertToAssetsCall { shares: one_share });
+        let lookback_ts = lookback_batch.add(multicall_addr, IMulticall3::getCurrentBlockTimestampCall {});
+
+        let lookback = lookback_batch.at_block(lookback_block).execute().await?;
+        let price = lookback.decode::<IYoVaultToken::convertToAssetsCall>(&lookback_price_call)?;
+        let timestamp = lookback.decode::<IMulticall3::getCurrentBlockTimestampCall>(&lookback_ts)?.to::<u64>();
+
+        Ok((price, timestamp))
+    }
 }
 
 #[async_trait]
@@ -123,22 +135,29 @@ where
         let mut latest_batch = self.ethereum_client.multicall();
         let share_bal = latest_batch.add(vault.yo_token, IERC20::balanceOfCall { account: owner });
         let asset_bal = latest_batch.add(vault.asset_token, IERC20::balanceOfCall { account: owner });
-        let latest_price = latest_batch.add(vault.yo_token, IYoVaultToken::convertToAssetsCall { shares: one_share });
+        let latest_price_call = latest_batch.add(vault.yo_token, IYoVaultToken::convertToAssetsCall { shares: one_share });
         let latest_ts = latest_batch.add(multicall_addr, IMulticall3::getCurrentBlockTimestampCall {});
 
-        let mut lookback_batch = self.ethereum_client.multicall();
-        let lookback_price = lookback_batch.add(vault.yo_token, IYoVaultToken::convertToAssetsCall { shares: one_share });
-        let lookback_ts = lookback_batch.add(multicall_addr, IMulticall3::getCurrentBlockTimestampCall {});
+        let latest = latest_batch.at_block(latest_block).execute().await?;
 
-        let (latest, lookback) = tokio::try_join!(latest_batch.at_block(latest_block).execute(), lookback_batch.at_block(lookback_block).execute())?;
+        let share_balance = latest.decode::<IERC20::balanceOfCall>(&share_bal)?;
+        let asset_balance = latest.decode::<IERC20::balanceOfCall>(&asset_bal)?;
+        let latest_price = latest.decode::<IYoVaultToken::convertToAssetsCall>(&latest_price_call)?;
+        let latest_timestamp = latest.decode::<IMulticall3::getCurrentBlockTimestampCall>(&latest_ts)?.to::<u64>();
+
+        // Lookback query may fail if vault didn't exist at that block - use latest as fallback
+        let (lookback_price, lookback_timestamp) = self
+            .fetch_lookback_data(vault.yo_token, one_share, multicall_addr, lookback_block)
+            .await
+            .unwrap_or((latest_price, latest_timestamp));
 
         Ok(PositionData {
-            share_balance: latest.decode::<IERC20::balanceOfCall>(&share_bal)?,
-            asset_balance: latest.decode::<IERC20::balanceOfCall>(&asset_bal)?,
-            latest_price: latest.decode::<IYoVaultToken::convertToAssetsCall>(&latest_price)?,
-            latest_timestamp: latest.decode::<IMulticall3::getCurrentBlockTimestampCall>(&latest_ts)?.to::<u64>(),
-            lookback_price: lookback.decode::<IYoVaultToken::convertToAssetsCall>(&lookback_price)?,
-            lookback_timestamp: lookback.decode::<IMulticall3::getCurrentBlockTimestampCall>(&lookback_ts)?.to::<u64>(),
+            share_balance,
+            asset_balance,
+            latest_price,
+            latest_timestamp,
+            lookback_price,
+            lookback_timestamp,
         })
     }
 }

@@ -63,7 +63,9 @@ pub fn map_transaction_fee_rates(chain: EVMChain, fee_history: &EthereumFeeHisto
         .into_iter()
         .map(|x| {
             let priority_fee = BigInt::max(min_priority_fee.clone(), x.value.clone());
-            FeeRate::new(x.priority, GasPriceType::eip1559(base_fee.clone(), priority_fee))
+            // maxFeePerGas must be >= maxPriorityFeePerGas, so use base_fee + priority_fee
+            let max_fee_per_gas = base_fee.clone() + &priority_fee;
+            FeeRate::new(x.priority, GasPriceType::eip1559(max_fee_per_gas, priority_fee))
         })
         .collect())
 }
@@ -375,6 +377,8 @@ mod tests {
                 GasPriceType::Eip1559 { gas_price, priority_fee } => {
                     assert!(*gas_price >= min_priority_fee);
                     assert!(*priority_fee >= min_priority_fee);
+                    // EIP-1559: maxFeePerGas must be >= maxPriorityFeePerGas
+                    assert!(*gas_price >= *priority_fee, "maxFeePerGas must be >= maxPriorityFeePerGas");
                 }
                 _ => panic!("Expected EIP-1559 gas price type"),
             }

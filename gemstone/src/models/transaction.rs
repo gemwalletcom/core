@@ -256,6 +256,17 @@ pub enum PerpetualType {
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
+pub enum GemYieldAction {
+    Deposit,
+    Withdraw,
+}
+
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemYieldData {
+    pub provider_name: String,
+}
+
+#[derive(Debug, Clone, uniffi::Enum)]
 #[allow(clippy::large_enum_variant)]
 pub enum GemTransactionInputType {
     Transfer {
@@ -294,6 +305,11 @@ pub enum GemTransactionInputType {
         asset: GemAsset,
         perpetual_type: GemPerpetualType,
     },
+    Yield {
+        asset: GemAsset,
+        action: GemYieldAction,
+        data: GemYieldData,
+    },
 }
 
 impl GemTransactionInputType {
@@ -306,7 +322,8 @@ impl GemTransactionInputType {
             | Self::Generic { asset, .. }
             | Self::TransferNft { asset, .. }
             | Self::Account { asset, .. }
-            | Self::Perpetual { asset, .. } => asset,
+            | Self::Perpetual { asset, .. }
+            | Self::Yield { asset, .. } => asset,
             Self::Swap { from_asset, .. } => from_asset,
         }
     }
@@ -854,6 +871,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
+            GemTransactionInputType::Yield { asset, .. } => TransactionInputType::Deposit(asset),
         }
     }
 }

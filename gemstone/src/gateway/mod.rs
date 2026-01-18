@@ -278,9 +278,8 @@ impl GemGateway {
 
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
         let preload_input: primitives::TransactionPreloadInput = input.into();
-        let metadata = self
-            .provider(chain)
-            .await?
+        let provider = self.provider(chain).await?;
+        let metadata = provider
             .get_transaction_preload(preload_input)
             .await
             .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
