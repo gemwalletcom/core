@@ -466,6 +466,8 @@ impl Across {
         let token_program = SolanaPubkey::from_str(program_ids::TOKEN_PROGRAM_ID).map_err(|_| SwapperError::InvalidAddress(program_ids::TOKEN_PROGRAM_ID.into()))?;
 
         let handler_token_account = get_associated_token_address(&handler_signer, &mint);
+        let referral_token_account = get_associated_token_address(&referral_account, &mint);
+        let user_token_account = get_associated_token_address(&user_account, &mint);
 
         let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
         let user_amount = amount - fee_amount;
@@ -473,10 +475,24 @@ impl Across {
         let fee_amount_u64: u64 = fee_amount.try_into().map_err(|_| SwapperError::InvalidAmount("Referral fee overflow".into()))?;
         let user_amount_u64: u64 = user_amount.try_into().map_err(|_| SwapperError::InvalidAmount("User amount overflow".into()))?;
 
-        let transfer_fee_ix = transfer_checked(&handler_token_account, &referral_account, &mint, &handler_signer, fee_amount_u64, ctx.output_token_decimals);
-        let transfer_user_ix = transfer_checked(&handler_token_account, &user_account, &mint, &handler_signer, user_amount_u64, ctx.output_token_decimals);
+        let transfer_fee_ix = transfer_checked(
+            &handler_token_account,
+            &referral_token_account,
+            &mint,
+            &handler_signer,
+            fee_amount_u64,
+            ctx.output_token_decimals,
+        );
+        let transfer_user_ix = transfer_checked(
+            &handler_token_account,
+            &user_token_account,
+            &mint,
+            &handler_signer,
+            user_amount_u64,
+            ctx.output_token_decimals,
+        );
 
-        let accounts = vec![handler_token_account, referral_account, user_account, handler_signer, mint, token_program];
+        let accounts = vec![handler_token_account, referral_token_account, user_token_account, handler_signer, mint, token_program];
 
         let compiled_ixs = self.compile_solana_instructions(&[transfer_fee_ix, transfer_user_ix], &accounts)?;
         let handler_message = borsh::to_vec(&compiled_ixs).map_err(|_| SwapperError::ComputeQuoteError("Failed to encode handler message".into()))?;
@@ -765,7 +781,13 @@ impl Swapper for Across {
         let initial_destination_message = self.build_destination_message(&ctx, &remain_amount, output_token_evm.as_ref())?;
         let output_token_bytes = Self::token_bytes32_for_asset(&ctx.output_asset)?;
         let (gas_fee, mut v3_relay_data) = self
-            .calculate_gas_price_and_fee(&ctx, &initial_destination_message, output_token_bytes, pool_state.eth_price.as_ref(), pool_state.sol_price.as_ref())
+            .calculate_gas_price_and_fee(
+                &ctx,
+                &initial_destination_message,
+                output_token_bytes,
+                pool_state.eth_price.as_ref(),
+                pool_state.sol_price.as_ref(),
+            )
             .await?;
 
         if remain_amount <= gas_fee {
@@ -1234,8 +1256,16 @@ mod tests {
 
         let across_message: AcrossPlusMessage = borsh::from_slice(&destination_message.bytes).unwrap();
         assert_eq!(across_message.read_only_len, 3);
-        assert!(across_message.accounts.iter().any(|acc| acc.to_string() == destination));
-        assert!(across_message.accounts.iter().any(|acc| acc.to_string() == referral_address));
+
+        // Accounts should be: handler_token_account, referral_token_account (ATA), user_token_account (ATA), handler_signer, mint, token_program
+        let mint = SolanaPubkey::from_str(SOLANA_USDC.id.token_id.as_ref().unwrap()).unwrap();
+        let user_pubkey = SolanaPubkey::from_str(destination).unwrap();
+        let referral_pubkey = SolanaPubkey::from_str(referral_address).unwrap();
+        let user_token_account = get_associated_token_address(&user_pubkey, &mint);
+        let referral_token_account = get_associated_token_address(&referral_pubkey, &mint);
+
+        assert!(across_message.accounts.iter().any(|acc| *acc == user_token_account));
+        assert!(across_message.accounts.iter().any(|acc| *acc == referral_token_account));
 
         let compiled: Vec<CompiledIx> = borsh::from_slice(&across_message.handler_message).unwrap();
         assert_eq!(compiled.len(), 2);
