@@ -11,6 +11,6 @@ alloy-primitives = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 gem_hash = { path = "../gem_hash" }
-zeroize = { version = "1.8.2" }
+zeroize = { workspace = true }
 
 [dev-dependencies]
