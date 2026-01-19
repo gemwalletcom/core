@@ -105,12 +105,16 @@ impl YieldProviderClient for YoYieldProvider {
         let gateway = self.gateway_for_chain(vault.chain)?;
         let wallet = parse_address(wallet_address)?;
         let receiver = wallet;
-        let shares = parse_value(value)?;
+        let assets = parse_value(value)?;
         let min_assets = U256::from(0);
         let partner_id = YO_PARTNER_ID_GEM;
 
+        // Convert asset amount (e.g., USDC) to shares (e.g., yoUSDC)
+        let shares = gateway.convert_to_shares(vault.yo_token, assets).await?;
+        let approval = gateway.check_token_allowance(vault.yo_token, wallet, shares).await?;
+
         let tx = gateway.build_redeem_transaction(wallet, vault.yo_token, shares, min_assets, receiver, partner_id);
-        Ok(convert_transaction(vault, tx, None))
+        Ok(convert_transaction(vault, tx, approval))
     }
 
     async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {

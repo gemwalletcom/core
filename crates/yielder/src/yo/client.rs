@@ -35,6 +35,7 @@ pub trait YoProvider: Send + Sync {
     ) -> TransactionObject;
     async fn fetch_position_data(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError>;
     async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YieldError>;
+    async fn convert_to_shares(&self, yo_vault: Address, assets: U256) -> Result<U256, YieldError>;
 }
 
 #[derive(Debug, Clone)]
@@ -180,5 +181,13 @@ where
         } else {
             Ok(None)
         }
+    }
+
+    async fn convert_to_shares(&self, yo_vault: Address, assets: U256) -> Result<U256, YieldError> {
+        let mut batch = self.ethereum_client.multicall();
+        let quote_call = batch.add(self.contract_address, IYoGateway::quoteConvertToSharesCall { yoVault: yo_vault, assets });
+        let result = batch.execute().await?;
+        let shares = result.decode::<IYoGateway::quoteConvertToSharesCall>(&quote_call)?;
+        Ok(shares)
     }
 }
