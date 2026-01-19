@@ -249,7 +249,7 @@ impl Across {
 
         let referral_fees = request.options.fee.clone().unwrap_or_default();
         // TODO: Re-enable Solana referral fees once cross-chain actions are supported by relayers
-        let referral_fee = if to_chain == Chain::Solana {
+        let referral_fee = if from_chain == Chain::Solana || to_chain == Chain::Solana {
             ReferralFee::default()
         } else {
             referral_fees.evm_bridge
