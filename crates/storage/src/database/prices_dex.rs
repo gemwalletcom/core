@@ -25,11 +25,7 @@ impl PricesDexStore for DatabaseClient {
 
     fn add_prices_dex(&mut self, values: Vec<PriceDexRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices_dex::dsl::*;
-        diesel::insert_into(prices_dex)
-            .values(&values)
-            .on_conflict(id)
-            .do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(prices_dex).values(&values).on_conflict(id).do_nothing().execute(&mut self.connection)
     }
 
     fn set_prices_dex(&mut self, values: Vec<PriceDexRow>) -> Result<usize, diesel::result::Error> {

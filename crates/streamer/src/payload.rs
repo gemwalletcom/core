@@ -1,6 +1,6 @@
 use primitives::{
-    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, PriceData, Subscription,
-    Transaction,
+    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, NotificationType, PriceData,
+    Subscription, Transaction,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -14,13 +14,7 @@ pub struct TransactionsPayload {
 
 impl fmt::Display for TransactionsPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "chain: {}, blocks: {:?}, transactions: {}",
-            self.chain.as_ref(),
-            self.blocks,
-            self.transactions.len()
-        )
+        write!(f, "chain: {}, blocks: {:?}, transactions: {}", self.chain.as_ref(), self.blocks, self.transactions.len())
     }
 }
 
@@ -126,23 +120,13 @@ pub struct FetchNFTCollectionAssetPayload {
 
 impl FetchNFTCollectionAssetPayload {
     pub fn new(chain: Chain, collection_id: String, asset_id: String) -> Self {
-        Self {
-            chain,
-            collection_id,
-            asset_id,
-        }
+        Self { chain, collection_id, asset_id }
     }
 }
 
 impl fmt::Display for FetchNFTCollectionAssetPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "chain: {}, collection_id: {}, asset_id: {}",
-            self.chain.as_ref(),
-            self.collection_id,
-            self.asset_id
-        )
+        write!(f, "chain: {}, collection_id: {}, asset_id: {}", self.chain.as_ref(), self.collection_id, self.asset_id)
     }
 }
 
@@ -304,5 +288,24 @@ impl RewardsRedemptionPayload {
 impl fmt::Display for RewardsRedemptionPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "redemption_id: {}", self.redemption_id)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InAppNotificationPayload {
+    pub wallet_id: i32,
+    pub notification_type: NotificationType,
+    pub metadata: Option<serde_json::Value>,
+}
+
+impl InAppNotificationPayload {
+    pub fn new(wallet_id: i32, notification_type: NotificationType, metadata: Option<serde_json::Value>) -> Self {
+        Self { wallet_id, notification_type, metadata }
+    }
+}
+
+impl fmt::Display for InAppNotificationPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "wallet_id: {}, notification_type: {}", self.wallet_id, self.notification_type.as_ref())
     }
 }

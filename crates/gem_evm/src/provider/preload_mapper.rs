@@ -8,8 +8,7 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
-    fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
 };
 
 use crate::contracts::{IERC20, IERC721, IERC1155};
@@ -55,11 +54,7 @@ pub fn map_transaction_fee_rates(chain: EVMChain, fee_history: &EthereumFeeHisto
     let min_priority_fee = BigInt::from(chain.min_priority_fee());
 
     Ok(FeeCalculator::new()
-        .calculate_priority_fees(
-            fee_history,
-            &[FeePriority::Slow, FeePriority::Normal, FeePriority::Fast],
-            min_priority_fee.clone(),
-        )?
+        .calculate_priority_fees(fee_history, &[FeePriority::Slow, FeePriority::Normal, FeePriority::Fast], min_priority_fee.clone())?
         .into_iter()
         .map(|x| {
             let priority_fee = BigInt::max(min_priority_fee.clone(), x.value.clone());
@@ -92,11 +87,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
         }
         TransactionInputType::Swap(from_asset, _, swap_data) => {
             if let Some(approval) = &swap_data.data.approval {
-                Ok(TransactionParams::new(
-                    approval.token.clone(),
-                    encode_erc20_approve(&approval.spender)?,
-                    BigInt::from(0),
-                ))
+                Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
             } else {
                 match from_asset.id.token_subtype() {
                     AssetSubtype::NATIVE => Ok(TransactionParams::new(
@@ -119,11 +110,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 }
             }
         }
-        TransactionInputType::TokenApprove(_, approval) => Ok(TransactionParams::new(
-            approval.token.clone(),
-            encode_erc20_approve(&approval.spender)?,
-            BigInt::from(0),
-        )),
+        TransactionInputType::TokenApprove(_, approval) => Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0))),
         TransactionInputType::Generic(_, _, extra) => Ok(TransactionParams::new(
             extra.to.clone(),
             extra.data.clone().unwrap_or_default(),
@@ -172,10 +159,7 @@ pub fn calculate_gas_limit_with_increase(gas_limit: BigInt) -> BigInt {
 
 pub fn get_priority_fee_by_type(input_type: &TransactionInputType, is_max_value: bool, gas_price_type: &GasPriceType) -> BigInt {
     match input_type {
-        TransactionInputType::Transfer(asset)
-        | TransactionInputType::Deposit(asset)
-        | TransactionInputType::TransferNft(asset, _)
-        | TransactionInputType::Account(asset, _) => {
+        TransactionInputType::Transfer(asset) | TransactionInputType::Deposit(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
             if asset.id.is_native() && is_max_value {
                 gas_price_type.gas_price()
             } else {

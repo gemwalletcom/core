@@ -29,10 +29,7 @@ impl WalletsStore for DatabaseClient {
     }
 
     fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError> {
-        let result = wallets::table
-            .filter(wallets::id.eq(id))
-            .select(WalletRow::as_select())
-            .first(&mut self.connection)?;
+        let result = wallets::table.filter(wallets::id.eq(id)).select(WalletRow::as_select()).first(&mut self.connection)?;
 
         Ok(result)
     }
@@ -97,7 +94,8 @@ impl WalletsStore for DatabaseClient {
             .into_iter()
             .filter_map(|(wallet_identifier, addresses)| {
                 wallet_ids.get(&wallet_identifier).map(|&wallet_id| {
-                    addresses.into_iter()
+                    addresses
+                        .into_iter()
                         .map(|(chain, address)| NewWalletSubscriptionRow {
                             wallet_id,
                             device_id: device.id,
@@ -112,7 +110,12 @@ impl WalletsStore for DatabaseClient {
 
         let count = diesel::insert_into(wallets_subscriptions::table)
             .values(&rows)
-            .on_conflict((wallets_subscriptions::wallet_id, wallets_subscriptions::device_id, wallets_subscriptions::chain, wallets_subscriptions::address))
+            .on_conflict((
+                wallets_subscriptions::wallet_id,
+                wallets_subscriptions::device_id,
+                wallets_subscriptions::chain,
+                wallets_subscriptions::address,
+            ))
             .do_nothing()
             .execute(&mut self.connection)?;
 
@@ -128,7 +131,9 @@ impl WalletsStore for DatabaseClient {
         let to_delete: Vec<_> = subscriptions
             .into_iter()
             .filter_map(|(wallet_identifier, addresses)| {
-                wallet_ids.get(&wallet_identifier).map(|&wallet_id| addresses.into_iter().map(move |(chain, address)| (wallet_id, chain, address)))
+                wallet_ids
+                    .get(&wallet_identifier)
+                    .map(|&wallet_id| addresses.into_iter().map(move |(chain, address)| (wallet_id, chain, address)))
             })
             .flatten()
             .collect();

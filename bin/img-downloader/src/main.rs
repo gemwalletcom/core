@@ -93,6 +93,9 @@ impl Downloader {
 
         for (platform, address) in coin_info.platforms.iter().filter(|(k, _)| !k.is_empty()) {
             let chain = get_chain_for_coingecko_platform_id(platform);
+            let Some(address) = address else {
+                continue;
+            };
             if chain.is_none() || address.is_empty() {
                 if self.args.verbose {
                     println!("<== {platform} not supported, skip");

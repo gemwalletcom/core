@@ -33,27 +33,17 @@ pub fn init_parser_metrics(registry: &mut Registry) {
 }
 
 pub fn update_parser_metrics(database: &Database) {
-    let states = database
-        .client()
-        .ok()
-        .and_then(|mut c| c.parser_state().get_parser_states().ok())
-        .unwrap_or_default();
+    let states = database.client().ok().and_then(|mut c| c.parser_state().get_parser_states().ok()).unwrap_or_default();
 
     for state in states {
         if let Some(current_block) = PARSER_CURRENT_BLOCK.get() {
-            current_block
-                .get_or_create(&ParserStateLabels { chain: state.clone().chain })
-                .set(state.current_block);
+            current_block.get_or_create(&ParserStateLabels { chain: state.clone().chain }).set(state.current_block);
         }
         if let Some(latest_block) = PARSER_LATEST_BLOCK.get() {
-            latest_block
-                .get_or_create(&ParserStateLabels { chain: state.clone().chain })
-                .set(state.latest_block);
+            latest_block.get_or_create(&ParserStateLabels { chain: state.clone().chain }).set(state.latest_block);
         }
         if let Some(is_enabled) = PARSER_IS_ENABLED.get() {
-            is_enabled
-                .get_or_create(&ParserStateLabels { chain: state.clone().chain })
-                .set(state.is_enabled as i64);
+            is_enabled.get_or_create(&ParserStateLabels { chain: state.clone().chain }).set(state.is_enabled as i64);
         }
         if let Some(updated_at) = PARSER_UPDATED_AT.get() {
             updated_at

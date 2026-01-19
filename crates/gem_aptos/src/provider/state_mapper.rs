@@ -4,11 +4,7 @@ use primitives::{NodeSyncStatus, TransactionChange, TransactionState, Transactio
 use std::error::Error;
 
 pub fn map_transaction_state(transaction: &Transaction) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-    let state = if transaction.success {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Reverted
-    };
+    let state = if transaction.success { TransactionState::Confirmed } else { TransactionState::Reverted };
 
     let mut changes = Vec::new();
 
@@ -29,7 +25,6 @@ pub fn map_node_status(ledger: &Ledger) -> Result<NodeSyncStatus, Box<dyn Error 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::Transaction;
 
     #[test]
     fn test_map_transaction_state_success() {

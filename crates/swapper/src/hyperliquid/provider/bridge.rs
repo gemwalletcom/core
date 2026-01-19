@@ -14,7 +14,7 @@ use crate::{
     asset::{HYPERCORE_HYPE, HYPEREVM_HYPE},
 };
 
-use super::math::scale_quote_value;
+use super::spot::scale_quote_value;
 
 #[derive(Debug)]
 pub struct HyperCoreBridge {

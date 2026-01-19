@@ -126,10 +126,7 @@ impl Client for ReqwestClient {
         let content_type = headers.get(CONTENT_TYPE).and_then(|s| ContentType::from_str(s).ok());
 
         let request_body = match content_type {
-            Some(ContentType::TextPlain)
-            | Some(ContentType::ApplicationFormUrlEncoded)
-            | Some(ContentType::ApplicationXBinary)
-            | Some(ContentType::ApplicationAptosBcs) => {
+            Some(ContentType::TextPlain) | Some(ContentType::ApplicationFormUrlEncoded) | Some(ContentType::ApplicationXBinary) | Some(ContentType::ApplicationAptosBcs) => {
                 let json_value = serde_json::to_value(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?;
                 match json_value {
                     serde_json::Value::String(s) => {
@@ -140,16 +137,10 @@ impl Client for ReqwestClient {
                             s.into_bytes()
                         }
                     }
-                    serde_json::Value::Array(values)
-                        if matches!(content_type, Some(ContentType::ApplicationXBinary) | Some(ContentType::ApplicationAptosBcs)) =>
-                    {
+                    serde_json::Value::Array(values) if matches!(content_type, Some(ContentType::ApplicationXBinary) | Some(ContentType::ApplicationAptosBcs)) => {
                         crate::decode_json_byte_array(values)?
                     }
-                    _ => {
-                        return Err(ClientError::Serialization(
-                            "Expected string body for text/plain or binary content-type".to_string(),
-                        ))
-                    }
+                    _ => return Err(ClientError::Serialization("Expected string body for text/plain or binary content-type".to_string())),
                 }
             }
             _ => serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?,

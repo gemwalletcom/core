@@ -5,8 +5,8 @@ use crate::models::{
     position::{AssetPositions, LeverageType, Position},
 };
 use primitives::{
-    Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition,
-    PerpetualProvider, PerpetualTriggerOrder,
+    Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider,
+    PerpetualTriggerOrder,
     chart::ChartCandleStick,
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
@@ -21,11 +21,7 @@ pub fn create_perpetual_id(coin: &str) -> String {
 
 pub fn map_positions(positions: AssetPositions, address: String, orders: &[OpenOrder]) -> PerpetualPositionsSummary {
     let balance = map_perpetual_balance(&positions);
-    let positions: Vec<PerpetualPosition> = positions
-        .asset_positions
-        .into_iter()
-        .map(|x| map_position(x.position, address.clone(), orders))
-        .collect();
+    let positions: Vec<PerpetualPosition> = positions.asset_positions.into_iter().map(|x| map_position(x.position, address.clone(), orders)).collect();
     PerpetualPositionsSummary { positions, balance }
 }
 
@@ -104,11 +100,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
 
             let prev_price = metadata_item.and_then(|m| m.prev_day_px.parse().ok()).unwrap_or(0.0);
 
-            let price_change_24h = if prev_price > 0.0 {
-                ((current_price - prev_price) / prev_price) * 100.0
-            } else {
-                0.0
-            };
+            let price_change_24h = if prev_price > 0.0 { ((current_price - prev_price) / prev_price) * 100.0 } else { 0.0 };
 
             let funding_rate = metadata_item.and_then(|m| m.funding.parse::<f64>().ok()).unwrap_or(0.0) * 100.0;
 

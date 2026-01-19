@@ -22,8 +22,7 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
                 Ok(calculate_network_apy_cosmos(inflation, staking_pool))
             }
             CosmosChain::Osmosis => {
-                let (mint_params, epoch_provisions, staking_pool) =
-                    try_join!(self.get_osmosis_mint_params(), self.get_osmosis_epoch_provisions(), self.get_staking_pool())?;
+                let (mint_params, epoch_provisions, staking_pool) = try_join!(self.get_osmosis_mint_params(), self.get_osmosis_epoch_provisions(), self.get_staking_pool())?;
 
                 Ok(calculate_network_apy_osmosis(mint_params, epoch_provisions, staking_pool))
             }
@@ -58,14 +57,7 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
 
                 let validators = self.get_validators().await?;
 
-                Ok(map_staking_delegations(
-                    active_delegations,
-                    unbonding,
-                    rewards,
-                    validators.validators,
-                    chain,
-                    denom,
-                ))
+                Ok(map_staking_delegations(active_delegations, unbonding, rewards, validators.validators, chain, denom))
             }
         }
     }

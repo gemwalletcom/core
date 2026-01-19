@@ -69,11 +69,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(self.client.batch_call::<T>(calls).await?.into_iter().collect())
     }
 
-    pub async fn eth_call<T: DeserializeOwned + 'static>(
-        &self,
-        contract_address: &str,
-        call_data: &str,
-    ) -> Result<T, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn eth_call<T: DeserializeOwned + 'static>(&self, contract_address: &str, call_data: &str) -> Result<T, Box<dyn std::error::Error + Send + Sync>> {
         let to_address = Address::from_str(contract_address)?;
 
         let params = json!([
@@ -128,10 +124,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(blocks_result)
     }
 
-    pub async fn get_transactions(
-        &self,
-        hashes: &[String],
-    ) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept, TransactionReplayTrace)>, JsonRpcError> {
+    pub async fn get_transactions(&self, hashes: &[String]) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept, TransactionReplayTrace)>, JsonRpcError> {
         let transactions = self.get_transactions_by_hash(hashes).await?;
         let reciepts = self.get_transactions_receipts(hashes).await?;
         let traces = self.trace_replay_transactions(hashes).await?;
@@ -220,11 +213,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         self.client.call("eth_sendRawTransaction", params).await
     }
 
-    pub async fn batch_eth_call<const N: usize>(
-        &self,
-        contract_address: &str,
-        function_selectors: [&str; N],
-    ) -> Result<[String; N], Box<dyn std::error::Error + Sync + Send>> {
+    pub async fn batch_eth_call<const N: usize>(&self, contract_address: &str, function_selectors: [&str; N]) -> Result<[String; N], Box<dyn std::error::Error + Sync + Send>> {
         let calls: Vec<(String, serde_json::Value)> = function_selectors
             .iter()
             .map(|selector| ("eth_call".to_string(), json!([{"to": contract_address, "data": selector}, "latest"])))
@@ -240,10 +229,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
     pub async fn batch_token_balance_calls(&self, address: &str, contracts: &[String]) -> Result<Vec<String>, Box<dyn std::error::Error + Sync + Send>> {
         let data = format!("0x70a08231000000000000000000000000{:0>40}", address.strip_prefix("0x").unwrap_or(address));
-        let calls: Vec<(String, serde_json::Value)> = contracts
-            .iter()
-            .map(|x| ("eth_call".to_string(), json!([{"to": x, "data": &data}, "latest"])))
-            .collect();
+        let calls: Vec<(String, serde_json::Value)> = contracts.iter().map(|x| ("eth_call".to_string(), json!([{"to": x, "data": &data}, "latest"]))).collect();
         Ok(self.client.batch_call::<String>(calls).await?.extract())
     }
 
@@ -282,8 +268,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let result: String = self.call(call.0, call.1).await?;
         let result_data = hex::decode(&result)?;
-        let multicall_results =
-            IMulticall3::aggregate3Call::abi_decode_returns(&result_data).map_err(|e| Box::new(e) as Box<dyn std::error::Error + Sync + Send>)?;
+        let multicall_results = IMulticall3::aggregate3Call::abi_decode_returns(&result_data).map_err(|e| Box::new(e) as Box<dyn std::error::Error + Sync + Send>)?;
 
         Ok(multicall_results)
     }

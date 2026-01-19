@@ -1,7 +1,5 @@
 use crate::models::order::PerpetualFill;
-use primitives::{
-    PerpetualDirection, PerpetualProvider, TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionUpdate,
-};
+use primitives::{PerpetualDirection, PerpetualProvider, TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionUpdate};
 
 fn direction_from_dir(dir: &str) -> Option<PerpetualDirection> {
     match dir {

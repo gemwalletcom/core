@@ -61,11 +61,7 @@ impl FiatQuotesClient {
         self.fiat_client.get_off_ramp_assets().await
     }
 
-    pub async fn process_and_publish_webhook(
-        &self,
-        provider: &str,
-        webhook_data: serde_json::Value,
-    ) -> Result<streamer::FiatWebhookPayload, Box<dyn Error + Send + Sync>> {
+    pub async fn process_and_publish_webhook(&self, provider: &str, webhook_data: serde_json::Value) -> Result<streamer::FiatWebhookPayload, Box<dyn Error + Send + Sync>> {
         self.fiat_client.process_and_publish_webhook(provider, webhook_data).await
     }
 

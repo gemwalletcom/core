@@ -27,15 +27,7 @@ pub struct RequestResponse {
 }
 
 impl Request {
-    pub fn new_buy(
-        partner_user_id: String,
-        wallet_address: String,
-        crypto_currency: String,
-        fiat_currency: String,
-        quote_id: String,
-        user_ip: String,
-        locale: String,
-    ) -> Self {
+    pub fn new_buy(partner_user_id: String, wallet_address: String, crypto_currency: String, fiat_currency: String, quote_id: String, user_ip: String, locale: String) -> Self {
         Self {
             partner_user_id,
             crypto_wallet_address: CryptoWalletAddress {
@@ -51,15 +43,7 @@ impl Request {
         }
     }
 
-    pub fn new_sell(
-        partner_user_id: String,
-        wallet_address: String,
-        crypto_currency: String,
-        fiat_currency: String,
-        quote_id: String,
-        user_ip: String,
-        locale: String,
-    ) -> Self {
+    pub fn new_sell(partner_user_id: String, wallet_address: String, crypto_currency: String, fiat_currency: String, quote_id: String, user_ip: String, locale: String) -> Self {
         Self {
             partner_user_id,
             crypto_wallet_address: CryptoWalletAddress {

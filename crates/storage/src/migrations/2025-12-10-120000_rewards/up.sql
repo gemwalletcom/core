@@ -1,5 +1,5 @@
 CREATE TYPE reward_status AS ENUM ('unverified', 'pending', 'verified', 'trusted', 'disabled');
-CREATE TYPE reward_event_type AS ENUM ('createUsername', 'invitePending', 'inviteNew', 'inviteExisting', 'joined', 'disabled');
+CREATE TYPE reward_event_type AS ENUM ('createUsername', 'invitePending', 'inviteNew', 'inviteExisting', 'joined', 'disabled', 'redeemed');
 CREATE TYPE username_status AS ENUM ('unverified', 'verified');
 CREATE TYPE ip_usage_type AS ENUM ('dataCenter', 'hosting', 'isp', 'mobile', 'business', 'education', 'government', 'unknown');
 
@@ -35,8 +35,8 @@ CREATE TABLE rewards_risk_signals (
     fingerprint VARCHAR(64) NOT NULL,
     referrer_username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON DELETE CASCADE ON UPDATE CASCADE,
     device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
-    device_platform VARCHAR(16) NOT NULL,
-    device_platform_store VARCHAR(32) NOT NULL,
+    device_platform platform NOT NULL,
+    device_platform_store platform_store NOT NULL,
     device_os VARCHAR(32) NOT NULL,
     device_model VARCHAR(64) NOT NULL,
     device_locale VARCHAR(16) NOT NULL,

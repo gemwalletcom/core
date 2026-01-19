@@ -9,11 +9,7 @@ pub fn map_node_status(node_info: &BitcoinNodeInfo) -> NodeSyncStatus {
 }
 
 pub fn map_latest_block_number(node_info: &BitcoinNodeInfo) -> u64 {
-    node_info
-        .backend
-        .as_ref()
-        .map(|backend| backend.blocks)
-        .unwrap_or(node_info.blockbook.best_height)
+    node_info.backend.as_ref().map(|backend| backend.blocks).unwrap_or(node_info.blockbook.best_height)
 }
 
 #[cfg(test)]

@@ -18,10 +18,7 @@ fn build_test_client(chain: primitives::EVMChain, rpc_url: &str) -> crate::rpc::
     let settings = get_test_settings();
     let rpc_client = JsonRpcClient::new_reqwest(rpc_url.to_string());
 
-    let ankr_client = AnkrClient::new(
-        JsonRpcClient::new_reqwest(format!("https://rpc.ankr.com/multichain/{}", settings.ankr.key.secret)),
-        chain,
-    );
+    let ankr_client = AnkrClient::new(JsonRpcClient::new_reqwest(format!("https://rpc.ankr.com/multichain/{}", settings.ankr.key.secret)), chain);
 
     EthereumClient::new(rpc_client, chain).with_ankr_client(ankr_client)
 }

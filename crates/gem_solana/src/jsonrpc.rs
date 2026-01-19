@@ -34,10 +34,7 @@ impl JsonRpcRequestConvert for SolanaRpc {
         let default_config = Configuration::default();
 
         let params: Vec<Value> = match val {
-            SolanaRpc::GetProgramAccounts(program, filters) => vec![
-                Value::String(program.into()),
-                serde_json::to_value(Configuration::new(filters.to_vec())).unwrap(),
-            ],
+            SolanaRpc::GetProgramAccounts(program, filters) => vec![Value::String(program.into()), serde_json::to_value(Configuration::new(filters.to_vec())).unwrap()],
             SolanaRpc::GetAccountInfo(program) => vec![Value::String(program.into()), serde_json::to_value(default_config).unwrap()],
             SolanaRpc::GetMultipleAccounts(accounts) => vec![
                 Value::Array(accounts.iter().map(|x| serde_json::to_value(x).unwrap()).collect()),

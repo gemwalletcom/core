@@ -1,12 +1,12 @@
 use super::{
-    AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult,
-    SwapType, asset_id_from_near_intents, auto_quote_time_chains, deposit_memo_chains, get_near_intents_asset_id,
+    AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType,
+    asset_id_from_near_intents, auto_quote_time_chains, deposit_memo_chains, get_near_intents_asset_id,
     model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
     reserved_tx_fees, supported_assets,
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
-    SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::base_url,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
+    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::base_url,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -210,26 +210,14 @@ where
         })
     }
 
-    async fn build_sui_deposit_data(
-        &self,
-        from_asset: &SwapperQuoteAsset,
-        wallet_address: &str,
-        deposit_address: &str,
-        amount_in: &str,
-    ) -> Result<DepositData, SwapperError> {
+    async fn build_sui_deposit_data(&self, from_asset: &SwapperQuoteAsset, wallet_address: &str, deposit_address: &str, amount_in: &str) -> Result<DepositData, SwapperError> {
         let amount = amount_in
             .parse::<u64>()
             .map_err(|_| SwapperError::ComputeQuoteError("Invalid Sui amount provided for deposit".into()))?;
 
-        let message_bytes = build_transfer_message_bytes(
-            self.sui_client.as_ref(),
-            wallet_address,
-            deposit_address,
-            amount,
-            from_asset.asset_id().token_id.as_deref(),
-        )
-        .await
-        .map_err(|err| SwapperError::NetworkError(format!("Failed to build Sui deposit data: {err}")))?;
+        let message_bytes = build_transfer_message_bytes(self.sui_client.as_ref(), wallet_address, deposit_address, amount, from_asset.asset_id().token_id.as_deref())
+            .await
+            .map_err(|err| SwapperError::NetworkError(format!("Failed to build Sui deposit data: {err}")))?;
 
         Ok(DepositData {
             to: deposit_address.to_string(),
@@ -337,12 +325,7 @@ where
             .build_deposit_data(deposit_memo, from_asset, &quote.request.wallet_address, &deposit_address, &amount_in)
             .await?;
 
-        let DepositData {
-            to,
-            value,
-            data: payload,
-            memo,
-        } = data;
+        let DepositData { to, value, data: payload, memo } = data;
 
         Ok(SwapperQuoteData {
             data: payload,
@@ -456,9 +439,7 @@ mod tests {
 #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{
-        FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, models::Options,
-    };
+    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, models::Options};
     use primitives::{AssetId, Chain, swap::SwapStatus};
     use std::sync::Arc;
 

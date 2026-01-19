@@ -124,15 +124,7 @@ pub fn make_market_order(asset: u32, is_buy: bool, price: &str, size: &str, redu
 
 // size 0 - means entire position
 // TP/SL orders are always reduce_only=true
-pub fn make_position_tp_sl(
-    asset: u32,
-    is_buy: bool,
-    size: &str,
-    tp_trigger: Option<String>,
-    sl_trigger: Option<String>,
-    builder: Option<Builder>,
-    is_market: bool,
-) -> PlaceOrder {
+pub fn make_position_tp_sl(asset: u32, is_buy: bool, size: &str, tp_trigger: Option<String>, sl_trigger: Option<String>, builder: Option<Builder>, is_market: bool) -> PlaceOrder {
     let mut orders = Vec::new();
 
     if let Some(sl_trigger) = sl_trigger {

@@ -55,9 +55,6 @@ mod tests {
             "https://suivision.xyz/txblock/ArS7DzeHUA54ccRG12SqEZwt7snQePcanZ77Mkm2KRos"
         );
         assert_eq!(explorer.get_token_url("token123"), Some("https://suivision.xyz/coin/token123".to_string()));
-        assert_eq!(
-            explorer.get_validator_url("val123"),
-            Some("https://suivision.xyz/validators/val123".to_string())
-        );
+        assert_eq!(explorer.get_validator_url("val123"), Some("https://suivision.xyz/validators/val123".to_string()));
     }
 }

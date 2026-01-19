@@ -103,20 +103,14 @@ impl From<IERC20Calls> for DecodedCall {
             ),
             IERC20Calls::approve(approve) => (
                 "approve",
-                vec![
-                    ("spender", "address", approve.spender.to_string()),
-                    ("value", "uint256", approve.value.to_string()),
-                ],
+                vec![("spender", "address", approve.spender.to_string()), ("value", "uint256", approve.value.to_string())],
             ),
             IERC20Calls::name(_) => ("name", vec![]),
             IERC20Calls::symbol(_) => ("symbol", vec![]),
             IERC20Calls::decimals(_) => ("decimals", vec![]),
             IERC20Calls::allowance(allowance) => (
                 "allowance",
-                vec![
-                    ("owner", "address", allowance.owner.to_string()),
-                    ("spender", "address", allowance.spender.to_string()),
-                ],
+                vec![("owner", "address", allowance.owner.to_string()), ("spender", "address", allowance.spender.to_string())],
             ),
         };
 
@@ -140,8 +134,7 @@ mod tests {
 
     #[test]
     fn test_decode_erc20_transfer() {
-        let calldata =
-            "0xa9059cbb0000000000000000000000002df1c51e09aecf9cacb7bc98cb1742757f163df700000000000000000000000000000000000000000000000000000000005ec1d0";
+        let calldata = "0xa9059cbb0000000000000000000000002df1c51e09aecf9cacb7bc98cb1742757f163df700000000000000000000000000000000000000000000000000000000005ec1d0";
         let decoded = decode_call(calldata, None).unwrap();
 
         assert_eq!(decoded.function, "transfer");
@@ -212,8 +205,7 @@ mod tests {
         assert_eq!(name_result.params.len(), 0);
 
         // Test ERC20 allowance(address,address) function - 0xdd62ed3e
-        let allowance_calldata =
-            "0xdd62ed3e0000000000000000000000008ba1f109551bd432803012645aac136c0c3def25000000000000000000000000271682deb8c4e0901d1a1550ad2e64d568e69909";
+        let allowance_calldata = "0xdd62ed3e0000000000000000000000008ba1f109551bd432803012645aac136c0c3def25000000000000000000000000271682deb8c4e0901d1a1550ad2e64d568e69909";
         let allowance_result = decode_call(allowance_calldata, None).unwrap();
         assert_eq!(allowance_result.function, "allowance");
         assert_eq!(allowance_result.params.len(), 2);

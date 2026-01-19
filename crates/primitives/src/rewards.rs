@@ -66,7 +66,6 @@ impl RewardStatus {
     }
 }
 
-
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
@@ -78,6 +77,7 @@ pub enum RewardEventType {
     InviteExisting,
     Joined,
     Disabled,
+    Redeemed,
 }
 
 impl RewardEventType {
@@ -93,6 +93,7 @@ impl RewardEventType {
             Self::InviteExisting => 10,
             Self::Joined => 10,
             Self::Disabled => 0,
+            Self::Redeemed => 0,
         }
     }
 }
@@ -191,6 +192,7 @@ pub struct RewardRedemption {
 #[strum(serialize_all = "camelCase")]
 pub enum RedemptionStatus {
     Pending,
+    Processing,
     Completed,
     Failed,
 }

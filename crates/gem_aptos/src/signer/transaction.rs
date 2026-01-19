@@ -75,10 +75,7 @@ pub fn expiration_timestamp_secs() -> Result<u64, SignerError> {
 
 fn ensure_length(input: Vec<u8>, expected: usize, label: &str) -> Result<Vec<u8>, SignerError> {
     if input.len() != expected {
-        return Err(SignerError::InvalidInput(format!(
-            "Invalid Aptos {label} length: expected {expected}, got {}",
-            input.len()
-        )));
+        return Err(SignerError::InvalidInput(format!("Invalid Aptos {label} length: expected {expected}, got {}", input.len())));
     }
     Ok(input)
 }

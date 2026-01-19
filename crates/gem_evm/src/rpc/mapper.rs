@@ -45,9 +45,7 @@ impl EthereumMapper {
                 .transactions
                 .into_iter()
                 .zip(transactions_reciepts.iter())
-                .filter_map(|(transaction, receipt)| {
-                    EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp, Some(&CONTRACT_REGISTRY))
-                })
+                .filter_map(|(transaction, receipt)| EthereumMapper::map_transaction(chain, &transaction, receipt, None, &block.timestamp, Some(&CONTRACT_REGISTRY)))
                 .collect(),
         }
     }
@@ -210,9 +208,7 @@ impl EthereumMapper {
             // Check if this is a relevant ERC20 transfer
             let is_direct_transfer = transaction.input.starts_with(FUNCTION_ERC20_TRANSFER);
 
-            if is_direct_transfer
-                || (is_smart_contract_call && (from_address_in_log == from || from_address_in_log == to)) && transaction_reciept.logs.len() <= 2
-            {
+            if is_direct_transfer || (is_smart_contract_call && (from_address_in_log == from || from_address_in_log == to)) && transaction_reciept.logs.len() <= 2 {
                 return Some(primitives::Transaction::new(
                     hash,
                     AssetId::from_token(chain, &token_id),
@@ -288,18 +284,9 @@ mod tests {
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
         let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx_receipt.json")).unwrap();
-        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
-            .unwrap()
-            .result;
+        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json).unwrap().result;
 
-        let _transaction = EthereumMapper::map_transaction(
-            Chain::Ethereum,
-            &contract_call_tx,
-            &contract_call_receipt,
-            None,
-            &BigUint::from(1735671600u64),
-            None,
-        );
+        let _transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, None, &BigUint::from(1735671600u64), None);
 
         // assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
         // assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
@@ -313,9 +300,7 @@ mod tests {
         let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
 
         let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx_receipt.json")).unwrap();
-        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json)
-            .unwrap()
-            .result;
+        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json).unwrap().result;
 
         assert!(EthereumMapper::has_smart_contract_indicators(&contract_call_tx, &contract_call_receipt));
         assert_eq!(contract_call_tx.gas, 400000);
@@ -323,30 +308,17 @@ mod tests {
 
     #[test]
     fn test_erc20_transfer() {
-        let erc20_transfer_tx =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_erc20.json")).unwrap())
+        let erc20_transfer_tx = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_erc20.json")).unwrap())
+            .unwrap()
+            .result;
+        let erc20_transfer_receipt =
+            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("../../testdata/transfer_erc20_receipt.json")).unwrap())
                 .unwrap()
                 .result;
-        let erc20_transfer_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../testdata/transfer_erc20_receipt.json")).unwrap(),
-        )
-        .unwrap()
-        .result;
 
-        let transaction = EthereumMapper::map_transaction(
-            Chain::Arbitrum,
-            &erc20_transfer_tx,
-            &erc20_transfer_receipt,
-            None,
-            &BigUint::from(1735671600u64),
-            None,
-        )
-        .unwrap();
+        let transaction = EthereumMapper::map_transaction(Chain::Arbitrum, &erc20_transfer_tx, &erc20_transfer_receipt, None, &BigUint::from(1735671600u64), None).unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::Transfer);
-        assert_eq!(
-            transaction.asset_id,
-            AssetId::from_token(Chain::Arbitrum, "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9")
-        );
+        assert_eq!(transaction.asset_id, AssetId::from_token(Chain::Arbitrum, "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"));
         assert_eq!(transaction.from, "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F");
         assert_eq!(transaction.to, "0x2Fc617E933a52713247CE25730f6695920B3befe");
         assert_eq!(transaction.value, "4801292");
@@ -354,18 +326,15 @@ mod tests {
 
     #[test]
     fn test_nft_eip721_transfer() {
-        let transaction =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721.json")).unwrap())
+        let transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721.json")).unwrap())
+            .unwrap()
+            .result;
+        let transaction_reciept =
+            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721_receipt.json")).unwrap())
                 .unwrap()
                 .result;
-        let transaction_reciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721_receipt.json")).unwrap(),
-        )
-        .unwrap()
-        .result;
 
-        let transaction =
-            EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64), None).unwrap();
+        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64), None).unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
 
         assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ethereum));
@@ -383,18 +352,15 @@ mod tests {
 
     #[test]
     fn test_nft_eip1155_transfer() {
-        let transaction =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip1155.json")).unwrap())
+        let transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip1155.json")).unwrap())
+            .unwrap()
+            .result;
+        let transaction_reciept =
+            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip1155_receipt.json")).unwrap())
                 .unwrap()
                 .result;
-        let transaction_reciept = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../testdata/transfer_nft_eip1155_receipt.json")).unwrap(),
-        )
-        .unwrap()
-        .result;
 
-        let transaction =
-            EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64), None).unwrap();
+        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64), None).unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
 
         assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ethereum));
@@ -412,23 +378,18 @@ mod tests {
 
     #[test]
     fn test_smart_contract_erc20_transfer() {
-        let sc_erc20_tx =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/contract_erc20_tx.json")).unwrap())
+        let sc_erc20_tx = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/contract_erc20_tx.json")).unwrap())
+            .unwrap()
+            .result;
+        let sc_erc20_receipt =
+            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("../../testdata/contract_erc20_receipt.json")).unwrap())
                 .unwrap()
                 .result;
-        let sc_erc20_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../testdata/contract_erc20_receipt.json")).unwrap(),
-        )
-        .unwrap()
-        .result;
 
         let transaction = EthereumMapper::map_transaction(Chain::Arbitrum, &sc_erc20_tx, &sc_erc20_receipt, None, &BigUint::from(1735671600u64), None).unwrap();
 
         assert_eq!(transaction.transaction_type, TransactionType::Transfer);
-        assert_eq!(
-            transaction.asset_id,
-            AssetId::from_token(Chain::Arbitrum, "0xaf88d065e77c8cC2239327C5EDb3A432268e5831")
-        );
+        assert_eq!(transaction.asset_id, AssetId::from_token(Chain::Arbitrum, "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"));
         assert_eq!(transaction.from, "0x58E1b0E63C905D5982324FCd9108582623b8132e");
         assert_eq!(transaction.to, "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC");
         assert_eq!(transaction.value, "930678651");
@@ -436,15 +397,13 @@ mod tests {
 
     #[test]
     fn test_native_transfer_high_gas_limit() {
-        let transaction =
-            serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_high_gas_limit.json")).unwrap())
+        let transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_high_gas_limit.json")).unwrap())
+            .unwrap()
+            .result;
+        let transaction_receipt =
+            serde_json::from_value::<JsonRpcResult<TransactionReciept>>(serde_json::from_str(include_str!("../../testdata/transfer_high_gas_limit_receipt.json")).unwrap())
                 .unwrap()
                 .result;
-        let transaction_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(
-            serde_json::from_str(include_str!("../../testdata/transfer_high_gas_limit_receipt.json")).unwrap(),
-        )
-        .unwrap()
-        .result;
 
         let result = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_receipt, None, &BigUint::from(1735671600u64), None);
 
@@ -466,10 +425,7 @@ mod tests {
         let result = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
 
         assert_eq!(result.transaction_type, TransactionType::TokenApproval);
-        assert_eq!(
-            result.asset_id,
-            AssetId::from_token(Chain::Ethereum, "0x6B175474E89094C44Da98b954EedeAC495271d0F")
-        );
+        assert_eq!(result.asset_id, AssetId::from_token(Chain::Ethereum, "0x6B175474E89094C44Da98b954EedeAC495271d0F"));
         assert_eq!(result.from, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4");
         assert_eq!(result.to, "0x000000000022D473030F116dDEE9F6B43aC78BA3");
         assert_eq!(result.value, "115792089237316195423570985008687907853269984665640564039457584007913129639935");
@@ -483,8 +439,7 @@ mod tests {
             to: Some("0x0000000000000000000000000000000000002002".to_string()),
             value: BigUint::parse_bytes(b"1158e460913d00000", 16).unwrap(),
             gas: 280395,
-            input: "0x982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000"
-                .to_string(),
+            input: "0x982ef0a7000000000000000000000000d34403249b2d82aaddb14e778422c966265e5fb50000000000000000000000000000000000000000000000000000000000000000".to_string(),
             block_number: BigUint::from(0x1234u32),
         };
 
@@ -499,8 +454,7 @@ mod tests {
                     "0x000000000000000000000000d34403249B2d82AAdDB14e778422c966265e5Fb5".to_string(), // operatorAddress
                     "0x000000000000000000000000f1a3687303606a6fD48179Ce503164CDcBAbeaB6".to_string(), // delegator
                 ],
-                data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000001158e460913d00000"
-                    .to_string(),
+                data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000001158e460913d00000".to_string(),
             }],
             status: "0x1".to_string(),
             block_number: BigUint::from(0x1234u32),

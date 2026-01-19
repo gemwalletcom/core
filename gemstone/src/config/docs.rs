@@ -80,10 +80,7 @@ mod tests {
 
     #[test]
     fn test_get_docs_url() {
-        assert_eq!(
-            get_docs_url(DocsUrl::WhatIsSecretPhrase),
-            "https://docs.gemwallet.com/faq/secret-recovery-phrase/"
-        );
+        assert_eq!(get_docs_url(DocsUrl::WhatIsSecretPhrase), "https://docs.gemwallet.com/faq/secret-recovery-phrase/");
     }
 
     #[test]

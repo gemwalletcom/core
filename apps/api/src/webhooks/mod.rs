@@ -19,9 +19,6 @@ impl WebhooksClient {
 }
 
 #[post("/webhooks/support", data = "<webhook_data>")]
-pub async fn create_support_webhook(
-    webhook_data: Json<serde_json::Value>,
-    webhooks_client: &State<Mutex<WebhooksClient>>,
-) -> Result<ApiResponse<SupportWebhookPayload>, ApiError> {
+pub async fn create_support_webhook(webhook_data: Json<serde_json::Value>, webhooks_client: &State<Mutex<WebhooksClient>>) -> Result<ApiResponse<SupportWebhookPayload>, ApiError> {
     Ok(webhooks_client.lock().await.process_support_webhook(webhook_data.0).await?.into())
 }

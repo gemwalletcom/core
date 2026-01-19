@@ -3,8 +3,7 @@ use crate::DatabaseError;
 use crate::DatabaseClient;
 use crate::database::nft::NftStore;
 use crate::models::{
-    NftAssetRow, NftCollectionRow, nft_asset::UpdateNftAssetImageUrlRow, nft_collection::UpdateNftCollectionImageUrlRow, nft_link::NftLinkRow,
-    nft_report::NewNftReportRow,
+    NftAssetRow, NftCollectionRow, nft_asset::UpdateNftAssetImageUrlRow, nft_collection::UpdateNftCollectionImageUrlRow, nft_link::NftLinkRow, nft_report::NewNftReportRow,
 };
 
 pub trait NftRepository {

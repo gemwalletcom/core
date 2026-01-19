@@ -59,10 +59,7 @@ where
     D: de::Deserializer<'de>,
 {
     let hex_strings: Vec<String> = de::Deserialize::deserialize(deserializer)?;
-    hex_strings
-        .into_iter()
-        .map(|hex_str| bigint_from_hex_str(&hex_str).map_err(de::Error::custom))
-        .collect()
+    hex_strings.into_iter().map(|hex_str| bigint_from_hex_str(&hex_str).map_err(de::Error::custom)).collect()
 }
 
 #[cfg(test)]

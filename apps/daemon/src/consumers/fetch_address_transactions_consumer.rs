@@ -26,9 +26,7 @@ impl FetchAddressTransactionsConsumer {
     }
 
     pub async fn process_result(&self, chain: Chain, transactions: Vec<Transaction>) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        self.producer
-            .publish_transactions(TransactionsPayload::new(chain, vec![], transactions.clone()))
-            .await
+        self.producer.publish_transactions(TransactionsPayload::new(chain, vec![], transactions.clone())).await
     }
 }
 
@@ -40,10 +38,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchAddressTransactionsCon
             .await
     }
     async fn process(&self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let transactions = self
-            .providers
-            .get_transactions_by_address(payload.value.chain, payload.value.address.clone())
-            .await?;
+        let transactions = self.providers.get_transactions_by_address(payload.value.chain, payload.value.address.clone()).await?;
         let _ = self.process_result(payload.value.chain, transactions.clone()).await;
         Ok(transactions.len())
     }

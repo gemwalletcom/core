@@ -4,9 +4,7 @@ use futures;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{
-    FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
-};
+use primitives::{FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 
 use crate::{models::AccountResult, provider::preload_mapper::map_transaction_load, rpc::client::StellarClient};
 

@@ -21,11 +21,7 @@ impl MessageConsumer<AssetsAddressPayload, usize> for AssetsAddressesConsumer {
     }
 
     async fn process(&self, payload: AssetsAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let assets_addresses = payload
-            .values
-            .into_iter()
-            .map(storage::models::AssetAddressRow::from_primitive)
-            .collect::<Vec<_>>();
+        let assets_addresses = payload.values.into_iter().map(storage::models::AssetAddressRow::from_primitive).collect::<Vec<_>>();
 
         Ok(self
             .database

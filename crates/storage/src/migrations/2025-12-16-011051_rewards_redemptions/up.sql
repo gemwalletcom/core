@@ -1,5 +1,5 @@
 CREATE TYPE reward_redemption_type AS ENUM ('asset', 'giftAsset');
-CREATE TYPE redemption_status AS ENUM ('pending', 'completed', 'failed');
+CREATE TYPE redemption_status AS ENUM ('pending', 'processing', 'completed', 'failed');
 
 CREATE TABLE rewards_redemption_options (
     id VARCHAR(64) PRIMARY KEY,

@@ -80,9 +80,7 @@ impl RewardsAbuseChecker {
             if eval.abuse_score >= eval.threshold
                 && let Some(event_id) = self.disable_user(&eval)?
             {
-                self.stream_producer
-                    .publish_rewards_events(vec![RewardsNotificationPayload::new(event_id)])
-                    .await?;
+                self.stream_producer.publish_rewards_events(vec![RewardsNotificationPayload::new(event_id)]).await?;
                 disabled_count += 1;
             }
         }
@@ -216,8 +214,7 @@ fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionCo
         penalty += config.country_rotation_penalty as f64;
     }
 
-    if patterns.max_referrers_per_device >= config.ring_referrers_per_device_threshold
-        || patterns.max_referrers_per_fingerprint >= config.ring_referrers_per_fingerprint_threshold
+    if patterns.max_referrers_per_device >= config.ring_referrers_per_device_threshold || patterns.max_referrers_per_fingerprint >= config.ring_referrers_per_fingerprint_threshold
     {
         penalty += config.ring_penalty as f64;
     }
@@ -291,20 +288,90 @@ mod tests {
         };
 
         assert_eq!(calculate_pattern_penalty(&base, &config, false), 0.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_countries_per_device: 2, ..base }, &config, false), 50.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_referrers_per_device: 2, ..base }, &config, false), 80.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_referrers_per_fingerprint: 2, ..base }, &config, false), 80.0);
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    max_countries_per_device: 2,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            50.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    max_referrers_per_device: 2,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            80.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    max_referrers_per_fingerprint: 2,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            80.0
+        );
         assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_devices_per_ip: 5, ..base }, &config, false), 10.0);
 
         // Normal user: daily_limit=5, divisor=2, velocity_threshold=2
         // 1 signal doesn't trigger, 2 signals trigger: (2-2+1)*100 = 100
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 1, ..base }, &config, false), 0.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 2, ..base }, &config, false), 100.0);
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 1,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            0.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 2,
+                    ..base
+                },
+                &config,
+                false
+            ),
+            100.0
+        );
 
         // Verified user: daily_limit=10, divisor=2, velocity_threshold=5
         // 4 signals don't trigger, 5 signals trigger: (5-5+1)*100 = 100
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 4, ..base }, &config, true), 0.0);
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { signals_in_velocity_window: 5, ..base }, &config, true), 100.0);
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 4,
+                    ..base
+                },
+                &config,
+                true
+            ),
+            0.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 5,
+                    ..base
+                },
+                &config,
+                true
+            ),
+            100.0
+        );
 
         // Combined: 50 + 80 + 10 + (5-2+1)*100 = 540
         assert_eq!(

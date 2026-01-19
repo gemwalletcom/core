@@ -53,9 +53,5 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    Ok(vec![
-        Box::pin(assets_index_updater),
-        Box::pin(perpetuals_index_updater),
-        Box::pin(nfts_index_updater),
-    ])
+    Ok(vec![Box::pin(assets_index_updater), Box::pin(perpetuals_index_updater), Box::pin(nfts_index_updater)])
 }

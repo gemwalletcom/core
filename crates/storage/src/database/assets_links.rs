@@ -21,9 +21,6 @@ impl AssetsLinksStore for DatabaseClient {
 
     fn get_asset_links(&mut self, _asset_id: &str) -> Result<Vec<AssetLinkRow>, diesel::result::Error> {
         use crate::schema::assets_links::dsl::*;
-        assets_links
-            .filter(asset_id.eq(_asset_id))
-            .select(AssetLinkRow::as_select())
-            .load(&mut self.connection)
+        assets_links.filter(asset_id.eq(_asset_id)).select(AssetLinkRow::as_select()).load(&mut self.connection)
     }
 }

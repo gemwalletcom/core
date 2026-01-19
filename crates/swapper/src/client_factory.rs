@@ -44,9 +44,7 @@ mod tests {
 
         println!("recent_blockhash: {}", recent_blockhash);
 
-        let blockhash = bs58::decode(recent_blockhash)
-            .into_vec()
-            .map_err(|_| "Failed to decode blockhash".to_string())?;
+        let blockhash = bs58::decode(recent_blockhash).into_vec().map_err(|_| "Failed to decode blockhash".to_string())?;
 
         let blockhash_array: [u8; 32] = blockhash.try_into().map_err(|_| "Failed to convert blockhash to array".to_string())?;
 

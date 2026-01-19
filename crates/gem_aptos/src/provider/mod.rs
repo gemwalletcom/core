@@ -25,6 +25,6 @@ impl<C: Client> ChainTraits for AptosClient<C> {}
 
 impl<C: Client> ChainProvider for AptosClient<C> {
     fn get_chain(&self) -> Chain {
-        self.get_chain()
+        self.chain
     }
 }

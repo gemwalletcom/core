@@ -21,19 +21,10 @@ gem_hash = { path = "../gem_hash" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
 gem_hypercore = { path = "../gem_hypercore" }
-gem_bitcoin = { path = "../gem_bitcoin", features = ["rpc"] }
-gem_cardano = { path = "../gem_cardano", features = ["rpc"] }
-gem_algorand = { path = "../gem_algorand", features = ["rpc"] }
-gem_stellar = { path = "../gem_stellar", features = ["rpc"] }
-gem_xrp = { path = "../gem_xrp", features = ["rpc"] }
-gem_near = { path = "../gem_near", features = ["rpc"] }
-gem_polkadot = { path = "../gem_polkadot", features = ["rpc"] }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
 
 reqwest = { workspace = true, optional = true }
-
-bcs.workspace = true
 
 strum = { workspace = true }
 
@@ -54,7 +45,7 @@ bs58 = { workspace = true }
 solana-primitives = "0.2.1"
 bigdecimal.workspace = true
 rand.workspace = true
-tracing = "0.1.41"
+tracing = "0.1.44"
 
 [dev-dependencies]
 tokio.workspace = true

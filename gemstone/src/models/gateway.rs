@@ -20,18 +20,9 @@ pub struct BroadcastOptions {
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemGasPriceType {
-    Regular {
-        gas_price: String,
-    },
-    Eip1559 {
-        gas_price: String,
-        priority_fee: String,
-    },
-    Solana {
-        gas_price: String,
-        priority_fee: String,
-        unit_price: String,
-    },
+    Regular { gas_price: String },
+    Eip1559 { gas_price: String, priority_fee: String },
+    Solana { gas_price: String, priority_fee: String, unit_price: String },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -50,9 +41,7 @@ pub struct GemTransactionPreloadInput {
 impl From<GasPriceType> for GemGasPriceType {
     fn from(value: GasPriceType) -> Self {
         match value {
-            GasPriceType::Regular { gas_price } => GemGasPriceType::Regular {
-                gas_price: gas_price.to_string(),
-            },
+            GasPriceType::Regular { gas_price } => GemGasPriceType::Regular { gas_price: gas_price.to_string() },
             GasPriceType::Eip1559 { gas_price, priority_fee } => GemGasPriceType::Eip1559 {
                 gas_price: gas_price.to_string(),
                 priority_fee: priority_fee.to_string(),

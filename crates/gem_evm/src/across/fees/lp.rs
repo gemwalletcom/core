@@ -53,11 +53,7 @@ impl LpFeeCalculator {
         let one = EtherConv::one();
         let (ubar, r1, r2) = (model.ubar.clone(), model.r1.clone(), model.r2.clone());
 
-        let before_kink = if model.ubar.is_zero() {
-            BigInt::zero()
-        } else {
-            util.min(&model.ubar) * r1 / &ubar
-        };
+        let before_kink = if model.ubar.is_zero() { BigInt::zero() } else { util.min(&model.ubar) * r1 / &ubar };
 
         let after_kink = max(util - &ubar, BigInt::zero()) * r2 / (one - &ubar);
         model.r0.clone() + before_kink + after_kink
@@ -77,13 +73,11 @@ impl LpFeeCalculator {
 
         let util_before_kink = util.min(&model.ubar);
         let rect_1 = util_before_kink * &model.r0 / &fixed_point_adjustment;
-        let triangle_1 =
-            &point_5 * (self.instantaneous_rate(util_before_kink) - &model.r0) * util_before_kink / &fixed_point_adjustment / &fixed_point_adjustment;
+        let triangle_1 = &point_5 * (self.instantaneous_rate(util_before_kink) - &model.r0) * util_before_kink / &fixed_point_adjustment / &fixed_point_adjustment;
 
         let util_after = max(util - &model.ubar, BigInt::zero());
         let rect_2 = util_after.clone() * (model.r0.clone() + model.r1.clone()) / &fixed_point_adjustment;
-        let triangle_2 =
-            point_5 * (self.instantaneous_rate(util) - (model.r0.clone() + model.r1.clone())) * util_after / &fixed_point_adjustment / &fixed_point_adjustment;
+        let triangle_2 = point_5 * (self.instantaneous_rate(util) - (model.r0.clone() + model.r1.clone())) * util_after / &fixed_point_adjustment / &fixed_point_adjustment;
 
         rect_1 + triangle_1 + rect_2 + triangle_2
     }
@@ -121,11 +115,7 @@ impl LpFeeCalculator {
         let apy = self.apy_from_utilization(util_before, util_after);
         let weekly_fee = convert_apy_to_weekly_fee(apy);
 
-        if truncate_decimals {
-            truncate_18_decimal_bn(&weekly_fee, 6)
-        } else {
-            weekly_fee
-        }
+        if truncate_decimals { truncate_18_decimal_bn(&weekly_fee, 6) } else { weekly_fee }
     }
 }
 

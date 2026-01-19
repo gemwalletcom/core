@@ -12,11 +12,7 @@ pub fn map_withdraw_request_to_delegations(withdraw_request: &WithdrawRequest) -
     let ready_for_claim = BigUint::from_bytes_be(&withdraw_request.readyForClaim.to_be_bytes::<32>());
 
     let mut delegations = Vec::new();
-    let pending_amount = if requested > ready_for_claim {
-        requested - &ready_for_claim
-    } else {
-        BigUint::zero()
-    };
+    let pending_amount = if requested > ready_for_claim { requested - &ready_for_claim } else { BigUint::zero() };
 
     let asset_id = AssetId::from_chain(Chain::Ethereum);
     let validator_id = EVERSTAKE_POOL_ADDRESS;
@@ -85,9 +81,6 @@ mod tests {
 
         let awaiting = delegations.iter().find(|d| matches!(d.state, DelegationState::AwaitingWithdrawal)).unwrap();
         assert_eq!(awaiting.balance, BigUint::from(500000000000000000_u64));
-        assert_eq!(
-            awaiting.delegation_id,
-            delegation_id(EVERSTAKE_POOL_ADDRESS, DelegationState::AwaitingWithdrawal)
-        );
+        assert_eq!(awaiting.delegation_id, delegation_id(EVERSTAKE_POOL_ADDRESS, DelegationState::AwaitingWithdrawal));
     }
 }

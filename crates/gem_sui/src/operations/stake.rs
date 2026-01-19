@@ -103,10 +103,7 @@ mod tests {
             sender: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
             validator: "0x61953ea72709eed72f4441dd944eec49a11b4acabfc8e04015e89c63be81b6ab".into(),
             stake_amount: 1_000_000_000,
-            gas: Gas {
-                budget: 20_000_000,
-                price: 750,
-            },
+            gas: Gas { budget: 20_000_000, price: 750 },
             coins: vec![Coin {
                 coin_type: SUI_COIN_TYPE.into(),
                 balance: 10990277896,
@@ -141,10 +138,7 @@ mod tests {
                 digest: "CU86BjXRF1XHFRjKBasCYEuaQxhHuyGBpuoJyqsrYoX5".into(),
                 version: 64195796,
             },
-            gas: Gas {
-                budget: 25_000_000,
-                price: 750,
-            },
+            gas: Gas { budget: 25_000_000, price: 750 },
             gas_coin: Coin {
                 coin_type: SUI_COIN_TYPE.into(),
                 balance: 631668351,

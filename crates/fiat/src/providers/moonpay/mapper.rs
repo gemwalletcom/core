@@ -102,8 +102,7 @@ mod tests {
 
     #[test]
     fn test_map_order_buy_failed() {
-        let webhook_data: Data<Transaction> =
-            serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_buy_complete.json")).expect("Failed to parse test data");
+        let webhook_data: Data<Transaction> = serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_buy_complete.json")).expect("Failed to parse test data");
         let payload = webhook_data.data;
 
         let result = map_order(payload).expect("Failed to map order");
@@ -121,8 +120,7 @@ mod tests {
 
     #[test]
     fn test_map_order_sell_pending() {
-        let webhook_data: Data<Transaction> =
-            serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_sell_complete_.json")).expect("Failed to parse test data");
+        let webhook_data: Data<Transaction> = serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_sell_complete_.json")).expect("Failed to parse test data");
         let payload = webhook_data.data;
 
         let result = map_order(payload).expect("Failed to map order");
@@ -140,8 +138,7 @@ mod tests {
 
     #[test]
     fn test_map_order_v3_sell_complete() {
-        let webhook_data: Transaction =
-            serde_json::from_str(include_str!("../../../testdata/moonpay/sell_transaction_complete.json")).expect("Failed to parse test data");
+        let webhook_data: Transaction = serde_json::from_str(include_str!("../../../testdata/moonpay/sell_transaction_complete.json")).expect("Failed to parse test data");
 
         let result = map_order(webhook_data).expect("Failed to map order");
 
@@ -159,8 +156,7 @@ mod tests {
 
     #[test]
     fn test_map_order_sell_failed() {
-        let webhook_data: Transaction =
-            serde_json::from_str(include_str!("../../../testdata/moonpay/transaction_sell_failed.json")).expect("Failed to parse test data");
+        let webhook_data: Transaction = serde_json::from_str(include_str!("../../../testdata/moonpay/transaction_sell_failed.json")).expect("Failed to parse test data");
 
         let result = map_order(webhook_data).expect("Failed to map order");
 

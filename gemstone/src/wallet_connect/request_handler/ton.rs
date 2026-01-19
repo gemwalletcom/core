@@ -8,9 +8,7 @@ use serde_json::Value;
 pub struct TonRequestHandler;
 
 fn extract_host(url: &str) -> String {
-    url::Url::parse(url)
-        .map(|u| u.host_str().unwrap_or(url).to_string())
-        .unwrap_or_else(|_| url.to_string())
+    url::Url::parse(url).map(|u| u.host_str().unwrap_or(url).to_string()).unwrap_or_else(|_| url.to_string())
 }
 
 impl ChainRequestHandler for TonRequestHandler {

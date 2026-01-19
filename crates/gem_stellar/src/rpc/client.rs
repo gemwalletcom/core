@@ -43,10 +43,7 @@ impl<C: Client> StellarClient<C> {
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<StellarTransactionBroadcast, Box<dyn Error + Send + Sync>> {
         let body = encode_transaction_data(data);
-        let headers = Some(HashMap::from([(
-            "Content-Type".to_string(),
-            ContentType::ApplicationFormUrlEncoded.as_str().to_string(),
-        )]));
+        let headers = Some(HashMap::from([("Content-Type".to_string(), ContentType::ApplicationFormUrlEncoded.as_str().to_string())]));
 
         Ok(self.client.post("/transactions_async", &body, headers).await?)
     }
@@ -87,10 +84,7 @@ impl<C: Client> StellarClient<C> {
         let cursor_param = cursor.unwrap_or_default();
         let result: Embedded<Payment> = self
             .client
-            .get(&format!(
-                "/ledgers/{}/payments?limit={}&include_failed=true&cursor={}",
-                block_number, limit, cursor_param
-            ))
+            .get(&format!("/ledgers/{}/payments?limit={}&include_failed=true&cursor={}", block_number, limit, cursor_param))
             .await?;
         Ok(result._embedded.records)
     }

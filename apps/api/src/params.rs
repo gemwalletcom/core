@@ -1,11 +1,11 @@
 use primitives::currency::Currency;
-use primitives::{Chain, ChartPeriod, FiatQuoteType, TransactionId, WalletIdType};
+use primitives::{Chain, ChartPeriod, FiatQuoteType, NFTAssetId, NFTCollectionId, TransactionId, WalletId};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::request::FromParam;
 use std::str::FromStr;
 
 const MAX_ADDRESS_LENGTH: usize = 256;
-const MAX_ASSET_ID_LENGTH: usize = 128;
+const MAX_ASSET_ID_LENGTH: usize = 256;
 const MAX_DEVICE_ID_LENGTH: usize = 32;
 const MAX_SEARCH_QUERY_LENGTH: usize = 128;
 
@@ -84,10 +84,10 @@ impl<'r> FromFormField<'r> for AddressParam {
 }
 
 // Accepts either:
-// - Full wallet_id format: "multicoin_0x123" (parsed as WalletIdType::Multicoin)
-// - Raw address: "0x123" (wrapped in WalletIdType::Multicoin for backwards compatibility)
+// - Full wallet_id format: "multicoin_0x123" (parsed as WalletId::Multicoin)
+// - Raw address: "0x123" (wrapped in WalletId::Multicoin for backwards compatibility)
 // TODO: Remove raw address support once all clients send wallet_id format
-pub struct MulticoinParam(pub WalletIdType);
+pub struct MulticoinParam(pub WalletId);
 
 impl MulticoinParam {
     pub fn id(&self) -> String {
@@ -103,14 +103,34 @@ impl<'r> FromParam<'r> for MulticoinParam {
             return Err(param);
         }
 
-        if let Some(wallet_id) = WalletIdType::from_id(param) {
+        if let Some(wallet_id) = WalletId::from_id(param) {
             match wallet_id {
-                WalletIdType::Multicoin(_) => return Ok(MulticoinParam(wallet_id)),
+                WalletId::Multicoin(_) => return Ok(MulticoinParam(wallet_id)),
                 _ => return Err(param),
             }
         }
 
-        Ok(MulticoinParam(WalletIdType::Multicoin(param.to_string())))
+        Ok(MulticoinParam(WalletId::Multicoin(param.to_string())))
+    }
+}
+
+pub struct NftCollectionIdParam(pub NFTCollectionId);
+
+impl<'r> FromParam<'r> for NftCollectionIdParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        NFTCollectionId::from_id(param).map(NftCollectionIdParam).ok_or(param)
+    }
+}
+
+pub struct NftAssetIdParam(pub NFTAssetId);
+
+impl<'r> FromParam<'r> for NftAssetIdParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        NFTAssetId::from_id(param).map(NftAssetIdParam).ok_or(param)
     }
 }
 

@@ -132,26 +132,12 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
 
         let (from_asset, from_value, to_asset, to_value) = match token_balance_changes.as_slice() {
             [a] => {
-                let (from, to) = if a.amount.sign() == Sign::Plus {
-                    (&balance_changes, a)
-                } else {
-                    (a, &balance_changes)
-                };
-                (
-                    from.asset_id.clone(),
-                    from.amount.magnitude().clone(),
-                    to.asset_id.clone(),
-                    to.amount.magnitude().clone(),
-                )
+                let (from, to) = if a.amount.sign() == Sign::Plus { (&balance_changes, a) } else { (a, &balance_changes) };
+                (from.asset_id.clone(), from.amount.magnitude().clone(), to.asset_id.clone(), to.amount.magnitude().clone())
             }
             [a, b] => {
                 let (from, to) = if a.amount.sign() == Sign::Plus { (b, a) } else { (a, b) };
-                (
-                    from.asset_id.clone(),
-                    from.amount.magnitude().clone(),
-                    to.asset_id.clone(),
-                    to.amount.magnitude().clone(),
-                )
+                (from.asset_id.clone(), from.amount.magnitude().clone(), to.asset_id.clone(), to.amount.magnitude().clone())
             }
             _ => return None,
         };

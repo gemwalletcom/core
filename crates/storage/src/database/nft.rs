@@ -26,10 +26,7 @@ impl NftStore for DatabaseClient {
 
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAssetRow>, diesel::result::Error> {
         use crate::schema::nft_assets::dsl::*;
-        nft_assets
-            .filter(id.eq_any(asset_ids))
-            .select(NftAssetRow::as_select())
-            .load(&mut self.connection)
+        nft_assets.filter(id.eq_any(asset_ids)).select(NftAssetRow::as_select()).load(&mut self.connection)
     }
 
     fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAssetRow, diesel::result::Error> {
@@ -39,10 +36,7 @@ impl NftStore for DatabaseClient {
 
     fn add_nft_assets(&mut self, values: Vec<NftAssetRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::nft_assets::dsl::*;
-        diesel::insert_into(nft_assets)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(nft_assets).values(values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn update_nft_asset_image_url(&mut self, update: UpdateNftAssetImageUrlRow) -> Result<usize, diesel::result::Error> {
@@ -58,18 +52,12 @@ impl NftStore for DatabaseClient {
 
     fn get_nft_collection(&mut self, collection_id: &str) -> Result<NftCollectionRow, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
-        nft_collections
-            .find(collection_id)
-            .select(NftCollectionRow::as_select())
-            .first(&mut self.connection)
+        nft_collections.find(collection_id).select(NftCollectionRow::as_select()).first(&mut self.connection)
     }
 
     fn get_nft_collections(&mut self, ids: Vec<String>) -> Result<Vec<NftCollectionRow>, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
-        nft_collections
-            .filter(id.eq_any(ids))
-            .select(NftCollectionRow::as_select())
-            .load(&mut self.connection)
+        nft_collections.filter(id.eq_any(ids)).select(NftCollectionRow::as_select()).load(&mut self.connection)
     }
 
     fn get_nft_collection_links(&mut self, _collection_id: &str) -> Result<Vec<NftLinkRow>, diesel::result::Error> {
@@ -82,17 +70,12 @@ impl NftStore for DatabaseClient {
 
     fn add_nft_collections(&mut self, values: Vec<NftCollectionRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
-        diesel::insert_into(nft_collections)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(nft_collections).values(values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn update_nft_collection_image_url(&mut self, update: UpdateNftCollectionImageUrlRow) -> Result<usize, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
-        diesel::update(nft_collections.find(update.id.clone()))
-            .set(update)
-            .execute(&mut self.connection)
+        diesel::update(nft_collections.find(update.id.clone())).set(update).execute(&mut self.connection)
     }
 
     // nft links
@@ -108,9 +91,6 @@ impl NftStore for DatabaseClient {
     // nft reports
     fn add_nft_report(&mut self, report: NewNftReportRow) -> Result<usize, diesel::result::Error> {
         use crate::schema::nft_reports::dsl::*;
-        diesel::insert_into(nft_reports)
-            .values(report)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(nft_reports).values(report).on_conflict_do_nothing().execute(&mut self.connection)
     }
 }

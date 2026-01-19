@@ -83,13 +83,7 @@ async fn root_endpoint() -> &'static str {
     "ok"
 }
 
-async fn process_proxy(
-    chain: Chain,
-    method: Method,
-    request: &Request<'_>,
-    data: Data<'_>,
-    node_service: &NodeService,
-) -> Result<ProxyResponse, ErrorResponse> {
+async fn process_proxy(chain: Chain, method: Method, request: &Request<'_>, data: Data<'_>, node_service: &NodeService) -> Result<ProxyResponse, ErrorResponse> {
     let body = read_request_body(data).await?;
     let headers = build_header_map(request)?;
     let uri = request.uri().to_string();
@@ -123,10 +117,9 @@ async fn read_request_body(data: Data<'_>) -> Result<Vec<u8>, ErrorResponse> {
 fn build_header_map(request: &Request<'_>) -> Result<HeaderMap, ErrorResponse> {
     let mut headers = HeaderMap::new();
     for header in request.headers().iter() {
-        let name = HeaderName::from_bytes(header.name().as_str().as_bytes())
-            .map_err(|_| ErrorResponse::new(Status::BadRequest, format!("Invalid header name: {}", header.name())))?;
-        let value =
-            HeaderValue::from_str(header.value()).map_err(|_| ErrorResponse::new(Status::BadRequest, format!("Invalid header value for {}", header.name())))?;
+        let name =
+            HeaderName::from_bytes(header.name().as_str().as_bytes()).map_err(|_| ErrorResponse::new(Status::BadRequest, format!("Invalid header name: {}", header.name())))?;
+        let value = HeaderValue::from_str(header.value()).map_err(|_| ErrorResponse::new(Status::BadRequest, format!("Invalid header value for {}", header.name())))?;
         headers.append(name, value);
     }
     Ok(headers)

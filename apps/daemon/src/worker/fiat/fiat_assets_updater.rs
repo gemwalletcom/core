@@ -28,14 +28,8 @@ impl FiatAssetsUpdater {
             .collect::<Vec<String>>();
         let buyable_result = Diff::compare(buyable_assets_ids, enabled_asset_ids.clone());
 
-        let _ = self
-            .database
-            .assets()?
-            .update_assets(buyable_result.missing.clone(), vec![AssetUpdate::IsBuyable(true)]);
-        let _ = self
-            .database
-            .assets()?
-            .update_assets(buyable_result.different.clone(), vec![AssetUpdate::IsBuyable(false)]);
+        let _ = self.database.assets()?.update_assets(buyable_result.missing.clone(), vec![AssetUpdate::IsBuyable(true)]);
+        let _ = self.database.assets()?.update_assets(buyable_result.different.clone(), vec![AssetUpdate::IsBuyable(false)]);
 
         // sellable
         let sellable_assets_ids = self
@@ -48,10 +42,7 @@ impl FiatAssetsUpdater {
             .collect::<Vec<String>>();
 
         let sellable_result = Diff::compare(sellable_assets_ids, enabled_asset_ids.clone());
-        let _ = self
-            .database
-            .assets()?
-            .update_assets(sellable_result.missing.clone(), vec![AssetUpdate::IsSellable(true)]);
+        let _ = self.database.assets()?.update_assets(sellable_result.missing.clone(), vec![AssetUpdate::IsSellable(true)]);
         let _ = self
             .database
             .assets()?
@@ -63,10 +54,7 @@ impl FiatAssetsUpdater {
     pub async fn update_trending_fiat_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let from = Utc::now() - Duration::days(30);
         let asset_ids = self.database.fiat()?.get_fiat_assets_popular(from.naive_utc(), 30)?;
-        Ok(self
-            .database
-            .tag()?
-            .set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
+        Ok(self.database.tag()?.set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }
 
     pub async fn update_fiat_assets(&self, name: &str) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {

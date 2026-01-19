@@ -10,23 +10,29 @@ use gem_hypercore::{
     },
     rpc::client::HyperCoreClient,
 };
-use number_formatter::BigNumberFormatter;
+use num_bigint::BigUint;
+use number_formatter::{BigNumberFormatter, NumberFormatterError};
 use primitives::Chain;
 
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset,
-    SwapperQuoteData,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
-    asset::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_USDC},
+    asset::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_UBTC, HYPERCORE_SPOT_USDC},
 };
 
 use super::{
-    math::{SpotSide, apply_slippage, format_decimal, format_decimal_with_scale, format_order_size, scale_units, spot_asset_index},
-    simulator::{SimulationResult, simulate_buy, simulate_sell},
+    math::{SpotSide, apply_slippage, format_decimal, format_decimal_with_scale, format_order_size, round_size_down, scale_units, spot_asset_index},
+    simulator::{simulate_buy, simulate_sell},
 };
 
-const PAIR_BASE_SYMBOL: &str = "HYPE";
-const PAIR_QUOTE_SYMBOL: &str = "USDC";
+const MIN_QUOTE_AMOUNT: i64 = 10;
+
+fn compute_actual_from(use_max_amount: bool, amount: &str, decimals: u32) -> Result<Option<BigUint>, NumberFormatterError> {
+    if !use_max_amount {
+        return Ok(None);
+    }
+    BigNumberFormatter::value_from_amount_biguint(amount, decimals).map(Some)
+}
 
 #[derive(Debug)]
 pub struct HyperCoreSpot {
@@ -96,11 +102,21 @@ impl HyperCoreSpot {
         Ok(token)
     }
 
-    fn resolve_market<'a>(&self, meta: &'a SpotMeta, base: &SpotToken, quote: &SpotToken) -> Result<&'a SpotMarket, SwapperError> {
-        meta.universe()
-            .iter()
-            .find(|market| market.tokens.len() == 2 && market.tokens[0] == base.index && market.tokens[1] == quote.index)
-            .ok_or(SwapperError::NotSupportedPair)
+    fn find_direct_market<'a>(
+        &self,
+        meta: &'a SpotMeta,
+        from_token: &'a SpotToken,
+        to_token: &'a SpotToken,
+    ) -> Result<(&'a SpotMarket, &'a SpotToken, &'a SpotToken, SpotSide), SwapperError> {
+        for market in meta.universe().iter().filter(|m| m.tokens.len() == 2) {
+            if market.tokens[0] == from_token.index && market.tokens[1] == to_token.index {
+                return Ok((market, from_token, to_token, SpotSide::Sell));
+            }
+            if market.tokens[0] == to_token.index && market.tokens[1] == from_token.index {
+                return Ok((market, to_token, from_token, SpotSide::Buy));
+            }
+        }
+        Err(SwapperError::NotSupportedPair)
     }
 }
 
@@ -113,7 +129,7 @@ impl Swapper for HyperCoreSpot {
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![SwapperChainAsset::Assets(
             Chain::HyperCore,
-            vec![HYPERCORE_SPOT_HYPE.id.clone(), HYPERCORE_SPOT_USDC.id.clone()],
+            vec![HYPERCORE_SPOT_HYPE.id.clone(), HYPERCORE_SPOT_USDC.id.clone(), HYPERCORE_SPOT_UBTC.id.clone()],
         )]
     }
 
@@ -128,33 +144,58 @@ impl Swapper for HyperCoreSpot {
             return Err(SwapperError::InvalidAmount("amount must be greater than zero".to_string()));
         }
 
-        let (side, base_token, quote_token) = match (from_token.name.as_str(), to_token.name.as_str()) {
-            (PAIR_BASE_SYMBOL, PAIR_QUOTE_SYMBOL) => (SpotSide::Sell, from_token, to_token),
-            (PAIR_QUOTE_SYMBOL, PAIR_BASE_SYMBOL) => (SpotSide::Buy, to_token, from_token),
-            _ => return Err(SwapperError::NotSupportedPair),
-        };
-
-        let market = self.resolve_market(&meta, base_token, quote_token)?;
-        let orderbook = self.load_orderbook(&base_token.name).await?;
+        let (market, base_token, _quote_token, side) = self.find_direct_market(&meta, from_token, to_token)?;
+        let coin = format!("@{}", market.index);
+        let orderbook = self.load_orderbook(&coin).await?;
         if orderbook.levels.len() < 2 {
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let SimulationResult {
-            amount_out: output_amount,
-            limit_price: base_limit_price,
-        } = match side {
-            SpotSide::Sell => simulate_sell(&amount_in, &orderbook.levels[0])?,
-            SpotSide::Buy => simulate_buy(&amount_in, &orderbook.levels[1])?,
+        // Round to sz_decimals before simulation to ensure quote matches execution.
+        let (raw_output, base_limit_price, size_rounded, actual_from_value) = match side {
+            SpotSide::Sell => {
+                let rounded_input = round_size_down(&amount_in, base_token.sz_decimals);
+                if rounded_input <= BigDecimal::zero() {
+                    return Err(SwapperError::InvalidAmount("amount too small after rounding".to_string()));
+                }
+                let result = simulate_sell(&rounded_input, &orderbook.levels[0])?;
+                let actual_from = compute_actual_from(request.options.use_max_amount, &format_decimal(&rounded_input), request.from_asset.decimals)?;
+                (result.amount_out, result.limit_price, rounded_input, actual_from)
+            }
+            SpotSide::Buy => {
+                let result = simulate_buy(&amount_in, &orderbook.levels[1])?;
+                let rounded_output = round_size_down(&result.amount_out, base_token.sz_decimals);
+                if rounded_output <= BigDecimal::zero() {
+                    return Err(SwapperError::InvalidAmount("output too small after rounding".to_string()));
+                }
+                let actual_from = compute_actual_from(
+                    request.options.use_max_amount,
+                    &format_decimal(&(&rounded_output * &result.limit_price)),
+                    request.from_asset.decimals,
+                )?;
+                (rounded_output.clone(), result.limit_price, rounded_output, actual_from)
+            }
         };
+
+        // Check minimum USD value (quote token is USDC)
+        let quote_amount = match side {
+            SpotSide::Sell => &raw_output,
+            SpotSide::Buy => &amount_in,
+        };
+        if quote_amount < &BigDecimal::from(MIN_QUOTE_AMOUNT) {
+            return Err(SwapperError::InputAmountTooSmall);
+        }
+
+        let builder_fee = client.config.max_builder_fee_bps;
+        let fee_factor = BigDecimal::from(100_000 - builder_fee as i64) / BigDecimal::from(100_000);
+        let output_amount = &raw_output * fee_factor;
 
         let token_decimals: u32 = to_token
             .wei_decimals
             .try_into()
             .map_err(|_| SwapperError::InvalidAmount("invalid amount precision".to_string()))?;
 
-        let output_amount_str = format_decimal(&output_amount);
-        let token_units = BigNumberFormatter::value_from_amount_biguint(&output_amount_str, token_decimals)
+        let token_units = BigNumberFormatter::value_from_amount_biguint(&format_decimal(&output_amount), token_decimals)
             .map_err(|err| SwapperError::InvalidAmount(format!("invalid amount: {err}")))?;
         let scaled_units = scale_units(token_units, token_decimals, request.to_asset.decimals)?;
         let to_value = scaled_units.to_string();
@@ -163,16 +204,15 @@ impl Swapper for HyperCoreSpot {
         let limit_price = apply_slippage(&base_limit_price, side, request.options.slippage.bps, price_decimals)?;
         let limit_price = format_decimal_with_scale(&limit_price, price_decimals);
 
-        let size_value = match side {
-            SpotSide::Sell => amount_in.clone(),
-            SpotSide::Buy => output_amount.clone(),
-        };
-        let size_str = format_order_size(&size_value, base_token.sz_decimals)?;
+        let order_size = format_order_size(&size_rounded, base_token.sz_decimals);
 
         let asset_index = spot_asset_index(market.index);
 
+        // Adjust from_value for use_max_amount to reflect actual swapped amount after sz_decimals rounding.
+        let from_value = actual_from_value.map(|v| v.to_string()).unwrap_or_else(|| request.value.clone());
+
         let quote = Quote {
-            from_value: request.value.clone(),
+            from_value,
             to_value,
             data: ProviderData {
                 provider: self.provider.clone(),
@@ -184,7 +224,7 @@ impl Swapper for HyperCoreSpot {
                         asset_index,
                         side.is_buy(),
                         &limit_price,
-                        &size_str,
+                        &order_size,
                         false,
                         Some(Builder {
                             builder_address: client.config.builder_address.clone(),
@@ -207,90 +247,68 @@ impl Swapper for HyperCoreSpot {
         let order: PlaceOrder = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let order_json = serde_json::to_string(&order).map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?;
 
-        Ok(SwapperQuoteData::new_contract(
-            "".to_string(),
-            quote.request.value.clone(),
-            order_json,
-            None,
-            None,
-        ))
+        Ok(SwapperQuoteData::new_contract("".to_string(), quote.request.value.clone(), order_json, None, None))
     }
 }
 
 #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
 mod tests {
     use super::*;
-    use crate::{FetchQuoteData, SwapperProvider, SwapperQuoteAsset, testkit::mock_quote};
-    use bigdecimal::BigDecimal;
-    use number_formatter::BigNumberFormatter;
+    use crate::{hyperliquid::provider::spot::math::SPOT_ASSET_OFFSET, testkit::mock_quote};
     use primitives::swap::SwapQuoteDataType;
-
-    use super::super::math::{SPOT_ASSET_OFFSET, format_order_size};
     use std::str::FromStr;
 
-    const HYPE_SIZE_DECIMALS: u32 = 2;
-
-    fn native_provider() -> Arc<crate::NativeProvider> {
-        Arc::new(crate::NativeProvider::new())
+    fn quote_asset(asset: &primitives::Asset) -> SwapperQuoteAsset {
+        SwapperQuoteAsset {
+            id: asset.id.to_string(),
+            symbol: asset.symbol.clone(),
+            decimals: asset.decimals as u32,
+        }
     }
 
-    #[tokio::test]
-    async fn test_fetch_spot_quote() {
-        let provider = native_provider();
-        let spot = HyperCoreSpot::new(provider);
+    async fn assert_spot_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) {
+        let spot = HyperCoreSpot::new(Arc::new(crate::NativeProvider::new()));
 
-        let from_asset = SwapperQuoteAsset {
-            id: HYPERCORE_SPOT_HYPE.id.to_string(),
-            symbol: "HYPE".into(),
-            decimals: 8,
-        };
-        let to_asset = SwapperQuoteAsset {
-            id: HYPERCORE_SPOT_USDC.id.to_string(),
-            symbol: "USDC".into(),
-            decimals: 8,
-        };
+        let mut request = mock_quote(from_asset, to_asset);
+        request.options.preferred_providers = vec![SwapperProvider::Hyperliquid];
+        request.value = "2000000000".into();
 
-        let mut quote_request = mock_quote(from_asset, to_asset);
-        quote_request.options.preferred_providers = vec![SwapperProvider::Hyperliquid];
-
-        let quote = spot.fetch_quote(&quote_request).await.unwrap();
-        println!("HyperCoreSpot quote: {:?}", quote);
+        let quote = spot.fetch_quote(&request).await.unwrap();
 
         let order: PlaceOrder = serde_json::from_str(&quote.data.routes[0].route_data).unwrap();
         assert_eq!(order.r#type, "order");
         assert!(order.orders[0].asset >= SPOT_ASSET_OFFSET);
-        assert!(order.orders[0].asset - SPOT_ASSET_OFFSET < SPOT_ASSET_OFFSET);
-        let expected_size = format_order_size(
-            &BigDecimal::from_str(&BigNumberFormatter::value(&quote.from_value, quote.request.from_asset.decimals as i32).unwrap()).unwrap(),
-            HYPE_SIZE_DECIMALS,
-        )
-        .unwrap();
-        assert_eq!(order.orders[0].size, expected_size);
-        assert_eq!(order.orders[0].size.split('.').nth(1).unwrap().len(), HYPE_SIZE_DECIMALS as usize);
 
         let quote_data = spot.fetch_quote_data(&quote, FetchQuoteData::None).await.unwrap();
-        let payload_order: PlaceOrder = serde_json::from_str(&quote_data.data).unwrap();
-        assert_eq!(payload_order.orders.len(), order.orders.len());
-
-        assert_eq!(payload_order.orders[0].size, order.orders[0].size);
-
         assert_eq!(quote.data.provider.id, SwapperProvider::Hyperliquid);
         assert!(!quote.to_value.is_empty());
         assert!(matches!(quote_data.data_type, SwapQuoteDataType::Contract));
-        assert!(!quote_data.data.is_empty());
 
-        let base_amount_str = BigNumberFormatter::value(&quote.from_value, quote.request.from_asset.decimals as i32).unwrap();
-        let quote_amount_str = BigNumberFormatter::value(&quote.to_value, quote.request.to_asset.decimals as i32).unwrap();
+        let from_amount = BigDecimal::from_str(&BigNumberFormatter::value(&quote.from_value, quote.request.from_asset.decimals as i32).unwrap()).unwrap();
+        let to_amount = BigDecimal::from_str(&BigNumberFormatter::value(&quote.to_value, quote.request.to_asset.decimals as i32).unwrap()).unwrap();
 
-        let base_amount = BigDecimal::from_str(&base_amount_str).unwrap();
-        let quote_amount = BigDecimal::from_str(&quote_amount_str).unwrap();
+        assert!(!from_amount.is_zero());
+        assert!(!to_amount.is_zero());
 
-        if !base_amount.is_zero() {
-            let rate = &quote_amount / &base_amount;
-            println!(
-                "HyperCoreSpot swap {} {} -> {} {} at rate {}",
-                base_amount, quote.request.from_asset.symbol, quote_amount, quote_request.to_asset.symbol, rate
-            );
-        }
+        println!(
+            "HyperCoreSpot: {} {} -> {} {} (rate: {})",
+            from_amount,
+            quote.request.from_asset.symbol,
+            to_amount,
+            quote.request.to_asset.symbol,
+            &to_amount / &from_amount
+        );
+    }
+
+    #[tokio::test]
+    async fn test_spot_quote_hype_usdc() {
+        assert_spot_quote(quote_asset(&HYPERCORE_SPOT_HYPE), quote_asset(&HYPERCORE_SPOT_USDC)).await;
+        assert_spot_quote(quote_asset(&HYPERCORE_SPOT_USDC), quote_asset(&HYPERCORE_SPOT_HYPE)).await;
+    }
+
+    #[tokio::test]
+    async fn test_spot_quote_ubtc_usdc() {
+        assert_spot_quote(quote_asset(&HYPERCORE_SPOT_UBTC), quote_asset(&HYPERCORE_SPOT_USDC)).await;
+        assert_spot_quote(quote_asset(&HYPERCORE_SPOT_USDC), quote_asset(&HYPERCORE_SPOT_UBTC)).await;
     }
 }

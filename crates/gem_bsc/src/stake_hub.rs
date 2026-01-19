@@ -151,12 +151,7 @@ pub fn encode_undelegate_call(operator_address: &str, shares: &str) -> Result<Ve
     Ok(call.abi_encode())
 }
 
-pub fn encode_redelegate_call(
-    src_validator: &str,
-    dst_validator: &str,
-    shares: &str,
-    delegate_vote_power: bool,
-) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+pub fn encode_redelegate_call(src_validator: &str, dst_validator: &str, shares: &str, delegate_vote_power: bool) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
     let src_validator = Address::from_str(src_validator)?;
     let dst_validator = Address::from_str(dst_validator)?;
     let amount = U256::from_str(shares)?;

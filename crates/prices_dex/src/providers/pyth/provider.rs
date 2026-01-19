@@ -25,9 +25,7 @@ impl PriceChainAssetsProvider for PythProvider {
         let feeds = self.pyth_client.get_price_feeds().await?;
         Ok(feeds
             .into_iter()
-            .filter_map(|feed| {
-                asset_id_for_feed_id(&feed.id).map(|asset_id| AssetPriceFeed::new(PriceFeedId::new(PriceFeedProvider::Pyth, feed.id.clone()), asset_id))
-            })
+            .filter_map(|feed| asset_id_for_feed_id(&feed.id).map(|asset_id| AssetPriceFeed::new(PriceFeedId::new(PriceFeedProvider::Pyth, feed.id.clone()), asset_id)))
             .collect())
     }
 

@@ -64,10 +64,7 @@ impl<C: Client> TonClient<C> {
     }
 
     pub async fn get_jetton_wallets(&self, address: String) -> Result<JettonWalletsResponse, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .client
-            .get(&format!("/api/v3/jetton/wallets?owner_address={}&limit=100&offset=0", address))
-            .await?)
+        Ok(self.client.get(&format!("/api/v3/jetton/wallets?owner_address={}&limit=100&offset=0", address)).await?)
     }
 
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
