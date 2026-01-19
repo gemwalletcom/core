@@ -21,7 +21,7 @@ impl NotificationRow {
     pub fn as_primitive(&self, wallet_identifier: String) -> Notification {
         Notification {
             wallet_id: wallet_identifier,
-            notification_type: self.notification_type.0.clone(),
+            notification_type: self.notification_type.0,
             is_read: self.is_read,
             metadata: self.metadata.clone(),
             read_at: self.read_at.map(|dt| dt.and_utc()),
