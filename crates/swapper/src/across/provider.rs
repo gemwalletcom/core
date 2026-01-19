@@ -4,7 +4,7 @@ use super::{
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
     models::{DestinationMessage, QuoteContext, RelayRecipient},
-    solana::{AcrossPlusMessage, CompiledIx, DEFAULT_SOLANA_COMPUTE_LIMIT, MULTICALL_HANDLER, SOL_NATIVE_DECIMALS},
+    solana::{AcrossPlusMessage, CompiledIx, DEFAULT_SOLANA_COMPUTE_LIMIT, MULTICALL_HANDLER, SOL_NATIVE_DECIMALS, spl_transfer_checked},
     solana_tx,
 };
 use crate::{
@@ -15,6 +15,7 @@ use crate::{
     asset::*,
     chainlink::ChainlinkPriceFeed,
     client_factory::{create_client_with_chain, create_eth_client},
+    config::ReferralFee,
     eth_address,
     models::*,
 };
@@ -44,7 +45,7 @@ use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, ChainType, EVMChain, swap::ApprovalData, swap::SwapStatus};
 use serde_serializers::biguint_from_hex_str;
 use solana_primitives::{
-    instructions::{associated_token::get_associated_token_address, program_ids, token::transfer_checked},
+    instructions::{associated_token::get_associated_token_address, program_ids},
     types::{Instruction as SolInstruction, Pubkey as SolanaPubkey, find_program_address},
 };
 use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
@@ -247,12 +248,9 @@ impl Across {
         let mainnet_token = eth_address::parse_or_weth_address(&mainnet_asset, mainnet_chain)?;
 
         let referral_fees = request.options.fee.clone().unwrap_or_default();
+        // TODO: Re-enable Solana referral fees once cross-chain actions are supported by relayers
         let referral_fee = if to_chain == Chain::Solana {
-            if referral_fees.solana.address.is_empty() {
-                referral_fees.evm_bridge
-            } else {
-                referral_fees.solana
-            }
+            ReferralFee::default()
         } else {
             referral_fees.evm_bridge
         };
@@ -475,18 +473,18 @@ impl Across {
         let fee_amount_u64: u64 = fee_amount.try_into().map_err(|_| SwapperError::InvalidAmount("Referral fee overflow".into()))?;
         let user_amount_u64: u64 = user_amount.try_into().map_err(|_| SwapperError::InvalidAmount("User amount overflow".into()))?;
 
-        let transfer_fee_ix = transfer_checked(
+        let transfer_fee_ix = spl_transfer_checked(
             &handler_token_account,
-            &referral_token_account,
             &mint,
+            &referral_token_account,
             &handler_signer,
             fee_amount_u64,
             ctx.output_token_decimals,
         );
-        let transfer_user_ix = transfer_checked(
+        let transfer_user_ix = spl_transfer_checked(
             &handler_token_account,
-            &user_token_account,
             &mint,
+            &user_token_account,
             &handler_signer,
             user_amount_u64,
             ctx.output_token_decimals,
@@ -1270,6 +1268,13 @@ mod tests {
         let compiled: Vec<CompiledIx> = borsh::from_slice(&across_message.handler_message).unwrap();
         assert_eq!(compiled.len(), 2);
         assert_eq!(compiled[0].account_key_indexes.len(), 4);
+
+        // Verify correct SPL Token transfer_checked account order: [source, mint, destination, authority]
+        // Account indexes (1-based): handler_token_account=1, referral_token_account=2, user_token_account=3, handler_signer=4, mint=5, token_program=6
+        // ix[0] (fee transfer): source=1, mint=5, dest=2, auth=4
+        assert_eq!(compiled[0].account_key_indexes, vec![1, 5, 2, 4]);
+        // ix[1] (user transfer): source=1, mint=5, dest=3, auth=4
+        assert_eq!(compiled[1].account_key_indexes, vec![1, 5, 3, 4]);
     }
 
     #[tokio::test]
