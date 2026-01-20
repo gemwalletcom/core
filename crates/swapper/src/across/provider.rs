@@ -4,12 +4,12 @@ use super::{
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
     models::{DestinationMessage, QuoteContext, RelayRecipient},
-    solana::{AcrossPlusMessage, CompiledIx, DEFAULT_SOLANA_COMPUTE_LIMIT, MULTICALL_HANDLER, SOL_NATIVE_DECIMALS, spl_transfer_checked},
+    solana::{AcrossPlusMessage, CompiledIx, DEFAULT_SOLANA_COMPUTE_LIMIT, MULTICALL_HANDLER, SOL_NATIVE_DECIMALS},
     solana_tx,
 };
 use crate::{
     SwapResult, Swapper, SwapperError, SwapperProvider, SwapperQuoteData,
-    across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
+    across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT, MESSAGE_GAS_MULTIPLIER},
     alien::RpcProvider,
     approval::check_approval_erc20,
     asset::*,
@@ -45,7 +45,7 @@ use num_bigint::{BigInt, Sign};
 use primitives::{AssetId, Chain, ChainType, EVMChain, swap::ApprovalData, swap::SwapStatus};
 use serde_serializers::biguint_from_hex_str;
 use solana_primitives::{
-    instructions::{associated_token::get_associated_token_address, program_ids},
+    instructions::{associated_token::get_associated_token_address, program_ids, token::transfer as spl_transfer},
     types::{Instruction as SolInstruction, Pubkey as SolanaPubkey, find_program_address},
 };
 use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
@@ -248,7 +248,7 @@ impl Across {
         let mainnet_token = eth_address::parse_or_weth_address(&mainnet_asset, mainnet_chain)?;
 
         let referral_fees = request.options.fee.clone().unwrap_or_default();
-        // TODO: Re-enable Solana referral fees once cross-chain actions are supported by relayers
+        // TODO: Re-enable Solana referral fees once messages are handled
         let referral_fee = if from_chain == Chain::Solana || to_chain == Chain::Solana {
             ReferralFee::default()
         } else {
@@ -379,7 +379,6 @@ impl Across {
     }
 
     fn calculate_relayer_capital_fee(from_amount: U256, cost_config: &fees::CapitalCostConfig) -> U256 {
-        // Capital fee applies to all destinations - it compensates relayers for fronting capital
         let relayer_calc = RelayerFeeCalculator::default();
         let from_amount_bigint = BigInt::from_bytes_le(Sign::Plus, &from_amount.to_le_bytes::<32>());
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&from_amount_bigint, cost_config);
@@ -473,31 +472,17 @@ impl Across {
         let fee_amount_u64: u64 = fee_amount.try_into().map_err(|_| SwapperError::InvalidAmount("Referral fee overflow".into()))?;
         let user_amount_u64: u64 = user_amount.try_into().map_err(|_| SwapperError::InvalidAmount("User amount overflow".into()))?;
 
-        let transfer_fee_ix = spl_transfer_checked(
-            &handler_token_account,
-            &mint,
-            &referral_token_account,
-            &handler_signer,
-            fee_amount_u64,
-            ctx.output_token_decimals,
-        );
-        let transfer_user_ix = spl_transfer_checked(
-            &handler_token_account,
-            &mint,
-            &user_token_account,
-            &handler_signer,
-            user_amount_u64,
-            ctx.output_token_decimals,
-        );
+        let transfer_fee_ix = spl_transfer(&handler_token_account, &referral_token_account, &handler_signer, fee_amount_u64);
+        let transfer_user_ix = spl_transfer(&handler_token_account, &user_token_account, &handler_signer, user_amount_u64);
 
-        let accounts = vec![handler_token_account, referral_token_account, user_token_account, handler_signer, mint, token_program];
+        let accounts = vec![handler_token_account, referral_token_account, user_token_account, handler_signer, token_program];
 
         let compiled_ixs = self.compile_solana_instructions(&[transfer_fee_ix, transfer_user_ix], &accounts)?;
         let handler_message = borsh::to_vec(&compiled_ixs).map_err(|_| SwapperError::ComputeQuoteError("Failed to encode handler message".into()))?;
 
         let across_message = AcrossPlusMessage {
             handler: handler_program,
-            read_only_len: 3,
+            read_only_len: 2, // handler_signer and token_program are read-only
             value_amount: 0,
             accounts,
             handler_message,
@@ -514,7 +499,7 @@ impl Across {
     fn compile_solana_instructions(&self, instructions: &[SolInstruction], accounts: &[SolanaPubkey]) -> Result<Vec<CompiledIx>, SwapperError> {
         let mut account_index_map: HashMap<String, u8> = HashMap::new();
         for (idx, account) in accounts.iter().enumerate() {
-            account_index_map.insert(account.to_base58(), (idx + 1) as u8);
+            account_index_map.insert(account.to_base58(), idx as u8);
         }
 
         let mut compiled = Vec::with_capacity(instructions.len());
@@ -679,20 +664,23 @@ impl Across {
         eth_price: Option<&BigInt>,
         sol_price: Option<&BigInt>,
     ) -> Result<(U256, V3RelayData), SwapperError> {
+        let has_message = !destination_message.bytes.is_empty();
+
         if ctx.to_chain == Chain::Solana {
             let unit_price = Self::fetch_solana_unit_price(self.rpc_provider.clone()).await?;
             let gas_fee_micro_lamports = DEFAULT_SOLANA_COMPUTE_LIMIT * unit_price;
-            // Convert micro-lamports to lamports (1 lamport = 10^6 micro-lamports)
             let gas_fee_lamports = gas_fee_micro_lamports / 1_000_000;
-            // Add base fee (signature cost) - approximately 5000 lamports per signature
             let total_gas_lamports = gas_fee_lamports + 5000;
 
-            // Convert lamports to output token using SOL price
-            let gas_fee = if let Some(price) = sol_price {
+            let mut gas_fee = if let Some(price) = sol_price {
                 Self::calculate_fee_in_token_with_native_decimals(&U256::from(total_gas_lamports), price, ctx.output_token_decimals as u32, SOL_NATIVE_DECIMALS)
             } else {
                 U256::ZERO
             };
+
+            if has_message {
+                gas_fee *= U256::from(MESSAGE_GAS_MULTIPLIER);
+            }
 
             let recipient = Self::recipient_to_fixed_bytes(&destination_message.recipient)?;
             let v3_relay_data = self.build_v3_relay_data(ctx, recipient, output_token, &destination_message.bytes)?;
@@ -709,6 +697,10 @@ impl Across {
 
             if let Some(price) = eth_price {
                 gas_fee = Self::calculate_fee_in_token(&gas_fee, price, 6);
+            }
+
+            if has_message {
+                gas_fee *= U256::from(MESSAGE_GAS_MULTIPLIER);
             }
 
             Ok((gas_fee, v3_relay_data))
@@ -1253,9 +1245,8 @@ mod tests {
         assert_eq!(destination_message.referral_fee, expected_fee);
 
         let across_message: AcrossPlusMessage = borsh::from_slice(&destination_message.bytes).unwrap();
-        assert_eq!(across_message.read_only_len, 3);
+        assert_eq!(across_message.read_only_len, 2);
 
-        // Accounts should be: handler_token_account, referral_token_account (ATA), user_token_account (ATA), handler_signer, mint, token_program
         let mint = SolanaPubkey::from_str(SOLANA_USDC.id.token_id.as_ref().unwrap()).unwrap();
         let user_pubkey = SolanaPubkey::from_str(destination).unwrap();
         let referral_pubkey = SolanaPubkey::from_str(referral_address).unwrap();
@@ -1267,14 +1258,9 @@ mod tests {
 
         let compiled: Vec<CompiledIx> = borsh::from_slice(&across_message.handler_message).unwrap();
         assert_eq!(compiled.len(), 2);
-        assert_eq!(compiled[0].account_key_indexes.len(), 4);
-
-        // Verify correct SPL Token transfer_checked account order: [source, mint, destination, authority]
-        // Account indexes (1-based): handler_token_account=1, referral_token_account=2, user_token_account=3, handler_signer=4, mint=5, token_program=6
-        // ix[0] (fee transfer): source=1, mint=5, dest=2, auth=4
-        assert_eq!(compiled[0].account_key_indexes, vec![1, 5, 2, 4]);
-        // ix[1] (user transfer): source=1, mint=5, dest=3, auth=4
-        assert_eq!(compiled[1].account_key_indexes, vec![1, 5, 3, 4]);
+        assert_eq!(compiled[0].account_key_indexes.len(), 3);
+        assert_eq!(compiled[0].account_key_indexes, vec![0, 1, 3]);
+        assert_eq!(compiled[1].account_key_indexes, vec![0, 2, 3]);
     }
 
     #[tokio::test]
