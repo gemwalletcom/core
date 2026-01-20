@@ -238,6 +238,14 @@ impl RewardsClient {
 
         let since = now().ago(risk_score_config.lookback);
 
+        let banned_user_count = match client.count_disabled_users_by_device(auth.device.id, since) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+        if banned_user_count > 0 {
+            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerDeviceDaily));
+        }
+
         let referrer_verified = match client.rewards().is_verified_by_username(referrer_username) {
             Ok(verified) => verified,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
@@ -451,6 +459,7 @@ impl RewardsClient {
             velocity_penalty: self.config.get_i64(ConfigKey::ReferralAbuseVelocityPenaltyPerSignal)?,
             referral_per_user_daily: self.config.get_i64(ConfigKey::ReferralPerUserDaily)?,
             verified_multiplier: self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?,
+            cross_referrer_device_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerDevicePenalty)?,
         })
     }
 

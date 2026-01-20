@@ -74,6 +74,7 @@ pub enum ConfigKey {
     ReferralRiskScoreHighRiskDeviceModelPenalty,
     ReferralRiskScoreIpHistoryPenaltyPerAbuser,
     ReferralRiskScoreIpHistoryMaxPenalty,
+    ReferralRiskScoreCrossReferrerDevicePenalty,
 
     // Referral Abuse Detection
     ReferralAbuseDisableThreshold,
@@ -225,6 +226,7 @@ impl ConfigKey {
             Self::ReferralRiskScoreHighRiskDeviceModelPenalty => "50",
             Self::ReferralRiskScoreIpHistoryPenaltyPerAbuser => "30",
             Self::ReferralRiskScoreIpHistoryMaxPenalty => "150",
+            Self::ReferralRiskScoreCrossReferrerDevicePenalty => "500",
             Self::ReferralAbuseDisableThreshold => "200",
             Self::ReferralAbuseAttemptPenalty => "15",
             Self::ReferralAbuseVerifiedThresholdMultiplier => "2",
