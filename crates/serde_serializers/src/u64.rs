@@ -63,7 +63,7 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
     match s {
-        Some(str_val) => str_val.parse::<u64>().map(Some).map_err(serde::de::Error::custom),
+        Some(str_val) => parse_u64_string(&str_val).map(Some).map_err(de::Error::custom),
         None => Ok(None),
     }
 }
@@ -85,6 +85,11 @@ mod tests {
         let json = r#"{"gas_used": "123"}"#;
         let result: TestStruct = serde_json::from_str(json).unwrap();
         assert_eq!(result.gas_used, Some(123));
+
+        // Test with hex string value
+        let json = r#"{"gas_used": "0x2a"}"#;
+        let result: TestStruct = serde_json::from_str(json).unwrap();
+        assert_eq!(result.gas_used, Some(42));
 
         // Test with null value
         let json = r#"{"gas_used": null}"#;

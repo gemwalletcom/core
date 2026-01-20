@@ -3,8 +3,6 @@ use std::marker::PhantomData;
 
 use serde::de::{self, Visitor};
 
-use super::map_err_option;
-
 pub(crate) trait NumberFromValue: Sized {
     fn from_u64(value: u64) -> Result<Self, String>;
     fn from_i64(value: i64) -> Result<Self, String>;
@@ -21,7 +19,7 @@ impl<T> OptionNumberVisitor<T> {
     where
         E: de::Error,
     {
-        map_err_option(value)
+        value.map(Some).map_err(de::Error::custom)
     }
 }
 

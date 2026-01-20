@@ -7,13 +7,6 @@ where
     value.map_err(de::Error::custom)
 }
 
-fn map_err_option<E, T>(value: Result<T, String>) -> Result<Option<T>, E>
-where
-    E: de::Error,
-{
-    map_err(value).map(Some)
-}
-
 mod number_value;
 mod string_or_number;
 mod string_value;

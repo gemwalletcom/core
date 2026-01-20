@@ -1,6 +1,22 @@
 use num_bigint::BigInt;
 use serde::{Deserialize, de};
 
+fn parse_bigint_hex(value: &str) -> Result<BigInt, String> {
+    let hex_value = value.strip_prefix("0x").unwrap_or(value);
+    if hex_value.is_empty() {
+        return Ok(BigInt::from(0));
+    }
+    BigInt::parse_bytes(hex_value.as_bytes(), 16).ok_or_else(|| format!("Invalid hex string: {value}"))
+}
+
+fn parse_bigint_str(value: &str) -> Result<BigInt, String> {
+    if value.starts_with("0x") {
+        parse_bigint_hex(value)
+    } else {
+        value.parse::<BigInt>().map_err(|err| err.to_string())
+    }
+}
+
 pub fn serialize_bigint<S>(value: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -13,15 +29,7 @@ where
     D: de::Deserializer<'de>,
 {
     let s: String = de::Deserialize::deserialize(deserializer)?;
-
-    if let Some(hex_str) = s.strip_prefix("0x") {
-        if hex_str.is_empty() {
-            return Ok(BigInt::from(0));
-        }
-        BigInt::parse_bytes(hex_str.as_bytes(), 16).ok_or_else(|| de::Error::custom(format!("Invalid hex string: {s}")))
-    } else {
-        s.parse::<BigInt>().map_err(de::Error::custom)
-    }
+    parse_bigint_str(&s).map_err(de::Error::custom)
 }
 
 pub fn deserialize_option_bigint_from_str<'de, D>(deserializer: D) -> Result<Option<BigInt>, D::Error>
@@ -30,28 +38,13 @@ where
 {
     let s: Option<String> = Option::deserialize(deserializer)?;
     match s {
-        Some(str_val) => {
-            if let Some(hex_str) = str_val.strip_prefix("0x") {
-                if hex_str.is_empty() {
-                    return Ok(Some(BigInt::from(0)));
-                }
-                BigInt::parse_bytes(hex_str.as_bytes(), 16)
-                    .map(Some)
-                    .ok_or_else(|| de::Error::custom(format!("Invalid hex string: {str_val}")))
-            } else {
-                str_val.parse::<BigInt>().map(Some).map_err(de::Error::custom)
-            }
-        }
+        Some(str_val) => parse_bigint_str(&str_val).map(Some).map_err(de::Error::custom),
         None => Ok(None),
     }
 }
 
 pub fn bigint_from_hex_str(hex_str: &str) -> Result<BigInt, Box<dyn std::error::Error + Send + Sync>> {
-    let hex_part = hex_str.strip_prefix("0x").unwrap_or(hex_str);
-    if hex_part.is_empty() {
-        return Ok(BigInt::from(0));
-    }
-    BigInt::parse_bytes(hex_part.as_bytes(), 16).ok_or_else(|| format!("Invalid hex format: {}", hex_str).into())
+    parse_bigint_hex(hex_str).map_err(|err| err.into())
 }
 
 pub fn deserialize_bigint_vec_from_hex_str<'de, D>(deserializer: D) -> Result<Vec<BigInt>, D::Error>
