@@ -33,7 +33,7 @@ impl RewardsConsumer {
     fn create_in_app_notification_payloads(&self, event: &primitives::RewardEvent) -> Result<Vec<InAppNotificationPayload>, Box<dyn Error + Send + Sync>> {
         let metadata = NotificationRewardsMetadata {
             username: event.username.clone(),
-            points: Some(event.points),
+            points: (event.points > 0).then_some(event.points),
         };
         let metadata_value = serde_json::to_value(metadata).ok();
 

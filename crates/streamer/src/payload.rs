@@ -310,6 +310,15 @@ impl InAppNotificationPayload {
 
 impl fmt::Display for InAppNotificationPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "wallet_id: {}, notification_type: {}", self.wallet_id, self.notification_type.as_ref())
+        match &self.metadata {
+            Some(metadata) => write!(
+                f,
+                "wallet_id: {}, notification_type: {}, metadata: {}",
+                self.wallet_id,
+                self.notification_type.as_ref(),
+                metadata
+            ),
+            None => write!(f, "wallet_id: {}, notification_type: {}", self.wallet_id, self.notification_type.as_ref()),
+        }
     }
 }
