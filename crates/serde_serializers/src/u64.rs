@@ -51,11 +51,7 @@ where
     D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(deserializer)?;
-    if let Some(hex_val) = s.strip_prefix("0x") {
-        u64::from_str_radix(hex_val, 16).map_err(|_| de::Error::custom(format!("Invalid hex string for u64: {s}")))
-    } else {
-        s.parse::<u64>().map_err(serde::de::Error::custom)
-    }
+    parse_u64_string(&s).map_err(de::Error::custom)
 }
 
 pub fn deserialize_u64_from_str_or_int<'de, D>(deserializer: D) -> Result<u64, D::Error>

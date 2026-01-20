@@ -61,7 +61,7 @@ where
 {
     let trimmed = hex_value.trim();
     if !trimmed.starts_with("0x") {
-        return Err(de::Error::custom(format!("Invalid hex string: {hex_value}")));
+        return Err(de::Error::custom(format!("Hex string must be prefixed with '0x': {hex_value}")));
     }
     biguint_from_hex_str(trimmed).map_err(de::Error::custom)
 }
