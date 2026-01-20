@@ -11,6 +11,8 @@ CREATE TABLE usernames (
     created_at timestamp NOT NULL default current_timestamp
 );
 
+CREATE INDEX usernames_username_lower_idx ON usernames (lower(username));
+
 SELECT diesel_manage_updated_at('usernames');
 
 CREATE TABLE rewards (
