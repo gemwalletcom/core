@@ -3560,7 +3560,7 @@ dependencies = [
 
 [[package]]
 name = "gemstone"
-version = "0.31.1"
+version = "1.0.2"
 dependencies = [
  "alloy-primitives",
  "async-trait",
