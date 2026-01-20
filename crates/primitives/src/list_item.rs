@@ -37,10 +37,16 @@ pub enum CoreListItemBadge {
 pub struct CoreListItem {
     pub id: String,
     pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub subtitle: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub subvalue: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub icon: Option<CoreListItemIcon>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub badge: Option<CoreListItemBadge>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
