@@ -22,13 +22,9 @@ impl NumberFromValue for u32 {
         }
         Ok(value as u32)
     }
-
-    fn from_f64(value: f64) -> Result<Self, String> {
-        Err(format!("Invalid number for u32: {value}"))
-    }
 }
 
-/// Deserialize an Option<u32> from a number (integer or float, rounded)
+/// Deserialize an Option<u32> from a number (integer only).
 pub fn deserialize_option_u32_from_number<'de, D>(deserializer: D) -> Result<Option<u32>, D::Error>
 where
     D: Deserializer<'de>,

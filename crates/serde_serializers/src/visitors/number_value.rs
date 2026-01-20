@@ -8,7 +8,6 @@ use super::map_err_option;
 pub(crate) trait NumberFromValue: Sized {
     fn from_u64(value: u64) -> Result<Self, String>;
     fn from_i64(value: i64) -> Result<Self, String>;
-    fn from_f64(value: f64) -> Result<Self, String>;
 }
 
 pub(crate) struct OptionNumberVisitor<T>(PhantomData<T>);
@@ -33,7 +32,7 @@ where
     type Value = Option<T>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("a number or null")
+        formatter.write_str("an integer or null")
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
@@ -48,13 +47,6 @@ where
         E: de::Error,
     {
         Self::map_number(T::from_i64(value))
-    }
-
-    fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Self::map_number(T::from_f64(value))
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E>

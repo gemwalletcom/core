@@ -17,7 +17,7 @@ fn invalid_number(value: impl fmt::Display) -> String {
 }
 
 impl StringOrNumberFromValue for u64 {
-    const EXPECTING: &'static str = "a number or string representing u64";
+    const EXPECTING: &'static str = "a string or integer representing u64";
 
     fn from_str(value: &str) -> Result<Self, String> {
         parse_u64_string(value)
@@ -32,10 +32,6 @@ impl StringOrNumberFromValue for u64 {
             return Err(invalid_number(value));
         }
         Ok(value as u64)
-    }
-
-    fn from_f64(value: f64) -> Result<Self, String> {
-        Err(invalid_number(value))
     }
 }
 

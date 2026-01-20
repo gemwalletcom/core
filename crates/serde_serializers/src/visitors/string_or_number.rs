@@ -11,7 +11,6 @@ pub(crate) trait StringOrNumberFromValue: Sized {
     fn from_str(value: &str) -> Result<Self, String>;
     fn from_u64(value: u64) -> Result<Self, String>;
     fn from_i64(value: i64) -> Result<Self, String>;
-    fn from_f64(value: f64) -> Result<Self, String>;
 }
 
 pub(crate) struct StringOrNumberVisitor<T>(PhantomData<T>);
@@ -65,12 +64,5 @@ where
         E: de::Error,
     {
         Self::map_value(T::from_i64(value))
-    }
-
-    fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        Self::map_value(T::from_f64(value))
     }
 }
