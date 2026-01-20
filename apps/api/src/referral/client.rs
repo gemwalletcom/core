@@ -161,7 +161,7 @@ impl RewardsClient {
     }
 
     pub async fn use_referral_code(&self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
-        let locale = &auth.device.locale;
+        let locale = auth.device.locale.as_str();
         let wallet_identifier = WalletId::Multicoin(auth.address.clone()).id();
         let wallet = self.db.wallets()?.get_or_create_wallet(NewWalletRow {
             identifier: wallet_identifier,
@@ -239,7 +239,7 @@ impl RewardsClient {
             device_platform_store: *auth.device.platform_store,
             device_os: auth.device.os.clone(),
             device_model: auth.device.model.clone(),
-            device_locale: auth.device.locale.clone(),
+            device_locale: auth.device.locale.as_str().to_string(),
             device_currency: auth.device.currency.clone(),
             ip_result,
             referrer_verified,

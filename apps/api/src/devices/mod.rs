@@ -1,12 +1,12 @@
 pub mod client;
-use crate::params::DeviceIdParam;
+use crate::params::{DeviceIdParam, DeviceParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use client::DevicesClient;
 use primitives::device::Device;
 use rocket::{State, delete, get, post, put, tokio::sync::Mutex};
 
 #[post("/devices", format = "json", data = "<device>")]
-pub async fn add_device(device: rocket::serde::json::Json<Device>, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
+pub async fn add_device(device: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
     Ok(client.lock().await.add_device(device.0)?.into())
 }
 
@@ -17,7 +17,7 @@ pub async fn get_device(device_id: DeviceIdParam, client: &State<Mutex<DevicesCl
 
 #[put("/devices/<device_id>", format = "json", data = "<device>")]
 pub async fn update_device(
-    device: rocket::serde::json::Json<Device>,
+    device: DeviceParam,
     #[allow(unused)] device_id: DeviceIdParam,
     client: &State<Mutex<DevicesClient>>,
 ) -> Result<ApiResponse<Device>, ApiError> {

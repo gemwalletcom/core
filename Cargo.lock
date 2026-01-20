@@ -778,6 +778,7 @@ dependencies = [
  "streamer",
  "strum",
  "tokio",
+ "unic-langid",
 ]
 
 [[package]]

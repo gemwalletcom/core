@@ -17,7 +17,7 @@ impl InAppNotificationsConsumer {
     }
 
     fn create_push_notification(&self, device: &Device, notification_type: NotificationType, wallet_id: i32, points: Option<i32>) -> GorushNotification {
-        let localizer = LanguageLocalizer::new_with_language(&device.locale);
+        let localizer = LanguageLocalizer::new_with_language(device.locale.as_str());
         let (title, message) = notification_content(&localizer, notification_type, points.unwrap_or(0));
         let data = PushNotification {
             notification_type: PushNotificationTypes::Rewards,
