@@ -72,7 +72,7 @@ fn notification_content(localizer: &LanguageLocalizer, notification_type: Notifi
         ),
         NotificationType::RewardsInvite => (
             localizer.notification_reward_title(RewardEventType::InviteNew.points()),
-            localizer.notification_reward_invite_description(),
+            localizer.notification_reward_invite_description(None),
         ),
         NotificationType::ReferralJoined => (
             localizer.notification_reward_title(RewardEventType::Joined.points()),

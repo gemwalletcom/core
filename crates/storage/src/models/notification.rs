@@ -1,7 +1,7 @@
 use crate::sql_types::NotificationType;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::Notification;
+use primitives::NotificationItem;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
@@ -18,8 +18,8 @@ pub struct NotificationRow {
 }
 
 impl NotificationRow {
-    pub fn as_primitive(&self, wallet_identifier: String) -> Notification {
-        Notification {
+    pub fn as_primitive(&self, wallet_identifier: String) -> NotificationItem {
+        NotificationItem {
             wallet_id: wallet_identifier,
             notification_type: self.notification_type.0,
             is_read: self.is_read,

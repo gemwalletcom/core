@@ -241,7 +241,11 @@ pub use self::chain_signer::ChainSigner;
 pub mod notification_type;
 pub use self::notification_type::NotificationType;
 pub mod notification;
-pub use self::notification::{Notification, NotificationRewardsMetadata};
+pub use self::notification::{NotificationItem, NotificationRewardsMetadata};
+pub mod list_item;
+pub use self::list_item::{CoreEmoji, CoreListItem, CoreListItemBadge, CoreListItemIcon};
+pub mod notification_item;
+pub use self::notification_item::Notification;
 pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;
 

@@ -16,6 +16,7 @@ config = { workspace = true }
 prometheus-client = { workspace = true }
 strum = { workspace = true }
 redis = { workspace = true }
+chrono = { workspace = true }
 
 gem_tracing = { path = "../../crates/tracing", features = ["sentry"] }
 storage = { path = "../../crates/storage" }
@@ -24,6 +25,8 @@ fiat = { path = "../../crates/fiat" }
 settings = { path = "../../crates/settings" }
 settings_chain = { path = "../../crates/settings_chain" }
 name_resolver = { path = "../../crates/name_resolver" }
+notifications = { path = "../../crates/notifications" }
+localizer = { path = "../../crates/localizer" }
 primitives = { path = "../../crates/primitives" }
 api_connector = { path = "../../crates/api_connector" }
 search_index = { path = "../../crates/search_index" }

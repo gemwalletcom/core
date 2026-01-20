@@ -41,6 +41,7 @@ members = [
     "crates/metrics",
     "crates/search_index",
     "crates/nft",
+    "crates/notifications",
     "crates/serde_serializers",
     "crates/number_formatter",
     "crates/prices_dex",

@@ -1,7 +1,7 @@
 use crate::schema::assets_addresses::dsl::*;
 
 use crate::{DatabaseClient, models::asset_address::AssetAddressRow};
-use chrono::DateTime;
+use chrono::NaiveDateTime;
 use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::sql_types::{Nullable, Text};
@@ -9,7 +9,7 @@ use primitives::ChainAddress;
 
 pub(crate) trait AssetsAddressesStore {
     fn add_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error>;
-    fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_timestamp: Option<u32>, include_with_prices: bool)
+    fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_datetime: Option<NaiveDateTime>, include_with_prices: bool)
     -> Result<Vec<AssetAddressRow>, diesel::result::Error>;
     fn delete_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error>;
 }
@@ -30,14 +30,9 @@ impl AssetsAddressesStore for DatabaseClient {
     fn get_assets_by_addresses(
         &mut self,
         values: Vec<ChainAddress>,
-        from_timestamp: Option<u32>,
+        from_datetime: Option<NaiveDateTime>,
         include_with_prices: bool,
     ) -> Result<Vec<AssetAddressRow>, diesel::result::Error> {
-        let datetime = if let Some(from_timestamp) = from_timestamp {
-            DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc()
-        } else {
-            DateTime::from_timestamp(0, 0).unwrap().naive_utc()
-        };
         let chains = values.iter().map(|x| x.chain.as_ref()).collect::<Vec<&str>>();
         let addresses = values.iter().map(|x| x.address.clone()).collect::<Vec<String>>();
         use crate::schema::assets_addresses::dsl as assets_addresses_dsl;
@@ -46,9 +41,12 @@ impl AssetsAddressesStore for DatabaseClient {
         let mut query = assets_addresses_dsl::assets_addresses
             .filter(assets_addresses_dsl::chain.eq_any(chains))
             .filter(assets_addresses_dsl::address.eq_any(addresses))
-            .filter(assets_addresses_dsl::created_at.gt(datetime))
             .select(AssetAddressRow::as_select())
             .into_boxed();
+
+        if let Some(datetime) = from_datetime {
+            query = query.filter(assets_addresses_dsl::created_at.gt(datetime));
+        }
 
         if include_with_prices {
             query = query.filter(diesel::dsl::exists(

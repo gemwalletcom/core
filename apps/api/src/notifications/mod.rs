@@ -6,9 +6,13 @@ pub use client::NotificationsClient;
 use primitives::Notification;
 use rocket::{State, get, post, tokio::sync::Mutex};
 
-#[get("/notifications/<device_id>")]
-pub async fn get_notifications(device_id: DeviceIdParam, client: &State<Mutex<NotificationsClient>>) -> Result<ApiResponse<Vec<Notification>>, ApiError> {
-    Ok(client.lock().await.get_notifications(&device_id.0)?.into())
+#[get("/notifications/<device_id>?<from_timestamp>")]
+pub async fn get_notifications(
+    device_id: DeviceIdParam,
+    from_timestamp: Option<u32>,
+    client: &State<Mutex<NotificationsClient>>,
+) -> Result<ApiResponse<Vec<Notification>>, ApiError> {
+    Ok(client.lock().await.get_notifications(&device_id.0, from_timestamp)?.into())
 }
 
 #[post("/notifications/<device_id>/read")]
