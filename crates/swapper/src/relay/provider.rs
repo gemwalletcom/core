@@ -10,13 +10,37 @@ use super::{
     asset::{SUPPORTED_CHAINS, map_asset_to_relay_currency},
     chain::RelayChain,
     client::RelayClient,
-    model::{RelayQuoteRequest, RouteData},
+    model::{RelayQuoteRequest, RelayQuoteResponse},
     quote_data_mapper,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20,
+    approval::check_approval_erc20, config::ReferralFee, referrer::DEFAULT_REFERRER,
 };
+
+fn resolve_referral_fee(request: &QuoteRequest, to_chain: RelayChain) -> Option<&ReferralFee> {
+    let fees = request.options.fee.as_ref()?;
+    let fee = match to_chain {
+        RelayChain::Bitcoin => return None,
+        RelayChain::Solana => &fees.solana,
+        _ if to_chain.is_evm() => &fees.evm,
+        _ => return None,
+    };
+
+    if fee.address.is_empty() || fee.bps == 0 {
+        return None;
+    }
+
+    Some(fee)
+}
+
+fn resolve_referrer_data(request: &QuoteRequest, to_chain: RelayChain) -> (Option<String>, Option<String>) {
+    let fee = resolve_referral_fee(request, to_chain);
+    let referrer_address = fee.map(|fee| fee.address.clone());
+    let referrer = referrer_address.as_ref().map(|_| DEFAULT_REFERRER.to_string());
+
+    (referrer, referrer_address)
+}
 
 impl Relay<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
@@ -47,6 +71,7 @@ where
 
         let origin_currency = map_asset_to_relay_currency(&from_asset_id, &from_chain)?;
         let destination_currency = map_asset_to_relay_currency(&to_asset_id, &to_chain)?;
+        let (referrer, referrer_address) = resolve_referrer_data(request, to_chain);
 
         let relay_request = RelayQuoteRequest {
             user: request.wallet_address.clone(),
@@ -57,17 +82,15 @@ where
             amount: request.value.clone(),
             recipient: request.destination_address.clone(),
             trade_type: "EXACT_INPUT".to_string(),
+            referrer,
+            referrer_address,
             refund_to: Some(request.wallet_address.clone()),
         };
 
         let quote_response = self.client.get_quote(relay_request).await?;
 
         let to_value = quote_response.details.currency_out.amount.clone();
-        let eta_in_seconds = quote_response.details.time_estimate;
-
-        let route_data = RouteData {
-            quote_response: quote_response.clone(),
-        };
+        let eta_in_seconds = quote_response.details.time_estimate_u32();
 
         let quote = Quote {
             from_value: request.value.clone(),
@@ -77,7 +100,7 @@ where
                 routes: vec![Route {
                     input: from_asset_id,
                     output: to_asset_id,
-                    route_data: serde_json::to_string(&route_data).unwrap_or_default(),
+                    route_data: serde_json::to_string(&quote_response).unwrap_or_default(),
                     gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
@@ -91,15 +114,14 @@ where
 
     async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
-        let route_data: RouteData = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let quote_response: RelayQuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
         let from_chain = RelayChain::from_chain(&quote.request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let from_asset_id = quote.request.from_asset.asset_id();
 
         let approval = match from_asset_id.chain.chain_type() {
             ChainType::Ethereum if !from_asset_id.is_native() => {
-                let router_address = route_data
-                    .quote_response
+                let router_address = quote_response
                     .steps
                     .iter()
                     .find_map(|s| s.items.first().and_then(|item| item.data.as_ref().map(|d| d.to.clone())))
@@ -122,7 +144,7 @@ where
             _ => None,
         };
 
-        quote_data_mapper::map_quote_data(&from_chain, &route_data.quote_response.steps, &quote.from_value, approval)
+        quote_data_mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, approval)
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {

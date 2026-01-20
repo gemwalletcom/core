@@ -1,6 +1,7 @@
-use primitives::swap::SwapStatus;
 use serde::{Deserialize, Serialize};
-use serde_serializers::{deserialize_option_u32_from_number, deserialize_string_from_value};
+
+use primitives::swap::SwapStatus;
+use serde_serializers::deserialize_string_from_value;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -14,6 +15,10 @@ pub struct RelayQuoteRequest {
     pub recipient: String,
     pub trade_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub referrer: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub referrer_address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub refund_to: Option<String>,
 }
 
@@ -22,8 +27,6 @@ pub struct RelayQuoteRequest {
 pub struct RelayQuoteResponse {
     pub steps: Vec<Step>,
     pub details: QuoteDetails,
-    #[serde(default)]
-    pub fees: serde_json::Value,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -33,13 +36,11 @@ pub struct Step {
     pub kind: String,
     #[serde(default)]
     pub items: Vec<StepItem>,
-    pub deposit_address: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StepItem {
-    pub status: String,
     pub data: Option<StepData>,
 }
 
@@ -62,8 +63,18 @@ pub struct StepData {
 #[serde(rename_all = "camelCase")]
 pub struct QuoteDetails {
     pub currency_out: CurrencyAmount,
-    #[serde(default, deserialize_with = "deserialize_option_u32_from_number")]
-    pub time_estimate: Option<u32>,
+    #[serde(default)]
+    pub time_estimate: Option<f64>,
+}
+
+impl QuoteDetails {
+    pub fn time_estimate_u32(&self) -> Option<u32> {
+        let value = self.time_estimate?;
+        if !value.is_finite() || value < 0.0 || value > u32::MAX as f64 {
+            return None;
+        }
+        Some(value.ceil() as u32)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -102,10 +113,4 @@ pub struct RelayStatusResponse {
     pub status: RelayStatus,
     pub out_tx_hashes: Option<Vec<String>>,
     pub destination_chain_id: Option<u64>,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RouteData {
-    pub quote_response: RelayQuoteResponse,
 }

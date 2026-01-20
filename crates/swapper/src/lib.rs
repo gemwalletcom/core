@@ -19,6 +19,7 @@ pub mod models;
 pub mod near_intents;
 pub mod permit2_data;
 pub mod proxy;
+pub mod referrer;
 pub mod relay;
 pub mod slippage;
 pub mod swapper;

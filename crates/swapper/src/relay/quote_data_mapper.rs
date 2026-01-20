@@ -52,7 +52,6 @@ mod tests {
             id: "swap".to_string(),
             kind: "transaction".to_string(),
             items: vec![StepItem {
-                status: "incomplete".to_string(),
                 data: Some(StepData {
                     to: to.to_string(),
                     data: data.to_string(),
@@ -61,7 +60,6 @@ mod tests {
                     psbt: None,
                 }),
             }],
-            deposit_address: None,
         }
     }
 
@@ -70,7 +68,6 @@ mod tests {
             id: "deposit".to_string(),
             kind: "transaction".to_string(),
             items: vec![StepItem {
-                status: "incomplete".to_string(),
                 data: Some(StepData {
                     to: String::new(),
                     data: String::new(),
@@ -79,7 +76,6 @@ mod tests {
                     psbt: Some(psbt.to_string()),
                 }),
             }],
-            deposit_address: None,
         }
     }
 
