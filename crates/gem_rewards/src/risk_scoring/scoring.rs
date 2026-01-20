@@ -50,6 +50,7 @@ pub fn calculate_risk_score(
     let mut device_id_referrers: HashSet<&str> = HashSet::new();
     let mut ip_matched = false;
     let mut isp_model_matched = false;
+    let mut cross_referrer_device_matched = false;
 
     let mut same_referrer_pattern_count = 0;
     let mut same_referrer_fingerprint_count = 0;
@@ -69,6 +70,11 @@ pub fn calculate_risk_score(
                 same_referrer_device_model_count += 1;
             }
             continue;
+        }
+
+        // Cross-referrer device sharing: same fingerprint + same IP = definite fraud
+        if !cross_referrer_device_matched && signal.fingerprint == fingerprint && signal.ip_address == input.ip_address {
+            cross_referrer_device_matched = true;
         }
 
         // Scaled penalties (count unique referrers)
@@ -98,6 +104,9 @@ pub fn calculate_risk_score(
     breakdown.device_id_reuse_score = device_id_penalty.min(config.device_id_reuse_max_penalty);
 
     // Binary penalties
+    if cross_referrer_device_matched {
+        breakdown.cross_referrer_device_score = config.cross_referrer_device_penalty;
+    }
     if ip_matched {
         breakdown.ip_reuse_score = config.ip_reuse_score;
     }
@@ -152,6 +161,7 @@ pub fn calculate_risk_score(
         + breakdown.high_risk_device_model_score
         + breakdown.velocity_score
         + breakdown.ip_history_score
+        + breakdown.cross_referrer_device_score
         + breakdown.verified_user_reduction)
         .max(0);
 
@@ -774,5 +784,59 @@ mod tests {
 
         assert_eq!(calculate_risk_score(&input, &[], 0, 3, &config).breakdown.ip_history_score, 90);
         assert_eq!(calculate_risk_score(&input, &[], 0, 10, &config).breakdown.ip_history_score, 150);
+    }
+
+    #[test]
+    fn cross_referrer_device_same_fingerprint_same_ip() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+        let fingerprint = input.generate_fingerprint();
+
+        // Same fingerprint + same IP + different referrer = fraud (500 penalty)
+        let existing = create_signal("other_referrer", &fingerprint, "192.168.1.1", "Comcast", "iPhone15,2", 2);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_device_score, 500);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn cross_referrer_device_same_fingerprint_different_ip() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+        let fingerprint = input.generate_fingerprint();
+
+        // Same fingerprint but different IP = only fingerprint penalty (50), not cross-referrer
+        let existing = create_signal("other_referrer", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_device_score, 0);
+        assert_eq!(result.breakdown.fingerprint_match_score, 50);
+    }
+
+    #[test]
+    fn cross_referrer_device_same_ip_different_fingerprint() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // Same IP but different fingerprint = only IP reuse penalty (50), not cross-referrer
+        let existing = create_signal("other_referrer", "different_fingerprint", "192.168.1.1", "Verizon", "Pixel 8", 2);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_device_score, 0);
+        assert_eq!(result.breakdown.ip_reuse_score, 50);
+    }
+
+    #[test]
+    fn cross_referrer_device_same_referrer_ignored() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+        let fingerprint = input.generate_fingerprint();
+
+        // Same referrer should not trigger cross-referrer penalty
+        let existing = create_signal("user1", &fingerprint, "192.168.1.1", "Comcast", "iPhone15,2", 2);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_device_score, 0);
     }
 }
