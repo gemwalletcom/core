@@ -10,10 +10,9 @@ fn parse_bigint_hex(value: &str) -> Result<BigInt, String> {
 }
 
 fn parse_bigint_str(value: &str) -> Result<BigInt, String> {
-    if value.starts_with("0x") {
-        parse_bigint_hex(value)
-    } else {
-        value.parse::<BigInt>().map_err(|err| err.to_string())
+    match value.strip_prefix("0x") {
+        Some(_) => parse_bigint_hex(value),
+        None => value.parse::<BigInt>().map_err(|err| err.to_string()),
     }
 }
 

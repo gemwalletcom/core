@@ -7012,8 +7012,6 @@ name = "serde_serializers"
 version = "1.0.0"
 dependencies = [
  "num-bigint",
- "num-traits",
- "primitives",
  "serde",
  "serde_json",
 ]
