@@ -16,18 +16,17 @@ use serde::de::DeserializeOwned;
 #[cfg(feature = "rpc")]
 use sui_types::Address;
 
-use crate::models::SuiCoinMetadata;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
 use crate::models::transaction::{SuiBroadcastTransaction, SuiTransaction};
 use crate::models::{Balance, Checkpoint, Digest, Digests, ResultData, TransactionBlocks};
 #[cfg(feature = "rpc")]
 use crate::models::{CoinAsset, InspectResult, SuiObject};
+use crate::models::{SuiCoin, SuiCoinMetadata};
 #[cfg(feature = "rpc")]
 use crate::{
     SUI_COIN_TYPE, SUI_COIN_TYPE_FULL,
     jsonrpc::{SuiData, SuiRpc},
 };
-use primitives::transaction_load_metadata::SuiCoin;
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 pub struct SuiClient {

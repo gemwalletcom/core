@@ -5574,7 +5574,6 @@ dependencies = [
  "num-bigint",
  "serde",
  "serde_json",
- "serde_serializers",
  "strum",
  "typeshare",
  "url",
@@ -7014,6 +7013,7 @@ version = "1.0.0"
 dependencies = [
  "num-bigint",
  "num-traits",
+ "primitives",
  "serde",
  "serde_json",
 ]
