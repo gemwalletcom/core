@@ -41,7 +41,7 @@ where
     D: de::Deserializer<'de>,
 {
     let s: String = de::Deserialize::deserialize(deserializer)?;
-    biguint_from_prefixed_hex(&s)
+    biguint_from_hex_str(&s).map_err(de::Error::custom)
 }
 
 pub fn deserialize_biguint_from_option_hex_str<'de, D>(deserializer: D) -> Result<Option<BigUint>, D::Error>
@@ -50,20 +50,9 @@ where
 {
     let opt: Option<String> = Option::deserialize(deserializer)?;
     match opt {
-        Some(s) => biguint_from_prefixed_hex(&s).map(Some),
+        Some(s) => biguint_from_hex_str(&s).map(Some).map_err(de::Error::custom),
         None => Ok(None),
     }
-}
-
-fn biguint_from_prefixed_hex<E>(hex_value: &str) -> Result<BigUint, E>
-where
-    E: de::Error,
-{
-    let trimmed = hex_value.trim();
-    if !trimmed.starts_with("0x") {
-        return Err(de::Error::custom(format!("Hex string must be prefixed with '0x': {hex_value}")));
-    }
-    biguint_from_hex_str(trimmed).map_err(de::Error::custom)
 }
 
 pub fn biguint_from_hex_str(hex_value: &str) -> Result<BigUint, Box<dyn std::error::Error + Send + Sync>> {
@@ -96,8 +85,8 @@ mod tests {
         let deserialized: HexStruct = serde_json::from_str(r#"{"value":"0x1a"}"#).unwrap();
         assert_eq!(deserialized.value, BigUint::from(26u32));
 
-        let result: Result<HexStruct, _> = serde_json::from_str(r#"{"value":"1a"}"#);
-        assert!(result.is_err());
+        let deserialized: HexStruct = serde_json::from_str(r#"{"value":"1a"}"#).unwrap();
+        assert_eq!(deserialized.value, BigUint::from(26u32));
     }
 
     #[derive(Deserialize)]

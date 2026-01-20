@@ -41,14 +41,15 @@ impl MessageConsumer<InAppNotificationPayload, usize> for InAppNotificationsCons
         };
         self.database.notifications()?.create_notifications(vec![notification])?;
 
-        let points = payload
-            .metadata
-            .as_ref()
-            .and_then(|m| m.get("points"))
-            .and_then(|p| p.as_i64())
-            .map(|p| p as i32);
+        let points = payload.metadata.as_ref().and_then(|m| m.get("points")).and_then(|p| p.as_i64()).map(|p| p as i32);
 
-        let devices: Vec<Device> = self.database.wallets()?.get_devices_by_wallet_id(payload.wallet_id)?.into_iter().map(|d| d.as_primitive()).collect();
+        let devices: Vec<Device> = self
+            .database
+            .wallets()?
+            .get_devices_by_wallet_id(payload.wallet_id)?
+            .into_iter()
+            .map(|d| d.as_primitive())
+            .collect();
 
         let notifications: Vec<GorushNotification> = devices
             .iter()
