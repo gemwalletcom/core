@@ -1,5 +1,5 @@
 CREATE TYPE reward_status AS ENUM ('unverified', 'pending', 'verified', 'trusted', 'disabled');
-CREATE TYPE reward_event_type AS ENUM ('createUsername', 'invitePending', 'inviteNew', 'inviteExisting', 'joined', 'disabled');
+CREATE TYPE reward_event_type AS ENUM ('createUsername', 'invitePending', 'inviteNew', 'inviteExisting', 'joined', 'disabled', 'redeemed');
 CREATE TYPE username_status AS ENUM ('unverified', 'verified');
 CREATE TYPE ip_usage_type AS ENUM ('dataCenter', 'hosting', 'isp', 'mobile', 'business', 'education', 'government', 'unknown');
 

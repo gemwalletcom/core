@@ -3,8 +3,9 @@ use std::error::Error;
 use primitives::{AssetId, Chain};
 
 use crate::{
-    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, NotificationsFailedPayload, NotificationsPayload,
-    PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload,
+    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, InAppNotificationPayload,
+    NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer,
+    TransactionsPayload,
 };
 
 #[async_trait::async_trait]
@@ -24,6 +25,7 @@ pub trait StreamProducerQueue {
     async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_blocks(&self, chain: Chain, blocks: &[u64]) -> Result<(), Box<dyn Error + Send + Sync>>;
     async fn publish_new_addresses(&self, payload: Vec<ChainAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_in_app_notifications(&self, payload: Vec<InAppNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
 }
 
 #[async_trait::async_trait]
@@ -132,5 +134,12 @@ impl StreamProducerQueue for StreamProducer {
                 .await?;
         }
         Ok(true)
+    }
+
+    async fn publish_in_app_notifications(&self, payload: Vec<InAppNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.is_empty() {
+            return Ok(true);
+        }
+        self.publish_batch(QueueName::NotificationsInApp, &payload).await
     }
 }

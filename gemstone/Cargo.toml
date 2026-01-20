@@ -1,7 +1,7 @@
 [package]
 edition = { workspace = true }
 name = "gemstone"
-version = "0.31.1"
+version = "1.0.2"
 
 [lib]
 crate-type = [
@@ -60,7 +60,7 @@ num-bigint.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
 url = { workspace = true }
-zeroize = "1.8"
+zeroize = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }
