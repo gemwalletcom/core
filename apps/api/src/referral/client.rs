@@ -342,7 +342,12 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, ip_abuser_count, &risk_score_config);
+        let cross_referrer_fingerprint_count = match client.count_unique_referrers_for_fingerprint(&fingerprint, since) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+
+        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, ip_abuser_count, cross_referrer_fingerprint_count, &risk_score_config);
         let risk_signal_id = match client.add_risk_signal(risk_result.signal) {
             Ok(id) => id,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
@@ -460,6 +465,8 @@ impl RewardsClient {
             referral_per_user_daily: self.config.get_i64(ConfigKey::ReferralPerUserDaily)?,
             verified_multiplier: self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?,
             cross_referrer_device_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerDevicePenalty)?,
+            cross_referrer_fingerprint_threshold: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerFingerprintThreshold)?,
+            cross_referrer_fingerprint_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerFingerprintPenalty)?,
         })
     }
 

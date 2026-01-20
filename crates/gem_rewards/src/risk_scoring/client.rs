@@ -45,9 +45,16 @@ pub struct RiskResult {
     pub signal: NewRiskSignalRow,
 }
 
-pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow], device_model_ring_count: i64, ip_abuser_count: i64, config: &RiskScoreConfig) -> RiskResult {
+pub fn evaluate_risk(
+    input: &RiskScoringInput,
+    existing_signals: &[RiskSignalRow],
+    device_model_ring_count: i64,
+    ip_abuser_count: i64,
+    cross_referrer_fingerprint_count: i64,
+    config: &RiskScoreConfig,
+) -> RiskResult {
     let signal_input = input.to_signal_input();
-    let score = calculate_risk_score(&signal_input, existing_signals, device_model_ring_count, ip_abuser_count, config);
+    let score = calculate_risk_score(&signal_input, existing_signals, device_model_ring_count, ip_abuser_count, cross_referrer_fingerprint_count, config);
 
     let signal = NewRiskSignalRow {
         fingerprint: score.fingerprint.clone(),
@@ -104,7 +111,7 @@ mod tests {
     fn evaluate_clean_user() {
         let input = create_test_input();
         let config = RiskScoreConfig::default();
-        let result = evaluate_risk(&input, &[], 0, 0, &config);
+        let result = evaluate_risk(&input, &[], 0, 0, 0, &config);
 
         assert_eq!(result.score.score, 0);
         assert!(result.score.is_allowed);
@@ -117,7 +124,7 @@ mod tests {
         let mut input = create_test_input();
         input.ip_result.confidence_score = 60;
         let config = RiskScoreConfig::default();
-        let result = evaluate_risk(&input, &[], 0, 0, &config);
+        let result = evaluate_risk(&input, &[], 0, 0, 0, &config);
 
         assert_eq!(result.score.score, 60);
         assert!(!result.score.is_allowed);
@@ -127,7 +134,7 @@ mod tests {
     fn signal_populated_correctly() {
         let input = create_test_input();
         let config = RiskScoreConfig::default();
-        let result = evaluate_risk(&input, &[], 0, 0, &config);
+        let result = evaluate_risk(&input, &[], 0, 0, 0, &config);
 
         assert_eq!(result.signal.ip_address, "192.168.1.1");
         assert_eq!(result.signal.ip_isp, "Comcast");

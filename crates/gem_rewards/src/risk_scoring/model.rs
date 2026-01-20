@@ -43,6 +43,8 @@ pub struct RiskScoreConfig {
     pub ip_history_penalty_per_abuser: i64,
     pub ip_history_max_penalty: i64,
     pub cross_referrer_device_penalty: i64,
+    pub cross_referrer_fingerprint_threshold: i64,
+    pub cross_referrer_fingerprint_penalty: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -87,6 +89,8 @@ impl Default for RiskScoreConfig {
             ip_history_penalty_per_abuser: 30,
             ip_history_max_penalty: 150,
             cross_referrer_device_penalty: 500,
+            cross_referrer_fingerprint_threshold: 2,
+            cross_referrer_fingerprint_penalty: 100,
         }
     }
 }
@@ -166,6 +170,8 @@ pub struct RiskScoreBreakdown {
     pub ip_history_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub cross_referrer_device_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub cross_referrer_fingerprint_score: i64,
 }
 
 fn is_zero(value: &i64) -> bool {
