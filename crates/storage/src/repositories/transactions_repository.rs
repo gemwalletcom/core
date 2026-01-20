@@ -1,7 +1,7 @@
 use crate::DatabaseClient;
 use crate::DatabaseError;
 use crate::database::transactions::TransactionsStore;
-use crate::models::{AddressChainIdResultRow, TransactionRow, TransactionTypeRow};
+use crate::models::{AddressChainIdResultRow, TransactionRow};
 use primitives::{Transaction, TransactionsFetchOption};
 
 pub trait TransactionsRepository {
@@ -18,7 +18,6 @@ pub trait TransactionsRepository {
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, DatabaseError>;
     fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, DatabaseError>;
     fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, DatabaseError>;
-    fn add_transactions_types(&mut self, values: Vec<TransactionTypeRow>) -> Result<usize, DatabaseError>;
 }
 
 impl TransactionsRepository for DatabaseClient {
@@ -54,9 +53,5 @@ impl TransactionsRepository for DatabaseClient {
 
     fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, DatabaseError> {
         Ok(TransactionsStore::delete_transactions_by_ids(self, ids)?)
-    }
-
-    fn add_transactions_types(&mut self, values: Vec<TransactionTypeRow>) -> Result<usize, DatabaseError> {
-        Ok(TransactionsStore::add_transactions_types(self, values)?)
     }
 }

@@ -1,13 +1,11 @@
-CREATE TABLE scan_addresses_types (
-    id VARCHAR(32) PRIMARY KEY NOT NULL
-);
+CREATE TYPE address_type AS ENUM ('address', 'contract', 'validator');
 
 CREATE TABLE scan_addresses (
     id SERIAL PRIMARY KEY,
     chain VARCHAR NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     address VARCHAR(128) NOT NULL,
     name VARCHAR(128),
-    type VARCHAR(32) REFERENCES scan_addresses_types (id) ON DELETE CASCADE,
+    type address_type NOT NULL DEFAULT 'address',
     is_verified boolean NOT NULL DEFAULT false,
     is_fraudulent boolean NOT NULL DEFAULT false,
     is_memo_required boolean NOT NULL DEFAULT false,

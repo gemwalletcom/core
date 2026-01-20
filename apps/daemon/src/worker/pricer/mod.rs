@@ -15,34 +15,32 @@ use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::time::Duration;
-use storage::{ConfigRepository, Database};
+use storage::{ConfigCacher, Database};
 use streamer::StreamProducer;
 
 pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let config = ConfigCacher::new(database.clone());
 
-    let pricer_timer = database.config()?.get_config_duration(ConfigKey::PricerTimer)?;
-    let pricer_outdated = database.config()?.get_config_duration(ConfigKey::PricerOutdated)?;
+    let price_outdated = config.get_duration(ConfigKey::PriceOutdated)?.as_secs();
 
-    let clean_updated_assets = run_job("Clean outdated assets", Duration::from_secs(86400), {
+    let clean_updated_assets = run_job("Clean outdated assets", config.get_duration(ConfigKey::PriceTimerCleanOutdated)?, {
         let cacher_client = cacher_client.clone();
         let database = database.clone();
         let settings = Arc::new(settings.clone());
-        let pricer_outdated = pricer_outdated.as_secs();
         move || {
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let settings = Arc::clone(&settings);
             async move {
                 let updater = price_updater_factory(&database, &cacher_client, &settings).await;
-                updater.clean_outdated_assets(pricer_outdated).await
+                updater.clean_outdated_assets(price_outdated).await
             }
         }
     });
-    let update_fiat_assets = run_job("Update fiat assets", Duration::from_secs(360), {
+    let update_fiat_assets = run_job("Update fiat assets", config.get_duration(ConfigKey::PriceTimerFiatRates)?, {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -57,7 +55,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_prices_top_market_cap = run_job("Update prices top (top 500) market cap", pricer_timer, {
+    let update_prices_top_market_cap = run_job("Update prices top (top 500) market cap", config.get_duration(ConfigKey::PriceTimerTopMarketCap)?, {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -72,7 +70,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_prices_high_market_cap = run_job("Update prices high (500-2500) market cap", pricer_timer * 3, {
+    let update_prices_high_market_cap = run_job("Update prices high (500-2500) market cap", config.get_duration(ConfigKey::PriceTimerHighMarketCap)?, {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -87,7 +85,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_prices_low_market_cap = run_job("Update prices low (2500...) market cap", pricer_timer * 10, {
+    let update_prices_low_market_cap = run_job("Update prices low (2500...) market cap", config.get_duration(ConfigKey::PriceTimerLowMarketCap)?, {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -102,7 +100,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_hourly_charts_job = run_job("Aggregate hourly charts", Duration::from_secs(60), {
+    let update_hourly_charts_job = run_job("Aggregate hourly charts", config.get_duration(ConfigKey::PriceTimerChartsHourly)?, {
         let settings = Arc::new(settings.clone());
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
@@ -119,7 +117,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_daily_charts_job = run_job("Aggregate daily charts", Duration::from_secs(360), {
+    let update_daily_charts_job = run_job("Aggregate daily charts", config.get_duration(ConfigKey::PriceTimerChartsDaily)?, {
         let settings = Arc::new(settings.clone());
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
@@ -136,7 +134,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let cleanup_charts_data_job = run_job("Cleanup charts data", Duration::from_secs(86400), {
+    let cleanup_charts_data_job = run_job("Cleanup charts data", config.get_duration(ConfigKey::PriceTimerCleanupCharts)?, {
         let settings = Arc::new(settings.clone());
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
@@ -153,7 +151,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    let update_markets = run_job("Update markets", Duration::from_secs(3600), {
+    let update_markets = run_job("Update markets", config.get_duration(ConfigKey::PriceTimerMarkets)?, {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();

@@ -3,8 +3,7 @@ use std::sync::Arc;
 use crate::model::{FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
 use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
-    FiatTransaction,
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote, FiatTransaction,
 };
 use streamer::FiatWebhook;
 

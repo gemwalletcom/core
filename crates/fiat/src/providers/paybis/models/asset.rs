@@ -46,9 +46,6 @@ pub struct PayoutPair {
 
 impl SellAssets {
     pub fn get_crypto_codes(&self) -> HashSet<String> {
-        self.data
-            .iter()
-            .flat_map(|method| method.pairs.iter().map(|pair| pair.from_asset_id.clone()))
-            .collect()
+        self.data.iter().flat_map(|method| method.pairs.iter().map(|pair| pair.from_asset_id.clone())).collect()
     }
 }

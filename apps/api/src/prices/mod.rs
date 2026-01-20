@@ -6,11 +6,7 @@ use primitives::{AssetIdVecExt, AssetMarketPrice, AssetPrices, AssetPricesReques
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 
 #[get("/prices/<asset_id>?<currency>")]
-pub async fn get_price(
-    asset_id: AssetIdParam,
-    currency: Option<&str>,
-    price_client: &State<Mutex<PriceClient>>,
-) -> Result<ApiResponse<AssetMarketPrice>, ApiError> {
+pub async fn get_price(asset_id: AssetIdParam, currency: Option<&str>, price_client: &State<Mutex<PriceClient>>) -> Result<ApiResponse<AssetMarketPrice>, ApiError> {
     let currency = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
     Ok(price_client.lock().await.get_asset_price(&asset_id.0, currency).await?.into())
 }

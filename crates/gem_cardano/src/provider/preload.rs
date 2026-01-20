@@ -3,9 +3,7 @@ use chain_traits::ChainTransactionLoad;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{
-    FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO,
-};
+use primitives::{FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO};
 
 use super::preload_mapper;
 use crate::rpc::client::CardanoClient;

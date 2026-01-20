@@ -22,10 +22,7 @@ pub(crate) trait PricesStore {
 impl PricesStore for DatabaseClient {
     fn add_prices(&mut self, values: Vec<NewPriceRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
-        diesel::insert_into(prices)
-            .values(&values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(prices).values(&values).on_conflict_do_nothing().execute(&mut self.connection)
     }
     fn set_prices(&mut self, values: Vec<PriceRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
@@ -54,10 +51,7 @@ impl PricesStore for DatabaseClient {
 
     fn set_prices_assets(&mut self, values: Vec<PriceAssetRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
-        diesel::insert_into(prices_assets)
-            .values(&values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(prices_assets).values(&values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn get_prices(&mut self) -> Result<Vec<PriceRow>, diesel::result::Error> {
@@ -80,18 +74,12 @@ impl PricesStore for DatabaseClient {
 
     fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAssetRow>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
-        prices_assets
-            .filter(asset_id.eq(id))
-            .select(PriceAssetRow::as_select())
-            .load(&mut self.connection)
+        prices_assets.filter(asset_id.eq(id)).select(PriceAssetRow::as_select()).load(&mut self.connection)
     }
 
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAssetRow>, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
-        prices_assets
-            .filter(price_id.eq_any(ids))
-            .select(PriceAssetRow::as_select())
-            .load(&mut self.connection)
+        prices_assets.filter(price_id.eq_any(ids)).select(PriceAssetRow::as_select()).load(&mut self.connection)
     }
 
     fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error> {

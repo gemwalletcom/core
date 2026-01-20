@@ -22,11 +22,7 @@ impl ProxyRequestBuilder {
     }
 
     fn extract_user_agent(headers: &HeaderMap) -> String {
-        headers
-            .get(reqwest::header::USER_AGENT)
-            .and_then(|h| h.to_str().ok())
-            .unwrap_or_default()
-            .to_string()
+        headers.get(reqwest::header::USER_AGENT).and_then(|h| h.to_str().ok()).unwrap_or_default().to_string()
     }
 
     fn extract_path(uri: &str) -> String {
@@ -54,11 +50,7 @@ impl ProxyRequestBuilder {
             .map(|(_, rest)| format!("/{}", rest))
             .unwrap_or_else(|| "/".to_string());
 
-        if query_part.is_empty() {
-            remaining
-        } else {
-            format!("{}?{}", remaining, query_part)
-        }
+        if query_part.is_empty() { remaining } else { format!("{}?{}", remaining, query_part) }
     }
 }
 
@@ -68,17 +60,11 @@ mod tests {
 
     #[test]
     fn test_remove_chain_from_path() {
-        assert_eq!(
-            ProxyRequestBuilder::remove_chain_from_path("/tron/wallet/getchainparameters"),
-            "/wallet/getchainparameters"
-        );
+        assert_eq!(ProxyRequestBuilder::remove_chain_from_path("/tron/wallet/getchainparameters"), "/wallet/getchainparameters");
         assert_eq!(ProxyRequestBuilder::remove_chain_from_path("/ethereum/v1/some/path"), "/v1/some/path");
         assert_eq!(ProxyRequestBuilder::remove_chain_from_path("/bitcoin"), "/");
         assert_eq!(ProxyRequestBuilder::remove_chain_from_path("/solana?query=1"), "/?query=1");
-        assert_eq!(
-            ProxyRequestBuilder::remove_chain_from_path("/chain/path?foo=bar&baz=qux"),
-            "/path?foo=bar&baz=qux"
-        );
+        assert_eq!(ProxyRequestBuilder::remove_chain_from_path("/chain/path?foo=bar&baz=qux"), "/path?foo=bar&baz=qux");
     }
 
     #[test]

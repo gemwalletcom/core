@@ -16,10 +16,7 @@ impl ReleasesStore for DatabaseClient {
 
     fn add_releases(&mut self, values: Vec<ReleaseRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::releases::dsl::*;
-        diesel::insert_into(releases)
-            .values(&values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(releases).values(&values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn update_release(&mut self, release: ReleaseRow) -> Result<usize, diesel::result::Error> {

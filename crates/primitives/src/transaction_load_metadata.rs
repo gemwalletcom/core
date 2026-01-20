@@ -1,9 +1,8 @@
-use crate::{UTXO, solana_token_program::SolanaTokenProgramId, stake_type::StakeData};
-use num_bigint::BigInt;
-use serde::{Deserialize, Serialize};
-use serde_serializers::deserialize_bigint_from_str;
-
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+use crate::{UTXO, solana_token_program::SolanaTokenProgramId, stake_type::StakeData};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HyperliquidOrder {
@@ -13,17 +12,6 @@ pub struct HyperliquidOrder {
     pub builder_fee_bps: u32,
     pub agent_address: String,
     pub agent_private_key: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SuiCoin {
-    pub coin_type: String,
-    pub coin_object_id: String,
-    #[serde(deserialize_with = "deserialize_bigint_from_str")]
-    pub balance: BigInt,
-    pub version: String,
-    pub digest: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -162,9 +150,7 @@ impl TransactionLoadMetadata {
 
     pub fn get_is_destination_address_exist(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
         match self {
-            TransactionLoadMetadata::Stellar {
-                is_destination_address_exist, ..
-            } => Ok(*is_destination_address_exist),
+            TransactionLoadMetadata::Stellar { is_destination_address_exist, .. } => Ok(*is_destination_address_exist),
             _ => Err("Destination existence flag not available for this metadata type".into()),
         }
     }

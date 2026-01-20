@@ -1,6 +1,5 @@
 use super::models::{
-    Asset, CachedToken, Country, CreateWidgetUrlRequest, CreateWidgetUrlResponse, Data, FiatCurrency, Response, TokenResponse, TransakOrderResponse,
-    TransakQuote, TransakResponse,
+    Asset, CachedToken, Country, CreateWidgetUrlRequest, CreateWidgetUrlResponse, Data, FiatCurrency, Response, TokenResponse, TransakOrderResponse, TransakQuote, TransakResponse,
 };
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as BASE64};
 use number_formatter::BigNumberFormatter;
@@ -104,14 +103,7 @@ impl TransakClient {
             query.push(("cryptoAmount", amount.to_string()));
         }
 
-        self.client
-            .get(url)
-            .query(&query)
-            .send()
-            .await?
-            .json::<TransakResponse<TransakQuote>>()
-            .await?
-            .into()
+        self.client.get(url).query(&query).send().await?.json::<TransakResponse<TransakQuote>>().await?.into()
     }
 
     pub async fn get_fiat_quote_with_redirect(
@@ -125,12 +117,8 @@ impl TransakClient {
     ) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
         let transak_quote = self.get_buy_quote(symbol, fiat_currency, fiat_amount, network, ip_address).await?;
 
-        let crypto_value = BigNumberFormatter::f64_as_value(transak_quote.crypto_amount, request.asset.decimals as u32).ok_or_else(|| {
-            format!(
-                "Failed to convert crypto amount {} with decimals {}",
-                transak_quote.crypto_amount, request.asset.decimals
-            )
-        })?;
+        let crypto_value = BigNumberFormatter::f64_as_value(transak_quote.crypto_amount, request.asset.decimals as u32)
+            .ok_or_else(|| format!("Failed to convert crypto amount {} with decimals {}", transak_quote.crypto_amount, request.asset.decimals))?;
         let redirect_url = self
             .redirect_url(transak_quote.clone(), request.wallet_address, FiatQuoteType::Buy, request.fiat_amount)
             .await?;
@@ -226,15 +214,7 @@ impl TransakClient {
             "apiKey": self.api_key
         });
 
-        let response: Data<TokenResponse> = self
-            .client
-            .post(&url)
-            .header("api-secret", &self.api_secret)
-            .json(&body)
-            .send()
-            .await?
-            .json()
-            .await?;
+        let response: Data<TokenResponse> = self.client.post(&url).header("api-secret", &self.api_secret).json(&body).send().await?.json().await?;
 
         Ok(response.data.access_token)
     }

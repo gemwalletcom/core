@@ -1,6 +1,8 @@
+mod in_app_notifications_consumer;
 mod notifications_consumer;
 mod notifications_failed_consumer;
 
+pub use in_app_notifications_consumer::InAppNotificationsConsumer;
 pub use notifications_consumer::NotificationsConsumer;
 pub use notifications_failed_consumer::NotificationsFailedConsumer;
 
@@ -15,6 +17,7 @@ fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
     ConsumerConfig {
         timeout_on_error: consumer.error.timeout,
         skip_on_error: consumer.error.skip,
+        delay: consumer.delay,
     }
 }
 
@@ -29,7 +32,7 @@ pub async fn run(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>>
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsObservers)),
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsSupport)),
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsRewards)),
-        tokio::spawn(run_notifications_failed_consumer(settings.clone(), database.clone())),
+        tokio::spawn(run_notifications_failed_consumer(settings.clone(), database.clone(), QueueName::NotificationsFailed)),
     ])
     .await?;
 
@@ -47,20 +50,12 @@ async fn run_notification_consumer(settings: Arc<Settings>, queue: QueueName) ->
     run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer)).await
 }
 
-async fn run_notifications_failed_consumer(settings: Arc<Settings>, database: Arc<Database>) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let name = "notifications_failed".to_string();
+async fn run_notifications_failed_consumer(settings: Arc<Settings>, database: Arc<Database>, queue: QueueName) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
     let consumer = NotificationsFailedConsumer::new((*database).clone());
 
     let consumer_config = consumer_config(&settings.consumer);
-    run_consumer::<NotificationsFailedPayload, NotificationsFailedConsumer, usize>(
-        &name,
-        stream_reader,
-        QueueName::NotificationsFailed,
-        None,
-        consumer,
-        consumer_config,
-    )
-    .await
+    run_consumer::<NotificationsFailedPayload, NotificationsFailedConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config).await
 }

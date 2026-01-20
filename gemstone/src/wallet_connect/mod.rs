@@ -168,14 +168,7 @@ impl WalletConnect {
         Some(primitives::WalletConnectCAIP2::get_chain(caip2, caip10)?.to_string())
     }
 
-    pub fn parse_request(
-        &self,
-        topic: String,
-        method: String,
-        params: String,
-        chain_id: String,
-        domain: String,
-    ) -> Result<WalletConnectAction, crate::GemstoneError> {
+    pub fn parse_request(&self, topic: String, method: String, params: String, chain_id: String, domain: String) -> Result<WalletConnectAction, crate::GemstoneError> {
         let request = WalletConnectRequest {
             topic,
             method,
@@ -186,12 +179,7 @@ impl WalletConnect {
         WalletConnectRequestHandler::parse_request(request).map_err(|e| crate::GemstoneError::AnyError { msg: e })
     }
 
-    pub fn validate_origin(
-        &self,
-        metadata_url: String,
-        origin: Option<String>,
-        validation: WalletConnectionVerificationStatus,
-    ) -> WalletConnectionVerificationStatus {
+    pub fn validate_origin(&self, metadata_url: String, origin: Option<String>, validation: WalletConnectionVerificationStatus) -> WalletConnectionVerificationStatus {
         WalletConnectVerifier::validate_origin(metadata_url, origin, validation)
     }
 
@@ -228,9 +216,7 @@ impl WalletConnect {
             return Ok(());
         };
 
-        let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| crate::GemstoneError::AnyError {
-            msg: "Invalid JSON".to_string(),
-        })?;
+        let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| crate::GemstoneError::AnyError { msg: "Invalid JSON".to_string() })?;
 
         if let Some(valid_until) = json.get("valid_until").and_then(|v| v.as_i64())
             && current_timestamp() >= valid_until
@@ -278,11 +264,7 @@ impl WalletConnect {
         })
     }
 
-    pub fn decode_send_transaction(
-        &self,
-        transaction_type: WalletConnectTransactionType,
-        data: String,
-    ) -> Result<WalletConnectTransaction, crate::GemstoneError> {
+    pub fn decode_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<WalletConnectTransaction, crate::GemstoneError> {
         match transaction_type {
             WalletConnectTransactionType::Ethereum => {
                 let tx: WCEthereumTransaction = serde_json::from_str(&data)?;
@@ -315,12 +297,7 @@ impl WalletConnect {
                     })?
                     .to_string();
 
-                let wallet_address = json
-                    .get("account")
-                    .or_else(|| json.get("address"))
-                    .and_then(|v| v.as_str())
-                    .unwrap_or_default()
-                    .to_string();
+                let wallet_address = json.get("account").or_else(|| json.get("address")).and_then(|v| v.as_str()).unwrap_or_default().to_string();
 
                 Ok(WalletConnectTransaction::Sui {
                     data: actions::WCSuiTransactionData { transaction, wallet_address },

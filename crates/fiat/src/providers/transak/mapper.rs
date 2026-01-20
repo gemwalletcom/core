@@ -58,9 +58,7 @@ pub fn map_asset_chain(network: &str, coin_id: Option<&str>) -> Option<Chain> {
 
 fn map_status(status: &str) -> FiatTransactionStatus {
     match status {
-        "ORDER_PAYMENT_VERIFYING" | "PAYMENT_DONE_MARKED_BY_USER" | "PENDING_DELIVERY_FROM_TRANSAK" | "AWAITING_PAYMENT_FROM_USER" | "PROCESSING" => {
-            FiatTransactionStatus::Pending
-        }
+        "ORDER_PAYMENT_VERIFYING" | "PAYMENT_DONE_MARKED_BY_USER" | "PENDING_DELIVERY_FROM_TRANSAK" | "AWAITING_PAYMENT_FROM_USER" | "PROCESSING" => FiatTransactionStatus::Pending,
         "EXPIRED" | "FAILED" | "CANCELLED" | "REFUNDED" => FiatTransactionStatus::Failed,
         "COMPLETED" => FiatTransactionStatus::Complete,
         _ => FiatTransactionStatus::Unknown(status.to_string()),
@@ -176,8 +174,7 @@ mod tests {
 
     #[test]
     fn test_map_order_buy_failed() {
-        let response: Data<TransakOrderResponse> =
-            serde_json::from_str(include_str!("../../../testdata/transak/transaction_buy_error.json")).expect("Failed to parse test data");
+        let response: Data<TransakOrderResponse> = serde_json::from_str(include_str!("../../../testdata/transak/transaction_buy_error.json")).expect("Failed to parse test data");
 
         let result = map_order_from_response(response.data).expect("Failed to map order");
 
@@ -189,10 +186,7 @@ mod tests {
         assert_eq!(result.fiat_currency, "USD");
         assert_eq!(result.fiat_amount, 108.0);
         assert_eq!(result.country, Some("DK".to_string()));
-        assert_eq!(
-            result.address,
-            Some("0xf47abc9e2ed94fb555b3e31e08ad8aa8ac64eea0ff15ba0e7b443cef4aaabffe".to_string())
-        );
+        assert_eq!(result.address, Some("0xf47abc9e2ed94fb555b3e31e08ad8aa8ac64eea0ff15ba0e7b443cef4aaabffe".to_string()));
         assert!(result.asset_id.is_some());
     }
 

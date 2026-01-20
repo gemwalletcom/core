@@ -8,9 +8,7 @@ pub use sentry::*;
 static TRACING_SUBSCRIBER: OnceLock<Arc<FmtSubscriber>> = OnceLock::new();
 
 pub fn get_subscriber() -> Arc<FmtSubscriber> {
-    TRACING_SUBSCRIBER
-        .get_or_init(|| Arc::new(tracing_subscriber::fmt().with_target(false).finish()))
-        .clone()
+    TRACING_SUBSCRIBER.get_or_init(|| Arc::new(tracing_subscriber::fmt().with_target(false).finish())).clone()
 }
 
 pub struct DurationMs(pub Duration);

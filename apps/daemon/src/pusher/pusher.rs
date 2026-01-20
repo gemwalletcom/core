@@ -3,8 +3,8 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
-    Subscription, Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
+    AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction,
+    TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::{Database, ScanAddressesRepository};
 
@@ -27,13 +27,7 @@ impl Pusher {
         }
     }
 
-    pub fn message(
-        &self,
-        localizer: LanguageLocalizer,
-        transaction: Transaction,
-        subscription: Subscription,
-        assets: Vec<Asset>,
-    ) -> Result<Message, Box<dyn Error + Send + Sync>> {
+    pub fn message(&self, localizer: LanguageLocalizer, transaction: Transaction, subscription: Subscription, assets: Vec<Asset>) -> Result<Message, Box<dyn Error + Send + Sync>> {
         let asset = assets.asset_result(transaction.asset_id.clone())?;
         let amount = BigNumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
         let chain = transaction.asset_id.chain;
@@ -151,8 +145,10 @@ impl Pusher {
         let localizer = LanguageLocalizer::new_with_language(&device.locale);
         let message = self.message(localizer, transaction.clone(), subscription.clone(), assets.clone())?;
 
+        // TODO: Pass wallet_id from subscription once v2 subscriptions migration is complete
         let notification_transaction = PushNotificationTransaction {
-            wallet_index: subscription.wallet_index,
+            wallet_index: Some(subscription.wallet_index),
+            wallet_id: String::new(),
             transaction_id: transaction.id.to_string(),
             transaction: transaction.clone(),
             asset_id: transaction.asset_id.to_string(),

@@ -18,9 +18,6 @@ impl AssetsLinksRepository for DatabaseClient {
     }
 
     fn get_asset_links(&mut self, asset_id: &str) -> Result<Vec<PrimitiveAssetLink>, DatabaseError> {
-        Ok(AssetsLinksStore::get_asset_links(self, asset_id)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect())
+        Ok(AssetsLinksStore::get_asset_links(self, asset_id)?.into_iter().map(|x| x.as_primitive()).collect())
     }
 }

@@ -27,10 +27,7 @@ impl TransactionUpdater {
         let result = self.database.transactions()?.delete_transactions_addresses(addresses.clone())?;
 
         let transactions_without_addresses = self.database.transactions()?.get_transactions_without_addresses(10000)?;
-        let transactions = self
-            .database
-            .transactions()?
-            .delete_transactions_by_ids(transactions_without_addresses.clone())?;
+        let transactions = self.database.transactions()?.delete_transactions_by_ids(transactions_without_addresses.clone())?;
 
         let result = HashMap::from([
             ("addresses".to_string(), addresses.len()),

@@ -70,11 +70,7 @@ pub async fn get_fiat_quotes_by_type(
 }
 
 #[post("/fiat/quotes/url", data = "<request>")]
-pub async fn get_fiat_quote_url(
-    request: Json<FiatQuoteUrlRequest>,
-    ip: std::net::IpAddr,
-    client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
+pub async fn get_fiat_quote_url(request: Json<FiatQuoteUrlRequest>, ip: std::net::IpAddr, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
     let ip_address = if cfg!(debug_assertions) { DEBUG_FIAT_IP } else { &ip.to_string() };
     let (url, quote) = client.lock().await.get_quote_url(&request, ip_address).await?;
     metrics_fiat_quote_url(&quote);
@@ -96,16 +92,7 @@ pub async fn get_fiat_on_ramp_quotes(
     Ok(client
         .lock()
         .await
-        .get_quotes_old(
-            &asset_id.0,
-            Some(amount),
-            None,
-            FiatQuoteType::Buy,
-            currency,
-            &wallet_address.0,
-            &ip_addr,
-            provider,
-        )
+        .get_quotes_old(&asset_id.0, Some(amount), None, FiatQuoteType::Buy, currency, &wallet_address.0, &ip_addr, provider)
         .await?
         .into())
 }
@@ -132,20 +119,12 @@ pub async fn get_fiat_off_ramp_assets(client: &State<Mutex<FiatQuotesClient>>) -
 }
 
 #[post("/fiat/webhooks/<provider>", data = "<webhook_data>")]
-pub async fn create_fiat_webhook(
-    provider: &str,
-    webhook_data: Json<serde_json::Value>,
-    client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<FiatWebhook>, ApiError> {
+pub async fn create_fiat_webhook(provider: &str, webhook_data: Json<serde_json::Value>, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatWebhook>, ApiError> {
     Ok(client.lock().await.process_and_publish_webhook(provider, webhook_data.0).await?.payload.into())
 }
 
 #[get("/fiat/orders/<provider>/<order_id>")]
-pub async fn get_fiat_order(
-    provider: &str,
-    order_id: &str,
-    client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<primitives::FiatTransaction>, ApiError> {
+pub async fn get_fiat_order(provider: &str, order_id: &str, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<primitives::FiatTransaction>, ApiError> {
     Ok(client.lock().await.get_order_status(provider, order_id).await?.into())
 }
 

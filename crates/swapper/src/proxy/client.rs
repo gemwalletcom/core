@@ -8,14 +8,10 @@ use std::fmt::Debug;
 const API_VERSION: u8 = 1;
 
 #[derive(Debug, Deserialize)]
+#[serde(untagged)]
 enum ProxyResult<T> {
     Ok { ok: T },
-    Err { err: ProxyError },
-}
-
-#[derive(Debug, Deserialize)]
-enum ProxyError {
-    Object { code: SwapperError },
+    Err { err: SwapperError },
 }
 
 #[derive(Clone, Debug)]
@@ -39,7 +35,7 @@ where
         let response: ProxyResult<ProxyQuote> = self.client.post(&path, &request, None).await.map_err(SwapperError::from)?;
         match response {
             ProxyResult::Ok { ok } => Ok(ok),
-            ProxyResult::Err { err } => Err(map_proxy_error(err)),
+            ProxyResult::Err { err } => Err(err),
         }
     }
 
@@ -48,7 +44,7 @@ where
         let response: ProxyResult<SwapQuoteData> = self.client.post(&path, &quote, None).await.map_err(SwapperError::from)?;
         match response {
             ProxyResult::Ok { ok } => Ok(ok),
-            ProxyResult::Err { err } => Err(map_proxy_error(err)),
+            ProxyResult::Err { err } => Err(err),
         }
     }
 }
@@ -58,9 +54,22 @@ struct VersionQuery {
     v: u8,
 }
 
-/// Try to cast a proxy error back into a `SwapperError` variant.
-fn map_proxy_error(error: ProxyError) -> SwapperError {
-    match error {
-        ProxyError::Object { code } => code,
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_proxy_result_error_deserialization() {
+        let json = r#"{"err": {"type": "compute_quote_error", "message": "Amount too small (min ~0.0008099 ETH)"}}"#;
+        let result: ProxyResult<()> = serde_json::from_str(json).unwrap();
+        match result {
+            ProxyResult::Err { err } => {
+                assert!(matches!(err, SwapperError::ComputeQuoteError(_)));
+                if let SwapperError::ComputeQuoteError(msg) = err {
+                    assert!(msg.contains("Amount too small"));
+                }
+            }
+            _ => panic!("Expected Err variant"),
+        }
     }
 }

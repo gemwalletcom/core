@@ -88,16 +88,7 @@ impl THORChainAsset {
             THORChainName::BitcoinCash => destination_address.strip_prefix("bitcoincash:").unwrap_or(&destination_address),
             _ => &destination_address,
         };
-        Some(format!(
-            "=:{}:{}:{}/{}/{}:{}:{}",
-            self.asset_name(),
-            address,
-            minimum,
-            interval,
-            quantity,
-            fee_address,
-            bps
-        ))
+        Some(format!("=:{}:{}:{}/{}/{}:{}:{}", self.asset_name(), address, minimum, interval, quantity, fee_address, bps))
     }
 }
 
@@ -203,9 +194,14 @@ mod tests {
             Some("=:c:qpcns7lget89x9km0t8ry5fk52e8lhl53q0a64gd65:0/1/0:g1:50".into())
         );
         assert_eq!(
-            THORChainAsset::from_asset_id(&AssetId::from_token(Chain::Thorchain, "tcy").to_string())
-                .unwrap()
-                .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
+            THORChainAsset::from_asset_id(&AssetId::from_token(Chain::Thorchain, "tcy").to_string()).unwrap().get_memo(
+                destination_address.clone(),
+                0,
+                1,
+                0,
+                fee_address.clone(),
+                bps
+            ),
             Some("=:THOR.TCY:0x1234567890abcdef:0/1/0:g1:50".into())
         );
     }

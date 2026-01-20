@@ -37,7 +37,7 @@ pub struct CoinInfo {
     pub preview_listing: bool,
     pub market_cap_rank: Option<i32>,
     pub watchlist_portfolio_users: Option<f32>,
-    pub platforms: HashMap<String, String>,
+    pub platforms: HashMap<String, Option<String>>,
     pub detail_platforms: HashMap<String, Option<DetailPlatform>>,
     pub links: CoinMarketLinks,
     pub community_data: Option<CommunityData>,
@@ -64,7 +64,7 @@ pub struct DeveloperData {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DetailPlatform {
     pub decimal_place: Option<i32>,
-    pub contract_address: String,
+    pub contract_address: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS devices;
+DROP TYPE IF EXISTS platform_store;
+DROP TYPE IF EXISTS platform;

@@ -32,10 +32,7 @@ impl SupportStore for DatabaseClient {
 
     fn get_support(&mut self, support_device_id: &str) -> Result<SupportRow, diesel::result::Error> {
         use crate::schema::support::dsl::*;
-        support
-            .filter(support_id.eq(support_device_id))
-            .select(SupportRow::as_select())
-            .first(&mut self.connection)
+        support.filter(support_id.eq(support_device_id)).select(SupportRow::as_select()).first(&mut self.connection)
     }
 
     fn support_update_unread(&mut self, support_device_id: &str, unread_value: i32) -> Result<SupportRow, diesel::result::Error> {

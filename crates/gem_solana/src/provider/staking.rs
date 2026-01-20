@@ -18,11 +18,7 @@ impl<C: Client + Clone> ChainStaking for SolanaClient<C> {
 
     async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
         let (accounts, inflation_rate) = futures::try_join!(self.get_vote_accounts(false), self.get_inflation_rate())?;
-        Ok(map_staking_validators(
-            accounts.current,
-            self.get_chain(),
-            apy.unwrap_or(inflation_rate.validator * 100.0),
-        ))
+        Ok(map_staking_validators(accounts.current, self.get_chain(), apy.unwrap_or(inflation_rate.validator * 100.0)))
     }
 
     async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {

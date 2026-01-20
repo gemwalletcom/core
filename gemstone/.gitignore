@@ -3,3 +3,4 @@ target/
 generated/
 xcuserdata/
 jniLibs/
+.kotlin/

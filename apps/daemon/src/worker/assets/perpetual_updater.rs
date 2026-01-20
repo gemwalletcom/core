@@ -25,10 +25,7 @@ impl PerpetualUpdater {
 
             let assets = perpetuals_data.iter().map(|x| x.asset.clone()).collect::<Vec<_>>();
             let asset_ids = assets.iter().map(|x| x.id.to_string()).collect::<Vec<_>>();
-            let perpetuals = perpetuals_data
-                .into_iter()
-                .map(|x| PerpetualRow::from_primitive(x.perpetual))
-                .collect::<Vec<_>>();
+            let perpetuals = perpetuals_data.into_iter().map(|x| PerpetualRow::from_primitive(x.perpetual)).collect::<Vec<_>>();
 
             self.database.assets()?.upsert_assets(assets)?;
             self.database.assets()?.update_assets(

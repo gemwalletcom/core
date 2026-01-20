@@ -86,9 +86,6 @@ impl GenericRpcProvider for NativeProvider {
                 println!("=== body: {:?}", String::from_utf8(bytes.to_vec()).unwrap());
             }
         }
-        if !status.is_success() {
-            return Err(Self::Error::http_error(status.as_u16(), bytes.len()));
-        }
         Ok(RpcResponse {
             status: Some(status.as_u16()),
             data: bytes.to_vec(),

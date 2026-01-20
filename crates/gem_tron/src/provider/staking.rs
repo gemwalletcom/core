@@ -19,19 +19,9 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
         let params = self.get_chain_parameters().await?;
         let witnesses = self.get_witnesses_list().await?;
 
-        let block_reward = params
-            .iter()
-            .find(|p| p.key == GET_WITNESS_PAY_PER_BLOCK)
-            .and_then(|p| p.value)
-            .unwrap_or(16_000_000) as f64
-            / 1_000_000.0;
+        let block_reward = params.iter().find(|p| p.key == GET_WITNESS_PAY_PER_BLOCK).and_then(|p| p.value).unwrap_or(16_000_000) as f64 / 1_000_000.0;
 
-        let voting_reward = params
-            .iter()
-            .find(|p| p.key == GET_WITNESS_127_PAY_PER_BLOCK)
-            .and_then(|p| p.value)
-            .unwrap_or(160_000_000) as f64
-            / 1_000_000.0;
+        let voting_reward = params.iter().find(|p| p.key == GET_WITNESS_127_PAY_PER_BLOCK).and_then(|p| p.value).unwrap_or(160_000_000) as f64 / 1_000_000.0;
 
         let blocks_per_year = 365.25 * 24.0 * 60.0 * 60.0 / 3.0;
         let annual_rewards = (block_reward + voting_reward) * blocks_per_year;

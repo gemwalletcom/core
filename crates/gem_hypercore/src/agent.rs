@@ -86,9 +86,7 @@ mod tests {
 
     impl MockPreferences {
         fn new() -> Self {
-            Self {
-                data: Mutex::new(HashMap::new()),
-            }
+            Self { data: Mutex::new(HashMap::new()) }
         }
     }
 

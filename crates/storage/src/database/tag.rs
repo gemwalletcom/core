@@ -19,10 +19,7 @@ impl TagStore for DatabaseClient {
 
     fn add_assets_tags(&mut self, values: Vec<AssetTagRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets_tags::dsl::*;
-        diesel::insert_into(assets_tags)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(assets_tags).values(values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn get_assets_tags(&mut self) -> Result<Vec<AssetTagRow>, diesel::result::Error> {
@@ -64,9 +61,6 @@ impl TagStore for DatabaseClient {
 
     fn get_assets_tags_for_asset(&mut self, _asset_id: &str) -> Result<Vec<AssetTagRow>, diesel::result::Error> {
         use crate::schema::assets_tags::dsl::*;
-        assets_tags
-            .filter(asset_id.eq(_asset_id))
-            .select(AssetTagRow::as_select())
-            .load(&mut self.connection)
+        assets_tags.filter(asset_id.eq(_asset_id)).select(AssetTagRow::as_select()).load(&mut self.connection)
     }
 }

@@ -240,10 +240,8 @@ pub static POLYGON_WETH: LazyLock<Asset> = LazyLock::new(|| {
         AssetType::ERC20,
     )
 });
-pub static POLYGON_USDC: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDC_POLYGON_ASSET_ID.into(), USDC_NAME.into(), USDC_SYMBOL.into(), 6, AssetType::ERC20));
-pub static POLYGON_USDT: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDT_POLYGON_ASSET_ID.into(), USDT_NAME.into(), USDT_SYMBOL.into(), 6, AssetType::ERC20));
+pub static POLYGON_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_POLYGON_ASSET_ID.into(), USDC_NAME.into(), USDC_SYMBOL.into(), 6, AssetType::ERC20));
+pub static POLYGON_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_POLYGON_ASSET_ID.into(), USDT_NAME.into(), USDT_SYMBOL.into(), 6, AssetType::ERC20));
 // zksync
 pub static ZKSYNC_WETH: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
@@ -266,15 +264,7 @@ pub static WORLD_WETH: LazyLock<Asset> = LazyLock::new(|| {
     )
 });
 // smartchain
-pub static SMARTCHAIN_ETH: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        ETH_SMARTCHAIN_ASSET_ID.into(),
-        "Binance-Peg Ethereum".into(),
-        "ETH".into(),
-        18,
-        AssetType::ERC20,
-    )
-});
+pub static SMARTCHAIN_ETH: LazyLock<Asset> = LazyLock::new(|| Asset::new(ETH_SMARTCHAIN_ASSET_ID.into(), "Binance-Peg Ethereum".into(), "ETH".into(), 18, AssetType::ERC20));
 pub static SMARTCHAIN_USDT: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
         AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID),
@@ -331,8 +321,7 @@ pub static INK_WETH: LazyLock<Asset> = LazyLock::new(|| {
         AssetType::ERC20,
     )
 });
-pub static INK_USDT: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDT_INK_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static INK_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_INK_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
 // Unichain
 pub static UNICHAIN_WETH: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
@@ -343,16 +332,12 @@ pub static UNICHAIN_WETH: LazyLock<Asset> = LazyLock::new(|| {
         AssetType::ERC20,
     )
 });
-pub static UNICHAIN_USDC: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDC_UNICHAIN_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
-pub static UNICHAIN_DAI: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(DAI_UNICHAIN_ASSET_ID.into(), DAI_NAME.to_owned(), DAI_SYMBOL.to_owned(), 18, AssetType::ERC20));
+pub static UNICHAIN_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_UNICHAIN_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static UNICHAIN_DAI: LazyLock<Asset> = LazyLock::new(|| Asset::new(DAI_UNICHAIN_ASSET_ID.into(), DAI_NAME.to_owned(), DAI_SYMBOL.to_owned(), 18, AssetType::ERC20));
 // Monad
 pub static MONAD_MON: LazyLock<Asset> = LazyLock::new(|| Asset::from_chain(Chain::Monad));
-pub static MONAD_USDC: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDC_MONAD_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
-pub static MONAD_USDT: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDT_MONAD_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static MONAD_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_MONAD_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static MONAD_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_MONAD_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
 // HyperCore
 pub static HYPERCORE_HYPE: LazyLock<Asset> = LazyLock::new(|| Asset::from_chain(Chain::HyperCore));
 pub static HYPERCORE_SPOT_HYPE: LazyLock<Asset> = LazyLock::new(|| {
@@ -373,15 +358,21 @@ pub static HYPERCORE_SPOT_USDC: LazyLock<Asset> = LazyLock::new(|| {
         AssetType::TOKEN,
     )
 });
+pub static HYPERCORE_SPOT_UBTC: LazyLock<Asset> = LazyLock::new(|| {
+    Asset::new(
+        AssetId::from(Chain::HyperCore, Some("UBTC::0x8f254b963e8468305d409b33aa137c67::197".to_string())),
+        "Bitcoin".to_string(),
+        "UBTC".to_string(),
+        10,
+        AssetType::TOKEN,
+    )
+});
 // HyperEvm
 pub static HYPEREVM_HYPE: LazyLock<Asset> = LazyLock::new(|| Asset::from_chain(Chain::Hyperliquid));
-pub static HYPEREVM_USDC: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDC_HYPEREVM_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
-pub static HYPEREVM_USDT: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDT_HYPEREVM_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static HYPEREVM_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_HYPEREVM_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static HYPEREVM_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_HYPEREVM_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
 // Plasma
-pub static PLASMA_USDT: LazyLock<Asset> =
-    LazyLock::new(|| Asset::new(USDT_PLASMA_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static PLASMA_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_PLASMA_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
 // Solana
 pub static SOLANA_USDC: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(

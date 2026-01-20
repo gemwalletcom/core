@@ -14,9 +14,7 @@ mod tests {
 
     #[test]
     fn test_map_node_status() {
-        let ledger_info = LedgerCurrent {
-            ledger_current_index: 80123456,
-        };
+        let ledger_info = LedgerCurrent { ledger_current_index: 80123456 };
         let mapped = map_node_status(&ledger_info).unwrap();
 
         assert!(mapped.in_sync);

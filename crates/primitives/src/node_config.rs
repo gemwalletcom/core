@@ -17,10 +17,7 @@ pub enum NodePriority {
 
 impl Node {
     pub fn new(url: &str, priority: NodePriority) -> Self {
-        Node {
-            url: url.to_string(),
-            priority,
-        }
+        Node { url: url.to_string(), priority }
     }
 }
 

@@ -8,10 +8,7 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
     ChainflipRouteData,
-    broker::{
-        BrokerClient, ChainflipAsset, DcaParameters, RefundParameters, VaultSwapBtcExtras, VaultSwapEvmExtras, VaultSwapExtras, VaultSwapResponse,
-        VaultSwapSolanaExtras,
-    },
+    broker::{BrokerClient, ChainflipAsset, DcaParameters, RefundParameters, VaultSwapBtcExtras, VaultSwapEvmExtras, VaultSwapExtras, VaultSwapResponse, VaultSwapSolanaExtras},
     capitalize::capitalize_first_letter,
     client::{ChainflipClient, QuoteRequest as ChainflipQuoteRequest, QuoteResponse},
     price::{apply_slippage, price_to_hex_price},
@@ -19,8 +16,7 @@ use super::{
     tx_builder,
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     alien::RpcProvider,
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
@@ -163,10 +159,7 @@ where
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![
             SwapperChainAsset::Assets(Chain::Bitcoin, vec![]),
-            SwapperChainAsset::Assets(
-                Chain::Ethereum,
-                vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone(), ETHEREUM_FLIP.id.clone()],
-            ),
+            SwapperChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone(), ETHEREUM_FLIP.id.clone()]),
             SwapperChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
             SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
         ]
@@ -286,11 +279,7 @@ where
 
         match response {
             VaultSwapResponse::Evm(response) => {
-                let value = if from_asset.is_native() {
-                    quote.request.value.clone()
-                } else {
-                    "0".to_string()
-                };
+                let value = if from_asset.is_native() { quote.request.value.clone() } else { "0".to_string() };
 
                 let approval = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
                     let approval = check_approval_erc20(
@@ -307,11 +296,7 @@ where
                     None
                 };
 
-                let gas_limit = if approval.is_some() {
-                    Some(DEFAULT_SWAP_ERC20_GAS_LIMIT.to_string())
-                } else {
-                    None
-                };
+                let gas_limit = if approval.is_some() { Some(DEFAULT_SWAP_ERC20_GAS_LIMIT.to_string()) } else { None };
 
                 Ok(SwapperQuoteData::new_contract(response.to, value, response.calldata, approval, gas_limit))
             }
@@ -437,10 +422,7 @@ mod tests {
         assert_eq!(result.from_tx_hash, tx_hash);
         assert_eq!(result.status, SwapStatus::Completed);
         assert_eq!(result.to_chain, Some(Chain::Ethereum));
-        assert_eq!(
-            result.to_tx_hash,
-            Some("0xc142acf0170a2efc7756d9c7c2d27474527ffc4fed6b6c535ca407ffed559dc1".to_string())
-        );
+        assert_eq!(result.to_tx_hash, Some("0xc142acf0170a2efc7756d9c7c2d27474527ffc4fed6b6c535ca407ffed559dc1".to_string()));
 
         Ok(())
     }

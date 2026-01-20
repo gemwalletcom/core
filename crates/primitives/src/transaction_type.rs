@@ -10,6 +10,8 @@ use typeshare::typeshare;
 pub enum TransactionType {
     #[default]
     Transfer,
+    #[serde(rename = "transferNFT")]
+    #[strum(serialize = "transferNFT")]
     TransferNFT,
     Swap,
     TokenApproval,

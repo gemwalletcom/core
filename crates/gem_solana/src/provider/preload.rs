@@ -5,8 +5,7 @@ use std::error::Error;
 use crate::provider::preload_mapper::{calculate_fee_rates, calculate_transaction_fee};
 use gem_client::Client;
 use primitives::{
-    AssetType, Chain, FeeRate, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput,
+    AssetType, Chain, FeeRate, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
 };
 
 use crate::rpc::client::SolanaClient;
@@ -49,8 +48,7 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
             Ok(None)
         };
 
-        let (block_hash, sender_token_address, recipient_token_address) =
-            futures::try_join!(self.get_latest_blockhash(), sender_token_future, recipient_token_future)?;
+        let (block_hash, sender_token_address, recipient_token_address) = futures::try_join!(self.get_latest_blockhash(), sender_token_future, recipient_token_future)?;
 
         let token_program = match source_asset.asset_type {
             AssetType::SPL => Some(SolanaTokenProgramId::Token),
@@ -146,10 +144,7 @@ mod chain_integration_tests {
         assert!(result.get_block_hash()?.len() == 44);
         assert!(result.get_recipient_token_address()?.is_none());
         assert_eq!(result.get_recipient_token_address()?, None);
-        assert_eq!(
-            result.get_sender_token_address()?,
-            Some("HEeranxp3y7kVQKVSLdZW1rUmnbs7bAtUTMu8o88Jash".to_string())
-        );
+        assert_eq!(result.get_sender_token_address()?, Some("HEeranxp3y7kVQKVSLdZW1rUmnbs7bAtUTMu8o88Jash".to_string()));
 
         if let TransactionLoadMetadata::Solana { token_program, .. } = &result {
             assert!(matches!(token_program, Some(SolanaTokenProgramId::Token)));

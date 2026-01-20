@@ -1,3 +1,5 @@
+use crate::HexError;
+
 #[derive(Debug, Clone)]
 pub enum SignerError {
     InvalidInput(String),
@@ -17,6 +19,12 @@ impl std::error::Error for SignerError {}
 
 impl From<serde_json::Error> for SignerError {
     fn from(error: serde_json::Error) -> Self {
+        SignerError::InvalidInput(error.to_string())
+    }
+}
+
+impl From<HexError> for SignerError {
+    fn from(error: HexError) -> Self {
         SignerError::InvalidInput(error.to_string())
     }
 }

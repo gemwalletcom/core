@@ -3,8 +3,7 @@ use async_trait::async_trait;
 use std::{collections::HashSet, fmt, str::FromStr, sync::Arc, vec};
 
 use crate::{
-    FetchQuoteData, Permit2ApprovalData, ProviderData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData,
+    FetchQuoteData, Permit2ApprovalData, ProviderData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::evm::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
@@ -101,11 +100,7 @@ impl Swapper for UniswapV4 {
     }
 
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
-        Chain::all()
-            .iter()
-            .filter(|x| self.support_chain(x))
-            .map(|x| SwapperChainAsset::All(*x))
-            .collect()
+        Chain::all().iter().filter(|x| self.support_chain(x)).map(|x| SwapperChainAsset::All(*x)).collect()
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
@@ -138,13 +133,11 @@ impl Swapper for UniswapV4 {
         if !Self::is_base_pair(&token_in, &token_out, &evm_chain) {
             let intermediaries = get_intermediaries(&token_in, &token_out, &base_pair);
             quote_exact_params = build_quote_exact_params(quote_amount_in, &token_in, &token_out, &fee_tiers, &intermediaries);
-            build_quote_exact_requests(deployment.quoter, &quote_exact_params)
-                .iter()
-                .for_each(|call_array| {
-                    let client = Arc::clone(&client);
-                    let calls = call_array.clone();
-                    requests.push(Box::pin(async move { client.batch_call_requests(calls).await }));
-                });
+            build_quote_exact_requests(deployment.quoter, &quote_exact_params).iter().for_each(|call_array| {
+                let client = Arc::clone(&client);
+                let calls = call_array.clone();
+                requests.push(Box::pin(async move { client.batch_call_requests(calls).await }));
+            });
         } else {
             quote_exact_params = vec![];
         }

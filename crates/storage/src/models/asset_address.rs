@@ -14,12 +14,7 @@ pub struct AssetAddressRow {
 
 impl AssetAddressRow {
     pub fn new(chain: String, asset_id: String, address: String, value: Option<String>) -> Self {
-        Self {
-            chain,
-            asset_id,
-            address,
-            value,
-        }
+        Self { chain, asset_id, address, value }
     }
 
     pub fn from_primitive(asset_address: AssetAddress) -> Self {

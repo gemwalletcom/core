@@ -84,20 +84,14 @@ impl GemGateway {
             Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
             Chain::Sui => Ok(Arc::new(SuiClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Xrp => Ok(Arc::new(XRPClient::new(JsonRpcClient::new(alien_client.clone())))),
-            Chain::Algorand => Ok(Arc::new(AlgorandClient::new(
-                alien_client.clone(),
-                AlgorandClientIndexer::new(alien_client.clone()),
-            ))),
+            Chain::Algorand => Ok(Arc::new(AlgorandClient::new(alien_client.clone(), AlgorandClientIndexer::new(alien_client.clone())))),
             Chain::Near => Ok(Arc::new(NearClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Aptos => Ok(Arc::new(AptosClient::new(alien_client))),
             Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Sei | Chain::Noble => {
                 Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
             }
             Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
-            Chain::Tron => Ok(Arc::new(TronClient::new(
-                alien_client.clone(),
-                TronGridClient::new(alien_client.clone(), String::new()),
-            ))),
+            Chain::Tron => Ok(Arc::new(TronClient::new(alien_client.clone(), TronGridClient::new(alien_client.clone(), String::new())))),
             Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
             Chain::Solana => Ok(Arc::new(SolanaClient::new(JsonRpcClient::new(alien_client.clone())))),
             Chain::Ethereum
@@ -126,10 +120,7 @@ impl GemGateway {
             | Chain::Plasma
             | Chain::Monad
             | Chain::XLayer
-            | Chain::Stable => Ok(Arc::new(EthereumClient::new(
-                JsonRpcClient::new(alien_client),
-                EVMChain::from_chain(chain).unwrap(),
-            ))),
+            | Chain::Stable => Ok(Arc::new(EthereumClient::new(JsonRpcClient::new(alien_client), EVMChain::from_chain(chain).unwrap()))),
         }
     }
 }
@@ -191,10 +182,7 @@ impl GemGateway {
     pub async fn get_staking_validators(&self, chain: Chain, apy: Option<f64>) -> Result<Vec<GemDelegationValidator>, GatewayError> {
         let provider = self.provider(chain).await?;
 
-        let validators = provider
-            .get_staking_validators(apy)
-            .await
-            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
+        let validators = provider.get_staking_validators(apy).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(validators)
     }
 
@@ -307,19 +295,10 @@ impl GemGateway {
             transaction_type: scan_type,
         };
 
-        self.api_client
-            .scan_transaction(payload)
-            .await
-            .map(Some)
-            .map_err(|e| GatewayError::NetworkError { msg: e })
+        self.api_client.scan_transaction(payload).await.map(Some).map_err(|e| GatewayError::NetworkError { msg: e })
     }
 
-    pub async fn get_fee(
-        &self,
-        chain: Chain,
-        input: GemTransactionLoadInput,
-        provider: Arc<dyn GemGatewayEstimateFee>,
-    ) -> Result<Option<GemTransactionLoadFee>, GatewayError> {
+    pub async fn get_fee(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<Option<GemTransactionLoadFee>, GatewayError> {
         let fee = provider.get_fee(chain, input.clone()).await?;
         if let Some(fee) = fee {
             return Ok(Some(fee));
@@ -336,12 +315,7 @@ impl GemGateway {
         Ok(None)
     }
 
-    pub async fn get_transaction_load(
-        &self,
-        chain: Chain,
-        input: GemTransactionLoadInput,
-        provider: Arc<dyn GemGatewayEstimateFee>,
-    ) -> Result<GemTransactionData, GatewayError> {
+    pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<GemTransactionData, GatewayError> {
         let fee = self.get_fee(chain, input.clone(), provider.clone()).await?;
 
         let load_data = self
@@ -436,6 +410,7 @@ mod tests {
         match result {
             Ok(status) => panic!("expected network error for 404 response, got {:?}", status),
             Err(GatewayError::NetworkError { msg }) => assert_eq!(msg, "HTTP error: status 404"),
+            Err(GatewayError::PlatformError { .. }) => panic!("expected NetworkError, got PlatformError"),
         }
     }
 }

@@ -1,17 +1,15 @@
 pub mod assets;
 pub mod assets_addresses;
 pub mod assets_links;
-pub mod assets_types;
 
 pub mod chains;
 pub mod charts;
 pub mod config;
 pub mod devices;
 pub mod fiat;
-pub mod link_types;
 pub mod migrations;
 pub mod nft;
-pub mod nodes;
+pub mod notifications;
 pub mod parser_state;
 pub mod perpetuals;
 pub mod price_alerts;
@@ -26,6 +24,7 @@ pub mod support;
 pub mod tag;
 pub mod transactions;
 pub mod usernames;
+pub mod wallets;
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
@@ -35,14 +34,16 @@ pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/migrations");
 pub type PgPool = Pool<ConnectionManager<PgConnection>>;
 pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
-use crate::{
-    AssetsAddressesRepository, AssetsLinksRepository, AssetsRepository, AssetsTypesRepository, ChainsRepository, ChartsRepository, ConfigRepository,
-    DevicesRepository, FiatRepository, LinkTypesRepository, MigrationsRepository, NftRepository, NodesRepository, ParserStateRepository, PerpetualsRepository,
-    PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRedemptionsRepository, RewardsRepository, ScanAddressesRepository,
-    SubscriptionsRepository, SupportRepository, TagRepository, TransactionsRepository,
+use crate::repositories::{
+    assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
+    chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository, devices_repository::DevicesRepository,
+    fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository, notifications_repository::NotificationsRepository,
+    parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository,
+    prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
+    rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository,
+    subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository,
+    wallets_repository::WalletsRepository,
 };
-use rewards::RewardsEventTypesStore;
-use rewards_redemptions::RewardsRedemptionTypesStore;
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
     let manager = ConnectionManager::<PgConnection>::new(database_url);
@@ -74,10 +75,6 @@ impl DatabaseClient {
         self
     }
 
-    pub fn assets_types(&mut self) -> &mut dyn AssetsTypesRepository {
-        self
-    }
-
     pub fn chains(&mut self) -> &mut dyn ChainsRepository {
         self
     }
@@ -98,10 +95,6 @@ impl DatabaseClient {
         self
     }
 
-    pub fn link_types(&mut self) -> &mut dyn LinkTypesRepository {
-        self
-    }
-
     pub fn migrations(&mut self) -> &mut dyn MigrationsRepository {
         self
     }
@@ -114,7 +107,7 @@ impl DatabaseClient {
         self
     }
 
-    pub fn nodes(&mut self) -> &mut dyn NodesRepository {
+    pub fn notifications(&mut self) -> &mut dyn NotificationsRepository {
         self
     }
 
@@ -142,14 +135,6 @@ impl DatabaseClient {
         self
     }
 
-    pub fn reward_event_types(&mut self) -> &mut dyn RewardsEventTypesStore {
-        self
-    }
-
-    pub fn reward_redemption_types(&mut self) -> &mut dyn RewardsRedemptionTypesStore {
-        self
-    }
-
     pub fn releases(&mut self) -> &mut dyn ReleasesRepository {
         self
     }
@@ -171,6 +156,10 @@ impl DatabaseClient {
     }
 
     pub fn transactions(&mut self) -> &mut dyn TransactionsRepository {
+        self
+    }
+
+    pub fn wallets(&mut self) -> &mut dyn WalletsRepository {
         self
     }
 }

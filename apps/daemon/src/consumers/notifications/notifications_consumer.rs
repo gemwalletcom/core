@@ -27,9 +27,7 @@ impl MessageConsumer<NotificationsPayload, usize> for NotificationsConsumer {
         let failures = result.failures();
 
         if !failures.is_empty() {
-            self.stream_producer
-                .publish_notifications_failed(NotificationsFailedPayload::new(failures))
-                .await?;
+            self.stream_producer.publish_notifications_failed(NotificationsFailedPayload::new(failures)).await?;
         }
 
         Ok(counts)

@@ -52,9 +52,7 @@ pub fn map_order(order: Order) -> Result<FiatTransaction, Box<dyn std::error::Er
     let asset_id = chain.map(AssetId::from_chain);
 
     let status = match order.status.as_str() {
-        "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress" | "coinTransferred" | "cryptoTransferred" | "extraVerification" => {
-            FiatTransactionStatus::Pending
-        }
+        "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress" | "coinTransferred" | "cryptoTransferred" | "extraVerification" => FiatTransactionStatus::Pending,
         "cancelled" | "declined" | "expired" | "refunded" => FiatTransactionStatus::Failed,
         "complete" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
         _ => FiatTransactionStatus::Unknown(order.status.clone()),

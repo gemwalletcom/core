@@ -38,10 +38,10 @@ impl SubscriptionRow {
         }
     }
 
-    pub fn from_primitive(subscription: Subscription, device_id: i32) -> Self {
+    pub fn from_primitive(subscription: Subscription, device_id: i32, wallet_index: i32) -> Self {
         Self {
             device_id,
-            wallet_index: subscription.wallet_index,
+            wallet_index,
             chain: subscription.chain.as_ref().to_string(),
             address: subscription.address.to_string(),
         }

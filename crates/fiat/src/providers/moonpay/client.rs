@@ -42,12 +42,7 @@ impl MoonPayClient {
             .await
     }
 
-    pub async fn get_buy_quote(
-        &self,
-        symbol: String,
-        fiat_currency: String,
-        fiat_amount: f64,
-    ) -> Result<MoonPayBuyQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_buy_quote(&self, symbol: String, fiat_currency: String, fiat_amount: f64) -> Result<MoonPayBuyQuote, Box<dyn std::error::Error + Send + Sync>> {
         self.client
             .get(format!("{MOONPAY_API_BASE_URL}/v3/currencies/{symbol}/buy_quote/"))
             .query(&[
@@ -63,12 +58,7 @@ impl MoonPayClient {
             .into()
     }
 
-    pub async fn get_sell_quote(
-        &self,
-        symbol: String,
-        fiat_currency: String,
-        fiat_amount: f64,
-    ) -> Result<MoonPaySellQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_sell_quote(&self, symbol: String, fiat_currency: String, fiat_amount: f64) -> Result<MoonPaySellQuote, Box<dyn std::error::Error + Send + Sync>> {
         self.client
             .get(format!("{MOONPAY_API_BASE_URL}/v3/currencies/{symbol}/sell_quote/"))
             .query(&[

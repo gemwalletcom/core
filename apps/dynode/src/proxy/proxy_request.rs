@@ -17,16 +17,7 @@ pub struct ProxyRequest {
 }
 
 impl ProxyRequest {
-    pub fn new(
-        method: Method,
-        headers: HeaderMap,
-        body: Vec<u8>,
-        path: String,
-        path_with_query: String,
-        host: String,
-        user_agent: String,
-        chain: Chain,
-    ) -> Self {
+    pub fn new(method: Method, headers: HeaderMap, body: Vec<u8>, path: String, path_with_query: String, host: String, user_agent: String, chain: Chain) -> Self {
         Self {
             method,
             headers,

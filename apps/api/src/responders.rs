@@ -8,6 +8,8 @@ use serde::Serialize;
 use storage::DatabaseError;
 use strum::ParseError;
 
+pub struct ErrorContext(pub String);
+
 #[derive(Debug)]
 pub enum ApiError {
     BadRequest(String),
@@ -78,7 +80,7 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
             }
         }
 
-        ApiError::InternalServerError(format!("Service error: {}", error))
+        ApiError::InternalServerError(format!("{}", error))
     }
 }
 

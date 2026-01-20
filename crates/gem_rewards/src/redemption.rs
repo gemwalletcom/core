@@ -5,9 +5,7 @@ pub fn redeem_points(database: &mut DatabaseClient, username: &str, option_id: &
     let redemption = RewardsRedemptionsRepository::add_redemption(database, username, option_id, device_id)?;
 
     Ok(RedemptionResponse {
-        result: RedemptionResult {
-            redemption: redemption.clone(),
-        },
+        result: RedemptionResult { redemption: redemption.clone() },
         redemption_id: redemption.id,
     })
 }

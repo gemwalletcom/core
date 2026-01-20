@@ -26,27 +26,27 @@ use pricer::PriceClient;
 use primitives::ConfigKey;
 use settings::Settings;
 use settings_chain::ChainProviders;
-use storage::{ConfigRepository, Database};
+use storage::{ConfigCacher, Database};
 pub use store_charts_consumer::StoreChartsConsumer;
 pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
-    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, PricesPayload,
+    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, InAppNotificationPayload, PricesPayload,
     QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamConnection, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload,
     TransactionsPayload, run_consumer,
 };
 
 use crate::consumers::{
-    fetch_address_transactions_consumer::FetchAddressTransactionsConsumer, fetch_blocks_consumer::FetchBlocksConsumer,
-    fetch_coin_addresses_consumer::FetchCoinAddressesConsumer, fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer,
-    fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
+    fetch_address_transactions_consumer::FetchAddressTransactionsConsumer, fetch_blocks_consumer::FetchBlocksConsumer, fetch_coin_addresses_consumer::FetchCoinAddressesConsumer,
+    fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer, fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
 };
 use crate::pusher::Pusher;
 use gem_client::ReqwestClient;
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::JsonRpcClient;
 use gem_rewards::{EvmClientProvider, TransferRedemptionService, WalletConfig};
+use primitives::rewards::RedemptionStatus;
 use primitives::{Chain, ChainType, EVMChain};
 use settings::service_user_agent;
 use settings_chain::ProviderFactory;
@@ -59,6 +59,7 @@ fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
     ConsumerConfig {
         timeout_on_error: consumer.error.timeout,
         skip_on_error: consumer.error.skip,
+        delay: consumer.delay,
     }
 }
 
@@ -131,12 +132,12 @@ pub async fn run_consumer_store_transactions(settings: Settings) -> Result<(), B
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
     let consumer = StoreTransactionsConsumer {
         database: database.clone(),
+        config_cacher: ConfigCacher::new(database.clone()),
         stream_producer,
         pusher: Pusher::new(database.clone()),
         config: StoreTransactionsConsumerConfig {},
     };
-    run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer))
-        .await
+    run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer)).await
 }
 
 pub async fn run_consumer_fetch_address_transactions(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -148,15 +149,7 @@ pub async fn run_consumer_fetch_address_transactions(settings: Settings) -> Resu
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
             let consumer = FetchAddressTransactionsConsumer::new(runner.database, chain_providers(&runner.settings, &name), stream_producer, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchAddressTransactionsConsumer, usize>(
-                &name,
-                stream_reader,
-                queue,
-                Some(chain.as_ref()),
-                consumer,
-                runner.config,
-            )
-            .await
+            run_consumer::<ChainAddressPayload, FetchAddressTransactionsConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config).await
         })
         .await
 }
@@ -194,8 +187,7 @@ pub async fn run_consumer_fetch_token_associations(settings: Settings) -> Result
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
             let consumer = FetchTokenAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, stream_producer, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config)
-                .await
+            run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config).await
         })
         .await
 }
@@ -208,8 +200,7 @@ pub async fn run_consumer_fetch_coin_associations(settings: Settings) -> Result<
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let consumer = FetchCoinAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config)
-                .await
+            run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config).await
         })
         .await
 }
@@ -217,9 +208,7 @@ pub async fn run_consumer_fetch_coin_associations(settings: Settings) -> Result<
 pub async fn run_consumer_fetch_nft_associations(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     ChainConsumerRunner::new(settings, QueueName::FetchNftAssociations)
         .await?
-        .run(|runner, chain| async move {
-            FetchNftAssetsAddressesConsumer::run(runner.settings, runner.database, chain, &runner.connection, runner.cacher, runner.config).await
-        })
+        .run(|runner, chain| async move { FetchNftAssetsAddressesConsumer::run(runner.settings, runner.database, chain, &runner.connection, runner.cacher, runner.config).await })
         .await
 }
 
@@ -254,7 +243,8 @@ pub async fn run_consumer_store_prices(settings: Settings) -> Result<(), Box<dyn
     let stream_reader = StreamReader::new(config).await?;
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(database.clone(), cacher_client);
-    let ttl_seconds = database.config()?.get_config_duration(ConfigKey::PricerOutdated)?.as_secs() as i64;
+    let config = ConfigCacher::new(database.clone());
+    let ttl_seconds = config.get_duration(ConfigKey::PriceOutdated)?.as_secs() as i64;
     let consumer = StorePricesConsumer::new(database, price_client, ttl_seconds);
     run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer)).await
 }
@@ -283,8 +273,26 @@ pub async fn run_consumer_rewards(settings: Settings) -> Result<(), Box<dyn Erro
     run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config).await
 }
 
+pub async fn run_consumer_in_app_notifications(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let queue = QueueName::NotificationsInApp;
+    let name = queue.to_string();
+    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+    let stream_reader = StreamReader::new(config).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let consumer = notifications::InAppNotificationsConsumer::new(database, stream_producer);
+    let consumer_config = consumer_config(&settings.consumer);
+    run_consumer::<InAppNotificationPayload, notifications::InAppNotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config).await
+}
+
 pub async fn run_rewards_redemption_consumer(settings: Settings) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let config = ConfigCacher::new(database.clone());
+    let retry_config = rewards_redemption_consumer::RedemptionRetryConfig {
+        max_retries: config.get_i64(ConfigKey::RedemptionRetryMaxRetries)? as u32,
+        delay: config.get_duration(ConfigKey::RedemptionRetryDelay)?,
+        errors: config.get_vec_string(ConfigKey::RedemptionRetryErrors)?,
+    };
     let queue = QueueName::RewardsRedemptions;
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
@@ -292,9 +300,9 @@ pub async fn run_rewards_redemption_consumer(settings: Settings) -> Result<(), B
     let wallets = parse_rewards_wallets(&settings)?;
     let client_provider = create_evm_client_provider(settings.clone());
     let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
-    let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service);
+    let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service, retry_config);
     let consumer_config = consumer_config(&settings.consumer);
-    run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, bool>(
+    run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, RedemptionStatus>(
         &name,
         stream_reader,
         queue,

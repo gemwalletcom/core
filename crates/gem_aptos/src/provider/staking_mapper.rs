@@ -2,10 +2,7 @@ use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 
-use crate::models::{DelegationPoolStake, ValidatorInfo, ValidatorSet};
-
-#[cfg(test)]
-use crate::models::StakingConfig;
+use crate::models::{DelegationPoolStake, StakingConfig, ValidatorInfo, ValidatorSet};
 
 pub fn map_validators(validator_set: ValidatorSet, apy: f64, pool_address: &str, commission: f64) -> Vec<DelegationValidator> {
     validator_set
@@ -27,13 +24,7 @@ pub fn map_validator(validator: &ValidatorInfo, apy: f64, commission: f64, is_ac
     }
 }
 
-fn map_delegation(
-    asset_id: &primitives::AssetId,
-    state: DelegationState,
-    balance: BigUint,
-    validator_id: &str,
-    completion_date: Option<DateTime<Utc>>,
-) -> DelegationBase {
+fn map_delegation(asset_id: &primitives::AssetId, state: DelegationState, balance: BigUint, validator_id: &str, completion_date: Option<DateTime<Utc>>) -> DelegationBase {
     DelegationBase {
         asset_id: asset_id.clone(),
         state,
@@ -70,13 +61,7 @@ pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, lockup_secs: 
             }
 
             if stake.inactive > BigUint::from(0u32) {
-                delegations.push(map_delegation(
-                    &asset_id,
-                    DelegationState::AwaitingWithdrawal,
-                    stake.inactive,
-                    &pool_address,
-                    None,
-                ));
+                delegations.push(map_delegation(&asset_id, DelegationState::AwaitingWithdrawal, stake.inactive, &pool_address, None));
             }
 
             delegations
@@ -84,7 +69,7 @@ pub fn map_delegations(stakes: Vec<(String, DelegationPoolStake)>, lockup_secs: 
         .collect()
 }
 
-pub fn calculate_apy(staking_config: &crate::models::StakingConfig) -> f64 {
+pub fn calculate_apy(staking_config: &StakingConfig) -> f64 {
     if staking_config.rewards_rate_denominator == 0 {
         return 0.0;
     }

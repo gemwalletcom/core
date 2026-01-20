@@ -22,10 +22,7 @@ pub fn build_quoter_request(mode: &SwapperMode, wallet_address: &str, quoter_v2:
         .abi_encode(),
     };
 
-    EthereumRpc::Call(
-        TransactionObject::new_call_with_from(wallet_address, quoter_v2, call_data),
-        BlockParameter::Latest,
-    )
+    EthereumRpc::Call(TransactionObject::new_call_with_from(wallet_address, quoter_v2, call_data), BlockParameter::Latest)
 }
 
 // Returns (amountOut, gasEstimate)

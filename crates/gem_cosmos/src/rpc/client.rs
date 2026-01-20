@@ -60,12 +60,8 @@ impl<C: Client> CosmosClient<C> {
         }
         let query_name = query_name.unwrap();
 
-        let inbound = self
-            .get_transactions_by_query(query_name, &format!("message.sender='{address}'"), limit)
-            .await?;
-        let outbound = self
-            .get_transactions_by_query(query_name, &format!("message.recipient='{address}'"), limit)
-            .await?;
+        let inbound = self.get_transactions_by_query(query_name, &format!("message.sender='{address}'"), limit).await?;
+        let outbound = self.get_transactions_by_query(query_name, &format!("message.recipient='{address}'"), limit).await?;
         let responses = inbound.tx_responses.into_iter().chain(outbound.tx_responses.into_iter()).collect::<Vec<_>>();
         let txs = inbound.txs.into_iter().chain(outbound.txs.into_iter()).collect::<Vec<_>>();
         Ok(responses
@@ -81,10 +77,7 @@ impl<C: Client> CosmosClient<C> {
     }
 
     pub async fn get_validators(&self) -> Result<ValidatorsResponse, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .client
-            .get("/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=100")
-            .await?)
+        Ok(self.client.get("/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=100").await?)
     }
 
     pub async fn get_staking_pool(&self) -> Result<StakingPoolResponse, Box<dyn Error + Send + Sync>> {
@@ -124,10 +117,7 @@ impl<C: Client> CosmosClient<C> {
     }
 
     pub async fn get_unbonding_delegations(&self, address: &str) -> Result<UnbondingDelegations, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .client
-            .get(&format!("/cosmos/staking/v1beta1/delegators/{}/unbonding_delegations", address))
-            .await?)
+        Ok(self.client.get(&format!("/cosmos/staking/v1beta1/delegators/{}/unbonding_delegations", address)).await?)
     }
 
     pub async fn get_delegation_rewards(&self, address: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {

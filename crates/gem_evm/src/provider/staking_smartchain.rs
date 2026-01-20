@@ -2,8 +2,8 @@ use crate::{constants::STAKING_VALIDATORS_LIMIT, rpc::client::EthereumClient};
 use alloy_primitives::hex;
 use chrono::{DateTime, Utc};
 use gem_bsc::stake_hub::{
-    HUB_READER_ADDRESS, STAKE_HUB_ADDRESS, decode_delegations_return, decode_undelegations_return, decode_validators_return, encode_delegations_call,
-    encode_undelegations_call, encode_validators_call,
+    HUB_READER_ADDRESS, STAKE_HUB_ADDRESS, decode_delegations_return, decode_undelegations_return, decode_validators_return, encode_delegations_call, encode_undelegations_call,
+    encode_validators_call,
 };
 use gem_client::Client;
 use num_bigint::BigUint;
@@ -182,10 +182,7 @@ mod tests {
         let expected_timestamp = 1716417585i64;
         let expected_date = DateTime::from_timestamp(expected_timestamp, 0).unwrap();
 
-        let completion_date = "1716417585"
-            .parse::<i64>()
-            .ok()
-            .and_then(|unlock_time| DateTime::from_timestamp(unlock_time, 0));
+        let completion_date = "1716417585".parse::<i64>().ok().and_then(|unlock_time| DateTime::from_timestamp(unlock_time, 0));
 
         assert!(completion_date.is_some());
         assert_eq!(completion_date.unwrap(), expected_date);

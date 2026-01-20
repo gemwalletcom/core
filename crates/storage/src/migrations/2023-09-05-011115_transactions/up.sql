@@ -1,7 +1,5 @@
-CREATE TABLE transactions_types (
-    id VARCHAR(32) PRIMARY KEY NOT NULL,
-    name VARCHAR(255) NOT NULL default ''
-);
+CREATE TYPE transaction_type AS ENUM ('transfer', 'transferNFT', 'swap', 'tokenApproval', 'stakeDelegate', 'stakeUndelegate', 'stakeRewards', 'stakeRedelegate', 'stakeWithdraw', 'stakeFreeze', 'stakeUnfreeze', 'assetActivation', 'smartContractCall', 'perpetualOpenPosition', 'perpetualClosePosition', 'perpetualModifyPosition');
+CREATE TYPE transaction_state AS ENUM ('pending', 'confirmed', 'failed', 'reverted');
 
 CREATE TABLE transactions
 (
@@ -11,8 +9,8 @@ CREATE TABLE transactions
     from_address VARCHAR(256),
     to_address   VARCHAR(256),
     memo         VARCHAR(256),
-    state        VARCHAR(16)  NOT NULL,
-    kind         VARCHAR(16)  NOT NULL REFERENCES transactions_types (id) ON DELETE CASCADE,
+    state        transaction_state NOT NULL,
+    kind         transaction_type NOT NULL,
     value        VARCHAR(256),
     asset_id     VARCHAR      NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
     fee          VARCHAR(32),
@@ -29,3 +27,14 @@ SELECT diesel_manage_updated_at('transactions');
 
 CREATE INDEX transactions_created_at_idx ON transactions (created_at DESC);
 CREATE INDEX transactions_asset_id_idx ON transactions (asset_id);
+
+CREATE TABLE transactions_addresses
+(
+    id             SERIAL PRIMARY KEY,
+    transaction_id BIGINT       NOT NULL REFERENCES transactions (id) ON DELETE CASCADE,
+    asset_id       VARCHAR(256) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
+    address        VARCHAR(256) NOT NULL,
+    UNIQUE (transaction_id, address, asset_id)
+);
+
+CREATE INDEX transactions_addresses_address_idx ON transactions_addresses (address);

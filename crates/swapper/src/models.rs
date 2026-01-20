@@ -35,14 +35,13 @@ impl ProviderType {
             SwapperProvider::UniswapV3
             | SwapperProvider::UniswapV4
             | SwapperProvider::PancakeswapV3
-            | SwapperProvider::PancakeswapAptosV2
+            | SwapperProvider::Panora
             | SwapperProvider::Jupiter
             | SwapperProvider::Oku
             | SwapperProvider::Wagmi
             | SwapperProvider::Cetus
             | SwapperProvider::CetusAggregator
             | SwapperProvider::StonfiV2
-            | SwapperProvider::Reservoir
             | SwapperProvider::Aerodrome
             | SwapperProvider::Orca => SwapProviderMode::OnChain,
             SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapProviderMode::CrossChain,
@@ -75,10 +74,7 @@ pub struct Options {
 
 impl Options {
     pub fn new_with_slippage(slippage: SwapperSlippage) -> Self {
-        Self {
-            slippage,
-            ..Default::default()
-        }
+        Self { slippage, ..Default::default() }
     }
 }
 

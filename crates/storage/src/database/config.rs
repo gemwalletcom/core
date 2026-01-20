@@ -16,9 +16,6 @@ impl ConfigStore for DatabaseClient {
 
     fn add_config(&mut self, configs: Vec<ConfigRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::config::dsl::*;
-        diesel::insert_into(config)
-            .values(&configs)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(config).values(&configs).on_conflict_do_nothing().execute(&mut self.connection)
     }
 }

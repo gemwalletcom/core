@@ -1,13 +1,33 @@
-use crate::models::{Transaction, TransactionResponse};
+use crate::models::{DelegationPoolAddStakeData, DelegationPoolUnlockStakeData, Event, Transaction, TransactionResponse};
 use crate::{
-    APTOS_NATIVE_COIN, DELEGATION_POOL_ADD_STAKE_EVENT, DELEGATION_POOL_UNLOCK_STAKE_EVENT, FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT,
-    STAKE_DEPOSIT_EVENT,
+    APTOS_NATIVE_COIN, DELEGATION_POOL_ADD_STAKE_EVENT, DELEGATION_POOL_UNLOCK_STAKE_EVENT, FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, STAKE_DEPOSIT_EVENT,
 };
 use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::DateTime;
 use num_bigint::{BigInt, BigUint};
 use primitives::{AssetId, Chain, SwapProvider, Transaction as PrimitivesTransaction, TransactionState, TransactionType};
 use std::error::Error;
+
+const PANORA_SWAP_EVENT: &str = "panora_swap";
+const PANORA_SWAP_EVENT_ADDRESS: &str = "0x1c3206329806286fd2223647c9f9b130e66baeb6d7224a18c1f642ffe48f3b4c";
+const PANORA_SWAP_SUMMARY_EVENT: &str = "PanoraSwapSummaryEvent";
+const APTOS_NATIVE_METADATA_ADDRESS: &str = "0xa";
+
+#[derive(serde::Deserialize)]
+struct PanoraSwapSummaryEventData {
+    input_token_address: String,
+    input_token_amount: String,
+    output_token_address: String,
+    output_token_amount: String,
+}
+
+fn map_token_address_to_asset_id(chain: Chain, token_address: &str) -> AssetId {
+    if token_address == APTOS_NATIVE_METADATA_ADDRESS || token_address == APTOS_NATIVE_COIN {
+        chain.as_asset_id()
+    } else {
+        AssetId::from_token(chain, token_address)
+    }
+}
 
 pub fn map_transaction_broadcast(response: &TransactionResponse) -> Result<String, Box<dyn Error + Sync + Send>> {
     if let Some(message) = &response.message {
@@ -35,11 +55,7 @@ struct TransactionMeta {
 fn extract_meta(transaction: &Transaction) -> Option<TransactionMeta> {
     let hash = transaction.hash.clone().unwrap_or_default();
     let sender = transaction.sender.clone().unwrap_or_default();
-    let state = if transaction.success {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Failed
-    };
+    let state = if transaction.success { TransactionState::Confirmed } else { TransactionState::Failed };
     let gas_used = BigUint::from(transaction.gas_used.unwrap_or_default());
     let gas_unit_price = BigUint::from(transaction.gas_unit_price.unwrap_or_default());
     let fee = (gas_used * gas_unit_price).to_string();
@@ -54,8 +70,39 @@ fn extract_meta(transaction: &Transaction) -> Option<TransactionMeta> {
     })
 }
 
-fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Event>, chain: Chain) -> Option<PrimitivesTransaction> {
+fn map_swap_transaction(transaction: Transaction, events: Vec<Event>, chain: Chain) -> Option<PrimitivesTransaction> {
     let meta = extract_meta(&transaction)?;
+
+    if let Some(summary) = events
+        .iter()
+        .find(|e| e.event_type.contains(PANORA_SWAP_EVENT_ADDRESS) && e.event_type.contains(PANORA_SWAP_SUMMARY_EVENT))
+        .and_then(|e| e.data.clone())
+        .and_then(|data| serde_json::from_value::<PanoraSwapSummaryEventData>(data).ok())
+    {
+        let from_asset = map_token_address_to_asset_id(chain, &summary.input_token_address);
+        let to_asset = map_token_address_to_asset_id(chain, &summary.output_token_address);
+
+        let balance_diffs = vec![
+            BalanceDiff {
+                asset_id: from_asset,
+                from_value: None,
+                to_value: None,
+                diff: -BigInt::parse_bytes(summary.input_token_amount.as_bytes(), 10)?,
+            },
+            BalanceDiff {
+                asset_id: to_asset,
+                from_value: None,
+                to_value: None,
+                diff: BigInt::parse_bytes(summary.output_token_amount.as_bytes(), 10)?,
+            },
+        ];
+
+        let swap = SwapMapper::map_swap(&balance_diffs, &BigUint::from(0u8), &chain.as_asset_id(), Some(SwapProvider::Panora.id().to_owned()))?;
+        let metadata = serde_json::to_value(&swap).ok();
+        let to = meta.sender.clone();
+
+        return Some(build_transaction(meta, chain.as_asset_id(), to, swap.from_value, TransactionType::Swap, metadata));
+    }
 
     let withdraw_event = events.iter().find(|e| e.event_type == FUNGIBLE_ASSET_WITHDRAW_EVENT)?;
     let deposit_event = events.iter().find(|e| e.event_type == FUNGIBLE_ASSET_DEPOSIT_EVENT)?;
@@ -93,9 +140,9 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Eve
         },
     ];
 
-    let provider = events.iter().find(|e| e.event_type.contains("Swap")).and_then(|e| {
-        if e.event_type.contains("pancakeswap") || e.event_type.contains("0xc7efb4076dbe143cbcd98cfaaa929ecfc8f299203dfff63b95ccb6bfe19850fa") {
-            Some(SwapProvider::PancakeswapAptosV2.id().to_owned())
+    let provider = events.iter().find(|e| e.event_type.contains(PANORA_SWAP_EVENT)).and_then(|e| {
+        if e.event_type.contains(PANORA_SWAP_EVENT_ADDRESS) {
+            Some(SwapProvider::Panora.id().to_owned())
         } else {
             None
         }
@@ -105,14 +152,7 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<crate::models::Eve
     let metadata = serde_json::to_value(&swap).ok();
     let to = meta.sender.clone();
 
-    Some(build_transaction(
-        meta,
-        chain.as_asset_id(),
-        to,
-        swap.from_value,
-        TransactionType::Swap,
-        metadata,
-    ))
+    Some(build_transaction(meta, chain.as_asset_id(), to, swap.from_value, TransactionType::Swap, metadata))
 }
 
 fn build_transaction(
@@ -153,7 +193,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
     for event in &events {
         match event.event_type.as_str() {
             DELEGATION_POOL_ADD_STAKE_EVENT => {
-                let data: crate::models::DelegationPoolAddStakeData = serde_json::from_value(event.data.clone()?).ok()?;
+                let data: DelegationPoolAddStakeData = serde_json::from_value(event.data.clone()?).ok()?;
                 return Some(build_transaction(
                     meta,
                     asset_id,
@@ -164,7 +204,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
                 ));
             }
             DELEGATION_POOL_UNLOCK_STAKE_EVENT => {
-                let data: crate::models::DelegationPoolUnlockStakeData = serde_json::from_value(event.data.clone()?).ok()?;
+                let data: DelegationPoolUnlockStakeData = serde_json::from_value(event.data.clone()?).ok()?;
                 return Some(build_transaction(
                     meta,
                     asset_id,
@@ -260,30 +300,30 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_swap_pancakeswap() {
-        let transaction: Transaction = serde_json::from_str(include_str!("../../testdata/transaction_swap_pancakeswap.json")).unwrap();
+    fn test_map_transaction_swap_panora() {
+        let transaction: Transaction = serde_json::from_str(include_str!("../../testdata/transaction_swap_panora.json")).unwrap();
 
         let result = map_transaction(transaction);
 
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.id.to_string(), "aptos_0x0a91279f5e94dd678c2a1655856270fc7635c9c98bdb0b923ab2d50ad656ad7b");
-        assert_eq!(tx.from, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
-        assert_eq!(tx.to, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
+        assert_eq!(tx.id.to_string(), "aptos_0xf1c24162c08b6b8b452c00adad1836d72949902a8701611479d4e49fec0a9e3c");
+        assert_eq!(tx.from, "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef");
+        assert_eq!(tx.to, "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef");
         assert_eq!(tx.state, TransactionState::Confirmed);
         assert_eq!(tx.transaction_type, TransactionType::Swap);
-        assert_eq!(tx.fee, "5700");
+        assert_eq!(tx.fee, "142600");
         assert!(tx.metadata.is_some());
 
         let metadata: primitives::TransactionSwapMetadata = serde_json::from_value(tx.metadata.unwrap()).unwrap();
-        assert_eq!(metadata.from_asset, Chain::Aptos.as_asset_id());
-        assert_eq!(metadata.from_value, "100000000");
         assert_eq!(
-            metadata.to_asset.token_id.unwrap(),
-            "0x159df6b7689437016108a019fd5bef736bac692b6d4a1f10c941f6fbb9a74ca6::oft::CakeOFT"
+            metadata.from_asset,
+            AssetId::from_token(Chain::Aptos, "0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b")
         );
-        assert_eq!(metadata.to_value, "117926015");
-        assert_eq!(metadata.provider.unwrap(), "pancakeswap_aptos_v2");
+        assert_eq!(metadata.from_value, "2346314");
+        assert_eq!(metadata.to_asset, Chain::Aptos.as_asset_id());
+        assert_eq!(metadata.to_value, "120590251");
+        assert_eq!(metadata.provider.unwrap(), "panora");
     }
 
     #[test]
