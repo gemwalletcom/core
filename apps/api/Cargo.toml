@@ -25,7 +25,7 @@ fiat = { path = "../../crates/fiat" }
 settings = { path = "../../crates/settings" }
 settings_chain = { path = "../../crates/settings_chain" }
 name_resolver = { path = "../../crates/name_resolver" }
-notifications = { path = "../../crates/notifications" }
+in_app_notifications = { path = "../../crates/in_app_notifications" }
 localizer = { path = "../../crates/localizer" }
 primitives = { path = "../../crates/primitives" }
 api_connector = { path = "../../crates/api_connector" }

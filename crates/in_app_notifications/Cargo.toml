@@ -1,5 +1,5 @@
 [package]
-name = "notifications"
+name = "in_app_notifications"
 edition = { workspace = true }
 version = { workspace = true }
 

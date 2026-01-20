@@ -35,11 +35,12 @@ pub enum CoreListItemBadge {
 #[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct CoreListItem {
+    pub id: String,
     pub title: String,
     pub subtitle: Option<String>,
     pub value: Option<String>,
     pub subvalue: Option<String>,
-    pub icon: CoreListItemIcon,
+    pub icon: Option<CoreListItemIcon>,
     pub badge: Option<CoreListItemBadge>,
     pub url: Option<String>,
 }
