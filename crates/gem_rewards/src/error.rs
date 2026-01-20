@@ -31,6 +31,7 @@ pub enum ReferralError {
     IpTorNotAllowed,
     IpCountryIneligible(String),
     LimitReached(ConfigKey),
+    InvalidDeviceToken(String),
     Database(DatabaseError),
 }
 
@@ -44,6 +45,7 @@ impl fmt::Display for ReferralError {
             ReferralError::IpTorNotAllowed => write!(f, "ip_tor_not_allowed"),
             ReferralError::IpCountryIneligible(country) => write!(f, "ip_country_ineligible: {}", country),
             ReferralError::LimitReached(key) => write!(f, "limit_reached: {}", key.as_ref()),
+            ReferralError::InvalidDeviceToken(reason) => write!(f, "invalid_device_token: {}", reason),
             ReferralError::Database(e) => write!(f, "{}", e),
         }
     }
@@ -63,7 +65,11 @@ impl Localize for ReferralError {
             Self::Validation(ReferralValidationError::Database(_)) => localizer.errors_generic(),
             Self::ReferrerLimitReached(_) => localizer.rewards_error_referral_referrer_limit_reached(),
             Self::IpCountryIneligible(country) => localizer.rewards_error_referral_country_ineligible(country),
-            Self::RiskScoreExceeded { .. } | Self::DuplicateAttempt | Self::IpTorNotAllowed | Self::LimitReached(_) => localizer.rewards_error_referral_limit_reached(),
+            Self::RiskScoreExceeded { .. }
+            | Self::DuplicateAttempt
+            | Self::IpTorNotAllowed
+            | Self::LimitReached(_)
+            | Self::InvalidDeviceToken(_) => localizer.rewards_error_referral_limit_reached(),
             Self::Database(_) => localizer.errors_generic(),
         }
     }

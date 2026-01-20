@@ -1,8 +1,9 @@
 use std::error::Error;
 
+use api_connector::PusherClient;
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::RewardRedemptionOption;
-use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletId, now};
+use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, Platform, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletId, now};
 use storage::{
     ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource, WalletType,
     WalletsRepository,
@@ -32,16 +33,18 @@ pub struct RewardsClient {
     config: ConfigCacher,
     stream_producer: StreamProducer,
     ip_security_client: IpSecurityClient,
+    pusher: PusherClient,
 }
 
 impl RewardsClient {
-    pub fn new(database: Database, stream_producer: StreamProducer, ip_security_client: IpSecurityClient) -> Self {
+    pub fn new(database: Database, stream_producer: StreamProducer, ip_security_client: IpSecurityClient, pusher: PusherClient) -> Self {
         let config = ConfigCacher::new(database.clone());
         Self {
             db: database,
             config,
             stream_producer,
             ip_security_client,
+            pusher,
         }
     }
 
@@ -203,6 +206,14 @@ impl RewardsClient {
 
         if let Err(e) = self.validate_referral_usage(auth, referrer_username) {
             return ReferralProcessResult::Failed(e);
+        }
+
+        if *auth.device.platform == Platform::Android {
+            match self.pusher.is_device_token_valid(&auth.device.token, auth.device.platform.as_i32()).await {
+                Ok(true) => {}
+                Ok(false) => return ReferralProcessResult::Failed(ReferralError::InvalidDeviceToken("token_not_registered".to_string())),
+                Err(e) => return ReferralProcessResult::Failed(ReferralError::InvalidDeviceToken(e.to_string())),
+            }
         }
 
         let ip_result = match self.ip_security_client.check_ip(ip_address).await {
