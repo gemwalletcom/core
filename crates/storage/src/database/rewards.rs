@@ -221,6 +221,8 @@ pub(crate) trait RiskSignalsStore {
     fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError>;
     fn count_disabled_users_by_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
     fn count_disabled_users_by_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_unique_countries_for_referrer(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_unique_devices_for_referrer(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
 }
 
 impl RiskSignalsStore for DatabaseClient {
@@ -488,6 +490,30 @@ impl RiskSignalsStore for DatabaseClient {
             .filter(rewards_risk_signals::created_at.ge(since))
             .filter(rewards::status.eq(RewardStatus::Disabled))
             .select(count(rewards_risk_signals::referrer_username).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_unique_countries_for_referrer(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::referrer_username.eq(username))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::ip_country_code).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_unique_devices_for_referrer(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::referrer_username.eq(username))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::device_id).aggregate_distinct())
             .first(&mut self.connection)
     }
 }

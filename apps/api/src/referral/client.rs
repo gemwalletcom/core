@@ -347,7 +347,26 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
-        let risk_result = evaluate_risk(&scoring_input, &existing_signals, device_model_ring_count, ip_abuser_count, cross_referrer_fingerprint_count, &risk_score_config);
+        let referrer_country_count = match client.count_unique_countries_for_referrer(referrer_username, since) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+
+        let referrer_device_count = match client.count_unique_devices_for_referrer(referrer_username, since) {
+            Ok(count) => count,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+
+        let risk_result = evaluate_risk(
+            &scoring_input,
+            &existing_signals,
+            device_model_ring_count,
+            ip_abuser_count,
+            cross_referrer_fingerprint_count,
+            referrer_country_count,
+            referrer_device_count,
+            &risk_score_config,
+        );
         let risk_signal_id = match client.add_risk_signal(risk_result.signal) {
             Ok(id) => id,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
@@ -467,6 +486,10 @@ impl RewardsClient {
             cross_referrer_device_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerDevicePenalty)?,
             cross_referrer_fingerprint_threshold: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerFingerprintThreshold)?,
             cross_referrer_fingerprint_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerFingerprintPenalty)?,
+            country_diversity_threshold: self.config.get_i64(ConfigKey::ReferralRiskScoreCountryDiversityThreshold)?,
+            country_diversity_penalty_per_country: self.config.get_i64(ConfigKey::ReferralRiskScoreCountryDiversityPenaltyPerCountry)?,
+            device_farming_threshold: self.config.get_i64(ConfigKey::ReferralRiskScoreDeviceFarmingThreshold)?,
+            device_farming_penalty_per_device: self.config.get_i64(ConfigKey::ReferralRiskScoreDeviceFarmingPenaltyPerDevice)?,
         })
     }
 
