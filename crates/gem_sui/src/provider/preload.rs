@@ -1,6 +1,5 @@
 use std::{collections::HashMap, error::Error};
 
-use crate::{SUI_COIN_TYPE, models::SuiObject};
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
@@ -10,9 +9,12 @@ use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::{
     FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
-    transaction_load_metadata::SuiCoin,
 };
 
+use crate::{
+    SUI_COIN_TYPE,
+    models::{SuiCoin, SuiObject},
+};
 use crate::{
     provider::preload_mapper::{GAS_BUDGET, map_transaction_data, map_transaction_rate_rates},
     rpc::client::SuiClient,
