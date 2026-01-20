@@ -84,6 +84,7 @@ dependencies {
 
 #### Maven Central (Recommended)
 
+```gradle
 allprojects {
     repositories {
         mavenCentral()

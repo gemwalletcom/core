@@ -14,6 +14,7 @@ pub enum ConsumerService {
     StoreAssetsAssociations,
     FetchNftAssociations,
     Notifications,
+    InAppNotifications,
     Rewards,
     RewardsRedemptions,
     Support,

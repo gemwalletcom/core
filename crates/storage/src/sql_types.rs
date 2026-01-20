@@ -157,7 +157,7 @@ diesel_enum!(
     NotificationType,
     PrimitiveNotificationType,
     NotificationTypeSql,
-    [ReferralJoined, RewardsEnabled, RewardsCodeDisabled]
+    [ReferralJoined, RewardsEnabled, RewardsCodeDisabled, RewardsRedeemed, RewardsCreateUsername, RewardsInvite]
 );
 
 diesel_enum!(
