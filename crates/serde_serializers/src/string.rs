@@ -1,18 +1,13 @@
-use serde::{Deserialize, Deserializer, de};
-use serde_json::Value;
+use serde::Deserializer;
+
+use crate::visitors::StringFromValueVisitor;
 
 /// Deserialize a String from either a string, number, or null JSON value
 pub fn deserialize_string_from_value<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let value = Value::deserialize(deserializer)?;
-    match value {
-        Value::String(s) => Ok(s),
-        Value::Number(n) => Ok(n.to_string()),
-        Value::Null => Ok(String::new()),
-        _ => Err(de::Error::custom("expected string, number, or null")),
-    }
+    deserializer.deserialize_any(StringFromValueVisitor::new(true))
 }
 
 /// Deserialize a String from either a string or a number JSON value
@@ -20,12 +15,7 @@ pub fn deserialize_string_from_str_or_number<'de, D>(deserializer: D) -> Result<
 where
     D: Deserializer<'de>,
 {
-    let value = Value::deserialize(deserializer)?;
-    match value {
-        Value::String(s) => Ok(s),
-        Value::Number(n) => Ok(n.to_string()),
-        _ => Err(de::Error::custom("expected string or number")),
-    }
+    deserializer.deserialize_any(StringFromValueVisitor::new(false))
 }
 
 #[cfg(test)]

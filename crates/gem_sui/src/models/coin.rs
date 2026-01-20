@@ -34,6 +34,18 @@ pub struct SuiObject {
 #[cfg(feature = "rpc")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SuiCoin {
+    pub coin_type: String,
+    pub coin_object_id: String,
+    #[serde(deserialize_with = "deserialize_bigint_from_str")]
+    pub balance: BigInt,
+    pub version: String,
+    pub digest: String,
+}
+
+#[cfg(feature = "rpc")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Balance {
     pub coin_type: String,
     #[serde(deserialize_with = "deserialize_bigint_from_str")]

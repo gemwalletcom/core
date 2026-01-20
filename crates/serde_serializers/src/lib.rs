@@ -1,4 +1,5 @@
 pub mod bigint;
+mod visitors;
 pub use bigint::{bigint_from_hex_str, deserialize_bigint_from_str, deserialize_bigint_vec_from_hex_str, deserialize_option_bigint_from_str, serialize_bigint};
 pub mod biguint;
 pub use biguint::{

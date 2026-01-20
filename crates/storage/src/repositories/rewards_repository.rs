@@ -295,12 +295,13 @@ impl RewardsRepository for DatabaseClient {
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError> {
         let current = now();
         let limit = 10;
-        let invite_types = [RewardEventType::InviteNew, RewardEventType::InviteExisting];
+        let invite_types = [RewardEventType::InviteNew];
+        let points_per_referral = RewardEventType::InviteNew.points() as i64;
 
-        let map_entry = |(username, referrals, points): (String, i64, i64)| ReferralLeader {
+        let map_entry = |(username, referrals): (String, i64)| ReferralLeader {
             username,
             referrals: referrals as i32,
-            points: points as i32,
+            points: (referrals * points_per_referral) as i32,
         };
 
         let daily = RewardsStore::get_top_referrers_since(self, &invite_types, current.days_ago(1), limit)?

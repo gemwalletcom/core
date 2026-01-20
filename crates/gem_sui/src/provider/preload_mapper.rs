@@ -1,10 +1,10 @@
-use crate::{encode_split_and_stake, encode_token_transfer, encode_transfer, encode_unstake, models::*, validate_and_hash};
+use std::{collections::HashMap, error::Error};
+
 use base64::{Engine, engine::general_purpose};
 use num_bigint::BigInt;
-use primitives::{
-    FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, transaction_load_metadata::SuiCoin,
-};
-use std::{collections::HashMap, error::Error};
+use primitives::{FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
+
+use crate::{encode_split_and_stake, encode_token_transfer, encode_transfer, encode_unstake, models::*, validate_and_hash};
 
 pub const GAS_BUDGET: u64 = 25_000_000;
 
