@@ -1,25 +1,19 @@
-use chrono::{DateTime, Utc};
-use primitives::portfolio::{Portfolio, PortfolioDataPoint, PortfolioTimeframeData};
+use chrono::DateTime;
+use primitives::portfolio::{PerpetualPortfolioDataPoint, PerpetualPortfolioTimeframeData};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(from = "(i64, String)")]
 pub struct HypercoreDataPoint {
     pub timestamp_ms: i64,
-    pub value: String,
+    pub value: f64,
 }
 
 impl From<(i64, String)> for HypercoreDataPoint {
     fn from((timestamp_ms, value): (i64, String)) -> Self {
-        Self { timestamp_ms, value }
-    }
-}
-
-impl From<HypercoreDataPoint> for PortfolioDataPoint {
-    fn from(point: HypercoreDataPoint) -> Self {
         Self {
-            date: DateTime::from_timestamp_millis(point.timestamp_ms).unwrap_or_else(Utc::now),
-            value: point.value,
+            timestamp_ms,
+            value: value.parse().unwrap_or(0.0),
         }
     }
 }
@@ -32,30 +26,21 @@ pub struct HypercorePortfolioTimeframeData {
     pub vlm: String,
 }
 
-impl From<HypercorePortfolioTimeframeData> for PortfolioTimeframeData {
+impl From<HypercorePortfolioTimeframeData> for PerpetualPortfolioTimeframeData {
     fn from(data: HypercorePortfolioTimeframeData) -> Self {
+        fn map_data_point(p: HypercoreDataPoint) -> Option<PerpetualPortfolioDataPoint> {
+            DateTime::from_timestamp_millis(p.timestamp_ms).map(|date| PerpetualPortfolioDataPoint { date, value: p.value })
+        }
         Self {
-            account_value_history: data.account_value_history.into_iter().map(Into::into).collect(),
-            pnl_history: data.pnl_history.into_iter().map(Into::into).collect(),
-            volume: data.vlm,
+            account_value_history: data.account_value_history.into_iter().filter_map(map_data_point).collect(),
+            pnl_history: data.pnl_history.into_iter().filter_map(map_data_point).collect(),
+            volume: data.vlm.parse().unwrap_or(0.0),
         }
     }
 }
 
-pub fn parse_portfolio_response(raw: Vec<(String, HypercorePortfolioTimeframeData)>) -> Portfolio {
-    let mut portfolio = Portfolio::default();
-    for (timeframe, data) in raw {
-        match timeframe.as_str() {
-            "day" => portfolio.day = Some(data.into()),
-            "week" => portfolio.week = Some(data.into()),
-            "month" => portfolio.month = Some(data.into()),
-            "allTime" => portfolio.all_time = Some(data.into()),
-            "perpDay" => portfolio.perp_day = Some(data.into()),
-            "perpWeek" => portfolio.perp_week = Some(data.into()),
-            "perpMonth" => portfolio.perp_month = Some(data.into()),
-            "perpAllTime" => portfolio.perp_all_time = Some(data.into()),
-            _ => {}
-        }
-    }
-    portfolio
+#[derive(Debug, Clone, Deserialize)]
+#[serde(transparent)]
+pub struct HypercorePortfolioResponse {
+    pub timeframes: Vec<(String, HypercorePortfolioTimeframeData)>,
 }

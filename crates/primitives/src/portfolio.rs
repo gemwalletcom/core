@@ -5,30 +5,26 @@ use typeshare::typeshare;
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
-pub struct PortfolioDataPoint {
+pub struct PerpetualPortfolioDataPoint {
     pub date: DateTime<Utc>,
-    pub value: String,
+    pub value: f64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
-pub struct PortfolioTimeframeData {
-    pub account_value_history: Vec<PortfolioDataPoint>,
-    pub pnl_history: Vec<PortfolioDataPoint>,
-    pub volume: String,
+pub struct PerpetualPortfolioTimeframeData {
+    pub account_value_history: Vec<PerpetualPortfolioDataPoint>,
+    pub pnl_history: Vec<PerpetualPortfolioDataPoint>,
+    pub volume: f64,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
-pub struct Portfolio {
-    pub day: Option<PortfolioTimeframeData>,
-    pub week: Option<PortfolioTimeframeData>,
-    pub month: Option<PortfolioTimeframeData>,
-    pub all_time: Option<PortfolioTimeframeData>,
-    pub perp_day: Option<PortfolioTimeframeData>,
-    pub perp_week: Option<PortfolioTimeframeData>,
-    pub perp_month: Option<PortfolioTimeframeData>,
-    pub perp_all_time: Option<PortfolioTimeframeData>,
+pub struct PerpetualPortfolio {
+    pub day: Option<PerpetualPortfolioTimeframeData>,
+    pub week: Option<PerpetualPortfolioTimeframeData>,
+    pub month: Option<PerpetualPortfolioTimeframeData>,
+    pub all_time: Option<PerpetualPortfolioTimeframeData>,
 }

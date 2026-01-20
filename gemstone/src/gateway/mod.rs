@@ -354,23 +354,23 @@ impl GemGateway {
         Ok(data)
     }
 
-    pub async fn get_candlesticks(&self, chain: Chain, symbol: String, period: String) -> Result<Vec<GemChartCandleStick>, GatewayError> {
+    pub async fn get_perpetual_candlesticks(&self, chain: Chain, symbol: String, period: String) -> Result<Vec<GemChartCandleStick>, GatewayError> {
         let chart_period = ChartPeriod::new(period).unwrap();
         let candlesticks = self
             .provider(chain)
             .await?
-            .get_candlesticks(symbol, chart_period)
+            .get_perpetual_candlesticks(symbol, chart_period)
             .await
             .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
 
         Ok(candlesticks)
     }
 
-    pub async fn get_portfolio(&self, chain: Chain, address: String) -> Result<GemPortfolio, GatewayError> {
+    pub async fn get_perpetual_portfolio(&self, chain: Chain, address: String) -> Result<GemPerpetualPortfolio, GatewayError> {
         let portfolio = self
             .provider(chain)
             .await?
-            .get_portfolio(address)
+            .get_perpetual_portfolio(address)
             .await
             .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
 

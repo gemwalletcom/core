@@ -2,6 +2,7 @@ use crate::models::{
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
     order::OpenOrder,
+    portfolio::HypercorePortfolioResponse,
     position::{AssetPositions, LeverageType, Position},
 };
 use primitives::{
@@ -9,6 +10,7 @@ use primitives::{
     PerpetualTriggerOrder,
     chart::ChartCandleStick,
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
+    portfolio::PerpetualPortfolio,
 };
 
 pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
@@ -141,6 +143,31 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
 
 pub fn map_candlesticks(candlesticks: Vec<Candlestick>) -> Vec<ChartCandleStick> {
     candlesticks.into_iter().map(|c| c.into()).collect()
+}
+
+pub fn map_perpetual_portfolio(response: HypercorePortfolioResponse) -> PerpetualPortfolio {
+    response
+        .timeframes
+        .into_iter()
+        .fold(PerpetualPortfolio::default(), |portfolio, (timeframe, data)| match timeframe.as_str() {
+            "perpDay" => PerpetualPortfolio {
+                day: Some(data.into()),
+                ..portfolio
+            },
+            "perpWeek" => PerpetualPortfolio {
+                week: Some(data.into()),
+                ..portfolio
+            },
+            "perpMonth" => PerpetualPortfolio {
+                month: Some(data.into()),
+                ..portfolio
+            },
+            "perpAllTime" => PerpetualPortfolio {
+                all_time: Some(data.into()),
+                ..portfolio
+            },
+            _ => portfolio,
+        })
 }
 
 fn determine_order_type(order_type_str: &str) -> PerpetualOrderType {
@@ -593,5 +620,26 @@ mod tests {
         assert_eq!(sl.price, 40000.0);
         assert_eq!(sl.order_type, PerpetualOrderType::Market);
         assert_eq!(sl.order_id, "123456789");
+    }
+
+    #[test]
+    fn test_map_perpetual_portfolio() {
+        use crate::testkit::*;
+
+        let response = HypercorePortfolioResponse {
+            timeframes: vec![
+                ("perpDay".to_string(), HypercorePortfolioTimeframeData::mock("100")),
+                ("perpWeek".to_string(), HypercorePortfolioTimeframeData::mock("500")),
+                ("perpMonth".to_string(), HypercorePortfolioTimeframeData::mock("2000")),
+                ("perpAllTime".to_string(), HypercorePortfolioTimeframeData::mock("50000")),
+            ],
+        };
+
+        let result = map_perpetual_portfolio(response);
+
+        assert_eq!(result.day.unwrap().volume, 100.0);
+        assert_eq!(result.week.unwrap().volume, 500.0);
+        assert_eq!(result.month.unwrap().volume, 2000.0);
+        assert_eq!(result.all_time.unwrap().volume, 50000.0);
     }
 }

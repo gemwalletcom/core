@@ -1,31 +1,27 @@
 use chrono::{DateTime, Utc};
-use primitives::portfolio::{Portfolio, PortfolioDataPoint, PortfolioTimeframeData};
+use primitives::portfolio::{PerpetualPortfolio, PerpetualPortfolioDataPoint, PerpetualPortfolioTimeframeData};
 
-pub type GemPortfolio = Portfolio;
-pub type GemPortfolioTimeframeData = PortfolioTimeframeData;
-pub type GemPortfolioDataPoint = PortfolioDataPoint;
+pub type GemPerpetualPortfolio = PerpetualPortfolio;
+pub type GemPerpetualPortfolioTimeframeData = PerpetualPortfolioTimeframeData;
+pub type GemPerpetualPortfolioDataPoint = PerpetualPortfolioDataPoint;
 
 #[uniffi::remote(Record)]
-pub struct GemPortfolioDataPoint {
+pub struct GemPerpetualPortfolioDataPoint {
     pub date: DateTime<Utc>,
-    pub value: String,
+    pub value: f64,
 }
 
 #[uniffi::remote(Record)]
-pub struct GemPortfolioTimeframeData {
-    pub account_value_history: Vec<PortfolioDataPoint>,
-    pub pnl_history: Vec<PortfolioDataPoint>,
-    pub volume: String,
+pub struct GemPerpetualPortfolioTimeframeData {
+    pub account_value_history: Vec<PerpetualPortfolioDataPoint>,
+    pub pnl_history: Vec<PerpetualPortfolioDataPoint>,
+    pub volume: f64,
 }
 
 #[uniffi::remote(Record)]
-pub struct GemPortfolio {
-    pub day: Option<PortfolioTimeframeData>,
-    pub week: Option<PortfolioTimeframeData>,
-    pub month: Option<PortfolioTimeframeData>,
-    pub all_time: Option<PortfolioTimeframeData>,
-    pub perp_day: Option<PortfolioTimeframeData>,
-    pub perp_week: Option<PortfolioTimeframeData>,
-    pub perp_month: Option<PortfolioTimeframeData>,
-    pub perp_all_time: Option<PortfolioTimeframeData>,
+pub struct GemPerpetualPortfolio {
+    pub day: Option<PerpetualPortfolioTimeframeData>,
+    pub week: Option<PerpetualPortfolioTimeframeData>,
+    pub month: Option<PerpetualPortfolioTimeframeData>,
+    pub all_time: Option<PerpetualPortfolioTimeframeData>,
 }

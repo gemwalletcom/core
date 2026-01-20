@@ -1,6 +1,6 @@
 use primitives::{
-    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, NotificationType, PriceData,
-    Subscription, Transaction,
+    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, NotificationType, PriceData, Subscription,
+    Transaction,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -300,7 +300,11 @@ pub struct InAppNotificationPayload {
 
 impl InAppNotificationPayload {
     pub fn new(wallet_id: i32, notification_type: NotificationType, metadata: Option<serde_json::Value>) -> Self {
-        Self { wallet_id, notification_type, metadata }
+        Self {
+            wallet_id,
+            notification_type,
+            metadata,
+        }
     }
 }
 
