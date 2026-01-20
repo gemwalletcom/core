@@ -3560,7 +3560,7 @@ dependencies = [
 
 [[package]]
 name = "gemstone"
-version = "0.31.1"
+version = "1.0.2"
 dependencies = [
  "alloy-primitives",
  "async-trait",
@@ -5575,7 +5575,6 @@ dependencies = [
  "num-bigint",
  "serde",
  "serde_json",
- "serde_serializers",
  "strum",
  "typeshare",
  "url",
@@ -7014,7 +7013,6 @@ name = "serde_serializers"
 version = "1.0.0"
 dependencies = [
  "num-bigint",
- "num-traits",
  "serde",
  "serde_json",
 ]
