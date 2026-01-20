@@ -6,13 +6,7 @@ pub fn map_is_token_address(token_id: &str) -> bool {
 }
 
 pub fn map_token_data(chain: Chain, token_id: &str, metadata: SuiCoinMetadata) -> Asset {
-    Asset::new(
-        AssetId::from_token(chain, token_id),
-        metadata.name,
-        metadata.symbol,
-        metadata.decimals,
-        AssetType::TOKEN,
-    )
+    Asset::new(AssetId::from_token(chain, token_id), metadata.name, metadata.symbol, metadata.decimals, AssetType::TOKEN)
 }
 
 #[cfg(test)]
@@ -21,9 +15,7 @@ mod tests {
 
     #[test]
     fn test_map_is_token_address() {
-        assert!(map_is_token_address(
-            "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
-        ));
+        assert!(map_is_token_address("0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"));
         assert!(!map_is_token_address("invalid"));
         assert!(!map_is_token_address("0x123"));
     }

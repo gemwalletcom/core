@@ -290,6 +290,8 @@ pub struct Daemon {
 #[allow(unused)]
 pub struct Consumer {
     pub error: ConsumerError,
+    #[serde(default, deserialize_with = "duration::deserialize")]
+    pub delay: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]

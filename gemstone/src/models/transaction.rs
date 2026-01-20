@@ -2,10 +2,9 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
-    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64,
-    WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType, TransactionChange,
+    TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
+    TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -157,25 +156,12 @@ pub struct GemHyperliquidOrder {
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemStakeType {
-    Delegate {
-        validator: GemDelegationValidator,
-    },
-    Undelegate {
-        delegation: GemDelegation,
-    },
-    Redelegate {
-        delegation: GemDelegation,
-        to_validator: GemDelegationValidator,
-    },
-    WithdrawRewards {
-        validators: Vec<GemDelegationValidator>,
-    },
-    Withdraw {
-        delegation: GemDelegation,
-    },
-    Freeze {
-        freeze_data: GemFreezeData,
-    },
+    Delegate { validator: GemDelegationValidator },
+    Undelegate { delegation: GemDelegation },
+    Redelegate { delegation: GemDelegation, to_validator: GemDelegationValidator },
+    WithdrawRewards { validators: Vec<GemDelegationValidator> },
+    Withdraw { delegation: GemDelegation },
+    Freeze { freeze_data: GemFreezeData },
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -525,15 +511,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 is_destination_address_exist,
             },
             TransactionLoadMetadata::Xrp { sequence, block_number } => GemTransactionLoadMetadata::Xrp { sequence, block_number },
-            TransactionLoadMetadata::Algorand {
-                sequence,
-                block_hash,
-                chain_id,
-            } => GemTransactionLoadMetadata::Algorand {
-                sequence,
-                block_hash,
-                chain_id,
-            },
+            TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
             TransactionLoadMetadata::Aptos { sequence, data } => GemTransactionLoadMetadata::Aptos { sequence, data },
             TransactionLoadMetadata::Polkadot {
                 sequence,
@@ -621,15 +599,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 is_destination_address_exist,
             },
             GemTransactionLoadMetadata::Xrp { sequence, block_number } => TransactionLoadMetadata::Xrp { sequence, block_number },
-            GemTransactionLoadMetadata::Algorand {
-                sequence,
-                block_hash,
-                chain_id,
-            } => TransactionLoadMetadata::Algorand {
-                sequence,
-                block_hash,
-                chain_id,
-            },
+            GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
             GemTransactionLoadMetadata::Aptos { sequence, data } => TransactionLoadMetadata::Aptos { sequence, data },
             GemTransactionLoadMetadata::Polkadot {
                 sequence,
@@ -708,11 +678,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
         match value {
             TransactionInputType::Transfer(asset) => GemTransactionInputType::Transfer { asset },
             TransactionInputType::Deposit(asset) => GemTransactionInputType::Deposit { asset },
-            TransactionInputType::Swap(from_asset, to_asset, swap_data) => GemTransactionInputType::Swap {
-                from_asset,
-                to_asset,
-                swap_data,
-            },
+            TransactionInputType::Swap(from_asset, to_asset, swap_data) => GemTransactionInputType::Swap { from_asset, to_asset, swap_data },
             TransactionInputType::Stake(asset, stake_type) => GemTransactionInputType::Stake {
                 asset,
                 stake_type: stake_type.into(),
@@ -759,9 +725,7 @@ impl From<StakeType> for GemStakeType {
             },
             StakeType::Rewards(validators) => GemStakeType::WithdrawRewards { validators },
             StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation },
-            StakeType::Freeze(freeze_data) => GemStakeType::Freeze {
-                freeze_data: freeze_data.into(),
-            },
+            StakeType::Freeze(freeze_data) => GemStakeType::Freeze { freeze_data: freeze_data.into() },
         }
     }
 }
@@ -842,12 +806,7 @@ impl From<GemTransactionLoadFee> for TransactionFee {
             fee: value.fee.parse().unwrap_or_default(),
             gas_price_type: value.gas_price_type.into(),
             gas_limit: value.gas_limit.parse().unwrap_or_default(),
-            options: value
-                .options
-                .options
-                .into_iter()
-                .map(|(key, value)| (key, value.parse().unwrap_or_default()))
-                .collect(),
+            options: value.options.options.into_iter().map(|(key, value)| (key, value.parse().unwrap_or_default())).collect(),
         }
     }
 }
@@ -868,11 +827,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
         match value {
             GemTransactionInputType::Transfer { asset } => TransactionInputType::Transfer(asset),
             GemTransactionInputType::Deposit { asset } => TransactionInputType::Deposit(asset),
-            GemTransactionInputType::Swap {
-                from_asset,
-                to_asset,
-                swap_data,
-            } => TransactionInputType::Swap(
+            GemTransactionInputType::Swap { from_asset, to_asset, swap_data } => TransactionInputType::Swap(
                 from_asset,
                 to_asset,
                 GemSwapData {

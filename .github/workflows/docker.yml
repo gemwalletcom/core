@@ -12,17 +12,19 @@ env:
 jobs:
   docker_build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clean space
-        run: ./free_disk_space.sh
-        working-directory: scripts
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Docker Build
-        run: |
-          docker build --tag core .
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: core:latest

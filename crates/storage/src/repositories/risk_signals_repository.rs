@@ -2,6 +2,7 @@ use crate::database::rewards::{AbusePatterns, RiskSignalsStore};
 use crate::models::{NewRiskSignalRow, RiskSignalRow};
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;
+use primitives::Platform;
 
 pub trait RiskSignalsRepository {
     fn add_risk_signal(&mut self, signal: NewRiskSignalRow) -> Result<i32, DatabaseError>;
@@ -28,7 +29,7 @@ pub trait RiskSignalsRepository {
     fn count_unique_referrers_for_device_model_pattern(
         &mut self,
         device_model: &str,
-        device_platform: &str,
+        device_platform: Platform,
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DatabaseError>;
@@ -108,7 +109,7 @@ impl RiskSignalsRepository for DatabaseClient {
     fn count_unique_referrers_for_device_model_pattern(
         &mut self,
         device_model: &str,
-        device_platform: &str,
+        device_platform: Platform,
         device_locale: &str,
         since: NaiveDateTime,
     ) -> Result<i64, DatabaseError> {

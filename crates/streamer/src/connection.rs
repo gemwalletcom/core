@@ -12,9 +12,7 @@ impl StreamConnection {
     pub async fn new(url: &str, name: impl Into<String>) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let name: String = name.into();
         let connection = Connection::connect(url, ConnectionProperties::default().with_connection_name(name.into())).await?;
-        Ok(Self {
-            connection: Arc::new(connection),
-        })
+        Ok(Self { connection: Arc::new(connection) })
     }
 
     pub async fn create_channel(&self) -> Result<Channel, Box<dyn Error + Send + Sync>> {

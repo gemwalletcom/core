@@ -81,9 +81,6 @@ mod tests {
         let filtered = RequestBuilder::filter_headers(&orig_headers, &keep);
 
         assert!(filtered.get("x-drop").is_none());
-        assert_eq!(
-            filtered.get(header::CONTENT_TYPE).unwrap(),
-            &header::HeaderValue::from_static(JSON_CONTENT_TYPE)
-        );
+        assert_eq!(filtered.get(header::CONTENT_TYPE).unwrap(), &header::HeaderValue::from_static(JSON_CONTENT_TYPE));
     }
 }

@@ -56,13 +56,7 @@ impl ChainProviders {
     }
 
     pub async fn get_validators(&self, chain: Chain) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .get_provider(chain)?
-            .get_staking_validators(None)
-            .await?
-            .into_iter()
-            .map(|v| v.into())
-            .collect())
+        Ok(self.get_provider(chain)?.get_staking_validators(None).await?.into_iter().map(|v| v.into()).collect())
     }
 
     pub async fn get_staking_apy(&self, chain: Chain) -> Result<f64, Box<dyn Error + Send + Sync>> {

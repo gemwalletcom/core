@@ -17,11 +17,7 @@ impl ProxyBuilder {
         }
     }
 
-    pub async fn handle_request(
-        &self,
-        request: ProxyRequest,
-        node_domain: &NodeDomain,
-    ) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn handle_request(&self, request: ProxyRequest, node_domain: &NodeDomain) -> Result<crate::proxy::ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         self.service.handle_request(request, node_domain).await
     }
 }

@@ -41,10 +41,7 @@ impl AssetsStore for DatabaseClient {
         if values.is_empty() {
             return Ok(0);
         }
-        diesel::insert_into(assets)
-            .values(values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(assets).values(values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, diesel::result::Error> {

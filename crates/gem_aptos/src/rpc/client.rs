@@ -2,17 +2,16 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::str::FromStr;
 
-use gem_client::{Client, ContentType, CONTENT_TYPE};
+use gem_client::{CONTENT_TYPE, Client, ContentType};
 use num_bigint::BigUint;
 use primitives::chain::Chain;
 use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::models::{
-    Account, Block, DelegationPoolStake, GasFee, Ledger, ReconfigurationState, Resource, ResourceData, StakingConfig, Transaction, TransactionPayload,
-    TransactionResponse, TransactionSignature, TransactionSimulation, ValidatorSet,
+    Account, Block, DelegationPoolStake, GasFee, Ledger, ReconfigurationState, Resource, ResourceData, StakingConfig, Transaction, TransactionPayload, TransactionResponse,
+    TransactionSignature, TransactionSimulation, ValidatorSet,
 };
-pub type AccountResource<T> = Resource<T>;
 
 #[derive(Debug)]
 pub struct AptosClient<C: Client> {
@@ -26,7 +25,7 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub fn get_chain(&self) -> Chain {
-        Chain::Aptos
+        self.chain
     }
 
     pub async fn get_ledger(&self) -> Result<Ledger, Box<dyn Error + Send + Sync>> {
@@ -43,11 +42,7 @@ impl<C: Client> AptosClient<C> {
         Ok(self.client.get(&url).await?)
     }
 
-    pub async fn get_account_resource<T: Serialize + DeserializeOwned>(
-        &self,
-        address: String,
-        resource: &str,
-    ) -> Result<AccountResource<T>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_account_resource<T: Serialize + DeserializeOwned>(&self, address: String, resource: &str) -> Result<Resource<T>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v1/accounts/{}/resource/{}", address, resource)).await?)
     }
 
@@ -64,27 +59,14 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub async fn submit_transaction(&self, bcs_bytes: Vec<u8>) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
-        if bcs_bytes.is_empty() {
-            return Err(Box::new(std::io::Error::other("Empty Aptos BCS payload")));
-        }
-        let headers = HashMap::from([(
-            CONTENT_TYPE.to_string(),
-            ContentType::ApplicationAptosBcs.as_str().to_string(),
-        )]);
-        let response = self
-            .client
-            .post::<Vec<u8>, TransactionResponse>("/v1/transactions", &bcs_bytes, Some(headers))
-            .await?;
+        let headers = HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationAptosBcs.as_str().to_string())]);
+        let response = self.client.post::<Vec<u8>, TransactionResponse>("/v1/transactions", &bcs_bytes, Some(headers)).await?;
 
         if let Some(message) = &response.message {
             return Err(Box::new(std::io::Error::other(message.clone())));
         }
 
         Ok(response)
-    }
-
-    pub async fn get_resources(&self, address: &str) -> Result<Vec<Resource<ResourceData>>, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/v1/accounts/{}/resources", address)).await?)
     }
 
     pub async fn get_transaction_by_hash(&self, hash: &str) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
@@ -106,11 +88,7 @@ impl<C: Client> AptosClient<C> {
             | TransactionInputType::Deposit(asset)
             | TransactionInputType::TransferNft(asset, _)
             | TransactionInputType::Account(asset, _) => {
-                let asset_type = if asset.id.token_id.is_none() {
-                    AssetSubtype::NATIVE
-                } else {
-                    AssetSubtype::TOKEN
-                };
+                let asset_type = if asset.id.token_id.is_none() { AssetSubtype::NATIVE } else { AssetSubtype::TOKEN };
 
                 match asset_type {
                     AssetSubtype::NATIVE => {
@@ -129,10 +107,7 @@ impl<C: Client> AptosClient<C> {
                     AssetSubtype::TOKEN => Ok(1500),
                 }
             }
-            TransactionInputType::Swap(_, _, _)
-            | TransactionInputType::Stake(_, _)
-            | TransactionInputType::TokenApprove(_, _)
-            | TransactionInputType::Generic(_, _, _)
+            TransactionInputType::Swap(_, _, _) | TransactionInputType::Stake(_, _) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _)
             | TransactionInputType::Yield(_, _, _) => Ok(1500),
             TransactionInputType::Perpetual(_, _) => unimplemented!(),
         }
@@ -175,10 +150,7 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub async fn get_validator_set(&self) -> Result<ValidatorSet, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .get_account_resource::<ValidatorSet>("0x1".to_string(), "0x1::stake::ValidatorSet")
-            .await?
-            .data)
+        Ok(self.get_account_resource::<ValidatorSet>("0x1".to_string(), "0x1::stake::ValidatorSet").await?.data)
     }
 
     pub async fn get_staking_config(&self) -> Result<StakingConfig, Box<dyn Error + Send + Sync>> {
@@ -204,11 +176,7 @@ impl<C: Client> AptosClient<C> {
         })
     }
 
-    pub async fn get_delegation_for_pool(
-        &self,
-        delegator_address: &str,
-        pool_address: &str,
-    ) -> Result<(String, DelegationPoolStake), Box<dyn Error + Send + Sync>> {
+    pub async fn get_delegation_for_pool(&self, delegator_address: &str, pool_address: &str) -> Result<(String, DelegationPoolStake), Box<dyn Error + Send + Sync>> {
         let stake = self.get_delegation_pool_stake(pool_address, delegator_address).await?;
         Ok((pool_address.to_string(), stake))
     }

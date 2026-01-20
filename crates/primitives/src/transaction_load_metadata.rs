@@ -163,9 +163,7 @@ impl TransactionLoadMetadata {
 
     pub fn get_is_destination_address_exist(&self) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
         match self {
-            TransactionLoadMetadata::Stellar {
-                is_destination_address_exist, ..
-            } => Ok(*is_destination_address_exist),
+            TransactionLoadMetadata::Stellar { is_destination_address_exist, .. } => Ok(*is_destination_address_exist),
             _ => Err("Destination existence flag not available for this metadata type".into()),
         }
     }

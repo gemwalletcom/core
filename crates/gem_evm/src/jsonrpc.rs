@@ -139,11 +139,7 @@ impl JsonRpcRequestConvert for EthereumRpc {
                 vec![value, block.into()]
             }
             EthereumRpc::FeeHistory { blocks, reward_percentiles } => {
-                vec![
-                    json!(blocks),
-                    json!("latest"),
-                    json!(reward_percentiles.iter().map(|x| json!(x)).collect::<Vec<_>>()),
-                ]
+                vec![json!(blocks), json!("latest"), json!(reward_percentiles.iter().map(|x| json!(x)).collect::<Vec<_>>())]
             }
             EthereumRpc::TraceRawTransaction(raw_tx) => {
                 vec![json!(raw_tx), json!(vec!["stateDiff"])]
@@ -160,11 +156,7 @@ mod tests {
 
     #[test]
     fn test_encode_call() {
-        let request = TransactionObject::new_call_with_from(
-            "0x46340b20830761efd32832a74d7169b29feb9758",
-            "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-            vec![],
-        );
+        let request = TransactionObject::new_call_with_from("0x46340b20830761efd32832a74d7169b29feb9758", "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", vec![]);
         let encoded = serde_json::to_string(&request).unwrap();
 
         assert_eq!(

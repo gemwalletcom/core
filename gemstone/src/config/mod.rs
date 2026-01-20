@@ -102,10 +102,7 @@ impl Config {
     }
 
     fn get_block_explorers(&self, chain: &str) -> Vec<String> {
-        primitives::block_explorer::get_block_explorers_by_chain(chain)
-            .into_iter()
-            .map(|x| x.name())
-            .collect()
+        primitives::block_explorer::get_block_explorers_by_chain(chain).into_iter().map(|x| x.name()).collect()
     }
 
     fn get_solana_token_program(&self, id: &str) -> String {

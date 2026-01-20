@@ -7,8 +7,7 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    BitcoinChain, FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput, UTXO,
+    BitcoinChain, FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO,
 };
 
 use crate::models::Address;

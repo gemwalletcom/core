@@ -47,7 +47,7 @@ impl DeviceRow {
     pub fn as_primitive(&self) -> Device {
         Device {
             id: self.device_id.clone(),
-            platform: self.platform.0.clone(),
+            platform: self.platform.0,
             platform_store: self.platform_store.0,
             os: self.os.clone(),
             model: self.model.clone(),

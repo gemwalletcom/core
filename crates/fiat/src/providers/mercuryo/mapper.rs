@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
 use super::models::{
-    Asset, BuyAcquirerTransaction, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction,
-    WithdrawTransaction,
+    Asset, BuyAcquirerTransaction, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction,
 };
 use crate::{model::FiatProviderAsset, providers::mercuryo::models::FiatPaymentMethod};
 use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
@@ -202,10 +201,7 @@ fn map_buy_transaction(buy: BuyTransaction, withdraw: Option<WithdrawTransaction
     )
 }
 
-fn map_buy_acquirer_transaction(
-    buy_acquirer: BuyAcquirerTransaction,
-    withdraw: Option<WithdrawTransaction>,
-) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+fn map_buy_acquirer_transaction(buy_acquirer: BuyAcquirerTransaction, withdraw: Option<WithdrawTransaction>) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
     map_buy_like_transaction(
         &buy_acquirer.currency,
         &buy_acquirer.status,
@@ -217,10 +213,7 @@ fn map_buy_acquirer_transaction(
     )
 }
 
-fn map_mobile_pay_transaction(
-    mobile_pay: MobilePayTransaction,
-    withdraw: Option<WithdrawTransaction>,
-) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+fn map_mobile_pay_transaction(mobile_pay: MobilePayTransaction, withdraw: Option<WithdrawTransaction>) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
     map_buy_like_transaction(
         &mobile_pay.currency,
         &mobile_pay.status,
@@ -301,11 +294,7 @@ pub fn map_asset_with_limits(asset: Asset, buy_limits: Vec<FiatAssetLimits>, sel
     map_asset_base(asset, buy_limits, sell_limits)
 }
 
-pub fn map_asset_limits(
-    currency_limits: Option<&CurrencyLimits>,
-    currency: Currency,
-    fiat_payment_methods: &HashMap<String, FiatPaymentMethod>,
-) -> Vec<FiatAssetLimits> {
+pub fn map_asset_limits(currency_limits: Option<&CurrencyLimits>, currency: Currency, fiat_payment_methods: &HashMap<String, FiatPaymentMethod>) -> Vec<FiatAssetLimits> {
     match currency_limits {
         Some(limits) => vec![FiatAssetLimits {
             currency,
@@ -325,8 +314,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_map_order_from_buy_complete_response() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let response: Response<Vec<MercuryoTransactionResponse>> =
-            serde_json::from_str(include_str!("../../../testdata/mercuryo/transaction_buy_complete.json"))?;
+        let response: Response<Vec<MercuryoTransactionResponse>> = serde_json::from_str(include_str!("../../../testdata/mercuryo/transaction_buy_complete.json"))?;
         let transaction = response.data.into_iter().next().unwrap();
 
         let result = map_order_from_response(transaction)?;
@@ -344,8 +332,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_map_order_from_mobile_buy_complete_response() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let response: Response<Vec<MercuryoTransactionResponse>> =
-            serde_json::from_str(include_str!("../../../testdata/mercuryo/transaction_buy_mobile_complete.json"))?;
+        let response: Response<Vec<MercuryoTransactionResponse>> = serde_json::from_str(include_str!("../../../testdata/mercuryo/transaction_buy_mobile_complete.json"))?;
         let transaction = response.data.into_iter().next().unwrap();
 
         let result = map_order_from_response(transaction)?;
@@ -365,8 +352,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_map_order_from_sell_complete_response() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let response: Response<Vec<MercuryoTransactionResponse>> =
-            serde_json::from_str(include_str!("../../../testdata/mercuryo/transaction_sell_complete.json"))?;
+        let response: Response<Vec<MercuryoTransactionResponse>> = serde_json::from_str(include_str!("../../../testdata/mercuryo/transaction_sell_complete.json"))?;
         let transaction = response.data.into_iter().next().unwrap();
 
         let result = map_order_from_response(transaction)?;
@@ -389,8 +375,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_map_order_from_buy_acquirer_complete_response() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let response: Response<Vec<MercuryoTransactionResponse>> =
-            serde_json::from_str(include_str!("../../../testdata/mercuryo/transaction_buy_acquirer_complete.json"))?;
+        let response: Response<Vec<MercuryoTransactionResponse>> = serde_json::from_str(include_str!("../../../testdata/mercuryo/transaction_buy_acquirer_complete.json"))?;
         let transaction = response.data.into_iter().next().unwrap();
 
         let result = map_order_from_response(transaction)?;

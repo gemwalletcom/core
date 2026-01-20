@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 #[derive(Debug, Clone)]
@@ -11,19 +12,23 @@ impl fmt::Display for HexError {
 
 impl std::error::Error for HexError {}
 
-pub fn strip_0x(value: &str) -> &str {
-    let trimmed = value.trim();
-    trimmed.strip_prefix("0x").unwrap_or(trimmed)
+impl From<hex::FromHexError> for HexError {
+    fn from(err: hex::FromHexError) -> Self {
+        Self(err.to_string())
+    }
 }
 
 pub fn decode_hex(value: &str) -> Result<Vec<u8>, HexError> {
-    let stripped = strip_0x(value);
-    let normalized = if stripped.len() % 2 == 1 {
-        format!("0{stripped}")
+    let stripped = value.trim().strip_prefix("0x").unwrap_or(value.trim());
+    if stripped.is_empty() {
+        return Ok(vec![]);
+    }
+    let normalized: Cow<str> = if stripped.len() % 2 == 1 {
+        Cow::Owned(format!("0{stripped}"))
     } else {
-        stripped.to_string()
+        Cow::Borrowed(stripped)
     };
-    ::hex::decode(normalized).map_err(|err| HexError(format!("Invalid hex: {err}")))
+    Ok(hex::decode(&*normalized)?)
 }
 
 #[cfg(test)]

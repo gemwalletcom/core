@@ -20,9 +20,7 @@ pub fn map_balance_tokens(wallets: JettonWalletsResponse, token_ids: Vec<String>
 }
 
 pub fn map_balance_assets(wallets: JettonWalletsResponse) -> Vec<AssetBalance> {
-    jetton_wallets_to_balances(wallets)
-        .filter(|x| x.balance.available > BigUint::from(0u32))
-        .collect()
+    jetton_wallets_to_balances(wallets).filter(|x| x.balance.available > BigUint::from(0u32)).collect()
 }
 
 #[cfg(test)]

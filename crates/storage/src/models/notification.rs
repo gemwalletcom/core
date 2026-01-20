@@ -13,6 +13,7 @@ pub struct NotificationRow {
     pub notification_type: NotificationType,
     pub is_read: bool,
     pub metadata: Option<serde_json::Value>,
+    pub read_at: Option<NaiveDateTime>,
     pub created_at: NaiveDateTime,
 }
 
@@ -23,6 +24,7 @@ impl NotificationRow {
             notification_type: self.notification_type.0.clone(),
             is_read: self.is_read,
             metadata: self.metadata.clone(),
+            read_at: self.read_at.map(|dt| dt.and_utc()),
             created_at: self.created_at.and_utc(),
         }
     }

@@ -40,13 +40,7 @@ pub enum CheckApprovalType {
     },
 }
 
-pub async fn check_approval_erc20_with_client<C>(
-    owner: String,
-    token: String,
-    spender: String,
-    amount: U256,
-    client: &JsonRpcClient<C>,
-) -> Result<ApprovalType, SwapperError>
+pub async fn check_approval_erc20_with_client<C>(owner: String, token: String, spender: String, amount: U256, client: &JsonRpcClient<C>) -> Result<ApprovalType, SwapperError>
 where
     C: Client + Clone + std::fmt::Debug + Send + Sync + 'static,
 {

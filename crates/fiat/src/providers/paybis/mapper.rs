@@ -122,11 +122,7 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
         provider_id: PaybisClient::NAME.id(),
         provider_transaction_id: webhook_data.transaction.invoice,
         status: map_status(&webhook_data.transaction.status),
-        country: webhook_data
-            .payment
-            .as_ref()
-            .and_then(|p| p.card.as_ref())
-            .map(|c| c.billing_address.country.code.clone()),
+        country: webhook_data.payment.as_ref().and_then(|p| p.card.as_ref()).map(|c| c.billing_address.country.code.clone()),
         fiat_amount: webhook_data.amount_from.amount.parse().unwrap_or(0.0),
         fiat_currency: webhook_data.amount_from.currency.to_uppercase(),
         transaction_hash: webhook_data.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
@@ -302,8 +298,7 @@ mod tests {
 
     #[test]
     fn test_map_process_webhook_no_payment() {
-        let webhook_json: serde_json::Value =
-            serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started_no_payment.json")).unwrap();
+        let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started_no_payment.json")).unwrap();
 
         let result = map_process_webhook(webhook_json);
         if let FiatWebhook::Transaction(transaction) = result {

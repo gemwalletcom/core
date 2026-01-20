@@ -26,9 +26,7 @@ impl SupportWebhookConsumer {
     async fn process_webhook(&self, device: &Device, support_device_id: &str, webhook: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         match webhook.event.as_str() {
             EVENT_MESSAGE_CREATED => self.support_client.handle_message_created(device, support_device_id, webhook).await,
-            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => {
-                self.support_client.handle_conversation_updated(support_device_id, webhook).map(|_| 0)
-            }
+            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => self.support_client.handle_conversation_updated(support_device_id, webhook).map(|_| 0),
             _ => Ok(0),
         }
     }
@@ -70,12 +68,7 @@ impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
                 Ok(true)
             }
             Err(error) => {
-                error_with_fields!(
-                    "Support webhook failed",
-                    &*error,
-                    support_device_id = support_device_id,
-                    payload = payload.data.to_string()
-                );
+                error_with_fields!("Support webhook failed", &*error, support_device_id = support_device_id, payload = payload.data.to_string());
                 Err(error)
             }
         }

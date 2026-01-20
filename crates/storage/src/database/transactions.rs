@@ -103,11 +103,7 @@ impl TransactionsStore for DatabaseClient {
             query = query.filter(created_at.gt(datetime).or(updated_at.gt(datetime)));
         }
 
-        query
-            .order(created_at.desc())
-            .select(TransactionRow::as_select())
-            .distinct()
-            .load(&mut self.connection)
+        query.order(created_at.desc()).select(TransactionRow::as_select()).distinct().load(&mut self.connection)
     }
 
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error> {
@@ -126,9 +122,7 @@ impl TransactionsStore for DatabaseClient {
 
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error> {
         use crate::schema::transactions_addresses::dsl::*;
-        diesel::delete(transactions_addresses)
-            .filter(address.eq_any(addresses))
-            .execute(&mut self.connection)
+        diesel::delete(transactions_addresses).filter(address.eq_any(addresses)).execute(&mut self.connection)
     }
 
     fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, diesel::result::Error> {

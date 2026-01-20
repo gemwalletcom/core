@@ -17,9 +17,7 @@ pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse
     let rpc_client = create_client_with_chain(provider, Chain::Solana);
     let blockhash_response: LatestBlockhash = rpc_client.request(SolanaRpc::GetLatestBlockhash).await.map_err(|e| e.to_string())?;
     let recent_blockhash = blockhash_response.value.blockhash;
-    let blockhash = bs58::decode(recent_blockhash)
-        .into_vec()
-        .map_err(|_| "Failed to decode blockhash".to_string())?;
+    let blockhash = bs58::decode(recent_blockhash).into_vec().map_err(|_| "Failed to decode blockhash".to_string())?;
 
     let blockhash_array: [u8; 32] = blockhash.try_into().map_err(|_| "Failed to convert blockhash to array".to_string())?;
 
@@ -73,8 +71,7 @@ mod tests {
         };
 
         let provider = Arc::new(mock);
-        let response: JsonRpcResponse<SolanaVaultSwapResponse> =
-            serde_json::from_str(include_str!("./test/chainflip_sol_arb_usdc_quote_data.json")).map_err(|e| e.to_string())?;
+        let response: JsonRpcResponse<SolanaVaultSwapResponse> = serde_json::from_str(include_str!("./test/chainflip_sol_arb_usdc_quote_data.json")).map_err(|e| e.to_string())?;
 
         let tx_b64 = build_solana_tx(wallet_address, &response.result, provider).await?;
 

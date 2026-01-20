@@ -51,10 +51,7 @@ impl<C: Client> AlgorandClient<C> {
     }
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<TransactionBroadcast, Box<dyn Error + Send + Sync>> {
-        let headers = Some(HashMap::from([(
-            CONTENT_TYPE.to_string(),
-            ContentType::ApplicationXBinary.as_str().to_string(),
-        )]));
+        let headers = Some(HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationXBinary.as_str().to_string())]));
 
         Ok(self.client.post("/v2/transactions", &data, headers).await?)
     }

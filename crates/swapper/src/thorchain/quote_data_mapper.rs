@@ -20,11 +20,7 @@ pub fn map_quote_data(
     memo: String,
     approval: Option<ApprovalData>,
 ) -> SwapperQuoteData {
-    let gas_limit = if approval.is_some() {
-        Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string())
-    } else {
-        None
-    };
+    let gas_limit = if approval.is_some() { Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()) } else { None };
 
     if from_asset.use_evm_router() {
         let router_address = route_data.router_address.clone().unwrap_or_default();
@@ -77,10 +73,7 @@ mod tests {
     fn evm_router() {
         let result = map_quote_data(
             &asset(Chain::Ethereum, Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string())),
-            &route_data(
-                Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string()),
-                "0x1234567890123456789012345678901234567890",
-            ),
+            &route_data(Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string()), "0x1234567890123456789012345678901234567890"),
             Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string()),
             "1000000".to_string(),
             "memo".to_string(),
@@ -114,14 +107,7 @@ mod tests {
 
     #[test]
     fn non_evm() {
-        let result = map_quote_data(
-            &asset(Chain::Bitcoin, None),
-            &route_data(None, "bc1q"),
-            None,
-            "1000".to_string(),
-            "memo".to_string(),
-            None,
-        );
+        let result = map_quote_data(&asset(Chain::Bitcoin, None), &route_data(None, "bc1q"), None, "1000".to_string(), "memo".to_string(), None);
 
         assert_eq!(result.to, "bc1q");
         assert_eq!(result.value, "1000");
@@ -141,10 +127,7 @@ mod tests {
 
         let result = map_quote_data(
             &asset(Chain::Ethereum, Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string())),
-            &route_data(
-                Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string()),
-                "0x1234567890123456789012345678901234567890",
-            ),
+            &route_data(Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string()), "0x1234567890123456789012345678901234567890"),
             Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string()),
             "1000000".to_string(),
             "memo".to_string(),

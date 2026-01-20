@@ -36,10 +36,7 @@ impl PriceAlertsRepository for DatabaseClient {
 
     fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, DatabaseError> {
         let device = DevicesStore::get_device(self, device_id)?;
-        let values = price_alerts
-            .into_iter()
-            .map(|x| crate::models::PriceAlertRow::new_price_alert(x, device.id))
-            .collect();
+        let values = price_alerts.into_iter().map(|x| crate::models::PriceAlertRow::new_price_alert(x, device.id)).collect();
         Ok(PriceAlertsStore::add_price_alerts(self, values)?)
     }
 

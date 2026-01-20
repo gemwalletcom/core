@@ -48,8 +48,7 @@ impl FiatProvider for BanxaClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let (assets, buy_fiat_currencies, sell_fiat_currencies) =
-            tokio::try_join!(self.get_assets_buy(), self.get_fiat_currencies("buy"), self.get_fiat_currencies("sell"))?;
+        let (assets, buy_fiat_currencies, sell_fiat_currencies) = tokio::try_join!(self.get_assets_buy(), self.get_fiat_currencies("buy"), self.get_fiat_currencies("sell"))?;
 
         let assets = assets
             .into_iter()

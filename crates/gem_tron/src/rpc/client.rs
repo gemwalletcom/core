@@ -6,12 +6,10 @@ use std::{error::Error, str::FromStr};
 
 use crate::address::TronAddress;
 use crate::models::{
-    Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData,
-    TriggerConstantContractRequest, TriggerConstantContractResponse, TronTransactionBroadcast, WitnessesList,
+    Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData, TriggerConstantContractRequest,
+    TriggerConstantContractResponse, TronTransactionBroadcast, WitnessesList,
 };
-use crate::models::{
-    TronAccount, TronAccountRequest, TronAccountUsage, TronBlock, TronEmptyAccount, TronReward, TronSmartContractCall, TronSmartContractResult,
-};
+use crate::models::{TronAccount, TronAccountRequest, TronAccountUsage, TronBlock, TronEmptyAccount, TronReward, TronSmartContractCall, TronSmartContractResult};
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
 use crate::rpc::trongrid::client::TronGridClient;
 use alloy_primitives::Address as AlloyAddress;
@@ -51,12 +49,7 @@ impl<C: Client> TronClient<C> {
         Ok(self.client.get(&format!("/wallet/gettransactioninfobyid?value={}", id)).await?)
     }
 
-    pub async fn trigger_constant_contract(
-        &self,
-        contract_address: &str,
-        function_selector: &str,
-        parameter: &str,
-    ) -> Result<String, Box<dyn Error + Send + Sync>> {
+    pub async fn trigger_constant_contract(&self, contract_address: &str, function_selector: &str, parameter: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         self.trigger_constant_contract_with_owner(DEFAULT_OWNER_ADDRESS, contract_address, function_selector, parameter)
             .await
     }
@@ -87,10 +80,7 @@ impl<C: Client> TronClient<C> {
         Ok(response.constant_result[0].clone())
     }
 
-    async fn trigger_constant_contract_request(
-        &self,
-        request: &TriggerConstantContractRequest,
-    ) -> Result<TriggerConstantContractResponse, Box<dyn Error + Send + Sync>> {
+    async fn trigger_constant_contract_request(&self, request: &TriggerConstantContractRequest) -> Result<TriggerConstantContractResponse, Box<dyn Error + Send + Sync>> {
         Ok(self.client.post("/wallet/triggerconstantcontract", request, None).await?)
     }
 

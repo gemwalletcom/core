@@ -14,8 +14,7 @@ pub fn sign_personal_message(message: &[u8], private_key: &[u8]) -> Result<Strin
 }
 
 pub fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
-    let (signature_bytes, public_key_bytes) =
-        Signer::sign_ed25519_with_public_key(digest, private_key).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
+    let (signature_bytes, public_key_bytes) = Signer::sign_ed25519_with_public_key(digest, private_key).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
 
     assemble_signature(&signature_bytes, &public_key_bytes)
 }
@@ -24,13 +23,9 @@ fn assemble_signature(signature: &[u8], public_key: &[u8]) -> Result<String, Sig
     let signature_bytes: [u8; Ed25519Signature::LENGTH] = signature
         .try_into()
         .map_err(|_| SignerError::InvalidInput(format!("Expected {} byte ed25519 signature, got {}", Ed25519Signature::LENGTH, signature.len())))?;
-    let public_key_bytes: [u8; Ed25519PublicKey::LENGTH] = public_key.try_into().map_err(|_| {
-        SignerError::InvalidInput(format!(
-            "Expected {} byte ed25519 public key, got {}",
-            Ed25519PublicKey::LENGTH,
-            public_key.len()
-        ))
-    })?;
+    let public_key_bytes: [u8; Ed25519PublicKey::LENGTH] = public_key
+        .try_into()
+        .map_err(|_| SignerError::InvalidInput(format!("Expected {} byte ed25519 public key, got {}", Ed25519PublicKey::LENGTH, public_key.len())))?;
 
     let sui_signature = SimpleSignature::Ed25519 {
         signature: Ed25519Signature::new(signature_bytes),
@@ -57,8 +52,7 @@ mod tests {
         assert_eq!(signature_bytes.len(), SUI_PERSONAL_MESSAGE_SIGNATURE_LEN, "signature layout length");
         assert_eq!(signature_bytes[0], 0x00, "expected Ed25519 flag prefix");
 
-        let expected_base64 =
-            "ALmKZNcvdmYgYloqKMAq7eSw5neV1mSEKfZProHEh8Ddw+6aJvLpuViFqZCHqwKdCqtzN8a+7jIDQSxbvmt04QDTaUUhl8KlZIHl4tPovwPeI0n2emMVGVaCIgjCM0re4g==";
+        let expected_base64 = "ALmKZNcvdmYgYloqKMAq7eSw5neV1mSEKfZProHEh8Ddw+6aJvLpuViFqZCHqwKdCqtzN8a+7jIDQSxbvmt04QDTaUUhl8KlZIHl4tPovwPeI0n2emMVGVaCIgjCM0re4g==";
         assert_eq!(signature_base64, expected_base64);
     }
 

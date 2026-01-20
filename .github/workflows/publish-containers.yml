@@ -11,10 +11,8 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
-  DOCKER_BUILDKIT: 1
   CORE_IMAGE: ghcr.io/gemwalletcom/core
   DYNODE_IMAGE: ghcr.io/gemwalletcom/dynode
 
@@ -25,19 +23,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Configure cache
-        id: cache
-        run: |
-          if [ -z "$RUNNER_ENVIRONMENT" ] || [ "$RUNNER_ENVIRONMENT" = "self-hosted" ]; then
-            echo "is_self_hosted=true" >> $GITHUB_OUTPUT
-            echo "from=type=local,src=/tmp/.buildx-cache" >> $GITHUB_OUTPUT
-            echo "to=type=local,dest=/tmp/.buildx-cache-new,mode=max" >> $GITHUB_OUTPUT
-          else
-            echo "is_self_hosted=false" >> $GITHUB_OUTPUT
-            echo "from=type=gha" >> $GITHUB_OUTPUT
-            echo "to=type=gha,mode=max" >> $GITHUB_OUTPUT
-          fi
+        with:
+          submodules: recursive
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -57,8 +44,8 @@ jobs:
           target: core
           push: true
           platforms: linux/amd64
-          cache-from: ${{ steps.cache.outputs.from }}
-          cache-to: ${{ steps.cache.outputs.to }}
+          cache-from: ${{ runner.environment == 'self-hosted' && 'type=local,src=/tmp/.buildx-cache' || 'type=gha' }}
+          cache-to: ${{ runner.environment == 'self-hosted' && 'type=local,dest=/tmp/.buildx-cache,mode=max' || 'type=gha,mode=max' }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
@@ -73,16 +60,9 @@ jobs:
           target: dynode
           push: true
           platforms: linux/amd64
-          cache-from: ${{ steps.cache.outputs.from }}
-          cache-to: ${{ steps.cache.outputs.to }}
+          cache-from: ${{ runner.environment == 'self-hosted' && 'type=local,src=/tmp/.buildx-cache' || 'type=gha' }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ${{ env.DYNODE_IMAGE }}:latest
             ${{ env.DYNODE_IMAGE }}:${{ github.sha }}
-
-      - name: Update local cache
-        if: steps.cache.outputs.is_self_hosted == 'true'
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

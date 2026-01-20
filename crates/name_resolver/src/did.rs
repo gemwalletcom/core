@@ -51,10 +51,7 @@ impl NameClient for DidClient {
         let account = Account { account: name.to_string() };
         let records = self.client.post(&url).json(&account).send().await?.json::<Data<Records>>().await?.data.records;
 
-        let record = records
-            .iter()
-            .find(|r| r.key == format!("address.{}", chain.as_slip44()))
-            .ok_or("address not found")?;
+        let record = records.iter().find(|r| r.key == format!("address.{}", chain.as_slip44())).ok_or("address not found")?;
 
         Ok(record.value.clone())
     }

@@ -85,10 +85,7 @@ impl PriceClient {
     }
 
     pub async fn set_cache_prices(&self, prices: Vec<AssetPriceInfo>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let values: Vec<(String, String)> = prices
-            .iter()
-            .map(|x| (x.asset_id.to_string().clone(), serde_json::to_string(&x).unwrap()))
-            .collect();
+        let values: Vec<(String, String)> = prices.iter().map(|x| (x.asset_id.to_string().clone(), serde_json::to_string(&x).unwrap())).collect();
 
         self.cacher_client.set_values_with_publish(values, ttl_seconds).await
     }

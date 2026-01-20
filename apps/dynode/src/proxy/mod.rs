@@ -8,7 +8,9 @@ pub mod request_parser;
 pub mod request_url;
 pub mod response_builder;
 pub mod service;
+pub mod types;
 
 pub use proxy_request_builder::ProxyRequestBuilder;
 pub use response_builder::ProxyResponse;
 pub use service::{NodeDomain, ProxyRequestService};
+pub use types::CachedResponse;

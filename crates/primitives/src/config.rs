@@ -30,11 +30,7 @@ pub struct Release {
 
 impl Release {
     pub fn new(store: PlatformStore, version: String, upgrade_required: bool) -> Self {
-        Self {
-            version,
-            store,
-            upgrade_required,
-        }
+        Self { version, store, upgrade_required }
     }
 }
 

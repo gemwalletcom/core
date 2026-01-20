@@ -38,13 +38,7 @@ impl OpenSeaClient {
     }
 
     pub async fn get_asset_id(&self, chain: Chain, contract_address: &str, token_id: &str) -> Result<NftResponse, Box<dyn Error + Send + Sync>> {
-        let url = format!(
-            "{}/api/v2/chain/{}/contract/{}/nfts/{}",
-            Self::BASE_URL,
-            Self::chain_id(chain)?,
-            contract_address,
-            token_id
-        );
+        let url = format!("{}/api/v2/chain/{}/contract/{}/nfts/{}", Self::BASE_URL, Self::chain_id(chain)?, contract_address, token_id);
         Ok(self.client.get(&url).send().await?.json().await?)
     }
 

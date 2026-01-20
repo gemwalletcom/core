@@ -4,8 +4,7 @@ use crate::transaction_fee::TransactionFee;
 use crate::transaction_load_metadata::TransactionLoadMetadata;
 use crate::yield_data::{YieldAction, YieldData};
 use crate::{
-    Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransactionType, TransferDataExtra, WalletConnectionSessionAppMetadata, nft::NFTAsset,
-    perpetual::AccountDataType,
+    Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransactionType, TransferDataExtra, WalletConnectionSessionAppMetadata, nft::NFTAsset, perpetual::AccountDataType,
 };
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -142,11 +141,7 @@ mod tests {
             TransactionType::StakeDelegate
         );
         assert_eq!(
-            TransactionInputType::Perpetual(
-                Asset::mock(),
-                PerpetualType::Open(PerpetualConfirmData::mock(PerpetualDirection::Long, 0, None, None))
-            )
-            .transaction_type(),
+            TransactionInputType::Perpetual(Asset::mock(), PerpetualType::Open(PerpetualConfirmData::mock(PerpetualDirection::Long, 0, None, None))).transaction_type(),
             TransactionType::PerpetualOpenPosition
         );
     }

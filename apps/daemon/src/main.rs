@@ -78,6 +78,7 @@ async fn run_consumer_mode(settings: settings::Settings, service: ConsumerServic
         ConsumerService::StoreAssetsAssociations => consumers::run_consumer_store_assets_associations(settings).await,
         ConsumerService::FetchNftAssociations => consumers::run_consumer_fetch_nft_associations(settings).await,
         ConsumerService::Notifications => consumers::notifications::run(settings).await,
+        ConsumerService::InAppNotifications => consumers::run_consumer_in_app_notifications(settings).await,
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings).await,
         ConsumerService::RewardsRedemptions => consumers::run_rewards_redemption_consumer(settings).await,
         ConsumerService::Support => consumers::run_consumer_support(settings).await,

@@ -44,8 +44,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             .collect();
 
         let (existing_assets, missing_assets_ids) = self.get_existing_and_missing_assets(asset_ids).await?;
-        let existing_assets_map: HashMap<AssetId, primitives::AssetPriceMetadata> =
-            existing_assets.into_iter().map(|asset| (asset.asset.asset.id.clone(), asset)).collect();
+        let existing_assets_map: HashMap<AssetId, primitives::AssetPriceMetadata> = existing_assets.into_iter().map(|asset| (asset.asset.asset.id.clone(), asset)).collect();
 
         let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
         let mut fetch_assets_payload: Vec<AssetId> = Vec::new();
@@ -113,7 +112,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let transactions_count = self.store_transactions(transactions_map.into_values().collect()).await?;
         let _ = self.stream_producer.publish_fetch_assets(fetch_assets_payload).await;
         let _ = self.stream_producer.publish_notifications_transactions(notifications_payload).await;
-        let assets_addresses: Vec<_> = address_assets_payload.into_iter().flat_map(|p| p.values).collect();
+        let assets_addresses: Vec<_> = address_assets_payload.into_iter().flat_map(|p| p.values).collect::<HashSet<_>>().into_iter().collect();
         let _ = self
             .stream_producer
             .publish_store_assets_addresses_associations(AssetsAddressPayload::new(assets_addresses))
@@ -123,10 +122,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 }
 
 impl StoreTransactionsConsumer {
-    async fn get_existing_and_missing_assets(
-        &self,
-        assets_ids: Vec<AssetId>,
-    ) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
+    async fn get_existing_and_missing_assets(&self, assets_ids: Vec<AssetId>) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
         let assets_with_prices = self.database.assets()?.get_assets_with_prices(assets_ids.ids().clone())?;
 
         let missing_assets_ids = assets_ids

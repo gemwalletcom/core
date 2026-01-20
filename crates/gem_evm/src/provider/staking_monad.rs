@@ -9,9 +9,8 @@ use num_traits::{ToPrimitive, Zero};
 use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
 use crate::monad::{
-    IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegation, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys,
-    decode_get_lens_balance, decode_get_lens_delegations, decode_get_lens_validators, encode_get_lens_apys, encode_get_lens_balance,
-    encode_get_lens_delegations, encode_get_lens_validators,
+    IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegation, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys, decode_get_lens_balance,
+    decode_get_lens_delegations, decode_get_lens_validators, encode_get_lens_apys, encode_get_lens_balance, encode_get_lens_delegations, encode_get_lens_validators,
 };
 use crate::rpc::client::EthereumClient;
 
@@ -124,11 +123,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             name: validator_name,
             is_active: validator.is_active,
             commission: Self::lens_commission_rate(&validator.commission),
-            apr: if validator.apy_bps > 0 {
-                validator.apy_bps as f64 / 100.0
-            } else {
-                network_apy
-            },
+            apr: if validator.apy_bps > 0 { validator.apy_bps as f64 / 100.0 } else { network_apy },
         }
     }
 
@@ -168,10 +163,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     fn monad_asset_balance(staked: BigUint, pending: BigUint, rewards: BigUint) -> AssetBalance {
-        AssetBalance::new_balance(
-            AssetId::from_chain(Chain::Monad),
-            primitives::Balance::stake_balance(staked, pending, Some(rewards)),
-        )
+        AssetBalance::new_balance(AssetId::from_chain(Chain::Monad), primitives::Balance::stake_balance(staked, pending, Some(rewards)))
     }
 
     fn monad_curated_validator_ids() -> Vec<u64> {

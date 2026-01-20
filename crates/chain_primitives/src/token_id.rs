@@ -98,17 +98,11 @@ mod tests {
         );
         assert_eq!(format_token_id(chain, "0x2::sui::SUI".to_string()), None);
         assert_eq!(
-            format_token_id(
-                chain,
-                "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL".to_string()
-            ),
+            format_token_id(chain, "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL".to_string()),
             Some("0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL".to_string())
         );
         assert_eq!(
-            format_token_id(
-                chain,
-                "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI".to_string()
-            ),
+            format_token_id(chain, "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI".to_string()),
             None
         );
     }

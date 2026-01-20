@@ -40,12 +40,7 @@ impl ChainClient {
         self.providers.get_staking_apy(chain).await
     }
 
-    pub async fn get_block_transactions(
-        &self,
-        chain: Chain,
-        block_number: i64,
-        transaction_type: Option<&str>,
-    ) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_block_transactions(&self, chain: Chain, block_number: i64, transaction_type: Option<&str>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let transactions = self.providers.get_block_transactions(chain, block_number as u64).await?;
         Ok(self.filter_transactions(transactions, transaction_type))
     }

@@ -1,7 +1,8 @@
-use crate::cache::{CacheProvider, CachedResponse, RequestCache};
+use crate::cache::{CacheProvider, RequestCache};
 use crate::config::{ChainConfig, HeadersConfig, Url};
 use crate::jsonrpc_types::{JsonRpcRequest, JsonRpcResponse, RequestType};
 use crate::metrics::Metrics;
+use crate::proxy::CachedResponse;
 use crate::proxy::jsonrpc::JsonRpcHandler;
 use crate::proxy::proxy_request::ProxyRequest;
 use crate::proxy::request_builder::RequestBuilder;
@@ -37,12 +38,7 @@ impl NodeDomain {
 
 impl ProxyRequestService {
     pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client, headers_config: HeadersConfig) -> Self {
-        let forward_headers: Arc<[HeaderName]> = headers_config
-            .forward
-            .iter()
-            .filter_map(|s| HeaderName::from_str(s).ok())
-            .collect::<Vec<_>>()
-            .into();
+        let forward_headers: Arc<[HeaderName]> = headers_config.forward.iter().filter_map(|s| HeaderName::from_str(s).ok()).collect::<Vec<_>>().into();
 
         Self {
             metrics,
@@ -110,8 +106,7 @@ impl ProxyRequestService {
         let cache_key = cache_ttl.and_then(|_| request_type.cache_key(&request.host, &request.path_with_query));
 
         let methods_for_metrics = request_type.get_methods_for_metrics();
-        self.metrics
-            .add_proxy_request_batch(request.chain.as_ref(), &request.user_agent, &methods_for_metrics);
+        self.metrics.add_proxy_request_batch(request.chain.as_ref(), &request.user_agent, &methods_for_metrics);
 
         if let Some(key) = &cache_key
             && let Some(result) = Self::try_cache_hit(&self.cache, key, &request, &url, &self.metrics).await
@@ -179,12 +174,7 @@ impl ProxyRequestService {
                 metrics.add_cache_hit(request.chain.as_ref(), method_name);
             }
 
-            info_with_fields!(
-                "Cache HIT",
-                chain = request.chain.as_ref(),
-                host = &request.host,
-                method = &methods_for_metrics.join(",")
-            );
+            info_with_fields!("Cache HIT", chain = request.chain.as_ref(), host = &request.host, method = &methods_for_metrics.join(","));
 
             let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), request.elapsed());
             let status = cached.status;

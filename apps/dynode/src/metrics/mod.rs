@@ -132,10 +132,7 @@ impl Metrics {
     pub fn add_proxy_request_by_method(&self, chain: &str, method: &str) {
         let method = self.truncate_method(method);
         self.proxy_requests_by_method
-            .get_or_create(&ProxyRequestByMethodLabels {
-                chain: chain.to_string(),
-                method,
-            })
+            .get_or_create(&ProxyRequestByMethodLabels { chain: chain.to_string(), method })
             .inc();
     }
 
@@ -153,10 +150,7 @@ impl Metrics {
         for method in methods {
             let method = self.truncate_method(method);
             self.proxy_requests_by_method
-                .get_or_create(&ProxyRequestByMethodLabels {
-                    chain: chain.to_string(),
-                    method,
-                })
+                .get_or_create(&ProxyRequestByMethodLabels { chain: chain.to_string(), method })
                 .inc();
         }
     }
@@ -184,22 +178,12 @@ impl Metrics {
 
     pub fn add_cache_hit(&self, chain: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_hits
-            .get_or_create(&CacheLabels {
-                chain: chain.to_string(),
-                path,
-            })
-            .inc();
+        self.cache_hits.get_or_create(&CacheLabels { chain: chain.to_string(), path }).inc();
     }
 
     pub fn add_cache_miss(&self, chain: &str, path: &str) {
         let path = self.truncate_path(path);
-        self.cache_misses
-            .get_or_create(&CacheLabels {
-                chain: chain.to_string(),
-                path,
-            })
-            .inc();
+        self.cache_misses.get_or_create(&CacheLabels { chain: chain.to_string(), path }).inc();
     }
 
     pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str, reason: &str) {
@@ -218,11 +202,7 @@ impl Metrics {
     }
 
     fn truncate_method(&self, method: &str) -> String {
-        if method.contains('/') {
-            self.truncate_path(method)
-        } else {
-            method.to_string()
-        }
+        if method.contains('/') { self.truncate_path(method) } else { method.to_string() }
     }
 
     fn truncate_path(&self, path: &str) -> String {

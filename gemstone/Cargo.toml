@@ -28,7 +28,6 @@ gem_tron = { path = "../crates/gem_tron", features = ["rpc"] }
 gem_evm = { path = "../crates/gem_evm", features = ["rpc"] }
 gem_sui = { path = "../crates/gem_sui", features = ["rpc", "signer"] }
 gem_aptos = { path = "../crates/gem_aptos", features = ["rpc"] }
-gem_hash = { path = "../crates/gem_hash" }
 gem_auth = { path = "../crates/gem_auth" }
 gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
 gem_client = { path = "../crates/gem_client" }
@@ -40,7 +39,6 @@ gem_stellar = { path = "../crates/gem_stellar", features = ["rpc"] }
 gem_xrp = { path = "../crates/gem_xrp", features = ["rpc"] }
 gem_near = { path = "../crates/gem_near", features = ["rpc"] }
 gem_polkadot = { path = "../crates/gem_polkadot", features = ["rpc"] }
-serde_serializers = { path = "../crates/serde_serializers" }
 chain_traits = { path = "../crates/chain_traits" }
 signer = { path = "../crates/signer" }
 number_formatter = { path = "../crates/number_formatter" }
@@ -63,7 +61,7 @@ num-bigint.workspace = true
 futures.workspace = true
 bs58 = { workspace = true }
 url = { workspace = true }
-zeroize = "1.8"
+zeroize = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

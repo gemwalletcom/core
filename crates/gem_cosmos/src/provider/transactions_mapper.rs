@@ -131,10 +131,7 @@ pub fn map_transaction(chain: CosmosChain, body: TransactionBody, auth_info: Opt
 }
 
 pub fn map_validators(validators: Vec<Validator>) -> Vec<StakeValidator> {
-    validators
-        .into_iter()
-        .map(|v| StakeValidator::new(v.operator_address, v.description.moniker))
-        .collect()
+    validators.into_iter().map(|v| StakeValidator::new(v.operator_address, v.description.moniker)).collect()
 }
 
 #[cfg(test)]

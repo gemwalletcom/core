@@ -1,4 +1,5 @@
 use crate::model::IpCheckResult;
+use primitives::{Platform, PlatformStore};
 use storage::models::{NewRiskSignalRow, RiskSignalRow};
 
 use super::model::{RiskScore, RiskScoreConfig, RiskSignalInput};
@@ -8,8 +9,8 @@ use super::scoring::calculate_risk_score;
 pub struct RiskScoringInput {
     pub username: String,
     pub device_id: i32,
-    pub device_platform: String,
-    pub device_platform_store: String,
+    pub device_platform: Platform,
+    pub device_platform_store: PlatformStore,
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
@@ -23,8 +24,8 @@ impl RiskScoringInput {
         RiskSignalInput {
             username: self.username.clone(),
             device_id: self.device_id,
-            device_platform: self.device_platform.clone(),
-            device_platform_store: self.device_platform_store.clone(),
+            device_platform: self.device_platform,
+            device_platform_store: self.device_platform_store,
             device_os: self.device_os.clone(),
             device_model: self.device_model.clone(),
             device_locale: self.device_locale.clone(),
@@ -44,13 +45,7 @@ pub struct RiskResult {
     pub signal: NewRiskSignalRow,
 }
 
-pub fn evaluate_risk(
-    input: &RiskScoringInput,
-    existing_signals: &[RiskSignalRow],
-    device_model_ring_count: i64,
-    ip_abuser_count: i64,
-    config: &RiskScoreConfig,
-) -> RiskResult {
+pub fn evaluate_risk(input: &RiskScoringInput, existing_signals: &[RiskSignalRow], device_model_ring_count: i64, ip_abuser_count: i64, config: &RiskScoreConfig) -> RiskResult {
     let signal_input = input.to_signal_input();
     let score = calculate_risk_score(&signal_input, existing_signals, device_model_ring_count, ip_abuser_count, config);
 
@@ -58,8 +53,8 @@ pub fn evaluate_risk(
         fingerprint: score.fingerprint.clone(),
         referrer_username: signal_input.username,
         device_id: signal_input.device_id,
-        device_platform: signal_input.device_platform,
-        device_platform_store: signal_input.device_platform_store,
+        device_platform: signal_input.device_platform.into(),
+        device_platform_store: signal_input.device_platform_store.into(),
         device_os: signal_input.device_os,
         device_model: signal_input.device_model,
         device_locale: signal_input.device_locale,
@@ -86,8 +81,8 @@ mod tests {
         RiskScoringInput {
             username: "user1".to_string(),
             device_id: 1,
-            device_platform: "iOS".to_string(),
-            device_platform_store: "appStore".to_string(),
+            device_platform: Platform::IOS,
+            device_platform_store: PlatformStore::AppStore,
             device_os: "18.0".to_string(),
             device_model: "iPhone15,2".to_string(),
             device_locale: "en-US".to_string(),
@@ -136,7 +131,7 @@ mod tests {
 
         assert_eq!(result.signal.ip_address, "192.168.1.1");
         assert_eq!(result.signal.ip_isp, "Comcast");
-        assert_eq!(result.signal.device_platform, "iOS");
+        assert_eq!(*result.signal.device_platform, Platform::IOS);
         assert!(!result.signal.fingerprint.is_empty());
     }
 }

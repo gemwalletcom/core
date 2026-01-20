@@ -8,6 +8,8 @@ use serde::Serialize;
 use storage::DatabaseError;
 use strum::ParseError;
 
+pub struct ErrorContext(pub String);
+
 #[derive(Debug)]
 pub enum ApiError {
     BadRequest(String),

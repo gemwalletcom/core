@@ -9,7 +9,7 @@ use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
 use primitives::rewards::{ReferralActivation, ReferralCodeActivation};
-use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletIdType, now};
+use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
 
 fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, address: &str, device_id: i32) -> Result<RewardsRow, DatabaseError> {
     UsernamesStore::create_username(
@@ -46,14 +46,7 @@ pub trait RewardsRepository {
     fn change_username(&mut self, wallet_id: i32, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn get_referral_code(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
     fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError>;
-    fn add_referral_attempt(
-        &mut self,
-        referrer_username: &str,
-        referred_wallet_id: i32,
-        device_id: i32,
-        risk_signal_id: Option<i32>,
-        reason: &str,
-    ) -> Result<(), DatabaseError>;
+    fn add_referral_attempt(&mut self, referrer_username: &str, referred_wallet_id: i32, device_id: i32, risk_signal_id: Option<i32>, reason: &str) -> Result<(), DatabaseError>;
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
     fn get_wallet_id_by_username(&mut self, username: &str) -> Result<i32, DatabaseError>;
     fn get_referrer_username(&mut self, referred_username: &str) -> Result<Option<String>, DatabaseError>;
@@ -64,13 +57,7 @@ pub trait RewardsRepository {
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
     fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError>;
 
-    fn use_or_verify_referral(
-        &mut self,
-        referrer_username: &str,
-        referred_wallet_id: i32,
-        device_id: i32,
-        risk_signal_id: i32,
-    ) -> Result<Vec<RewardEvent>, DatabaseError>;
+    fn use_or_verify_referral(&mut self, referrer_username: &str, referred_wallet_id: i32, device_id: i32, risk_signal_id: i32) -> Result<Vec<RewardEvent>, DatabaseError>;
 }
 
 impl RewardsRepository for DatabaseClient {
@@ -232,18 +219,19 @@ impl RewardsRepository for DatabaseClient {
         let device_subscriptions = SubscriptionsStore::get_device_addresses(self, device_id, Chain::Ethereum.as_ref())?;
 
         for address in &device_subscriptions {
-            let wallet_identifier = WalletIdType::Multicoin(address.clone()).id();
+            let wallet_identifier = WalletId::Multicoin(address.clone()).id();
             if let Ok(wallet) = WalletsStore::get_wallet(self, &wallet_identifier)
-                && UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet.id))? {
-                    let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet.id))?;
-                    let rewards = RewardsStore::get_rewards(self, &username.username)?;
-                    if rewards.created_at.is_older_than_days(eligibility_days) {
-                        return Err(ReferralValidationError::EligibilityExpired(eligibility_days));
-                    }
-                    if referrer_username == username.username || referrer.wallet_id == username.wallet_id {
-                        return Err(ReferralValidationError::CannotReferSelf);
-                    }
+                && UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet.id))?
+            {
+                let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet.id))?;
+                let rewards = RewardsStore::get_rewards(self, &username.username)?;
+                if rewards.created_at.is_older_than_days(eligibility_days) {
+                    return Err(ReferralValidationError::EligibilityExpired(eligibility_days));
                 }
+                if referrer_username == username.username || referrer.wallet_id == username.wallet_id {
+                    return Err(ReferralValidationError::CannotReferSelf);
+                }
+            }
         }
 
         if RewardsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
@@ -253,14 +241,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(())
     }
 
-    fn add_referral_attempt(
-        &mut self,
-        referrer_username: &str,
-        wallet_id: i32,
-        device_id: i32,
-        risk_signal_id: Option<i32>,
-        reason: &str,
-    ) -> Result<(), DatabaseError> {
+    fn add_referral_attempt(&mut self, referrer_username: &str, wallet_id: i32, device_id: i32, risk_signal_id: Option<i32>, reason: &str) -> Result<(), DatabaseError> {
         RewardsStore::add_referral_attempt(
             self,
             ReferralAttemptRow {
@@ -344,13 +325,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(RewardsStore::disable_rewards(self, username, reason, comment)?)
     }
 
-    fn use_or_verify_referral(
-        &mut self,
-        referrer_username: &str,
-        referred_wallet_id: i32,
-        device_id: i32,
-        risk_signal_id: i32,
-    ) -> Result<Vec<RewardEvent>, DatabaseError> {
+    fn use_or_verify_referral(&mut self, referrer_username: &str, referred_wallet_id: i32, device_id: i32, risk_signal_id: i32) -> Result<Vec<RewardEvent>, DatabaseError> {
         let verification_date = self.get_referral_verification_date(now())?;
         let verified_at = if verification_date.is_none() { Some(now()) } else { None };
 

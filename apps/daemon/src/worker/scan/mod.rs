@@ -36,11 +36,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 database.clone(),
                 &settings.assets.url,
             );
-            async move {
-                validator_scanner
-                    .update_validators_from_static_assets("Update validators from static assets")
-                    .await
-            }
+            async move { validator_scanner.update_validators_from_static_assets("Update validators from static assets").await }
         }
     });
 

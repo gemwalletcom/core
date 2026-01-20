@@ -22,12 +22,7 @@ impl TokenDetail {
     }
 
     pub fn as_primitive(&self, asset: NFTAssetId) -> Option<NFTAsset> {
-        let image_url = self
-            .media_v2
-            .as_ref()
-            .and_then(|m| m.main.as_ref())
-            .and_then(|main| main.uri.clone())
-            .unwrap_or_default();
+        let image_url = self.media_v2.as_ref().and_then(|m| m.main.as_ref()).and_then(|main| main.uri.clone()).unwrap_or_default();
 
         let token_type = match self.standard.as_deref() {
             Some("ERC721") => NFTType::ERC721,

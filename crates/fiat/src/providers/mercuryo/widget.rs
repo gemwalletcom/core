@@ -87,14 +87,10 @@ impl MercuryoWidget {
 
         match self.quote_type {
             FiatQuoteType::Buy => {
-                url.query_pairs_mut()
-                    .append_pair("type", "buy")
-                    .append_pair("fiat_amount", &self.amount.to_string());
+                url.query_pairs_mut().append_pair("type", "buy").append_pair("fiat_amount", &self.amount.to_string());
             }
             FiatQuoteType::Sell => {
-                url.query_pairs_mut()
-                    .append_pair("type", "sell")
-                    .append_pair("amount", &self.amount.to_string());
+                url.query_pairs_mut().append_pair("type", "sell").append_pair("amount", &self.amount.to_string());
             }
         };
 

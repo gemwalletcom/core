@@ -14,12 +14,7 @@ pub fn map_balance_token(asset_id: AssetId, balance: String, decimals: i32) -> R
     Ok(AssetBalance::new(asset_id, available))
 }
 
-pub fn map_balance_tokens(
-    spot_balances: &crate::models::balance::Balances,
-    spot_tokens: &[SpotToken],
-    token_ids: &[String],
-    chain: Chain,
-) -> Vec<AssetBalance> {
+pub fn map_balance_tokens(spot_balances: &crate::models::balance::Balances, spot_tokens: &[SpotToken], token_ids: &[String], chain: Chain) -> Vec<AssetBalance> {
     token_ids
         .iter()
         .filter_map(|token_id| {

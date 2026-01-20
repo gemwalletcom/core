@@ -46,10 +46,7 @@ mod tests {
         assert_eq!(explorer.name(), "Mintscan");
         assert_eq!(explorer.get_tx_url("abc123"), "https://www.mintscan.io/cosmos/tx/abc123");
         assert_eq!(explorer.get_address_url("addr123"), "https://www.mintscan.io/cosmos/address/addr123");
-        assert_eq!(
-            explorer.get_validator_url("val123"),
-            Some("https://www.mintscan.io/cosmos/validators/val123".to_string())
-        );
+        assert_eq!(explorer.get_validator_url("val123"), Some("https://www.mintscan.io/cosmos/validators/val123".to_string()));
     }
 
     #[test]
@@ -58,9 +55,6 @@ mod tests {
         assert_eq!(explorer.name(), "Mintscan");
         assert_eq!(explorer.get_tx_url("abc123"), "https://www.mintscan.io/osmosis/tx/abc123");
         assert_eq!(explorer.get_address_url("addr123"), "https://www.mintscan.io/osmosis/address/addr123");
-        assert_eq!(
-            explorer.get_validator_url("val123"),
-            Some("https://www.mintscan.io/osmosis/validators/val123".to_string())
-        );
+        assert_eq!(explorer.get_validator_url("val123"), Some("https://www.mintscan.io/osmosis/validators/val123".to_string()));
     }
 }

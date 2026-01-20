@@ -74,8 +74,7 @@ impl ChatwootWebhookPayload {
     }
 
     pub fn get_unread(&self) -> Option<i32> {
-        self.unread_count
-            .or_else(|| self.conversation.as_ref().and_then(|conversation| conversation.unread_count))
+        self.unread_count.or_else(|| self.conversation.as_ref().and_then(|conversation| conversation.unread_count))
     }
 
     pub fn is_outgoing_message(&self) -> bool {

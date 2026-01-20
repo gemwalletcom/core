@@ -1,9 +1,7 @@
 use serde_json::json;
 use std::error::Error;
 
-use crate::models::rpc::{
-    AccountInfo, AccountInfoResult, AccountLedger, AccountObjects, FeesResult, Ledger, LedgerCurrent, LedgerData, TransactionBroadcast, TransactionStatus,
-};
+use crate::models::rpc::{AccountInfo, AccountInfoResult, AccountLedger, AccountObjects, FeesResult, Ledger, LedgerCurrent, LedgerData, TransactionBroadcast, TransactionStatus};
 
 use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
 use gem_client::Client;

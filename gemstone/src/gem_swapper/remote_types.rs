@@ -2,9 +2,9 @@ use crate::config::swap_config::SwapReferralFees;
 use primitives::{AssetId, Chain};
 use std::str::FromStr;
 pub use swapper::{
-    AssetList as SwapperAssetList, FetchQuoteData, Options as SwapperOptions, ProviderData as SwapperProviderData, ProviderType as SwapperProviderType,
-    Quote as SwapperQuote, QuoteRequest as SwapperQuoteRequest, Route as SwapperRoute, SwapResult as SwapperSwapResult, SwapperMode, SwapperProvider,
-    SwapperProviderMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, SwapperSwapStatus, permit2_data::Permit2Data,
+    AssetList as SwapperAssetList, FetchQuoteData, Options as SwapperOptions, ProviderData as SwapperProviderData, ProviderType as SwapperProviderType, Quote as SwapperQuote,
+    QuoteRequest as SwapperQuoteRequest, Route as SwapperRoute, SwapResult as SwapperSwapResult, SwapperMode, SwapperProvider, SwapperProviderMode, SwapperQuoteAsset,
+    SwapperSlippage, SwapperSlippageMode, SwapperSwapStatus, permit2_data::Permit2Data,
 };
 
 pub use crate::models::swap::GemSwapQuoteData;

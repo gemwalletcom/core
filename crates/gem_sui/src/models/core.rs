@@ -77,10 +77,7 @@ impl TxOutput {
     pub fn from_tx(tx_data: &Transaction) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let digest = tx_data.signing_digest();
         let tx_data = bcs::to_bytes(tx_data)?;
-        Ok(Self {
-            tx_data,
-            hash: digest.to_vec(),
-        })
+        Ok(Self { tx_data, hash: digest.to_vec() })
     }
 
     pub fn base64_encoded(&self) -> String {

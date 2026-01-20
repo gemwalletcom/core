@@ -48,11 +48,7 @@ impl HashDitProvider {
         let method = "POST";
         let path = "/security-api/public/app/v1/detect";
 
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_millis()
-            .to_string();
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_millis().to_string();
         let nonce: String = uuid::Uuid::new_v4().to_string().replace('-', "");
 
         let body_str = serde_json::to_string(body).unwrap_or_default();
@@ -94,12 +90,7 @@ impl HashDitProvider {
         Ok((is_malicious, reason))
     }
 
-    async fn _scan<T: Clone + Send + Sync + 'static>(
-        &self,
-        target: &T,
-        business: &str,
-        body: &Value,
-    ) -> Result<ScanResult<T>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn _scan<T: Clone + Send + Sync + 'static>(&self, target: &T, business: &str, body: &Value) -> Result<ScanResult<T>, Box<dyn std::error::Error + Send + Sync>> {
         let response = self.send_request(business, body).await?;
         let (is_malicious, reason) = Self::parse_response(response)?;
         Ok(ScanResult {

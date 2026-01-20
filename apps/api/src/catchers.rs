@@ -1,9 +1,8 @@
+use crate::responders::ErrorContext;
 use primitives::ResponseResult;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{Request, catch};
-
-pub struct ErrorContext(pub String);
 
 #[catch(default)]
 pub fn default_catcher(status: Status, req: &Request) -> (Status, Json<ResponseResult<()>>) {

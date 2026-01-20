@@ -2,8 +2,7 @@ use crate::{encode_split_and_stake, encode_token_transfer, encode_transfer, enco
 use base64::{Engine, engine::general_purpose};
 use num_bigint::BigInt;
 use primitives::{
-    FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata,
-    transaction_load_metadata::SuiCoin,
+    FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, transaction_load_metadata::SuiCoin,
 };
 use std::{collections::HashMap, error::Error};
 
@@ -24,10 +23,7 @@ pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_ty
 pub fn map_transaction_rate_rates(base_gas_price: BigInt) -> Vec<FeeRate> {
     vec![
         FeeRate::new(FeePriority::Slow, GasPriceType::regular(base_gas_price.clone())),
-        FeeRate::new(
-            FeePriority::Normal,
-            GasPriceType::regular(&base_gas_price * BigInt::from(110) / BigInt::from(100)),
-        ),
+        FeeRate::new(FeePriority::Normal, GasPriceType::regular(&base_gas_price * BigInt::from(110) / BigInt::from(100))),
         FeeRate::new(FeePriority::Fast, GasPriceType::regular(&base_gas_price * BigInt::from(2))),
     ]
 }
@@ -69,12 +65,7 @@ pub fn map_preload_metadata(_coins: Vec<SuiCoin>) -> Result<TransactionLoadMetad
     Ok(TransactionLoadMetadata::Sui { message_bytes: "".to_string() })
 }
 
-pub fn map_transaction_data(
-    input: TransactionLoadInput,
-    gas_coins: Vec<SuiCoin>,
-    coins: Vec<SuiCoin>,
-    objects: Vec<SuiObject>,
-) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>, coins: Vec<SuiCoin>, objects: Vec<SuiObject>) -> Result<String, Box<dyn Error + Send + Sync>> {
     let gas_price = input.gas_price.gas_price().to_string().parse().unwrap_or(0);
 
     match input.input_type {

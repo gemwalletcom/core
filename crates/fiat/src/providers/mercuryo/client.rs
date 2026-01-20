@@ -30,13 +30,7 @@ impl MercuryoClient {
         }
     }
 
-    pub async fn get_quote_buy(
-        &self,
-        fiat_currency: String,
-        symbol: String,
-        fiat_amount: f64,
-        network: String,
-    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote_buy(&self, fiat_currency: String, symbol: String, fiat_amount: f64, network: String) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
         let query = QuoteQuery {
             from: fiat_currency.clone(),
             to: symbol.clone(),
@@ -45,36 +39,17 @@ impl MercuryoClient {
             widget_id: self.widget_id.clone(),
         };
         let url = format!("{MERCURYO_API_BASE_URL}/v1.6/widget/buy/rate");
-        self.client
-            .get(url.as_str())
-            .query(&query)
-            .send()
-            .await?
-            .json::<MercuryoResponse<Quote>>()
-            .await?
-            .into()
+        self.client.get(url.as_str()).query(&query).send().await?.json::<MercuryoResponse<Quote>>().await?.into()
     }
 
-    pub async fn get_quote_sell(
-        &self,
-        fiat_currency: String,
-        symbol: String,
-        fiat_amount: f64,
-        network: String,
-    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_quote_sell(&self, fiat_currency: String, symbol: String, fiat_amount: f64, network: String) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
         let buy_quote = self.get_quote_buy(fiat_currency.clone(), symbol.clone(), fiat_amount, network.clone()).await?;
         let sell_quote = self.get_sell_rate(symbol, fiat_currency, buy_quote.amount, network).await?;
 
         Ok(map_sell_quote(buy_quote, sell_quote, fiat_amount))
     }
 
-    async fn get_sell_rate(
-        &self,
-        symbol: String,
-        fiat_currency: String,
-        crypto_amount: f64,
-        network: String,
-    ) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_sell_rate(&self, symbol: String, fiat_currency: String, crypto_amount: f64, network: String) -> Result<Quote, Box<dyn std::error::Error + Send + Sync>> {
         let query = QuoteSellQuery {
             from: symbol,
             to: fiat_currency,
@@ -84,14 +59,7 @@ impl MercuryoClient {
             widget_id: self.widget_id.clone(),
         };
         let url = format!("{MERCURYO_API_BASE_URL}/v1.6/public/convert");
-        self.client
-            .get(url.as_str())
-            .query(&query)
-            .send()
-            .await?
-            .json::<MercuryoResponse<Quote>>()
-            .await?
-            .into()
+        self.client.get(url.as_str()).query(&query).send().await?.json::<MercuryoResponse<Quote>>().await?.into()
     }
 
     pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {

@@ -4,18 +4,12 @@ use num_bigint::BigInt;
 
 use crate::models::ChainParameter;
 use crate::models::TronAccountUsage;
-use crate::rpc::constants::{
-    DEFAULT_BANDWIDTH_BYTES, GET_CREATE_ACCOUNT_FEE, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT, GET_ENERGY_FEE, GET_TRANSACTION_FEE,
-};
+use crate::rpc::constants::{DEFAULT_BANDWIDTH_BYTES, GET_CREATE_ACCOUNT_FEE, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT, GET_ENERGY_FEE, GET_TRANSACTION_FEE};
 use primitives::StakeType;
 
 const FEE_LIMIT_BUFFER_PERCENT: u64 = 20;
 
-pub fn calculate_transfer_fee_rate(
-    chain_parameters: &[ChainParameter],
-    account_usage: &TronAccountUsage,
-    is_new_account: bool,
-) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
+pub fn calculate_transfer_fee_rate(chain_parameters: &[ChainParameter], account_usage: &TronAccountUsage, is_new_account: bool) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
     let bandwidth_price = get_chain_parameter_value(chain_parameters, GET_TRANSACTION_FEE)?;
 
     if is_new_account {
@@ -48,11 +42,7 @@ pub fn calculate_transfer_token_fee_rate(
     Ok(fee)
 }
 
-pub fn calculate_stake_fee_rate(
-    chain_parameters: &[ChainParameter],
-    account_usage: &TronAccountUsage,
-    _stake_type: &StakeType,
-) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
+pub fn calculate_stake_fee_rate(chain_parameters: &[ChainParameter], account_usage: &TronAccountUsage, _stake_type: &StakeType) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
     let bandwidth_price = get_chain_parameter_value(chain_parameters, GET_TRANSACTION_FEE)?;
     let missing_bandwidth = account_usage.missing_bandwidth(DEFAULT_BANDWIDTH_BYTES);
     Ok(BigInt::from(missing_bandwidth) * BigInt::from(bandwidth_price))

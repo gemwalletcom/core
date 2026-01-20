@@ -54,12 +54,7 @@ mod chain_integration_tests {
         let block_number = latest_block - 25;
         let transactions = tron_client.get_transactions_by_block(block_number).await.unwrap();
 
-        println!(
-            "Latest block: {}, test block: {}, transactions count: {}",
-            latest_block,
-            block_number,
-            transactions.len()
-        );
+        println!("Latest block: {}, test block: {}, transactions count: {}", latest_block, block_number, transactions.len());
         assert!(latest_block > 0);
         assert!(!transactions.is_empty());
 

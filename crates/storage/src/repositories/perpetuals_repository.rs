@@ -13,10 +13,7 @@ pub trait PerpetualsRepository {
 
 impl PerpetualsRepository for DatabaseClient {
     fn get_perpetuals_for_asset(&mut self, asset_id: &str) -> Result<Vec<Perpetual>, DatabaseError> {
-        Ok(PerpetualsStore::get_perpetuals_for_asset(self, asset_id)?
-            .into_iter()
-            .map(|x| x.as_primitive())
-            .collect())
+        Ok(PerpetualsStore::get_perpetuals_for_asset(self, asset_id)?.into_iter().map(|x| x.as_primitive()).collect())
     }
 
     fn perpetuals_update(&mut self, values: Vec<PerpetualRow>) -> Result<usize, DatabaseError> {

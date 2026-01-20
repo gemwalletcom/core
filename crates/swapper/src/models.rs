@@ -74,10 +74,7 @@ pub struct Options {
 
 impl Options {
     pub fn new_with_slippage(slippage: SwapperSlippage) -> Self {
-        Self {
-            slippage,
-            ..Default::default()
-        }
+        Self { slippage, ..Default::default() }
     }
 }
 

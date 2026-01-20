@@ -1,4 +1,4 @@
-CREATE TYPE notification_type AS ENUM ('referralJoined', 'rewardsEnabled', 'rewardsCodeDisabled');
+CREATE TYPE notification_type AS ENUM ('referralJoined', 'rewardsEnabled', 'rewardsCodeDisabled', 'rewardsRedeemed', 'rewardsCreateUsername', 'rewardsInvite');
 
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
@@ -6,7 +6,7 @@ CREATE TABLE notifications (
     notification_type notification_type NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT false,
     metadata JSONB,
-    updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    read_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );
 

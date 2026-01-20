@@ -1,4 +1,4 @@
-use super::super::constants::{FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
+use crate::{FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_option_u64_from_str, deserialize_u64_from_str};
 
@@ -54,9 +54,7 @@ impl Event {
     pub fn get_amount(&self) -> Option<String> {
         let data = self.data.clone()?;
         match self.event_type.as_str() {
-            STAKE_WITHDRAW_EVENT | STAKE_DEPOSIT_EVENT | FUNGIBLE_ASSET_WITHDRAW_EVENT | FUNGIBLE_ASSET_DEPOSIT_EVENT => {
-                serde_json::from_value::<AmountData>(data).ok()?.amount
-            }
+            STAKE_WITHDRAW_EVENT | STAKE_DEPOSIT_EVENT | FUNGIBLE_ASSET_WITHDRAW_EVENT | FUNGIBLE_ASSET_DEPOSIT_EVENT => serde_json::from_value::<AmountData>(data).ok()?.amount,
             _ => None,
         }
     }

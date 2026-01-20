@@ -1,4 +1,4 @@
-use crate::catchers::ErrorContext;
+use crate::responders::ErrorContext;
 use gem_auth::{AuthClient, verify_auth_signature};
 use primitives::{AuthMessage, AuthenticatedRequest};
 use rocket::data::{FromData, Outcome, ToByteUnit};

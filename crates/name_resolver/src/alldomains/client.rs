@@ -107,10 +107,7 @@ impl AllDomainsClient {
             .client
             .call(
                 "getAccountInfo",
-                vec![
-                    json!(name_account_key.to_string()),
-                    json!({"encoding": "base64", "commitment": COMMITMENT_CONFIRMED}),
-                ],
+                vec![json!(name_account_key.to_string()), json!({"encoding": "base64", "commitment": COMMITMENT_CONFIRMED})],
             )
             .await?;
 

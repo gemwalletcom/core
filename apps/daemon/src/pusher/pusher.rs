@@ -3,8 +3,8 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
-    Subscription, Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
+    AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction,
+    TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::{Database, ScanAddressesRepository};
 
@@ -27,13 +27,7 @@ impl Pusher {
         }
     }
 
-    pub fn message(
-        &self,
-        localizer: LanguageLocalizer,
-        transaction: Transaction,
-        subscription: Subscription,
-        assets: Vec<Asset>,
-    ) -> Result<Message, Box<dyn Error + Send + Sync>> {
+    pub fn message(&self, localizer: LanguageLocalizer, transaction: Transaction, subscription: Subscription, assets: Vec<Asset>) -> Result<Message, Box<dyn Error + Send + Sync>> {
         let asset = assets.asset_result(transaction.asset_id.clone())?;
         let amount = BigNumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
         let chain = transaction.asset_id.chain;

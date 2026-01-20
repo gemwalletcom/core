@@ -3,8 +3,8 @@ use gem_tracing::info_with_fields;
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{
-    Asset, DEFAULT_FIAT_CURRENCY, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PriceData,
-    PushNotification, PushNotificationAsset, PushNotificationTypes,
+    Asset, DEFAULT_FIAT_CURRENCY, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PriceData, PushNotification,
+    PushNotificationAsset, PushNotificationTypes,
 };
 use std::collections::HashSet;
 use std::error::Error;
@@ -39,6 +39,19 @@ pub struct PriceAlertRules {
 struct AlertResult {
     alert_type: PriceAlertType,
     milestone: Option<f64>,
+}
+
+impl AlertResult {
+    fn new(alert_type: PriceAlertType) -> Self {
+        Self { alert_type, milestone: None }
+    }
+
+    fn with_milestone(alert_type: PriceAlertType, milestone: f64) -> Self {
+        Self {
+            alert_type,
+            milestone: Some(milestone),
+        }
+    }
 }
 
 impl PriceAlertRules {
@@ -99,8 +112,7 @@ impl PriceAlertClient {
 
         for (price_alert, price_data, device) in price_alerts {
             if let Some(alert_result) = self.get_price_alert_type(&price_alert, &price_data, &rules) {
-                let notification =
-                    self.price_alert_notification(device, &price_data, price_alert.clone(), alert_result.alert_type, alert_result.milestone)?;
+                let notification = self.price_alert_notification(device, &price_data, price_alert.clone(), alert_result.alert_type, alert_result.milestone)?;
                 price_alert_ids.insert(price_alert.id());
                 results.push(notification);
             }
@@ -121,7 +133,7 @@ impl PriceAlertClient {
                 PriceAlertDirection::Down if price_data.price <= target_price => Some(PriceAlertType::PriceDown),
                 _ => None,
             };
-            return alert_type.map(|t| AlertResult { alert_type: t, milestone: None });
+            return alert_type.map(AlertResult::new);
         }
 
         // User-defined percent change
@@ -132,39 +144,27 @@ impl PriceAlertClient {
                 PriceAlertDirection::Down if price_data.price_change_percentage_24h <= -target_percent => Some(PriceAlertType::PricePercentChangeDown),
                 _ => None,
             };
-            return alert_type.map(|t| AlertResult { alert_type: t, milestone: None });
+            return alert_type.map(AlertResult::new);
         }
 
         // All-time high check
         if price_data.all_time_high > 0.0 && price_data.price > price_data.all_time_high {
-            return Some(AlertResult {
-                alert_type: PriceAlertType::AllTimeHigh,
-                milestone: None,
-            });
+            return Some(AlertResult::new(PriceAlertType::AllTimeHigh));
         }
 
         // Price milestone check
         let price_24h_ago = calculate_price_24h_ago(price_data.price, price_data.price_change_percentage_24h);
         if let Some(milestone) = rules.find_crossed_milestone(price_24h_ago, price_data.price) {
-            return Some(AlertResult {
-                alert_type: PriceAlertType::PriceMilestone,
-                milestone: Some(milestone),
-            });
+            return Some(AlertResult::with_milestone(PriceAlertType::PriceMilestone, milestone));
         }
 
         // Dynamic threshold based on rank
         let threshold = rules.calculate_threshold(price_data.market_cap_rank);
         if price_data.price_change_percentage_24h > threshold {
-            return Some(AlertResult {
-                alert_type: PriceAlertType::PriceChangesUp,
-                milestone: None,
-            });
+            return Some(AlertResult::new(PriceAlertType::PriceChangesUp));
         }
         if price_data.price_change_percentage_24h < -threshold {
-            return Some(AlertResult {
-                alert_type: PriceAlertType::PriceChangesDown,
-                milestone: None,
-            });
+            return Some(AlertResult::new(PriceAlertType::PriceChangesDown));
         }
 
         None
@@ -216,22 +216,13 @@ impl PriceAlertClient {
             let localizer = LanguageLocalizer::new_with_language(&alert.device.locale);
 
             let message: LanguageNotification = match alert.alert_type {
-                PriceAlertType::PriceUp | PriceAlertType::PriceDown => {
-                    localizer.price_alert_target(&alert.asset.full_name(), &price, &change)
-                }
-                PriceAlertType::PriceChangesUp | PriceAlertType::PricePercentChangeUp => {
-                    localizer.price_alert_up(&alert.asset.full_name(), &price, &change)
-                }
-                PriceAlertType::PriceChangesDown | PriceAlertType::PricePercentChangeDown => {
-                    localizer.price_alert_down(&alert.asset.full_name(), &price, &change)
-                }
+                PriceAlertType::PriceUp | PriceAlertType::PriceDown => localizer.price_alert_target(&alert.asset.full_name(), &price, &change),
+                PriceAlertType::PriceChangesUp | PriceAlertType::PricePercentChangeUp => localizer.price_alert_up(&alert.asset.full_name(), &price, &change),
+                PriceAlertType::PriceChangesDown | PriceAlertType::PricePercentChangeDown => localizer.price_alert_down(&alert.asset.full_name(), &price, &change),
                 PriceAlertType::AllTimeHigh => localizer.price_alert_all_time_high(&alert.asset.name, &price),
                 PriceAlertType::PriceMilestone => {
-                    let milestone_price = alert
-                        .milestone
-                        .and_then(|m| formatter.currency(m, &alert.device.currency))
-                        .unwrap_or_else(|| price.clone());
-                    localizer.price_alert_milestone(&alert.asset.full_name(), &milestone_price, &change)
+                    let milestone_price = alert.milestone.and_then(|m| formatter.currency(m, &alert.device.currency)).unwrap_or_else(|| price.clone());
+                    localizer.price_alert_target(&alert.asset.full_name(), &milestone_price, &change)
                 }
             };
 

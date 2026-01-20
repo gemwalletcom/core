@@ -3,18 +3,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GasPriceType {
-    Regular {
-        gas_price: BigInt,
-    },
-    Eip1559 {
-        gas_price: BigInt,
-        priority_fee: BigInt,
-    },
-    Solana {
-        gas_price: BigInt,
-        priority_fee: BigInt,
-        unit_price: BigInt,
-    },
+    Regular { gas_price: BigInt },
+    Eip1559 { gas_price: BigInt, priority_fee: BigInt },
+    Solana { gas_price: BigInt, priority_fee: BigInt, unit_price: BigInt },
 }
 
 impl GasPriceType {

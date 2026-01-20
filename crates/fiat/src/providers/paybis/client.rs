@@ -39,12 +39,7 @@ impl PaybisClient {
             .into()
     }
 
-    pub async fn get_buy_quote(
-        &self,
-        crypto_currency: String,
-        fiat_currency: String,
-        fiat_amount: f64,
-    ) -> Result<PaybisQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_buy_quote(&self, crypto_currency: String, fiat_currency: String, fiat_amount: f64) -> Result<PaybisQuote, Box<dyn std::error::Error + Send + Sync>> {
         let request_body = QuoteRequest {
             amount: fiat_amount.to_string(),
             direction_change: "from".to_string(),
@@ -58,12 +53,7 @@ impl PaybisClient {
         self.signed_post(url, body).await
     }
 
-    pub async fn get_sell_quote(
-        &self,
-        crypto_currency: String,
-        fiat_currency: String,
-        fiat_amount: f64,
-    ) -> Result<PaybisQuote, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_sell_quote(&self, crypto_currency: String, fiat_currency: String, fiat_amount: f64) -> Result<PaybisQuote, Box<dyn std::error::Error + Send + Sync>> {
         let request_body = QuoteRequest {
             amount: fiat_amount.to_string(),
             direction_change: "to".to_string(),

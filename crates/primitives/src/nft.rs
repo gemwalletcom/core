@@ -111,6 +111,17 @@ impl NFTCollectionId {
         }
     }
 
+    pub fn from_id(id: &str) -> Option<Self> {
+        let parts: Vec<&str> = id.split('_').collect();
+        if parts.len() != 2 {
+            return None;
+        }
+        Some(Self {
+            chain: Chain::from_str(parts[0]).ok()?,
+            contract_address: parts[1].to_string(),
+        })
+    }
+
     pub fn id(&self) -> String {
         format!("{}_{}", self.chain.as_ref(), self.contract_address)
     }

@@ -40,6 +40,6 @@ futures = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }
-ed25519-dalek = { version = "2.1.1", default-features = false, features = [
+ed25519-dalek = { version = "2.2.0", default-features = false, features = [
     "std",
 ] }

@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use primitives::rewards::{RewardRedemption, RewardRedemptionOption};
 use primitives::{Asset, RewardEvent};
 
-use crate::sql_types::{IpUsageType, RedemptionStatus, RewardEventType, RewardRedemptionType, RewardStatus};
+use crate::sql_types::{IpUsageType, Platform, PlatformStore, RedemptionStatus, RewardEventType, RewardRedemptionType, RewardStatus};
 
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
@@ -206,8 +206,8 @@ pub struct RiskSignalRow {
     pub fingerprint: String,
     pub referrer_username: String,
     pub device_id: i32,
-    pub device_platform: String,
-    pub device_platform_store: String,
+    pub device_platform: Platform,
+    pub device_platform_store: PlatformStore,
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,
@@ -228,8 +228,8 @@ pub struct NewRiskSignalRow {
     pub fingerprint: String,
     pub referrer_username: String,
     pub device_id: i32,
-    pub device_platform: String,
-    pub device_platform_store: String,
+    pub device_platform: Platform,
+    pub device_platform_store: PlatformStore,
     pub device_os: String,
     pub device_model: String,
     pub device_locale: String,

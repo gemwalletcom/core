@@ -3,11 +3,7 @@ use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 
 pub fn map_transaction_status(transaction: &TransactionStatus) -> TransactionUpdate {
     let confirmed_round = transaction.confirmed_round.unwrap_or(0);
-    let state: TransactionState = if confirmed_round > 0 {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Failed
-    };
+    let state: TransactionState = if confirmed_round > 0 { TransactionState::Confirmed } else { TransactionState::Failed };
 
     let mut changes = Vec::new();
     if confirmed_round > 0 {
@@ -25,9 +21,7 @@ mod tests {
 
     #[test]
     fn test_map_transaction_status_confirmed() {
-        let result = map_transaction_status(&TransactionStatus {
-            confirmed_round: Some(52961610),
-        });
+        let result = map_transaction_status(&TransactionStatus { confirmed_round: Some(52961610) });
         assert_eq!(result.state, TransactionState::Confirmed);
         assert_eq!(result.changes, vec![TransactionChange::BlockNumber("52961610".to_string())]);
     }

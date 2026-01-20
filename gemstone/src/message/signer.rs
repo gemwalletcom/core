@@ -89,12 +89,10 @@ impl MessageSigner {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal | SignDigestType::BitcoinPersonal => {
-                match self.preview() {
-                    Ok(MessagePreview::Text(preview)) => preview,
-                    _ => "".to_string(),
-                }
-            }
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal | SignDigestType::BitcoinPersonal => match self.preview() {
+                Ok(MessagePreview::Text(preview)) => preview,
+                _ => "".to_string(),
+            },
             SignDigestType::Siwe => String::from_utf8(self.message.data.clone()).unwrap_or_else(|_| encode_prefixed(&self.message.data)),
             SignDigestType::Eip712 => {
                 let value: serde_json::Value = serde_json::from_slice(&self.message.data).unwrap_or_default();
@@ -150,10 +148,7 @@ impl MessageSigner {
         let string = String::from_utf8(self.message.data.clone())?;
         let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
         let payload = ton_data.payload;
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
+        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
 
         let response = TonSignDataResponse::new(BASE64.encode(signature), BASE64.encode(public_key), timestamp, ton_data.domain, payload);
 
@@ -243,9 +238,8 @@ mod tests {
 
     #[test]
     fn test_get_result_eip191() {
-        let data =
-            hex::decode("d80c5ffe75fcbac0706c5c5d3b8884ae3588c30065a95075e07fa6ebc24e56433e5030992ef438b1d23437ec8d66d3197b1ad92f85222af1624d8f295907a65800")
-                .expect("Invalid hex string");
+        let data = hex::decode("d80c5ffe75fcbac0706c5c5d3b8884ae3588c30065a95075e07fa6ebc24e56433e5030992ef438b1d23437ec8d66d3197b1ad92f85222af1624d8f295907a65800")
+            .expect("Invalid hex string");
         let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip191,
@@ -405,10 +399,7 @@ mod tests {
 
     #[test]
     fn test_eip712_hyperliquid_approve_agent_hash() {
-        let json_str = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json"
-        ));
+        let json_str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json"));
         let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip712,

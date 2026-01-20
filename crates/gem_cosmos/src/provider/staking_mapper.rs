@@ -34,11 +34,7 @@ pub fn calculate_network_apy_cosmos(inflation: InflationResponse, staking_pool: 
     Some(network_apy * 100.0)
 }
 
-pub fn calculate_network_apy_osmosis(
-    mint_params: OsmosisMintParamsResponse,
-    epoch_provisions: OsmosisEpochProvisionsResponse,
-    staking_pool: StakingPoolResponse,
-) -> Option<f64> {
+pub fn calculate_network_apy_osmosis(mint_params: OsmosisMintParamsResponse, epoch_provisions: OsmosisEpochProvisionsResponse, staking_pool: StakingPoolResponse) -> Option<f64> {
     let epoch_provisions = epoch_provisions.epoch_provisions;
     let staking_distribution = mint_params.params.distribution_proportions.staking;
     let bonded_tokens = staking_pool.pool.bonded_tokens;
@@ -63,11 +59,7 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, ap
         .map(|validator| {
             let commission_rate = validator.commission.commission_rates.rate;
             let is_active = !validator.jailed && validator.status == BOND_STATUS_BONDED;
-            let validator_apr = if is_active {
-                apy.map(|apr| apr - (apr * commission_rate)).unwrap_or(0.0)
-            } else {
-                0.0
-            };
+            let validator_apr = if is_active { apy.map(|apr| apr - (apr * commission_rate)).unwrap_or(0.0) } else { 0.0 };
 
             DelegationValidator {
                 chain: chain.as_chain(),
@@ -145,10 +137,7 @@ pub fn map_staking_delegations(
     for unbonding in unbonding_delegations.unbonding_responses {
         for entry in unbonding.entries {
             let balance = parse_to_biguint(&entry.balance.to_string());
-            let rewards = rewards_map
-                .get(&unbonding.validator_address)
-                .map(|r| parse_to_biguint(&r.to_string()))
-                .unwrap_or_default();
+            let rewards = rewards_map.get(&unbonding.validator_address).map(|r| parse_to_biguint(&r.to_string())).unwrap_or_default();
 
             delegations.push(DelegationBase {
                 asset_id: asset_id.clone(),
