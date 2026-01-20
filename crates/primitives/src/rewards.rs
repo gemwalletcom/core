@@ -36,12 +36,48 @@ impl RewardRedemptionType {
 #[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
+#[derive(Default)]
+pub enum RewardStatus {
+    #[default]
+    Unverified,
+    Pending,
+    Verified,
+    Trusted,
+    Disabled,
+}
+
+impl RewardStatus {
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect()
+    }
+
+    pub fn is_verified(&self) -> bool {
+        match self {
+            Self::Verified | Self::Trusted => true,
+            Self::Unverified | Self::Pending | Self::Disabled => false,
+        }
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            Self::Unverified | Self::Pending | Self::Verified | Self::Trusted => true,
+            Self::Disabled => false,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
+#[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
 pub enum RewardEventType {
     CreateUsername,
+    InvitePending,
     InviteNew,
     InviteExisting,
     Joined,
     Disabled,
+    Redeemed,
 }
 
 impl RewardEventType {
@@ -52,12 +88,32 @@ impl RewardEventType {
     pub fn points(&self) -> i32 {
         match self {
             Self::CreateUsername => 25,
+            Self::InvitePending => 0,
             Self::InviteNew => 100,
             Self::InviteExisting => 10,
             Self::Joined => 10,
             Self::Disabled => 0,
+            Self::Redeemed => 0,
         }
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralCodeActivation {
+    pub swap_completed: bool,
+    pub swap_amount: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralActivation {
+    pub verify_completed: bool,
+    pub verify_after: Option<DateTime<Utc>>,
+    pub swap_completed: bool,
+    pub swap_amount: i32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -69,11 +125,19 @@ pub struct Rewards {
     pub referral_count: i32,
     pub points: i32,
     pub used_referral_code: Option<String>,
+    pub status: RewardStatus,
+    #[typeshare(skip)]
     pub is_enabled: bool,
+    #[typeshare(skip)]
     pub verified: bool,
+    #[typeshare(skip)]
+    #[serde(skip)]
+    pub created_at: chrono::NaiveDateTime,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
     pub referral_allowance: ReferralAllowance,
+    pub referral_code_activation: Option<ReferralCodeActivation>,
+    pub referral_activation: Option<ReferralActivation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -103,6 +167,9 @@ pub struct ReferralCode {
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct RewardEvent {
+    #[typeshare(skip)]
+    #[serde(skip)]
+    pub username: String,
     pub event: RewardEventType,
     pub points: i32,
     pub created_at: DateTime<Utc>,
@@ -119,12 +186,13 @@ pub struct RewardRedemption {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumString, AsRefStr, PartialEq)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumString, EnumIter, AsRefStr, PartialEq)]
+#[typeshare(swift = "Equatable, Hashable, CaseIterable, Sendable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
 pub enum RedemptionStatus {
     Pending,
+    Processing,
     Completed,
     Failed,
 }

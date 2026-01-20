@@ -43,10 +43,7 @@ impl FiatRepository for DatabaseClient {
     }
 
     fn add_fiat_transaction(&mut self, transaction: FiatTransaction) -> Result<usize, DatabaseError> {
-        Ok(FiatStore::add_fiat_transaction(
-            self,
-            crate::models::FiatTransactionRow::from_primitive(transaction),
-        )?)
+        Ok(FiatStore::add_fiat_transaction(self, crate::models::FiatTransactionRow::from_primitive(transaction))?)
     }
 
     fn get_fiat_assets(&mut self) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError> {

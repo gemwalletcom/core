@@ -20,14 +20,8 @@ mod tests {
     fn test_sui_scan_urls() {
         let explorer = new_sui_scan();
 
-        assert_eq!(
-            explorer.get_token_url("token123"),
-            Some("https://suiscan.xyz/mainnet/coin/token123".to_string())
-        );
+        assert_eq!(explorer.get_token_url("token123"), Some("https://suiscan.xyz/mainnet/coin/token123".to_string()));
 
-        assert_eq!(
-            explorer.get_validator_url("val123"),
-            Some("https://suiscan.xyz/mainnet/validator/val123".to_string())
-        );
+        assert_eq!(explorer.get_validator_url("val123"), Some("https://suiscan.xyz/mainnet/validator/val123".to_string()));
     }
 }

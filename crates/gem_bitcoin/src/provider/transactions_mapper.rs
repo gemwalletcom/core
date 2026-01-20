@@ -27,9 +27,7 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
         .iter()
         .filter(|o| o.is_address)
         .map(|output| TransactionUtxoInput {
-            address: Address::new(output.addresses.clone().unwrap_or_default().first().unwrap(), chain)
-                .short()
-                .to_string(),
+            address: Address::new(output.addresses.clone().unwrap_or_default().first().unwrap(), chain).short().to_string(),
             value: output.value.clone(),
         })
         .collect();

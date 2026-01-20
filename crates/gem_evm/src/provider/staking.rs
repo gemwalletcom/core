@@ -42,9 +42,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::{
-        TEST_MONAD_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_monad_test_client, create_smartchain_test_client,
-    };
+    use crate::provider::testkit::{TEST_MONAD_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_monad_test_client, create_smartchain_test_client};
     use chain_traits::ChainStaking;
     use num_bigint::BigUint;
     use primitives::{Chain, DelegationState};

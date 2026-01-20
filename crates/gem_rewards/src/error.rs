@@ -25,7 +25,7 @@ impl Error for RewardsError {}
 #[derive(Debug)]
 pub enum ReferralError {
     Validation(ReferralValidationError),
-    ReferrerLimitReached(String),
+    ReferrerLimitReached(ConfigKey),
     RiskScoreExceeded { score: i64, max_allowed: i64 },
     DuplicateAttempt,
     IpTorNotAllowed,
@@ -38,7 +38,7 @@ impl fmt::Display for ReferralError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ReferralError::Validation(e) => write!(f, "{}", e),
-            ReferralError::ReferrerLimitReached(period) => write!(f, "Referrer {} limit reached", period),
+            ReferralError::ReferrerLimitReached(key) => write!(f, "referrer_limit_reached: {}", key.as_ref()),
             ReferralError::RiskScoreExceeded { score, max_allowed } => write!(f, "risk_score: {} (max allowed: {})", score, max_allowed),
             ReferralError::DuplicateAttempt => write!(f, "duplicate_attempt"),
             ReferralError::IpTorNotAllowed => write!(f, "ip_tor_not_allowed"),
@@ -63,9 +63,7 @@ impl Localize for ReferralError {
             Self::Validation(ReferralValidationError::Database(_)) => localizer.errors_generic(),
             Self::ReferrerLimitReached(_) => localizer.rewards_error_referral_referrer_limit_reached(),
             Self::IpCountryIneligible(country) => localizer.rewards_error_referral_country_ineligible(country),
-            Self::RiskScoreExceeded { .. } | Self::DuplicateAttempt | Self::IpTorNotAllowed | Self::LimitReached(_) => {
-                localizer.rewards_error_referral_limit_reached()
-            }
+            Self::RiskScoreExceeded { .. } | Self::DuplicateAttempt | Self::IpTorNotAllowed | Self::LimitReached(_) => localizer.rewards_error_referral_limit_reached(),
             Self::Database(_) => localizer.errors_generic(),
         }
     }
@@ -94,6 +92,8 @@ pub enum RewardsRedemptionError {
     NotEligible(String),
     DailyLimitReached,
     WeeklyLimitReached,
+    AccountTooNew,
+    CooldownNotElapsed,
     NotEnoughPoints,
     OptionNotAvailable,
     NoUsername,
@@ -105,6 +105,8 @@ impl fmt::Display for RewardsRedemptionError {
             RewardsRedemptionError::NotEligible(msg) => write!(f, "{}", msg),
             RewardsRedemptionError::DailyLimitReached => write!(f, "Daily redemption limit reached"),
             RewardsRedemptionError::WeeklyLimitReached => write!(f, "Weekly redemption limit reached"),
+            RewardsRedemptionError::AccountTooNew => write!(f, "Account too new for redemption"),
+            RewardsRedemptionError::CooldownNotElapsed => write!(f, "Must wait after recent referral activity"),
             RewardsRedemptionError::NotEnoughPoints => write!(f, "Not enough points"),
             RewardsRedemptionError::OptionNotAvailable => write!(f, "Redemption option is no longer available"),
             RewardsRedemptionError::NoUsername => write!(f, "No username found for address"),
@@ -113,3 +115,27 @@ impl fmt::Display for RewardsRedemptionError {
 }
 
 impl Error for RewardsRedemptionError {}
+
+#[derive(Debug)]
+pub enum UsernameError {
+    LimitReached(ConfigKey),
+}
+
+impl fmt::Display for UsernameError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UsernameError::LimitReached(key) => write!(f, "Username creation limit reached: {}", key.as_ref()),
+        }
+    }
+}
+
+impl Error for UsernameError {}
+
+impl Localize for UsernameError {
+    fn localize(&self, locale: &str) -> String {
+        let localizer = LanguageLocalizer::new_with_language(locale);
+        match self {
+            Self::LimitReached(_) => localizer.rewards_error_username_daily_limit_reached(),
+        }
+    }
+}

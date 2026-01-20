@@ -1,6 +1,10 @@
 use std::error::Error;
 
-use super::model::{AbuseIPDBData, AbuseIPDBResponse};
+use async_trait::async_trait;
+
+use super::model::AbuseIPDBResponse;
+use crate::ip_check_provider::IpCheckProvider;
+use crate::model::IpCheckResult;
 
 #[derive(Clone)]
 pub struct AbuseIPDBClient {
@@ -17,8 +21,15 @@ impl AbuseIPDBClient {
             api_key,
         }
     }
+}
 
-    pub async fn check_ip(&self, ip_address: &str) -> Result<AbuseIPDBData, Box<dyn Error + Send + Sync>> {
+#[async_trait]
+impl IpCheckProvider for AbuseIPDBClient {
+    fn name(&self) -> &'static str {
+        "abuseipdb"
+    }
+
+    async fn check_ip(&self, ip_address: &str) -> Result<IpCheckResult, Box<dyn Error + Send + Sync>> {
         let url = format!("{}/api/v2/check", self.url);
         let response = self
             .client
@@ -31,6 +42,6 @@ impl AbuseIPDBClient {
             .json::<AbuseIPDBResponse>()
             .await?;
 
-        Ok(response.data)
+        Ok(response.data.as_ip_check_result())
     }
 }

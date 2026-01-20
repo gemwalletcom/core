@@ -2,8 +2,8 @@ use ::signer::Signer;
 use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType,
-    PerpetualType, SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
+    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualType,
+    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -12,13 +12,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::{
     core::{
         actions::{
-            ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, Cancel, CancelOrder, PlaceOrder, SetReferrer, SpotSend, TokenDelegate,
-            UpdateLeverage, WithdrawalRequest, make_market_order, make_position_tp_sl,
+            ApproveAgent, ApproveBuilderFee, Builder, CDeposit, CWithdraw, Cancel, CancelOrder, PlaceOrder, SetReferrer, SpotSend, TokenDelegate, UpdateLeverage,
+            WithdrawalRequest, make_market_order, make_position_tp_sl,
         },
         hypercore::{
-            approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data,
-            place_order_typed_data, send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, update_leverage_typed_data,
-            withdrawal_request_typed_data,
+            approve_agent_typed_data, approve_builder_fee_typed_data, c_deposit_typed_data, c_withdraw_typed_data, cancel_order_typed_data, place_order_typed_data,
+            send_spot_token_to_address_typed_data, set_referrer_typed_data, token_delegate_typed_data, update_leverage_typed_data, withdrawal_request_typed_data,
         },
     },
     is_spot_swap,
@@ -42,12 +41,7 @@ impl HyperCoreSigner {
         self.sign_spot_send(&amount, &input.destination_address, NATIVE_SPOT_TOKEN, private_key)
     }
 
-    fn sign_approval_transactions(
-        &self,
-        order: &HyperliquidOrder,
-        private_key: &[u8],
-        timestamp_incrementer: &mut NumberIncrementer,
-    ) -> SignerResult<Vec<String>> {
+    fn sign_approval_transactions(&self, order: &HyperliquidOrder, private_key: &[u8], timestamp_incrementer: &mut NumberIncrementer) -> SignerResult<Vec<String>> {
         let mut transactions = Vec::new();
 
         if order.approve_referral_required {
@@ -145,8 +139,7 @@ impl HyperCoreSigner {
             .get("message")
             .ok_or_else(|| SignerError::InvalidInput("Typed data missing message field".to_string()))?;
 
-        let timestamp = serde_json::from_value::<TimestampField>(message.clone())
-            .map_err(|err| SignerError::InvalidInput(format!("Failed to parse time or nonce: {err}")))?;
+        let timestamp = serde_json::from_value::<TimestampField>(message.clone()).map_err(|err| SignerError::InvalidInput(format!("Failed to parse time or nonce: {err}")))?;
         let action = serde_json::to_string(message).map_err(|err| SignerError::InvalidInput(format!("Failed to serialize action payload: {err}")))?;
 
         self.sign_action(typed_data_json, &action, timestamp.value, private_key)
@@ -191,13 +184,7 @@ impl HyperCoreSigner {
     }
 
     fn sign_update_leverage(&self, update_leverage: UpdateLeverage, nonce: u64, private_key: &[u8]) -> SignerResult<String> {
-        self.sign_serialized_action(
-            update_leverage,
-            nonce,
-            private_key,
-            |value| update_leverage_typed_data(value, nonce),
-            "update leverage",
-        )
+        self.sign_serialized_action(update_leverage, nonce, private_key, |value| update_leverage_typed_data(value, nonce), "update leverage")
     }
 
     fn sign_market_message(

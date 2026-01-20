@@ -33,10 +33,7 @@ impl ChainConfig {
                 .as_ref()
                 .is_none_or(|override_method| Some(override_method.as_str()) == rpc_method);
 
-            let path_matches = override_config
-                .path
-                .as_ref()
-                .is_none_or(|override_path| Some(override_path.as_str()) == request_path);
+            let path_matches = override_config.path.as_ref().is_none_or(|override_path| Some(override_path.as_str()) == request_path);
 
             if rpc_matches && path_matches {
                 return Url {
@@ -137,10 +134,7 @@ mod tests {
     fn resolve_url_without_override() {
         let chain_config = make_chain_config(None, None);
         let base_url = make_url("https://example.com/rpc");
-        assert_eq!(
-            chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url,
-            "https://example.com/rpc"
-        );
+        assert_eq!(chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url, "https://example.com/rpc");
     }
 
     #[test]
@@ -151,10 +145,7 @@ mod tests {
             url: "https://tx-relay.example.com".to_string(),
         }]);
         let base_url = make_url("https://example.com/rpc");
-        assert_eq!(
-            chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url,
-            "https://tx-relay.example.com"
-        );
+        assert_eq!(chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url, "https://tx-relay.example.com");
     }
 
     #[test]
@@ -179,10 +170,7 @@ mod tests {
             url: "https://tx-relay.example.com".to_string(),
         }]);
         let base_url = make_url("https://example.com/rpc");
-        assert_eq!(
-            chain_config.resolve_url(&base_url, Some("eth_blockNumber"), None).url,
-            "https://example.com/rpc"
-        );
+        assert_eq!(chain_config.resolve_url(&base_url, Some("eth_blockNumber"), None).url, "https://example.com/rpc");
     }
 
     #[test]
@@ -207,10 +195,7 @@ mod tests {
             url: "https://api.example.com/v2/block".to_string(),
         }]);
         let base_url = make_url("https://example.com");
-        assert_eq!(
-            chain_config.resolve_url(&base_url, None, Some("/api/v1/block")).url,
-            "https://api.example.com/v2/block"
-        );
+        assert_eq!(chain_config.resolve_url(&base_url, None, Some("/api/v1/block")).url, "https://api.example.com/v2/block");
     }
 
     #[test]

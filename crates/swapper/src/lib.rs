@@ -9,7 +9,6 @@ pub mod testkit;
 
 pub mod across;
 pub mod asset;
-pub mod cetus;
 pub mod chainflip;
 pub mod client_factory;
 pub mod config;
@@ -18,7 +17,6 @@ pub mod hyperliquid;
 pub mod jupiter;
 pub mod models;
 pub mod near_intents;
-pub mod pancakeswap_aptos;
 pub mod permit2_data;
 pub mod proxy;
 pub mod slippage;

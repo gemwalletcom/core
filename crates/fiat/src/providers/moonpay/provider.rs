@@ -10,8 +10,8 @@ use streamer::FiatWebhook;
 
 use super::{client::MoonPayClient, mapper::map_order};
 use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
-    FiatSellQuote, FiatTransaction,
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
+    FiatTransaction,
 };
 
 #[async_trait]
@@ -54,12 +54,7 @@ impl FiatProvider for MoonPayClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let assets = self
-            .get_assets()
-            .await?
-            .into_iter()
-            .flat_map(Self::map_asset)
-            .collect::<Vec<FiatProviderAsset>>();
+        let assets = self.get_assets().await?.into_iter().flat_map(Self::map_asset).collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
     }
 
@@ -91,11 +86,7 @@ impl FiatProvider for MoonPayClient {
             .get_buy_quote(request_map.asset_symbol.symbol.to_lowercase(), request.currency.to_lowercase(), request.amount)
             .await?;
 
-        Ok(FiatQuoteResponse::new(
-            MoonPayClient::generate_quote_id(),
-            request.amount,
-            quote.quote_currency_amount,
-        ))
+        Ok(FiatQuoteResponse::new(MoonPayClient::generate_quote_id(), request.amount, quote.quote_currency_amount))
     }
 
     async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {

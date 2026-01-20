@@ -53,11 +53,7 @@ impl ValidatorScanner {
         Ok(())
     }
 
-    async fn update_validators_from_static_assets_for_chain(
-        &self,
-        chain: Chain,
-        static_assets_client: &StaticAssetsClient,
-    ) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn update_validators_from_static_assets_for_chain(&self, chain: Chain, static_assets_client: &StaticAssetsClient) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let static_validators = static_assets_client.get_validators(chain).await?;
         let validators: Vec<_> = static_validators.into_iter().map(|v| StakeValidator::new(v.id, v.name)).collect();
         let addresses: Vec<_> = validators.into_iter().filter_map(|v| v.as_scan_address(chain)).collect();

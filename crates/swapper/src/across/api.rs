@@ -55,12 +55,7 @@ impl AcrossApi {
         let deposit_log = receipt
             .logs
             .iter()
-            .find(|log| {
-                log.topics
-                    .first()
-                    .map(|topic| topic.eq_ignore_ascii_case(FUNDS_DEPOSITED_TOPIC))
-                    .unwrap_or(false)
-            })
+            .find(|log| log.topics.first().map(|topic| topic.eq_ignore_ascii_case(FUNDS_DEPOSITED_TOPIC)).unwrap_or(false))
             .ok_or_else(|| SwapperError::TransactionError("FundsDeposited event not found".into()))?;
 
         if deposit_log.topics.len() < 3 {

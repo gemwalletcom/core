@@ -5,8 +5,7 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput,
+    FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
 };
 
 use crate::rpc::client::AlgorandClient;

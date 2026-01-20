@@ -182,11 +182,7 @@ mod tests {
     #[test]
     fn test_calculate_transaction_fee_cross_chain_swap_without_token_creation() {
         let gas_price_type = GasPriceType::eip1559(BigInt::from(5000u64), BigInt::from(15000u64));
-        let input_type = TransactionInputType::Swap(
-            Asset::mock_spl_token(),
-            Asset::mock_ethereum_usdc(),
-            SwapData::mock_with_provider(SwapProvider::Jupiter),
-        );
+        let input_type = TransactionInputType::Swap(Asset::mock_spl_token(), Asset::mock_ethereum_usdc(), SwapData::mock_with_provider(SwapProvider::Jupiter));
 
         let fee = calculate_transaction_fee(&input_type, &gas_price_type, None);
 

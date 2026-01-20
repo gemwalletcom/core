@@ -1,7 +1,7 @@
 use base64::{Engine as _, engine::general_purpose};
 use bcs;
 use std::error::Error;
-use sui_transaction_builder::unresolved::Input;
+use sui_transaction_builder::ObjectInput;
 use sui_types::Transaction;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -19,8 +19,8 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn to_input(&self) -> Input {
-        Input::owned(self.object_id.parse().unwrap(), self.version, self.digest.parse().unwrap())
+    pub fn to_input(&self) -> ObjectInput {
+        ObjectInput::owned(self.object_id.parse().unwrap(), self.version, self.digest.parse().unwrap())
     }
 }
 
@@ -77,10 +77,7 @@ impl TxOutput {
     pub fn from_tx(tx_data: &Transaction) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let digest = tx_data.signing_digest();
         let tx_data = bcs::to_bytes(tx_data)?;
-        Ok(Self {
-            tx_data,
-            hash: digest.to_vec(),
-        })
+        Ok(Self { tx_data, hash: digest.to_vec() })
     }
 
     pub fn base64_encoded(&self) -> String {

@@ -4,9 +4,9 @@ use primitives::{TransactionChange, TransactionState, TransactionUpdate};
 
 pub fn map_transaction_status(response: &BroadcastResult) -> TransactionUpdate {
     let state = match response.final_execution_status.as_str() {
-        crate::constants::TRANSACTION_STATUS_FINAL
-        | crate::constants::TRANSACTION_STATUS_EXECUTED
-        | crate::constants::TRANSACTION_STATUS_EXECUTED_OPTIMISTIC => TransactionState::Confirmed,
+        crate::constants::TRANSACTION_STATUS_FINAL | crate::constants::TRANSACTION_STATUS_EXECUTED | crate::constants::TRANSACTION_STATUS_EXECUTED_OPTIMISTIC => {
+            TransactionState::Confirmed
+        }
         _ => TransactionState::Failed,
     };
 

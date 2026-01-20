@@ -58,7 +58,7 @@ impl EvmTransferProvider {
         let client = self.get_client(evm_chain)?;
 
         let fee_rates = client.get_transaction_fee_rates(TransactionInputType::Transfer(asset.clone())).await?;
-        let fee_rate = fee_rates.iter().find(|r| r.priority == FeePriority::Normal).ok_or("No normal fee rate")?;
+        let fee_rate = fee_rates.iter().find(|r| r.priority == FeePriority::Fast).ok_or("No fast fee rate")?;
 
         let preload_input = TransactionPreloadInput {
             input_type: TransactionInputType::Transfer(asset.clone()),

@@ -42,11 +42,7 @@ impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer
             Some(balance.balance.available.to_string()),
         );
 
-        let _ = self
-            .database
-            .client()?
-            .assets_addresses()
-            .add_assets_addresses(vec![asset_address.as_primitive()])?;
+        let _ = self.database.client()?.assets_addresses().add_assets_addresses(vec![asset_address.as_primitive()])?;
 
         Ok(balance.balance.available.to_string())
     }

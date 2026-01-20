@@ -3,8 +3,8 @@ use typeshare::typeshare;
 
 use crate::PlatformStore;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigResponse {
     pub releases: Vec<Release>,
@@ -12,15 +12,15 @@ pub struct ConfigResponse {
     pub swap: SwapConfig,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct SwapConfig {
     pub enabled_providers: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct Release {
     pub version: String,
@@ -30,16 +30,12 @@ pub struct Release {
 
 impl Release {
     pub fn new(store: PlatformStore, version: String, upgrade_required: bool) -> Self {
-        Self {
-            version,
-            store,
-            upgrade_required,
-        }
+        Self { version, store, upgrade_required }
     }
 }
 
-#[typeshare(swift = "Sendable")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigVersions {
     pub fiat_on_ramp_assets: i32,

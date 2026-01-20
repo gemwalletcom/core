@@ -38,6 +38,7 @@ pub struct EIP712Field {
 pub enum EIP712TypedValue {
     Address { value: String },
     Uint256 { value: String },
+    Int256 { value: String },
     String { value: String },
     Bool { value: bool },
     Bytes { value: Vec<u8> },
@@ -127,12 +128,21 @@ pub fn parse_eip712_json(value: &Value) -> Result<EIP712Message, String> {
     })
 }
 
+fn parse_numeric_value_as_string(json_value: &Value, type_name: &str) -> Result<String, String> {
+    match json_value {
+        Value::Number(n) => Ok(n.to_string()),
+        Value::String(s) => Ok(s.clone()),
+        _ => {
+            let type_kind = if type_name.starts_with("int") { "int" } else { "uint" };
+            Err(format!("Expected number or string for {type_kind} type '{type_name}', got: {json_value:?}"))
+        }
+    }
+}
+
 pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<String, Vec<EIP712Type>>) -> Result<EIP712TypedValue, String> {
     // 1. Handle Arrays
     if let Some(base_type) = type_name.strip_suffix("[]") {
-        let items_json = json_value
-            .as_array()
-            .ok_or_else(|| format!("Expected array for type '{type_name}', got: {json_value:?}"))?;
+        let items_json = json_value.as_array().ok_or_else(|| format!("Expected array for type '{type_name}', got: {json_value:?}"))?;
         let mut items = Vec::with_capacity(items_json.len());
         for item_json in items_json {
             items.push(parse_value(base_type, item_json, all_types)?);
@@ -146,47 +156,38 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
                 Ok(EIP712TypedValue::Address { value: s.to_string() })
             }
             "string" => {
-                let s = json_value
-                    .as_str()
-                    .ok_or_else(|| format!("Expected string for string type, got: {json_value:?}"))?;
+                let s = json_value.as_str().ok_or_else(|| format!("Expected string for string type, got: {json_value:?}"))?;
                 Ok(EIP712TypedValue::String { value: s.to_string() })
             }
             "bool" => {
-                let b = json_value
-                    .as_bool()
-                    .ok_or_else(|| format!("Expected boolean for bool type, got: {json_value:?}"))?;
+                let b = json_value.as_bool().ok_or_else(|| format!("Expected boolean for bool type, got: {json_value:?}"))?;
                 Ok(EIP712TypedValue::Bool { value: b })
             }
             "bytes" => {
                 // Dynamic bytes
-                let s = json_value
-                    .as_str()
-                    .ok_or_else(|| format!("Expected hex string for bytes type, got: {json_value:?}"))?;
+                let s = json_value.as_str().ok_or_else(|| format!("Expected hex string for bytes type, got: {json_value:?}"))?;
                 let bytes_vec = hex::decode(s.strip_prefix("0x").unwrap_or(s)).map_err(|e| format!("Invalid hex string for bytes type: {s}, error: {e}"))?;
                 Ok(EIP712TypedValue::Bytes { value: bytes_vec })
             }
-            // Wildcard for uint<N>, bytes<N>, and structs
+            // Wildcard for uint<N>, int<N>, bytes<N>, and structs
             other_type_name => {
                 if other_type_name.starts_with("uint") {
-                    let value_str = match json_value {
-                        Value::Number(n) => n.to_string(),
-                        Value::String(s) => s.clone(),
-                        _ => return Err(format!("Expected number or string for uint type '{other_type_name}', got: {json_value:?}")),
-                    };
+                    let value_str = parse_numeric_value_as_string(json_value, other_type_name)?;
                     Ok(EIP712TypedValue::Uint256 { value: value_str })
+                } else if other_type_name.starts_with("int") {
+                    let value_str = parse_numeric_value_as_string(json_value, other_type_name)?;
+                    Ok(EIP712TypedValue::Int256 { value: value_str })
                 } else if other_type_name.starts_with("bytes") {
                     // Fixed-size bytes<N>
                     let s = json_value
                         .as_str()
                         .ok_or_else(|| format!("Expected hex string for bytes type '{other_type_name}', got: {json_value:?}"))?;
-                    let bytes_vec = hex::decode(s.strip_prefix("0x").unwrap_or(s))
-                        .map_err(|e| format!("Invalid hex string for bytes type '{other_type_name}': {s}, error: {e}"))?;
+                    let bytes_vec =
+                        hex::decode(s.strip_prefix("0x").unwrap_or(s)).map_err(|e| format!("Invalid hex string for bytes type '{other_type_name}': {s}, error: {e}"))?;
                     Ok(EIP712TypedValue::Bytes { value: bytes_vec })
                 } else {
                     // Assume it's a struct type defined in 'all_types'
-                    let defined_fields = all_types
-                        .get(other_type_name)
-                        .ok_or_else(|| format!("Unknown or unsupported type '{other_type_name}'"))?;
+                    let defined_fields = all_types.get(other_type_name).ok_or_else(|| format!("Unknown or unsupported type '{other_type_name}'"))?;
 
                     let message_obj = json_value
                         .as_object()
@@ -312,5 +313,42 @@ mod tests {
         use crate::testkit::eip712_mock::mock_eip712_json;
         let result = validate_eip712_chain_id(&mock_eip712_json(137), 137);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_int8_type_parsing() {
+        let json_str = r#"{
+            "domain": {
+                "name": "Test",
+                "chainId": 1
+            },
+            "primaryType": "AccountRegistration",
+            "types": {
+                "AccountRegistration": [
+                    {
+                        "name": "accountIndex",
+                        "type": "int8"
+                    }
+                ]
+            },
+            "message": {
+                "accountIndex": 1
+            }
+        }"#;
+
+        let value: serde_json::Value = serde_json::from_str(json_str).unwrap();
+        let result = parse_eip712_json(&value);
+
+        assert!(result.is_ok(), "Parsing failed: {:?}", result.err());
+
+        let message = result.unwrap();
+        assert_eq!(message.primary_type, "AccountRegistration");
+        assert_eq!(message.message.len(), 1);
+
+        assert_eq!(message.message[0].name, "accountIndex");
+        match &message.message[0].value {
+            EIP712TypedValue::Int256 { value } => assert_eq!(value, "1"),
+            _ => panic!("Expected Int256 type for accountIndex field"),
+        }
     }
 }

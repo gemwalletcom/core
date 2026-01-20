@@ -11,7 +11,7 @@ rpc = [
     "dep:chain_traits",
     "dep:chain_primitives",
     "dep:gem_client",
-    "dep:futures"
+    "dep:futures",
 ]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
@@ -22,6 +22,11 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
 num-bigint = { workspace = true }
+bcs = { workspace = true }
+hex = { workspace = true }
+num-traits = { workspace = true }
+signer = { path = "../signer" }
+gem_hash = { path = "../gem_hash" }
 
 # Dependencies for RPC client & mapper
 async-trait = { workspace = true, optional = true }
@@ -35,3 +40,6 @@ futures = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }
+ed25519-dalek = { version = "2.2.0", default-features = false, features = [
+    "std",
+] }

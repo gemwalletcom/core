@@ -1,1 +1,0 @@
-drop table subscriptions_addresses_exclude;

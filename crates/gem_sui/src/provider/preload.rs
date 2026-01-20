@@ -1,6 +1,5 @@
 use std::{collections::HashMap, error::Error};
 
-use crate::{SUI_COIN_TYPE, models::SuiObject};
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
@@ -9,10 +8,13 @@ use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::{
-    FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput, transaction_load_metadata::SuiCoin,
+    FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
 };
 
+use crate::{
+    SUI_COIN_TYPE,
+    models::{SuiCoin, SuiObject},
+};
 use crate::{
     provider::preload_mapper::{GAS_BUDGET, map_transaction_data, map_transaction_rate_rates},
     rpc::client::SuiClient,
@@ -81,8 +83,7 @@ impl<C: Client + Clone> SuiClient<C> {
             TransactionInputType::Stake(_, stake_type) => match stake_type {
                 StakeType::Stake(_) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new(), Vec::new())),
                 StakeType::Unstake(delegation) => {
-                    let (gas_coins, staked_object) =
-                        futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_object(delegation.base.delegation_id.clone()))?;
+                    let (gas_coins, staked_object) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_object(delegation.base.delegation_id.clone()))?;
                     Ok((gas_coins, Vec::new(), vec![staked_object]))
                 }
                 _ => Err("Unsupported stake type for Sui".into()),
@@ -106,9 +107,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_sui_get_transaction_fee_rates() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_sui_test_client();
-        let rates = client
-            .get_transaction_fee_rates(TransactionInputType::Transfer(Asset::from_chain(Chain::Sui)))
-            .await?;
+        let rates = client.get_transaction_fee_rates(TransactionInputType::Transfer(Asset::from_chain(Chain::Sui))).await?;
 
         println!("Sui transaction fee rates: {:?}", rates);
 

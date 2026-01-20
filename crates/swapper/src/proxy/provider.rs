@@ -7,8 +7,7 @@ use super::{
     mayan::{MayanClientStatus, MayanExplorer, wormhole_chain_id_to_chain},
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::evm::check_approval_erc20,
     asset::*,
@@ -106,12 +105,11 @@ impl ProxyProvider<RpcClient> {
     }
 
     pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(
-            SwapperProvider::CetusAggregator,
-            "cetus",
-            vec![SwapperChainAsset::All(Chain::Sui)],
-            rpc_provider,
-        )
+        Self::new_with_path(SwapperProvider::CetusAggregator, "cetus", vec![SwapperChainAsset::All(Chain::Sui)], rpc_provider)
+    }
+
+    pub fn new_panora(rpc_provider: Arc<dyn RpcProvider>) -> Self {
+        Self::new_with_path(SwapperProvider::Panora, "panora", vec![SwapperChainAsset::All(Chain::Aptos)], rpc_provider)
     }
 
     pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> Self {
@@ -141,14 +139,8 @@ impl ProxyProvider<RpcClient> {
                 ],
             ),
             SwapperChainAsset::Assets(Chain::Sui, vec![SUI_USDC.id.clone(), SUI_SBUSDT.id.clone(), SUI_WAL.id.clone()]),
-            SwapperChainAsset::Assets(
-                Chain::SmartChain,
-                vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone(), SMARTCHAIN_WBTC.id.clone()],
-            ),
-            SwapperChainAsset::Assets(
-                Chain::Base,
-                vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone(), BASE_WBTC.id.clone(), BASE_USDS.id.clone()],
-            ),
+            SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone(), SMARTCHAIN_WBTC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone(), BASE_WBTC.id.clone(), BASE_USDS.id.clone()]),
             SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_USDC.id.clone(), POLYGON_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::AvalancheC, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
             SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),
@@ -362,6 +354,70 @@ mod swap_integration_tests {
         assert_eq!(result.status, SwapStatus::Completed);
         assert_eq!(result.to_chain, Some(Chain::Sui));
         assert_eq!(result.to_tx_hash, Some("GLs1TUZ6jQdWBBDHVBYFumaBMf6kVNcb2NxQnapXqJUL".to_string()));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_proxy_error_object_deserialization() {
+        let rpc_provider = Arc::new(NativeProvider::default());
+        let provider = ProxyProvider::new_mayan(rpc_provider);
+
+        let options = Options::new_with_slippage(200.into());
+
+        // Use a very small amount to trigger an error from the API
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
+            value: "1".to_string(), // 1 wei - too small
+            mode: SwapperMode::ExactIn,
+            options,
+        };
+
+        let result = provider.fetch_quote(&request).await;
+
+        // The API should return an error object which deserializes into SwapperError
+        assert!(result.is_err(), "Expected error for tiny swap amount");
+        let err = result.unwrap_err();
+        println!("Received v=1 error object: {:?}", err);
+
+        // Verify the error is a typed SwapperError (not a generic HTTP error)
+        let is_typed_error = matches!(
+            err,
+            SwapperError::InputAmountError { .. } | SwapperError::NoQuoteAvailable | SwapperError::NotSupportedAsset | SwapperError::ComputeQuoteError(_)
+        );
+        assert!(is_typed_error, "Expected a typed SwapperError, got: {:?}", err);
+    }
+
+    #[tokio::test]
+    async fn test_mayan_provider_fetch_quote_and_data() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::default());
+        let provider = ProxyProvider::new_mayan(rpc_provider);
+
+        let options = Options::new_with_slippage(200.into());
+
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
+            value: "50000000000000000".to_string(), // 0.05 ETH
+            mode: SwapperMode::ExactIn,
+            options,
+        };
+
+        // Fetch quote
+        let quote = provider.fetch_quote(&request).await?;
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        println!("Quote: from={} to={}", quote.from_value, quote.to_value);
+
+        // Fetch quote data
+        let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        assert!(!quote_data.to.is_empty(), "Expected non-empty 'to' address");
+        assert!(!quote_data.data.is_empty(), "Expected non-empty calldata");
+        println!("Quote data: to={}, value={}", quote_data.to, quote_data.value);
 
         Ok(())
     }

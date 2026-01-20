@@ -5,13 +5,10 @@ use async_trait::async_trait;
 use gem_client::Client;
 use primitives::{Chain, swap::ApprovalData};
 
-use super::{
-    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData,
-    quote_data_mapper,
-};
+use super::{QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper};
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError,
-    SwapperQuoteData, approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
+    approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
 };
 
 const ZERO_HASH: &str = "0000000000000000000000000000000000000000000000000000000000000000";
@@ -42,12 +39,7 @@ where
             .map(|chain| match chain {
                 Chain::Ethereum => SwapperChainAsset::Assets(
                     chain,
-                    vec![
-                        ETHEREUM_USDT.id.clone(),
-                        ETHEREUM_USDC.id.clone(),
-                        ETHEREUM_DAI.id.clone(),
-                        ETHEREUM_WBTC.id.clone(),
-                    ],
+                    vec![ETHEREUM_USDT.id.clone(), ETHEREUM_USDC.id.clone(), ETHEREUM_DAI.id.clone(), ETHEREUM_WBTC.id.clone()],
                 ),
                 Chain::Thorchain => SwapperChainAsset::Assets(chain, vec![THORCHAIN_TCY.id.clone()]),
                 Chain::SmartChain => SwapperChainAsset::Assets(chain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone()]),
@@ -165,14 +157,7 @@ where
             }
         };
 
-        let data = quote_data_mapper::map_quote_data(
-            &from_asset,
-            &route_data,
-            quote.request.from_asset.asset_id().token_id.clone(),
-            value,
-            memo,
-            approval,
-        );
+        let data = quote_data_mapper::map_quote_data(&from_asset, &route_data, quote.request.from_asset.asset_id().token_id.clone(), value, memo, approval);
 
         Ok(data)
     }
@@ -315,10 +300,7 @@ mod swap_integration_tests {
         assert_eq!(result.from_tx_hash, tx_hash);
         assert_eq!(result.status, SwapStatus::Completed);
         assert_eq!(result.to_chain, Some(Chain::Ethereum));
-        assert_eq!(
-            result.to_tx_hash,
-            Some("DC56C32556D2E518F67594B6A5F5BCB777484C0C3CF8940F5CA2E1B2DDC182E9".to_string())
-        );
+        assert_eq!(result.to_tx_hash, Some("DC56C32556D2E518F67594B6A5F5BCB777484C0C3CF8940F5CA2E1B2DDC182E9".to_string()));
 
         Ok(())
     }

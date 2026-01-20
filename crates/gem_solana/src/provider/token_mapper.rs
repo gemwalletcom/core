@@ -4,20 +4,11 @@ use crate::{
 };
 use primitives::{Asset, AssetId, AssetType, Chain};
 
-pub fn map_token_data_metaplex(
-    chain: Chain,
-    token_id: String,
-    token_info: &TokenInfo,
-    meta: &Metadata,
-) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
+pub fn map_token_data_metaplex(chain: Chain, token_id: String, token_info: &TokenInfo, meta: &Metadata) -> Result<Asset, Box<dyn std::error::Error + Send + Sync>> {
     let name = meta.data.name.trim_matches(char::from(0)).to_string();
     let symbol = meta.data.symbol.trim_matches(char::from(0)).to_string();
     let decimals: i32 = token_info.decimals;
-    let asset_type = if token_info.extensions.is_some() {
-        AssetType::SPL2022
-    } else {
-        AssetType::SPL
-    };
+    let asset_type = if token_info.extensions.is_some() { AssetType::SPL2022 } else { AssetType::SPL };
 
     Ok(Asset::new(AssetId::from_token(chain, &token_id), name, symbol, decimals, asset_type))
 }

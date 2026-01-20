@@ -30,11 +30,7 @@ impl<C: Client> ChainToken for StellarClient<C> {
                 .find(|a| a.asset_code == sym)
                 .ok_or_else(|| format!("Asset not found: {}", token_id))?
         } else {
-            assets
-                ._embedded
-                .records
-                .first()
-                .ok_or_else(|| format!("No assets found for issuer: {}", issuer))?
+            assets._embedded.records.first().ok_or_else(|| format!("No assets found for issuer: {}", issuer))?
         };
         let symbol = asset.asset_code.clone();
         let token_id = AssetId::sub_token_id(&[issuer.to_string(), symbol.clone()]);

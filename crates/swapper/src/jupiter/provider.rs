@@ -4,8 +4,8 @@ use super::{
     model::{DynamicSlippage, QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
 };
 use crate::{
-    FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider,
-    SwapperQuoteData, SwapperSlippageMode, error::INVALID_ADDRESS,
+    FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperQuoteData,
+    SwapperSlippageMode, error::INVALID_ADDRESS,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -46,9 +46,7 @@ where
     }
 
     pub fn get_asset_address(&self, asset_id: &str) -> Result<String, SwapperError> {
-        get_pubkey_by_str(asset_id)
-            .map(|x| x.to_string())
-            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("{}: {asset_id}", INVALID_ADDRESS)))
+        get_pubkey_by_str(asset_id).map(|x| x.to_string()).ok_or_else(|| SwapperError::ComputeQuoteError(format!("{}: {asset_id}", INVALID_ADDRESS)))
     }
 
     fn get_fee_mint(&self, mode: &SwapperMode, input: &str, output: &str) -> String {
@@ -73,14 +71,10 @@ where
 
     async fn fetch_token_program(&self, mint: &str) -> Result<String, SwapperError> {
         let rpc_call = SolanaRpc::GetAccountInfo(mint.to_string());
-        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> =
-            self.rpc_client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
+        let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = self.rpc_client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
         let value = rpc_result.take()?;
 
-        value
-            .value
-            .map(|x| x.owner)
-            .ok_or_else(|| SwapperError::ComputeQuoteError("fetch_token_program error".to_string()))
+        value.value.map(|x| x.owner).ok_or_else(|| SwapperError::ComputeQuoteError("fetch_token_program error".to_string()))
     }
 
     async fn fetch_fee_account(&self, mode: &SwapperMode, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
@@ -177,9 +171,7 @@ where
         let output_mint = route.output.token_id.clone().unwrap();
 
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let fee_account = self
-            .fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint)
-            .await?;
+        let fee_account = self.fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint).await?;
 
         let dynamic_slippage = match quote.request.options.slippage.mode {
             SwapperSlippageMode::Auto => Some(DynamicSlippage {
@@ -244,10 +236,7 @@ mod swap_integration_tests {
         assert_eq!(quote.data.routes.len(), 1);
 
         let route = &quote.data.routes[0];
-        assert_eq!(
-            route.input,
-            AssetId::from(Chain::Solana, Some("So11111111111111111111111111111111111111112".to_string()))
-        );
+        assert_eq!(route.input, AssetId::from(Chain::Solana, Some("So11111111111111111111111111111111111111112".to_string())));
         assert_eq!(route.output, AssetId::from(Chain::Solana, Some(USDC_TOKEN_MINT.to_string())));
         assert!(!route.route_data.is_empty());
 

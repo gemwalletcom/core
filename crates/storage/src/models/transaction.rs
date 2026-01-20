@@ -2,8 +2,10 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetId, Chain, Transaction, TransactionDirection, TransactionId, TransactionState, TransactionType, TransactionUtxoInput};
+use primitives::{AssetId, Chain, Transaction, TransactionDirection, TransactionId, TransactionUtxoInput};
 use serde::{Deserialize, Serialize};
+
+use crate::sql_types::{TransactionState, TransactionType};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::transactions)]
@@ -15,8 +17,8 @@ pub struct TransactionRow {
     pub from_address: Option<String>,
     pub to_address: Option<String>,
     pub memo: Option<String>,
-    pub state: String,
-    pub kind: String,
+    pub state: TransactionState,
+    pub kind: TransactionType,
     pub value: Option<String>,
     pub asset_id: String,
     pub fee: Option<String>,
@@ -36,8 +38,8 @@ pub struct NewTransactionRow {
     pub from_address: Option<String>,
     pub to_address: Option<String>,
     pub memo: Option<String>,
-    pub state: String,
-    pub kind: String,
+    pub state: TransactionState,
+    pub kind: TransactionType,
     pub value: Option<String>,
     pub asset_id: String,
     pub fee: Option<String>,
@@ -68,7 +70,7 @@ impl TransactionRow {
         } else {
             TransactionDirection::SelfTransfer
         };
-        let transaction_type = TransactionType::from_str(self.kind.as_str()).ok().unwrap();
+        let transaction_type = self.kind.0.clone();
 
         Transaction {
             id: transaction_id.clone(),
@@ -78,7 +80,7 @@ impl TransactionRow {
             to: to_address.clone(),
             contract: None,
             transaction_type,
-            state: TransactionState::new(self.state.as_str()).unwrap(),
+            state: self.state.0,
             block_number: None,
             sequence: None,
             fee: self.fee.clone().unwrap(),
@@ -129,26 +131,11 @@ impl NewTransactionRow {
             fee_asset_id: transaction.fee_asset_id.to_string(),
             from_address,
             to_address,
-            kind: transaction.transaction_type.as_ref().to_string(),
-            state: transaction.state.to_string(),
+            kind: transaction.transaction_type.into(),
+            state: transaction.state.into(),
             utxo_inputs,
             utxo_outputs,
             metadata,
-        }
-    }
-}
-
-#[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
-#[diesel(table_name = crate::schema::transactions_types)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct TransactionTypeRow {
-    pub id: String,
-}
-
-impl TransactionTypeRow {
-    pub fn from_primitive(primitive: TransactionType) -> Self {
-        Self {
-            id: primitive.as_ref().to_owned(),
         }
     }
 }

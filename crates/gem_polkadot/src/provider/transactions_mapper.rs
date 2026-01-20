@@ -15,12 +15,7 @@ pub fn map_transactions(chain: Chain, block: Block) -> Vec<Transaction> {
     }
     .expect("Timestamp not found");
 
-    block
-        .extrinsics
-        .iter()
-        .flat_map(|x| map_transaction(chain, x.clone(), created_at))
-        .flatten()
-        .collect()
+    block.extrinsics.iter().flat_map(|x| map_transaction(chain, x.clone(), created_at)).flatten().collect()
 }
 
 pub fn map_transaction(chain: Chain, transaction: Extrinsic, created_at: DateTime<Utc>) -> Vec<Option<Transaction>> {
@@ -59,11 +54,7 @@ fn map_transfer(chain: Chain, transaction: Extrinsic, method: String, to_address
     }
 
     let from_address = transaction.signature?.signer.id.clone();
-    let state = if transaction.success {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Failed
-    };
+    let state = if transaction.success { TransactionState::Confirmed } else { TransactionState::Failed };
 
     Some(Transaction::new(
         transaction.hash.clone(),

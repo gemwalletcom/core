@@ -66,8 +66,7 @@ mod tests {
 
     #[test]
     fn test_parse_sign_transaction() {
-        let params =
-            serde_json::from_str(r#"{"address":"0xfa92fe9555eeb34d3d922dae643483cbd18bd607bf900a1df5e82dc22804698e","transaction":"AAACAAhkAAA"}"#).unwrap();
+        let params = serde_json::from_str(r#"{"address":"0xfa92fe9555eeb34d3d922dae643483cbd18bd607bf900a1df5e82dc22804698e","transaction":"AAACAAhkAAA"}"#).unwrap();
         let action = SuiRequestHandler::parse_sign_transaction(Chain::Sui, params).unwrap();
         match action {
             WalletConnectAction::SignTransaction { chain, transaction_type, data } => {
@@ -83,8 +82,7 @@ mod tests {
 
     #[test]
     fn test_parse_send_transaction() {
-        let params =
-            serde_json::from_str(r#"{"address":"0xfa92fe9555eeb34d3d922dae643483cbd18bd607bf900a1df5e82dc22804698e","transaction":"AAACAAhkAAA"}"#).unwrap();
+        let params = serde_json::from_str(r#"{"address":"0xfa92fe9555eeb34d3d922dae643483cbd18bd607bf900a1df5e82dc22804698e","transaction":"AAACAAhkAAA"}"#).unwrap();
         let action = SuiRequestHandler::parse_send_transaction(Chain::Sui, params).unwrap();
         match action {
             WalletConnectAction::SendTransaction { chain, transaction_type, data } => {

@@ -1,8 +1,10 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{Chain, NFTAsset, NFTImages, NFTResource, NFTType};
+use primitives::{Chain, NFTAsset, NFTImages, NFTResource};
 use serde::{Deserialize, Serialize};
+
+use crate::sql_types::NftType;
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_assets)]
@@ -15,7 +17,7 @@ pub struct NftAssetRow {
     pub name: String,
     pub description: String,
     pub token_id: String,
-    pub token_type: String,
+    pub token_type: NftType,
     pub image_preview_url: Option<String>,
     pub image_preview_mime_type: Option<String>,
     pub resource_url: Option<String>,
@@ -30,21 +32,6 @@ pub struct UpdateNftAssetImageUrlRow {
     pub id: String,
     pub image_preview_url: Option<String>,
     pub image_preview_mime_type: Option<String>,
-}
-
-#[derive(Debug, Queryable, Selectable, Insertable, Serialize, Deserialize, Clone)]
-#[diesel(table_name = crate::schema::nft_types)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct NftTypeRow {
-    pub id: String,
-}
-
-impl NftTypeRow {
-    pub fn from_primitive(primitive: NFTType) -> Self {
-        Self {
-            id: primitive.as_ref().to_string(),
-        }
-    }
 }
 
 impl NftAssetRow {
@@ -67,7 +54,7 @@ impl NftAssetRow {
                     mime_type: self.image_preview_mime_type.clone().unwrap_or_default(),
                 },
             },
-            token_type: NFTType::from_str(self.token_type.as_str()).unwrap(),
+            token_type: self.token_type.0.clone(),
             attributes: serde_json::from_value(self.attributes.clone()).unwrap_or_default(),
         }
     }
@@ -81,7 +68,7 @@ impl NftAssetRow {
             description: primitive.description.unwrap_or_default(),
             contract_address: primitive.contract_address.unwrap_or_default(),
             token_id: primitive.token_id.clone(),
-            token_type: primitive.token_type.as_ref().to_string(),
+            token_type: primitive.token_type.into(),
             image_preview_url: Some(primitive.images.preview.url.clone()),
             image_preview_mime_type: Some(primitive.images.preview.mime_type.clone()),
             resource_url: Some(primitive.resource.url.clone()),

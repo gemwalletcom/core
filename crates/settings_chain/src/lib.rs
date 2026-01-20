@@ -65,18 +65,10 @@ impl ProviderFactory {
     }
 
     pub fn new_provider(config: ProviderConfig, user_agent: &str) -> Box<dyn ChainTraits> {
-        let host = config
-            .url
-            .parse::<url::Url>()
-            .ok()
-            .and_then(|u| u.host_str().map(String::from))
-            .unwrap_or_default();
+        let host = config.url.parse::<url::Url>().ok().and_then(|u| u.host_str().map(String::from)).unwrap_or_default();
 
         let retry_policy_config = retry_policy(host, 3);
-        let reqwest_client = gem_client::builder()
-            .retry(retry_policy_config)
-            .build()
-            .expect("Failed to build reqwest client");
+        let reqwest_client = gem_client::builder().retry(retry_policy_config).build().expect("Failed to build reqwest client");
 
         let chain = config.chain;
         let url = config.url.clone();
@@ -117,12 +109,10 @@ impl ProviderFactory {
                 let chain = EVMChain::from_chain(chain).unwrap();
                 let client = gem_client.clone();
                 let rpc_client = JsonRpcClient::new(client.clone());
-                let ethereum_client = EthereumClient::new(rpc_client.clone(), chain)
-                    .with_node_type(node_type)
-                    .with_ankr_client(AnkrClient::new(
-                        JsonRpcClient::new(ReqwestClient::new(config.clone().ankr_url(), reqwest_client.clone())),
-                        chain,
-                    ));
+                let ethereum_client = EthereumClient::new(rpc_client.clone(), chain).with_node_type(node_type).with_ankr_client(AnkrClient::new(
+                    JsonRpcClient::new(ReqwestClient::new(config.clone().ankr_url(), reqwest_client.clone())),
+                    chain,
+                ));
                 Box::new(ethereum_client)
             }
             Chain::Cardano => Box::new(CardanoClient::new(gem_client)),
@@ -142,10 +132,7 @@ impl ProviderFactory {
             Chain::Polkadot => Box::new(PolkadotClient::new(gem_client.clone())),
             Chain::Solana => Box::new(SolanaClient::new(JsonRpcClient::new(gem_client.clone()))),
             Chain::Ton => Box::new(TonClient::new(gem_client.clone())),
-            Chain::Tron => Box::new(TronClient::new(
-                gem_client.clone(),
-                TronGridClient::new(gem_client.clone(), config.trongrid_key.clone()),
-            )),
+            Chain::Tron => Box::new(TronClient::new(gem_client.clone(), TronGridClient::new(gem_client.clone(), config.trongrid_key.clone()))),
             Chain::HyperCore => Box::new(HyperCoreClient::new(gem_client.clone())),
         }
     }

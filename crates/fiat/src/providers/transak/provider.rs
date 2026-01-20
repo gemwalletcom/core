@@ -10,8 +10,8 @@ use crate::{
 };
 use async_trait::async_trait;
 use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
-    FiatSellQuote, FiatTransaction,
+    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
+    FiatTransaction,
 };
 use std::error::Error;
 use streamer::FiatWebhook;
@@ -69,9 +69,7 @@ impl FiatProvider for TransakClient {
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
         let encrypted_data = serde_json::from_value::<Data<String>>(data)?;
-        let decoded_payload = self
-            .decode_jwt_content(&encrypted_data.data)
-            .map_err(|e| format!("Failed to decode Transak JWT: {}", e))?;
+        let decoded_payload = self.decode_jwt_content(&encrypted_data.data).map_err(|e| format!("Failed to decode Transak JWT: {}", e))?;
         let webhook_payload = serde_json::from_str::<WebhookPayload>(&decoded_payload)?;
         Ok(FiatWebhook::OrderId(webhook_payload.webhook_data.id))
     }
@@ -79,13 +77,7 @@ impl FiatProvider for TransakClient {
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         let network = request_map.asset_symbol.network.unwrap_or_default();
         let quote = self
-            .get_buy_quote(
-                request_map.asset_symbol.symbol,
-                request.currency.clone(),
-                request.amount,
-                network,
-                request.ip_address,
-            )
+            .get_buy_quote(request_map.asset_symbol.symbol, request.currency.clone(), request.amount, network, request.ip_address)
             .await?;
 
         Ok(FiatQuoteResponse::new(quote.quote_id, request.amount, quote.crypto_amount))
@@ -94,13 +86,7 @@ impl FiatProvider for TransakClient {
     async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         let network = request_map.asset_symbol.network.unwrap_or_default();
         let quote = self
-            .get_sell_quote(
-                request_map.asset_symbol.symbol,
-                request.currency.clone(),
-                request.amount,
-                network,
-                request.ip_address,
-            )
+            .get_sell_quote(request_map.asset_symbol.symbol, request.currency.clone(), request.amount, network, request.ip_address)
             .await?;
 
         Ok(FiatQuoteResponse::new(quote.quote_id, request.amount, quote.crypto_amount))
@@ -132,9 +118,7 @@ impl FiatProvider for TransakClient {
             }
         };
 
-        let redirect_url = self
-            .redirect_url(transak_quote, data.wallet_address, data.quote.quote_type, data.quote.fiat_amount)
-            .await?;
+        let redirect_url = self.redirect_url(transak_quote, data.wallet_address, data.quote.quote_type, data.quote.fiat_amount).await?;
 
         Ok(FiatQuoteUrl { redirect_url })
     }
@@ -188,11 +172,7 @@ mod fiat_integration_tests {
         assert!(assets_with_buy_limits > 0, "Expected at least some assets to have buy limits");
 
         if let Some(asset_with_limits) = assets.iter().find(|a| !a.buy_limits.is_empty()) {
-            println!(
-                "Asset with limits: {} has {} buy limits",
-                asset_with_limits.symbol,
-                asset_with_limits.buy_limits.len()
-            );
+            println!("Asset with limits: {} has {} buy limits", asset_with_limits.symbol, asset_with_limits.buy_limits.len());
 
             let first_limit = &asset_with_limits.buy_limits[0];
             assert!(first_limit.min_amount.is_some() || first_limit.max_amount.is_some());

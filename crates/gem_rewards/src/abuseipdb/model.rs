@@ -31,7 +31,8 @@ impl AbuseIPDBData {
             country_code: self.country_code.clone(),
             confidence_score: self.abuse_confidence_score,
             is_tor: self.is_tor,
-            usage_type: self.usage_type.clone().unwrap_or_default(),
+            is_vpn: false,
+            usage_type: self.usage_type.as_deref().and_then(|s| s.parse().ok()).unwrap_or_default(),
             isp: self.isp.clone().unwrap_or_default(),
         }
     }

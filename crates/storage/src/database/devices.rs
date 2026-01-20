@@ -45,10 +45,7 @@ impl DevicesStore for DatabaseClient {
 
     fn get_device(&mut self, _device_id: &str) -> Result<DeviceRow, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
-        devices
-            .filter(device_id.eq(_device_id))
-            .select(DeviceRow::as_select())
-            .first(&mut self.connection)
+        devices.filter(device_id.eq(_device_id)).select(DeviceRow::as_select()).first(&mut self.connection)
     }
 
     fn update_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error> {
@@ -72,9 +69,7 @@ impl DevicesStore for DatabaseClient {
             let target = devices.filter(device_id.eq_any(&device_ids));
             let updated = match update {
                 DeviceFieldUpdate::IsPushEnabled(value) => diesel::update(target).set(is_push_enabled.eq(value)).execute(&mut self.connection)?,
-                DeviceFieldUpdate::IsPriceAlertsEnabled(value) => {
-                    diesel::update(target).set(is_price_alerts_enabled.eq(value)).execute(&mut self.connection)?
-                }
+                DeviceFieldUpdate::IsPriceAlertsEnabled(value) => diesel::update(target).set(is_price_alerts_enabled.eq(value)).execute(&mut self.connection)?,
             };
             total_updated += updated;
         }

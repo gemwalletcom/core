@@ -107,11 +107,7 @@ impl Swapper for UniswapV3 {
     }
 
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
-        Chain::all()
-            .iter()
-            .filter(|x| self.support_chain(x))
-            .map(|x| SwapperChainAsset::All(*x))
-            .collect()
+        Chain::all().iter().filter(|x| self.support_chain(x)).map(|x| SwapperChainAsset::All(*x)).collect()
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
@@ -241,16 +237,7 @@ impl Swapper for UniswapV3 {
         let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
         let path: Bytes = build_paths_with_routes(&quote.data.routes)?;
-        let commands = build_commands(
-            request,
-            &token_in,
-            &token_out,
-            amount_in,
-            to_amount,
-            &path,
-            permit,
-            fee_preference.is_input_token,
-        )?;
+        let commands = build_commands(request, &token_in, &token_out, amount_in, to_amount, &path, permit, fee_preference.is_input_token)?;
         let encoded = encode_commands(&commands, U256::from(sig_deadline));
 
         let wrap_input_eth = request.from_asset.is_native();

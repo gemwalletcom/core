@@ -235,6 +235,7 @@ consumer:
   error:
     timeout: 0s
     skip: true
+  delay: 0s
 
 api:
   service: ""
@@ -275,7 +276,13 @@ sentry:
 
 rewards:
   wallets: {}
+
+ip:
   abuseipdb:
     url: https://api.abuseipdb.com
+    key:
+      secret: ""
+  ipapi:
+    url: https://api.ipapi.is
     key:
       secret: ""

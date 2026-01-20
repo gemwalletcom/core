@@ -36,9 +36,7 @@ impl Default for InMemoryPreferences {
 
 impl InMemoryPreferences {
     pub fn new() -> Self {
-        Self {
-            data: Mutex::new(HashMap::new()),
-        }
+        Self { data: Mutex::new(HashMap::new()) }
     }
 }
 

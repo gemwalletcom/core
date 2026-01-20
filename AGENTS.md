@@ -158,8 +158,8 @@ Follow the existing code style patterns unless explicitly asked to change
 - Line length: 160 characters maximum (configured in `rustfmt.toml`)
 - Indentation: 4 spaces (Rust standard)
 - Imports: Automatically reordered with rustfmt
- - ALWAYS run `just format` before committing
- - Formatter enforces consistent style across all crates/workspace
+- Only format files you modified: `cargo fmt -- <file1> <file2> ...` (avoid `just format` which formats entire workspace)
+- Formatter enforces consistent style across all crates/workspace
 
 ### Commit Messages
 - Write descriptive messages following conventional commit format
@@ -284,3 +284,11 @@ Direct repository access methods available on `DatabaseClient` include:
 - Prefer recent blocks for batch operations (more reliable than historical blocks)
 - Verify both successful calls and proper error propagation
 - Use realistic contract addresses (e.g., USDC) for `eth_call` testing
+
+## Task Completion
+
+Before finishing a task, always:
+1. **Review for simplification**: Take an overall look at the code you touched and identify opportunities to simplify (reduce duplication, extract helpers, consolidate modules, remove dead code)
+2. **Run tests**: Ensure all relevant tests pass
+3. **Run clippy**: `cargo clippy -p <crate> -- -D warnings`
+4. **Format only touched files**: `cargo fmt -- <files>`

@@ -82,6 +82,20 @@ dependencies {
 }
 ```
 
+#### Maven Central (Recommended)
+
+```gradle
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+```
+
+#### GitHub Packages (Alternative)
+
+Alternatively, you can use GitHub Packages (requires GitHub token):
+
 ```gradle
 allprojects {
     repositories {

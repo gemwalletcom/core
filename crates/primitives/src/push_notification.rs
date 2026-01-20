@@ -28,10 +28,7 @@ impl PushNotification {
     pub fn new_buy_asset(asset_id: AssetId) -> Self {
         Self {
             notification_type: PushNotificationTypes::BuyAsset,
-            data: serde_json::to_value(PushNotificationAsset {
-                asset_id: asset_id.to_string(),
-            })
-            .ok(),
+            data: serde_json::to_value(PushNotificationAsset { asset_id: asset_id.to_string() }).ok(),
         }
     }
 }
@@ -48,7 +45,8 @@ pub struct PushNotificationPayloadType {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationTransaction {
-    pub wallet_index: i32,
+    pub wallet_index: Option<i32>,
+    pub wallet_id: String,
     pub asset_id: String,
     #[typeshare(skip)]
     pub transaction_id: String,
@@ -78,4 +76,6 @@ pub struct PushNotificationSupport {}
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct PushNotificationReward {}
+pub struct PushNotificationReward {
+    pub wallet_id: String,
+}

@@ -1,1 +1,0 @@
-drop table link_types;

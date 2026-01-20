@@ -30,10 +30,7 @@ pub async fn add_asset(
     let asset = chain_client
         .lock()
         .await
-        .get_token_data(
-            asset_id.chain,
-            asset_id.token_id.clone().ok_or(ApiError::BadRequest("Missing token_id".to_string()))?,
-        )
+        .get_token_data(asset_id.chain, asset_id.token_id.clone().ok_or(ApiError::BadRequest("Missing token_id".to_string()))?)
         .await?;
     client.lock().await.add_assets(vec![asset.clone()])?;
 

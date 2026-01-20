@@ -1,8 +1,11 @@
 use std::str::FromStr;
 
 use diesel::prelude::*;
-use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, Chain};
+use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, Chain};
 use serde::{Deserialize, Serialize};
+
+use crate::sql_types::{AssetType, LinkType};
+
 #[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -12,7 +15,7 @@ pub struct AssetRow {
     pub token_id: Option<String>,
     pub name: String,
     pub symbol: String,
-    pub asset_type: String,
+    pub asset_type: AssetType,
     pub decimals: i32,
     pub rank: i32,
 
@@ -35,7 +38,7 @@ impl AssetRow {
             self.name.clone(),
             self.symbol.clone(),
             self.decimals,
-            AssetType::from_str(&self.asset_type).unwrap(),
+            self.asset_type.0.clone(),
         )
     }
 
@@ -58,7 +61,7 @@ impl AssetRow {
             token_id: asset.id.token_id,
             name: asset.name,
             symbol: asset.symbol,
-            asset_type: asset.asset_type.as_ref().to_string(),
+            asset_type: asset.asset_type.into(),
             decimals: asset.decimals,
             rank: score.rank,
             is_enabled: properties.is_enabled,
@@ -87,14 +90,14 @@ impl AssetRow {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct AssetLinkRow {
     pub asset_id: String,
-    pub link_type: String,
+    pub link_type: LinkType,
     pub url: String,
 }
 
 impl AssetLinkRow {
     pub fn as_primitive(&self) -> AssetLink {
         AssetLink {
-            name: self.link_type.clone(),
+            name: self.link_type.as_ref().to_string(),
             url: self.url.clone(),
         }
     }
@@ -102,7 +105,7 @@ impl AssetLinkRow {
     pub fn from_primitive(asset_id: &str, link: AssetLink) -> Self {
         Self {
             asset_id: asset_id.to_string(),
-            link_type: link.name.clone(),
+            link_type: primitives::LinkType::from_str(&link.name).unwrap().into(),
             url: link.url.clone(),
         }
     }

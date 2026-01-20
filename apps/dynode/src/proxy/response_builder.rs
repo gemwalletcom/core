@@ -1,5 +1,6 @@
 use reqwest::StatusCode;
 use reqwest::header::{self, HeaderMap, HeaderName, HeaderValue};
+use std::time::Duration;
 
 use super::constants::{JSON_CONTENT_TYPE, JSON_HEADER};
 
@@ -22,14 +23,11 @@ impl ProxyResponse {
 pub struct ResponseBuilder;
 
 impl ResponseBuilder {
-    pub fn create_upstream_headers(upstream_host: Option<&str>, latency: std::time::Duration) -> HeaderMap {
+    pub fn create_upstream_headers(upstream_host: Option<&str>, latency: Duration) -> HeaderMap {
         let mut headers = HeaderMap::new();
 
         if let Some(host) = upstream_host {
-            headers.insert(
-                X_UPSTREAM_HOST,
-                HeaderValue::from_str(host).unwrap_or_else(|_| HeaderValue::from_static("unknown")),
-            );
+            headers.insert(X_UPSTREAM_HOST, HeaderValue::from_str(host).unwrap_or_else(|_| HeaderValue::from_static("unknown")));
         }
 
         headers.insert(
@@ -40,12 +38,7 @@ impl ResponseBuilder {
         headers
     }
 
-    pub fn build_with_headers(
-        data: Vec<u8>,
-        status: u16,
-        content_type: &str,
-        additional_headers: HeaderMap,
-    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn build_with_headers(data: Vec<u8>, status: u16, content_type: &str, additional_headers: HeaderMap) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let mut headers = HeaderMap::new();
 
         let content_header = if content_type == JSON_CONTENT_TYPE {
@@ -60,7 +53,7 @@ impl ResponseBuilder {
         Ok(ProxyResponse::new(status, headers, data))
     }
 
-    pub fn build_cached_with_headers(cached: crate::cache::CachedResponse, additional_headers: HeaderMap) -> ProxyResponse {
+    pub fn build_cached_with_headers(cached: super::CachedResponse, additional_headers: HeaderMap) -> ProxyResponse {
         let mut headers = HeaderMap::new();
 
         let content_header = if cached.content_type == JSON_CONTENT_TYPE {
@@ -75,10 +68,7 @@ impl ResponseBuilder {
         ProxyResponse::new(cached.status, headers, cached.body)
     }
 
-    pub fn build_json_response_with_headers<T: serde::Serialize>(
-        data: &T,
-        headers: HeaderMap,
-    ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn build_json_response_with_headers<T: serde::Serialize>(data: &T, headers: HeaderMap) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
         Self::build_with_headers(response_body, StatusCode::OK.as_u16(), JSON_CONTENT_TYPE, headers)
     }

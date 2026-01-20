@@ -75,18 +75,12 @@ impl SubscriptionsStore for DatabaseClient {
 
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, diesel::result::Error> {
         use crate::schema::subscriptions_addresses_exclude::dsl::*;
-        subscriptions_addresses_exclude
-            .filter(address.eq_any(addresses))
-            .select(address)
-            .load(&mut self.connection)
+        subscriptions_addresses_exclude.filter(address.eq_any(addresses)).select(address).load(&mut self.connection)
     }
 
     fn add_subscriptions(&mut self, values: Vec<SubscriptionRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::subscriptions::dsl::*;
-        diesel::insert_into(subscriptions)
-            .values(&values)
-            .on_conflict_do_nothing()
-            .execute(&mut self.connection)
+        diesel::insert_into(subscriptions).values(&values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, diesel::result::Error> {

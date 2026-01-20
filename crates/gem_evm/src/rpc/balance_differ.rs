@@ -141,10 +141,9 @@ mod tests {
     #[test]
     fn test_calculate() {
         // https://etherscan.io/tx/0x23fe2ead060a3812a1f03c2e082b6fc8888b7c655a8f58f4ed19de00e8c9aaa6
-        let trace_replay_transaction =
-            serde_json::from_str::<JsonRpcResponse<TransactionReplayTrace>>(include_str!("../../testdata/trace_replay_tx_trace.json"))
-                .unwrap()
-                .result;
+        let trace_replay_transaction = serde_json::from_str::<JsonRpcResponse<TransactionReplayTrace>>(include_str!("../../testdata/trace_replay_tx_trace.json"))
+            .unwrap()
+            .result;
         let receipt = serde_json::from_str::<JsonRpcResponse<TransactionReciept>>(include_str!("../../testdata/trace_replay_tx_receipt.json"))
             .unwrap()
             .result;
@@ -170,10 +169,7 @@ mod tests {
             chain: Chain::Ethereum,
             token_id: Some("0xD0eC028a3D21533Fdd200838F39c85B03679285D".to_string()),
         };
-        let token_diff = sender_diffs
-            .iter()
-            .find(|d| d.asset_id == newt_asset_id)
-            .expect("Token diff not found in sender's diffs");
+        let token_diff = sender_diffs.iter().find(|d| d.asset_id == newt_asset_id).expect("Token diff not found in sender's diffs");
 
         assert_eq!(token_diff.from_value, None);
         assert_eq!(token_diff.to_value, None);
@@ -193,10 +189,7 @@ mod tests {
         assert_eq!(contract_native_diff.diff, BigInt::from_str("-163303146652936307").unwrap()); // negative diff
 
         // Check ERC20 token net change: +778.05 NEWT
-        let pool_token_diff = pool_diffs
-            .iter()
-            .find(|d| d.asset_id == newt_asset_id)
-            .expect("Token diff not found in contract's diffs");
+        let pool_token_diff = pool_diffs.iter().find(|d| d.asset_id == newt_asset_id).expect("Token diff not found in contract's diffs");
 
         assert_eq!(pool_token_diff.from_value, None);
         assert_eq!(pool_token_diff.to_value, None);
@@ -204,10 +197,7 @@ mod tests {
 
         let rabby_address = "0x39041F1B366fE33F9A5a79dE5120F2Aee2577ebc";
         let rabby_diffs = diff_map.get(rabby_address).unwrap();
-        let rabby_token_diff = rabby_diffs
-            .iter()
-            .find(|d| d.asset_id == newt_asset_id)
-            .expect("Token diff not found in Rabby's diffs");
+        let rabby_token_diff = rabby_diffs.iter().find(|d| d.asset_id == newt_asset_id).expect("Token diff not found in Rabby's diffs");
 
         assert_eq!(rabby_token_diff.from_value, None);
         assert_eq!(rabby_token_diff.to_value, None);

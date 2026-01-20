@@ -87,12 +87,6 @@ impl From<alloy_primitives::AddressError> for SwapperError {
     }
 }
 
-impl From<sui_types::AddressParseError> for SwapperError {
-    fn from(err: sui_types::AddressParseError) -> Self {
-        Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))
-    }
-}
-
 impl From<serde_json::Error> for SwapperError {
     fn from(err: serde_json::Error) -> Self {
         Self::ComputeQuoteError(format!("serde_json::Error: {err}"))

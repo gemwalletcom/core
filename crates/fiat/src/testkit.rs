@@ -19,12 +19,7 @@ fn get_test_settings() -> Settings {
 pub fn create_transak_test_client() -> TransakClient {
     let settings = get_test_settings();
     let client = FiatClient::request_client(settings.fiat.timeout);
-    TransakClient::new(
-        client,
-        settings.transak.key.public,
-        settings.transak.key.secret,
-        settings.transak.referrer_domain,
-    )
+    TransakClient::new(client, settings.transak.key.public, settings.transak.key.secret, settings.transak.referrer_domain)
 }
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]

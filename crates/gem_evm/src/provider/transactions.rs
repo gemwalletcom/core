@@ -14,21 +14,14 @@ use gem_client::Client;
 use gem_jsonrpc::types::JsonRpcError;
 
 #[cfg(feature = "rpc")]
-async fn load_transactions_by_hashes<C: Client + Clone>(
-    client: &EthereumClient<C>,
-    node_type: NodeType,
-    hashes: &[String],
-) -> Result<Vec<Transaction>, JsonRpcError> {
+async fn load_transactions_by_hashes<C: Client + Clone>(client: &EthereumClient<C>, node_type: NodeType, hashes: &[String]) -> Result<Vec<Transaction>, JsonRpcError> {
     if hashes.is_empty() {
         return Ok(vec![]);
     }
 
     let transactions = client.get_transactions_by_hash(hashes).await?;
     let receipts = client.get_transactions_receipts(hashes).await?;
-    let block_ids = receipts
-        .iter()
-        .map(|x| format!("0x{}", x.block_number.to_str_radix(16)))
-        .collect::<Vec<String>>();
+    let block_ids = receipts.iter().map(|x| format!("0x{}", x.block_number.to_str_radix(16))).collect::<Vec<String>>();
     let blocks = client.get_blocks(&block_ids, false).await?;
 
     let traces = if node_type == NodeType::Archival {

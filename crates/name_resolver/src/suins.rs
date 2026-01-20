@@ -27,11 +27,7 @@ impl NameClient for SuinsClient {
 
     async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         let params = vec![serde_json::json!(name)];
-        let address: String = self
-            .client
-            .call("suix_resolveNameServiceAddress", params)
-            .await
-            .map_err(|e: JsonRpcError| e.to_string())?;
+        let address: String = self.client.call("suix_resolveNameServiceAddress", params).await.map_err(|e: JsonRpcError| e.to_string())?;
         Ok(address)
     }
 

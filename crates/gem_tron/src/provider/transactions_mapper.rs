@@ -72,12 +72,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
         if let Some((transaction_type, to, amount, metadata)) = match value.contract_type.as_str() {
             TRANSFER_CONTRACT if !transaction.ret.is_empty() => {
                 let to = TronAddress::from_hex(value.parameter.value.to_address.unwrap_or_default().as_str()).unwrap_or_default();
-                Some((
-                    TransactionType::Transfer,
-                    to,
-                    value.parameter.value.amount.unwrap_or_default().to_string(),
-                    None,
-                ))
+                Some((TransactionType::Transfer, to, value.parameter.value.amount.unwrap_or_default().to_string(), None))
             }
             FREEZE_BALANCE_V2_CONTRACT => Some((
                 TransactionType::StakeFreeze,
@@ -130,10 +125,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
             let from = TronAddress::from_hex(from_string.as_str()).unwrap_or_default();
             let to = TronAddress::from_hex(to_string.as_str()).unwrap_or_default();
             let value = BigUint::from_str_radix(&log.data.clone().unwrap_or_default(), 16).unwrap();
-            let asset_id = AssetId {
-                chain,
-                token_id: Some(token_id),
-            };
+            let asset_id = AssetId { chain, token_id: Some(token_id) };
 
             let transaction = Transaction::new(
                 transaction.tx_id,
@@ -213,10 +205,7 @@ mod tests {
         assert_eq!(tx.transaction_type, TransactionType::StakeFreeze);
         assert_eq!(tx.value, "100000000");
         assert_eq!(tx.from, tx.to);
-        assert_eq!(
-            tx.metadata,
-            serde_json::to_value(TransactionResourceTypeMetadata::new(Resource::Bandwidth)).ok()
-        );
+        assert_eq!(tx.metadata, serde_json::to_value(TransactionResourceTypeMetadata::new(Resource::Bandwidth)).ok());
     }
 
     #[test]
@@ -285,10 +274,7 @@ mod tests {
         assert_eq!(tx.transaction_type, TransactionType::StakeUnfreeze);
         assert_eq!(tx.value, "100000000");
         assert_eq!(tx.from, tx.to);
-        assert_eq!(
-            tx.metadata,
-            serde_json::to_value(TransactionResourceTypeMetadata::new(Resource::Bandwidth)).ok()
-        );
+        assert_eq!(tx.metadata, serde_json::to_value(TransactionResourceTypeMetadata::new(Resource::Bandwidth)).ok());
     }
 
     #[test]

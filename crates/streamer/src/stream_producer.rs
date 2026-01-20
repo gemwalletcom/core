@@ -64,9 +64,7 @@ impl StreamProducer {
     // Exchange methods
 
     pub async fn declare_exchange(&self, name: &str, kind: ExchangeKind) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.channel
-            .exchange_declare(name, kind, ExchangeDeclareOptions::default(), FieldTable::default())
-            .await?;
+        self.channel.exchange_declare(name, kind, ExchangeDeclareOptions::default(), FieldTable::default()).await?;
         Ok(())
     }
 
@@ -148,12 +146,7 @@ impl StreamProducer {
         self.publish_message(&exchange.to_string(), "", message).await
     }
 
-    pub async fn publish_to_exchange_with_routing_key<T>(
-        &self,
-        exchange: ExchangeName,
-        routing_key: &str,
-        message: &T,
-    ) -> Result<bool, Box<dyn Error + Send + Sync>>
+    pub async fn publish_to_exchange_with_routing_key<T>(&self, exchange: ExchangeName, routing_key: &str, message: &T) -> Result<bool, Box<dyn Error + Send + Sync>>
     where
         T: serde::Serialize,
     {

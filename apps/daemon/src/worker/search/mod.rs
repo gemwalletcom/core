@@ -12,15 +12,16 @@ use settings::Settings;
 use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
-use storage::ConfigRepository;
+use storage::ConfigCacher;
 
 pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
+    let config = ConfigCacher::new(database.clone());
 
-    let assets_update_interval = database.config()?.get_config_duration(ConfigKey::SearchAssetsUpdateInterval)?;
-    let perpetuals_update_interval = database.config()?.get_config_duration(ConfigKey::SearchPerpetualsUpdateInterval)?;
-    let nfts_update_interval = database.config()?.get_config_duration(ConfigKey::SearchNftsUpdateInterval)?;
+    let assets_update_interval = config.get_duration(ConfigKey::SearchAssetsUpdateInterval)?;
+    let perpetuals_update_interval = config.get_duration(ConfigKey::SearchPerpetualsUpdateInterval)?;
+    let nfts_update_interval = config.get_duration(ConfigKey::SearchNftsUpdateInterval)?;
 
     let assets_index_updater = run_job("Update assets index", assets_update_interval, {
         let database = database.clone();
@@ -52,9 +53,5 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
-    Ok(vec![
-        Box::pin(assets_index_updater),
-        Box::pin(perpetuals_index_updater),
-        Box::pin(nfts_index_updater),
-    ])
+    Ok(vec![Box::pin(assets_index_updater), Box::pin(perpetuals_index_updater), Box::pin(nfts_index_updater)])
 }

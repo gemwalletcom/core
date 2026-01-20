@@ -1,6 +1,6 @@
 use crate::{
-    AddressName, AssetAddress, Chain, TransactionId, TransactionSwapMetadata, asset_id::AssetId, transaction_direction::TransactionDirection,
-    transaction_state::TransactionState, transaction_type::TransactionType, transaction_utxo::TransactionUtxoInput,
+    AddressName, AssetAddress, Chain, TransactionId, TransactionSwapMetadata, asset_id::AssetId, transaction_direction::TransactionDirection, transaction_state::TransactionState,
+    transaction_type::TransactionType, transaction_utxo::TransactionUtxoInput,
 };
 
 use chrono::{DateTime, Utc};
@@ -222,14 +222,7 @@ impl Transaction {
             TransactionDirection::Outgoing => {
                 let filtered: Vec<String> = outputs_addresses.clone().into_iter().filter(|x| !user_set.contains(x)).collect();
                 to = filtered.first().unwrap().clone();
-                let vals: Vec<TransactionUtxoInput> = self
-                    .utxo_outputs
-                    .clone()
-                    .unwrap_or_default()
-                    .clone()
-                    .into_iter()
-                    .filter(|x| x.address == to)
-                    .collect();
+                let vals: Vec<TransactionUtxoInput> = self.utxo_outputs.clone().unwrap_or_default().clone().into_iter().filter(|x| x.address == to).collect();
                 value = vals.first().unwrap().value.clone();
             }
             TransactionDirection::SelfTransfer => {
@@ -245,7 +238,7 @@ impl Transaction {
             to,
             contract: self.contract.clone(),
             transaction_type: self.transaction_type.clone(),
-            state: self.state.clone(),
+            state: self.state,
             block_number: self.block_number.clone(),
             sequence: self.sequence.clone(),
             fee: self.fee.clone(),
@@ -338,15 +331,12 @@ impl Transaction {
     }
 
     pub fn assets_addresses_with_fee(&self) -> Vec<AssetAddress> {
-        [
-            self.assets_addresses(),
-            vec![AssetAddress::new(self.fee_asset_id.clone(), self.from.clone(), None)],
-        ]
-        .concat()
-        .into_iter()
-        .collect::<HashSet<_>>()
-        .into_iter()
-        .collect()
+        [self.assets_addresses(), vec![AssetAddress::new(self.fee_asset_id.clone(), self.from.clone(), None)]]
+            .concat()
+            .into_iter()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect()
     }
 
     pub fn without_utxo(self) -> Self {
@@ -485,11 +475,8 @@ mod tests {
 
     #[test]
     fn test_finalize_incoming_utxo() {
-        let transaction = Transaction::mock_utxo(
-            vec![utxo_input("sender", "50000")],
-            vec![utxo_input("user", "40000"), utxo_input("change", "9000")],
-        )
-        .finalize(vec!["user".to_string()]);
+        let transaction =
+            Transaction::mock_utxo(vec![utxo_input("sender", "50000")], vec![utxo_input("user", "40000"), utxo_input("change", "9000")]).finalize(vec!["user".to_string()]);
 
         assert_eq!(
             (transaction.from.as_str(), transaction.to.as_str(), transaction.value.as_str()),
@@ -500,11 +487,8 @@ mod tests {
 
     #[test]
     fn test_finalize_outgoing_utxo() {
-        let transaction = Transaction::mock_utxo(
-            vec![utxo_input("user", "50000")],
-            vec![utxo_input("recipient", "40000"), utxo_input("user", "9000")],
-        )
-        .finalize(vec!["user".to_string()]);
+        let transaction =
+            Transaction::mock_utxo(vec![utxo_input("user", "50000")], vec![utxo_input("recipient", "40000"), utxo_input("user", "9000")]).finalize(vec!["user".to_string()]);
 
         assert_eq!(
             (transaction.from.as_str(), transaction.to.as_str(), transaction.value.as_str()),
@@ -515,13 +499,10 @@ mod tests {
 
     #[test]
     fn test_finalize_self_transfer_utxo() {
-        let transaction = Transaction::mock_utxo(vec![utxo_input("user", "50000")], vec![utxo_input("user", "40000"), utxo_input("user", "9000")])
-            .finalize(vec!["user".to_string()]);
+        let transaction =
+            Transaction::mock_utxo(vec![utxo_input("user", "50000")], vec![utxo_input("user", "40000"), utxo_input("user", "9000")]).finalize(vec!["user".to_string()]);
 
-        assert_eq!(
-            (transaction.from.as_str(), transaction.to.as_str(), transaction.value.as_str()),
-            ("user", "user", "49000")
-        );
+        assert_eq!((transaction.from.as_str(), transaction.to.as_str(), transaction.value.as_str()), ("user", "user", "49000"));
         assert_eq!(transaction.direction, TransactionDirection::SelfTransfer);
     }
 
@@ -530,9 +511,6 @@ mod tests {
         let original = Transaction::mock();
         let transaction = original.clone().finalize(vec!["0xfrom".to_string()]);
 
-        assert_eq!(
-            (transaction.from, transaction.to, transaction.value),
-            (original.from, original.to, original.value)
-        );
+        assert_eq!((transaction.from, transaction.to, transaction.value), (original.from, original.to, original.value));
     }
 }

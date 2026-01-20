@@ -1,5 +1,5 @@
-use primitives::{ConfigResponse, ConfigVersions, PlatformStore, Release, SwapConfig, SwapProvider};
-use std::{error::Error, str::FromStr};
+use primitives::{ConfigResponse, ConfigVersions, SwapConfig, SwapProvider};
+use std::error::Error;
 use storage::{AssetFilter, AssetsRepository, Database, ReleasesRepository};
 
 #[derive(Clone)]
@@ -18,14 +18,7 @@ impl ConfigClient {
         let swap_assets_version = self.database.assets()?.get_swap_assets_version()?;
         let releases = self.database.releases()?.get_releases()?;
 
-        let releases = releases
-            .into_iter()
-            .map(|x| Release {
-                store: PlatformStore::from_str(&x.platform_store).unwrap(),
-                version: x.version,
-                upgrade_required: x.upgrade_required,
-            })
-            .collect();
+        let releases = releases.into_iter().map(|x| x.as_primitive()).collect();
 
         let response = ConfigResponse {
             releases,
