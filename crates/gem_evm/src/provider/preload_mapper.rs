@@ -416,8 +416,10 @@ mod tests {
 
         assert_eq!(result.len(), 3);
 
-        assert_eq!(result[0].gas_price_type.gas_price(), BigInt::ZERO);
-        assert!(result[0].gas_price_type.priority_fee() != BigInt::ZERO);
+        // When base_fee is 0, max_fee_per_gas equals priority_fee (0x5f5e100 = 100000000)
+        let expected_priority_fee = BigInt::from(100000000u64);
+        assert_eq!(result[0].gas_price_type.gas_price(), expected_priority_fee.clone());
+        assert_eq!(result[0].gas_price_type.priority_fee(), expected_priority_fee);
 
         Ok(())
     }
