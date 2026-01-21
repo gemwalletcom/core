@@ -87,7 +87,7 @@ fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocaliz
                 value,
                 subvalue,
                 CoreEmoji::Gift,
-                Some(CoreListItemBadge::New),
+                None,
                 url,
             )
         }
