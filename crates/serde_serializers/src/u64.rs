@@ -79,40 +79,10 @@ mod tests {
         pub gas_used: Option<u64>,
     }
 
-    #[test]
-    fn test_deserialize_option_u64_from_str() {
-        let result: TestStruct = serde_json::from_str(r#"{"gas_used": "123"}"#).unwrap();
-        assert_eq!(result.gas_used, Some(123));
-
-        let result: TestStruct = serde_json::from_str(r#"{"gas_used": "0x2a"}"#).unwrap();
-        assert_eq!(result.gas_used, Some(42));
-
-        let result: TestStruct = serde_json::from_str(r#"{"gas_used": null}"#).unwrap();
-        assert_eq!(result.gas_used, None);
-
-        let result: TestStruct = serde_json::from_str(r#"{}"#).unwrap();
-        assert_eq!(result.gas_used, None);
-    }
-
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct TestMixedStruct {
         #[serde(deserialize_with = "deserialize_u64_from_str")]
         pub value: u64,
-    }
-
-    #[test]
-    fn test_deserialize_u64_from_str_with_hex() {
-        let result: TestMixedStruct = serde_json::from_str(r#"{"value": "0x1a2b"}"#).unwrap();
-        assert_eq!(result.value, 6699);
-
-        let result: TestMixedStruct = serde_json::from_str(r#"{"value": "0x0"}"#).unwrap();
-        assert_eq!(result.value, 0);
-
-        let result: TestMixedStruct = serde_json::from_str(r#"{"value": "12345"}"#).unwrap();
-        assert_eq!(result.value, 12345);
-
-        let result: TestMixedStruct = serde_json::from_str(r#"{"value": "0"}"#).unwrap();
-        assert_eq!(result.value, 0);
     }
 
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -122,20 +92,36 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize_u64_from_str_or_int() {
-        let result: TestStrOrIntStruct = serde_json::from_str(r#"{"value": 42}"#).unwrap();
-        assert_eq!(result.value, 42);
+    fn test_u64_deserialization() {
+        let option_cases = [
+            (r#"{"gas_used": "123"}"#, Some(123u64)),
+            (r#"{"gas_used": "0x2a"}"#, Some(42)),
+            (r#"{"gas_used": null}"#, None),
+            (r#"{}"#, None),
+        ];
+        for (json, expected) in option_cases {
+            let result: TestStruct = serde_json::from_str(json).unwrap();
+            assert_eq!(result.gas_used, expected);
+        }
 
-        let result: TestStrOrIntStruct = serde_json::from_str(r#"{"value": "0x2a"}"#).unwrap();
-        assert_eq!(result.value, 42);
+        let str_cases = [
+            (r#"{"value": "0x1a2b"}"#, 6699u64),
+            (r#"{"value": "0x0"}"#, 0),
+            (r#"{"value": "12345"}"#, 12345),
+            (r#"{"value": "0"}"#, 0),
+        ];
+        for (json, expected) in str_cases {
+            let result: TestMixedStruct = serde_json::from_str(json).unwrap();
+            assert_eq!(result.value, expected);
+        }
 
-        let result: TestStrOrIntStruct = serde_json::from_str(r#"{"value": "42"}"#).unwrap();
-        assert_eq!(result.value, 42);
+        let mixed_cases = [(r#"{"value": 42}"#, 42u64), (r#"{"value": "0x2a"}"#, 42), (r#"{"value": "42"}"#, 42)];
+        for (json, expected) in mixed_cases {
+            let result: TestStrOrIntStruct = serde_json::from_str(json).unwrap();
+            assert_eq!(result.value, expected);
+        }
 
-        let result: Result<TestStrOrIntStruct, _> = serde_json::from_str(r#"{"value": 1.5}"#);
-        assert!(result.is_err());
-
-        let result: Result<TestStrOrIntStruct, _> = serde_json::from_str(r#"{"value": -1}"#);
-        assert!(result.is_err());
+        assert!(serde_json::from_str::<TestStrOrIntStruct>(r#"{"value": 1.5}"#).is_err());
+        assert!(serde_json::from_str::<TestStrOrIntStruct>(r#"{"value": -1}"#).is_err());
     }
 }
