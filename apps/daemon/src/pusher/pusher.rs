@@ -142,7 +142,7 @@ impl Pusher {
 
         let transaction = transaction.finalize(vec![subscription.address.clone()]).without_utxo();
 
-        let localizer = LanguageLocalizer::new_with_language(&device.locale);
+        let localizer = LanguageLocalizer::new_with_language(device.locale.as_str());
         let message = self.message(localizer, transaction.clone(), subscription.clone(), assets.clone())?;
 
         // TODO: Pass wallet_id from subscription once v2 subscriptions migration is complete

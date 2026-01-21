@@ -1,13 +1,16 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
-use primitives::{Asset, AssetTag, Chain, ConfigKey, FiatProviderName, PlatformStore as PrimitivePlatformStore, Subscription};
+use primitives::{
+    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NotificationType, PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, Subscription,
+};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
 use storage::models::{ConfigRow, FiatRateRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
-    AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, PricesDexRepository, ReleasesRepository, SubscriptionsRepository, TagRepository,
+    AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
+    PriceAlertsRepository, PricesDexRepository, ReleasesRepository, RewardsRepository, SubscriptionsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer};
 
@@ -182,6 +185,8 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     let _ = database.devices()?.add_device(android_device).expect("Failed to add Android device");
     info_with_fields!("setup_dev", step = "device added", device_id = "test-android");
 
+    let device_row_id = database.devices()?.get_device_row_id("test").expect("Failed to get device row id");
+
     info_with_fields!("setup_dev", step = "add subscription");
 
     let subscription = Subscription {
@@ -190,8 +195,99 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         address: "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string(),
     };
 
-    let result = database.subscriptions()?.add_subscriptions(vec![subscription], "test").expect("Failed to add subscription");
+    let result = SubscriptionsRepository::add_subscriptions(&mut database.subscriptions()?, vec![subscription], "test").expect("Failed to add subscription");
     info_with_fields!("setup_dev", step = "subscription added", count = result);
+
+    info_with_fields!("setup_dev", step = "add wallet");
+
+    let wallet_identifier = "multicoin_0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string();
+    let new_wallet = NewWalletRow {
+        identifier: wallet_identifier.clone(),
+        wallet_type: WalletType::Multicoin,
+        source: WalletSource::Create,
+    };
+
+    let wallet = database.wallets()?.get_or_create_wallet(new_wallet).expect("Failed to create wallet");
+    info_with_fields!("setup_dev", step = "wallet added", wallet_id = wallet.id);
+
+    info_with_fields!("setup_dev", step = "add wallet subscription");
+
+    let wallet_subscriptions = vec![(wallet.id, Chain::Ethereum, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string())];
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, device_row_id, wallet_subscriptions).expect("Failed to add wallet subscription");
+    info_with_fields!("setup_dev", step = "wallet subscription added", count = result);
+
+    info_with_fields!("setup_dev", step = "add rewards");
+
+    let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id).expect("Failed to get devices");
+    if let Some(device) = devices.first() {
+        let result = database.rewards()?.create_reward(wallet.id, "gemcoder", device.id);
+        match result {
+            Ok((rewards, _)) => info_with_fields!("setup_dev", step = "rewards added", code = rewards.code.unwrap_or_default(), points = rewards.points),
+            Err(e) => info_with_fields!("setup_dev", step = "rewards skipped (may already exist)", error = e.to_string()),
+        }
+    }
+
+    info_with_fields!("setup_dev", step = "add notifications");
+
+    let notifications = vec![
+        NewNotificationRow {
+            wallet_id: wallet.id,
+            asset_id: None,
+            notification_type: NotificationType::RewardsEnabled.into(),
+            metadata: None,
+        },
+        NewNotificationRow {
+            wallet_id: wallet.id,
+            asset_id: None,
+            notification_type: NotificationType::ReferralJoined.into(),
+            metadata: Some(serde_json::json!({"username": "alice", "points": 100})),
+        },
+        NewNotificationRow {
+            wallet_id: wallet.id,
+            asset_id: None,
+            notification_type: NotificationType::RewardsCodeDisabled.into(),
+            metadata: None,
+        },
+        NewNotificationRow {
+            wallet_id: wallet.id,
+            asset_id: None,
+            notification_type: NotificationType::RewardsCreateUsername.into(),
+            metadata: Some(serde_json::json!({"points": 50})),
+        },
+        NewNotificationRow {
+            wallet_id: wallet.id,
+            asset_id: None,
+            notification_type: NotificationType::RewardsInvite.into(),
+            metadata: Some(serde_json::json!({"username": "bob", "points": 200})),
+        },
+    ];
+
+    let result = database.notifications()?.create_notifications(notifications).expect("Failed to create notifications");
+    info_with_fields!("setup_dev", step = "notifications added", count = result);
+
+    info_with_fields!("setup_dev", step = "add price alerts");
+
+    let price_alerts = vec![
+        PriceAlert {
+            asset_id: AssetId::from(Chain::Ethereum, None),
+            currency: "USD".to_string(),
+            price: Some(3000.0),
+            price_percent_change: None,
+            price_direction: Some(PriceAlertDirection::Up),
+            last_notified_at: None,
+        },
+        PriceAlert {
+            asset_id: AssetId::from(Chain::Bitcoin, None),
+            currency: "USD".to_string(),
+            price: Some(50000.0),
+            price_percent_change: None,
+            price_direction: Some(PriceAlertDirection::Down),
+            last_notified_at: None,
+        },
+    ];
+
+    let result = database.price_alerts()?.add_price_alerts("test", price_alerts).expect("Failed to create price alerts");
+    info_with_fields!("setup_dev", step = "price alerts added", count = result);
 
     info_with_fields!("setup_dev", step = "complete");
     Ok(())
