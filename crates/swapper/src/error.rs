@@ -1,4 +1,5 @@
 use crate::alien::AlienError;
+use crate::proxy::ProxyError;
 use gem_client::ClientError;
 use gem_jsonrpc::types::JsonRpcError;
 use serde::{Deserialize, Serialize};
@@ -75,7 +76,13 @@ impl From<ClientError> for SwapperError {
         match err {
             ClientError::Network(msg) => Self::ComputeQuoteError(msg),
             ClientError::Timeout => Self::ComputeQuoteError("Request timed out".into()),
-            ClientError::Http { status, len } => Self::ComputeQuoteError(format!("HTTP error: status {}, body size: {}", status, len)),
+            ClientError::Http { status, ref body } => {
+                // Try to parse body as JSON error from proxy API
+                if let Ok(proxy_error) = serde_json::from_slice::<ProxyError>(body) {
+                    return proxy_error.err;
+                }
+                Self::ComputeQuoteError(format!("HTTP error: status {}", status))
+            }
             ClientError::Serialization(msg) => Self::ComputeQuoteError(msg),
         }
     }

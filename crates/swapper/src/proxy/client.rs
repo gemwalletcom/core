@@ -7,11 +7,17 @@ use std::fmt::Debug;
 
 const API_VERSION: u8 = 1;
 
+/// Proxy API error response format: `{"err": SwapperError}`
+#[derive(Debug, Deserialize)]
+pub struct ProxyError {
+    pub err: SwapperError,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-enum ProxyResult<T> {
+enum ProxyResponse<T> {
     Ok { ok: T },
-    Err { err: SwapperError },
+    Err(ProxyError),
 }
 
 #[derive(Clone, Debug)]
@@ -32,19 +38,19 @@ where
 
     pub async fn get_quote(&self, request: ProxyQuoteRequest) -> Result<ProxyQuote, SwapperError> {
         let path = build_path_with_query("/quote", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
-        let response: ProxyResult<ProxyQuote> = self.client.post(&path, &request, None).await.map_err(SwapperError::from)?;
+        let response: ProxyResponse<ProxyQuote> = self.client.post(&path, &request, None).await.map_err(SwapperError::from)?;
         match response {
-            ProxyResult::Ok { ok } => Ok(ok),
-            ProxyResult::Err { err } => Err(err),
+            ProxyResponse::Ok { ok } => Ok(ok),
+            ProxyResponse::Err(e) => Err(e.err),
         }
     }
 
     pub async fn get_quote_data(&self, quote: ProxyQuote) -> Result<SwapQuoteData, SwapperError> {
         let path = build_path_with_query("/quote_data", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
-        let response: ProxyResult<SwapQuoteData> = self.client.post(&path, &quote, None).await.map_err(SwapperError::from)?;
+        let response: ProxyResponse<SwapQuoteData> = self.client.post(&path, &quote, None).await.map_err(SwapperError::from)?;
         match response {
-            ProxyResult::Ok { ok } => Ok(ok),
-            ProxyResult::Err { err } => Err(err),
+            ProxyResponse::Ok { ok } => Ok(ok),
+            ProxyResponse::Err(e) => Err(e.err),
         }
     }
 }
@@ -59,17 +65,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_proxy_result_error_deserialization() {
+    fn test_proxy_error_deserialization() {
         let json = r#"{"err": {"type": "compute_quote_error", "message": "Amount too small (min ~0.0008099 ETH)"}}"#;
-        let result: ProxyResult<()> = serde_json::from_str(json).unwrap();
-        match result {
-            ProxyResult::Err { err } => {
-                assert!(matches!(err, SwapperError::ComputeQuoteError(_)));
-                if let SwapperError::ComputeQuoteError(msg) = err {
-                    assert!(msg.contains("Amount too small"));
-                }
-            }
-            _ => panic!("Expected Err variant"),
+        let error: ProxyError = serde_json::from_str(json).unwrap();
+        assert!(matches!(error.err, SwapperError::ComputeQuoteError(_)));
+        if let SwapperError::ComputeQuoteError(msg) = error.err {
+            assert!(msg.contains("Amount too small"));
         }
     }
 }

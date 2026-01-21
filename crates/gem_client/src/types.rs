@@ -8,11 +8,11 @@ pub struct Response {
     pub data: Vec<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ClientError {
     Network(String),
     Timeout,
-    Http { status: u16, len: usize },
+    Http { status: u16, body: Vec<u8> },
     Serialization(String),
 }
 
@@ -51,6 +51,7 @@ impl From<serde_json::Error> for ClientError {
 
 /// Deserializes a response, trying to decode the model first.
 /// If deserialization fails, checks if it's an HTTP error before returning a serde error.
+/// HTTP errors include the response body so callers can parse it if needed.
 pub fn deserialize_response<R>(response: &Response) -> Result<R, ClientError>
 where
     R: DeserializeOwned,
@@ -59,11 +60,7 @@ where
         Ok(value) => Ok(value),
         Err(error) => {
             validate_http_status(response)?;
-            let preview_bytes = if response.data.len() > 256 { &response.data[..256] } else { &response.data };
-            let body_preview = String::from_utf8_lossy(preview_bytes);
-            Err(ClientError::Serialization(format!(
-                "Failed to deserialize response: {error}. Response body: {body_preview}"
-            )))
+            Err(ClientError::Serialization(error.to_string()))
         }
     }
 }
@@ -71,7 +68,10 @@ where
 fn validate_http_status(response: &Response) -> Result<(), ClientError> {
     if let Some(status) = response.status {
         if !(200..400).contains(&status) {
-            return Err(ClientError::Http { status, len: response.data.len() });
+            return Err(ClientError::Http {
+                status,
+                body: response.data.clone(),
+            });
         }
     }
     Ok(())
