@@ -275,6 +275,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
             price_percent_change: None,
             price_direction: Some(PriceAlertDirection::Up),
             last_notified_at: None,
+            identifier: "ethereum_USD_3000_up".to_string(),
         },
         PriceAlert {
             asset_id: AssetId::from(Chain::Bitcoin, None),
@@ -283,6 +284,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
             price_percent_change: None,
             price_direction: Some(PriceAlertDirection::Down),
             last_notified_at: None,
+            identifier: "bitcoin_USD_50000_down".to_string(),
         },
     ];
 
