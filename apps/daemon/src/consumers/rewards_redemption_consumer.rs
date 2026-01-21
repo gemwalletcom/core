@@ -2,13 +2,14 @@ use async_trait::async_trait;
 use gem_rewards::{RedemptionAsset, RedemptionRequest, RedemptionService};
 use gem_tracing::info_with_fields;
 use primitives::rewards::RedemptionStatus as PrimitiveRedemptionStatus;
+use primitives::{NotificationRewardsRedeemMetadata, NotificationType};
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
 use storage::sql_types::RedemptionStatus;
 use storage::{Database, RedemptionUpdate, RewardsRedemptionsRepository, RewardsRepository};
-use streamer::RewardsRedemptionPayload;
 use streamer::consumer::MessageConsumer;
+use streamer::{InAppNotificationPayload, RewardsRedemptionPayload, StreamProducer, StreamProducerQueue};
 
 pub struct RedemptionRetryConfig {
     pub max_retries: u32,
@@ -20,14 +21,16 @@ pub struct RewardsRedemptionConsumer<S: RedemptionService> {
     database: Database,
     redemption_service: Arc<S>,
     retry_config: RedemptionRetryConfig,
+    stream_producer: StreamProducer,
 }
 
 impl<S: RedemptionService> RewardsRedemptionConsumer<S> {
-    pub fn new(database: Database, redemption_service: Arc<S>, retry_config: RedemptionRetryConfig) -> Self {
+    pub fn new(database: Database, redemption_service: Arc<S>, retry_config: RedemptionRetryConfig, stream_producer: StreamProducer) -> Self {
         Self {
             database,
             redemption_service,
             retry_config,
+            stream_producer,
         }
     }
 
@@ -67,8 +70,10 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, PrimitiveRe
         let recipient_address = self.database.rewards()?.get_address_by_username(&redemption.username)?;
         let option = self.database.rewards_redemptions()?.get_redemption_option(&redemption.option_id)?;
 
-        let asset_id = option.asset.as_ref().map(|a| a.id.to_string());
+        let asset_id = option.asset.as_ref().map(|a| a.id.clone());
+        let asset_id_str = asset_id.as_ref().map(|a| a.to_string());
         let value = option.value.clone();
+        let points = option.points;
 
         let asset = option.asset.map(|asset| RedemptionAsset {
             asset,
@@ -84,10 +89,22 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, PrimitiveRe
                     RedemptionUpdate::Status(RedemptionStatus::Completed),
                 ];
                 self.database.rewards_redemptions()?.update_redemption(payload.redemption_id, updates)?;
+
+                let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&redemption.username)?;
+                if let Some(id) = &asset_id {
+                    let metadata = NotificationRewardsRedeemMetadata {
+                        transaction_id: transaction_id.clone(),
+                        points,
+                        value: value.clone(),
+                    };
+                    let notification = InAppNotificationPayload::new_with_asset(wallet_id, id.to_string(), NotificationType::RewardsRedeemed, serde_json::to_value(metadata).ok());
+                    self.stream_producer.publish_in_app_notifications(vec![notification]).await?;
+                }
+
                 info_with_fields!(
                     "redemption completed",
                     id = payload.redemption_id,
-                    asset = asset_id.as_deref().unwrap_or("none"),
+                    asset = asset_id_str.as_deref().unwrap_or("none"),
                     value = value,
                     tx_id = transaction_id
                 );
@@ -100,7 +117,7 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, PrimitiveRe
                 info_with_fields!(
                     "redemption failed",
                     id = payload.redemption_id,
-                    asset = asset_id.as_deref().unwrap_or("none"),
+                    asset = asset_id_str.as_deref().unwrap_or("none"),
                     value = value,
                     error = error_msg
                 );

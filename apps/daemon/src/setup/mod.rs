@@ -183,6 +183,8 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     let _ = database.devices()?.add_device(android_device).expect("Failed to add Android device");
     info_with_fields!("setup_dev", step = "device added", device_id = "test-android");
 
+    let device_row_id = database.devices()?.get_device_row_id("test").expect("Failed to get device row id");
+
     info_with_fields!("setup_dev", step = "add subscription");
 
     let subscription = Subscription {
@@ -208,10 +210,8 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
 
     info_with_fields!("setup_dev", step = "add wallet subscription");
 
-    let wallet_ids = std::collections::HashMap::from([(wallet_identifier.clone(), wallet.id)]);
-    let wallet_subscriptions = vec![(wallet_identifier, vec![(Chain::Ethereum, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string())])];
-
-    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, "test", wallet_ids, wallet_subscriptions).expect("Failed to add wallet subscription");
+    let wallet_subscriptions = vec![(wallet.id, Chain::Ethereum, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string())];
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, device_row_id, wallet_subscriptions).expect("Failed to add wallet subscription");
     info_with_fields!("setup_dev", step = "wallet subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add rewards");
@@ -230,26 +230,31 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     let notifications = vec![
         NewNotificationRow {
             wallet_id: wallet.id,
+            asset_id: None,
             notification_type: NotificationType::RewardsEnabled.into(),
             metadata: None,
         },
         NewNotificationRow {
             wallet_id: wallet.id,
+            asset_id: None,
             notification_type: NotificationType::ReferralJoined.into(),
             metadata: Some(serde_json::json!({"username": "alice", "points": 100})),
         },
         NewNotificationRow {
             wallet_id: wallet.id,
+            asset_id: None,
             notification_type: NotificationType::RewardsCodeDisabled.into(),
             metadata: None,
         },
         NewNotificationRow {
             wallet_id: wallet.id,
+            asset_id: None,
             notification_type: NotificationType::RewardsCreateUsername.into(),
             metadata: Some(serde_json::json!({"points": 50})),
         },
         NewNotificationRow {
             wallet_id: wallet.id,
+            asset_id: None,
             notification_type: NotificationType::RewardsInvite.into(),
             metadata: Some(serde_json::json!({"username": "bob", "points": 200})),
         },

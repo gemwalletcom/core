@@ -34,7 +34,7 @@ use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
-use devices::DevicesClient;
+use devices::{DeviceCacher, DevicesClient};
 use fiat::FiatProviderFactory;
 use gem_auth::AuthClient;
 use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
@@ -83,7 +83,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let transactions_client = TransactionsClient::new(database.clone());
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "api").await.unwrap();
     let subscriptions_client = SubscriptionsClient::new(database.clone(), stream_producer.clone());
-    let wallets_client = WalletsClient::new(database.clone(), stream_producer.clone());
+    let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
+    let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());
     let metrics_client = MetricsClient::new(database.clone());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);

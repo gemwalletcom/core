@@ -294,6 +294,7 @@ impl fmt::Display for RewardsRedemptionPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InAppNotificationPayload {
     pub wallet_id: i32,
+    pub asset_id: Option<String>,
     pub notification_type: NotificationType,
     pub metadata: Option<serde_json::Value>,
 }
@@ -302,6 +303,16 @@ impl InAppNotificationPayload {
     pub fn new(wallet_id: i32, notification_type: NotificationType, metadata: Option<serde_json::Value>) -> Self {
         Self {
             wallet_id,
+            asset_id: None,
+            notification_type,
+            metadata,
+        }
+    }
+
+    pub fn new_with_asset(wallet_id: i32, asset_id: String, notification_type: NotificationType, metadata: Option<serde_json::Value>) -> Self {
+        Self {
+            wallet_id,
+            asset_id: Some(asset_id),
             notification_type,
             metadata,
         }

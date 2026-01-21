@@ -241,7 +241,7 @@ pub use self::chain_signer::ChainSigner;
 pub mod notification_type;
 pub use self::notification_type::NotificationType;
 pub mod notification_data;
-pub use self::notification_data::{NotificationData, NotificationRewardsMetadata};
+pub use self::notification_data::{NotificationData, NotificationRewardsMetadata, NotificationRewardsRedeemMetadata};
 pub mod deeplink;
 pub use self::deeplink::Deeplink;
 pub mod list_item;

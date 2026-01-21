@@ -1,6 +1,8 @@
+pub mod cacher;
 pub mod client;
 use crate::params::{DeviceIdParam, DeviceParam};
 use crate::responders::{ApiError, ApiResponse};
+pub use cacher::DeviceCacher;
 pub use client::DevicesClient;
 use primitives::device::Device;
 use rocket::{State, delete, get, post, put, tokio::sync::Mutex};

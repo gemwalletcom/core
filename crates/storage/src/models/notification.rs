@@ -1,7 +1,7 @@
 use crate::sql_types::NotificationType;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::NotificationData;
+use primitives::{Asset, NotificationData};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct NotificationRow {
     pub id: i32,
     pub wallet_id: i32,
+    pub asset_id: Option<String>,
     pub notification_type: NotificationType,
     pub is_read: bool,
     pub metadata: Option<serde_json::Value>,
@@ -18,9 +19,10 @@ pub struct NotificationRow {
 }
 
 impl NotificationRow {
-    pub fn as_primitive(&self, wallet_identifier: String) -> NotificationData {
+    pub fn as_primitive(&self, wallet_identifier: String, asset: Option<Asset>) -> NotificationData {
         NotificationData {
             wallet_id: wallet_identifier,
+            asset,
             notification_type: self.notification_type.0,
             is_read: self.is_read,
             metadata: self.metadata.clone(),
@@ -34,6 +36,7 @@ impl NotificationRow {
 #[diesel(table_name = crate::schema::notifications)]
 pub struct NewNotificationRow {
     pub wallet_id: i32,
+    pub asset_id: Option<String>,
     pub notification_type: NotificationType,
     pub metadata: Option<serde_json::Value>,
 }

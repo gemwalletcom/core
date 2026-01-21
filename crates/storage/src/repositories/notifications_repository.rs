@@ -14,7 +14,7 @@ impl NotificationsRepository for DatabaseClient {
     fn get_notifications_by_device_id(&mut self, device_id: &str, from_datetime: Option<NaiveDateTime>) -> Result<Vec<NotificationData>, DatabaseError> {
         Ok(NotificationsStore::get_notifications_by_device_id(self, device_id, from_datetime)?
             .into_iter()
-            .map(|(row, wallet_identifier)| row.as_primitive(wallet_identifier))
+            .map(|(row, wallet_identifier, asset_row)| row.as_primitive(wallet_identifier, asset_row.map(|a| a.as_primitive())))
             .collect())
     }
 

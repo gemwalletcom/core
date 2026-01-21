@@ -4239,6 +4239,7 @@ name = "in_app_notifications"
 version = "1.0.0"
 dependencies = [
  "localizer",
+ "number_formatter",
  "primitives",
  "serde_json",
 ]
