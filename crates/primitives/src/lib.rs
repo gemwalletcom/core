@@ -85,7 +85,7 @@ pub use self::payment_type::PaymentType;
 pub mod device;
 pub use self::device::Device;
 pub mod transaction;
-pub use self::transaction::{Transaction, TransactionsFetchOption, TransactionsResponse};
+pub use self::transaction::{Transaction, TransactionsResponse};
 pub mod transaction_type;
 pub use self::transaction_type::TransactionType;
 pub mod transaction_state;

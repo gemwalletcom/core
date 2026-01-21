@@ -8,14 +8,6 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, vec};
 use typeshare::typeshare;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable, Equatable")]
-pub struct TransactionsFetchOption {
-    pub wallet_index: i32,
-    pub asset_id: Option<String>,
-    pub from_timestamp: Option<u32>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
