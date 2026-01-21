@@ -187,7 +187,7 @@ impl JsonRpcHandler {
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
 
-        let result: JsonRpcResult = serde_json::from_slice(&body_bytes)?;
+        let result: JsonRpcResult = serde_json::from_slice(&body_bytes).map_err(|e| Self::format_parse_error(status, &body_bytes, e))?;
 
         if status == StatusCode::OK.as_u16()
             && let (JsonRpcResult::Success(success), Some(ttl)) = (&result, cache.should_cache_call(&request.chain, call))
@@ -224,13 +224,22 @@ impl JsonRpcHandler {
         let response = Self::send_jsonrpc_request(client, method, url, body, forward_headers).await?;
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
-        let responses: serde_json::Value = serde_json::from_slice(&body_bytes)?;
+        let responses: serde_json::Value =
+            serde_json::from_slice(&body_bytes).map_err(|e| Self::format_parse_error(status, &body_bytes, e))?;
         Ok((responses, status))
     }
 
     fn build_json_response<T: serde::Serialize>(data: &T, headers: HeaderMap, status: u16) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
         ResponseBuilder::build_with_headers(response_body, status, JSON_CONTENT_TYPE, headers)
+    }
+
+    fn format_parse_error(status: u16, body: &[u8], error: serde_json::Error) -> String {
+        const MAX_BODY_LEN: usize = 256;
+        if body.len() <= MAX_BODY_LEN && let Ok(text) = std::str::from_utf8(body) {
+            return format!("status={}, body: {}", status, text.trim());
+        }
+        format!("status={}, parse error: {}", status, error)
     }
 }
 
@@ -258,5 +267,23 @@ mod tests {
 
         assert!(matches!(single_request, JsonRpcRequest::Single(_)));
         assert!(matches!(batch_request, JsonRpcRequest::Batch(_)));
+    }
+
+    #[test]
+    fn test_format_parse_error() {
+        let err = || serde_json::from_slice::<serde_json::Value>(b"x").unwrap_err();
+
+        assert_eq!(
+            JsonRpcHandler::format_parse_error(415, b"Expected Content-Type: application/json", err()),
+            "status=415, body: Expected Content-Type: application/json"
+        );
+        assert_eq!(
+            JsonRpcHandler::format_parse_error(502, b"<html>Bad Gateway...</html>".repeat(20).as_slice(), err()),
+            "status=502, parse error: expected value at line 1 column 1"
+        );
+        assert_eq!(
+            JsonRpcHandler::format_parse_error(500, &[0xff, 0xfe], err()),
+            "status=500, parse error: expected value at line 1 column 1"
+        );
     }
 }

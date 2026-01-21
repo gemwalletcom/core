@@ -87,7 +87,6 @@ impl NodeService {
         }
 
         let mut last_error: Option<String> = None;
-        let mut last_status: Option<u16> = None;
         let max_attempts = self.retry_config.effective_max_attempts(urls.len());
         for url in urls.iter().take(max_attempts) {
             let node_domain = NodeDomain::new(url.clone(), chain_config.clone());
@@ -96,8 +95,7 @@ impl NodeService {
                     return Ok(response);
                 }
                 Ok(response) => {
-                    last_status = Some(response.status);
-                    last_error = Some(format!("status {}", response.status));
+                    last_error = Some(format!("status={}", response.status));
                 }
                 Err(e) => {
                     let error = e.to_string();
@@ -120,11 +118,9 @@ impl NodeService {
             }
         }
 
-        let error_message = match (last_error, last_status) {
-            (Some(e), Some(status)) => format!("All upstream URLs failed, last_status={}, error: {}", status, e),
-            (Some(e), None) => format!("All upstream URLs failed, error: {}", e),
-            _ => "All upstream URLs failed".to_string(),
-        };
+        let error_message = last_error
+            .map(|e| format!("All upstream URLs failed, {}", e))
+            .unwrap_or_else(|| "All upstream URLs failed".to_string());
         self.log_and_create_error_response(&request, None, &error_message)
     }
 
