@@ -54,7 +54,7 @@ pub async fn get_assets_search(
 pub async fn get_assets_by_device_id(
     device_id: DeviceIdParam,
     wallet_index: i32,
-    from_timestamp: Option<u32>,
+    from_timestamp: Option<u64>,
     client: &State<Mutex<AssetsClient>>,
 ) -> Result<ApiResponse<Vec<AssetId>>, ApiError> {
     Ok(client.lock().await.get_assets_by_device_id(&device_id.0, wallet_index, from_timestamp)?.into())

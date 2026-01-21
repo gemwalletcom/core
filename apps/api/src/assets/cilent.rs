@@ -35,7 +35,7 @@ impl AssetsClient {
         Ok(self.database.assets()?.get_asset_full(asset_id)?)
     }
 
-    pub fn get_assets_by_device_id(&self, device_id: &str, wallet_index: i32, from_timestamp: Option<u32>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
+    pub fn get_assets_by_device_id(&self, device_id: &str, wallet_index: i32, from_timestamp: Option<u64>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.database.subscriptions()?.get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
         let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
         let from_datetime = from_timestamp.and_then(|ts| DateTime::<Utc>::from_timestamp(ts as i64, 0).map(|dt| dt.naive_utc()));
