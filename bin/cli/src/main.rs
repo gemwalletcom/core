@@ -8,7 +8,11 @@ use std::error::Error;
 
 #[derive(Parser)]
 #[command(name = "cli")]
-#[command(about = "Gem Wallet CLI tool", long_about = None)]
+#[command(about = "Gem Wallet CLI tool")]
+#[command(after_help = "Examples:
+  cli asset info solana Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB
+  cli balance solana 7v91N7iZ9mNicL8WfG6cgSCKyRXydQjLh6UYBWwm6y1Q
+")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -16,7 +20,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Get token info
     Asset(AssetCommand),
+    /// Get address balances
     Balance(BalanceCommand),
 }
 

@@ -11,7 +11,7 @@ pub struct AssetCommand {
 
 #[derive(Subcommand)]
 enum AssetSubcommand {
-    /// Get token info from chain RPC
+    /// Get token info
     Info {
         /// Chain name (e.g., solana, ethereum)
         chain: Chain,
