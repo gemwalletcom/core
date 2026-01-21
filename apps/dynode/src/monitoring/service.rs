@@ -88,7 +88,8 @@ impl NodeService {
 
         let mut last_error: Option<String> = None;
         let mut last_status: Option<u16> = None;
-        for url in urls {
+        let max_attempts = self.retry_config.effective_max_attempts(urls.len());
+        for url in urls.iter().take(max_attempts) {
             let node_domain = NodeDomain::new(url.clone(), chain_config.clone());
             match self.proxy_builder.handle_request(request.clone(), &node_domain).await {
                 Ok(response) if !self.should_retry_response(&request, &response) => {
@@ -207,6 +208,7 @@ mod tests {
             NodeMonitoringConfig::default(),
             RetryConfig {
                 enabled: false,
+                max_attempts: 0,
                 status_codes: vec![],
                 error_messages: vec![],
             },
