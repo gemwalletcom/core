@@ -30,6 +30,5 @@ pub(crate) fn parse_asset_id(asset: &AssetId) -> Result<Address, SwapperError> {
 }
 
 pub(crate) fn parse_str(str: &str) -> Result<Address, SwapperError> {
-    str.parse::<Address>()
-        .map_err(|_| SwapperError::ComputeQuoteError(format!("{}: {}", INVALID_ADDRESS, str)))
+    str.parse::<Address>().map_err(|_| SwapperError::ComputeQuoteError(format!("{}: {}", INVALID_ADDRESS, str)))
 }

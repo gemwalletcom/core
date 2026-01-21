@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use number_formatter::BigNumberFormatter;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
@@ -21,6 +20,7 @@ use crate::{
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
+    error::amount_to_value,
     slippage,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
@@ -130,20 +130,7 @@ fn parse_min_amount(message: &str, decimals: u32) -> Option<String> {
     let open = message.rfind('(')?;
     let close = message[open + 1..].find(')')? + open + 1;
     let token = message[open + 1..close].trim();
-    normalize_token(token, decimals)
-}
-
-fn normalize_token(token: &str, decimals: u32) -> Option<String> {
-    let cleaned = token.replace([',', '_'], "");
-    if cleaned.is_empty() {
-        return None;
-    }
-
-    if cleaned.contains('.') {
-        BigNumberFormatter::value_from_amount(&cleaned, decimals).ok()
-    } else {
-        Some(cleaned)
-    }
+    amount_to_value(token, decimals)
 }
 
 #[async_trait]

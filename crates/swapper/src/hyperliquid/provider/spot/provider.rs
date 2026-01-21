@@ -69,10 +69,7 @@ impl HyperCoreSpot {
 
     async fn load_orderbook(&self, coin: &str) -> Result<OrderbookResponse, SwapperError> {
         let client = self.client()?;
-        client
-            .get_spot_orderbook(coin)
-            .await
-            .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))
+        client.get_spot_orderbook(coin).await.map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))
     }
 
     fn resolve_token<'a>(&self, meta: &'a SpotMeta, asset: &'a SwapperQuoteAsset) -> Result<&'a SpotToken, SwapperError> {

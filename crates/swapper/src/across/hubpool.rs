@@ -59,8 +59,7 @@ impl HubPoolClient {
 
     pub fn decoded_pooled_token_call3(&self, result: &IMulticall3::Result) -> Result<HubPoolInterface::PooledToken, SwapperError> {
         if result.success {
-            let decoded =
-                HubPoolInterface::pooledTokensCall::abi_decode_returns(&result.returnData).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
+            let decoded = HubPoolInterface::pooledTokensCall::abi_decode_returns(&result.returnData).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
             Ok(decoded)
         } else {
             Err(SwapperError::ComputeQuoteError("pooled token call failed".into()))
@@ -100,9 +99,7 @@ impl HubPoolClient {
 
     pub fn decoded_current_time(&self, result: &IMulticall3::Result) -> Result<u32, SwapperError> {
         let value = decode_call3_return::<HubPoolInterface::getCurrentTimeCall>(result).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
-        value
-            .try_into()
-            .map_err(|_| SwapperError::ComputeQuoteError("decode current time failed".into()))
+        value.try_into().map_err(|_| SwapperError::ComputeQuoteError("decode current time failed".into()))
     }
 
     pub async fn fetch_utilization(&self, pool_token: &Address, amount: U256) -> Result<BigInt, SwapperError> {

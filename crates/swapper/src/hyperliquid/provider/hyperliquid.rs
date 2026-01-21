@@ -63,7 +63,7 @@ impl Swapper for Hyperliquid {
             return self.bridge.fetch_quote(request).await;
         }
 
-        Err(SwapperError::NotSupportedAsset)
+        Err(SwapperError::NoQuoteAvailable)
     }
 
     async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
@@ -73,7 +73,7 @@ impl Swapper for Hyperliquid {
         if Self::is_bridge_request(&quote.request) {
             return self.bridge.fetch_quote_data(quote, data).await;
         }
-        Err(SwapperError::NotSupportedAsset)
+        Err(SwapperError::NoQuoteAvailable)
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {

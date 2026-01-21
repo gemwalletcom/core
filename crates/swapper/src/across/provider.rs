@@ -321,9 +321,8 @@ impl Swapper for Across {
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        // does not support same chain swap
         if request.from_asset.chain() == request.to_asset.chain() {
-            return Err(SwapperError::NotSupportedAsset);
+            return Err(SwapperError::NoQuoteAvailable);
         }
 
         let input_is_native = request.from_asset.is_native();
@@ -334,7 +333,7 @@ impl Swapper for Across {
         let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         if !Self::is_supported_pair(&request.from_asset.asset_id(), &request.to_asset.asset_id()) {
-            return Err(SwapperError::NotSupportedAsset);
+            return Err(SwapperError::NoQuoteAvailable);
         }
 
         let input_asset = eth_address::convert_native_to_weth(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedAsset)?;

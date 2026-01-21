@@ -2,6 +2,7 @@ use crate::alien::AlienError;
 use crate::proxy::ProxyError;
 use gem_client::ClientError;
 use gem_jsonrpc::types::JsonRpcError;
+use number_formatter::BigNumberFormatter;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use typeshare::typeshare;
@@ -133,5 +134,19 @@ impl From<num_bigint::ParseBigIntError> for SwapperError {
 impl From<number_formatter::NumberFormatterError> for SwapperError {
     fn from(err: number_formatter::NumberFormatterError) -> Self {
         Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
+    }
+}
+
+/// Converts a human-readable amount string to base units value.
+pub fn amount_to_value(token: &str, decimals: u32) -> Option<String> {
+    let cleaned = token.replace([',', '_'], "");
+    if cleaned.is_empty() {
+        return None;
+    }
+
+    if cleaned.contains('.') {
+        BigNumberFormatter::value_from_amount(&cleaned, decimals).ok()
+    } else {
+        Some(cleaned)
     }
 }

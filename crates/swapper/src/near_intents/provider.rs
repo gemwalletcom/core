@@ -6,13 +6,12 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::base_url,
+    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, error::amount_to_value, near_intents::client::base_url,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use gem_sui::{SuiClient, build_transfer_message_bytes};
-use number_formatter::BigNumberFormatter;
 use primitives::{Chain, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
@@ -255,7 +254,7 @@ fn parse_min_amount(message: &str, decimals: u32) -> Option<String> {
     let start = lower.find(marker)? + marker.len();
     let tail = message.get(start..)?;
     let token = extract_numeric_token(tail)?;
-    normalize_token(&token, decimals)
+    amount_to_value(&token, decimals)
 }
 
 fn extract_numeric_token(message: &str) -> Option<String> {
@@ -269,24 +268,7 @@ fn extract_numeric_token(message: &str) -> Option<String> {
         }
     }
 
-    if current.is_empty() {
-        None
-    } else {
-        Some(current)
-    }
-}
-
-fn normalize_token(token: &str, decimals: u32) -> Option<String> {
-    let cleaned = token.replace([',', '_'], "");
-    if cleaned.is_empty() {
-        return None;
-    }
-
-    if cleaned.contains('.') {
-        BigNumberFormatter::value_from_amount(&cleaned, decimals).ok()
-    } else {
-        Some(cleaned)
-    }
+    if current.is_empty() { None } else { Some(current) }
 }
 
 #[async_trait]

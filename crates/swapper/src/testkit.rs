@@ -1,6 +1,6 @@
 use crate::{
-    FetchQuoteData, ProviderType, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage,
-    SwapperSlippageMode, config::get_swap_config,
+    FetchQuoteData, ProviderType, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage, SwapperSlippageMode,
+    config::get_swap_config,
 };
 use async_trait::async_trait;
 use primitives::Chain;

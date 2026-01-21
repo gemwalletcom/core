@@ -79,9 +79,7 @@ impl GemSwapper {
     fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
         for err in errors {
             if let SwapperError::InputAmountError { min_amount } = err {
-                return Some(SwapperError::InputAmountError {
-                    min_amount: min_amount.clone(),
-                });
+                return Some(SwapperError::InputAmountError { min_amount: min_amount.clone() });
             }
         }
 
@@ -144,7 +142,7 @@ impl GemSwapper {
 
     pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
         if request.from_asset.id == request.to_asset.id {
-            return Err(SwapperError::NotSupportedAsset);
+            return Err(SwapperError::NoQuoteAvailable);
         }
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
@@ -407,9 +405,7 @@ mod tests {
         let gem_swapper = GemSwapper {
             rpc_provider: Arc::new(NativeProvider::default()),
             swappers: vec![
-                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || {
-                    Err(SwapperError::InputAmountError { min_amount: None })
-                })),
+                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountError { min_amount: None }))),
                 Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
                     Err(SwapperError::InputAmountError { min_amount: None })
                 })),
