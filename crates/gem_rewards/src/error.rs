@@ -65,11 +65,9 @@ impl Localize for ReferralError {
             Self::Validation(ReferralValidationError::Database(_)) => localizer.errors_generic(),
             Self::ReferrerLimitReached(_) => localizer.rewards_error_referral_referrer_limit_reached(),
             Self::IpCountryIneligible(country) => localizer.rewards_error_referral_country_ineligible(country),
-            Self::RiskScoreExceeded { .. }
-            | Self::DuplicateAttempt
-            | Self::IpTorNotAllowed
-            | Self::LimitReached(_)
-            | Self::InvalidDeviceToken(_) => localizer.rewards_error_referral_limit_reached(),
+            Self::RiskScoreExceeded { .. } | Self::DuplicateAttempt | Self::IpTorNotAllowed | Self::LimitReached(_) | Self::InvalidDeviceToken(_) => {
+                localizer.rewards_error_referral_limit_reached()
+            }
             Self::Database(_) => localizer.errors_generic(),
         }
     }

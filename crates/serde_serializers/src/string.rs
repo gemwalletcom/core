@@ -37,42 +37,33 @@ mod tests {
 
     #[test]
     fn test_deserialize_string_from_str_or_number() {
-        // String
         let result: TestStruct = serde_json::from_str(r#"{"value": "hello"}"#).unwrap();
         assert_eq!(result.value, "hello");
 
-        // Integer
         let result: TestStruct = serde_json::from_str(r#"{"value": 123}"#).unwrap();
         assert_eq!(result.value, "123");
 
-        // Zero
         let result: TestStruct = serde_json::from_str(r#"{"value": 0}"#).unwrap();
         assert_eq!(result.value, "0");
 
-        // Float
         let result: TestStruct = serde_json::from_str(r#"{"value": 123.456}"#).unwrap();
         assert_eq!(result.value, "123.456");
     }
 
     #[test]
     fn test_deserialize_string_from_value() {
-        // String
         let result: TestStructWithNull = serde_json::from_str(r#"{"value": "hello"}"#).unwrap();
         assert_eq!(result.value, "hello");
 
-        // Integer
         let result: TestStructWithNull = serde_json::from_str(r#"{"value": 123}"#).unwrap();
         assert_eq!(result.value, "123");
 
-        // Zero
         let result: TestStructWithNull = serde_json::from_str(r#"{"value": 0}"#).unwrap();
         assert_eq!(result.value, "0");
 
-        // Null
         let result: TestStructWithNull = serde_json::from_str(r#"{"value": null}"#).unwrap();
         assert_eq!(result.value, "");
 
-        // Float
         let result: TestStructWithNull = serde_json::from_str(r#"{"value": 123.456}"#).unwrap();
         assert_eq!(result.value, "123.456");
     }

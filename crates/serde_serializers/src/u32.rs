@@ -45,19 +45,15 @@ mod tests {
 
     #[test]
     fn test_deserialize_option_u32_from_number() {
-        // Integer
         let result: TestStruct = serde_json::from_str(r#"{"time_estimate": 10}"#).unwrap();
         assert_eq!(result.time_estimate, Some(10));
 
-        // Null
         let result: TestStruct = serde_json::from_str(r#"{"time_estimate": null}"#).unwrap();
         assert_eq!(result.time_estimate, None);
 
-        // Missing field
         let result: TestStruct = serde_json::from_str(r#"{}"#).unwrap();
         assert_eq!(result.time_estimate, None);
 
-        // Zero
         let result: TestStruct = serde_json::from_str(r#"{"time_estimate": 0}"#).unwrap();
         assert_eq!(result.time_estimate, Some(0));
     }

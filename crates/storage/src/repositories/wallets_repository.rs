@@ -55,12 +55,7 @@ impl WalletsRepository for DatabaseClient {
             return Ok(0);
         }
 
-        let all_addresses: Vec<String> = subscriptions
-            .iter()
-            .map(|(_, _, addr)| addr.clone())
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect();
+        let all_addresses: Vec<String> = subscriptions.iter().map(|(_, _, addr)| addr.clone()).collect::<HashSet<_>>().into_iter().collect();
 
         let existing_rows = WalletsStore::get_addresses(self, all_addresses.clone())?;
         let existing_set: HashSet<String> = existing_rows.iter().map(|row| row.address.clone()).collect();
@@ -79,11 +74,7 @@ impl WalletsRepository for DatabaseClient {
             WalletsStore::get_addresses(self, missing_strs)?
         };
 
-        let address_map: HashMap<String, i32> = existing_rows
-            .into_iter()
-            .chain(new_rows)
-            .map(|row| (row.address, row.id))
-            .collect();
+        let address_map: HashMap<String, i32> = existing_rows.into_iter().chain(new_rows).map(|row| (row.address, row.id)).collect();
 
         let rows: Vec<NewWalletSubscriptionRow> = subscriptions
             .into_iter()
@@ -109,12 +100,7 @@ impl WalletsRepository for DatabaseClient {
             return Ok(0);
         }
 
-        let all_addresses: Vec<String> = subscriptions
-            .iter()
-            .map(|(_, _, addr)| addr.clone())
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect();
+        let all_addresses: Vec<String> = subscriptions.iter().map(|(_, _, addr)| addr.clone()).collect::<HashSet<_>>().into_iter().collect();
 
         let address_rows = WalletsStore::get_addresses(self, all_addresses)?;
         let address_map: HashMap<String, i32> = address_rows.into_iter().map(|row| (row.address, row.id)).collect();

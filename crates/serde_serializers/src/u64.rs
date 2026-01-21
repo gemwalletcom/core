@@ -81,24 +81,16 @@ mod tests {
 
     #[test]
     fn test_deserialize_option_u64_from_str() {
-        // Test with string value
-        let json = r#"{"gas_used": "123"}"#;
-        let result: TestStruct = serde_json::from_str(json).unwrap();
+        let result: TestStruct = serde_json::from_str(r#"{"gas_used": "123"}"#).unwrap();
         assert_eq!(result.gas_used, Some(123));
 
-        // Test with hex string value
-        let json = r#"{"gas_used": "0x2a"}"#;
-        let result: TestStruct = serde_json::from_str(json).unwrap();
+        let result: TestStruct = serde_json::from_str(r#"{"gas_used": "0x2a"}"#).unwrap();
         assert_eq!(result.gas_used, Some(42));
 
-        // Test with null value
-        let json = r#"{"gas_used": null}"#;
-        let result: TestStruct = serde_json::from_str(json).unwrap();
+        let result: TestStruct = serde_json::from_str(r#"{"gas_used": null}"#).unwrap();
         assert_eq!(result.gas_used, None);
 
-        // Test with missing field (should use default)
-        let json = r#"{}"#;
-        let result: TestStruct = serde_json::from_str(json).unwrap();
+        let result: TestStruct = serde_json::from_str(r#"{}"#).unwrap();
         assert_eq!(result.gas_used, None);
     }
 
@@ -110,24 +102,16 @@ mod tests {
 
     #[test]
     fn test_deserialize_u64_from_str_with_hex() {
-        // Test with 0x prefixed hex
-        let json = r#"{"value": "0x1a2b"}"#;
-        let result: TestMixedStruct = serde_json::from_str(json).unwrap();
-        assert_eq!(result.value, 6699); // 0x1a2b = 6699
+        let result: TestMixedStruct = serde_json::from_str(r#"{"value": "0x1a2b"}"#).unwrap();
+        assert_eq!(result.value, 6699);
 
-        // Test with zero hex
-        let json = r#"{"value": "0x0"}"#;
-        let result: TestMixedStruct = serde_json::from_str(json).unwrap();
+        let result: TestMixedStruct = serde_json::from_str(r#"{"value": "0x0"}"#).unwrap();
         assert_eq!(result.value, 0);
 
-        // Test with decimal string
-        let json = r#"{"value": "12345"}"#;
-        let result: TestMixedStruct = serde_json::from_str(json).unwrap();
+        let result: TestMixedStruct = serde_json::from_str(r#"{"value": "12345"}"#).unwrap();
         assert_eq!(result.value, 12345);
 
-        // Test with zero decimal
-        let json = r#"{"value": "0"}"#;
-        let result: TestMixedStruct = serde_json::from_str(json).unwrap();
+        let result: TestMixedStruct = serde_json::from_str(r#"{"value": "0"}"#).unwrap();
         assert_eq!(result.value, 0);
     }
 

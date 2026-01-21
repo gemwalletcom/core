@@ -3,6 +3,8 @@ use std::marker::PhantomData;
 
 use serde::de::{self, Visitor};
 
+use super::map_err;
+
 pub(crate) trait NumberFromValue: Sized {
     fn from_u64(value: u64) -> Result<Self, String>;
     fn from_i64(value: i64) -> Result<Self, String>;
@@ -13,13 +15,6 @@ pub(crate) struct OptionNumberVisitor<T>(PhantomData<T>);
 impl<T> OptionNumberVisitor<T> {
     pub(crate) fn new() -> Self {
         Self(PhantomData)
-    }
-
-    fn map_number<E>(value: Result<T, String>) -> Result<Option<T>, E>
-    where
-        E: de::Error,
-    {
-        value.map(Some).map_err(de::Error::custom)
     }
 }
 
@@ -37,14 +32,14 @@ where
     where
         E: de::Error,
     {
-        Self::map_number(T::from_u64(value))
+        map_err(T::from_u64(value)).map(Some)
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Self::map_number(T::from_i64(value))
+        map_err(T::from_i64(value)).map(Some)
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E>

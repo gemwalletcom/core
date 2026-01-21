@@ -745,7 +745,10 @@ mod tests {
         input.referrer_verified = true;
         // Verified user threshold=5 (10/2), 4 signals - no penalty
         let signals: Vec<_> = (0..4).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert_eq!(calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score, 0);
+        assert_eq!(
+            calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score,
+            0
+        );
         // 5 signals triggers penalty
         let signals: Vec<_> = (0..5).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
         assert!(calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score > 0);

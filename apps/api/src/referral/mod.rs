@@ -38,7 +38,13 @@ pub async fn create_referral(request: Authenticated<ReferralCode>, ip: std::net:
     Ok(client
         .lock()
         .await
-        .create_username(&wallet_identifier, &request.data.code, request.auth.device.id, &ip.to_string(), request.auth.device.locale.as_str())
+        .create_username(
+            &wallet_identifier,
+            &request.data.code,
+            request.auth.device.id,
+            &ip.to_string(),
+            request.auth.device.locale.as_str(),
+        )
         .await?
         .into())
 }

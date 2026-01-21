@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
-use localizer::LanguageLocalizer;
 use in_app_notifications::map_notification;
+use localizer::LanguageLocalizer;
 use primitives::InAppNotification;
 use std::error::Error;
 use storage::{Database, NotificationsRepository};

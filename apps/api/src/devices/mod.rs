@@ -18,11 +18,7 @@ pub async fn get_device(device_id: DeviceIdParam, client: &State<Mutex<DevicesCl
 }
 
 #[put("/devices/<device_id>", format = "json", data = "<device>")]
-pub async fn update_device(
-    device: DeviceParam,
-    #[allow(unused)] device_id: DeviceIdParam,
-    client: &State<Mutex<DevicesClient>>,
-) -> Result<ApiResponse<Device>, ApiError> {
+pub async fn update_device(device: DeviceParam, #[allow(unused)] device_id: DeviceIdParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
     Ok(client.lock().await.update_device(device.0)?.into())
 }
 

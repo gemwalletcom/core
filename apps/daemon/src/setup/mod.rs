@@ -1,14 +1,16 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
-use primitives::{Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NotificationType, PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, Subscription};
+use primitives::{
+    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NotificationType, PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, Subscription,
+};
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
 use storage::models::{ConfigRow, FiatRateRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
-    AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository, PriceAlertsRepository,
-    PricesDexRepository, ReleasesRepository, RewardsRepository, SubscriptionsRepository, TagRepository, WalletsRepository, WalletSource, WalletType,
+    AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
+    PriceAlertsRepository, PricesDexRepository, ReleasesRepository, RewardsRepository, SubscriptionsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer};
 
