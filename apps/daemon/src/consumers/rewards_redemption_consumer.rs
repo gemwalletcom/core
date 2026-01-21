@@ -90,14 +90,13 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, PrimitiveRe
                 ];
                 self.database.rewards_redemptions()?.update_redemption(payload.redemption_id, updates)?;
 
-                let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&redemption.username)?;
                 if let Some(id) = &asset_id {
                     let metadata = NotificationRewardsRedeemMetadata {
                         transaction_id: transaction_id.clone(),
                         points,
                         value: value.clone(),
                     };
-                    let notification = InAppNotificationPayload::new_with_asset(wallet_id, id.to_string(), NotificationType::RewardsRedeemed, serde_json::to_value(metadata).ok());
+                    let notification = InAppNotificationPayload::new_with_asset(redemption.wallet_id, id.to_string(), NotificationType::RewardsRedeemed, serde_json::to_value(metadata).ok());
                     self.stream_producer.publish_in_app_notifications(vec![notification]).await?;
                 }
 
