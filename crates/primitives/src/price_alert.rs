@@ -16,6 +16,9 @@ pub struct PriceAlert {
     pub price_percent_change: Option<f64>,
     pub price_direction: Option<PriceAlertDirection>,
     pub last_notified_at: Option<DateTime<Utc>>,
+    #[typeshare(skip)]
+    #[serde(skip)]
+    pub identifier: String,
 }
 
 fn default_currency() -> String {
@@ -24,6 +27,9 @@ fn default_currency() -> String {
 
 impl PriceAlert {
     pub fn id(&self) -> String {
+        if !self.identifier.is_empty() {
+            return self.identifier.clone();
+        }
         if self.price.is_none() && self.price_percent_change.is_none() && self.price_direction.is_none() {
             return self.asset_id.to_string();
         }
@@ -103,6 +109,7 @@ mod tests {
             price_percent_change: Some(5.0),
             price_direction: Some(PriceAlertDirection::Up),
             last_notified_at: None,
+            identifier: String::new(),
         };
         assert_eq!(price_alert.id(), "ethereum_USD_100_5_up");
 
@@ -113,6 +120,7 @@ mod tests {
             price_percent_change: Some(10_000.10),
             price_direction: Some(PriceAlertDirection::Up),
             last_notified_at: None,
+            identifier: String::new(),
         };
         assert_eq!(price_alert.id(), "ethereum_USD_1.12344_10000.1_up");
     }
@@ -126,6 +134,7 @@ mod tests {
             price_percent_change: None,
             price_direction: None,
             last_notified_at: None,
+            identifier: String::new(),
         };
         assert_eq!(price_alert.id(), "ethereum");
     }
@@ -139,7 +148,22 @@ mod tests {
             price_percent_change: None,
             price_direction: Some(PriceAlertDirection::Down),
             last_notified_at: None,
+            identifier: String::new(),
         };
         assert_eq!(price_alert.id(), "ethereum_USD_100_down");
+    }
+
+    #[test]
+    fn test_price_alert_id_uses_stored_identifier() {
+        let price_alert = PriceAlert {
+            asset_id: AssetId::from_chain(Chain::Ethereum),
+            currency: "USD".to_string(),
+            price: Some(100.0),
+            price_percent_change: None,
+            price_direction: Some(PriceAlertDirection::Up),
+            last_notified_at: None,
+            identifier: "stored_identifier_from_db".to_string(),
+        };
+        assert_eq!(price_alert.id(), "stored_identifier_from_db");
     }
 }
