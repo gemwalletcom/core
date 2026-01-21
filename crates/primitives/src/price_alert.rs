@@ -26,24 +26,70 @@ fn default_currency() -> String {
 }
 
 impl PriceAlert {
+    pub fn new_auto(asset_id: AssetId, currency: String) -> Self {
+        Self {
+            identifier: asset_id.to_string(),
+            asset_id,
+            currency,
+            price: None,
+            price_percent_change: None,
+            price_direction: None,
+            last_notified_at: None,
+        }
+    }
+
+    pub fn new_price(asset_id: AssetId, currency: String, price: f64, direction: PriceAlertDirection) -> Self {
+        Self {
+            identifier: Self::generate_id(&asset_id, &currency, Some(price), None, Some(&direction)),
+            asset_id,
+            currency,
+            price: Some(price),
+            price_percent_change: None,
+            price_direction: Some(direction),
+            last_notified_at: None,
+        }
+    }
+
+    pub fn new_price_percent(asset_id: AssetId, currency: String, percent_change: f64, direction: PriceAlertDirection) -> Self {
+        Self {
+            identifier: Self::generate_id(&asset_id, &currency, None, Some(percent_change), Some(&direction)),
+            asset_id,
+            currency,
+            price: None,
+            price_percent_change: Some(percent_change),
+            price_direction: Some(direction),
+            last_notified_at: None,
+        }
+    }
+
     pub fn id(&self) -> String {
         if !self.identifier.is_empty() {
             return self.identifier.clone();
         }
-        if self.price.is_none() && self.price_percent_change.is_none() && self.price_direction.is_none() {
-            return self.asset_id.to_string();
+        Self::generate_id(&self.asset_id, &self.currency, self.price, self.price_percent_change, self.price_direction.as_ref())
+    }
+
+    fn generate_id(
+        asset_id: &AssetId,
+        currency: &str,
+        price: Option<f64>,
+        price_percent_change: Option<f64>,
+        price_direction: Option<&PriceAlertDirection>,
+    ) -> String {
+        if price.is_none() && price_percent_change.is_none() && price_direction.is_none() {
+            return asset_id.to_string();
         }
-        let parts: Vec<String> = vec![
-            Some(self.asset_id.to_string()),
-            Some(self.currency.clone()),
-            self.price.map(|p| p.to_string()),
-            self.price_percent_change.map(|p| p.to_string()),
-            self.price_direction.clone().map(|d| d.as_ref().to_string()),
+        [
+            Some(asset_id.to_string()),
+            Some(currency.to_string()),
+            price.map(|p| p.to_string()),
+            price_percent_change.map(|p| p.to_string()),
+            price_direction.map(|d| d.as_ref().to_string()),
         ]
         .into_iter()
-        .filter_map(|x| x.map(|s| s.to_string()))
-        .collect();
-        parts.join("_")
+        .flatten()
+        .collect::<Vec<_>>()
+        .join("_")
     }
 }
 
@@ -101,69 +147,34 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_price_alert_id_with_all_fields() {
-        let price_alert = PriceAlert {
-            asset_id: AssetId::from_chain(Chain::Ethereum),
-            currency: "USD".to_string(),
-            price: Some(100.0),
-            price_percent_change: Some(5.0),
-            price_direction: Some(PriceAlertDirection::Up),
-            last_notified_at: None,
-            identifier: String::new(),
-        };
-        assert_eq!(price_alert.id(), "ethereum_USD_100_5_up");
-
-        let price_alert = PriceAlert {
-            asset_id: AssetId::from_chain(Chain::Ethereum),
-            currency: "USD".to_string(),
-            price: Some(1.12344),
-            price_percent_change: Some(10_000.10),
-            price_direction: Some(PriceAlertDirection::Up),
-            last_notified_at: None,
-            identifier: String::new(),
-        };
-        assert_eq!(price_alert.id(), "ethereum_USD_1.12344_10000.1_up");
+    fn test_generate_id() {
+        let eth = AssetId::from_chain(Chain::Ethereum);
+        assert_eq!(PriceAlert::generate_id(&eth, "USD", None, None, None), "ethereum");
+        assert_eq!(PriceAlert::generate_id(&eth, "USD", Some(100.0), None, Some(&PriceAlertDirection::Up)), "ethereum_USD_100_up");
+        assert_eq!(PriceAlert::generate_id(&eth, "USD", Some(1.12344), None, Some(&PriceAlertDirection::Down)), "ethereum_USD_1.12344_down");
+        assert_eq!(PriceAlert::generate_id(&eth, "USD", None, Some(5.0), Some(&PriceAlertDirection::Up)), "ethereum_USD_5_up");
+        assert_eq!(PriceAlert::generate_id(&eth, "USD", None, Some(10_000.10), Some(&PriceAlertDirection::Down)), "ethereum_USD_10000.1_down");
     }
 
     #[test]
-    fn test_price_alert_id_with_missing_optional_fields() {
-        let price_alert = PriceAlert {
-            asset_id: AssetId::from_chain(Chain::Ethereum),
-            currency: "USD".to_string(),
-            price: None,
-            price_percent_change: None,
-            price_direction: None,
-            last_notified_at: None,
-            identifier: String::new(),
-        };
-        assert_eq!(price_alert.id(), "ethereum");
+    fn test_new_auto_price_percent() {
+        let eth = AssetId::from_chain(Chain::Ethereum);
+        assert_eq!(PriceAlert::new_auto(eth.clone(), "USD".to_string()).identifier, "ethereum");
+        assert_eq!(PriceAlert::new_price(eth.clone(), "USD".to_string(), 100.0, PriceAlertDirection::Up).identifier, "ethereum_USD_100_up");
+        assert_eq!(PriceAlert::new_price_percent(eth, "USD".to_string(), 5.0, PriceAlertDirection::Down).identifier, "ethereum_USD_5_down");
     }
 
     #[test]
-    fn test_price_alert_id_with_some_optional_fields() {
-        let price_alert = PriceAlert {
-            asset_id: AssetId::from_chain(Chain::Ethereum),
-            currency: "USD".to_string(),
-            price: Some(100.0),
-            price_percent_change: None,
-            price_direction: Some(PriceAlertDirection::Down),
-            last_notified_at: None,
-            identifier: String::new(),
-        };
-        assert_eq!(price_alert.id(), "ethereum_USD_100_down");
-    }
-
-    #[test]
-    fn test_price_alert_id_uses_stored_identifier() {
-        let price_alert = PriceAlert {
+    fn test_id_returns_stored_identifier() {
+        let alert = PriceAlert {
             asset_id: AssetId::from_chain(Chain::Ethereum),
             currency: "USD".to_string(),
             price: Some(100.0),
             price_percent_change: None,
             price_direction: Some(PriceAlertDirection::Up),
             last_notified_at: None,
-            identifier: "stored_identifier_from_db".to_string(),
+            identifier: "stored_from_db".to_string(),
         };
-        assert_eq!(price_alert.id(), "stored_identifier_from_db");
+        assert_eq!(alert.id(), "stored_from_db");
     }
 }
