@@ -237,7 +237,8 @@ impl JsonRpcHandler {
     fn format_parse_error(status: u16, body: &[u8], error: serde_json::Error) -> String {
         const MAX_BODY_LEN: usize = 256;
         if body.len() <= MAX_BODY_LEN && let Ok(text) = std::str::from_utf8(body) {
-            return format!("status={}, body: {}", status, text.trim());
+            let body = text.split_whitespace().collect::<Vec<_>>().join(" ");
+            return format!("status={}, body: {}", status, body);
         }
         format!("status={}, parse error: {}", status, error)
     }
@@ -276,6 +277,10 @@ mod tests {
         assert_eq!(
             JsonRpcHandler::format_parse_error(415, b"Expected Content-Type: application/json", err()),
             "status=415, body: Expected Content-Type: application/json"
+        );
+        assert_eq!(
+            JsonRpcHandler::format_parse_error(400, b"<html>\n<body>Bad Request</body>\n</html>", err()),
+            "status=400, body: <html> <body>Bad Request</body> </html>"
         );
         assert_eq!(
             JsonRpcHandler::format_parse_error(502, b"<html>Bad Gateway...</html>".repeat(20).as_slice(), err()),
