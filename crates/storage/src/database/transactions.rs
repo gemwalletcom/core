@@ -1,9 +1,9 @@
 use crate::{DatabaseClient, models::*, schema::transactions_addresses};
-use chrono::DateTime;
+use chrono::NaiveDateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use diesel::upsert::excluded;
-use primitives::{Transaction, TransactionsFetchOption};
+use primitives::Transaction;
 
 pub(crate) trait TransactionsStore {
     fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, diesel::result::Error>;
@@ -13,7 +13,8 @@ pub(crate) trait TransactionsStore {
         _device_id: &str,
         addresses: Vec<String>,
         chains: Vec<String>,
-        options: TransactionsFetchOption,
+        asset_id: Option<String>,
+        from_datetime: Option<NaiveDateTime>,
     ) -> Result<Vec<TransactionRow>, diesel::result::Error>;
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error>;
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error>;
@@ -84,7 +85,8 @@ impl TransactionsStore for DatabaseClient {
         _device_id: &str,
         addresses: Vec<String>,
         chains: Vec<String>,
-        options: TransactionsFetchOption,
+        filter_asset_id: Option<String>,
+        from_datetime: Option<NaiveDateTime>,
     ) -> Result<Vec<TransactionRow>, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
 
@@ -94,12 +96,11 @@ impl TransactionsStore for DatabaseClient {
             .filter(chain.eq_any(chains.clone()))
             .filter(transactions_addresses::address.eq_any(addresses));
 
-        if let Some(_asset_id) = options.asset_id {
-            query = query.filter(asset_id.eq(_asset_id));
+        if let Some(filter_asset) = filter_asset_id {
+            query = query.filter(asset_id.eq(filter_asset));
         }
 
-        if let Some(from_timestamp) = options.from_timestamp {
-            let datetime = DateTime::from_timestamp(from_timestamp.into(), 0).unwrap().naive_utc();
+        if let Some(datetime) = from_datetime {
             query = query.filter(created_at.gt(datetime).or(updated_at.gt(datetime)));
         }
 
