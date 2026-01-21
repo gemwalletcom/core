@@ -59,7 +59,6 @@ mod tests {
     use super::*;
     use num_bigint::BigInt;
     use serde::{Deserialize, Serialize};
-    use serde_json;
 
     #[derive(Serialize, Deserialize)]
     struct TestStruct {
@@ -67,44 +66,31 @@ mod tests {
         value: BigInt,
     }
 
+    #[derive(Deserialize)]
+    struct TestVecStruct {
+        #[serde(deserialize_with = "deserialize_bigint_vec_from_hex_str")]
+        values: Vec<BigInt>,
+    }
+
     #[test]
-    fn test_serialize_bigint() {
+    fn test_bigint_serialization() {
         let value = BigInt::parse_bytes(b"12345678901234567890", 10).unwrap();
         let test_struct = TestStruct { value };
         let serialized = serde_json::to_string(&test_struct).unwrap();
         assert_eq!(serialized, r#"{"value":"12345678901234567890"}"#);
-    }
 
-    #[test]
-    fn test_deserialize_bigint() {
-        let json_data = r#"{"value":"12345678901234567890"}"#;
-        let deserialized: TestStruct = serde_json::from_str(json_data).unwrap();
-        let expected_value = BigInt::parse_bytes(b"12345678901234567890", 10).unwrap();
-        assert_eq!(deserialized.value, expected_value);
-    }
+        let deserialized: TestStruct = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deserialized.value, BigInt::parse_bytes(b"12345678901234567890", 10).unwrap());
 
-    #[test]
-    fn test_deserialize_bigint_hex() {
-        let json_data = r#"{"value":"0xff"}"#;
-        let deserialized: TestStruct = serde_json::from_str(json_data).unwrap();
-        let expected_value = BigInt::from(255);
-        assert_eq!(deserialized.value, expected_value);
-    }
-
-    #[test]
-    fn test_deserialize_bigint_hex_zero() {
-        let json_data = r#"{"value":"0x0"}"#;
-        let deserialized: TestStruct = serde_json::from_str(json_data).unwrap();
-        let expected_value = BigInt::from(0);
-        assert_eq!(deserialized.value, expected_value);
-    }
-
-    #[test]
-    fn test_deserialize_bigint_hex_empty() {
-        let json_data = r#"{"value":"0x"}"#;
-        let deserialized: TestStruct = serde_json::from_str(json_data).unwrap();
-        let expected_value = BigInt::from(0);
-        assert_eq!(deserialized.value, expected_value);
+        let hex_cases = [
+            (r#"{"value":"0xff"}"#, BigInt::from(255)),
+            (r#"{"value":"0x0"}"#, BigInt::from(0)),
+            (r#"{"value":"0x"}"#, BigInt::from(0)),
+        ];
+        for (json, expected) in hex_cases {
+            let deserialized: TestStruct = serde_json::from_str(json).unwrap();
+            assert_eq!(deserialized.value, expected);
+        }
     }
 
     #[test]
@@ -115,22 +101,8 @@ mod tests {
         assert_eq!(bigint_from_hex_str("0x").unwrap(), BigInt::from(0));
         assert_eq!(bigint_from_hex_str("ff").unwrap(), BigInt::from(255));
         assert!(bigint_from_hex_str("xyz").is_err());
-    }
 
-    #[derive(Deserialize)]
-    struct TestVecStruct {
-        #[serde(deserialize_with = "deserialize_bigint_vec_from_hex_str")]
-        values: Vec<BigInt>,
-    }
-
-    #[test]
-    fn test_deserialize_bigint_vec_from_hex_str() {
-        let json_data = r#"{"values":["0x1a","0xff","0x0"]}"#;
-        let deserialized: TestVecStruct = serde_json::from_str(json_data).unwrap();
-
-        assert_eq!(deserialized.values.len(), 3);
-        assert_eq!(deserialized.values[0], BigInt::from(26));
-        assert_eq!(deserialized.values[1], BigInt::from(255));
-        assert_eq!(deserialized.values[2], BigInt::from(0));
+        let deserialized: TestVecStruct = serde_json::from_str(r#"{"values":["0x1a","0xff","0x0"]}"#).unwrap();
+        assert_eq!(deserialized.values, vec![BigInt::from(26), BigInt::from(255), BigInt::from(0)]);
     }
 }

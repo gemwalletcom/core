@@ -57,4 +57,4 @@ pub use self::tag::{AssetTagRow, TagRow};
 pub use self::transaction::{NewTransactionRow, TransactionRow};
 pub use self::transaction_addresses::{AddressChainIdResultRow, NewTransactionAddressesRow, TransactionAddressesRow};
 pub use self::username::{NewUsernameRow, UsernameRow};
-pub use self::wallet::{NewWalletRow, NewWalletSubscriptionRow, WalletRow, WalletSubscriptionRow};
+pub use self::wallet::{NewWalletAddressRow, NewWalletRow, NewWalletSubscriptionRow, WalletAddressRow, WalletRow, WalletSubscriptionRow};

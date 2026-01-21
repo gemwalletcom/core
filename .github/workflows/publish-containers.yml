@@ -25,6 +25,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
+
+      - name: Check for dynode changes
+        id: changes
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^apps/dynode/'; then
+            echo "dynode=true" >> $GITHUB_OUTPUT
+          else
+            echo "dynode=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -53,6 +63,7 @@ jobs:
             ${{ env.CORE_IMAGE }}:${{ github.sha }}
 
       - name: Build and push dynode
+        if: steps.changes.outputs.dynode == 'true' || github.event_name == 'workflow_dispatch'
         uses: docker/build-push-action@v6
         with:
           context: .

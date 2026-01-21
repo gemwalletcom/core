@@ -19,7 +19,7 @@ chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 primitives = { path = "../primitives" }
 chain_primitives = { path = "../chain_primitives" }
 sui-types = { workspace = true }
-sui-transaction-builder = { package = "sui-transaction-builder", version = "0.2.1" }
+sui-transaction-builder = { package = "sui-transaction-builder", version = "0.2.2" }
 bcs = { version = "0.1.6" }
 hex = { workspace = true }
 base64 = { workspace = true }

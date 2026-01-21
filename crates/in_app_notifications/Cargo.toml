@@ -1,0 +1,10 @@
+[package]
+name = "in_app_notifications"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+localizer = { path = "../localizer" }
+number_formatter = { path = "../number_formatter" }
+primitives = { path = "../primitives" }
+serde_json = { workspace = true }

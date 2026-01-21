@@ -11,6 +11,9 @@ pub fn calculate_risk_score(
     existing_signals: &[RiskSignalRow],
     device_model_ring_count: i64,
     ip_abuser_count: i64,
+    cross_referrer_fingerprint_count: i64,
+    referrer_country_count: i64,
+    referrer_device_count: i64,
     config: &RiskScoreConfig,
 ) -> RiskScore {
     let fingerprint = input.generate_fingerprint();
@@ -50,6 +53,7 @@ pub fn calculate_risk_score(
     let mut device_id_referrers: HashSet<&str> = HashSet::new();
     let mut ip_matched = false;
     let mut isp_model_matched = false;
+    let mut cross_referrer_device_matched = false;
 
     let mut same_referrer_pattern_count = 0;
     let mut same_referrer_fingerprint_count = 0;
@@ -69,6 +73,11 @@ pub fn calculate_risk_score(
                 same_referrer_device_model_count += 1;
             }
             continue;
+        }
+
+        // Cross-referrer device sharing: same fingerprint + same IP = definite fraud
+        if !cross_referrer_device_matched && signal.fingerprint == fingerprint && signal.ip_address == input.ip_address {
+            cross_referrer_device_matched = true;
         }
 
         // Scaled penalties (count unique referrers)
@@ -98,6 +107,9 @@ pub fn calculate_risk_score(
     breakdown.device_id_reuse_score = device_id_penalty.min(config.device_id_reuse_max_penalty);
 
     // Binary penalties
+    if cross_referrer_device_matched {
+        breakdown.cross_referrer_device_score = config.cross_referrer_device_penalty;
+    }
     if ip_matched {
         breakdown.ip_reuse_score = config.ip_reuse_score;
     }
@@ -126,6 +138,18 @@ pub fn calculate_risk_score(
         breakdown.ip_history_score = ip_history_penalty.min(config.ip_history_max_penalty);
     }
 
+    if cross_referrer_fingerprint_count >= config.cross_referrer_fingerprint_threshold {
+        breakdown.cross_referrer_fingerprint_score = config.cross_referrer_fingerprint_penalty;
+    }
+
+    if referrer_country_count >= config.country_diversity_threshold {
+        breakdown.country_diversity_score = referrer_country_count * config.country_diversity_penalty_per_country;
+    }
+
+    if referrer_device_count >= config.device_farming_threshold {
+        breakdown.device_farming_score = referrer_device_count * config.device_farming_penalty_per_device;
+    }
+
     let same_referrer_signals: Vec<_> = existing_signals.iter().filter(|s| s.referrer_username == input.username).collect();
     let multiplier = if input.referrer_verified { config.verified_multiplier } else { 1 };
     let daily_limit = config.referral_per_user_daily * multiplier;
@@ -152,6 +176,10 @@ pub fn calculate_risk_score(
         + breakdown.high_risk_device_model_score
         + breakdown.velocity_score
         + breakdown.ip_history_score
+        + breakdown.cross_referrer_device_score
+        + breakdown.cross_referrer_fingerprint_score
+        + breakdown.country_diversity_score
+        + breakdown.device_farming_score
         + breakdown.verified_user_reduction)
         .max(0);
 
@@ -229,7 +257,7 @@ mod tests {
     fn clean_user() {
         let input = create_test_input();
         let config = RiskScoreConfig::default();
-        let result = calculate_risk_score(&input, &[], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.score, 0);
         assert!(result.is_allowed);
@@ -241,7 +269,7 @@ mod tests {
         input.ip_usage_type = IpUsageType::DataCenter;
         input.ip_abuse_score = 70;
         let config = RiskScoreConfig::default();
-        let result = calculate_risk_score(&input, &[], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.score, 170);
         assert!(!result.is_allowed);
@@ -255,7 +283,7 @@ mod tests {
 
         // 1 referrer * 50 per referrer = 50
         let existing = create_signal("other_user", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2);
-        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.score, 50);
         assert!(result.is_allowed);
@@ -272,7 +300,7 @@ mod tests {
             create_signal("referrer_a", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2),
             create_signal("referrer_b", &fingerprint, "10.0.0.2", "Comcast", "iPhone15,2", 3),
         ];
-        let result = calculate_risk_score(&input, &signals, 0, 0, &config);
+        let result = calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.fingerprint_match_score, 100);
         assert!(!result.is_allowed);
@@ -288,7 +316,7 @@ mod tests {
         let signals: Vec<_> = (0..5)
             .map(|i| create_signal(&format!("referrer_{}", i), &fingerprint, &format!("10.0.0.{}", i), "Comcast", "iPhone15,2", 10 + i))
             .collect();
-        let result = calculate_risk_score(&input, &signals, 0, 0, &config);
+        let result = calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.fingerprint_match_score, 200);
     }
@@ -302,7 +330,7 @@ mod tests {
         };
 
         let existing = create_signal("other_user", "different", "192.168.1.1", "Verizon", "Pixel 8", 2);
-        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.score, 50);
         assert!(!result.is_allowed);
@@ -314,7 +342,7 @@ mod tests {
         let config = RiskScoreConfig::default();
 
         let existing = create_signal("other_user", "different", "10.0.0.1", "Comcast", "iPhone15,2", 2);
-        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.score, 30);
         assert!(result.is_allowed);
@@ -327,7 +355,7 @@ mod tests {
 
         // 1 referrer * 50 per referrer = 50
         let existing = create_signal("other_user", "different", "10.0.0.1", "Verizon", "Pixel 8", 1);
-        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.score, 50);
         assert!(result.is_allowed);
@@ -343,7 +371,7 @@ mod tests {
             create_signal("referrer_a", "fp1", "10.0.0.1", "Verizon", "Pixel 8", 1),
             create_signal("referrer_b", "fp2", "10.0.0.2", "AT&T", "Galaxy S23", 1),
         ];
-        let result = calculate_risk_score(&input, &signals, 0, 0, &config);
+        let result = calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.device_id_reuse_score, 100);
         assert!(!result.is_allowed);
@@ -358,7 +386,7 @@ mod tests {
         let signals: Vec<_> = (0..5)
             .map(|i| create_signal(&format!("referrer_{}", i), &format!("fp{}", i), &format!("10.0.0.{}", i), "ISP", "Model", 1))
             .collect();
-        let result = calculate_risk_score(&input, &signals, 0, 0, &config);
+        let result = calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.device_id_reuse_score, 200);
     }
@@ -370,7 +398,7 @@ mod tests {
         let fingerprint = input.generate_fingerprint();
 
         let existing = create_signal("user1", &fingerprint, "192.168.1.1", "Comcast", "iPhone15,2", 1);
-        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.score, 0);
         assert!(result.is_allowed);
@@ -384,7 +412,7 @@ mod tests {
 
         // When fingerprint matches, isp_model is not counted (fingerprint is more specific)
         let existing = create_signal("other_user", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2);
-        let result = calculate_risk_score(&input, &[existing], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.fingerprint_match_score, 50);
         assert_eq!(result.breakdown.isp_model_match_score, 0);
@@ -396,7 +424,7 @@ mod tests {
         let mut input = create_test_input();
         input.ip_usage_type = IpUsageType::Isp;
         input.ip_abuse_score = 80;
-        let result = calculate_risk_score(&input, &[], 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.abuse_score, 60);
         assert!(!result.is_allowed);
@@ -407,7 +435,7 @@ mod tests {
         let mut input = create_test_input();
         input.ip_usage_type = IpUsageType::DataCenter;
         input.ip_abuse_score = 60;
-        let result = calculate_risk_score(&input, &[], 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.abuse_score, 60);
         assert_eq!(result.breakdown.ineligible_ip_type_score, 100);
@@ -423,7 +451,7 @@ mod tests {
             max_allowed_score: 50,
             ..Default::default()
         };
-        let result = calculate_risk_score(&input, &[], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.abuse_score, 25);
         assert_eq!(result.breakdown.ineligible_ip_type_score, 30);
@@ -437,7 +465,7 @@ mod tests {
         input.ip_abuse_score = 60;
         input.referrer_verified = true;
         let config = RiskScoreConfig::default();
-        let result = calculate_risk_score(&input, &[], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.abuse_score, 60);
         assert_eq!(result.breakdown.verified_user_reduction, -30);
@@ -450,7 +478,7 @@ mod tests {
         let mut input = create_test_input();
         input.referrer_verified = true;
         let config = RiskScoreConfig::default();
-        let result = calculate_risk_score(&input, &[], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.verified_user_reduction, -30);
         assert_eq!(result.score, 0);
@@ -463,7 +491,7 @@ mod tests {
             create_signal("user1", "fp1", "10.0.0.1", "Comcast", "iPhone15,2", 2),
             create_signal("user1", "fp2", "10.0.0.2", "Comcast", "iPhone15,2", 3),
         ];
-        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_pattern_score, 0);
         assert!(result.is_allowed);
@@ -476,7 +504,7 @@ mod tests {
             create_signal("user1", "fp2", "10.0.0.2", "Comcast", "iPhone15,2", 3),
             create_signal("user1", "fp3", "10.0.0.3", "Comcast", "iPhone15,2", 4),
         ];
-        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_pattern_score, 40);
         assert_eq!(result.breakdown.same_referrer_device_model_score, 50);
@@ -492,7 +520,7 @@ mod tests {
             create_signal("user1", &fingerprint, "10.0.0.2", "Comcast", "iPhone15,2", 3),
         ];
 
-        let result = calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_fingerprint_score, 60);
         assert!(!result.is_allowed);
@@ -508,7 +536,7 @@ mod tests {
             create_signal("user1", &fingerprint, "10.0.0.3", "Comcast", "iPhone15,2", 4),
         ];
 
-        let result = calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_pattern_score, 40);
         assert_eq!(result.breakdown.same_referrer_fingerprint_score, 60);
@@ -528,7 +556,7 @@ mod tests {
             create_signal("user1", "fp3", "10.0.0.3", "Comcast", "iPhone15,2", 4),
         ];
 
-        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_pattern_score, 0);
     }
@@ -556,7 +584,7 @@ mod tests {
             })
             .collect();
 
-        let result = calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_pattern_score, 40);
         assert_eq!(result.breakdown.same_referrer_fingerprint_score, 60);
@@ -571,7 +599,7 @@ mod tests {
             create_signal("user1", "fp1", "10.0.0.1", "ISP_A", "iPhone15,2", 2),
             create_signal("user1", "fp2", "10.0.0.2", "ISP_B", "iPhone15,2", 3),
         ];
-        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_device_model_score, 0);
         assert!(result.is_allowed);
@@ -584,7 +612,7 @@ mod tests {
             create_signal("user1", "fp2", "10.0.0.2", "ISP_B", "iPhone15,2", 3),
             create_signal("user1", "fp3", "10.0.0.3", "ISP_C", "iPhone15,2", 4),
         ];
-        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_device_model_score, 50);
         assert_eq!(result.breakdown.same_referrer_pattern_score, 0);
@@ -613,7 +641,7 @@ mod tests {
             })
             .collect();
 
-        let result = calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.same_referrer_device_model_score, 50);
         assert_eq!(result.breakdown.same_referrer_pattern_score, 0);
@@ -623,7 +651,7 @@ mod tests {
     #[test]
     fn device_model_ring_detected() {
         let input = create_test_input();
-        let result = calculate_risk_score(&input, &[], 2, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &[], 2, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         // count=2: (2-1) * 40 = 40
         assert_eq!(result.breakdown.device_model_ring_score, 40);
@@ -636,12 +664,12 @@ mod tests {
         let input = create_test_input();
 
         // count=3: (3-1) * 40 = 80
-        let result = calculate_risk_score(&input, &[], 3, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &[], 3, 0, 0, 0, 0, &RiskScoreConfig::default());
         assert_eq!(result.breakdown.device_model_ring_score, 80);
         assert!(!result.is_allowed);
 
         // count=5: (5-1) * 40 = 160
-        let result = calculate_risk_score(&input, &[], 5, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &[], 5, 0, 0, 0, 0, &RiskScoreConfig::default());
         assert_eq!(result.breakdown.device_model_ring_score, 160);
         assert!(!result.is_allowed);
     }
@@ -649,7 +677,7 @@ mod tests {
     #[test]
     fn device_model_ring_below_threshold() {
         let input = create_test_input();
-        let result = calculate_risk_score(&input, &[], 1, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &[], 1, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.device_model_ring_score, 0);
         assert_eq!(result.score, 0);
@@ -665,18 +693,18 @@ mod tests {
     #[test]
     fn velocity_no_burst() {
         // Signals from different referrer don't trigger velocity for user1
-        let result = calculate_risk_score(&create_test_input(), &[create_recent_signal("other", 60)], 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&create_test_input(), &[create_recent_signal("other", 60)], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
         assert_eq!(result.breakdown.velocity_score, 0);
     }
 
     #[test]
     fn velocity_burst() {
         // Normal user threshold=2 (5/2), 1 signal - no penalty
-        let result = calculate_risk_score(&create_test_input(), &[create_recent_signal("user1", 60)], 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&create_test_input(), &[create_recent_signal("user1", 60)], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
         assert_eq!(result.breakdown.velocity_score, 0);
         // 2 signals triggers penalty
         let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120)];
-        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default());
         assert!(result.breakdown.velocity_score > 0);
     }
 
@@ -684,11 +712,11 @@ mod tests {
     fn velocity_scales_with_count_and_speed() {
         // More signals and tighter span = higher penalty
         let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120)];
-        let score2 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
+        let score2 = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
         let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120), create_recent_signal("user1", 180)];
-        let score3 = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
+        let score3 = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
         assert!(score3 > score2);
@@ -700,12 +728,12 @@ mod tests {
         // Same count but tighter time = higher penalty
         // 3 signals in 120s span: multiplier=1.6, penalty=300*1.6=480
         let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 120), create_recent_signal("user1", 180)];
-        let slow = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
+        let slow = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
         // 3 signals in 20s span: multiplier=1+(300-20)/300=1.93, penalty=300*1.93=579
         let signals = vec![create_recent_signal("user1", 60), create_recent_signal("user1", 70), create_recent_signal("user1", 80)];
-        let fast = calculate_risk_score(&create_test_input(), &signals, 0, 0, &RiskScoreConfig::default())
+        let fast = calculate_risk_score(&create_test_input(), &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default())
             .breakdown
             .velocity_score;
         assert!(fast > slow);
@@ -717,17 +745,20 @@ mod tests {
         input.referrer_verified = true;
         // Verified user threshold=5 (10/2), 4 signals - no penalty
         let signals: Vec<_> = (0..4).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert_eq!(calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score, 0);
+        assert_eq!(
+            calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score,
+            0
+        );
         // 5 signals triggers penalty
         let signals: Vec<_> = (0..5).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
-        assert!(calculate_risk_score(&input, &signals, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score > 0);
+        assert!(calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score > 0);
     }
 
     #[test]
     fn high_risk_device_model_emulator() {
         let mut input = create_test_input();
         input.device_model = "Google sdk_gphone64_arm64".to_string();
-        let result = calculate_risk_score(&input, &[], 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.high_risk_device_model_score, 50);
         assert_eq!(result.score, 50);
@@ -736,7 +767,7 @@ mod tests {
     #[test]
     fn high_risk_device_model_no_match() {
         let input = create_test_input();
-        let result = calculate_risk_score(&input, &[], 0, 0, &RiskScoreConfig::default());
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
 
         assert_eq!(result.breakdown.high_risk_device_model_score, 0);
     }
@@ -749,7 +780,7 @@ mod tests {
             high_risk_device_models: vec!["INFINIX".to_string()],
             ..Default::default()
         };
-        let result = calculate_risk_score(&input, &[], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.high_risk_device_model_score, 50);
     }
@@ -762,7 +793,7 @@ mod tests {
             high_risk_device_models: vec![r"\d{7}[A-Z]{2}".to_string()],
             ..Default::default()
         };
-        let result = calculate_risk_score(&input, &[], 0, 0, &config);
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.high_risk_device_model_score, 50);
     }
@@ -772,7 +803,192 @@ mod tests {
         let input = create_test_input();
         let config = RiskScoreConfig::default();
 
-        assert_eq!(calculate_risk_score(&input, &[], 0, 3, &config).breakdown.ip_history_score, 90);
-        assert_eq!(calculate_risk_score(&input, &[], 0, 10, &config).breakdown.ip_history_score, 150);
+        assert_eq!(calculate_risk_score(&input, &[], 0, 3, 0, 0, 0, &config).breakdown.ip_history_score, 90);
+        assert_eq!(calculate_risk_score(&input, &[], 0, 10, 0, 0, 0, &config).breakdown.ip_history_score, 150);
+    }
+
+    #[test]
+    fn cross_referrer_device_same_fingerprint_same_ip() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+        let fingerprint = input.generate_fingerprint();
+
+        // Same fingerprint + same IP + different referrer = fraud (500 penalty)
+        let existing = create_signal("other_referrer", &fingerprint, "192.168.1.1", "Comcast", "iPhone15,2", 2);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_device_score, 500);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn cross_referrer_device_same_fingerprint_different_ip() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+        let fingerprint = input.generate_fingerprint();
+
+        // Same fingerprint but different IP = only fingerprint penalty (50), not cross-referrer
+        let existing = create_signal("other_referrer", &fingerprint, "10.0.0.1", "Comcast", "iPhone15,2", 2);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_device_score, 0);
+        assert_eq!(result.breakdown.fingerprint_match_score, 50);
+    }
+
+    #[test]
+    fn cross_referrer_device_same_ip_different_fingerprint() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // Same IP but different fingerprint = only IP reuse penalty (50), not cross-referrer
+        let existing = create_signal("other_referrer", "different_fingerprint", "192.168.1.1", "Verizon", "Pixel 8", 2);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_device_score, 0);
+        assert_eq!(result.breakdown.ip_reuse_score, 50);
+    }
+
+    #[test]
+    fn cross_referrer_device_same_referrer_ignored() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+        let fingerprint = input.generate_fingerprint();
+
+        // Same referrer should not trigger cross-referrer penalty
+        let existing = create_signal("user1", &fingerprint, "192.168.1.1", "Comcast", "iPhone15,2", 2);
+        let result = calculate_risk_score(&input, &[existing], 0, 0, 0, 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_device_score, 0);
+    }
+
+    #[test]
+    fn cross_referrer_fingerprint_below_threshold() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 1 referrer is below threshold (2)
+        let result = calculate_risk_score(&input, &[], 0, 0, 1, 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_fingerprint_score, 0);
+    }
+
+    #[test]
+    fn cross_referrer_fingerprint_at_threshold() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 2 referrers triggers penalty (threshold is 2)
+        let result = calculate_risk_score(&input, &[], 0, 0, 2, 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_fingerprint_score, 100);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn cross_referrer_fingerprint_above_threshold() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 6 referrers (VPN fraud ring) triggers penalty
+        let result = calculate_risk_score(&input, &[], 0, 0, 6, 0, 0, &config);
+
+        assert_eq!(result.breakdown.cross_referrer_fingerprint_score, 100);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn country_diversity_below_threshold() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 4 countries is below threshold (5)
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 4, 0, &config);
+
+        assert_eq!(result.breakdown.country_diversity_score, 0);
+    }
+
+    #[test]
+    fn country_diversity_at_threshold() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 5 countries = 5 * 5 = 25 penalty
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 5, 0, &config);
+
+        assert_eq!(result.breakdown.country_diversity_score, 25);
+        assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn country_diversity_high_count() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 10 countries = 10 * 5 = 50 penalty
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 10, 0, &config);
+
+        assert_eq!(result.breakdown.country_diversity_score, 50);
+        assert!(result.is_allowed);
+
+        // 13 countries = 13 * 5 = 65 penalty -> blocked
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 13, 0, &config);
+
+        assert_eq!(result.breakdown.country_diversity_score, 65);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn device_farming_below_threshold() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 9 devices is below threshold (10)
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 9, &config);
+
+        assert_eq!(result.breakdown.device_farming_score, 0);
+    }
+
+    #[test]
+    fn device_farming_at_threshold() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 10 devices = 10 * 3 = 30 penalty
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 10, &config);
+
+        assert_eq!(result.breakdown.device_farming_score, 30);
+        assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn device_farming_high_count() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 20 devices = 20 * 3 = 60 penalty -> blocked
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 20, &config);
+
+        assert_eq!(result.breakdown.device_farming_score, 60);
+        assert!(!result.is_allowed);
+
+        // 41 devices = 41 * 3 = 123 penalty
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 41, &config);
+
+        assert_eq!(result.breakdown.device_farming_score, 123);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn combined_country_and_device_farming() {
+        let input = create_test_input();
+        let config = RiskScoreConfig::default();
+
+        // 10 countries + 41 devices: 10 * 5 = 50 + 41 * 3 = 123 = 173 total
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 10, 41, &config);
+
+        assert_eq!(result.breakdown.country_diversity_score, 50);
+        assert_eq!(result.breakdown.device_farming_score, 123);
+        assert_eq!(result.score, 173);
+        assert!(!result.is_allowed);
     }
 }

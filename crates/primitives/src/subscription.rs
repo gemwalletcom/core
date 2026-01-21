@@ -20,7 +20,8 @@ pub struct Subscription {
 pub struct WalletSubscription {
     #[typeshare(serialized_as = "String")]
     pub wallet_id: WalletId,
-    pub source: WalletSource,
+    #[serde(default)]
+    pub source: Option<WalletSource>,
     pub subscriptions: Vec<ChainAddress>,
 }
 

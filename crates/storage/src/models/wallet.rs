@@ -22,6 +22,20 @@ pub struct NewWalletRow {
 }
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
+#[diesel(table_name = crate::schema::wallets_addresses)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct WalletAddressRow {
+    pub id: i32,
+    pub address: String,
+}
+
+#[derive(Debug, Insertable, Clone)]
+#[diesel(table_name = crate::schema::wallets_addresses)]
+pub struct NewWalletAddressRow {
+    pub address: String,
+}
+
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::wallets_subscriptions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct WalletSubscriptionRow {
@@ -29,7 +43,7 @@ pub struct WalletSubscriptionRow {
     pub wallet_id: i32,
     pub device_id: i32,
     pub chain: ChainRow,
-    pub address: String,
+    pub address_id: i32,
 }
 
 #[derive(Debug, Insertable, Clone)]
@@ -38,5 +52,5 @@ pub struct NewWalletSubscriptionRow {
     pub wallet_id: i32,
     pub device_id: i32,
     pub chain: ChainRow,
-    pub address: String,
+    pub address_id: i32,
 }

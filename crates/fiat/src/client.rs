@@ -351,7 +351,7 @@ impl FiatClient {
             asset_symbol: quote.asset_symbol,
             wallet_address: wallet_address.to_string(),
             ip_address: ip_address.to_string(),
-            locale: device.locale.clone(),
+            locale: device.locale.as_str().to_string(),
         };
 
         let url = provider.get_quote_url(data).await?;

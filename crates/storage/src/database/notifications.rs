@@ -1,6 +1,7 @@
-use crate::models::{NewNotificationRow, NotificationRow};
-use crate::schema::{devices, notifications, wallets, wallets_subscriptions};
+use crate::models::{AssetRow, NewNotificationRow, NotificationRow};
+use crate::schema::{assets, devices, notifications, wallets, wallets_subscriptions};
 use crate::{DatabaseClient, DatabaseError};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 
 type WalletIdsSubquery<'a> = diesel::dsl::Select<
@@ -16,21 +17,26 @@ fn wallet_ids_by_device_id(device_id: &str) -> WalletIdsSubquery<'_> {
 }
 
 pub trait NotificationsStore {
-    fn get_notifications_by_device_id(&mut self, device_id: &str) -> Result<Vec<(NotificationRow, String)>, DatabaseError>;
+    fn get_notifications_by_device_id(&mut self, device_id: &str, from_datetime: Option<NaiveDateTime>) -> Result<Vec<(NotificationRow, String, Option<AssetRow>)>, DatabaseError>;
     fn create_notifications(&mut self, notifications: Vec<NewNotificationRow>) -> Result<usize, DatabaseError>;
     fn mark_all_as_read(&mut self, device_id: &str) -> Result<usize, DatabaseError>;
 }
 
 impl NotificationsStore for DatabaseClient {
-    fn get_notifications_by_device_id(&mut self, device_id: &str) -> Result<Vec<(NotificationRow, String)>, DatabaseError> {
-        let results = notifications::table
+    fn get_notifications_by_device_id(&mut self, device_id: &str, from_datetime: Option<NaiveDateTime>) -> Result<Vec<(NotificationRow, String, Option<AssetRow>)>, DatabaseError> {
+        let mut query = notifications::table
             .inner_join(wallets::table)
+            .left_join(assets::table)
             .filter(notifications::wallet_id.eq_any(wallet_ids_by_device_id(device_id)))
             .order(notifications::created_at.desc())
-            .select((NotificationRow::as_select(), wallets::identifier))
-            .load(&mut self.connection)?;
+            .select((NotificationRow::as_select(), wallets::identifier, Option::<AssetRow>::as_select()))
+            .into_boxed();
 
-        Ok(results)
+        if let Some(datetime) = from_datetime {
+            query = query.filter(notifications::created_at.gt(datetime));
+        }
+
+        Ok(query.load(&mut self.connection)?)
     }
 
     fn create_notifications(&mut self, values: Vec<NewNotificationRow>) -> Result<usize, DatabaseError> {

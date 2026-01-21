@@ -41,6 +41,14 @@ impl PusherClient {
         Ok(PushResult { response, notifications })
     }
 
+    pub async fn is_device_token_valid(&self, token: &str, platform: i32) -> Result<bool, reqwest::Error> {
+        let notification = GorushNotification::for_token_validation(token.to_string(), platform);
+        let result = self.push_notifications(vec![notification]).await?;
+
+        let has_invalid_token = result.response.logs.iter().any(|log| log.is_device_invalid());
+        Ok(!has_invalid_token)
+    }
+
     //Remove in the future
     fn get_topic(&self, platform: i32) -> Option<String> {
         match platform {

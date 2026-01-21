@@ -1,6 +1,9 @@
 use crate::DatabaseClient;
 use crate::models::{NewUsernameRow, UsernameRow};
 use diesel::prelude::*;
+use diesel::sql_types::Text;
+
+diesel::define_sql_function!(fn lower(x: Text) -> Text);
 
 pub enum UsernameLookup<'a> {
     Username(&'a str),
@@ -20,7 +23,7 @@ impl UsernamesStore for DatabaseClient {
         use crate::schema::usernames::dsl;
         match lookup {
             UsernameLookup::Username(username) => dsl::usernames
-                .filter(dsl::username.eq(username))
+                .filter(lower(dsl::username).eq(username.to_lowercase()))
                 .select(UsernameRow::as_select())
                 .first(&mut self.connection),
             UsernameLookup::WalletId(wallet_id) => dsl::usernames

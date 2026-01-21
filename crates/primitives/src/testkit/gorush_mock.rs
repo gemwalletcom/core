@@ -13,6 +13,7 @@ impl GorushNotification {
                 notification_type: PushNotificationTypes::Transaction,
             },
             device_id: "test-device-id".to_string(),
+            dry_run: None,
         }
     }
 

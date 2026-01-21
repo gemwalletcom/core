@@ -19,13 +19,6 @@ impl<T> StringOrNumberVisitor<T> {
     pub(crate) fn new() -> Self {
         Self(PhantomData)
     }
-
-    fn map_value<E>(value: Result<T, String>) -> Result<T, E>
-    where
-        E: de::Error,
-    {
-        map_err(value)
-    }
 }
 
 impl<'de, T> Visitor<'de> for StringOrNumberVisitor<T>
@@ -42,27 +35,27 @@ where
     where
         E: de::Error,
     {
-        Self::map_value(T::from_str(value))
+        map_err(T::from_str(value))
     }
 
     fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Self::map_value(T::from_str(&value))
+        map_err(T::from_str(&value))
     }
 
     fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Self::map_value(T::from_u64(value))
+        map_err(T::from_u64(value))
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        Self::map_value(T::from_i64(value))
+        map_err(T::from_i64(value))
     }
 }

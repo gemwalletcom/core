@@ -213,7 +213,7 @@ impl PriceAlertClient {
             };
 
             let change = formatter.percent(alert.price.price_change_percentage_24h, alert.device.locale.as_str());
-            let localizer = LanguageLocalizer::new_with_language(&alert.device.locale);
+            let localizer = LanguageLocalizer::new_with_language(alert.device.locale.as_str());
 
             let message: LanguageNotification = match alert.alert_type {
                 PriceAlertType::PriceUp | PriceAlertType::PriceDown => localizer.price_alert_target(&alert.asset.full_name(), &price, &change),
