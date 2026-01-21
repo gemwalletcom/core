@@ -21,6 +21,7 @@ pub struct NotificationRow {
 impl NotificationRow {
     pub fn as_primitive(&self, wallet_identifier: String, asset: Option<Asset>) -> NotificationData {
         NotificationData {
+            id: self.id,
             wallet_id: wallet_identifier,
             asset,
             notification_type: self.notification_type.0,

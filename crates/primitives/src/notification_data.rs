@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NotificationData {
+    pub id: i32,
     pub wallet_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub asset: Option<Asset>,

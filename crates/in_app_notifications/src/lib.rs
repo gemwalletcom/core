@@ -39,12 +39,7 @@ fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocaliz
     let metadata = &notification.metadata;
     let points = get_i32(metadata, "points");
     let username = get_string(metadata, "username");
-    let id = format!(
-        "{}_{}_{}",
-        notification.wallet_id,
-        notification.notification_type.as_ref(),
-        notification.created_at.timestamp()
-    );
+    let id = notification.id.to_string();
     let url = Some(Deeplink::Rewards.to_url());
 
     match notification.notification_type {
