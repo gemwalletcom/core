@@ -12,9 +12,7 @@ use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_jsonrpc::rpc::RpcClient;
 use primitives::{AssetId, Chain, EVMChain};
-use yielder::{
-    YO_GATEWAY, YieldDetailsRequest, YieldProvider, YieldProviderClient, Yielder, YoGatewayClient, YoProvider, YoYieldProvider,
-};
+use yielder::{YO_GATEWAY, YieldDetailsRequest, YieldProvider, YieldProviderClient, Yielder, YoGatewayClient, YoProvider, YoYieldProvider};
 
 #[derive(uniffi::Object)]
 pub struct GemYielder {
@@ -108,7 +106,7 @@ pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yiel
         (Chain::Ethereum, build_gateway(Chain::Ethereum, EVMChain::Ethereum)?),
     ]);
 
-    let yo_provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways));
+    let yo_provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways, wrapper));
     let mut yielder = Yielder::new();
     yielder.add_provider_arc(yo_provider);
     Ok(yielder)

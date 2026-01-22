@@ -9171,7 +9171,9 @@ dependencies = [
  "num-traits",
  "primitives",
  "reqwest 0.13.1",
+ "serde",
  "serde_json",
+ "serde_serializers",
  "tokio",
 ]
 

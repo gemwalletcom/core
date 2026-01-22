@@ -3,36 +3,37 @@ use std::{collections::HashMap, str::FromStr, sync::Arc};
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
+use gem_jsonrpc::RpcProvider;
 use primitives::{swap::ApprovalData, AssetId, Chain};
 
 use crate::models::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldTransaction};
 use crate::provider::YieldProviderClient;
 
+use super::api::YoApiClient;
 use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
 
 const SECONDS_PER_YEAR: f64 = 31_536_000.0;
 
 fn lookback_blocks_for_chain(chain: Chain) -> u64 {
     match chain {
-        // Base chain has ~2 second block time, 7 days lookback
         Chain::Base => 7 * 24 * 60 * 60 / 2,
-        // Ethereum has ~12 second block time, 7 days lookback
         Chain::Ethereum => 7 * 24 * 60 * 60 / 12,
-        _ => 7 * 24 * 60 * 60 / 12, // Default to Ethereum-like
+        _ => 7 * 24 * 60 * 60 / 12,
     }
 }
 
-#[derive(Clone)]
-pub struct YoYieldProvider {
+pub struct YoYieldProvider<E: std::error::Error + Send + Sync + 'static = YieldError> {
     vaults: Vec<YoVault>,
     gateways: HashMap<Chain, Arc<dyn YoProvider>>,
+    api_client: YoApiClient<E>,
 }
 
-impl YoYieldProvider {
-    pub fn new(gateways: HashMap<Chain, Arc<dyn YoProvider>>) -> Self {
+impl<E: std::error::Error + Send + Sync + 'static> YoYieldProvider<E> {
+    pub fn new(gateways: HashMap<Chain, Arc<dyn YoProvider>>, rpc_provider: Arc<dyn RpcProvider<Error = E>>) -> Self {
         Self {
             vaults: vaults().to_vec(),
             gateways,
+            api_client: YoApiClient::new(rpc_provider),
         }
     }
 
@@ -52,7 +53,7 @@ impl YoYieldProvider {
 }
 
 #[async_trait]
-impl YieldProviderClient for YoYieldProvider {
+impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYieldProvider<E> {
     fn provider(&self) -> YieldProvider {
         YieldProvider::Yo
     }
@@ -74,7 +75,7 @@ impl YieldProviderClient for YoYieldProvider {
     async fn yields_with_apy(&self, asset_id: &AssetId) -> Result<Vec<Yield>, YieldError> {
         let mut results = Vec::new();
 
-        for vault in self.vaults.iter().copied().filter(|vault| vault.asset_id() == *asset_id) {
+        for vault in self.vaults.iter().copied().filter(|vault: &YoVault| vault.asset_id() == *asset_id) {
             let gateway = self.gateway_for_chain(vault.chain)?;
             let lookback_blocks = lookback_blocks_for_chain(vault.chain);
             let data = gateway.fetch_position_data(vault, Address::ZERO, lookback_blocks).await?;
@@ -90,13 +91,10 @@ impl YieldProviderClient for YoYieldProvider {
         let vault = self.find_vault(asset_id)?;
         let gateway = self.gateway_for_chain(vault.chain)?;
         let wallet = parse_address(wallet_address)?;
-        let receiver = wallet;
         let amount = parse_value(value)?;
-        let min_shares = U256::from(0);
-        let partner_id = YO_PARTNER_ID_GEM;
 
         let approval = gateway.check_token_allowance(vault.asset_token, wallet, amount).await?;
-        let tx = gateway.build_deposit_transaction(wallet, vault.yo_token, amount, min_shares, receiver, partner_id);
+        let tx = gateway.build_deposit_transaction(wallet, vault.yo_token, amount, U256::ZERO, wallet, YO_PARTNER_ID_GEM);
         Ok(convert_transaction(vault, tx, approval))
     }
 
@@ -104,39 +102,34 @@ impl YieldProviderClient for YoYieldProvider {
         let vault = self.find_vault(asset_id)?;
         let gateway = self.gateway_for_chain(vault.chain)?;
         let wallet = parse_address(wallet_address)?;
-        let receiver = wallet;
         let assets = parse_value(value)?;
-        let min_assets = U256::from(0);
-        let partner_id = YO_PARTNER_ID_GEM;
 
-        // Convert asset amount (e.g., USDC) to shares (e.g., yoUSDC)
         let shares = gateway.convert_to_shares(vault.yo_token, assets).await?;
         let approval = gateway.check_token_allowance(vault.yo_token, wallet, shares).await?;
-
-        let tx = gateway.build_redeem_transaction(wallet, vault.yo_token, shares, min_assets, receiver, partner_id);
+        let tx = gateway.build_redeem_transaction(wallet, vault.yo_token, shares, U256::ZERO, wallet, YO_PARTNER_ID_GEM);
         Ok(convert_transaction(vault, tx, approval))
     }
 
     async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
         let vault = self.find_vault(&request.asset_id)?;
         let gateway = self.gateway_for_chain(vault.chain)?;
-        let lookback_blocks = lookback_blocks_for_chain(vault.chain);
         let owner = parse_address(&request.wallet_address)?;
-        let mut details = YieldPosition::new(vault.name, request.asset_id.clone(), self.provider(), vault.yo_token, vault.asset_token);
+        let data = gateway.fetch_position_data(vault, owner, lookback_blocks_for_chain(vault.chain)).await?;
 
-        let data = gateway.fetch_position_data(vault, owner, lookback_blocks).await?;
-
-        details.vault_balance_value = Some(data.share_balance.to_string());
-
-        // Calculate asset value from shares: share_balance * latest_price / one_share
         let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
         let asset_value = data.share_balance.saturating_mul(data.latest_price) / one_share;
-        details.asset_balance_value = Some(asset_value.to_string());
-
         let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
-        details.apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
 
-        Ok(details)
+        let mut position = YieldPosition::new(vault.name, request.asset_id.clone(), self.provider(), vault.yo_token, vault.asset_token);
+        position.vault_balance_value = Some(data.share_balance.to_string());
+        position.asset_balance_value = Some(asset_value.to_string());
+        position.apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
+
+        if let Ok(performance) = self.api_client.fetch_rewards(vault.chain, &vault.yo_token.to_string(), &request.wallet_address).await {
+            position.rewards = Some(performance.total_rewards_raw().to_string());
+        }
+
+        Ok(position)
     }
 }
 

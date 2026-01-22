@@ -1,3 +1,4 @@
+use alloy_primitives::hex::{self, encode_prefixed};
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
@@ -148,7 +149,6 @@ where
         let latest_price = latest.decode::<IYoVaultToken::convertToAssetsCall>(&latest_price_call)?;
         let latest_timestamp = latest.decode::<IMulticall3::getCurrentBlockTimestampCall>(&latest_ts)?.to::<u64>();
 
-        // Lookback query may fail if vault didn't exist at that block - use latest as fallback
         let (lookback_price, lookback_timestamp) = self
             .fetch_lookback_data(vault.yo_token, one_share, multicall_addr, lookback_block)
             .await
@@ -184,10 +184,16 @@ where
     }
 
     async fn convert_to_shares(&self, yo_vault: Address, assets: U256) -> Result<U256, YieldError> {
-        let mut batch = self.ethereum_client.multicall();
-        let quote_call = batch.add(self.contract_address, IYoGateway::quoteConvertToSharesCall { yoVault: yo_vault, assets });
-        let result = batch.execute().await?;
-        let shares = result.decode::<IYoGateway::quoteConvertToSharesCall>(&quote_call)?;
+        let call = IYoGateway::quoteConvertToSharesCall { yoVault: yo_vault, assets };
+        let call_data = encode_prefixed(call.abi_encode());
+        let result: String = self
+            .ethereum_client
+            .eth_call(&self.contract_address.to_string(), &call_data)
+            .await
+            .map_err(|e| YieldError::new(format!("eth_call failed: {}", e)))?;
+        let bytes = hex::decode(&result).map_err(|e| YieldError::new(format!("hex decode failed: {}", e)))?;
+        let shares = IYoGateway::quoteConvertToSharesCall::abi_decode_returns(&bytes)
+            .map_err(|e| YieldError::new(format!("abi decode failed: {}", e)))?;
         Ok(shares)
     }
 }
