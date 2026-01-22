@@ -23,10 +23,12 @@ pub struct ProxyRequest {
     pub user_agent: String,
     pub chain: Chain,
     pub request_start: Instant,
+    request_type: RequestType,
 }
 
 impl ProxyRequest {
     pub fn new(method: Method, headers: HeaderMap, body: Vec<u8>, path: String, path_with_query: String, host: String, user_agent: String, chain: Chain) -> Self {
+        let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
         Self {
             id: generate_request_id(),
             method,
@@ -38,6 +40,7 @@ impl ProxyRequest {
             user_agent,
             chain,
             request_start: Instant::now(),
+            request_type,
         }
     }
 
@@ -45,8 +48,8 @@ impl ProxyRequest {
         self.request_start.elapsed()
     }
 
-    pub fn request_type(&self) -> RequestType {
-        RequestType::from_request(self.method.as_str(), self.path_with_query.clone(), self.body.clone())
+    pub fn request_type(&self) -> &RequestType {
+        &self.request_type
     }
 }
 
