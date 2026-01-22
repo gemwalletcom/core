@@ -1,6 +1,7 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
+
+use crate::chart::ChartDateValue;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
@@ -15,17 +16,9 @@ pub struct PerpetualAccountSummary {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
-pub struct PerpetualPortfolioDataPoint {
-    pub date: DateTime<Utc>,
-    pub value: f64,
-}
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable, Hashable")]
-#[serde(rename_all = "camelCase")]
 pub struct PerpetualPortfolioTimeframeData {
-    pub account_value_history: Vec<PerpetualPortfolioDataPoint>,
-    pub pnl_history: Vec<PerpetualPortfolioDataPoint>,
+    pub account_value_history: Vec<ChartDateValue>,
+    pub pnl_history: Vec<ChartDateValue>,
     pub volume: f64,
 }
 

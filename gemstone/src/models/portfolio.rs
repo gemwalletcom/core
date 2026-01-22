@@ -1,21 +1,16 @@
-use chrono::{DateTime, Utc};
-use primitives::portfolio::{PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioDataPoint, PerpetualPortfolioTimeframeData};
+use primitives::{
+    chart::ChartDateValue,
+    portfolio::{PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData},
+};
 
 pub type GemPerpetualPortfolio = PerpetualPortfolio;
 pub type GemPerpetualPortfolioTimeframeData = PerpetualPortfolioTimeframeData;
-pub type GemPerpetualPortfolioDataPoint = PerpetualPortfolioDataPoint;
 pub type GemPerpetualAccountSummary = PerpetualAccountSummary;
 
 #[uniffi::remote(Record)]
-pub struct GemPerpetualPortfolioDataPoint {
-    pub date: DateTime<Utc>,
-    pub value: f64,
-}
-
-#[uniffi::remote(Record)]
 pub struct GemPerpetualPortfolioTimeframeData {
-    pub account_value_history: Vec<PerpetualPortfolioDataPoint>,
-    pub pnl_history: Vec<PerpetualPortfolioDataPoint>,
+    pub account_value_history: Vec<ChartDateValue>,
+    pub pnl_history: Vec<ChartDateValue>,
     pub volume: f64,
 }
 
