@@ -3,6 +3,7 @@ pub mod balance;
 pub mod candlestick;
 pub mod metadata;
 pub mod order;
+pub mod portfolio;
 pub mod position;
 pub mod referral;
 pub mod response;
