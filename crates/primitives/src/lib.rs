@@ -204,7 +204,7 @@ pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;
 pub use self::perpetual_position::{PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualTriggerOrder};
 pub mod portfolio;
-pub use self::portfolio::{PerpetualPortfolio, PerpetualPortfolioDataPoint, PerpetualPortfolioTimeframeData};
+pub use self::portfolio::{PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData};
 pub use chrono;
 pub mod tpsl_type;
 pub use self::tpsl_type::TpslType;

@@ -1,5 +1,5 @@
 use chrono::DateTime;
-use primitives::portfolio::{PerpetualPortfolioDataPoint, PerpetualPortfolioTimeframeData};
+use primitives::{chart::ChartDateValue, portfolio::PerpetualPortfolioTimeframeData};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -28,8 +28,8 @@ pub struct HypercorePortfolioTimeframeData {
 
 impl From<HypercorePortfolioTimeframeData> for PerpetualPortfolioTimeframeData {
     fn from(data: HypercorePortfolioTimeframeData) -> Self {
-        fn map_data_point(p: HypercoreDataPoint) -> Option<PerpetualPortfolioDataPoint> {
-            DateTime::from_timestamp_millis(p.timestamp_ms).map(|date| PerpetualPortfolioDataPoint { date, value: p.value })
+        fn map_data_point(p: HypercoreDataPoint) -> Option<ChartDateValue> {
+            DateTime::from_timestamp_millis(p.timestamp_ms).map(|date| ChartDateValue { date, value: p.value })
         }
         Self {
             account_value_history: data.account_value_history.into_iter().filter_map(map_data_point).collect(),
