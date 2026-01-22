@@ -13,6 +13,7 @@ use crate::proxy::proxy_builder::ProxyBuilder;
 use crate::proxy::proxy_request::ProxyRequest;
 use crate::proxy::response_builder::ResponseBuilder;
 use crate::proxy::{NodeDomain, ProxyResponse};
+use gem_tracing::{DurationMs, info_with_fields};
 use primitives::{Chain, ResponseError, response::ErrorDetail};
 use std::time::Duration;
 
@@ -66,7 +67,7 @@ impl NodeService {
 
         if !self.retry_config.enabled || urls.len() <= 1 {
             let Some(node_domain) = NodeService::get_node_domain(&self.nodes, chain_config.chain).await else {
-                return self.create_error_response(&request, None, "Node not found");
+                return self.log_and_create_error_response(&request, None, "Node not found");
             };
             let active_node = if let Some(url) = urls.first() {
                 NodeDomain::new(url.clone(), chain_config.clone())
@@ -75,22 +76,52 @@ impl NodeService {
             };
             match self.proxy_builder.handle_request(request.clone(), &active_node).await {
                 Ok(response) if self.should_retry_response(&request, &response) => {
-                    return self.create_error_response(&request, Some(&active_node.url.host()), &format!("Upstream status code: {}", response.status));
+                    return self.log_and_create_error_response(
+                        &request,
+                        Some(&active_node.url.host()),
+                        &format!("Upstream status code: {}", response.status),
+                    );
                 }
                 result => return result,
             }
         }
 
-        for url in urls {
+        let mut last_error: Option<String> = None;
+        let max_attempts = self.retry_config.effective_max_attempts(urls.len());
+        for url in urls.iter().take(max_attempts) {
             let node_domain = NodeDomain::new(url.clone(), chain_config.clone());
-            if let Ok(response) = self.proxy_builder.handle_request(request.clone(), &node_domain).await
-                && !self.should_retry_response(&request, &response)
-            {
-                return Ok(response);
+            match self.proxy_builder.handle_request(request.clone(), &node_domain).await {
+                Ok(response) if !self.should_retry_response(&request, &response) => {
+                    return Ok(response);
+                }
+                Ok(response) => {
+                    last_error = Some(format!("status={}", response.status));
+                }
+                Err(e) => {
+                    let error = e.to_string();
+                    let request_id = request.id.as_str();
+                    let chain = request.chain.as_ref();
+                    let remote_host = url.host();
+                    let user_agent = request.user_agent.as_str();
+                    let latency = DurationMs(request.elapsed());
+                    info_with_fields!(
+                        "Upstream error",
+                        id = request_id,
+                        chain = chain,
+                        remote_host = remote_host,
+                        error = error.as_str(),
+                        user_agent = user_agent,
+                        latency = latency,
+                    );
+                    last_error = Some(error);
+                }
             }
         }
 
-        self.create_error_response(&request, None, "All upstream URLs failed")
+        let error_message = last_error
+            .map(|e| format!("All upstream URLs failed, {}", e))
+            .unwrap_or_else(|| "All upstream URLs failed".to_string());
+        self.log_and_create_error_response(&request, None, &error_message)
     }
 
     fn get_chain_config(&self, request: &ProxyRequest) -> Result<&ChainConfig, Box<dyn Error + Send + Sync>> {
@@ -113,7 +144,33 @@ impl NodeService {
         }
     }
 
-    fn create_error_response(&self, request: &ProxyRequest, host: Option<&str>, error_message: &str) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+    fn log_and_create_error_response(
+        &self,
+        request: &ProxyRequest,
+        host: Option<&str>,
+        error_message: &str,
+    ) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+        let request_id = request.id.as_str();
+        let chain = request.chain.as_ref();
+        let uri = request.path.as_str();
+        let method = request.method.as_str();
+        let remote_host = host.unwrap_or("none");
+        let user_agent = request.user_agent.as_str();
+        let latency = DurationMs(request.elapsed());
+        let status: u16 = 500;
+        info_with_fields!(
+            "Proxy response",
+            id = request_id,
+            chain = chain,
+            remote_host = remote_host,
+            method = method,
+            uri = uri,
+            status = status,
+            error = error_message,
+            user_agent = user_agent,
+            latency = latency,
+        );
+
         let upstream_headers = ResponseBuilder::create_upstream_headers(host, request.elapsed());
 
         let response = match request.request_type() {
@@ -147,6 +204,7 @@ mod tests {
             NodeMonitoringConfig::default(),
             RetryConfig {
                 enabled: false,
+                max_attempts: 0,
                 status_codes: vec![],
                 error_messages: vec![],
             },

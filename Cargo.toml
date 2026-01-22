@@ -14,6 +14,7 @@ members = [
     "apps/daemon",
     "apps/dynode",
 
+    "bin/cli",
     "bin/img-downloader",
     "bin/generate",
     "bin/uniffi-*",

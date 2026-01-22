@@ -80,10 +80,12 @@ impl ProxyRequestService {
 
         self.metrics.add_proxy_request(request.chain.as_ref(), &request.user_agent);
 
+        let request_id = request.id.as_str();
         match &request_type {
             RequestType::JsonRpc(_) => {
                 info_with_fields!(
                     "Incoming request",
+                    id = request_id,
                     chain = request.chain.as_ref(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
@@ -94,6 +96,7 @@ impl ProxyRequestService {
             RequestType::Regular { .. } => {
                 info_with_fields!(
                     "Incoming request",
+                    id = request_id,
                     chain = request.chain.as_ref(),
                     method = request.method.as_str(),
                     uri = request.path.as_str(),
@@ -136,6 +139,7 @@ impl ProxyRequestService {
 
         info_with_fields!(
             "Proxy response",
+            id = request_id,
             chain = request.chain.as_ref(),
             remote_host = url.url.host_str().unwrap_or_default(),
             method = request.method.as_str(),
@@ -174,7 +178,7 @@ impl ProxyRequestService {
                 metrics.add_cache_hit(request.chain.as_ref(), method_name);
             }
 
-            info_with_fields!("Cache HIT", chain = request.chain.as_ref(), host = &request.host, method = &methods_for_metrics.join(","));
+            info_with_fields!("Cache HIT", id = request.id.as_str(), chain = request.chain.as_ref(), host = &request.host, method = &methods_for_metrics.join(","));
 
             let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), request.elapsed());
             let status = cached.status;
@@ -234,6 +238,7 @@ impl ProxyRequestService {
 
         info_with_fields!(
             "Cache SET",
+            id = request.id.as_str(),
             chain = request.chain.as_ref(),
             host = &request.host,
             method = request.method.as_str(),

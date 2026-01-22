@@ -268,22 +268,8 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     info_with_fields!("setup_dev", step = "add price alerts");
 
     let price_alerts = vec![
-        PriceAlert {
-            asset_id: AssetId::from(Chain::Ethereum, None),
-            currency: "USD".to_string(),
-            price: Some(3000.0),
-            price_percent_change: None,
-            price_direction: Some(PriceAlertDirection::Up),
-            last_notified_at: None,
-        },
-        PriceAlert {
-            asset_id: AssetId::from(Chain::Bitcoin, None),
-            currency: "USD".to_string(),
-            price: Some(50000.0),
-            price_percent_change: None,
-            price_direction: Some(PriceAlertDirection::Down),
-            last_notified_at: None,
-        },
+        PriceAlert::new_price(AssetId::from_chain(Chain::Ethereum), "USD".to_string(), 3000.0, PriceAlertDirection::Up),
+        PriceAlert::new_price(AssetId::from_chain(Chain::Bitcoin), "USD".to_string(), 50000.0, PriceAlertDirection::Down),
     ];
 
     let result = database.price_alerts()?.add_price_alerts("test", price_alerts).expect("Failed to create price alerts");
