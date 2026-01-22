@@ -3,6 +3,14 @@ use typeshare::typeshare;
 
 use crate::chart::ChartDateValue;
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, CaseIterable, Identifiable")]
+#[serde(rename_all = "camelCase")]
+pub enum PerpetualPortfolioChartType {
+    Value,
+    Pnl,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
