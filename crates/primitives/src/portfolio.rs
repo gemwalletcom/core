@@ -5,6 +5,16 @@ use typeshare::typeshare;
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
+pub struct PerpetualAccountSummary {
+    pub account_value: f64,
+    pub account_leverage: f64,
+    pub margin_usage: f64,
+    pub unrealized_pnl: f64,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
 pub struct PerpetualPortfolioDataPoint {
     pub date: DateTime<Utc>,
     pub value: f64,
@@ -27,4 +37,5 @@ pub struct PerpetualPortfolio {
     pub week: Option<PerpetualPortfolioTimeframeData>,
     pub month: Option<PerpetualPortfolioTimeframeData>,
     pub all_time: Option<PerpetualPortfolioTimeframeData>,
+    pub account_summary: Option<PerpetualAccountSummary>,
 }

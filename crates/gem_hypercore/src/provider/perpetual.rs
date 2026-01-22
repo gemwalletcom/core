@@ -53,8 +53,8 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     }
 
     async fn get_perpetual_portfolio(&self, address: String) -> Result<PerpetualPortfolio, Box<dyn Error + Sync + Send>> {
-        let response = self.get_perpetual_portfolio(&address).await?;
-        Ok(map_perpetual_portfolio(response))
+        let (response, positions) = try_join!(self.get_perpetual_portfolio(&address), self.get_clearinghouse_state(&address))?;
+        Ok(map_perpetual_portfolio(response, &positions))
     }
 }
 

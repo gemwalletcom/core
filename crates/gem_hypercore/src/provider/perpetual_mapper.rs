@@ -10,7 +10,7 @@ use primitives::{
     PerpetualTriggerOrder,
     chart::ChartCandleStick,
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
-    portfolio::PerpetualPortfolio,
+    portfolio::{PerpetualAccountSummary, PerpetualPortfolio},
 };
 
 pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
@@ -145,29 +145,47 @@ pub fn map_candlesticks(candlesticks: Vec<Candlestick>) -> Vec<ChartCandleStick>
     candlesticks.into_iter().map(|c| c.into()).collect()
 }
 
-pub fn map_perpetual_portfolio(response: HypercorePortfolioResponse) -> PerpetualPortfolio {
-    response
-        .timeframes
-        .into_iter()
-        .fold(PerpetualPortfolio::default(), |portfolio, (timeframe, data)| match timeframe.as_str() {
-            "perpDay" => PerpetualPortfolio {
-                day: Some(data.into()),
-                ..portfolio
-            },
-            "perpWeek" => PerpetualPortfolio {
-                week: Some(data.into()),
-                ..portfolio
-            },
-            "perpMonth" => PerpetualPortfolio {
-                month: Some(data.into()),
-                ..portfolio
-            },
-            "perpAllTime" => PerpetualPortfolio {
-                all_time: Some(data.into()),
-                ..portfolio
-            },
-            _ => portfolio,
-        })
+pub fn map_account_summary(positions: &AssetPositions) -> PerpetualAccountSummary {
+    let account_value = positions.margin_summary.account_value.parse::<f64>().unwrap_or(0.0);
+    let total_ntl_pos = positions.margin_summary.total_ntl_pos.parse::<f64>().unwrap_or(0.0);
+    let total_margin_used = positions.margin_summary.total_margin_used.parse::<f64>().unwrap_or(0.0);
+
+    let account_leverage = if account_value > 0.0 { total_ntl_pos / account_value } else { 0.0 };
+    let margin_usage = if account_value > 0.0 { total_margin_used / account_value } else { 0.0 };
+
+    let unrealized_pnl: f64 = positions
+        .asset_positions
+        .iter()
+        .map(|p| p.position.unrealized_pnl.parse::<f64>().unwrap_or(0.0))
+        .sum();
+
+    PerpetualAccountSummary {
+        account_value,
+        account_leverage,
+        margin_usage,
+        unrealized_pnl,
+    }
+}
+
+pub fn map_perpetual_portfolio(response: HypercorePortfolioResponse, positions: &AssetPositions) -> PerpetualPortfolio {
+    let (day, week, month, all_time) = response.timeframes.into_iter().fold(
+        (None, None, None, None),
+        |(day, week, month, all_time), (timeframe, data)| match timeframe.as_str() {
+            "perpDay" => (Some(data.into()), week, month, all_time),
+            "perpWeek" => (day, Some(data.into()), month, all_time),
+            "perpMonth" => (day, week, Some(data.into()), all_time),
+            "perpAllTime" => (day, week, month, Some(data.into())),
+            _ => (day, week, month, all_time),
+        },
+    );
+
+    PerpetualPortfolio {
+        day,
+        week,
+        month,
+        all_time,
+        account_summary: Some(map_account_summary(positions)),
+    }
 }
 
 fn determine_order_type(order_type_str: &str) -> PerpetualOrderType {
@@ -634,12 +652,32 @@ mod tests {
                 ("perpAllTime".to_string(), HypercorePortfolioTimeframeData::mock("50000")),
             ],
         };
+        let positions = AssetPositions::mock();
 
-        let result = map_perpetual_portfolio(response);
+        let result = map_perpetual_portfolio(response, &positions);
 
         assert_eq!(result.day.unwrap().volume, 100.0);
         assert_eq!(result.week.unwrap().volume, 500.0);
         assert_eq!(result.month.unwrap().volume, 2000.0);
         assert_eq!(result.all_time.unwrap().volume, 50000.0);
+
+        let summary = result.account_summary.unwrap();
+        assert_eq!(summary.account_value, 10000.0);
+        assert_eq!(summary.account_leverage, 0.5);
+        assert_eq!(summary.margin_usage, 0.2);
+        assert_eq!(summary.unrealized_pnl, 0.0);
+    }
+
+    #[test]
+    fn test_map_account_summary() {
+        use crate::testkit::*;
+
+        let positions = AssetPositions::mock();
+        let summary = map_account_summary(&positions);
+
+        assert_eq!(summary.account_value, 10000.0);
+        assert_eq!(summary.account_leverage, 0.5);
+        assert_eq!(summary.margin_usage, 0.2);
+        assert_eq!(summary.unrealized_pnl, 0.0);
     }
 }

@@ -1,5 +1,28 @@
 pub use crate::models::order::OpenOrder;
 pub use crate::models::portfolio::{HypercoreDataPoint, HypercorePortfolioResponse, HypercorePortfolioTimeframeData};
+pub use crate::models::position::{AssetPositions, MarginSummary};
+
+impl AssetPositions {
+    pub fn mock() -> Self {
+        Self {
+            asset_positions: vec![],
+            margin_summary: MarginSummary {
+                account_value: "10000".to_string(),
+                total_ntl_pos: "5000".to_string(),
+                total_raw_usd: "5000".to_string(),
+                total_margin_used: "2000".to_string(),
+            },
+            cross_margin_summary: MarginSummary {
+                account_value: "10000".to_string(),
+                total_ntl_pos: "5000".to_string(),
+                total_raw_usd: "5000".to_string(),
+                total_margin_used: "2000".to_string(),
+            },
+            cross_maintenance_margin_used: "1000".to_string(),
+            withdrawable: "8000".to_string(),
+        }
+    }
+}
 
 impl OpenOrder {
     pub fn mock(coin: &str, oid: u64, order_type: &str, trigger_px: f64, limit_px: Option<f64>) -> Self {
