@@ -400,7 +400,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_fetch_quote_amount_error() {
+    async fn test_fetch_quote_input_amount_error() {
         let request = mock_quote(
             SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
             SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
@@ -410,51 +410,20 @@ mod tests {
             rpc_provider: Arc::new(NativeProvider::default()),
             swappers: vec![
                 Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountError { min_amount: None }))),
-                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
-                    Err(SwapperError::InputAmountError { min_amount: None })
-                })),
+                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || Err(SwapperError::InputAmountError { min_amount: None }))),
                 Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
             ],
         };
-
-        let result = gem_swapper.fetch_quote(&request).await;
-        assert!(matches!(result, Err(SwapperError::InputAmountError { .. })));
-    }
-
-    #[tokio::test]
-    async fn test_fetch_quote_selects_smallest_min_amount() {
-        let request = mock_quote(
-            SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
-        );
+        assert_eq!(gem_swapper.fetch_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: None }));
 
         let gem_swapper = GemSwapper {
             rpc_provider: Arc::new(NativeProvider::default()),
             swappers: vec![
-                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || {
-                    Err(SwapperError::InputAmountError {
-                        min_amount: Some("19630000".into()),
-                    })
-                })),
-                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
-                    Err(SwapperError::InputAmountError {
-                        min_amount: Some("1264000".into()),
-                    })
-                })),
-                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || {
-                    Err(SwapperError::InputAmountError {
-                        min_amount: Some("68000000".into()),
-                    })
-                })),
+                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountError { min_amount: Some("19630000".into()) }))),
+                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || Err(SwapperError::InputAmountError { min_amount: Some("1264000".into()) }))),
+                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::InputAmountError { min_amount: Some("68000000".into()) }))),
             ],
         };
-
-        let result = gem_swapper.fetch_quote(&request).await;
-        assert_eq!(
-            result,
-            Err(SwapperError::InputAmountError {
-                min_amount: Some("1264000".into())
-            })
-        );
+        assert_eq!(gem_swapper.fetch_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: Some("1264000".into()) }));
     }
 }

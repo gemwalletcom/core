@@ -365,7 +365,6 @@ mod swap_integration_tests {
 
         let options = Options::new_with_slippage(200.into());
 
-        // Use a very small amount to trigger an error from the API
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
             to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
