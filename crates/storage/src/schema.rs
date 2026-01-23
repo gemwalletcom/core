@@ -482,6 +482,7 @@ diesel::table! {
         updated_at -> Timestamp,
         created_at -> Timestamp,
         queue_behind_blocks -> Nullable<Int4>,
+        block_time -> Int4,
     }
 }
 

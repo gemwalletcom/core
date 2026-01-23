@@ -31,7 +31,7 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
 
     info_with_fields!("setup", step = "parser state");
     for chain in chains.clone() {
-        let _ = database.parser_state()?.add_parser_state(chain.as_ref());
+        let _ = database.parser_state()?.add_parser_state(chain.as_ref(), chain.block_time() as i32);
     }
 
     info_with_fields!("setup", step = "assets");
