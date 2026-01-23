@@ -1,6 +1,6 @@
 use alloy_primitives::Address;
 
-use super::error::SwapperError;
+use super::error::{INVALID_ADDRESS, SwapperError};
 use primitives::{AssetId, EVMChain};
 
 pub(crate) fn convert_native_to_weth(asset: &AssetId) -> Option<AssetId> {
@@ -25,10 +25,10 @@ pub(crate) fn parse_asset_id(asset: &AssetId) -> Result<Address, SwapperError> {
     if let Some(token_id) = &asset.token_id {
         parse_str(token_id)
     } else {
-        Err(SwapperError::InvalidAddress(asset.to_string()))
+        Err(SwapperError::ComputeQuoteError(format!("{}: {}", INVALID_ADDRESS, asset)))
     }
 }
 
 pub(crate) fn parse_str(str: &str) -> Result<Address, SwapperError> {
-    str.parse::<Address>().map_err(|_| SwapperError::InvalidAddress(str.to_string()))
+    str.parse::<Address>().map_err(|_| SwapperError::ComputeQuoteError(format!("{}: {}", INVALID_ADDRESS, str)))
 }

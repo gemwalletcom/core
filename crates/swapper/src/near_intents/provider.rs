@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, near_intents::client::base_url,
+    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, amount_to_value, near_intents::client::base_url,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -91,7 +91,9 @@ where
         let amount_u256 = Self::parse_u256(&base_amount, "amount")?;
 
         if amount_u256 <= reserved_fee {
-            return Err(SwapperError::InputAmountTooSmall);
+            return Err(SwapperError::InputAmountError {
+                min_amount: Some(reserved_fee.to_string()),
+            });
         }
 
         Ok((amount_u256 - reserved_fee).to_string())
@@ -217,7 +219,7 @@ where
 
         let message_bytes = build_transfer_message_bytes(self.sui_client.as_ref(), wallet_address, deposit_address, amount, from_asset.asset_id().token_id.as_deref())
             .await
-            .map_err(|err| SwapperError::NetworkError(format!("Failed to build Sui deposit data: {err}")))?;
+            .map_err(|err| SwapperError::TransactionError(format!("Failed to build Sui deposit data: {err}")))?;
 
         Ok(DepositData {
             to: deposit_address.to_string(),
@@ -227,21 +229,46 @@ where
         })
     }
 
-    fn extract_quote(response: QuoteResponseResult) -> Result<QuoteResponse, SwapperError> {
+    fn extract_quote(response: QuoteResponseResult, from_decimals: u32) -> Result<QuoteResponse, SwapperError> {
         match response {
             QuoteResponseResult::Ok(quote) => Ok(*quote),
-            QuoteResponseResult::Err(error) => Err(map_quote_error(&error)),
+            QuoteResponseResult::Err(error) => Err(map_quote_error(&error, from_decimals)),
         }
     }
 }
 
-fn map_quote_error(error: &QuoteResponseError) -> SwapperError {
+fn map_quote_error(error: &QuoteResponseError, from_decimals: u32) -> SwapperError {
     let lower = error.message.to_ascii_lowercase();
     if lower.contains("too low") {
-        SwapperError::InputAmountTooSmall
+        SwapperError::InputAmountError {
+            min_amount: parse_min_amount(&error.message, from_decimals),
+        }
     } else {
-        SwapperError::NetworkError(format!("Near Intents quote error: {}", error.message))
+        SwapperError::ComputeQuoteError(format!("Near Intents quote error: {}", error.message))
     }
+}
+
+fn parse_min_amount(message: &str, decimals: u32) -> Option<String> {
+    let marker = "try at least ";
+    let lower = message.to_ascii_lowercase();
+    let start = lower.find(marker)? + marker.len();
+    let tail = message.get(start..)?;
+    let token = extract_numeric_token(tail)?;
+    amount_to_value(&token, decimals)
+}
+
+fn extract_numeric_token(message: &str) -> Option<String> {
+    let mut current = String::new();
+
+    for ch in message.chars() {
+        if ch.is_ascii_digit() || ch == '.' || ch == ',' || ch == '_' {
+            current.push(ch);
+        } else if !current.is_empty() {
+            return Some(current);
+        }
+    }
+
+    if current.is_empty() { None } else { Some(current) }
 }
 
 #[async_trait]
@@ -260,12 +287,12 @@ where
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let mode = match request.mode {
             SwapperMode::ExactIn => SwapType::FlexInput,
-            SwapperMode::ExactOut => return Err(SwapperError::NotImplemented),
+            SwapperMode::ExactOut => todo!("ExactOut mode is not supported for Near Intents"),
         };
 
         let amount = Self::resolve_quote_amount(request, &mode)?;
         let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
-        let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
+        let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, request.from_asset.decimals)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
 
         let eta = response.quote.time_estimate;
@@ -295,7 +322,7 @@ where
         let request_deposit_mode = quote_request.deposit_mode.clone();
         quote_request.dry = false;
 
-        let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?)?;
+        let response: QuoteResponse = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, quote.request.from_asset.decimals)?;
         let QuoteResponse {
             quote_request: _,
             quote: near_quote,
@@ -415,7 +442,7 @@ mod tests {
 
         let err = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect_err("expected error");
 
-        assert!(matches!(err, SwapperError::InputAmountTooSmall));
+        assert!(matches!(err, SwapperError::InputAmountError { .. }));
     }
 
     #[test]
@@ -426,13 +453,16 @@ mod tests {
 
         let decoded: QuoteResponseResult = serde_json::from_value(payload).expect("failed to decode error payload");
 
-        match decoded {
-            QuoteResponseResult::Err(err) => {
-                assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
-                assert!(matches!(map_quote_error(&err), SwapperError::InputAmountTooSmall));
+        let QuoteResponseResult::Err(err) = decoded else {
+            panic!("expected error variant");
+        };
+        assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
+        assert_eq!(
+            map_quote_error(&err, 6),
+            SwapperError::InputAmountError {
+                min_amount: Some("8516130".into())
             }
-            QuoteResponseResult::Ok(_) => panic!("expected error variant"),
-        }
+        );
     }
 }
 
@@ -502,12 +532,12 @@ mod swap_integration_tests {
 
         let quote = match provider.fetch_quote(&request).await {
             Ok(quote) => quote,
-            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(SwapperError::ComputeQuoteError(_)) => return Ok(()),
             Err(error) => return Err(error),
         };
         let quote_data = match provider.fetch_quote_data(&quote, FetchQuoteData::None).await {
             Ok(data) => data,
-            Err(SwapperError::NetworkError(_)) => return Ok(()),
+            Err(SwapperError::TransactionError(_)) => return Ok(()),
             Err(error) => return Err(error),
         };
 

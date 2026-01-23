@@ -416,7 +416,7 @@ mod tests {
         let preferences: Arc<dyn GemPreferences> = Arc::new(EmptyPreferences {});
         let gateway = GemGateway::new(provider, preferences.clone(), preferences.clone(), "https://example.invalid".to_string());
 
-        let result = gateway.get_node_status(Chain::Bitcoin, "https://httpbin.io/status/404").await;
+        let result = gateway.get_node_status(Chain::Bitcoin, "https://httpbin.org/status/404").await;
 
         match result {
             Ok(status) => panic!("expected network error for 404 response, got {:?}", status),
