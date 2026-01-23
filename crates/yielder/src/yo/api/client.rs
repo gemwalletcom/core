@@ -20,7 +20,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YoApiClient<E> {
     pub async fn fetch_rewards(&self, chain: Chain, vault_address: &str, user_address: &str) -> Result<YoPerformanceData, YieldError> {
         let network = match chain {
             Chain::Base => "base",
-            Chain::Ethereum => "mainnet",
+            Chain::Ethereum => "ethereum",
             _ => return Err(YieldError::new(format!("unsupported chain for Yo API: {:?}", chain))),
         };
         let url = format!("{}/api/v1/performance/user/{}/{}/{}", YO_API_BASE_URL, network, vault_address, user_address);
@@ -36,7 +36,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YoApiClient<E> {
             serde_json::from_slice(&response.data).map_err(|e| YieldError::new(format!("failed to parse Yo API response: {}", e)))?;
 
         if parsed.status_code != 200 {
-            return Err(YieldError::new(format!("Yo API error: {}", parsed.message)));
+            return Ok(YoPerformanceData::default());
         }
 
         Ok(parsed.data)
