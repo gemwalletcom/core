@@ -65,13 +65,40 @@ mod tests {
 
     #[test]
     fn test_proxy_error_deserialization() {
-        let json = r#"{"err": {"type": "compute_quote_error", "message": "Amount too small (min ~0.0008099 ETH)"}}"#;
-        let error: ProxyError = serde_json::from_str(json).unwrap();
+        let json = r#"{"err": {"type": "compute_quote_error", "message": "Quote failed"}}"#;
+        assert_eq!(
+            serde_json::from_str::<ProxyError>(json).unwrap().err,
+            SwapperError::ComputeQuoteError("Quote failed".into())
+        );
 
-        assert!(matches!(error.err, SwapperError::ComputeQuoteError(_)));
+        let json = r#"{"err": {"type": "input_amount_error", "message": {"min_amount": "19620000"}}}"#;
+        assert_eq!(
+            serde_json::from_str::<ProxyError>(json).unwrap().err,
+            SwapperError::InputAmountError {
+                min_amount: Some("19620000".into())
+            }
+        );
 
-        if let SwapperError::ComputeQuoteError(msg) = error.err {
-            assert!(msg.contains("Amount too small"));
-        }
+        let json = r#"{"err": {"type": "input_amount_error", "message": {"min_amount": null}}}"#;
+        assert_eq!(serde_json::from_str::<ProxyError>(json).unwrap().err, SwapperError::InputAmountError { min_amount: None });
+
+        let json = r#"{"err": {"type": "no_quote_available"}}"#;
+        assert_eq!(serde_json::from_str::<ProxyError>(json).unwrap().err, SwapperError::NoQuoteAvailable);
+
+        let json = r#"{"err": {"type": "transaction_error", "message": "tx failed"}}"#;
+        assert_eq!(serde_json::from_str::<ProxyError>(json).unwrap().err, SwapperError::TransactionError("tx failed".into()));
+    }
+
+    #[test]
+    fn test_swapper_error_serialization() {
+        assert_eq!(
+            serde_json::to_string(&SwapperError::InputAmountError { min_amount: Some("100".into()) }).unwrap(),
+            r#"{"type":"input_amount_error","message":{"min_amount":"100"}}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&SwapperError::ComputeQuoteError("error".into())).unwrap(),
+            r#"{"type":"compute_quote_error","message":"error"}"#
+        );
+        assert_eq!(serde_json::to_string(&SwapperError::NoQuoteAvailable).unwrap(), r#"{"type":"no_quote_available"}"#);
     }
 }

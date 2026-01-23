@@ -453,18 +453,16 @@ mod tests {
 
         let decoded: QuoteResponseResult = serde_json::from_value(payload).expect("failed to decode error payload");
 
-        match decoded {
-            QuoteResponseResult::Err(err) => {
-                assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
-                match map_quote_error(&err, 6) {
-                    SwapperError::InputAmountError { min_amount } => {
-                        assert_eq!(min_amount, Some("8516130".to_string()));
-                    }
-                    _ => panic!("expected InputAmountError"),
-                }
+        let QuoteResponseResult::Err(err) = decoded else {
+            panic!("expected error variant");
+        };
+        assert_eq!(err.message, "Amount is too low for bridge, try at least 8516130");
+        assert_eq!(
+            map_quote_error(&err, 6),
+            SwapperError::InputAmountError {
+                min_amount: Some("8516130".into())
             }
-            QuoteResponseResult::Ok(_) => panic!("expected error variant"),
-        }
+        );
     }
 }
 

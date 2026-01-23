@@ -326,23 +326,21 @@ mod tests {
     fn test_chainflip_min_amount_error() {
         let message = "expected amount is below minimum swap amount (68000000)".to_string();
         let err = map_chainflip_quote_error(SwapperError::ComputeQuoteError(message), 6);
-
-        match err {
-            SwapperError::InputAmountError { min_amount } => {
-                assert_eq!(min_amount, Some("68000000".to_string()));
+        assert_eq!(
+            err,
+            SwapperError::InputAmountError {
+                min_amount: Some("68000000".into())
             }
-            _ => panic!("expected InputAmountError"),
-        }
+        );
 
         let message = "expected amount is below minimum swap amount (1.23)".to_string();
         let err = map_chainflip_quote_error(SwapperError::ComputeQuoteError(message), 6);
-
-        match err {
-            SwapperError::InputAmountError { min_amount } => {
-                assert_eq!(min_amount, Some("1230000".to_string()));
+        assert_eq!(
+            err,
+            SwapperError::InputAmountError {
+                min_amount: Some("1230000".into())
             }
-            _ => panic!("expected InputAmountError"),
-        }
+        );
     }
 
     #[test]

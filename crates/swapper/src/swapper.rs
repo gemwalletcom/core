@@ -77,13 +77,17 @@ impl GemSwapper {
     }
 
     fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
-        for err in errors {
-            if let SwapperError::InputAmountError { min_amount } = err {
-                return Some(SwapperError::InputAmountError { min_amount: min_amount.clone() });
-            }
-        }
-
-        None
+        errors
+            .iter()
+            .filter_map(|err| match err {
+                SwapperError::InputAmountError { min_amount } => {
+                    let value = min_amount.as_ref().and_then(|s| s.parse::<u128>().ok()).unwrap_or(u128::MAX);
+                    Some((value, min_amount.clone()))
+                }
+                _ => None,
+            })
+            .min_by_key(|(value, _)| *value)
+            .map(|(_, min_amount)| SwapperError::InputAmountError { min_amount })
     }
 }
 
@@ -414,10 +418,43 @@ mod tests {
         };
 
         let result = gem_swapper.fetch_quote(&request).await;
+        assert!(matches!(result, Err(SwapperError::InputAmountError { .. })));
+    }
 
-        match result {
-            Err(SwapperError::InputAmountError { min_amount: _ }) => {}
-            _ => panic!("expected InputAmountError when every provider rejects the amount"),
-        }
+    #[tokio::test]
+    async fn test_fetch_quote_selects_smallest_min_amount() {
+        let request = mock_quote(
+            SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
+        );
+
+        let gem_swapper = GemSwapper {
+            rpc_provider: Arc::new(NativeProvider::default()),
+            swappers: vec![
+                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || {
+                    Err(SwapperError::InputAmountError {
+                        min_amount: Some("19630000".into()),
+                    })
+                })),
+                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
+                    Err(SwapperError::InputAmountError {
+                        min_amount: Some("1264000".into()),
+                    })
+                })),
+                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || {
+                    Err(SwapperError::InputAmountError {
+                        min_amount: Some("68000000".into()),
+                    })
+                })),
+            ],
+        };
+
+        let result = gem_swapper.fetch_quote(&request).await;
+        assert_eq!(
+            result,
+            Err(SwapperError::InputAmountError {
+                min_amount: Some("1264000".into())
+            })
+        );
     }
 }

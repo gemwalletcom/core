@@ -272,12 +272,12 @@ mod swap_integration_tests {
         }
 
         let err = swapper.fetch_quote(&request).await.expect_err("expected error");
-        match err {
-            SwapperError::InputAmountError { min_amount } => {
-                assert_eq!(min_amount, Some(expected_min_amount.to_string()));
+        assert_eq!(
+            err,
+            SwapperError::InputAmountError {
+                min_amount: Some(expected_min_amount.to_string())
             }
-            _ => panic!("expected InputAmountError"),
-        }
+        );
 
         Ok(())
     }
