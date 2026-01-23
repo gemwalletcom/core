@@ -345,9 +345,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-ens"
-version = "1.4.3"
+version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b03770ec5adb3ea02155690584cac277c38674a1e03f530eb398ed5e49880640"
+checksum = "a93e43e421cb6e174846debd5fef802a59d68d409362c220b3366c850eb52e57"
 dependencies = [
  "alloy-primitives",
 ]
