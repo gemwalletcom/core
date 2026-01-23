@@ -162,6 +162,9 @@ pub enum ConfigKey {
     SearchAssetsUpdateInterval,
     SearchPerpetualsUpdateInterval,
     SearchNftsUpdateInterval,
+
+    // Parser
+    ParserCatchupReloadInterval,
 }
 
 impl ConfigKey {
@@ -293,6 +296,7 @@ impl ConfigKey {
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",
             Self::SearchNftsUpdateInterval => "30m",
+            Self::ParserCatchupReloadInterval => "50",
         }
     }
 }
