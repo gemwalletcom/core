@@ -42,6 +42,13 @@ pub struct RiskScoreConfig {
     pub verified_multiplier: i64,
     pub ip_history_penalty_per_abuser: i64,
     pub ip_history_max_penalty: i64,
+    pub cross_referrer_device_penalty: i64,
+    pub cross_referrer_fingerprint_threshold: i64,
+    pub cross_referrer_fingerprint_penalty: i64,
+    pub country_diversity_threshold: i64,
+    pub country_diversity_penalty_per_country: i64,
+    pub device_farming_threshold: i64,
+    pub device_farming_penalty_per_device: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -85,6 +92,13 @@ impl Default for RiskScoreConfig {
             verified_multiplier: 2,
             ip_history_penalty_per_abuser: 30,
             ip_history_max_penalty: 150,
+            cross_referrer_device_penalty: 500,
+            cross_referrer_fingerprint_threshold: 2,
+            cross_referrer_fingerprint_penalty: 100,
+            country_diversity_threshold: 5,
+            country_diversity_penalty_per_country: 5,
+            device_farming_threshold: 10,
+            device_farming_penalty_per_device: 3,
         }
     }
 }
@@ -162,6 +176,14 @@ pub struct RiskScoreBreakdown {
     pub velocity_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub ip_history_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub cross_referrer_device_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub cross_referrer_fingerprint_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub country_diversity_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub device_farming_score: i64,
 }
 
 fn is_zero(value: &i64) -> bool {

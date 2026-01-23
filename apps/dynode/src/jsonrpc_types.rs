@@ -17,7 +17,7 @@ impl JsonRpcCall {
         if self.params.is_null() {
             base
         } else {
-            let params_str = serde_json::to_string(&self.params).unwrap_or_else(|_| self.params.to_string());
+            let params_str = serde_json::to_string(&self.params).unwrap_or_default();
             format!("{}:{}", base, params_str)
         }
     }
@@ -165,20 +165,6 @@ impl RequestType {
             Self::JsonRpc(json_rpc) => json_rpc.cache_key(host, path),
         }
     }
-
-    pub fn create_cache_key(host: &str, path: &str, call: &JsonRpcCall) -> String {
-        let mut key = format!("{}:POST:{}", host, path);
-        key.push(':');
-        key.push_str(&call.method);
-
-        if !call.params.is_null() {
-            key.push(':');
-            let params_str = serde_json::to_string(&call.params).unwrap_or_else(|_| call.params.to_string());
-            key.push_str(&params_str);
-        }
-
-        key
-    }
 }
 
 #[cfg(test)]
@@ -213,9 +199,7 @@ mod tests {
         let request = JsonRpcRequest::Single(call);
         let key = request.cache_key("example.com", "/rpc").unwrap();
 
-        assert!(key.contains("eth_getBalance"));
-        assert!(key.contains("0x123"));
-        assert!(key.contains("latest"));
+        assert_eq!(key, "example.com:POST:/rpc:eth_getBalance:[\"0x123\",\"latest\"]");
     }
 
     #[test]

@@ -86,7 +86,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                     continue;
                 }
 
-                transactions_map.insert(transaction.id.clone(), transaction.clone());
+                transactions_map.entry(transaction.id.clone()).or_insert_with(|| transaction.clone());
 
                 let is_outdated = self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain);
                 let should_notify = !is_outdated && is_notify_devices;

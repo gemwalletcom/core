@@ -1,10 +1,19 @@
 use crate::jsonrpc_types::RequestType;
 use primitives::Chain;
 use reqwest::{Method, header::HeaderMap};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
+
+static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+fn generate_request_id() -> String {
+    let count = REQUEST_COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("{:08x}", count)
+}
 
 #[derive(Debug, Clone)]
 pub struct ProxyRequest {
+    pub id: String,
     pub method: Method,
     pub headers: HeaderMap,
     pub body: Vec<u8>,
@@ -14,11 +23,14 @@ pub struct ProxyRequest {
     pub user_agent: String,
     pub chain: Chain,
     pub request_start: Instant,
+    request_type: RequestType,
 }
 
 impl ProxyRequest {
     pub fn new(method: Method, headers: HeaderMap, body: Vec<u8>, path: String, path_with_query: String, host: String, user_agent: String, chain: Chain) -> Self {
+        let request_type = RequestType::from_request(method.as_str(), path_with_query.clone(), body.clone());
         Self {
+            id: generate_request_id(),
             method,
             headers,
             body,
@@ -28,6 +40,7 @@ impl ProxyRequest {
             user_agent,
             chain,
             request_start: Instant::now(),
+            request_type,
         }
     }
 
@@ -35,8 +48,8 @@ impl ProxyRequest {
         self.request_start.elapsed()
     }
 
-    pub fn request_type(&self) -> RequestType {
-        RequestType::from_request(self.method.as_str(), self.path_with_query.clone(), self.body.clone())
+    pub fn request_type(&self) -> &RequestType {
+        &self.request_type
     }
 }
 
@@ -83,5 +96,18 @@ mod tests {
 
         let elapsed = ctx.elapsed();
         assert!(elapsed.as_millis() > 0);
+    }
+
+    #[test]
+    fn generate_request_id_unique() {
+        let id1 = super::generate_request_id();
+        let id2 = super::generate_request_id();
+        let id3 = super::generate_request_id();
+
+        assert_ne!(id1, id2);
+        assert_ne!(id2, id3);
+        assert_eq!(id1.len(), 8);
+        assert_eq!(id2.len(), 8);
+        assert_eq!(id1.chars().all(|c| c.is_ascii_hexdigit()), true);
     }
 }

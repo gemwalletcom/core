@@ -203,8 +203,11 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_reward_create_username_description")
     }
 
-    pub fn notification_reward_invite_description(&self) -> String {
-        fl!(self.loader.as_ref(), "notification_reward_invite_description")
+    pub fn notification_reward_invite_description(&self, username: Option<&str>) -> String {
+        match username {
+            Some(name) if !name.is_empty() => fl!(self.loader.as_ref(), "notification_reward_invite_description", username = name),
+            _ => "Referral joined using your code.".to_string(),
+        }
     }
 
     pub fn notification_reward_joined_description(&self) -> String {
@@ -265,6 +268,10 @@ impl LanguageLocalizer {
 
     pub fn rewards_error_username_daily_limit_reached(&self) -> String {
         fl!(self.loader.as_ref(), "rewards_error_username_daily_limit_reached")
+    }
+
+    pub fn notification_rewards_enabled_title(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_rewards_enabled_title")
     }
 
     pub fn notification_rewards_enabled_description(&self) -> String {

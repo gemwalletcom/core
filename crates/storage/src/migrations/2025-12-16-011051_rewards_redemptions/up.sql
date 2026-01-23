@@ -19,6 +19,7 @@ CREATE TABLE rewards_redemptions (
     username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON UPDATE CASCADE ON DELETE CASCADE,
     option_id VARCHAR(64) NOT NULL REFERENCES rewards_redemption_options(id) ON DELETE CASCADE,
     device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+    wallet_id INT NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
     transaction_id VARCHAR(512),
     status redemption_status NOT NULL,
     error VARCHAR(1024),

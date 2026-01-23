@@ -46,7 +46,8 @@ impl JsonRpcHandler {
         if let Some(_ttl) = cache.should_cache_call(&request.chain, call) {
             if let Some(cached) = cache.get(&request.chain, &cache_key).await {
                 metrics.add_cache_hit(request.chain.as_ref(), &call.method);
-                info_with_fields!("Cache HIT", chain = request.chain.as_ref(), host = request.host.as_str(), method = call.method.as_str());
+                let request_id = request.id.as_str();
+                info_with_fields!("Cache HIT", id = request_id, chain = request.chain.as_ref(), host = request.host.as_str(), method = call.method.as_str());
 
                 let result = serde_json::from_slice(&cached.body).unwrap_or_default();
                 let response = JsonRpcResult::Success(JsonRpcResponse {
@@ -82,10 +83,12 @@ impl JsonRpcHandler {
             request.elapsed().as_millis(),
         );
 
+        let request_id = request.id.as_str();
         match &response {
             JsonRpcResult::Success(_) => {
                 info_with_fields!(
                     "Proxy response",
+                    id = request_id,
                     chain = request.chain.as_ref(),
                     remote_host = url.url.host_str().unwrap_or_default(),
                     method = request.method.as_str(),
@@ -98,6 +101,7 @@ impl JsonRpcHandler {
             JsonRpcResult::Error(error_response) => {
                 info_with_fields!(
                     "Proxy response",
+                    id = request_id,
                     chain = request.chain.as_ref(),
                     remote_host = url.url.host_str().unwrap_or_default(),
                     method = request.method.as_str(),
@@ -106,7 +110,7 @@ impl JsonRpcHandler {
                     status = response_status,
                     latency = DurationMs(request.elapsed()),
                     error_code = error_response.error.code,
-                    error_message = error_response.error.message.as_str(),
+                    error = error_response.error.message.as_str(),
                 );
             }
         }
@@ -142,8 +146,10 @@ impl JsonRpcHandler {
         }
 
         let rpc_methods = rpc_request.get_methods_list();
+        let request_id = request.id.as_str();
         info_with_fields!(
             "Proxy response",
+            id = request_id,
             chain = request.chain.as_ref(),
             remote_host = url.url.host_str().unwrap_or_default(),
             method = request.method.as_str(),
@@ -181,53 +187,27 @@ impl JsonRpcHandler {
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
 
-        let result: JsonRpcResult = serde_json::from_slice(&body_bytes)?;
+        let result: JsonRpcResult = serde_json::from_slice(&body_bytes).map_err(|e| Self::format_parse_error(status, &body_bytes, e))?;
 
-        if status == StatusCode::OK.as_u16() {
-            if let (JsonRpcResult::Success(success), Some(ttl)) = (&result, cache.should_cache_call(&request.chain, call)) {
-                let result_bytes = serde_json::to_string(&success.result).unwrap_or_default().into_bytes();
-                let size_bytes = result_bytes.len();
-                let cached = CachedResponse::new(result_bytes, StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), ttl);
-                let cache_key = call.cache_key(&request.host, &request.path_with_query);
-                cache.set(&request.chain, cache_key, cached, ttl).await;
+        if status == StatusCode::OK.as_u16()
+            && let (JsonRpcResult::Success(success), Some(ttl)) = (&result, cache.should_cache_call(&request.chain, call))
+        {
+            let result_bytes = serde_json::to_string(&success.result).unwrap_or_default().into_bytes();
+            let size_bytes = result_bytes.len();
+            let cached = CachedResponse::new(result_bytes, StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), ttl);
+            let cache_key = call.cache_key(&request.host, &request.path_with_query);
+            cache.set(&request.chain, cache_key, cached, ttl).await;
 
-                info_with_fields!(
-                    "Cache SET",
-                    chain = request.chain.as_ref(),
-                    host = request.host.as_str(),
-                    method = call.method.as_str(),
-                    ttl_seconds = ttl,
-                    size_bytes = size_bytes,
-                    latency = DurationMs(request.elapsed()),
-                );
-            }
-        } else {
-            match &result {
-                JsonRpcResult::Error(error_response) => {
-                    info_with_fields!(
-                        "JSON RPC error response",
-                        chain = request.chain.as_ref(),
-                        host = request.host.as_str(),
-                        method = call.method.as_str(),
-                        remote_host = url.url.host_str().unwrap_or(""),
-                        status = status,
-                        latency = DurationMs(request.elapsed()),
-                        error_code = error_response.error.code,
-                        error_message = error_response.error.message.as_str()
-                    );
-                }
-                JsonRpcResult::Success(_) => {
-                    info_with_fields!(
-                        "JSON RPC success response",
-                        chain = request.chain.as_ref(),
-                        host = request.host.as_str(),
-                        method = call.method.as_str(),
-                        remote_host = url.url.host_str().unwrap_or(""),
-                        status = status,
-                        latency = DurationMs(request.elapsed())
-                    );
-                }
-            }
+            info_with_fields!(
+                "Cache SET",
+                id = request.id.as_str(),
+                chain = request.chain.as_ref(),
+                host = request.host.as_str(),
+                method = call.method.as_str(),
+                ttl_seconds = ttl,
+                size_bytes = size_bytes,
+                latency = DurationMs(request.elapsed()),
+            );
         }
 
         Ok((result, status))
@@ -244,13 +224,23 @@ impl JsonRpcHandler {
         let response = Self::send_jsonrpc_request(client, method, url, body, forward_headers).await?;
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
-        let responses: serde_json::Value = serde_json::from_slice(&body_bytes)?;
+        let responses: serde_json::Value =
+            serde_json::from_slice(&body_bytes).map_err(|e| Self::format_parse_error(status, &body_bytes, e))?;
         Ok((responses, status))
     }
 
     fn build_json_response<T: serde::Serialize>(data: &T, headers: HeaderMap, status: u16) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let response_body = serde_json::to_vec(data)?;
         ResponseBuilder::build_with_headers(response_body, status, JSON_CONTENT_TYPE, headers)
+    }
+
+    fn format_parse_error(status: u16, body: &[u8], error: serde_json::Error) -> String {
+        const MAX_BODY_LEN: usize = 256;
+        if body.len() <= MAX_BODY_LEN && let Ok(text) = std::str::from_utf8(body) {
+            let body = text.split_whitespace().collect::<Vec<_>>().join(" ");
+            return format!("status={}, body: {}", status, body);
+        }
+        format!("status={}, parse error: {}", status, error)
     }
 }
 
@@ -278,5 +268,27 @@ mod tests {
 
         assert!(matches!(single_request, JsonRpcRequest::Single(_)));
         assert!(matches!(batch_request, JsonRpcRequest::Batch(_)));
+    }
+
+    #[test]
+    fn test_format_parse_error() {
+        let err = || serde_json::from_slice::<serde_json::Value>(b"x").unwrap_err();
+
+        assert_eq!(
+            JsonRpcHandler::format_parse_error(415, b"Expected Content-Type: application/json", err()),
+            "status=415, body: Expected Content-Type: application/json"
+        );
+        assert_eq!(
+            JsonRpcHandler::format_parse_error(400, b"<html>\n<body>Bad Request</body>\n</html>", err()),
+            "status=400, body: <html> <body>Bad Request</body> </html>"
+        );
+        assert_eq!(
+            JsonRpcHandler::format_parse_error(502, b"<html>Bad Gateway...</html>".repeat(20).as_slice(), err()),
+            "status=502, parse error: expected value at line 1 column 1"
+        );
+        assert_eq!(
+            JsonRpcHandler::format_parse_error(500, &[0xff, 0xfe], err()),
+            "status=500, parse error: expected value at line 1 column 1"
+        );
     }
 }

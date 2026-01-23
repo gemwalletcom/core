@@ -38,17 +38,15 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize_option_u128_from_str() {
-        let json = r#"{"amount": "123456789012345678901"}"#;
-        let result: TestStruct = serde_json::from_str(json).unwrap();
-        assert_eq!(result.amount, Some(123456789012345678901));
-
-        let json = r#"{"amount": null}"#;
-        let result: TestStruct = serde_json::from_str(json).unwrap();
-        assert_eq!(result.amount, None);
-
-        let json = r#"{}"#;
-        let result: TestStruct = serde_json::from_str(json).unwrap();
-        assert_eq!(result.amount, None);
+    fn test_u128_deserialization() {
+        let cases = [
+            (r#"{"amount": "123456789012345678901"}"#, Some(123456789012345678901u128)),
+            (r#"{"amount": null}"#, None),
+            (r#"{}"#, None),
+        ];
+        for (json, expected) in cases {
+            let result: TestStruct = serde_json::from_str(json).unwrap();
+            assert_eq!(result.amount, expected);
+        }
     }
 }
