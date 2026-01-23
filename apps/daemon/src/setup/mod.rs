@@ -265,6 +265,11 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     let result = database.notifications()?.create_notifications(notifications).expect("Failed to create notifications");
     info_with_fields!("setup_dev", step = "notifications added", count = result);
 
+    info_with_fields!("setup_dev", step = "add assets");
+
+    let assets = Chain::all().into_iter().map(|x| Asset::from_chain(x).as_basic_primitive()).collect::<Vec<_>>();
+    let _ = database.assets()?.add_assets(assets);
+
     info_with_fields!("setup_dev", step = "add price alerts");
 
     let price_alerts = vec![
