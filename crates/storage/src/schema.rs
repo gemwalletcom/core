@@ -973,6 +973,7 @@ diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
 diesel::joinable!(rewards -> devices (device_id));
+diesel::joinable!(rewards -> usernames (username));
 diesel::joinable!(rewards_events -> usernames (username));
 diesel::joinable!(rewards_redemption_options -> assets (asset_id));
 diesel::joinable!(rewards_redemptions -> devices (device_id));
