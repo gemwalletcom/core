@@ -20,7 +20,7 @@ use crate::{
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
-    error::amount_to_value,
+    amount_to_value,
     slippage,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
