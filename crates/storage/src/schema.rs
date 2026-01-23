@@ -96,6 +96,8 @@ diesel::table! {
         is_swappable -> Bool,
         is_stakeable -> Bool,
         staking_apr -> Nullable<Float8>,
+        is_earnable -> Bool,
+        earn_apr -> Nullable<Float8>,
     }
 }
 
