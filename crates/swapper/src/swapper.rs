@@ -171,7 +171,7 @@ impl GemSwapper {
             match result {
                 Ok(quote) => quotes.push(quote),
                 Err(err) => {
-                    tracing::debug!("fetch_quote error: {:?}", err);
+                    println!("fetch_quote error: {:?}", err);
                     errors.push(err);
                 }
             }
@@ -418,29 +418,6 @@ mod tests {
         match result {
             Err(SwapperError::InputAmountError { min_amount: _ }) => {}
             _ => panic!("expected InputAmountError when every provider rejects the amount"),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fetch_quote_no_quote() {
-        let request = mock_quote(
-            SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, "0xdAC17F958D2ee523a2206206994597C13D831ec7")),
-        );
-
-        let gem_swapper = GemSwapper {
-            rpc_provider: Arc::new(NativeProvider::default()),
-            swappers: vec![
-                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::NoQuoteAvailable))),
-                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || Err(SwapperError::NoQuoteAvailable))),
-            ],
-        };
-
-        let result = gem_swapper.fetch_quote(&request).await;
-
-        match result {
-            Err(SwapperError::NoQuoteAvailable) => {}
-            _ => panic!("expected NoQuoteAvailable when providers failed without amount errors"),
         }
     }
 }

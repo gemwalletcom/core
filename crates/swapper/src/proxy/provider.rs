@@ -378,12 +378,10 @@ mod swap_integration_tests {
 
         let result = provider.fetch_quote(&request).await;
 
-        // The API should return an error object which deserializes into SwapperError
         assert!(result.is_err(), "Expected error for tiny swap amount");
         let err = result.unwrap_err();
         println!("Received v=1 error object: {:?}", err);
 
-        // Verify the error is a typed SwapperError (not a generic HTTP error)
         let is_typed_error = matches!(
             err,
             SwapperError::InputAmountError { .. } | SwapperError::NoQuoteAvailable | SwapperError::NotSupportedAsset | SwapperError::ComputeQuoteError(_)
@@ -408,13 +406,13 @@ mod swap_integration_tests {
             options,
         };
 
-        // Fetch quote
         let quote = provider.fetch_quote(&request).await?;
+
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         println!("Quote: from={} to={}", quote.from_value, quote.to_value);
 
-        // Fetch quote data
         let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+
         assert!(!quote_data.to.is_empty(), "Expected non-empty 'to' address");
         assert!(!quote_data.data.is_empty(), "Expected non-empty calldata");
         println!("Quote data: to={}, value={}", quote_data.to, quote_data.value);

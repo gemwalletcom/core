@@ -56,16 +56,12 @@ where
     let allowance_data = IERC20::allowanceCall { owner, spender }.abi_encode();
     let allowance_call = EthereumRpc::Call(TransactionObject::new_call(&token, allowance_data), BlockParameter::Latest);
 
-    let result: String = client
-        .request(allowance_call)
-        .await
-        .map_err(SwapperError::from)
-        .map_err(SwapperError::into_transaction_error)?;
+    let result: String = client.request(allowance_call).await.map_err(SwapperError::from)?;
+
     let decoded = HexDecode(result).map_err(|_| SwapperError::TransactionError("failed to decode allowance_call result".into()))?;
 
-    let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded)
-        .map_err(SwapperError::from)
-        .map_err(SwapperError::into_transaction_error)?;
+    let allowance = IERC20::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
+
     if allowance < amount {
         return Ok(ApprovalType::Approve(ApprovalData {
             token: token.to_string(),
@@ -108,15 +104,10 @@ where
     .abi_encode();
     let permit2_call = EthereumRpc::Call(TransactionObject::new_call(permit2_contract, permit2_data), BlockParameter::Latest);
 
-    let result: String = client
-        .request(permit2_call)
-        .await
-        .map_err(SwapperError::from)
-        .map_err(SwapperError::into_transaction_error)?;
+    let result: String = client.request(permit2_call).await.map_err(SwapperError::from)?;
+
     let decoded = HexDecode(result).map_err(|_| SwapperError::TransactionError("failed to decode permit2 allowance result".into()))?;
-    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded)
-        .map_err(SwapperError::from)
-        .map_err(SwapperError::into_transaction_error)?;
+    let allowance_return = IAllowanceTransfer::allowanceCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
 
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_secs();
     let expiration: u64 = allowance_return

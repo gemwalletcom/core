@@ -47,15 +47,6 @@ impl std::fmt::Display for SwapperError {
 
 impl std::error::Error for SwapperError {}
 
-impl SwapperError {
-    pub fn into_transaction_error(self) -> Self {
-        match self {
-            SwapperError::ComputeQuoteError(msg) => SwapperError::TransactionError(msg),
-            other => other,
-        }
-    }
-}
-
 impl From<AlienError> for SwapperError {
     fn from(err: AlienError) -> Self {
         match err {

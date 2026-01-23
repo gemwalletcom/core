@@ -323,7 +323,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_chainflip_min_amount_error_normalization() {
+    fn test_chainflip_min_amount_error() {
         let message = "expected amount is below minimum swap amount (68000000)".to_string();
         let err = map_chainflip_quote_error(SwapperError::ComputeQuoteError(message), 6);
 
@@ -333,10 +333,7 @@ mod tests {
             }
             _ => panic!("expected InputAmountError"),
         }
-    }
 
-    #[test]
-    fn test_chainflip_min_amount_error_decimal_value() {
         let message = "expected amount is below minimum swap amount (1.23)".to_string();
         let err = map_chainflip_quote_error(SwapperError::ComputeQuoteError(message), 6);
 

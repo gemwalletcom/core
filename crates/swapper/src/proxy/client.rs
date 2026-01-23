@@ -7,7 +7,11 @@ use std::fmt::Debug;
 
 const API_VERSION: u8 = 1;
 
-/// Proxy API error response format: `{"err": SwapperError}`
+#[derive(Debug, Serialize)]
+struct VersionQuery {
+    v: u8,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct ProxyError {
     pub err: SwapperError,
@@ -55,11 +59,6 @@ where
     }
 }
 
-#[derive(Debug, Serialize)]
-struct VersionQuery {
-    v: u8,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -68,7 +67,9 @@ mod tests {
     fn test_proxy_error_deserialization() {
         let json = r#"{"err": {"type": "compute_quote_error", "message": "Amount too small (min ~0.0008099 ETH)"}}"#;
         let error: ProxyError = serde_json::from_str(json).unwrap();
+
         assert!(matches!(error.err, SwapperError::ComputeQuoteError(_)));
+
         if let SwapperError::ComputeQuoteError(msg) = error.err {
             assert!(msg.contains("Amount too small"));
         }
