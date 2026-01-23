@@ -1,3 +1,4 @@
+use primitives::rewards::RewardStatus;
 use primitives::{IpUsageType, Platform, PlatformStore};
 use sha2::{Digest, Sha256};
 use std::time::Duration;
@@ -40,6 +41,7 @@ pub struct RiskScoreConfig {
     pub velocity_penalty: i64,
     pub referral_per_user_daily: i64,
     pub verified_multiplier: i64,
+    pub trusted_multiplier: i64,
     pub ip_history_penalty_per_abuser: i64,
     pub ip_history_max_penalty: i64,
     pub cross_referrer_device_penalty: i64,
@@ -90,6 +92,7 @@ impl Default for RiskScoreConfig {
             velocity_penalty: 100,
             referral_per_user_daily: 5,
             verified_multiplier: 2,
+            trusted_multiplier: 3,
             ip_history_penalty_per_abuser: 30,
             ip_history_max_penalty: 150,
             cross_referrer_device_penalty: 500,
@@ -118,7 +121,7 @@ pub struct RiskSignalInput {
     pub ip_usage_type: IpUsageType,
     pub ip_isp: String,
     pub ip_abuse_score: i64,
-    pub referrer_verified: bool,
+    pub referrer_status: RewardStatus,
 }
 
 impl RiskSignalInput {
@@ -216,7 +219,7 @@ mod tests {
             ip_usage_type: IpUsageType::Isp,
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
-            referrer_verified: false,
+            referrer_status: RewardStatus::Unverified,
         };
         assert_eq!(input.generate_fingerprint().len(), 64);
     }

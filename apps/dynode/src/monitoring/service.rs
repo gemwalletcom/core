@@ -76,11 +76,7 @@ impl NodeService {
             };
             match self.proxy_builder.handle_request(request.clone(), &active_node).await {
                 Ok(response) if self.should_retry_response(&request, &response) => {
-                    return self.log_and_create_error_response(
-                        &request,
-                        Some(&active_node.url.host()),
-                        &format!("Upstream status code: {}", response.status),
-                    );
+                    return self.log_and_create_error_response(&request, Some(&active_node.url.host()), &format!("Upstream status code: {}", response.status));
                 }
                 result => return result,
             }
@@ -144,12 +140,7 @@ impl NodeService {
         }
     }
 
-    fn log_and_create_error_response(
-        &self,
-        request: &ProxyRequest,
-        host: Option<&str>,
-        error_message: &str,
-    ) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+    fn log_and_create_error_response(&self, request: &ProxyRequest, host: Option<&str>, error_message: &str) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
         let request_id = request.id.as_str();
         let chain = request.chain.as_ref();
         let uri = request.path.as_str();

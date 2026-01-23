@@ -47,7 +47,13 @@ impl JsonRpcHandler {
             if let Some(cached) = cache.get(&request.chain, &cache_key).await {
                 metrics.add_cache_hit(request.chain.as_ref(), &call.method);
                 let request_id = request.id.as_str();
-                info_with_fields!("Cache HIT", id = request_id, chain = request.chain.as_ref(), host = request.host.as_str(), method = call.method.as_str());
+                info_with_fields!(
+                    "Cache HIT",
+                    id = request_id,
+                    chain = request.chain.as_ref(),
+                    host = request.host.as_str(),
+                    method = call.method.as_str()
+                );
 
                 let result = serde_json::from_slice(&cached.body).unwrap_or_default();
                 let response = JsonRpcResult::Success(JsonRpcResponse {
@@ -224,8 +230,7 @@ impl JsonRpcHandler {
         let response = Self::send_jsonrpc_request(client, method, url, body, forward_headers).await?;
         let status = response.status().as_u16();
         let body_bytes = response.bytes().await?.to_vec();
-        let responses: serde_json::Value =
-            serde_json::from_slice(&body_bytes).map_err(|e| Self::format_parse_error(status, &body_bytes, e))?;
+        let responses: serde_json::Value = serde_json::from_slice(&body_bytes).map_err(|e| Self::format_parse_error(status, &body_bytes, e))?;
         Ok((responses, status))
     }
 
@@ -236,7 +241,9 @@ impl JsonRpcHandler {
 
     fn format_parse_error(status: u16, body: &[u8], error: serde_json::Error) -> String {
         const MAX_BODY_LEN: usize = 256;
-        if body.len() <= MAX_BODY_LEN && let Ok(text) = std::str::from_utf8(body) {
+        if body.len() <= MAX_BODY_LEN
+            && let Ok(text) = std::str::from_utf8(body)
+        {
             let body = text.split_whitespace().collect::<Vec<_>>().join(" ");
             return format!("status={}, body: {}", status, body);
         }

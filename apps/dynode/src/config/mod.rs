@@ -55,11 +55,7 @@ impl RetryConfig {
     }
 
     pub fn effective_max_attempts(&self, urls_count: usize) -> usize {
-        if self.max_attempts == 0 {
-            urls_count
-        } else {
-            self.max_attempts
-        }
+        if self.max_attempts == 0 { urls_count } else { self.max_attempts }
     }
 }
 

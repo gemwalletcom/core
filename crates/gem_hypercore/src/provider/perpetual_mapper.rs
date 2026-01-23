@@ -153,11 +153,7 @@ pub fn map_account_summary(positions: &AssetPositions) -> PerpetualAccountSummar
     let account_leverage = if account_value > 0.0 { total_ntl_pos / account_value } else { 0.0 };
     let margin_usage = if account_value > 0.0 { total_margin_used / account_value } else { 0.0 };
 
-    let unrealized_pnl: f64 = positions
-        .asset_positions
-        .iter()
-        .map(|p| p.position.unrealized_pnl.parse::<f64>().unwrap_or(0.0))
-        .sum();
+    let unrealized_pnl: f64 = positions.asset_positions.iter().map(|p| p.position.unrealized_pnl.parse::<f64>().unwrap_or(0.0)).sum();
 
     PerpetualAccountSummary {
         account_value,
@@ -168,16 +164,16 @@ pub fn map_account_summary(positions: &AssetPositions) -> PerpetualAccountSummar
 }
 
 pub fn map_perpetual_portfolio(response: HypercorePortfolioResponse, positions: &AssetPositions) -> PerpetualPortfolio {
-    let (day, week, month, all_time) = response.timeframes.into_iter().fold(
-        (None, None, None, None),
-        |(day, week, month, all_time), (timeframe, data)| match timeframe.as_str() {
+    let (day, week, month, all_time) = response
+        .timeframes
+        .into_iter()
+        .fold((None, None, None, None), |(day, week, month, all_time), (timeframe, data)| match timeframe.as_str() {
             "perpDay" => (Some(data.into()), week, month, all_time),
             "perpWeek" => (day, Some(data.into()), month, all_time),
             "perpMonth" => (day, week, Some(data.into()), all_time),
             "perpAllTime" => (day, week, month, Some(data.into())),
             _ => (day, week, month, all_time),
-        },
-    );
+        });
 
     PerpetualPortfolio {
         day,

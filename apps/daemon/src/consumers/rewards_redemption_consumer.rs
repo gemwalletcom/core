@@ -96,7 +96,8 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, PrimitiveRe
                         points,
                         value: value.clone(),
                     };
-                    let notification = InAppNotificationPayload::new_with_asset(redemption.wallet_id, id.clone(), NotificationType::RewardsRedeemed, serde_json::to_value(metadata).ok());
+                    let notification =
+                        InAppNotificationPayload::new_with_asset(redemption.wallet_id, id.clone(), NotificationType::RewardsRedeemed, serde_json::to_value(metadata).ok());
                     self.stream_producer.publish_in_app_notifications(vec![notification]).await?;
                 }
 

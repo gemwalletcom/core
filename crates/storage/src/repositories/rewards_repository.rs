@@ -53,6 +53,7 @@ pub trait RewardsRepository {
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
     fn get_username_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<String>, DatabaseError>;
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError>;
+    fn get_status_by_username(&mut self, username: &str) -> Result<primitives::rewards::RewardStatus, DatabaseError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
     fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError>;
@@ -286,6 +287,11 @@ impl RewardsRepository for DatabaseClient {
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError> {
         let rewards = RewardsStore::get_rewards(self, username)?;
         Ok(rewards.status.is_verified())
+    }
+
+    fn get_status_by_username(&mut self, username: &str) -> Result<primitives::rewards::RewardStatus, DatabaseError> {
+        let rewards = RewardsStore::get_rewards(self, username)?;
+        Ok(*rewards.status)
     }
 
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {
