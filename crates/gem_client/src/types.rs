@@ -49,9 +49,6 @@ impl From<serde_json::Error> for ClientError {
     }
 }
 
-/// Deserializes a response, trying to decode the model first.
-/// If deserialization fails, checks if it's an HTTP error before returning a serde error.
-/// HTTP errors include the response body so callers can parse it if needed.
 pub fn deserialize_response<R>(response: &Response) -> Result<R, ClientError>
 where
     R: DeserializeOwned,
@@ -60,6 +57,10 @@ where
         Ok(value) => Ok(value),
         Err(error) => {
             validate_http_status(response)?;
+
+            let preview_bytes = if response.data.len() > 256 { &response.data[..256] } else { &response.data };
+            println!("Deserialize error: {}, response: {}", error, String::from_utf8_lossy(preview_bytes));
+
             Err(ClientError::Serialization(error.to_string()))
         }
     }
