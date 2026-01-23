@@ -96,6 +96,8 @@ diesel::table! {
         is_swappable -> Bool,
         is_stakeable -> Bool,
         staking_apr -> Nullable<Float8>,
+        is_earnable -> Bool,
+        earn_apr -> Nullable<Float8>,
     }
 }
 
@@ -460,6 +462,7 @@ diesel::table! {
     notifications (id) {
         id -> Int4,
         wallet_id -> Int4,
+        asset_id -> Nullable<Varchar>,
         notification_type -> NotificationType,
         is_read -> Bool,
         metadata -> Nullable<Jsonb>,
@@ -481,6 +484,7 @@ diesel::table! {
         updated_at -> Timestamp,
         created_at -> Timestamp,
         queue_behind_blocks -> Nullable<Int4>,
+        block_time -> Int4,
     }
 }
 
@@ -691,6 +695,7 @@ diesel::table! {
         #[max_length = 64]
         option_id -> Varchar,
         device_id -> Int4,
+        wallet_id -> Int4,
         #[max_length = 512]
         transaction_id -> Nullable<Varchar>,
         status -> RedemptionStatus,
@@ -907,14 +912,21 @@ diesel::table! {
 }
 
 diesel::table! {
+    wallets_addresses (id) {
+        id -> Int4,
+        #[max_length = 256]
+        address -> Varchar,
+    }
+}
+
+diesel::table! {
     wallets_subscriptions (id) {
         id -> Int4,
         wallet_id -> Int4,
         device_id -> Int4,
         #[max_length = 32]
         chain -> Varchar,
-        #[max_length = 256]
-        address -> Varchar,
+        address_id -> Int4,
         created_at -> Timestamp,
     }
 }
@@ -946,6 +958,7 @@ diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
 diesel::joinable!(nft_reports -> devices (device_id));
 diesel::joinable!(nft_reports -> nft_assets (asset_id));
 diesel::joinable!(nft_reports -> nft_collections (collection_id));
+diesel::joinable!(notifications -> assets (asset_id));
 diesel::joinable!(notifications -> wallets (wallet_id));
 diesel::joinable!(parser_state -> chains (chain));
 diesel::joinable!(perpetuals -> assets (asset_id));
@@ -965,6 +978,7 @@ diesel::joinable!(rewards_redemption_options -> assets (asset_id));
 diesel::joinable!(rewards_redemptions -> devices (device_id));
 diesel::joinable!(rewards_redemptions -> rewards (username));
 diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
+diesel::joinable!(rewards_redemptions -> wallets (wallet_id));
 diesel::joinable!(rewards_referral_attempts -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
 diesel::joinable!(rewards_referral_attempts -> rewards_risk_signals (risk_signal_id));
@@ -985,6 +999,7 @@ diesel::joinable!(usernames -> wallets (wallet_id));
 diesel::joinable!(wallets_subscriptions -> chains (chain));
 diesel::joinable!(wallets_subscriptions -> devices (device_id));
 diesel::joinable!(wallets_subscriptions -> wallets (wallet_id));
+diesel::joinable!(wallets_subscriptions -> wallets_addresses (address_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     assets,
@@ -1036,5 +1051,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     transactions_addresses,
     usernames,
     wallets,
+    wallets_addresses,
     wallets_subscriptions,
 );

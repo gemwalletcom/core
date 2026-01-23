@@ -8,14 +8,6 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, vec};
 use typeshare::typeshare;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable, Equatable")]
-pub struct TransactionsFetchOption {
-    pub wallet_index: i32,
-    pub asset_id: Option<String>,
-    pub from_timestamp: Option<u32>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
@@ -153,15 +145,16 @@ impl Transaction {
     }
 
     pub fn is_utxo_tx(&self) -> bool {
-        !self.utxo_inputs.clone().unwrap_or_default().is_empty() && !self.utxo_outputs.clone().unwrap_or_default().is_empty()
+        self.utxo_inputs.as_ref().is_some_and(|v| !v.is_empty())
+            && self.utxo_outputs.as_ref().is_some_and(|v| !v.is_empty())
     }
 
     pub fn input_addresses(&self) -> Vec<String> {
-        self.utxo_inputs.clone().unwrap_or_default().iter().map(|x| x.address.clone()).collect()
+        self.utxo_inputs.as_ref().map_or_else(Vec::new, |v| v.iter().map(|x| x.address.clone()).collect())
     }
 
     pub fn output_addresses(&self) -> Vec<String> {
-        self.utxo_outputs.clone().unwrap_or_default().iter().map(|x| x.address.clone()).collect()
+        self.utxo_outputs.as_ref().map_or_else(Vec::new, |v| v.iter().map(|x| x.address.clone()).collect())
     }
 
     pub fn addresses(&self) -> Vec<String> {
@@ -173,7 +166,6 @@ impl Transaction {
         array.into_iter().filter(|x| !x.is_empty()).collect()
     }
 
-    // addresses - is a list of user addresses
     pub fn finalize(&self, addresses: Vec<String>) -> Self {
         let chain = self.asset_id.chain;
         if !chain.is_utxo() {
@@ -183,51 +175,47 @@ impl Transaction {
         let inputs_addresses = self.input_addresses();
         let outputs_addresses = self.output_addresses();
 
-        // skip if addresses is empty or coinbase or op_return only
         if addresses.is_empty() || inputs_addresses.is_empty() || outputs_addresses.is_empty() {
             return self.clone();
         }
 
-        // set doesn't keep order
-        let user_set: HashSet<String> = HashSet::from_iter(addresses.clone());
-        let input_set = HashSet::from_iter(inputs_addresses);
-        let output_set = HashSet::from_iter(outputs_addresses.clone());
+        let user_set: HashSet<String> = HashSet::from_iter(addresses);
+        let input_set: HashSet<String> = HashSet::from_iter(inputs_addresses);
+        let output_set: HashSet<String> = HashSet::from_iter(outputs_addresses.clone());
 
-        // unrelated tx, return self
         if user_set.is_disjoint(&input_set) && user_set.is_disjoint(&output_set) {
             return self.clone();
         }
 
-        let mut direction: TransactionDirection;
-        if user_set.intersection(&input_set).count() > 0 {
-            direction = TransactionDirection::Outgoing;
+        let direction = if user_set.intersection(&input_set).next().is_some() {
             if user_set.is_superset(&output_set) {
-                direction = TransactionDirection::SelfTransfer;
+                TransactionDirection::SelfTransfer
+            } else {
+                TransactionDirection::Outgoing
             }
         } else {
-            direction = TransactionDirection::Incoming;
-        }
+            TransactionDirection::Incoming
+        };
 
-        // from is always picked from first
-        let from = self.utxo_inputs.clone().unwrap_or_default().first().unwrap().address.clone();
-        let to: String;
-        let value: String;
+        let utxo_inputs = self.utxo_inputs.as_ref().unwrap();
+        let utxo_outputs = self.utxo_outputs.as_ref().unwrap();
 
-        match direction {
+        let from = utxo_inputs.first().unwrap().address.clone();
+        let (to, value) = match direction {
             TransactionDirection::Incoming => {
-                let addrs: Vec<String> = outputs_addresses.clone().into_iter().filter(|x| user_set.contains(x)).collect();
-                to = addrs.first().unwrap().clone();
-                value = Self::utxo_calculate_value(&self.utxo_outputs.clone().unwrap_or_default(), addresses).to_string();
+                let to = outputs_addresses.iter().find(|x| user_set.contains(*x)).unwrap().clone();
+                let value = Self::utxo_calculate_value(utxo_outputs, &user_set).to_string();
+                (to, value)
             }
             TransactionDirection::Outgoing => {
-                let filtered: Vec<String> = outputs_addresses.clone().into_iter().filter(|x| !user_set.contains(x)).collect();
-                to = filtered.first().unwrap().clone();
-                let vals: Vec<TransactionUtxoInput> = self.utxo_outputs.clone().unwrap_or_default().clone().into_iter().filter(|x| x.address == to).collect();
-                value = vals.first().unwrap().value.clone();
+                let to = outputs_addresses.iter().find(|x| !user_set.contains(*x)).unwrap().clone();
+                let value = utxo_outputs.iter().find(|x| x.address == to).unwrap().value.clone();
+                (to, value)
             }
             TransactionDirection::SelfTransfer => {
-                to = self.utxo_outputs.clone().unwrap_or_default().first().unwrap().address.clone();
-                value = Self::utxo_calculate_value(&self.utxo_outputs.clone().unwrap_or_default(), addresses).to_string()
+                let to = utxo_outputs.first().unwrap().address.clone();
+                let value = Self::utxo_calculate_value(utxo_outputs, &user_set).to_string();
+                (to, value)
             }
         };
         Transaction {
@@ -253,15 +241,12 @@ impl Transaction {
         }
     }
 
-    fn utxo_calculate_value(values: &[TransactionUtxoInput], addresses: Vec<String>) -> i64 {
-        let values = values
-            .to_owned()
-            .clone()
-            .into_iter()
+    fn utxo_calculate_value(values: &[TransactionUtxoInput], addresses: &HashSet<String>) -> i64 {
+        values
+            .iter()
             .filter(|x| addresses.contains(&x.address))
-            .collect::<Vec<TransactionUtxoInput>>();
-
-        values.clone().into_iter().map(|x| x.value.parse::<i64>().unwrap()).sum::<i64>()
+            .filter_map(|x| x.value.parse::<i64>().ok())
+            .sum()
     }
 
     pub fn asset_ids(&self) -> Vec<AssetId> {

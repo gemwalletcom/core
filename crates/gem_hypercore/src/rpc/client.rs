@@ -3,6 +3,7 @@ use crate::models::{
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
     order::{OpenOrder, PerpetualFill},
+    portfolio::HypercorePortfolioResponse,
     position::AssetPositions,
     referral::Referral,
     spot::{OrderbookResponse, SpotMeta, SpotMetaRaw},
@@ -249,6 +250,14 @@ impl<C: Client> HyperCoreClient<C> {
         }))
         .await
     }
+
+    pub async fn get_perpetual_portfolio(&self, user: &str) -> Result<HypercorePortfolioResponse, Box<dyn Error + Send + Sync>> {
+        self.info(json!({
+            "type": "portfolio",
+            "user": user
+        }))
+        .await
+    }
 }
 
 impl<C: Client> ChainTraits for HyperCoreClient<C> {}
@@ -256,24 +265,5 @@ impl<C: Client> ChainTraits for HyperCoreClient<C> {}
 impl<C: Client> chain_traits::ChainProvider for HyperCoreClient<C> {
     fn get_chain(&self) -> primitives::Chain {
         Chain::HyperCore
-    }
-}
-
-#[cfg(all(test, feature = "reqwest"))]
-mod tests {
-    use super::*;
-    use gem_client::ReqwestClient;
-
-    #[tokio::test]
-    #[ignore]
-    async fn test_get_tx_hash_by_nonce() {
-        let url = "https://api.hyperliquid.xyz";
-        let client = HyperCoreClient::new(ReqwestClient::new(url.to_string(), reqwest::Client::new()));
-        let user = "0x1085c5f70f7f7591d97da281a64688385455c2bd";
-        let nonce = 1758781366692_u64;
-
-        let hash = client.get_tx_hash_by_nonce(user, nonce).await.unwrap();
-
-        assert_eq!(hash, "0x610840f41a814c016281042c3882980202c800d9b5846ad304d0ec46d98525ec");
     }
 }

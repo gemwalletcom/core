@@ -1,4 +1,4 @@
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de};
 
 pub fn serialize_f64<S>(value: &f64, serializer: S) -> Result<S::Ok, S::Error>
 where
@@ -12,7 +12,7 @@ where
     D: Deserializer<'de>,
 {
     let s: String = Deserialize::deserialize(deserializer)?;
-    s.parse::<f64>().map_err(serde::de::Error::custom)
+    s.parse::<f64>().map_err(de::Error::custom)
 }
 
 pub fn deserialize_option_f64_from_str<'de, D>(deserializer: D) -> Result<Option<f64>, D::Error>
@@ -21,7 +21,7 @@ where
 {
     let opt: Option<String> = Option::deserialize(deserializer)?;
     match opt {
-        Some(s) => s.parse::<f64>().map(Some).map_err(serde::de::Error::custom),
+        Some(s) => s.parse::<f64>().map(Some).map_err(de::Error::custom),
         None => Ok(None),
     }
 }
@@ -29,7 +29,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde::{Serialize, de::IntoDeserializer};
+    use serde::Serialize;
+    use serde::de::IntoDeserializer;
 
     #[derive(Serialize, Deserialize)]
     struct TestOptionStruct {
@@ -38,18 +39,13 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize_f64_from_str() {
+    fn test_f64_deserialization() {
         let deserializer: serde::de::value::StrDeserializer<serde::de::value::Error> = "42.42".into_deserializer();
-        let result = deserialize_f64_from_str(deserializer);
-        assert_eq!(result.unwrap(), 42.42);
+        assert_eq!(deserialize_f64_from_str(deserializer).unwrap(), 42.42);
 
         let deserializer: serde::de::value::StrDeserializer<serde::de::value::Error> = "invalid".into_deserializer();
-        let result = deserialize_f64_from_str(deserializer);
-        assert!(result.is_err());
-    }
+        assert!(deserialize_f64_from_str(deserializer).is_err());
 
-    #[test]
-    fn test_deserialize_option_f64_from_str() {
         let deserialized: TestOptionStruct = serde_json::from_str(r#"{"value":"42.42"}"#).unwrap();
         assert_eq!(deserialized.value, Some(42.42));
 

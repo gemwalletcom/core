@@ -74,6 +74,13 @@ pub enum ConfigKey {
     ReferralRiskScoreHighRiskDeviceModelPenalty,
     ReferralRiskScoreIpHistoryPenaltyPerAbuser,
     ReferralRiskScoreIpHistoryMaxPenalty,
+    ReferralRiskScoreCrossReferrerDevicePenalty,
+    ReferralRiskScoreCrossReferrerFingerprintThreshold,
+    ReferralRiskScoreCrossReferrerFingerprintPenalty,
+    ReferralRiskScoreCountryDiversityThreshold,
+    ReferralRiskScoreCountryDiversityPenaltyPerCountry,
+    ReferralRiskScoreDeviceFarmingThreshold,
+    ReferralRiskScoreDeviceFarmingPenaltyPerDevice,
 
     // Referral Abuse Detection
     ReferralAbuseDisableThreshold,
@@ -155,6 +162,9 @@ pub enum ConfigKey {
     SearchAssetsUpdateInterval,
     SearchPerpetualsUpdateInterval,
     SearchNftsUpdateInterval,
+
+    // Parser
+    ParserCatchupReloadInterval,
 }
 
 impl ConfigKey {
@@ -225,6 +235,13 @@ impl ConfigKey {
             Self::ReferralRiskScoreHighRiskDeviceModelPenalty => "50",
             Self::ReferralRiskScoreIpHistoryPenaltyPerAbuser => "30",
             Self::ReferralRiskScoreIpHistoryMaxPenalty => "150",
+            Self::ReferralRiskScoreCrossReferrerDevicePenalty => "500",
+            Self::ReferralRiskScoreCrossReferrerFingerprintThreshold => "2",
+            Self::ReferralRiskScoreCrossReferrerFingerprintPenalty => "100",
+            Self::ReferralRiskScoreCountryDiversityThreshold => "5",
+            Self::ReferralRiskScoreCountryDiversityPenaltyPerCountry => "5",
+            Self::ReferralRiskScoreDeviceFarmingThreshold => "10",
+            Self::ReferralRiskScoreDeviceFarmingPenaltyPerDevice => "3",
             Self::ReferralAbuseDisableThreshold => "200",
             Self::ReferralAbuseAttemptPenalty => "15",
             Self::ReferralAbuseVerifiedThresholdMultiplier => "2",
@@ -279,6 +296,7 @@ impl ConfigKey {
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",
             Self::SearchNftsUpdateInterval => "30m",
+            Self::ParserCatchupReloadInterval => "50",
         }
     }
 }

@@ -15,6 +15,8 @@ pub struct GorushNotification {
     pub topic: Option<String>,
     pub data: PushNotification,
     pub device_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dry_run: Option<bool>,
 }
 
 impl GorushNotification {
@@ -27,6 +29,23 @@ impl GorushNotification {
             topic: None,
             data,
             device_id: device.id,
+            dry_run: None,
+        }
+    }
+
+    pub fn for_token_validation(token: String, platform: i32) -> Self {
+        Self {
+            tokens: vec![token],
+            platform,
+            title: String::new(),
+            message: String::new(),
+            topic: None,
+            data: PushNotification {
+                notification_type: crate::PushNotificationTypes::Test,
+                data: None,
+            },
+            device_id: String::new(),
+            dry_run: Some(true),
         }
     }
 
