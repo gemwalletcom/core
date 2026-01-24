@@ -1,3 +1,4 @@
+use primitives::rewards::RewardStatus;
 use primitives::{IpUsageType, Platform, PlatformStore};
 use sha2::{Digest, Sha256};
 use std::time::Duration;
@@ -40,8 +41,16 @@ pub struct RiskScoreConfig {
     pub velocity_penalty: i64,
     pub referral_per_user_daily: i64,
     pub verified_multiplier: i64,
+    pub trusted_multiplier: i64,
     pub ip_history_penalty_per_abuser: i64,
     pub ip_history_max_penalty: i64,
+    pub cross_referrer_device_penalty: i64,
+    pub cross_referrer_fingerprint_threshold: i64,
+    pub cross_referrer_fingerprint_penalty: i64,
+    pub country_diversity_threshold: i64,
+    pub country_diversity_penalty_per_country: i64,
+    pub device_farming_threshold: i64,
+    pub device_farming_penalty_per_device: i64,
 }
 
 impl Default for RiskScoreConfig {
@@ -83,8 +92,16 @@ impl Default for RiskScoreConfig {
             velocity_penalty: 100,
             referral_per_user_daily: 5,
             verified_multiplier: 2,
+            trusted_multiplier: 3,
             ip_history_penalty_per_abuser: 30,
             ip_history_max_penalty: 150,
+            cross_referrer_device_penalty: 500,
+            cross_referrer_fingerprint_threshold: 2,
+            cross_referrer_fingerprint_penalty: 100,
+            country_diversity_threshold: 5,
+            country_diversity_penalty_per_country: 5,
+            device_farming_threshold: 10,
+            device_farming_penalty_per_device: 3,
         }
     }
 }
@@ -104,7 +121,7 @@ pub struct RiskSignalInput {
     pub ip_usage_type: IpUsageType,
     pub ip_isp: String,
     pub ip_abuse_score: i64,
-    pub referrer_verified: bool,
+    pub referrer_status: RewardStatus,
 }
 
 impl RiskSignalInput {
@@ -162,6 +179,14 @@ pub struct RiskScoreBreakdown {
     pub velocity_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub ip_history_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub cross_referrer_device_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub cross_referrer_fingerprint_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub country_diversity_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub device_farming_score: i64,
 }
 
 fn is_zero(value: &i64) -> bool {
@@ -194,7 +219,7 @@ mod tests {
             ip_usage_type: IpUsageType::Isp,
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
-            referrer_verified: false,
+            referrer_status: RewardStatus::Unverified,
         };
         assert_eq!(input.generate_fingerprint().len(), 64);
     }

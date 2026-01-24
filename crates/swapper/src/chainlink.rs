@@ -43,7 +43,7 @@ impl ChainlinkPriceFeed {
 
     // Price is in 8 decimals
     pub fn decoded_answer(result: &IMulticall3::Result) -> Result<BigInt, SwapperError> {
-        let decoded = decode_call3_return::<AggregatorInterface::latestRoundDataCall>(result).map_err(|_| SwapperError::ABIError("failed to decode answer".into()))?;
+        let decoded = decode_call3_return::<AggregatorInterface::latestRoundDataCall>(result).map_err(|_| SwapperError::ComputeQuoteError("failed to decode answer".into()))?;
         let price = BigInt::from_le_bytes(&decoded.answer.to_le_bytes::<32>());
         Ok(price)
     }

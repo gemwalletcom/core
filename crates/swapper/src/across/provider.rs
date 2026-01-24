@@ -15,7 +15,7 @@ use crate::{
     asset::*,
     chainlink::ChainlinkPriceFeed,
     client_factory::{create_client_with_chain, create_eth_client},
-    config::ReferralFee,
+    error::{INVALID_ADDRESS, INVALID_AMOUNT},
     eth_address,
     models::*,
 };
@@ -86,44 +86,16 @@ impl Across {
         Box::new(Self::new(rpc_provider))
     }
 
-    fn is_supported_solana_asset(asset: &AssetId) -> bool {
-        asset == &SOLANA_USDC.id || asset == &SOLANA_USDT.id
-    }
-
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
-        if from_asset.chain == Chain::Solana {
-            if !Self::is_supported_solana_asset(from_asset) {
-                return false;
-            }
-            let to_normalized = match eth_address::convert_native_to_weth(to_asset) {
-                Some(asset) => asset,
-                None => return false,
-            };
-            return AcrossDeployment::asset_mappings()
-                .into_iter()
-                .any(|mapping| mapping.set.contains(&to_normalized) && mapping.set.contains(from_asset));
+        if from_asset.chain == Chain::Solana || to_asset.chain == Chain::Solana {
+            return false;
         }
 
-        if to_asset.chain == Chain::Solana {
-            if !Self::is_supported_solana_asset(to_asset) {
-                return false;
-            }
-            let from_normalized = match eth_address::convert_native_to_weth(from_asset) {
-                Some(asset) => asset,
-                None => return false,
-            };
-            return AcrossDeployment::asset_mappings()
-                .into_iter()
-                .any(|mapping| mapping.set.contains(&from_normalized) && mapping.set.contains(to_asset));
-        }
-
-        let from = match eth_address::convert_native_to_weth(from_asset) {
-            Some(asset) => asset,
-            None => return false,
+        let Some(from) = eth_address::convert_native_to_weth(from_asset) else {
+            return false;
         };
-        let to = match eth_address::convert_native_to_weth(to_asset) {
-            Some(asset) => asset,
-            None => return false,
+        let Some(to) = eth_address::convert_native_to_weth(to_asset) else {
+            return false;
         };
 
         AcrossDeployment::asset_mappings().into_iter().any(|x| x.set.contains(&from) && x.set.contains(&to))
@@ -136,11 +108,12 @@ impl Across {
     }
 
     fn decode_bs58_bytes32(addr: &str) -> Result<FixedBytes<32>, SwapperError> {
-        let decoded = bs58::decode(addr).into_vec().map_err(|_| SwapperError::InvalidAddress(addr.to_string()))?;
+        let invalid_address = || SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {addr}"));
+        let decoded = bs58::decode(addr).into_vec().map_err(|_| invalid_address())?;
         if decoded.len() != 32 {
-            return Err(SwapperError::InvalidAddress(addr.to_string()));
+            return Err(invalid_address());
         }
-        let bytes: [u8; 32] = decoded.try_into().map_err(|_| SwapperError::InvalidAddress(addr.to_string()))?;
+        let bytes: [u8; 32] = decoded.try_into().map_err(|_| invalid_address())?;
         Ok(FixedBytes::from(bytes))
     }
 
@@ -164,7 +137,7 @@ impl Across {
                 let id = asset
                     .token_id
                     .as_deref()
-                    .ok_or_else(|| SwapperError::InvalidAddress("missing token_id for Solana".into()))?;
+                    .ok_or_else(|| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: missing token_id for Solana")))?;
                 Self::decode_bs58_bytes32(id)
             }
             ChainType::Ethereum => {
@@ -173,7 +146,7 @@ impl Across {
                 let id = if asset.is_native() { default_weth } else { asset.token_id.as_deref().unwrap() };
                 Ok(Self::decode_address_bytes32(&eth_address::parse_str(id)?))
             }
-            _ => Err(SwapperError::NotImplemented),
+            _ => Err(SwapperError::NotSupportedChain),
         }
     }
 
@@ -189,7 +162,7 @@ impl Across {
         if Self::is_solana_destination(request) {
             Ok(request.to_asset.asset_id())
         } else {
-            eth_address::convert_native_to_weth(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)
+            eth_address::convert_native_to_weth(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedAsset)
         }
     }
 
@@ -200,7 +173,10 @@ impl Across {
 
     fn build_context<'a>(&self, request: &'a QuoteRequest) -> Result<QuoteContext<'a>, SwapperError> {
         if request.from_asset.chain() == request.to_asset.chain() {
-            return Err(SwapperError::NotSupportedPair);
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+        if request.from_asset.chain() == Chain::Solana || request.to_asset.chain() == Chain::Solana {
+            return Err(SwapperError::NoQuoteAvailable);
         }
 
         let from_amount: U256 = request.value.parse().map_err(SwapperError::from)?;
@@ -208,7 +184,8 @@ impl Across {
         let to_chain = request.to_asset.chain();
         let is_solana_origin = Self::is_solana_origin(request);
         let depositor = if is_solana_origin {
-            let depositor_address = SolanaPubkey::from_str(&request.wallet_address).map_err(|_| SwapperError::InvalidAddress(request.wallet_address.clone()))?;
+            let depositor_address =
+                SolanaPubkey::from_str(&request.wallet_address).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {}", request.wallet_address)))?;
             RelayRecipient::Solana(depositor_address)
         } else {
             RelayRecipient::Evm(eth_address::parse_str(&request.wallet_address)?)
@@ -223,13 +200,13 @@ impl Across {
         let destination_deployment = AcrossDeployment::deployment_by_chain(&to_chain).ok_or(SwapperError::NotSupportedChain)?;
 
         if !Self::is_supported_pair(&request.from_asset.asset_id(), &request.to_asset.asset_id()) {
-            return Err(SwapperError::NotSupportedPair);
+            return Err(SwapperError::NoQuoteAvailable);
         }
 
         let input_asset = if is_solana_origin {
             request.from_asset.asset_id()
         } else {
-            eth_address::convert_native_to_weth(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?
+            eth_address::convert_native_to_weth(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedAsset)?
         };
         let output_asset = Self::get_output_asset(request)?;
         let original_output_asset = request.to_asset.asset_id();
@@ -237,23 +214,18 @@ impl Across {
         let asset_mapping = AcrossDeployment::asset_mappings()
             .into_iter()
             .find(|mapping| mapping.set.contains(&input_asset))
-            .ok_or(SwapperError::NotSupportedPair)?;
+            .ok_or(SwapperError::NoQuoteAvailable)?;
         let mainnet_asset = asset_mapping
             .set
             .iter()
             .find(|asset| asset.chain == Chain::Ethereum)
             .cloned()
-            .ok_or(SwapperError::NotSupportedPair)?;
+            .ok_or(SwapperError::NoQuoteAvailable)?;
         let mainnet_chain = EVMChain::from_chain(mainnet_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let mainnet_token = eth_address::parse_or_weth_address(&mainnet_asset, mainnet_chain)?;
 
         let referral_fees = request.options.fee.clone().unwrap_or_default();
-        // TODO: Re-enable Solana referral fees once messages are handled
-        let referral_fee = if from_chain == Chain::Solana || to_chain == Chain::Solana {
-            ReferralFee::default()
-        } else {
-            referral_fees.evm_bridge
-        };
+        let referral_fee = referral_fees.evm_bridge;
 
         let output_token_decimals = u8::try_from(asset_mapping.capital_cost.decimals).map_err(|_| SwapperError::ComputeQuoteError("Unsupported token decimals".into()))?;
 
@@ -336,7 +308,7 @@ impl Across {
                 let results = create_eth_client(self.rpc_provider.clone(), Chain::Monad)?
                     .multicall3(vec![feed.latest_round_call3()])
                     .await
-                    .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+                    .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
                 eth_price = Some(ChainlinkPriceFeed::decoded_answer(&results[0])?);
             } else if let Some(index) = index_tracker.get("eth_price") {
                 eth_price = Some(ChainlinkPriceFeed::decoded_answer(&multicall_results[*index])?);
@@ -395,7 +367,7 @@ impl Across {
         match ctx.to_chain.chain_type() {
             ChainType::Ethereum => self.build_evm_destination_message(ctx, amount, output_token_evm),
             ChainType::Solana => self.build_solana_destination_message(ctx, amount),
-            _ => Err(SwapperError::NotSupportedPair),
+            _ => Err(SwapperError::NotSupportedChain),
         }
     }
 
@@ -409,8 +381,8 @@ impl Across {
             });
         }
 
-        let token = output_token_evm.ok_or(SwapperError::NotSupportedPair)?;
-        let fee_address = Address::from_str(&referral_fee.address).map_err(|_| SwapperError::InvalidAddress(referral_fee.address.clone()))?;
+        let token = output_token_evm.ok_or(SwapperError::NotSupportedAsset)?;
+        let fee_address = Address::from_str(&referral_fee.address).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {}", referral_fee.address)))?;
         let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
 
         let calls = if ctx.original_output_asset.is_native() {
@@ -436,8 +408,8 @@ impl Across {
     fn build_solana_destination_message(&self, ctx: &QuoteContext<'_>, amount: &U256) -> Result<DestinationMessage, SwapperError> {
         let destination_address = ctx
             .solana_destination_address
-            .ok_or_else(|| SwapperError::InvalidAddress("Missing Solana destination address".into()))?;
-        let user_account = SolanaPubkey::from_str(destination_address).map_err(|_| SwapperError::InvalidAddress(destination_address.into()))?;
+            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: Missing Solana destination address")))?;
+        let user_account = SolanaPubkey::from_str(destination_address).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {destination_address}")))?;
 
         let referral_fee = &ctx.referral_fee;
         if referral_fee.bps == 0 || referral_fee.address.is_empty() {
@@ -448,8 +420,9 @@ impl Across {
             });
         }
 
-        let referral_account = SolanaPubkey::from_str(&referral_fee.address).map_err(|_| SwapperError::InvalidAddress(referral_fee.address.clone()))?;
-        let handler_program = SolanaPubkey::from_str(MULTICALL_HANDLER).map_err(|_| SwapperError::InvalidAddress(MULTICALL_HANDLER.into()))?;
+        let referral_account =
+            SolanaPubkey::from_str(&referral_fee.address).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {}", referral_fee.address)))?;
+        let handler_program = SolanaPubkey::from_str(MULTICALL_HANDLER).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {MULTICALL_HANDLER}")))?;
         let (handler_signer, _) =
             find_program_address(&handler_program, &[b"handler_signer"]).map_err(|_| SwapperError::ComputeQuoteError("Failed to derive handler signer".into()))?;
 
@@ -457,10 +430,11 @@ impl Across {
             .original_output_asset
             .token_id
             .as_deref()
-            .ok_or_else(|| SwapperError::InvalidAddress("Missing Solana mint".into()))?;
-        let mint = SolanaPubkey::from_str(mint_id).map_err(|_| SwapperError::InvalidAddress(mint_id.into()))?;
+            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: Missing Solana mint")))?;
+        let mint = SolanaPubkey::from_str(mint_id).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {mint_id}")))?;
 
-        let token_program = SolanaPubkey::from_str(program_ids::TOKEN_PROGRAM_ID).map_err(|_| SwapperError::InvalidAddress(program_ids::TOKEN_PROGRAM_ID.into()))?;
+        let token_program =
+            SolanaPubkey::from_str(program_ids::TOKEN_PROGRAM_ID).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {}", program_ids::TOKEN_PROGRAM_ID)))?;
 
         let handler_token_account = get_associated_token_address(&handler_signer, &mint);
         let referral_token_account = get_associated_token_address(&referral_account, &mint);
@@ -469,8 +443,12 @@ impl Across {
         let fee_amount = amount * U256::from(referral_fee.bps) / U256::from(10000);
         let user_amount = amount - fee_amount;
 
-        let fee_amount_u64: u64 = fee_amount.try_into().map_err(|_| SwapperError::InvalidAmount("Referral fee overflow".into()))?;
-        let user_amount_u64: u64 = user_amount.try_into().map_err(|_| SwapperError::InvalidAmount("User amount overflow".into()))?;
+        let fee_amount_u64: u64 = fee_amount
+            .try_into()
+            .map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_AMOUNT}: Referral fee overflow")))?;
+        let user_amount_u64: u64 = user_amount
+            .try_into()
+            .map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_AMOUNT}: User amount overflow")))?;
 
         let transfer_fee_ix = spl_transfer(&handler_token_account, &referral_token_account, &handler_signer, fee_amount_u64);
         let transfer_user_ix = spl_transfer(&handler_token_account, &user_token_account, &handler_signer, user_amount_u64);
@@ -569,17 +547,14 @@ impl Across {
         create_eth_client(self.rpc_provider.clone(), chain)?
             .multicall3(calls)
             .await
-            .map_err(|e| SwapperError::NetworkError(e.to_string()))
+            .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))
     }
 
     async fn estimate_gas_transaction(&self, chain: Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
         let client = create_eth_client(self.rpc_provider.clone(), chain)?;
-        let gas_hex = client
-            .estimate_gas(tx.from.as_deref(), &tx.to, tx.value.as_deref(), Some(tx.data.as_str()))
-            .await
-            .map_err(SwapperError::from)?;
+        let gas_hex = client.estimate_gas(tx.from.as_deref(), &tx.to, tx.value.as_deref(), Some(tx.data.as_str())).await?;
 
-        let gas_biguint = biguint_from_hex_str(&gas_hex).map_err(|e| SwapperError::NetworkError(format!("Failed to parse gas estimate: {e}")))?;
+        let gas_biguint = biguint_from_hex_str(&gas_hex).map_err(|e| SwapperError::ComputeQuoteError(format!("Failed to parse gas estimate: {e}")))?;
         let gas_bigint = BigInt::from_biguint(Sign::Plus, gas_biguint);
         Self::bigint_to_u256(&gas_bigint)
     }
@@ -592,10 +567,10 @@ impl Across {
     ) -> Result<(U256, V3RelayData), SwapperError> {
         let chain = ctx.to_chain;
         if chain.chain_type() != ChainType::Ethereum {
-            return Err(SwapperError::NotImplemented);
+            return Err(SwapperError::NotSupportedChain);
         }
 
-        let recipient_address = Self::recipient_evm_address(&destination_message.recipient).ok_or(SwapperError::NotImplemented)?;
+        let recipient_address = Self::recipient_evm_address(&destination_message.recipient).ok_or(SwapperError::NotSupportedChain)?;
         let recipient = Self::decode_address_bytes32(recipient_address);
         let v3_relay_data = self.build_v3_relay_data(ctx, recipient, output_token, &destination_message.bytes)?;
 
@@ -647,7 +622,7 @@ impl Across {
         let fees: Vec<SolanaPrioritizationFee> = client.request(rpc_call).await?;
 
         if fees.is_empty() {
-            return Err(SwapperError::NetworkError("Failed to fetch recent prioritization fees".to_string()));
+            return Err(SwapperError::ComputeQuoteError("Failed to fetch recent prioritization fees".to_string()));
         }
 
         let total_fee: u64 = fees.iter().map(|f| f.prioritization_fee as u64).sum();
@@ -743,7 +718,6 @@ impl Swapper for Across {
             SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_ETH.id.clone()]),
             SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_USDC.id.clone(), HYPEREVM_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::Plasma, vec![PLASMA_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone(), SOLANA_USDT.id.clone()]),
         ]
     }
 
@@ -758,7 +732,7 @@ impl Swapper for Across {
         let relayer_fee = Self::calculate_relayer_capital_fee(ctx.from_amount, &ctx.capital_cost);
 
         if lpfee + relayer_fee >= ctx.from_amount {
-            return Err(SwapperError::InputAmountTooSmall);
+            return Err(SwapperError::InputAmountError { min_amount: None });
         }
         let remain_amount = ctx.from_amount - lpfee - relayer_fee;
 
@@ -781,7 +755,7 @@ impl Swapper for Across {
             .await?;
 
         if remain_amount <= gas_fee {
-            return Err(SwapperError::InputAmountTooSmall);
+            return Err(SwapperError::InputAmountError { min_amount: None });
         }
         let output_amount = remain_amount - gas_fee;
 
@@ -792,7 +766,7 @@ impl Swapper for Across {
         }
         let final_referral_fee = self.update_v3_relay_data(&mut v3_relay_data, &output_amount, pool_state.timestamp, final_destination_message);
         if final_referral_fee > output_amount {
-            return Err(SwapperError::InputAmountTooSmall);
+            return Err(SwapperError::InputAmountError { min_amount: None });
         }
         let to_value = output_amount - final_referral_fee;
 
@@ -1040,18 +1014,18 @@ mod tests {
 
         let solana_usdc = SOLANA_USDC.id.clone();
 
-        assert!(Across::is_supported_pair(&usdc_eth, &solana_usdc));
-        assert!(Across::is_supported_pair(&usdc_arb, &solana_usdc));
+        assert!(!Across::is_supported_pair(&usdc_eth, &solana_usdc));
+        assert!(!Across::is_supported_pair(&usdc_arb, &solana_usdc));
 
         let solana_usdt = SOLANA_USDT.id.clone();
 
-        assert!(Across::is_supported_pair(&usdt_eth, &solana_usdt));
-        assert!(Across::is_supported_pair(&solana_usdt, &usdt_eth));
+        assert!(!Across::is_supported_pair(&usdt_eth, &solana_usdt));
+        assert!(!Across::is_supported_pair(&solana_usdt, &usdt_eth));
         assert!(!Across::is_supported_pair(&usdc_eth, &solana_usdt));
         assert!(!Across::is_supported_pair(&solana_usdt, &usdc_eth));
 
-        assert!(Across::is_supported_pair(&solana_usdc, &usdc_eth));
-        assert!(Across::is_supported_pair(&solana_usdc, &usdc_arb));
+        assert!(!Across::is_supported_pair(&solana_usdc, &usdc_eth));
+        assert!(!Across::is_supported_pair(&solana_usdc, &usdc_arb));
         assert!(!Across::is_supported_pair(&weth_eth, &solana_usdc));
         assert!(!Across::is_supported_pair(&weth_eth, &solana_usdt));
     }
@@ -1473,16 +1447,11 @@ mod tests {
                 options,
             };
 
-            let now = SystemTime::now();
-            let quote = swap_provider.fetch_quote(&request).await?;
-            let elapsed = SystemTime::now().duration_since(now).unwrap();
-
-            println!("<== elapsed: {:?}", elapsed);
-            println!("<== quote: {:?}", quote);
-            assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-
-            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
-            println!("<== quote_data: {:?}", quote_data);
+            let result = swap_provider.fetch_quote(&request).await;
+            match result {
+                Err(err) => assert_eq!(err, SwapperError::NoQuoteAvailable),
+                Ok(_) => panic!("expected NoQuoteAvailable"),
+            }
 
             Ok(())
         }
@@ -1512,16 +1481,11 @@ mod tests {
                 options,
             };
 
-            let now = SystemTime::now();
-            let quote = swap_provider.fetch_quote(&request).await?;
-            let elapsed = SystemTime::now().duration_since(now).unwrap();
-
-            println!("<== elapsed: {:?}", elapsed);
-            println!("<== quote: {:?}", quote);
-            assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-
-            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
-            println!("<== quote_data: {:?}", quote_data);
+            let result = swap_provider.fetch_quote(&request).await;
+            match result {
+                Err(err) => assert_eq!(err, SwapperError::NoQuoteAvailable),
+                Ok(_) => panic!("expected NoQuoteAvailable"),
+            }
 
             Ok(())
         }

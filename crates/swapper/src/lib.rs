@@ -25,6 +25,21 @@ pub mod swapper;
 pub mod thorchain;
 pub mod uniswap;
 
+use number_formatter::BigNumberFormatter;
+
+/// Converts a human-readable amount string to base units value.
+pub fn amount_to_value(token: &str, decimals: u32) -> Option<String> {
+    let cleaned = token.replace([',', '_'], "");
+    if cleaned.is_empty() {
+        return None;
+    }
+    if cleaned.contains('.') {
+        BigNumberFormatter::value_from_amount(&cleaned, decimals).ok()
+    } else {
+        Some(cleaned)
+    }
+}
+
 #[cfg(feature = "reqwest_provider")]
 pub use alien::reqwest_provider::NativeProvider;
 pub use alien::{AlienError, HttpMethod, RpcClient, RpcProvider, Target};

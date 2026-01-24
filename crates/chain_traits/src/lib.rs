@@ -3,6 +3,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
+use primitives::portfolio::PerpetualPortfolio;
 use primitives::{
     AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction, TransactionFee,
     TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
@@ -106,8 +107,12 @@ pub trait ChainPerpetual: Send + Sync {
         Err("Chain does not support perpetual trading".into())
     }
 
-    async fn get_candlesticks(&self, _symbol: String, _period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
+    async fn get_perpetual_candlesticks(&self, _symbol: String, _period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support perpetual trading".into())
+    }
+
+    async fn get_perpetual_portfolio(&self, _address: String) -> Result<PerpetualPortfolio, Box<dyn Error + Sync + Send>> {
+        Err("Chain does not support perpetual portfolio".into())
     }
 }
 

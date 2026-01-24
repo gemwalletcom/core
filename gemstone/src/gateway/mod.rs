@@ -354,16 +354,27 @@ impl GemGateway {
         Ok(data)
     }
 
-    pub async fn get_candlesticks(&self, chain: Chain, symbol: String, period: String) -> Result<Vec<GemChartCandleStick>, GatewayError> {
+    pub async fn get_perpetual_candlesticks(&self, chain: Chain, symbol: String, period: String) -> Result<Vec<GemChartCandleStick>, GatewayError> {
         let chart_period = ChartPeriod::new(period).unwrap();
         let candlesticks = self
             .provider(chain)
             .await?
-            .get_candlesticks(symbol, chart_period)
+            .get_perpetual_candlesticks(symbol, chart_period)
             .await
             .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
 
         Ok(candlesticks)
+    }
+
+    pub async fn get_perpetual_portfolio(&self, chain: Chain, address: String) -> Result<GemPerpetualPortfolio, GatewayError> {
+        let portfolio = self
+            .provider(chain)
+            .await?
+            .get_perpetual_portfolio(address)
+            .await
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
+
+        Ok(portfolio)
     }
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<GemAsset, GatewayError> {
@@ -405,7 +416,7 @@ mod tests {
         let preferences: Arc<dyn GemPreferences> = Arc::new(EmptyPreferences {});
         let gateway = GemGateway::new(provider, preferences.clone(), preferences.clone(), "https://example.invalid".to_string());
 
-        let result = gateway.get_node_status(Chain::Bitcoin, "https://httpbin.io/status/404").await;
+        let result = gateway.get_node_status(Chain::Bitcoin, "https://httpbin.org/status/404").await;
 
         match result {
             Ok(status) => panic!("expected network error for 404 response, got {:?}", status),

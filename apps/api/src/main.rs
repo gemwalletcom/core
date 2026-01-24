@@ -34,7 +34,7 @@ use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
-use devices::DevicesClient;
+use devices::{DeviceCacher, DevicesClient};
 use fiat::FiatProviderFactory;
 use gem_auth::AuthClient;
 use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
@@ -79,11 +79,12 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
 
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
-    let devices_client = DevicesClient::new(database.clone(), pusher_client);
+    let devices_client = DevicesClient::new(database.clone(), pusher_client.clone());
     let transactions_client = TransactionsClient::new(database.clone());
     let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "api").await.unwrap();
     let subscriptions_client = SubscriptionsClient::new(database.clone(), stream_producer.clone());
-    let wallets_client = WalletsClient::new(database.clone(), stream_producer.clone());
+    let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
+    let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());
     let metrics_client = MetricsClient::new(database.clone());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
@@ -113,7 +114,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         Arc::new(IpApiClient::new(settings.ip.ipapi.url.clone(), settings.ip.ipapi.key.secret.clone())),
     ];
     let ip_security_client = IpSecurityClient::new(ip_check_providers, cacher_client.clone());
-    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client);
+    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client, pusher_client.clone());
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());
 

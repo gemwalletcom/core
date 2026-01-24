@@ -27,7 +27,7 @@ pub fn build_quoter_request(mode: &SwapperMode, wallet_address: &str, quoter_v2:
 
 // Returns (amountOut, gasEstimate)
 pub fn decode_quoter_response(response: &JsonRpcResponse<String>) -> Result<(U256, U256), SwapperError> {
-    let decoded = HexDecode(&response.result).map_err(|_| SwapperError::NetworkError("Failed to decode quoter response".into()))?;
+    let decoded = HexDecode(&response.result).map_err(|_| SwapperError::ComputeQuoteError("Failed to decode quoter response".into()))?;
     let quoter_return = IQuoterV2::quoteExactInputCall::abi_decode_returns(&decoded).map_err(SwapperError::from)?;
 
     Ok((quoter_return.amountOut, quoter_return.gasEstimate))

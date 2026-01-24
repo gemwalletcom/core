@@ -24,8 +24,9 @@ pub struct AssetRow {
     pub is_sellable: bool,
     pub is_swappable: bool,
     pub is_stakeable: bool,
-
     pub staking_apr: Option<f64>,
+    pub is_earnable: bool,
+    pub earn_apr: Option<f64>,
 }
 
 impl AssetRow {
@@ -70,6 +71,8 @@ impl AssetRow {
             is_swappable: properties.is_swapable,
             is_stakeable: properties.is_stakeable,
             staking_apr: properties.staking_apr,
+            is_earnable: properties.is_earnable,
+            earn_apr: properties.earn_apr,
         }
     }
 
@@ -81,6 +84,8 @@ impl AssetRow {
             is_swapable: self.is_swappable,
             is_stakeable: self.is_stakeable,
             staking_apr: self.staking_apr,
+            is_earnable: self.is_earnable,
+            earn_apr: self.earn_apr,
         }
     }
 }

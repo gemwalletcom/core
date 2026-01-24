@@ -32,9 +32,9 @@ pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
-    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, InAppNotificationPayload,
-    PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamConnection, StreamProducer, StreamReader, StreamReaderConfig,
-    SupportWebhookPayload, TransactionsPayload, run_consumer,
+    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, InAppNotificationPayload, PricesPayload,
+    QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamConnection, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload,
+    TransactionsPayload, run_consumer,
 };
 
 use crate::consumers::{
@@ -297,10 +297,11 @@ pub async fn run_rewards_redemption_consumer(settings: Settings) -> Result<(), B
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
     let wallets = parse_rewards_wallets(&settings)?;
     let client_provider = create_evm_client_provider(settings.clone());
     let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
-    let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service, retry_config);
+    let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service, retry_config, stream_producer);
     let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<RewardsRedemptionPayload, rewards_redemption_consumer::RewardsRedemptionConsumer<TransferRedemptionService>, RedemptionStatus>(
         &name,

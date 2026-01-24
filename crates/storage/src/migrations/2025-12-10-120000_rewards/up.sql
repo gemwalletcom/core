@@ -11,6 +11,8 @@ CREATE TABLE usernames (
     created_at timestamp NOT NULL default current_timestamp
 );
 
+CREATE INDEX usernames_username_lower_idx ON usernames (lower(username));
+
 SELECT diesel_manage_updated_at('usernames');
 
 CREATE TABLE rewards (
@@ -18,9 +20,9 @@ CREATE TABLE rewards (
     status reward_status NOT NULL,
     level VARCHAR(32),
     points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
-    referrer_username VARCHAR(64) REFERENCES usernames(username) ON DELETE SET NULL ON UPDATE CASCADE,
+    referrer_username VARCHAR(64) REFERENCES rewards(username) ON DELETE SET NULL ON UPDATE CASCADE,
     referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
-    device_id INTEGER NOT NULL REFERENCES devices(id),
+    device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     is_swap_complete BOOLEAN NOT NULL DEFAULT false,
     comment VARCHAR(512),
     disable_reason VARCHAR(256),
@@ -88,7 +90,7 @@ CREATE TABLE rewards_referral_attempts (
     id SERIAL PRIMARY KEY,
     referrer_username VARCHAR(64) NOT NULL REFERENCES rewards(username) ON UPDATE CASCADE ON DELETE CASCADE,
     wallet_id INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
-    device_id INTEGER NOT NULL REFERENCES devices(id),
+    device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     risk_signal_id INT NULL REFERENCES rewards_risk_signals(id) ON DELETE SET NULL,
     reason VARCHAR(256) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

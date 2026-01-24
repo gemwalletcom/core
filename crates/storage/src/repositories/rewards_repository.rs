@@ -53,6 +53,7 @@ pub trait RewardsRepository {
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError>;
     fn get_username_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<String>, DatabaseError>;
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError>;
+    fn get_status_by_username(&mut self, username: &str) -> Result<primitives::rewards::RewardStatus, DatabaseError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError>;
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
     fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError>;
@@ -288,6 +289,11 @@ impl RewardsRepository for DatabaseClient {
         Ok(rewards.status.is_verified())
     }
 
+    fn get_status_by_username(&mut self, username: &str) -> Result<primitives::rewards::RewardStatus, DatabaseError> {
+        let rewards = RewardsStore::get_rewards(self, username)?;
+        Ok(*rewards.status)
+    }
+
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DatabaseError> {
         Ok(RewardsStore::count_referrals_since(self, referrer_username, since)?)
     }
@@ -295,12 +301,13 @@ impl RewardsRepository for DatabaseClient {
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError> {
         let current = now();
         let limit = 10;
-        let invite_types = [RewardEventType::InviteNew, RewardEventType::InviteExisting];
+        let invite_types = [RewardEventType::InviteNew];
+        let points_per_referral = RewardEventType::InviteNew.points() as i64;
 
-        let map_entry = |(username, referrals, points): (String, i64, i64)| ReferralLeader {
+        let map_entry = |(username, referrals): (String, i64)| ReferralLeader {
             username,
             referrals: referrals as i32,
-            points: points as i32,
+            points: (referrals * points_per_referral) as i32,
         };
 
         let daily = RewardsStore::get_top_referrers_since(self, &invite_types, current.days_ago(1), limit)?

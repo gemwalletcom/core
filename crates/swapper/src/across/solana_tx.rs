@@ -1,5 +1,11 @@
 use super::DEFAULT_FILL_TIMEOUT;
-use crate::{SwapperError, SwapperQuoteData, alien::RpcProvider, models::Quote, solana::tx_builder};
+use crate::{
+    SwapperError, SwapperQuoteData,
+    alien::RpcProvider,
+    error::{INVALID_ADDRESS, INVALID_AMOUNT},
+    models::Quote,
+    solana::tx_builder,
+};
 use alloy_primitives::FixedBytes;
 use borsh::BorshSerialize;
 use gem_evm::across::{contracts::V3SpokePoolInterface::V3RelayData, deployment::AcrossDeployment};
@@ -17,11 +23,12 @@ const SVM_DELEGATE_SEED: &[u8] = b"delegate";
 const SVM_EVENT_AUTHORITY_SEED: &[u8] = b"__event_authority";
 
 pub async fn build_deposit_tx(rpc_provider: Arc<dyn RpcProvider>, quote: &Quote, v3_relay_data: &V3RelayData) -> Result<SwapperQuoteData, SwapperError> {
-    let depositor = SolanaPubkey::from_str(&quote.request.wallet_address).map_err(|_| SwapperError::InvalidAddress(quote.request.wallet_address.clone()))?;
+    let depositor =
+        SolanaPubkey::from_str(&quote.request.wallet_address).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {}", quote.request.wallet_address)))?;
 
     let origin_chain = quote.request.from_asset.chain();
     let deployment = AcrossDeployment::deployment_by_chain(&origin_chain).ok_or(SwapperError::NotSupportedChain)?;
-    let spoke_pool_program = SolanaPubkey::from_str(deployment.spoke_pool).map_err(|_| SwapperError::InvalidAddress(deployment.spoke_pool.to_string()))?;
+    let spoke_pool_program = SolanaPubkey::from_str(deployment.spoke_pool).map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_ADDRESS}: {}", deployment.spoke_pool)))?;
 
     let recipient = solana_pubkey_from_fixed_bytes(&v3_relay_data.recipient);
     let input_token = solana_pubkey_from_fixed_bytes(&v3_relay_data.inputToken);
@@ -30,7 +37,7 @@ pub async fn build_deposit_tx(rpc_provider: Arc<dyn RpcProvider>, quote: &Quote,
     let input_amount: u64 = v3_relay_data
         .inputAmount
         .try_into()
-        .map_err(|_| SwapperError::InvalidAmount("Input amount overflow".into()))?;
+        .map_err(|_| SwapperError::ComputeQuoteError(format!("{INVALID_AMOUNT}: Input amount overflow")))?;
     let output_amount = v3_relay_data.outputAmount.to_be_bytes::<32>();
 
     let destination_chain_id = AcrossDeployment::deployment_by_chain(&quote.request.to_asset.chain())

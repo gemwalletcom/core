@@ -33,7 +33,7 @@ pub(crate) trait RewardsStore {
     fn get_event(&mut self, event_id: i32) -> Result<RewardEventRow, DieselError>;
     fn get_events(&mut self, username: &str) -> Result<Vec<RewardEventRow>, DieselError>;
     fn count_referrals_since(&mut self, referrer_username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
-    fn get_top_referrers_since(&mut self, event_types: &[RewardEventType], since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64, i64)>, DieselError>;
+    fn get_top_referrers_since(&mut self, event_types: &[RewardEventType], since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64)>, DieselError>;
     fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DieselError>;
 }
 
@@ -134,7 +134,7 @@ impl RewardsStore for DatabaseClient {
             .get_result(&mut self.connection)
     }
 
-    fn get_top_referrers_since(&mut self, event_types: &[RewardEventType], since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64, i64)>, DieselError> {
+    fn get_top_referrers_since(&mut self, event_types: &[RewardEventType], since: NaiveDateTime, limit: i64) -> Result<Vec<(String, i64)>, DieselError> {
         use crate::schema::{rewards, rewards_events};
         use diesel::dsl::count_star;
 
@@ -144,7 +144,7 @@ impl RewardsStore for DatabaseClient {
             .filter(rewards_events::event_type.eq_any(event_types))
             .filter(rewards_events::created_at.ge(since))
             .group_by(rewards_events::username)
-            .select((rewards_events::username, count_star(), count_star()))
+            .select((rewards_events::username, count_star()))
             .order_by(count_star().desc())
             .limit(limit)
             .load(&mut self.connection)
@@ -220,6 +220,9 @@ pub(crate) trait RiskSignalsStore {
     ) -> Result<i64, DieselError>;
     fn get_abuse_patterns_for_referrer(&mut self, referrer_username: &str, since: NaiveDateTime, velocity_window_secs: i64) -> Result<AbusePatterns, DieselError>;
     fn count_disabled_users_by_ip(&mut self, ip_address: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_disabled_users_by_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_unique_countries_for_referrer(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
+    fn count_unique_devices_for_referrer(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError>;
 }
 
 impl RiskSignalsStore for DatabaseClient {
@@ -473,6 +476,44 @@ impl RiskSignalsStore for DatabaseClient {
             .filter(rewards_risk_signals::created_at.ge(since))
             .filter(rewards::status.eq(RewardStatus::Disabled))
             .select(count(rewards_risk_signals::referrer_username).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_disabled_users_by_device(&mut self, device_id: i32, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::{rewards, rewards_risk_signals};
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        rewards_risk_signals::table
+            .inner_join(rewards::table.on(rewards_risk_signals::referrer_username.eq(rewards::username)))
+            .filter(rewards_risk_signals::device_id.eq(device_id))
+            .filter(rewards_risk_signals::created_at.ge(since))
+            .filter(rewards::status.eq(RewardStatus::Disabled))
+            .select(count(rewards_risk_signals::referrer_username).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_unique_countries_for_referrer(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::referrer_username.eq(username))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::ip_country_code).aggregate_distinct())
+            .first(&mut self.connection)
+    }
+
+    fn count_unique_devices_for_referrer(&mut self, username: &str, since: NaiveDateTime) -> Result<i64, DieselError> {
+        use crate::schema::rewards_risk_signals::dsl;
+        use diesel::dsl::count;
+        use diesel::expression_methods::AggregateExpressionMethods;
+
+        dsl::rewards_risk_signals
+            .filter(dsl::referrer_username.eq(username))
+            .filter(dsl::created_at.ge(since))
+            .select(count(dsl::device_id).aggregate_distinct())
             .first(&mut self.connection)
     }
 }

@@ -57,8 +57,11 @@ pub struct AssetProperties {
     pub is_sellable: bool,
     pub is_swapable: bool,
     pub is_stakeable: bool,
-
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub staking_apr: Option<f64>,
+    pub is_earnable: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub earn_apr: Option<f64>,
 }
 
 impl AssetProperties {
@@ -71,6 +74,8 @@ impl AssetProperties {
             is_swapable: asset_id.chain.is_swap_supported(),
             is_stakeable,
             staking_apr: None,
+            is_earnable: false,
+            earn_apr: None,
         }
     }
 }
