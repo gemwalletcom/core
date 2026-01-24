@@ -56,10 +56,10 @@ impl AcrossApi {
             .logs
             .iter()
             .find(|log| log.topics.first().map(|topic| topic.eq_ignore_ascii_case(FUNDS_DEPOSITED_TOPIC)).unwrap_or(false))
-            .ok_or_else(|| SwapperError::NetworkError("FundsDeposited event not found".into()))?;
+            .ok_or_else(|| SwapperError::TransactionError("FundsDeposited event not found".into()))?;
 
         if deposit_log.topics.len() < 3 {
-            return Err(SwapperError::NetworkError("invalid FundsDeposited topics".into()));
+            return Err(SwapperError::TransactionError("invalid FundsDeposited topics".into()));
         }
         // The deposit ID is in topics[2] (topics[0] is event signature, topics[1] is destination chain ID)
         let deposit_id_hex = deposit_log.topics[2].clone();
@@ -67,7 +67,7 @@ impl AcrossApi {
         // Convert hex deposit ID to decimal string
         let deposit_id = if let Some(stripped) = deposit_id_hex.strip_prefix("0x") {
             u64::from_str_radix(stripped, 16)
-                .map_err(|e| SwapperError::NetworkError(format!("Failed to parse deposit ID: {}", e)))?
+                .map_err(|e| SwapperError::TransactionError(format!("Failed to parse deposit ID: {}", e)))?
                 .to_string()
         } else {
             deposit_id_hex

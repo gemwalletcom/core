@@ -15,7 +15,7 @@ pub struct ChartCandleStick {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct ChartDateValue {
     pub date: DateTime<Utc>,

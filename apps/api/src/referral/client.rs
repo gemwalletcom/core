@@ -2,7 +2,7 @@ use std::error::Error;
 
 use api_connector::PusherClient;
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
-use primitives::rewards::RewardRedemptionOption;
+use primitives::rewards::{RewardRedemptionOption, RewardStatus};
 use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, Platform, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletId, now};
 use storage::{
     ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource, WalletType,
@@ -69,12 +69,18 @@ impl RewardsClient {
             Err(e) => return Err(e.into()),
         };
 
-        rewards.referral_allowance = self.calculate_referral_allowance(wallet.id, rewards.status.is_verified())?;
+        rewards.referral_allowance = self.calculate_referral_allowance(wallet.id, &rewards.status)?;
         Ok(rewards)
     }
 
-    fn calculate_referral_allowance(&self, wallet_id: i32, is_verified: bool) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
-        let multiplier = if is_verified { self.config.get_i32(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
+    fn calculate_referral_allowance(&self, wallet_id: i32, status: &primitives::rewards::RewardStatus) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
+        let multiplier = if *status == RewardStatus::Trusted {
+            self.config.get_i32(ConfigKey::ReferralTrustedMultiplier)?
+        } else if status.is_verified() {
+            self.config.get_i32(ConfigKey::ReferralVerifiedMultiplier)?
+        } else {
+            1
+        };
 
         let daily_limit = self.config.get_i32(ConfigKey::ReferralPerUserDaily)? * multiplier;
         let weekly_limit = self.config.get_i32(ConfigKey::ReferralPerUserWeekly)? * multiplier;
@@ -246,8 +252,8 @@ impl RewardsClient {
             return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerDeviceDaily));
         }
 
-        let referrer_verified = match client.rewards().is_verified_by_username(referrer_username) {
-            Ok(verified) => verified,
+        let referrer_status = match client.rewards().get_status_by_username(referrer_username) {
+            Ok(status) => status,
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
@@ -261,7 +267,7 @@ impl RewardsClient {
             device_locale: auth.device.locale.as_str().to_string(),
             device_currency: auth.device.currency.clone(),
             ip_result,
-            referrer_verified,
+            referrer_status,
         };
 
         let signal_input = scoring_input.to_signal_input();
@@ -384,8 +390,14 @@ impl RewardsClient {
     }
 
     fn check_referrer_limits(&self, referrer_username: &str) -> Result<(), ReferralError> {
-        let is_verified = self.db.rewards()?.is_verified_by_username(referrer_username)?;
-        let multiplier = if is_verified { self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)? } else { 1 };
+        let status = self.db.rewards()?.get_status_by_username(referrer_username)?;
+        let multiplier = if status == RewardStatus::Trusted {
+            self.config.get_i64(ConfigKey::ReferralTrustedMultiplier)?
+        } else if status.is_verified() {
+            self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?
+        } else {
+            1
+        };
 
         let current = now();
 
@@ -483,6 +495,7 @@ impl RewardsClient {
             velocity_penalty: self.config.get_i64(ConfigKey::ReferralAbuseVelocityPenaltyPerSignal)?,
             referral_per_user_daily: self.config.get_i64(ConfigKey::ReferralPerUserDaily)?,
             verified_multiplier: self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?,
+            trusted_multiplier: self.config.get_i64(ConfigKey::ReferralTrustedMultiplier)?,
             cross_referrer_device_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerDevicePenalty)?,
             cross_referrer_fingerprint_threshold: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerFingerprintThreshold)?,
             cross_referrer_fingerprint_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreCrossReferrerFingerprintPenalty)?,

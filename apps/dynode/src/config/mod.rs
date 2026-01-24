@@ -44,6 +44,7 @@ impl NodeMonitoringConfig {
 #[derive(Debug, Deserialize, Clone)]
 pub struct RetryConfig {
     pub enabled: bool,
+    pub max_attempts: usize,
     pub status_codes: Vec<u16>,
     pub error_messages: Vec<String>,
 }
@@ -51,6 +52,10 @@ pub struct RetryConfig {
 impl RetryConfig {
     pub fn should_retry_on_error_message(&self, message: &str) -> bool {
         self.error_messages.iter().any(|prefix| message.contains(prefix))
+    }
+
+    pub fn effective_max_attempts(&self, urls_count: usize) -> usize {
+        if self.max_attempts == 0 { urls_count } else { self.max_attempts }
     }
 }
 
@@ -62,6 +67,7 @@ mod tests {
     fn test_should_retry_on_error_message() {
         let config = RetryConfig {
             enabled: true,
+            max_attempts: 0,
             status_codes: vec![],
             error_messages: vec!["daily request limit".to_string(), "rate limit".to_string()],
         };
@@ -76,11 +82,33 @@ mod tests {
     fn test_should_retry_on_error_message_empty() {
         let config = RetryConfig {
             enabled: true,
+            max_attempts: 0,
             status_codes: vec![],
             error_messages: vec![],
         };
 
         assert!(!config.should_retry_on_error_message("daily request limit reached"));
+    }
+
+    #[test]
+    fn test_effective_max_attempts() {
+        let config_zero = RetryConfig {
+            enabled: true,
+            max_attempts: 0,
+            status_codes: vec![],
+            error_messages: vec![],
+        };
+        assert_eq!(config_zero.effective_max_attempts(5), 5);
+        assert_eq!(config_zero.effective_max_attempts(10), 10);
+
+        let config_limited = RetryConfig {
+            enabled: true,
+            max_attempts: 3,
+            status_codes: vec![],
+            error_messages: vec![],
+        };
+        assert_eq!(config_limited.effective_max_attempts(5), 3);
+        assert_eq!(config_limited.effective_max_attempts(2), 3);
     }
 }
 

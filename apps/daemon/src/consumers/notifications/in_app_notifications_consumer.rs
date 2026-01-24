@@ -36,7 +36,7 @@ impl MessageConsumer<InAppNotificationPayload, usize> for InAppNotificationsCons
     async fn process(&self, payload: InAppNotificationPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let notification = NewNotificationRow {
             wallet_id: payload.wallet_id,
-            asset_id: payload.asset_id.clone(),
+            asset_id: payload.asset_id.as_ref().map(|id| id.to_string()),
             notification_type: StorageNotificationType::from(payload.notification_type),
             metadata: payload.metadata.clone(),
         };

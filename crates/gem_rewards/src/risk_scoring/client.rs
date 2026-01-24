@@ -1,4 +1,5 @@
 use crate::model::IpCheckResult;
+use primitives::rewards::RewardStatus;
 use primitives::{Platform, PlatformStore};
 use storage::models::{NewRiskSignalRow, RiskSignalRow};
 
@@ -16,7 +17,7 @@ pub struct RiskScoringInput {
     pub device_locale: String,
     pub device_currency: String,
     pub ip_result: IpCheckResult,
-    pub referrer_verified: bool,
+    pub referrer_status: RewardStatus,
 }
 
 impl RiskScoringInput {
@@ -35,7 +36,7 @@ impl RiskScoringInput {
             ip_usage_type: self.ip_result.usage_type,
             ip_isp: self.ip_result.isp.clone(),
             ip_abuse_score: self.ip_result.confidence_score,
-            referrer_verified: self.referrer_verified,
+            referrer_status: self.referrer_status,
         }
     }
 }
@@ -114,7 +115,7 @@ mod tests {
                 usage_type: IpUsageType::Isp,
                 isp: "Comcast".to_string(),
             },
-            referrer_verified: false,
+            referrer_status: RewardStatus::Unverified,
         }
     }
 

@@ -15,17 +15,17 @@ pub enum WalletSource {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
 pub struct Wallet {
     pub id: String,
+    pub external_id: Option<String>,
     pub name: String,
     pub index: i32,
     #[serde(rename = "type")]
     pub wallet_type: WalletType,
     pub accounts: Vec<Account>,
     pub order: i32,
-    #[serde(rename = "isPinned")]
     pub is_pinned: bool,
-    #[serde(rename = "imageUrl")]
     pub image_url: Option<String>,
     pub source: WalletSource,
 }

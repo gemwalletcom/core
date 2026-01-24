@@ -1,14 +1,27 @@
 use crate::SwapperError;
-use gem_client::Client;
+use gem_client::{Client, build_path_with_query};
 use primitives::swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData};
 use serde::Deserialize;
+use serde::Serialize;
 use std::fmt::Debug;
+
+const API_VERSION: u8 = 1;
+
+#[derive(Debug, Serialize)]
+struct VersionQuery {
+    v: u8,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ProxyError {
+    pub err: SwapperError,
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-enum ProxyResult<T> {
-    Ok(T),
-    Err { error: String },
+enum ProxyResponse<T> {
+    Ok { ok: T },
+    Err(ProxyError),
 }
 
 #[derive(Clone, Debug)]
@@ -28,18 +41,64 @@ where
     }
 
     pub async fn get_quote(&self, request: ProxyQuoteRequest) -> Result<ProxyQuote, SwapperError> {
-        let response: ProxyResult<ProxyQuote> = self.client.post("/quote", &request, None).await.map_err(SwapperError::from)?;
+        let path = build_path_with_query("/quote", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
+        let response: ProxyResponse<ProxyQuote> = self.client.post(&path, &request, None).await.map_err(SwapperError::from)?;
         match response {
-            ProxyResult::Ok(q) => Ok(q),
-            ProxyResult::Err { error } => Err(SwapperError::ComputeQuoteError(error)),
+            ProxyResponse::Ok { ok } => Ok(ok),
+            ProxyResponse::Err(e) => Err(e.err),
         }
     }
 
     pub async fn get_quote_data(&self, quote: ProxyQuote) -> Result<SwapQuoteData, SwapperError> {
-        let response: ProxyResult<SwapQuoteData> = self.client.post("/quote_data", &quote, None).await.map_err(SwapperError::from)?;
+        let path = build_path_with_query("/quote_data", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
+        let response: ProxyResponse<SwapQuoteData> = self.client.post(&path, &quote, None).await.map_err(SwapperError::from)?;
         match response {
-            ProxyResult::Ok(qd) => Ok(qd),
-            ProxyResult::Err { error } => Err(SwapperError::TransactionError(error)),
+            ProxyResponse::Ok { ok } => Ok(ok),
+            ProxyResponse::Err(e) => Err(e.err),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_proxy_error_deserialization() {
+        let json = r#"{"err": {"type": "compute_quote_error", "message": "Quote failed"}}"#;
+        assert_eq!(
+            serde_json::from_str::<ProxyError>(json).unwrap().err,
+            SwapperError::ComputeQuoteError("Quote failed".into())
+        );
+
+        let json = r#"{"err": {"type": "input_amount_error", "message": {"min_amount": "19620000"}}}"#;
+        assert_eq!(
+            serde_json::from_str::<ProxyError>(json).unwrap().err,
+            SwapperError::InputAmountError {
+                min_amount: Some("19620000".into())
+            }
+        );
+
+        let json = r#"{"err": {"type": "input_amount_error", "message": {"min_amount": null}}}"#;
+        assert_eq!(serde_json::from_str::<ProxyError>(json).unwrap().err, SwapperError::InputAmountError { min_amount: None });
+
+        let json = r#"{"err": {"type": "no_quote_available"}}"#;
+        assert_eq!(serde_json::from_str::<ProxyError>(json).unwrap().err, SwapperError::NoQuoteAvailable);
+
+        let json = r#"{"err": {"type": "transaction_error", "message": "tx failed"}}"#;
+        assert_eq!(serde_json::from_str::<ProxyError>(json).unwrap().err, SwapperError::TransactionError("tx failed".into()));
+    }
+
+    #[test]
+    fn test_swapper_error_serialization() {
+        assert_eq!(
+            serde_json::to_string(&SwapperError::InputAmountError { min_amount: Some("100".into()) }).unwrap(),
+            r#"{"type":"input_amount_error","message":{"min_amount":"100"}}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&SwapperError::ComputeQuoteError("error".into())).unwrap(),
+            r#"{"type":"compute_quote_error","message":"error"}"#
+        );
+        assert_eq!(serde_json::to_string(&SwapperError::NoQuoteAvailable).unwrap(), r#"{"type":"no_quote_available"}"#);
     }
 }

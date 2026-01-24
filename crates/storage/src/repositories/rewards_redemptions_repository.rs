@@ -7,7 +7,7 @@ use chrono::Utc;
 use primitives::rewards::{RewardRedemption, RewardRedemptionOption};
 
 pub trait RewardsRedemptionsRepository {
-    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError>;
+    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32, wallet_id: i32) -> Result<RewardRedemption, DatabaseError>;
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError>;
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError>;
     fn get_redemption_options(&mut self, types: &[RewardRedemptionType]) -> Result<Vec<RewardRedemptionOption>, DatabaseError>;
@@ -16,7 +16,7 @@ pub trait RewardsRedemptionsRepository {
 }
 
 impl RewardsRedemptionsRepository for DatabaseClient {
-    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32) -> Result<RewardRedemption, DatabaseError> {
+    fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32, wallet_id: i32) -> Result<RewardRedemption, DatabaseError> {
         let redemption_option = RewardsRedemptionsStore::get_redemption_option(self, option_id)?;
         let rewards = RewardsStore::get_rewards(self, username)?;
 
@@ -36,6 +36,7 @@ impl RewardsRedemptionsRepository for DatabaseClient {
                 username: username.to_string(),
                 option_id: option_id.to_string(),
                 device_id,
+                wallet_id,
                 status: RedemptionStatus::Pending,
             },
         )?;

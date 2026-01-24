@@ -10,10 +10,10 @@ use std::{
 
 use chain_traits::ChainTraits;
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
-use primitives::Chain;
+use primitives::{Chain, ConfigKey};
 use settings::{Settings, service_user_agent};
 use std::str::FromStr;
-use storage::Database;
+use storage::{ConfigCacher, Database};
 use streamer::{StreamProducer, StreamProducerQueue, TransactionsPayload};
 
 pub struct Parser {
@@ -95,7 +95,6 @@ impl Parser {
                     break;
                 }
 
-                // queue blocks, continue parsing
                 if let Some(queue_behind_blocks) = state.queue_behind_blocks
                     && remaining > queue_behind_blocks as i64
                 {
@@ -132,8 +131,8 @@ impl Parser {
                         break;
                     }
                 }
-                // exit loop every n blocks to update latest block
-                if remaining % 50 == 0 {
+
+                if remaining % self.options.catchup_reload_interval == 0 {
                     break;
                 }
                 if state.timeout_between_blocks > 0 {
@@ -145,18 +144,22 @@ impl Parser {
     }
 
     pub async fn parse_blocks(&self, blocks: Vec<u64>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let transactions = self.provider.get_transactions_in_blocks(blocks.clone()).await?;
+        let blocks_for_payload = blocks.clone();
+        let transactions = self.provider.get_transactions_in_blocks(blocks).await?;
         if transactions.is_empty() {
             return Ok(0);
         }
-        let payload = TransactionsPayload::new(self.chain, blocks.clone(), transactions.clone());
+        let count = transactions.len();
+        let payload = TransactionsPayload::new(self.chain, blocks_for_payload, transactions);
         self.stream_producer.publish_transactions(payload).await?;
-        Ok(transactions.len())
+        Ok(count)
     }
 }
 
 pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let config_cacher = ConfigCacher::new(database.clone());
+    let catchup_reload_interval = config_cacher.get_i64(ConfigKey::ParserCatchupReloadInterval)?;
 
     let chains: Vec<Chain> = if let Some(chain) = chain {
         vec![chain]
@@ -181,6 +184,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
         let parser_options = ParserOptions {
             chain,
             timeout: settings.parser.timeout,
+            catchup_reload_interval,
         };
 
         let parser = tokio::spawn(async move {

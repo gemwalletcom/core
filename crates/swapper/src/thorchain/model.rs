@@ -75,11 +75,34 @@ impl RouteData {
 pub struct InboundAddress {
     pub chain: String,
     #[serde(deserialize_with = "deserialize_bigint_from_str")]
-    pub gas_rate: BigInt,
-    #[serde(deserialize_with = "deserialize_bigint_from_str")]
-    pub outbound_fee: BigInt,
-    #[serde(deserialize_with = "deserialize_bigint_from_str")]
     pub dust_threshold: BigInt,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ErrorResponse {
+    pub message: String,
+}
+
+impl ErrorResponse {
+    const MIN_AMOUNT_PREFIX: &str = "recommended_min_amount_in: ";
+    const DUST_THRESHOLD_MSG: &str = "amount less than dust threshold";
+    const MIN_SWAP_AMOUNT_MSG: &str = "amount less than min swap amount";
+
+    pub fn is_input_amount_error(&self) -> bool {
+        self.message.contains(Self::DUST_THRESHOLD_MSG) || self.message.contains(Self::MIN_SWAP_AMOUNT_MSG)
+    }
+
+    pub fn parse_min_amount(&self) -> Option<String> {
+        self.message
+            .find(Self::MIN_AMOUNT_PREFIX)
+            .map(|start| {
+                self.message[start + Self::MIN_AMOUNT_PREFIX.len()..]
+                    .chars()
+                    .take_while(|c| c.is_ascii_digit())
+                    .collect()
+            })
+            .filter(|s: &String| !s.is_empty())
+    }
 }
 
 #[cfg(test)]
@@ -103,5 +126,20 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), quote_address);
+    }
+
+    #[test]
+    fn test_error_response() {
+        let error = ErrorResponse {
+            message: "amount less than min swap amount (recommended_min_amount_in: 50570): invalid request".into(),
+        };
+        assert!(error.is_input_amount_error());
+        assert_eq!(error.parse_min_amount(), Some("50570".into()));
+
+        let error = ErrorResponse {
+            message: "amount less than dust threshold: invalid request".into(),
+        };
+        assert!(error.is_input_amount_error());
+        assert_eq!(error.parse_min_amount(), None);
     }
 }

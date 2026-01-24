@@ -2,7 +2,8 @@ use crate::DatabaseClient;
 use crate::DatabaseError;
 use crate::database::transactions::TransactionsStore;
 use crate::models::{AddressChainIdResultRow, TransactionRow};
-use primitives::{Transaction, TransactionsFetchOption};
+use chrono::NaiveDateTime;
+use primitives::Transaction;
 
 pub trait TransactionsRepository {
     fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, DatabaseError>;
@@ -12,7 +13,8 @@ pub trait TransactionsRepository {
         _device_id: &str,
         addresses: Vec<String>,
         chains: Vec<String>,
-        options: TransactionsFetchOption,
+        asset_id: Option<String>,
+        from_datetime: Option<NaiveDateTime>,
     ) -> Result<Vec<TransactionRow>, DatabaseError>;
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, DatabaseError>;
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, DatabaseError>;
@@ -34,9 +36,17 @@ impl TransactionsRepository for DatabaseClient {
         _device_id: &str,
         addresses: Vec<String>,
         chains: Vec<String>,
-        options: TransactionsFetchOption,
+        asset_id: Option<String>,
+        from_datetime: Option<NaiveDateTime>,
     ) -> Result<Vec<TransactionRow>, DatabaseError> {
-        Ok(TransactionsStore::get_transactions_by_device_id(self, _device_id, addresses, chains, options)?)
+        Ok(TransactionsStore::get_transactions_by_device_id(
+            self,
+            _device_id,
+            addresses,
+            chains,
+            asset_id,
+            from_datetime,
+        )?)
     }
 
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, DatabaseError> {

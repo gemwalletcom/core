@@ -39,6 +39,7 @@ impl PriceAlertRow {
             price: self.price,
             price_percent_change: self.price_percent_change,
             last_notified_at: self.last_notified_at.map(|x| x.and_utc()),
+            identifier: self.identifier.clone(),
         }
     }
 

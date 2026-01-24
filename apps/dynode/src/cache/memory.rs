@@ -31,26 +31,20 @@ impl MemoryCache {
 
     fn evict_if_needed(cache: &mut HashMap<String, CacheEntry>, max_size: usize) {
         let mut size = 0;
-        let mut expired_keys = Vec::new();
-        let mut valid_entries = Vec::new();
-
-        for (key, entry) in cache.iter() {
+        cache.retain(|_, entry| {
             if entry.is_expired() {
-                expired_keys.push(key.clone());
+                false
             } else {
                 size += entry.size();
-                valid_entries.push((key.clone(), entry.created_at));
+                true
             }
-        }
-
-        for key in expired_keys {
-            cache.remove(&key);
-        }
+        });
 
         if size <= max_size {
             return;
         }
 
+        let mut valid_entries: Vec<_> = cache.iter().map(|(key, entry)| (key.clone(), entry.created_at)).collect();
         valid_entries.sort_unstable_by_key(|(_, created)| *created);
 
         for (key, _) in valid_entries {

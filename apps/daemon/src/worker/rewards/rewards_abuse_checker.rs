@@ -1,4 +1,5 @@
 use gem_tracing::info_with_fields;
+use primitives::rewards::RewardStatus;
 use primitives::{ConfigKey, NaiveDateTimeExt, now};
 use std::error::Error;
 use storage::{AbusePatterns, ConfigCacher, Database, RiskSignalsRepository};
@@ -22,16 +23,19 @@ struct AbuseDetectionConfig {
     velocity_penalty: i64,
     referral_per_user_daily: i64,
     verified_multiplier: i64,
+    trusted_multiplier: i64,
+    disabled_referrer_penalty: i64,
 }
 
 struct AbuseEvaluation {
     username: String,
-    verified: bool,
+    status: RewardStatus,
     referrals: i64,
     attempts: i64,
     risk_score: i64,
     patterns: AbusePatterns,
     pattern_penalty: f64,
+    referrer_disabled: bool,
     threshold: f64,
     abuse_score: f64,
     abuse_percent: f64,
@@ -91,7 +95,7 @@ impl RewardsAbuseChecker {
     fn evaluate_user(&self, username: &str, config: &AbuseDetectionConfig) -> Result<AbuseEvaluation, Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
 
-        let is_verified = client.rewards().is_verified_by_username(username)?;
+        let status = client.rewards().get_status_by_username(username)?;
         let since = now().ago(config.lookback);
         let velocity_window_secs = config.velocity_window.as_secs() as i64;
 
@@ -100,20 +104,30 @@ impl RewardsAbuseChecker {
         let risk_score_sum = client.sum_risk_scores_for_referrer(username, since)?;
 
         let patterns = client.get_abuse_patterns_for_referrer(username, since, velocity_window_secs)?;
-        let pattern_penalty = calculate_pattern_penalty(&patterns, config, is_verified);
+        let pattern_penalty = calculate_pattern_penalty(&patterns, config, &status);
 
-        let abuse_score = calculate_abuse_score(risk_score_sum, attempt_count, referral_count, config) + pattern_penalty;
-        let threshold = calculate_abuse_threshold(config, is_verified);
+        let referrer_disabled = client
+            .rewards()
+            .get_referrer_username(username)
+            .ok()
+            .flatten()
+            .and_then(|referrer| client.rewards().get_status_by_username(&referrer).ok())
+            .is_some_and(|s| s == RewardStatus::Disabled);
+        let disabled_referrer_penalty = if referrer_disabled { config.disabled_referrer_penalty as f64 } else { 0.0 };
+
+        let abuse_score = calculate_abuse_score(risk_score_sum, attempt_count, referral_count, config) + pattern_penalty + disabled_referrer_penalty;
+        let threshold = calculate_abuse_threshold(config, &status);
         let abuse_percent = (abuse_score / threshold * 100.0).min(100.0);
 
         Ok(AbuseEvaluation {
             username: username.to_string(),
-            verified: is_verified,
+            status,
             referrals: referral_count,
             attempts: attempt_count,
             risk_score: risk_score_sum,
             patterns,
             pattern_penalty,
+            referrer_disabled,
             threshold,
             abuse_score,
             abuse_percent,
@@ -124,7 +138,7 @@ impl RewardsAbuseChecker {
         info_with_fields!(
             "abuse evaluation",
             username = eval.username,
-            verified = eval.verified.to_string(),
+            status = eval.status.as_ref(),
             referrals = eval.referrals.to_string(),
             attempts = eval.attempts.to_string(),
             risk_score = eval.risk_score.to_string(),
@@ -133,6 +147,7 @@ impl RewardsAbuseChecker {
             referrers_per_fingerprint = eval.patterns.max_referrers_per_fingerprint.to_string(),
             devices_per_ip = eval.patterns.max_devices_per_ip.to_string(),
             velocity_burst = eval.patterns.signals_in_velocity_window.to_string(),
+            referrer_disabled = eval.referrer_disabled.to_string(),
             pattern_penalty = format!("{:.0}", eval.pattern_penalty),
             abuse_threshold = format!("{:.0}", eval.threshold),
             abuse_score = format!("{:.0}", eval.abuse_score),
@@ -152,7 +167,7 @@ impl RewardsAbuseChecker {
 
         let reason = "Auto-disabled due to abuse detection";
         let comment = format!(
-            "abuse_score={:.0}, threshold={:.0}, risk_scores={}, attempts={}, referrals={}, countries/device={}, referrers/device={}, referrers/fingerprint={}, devices/ip={}, velocity_burst={}",
+            "abuse_score={:.0}, threshold={:.0}, risk_scores={}, attempts={}, referrals={}, countries/device={}, referrers/device={}, referrers/fingerprint={}, devices/ip={}, velocity_burst={}, referrer_disabled={}",
             eval.abuse_score,
             eval.threshold,
             eval.risk_score,
@@ -162,7 +177,8 @@ impl RewardsAbuseChecker {
             eval.patterns.max_referrers_per_device,
             eval.patterns.max_referrers_per_fingerprint,
             eval.patterns.max_devices_per_ip,
-            eval.patterns.signals_in_velocity_window
+            eval.patterns.signals_in_velocity_window,
+            eval.referrer_disabled
         );
         let event_id = client.rewards().disable_rewards(&eval.username, reason, &comment)?;
 
@@ -188,6 +204,8 @@ impl RewardsAbuseChecker {
             velocity_penalty: self.config.get_i64(ConfigKey::ReferralAbuseVelocityPenaltyPerSignal)?,
             referral_per_user_daily: self.config.get_i64(ConfigKey::ReferralPerUserDaily)?,
             verified_multiplier: self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?,
+            trusted_multiplier: self.config.get_i64(ConfigKey::ReferralTrustedMultiplier)?,
+            disabled_referrer_penalty: self.config.get_i64(ConfigKey::ReferralAbuseDisabledReferrerPenalty)?,
         })
     }
 }
@@ -199,15 +217,18 @@ fn calculate_abuse_score(risk_score_sum: i64, attempt_count: i64, referral_count
     risk_score_per_referral + (attempts_per_referral * config.attempt_penalty as f64)
 }
 
-fn calculate_abuse_threshold(config: &AbuseDetectionConfig, is_verified: bool) -> f64 {
-    if is_verified {
-        config.disable_threshold as f64 * config.verified_threshold_multiplier
+fn calculate_abuse_threshold(config: &AbuseDetectionConfig, status: &RewardStatus) -> f64 {
+    let multiplier = if *status == RewardStatus::Trusted {
+        config.trusted_multiplier as f64
+    } else if status.is_verified() {
+        config.verified_threshold_multiplier
     } else {
-        config.disable_threshold as f64
-    }
+        1.0
+    };
+    config.disable_threshold as f64 * multiplier
 }
 
-fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionConfig, is_verified: bool) -> f64 {
+fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionConfig, status: &RewardStatus) -> f64 {
     let mut penalty = 0.0;
 
     if patterns.max_countries_per_device >= config.country_rotation_threshold {
@@ -223,7 +244,13 @@ fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionCo
         penalty += config.device_farming_penalty as f64;
     }
 
-    let multiplier = if is_verified { config.verified_multiplier } else { 1 };
+    let multiplier = if *status == RewardStatus::Trusted {
+        config.trusted_multiplier
+    } else if status.is_verified() {
+        config.verified_multiplier
+    } else {
+        1
+    };
     let daily_limit = config.referral_per_user_daily * multiplier;
     let velocity_threshold = daily_limit / config.velocity_divisor.max(1);
     if patterns.signals_in_velocity_window >= velocity_threshold {
@@ -257,6 +284,8 @@ mod tests {
             velocity_penalty: 100,
             referral_per_user_daily: 5,
             verified_multiplier: 2,
+            trusted_multiplier: 3,
+            disabled_referrer_penalty: 80,
         }
     }
 
@@ -272,8 +301,9 @@ mod tests {
 
     #[test]
     fn test_abuse_threshold() {
-        assert_eq!(calculate_abuse_threshold(&config(), false), 200.0);
-        assert_eq!(calculate_abuse_threshold(&config(), true), 400.0);
+        assert_eq!(calculate_abuse_threshold(&config(), &RewardStatus::Unverified), 200.0);
+        assert_eq!(calculate_abuse_threshold(&config(), &RewardStatus::Verified), 400.0);
+        assert_eq!(calculate_abuse_threshold(&config(), &RewardStatus::Trusted), 600.0);
     }
 
     #[test]
@@ -287,7 +317,7 @@ mod tests {
             signals_in_velocity_window: 0,
         };
 
-        assert_eq!(calculate_pattern_penalty(&base, &config, false), 0.0);
+        assert_eq!(calculate_pattern_penalty(&base, &config, &RewardStatus::Unverified), 0.0);
         assert_eq!(
             calculate_pattern_penalty(
                 &AbusePatterns {
@@ -295,7 +325,7 @@ mod tests {
                     ..base
                 },
                 &config,
-                false
+                &RewardStatus::Unverified
             ),
             50.0
         );
@@ -306,7 +336,7 @@ mod tests {
                     ..base
                 },
                 &config,
-                false
+                &RewardStatus::Unverified
             ),
             80.0
         );
@@ -317,11 +347,14 @@ mod tests {
                     ..base
                 },
                 &config,
-                false
+                &RewardStatus::Unverified
             ),
             80.0
         );
-        assert_eq!(calculate_pattern_penalty(&AbusePatterns { max_devices_per_ip: 5, ..base }, &config, false), 10.0);
+        assert_eq!(
+            calculate_pattern_penalty(&AbusePatterns { max_devices_per_ip: 5, ..base }, &config, &RewardStatus::Unverified),
+            10.0
+        );
 
         // Normal user: daily_limit=5, divisor=2, velocity_threshold=2
         // 1 signal doesn't trigger, 2 signals trigger: (2-2+1)*100 = 100
@@ -332,7 +365,7 @@ mod tests {
                     ..base
                 },
                 &config,
-                false
+                &RewardStatus::Unverified
             ),
             0.0
         );
@@ -343,7 +376,7 @@ mod tests {
                     ..base
                 },
                 &config,
-                false
+                &RewardStatus::Unverified
             ),
             100.0
         );
@@ -357,7 +390,7 @@ mod tests {
                     ..base
                 },
                 &config,
-                true
+                &RewardStatus::Verified
             ),
             0.0
         );
@@ -368,7 +401,32 @@ mod tests {
                     ..base
                 },
                 &config,
-                true
+                &RewardStatus::Verified
+            ),
+            100.0
+        );
+
+        // Trusted user: daily_limit=15, divisor=2, velocity_threshold=7
+        // 6 signals don't trigger, 7 signals trigger: (7-7+1)*100 = 100
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 6,
+                    ..base
+                },
+                &config,
+                &RewardStatus::Trusted
+            ),
+            0.0
+        );
+        assert_eq!(
+            calculate_pattern_penalty(
+                &AbusePatterns {
+                    signals_in_velocity_window: 7,
+                    ..base
+                },
+                &config,
+                &RewardStatus::Trusted
             ),
             100.0
         );
@@ -384,7 +442,7 @@ mod tests {
                     signals_in_velocity_window: 5,
                 },
                 &config,
-                false
+                &RewardStatus::Unverified
             ),
             540.0
         );

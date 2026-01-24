@@ -16,4 +16,5 @@ pub struct ParserStateRow {
     pub is_enabled: bool,
     pub updated_at: NaiveDateTime,
     pub queue_behind_blocks: Option<i32>,
+    pub block_time: i32,
 }

@@ -128,7 +128,7 @@ static CHAIN_CONFIGS: &[ChainConfig] = &[
             weth_contract: Some(WETH_ETH_CONTRACT),
         }),
         stake: Some(StakeChainConfig {
-            lock_time: 1_209_600,
+            lock_time: 259200,
             min_stake_amount: 100_000_000_000_000_000,
             change_amount_on_unstake: true,
             can_redelegate: false,

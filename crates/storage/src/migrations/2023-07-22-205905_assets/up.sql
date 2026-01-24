@@ -19,6 +19,8 @@ CREATE TABLE assets (
     is_swappable boolean NOT NULL default false,
     is_stakeable boolean NOT NULL default false,
     staking_apr float,
+    is_earnable boolean NOT NULL default false,
+    earn_apr float,
 
     UNIQUE(id)
 );

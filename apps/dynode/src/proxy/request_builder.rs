@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::str::FromStr;
 
 use reqwest::header::{HeaderMap, HeaderName};
@@ -24,7 +25,7 @@ impl RequestBuilder {
         }
     }
 
-    pub fn filter_headers(original_headers: &HeaderMap, forward_headers: &[HeaderName]) -> HeaderMap {
+    pub fn filter_headers(original_headers: &HeaderMap, forward_headers: &HashSet<HeaderName>) -> HeaderMap {
         original_headers
             .iter()
             .filter_map(|(k, v)| if forward_headers.contains(k) { Some((k.clone(), v.clone())) } else { None })
@@ -77,7 +78,7 @@ mod tests {
         orig_headers.insert(header::CONTENT_TYPE, header::HeaderValue::from_static(JSON_CONTENT_TYPE));
         orig_headers.insert("x-drop", header::HeaderValue::from_static("dropme"));
 
-        let keep = [header::CONTENT_TYPE];
+        let keep: HashSet<HeaderName> = [header::CONTENT_TYPE].into_iter().collect();
         let filtered = RequestBuilder::filter_headers(&orig_headers, &keep);
 
         assert!(filtered.get("x-drop").is_none());

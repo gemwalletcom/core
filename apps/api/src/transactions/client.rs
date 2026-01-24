@@ -1,6 +1,7 @@
 use std::error::Error;
 
-use primitives::{Transaction, TransactionId, TransactionsFetchOption, TransactionsResponse};
+use chrono::{DateTime, Utc};
+use primitives::{Transaction, TransactionId, TransactionsResponse};
 use storage::{Database, ScanAddressesRepository, SubscriptionsRepository, TransactionsRepository};
 
 #[derive(Clone)]
@@ -13,17 +14,23 @@ impl TransactionsClient {
         Self { database }
     }
 
-    pub fn get_transactions_by_device_id(&self, device_id: &str, options: TransactionsFetchOption) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {
-        let wallet_index = options.wallet_index;
+    pub fn get_transactions_by_device_id(
+        &self,
+        device_id: &str,
+        wallet_index: i32,
+        asset_id: Option<String>,
+        from_timestamp: Option<u64>,
+    ) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.database.subscriptions()?.get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
 
         let addresses = subscriptions.clone().into_iter().map(|x| x.address).collect::<Vec<String>>();
         let chains = subscriptions.clone().into_iter().map(|x| x.chain.as_ref().to_string()).collect::<Vec<String>>();
+        let from_datetime = from_timestamp.and_then(|ts| DateTime::<Utc>::from_timestamp(ts as i64, 0).map(|dt| dt.naive_utc()));
 
         let transactions = self
             .database
             .transactions()?
-            .get_transactions_by_device_id(device_id, addresses.clone(), chains.clone(), options)?
+            .get_transactions_by_device_id(device_id, addresses.clone(), chains.clone(), asset_id, from_datetime)?
             .into_iter()
             .map(|x| x.as_primitive(addresses.clone()).finalize(addresses.clone()))
             .collect::<Vec<Transaction>>();

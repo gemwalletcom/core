@@ -96,6 +96,8 @@ diesel::table! {
         is_swappable -> Bool,
         is_stakeable -> Bool,
         staking_apr -> Nullable<Float8>,
+        is_earnable -> Bool,
+        earn_apr -> Nullable<Float8>,
     }
 }
 
@@ -482,6 +484,7 @@ diesel::table! {
         updated_at -> Timestamp,
         created_at -> Timestamp,
         queue_behind_blocks -> Nullable<Int4>,
+        block_time -> Int4,
     }
 }
 
@@ -692,6 +695,7 @@ diesel::table! {
         #[max_length = 64]
         option_id -> Varchar,
         device_id -> Int4,
+        wallet_id -> Int4,
         #[max_length = 512]
         transaction_id -> Nullable<Varchar>,
         status -> RedemptionStatus,
@@ -969,11 +973,13 @@ diesel::joinable!(prices_dex -> prices_dex_providers (provider));
 diesel::joinable!(prices_dex_assets -> assets (asset_id));
 diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
 diesel::joinable!(rewards -> devices (device_id));
+diesel::joinable!(rewards -> usernames (username));
 diesel::joinable!(rewards_events -> usernames (username));
 diesel::joinable!(rewards_redemption_options -> assets (asset_id));
 diesel::joinable!(rewards_redemptions -> devices (device_id));
 diesel::joinable!(rewards_redemptions -> rewards (username));
 diesel::joinable!(rewards_redemptions -> rewards_redemption_options (option_id));
+diesel::joinable!(rewards_redemptions -> wallets (wallet_id));
 diesel::joinable!(rewards_referral_attempts -> devices (device_id));
 diesel::joinable!(rewards_referral_attempts -> rewards (referrer_username));
 diesel::joinable!(rewards_referral_attempts -> rewards_risk_signals (risk_signal_id));

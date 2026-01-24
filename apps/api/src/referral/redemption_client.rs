@@ -32,7 +32,7 @@ impl RewardsRedemptionClient {
 
         self.check_redemption_limits(&username, &rewards)?;
 
-        let response = redeem_points(&mut self.database.client()?, &username, id, device_id)?;
+        let response = redeem_points(&mut self.database.client()?, &username, id, device_id, wallet.id)?;
         self.stream_producer
             .publish_rewards_redemption(streamer::RewardsRedemptionPayload::new(response.redemption_id))
             .await?;

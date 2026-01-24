@@ -42,7 +42,7 @@ impl RpcClientError for AlienError {
         match self {
             Self::RequestError { msg } => ClientError::Network(msg),
             Self::ResponseError { msg } => ClientError::Network(msg),
-            Self::Http { status, len } => ClientError::Http { status, len: len as usize },
+            Self::Http { status, .. } => ClientError::Http { status, body: Vec::new() },
         }
     }
 }

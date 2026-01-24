@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use primitives::{
     Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
-    chart::ChartCandleStick,
+    chart::{ChartCandleStick, ChartDateValue},
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
 
@@ -13,6 +13,7 @@ pub type GemPerpetualPosition = PerpetualPosition;
 pub type GemPerpetual = Perpetual;
 pub type GemPerpetualMetadata = PerpetualMetadata;
 pub type GemChartCandleStick = ChartCandleStick;
+pub type GemChartDateValue = ChartDateValue;
 pub type GemPerpetualData = PerpetualData;
 
 #[uniffi::remote(Enum)]
@@ -103,4 +104,10 @@ pub struct GemChartCandleStick {
     pub low: f64,
     pub close: f64,
     pub volume: f64,
+}
+
+#[uniffi::remote(Record)]
+pub struct GemChartDateValue {
+    pub date: DateTime<Utc>,
+    pub value: f64,
 }

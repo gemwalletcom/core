@@ -2,8 +2,8 @@ use super::{
     asset::THORChainAsset,
     model::{InboundAddress, QuoteSwapRequest, QuoteSwapResponse, Transaction},
 };
-use crate::{SwapperError, alien::X_CACHE_TTL};
-use gem_client::Client;
+use crate::SwapperError;
+use gem_client::{Client, X_CACHE_TTL};
 use serde_urlencoded;
 use std::{collections::HashMap, fmt::Debug};
 

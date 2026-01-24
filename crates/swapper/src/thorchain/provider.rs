@@ -59,13 +59,13 @@ where
 
         if from_asset.chain != THORChainName::Thorchain {
             let inbound_addresses = self.swap_client.get_inbound_addresses().await?;
-            let from_inbound_address = &inbound_addresses
+            let from_inbound_address = inbound_addresses
                 .iter()
                 .find(|address| address.chain == from_asset.chain.long_name())
                 .ok_or(SwapperError::InvalidRoute)?;
 
             if from_inbound_address.dust_threshold > value {
-                return Err(SwapperError::InputAmountTooSmall);
+                return Err(SwapperError::InputAmountError { min_amount: None });
             }
         }
 
@@ -161,17 +161,15 @@ where
         let memo_parsed = ThorchainMemo::parse(&status.observed_tx.tx.memo);
         let destination_chain = memo_parsed.as_ref().and_then(|m| m.destination_chain());
 
-        let destination_tx_hash = if let Some(out_hashes) = &status.observed_tx.out_hashes {
-            out_hashes.iter().find(|hash| *hash != ZERO_HASH && !hash.is_empty()).cloned()
-        } else {
-            None
-        };
+        let destination_tx_hash = status
+            .observed_tx
+            .out_hashes
+            .as_ref()
+            .and_then(|hashes| hashes.iter().find(|h| *h != ZERO_HASH && !h.is_empty()).cloned());
 
-        let (to_chain, to_tx_hash) = match (destination_chain, destination_tx_hash) {
-            (Some(dest_chain), Some(dest_hash)) => (Some(dest_chain), Some(dest_hash)),
-            (Some(dest_chain), None) => (Some(dest_chain), None),
-            _ => (None, None),
-        };
+        let (to_chain, to_tx_hash) = destination_chain
+            .map(|chain| (Some(chain), destination_tx_hash))
+            .unwrap_or((None, None));
 
         Ok(SwapResult {
             status: swap_status,
@@ -224,6 +222,22 @@ mod swap_integration_tests {
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         assert!(quote.eta_in_seconds.is_some());
         assert!(!quote.data.routes.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_thorchain_quote_rejects_below_min_amount() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let provider = Arc::new(NativeProvider::default());
+        let swapper = ThorChain::new(provider.clone());
+
+        let from_asset = SwapperQuoteAsset::from(Chain::Xrp.as_asset_id());
+        let to_asset = SwapperQuoteAsset::from(Chain::Thorchain.as_asset_id());
+        let mut request = mock_quote(from_asset, to_asset);
+        request.value = "1".to_string();
+
+        let err = swapper.fetch_quote(&request).await.expect_err("expected error");
+        assert!(matches!(err, SwapperError::InputAmountError { .. }));
 
         Ok(())
     }

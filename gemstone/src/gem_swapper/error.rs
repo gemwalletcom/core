@@ -4,16 +4,10 @@ pub type SwapperError = swapper::SwapperError;
 pub enum SwapperError {
     NotSupportedChain,
     NotSupportedAsset,
-    NotSupportedPair,
     NoAvailableProvider,
-    InvalidAddress(String),
-    InvalidAmount(String),
-    InputAmountTooSmall,
+    InputAmountError { min_amount: Option<String> },
     InvalidRoute,
-    NetworkError(String),
-    ABIError(String),
     ComputeQuoteError(String),
     TransactionError(String),
     NoQuoteAvailable,
-    NotImplemented,
 }

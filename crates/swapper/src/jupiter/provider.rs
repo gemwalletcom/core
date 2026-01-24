@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperQuoteData,
-    SwapperSlippageMode,
+    SwapperSlippageMode, error::INVALID_ADDRESS,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -46,7 +46,9 @@ where
     }
 
     pub fn get_asset_address(&self, asset_id: &str) -> Result<String, SwapperError> {
-        get_pubkey_by_str(asset_id).map(|x| x.to_string()).ok_or(SwapperError::InvalidAddress(asset_id.to_string()))
+        get_pubkey_by_str(asset_id)
+            .map(|x| x.to_string())
+            .ok_or_else(|| SwapperError::ComputeQuoteError(format!("{}: {asset_id}", INVALID_ADDRESS)))
     }
 
     fn get_fee_mint(&self, mode: &SwapperMode, input: &str, output: &str) -> String {
@@ -74,7 +76,10 @@ where
         let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = self.rpc_client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
         let value = rpc_result.take()?;
 
-        value.value.map(|x| x.owner).ok_or(SwapperError::NetworkError("fetch_token_program error".to_string()))
+        value
+            .value
+            .map(|x| x.owner)
+            .ok_or_else(|| SwapperError::ComputeQuoteError("fetch_token_program error".to_string()))
     }
 
     async fn fetch_fee_account(&self, mode: &SwapperMode, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
