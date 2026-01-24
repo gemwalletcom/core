@@ -1,7 +1,7 @@
 use std::{fmt, str::FromStr};
 
 use alloy_primitives::Address;
-use primitives::{swap::ApprovalData, AssetId, Chain};
+use primitives::{AssetId, Chain, swap::ApprovalData};
 
 use crate::yo::YieldError;
 

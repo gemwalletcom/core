@@ -1,4 +1,3 @@
-use crate::alien::AlienError;
 use crate::proxy::ProxyError;
 use crate::thorchain::model::ErrorResponse as ThorchainError;
 use gem_client::ClientError;
@@ -47,16 +46,6 @@ impl std::fmt::Display for SwapperError {
 
 impl std::error::Error for SwapperError {}
 
-impl From<AlienError> for SwapperError {
-    fn from(err: AlienError) -> Self {
-        match err {
-            AlienError::RequestError { msg } => Self::ComputeQuoteError(msg),
-            AlienError::ResponseError { msg } => Self::ComputeQuoteError(msg),
-            AlienError::Http { status, .. } => Self::ComputeQuoteError(format!("HTTP error: status {}", status)),
-        }
-    }
-}
-
 impl From<JsonRpcError> for SwapperError {
     fn from(err: JsonRpcError) -> Self {
         Self::ComputeQuoteError(format!("JSON RPC error: {err}"))
@@ -75,7 +64,9 @@ impl From<ClientError> for SwapperError {
                 if let Ok(thorchain_error) = serde_json::from_slice::<ThorchainError>(body)
                     && thorchain_error.is_input_amount_error()
                 {
-                    return Self::InputAmountError { min_amount: thorchain_error.parse_min_amount() };
+                    return Self::InputAmountError {
+                        min_amount: thorchain_error.parse_min_amount(),
+                    };
                 }
                 Self::ComputeQuoteError(format!("HTTP error: status {}", status))
             }

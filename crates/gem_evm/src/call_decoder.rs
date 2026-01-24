@@ -22,15 +22,12 @@ pub struct DecodedCall {
 pub fn decode_call(calldata: &str, abi: Option<&str>) -> Result<DecodedCall, Box<dyn Error + Send + Sync>> {
     let calldata = hex::decode(calldata)?;
 
-    // Check minimum calldata length early
     if calldata.len() < 4 {
         return Err("Calldata too short".into());
     }
 
-    // Try ERC20 interface first if no ABI provided
-    if abi.is_none()
-        && let Ok(call) = IERC20Calls::abi_decode(&calldata)
-    {
+    let erc20_call = if abi.is_none() { IERC20Calls::abi_decode(&calldata).ok() } else { None };
+    if let Some(call) = erc20_call {
         return Ok(call.into());
     }
 
@@ -149,7 +146,6 @@ mod tests {
 
     #[test]
     fn test_decode_custom_abi() {
-        // Using ERC721 safeTransferFrom as test case
         let calldata = "0x42842e0e0000000000000000000000008ba1f109551bd432803012645aac136c0c3def25000000000000000000000000271682deb8c4e0901d1a1550ad2e64d568e69909000000000000000000000000000000000000000000000000000000000000007b";
         let abi = r#"[
     {
@@ -191,8 +187,7 @@ mod tests {
 
     #[test]
     fn test_decode_short_calldata() {
-        // Test that short calldata returns proper error
-        let result = decode_call("0x1234", None); // Only 2 bytes, need 4
+        let result = decode_call("0x1234", None);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Calldata too short"));
     }

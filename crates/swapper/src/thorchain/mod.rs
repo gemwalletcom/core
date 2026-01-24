@@ -1,4 +1,5 @@
 mod asset;
+mod bigint;
 mod chain;
 mod client;
 mod constants;
@@ -7,9 +8,8 @@ pub(crate) mod model;
 mod provider;
 mod quote_data_mapper;
 
-use num_bigint::BigInt;
 use primitives::Chain;
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 use crate::alien::RpcProvider;
 use gem_client::Client;
@@ -46,80 +46,7 @@ where
         }
     }
 
-    fn value_from(&self, value: String, decimals: i32) -> BigInt {
-        let value = BigInt::from_str(&value).unwrap();
-        let decimals = decimals - 8;
-        let factor = BigInt::from(10).pow(decimals.unsigned_abs());
-        if decimals > 0 { value / factor } else { value * factor }
-    }
-
-    fn value_to(&self, value: String, decimals: i32) -> BigInt {
-        let value = BigInt::from_str(&value).unwrap();
-        let decimals = decimals - 8;
-        let factor = BigInt::from(10).pow(decimals.unsigned_abs());
-        if decimals > 0 { value * factor } else { value / factor }
-    }
-
     fn get_eta_in_seconds(&self, destination_chain: Chain, total_swap_seconds: Option<u32>) -> u32 {
         destination_chain.block_time() / 1000 + OUTBOUND_DELAY_SECONDS + total_swap_seconds.unwrap_or(0)
-    }
-}
-
-#[cfg(all(test, feature = "reqwest_provider"))]
-mod tests {
-    use super::*;
-    use crate::alien::reqwest_provider::NativeProvider;
-    use std::sync::Arc;
-
-    #[test]
-    fn test_value_from() {
-        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
-
-        let value = "1000000000".to_string();
-
-        let result = thorchain.value_from(value.clone(), 18);
-        assert_eq!(result, BigInt::from_str("0").unwrap());
-
-        let result = thorchain.value_from(value.clone(), 10);
-        assert_eq!(result, BigInt::from_str("10000000").unwrap());
-
-        let result = thorchain.value_from(value.clone(), 6);
-        assert_eq!(result, BigInt::from_str("100000000000").unwrap());
-
-        let result = thorchain.value_from(value.clone(), 8);
-        assert_eq!(result, BigInt::from(1000000000));
-    }
-
-    #[test]
-    fn test_value_to() {
-        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
-
-        let value = "10000000".to_string();
-
-        let result = thorchain.value_to(value.clone(), 18);
-        assert_eq!(result, BigInt::from_str("100000000000000000").unwrap());
-
-        let result = thorchain.value_to(value.clone(), 10);
-        assert_eq!(result, BigInt::from(1000000000));
-
-        let result = thorchain.value_to(value.clone(), 6);
-        assert_eq!(result, BigInt::from(100000));
-
-        let result = thorchain.value_to(value.clone(), 8);
-        assert_eq!(result, BigInt::from(10000000));
-    }
-
-    #[test]
-    fn test_get_eta_in_seconds() {
-        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
-
-        let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, None);
-        assert_eq!(eta, 660);
-
-        let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, Some(1200));
-        assert_eq!(eta, 1860);
-
-        let eta = thorchain.get_eta_in_seconds(Chain::SmartChain, Some(648));
-        assert_eq!(eta, 709);
     }
 }

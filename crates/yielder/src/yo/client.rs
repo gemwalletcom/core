@@ -8,32 +8,16 @@ use gem_evm::multicall3::IMulticall3;
 use gem_evm::{jsonrpc::TransactionObject, rpc::EthereumClient};
 use primitives::swap::ApprovalData;
 
+use super::YoVault;
 use super::contract::{IYoGateway, IYoVaultToken};
 use super::error::YieldError;
 use super::model::PositionData;
-use super::YoVault;
 
 #[async_trait]
 pub trait YoProvider: Send + Sync {
     fn contract_address(&self) -> Address;
-    fn build_deposit_transaction(
-        &self,
-        from: Address,
-        yo_vault: Address,
-        assets: U256,
-        min_shares_out: U256,
-        receiver: Address,
-        partner_id: u32,
-    ) -> TransactionObject;
-    fn build_redeem_transaction(
-        &self,
-        from: Address,
-        yo_vault: Address,
-        shares: U256,
-        min_assets_out: U256,
-        receiver: Address,
-        partner_id: u32,
-    ) -> TransactionObject;
+    fn build_deposit_transaction(&self, from: Address, yo_vault: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> TransactionObject;
+    fn build_redeem_transaction(&self, from: Address, yo_vault: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> TransactionObject;
     async fn fetch_position_data(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError>;
     async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YieldError>;
     async fn convert_to_shares(&self, yo_vault: Address, assets: U256) -> Result<U256, YieldError>;
@@ -97,28 +81,12 @@ where
         self.contract_address
     }
 
-    fn build_deposit_transaction(
-        &self,
-        from: Address,
-        yo_vault: Address,
-        assets: U256,
-        min_shares_out: U256,
-        receiver: Address,
-        partner_id: u32,
-    ) -> TransactionObject {
+    fn build_deposit_transaction(&self, from: Address, yo_vault: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> TransactionObject {
         let data = Self::deposit_call_data(yo_vault, assets, min_shares_out, receiver, partner_id);
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
 
-    fn build_redeem_transaction(
-        &self,
-        from: Address,
-        yo_vault: Address,
-        shares: U256,
-        min_assets_out: U256,
-        receiver: Address,
-        partner_id: u32,
-    ) -> TransactionObject {
+    fn build_redeem_transaction(&self, from: Address, yo_vault: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> TransactionObject {
         let data = Self::redeem_call_data(yo_vault, shares, min_assets_out, receiver, partner_id);
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
@@ -132,9 +100,7 @@ where
 
         let lookback_block = latest_block.saturating_sub(lookback_blocks);
         let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
-        let multicall_addr: Address = gem_evm::multicall3::deployment_by_chain_stack(self.ethereum_client.chain.chain_stack())
-            .parse()
-            .unwrap();
+        let multicall_addr: Address = gem_evm::multicall3::deployment_by_chain_stack(self.ethereum_client.chain.chain_stack()).parse().unwrap();
 
         let mut latest_batch = self.ethereum_client.multicall();
         let share_bal = latest_batch.add(vault.yo_token, IERC20::balanceOfCall { account: owner });
@@ -190,10 +156,9 @@ where
             .ethereum_client
             .eth_call(&self.contract_address.to_string(), &call_data)
             .await
-            .map_err(|e| YieldError::new(format!("eth_call failed: {}", e)))?;
-        let bytes = hex::decode(&result).map_err(|e| YieldError::new(format!("hex decode failed: {}", e)))?;
-        let shares = IYoGateway::quoteConvertToSharesCall::abi_decode_returns(&bytes)
-            .map_err(|e| YieldError::new(format!("abi decode failed: {}", e)))?;
+            .map_err(|e| YieldError::new(format!("convert_to_shares eth_call failed: {e}")))?;
+        let bytes = hex::decode(&result).map_err(|e| YieldError::new(format!("convert_to_shares hex decode failed: {e}")))?;
+        let shares = IYoGateway::quoteConvertToSharesCall::abi_decode_returns(&bytes).map_err(|e| YieldError::new(format!("convert_to_shares abi decode failed: {e}")))?;
         Ok(shares)
     }
 }

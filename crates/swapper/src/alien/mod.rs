@@ -1,11 +1,7 @@
-pub mod error;
 pub mod mock;
-#[cfg(feature = "reqwest_provider")]
-pub mod reqwest_provider;
 
-pub use error::AlienError;
+pub use gem_client::ClientError as AlienError;
 pub use gem_jsonrpc::{HttpMethod, RpcClient as GenericRpcClient, RpcProvider as GenericRpcProvider, Target};
-
 pub type RpcClient = GenericRpcClient<AlienError>;
 
 pub trait RpcProvider: GenericRpcProvider<Error = AlienError> {}

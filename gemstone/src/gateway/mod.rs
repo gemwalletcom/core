@@ -320,7 +320,6 @@ impl GemGateway {
     }
 
     pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<GemTransactionData, GatewayError> {
-        // Prepare yield input (builds contract_address and call_data if needed)
         let input = if let Some(yielder) = &self.yielder {
             prepare_yield_input(yielder, input).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?
         } else {
@@ -419,7 +418,7 @@ impl GemGateway {
 #[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
     use super::*;
-    use crate::alien::reqwest_provider::NativeProvider;
+    use gem_jsonrpc::native_provider::NativeProvider;
 
     #[tokio::test]
     async fn test_get_node_status_http_404_error() {

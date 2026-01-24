@@ -3137,6 +3137,7 @@ version = "1.0.0"
 dependencies = [
  "clap",
  "gem_evm",
+ "gem_jsonrpc",
  "gemstone",
  "num-bigint",
  "prettytable-rs",
@@ -7560,7 +7561,6 @@ dependencies = [
  "number_formatter",
  "primitives",
  "rand 0.9.2",
- "reqwest 0.13.1",
  "serde",
  "serde_json",
  "serde_serializers",

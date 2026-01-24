@@ -8,8 +8,8 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, YieldAction,
-    fee::FeePriority, fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, YieldAction, fee::FeePriority,
+    fee::GasPriceType,
 };
 
 use crate::contracts::{IERC20, IERC721, IERC1155};
@@ -100,11 +100,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                         BigInt::from_str_radix(&swap_data.data.value, 10)?,
                     )),
                     AssetSubtype::TOKEN => match swap_data.data.data_type {
-                        SwapQuoteDataType::Contract => Ok(TransactionParams::new(
-                            swap_data.data.to.clone(),
-                            hex::decode(swap_data.data.data.clone())?,
-                            BigInt::ZERO,
-                        )),
+                        SwapQuoteDataType::Contract => Ok(TransactionParams::new(swap_data.data.to.clone(), hex::decode(swap_data.data.data.clone())?, BigInt::ZERO)),
                         SwapQuoteDataType::Transfer => {
                             let to = from_asset.token_id.clone().ok_or("Missing token ID")?.clone();
                             let data = encode_erc20_transfer(&swap_data.data.to.clone(), &BigInt::from_str_radix(&input.value, 10)?)?;
@@ -151,11 +147,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
         },
         TransactionInputType::Yield(_, action, yield_data) => {
             if let Some(approval) = &yield_data.approval {
-                Ok(TransactionParams::new(
-                    approval.token.clone(),
-                    encode_erc20_approve(&approval.spender)?,
-                    BigInt::from(0),
-                ))
+                Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
             } else {
                 let call_data = hex::decode(&yield_data.call_data)?;
                 let tx_value = match action {
@@ -204,7 +196,6 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
             }
         }
         TransactionInputType::Yield(_, _, yield_data) => {
-            // When there's an approval, add the yield deposit gas limit
             if yield_data.approval.is_some() && yield_data.gas_limit.is_some() {
                 Ok(BigInt::from_str_radix(yield_data.gas_limit.as_ref().unwrap(), 10)?)
             } else {

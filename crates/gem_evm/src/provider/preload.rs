@@ -17,8 +17,6 @@ use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
 use primitives::stake_type::StakeData;
 #[cfg(feature = "rpc")]
-use primitives::yield_data::EvmYieldData;
-#[cfg(feature = "rpc")]
 use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 #[cfg(feature = "rpc")]
 use serde_serializers::bigint::bigint_from_hex_str;
@@ -83,12 +81,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                     nonce,
                     chain_id,
                     stake_data: None,
-                    yield_data: Some(EvmYieldData {
-                        contract_address: yield_input.contract_address.clone(),
-                        call_data: yield_input.call_data.clone(),
-                        approval: yield_input.approval.clone(),
-                        gas_limit: yield_input.gas_limit.clone(),
-                    }),
+                    yield_data: Some(yield_input.clone()),
                 },
                 _ => input.metadata,
             },

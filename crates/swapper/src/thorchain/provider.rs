@@ -5,7 +5,9 @@ use async_trait::async_trait;
 use gem_client::Client;
 use primitives::{Chain, swap::ApprovalData};
 
-use super::{QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper};
+use super::{
+    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, bigint, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper,
+};
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
     approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
@@ -55,7 +57,7 @@ where
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
-        let value = self.value_from(request.clone().value, from_asset.decimals as i32);
+        let value = bigint::value_from(&request.value, from_asset.decimals as i32)?;
 
         if from_asset.chain != THORChainName::Thorchain {
             let inbound_addresses = self.swap_client.get_inbound_addresses().await?;
@@ -84,7 +86,7 @@ where
             )
             .await?;
 
-        let to_value = self.value_to(quote.expected_amount_out, to_asset.decimals as i32);
+        let to_value = bigint::value_to(&quote.expected_amount_out, to_asset.decimals as i32)?;
         let inbound_address = RouteData::get_inbound_address(&from_asset, quote.inbound_address.clone())?;
         let route_data = RouteData {
             router_address: quote.router.clone(),
@@ -167,9 +169,7 @@ where
             .as_ref()
             .and_then(|hashes| hashes.iter().find(|h| *h != ZERO_HASH && !h.is_empty()).cloned());
 
-        let (to_chain, to_tx_hash) = destination_chain
-            .map(|chain| (Some(chain), destination_tx_hash))
-            .unwrap_or((None, None));
+        let (to_chain, to_tx_hash) = destination_chain.map(|chain| (Some(chain), destination_tx_hash)).unwrap_or((None, None));
 
         Ok(SwapResult {
             status: swap_status,
@@ -184,7 +184,8 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, testkit::mock_quote};
+    use crate::{SwapperQuoteAsset, testkit::mock_quote};
+    use gem_jsonrpc::native_provider::NativeProvider;
     use std::sync::Arc;
 
     #[tokio::test]
@@ -263,5 +264,19 @@ mod swap_integration_tests {
         assert_eq!(result.to_tx_hash, Some("DC56C32556D2E518F67594B6A5F5BCB777484C0C3CF8940F5CA2E1B2DDC182E9".to_string()));
 
         Ok(())
+    }
+
+    #[test]
+    fn test_get_eta_in_seconds() {
+        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
+
+        let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, None);
+        assert_eq!(eta, 660);
+
+        let eta = thorchain.get_eta_in_seconds(Chain::Bitcoin, Some(1200));
+        assert_eq!(eta, 1860);
+
+        let eta = thorchain.get_eta_in_seconds(Chain::SmartChain, Some(648));
+        assert_eq!(eta, 709);
     }
 }

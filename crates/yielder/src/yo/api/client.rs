@@ -30,10 +30,10 @@ impl<E: std::error::Error + Send + Sync + 'static> YoApiClient<E> {
             .rpc_provider
             .request(target)
             .await
-            .map_err(|e| YieldError::new(format!("API request failed: {}", e)))?;
+            .map_err(|e| YieldError::new(format!("fetch performance error: request failed: {e}")))?;
 
         let parsed: YoApiResponse<YoPerformanceData> =
-            serde_json::from_slice(&response.data).map_err(|e| YieldError::new(format!("failed to parse Yo API response: {}", e)))?;
+            serde_json::from_slice(&response.data).map_err(|e| YieldError::new(format!("fetch performance error: failed to parse response: {e}")))?;
 
         if parsed.status_code != 200 {
             return Ok(YoPerformanceData::default());

@@ -4,7 +4,7 @@ use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
 use gem_jsonrpc::RpcProvider;
-use primitives::{swap::ApprovalData, AssetId, Chain};
+use primitives::{AssetId, Chain, swap::ApprovalData};
 
 use crate::models::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldTransaction};
 use crate::provider::YieldProviderClient;
@@ -38,17 +38,26 @@ impl<E: std::error::Error + Send + Sync + 'static> YoYieldProvider<E> {
     }
 
     fn find_vault(&self, asset_id: &AssetId) -> Result<YoVault, YieldError> {
-        self.vaults
-            .iter()
-            .copied()
-            .find(|vault| vault.asset_id() == *asset_id)
+        self.vaults_for_asset(asset_id)
+            .next()
             .ok_or_else(|| YieldError::new(format!("unsupported asset {}", asset_id)))
+    }
+
+    fn vaults_for_asset(&self, asset_id: &AssetId) -> impl Iterator<Item = YoVault> + '_ {
+        let asset_id = asset_id.clone();
+        self.vaults.iter().copied().filter(move |vault| vault.asset_id() == asset_id)
     }
 
     fn gateway_for_chain(&self, chain: Chain) -> Result<&Arc<dyn YoProvider>, YieldError> {
         self.gateways
             .get(&chain)
             .ok_or_else(|| YieldError::new(format!("no gateway configured for chain {:?}", chain)))
+    }
+
+    fn vault_and_gateway(&self, asset_id: &AssetId) -> Result<(YoVault, &Arc<dyn YoProvider>), YieldError> {
+        let vault = self.find_vault(asset_id)?;
+        let gateway = self.gateway_for_chain(vault.chain)?;
+        Ok((vault, gateway))
     }
 }
 
@@ -59,23 +68,15 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
     }
 
     fn yields(&self, asset_id: &AssetId) -> Vec<Yield> {
-        self.vaults
-            .iter()
-            .filter_map(|vault| {
-                let vault_asset = vault.asset_id();
-                if &vault_asset == asset_id {
-                    Some(Yield::new(vault.name, vault_asset, self.provider(), None))
-                } else {
-                    None
-                }
-            })
+        self.vaults_for_asset(asset_id)
+            .map(|vault| Yield::new(vault.name, vault.asset_id(), self.provider(), None))
             .collect()
     }
 
     async fn yields_with_apy(&self, asset_id: &AssetId) -> Result<Vec<Yield>, YieldError> {
         let mut results = Vec::new();
 
-        for vault in self.vaults.iter().copied().filter(|vault: &YoVault| vault.asset_id() == *asset_id) {
+        for vault in self.vaults_for_asset(asset_id) {
             let gateway = self.gateway_for_chain(vault.chain)?;
             let lookback_blocks = lookback_blocks_for_chain(vault.chain);
             let data = gateway.fetch_position_data(vault, Address::ZERO, lookback_blocks).await?;
@@ -88,10 +89,8 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
     }
 
     async fn deposit(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
-        let vault = self.find_vault(asset_id)?;
-        let gateway = self.gateway_for_chain(vault.chain)?;
-        let wallet = parse_address(wallet_address)?;
-        let amount = parse_value(value)?;
+        let (vault, gateway) = self.vault_and_gateway(asset_id)?;
+        let (wallet, amount) = parse_wallet_and_value(wallet_address, value)?;
 
         let approval = gateway.check_token_allowance(vault.asset_token, wallet, amount).await?;
         let tx = gateway.build_deposit_transaction(wallet, vault.yo_token, amount, U256::ZERO, wallet, YO_PARTNER_ID_GEM);
@@ -99,10 +98,8 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
     }
 
     async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
-        let vault = self.find_vault(asset_id)?;
-        let gateway = self.gateway_for_chain(vault.chain)?;
-        let wallet = parse_address(wallet_address)?;
-        let assets = parse_value(value)?;
+        let (vault, gateway) = self.vault_and_gateway(asset_id)?;
+        let (wallet, assets) = parse_wallet_and_value(wallet_address, value)?;
 
         let shares = gateway.convert_to_shares(vault.yo_token, assets).await?;
         let approval = gateway.check_token_allowance(vault.yo_token, wallet, shares).await?;
@@ -111,8 +108,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
     }
 
     async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
-        let vault = self.find_vault(&request.asset_id)?;
-        let gateway = self.gateway_for_chain(vault.chain)?;
+        let (vault, gateway) = self.vault_and_gateway(&request.asset_id)?;
         let owner = parse_address(&request.wallet_address)?;
         let data = gateway.fetch_position_data(vault, owner, lookback_blocks_for_chain(vault.chain)).await?;
 
@@ -139,6 +135,12 @@ fn parse_address(value: &str) -> Result<Address, YieldError> {
 
 fn parse_value(value: &str) -> Result<U256, YieldError> {
     U256::from_str_radix(value, 10).map_err(|err| YieldError::new(format!("invalid value {value}: {err}")))
+}
+
+fn parse_wallet_and_value(wallet_address: &str, value: &str) -> Result<(Address, U256), YieldError> {
+    let wallet = parse_address(wallet_address)?;
+    let amount = parse_value(value)?;
+    Ok((wallet, amount))
 }
 
 fn convert_transaction(vault: YoVault, tx: TransactionObject, approval: Option<ApprovalData>) -> YieldTransaction {

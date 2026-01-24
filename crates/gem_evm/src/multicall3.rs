@@ -41,10 +41,7 @@ pub struct Multicall3Results {
 impl Multicall3Results {
     /// Decode the result for a specific call handle
     pub fn decode<T: SolCall>(&self, handle: &CallHandle<T::Return>) -> Result<T::Return, Multicall3Error> {
-        let result = self
-            .results
-            .get(handle.index)
-            .ok_or_else(|| Multicall3Error(format!("invalid index: {}", handle.index)))?;
+        let result = self.results.get(handle.index).ok_or_else(|| Multicall3Error(format!("invalid index: {}", handle.index)))?;
 
         if !result.success {
             return Err(Multicall3Error(format!("{} failed", T::SIGNATURE)));
@@ -96,10 +93,7 @@ impl<'a, C: Client + Clone> Multicall3Builder<'a, C> {
         let multicall_address = deployment_by_chain_stack(self.client.chain.chain_stack());
         let multicall_data = IMulticall3::aggregate3Call { calls: self.calls }.abi_encode();
 
-        let block_param = self
-            .block
-            .map(|n| serde_json::Value::String(format!("0x{n:x}")))
-            .unwrap_or_else(|| json!("latest"));
+        let block_param = self.block.map(|n| serde_json::Value::String(format!("0x{n:x}"))).unwrap_or_else(|| json!("latest"));
 
         let result: String = self
             .client
@@ -154,5 +148,27 @@ pub fn decode_call3_return<T: SolCall>(result: &IMulticall3::Result) -> Result<T
         T::abi_decode_returns(&result.returnData).map_err(|e| format!("{}: {:?}", T::SIGNATURE, e))
     } else {
         Err(format!("{} failed", T::SIGNATURE))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::contracts::IERC20;
+    use alloy_primitives::U256;
+
+    #[test]
+    fn test_multicall3_results_decode_success() {
+        let value = U256::from(42u64);
+        let handle = CallHandle { index: 0, _marker: PhantomData };
+        let results = Multicall3Results {
+            results: vec![IMulticall3::Result {
+                success: true,
+                returnData: value.to_be_bytes::<32>().to_vec().into(),
+            }],
+        };
+
+        let decoded = results.decode::<IERC20::balanceOfCall>(&handle).expect("decode should succeed");
+        assert_eq!(decoded, value);
     }
 }

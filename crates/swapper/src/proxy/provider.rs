@@ -260,10 +260,8 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{
-        alien::reqwest_provider::NativeProvider,
-        {SwapperMode, SwapperQuoteAsset, asset::SUI_USDC_TOKEN_ID, models::Options},
-    };
+    use crate::{SwapperMode, SwapperQuoteAsset, asset::SUI_USDC_TOKEN_ID, models::Options};
+    use gem_jsonrpc::native_provider::NativeProvider;
     use primitives::AssetId;
 
     #[tokio::test]

@@ -17,10 +17,10 @@ use super::{
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     alien::RpcProvider,
+    amount_to_value,
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
-    amount_to_value,
     slippage,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
@@ -387,7 +387,7 @@ mod tests {
     #[tokio::test]
     #[cfg(feature = "swap_integration_tests")]
     async fn test_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use crate::alien::reqwest_provider::NativeProvider;
+        use gem_jsonrpc::native_provider::NativeProvider;
         use primitives::swap::SwapStatus;
 
         let network_provider = Arc::new(NativeProvider::default());

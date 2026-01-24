@@ -212,7 +212,8 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
+    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, models::Options};
+    use gem_jsonrpc::native_provider::NativeProvider;
     use primitives::AssetId;
     use std::sync::Arc;
 
