@@ -99,6 +99,7 @@ pub enum ConfigKey {
     ReferralAbuseVelocityWindow,
     ReferralAbuseVelocityDivisor,
     ReferralAbuseVelocityPenaltyPerSignal,
+    ReferralAbuseDisabledReferrerPenalty,
 
     // Fiat
     FiatValidateSubscription,
@@ -257,6 +258,7 @@ impl ConfigKey {
             Self::ReferralAbuseVelocityWindow => "5m",
             Self::ReferralAbuseVelocityDivisor => "2",
             Self::ReferralAbuseVelocityPenaltyPerSignal => "100",
+            Self::ReferralAbuseDisabledReferrerPenalty => "80",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
             Self::AlerterInterval => "60s",
