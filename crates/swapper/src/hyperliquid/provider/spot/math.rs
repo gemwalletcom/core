@@ -55,7 +55,7 @@ pub fn scale_units(value: BigUint, from_decimals: u32, to_decimals: u32) -> Resu
             let factor = BigUint::from(10u32).pow(from_decimals - to_decimals);
             let (quotient, remainder) = value.div_rem(&factor);
             if !NumZero::is_zero(&remainder) {
-                return Err(SwapperError::InvalidAmount("amount precision loss".to_string()));
+                return Err(SwapperError::ComputeQuoteError("amount precision loss".into()));
             }
             Ok(quotient)
         }
@@ -69,16 +69,16 @@ pub fn scale_quote_value(value: &str, from_decimals: u32, to_decimals: u32) -> R
 
 pub(super) fn apply_slippage(limit_price: &BigDecimal, side: SpotSide, slippage_bps: u32, price_decimals: u32) -> Result<BigDecimal, SwapperError> {
     if limit_price <= &BigDecimal::zero() {
-        return Err(SwapperError::InvalidAmount("invalid limit price".to_string()));
+        return Err(SwapperError::ComputeQuoteError("invalid limit price".into()));
     }
 
-    let limit_price_f64 = limit_price.to_f64().ok_or_else(|| SwapperError::InvalidAmount("failed to convert price".to_string()))?;
+    let limit_price_f64 = limit_price.to_f64().ok_or_else(|| SwapperError::ComputeQuoteError("failed to convert price".into()))?;
 
     let slippage_fraction = slippage_bps as f64 / 10_000.0;
     let multiplier = if side.is_buy() { 1.0 + slippage_fraction } else { 1.0 - slippage_fraction };
 
     if multiplier <= 0.0 {
-        return Err(SwapperError::InvalidAmount("slippage multiplier not positive".to_string()));
+        return Err(SwapperError::ComputeQuoteError("slippage multiplier not positive".into()));
     }
 
     let adjusted = limit_price_f64 * multiplier;
@@ -90,7 +90,7 @@ pub(super) fn apply_slippage(limit_price: &BigDecimal, side: SpotSide, slippage_
         format!("{rounded:.price_decimals$}", price_decimals = price_decimals as usize)
     };
 
-    BigDecimal::from_str(&formatted).map_err(|_| SwapperError::InvalidAmount("failed to format limit price".to_string()))
+    BigDecimal::from_str(&formatted).map_err(|_| SwapperError::ComputeQuoteError("failed to format limit price".into()))
 }
 
 fn round_to_decimals(value: f64, decimals: u32) -> f64 {

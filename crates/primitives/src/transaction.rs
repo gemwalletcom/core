@@ -145,8 +145,7 @@ impl Transaction {
     }
 
     pub fn is_utxo_tx(&self) -> bool {
-        self.utxo_inputs.as_ref().is_some_and(|v| !v.is_empty())
-            && self.utxo_outputs.as_ref().is_some_and(|v| !v.is_empty())
+        self.utxo_inputs.as_ref().is_some_and(|v| !v.is_empty()) && self.utxo_outputs.as_ref().is_some_and(|v| !v.is_empty())
     }
 
     pub fn input_addresses(&self) -> Vec<String> {
@@ -242,11 +241,7 @@ impl Transaction {
     }
 
     fn utxo_calculate_value(values: &[TransactionUtxoInput], addresses: &HashSet<String>) -> i64 {
-        values
-            .iter()
-            .filter(|x| addresses.contains(&x.address))
-            .filter_map(|x| x.value.parse::<i64>().ok())
-            .sum()
+        values.iter().filter(|x| addresses.contains(&x.address)).filter_map(|x| x.value.parse::<i64>().ok()).sum()
     }
 
     pub fn asset_ids(&self) -> Vec<AssetId> {

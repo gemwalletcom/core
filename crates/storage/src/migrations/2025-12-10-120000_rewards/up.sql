@@ -20,7 +20,7 @@ CREATE TABLE rewards (
     status reward_status NOT NULL,
     level VARCHAR(32),
     points INT NOT NULL DEFAULT 0 CHECK (points >= 0),
-    referrer_username VARCHAR(64) REFERENCES usernames(username) ON DELETE SET NULL ON UPDATE CASCADE,
+    referrer_username VARCHAR(64) REFERENCES rewards(username) ON DELETE SET NULL ON UPDATE CASCADE,
     referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
     device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     is_swap_complete BOOLEAN NOT NULL DEFAULT false,

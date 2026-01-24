@@ -3,7 +3,7 @@ mod chain;
 mod client;
 mod constants;
 mod memo;
-mod model;
+pub(crate) mod model;
 mod provider;
 mod quote_data_mapper;
 
@@ -47,21 +47,17 @@ where
     }
 
     fn value_from(&self, value: String, decimals: i32) -> BigInt {
+        let value = BigInt::from_str(&value).unwrap();
         let decimals = decimals - 8;
-        if decimals > 0 {
-            BigInt::from_str(value.as_str()).unwrap() / BigInt::from(10).pow(decimals as u32)
-        } else {
-            BigInt::from_str(value.as_str()).unwrap() * BigInt::from(10).pow(decimals.unsigned_abs())
-        }
+        let factor = BigInt::from(10).pow(decimals.unsigned_abs());
+        if decimals > 0 { value / factor } else { value * factor }
     }
 
     fn value_to(&self, value: String, decimals: i32) -> BigInt {
+        let value = BigInt::from_str(&value).unwrap();
         let decimals = decimals - 8;
-        if decimals > 0 {
-            BigInt::from_str(value.as_str()).unwrap() * BigInt::from(10).pow((decimals).unsigned_abs())
-        } else {
-            BigInt::from_str(value.as_str()).unwrap() / BigInt::from(10).pow((decimals).unsigned_abs())
-        }
+        let factor = BigInt::from(10).pow(decimals.unsigned_abs());
+        if decimals > 0 { value * factor } else { value / factor }
     }
 
     fn get_eta_in_seconds(&self, destination_chain: Chain, total_swap_seconds: Option<u32>) -> u32 {

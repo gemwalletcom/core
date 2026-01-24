@@ -94,17 +94,14 @@ impl Across {
         create_eth_client(self.rpc_provider.clone(), chain)?
             .multicall3(calls)
             .await
-            .map_err(|e| SwapperError::NetworkError(e.to_string()))
+            .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))
     }
 
     async fn estimate_gas_transaction(&self, chain: Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
         let client = create_eth_client(self.rpc_provider.clone(), chain)?;
-        let gas_hex = client
-            .estimate_gas(tx.from.as_deref(), &tx.to, tx.value.as_deref(), Some(tx.data.as_str()))
-            .await
-            .map_err(SwapperError::from)?;
+        let gas_hex = client.estimate_gas(tx.from.as_deref(), &tx.to, tx.value.as_deref(), Some(tx.data.as_str())).await?;
 
-        let gas_biguint = biguint_from_hex_str(&gas_hex).map_err(|e| SwapperError::NetworkError(format!("Failed to parse gas estimate: {e}")))?;
+        let gas_biguint = biguint_from_hex_str(&gas_hex).map_err(|e| SwapperError::ComputeQuoteError(format!("Failed to parse gas estimate: {e}")))?;
         let gas_bigint = BigInt::from_biguint(Sign::Plus, gas_biguint);
         Self::bigint_to_u256(&gas_bigint)
     }
@@ -249,7 +246,7 @@ impl Across {
             let results = create_eth_client(self.rpc_provider.clone(), Chain::Monad)?
                 .multicall3(vec![feed.latest_round_call3()])
                 .await
-                .map_err(|e| SwapperError::NetworkError(e.to_string()))?;
+                .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
             ChainlinkPriceFeed::decoded_answer(&results[0])
         } else {
             ChainlinkPriceFeed::decoded_answer(&existing_results[3])
@@ -321,9 +318,8 @@ impl Swapper for Across {
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        // does not support same chain swap
         if request.from_asset.chain() == request.to_asset.chain() {
-            return Err(SwapperError::NotSupportedPair);
+            return Err(SwapperError::NoQuoteAvailable);
         }
 
         let input_is_native = request.from_asset.is_native();
@@ -334,11 +330,11 @@ impl Swapper for Across {
         let _ = AcrossDeployment::deployment_by_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let destination_deployment = AcrossDeployment::deployment_by_chain(&request.to_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         if !Self::is_supported_pair(&request.from_asset.asset_id(), &request.to_asset.asset_id()) {
-            return Err(SwapperError::NotSupportedPair);
+            return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let input_asset = eth_address::convert_native_to_weth(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
-        let output_asset = eth_address::convert_native_to_weth(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedPair)?;
+        let input_asset = eth_address::convert_native_to_weth(&request.from_asset.asset_id()).ok_or(SwapperError::NotSupportedAsset)?;
+        let output_asset = eth_address::convert_native_to_weth(&request.to_asset.asset_id()).ok_or(SwapperError::NotSupportedAsset)?;
         let original_output_asset = request.to_asset.asset_id();
         let output_token = eth_address::parse_asset_id(&output_asset)?;
 
@@ -429,7 +425,7 @@ impl Swapper for Across {
 
         // Check if bridge amount is too small
         if remain_amount < gas_fee {
-            return Err(SwapperError::InputAmountTooSmall);
+            return Err(SwapperError::InputAmountError { min_amount: None });
         }
 
         let output_amount = remain_amount - gas_fee;

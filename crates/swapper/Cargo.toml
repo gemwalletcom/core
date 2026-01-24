@@ -25,6 +25,7 @@ serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
 
 reqwest = { workspace = true, optional = true }
+typeshare = { version = "1.0.4" }
 
 strum = { workspace = true }
 

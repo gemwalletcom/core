@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::time::Duration;
 
+use primitives::rewards::RewardStatus;
 use regex::Regex;
 use storage::models::RiskSignalRow;
 
@@ -41,7 +42,7 @@ pub fn calculate_risk_score(
         } else {
             0
         },
-        verified_user_reduction: if input.referrer_verified { -config.verified_user_reduction } else { 0 },
+        verified_user_reduction: if input.referrer_status.is_verified() { -config.verified_user_reduction } else { 0 },
         platform_store_score: if is_high_risk_platform_store { config.high_risk_platform_store_penalty } else { 0 },
         country_score: if is_high_risk_country { config.high_risk_country_penalty } else { 0 },
         locale_score: if is_high_risk_locale { config.high_risk_locale_penalty } else { 0 },
@@ -151,7 +152,13 @@ pub fn calculate_risk_score(
     }
 
     let same_referrer_signals: Vec<_> = existing_signals.iter().filter(|s| s.referrer_username == input.username).collect();
-    let multiplier = if input.referrer_verified { config.verified_multiplier } else { 1 };
+    let multiplier = if input.referrer_status == RewardStatus::Trusted {
+        config.trusted_multiplier
+    } else if input.referrer_status.is_verified() {
+        config.verified_multiplier
+    } else {
+        1
+    };
     let daily_limit = config.referral_per_user_daily * multiplier;
     let velocity_threshold = daily_limit / config.velocity_divisor.max(1);
     let (signals_in_window, speed_multiplier) = count_signals_in_recent_window(&same_referrer_signals, config.velocity_window);
@@ -209,6 +216,7 @@ fn count_signals_in_recent_window(signals: &[&RiskSignalRow], window: Duration) 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::rewards::RewardStatus;
     use primitives::{IpUsageType, Platform, PlatformStore};
 
     fn create_test_input() -> RiskSignalInput {
@@ -226,7 +234,7 @@ mod tests {
             ip_usage_type: IpUsageType::Isp,
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
-            referrer_verified: false,
+            referrer_status: RewardStatus::Unverified,
         }
     }
 
@@ -463,7 +471,7 @@ mod tests {
     fn verified_user_reduces_score() {
         let mut input = create_test_input();
         input.ip_abuse_score = 60;
-        input.referrer_verified = true;
+        input.referrer_status = RewardStatus::Verified;
         let config = RiskScoreConfig::default();
         let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
@@ -476,7 +484,7 @@ mod tests {
     #[test]
     fn verified_user_score_cannot_go_negative() {
         let mut input = create_test_input();
-        input.referrer_verified = true;
+        input.referrer_status = RewardStatus::Verified;
         let config = RiskScoreConfig::default();
         let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
@@ -742,7 +750,7 @@ mod tests {
     #[test]
     fn velocity_verified_user() {
         let mut input = create_test_input();
-        input.referrer_verified = true;
+        input.referrer_status = RewardStatus::Verified;
         // Verified user threshold=5 (10/2), 4 signals - no penalty
         let signals: Vec<_> = (0..4).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
         assert_eq!(
@@ -751,6 +759,21 @@ mod tests {
         );
         // 5 signals triggers penalty
         let signals: Vec<_> = (0..5).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
+        assert!(calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score > 0);
+    }
+
+    #[test]
+    fn velocity_trusted_user() {
+        let mut input = create_test_input();
+        input.referrer_status = RewardStatus::Trusted;
+        // Trusted user threshold=7 (15/2), 6 signals - no penalty
+        let signals: Vec<_> = (0..6).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
+        assert_eq!(
+            calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score,
+            0
+        );
+        // 7 signals triggers penalty
+        let signals: Vec<_> = (0..7).map(|i| create_recent_signal("user1", 60 + i * 30)).collect();
         assert!(calculate_risk_score(&input, &signals, 0, 0, 0, 0, 0, &RiskScoreConfig::default()).breakdown.velocity_score > 0);
     }
 

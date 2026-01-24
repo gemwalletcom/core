@@ -51,8 +51,7 @@ impl NodeDomain {
 
 impl ProxyRequestService {
     pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client, headers_config: HeadersConfig) -> Self {
-        let forward_headers: Arc<HashSet<HeaderName>> =
-            Arc::new(headers_config.forward.iter().filter_map(|s| HeaderName::from_str(s).ok()).collect());
+        let forward_headers: Arc<HashSet<HeaderName>> = Arc::new(headers_config.forward.iter().filter_map(|s| HeaderName::from_str(s).ok()).collect());
 
         Self {
             metrics,
@@ -199,7 +198,13 @@ impl ProxyRequestService {
                 metrics.add_cache_hit(request.chain.as_ref(), method_name);
             }
 
-            info_with_fields!("Cache HIT", id = request.id.as_str(), chain = request.chain.as_ref(), host = &request.host, method = &methods_for_metrics.join(","));
+            info_with_fields!(
+                "Cache HIT",
+                id = request.id.as_str(),
+                chain = request.chain.as_ref(),
+                host = &request.host,
+                method = &methods_for_metrics.join(",")
+            );
 
             let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), request.elapsed());
             let status = cached.status;

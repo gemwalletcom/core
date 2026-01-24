@@ -7569,6 +7569,7 @@ dependencies = [
  "strum",
  "tokio",
  "tracing",
+ "typeshare",
 ]
 
 [[package]]

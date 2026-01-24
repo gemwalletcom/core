@@ -20,6 +20,7 @@ use crate::{
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
+    amount_to_value,
     slippage,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
@@ -109,6 +110,29 @@ fn get_best_quote(mut quotes: Vec<QuoteResponse>, fee_bps: u32) -> (BigUint, u32
     )
 }
 
+fn map_chainflip_quote_error(error: SwapperError, from_decimals: u32) -> SwapperError {
+    match error {
+        SwapperError::ComputeQuoteError(message) => {
+            let lower = message.to_ascii_lowercase();
+            if lower.contains("expected amount is below minimum swap amount") {
+                SwapperError::InputAmountError {
+                    min_amount: parse_min_amount(&message, from_decimals),
+                }
+            } else {
+                SwapperError::ComputeQuoteError(message)
+            }
+        }
+        other => other,
+    }
+}
+
+fn parse_min_amount(message: &str, decimals: u32) -> Option<String> {
+    let open = message.rfind('(')?;
+    let close = message[open + 1..].find(')')? + open + 1;
+    let token = message[open + 1..close].trim();
+    amount_to_value(token, decimals)
+}
+
 #[async_trait]
 impl<CX, BR> Swapper for ChainflipProvider<CX, BR>
 where
@@ -148,7 +172,10 @@ where
             broker_commission_bps: Some(fee_bps),
         };
 
-        let quotes = self.chainflip_client.get_quote(&quote_request).await?;
+        let quotes = match self.chainflip_client.get_quote(&quote_request).await {
+            Ok(quotes) => quotes,
+            Err(err) => return Err(map_chainflip_quote_error(err, request.from_asset.decimals)),
+        };
         if quotes.is_empty() {
             return Err(SwapperError::NoQuoteAvailable);
         }
@@ -294,6 +321,27 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_chainflip_min_amount_error() {
+        let message = "expected amount is below minimum swap amount (68000000)".to_string();
+        let err = map_chainflip_quote_error(SwapperError::ComputeQuoteError(message), 6);
+        assert_eq!(
+            err,
+            SwapperError::InputAmountError {
+                min_amount: Some("68000000".into())
+            }
+        );
+
+        let message = "expected amount is below minimum swap amount (1.23)".to_string();
+        let err = map_chainflip_quote_error(SwapperError::ComputeQuoteError(message), 6);
+        assert_eq!(
+            err,
+            SwapperError::InputAmountError {
+                min_amount: Some("1230000".into())
+            }
+        );
+    }
 
     #[test]
     fn test_best_quote() {
