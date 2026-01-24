@@ -40,7 +40,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YoYieldProvider<E> {
     fn find_vault(&self, asset_id: &AssetId) -> Result<YoVault, YieldError> {
         self.vaults_for_asset(asset_id)
             .next()
-            .ok_or_else(|| YieldError::new(format!("unsupported asset {}", asset_id)))
+            .ok_or_else(|| format!("unsupported asset {}", asset_id).into())
     }
 
     fn vaults_for_asset(&self, asset_id: &AssetId) -> impl Iterator<Item = YoVault> + '_ {
@@ -51,7 +51,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YoYieldProvider<E> {
     fn gateway_for_chain(&self, chain: Chain) -> Result<&Arc<dyn YoProvider>, YieldError> {
         self.gateways
             .get(&chain)
-            .ok_or_else(|| YieldError::new(format!("no gateway configured for chain {:?}", chain)))
+            .ok_or_else(|| format!("no gateway configured for chain {:?}", chain).into())
     }
 
     fn vault_and_gateway(&self, asset_id: &AssetId) -> Result<(YoVault, &Arc<dyn YoProvider>), YieldError> {
@@ -130,11 +130,11 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
 }
 
 fn parse_address(value: &str) -> Result<Address, YieldError> {
-    Address::from_str(value).map_err(|err| YieldError::new(format!("invalid address {value}: {err}")))
+    Address::from_str(value).map_err(|e| format!("invalid address {value}: {e}").into())
 }
 
 fn parse_value(value: &str) -> Result<U256, YieldError> {
-    U256::from_str_radix(value, 10).map_err(|err| YieldError::new(format!("invalid value {value}: {err}")))
+    U256::from_str_radix(value, 10).map_err(|e| format!("invalid value {value}: {e}").into())
 }
 
 fn parse_wallet_and_value(wallet_address: &str, value: &str) -> Result<(Address, U256), YieldError> {

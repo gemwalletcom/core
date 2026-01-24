@@ -27,13 +27,11 @@ sol! {
     }
 }
 
-/// Handle returned when adding a call to the batch. Used to decode the result.
 pub struct CallHandle<T> {
     index: usize,
     _marker: PhantomData<T>,
 }
 
-/// Results from executing a multicall batch
 pub struct Multicall3Results {
     results: Vec<IMulticall3::Result>,
 }
@@ -51,7 +49,6 @@ impl Multicall3Results {
     }
 }
 
-/// Builder for constructing multicall3 batches
 pub struct Multicall3Builder<'a, C: Client + Clone> {
     client: &'a EthereumClient<C>,
     calls: Vec<IMulticall3::Call3>,
@@ -67,7 +64,6 @@ impl<'a, C: Client + Clone> Multicall3Builder<'a, C> {
         }
     }
 
-    /// Add a contract call to the batch
     pub fn add<T: SolCall>(&mut self, target: Address, call: T) -> CallHandle<T::Return> {
         let index = self.calls.len();
         self.calls.push(IMulticall3::Call3 {
@@ -78,7 +74,6 @@ impl<'a, C: Client + Clone> Multicall3Builder<'a, C> {
         CallHandle { index, _marker: PhantomData }
     }
 
-    /// Set the block number to execute at (default: latest)
     pub fn at_block(mut self, block: u64) -> Self {
         self.block = Some(block);
         self

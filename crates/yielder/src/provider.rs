@@ -80,6 +80,6 @@ impl Yielder {
             .iter()
             .find(|candidate| candidate.provider() == provider)
             .cloned()
-            .ok_or_else(|| YieldError::new(format!("provider {provider} not found")))
+            .ok_or_else(|| format!("provider {provider} not found").into())
     }
 }

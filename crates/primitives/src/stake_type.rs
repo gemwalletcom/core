@@ -13,7 +13,6 @@ pub struct RedelegateData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
-#[serde(rename_all = "camelCase")]
 pub struct StakeData {
     pub data: Option<String>,
     pub to: Option<String>,

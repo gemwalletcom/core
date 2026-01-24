@@ -3,14 +3,14 @@ name = "yielder"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-homepage.workspace = true
-description.workspace = true
-repository.workspace = true
-documentation.workspace = true
 
 [features]
 default = []
-yield_integration_tests = ["gem_jsonrpc/reqwest", "gem_client/reqwest", "tokio/rt-multi-thread"]
+yield_integration_tests = [
+    "gem_jsonrpc/reqwest",
+    "gem_client/reqwest",
+    "tokio/rt-multi-thread",
+]
 
 [dependencies]
 alloy-primitives = { workspace = true }
@@ -21,10 +21,9 @@ gem_jsonrpc = { path = "../gem_jsonrpc" }
 primitives = { path = "../primitives" }
 serde_serializers = { path = "../serde_serializers" }
 async-trait = { workspace = true }
-num-traits = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-tokio = { workspace = true, features = ["macros"] }
+strum = { workspace = true }
 
 [dev-dependencies]
 gem_client = { path = "../gem_client", features = ["reqwest"] }

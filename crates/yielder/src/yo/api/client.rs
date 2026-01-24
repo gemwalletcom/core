@@ -21,7 +21,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YoApiClient<E> {
         let network = match chain {
             Chain::Base => "base",
             Chain::Ethereum => "ethereum",
-            _ => return Err(YieldError::new(format!("unsupported chain for Yo API: {:?}", chain))),
+            _ => return Err(format!("unsupported chain for Yo API: {:?}", chain).into()),
         };
         let url = format!("{}/api/v1/performance/user/{}/{}/{}", YO_API_BASE_URL, network, vault_address, user_address);
         let target = Target::get(&url);
@@ -30,10 +30,10 @@ impl<E: std::error::Error + Send + Sync + 'static> YoApiClient<E> {
             .rpc_provider
             .request(target)
             .await
-            .map_err(|e| YieldError::new(format!("fetch performance error: request failed: {e}")))?;
+            .map_err(|e| format!("fetch performance error: request failed: {e}"))?;
 
         let parsed: YoApiResponse<YoPerformanceData> =
-            serde_json::from_slice(&response.data).map_err(|e| YieldError::new(format!("fetch performance error: failed to parse response: {e}")))?;
+            serde_json::from_slice(&response.data).map_err(|e| format!("fetch performance error: parse failed: {e}"))?;
 
         if parsed.status_code != 200 {
             return Ok(YoPerformanceData::default());

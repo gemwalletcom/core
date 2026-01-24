@@ -1,38 +1,11 @@
-use std::{fmt, str::FromStr};
-
 use alloy_primitives::Address;
 use primitives::{AssetId, Chain, swap::ApprovalData};
+use strum::{AsRefStr, Display, EnumString};
 
-use crate::yo::YieldError;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "lowercase")]
 pub enum YieldProvider {
     Yo,
-}
-
-impl YieldProvider {
-    pub fn name(&self) -> &'static str {
-        match self {
-            YieldProvider::Yo => "yo",
-        }
-    }
-}
-
-impl fmt::Display for YieldProvider {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.name())
-    }
-}
-
-impl FromStr for YieldProvider {
-    type Err = YieldError;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value.to_ascii_lowercase().as_str() {
-            "yo" => Ok(YieldProvider::Yo),
-            other => Err(YieldError::new(format!("unknown yield provider {other}"))),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]

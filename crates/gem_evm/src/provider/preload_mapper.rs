@@ -60,9 +60,7 @@ pub fn map_transaction_fee_rates(chain: EVMChain, fee_history: &EthereumFeeHisto
         .into_iter()
         .map(|x| {
             let priority_fee = BigInt::max(min_priority_fee.clone(), x.value.clone());
-            // maxFeePerGas must be >= maxPriorityFeePerGas, so use base_fee + priority_fee
-            let max_fee_per_gas = base_fee.clone() + &priority_fee;
-            FeeRate::new(x.priority, GasPriceType::eip1559(max_fee_per_gas, priority_fee))
+            FeeRate::new(x.priority, GasPriceType::eip1559(base_fee.clone(), priority_fee))
         })
         .collect())
 }
@@ -384,8 +382,6 @@ mod tests {
                 GasPriceType::Eip1559 { gas_price, priority_fee } => {
                     assert!(*gas_price >= min_priority_fee);
                     assert!(*priority_fee >= min_priority_fee);
-                    // EIP-1559: maxFeePerGas must be >= maxPriorityFeePerGas
-                    assert!(*gas_price >= *priority_fee, "maxFeePerGas must be >= maxPriorityFeePerGas");
                 }
                 _ => panic!("Expected EIP-1559 gas price type"),
             }
@@ -406,11 +402,8 @@ mod tests {
         let result = map_transaction_fee_rates(EVMChain::SmartChain, &fee_history)?;
 
         assert_eq!(result.len(), 3);
-
-        // When base_fee is 0, max_fee_per_gas equals priority_fee (0x5f5e100 = 100000000)
-        let expected_priority_fee = BigInt::from(100000000u64);
-        assert_eq!(result[0].gas_price_type.gas_price(), expected_priority_fee.clone());
-        assert_eq!(result[0].gas_price_type.priority_fee(), expected_priority_fee);
+        assert_eq!(result[0].gas_price_type.gas_price(), BigInt::ZERO);
+        assert!(result[0].gas_price_type.priority_fee() != BigInt::ZERO);
 
         Ok(())
     }

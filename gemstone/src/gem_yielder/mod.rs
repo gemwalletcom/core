@@ -19,12 +19,6 @@ pub struct GemYielder {
     yielder: Yielder,
 }
 
-impl std::fmt::Debug for GemYielder {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GemYielder").finish()
-    }
-}
-
 #[uniffi::export]
 impl GemYielder {
     #[uniffi::constructor]

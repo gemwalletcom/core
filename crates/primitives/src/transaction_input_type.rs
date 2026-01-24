@@ -78,8 +78,8 @@ impl TransactionInputType {
                 PerpetualType::Modify(_) => TransactionType::PerpetualModifyPosition,
             },
             TransactionInputType::Yield(_, action, _) => match action {
-                YieldAction::Deposit => TransactionType::StakeDelegate,
-                YieldAction::Withdraw => TransactionType::StakeUndelegate,
+                YieldAction::Deposit => TransactionType::YieldDeposit,
+                YieldAction::Withdraw => TransactionType::YieldWithdraw,
             },
         }
     }

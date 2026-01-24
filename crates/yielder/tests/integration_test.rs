@@ -6,7 +6,7 @@ use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_jsonrpc::{NativeProvider, RpcProvider};
 use primitives::{Chain, EVMChain};
-use yielder::{YO_GATEWAY, YO_USD, YieldDetailsRequest, YieldProviderClient, Yielder, YoApiClient, YoGatewayClient, YoProvider, YoYieldProvider};
+use yielder::{YO_GATEWAY, YO_USDC, YieldDetailsRequest, YieldProviderClient, Yielder, YoApiClient, YoGatewayClient, YoProvider, YoYieldProvider};
 
 fn get_endpoint(provider: &NativeProvider, chain: Chain) -> String {
     provider.get_endpoint(chain).unwrap_or_else(|err| panic!("missing RPC endpoint for chain {chain:?}: {err}"))
@@ -34,7 +34,7 @@ async fn test_yields_for_asset_with_apy() -> Result<(), Box<dyn std::error::Erro
     let provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways, rpc_provider));
     let yielder = Yielder::with_providers(vec![provider]);
 
-    let apy_yields = yielder.yields_for_asset_with_apy(&YO_USD.asset_id()).await?;
+    let apy_yields = yielder.yields_for_asset_with_apy(&YO_USDC.asset_id()).await?;
     println!("yielder: yields_for_asset_with_apy count={}", apy_yields.len());
     assert!(!apy_yields.is_empty(), "expected at least one Yo vault for asset");
     let apy = apy_yields[0].apy.expect("apy should be computed");
@@ -50,7 +50,7 @@ async fn test_yo_api_performance() -> Result<(), Box<dyn std::error::Error + Sen
     let rpc_provider = build_rpc_provider();
     let api_client = YoApiClient::new(rpc_provider);
 
-    let vault_address = YO_USD.yo_token.to_string();
+    let vault_address = YO_USDC.yo_token.to_string();
     let wallet_address = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7";
 
     println!("yielder: fetch_rewards chain=Base vault={vault_address} wallet={wallet_address}");
@@ -71,7 +71,7 @@ async fn test_yo_positions_with_rewards() -> Result<(), Box<dyn std::error::Erro
 
     let wallet_address = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7";
     let request = YieldDetailsRequest {
-        asset_id: YO_USD.asset_id(),
+        asset_id: YO_USDC.asset_id(),
         wallet_address: wallet_address.to_string(),
     };
 

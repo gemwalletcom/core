@@ -96,7 +96,7 @@ where
             .ethereum_client
             .get_latest_block()
             .await
-            .map_err(|err| YieldError::new(format!("failed to fetch latest block: {err}")))?;
+            .map_err(|e| format!("failed to fetch latest block: {e}"))?;
 
         let lookback_block = latest_block.saturating_sub(lookback_blocks);
         let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
@@ -156,9 +156,10 @@ where
             .ethereum_client
             .eth_call(&self.contract_address.to_string(), &call_data)
             .await
-            .map_err(|e| YieldError::new(format!("convert_to_shares eth_call failed: {e}")))?;
-        let bytes = hex::decode(&result).map_err(|e| YieldError::new(format!("convert_to_shares hex decode failed: {e}")))?;
-        let shares = IYoGateway::quoteConvertToSharesCall::abi_decode_returns(&bytes).map_err(|e| YieldError::new(format!("convert_to_shares abi decode failed: {e}")))?;
+            .map_err(|e| format!("convert_to_shares eth_call failed: {e}"))?;
+        let bytes = hex::decode(&result).map_err(|e| format!("convert_to_shares hex decode failed: {e}"))?;
+        let shares =
+            IYoGateway::quoteConvertToSharesCall::abi_decode_returns(&bytes).map_err(|e| format!("convert_to_shares abi decode failed: {e}"))?;
         Ok(shares)
     }
 }

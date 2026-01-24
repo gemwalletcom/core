@@ -5,6 +5,7 @@ use primitives::{
     AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType, TransactionChange,
     TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
     TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
+    YieldAction, YieldData,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -243,14 +244,18 @@ pub enum PerpetualType {
     Reduce(PerpetualReduceData),
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
-pub enum GemYieldAction {
+pub type GemYieldAction = YieldAction;
+
+#[uniffi::remote(Enum)]
+pub enum YieldAction {
     Deposit,
     Withdraw,
 }
 
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemYieldData {
+pub type GemYieldData = YieldData;
+
+#[uniffi::remote(Record)]
+pub struct YieldData {
     pub provider_name: String,
     pub contract_address: String,
     pub call_data: String,
@@ -500,7 +505,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 nonce,
                 chain_id,
                 stake_data,
-                yield_data: yield_data.map(Into::into),
+                yield_data,
             },
             TransactionLoadMetadata::Near { sequence, block_hash } => GemTransactionLoadMetadata::Near { sequence, block_hash },
             TransactionLoadMetadata::Stellar {
@@ -598,7 +603,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 nonce,
                 chain_id,
                 stake_data,
-                yield_data: yield_data.map(Into::into),
+                yield_data,
             },
             GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {
@@ -702,11 +707,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
-            TransactionInputType::Yield(asset, action, data) => GemTransactionInputType::Yield {
-                asset,
-                action: action.into(),
-                data: data.into(),
-            },
+            TransactionInputType::Yield(asset, action, data) => GemTransactionInputType::Yield { asset, action, data },
         }
     }
 }
@@ -858,7 +859,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
-            GemTransactionInputType::Yield { asset, action, data } => TransactionInputType::Yield(asset, action.into(), data.into()),
+            GemTransactionInputType::Yield { asset, action, data } => TransactionInputType::Yield(asset, action, data),
         }
     }
 }
@@ -877,48 +878,6 @@ impl From<FreezeData> for GemFreezeData {
         GemFreezeData {
             freeze_type: value.freeze_type,
             resource: value.resource,
-        }
-    }
-}
-
-impl From<GemYieldAction> for primitives::YieldAction {
-    fn from(value: GemYieldAction) -> Self {
-        match value {
-            GemYieldAction::Deposit => primitives::YieldAction::Deposit,
-            GemYieldAction::Withdraw => primitives::YieldAction::Withdraw,
-        }
-    }
-}
-
-impl From<primitives::YieldAction> for GemYieldAction {
-    fn from(value: primitives::YieldAction) -> Self {
-        match value {
-            primitives::YieldAction::Deposit => GemYieldAction::Deposit,
-            primitives::YieldAction::Withdraw => GemYieldAction::Withdraw,
-        }
-    }
-}
-
-impl From<GemYieldData> for primitives::YieldData {
-    fn from(value: GemYieldData) -> Self {
-        primitives::YieldData {
-            provider_name: value.provider_name,
-            contract_address: value.contract_address,
-            call_data: value.call_data,
-            approval: value.approval,
-            gas_limit: value.gas_limit,
-        }
-    }
-}
-
-impl From<primitives::YieldData> for GemYieldData {
-    fn from(value: primitives::YieldData) -> Self {
-        GemYieldData {
-            provider_name: value.provider_name,
-            contract_address: value.contract_address,
-            call_data: value.call_data,
-            approval: value.approval,
-            gas_limit: value.gas_limit,
         }
     }
 }

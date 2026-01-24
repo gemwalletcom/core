@@ -9,10 +9,10 @@ mod vault;
 pub use api::{YoApiClient, YoPerformanceData};
 pub use client::{YoGatewayClient, YoProvider};
 pub use contract::{IYoGateway, IYoVaultToken};
-pub use error::YieldError;
+pub use error::{BoxError, YieldError};
 pub use model::PositionData;
 pub use provider::YoYieldProvider;
-pub use vault::{YO_USD, YO_USDT, YoVault, vaults};
+pub use vault::{YO_USDC, YO_USDT, YoVault, vaults};
 
 use alloy_primitives::{Address, address};
 

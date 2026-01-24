@@ -3624,6 +3624,7 @@ dependencies = [
  "serde",
  "serde_json",
  "signer",
+ "strum",
  "sui-sdk-types",
  "swapper",
  "tokio",
@@ -9214,12 +9215,12 @@ dependencies = [
  "gem_client",
  "gem_evm",
  "gem_jsonrpc",
- "num-traits",
  "primitives",
  "reqwest 0.13.1",
  "serde",
  "serde_json",
  "serde_serializers",
+ "strum",
  "tokio",
 ]
 

@@ -2,6 +2,8 @@ use std::{error::Error, fmt};
 
 use gem_evm::multicall3::Multicall3Error;
 
+pub type BoxError = Box<dyn Error + Send + Sync + 'static>;
+
 #[derive(Debug, Clone)]
 pub struct YieldError(String);
 
@@ -37,6 +39,12 @@ impl From<String> for YieldError {
 
 impl From<Multicall3Error> for YieldError {
     fn from(e: Multicall3Error) -> Self {
+        YieldError::new(e.to_string())
+    }
+}
+
+impl From<BoxError> for YieldError {
+    fn from(e: BoxError) -> Self {
         YieldError::new(e.to_string())
     }
 }
