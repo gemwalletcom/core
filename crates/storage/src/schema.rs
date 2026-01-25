@@ -118,15 +118,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    assets_usage_ranks (asset_id) {
-        #[max_length = 128]
-        asset_id -> Varchar,
-        usage_rank -> Int4,
-        updated_at -> Timestamp,
-    }
-}
-
-diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::LinkType;
 
@@ -150,6 +141,15 @@ diesel::table! {
         tag_id -> Varchar,
         order -> Nullable<Int4>,
         created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    assets_usage_ranks (asset_id) {
+        #[max_length = 128]
+        asset_id -> Varchar,
+        usage_rank -> Int4,
+        updated_at -> Timestamp,
     }
 }
 
