@@ -118,6 +118,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    assets_usage_ranks (asset_id) {
+        #[max_length = 128]
+        asset_id -> Varchar,
+        usage_rank -> Int4,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     use diesel::sql_types::*;
     use super::sql_types::LinkType;
 
@@ -937,6 +946,7 @@ diesel::joinable!(assets_addresses -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
 diesel::joinable!(assets_tags -> assets (asset_id));
 diesel::joinable!(assets_tags -> tags (tag_id));
+diesel::joinable!(assets_usage_ranks -> assets (asset_id));
 diesel::joinable!(charts -> prices (coin_id));
 diesel::joinable!(charts_daily -> prices (coin_id));
 diesel::joinable!(charts_hourly -> prices (coin_id));
@@ -1007,6 +1017,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     assets_addresses,
     assets_links,
     assets_tags,
+    assets_usage_ranks,
     chains,
     charts,
     charts_daily,

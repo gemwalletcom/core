@@ -2,9 +2,11 @@ mod asset_rank_updater;
 pub mod asset_updater;
 mod perpetual_updater;
 mod staking_apy_updater;
+mod usage_rank_updater;
 
 use asset_rank_updater::AssetRankUpdater;
 use asset_updater::AssetUpdater;
+use usage_rank_updater::UsageRankUpdater;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
@@ -91,6 +93,14 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
+    let update_usage_ranks = run_job("Update usage ranks", config.get_duration(ConfigKey::AssetsTimerUpdateUsageRank)?, {
+        let database = database.clone();
+        move || {
+            let updater = UsageRankUpdater::new(database.clone());
+            async move { updater.update_usage_ranks().await }
+        }
+    });
+
     Ok(vec![
         Box::pin(update_existing_assets),
         Box::pin(update_all_assets),
@@ -100,5 +110,6 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         Box::pin(update_suspicious_assets),
         Box::pin(update_staking_apy),
         Box::pin(update_perpetuals),
+        Box::pin(update_usage_ranks),
     ])
 }

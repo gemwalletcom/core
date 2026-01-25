@@ -135,6 +135,7 @@ pub enum ConfigKey {
     AssetsTimerUpdateSuspicious,
     AssetsTimerUpdateStakingApy,
     AssetsTimerUpdatePerpetuals,
+    AssetsTimerUpdateUsageRank,
 
     // Fiat
     FiatTimerUpdateAssets,
@@ -284,6 +285,7 @@ impl ConfigKey {
             Self::AssetsTimerUpdateSuspicious => "1h",
             Self::AssetsTimerUpdateStakingApy => "1d",
             Self::AssetsTimerUpdatePerpetuals => "1h",
+            Self::AssetsTimerUpdateUsageRank => "1h",
             Self::FiatTimerUpdateAssets => "1h",
             Self::FiatTimerUpdateProviderCountries => "1h",
             Self::FiatTimerUpdateBuyableAssets => "1h",

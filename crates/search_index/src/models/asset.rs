@@ -21,6 +21,7 @@ pub const ASSETS_RANKING_RULES: &[&str] = &[
     "words",
     "typo",
     "score.rank:desc",
+    "usageRank:desc",
     "market.marketCapFdv:desc",
     "proximity",
     "market.marketCapRank:asc",
@@ -33,11 +34,13 @@ pub const ASSETS_RANKING_RULES: &[&str] = &[
 pub const ASSETS_SORTS: &[&str] = &["score.rank"];
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct AssetDocument {
     pub id: String,
     pub asset: Asset,
     pub properties: AssetProperties,
     pub score: AssetScore,
+    pub usage_rank: i32,
     pub market: Option<AssetMarket>,
     pub tags: Option<Vec<String>>,
 }

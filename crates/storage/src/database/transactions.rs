@@ -20,6 +20,7 @@ pub(crate) trait TransactionsStore {
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error>;
     fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, diesel::result::Error>;
     fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, diesel::result::Error>;
+    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, diesel::result::Error>;
 }
 
 impl TransactionsStore for DatabaseClient {
@@ -141,5 +142,15 @@ impl TransactionsStore for DatabaseClient {
     fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
         diesel::delete(transactions.filter(id.eq_any(ids))).execute(&mut self.connection)
+    }
+
+    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, diesel::result::Error> {
+        use crate::schema::assets_addresses::dsl::*;
+
+        assets_addresses
+            .filter(updated_at.ge(since))
+            .group_by(asset_id)
+            .select((asset_id, count(asset_id)))
+            .load(&mut self.connection)
     }
 }

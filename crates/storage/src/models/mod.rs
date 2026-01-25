@@ -1,5 +1,6 @@
 pub mod asset;
 pub mod asset_address;
+pub mod asset_usage_rank;
 pub mod chain;
 pub mod chart;
 pub mod config;
@@ -28,6 +29,7 @@ pub mod wallet;
 
 pub use self::asset::{AssetLinkRow, AssetRow};
 pub use self::asset_address::AssetAddressRow;
+pub use self::asset_usage_rank::AssetUsageRankRow;
 pub use self::chain::ChainRow;
 pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};
 pub use self::config::ConfigRow;
