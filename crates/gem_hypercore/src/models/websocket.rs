@@ -8,6 +8,7 @@ use super::position::AssetPositions;
 pub enum WebSocketChannel {
     ClearinghouseState,
     OpenOrders,
+    Candle,
     SubscriptionResponse,
     #[serde(other)]
     Unknown,

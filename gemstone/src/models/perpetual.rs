@@ -6,8 +6,6 @@ use primitives::{
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
 
-pub type GemHyperliquidOpenOrder = OpenOrder;
-
 pub type GemPerpetualMarginType = PerpetualMarginType;
 pub type GemPerpetualOrderType = PerpetualOrderType;
 pub type GemPerpetualPositionsSummary = PerpetualPositionsSummary;
@@ -102,6 +100,7 @@ pub struct GemPerpetualMetadata {
 #[uniffi::remote(Record)]
 pub struct GemChartCandleStick {
     pub date: DateTime<Utc>,
+    pub interval: String,
     pub open: f64,
     pub high: f64,
     pub low: f64,
@@ -135,6 +134,7 @@ pub struct GemHyperliquidOpenOrder {
 pub enum GemHyperliquidSocketMessage {
     ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
     OpenOrders { orders: Vec<OpenOrder> },
+    Candle { candle: ChartCandleStick },
     SubscriptionResponse { subscription_type: String },
     Unknown,
 }
