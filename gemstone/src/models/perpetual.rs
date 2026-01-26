@@ -1,9 +1,12 @@
 use chrono::{DateTime, Utc};
+use gem_hypercore::models::order::OpenOrder;
 use primitives::{
     Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
     chart::{ChartCandleStick, ChartDateValue},
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
+
+pub type GemHyperliquidOpenOrder = OpenOrder;
 
 pub type GemPerpetualMarginType = PerpetualMarginType;
 pub type GemPerpetualOrderType = PerpetualOrderType;
@@ -110,4 +113,28 @@ pub struct GemChartCandleStick {
 pub struct GemChartDateValue {
     pub date: DateTime<Utc>,
     pub value: f64,
+}
+
+#[derive(Debug, uniffi::Record)]
+pub struct GemPositionsDiff {
+    pub delete_position_ids: Vec<String>,
+    pub positions: Vec<PerpetualPosition>,
+}
+
+#[uniffi::remote(Record)]
+pub struct GemHyperliquidOpenOrder {
+    pub coin: String,
+    pub oid: u64,
+    pub trigger_px: Option<f64>,
+    pub limit_px: Option<f64>,
+    pub is_position_tpsl: bool,
+    pub order_type: String,
+}
+
+#[derive(Debug, uniffi::Enum)]
+pub enum GemHyperliquidSocketMessage {
+    ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
+    OpenOrders { orders: Vec<OpenOrder> },
+    SubscriptionResponse { subscription_type: String },
+    Unknown,
 }
