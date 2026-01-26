@@ -61,7 +61,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
 
     fn yields(&self, asset_id: &AssetId) -> Vec<Yield> {
         self.vaults_for_asset(asset_id)
-            .map(|vault| Yield::new(vault.name, vault.asset_id(), self.provider(), None))
+            .map(|vault| Yield::new(vault.name, vault.asset_id(), self.provider(), None, vault.risk))
             .collect()
     }
 
@@ -74,7 +74,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
             let data = gateway.get_position(vault, Address::ZERO, lookback_blocks).await?;
             let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
             let apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
-            results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy));
+            results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy, vault.risk));
         }
 
         Ok(results)

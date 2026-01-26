@@ -8,21 +8,31 @@ pub enum YieldProvider {
     Yo,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "lowercase")]
+pub enum RiskLevel {
+    Low,
+    Medium,
+    High,
+}
+
 #[derive(Debug, Clone)]
 pub struct Yield {
     pub name: String,
     pub asset_id: AssetId,
     pub provider: YieldProvider,
     pub apy: Option<f64>,
+    pub risk: RiskLevel,
 }
 
 impl Yield {
-    pub fn new(name: impl Into<String>, asset_id: AssetId, provider: YieldProvider, apy: Option<f64>) -> Self {
+    pub fn new(name: impl Into<String>, asset_id: AssetId, provider: YieldProvider, apy: Option<f64>, risk: RiskLevel) -> Self {
         Self {
             name: name.into(),
             asset_id,
             provider,
             apy,
+            risk,
         }
     }
 }

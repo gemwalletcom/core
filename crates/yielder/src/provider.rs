@@ -36,6 +36,10 @@ impl Yielder {
         for provider in &self.providers {
             yields.extend(provider.yields_with_apy(asset_id).await?);
         }
+        yields.sort_by(|a, b| {
+            let apy_cmp = b.apy.partial_cmp(&a.apy).unwrap_or(std::cmp::Ordering::Equal);
+            apy_cmp.then_with(|| a.risk.cmp(&b.risk))
+        });
         Ok(yields)
     }
 

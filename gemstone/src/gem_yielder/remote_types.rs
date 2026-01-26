@@ -1,5 +1,5 @@
 use primitives::AssetId;
-use yielder::{Yield, YieldPosition, YieldProvider, YieldTransaction};
+use yielder::{RiskLevel, Yield, YieldPosition, YieldProvider, YieldTransaction};
 
 use crate::models::swap::GemApprovalData;
 pub use crate::models::transaction::GemYieldAction;
@@ -9,6 +9,15 @@ pub type GemYieldProvider = YieldProvider;
 #[uniffi::remote(Enum)]
 pub enum GemYieldProvider {
     Yo,
+}
+
+pub type GemRiskLevel = RiskLevel;
+
+#[uniffi::remote(Enum)]
+pub enum GemRiskLevel {
+    Low,
+    Medium,
+    High,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
@@ -27,6 +36,7 @@ pub struct GemYield {
     pub asset_id: AssetId,
     pub provider: GemYieldProvider,
     pub apy: Option<f64>,
+    pub risk: GemRiskLevel,
 }
 
 pub type GemYieldTransaction = YieldTransaction;
