@@ -6,6 +6,7 @@ use primitives::{
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
 
+pub type GemHyperliquidOpenOrder = OpenOrder;
 pub type GemPerpetualMarginType = PerpetualMarginType;
 pub type GemPerpetualOrderType = PerpetualOrderType;
 pub type GemPerpetualPositionsSummary = PerpetualPositionsSummary;
@@ -133,7 +134,7 @@ pub struct GemHyperliquidOpenOrder {
 #[derive(Debug, uniffi::Enum)]
 pub enum GemHyperliquidSocketMessage {
     ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
-    OpenOrders { orders: Vec<OpenOrder> },
+    OpenOrders { orders: Vec<GemHyperliquidOpenOrder> },
     Candle { candle: ChartCandleStick },
     SubscriptionResponse { subscription_type: String },
     Unknown,
