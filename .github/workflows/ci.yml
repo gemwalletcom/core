@@ -21,7 +21,7 @@ jobs:
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: "v1-rust"
+          shared-key: "ci-rust"
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
@@ -41,7 +41,7 @@ jobs:
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: "v1-rust"
+          shared-key: "ci-rust"
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
