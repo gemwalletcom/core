@@ -21,22 +21,14 @@ impl UsageRankUpdater {
         let counts_30d = self.database.transactions()?.get_asset_usage_counts(thirty_days_ago)?;
 
         let usage_ranks = calculate_usage_ranks(&counts_1h, &counts_24h, &counts_7d, &counts_30d);
-        let rows: Vec<AssetUsageRankRow> = usage_ranks
-            .into_iter()
-            .map(|(asset_id, usage_rank)| AssetUsageRankRow { asset_id, usage_rank })
-            .collect();
+        let rows: Vec<AssetUsageRankRow> = usage_ranks.into_iter().map(|(asset_id, usage_rank)| AssetUsageRankRow { asset_id, usage_rank }).collect();
 
         self.database.assets_usage_ranks()?.delete_usage_ranks_before(thirty_days_ago)?;
         Ok(self.database.assets_usage_ranks()?.upsert_usage_ranks(rows)?)
     }
 }
 
-fn calculate_usage_ranks(
-    counts_1h: &[(String, i64)],
-    counts_24h: &[(String, i64)],
-    counts_7d: &[(String, i64)],
-    counts_30d: &[(String, i64)],
-) -> Vec<(String, i32)> {
+fn calculate_usage_ranks(counts_1h: &[(String, i64)], counts_24h: &[(String, i64)], counts_7d: &[(String, i64)], counts_30d: &[(String, i64)]) -> Vec<(String, i32)> {
     let mut raw_scores: HashMap<String, i64> = HashMap::new();
 
     for (asset_id, count) in counts_1h {
@@ -91,11 +83,7 @@ mod tests {
 
     #[test]
     fn test_calculate_usage_ranks_multiple() {
-        let counts_1h = vec![
-            ("asset1".to_string(), 100),
-            ("asset2".to_string(), 10),
-            ("asset3".to_string(), 1),
-        ];
+        let counts_1h = vec![("asset1".to_string(), 100), ("asset2".to_string(), 10), ("asset3".to_string(), 1)];
         let result = calculate_usage_ranks(&counts_1h, &[], &[], &[]);
         assert_eq!(result.len(), 3);
 

@@ -6,7 +6,6 @@ mod usage_rank_updater;
 
 use asset_rank_updater::AssetRankUpdater;
 use asset_updater::AssetUpdater;
-use usage_rank_updater::UsageRankUpdater;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
@@ -19,6 +18,7 @@ use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
 use storage::ConfigCacher;
+use usage_rank_updater::UsageRankUpdater;
 
 pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);

@@ -1,17 +1,23 @@
 use std::collections::HashMap;
 
+use chrono::{NaiveDateTime, Utc};
+use primitives::ConfigKey;
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, SearchIndexClient, sanitize_index_primary_id};
-use storage::{AssetsUsageRanksRepository, Database, PricesRepository, TagRepository};
+use storage::models::PriceAssetDataRow;
+use storage::{AssetsUsageRanksRepository, ConfigCacher, Database, PricesRepository, TagRepository};
 
 pub struct AssetsIndexUpdater {
     database: Database,
+    config: ConfigCacher,
     search_index: SearchIndexClient,
 }
 
 impl AssetsIndexUpdater {
     pub fn new(database: Database, search_index: &SearchIndexClient) -> Self {
+        let config = ConfigCacher::new(database.clone());
         Self {
             database,
+            config,
             search_index: search_index.clone(),
         }
     }
@@ -27,8 +33,27 @@ impl AssetsIndexUpdater {
         });
         let usage_ranks_map: HashMap<String, i32> = usage_ranks.into_iter().map(|r| (r.asset_id, r.usage_rank)).collect();
 
-        let documents = prices
-            .into_iter()
+        let now = Utc::now().naive_utc();
+        let last_updated_at = self.config.get_datetime(ConfigKey::SearchAssetsLastUpdatedAt)?;
+
+        let updated_prices: Vec<_> = prices.into_iter().filter(|x| Self::is_updated(x, last_updated_at)).collect();
+        let documents = Self::build_documents(&updated_prices, &assets_tags_map, &usage_ranks_map);
+        let count = documents.len();
+        if count > 0 {
+            self.search_index.add_documents(ASSETS_INDEX_NAME, documents).await?;
+        }
+
+        self.config.set_datetime(ConfigKey::SearchAssetsLastUpdatedAt, now)?;
+        Ok(count)
+    }
+
+    fn is_updated(data: &PriceAssetDataRow, since: NaiveDateTime) -> bool {
+        data.asset.updated_at > since || data.price.as_ref().is_some_and(|p| p.last_updated_at > since)
+    }
+
+    fn build_documents(prices: &[PriceAssetDataRow], assets_tags_map: &HashMap<String, Vec<String>>, usage_ranks_map: &HashMap<String, i32>) -> Vec<AssetDocument> {
+        prices
+            .iter()
             .map(|x| {
                 let asset_id = x.asset.id.as_str();
                 let usage_rank = usage_ranks_map.get(asset_id).copied().unwrap_or(0);
@@ -42,8 +67,6 @@ impl AssetsIndexUpdater {
                     tags: assets_tags_map.get(asset_id).cloned(),
                 }
             })
-            .collect::<Vec<_>>();
-
-        self.search_index.sync_documents(ASSETS_INDEX_NAME, documents, |doc| doc.id.clone()).await
+            .collect()
     }
 }

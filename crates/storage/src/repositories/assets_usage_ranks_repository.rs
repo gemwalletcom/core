@@ -1,7 +1,7 @@
-use crate::database::assets_usage_ranks::AssetsUsageRanksStore;
-use crate::models::AssetUsageRankRow;
 use crate::DatabaseClient;
 use crate::DatabaseError;
+use crate::database::assets_usage_ranks::AssetsUsageRanksStore;
+use crate::models::AssetUsageRankRow;
 use chrono::NaiveDateTime;
 
 pub trait AssetsUsageRanksRepository {

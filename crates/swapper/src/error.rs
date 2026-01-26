@@ -75,7 +75,9 @@ impl From<ClientError> for SwapperError {
                 if let Ok(thorchain_error) = serde_json::from_slice::<ThorchainError>(body)
                     && thorchain_error.is_input_amount_error()
                 {
-                    return Self::InputAmountError { min_amount: thorchain_error.parse_min_amount() };
+                    return Self::InputAmountError {
+                        min_amount: thorchain_error.parse_min_amount(),
+                    };
                 }
                 Self::ComputeQuoteError(format!("HTTP error: status {}", status))
             }

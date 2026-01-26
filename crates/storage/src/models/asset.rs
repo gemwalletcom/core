@@ -1,12 +1,13 @@
 use std::str::FromStr;
 
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, Chain};
 use serde::{Deserialize, Serialize};
 
 use crate::sql_types::{AssetType, LinkType};
 
-#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct AssetRow {
@@ -27,30 +28,34 @@ pub struct AssetRow {
     pub staking_apr: Option<f64>,
     pub is_earnable: bool,
     pub earn_apr: Option<f64>,
+
+    pub updated_at: NaiveDateTime,
 }
 
-impl AssetRow {
-    pub fn as_primitive(&self) -> Asset {
-        Asset::new(
-            AssetId {
-                chain: Chain::from_str(&self.chain).unwrap(),
-                token_id: self.token_id.clone(),
-            },
-            self.name.clone(),
-            self.symbol.clone(),
-            self.decimals,
-            self.asset_type.0.clone(),
-        )
-    }
+#[derive(Debug, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::assets)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct NewAssetRow {
+    pub id: String,
+    pub chain: String,
+    pub token_id: Option<String>,
+    pub name: String,
+    pub symbol: String,
+    pub asset_type: AssetType,
+    pub decimals: i32,
+    pub rank: i32,
 
-    pub fn as_basic_primitive(&self) -> AssetBasic {
-        AssetBasic::new(self.as_primitive(), self.as_property_primitive(), self.as_score_primitive())
-    }
+    pub is_enabled: bool,
+    pub is_buyable: bool,
+    pub is_sellable: bool,
+    pub is_swappable: bool,
+    pub is_stakeable: bool,
+    pub staking_apr: Option<f64>,
+    pub is_earnable: bool,
+    pub earn_apr: Option<f64>,
+}
 
-    pub fn as_score_primitive(&self) -> AssetScore {
-        AssetScore::new(self.rank)
-    }
-
+impl NewAssetRow {
     pub fn from_primitive_default(asset: Asset) -> Self {
         Self::from_primitive(asset.clone(), AssetScore::default(), AssetProperties::default(asset.id))
     }
@@ -74,6 +79,29 @@ impl AssetRow {
             is_earnable: properties.is_earnable,
             earn_apr: properties.earn_apr,
         }
+    }
+}
+
+impl AssetRow {
+    pub fn as_primitive(&self) -> Asset {
+        Asset::new(
+            AssetId {
+                chain: Chain::from_str(&self.chain).unwrap(),
+                token_id: self.token_id.clone(),
+            },
+            self.name.clone(),
+            self.symbol.clone(),
+            self.decimals,
+            self.asset_type.0.clone(),
+        )
+    }
+
+    pub fn as_basic_primitive(&self) -> AssetBasic {
+        AssetBasic::new(self.as_primitive(), self.as_property_primitive(), self.as_score_primitive())
+    }
+
+    pub fn as_score_primitive(&self) -> AssetScore {
+        AssetScore::new(self.rank)
     }
 
     pub fn as_property_primitive(&self) -> AssetProperties {

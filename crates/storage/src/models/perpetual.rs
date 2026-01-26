@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::{
     AssetId,
@@ -7,10 +8,28 @@ use primitives::{
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::perpetuals)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PerpetualRow {
+    pub id: String,
+    pub name: String,
+    pub provider: String,
+    pub asset_id: String,
+    pub identifier: String,
+    pub price: f64,
+    pub price_percent_change_24h: f64,
+    pub open_interest: f64,
+    pub volume_24h: f64,
+    pub funding: f64,
+    pub leverage: Vec<Option<i32>>,
+    pub updated_at: NaiveDateTime,
+}
+
+#[derive(Debug, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::perpetuals)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct NewPerpetualRow {
     pub id: String,
     pub name: String,
     pub provider: String,
@@ -38,7 +57,7 @@ impl NewPerpetualAssetRow {
     }
 }
 
-impl PerpetualRow {
+impl NewPerpetualRow {
     pub fn from_primitive(perpetual: PrimitivePerpetual) -> Self {
         Self {
             id: perpetual.id,
@@ -54,7 +73,9 @@ impl PerpetualRow {
             leverage: vec![Some(i32::from(perpetual.max_leverage))],
         }
     }
+}
 
+impl PerpetualRow {
     pub fn as_primitive(&self) -> PrimitivePerpetual {
         let provider = PerpetualProvider::from_str(&self.provider).ok().unwrap();
 
