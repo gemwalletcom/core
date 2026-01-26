@@ -11,13 +11,6 @@ pub struct RedelegateData {
     pub to_validator: DelegationValidator,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Sendable, Hashable")]
-pub struct StakeData {
-    pub data: Option<String>,
-    pub to: Option<String>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]

@@ -1,9 +1,10 @@
 use std::{fmt, marker::PhantomData};
 
-use alloy_primitives::{Address, hex};
+use alloy_primitives::Address;
 use alloy_sol_types::{SolCall, sol};
 use gem_client::Client;
 use primitives::chain_config::ChainStack;
+use primitives::hex;
 use serde_json::json;
 
 use crate::rpc::EthereumClient;
@@ -83,7 +84,7 @@ impl<'a, C: Client + Clone> Multicall3Builder<'a, C> {
             return Ok(Multicall3Results { results: vec![] });
         }
 
-        let multicall_address = deployment_by_chain_stack(self.client.chain.chain_stack());
+        let address = deployment_by_chain_stack(self.client.chain.chain_stack());
         let multicall_data = IMulticall3::aggregate3Call { calls: self.calls }.abi_encode();
 
         let block_param = self.block.map(|n| serde_json::Value::String(format!("0x{n:x}"))).unwrap_or_else(|| json!("latest"));
@@ -94,14 +95,14 @@ impl<'a, C: Client + Clone> Multicall3Builder<'a, C> {
             .call(
                 "eth_call",
                 json!([{
-                    "to": multicall_address,
-                    "data": hex::encode_prefixed(&multicall_data)
+                    "to": address,
+                    "data": hex::encode_with_0x(&multicall_data)
                 }, block_param]),
             )
             .await
             .map_err(|e| Multicall3Error(e.to_string()))?;
 
-        let result_data = hex::decode(&result).map_err(|e| Multicall3Error(e.to_string()))?;
+        let result_data = hex::decode_hex(&result).map_err(|e| Multicall3Error(e.to_string()))?;
 
         let results = IMulticall3::aggregate3Call::abi_decode_returns(&result_data).map_err(|e| Multicall3Error(e.to_string()))?;
 

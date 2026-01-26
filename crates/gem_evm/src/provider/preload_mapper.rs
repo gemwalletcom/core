@@ -46,8 +46,7 @@ pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<Tr
     Ok(TransactionLoadMetadata::Evm {
         nonce,
         chain_id: chain_id.parse::<u64>()?,
-        stake_data: None,
-        yield_data: None,
+        earn_data: None,
     })
 }
 
@@ -143,16 +142,18 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             }
             _ => Err("Unsupported chain for staking".into()),
         },
-        TransactionInputType::Yield(_, action, yield_data) => {
-            if let Some(approval) = &yield_data.approval {
+        TransactionInputType::Yield(_, action, earn_data) => {
+            if let Some(approval) = &earn_data.approval {
                 Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
             } else {
-                let call_data = hex::decode(&yield_data.call_data)?;
+                let call_data = earn_data.call_data.as_ref().ok_or("Missing call_data")?;
+                let contract_address = earn_data.contract_address.as_ref().ok_or("Missing contract_address")?;
+                let decoded_data = hex::decode(call_data)?;
                 let tx_value = match action {
                     YieldAction::Deposit => BigInt::from(0),
                     YieldAction::Withdraw => BigInt::from(0),
                 };
-                Ok(TransactionParams::new(yield_data.contract_address.clone(), call_data, tx_value))
+                Ok(TransactionParams::new(contract_address.clone(), decoded_data, tx_value))
             }
         }
         _ => Err("Unsupported transfer type".into()),
@@ -193,9 +194,9 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
                 Ok(BigInt::from(0))
             }
         }
-        TransactionInputType::Yield(_, _, yield_data) => {
-            if yield_data.approval.is_some() && yield_data.gas_limit.is_some() {
-                Ok(BigInt::from_str_radix(yield_data.gas_limit.as_ref().unwrap(), 10)?)
+        TransactionInputType::Yield(_, _, earn_data) => {
+            if earn_data.approval.is_some() && earn_data.gas_limit.is_some() {
+                Ok(BigInt::from_str_radix(earn_data.gas_limit.as_ref().unwrap(), 10)?)
             } else {
                 Ok(BigInt::from(0))
             }
@@ -322,16 +323,10 @@ mod tests {
         let result = map_transaction_preload(nonce_hex, chain_id)?;
 
         match result {
-            TransactionLoadMetadata::Evm {
-                nonce,
-                chain_id,
-                stake_data,
-                yield_data,
-            } => {
+            TransactionLoadMetadata::Evm { nonce, chain_id, earn_data } => {
                 assert_eq!(nonce, 10);
                 assert_eq!(chain_id, 1);
-                assert!(stake_data.is_none());
-                assert!(yield_data.is_none());
+                assert!(earn_data.is_none());
             }
             _ => panic!("Expected Evm variant"),
         }

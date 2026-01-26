@@ -6,7 +6,7 @@ use std::{collections::HashMap, sync::Arc};
 use crate::{
     GemstoneError,
     alien::{AlienProvider, AlienProviderWrapper},
-    models::{GemTransactionInputType, GemTransactionLoadInput, GemYieldData},
+    models::{GemEarnData, GemTransactionInputType, GemTransactionLoadInput},
 };
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
@@ -91,17 +91,17 @@ pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yiel
 pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransactionLoadInput) -> Result<GemTransactionLoadInput, GemstoneError> {
     match &input.input_type {
         GemTransactionInputType::Yield { asset, action, data } => {
-            if data.contract_address.is_empty() || data.call_data.is_empty() {
+            if data.contract_address.is_none() || data.call_data.is_none() {
                 let transaction = build_yield_transaction(yielder, action, YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?;
 
                 Ok(GemTransactionLoadInput {
                     input_type: GemTransactionInputType::Yield {
                         asset: asset.clone(),
                         action: action.clone(),
-                        data: GemYieldData {
-                            provider_name: data.provider_name.clone(),
-                            contract_address: transaction.to,
-                            call_data: transaction.data,
+                        data: GemEarnData {
+                            provider: data.provider.clone(),
+                            contract_address: Some(transaction.to),
+                            call_data: Some(transaction.data),
                             approval: transaction.approval,
                             gas_limit: Some(GAS_LIMIT.to_string()),
                         },

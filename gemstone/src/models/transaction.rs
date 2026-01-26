@@ -1,11 +1,11 @@
 use crate::models::*;
 use num_bigint::BigInt;
-use primitives::stake_type::{FreezeData, StakeData};
+use primitives::stake_type::FreezeData;
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType, TransactionChange,
-    TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
+    AccountDataType, Asset, EarnData, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
+    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
     TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
-    YieldAction, YieldData,
+    YieldAction,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -127,14 +127,6 @@ pub struct GemTransactionStateRequest {
 
 pub type GemHyperliquidOrder = HyperliquidOrder;
 
-pub type GemStakeData = StakeData;
-
-#[uniffi::remote(Record)]
-pub struct GemStakeData {
-    pub data: Option<String>,
-    pub to: Option<String>,
-}
-
 #[uniffi::remote(Record)]
 pub struct GemHyperliquidOrder {
     pub approve_agent_required: bool,
@@ -252,13 +244,13 @@ pub enum YieldAction {
     Withdraw,
 }
 
-pub type GemYieldData = YieldData;
+pub type GemEarnData = EarnData;
 
 #[uniffi::remote(Record)]
-pub struct YieldData {
-    pub provider_name: String,
-    pub contract_address: String,
-    pub call_data: String,
+pub struct EarnData {
+    pub provider: Option<String>,
+    pub contract_address: Option<String>,
+    pub call_data: Option<String>,
     pub approval: Option<GemApprovalData>,
     pub gas_limit: Option<String>,
 }
@@ -305,7 +297,7 @@ pub enum GemTransactionInputType {
     Yield {
         asset: GemAsset,
         action: GemYieldAction,
-        data: GemYieldData,
+        data: GemEarnData,
     },
 }
 
@@ -410,8 +402,7 @@ pub enum GemTransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
-        stake_data: Option<GemStakeData>,
-        yield_data: Option<GemYieldData>,
+        earn_data: Option<GemEarnData>,
     },
     Near {
         sequence: u64,
@@ -496,17 +487,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin { utxos },
             TransactionLoadMetadata::Zcash { utxos, branch_id } => GemTransactionLoadMetadata::Zcash { utxos, branch_id },
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano { utxos },
-            TransactionLoadMetadata::Evm {
-                nonce,
-                chain_id,
-                stake_data,
-                yield_data,
-            } => GemTransactionLoadMetadata::Evm {
-                nonce,
-                chain_id,
-                stake_data,
-                yield_data,
-            },
+            TransactionLoadMetadata::Evm { nonce, chain_id, earn_data } => GemTransactionLoadMetadata::Evm { nonce, chain_id, earn_data },
             TransactionLoadMetadata::Near { sequence, block_hash } => GemTransactionLoadMetadata::Near { sequence, block_hash },
             TransactionLoadMetadata::Stellar {
                 sequence,
@@ -594,17 +575,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin { utxos },
             GemTransactionLoadMetadata::Zcash { utxos, branch_id } => TransactionLoadMetadata::Zcash { utxos, branch_id },
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano { utxos },
-            GemTransactionLoadMetadata::Evm {
-                nonce,
-                chain_id,
-                stake_data,
-                yield_data,
-            } => TransactionLoadMetadata::Evm {
-                nonce,
-                chain_id,
-                stake_data,
-                yield_data,
-            },
+            GemTransactionLoadMetadata::Evm { nonce, chain_id, earn_data } => TransactionLoadMetadata::Evm { nonce, chain_id, earn_data },
             GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {
                 sequence,

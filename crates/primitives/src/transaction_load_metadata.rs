@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{UTXO, solana_token_program::SolanaTokenProgramId, stake_type::StakeData, yield_data::YieldData};
+use crate::{UTXO, solana_token_program::SolanaTokenProgramId, yield_data::EarnData};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HyperliquidOrder {
@@ -46,8 +46,7 @@ pub enum TransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
-        stake_data: Option<StakeData>,
-        yield_data: Option<YieldData>,
+        earn_data: Option<EarnData>,
     },
     Near {
         sequence: u64,

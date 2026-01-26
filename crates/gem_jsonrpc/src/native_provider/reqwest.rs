@@ -54,7 +54,7 @@ impl RpcProvider for NativeProvider {
             HttpMethod::Delete => self.client.delete(target.url),
             HttpMethod::Head => self.client.head(target.url),
             HttpMethod::Patch => self.client.patch(target.url),
-            HttpMethod::Options => return Err(ClientError::Network("options method not supported".to_string())),
+            HttpMethod::Options => self.client.request(reqwest::Method::OPTIONS, target.url),
         };
 
         if let Some(headers) = target.headers {

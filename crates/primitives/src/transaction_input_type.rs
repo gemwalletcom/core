@@ -2,7 +2,7 @@ use crate::stake_type::StakeType;
 use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
 use crate::transaction_load_metadata::TransactionLoadMetadata;
-use crate::yield_data::{YieldAction, YieldData};
+use crate::yield_data::{EarnData, YieldAction};
 use crate::{
     Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransactionType, TransferDataExtra, WalletConnectionSessionAppMetadata, nft::NFTAsset, perpetual::AccountDataType,
 };
@@ -22,7 +22,7 @@ pub enum TransactionInputType {
     TransferNft(Asset, NFTAsset),
     Account(Asset, AccountDataType),
     Perpetual(Asset, PerpetualType),
-    Yield(Asset, YieldAction, YieldData),
+    Yield(Asset, YieldAction, EarnData),
 }
 
 impl TransactionInputType {

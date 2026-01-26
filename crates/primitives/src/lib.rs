@@ -220,7 +220,7 @@ pub use self::transaction_preload_input::TransactionPreloadInput;
 pub mod transaction_fee;
 pub use self::transaction_fee::{FeeOption, TransactionFee};
 pub mod stake_type;
-pub use self::stake_type::{RedelegateData, StakeData, StakeType};
+pub use self::stake_type::{RedelegateData, StakeType};
 pub mod transaction_load_metadata;
 pub use self::transaction_load_metadata::{HyperliquidOrder, TransactionLoadMetadata};
 pub mod transaction_input_type;
@@ -228,7 +228,7 @@ pub use self::transaction_input_type::{TransactionInputType, TransactionLoadData
 pub mod transfer_data_extra;
 pub use self::transfer_data_extra::TransferDataExtra;
 pub mod yield_data;
-pub use self::yield_data::{YieldAction, YieldData};
+pub use self::yield_data::{EarnData, YieldAction};
 pub mod transaction_data_output;
 pub use self::transaction_data_output::{TransferDataOutputAction, TransferDataOutputType};
 pub mod broadcast_options;
