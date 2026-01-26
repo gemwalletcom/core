@@ -18,7 +18,7 @@ pub trait YoProvider: Send + Sync {
     fn contract_address(&self) -> Address;
     fn build_deposit_transaction(&self, from: Address, yo_vault: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> TransactionObject;
     fn build_redeem_transaction(&self, from: Address, yo_vault: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> TransactionObject;
-    async fn fetch_position_data(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError>;
+    async fn get_position(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError>;
     async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YieldError>;
     async fn convert_to_shares(&self, yo_vault: Address, assets: U256) -> Result<U256, YieldError>;
 }
@@ -91,7 +91,7 @@ where
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
 
-    async fn fetch_position_data(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError> {
+    async fn get_position(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError> {
         let latest_block = self
             .ethereum_client
             .get_latest_block()

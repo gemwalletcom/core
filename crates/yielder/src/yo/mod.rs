@@ -11,7 +11,7 @@ pub use client::{YoGatewayClient, YoProvider};
 pub use contract::{IYoGateway, IYoVaultToken};
 pub use error::{BoxError, YieldError};
 pub use model::PositionData;
-pub use provider::YoYieldProvider;
+pub use provider::{GAS_LIMIT, YoYieldProvider};
 pub use vault::{YO_USDC, YO_USDT, YoVault, vaults};
 
 use alloy_primitives::{Address, address};

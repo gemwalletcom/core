@@ -12,6 +12,8 @@ use crate::provider::YieldProviderClient;
 use super::api::YoApiClient;
 use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
 
+pub const GAS_LIMIT: &str = "300000";
+
 const SECONDS_PER_YEAR: f64 = 31_536_000.0;
 
 fn lookback_blocks_for_chain(chain: Chain) -> u64 {
@@ -53,12 +55,6 @@ impl<E: std::error::Error + Send + Sync + 'static> YoYieldProvider<E> {
             .get(&chain)
             .ok_or_else(|| format!("no gateway configured for chain {:?}", chain).into())
     }
-
-    fn vault_and_gateway(&self, asset_id: &AssetId) -> Result<(YoVault, &Arc<dyn YoProvider>), YieldError> {
-        let vault = self.find_vault(asset_id)?;
-        let gateway = self.gateway_for_chain(vault.chain)?;
-        Ok((vault, gateway))
-    }
 }
 
 #[async_trait]
@@ -79,7 +75,7 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
         for vault in self.vaults_for_asset(asset_id) {
             let gateway = self.gateway_for_chain(vault.chain)?;
             let lookback_blocks = lookback_blocks_for_chain(vault.chain);
-            let data = gateway.fetch_position_data(vault, Address::ZERO, lookback_blocks).await?;
+            let data = gateway.get_position(vault, Address::ZERO, lookback_blocks).await?;
             let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
             let apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
             results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy));
@@ -89,8 +85,10 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
     }
 
     async fn deposit(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
-        let (vault, gateway) = self.vault_and_gateway(asset_id)?;
-        let (wallet, amount) = parse_wallet_and_value(wallet_address, value)?;
+        let vault = self.find_vault(asset_id)?;
+        let gateway = self.gateway_for_chain(vault.chain)?;
+        let wallet = Address::from_str(wallet_address).map_err(|e| format!("invalid address {wallet_address}: {e}"))?;
+        let amount = U256::from_str_radix(value, 10).map_err(|e| format!("invalid value {value}: {e}"))?;
 
         let approval = gateway.check_token_allowance(vault.asset_token, wallet, amount).await?;
         let tx = gateway.build_deposit_transaction(wallet, vault.yo_token, amount, U256::ZERO, wallet, YO_PARTNER_ID_GEM);
@@ -98,8 +96,10 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
     }
 
     async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
-        let (vault, gateway) = self.vault_and_gateway(asset_id)?;
-        let (wallet, assets) = parse_wallet_and_value(wallet_address, value)?;
+        let vault = self.find_vault(asset_id)?;
+        let gateway = self.gateway_for_chain(vault.chain)?;
+        let wallet = Address::from_str(wallet_address).map_err(|e| format!("invalid address {wallet_address}: {e}"))?;
+        let assets = U256::from_str_radix(value, 10).map_err(|e| format!("invalid value {value}: {e}"))?;
 
         let shares = gateway.convert_to_shares(vault.yo_token, assets).await?;
         let approval = gateway.check_token_allowance(vault.yo_token, wallet, shares).await?;
@@ -108,39 +108,35 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
     }
 
     async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
-        let (vault, gateway) = self.vault_and_gateway(&request.asset_id)?;
-        let owner = parse_address(&request.wallet_address)?;
-        let data = gateway.fetch_position_data(vault, owner, lookback_blocks_for_chain(vault.chain)).await?;
+        let vault = self.find_vault(&request.asset_id)?;
+        let gateway = self.gateway_for_chain(vault.chain)?;
+        let owner = Address::from_str(&request.wallet_address).map_err(|e| format!("invalid address {}: {e}", request.wallet_address))?;
+        let data = gateway.get_position(vault, owner, lookback_blocks_for_chain(vault.chain)).await?;
 
         let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
         let asset_value = data.share_balance.saturating_mul(data.latest_price) / one_share;
         let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
+        let apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
 
-        let mut position = YieldPosition::new(vault.name, request.asset_id.clone(), self.provider(), vault.yo_token, vault.asset_token);
-        position.vault_balance_value = Some(data.share_balance.to_string());
-        position.asset_balance_value = Some(asset_value.to_string());
-        position.apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
+        let rewards = self
+            .api_client
+            .fetch_rewards(vault.chain, &vault.yo_token.to_string(), &request.wallet_address)
+            .await
+            .ok()
+            .map(|p| p.total_rewards_raw().to_string());
 
-        if let Ok(performance) = self.api_client.fetch_rewards(vault.chain, &vault.yo_token.to_string(), &request.wallet_address).await {
-            position.rewards = Some(performance.total_rewards_raw().to_string());
-        }
-
-        Ok(position)
+        Ok(YieldPosition {
+            name: vault.name.to_string(),
+            asset_id: request.asset_id.clone(),
+            provider: self.provider(),
+            vault_token_address: vault.yo_token.to_string(),
+            asset_token_address: vault.asset_token.to_string(),
+            vault_balance_value: Some(data.share_balance.to_string()),
+            asset_balance_value: Some(asset_value.to_string()),
+            apy,
+            rewards,
+        })
     }
-}
-
-fn parse_address(value: &str) -> Result<Address, YieldError> {
-    Address::from_str(value).map_err(|e| format!("invalid address {value}: {e}").into())
-}
-
-fn parse_value(value: &str) -> Result<U256, YieldError> {
-    U256::from_str_radix(value, 10).map_err(|e| format!("invalid value {value}: {e}").into())
-}
-
-fn parse_wallet_and_value(wallet_address: &str, value: &str) -> Result<(Address, U256), YieldError> {
-    let wallet = parse_address(wallet_address)?;
-    let amount = parse_value(value)?;
-    Ok((wallet, amount))
 }
 
 fn convert_transaction(vault: YoVault, tx: TransactionObject, approval: Option<ApprovalData>) -> YieldTransaction {

@@ -261,8 +261,8 @@ impl Transaction {
             | TransactionType::PerpetualOpenPosition
             | TransactionType::PerpetualClosePosition
             | TransactionType::PerpetualModifyPosition
-            | TransactionType::YieldDeposit
-            | TransactionType::YieldWithdraw => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
+            | TransactionType::EarnDeposit
+            | TransactionType::EarnWithdraw => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
@@ -298,8 +298,8 @@ impl Transaction {
             | TransactionType::PerpetualOpenPosition
             | TransactionType::PerpetualClosePosition
             | TransactionType::PerpetualModifyPosition
-            | TransactionType::YieldDeposit
-            | TransactionType::YieldWithdraw => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
+            | TransactionType::EarnDeposit
+            | TransactionType::EarnWithdraw => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
             TransactionType::Swap => self
                 .metadata
                 .clone()

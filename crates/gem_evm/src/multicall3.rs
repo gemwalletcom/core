@@ -37,7 +37,6 @@ pub struct Multicall3Results {
 }
 
 impl Multicall3Results {
-    /// Decode the result for a specific call handle
     pub fn decode<T: SolCall>(&self, handle: &CallHandle<T::Return>) -> Result<T::Return, Multicall3Error> {
         let result = self.results.get(handle.index).ok_or_else(|| Multicall3Error(format!("invalid index: {}", handle.index)))?;
 
@@ -79,7 +78,6 @@ impl<'a, C: Client + Clone> Multicall3Builder<'a, C> {
         self
     }
 
-    /// Execute all calls in a single RPC request
     pub async fn execute(self) -> Result<Multicall3Results, Multicall3Error> {
         if self.calls.is_empty() {
             return Ok(Multicall3Results { results: vec![] });
@@ -129,7 +127,6 @@ pub fn deployment_by_chain_stack(stack: ChainStack) -> &'static str {
     }
 }
 
-// Helpers for direct Call3 creation (used by swapper crate)
 pub fn create_call3(target: &str, call: impl SolCall) -> IMulticall3::Call3 {
     IMulticall3::Call3 {
         target: target.parse().unwrap(),

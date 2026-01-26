@@ -122,7 +122,7 @@ impl Pusher {
                 title: localizer.notification_unfreeze_title(self.get_value(amount, asset.symbol.clone()).as_str()),
                 message: None,
             }),
-            TransactionType::YieldDeposit | TransactionType::YieldWithdraw => Err("Yield transactions not implemented".into()),
+            TransactionType::EarnDeposit | TransactionType::EarnWithdraw => Err("Earn transactions not implemented".into()),
         }
     }
 

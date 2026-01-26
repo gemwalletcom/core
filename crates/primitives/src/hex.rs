@@ -31,6 +31,10 @@ pub fn decode_hex(value: &str) -> Result<Vec<u8>, HexError> {
     Ok(hex::decode(&*normalized)?)
 }
 
+pub fn encode_with_0x(data: &[u8]) -> String {
+    format!("0x{}", hex::encode(data))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -45,5 +49,11 @@ mod tests {
     fn decode_hex_pads_odd_length() {
         let bytes = decode_hex("0xa").expect("decode");
         assert_eq!(bytes, vec![0x0a]);
+    }
+
+    #[test]
+    fn encode_with_0x_adds_prefix() {
+        assert_eq!(encode_with_0x(&[0x0a, 0x0b]), "0x0a0b");
+        assert_eq!(encode_with_0x(&[]), "0x");
     }
 }

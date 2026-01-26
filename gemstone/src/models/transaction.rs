@@ -106,8 +106,8 @@ pub enum TransactionType {
     PerpetualOpenPosition,
     PerpetualClosePosition,
     PerpetualModifyPosition,
-    YieldDeposit,
-    YieldWithdraw,
+    EarnDeposit,
+    EarnWithdraw,
 }
 
 pub type GemAccountDataType = AccountDataType;

@@ -12,7 +12,7 @@ use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_jsonrpc::rpc::RpcClient;
 use primitives::{AssetId, Chain, EVMChain};
-use yielder::{YO_GATEWAY, YieldDetailsRequest, YieldProvider, YieldProviderClient, YieldTransaction, Yielder, YoGatewayClient, YoProvider, YoYieldProvider};
+use yielder::{YO_GATEWAY, YieldDetailsRequest, YieldProvider, YieldProviderClient, YieldTransaction, Yielder, YoGatewayClient, YoProvider, YoYieldProvider, GAS_LIMIT};
 
 #[derive(uniffi::Object)]
 pub struct GemYielder {
@@ -29,10 +29,6 @@ impl GemYielder {
 
     pub async fn yields_for_asset(&self, asset_id: &AssetId) -> Result<Vec<GemYield>, GemstoneError> {
         self.yielder.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
-    }
-
-    pub fn is_yield_available(&self, asset_id: &AssetId) -> bool {
-        self.yielder.is_yield_available(asset_id)
     }
 
     pub async fn deposit(&self, provider: String, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
@@ -68,7 +64,7 @@ impl GemYielder {
             transaction,
             nonce,
             chain_id,
-            gas_limit: "300000".to_string(),
+            gas_limit: GAS_LIMIT.to_string(),
         })
     }
 }
@@ -89,9 +85,7 @@ pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yiel
     ]);
 
     let yo_provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways, wrapper));
-    let mut yielder = Yielder::new();
-    yielder.add_provider_arc(yo_provider);
-    Ok(yielder)
+    Ok(Yielder::new(vec![yo_provider]))
 }
 
 pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransactionLoadInput) -> Result<GemTransactionLoadInput, GemstoneError> {
@@ -109,7 +103,7 @@ pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransaction
                             contract_address: transaction.to,
                             call_data: transaction.data,
                             approval: transaction.approval,
-                            gas_limit: Some("350000".to_string()),
+                            gas_limit: Some(GAS_LIMIT.to_string()),
                         },
                     },
                     sender_address: input.sender_address,
