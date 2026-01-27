@@ -26,11 +26,18 @@ pub struct AssetBasic {
     pub asset: Asset,
     pub properties: AssetProperties,
     pub score: AssetScore,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price: Option<Price>,
 }
 
 impl AssetBasic {
     pub fn new(asset: Asset, properties: AssetProperties, score: AssetScore) -> Self {
-        Self { asset, properties, score }
+        Self {
+            asset,
+            properties,
+            score,
+            price: None,
+        }
     }
 }
 
