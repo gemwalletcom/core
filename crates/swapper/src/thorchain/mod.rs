@@ -65,12 +65,12 @@ where
     }
 
     fn map_quote_error(&self, error: SwapperError, decimals: i32) -> SwapperError {
-        if let SwapperError::InputAmountError { min_amount: Some(min) } = &error {
-            return SwapperError::InputAmountError {
-                min_amount: Some(self.value_to(min.clone(), decimals).to_string()),
-            };
+        match error {
+            SwapperError::InputAmountError { min_amount: Some(min) } => SwapperError::InputAmountError {
+                min_amount: Some(self.value_to(min, decimals).to_string()),
+            },
+            other => other,
         }
-        error
     }
 }
 
