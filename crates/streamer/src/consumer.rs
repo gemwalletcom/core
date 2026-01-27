@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{QueueName, StreamReader};
+use crate::{QueueName, ShutdownReceiver, StreamReader};
 use async_trait::async_trait;
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
 use serde::Deserialize;
@@ -36,6 +36,7 @@ pub async fn run_consumer<P, C, R>(
     routing_key: Option<&str>,
     consumer: C,
     config: ConsumerConfig,
+    shutdown_rx: ShutdownReceiver,
 ) -> Result<(), Box<dyn Error + Send + Sync>>
 where
     P: Clone + Send + Display + 'static,
@@ -45,7 +46,7 @@ where
 {
     info_with_fields!("running consumer", consumer = name, queue = queue_name.to_string(), routing_key = routing_key.unwrap_or(""));
     stream_reader
-        .read::<P, _>(queue_name, routing_key, |payload| process_message(name, &consumer, &config, payload))
+        .read::<P, _>(queue_name, routing_key, |payload| process_message(name, &consumer, &config, payload), shutdown_rx)
         .await
 }
 

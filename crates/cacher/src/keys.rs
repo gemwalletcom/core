@@ -2,6 +2,9 @@ const SECONDS_PER_MINUTE: u64 = 60;
 const SECONDS_PER_DAY: u64 = 24 * 60 * 60;
 
 pub enum CacheKey<'a> {
+    ParserCurrentBlock(&'a str),
+    ParserLatestBlock(&'a str),
+
     // Referral keys
     ReferralIpCheck(&'a str),
 
@@ -35,6 +38,8 @@ pub enum CacheKey<'a> {
 impl CacheKey<'_> {
     pub fn key(&self) -> String {
         match self {
+            Self::ParserCurrentBlock(chain) => format!("parser:state:{}:current_block", chain),
+            Self::ParserLatestBlock(chain) => format!("parser:state:{}:latest_block", chain),
             Self::ReferralIpCheck(ip_address) => format!("referral:ip_check:{}", ip_address),
             Self::UsernameCreationPerIp(ip_address) => format!("username:ip:{}", ip_address),
             Self::UsernameCreationPerDevice(device_id) => format!("username:device:{}", device_id),
@@ -55,6 +60,8 @@ impl CacheKey<'_> {
 
     pub fn ttl(&self) -> u64 {
         match self {
+            Self::ParserCurrentBlock(_) => 7 * SECONDS_PER_DAY,
+            Self::ParserLatestBlock(_) => 7 * SECONDS_PER_DAY,
             Self::ReferralIpCheck(_) => 30 * SECONDS_PER_DAY,
             Self::UsernameCreationPerIp(_) => 30 * SECONDS_PER_DAY,
             Self::UsernameCreationPerDevice(_) => 30 * SECONDS_PER_DAY,

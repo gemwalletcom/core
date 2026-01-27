@@ -171,6 +171,7 @@ pub enum ConfigKey {
 
     // Parser
     ParserCatchupReloadInterval,
+    ParserPersistInterval,
 }
 
 impl ConfigKey {
@@ -309,6 +310,7 @@ impl ConfigKey {
             Self::SearchPerpetualsLastUpdatedAt => "0",
             Self::SearchNftsLastUpdatedAt => "0",
             Self::ParserCatchupReloadInterval => "50",
+            Self::ParserPersistInterval => "1s",
         }
     }
 }

@@ -5,20 +5,19 @@ mod price_updater;
 use cacher::CacherClient;
 use charts_updater::ChartsUpdater;
 use coingecko::CoinGeckoClient;
-use job_runner::run_job;
+use job_runner::{ShutdownReceiver, run_job};
 use markets_updater::MarketsUpdater;
 use price_updater::{PriceUpdater, UpdatePrices};
 use pricer::{MarketsClient, PriceClient};
 use primitives::ConfigKey;
 use settings::Settings;
 use std::error::Error;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 use storage::{ConfigCacher, Database};
 use streamer::StreamProducer;
+use tokio::task::JoinHandle;
 
-pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
@@ -26,7 +25,7 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
 
     let price_outdated = config.get_duration(ConfigKey::PriceOutdated)?.as_secs();
 
-    let clean_updated_assets = run_job("Clean outdated assets", config.get_duration(ConfigKey::PriceTimerCleanOutdated)?, {
+    let clean_updated_assets = tokio::spawn(run_job("Clean outdated assets", config.get_duration(ConfigKey::PriceTimerCleanOutdated)?, shutdown_rx.clone(), {
         let cacher_client = cacher_client.clone();
         let database = database.clone();
         let settings = Arc::new(settings.clone());
@@ -39,8 +38,8 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 updater.clean_outdated_assets(price_outdated).await
             }
         }
-    });
-    let update_fiat_assets = run_job("Update fiat assets", config.get_duration(ConfigKey::PriceTimerFiatRates)?, {
+    }));
+    let update_fiat_assets = tokio::spawn(run_job("Update fiat assets", config.get_duration(ConfigKey::PriceTimerFiatRates)?, shutdown_rx.clone(), {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -53,9 +52,9 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 updater.update_fiat_rates().await
             }
         }
-    });
+    }));
 
-    let update_prices_top_market_cap = run_job("Update prices top (top 500) market cap", config.get_duration(ConfigKey::PriceTimerTopMarketCap)?, {
+    let update_prices_top_market_cap = tokio::spawn(run_job("Update prices top (top 500) market cap", config.get_duration(ConfigKey::PriceTimerTopMarketCap)?, shutdown_rx.clone(), {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -68,9 +67,9 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 updater.update_prices_type(UpdatePrices::Top).await
             }
         }
-    });
+    }));
 
-    let update_prices_high_market_cap = run_job("Update prices high (500-2500) market cap", config.get_duration(ConfigKey::PriceTimerHighMarketCap)?, {
+    let update_prices_high_market_cap = tokio::spawn(run_job("Update prices high (500-2500) market cap", config.get_duration(ConfigKey::PriceTimerHighMarketCap)?, shutdown_rx.clone(), {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -83,9 +82,9 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 updater.update_prices_type(UpdatePrices::High).await
             }
         }
-    });
+    }));
 
-    let update_prices_low_market_cap = run_job("Update prices low (2500...) market cap", config.get_duration(ConfigKey::PriceTimerLowMarketCap)?, {
+    let update_prices_low_market_cap = tokio::spawn(run_job("Update prices low (2500...) market cap", config.get_duration(ConfigKey::PriceTimerLowMarketCap)?, shutdown_rx.clone(), {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -98,9 +97,9 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 updater.update_prices_type(UpdatePrices::Low).await
             }
         }
-    });
+    }));
 
-    let update_hourly_charts_job = run_job("Aggregate hourly charts", config.get_duration(ConfigKey::PriceTimerChartsHourly)?, {
+    let update_hourly_charts_job = tokio::spawn(run_job("Aggregate hourly charts", config.get_duration(ConfigKey::PriceTimerChartsHourly)?, shutdown_rx.clone(), {
         let settings = Arc::new(settings.clone());
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
@@ -115,9 +114,9 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 updater.aggregate_hourly_charts().await
             }
         }
-    });
+    }));
 
-    let update_daily_charts_job = run_job("Aggregate daily charts", config.get_duration(ConfigKey::PriceTimerChartsDaily)?, {
+    let update_daily_charts_job = tokio::spawn(run_job("Aggregate daily charts", config.get_duration(ConfigKey::PriceTimerChartsDaily)?, shutdown_rx.clone(), {
         let settings = Arc::new(settings.clone());
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
@@ -132,9 +131,9 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 updater.aggregate_daily_charts().await
             }
         }
-    });
+    }));
 
-    let cleanup_charts_data_job = run_job("Cleanup charts data", config.get_duration(ConfigKey::PriceTimerCleanupCharts)?, {
+    let cleanup_charts_data_job = tokio::spawn(run_job("Cleanup charts data", config.get_duration(ConfigKey::PriceTimerCleanupCharts)?, shutdown_rx.clone(), {
         let settings = Arc::new(settings.clone());
         let coingecko_client = coingecko_client.clone();
         let cacher_client = cacher_client.clone();
@@ -149,9 +148,9 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
                 updater.cleanup_charts_data().await
             }
         }
-    });
+    }));
 
-    let update_markets = run_job("Update markets", config.get_duration(ConfigKey::PriceTimerMarkets)?, {
+    let update_markets = tokio::spawn(run_job("Update markets", config.get_duration(ConfigKey::PriceTimerMarkets)?, shutdown_rx, {
         let settings = Arc::new(settings.clone());
         let cacher_client = cacher_client.clone();
         let database = database.clone();
@@ -161,18 +160,18 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
             let database = database.clone();
             async move { markets_updater_factory(&database, &cacher_client, &settings.clone()).update_markets().await }
         }
-    });
+    }));
 
     Ok(vec![
-        Box::pin(clean_updated_assets),
-        Box::pin(update_fiat_assets),
-        Box::pin(update_prices_top_market_cap),
-        Box::pin(update_prices_high_market_cap),
-        Box::pin(update_prices_low_market_cap),
-        Box::pin(update_hourly_charts_job),
-        Box::pin(update_daily_charts_job),
-        Box::pin(cleanup_charts_data_job),
-        Box::pin(update_markets),
+        clean_updated_assets,
+        update_fiat_assets,
+        update_prices_top_market_cap,
+        update_prices_high_market_cap,
+        update_prices_low_market_cap,
+        update_hourly_charts_job,
+        update_daily_charts_job,
+        cleanup_charts_data_job,
+        update_markets,
     ])
 }
 

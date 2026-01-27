@@ -181,4 +181,13 @@ impl CacherClient {
     pub async fn can_process_cached(&self, key: CacheKey<'_>) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.can_process_now(&key.key(), key.ttl()).await
     }
+
+    pub async fn set_i64(&self, key: &str, value: i64, ttl_seconds: u64) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.connection.clone().set_ex::<&str, i64, ()>(key, value, ttl_seconds).await?;
+        Ok(())
+    }
+
+    pub async fn get_i64(&self, key: &str) -> Result<Option<i64>, Box<dyn Error + Send + Sync>> {
+        Ok(self.connection.clone().get::<&str, Option<i64>>(key).await?)
+    }
 }

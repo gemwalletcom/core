@@ -3,10 +3,12 @@ mod model;
 mod parser;
 mod pusher;
 mod setup;
+mod shutdown;
 mod worker;
 
 use crate::model::{ConsumerService, DaemonService, WorkerService};
-use gem_tracing::{SentryConfig, SentryTracing, info_with_fields};
+use crate::shutdown::ShutdownReceiver;
+use gem_tracing::{SentryConfig, SentryTracing, error_with_fields, info_with_fields};
 use std::str::FromStr;
 
 #[tokio::main]
@@ -50,40 +52,64 @@ pub async fn main() {
 }
 
 async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
+    let (shutdown_tx, shutdown_rx) = shutdown::channel();
+    let shutdown_timeout = settings.daemon.shutdown.timeout;
+
+    shutdown::spawn_signal_handler(shutdown_tx);
+
     let services = match service {
-        WorkerService::Alerter => worker::alerter::jobs(settings).await.unwrap(),
-        WorkerService::Pricer => worker::pricer::jobs(settings).await.unwrap(),
-        WorkerService::PricesDex => worker::prices_dex::jobs(settings).await,
-        WorkerService::Fiat => worker::fiat::jobs(settings).await.unwrap(),
-        WorkerService::Assets => worker::assets::jobs(settings).await.unwrap(),
-        WorkerService::Version => worker::version::jobs(settings).await.unwrap(),
-        WorkerService::Transaction => worker::transaction::jobs(settings).await.unwrap(),
-        WorkerService::Device => worker::device::jobs(settings).await.unwrap(),
-        WorkerService::Search => worker::search::jobs(settings).await.unwrap(),
-        WorkerService::Nft => worker::nft::jobs(settings).await,
-        WorkerService::Scan => worker::scan::jobs(settings).await.unwrap(),
-        WorkerService::Rewards => worker::rewards::jobs(settings).await.unwrap(),
+        WorkerService::Alerter => worker::alerter::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Pricer => worker::pricer::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::PricesDex => worker::prices_dex::jobs(settings, shutdown_rx).await,
+        WorkerService::Fiat => worker::fiat::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Assets => worker::assets::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Version => worker::version::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Transaction => worker::transaction::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Device => worker::device::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Search => worker::search::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Nft => worker::nft::jobs(settings, shutdown_rx).await,
+        WorkerService::Scan => worker::scan::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Rewards => worker::rewards::jobs(settings, shutdown_rx).await.unwrap(),
     };
-    let _ = futures::future::join_all(services).await;
+
+    shutdown::wait_with_timeout(services, shutdown_timeout).await;
+    info_with_fields!("all workers stopped", status = "ok");
 }
 
 async fn run_consumer_mode(settings: settings::Settings, service: ConsumerService) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let (shutdown_tx, shutdown_rx) = shutdown::channel();
+    let shutdown_timeout = settings.consumer.shutdown.timeout;
+
+    shutdown::spawn_signal_handler(shutdown_tx);
+
+    let handle = tokio::spawn(async move {
+        if let Err(e) = run_consumer(settings, service, shutdown_rx).await {
+            error_with_fields!("consumer error", &*e, status = "failed");
+        }
+    });
+
+    shutdown::wait_with_timeout(vec![handle], shutdown_timeout).await;
+    info_with_fields!("consumer stopped", status = "ok");
+    Ok(())
+}
+
+async fn run_consumer(settings: settings::Settings, service: ConsumerService, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match service {
-        ConsumerService::FetchAddressTransactions => consumers::run_consumer_fetch_address_transactions(settings).await,
-        ConsumerService::StoreTransactions => consumers::run_consumer_store_transactions(settings).await,
-        ConsumerService::FetchBlocks => consumers::run_consumer_fetch_blocks(settings).await,
-        ConsumerService::FetchAssets => consumers::run_consumer_fetch_assets(settings).await,
-        ConsumerService::FetchTokenAssociations => consumers::run_consumer_fetch_token_associations(settings).await,
-        ConsumerService::FetchCoinAssociations => consumers::run_consumer_fetch_coin_associations(settings).await,
-        ConsumerService::StoreAssetsAssociations => consumers::run_consumer_store_assets_associations(settings).await,
-        ConsumerService::FetchNftAssociations => consumers::run_consumer_fetch_nft_associations(settings).await,
-        ConsumerService::Notifications => consumers::notifications::run(settings).await,
-        ConsumerService::InAppNotifications => consumers::run_consumer_in_app_notifications(settings).await,
-        ConsumerService::Rewards => consumers::run_consumer_rewards(settings).await,
-        ConsumerService::RewardsRedemptions => consumers::run_rewards_redemption_consumer(settings).await,
-        ConsumerService::Support => consumers::run_consumer_support(settings).await,
-        ConsumerService::Fiat => consumers::run_consumer_fiat(settings).await,
-        ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings).await,
-        ConsumerService::StoreCharts => consumers::run_consumer_store_charts(settings).await,
+        ConsumerService::FetchAddressTransactions => consumers::run_consumer_fetch_address_transactions(settings, shutdown_rx).await,
+        ConsumerService::StoreTransactions => consumers::run_consumer_store_transactions(settings, shutdown_rx).await,
+        ConsumerService::FetchBlocks => consumers::run_consumer_fetch_blocks(settings, shutdown_rx).await,
+        ConsumerService::FetchAssets => consumers::run_consumer_fetch_assets(settings, shutdown_rx).await,
+        ConsumerService::FetchTokenAssociations => consumers::run_consumer_fetch_token_associations(settings, shutdown_rx).await,
+        ConsumerService::FetchCoinAssociations => consumers::run_consumer_fetch_coin_associations(settings, shutdown_rx).await,
+        ConsumerService::StoreAssetsAssociations => consumers::run_consumer_store_assets_associations(settings, shutdown_rx).await,
+        ConsumerService::FetchNftAssociations => consumers::run_consumer_fetch_nft_associations(settings, shutdown_rx).await,
+        ConsumerService::Notifications => consumers::notifications::run(settings, shutdown_rx).await,
+        ConsumerService::InAppNotifications => consumers::run_consumer_in_app_notifications(settings, shutdown_rx).await,
+        ConsumerService::Rewards => consumers::run_consumer_rewards(settings, shutdown_rx).await,
+        ConsumerService::RewardsRedemptions => consumers::run_rewards_redemption_consumer(settings, shutdown_rx).await,
+        ConsumerService::Support => consumers::run_consumer_support(settings, shutdown_rx).await,
+        ConsumerService::Fiat => consumers::run_consumer_fiat(settings, shutdown_rx).await,
+        ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings, shutdown_rx).await,
+        ConsumerService::StoreCharts => consumers::run_consumer_store_charts(settings, shutdown_rx).await,
     }
 }
