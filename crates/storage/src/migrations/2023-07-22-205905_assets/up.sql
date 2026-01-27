@@ -21,6 +21,7 @@ CREATE TABLE assets (
     staking_apr float,
     is_earnable boolean NOT NULL default false,
     earn_apr float,
+    has_image boolean NOT NULL default false,
 
     UNIQUE(id)
 );

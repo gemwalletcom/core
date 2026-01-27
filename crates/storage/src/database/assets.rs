@@ -12,6 +12,7 @@ pub enum AssetUpdate {
     IsEnabled(bool),
     Rank(i32),
     StakingApr(Option<f64>),
+    HasImage(bool),
 }
 
 #[derive(Debug, Clone)]
@@ -19,6 +20,7 @@ pub enum AssetFilter {
     IsSwappable(bool),
     IsBuyable(bool),
     IsSellable(bool),
+    HasImage(bool),
 }
 
 pub(crate) trait AssetsStore {
@@ -63,6 +65,7 @@ impl AssetsStore for DatabaseClient {
                         AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(*value)).execute(conn)?,
                         AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(*value)).execute(conn)?,
                         AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(*value)).execute(conn)?,
+                        AssetUpdate::HasImage(value) => diesel::update(target).set(has_image.eq(*value)).execute(conn)?,
                     };
                     total_updated += updated;
                 }
@@ -94,6 +97,9 @@ impl AssetsStore for DatabaseClient {
                 }
                 AssetFilter::IsSwappable(value) => {
                     query = query.filter(is_swappable.eq(value));
+                }
+                AssetFilter::HasImage(value) => {
+                    query = query.filter(has_image.eq(value));
                 }
             }
         }

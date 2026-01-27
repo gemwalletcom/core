@@ -1,11 +1,14 @@
 mod asset_rank_updater;
 pub mod asset_updater;
+mod assets_images_updater;
 mod perpetual_updater;
 mod staking_apy_updater;
 mod usage_rank_updater;
 
+use api_connector::StaticAssetsClient;
 use asset_rank_updater::AssetRankUpdater;
 use asset_updater::AssetUpdater;
+use assets_images_updater::AssetsImagesUpdater;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
 use job_runner::run_job;
@@ -101,6 +104,15 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         }
     });
 
+    let update_assets_images = run_job("Update assets images", config.get_duration(ConfigKey::AssetsTimerUpdateImages)?, {
+        let static_assets_client = StaticAssetsClient::new(&settings.assets.url);
+        let database = database.clone();
+        move || {
+            let updater = AssetsImagesUpdater::new(static_assets_client.clone(), database.clone());
+            async move { updater.update_assets_images().await }
+        }
+    });
+
     Ok(vec![
         Box::pin(update_existing_assets),
         Box::pin(update_all_assets),
@@ -111,5 +123,6 @@ pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = 
         Box::pin(update_staking_apy),
         Box::pin(update_perpetuals),
         Box::pin(update_usage_ranks),
+        Box::pin(update_assets_images),
     ])
 }
