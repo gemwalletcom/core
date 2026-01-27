@@ -1,7 +1,7 @@
 use api_connector::StaticAssetsClient;
 use futures::{StreamExt, stream};
 use primitives::Chain;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::error::Error;
 use storage::{AssetFilter, AssetUpdate, AssetsRepository, Database};
 use strum::IntoEnumIterator;
@@ -16,8 +16,8 @@ impl AssetsImagesUpdater {
         Self { client, database }
     }
 
-    pub async fn update_assets_images(&self) -> Result<HashMap<&'static str, usize>, Box<dyn Error + Send + Sync>> {
-        let new: HashSet<String> = stream::iter(Chain::iter())
+    pub async fn update_assets_images(&self) -> Result<(usize, usize), Box<dyn Error + Send + Sync>> {
+        let mut new: HashSet<String> = stream::iter(Chain::iter())
             .map(|chain| async move {
                 self.client
                     .get_assets_list(chain)
@@ -34,6 +34,8 @@ impl AssetsImagesUpdater {
             .flatten()
             .collect();
 
+        new.extend(Chain::all().into_iter().map(|c| c.as_ref().to_string()));
+
         let current: HashSet<String> = self
             .database
             .assets()?
@@ -45,15 +47,13 @@ impl AssetsImagesUpdater {
         let additions: Vec<String> = new.difference(&current).cloned().collect();
         let removals: Vec<String> = current.difference(&new).cloned().collect();
 
-        let result = HashMap::from([("additions", additions.len()), ("removals", removals.len())]);
-
         if !additions.is_empty() {
-            self.database.assets()?.update_assets(additions, vec![AssetUpdate::HasImage(true)])?;
+            self.database.assets()?.update_assets(additions.clone(), vec![AssetUpdate::HasImage(true)])?;
         }
         if !removals.is_empty() {
-            self.database.assets()?.update_assets(removals, vec![AssetUpdate::HasImage(false)])?;
+            self.database.assets()?.update_assets(removals.clone(), vec![AssetUpdate::HasImage(false)])?;
         }
 
-        Ok(result)
+        Ok((additions.len(), removals.len()))
     }
 }
