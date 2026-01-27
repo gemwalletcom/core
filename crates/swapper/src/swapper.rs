@@ -87,7 +87,10 @@ impl GemSwapper {
                 _ => None,
             })
             .min_by_key(|(value, _)| *value)
-            .map(|(_, min_amount)| SwapperError::InputAmountError { min_amount })
+            .map(|(value, min_amount)| {
+                let adjusted = min_amount.as_ref().map(|_| (value * 11 / 10).to_string());
+                SwapperError::InputAmountError { min_amount: adjusted }
+            })
     }
 }
 
@@ -441,7 +444,7 @@ mod tests {
         assert_eq!(
             gem_swapper.fetch_quote(&request).await,
             Err(SwapperError::InputAmountError {
-                min_amount: Some("1264000".into())
+                min_amount: Some("1390400".into())
             })
         );
     }
