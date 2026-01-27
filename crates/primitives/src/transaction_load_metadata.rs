@@ -32,7 +32,7 @@ pub enum TransactionLoadMetadata {
         recipient_token_address: Option<String>,
         token_program: Option<SolanaTokenProgramId>,
         block_hash: String,
-        jito_tips: Option<SolanaJitoTips>,
+        jito_tips: SolanaJitoTips,
     },
     Ton {
         sender_token_address: Option<String>,
@@ -189,7 +189,7 @@ impl TransactionLoadMetadata {
         }
     }
 
-    pub fn get_jito_tips(&self) -> Result<Option<SolanaJitoTips>, Box<dyn std::error::Error + Send + Sync>> {
+    pub fn get_jito_tips(&self) -> Result<SolanaJitoTips, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Solana { jito_tips, .. } => Ok(jito_tips.clone()),
             _ => Err("Jito tips not available for this metadata type".into()),

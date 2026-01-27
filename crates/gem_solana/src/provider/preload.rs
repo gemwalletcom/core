@@ -65,11 +65,11 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
             let values: Vec<i64> = prioritization_fees.iter().map(|f| f.prioritization_fee).collect();
             let stats = calculate_fee_stats(&values);
             let estimates = estimate_jito_tips(&stats);
-            Some(SolanaJitoTips {
+            SolanaJitoTips {
                 slow: estimates.slow,
                 normal: estimates.normal,
                 fast: estimates.fast,
-            })
+            }
         };
 
         Ok(TransactionLoadMetadata::Solana {

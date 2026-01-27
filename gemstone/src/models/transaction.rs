@@ -365,7 +365,7 @@ pub enum GemTransactionLoadMetadata {
         recipient_token_address: Option<String>,
         token_program: Option<GemSolanaTokenProgramId>,
         block_hash: String,
-        jito_tips: Option<GemSolanaJitoTips>,
+        jito_tips: GemSolanaJitoTips,
     },
     Ton {
         sender_token_address: Option<String>,
@@ -454,11 +454,11 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 recipient_token_address,
                 token_program,
                 block_hash,
-                jito_tips: jito_tips.map(|t| GemSolanaJitoTips {
-                    slow: t.slow,
-                    normal: t.normal,
-                    fast: t.fast,
-                }),
+                jito_tips: GemSolanaJitoTips {
+                    slow: jito_tips.slow,
+                    normal: jito_tips.normal,
+                    fast: jito_tips.fast,
+                },
             },
             TransactionLoadMetadata::Ton {
                 sender_token_address,
@@ -548,11 +548,11 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 recipient_token_address,
                 token_program,
                 block_hash,
-                jito_tips: jito_tips.map(|t| primitives::SolanaJitoTips {
-                    slow: t.slow,
-                    normal: t.normal,
-                    fast: t.fast,
-                }),
+                jito_tips: primitives::SolanaJitoTips {
+                    slow: jito_tips.slow,
+                    normal: jito_tips.normal,
+                    fast: jito_tips.fast,
+                },
             },
             GemTransactionLoadMetadata::Ton {
                 sender_token_address,
