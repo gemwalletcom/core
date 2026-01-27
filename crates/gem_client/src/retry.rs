@@ -1,4 +1,4 @@
-use reqwest::{retry, StatusCode};
+use reqwest::{StatusCode, retry};
 use std::future::Future;
 use std::time::Duration;
 
@@ -63,18 +63,21 @@ where
 /// Default retry predicate for clearly transient errors
 ///
 /// Retries on:
+/// - 401 (Unauthorized - some APIs use this for rate limits)
 /// - 429 (Too Many Requests)
 /// - 502 (Bad Gateway)
 /// - 503 (Service Unavailable)
 /// - 504 (Gateway Timeout)
-/// - "too many requests" and "throttled" messages
+/// - "too many requests", "throttled", and "limited" messages
 pub fn default_should_retry<E: std::fmt::Display>(error: &E) -> bool {
     let error_str = error.to_string().to_lowercase();
 
+    error_str.contains("401") ||                    // Unauthorized (rate limit on some APIs)
     error_str.contains("429") ||                    // Too Many Requests
     error_str.contains("502") ||                    // Bad Gateway
     error_str.contains("503") ||                    // Service Unavailable
     error_str.contains("504") ||                    // Gateway Timeout
     error_str.contains("too many requests") ||      // Rate limiting messages
-    error_str.contains("throttled") // Throttling messages
+    error_str.contains("throttled") ||              // Throttling messages
+    error_str.contains("request is limited") // CoinGecko rate limit message
 }

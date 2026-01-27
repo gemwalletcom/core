@@ -115,7 +115,7 @@ impl<C: Client> CoinGeckoClient<C> {
         };
         let base_path = format!("/api/v3/coins/{}", id);
         let path = build_path_with_query(&base_path, &query)?;
-        Ok(self.client.get(&path).await?)
+        self._get(&path).await
     }
 
     pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {

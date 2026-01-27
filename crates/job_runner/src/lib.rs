@@ -15,7 +15,12 @@ where
 
         let result = job_fn().await;
 
-        info_with_fields!("job complete", job = name, duration = format!("{}ms", now.elapsed().as_millis()), result = format!("{:?}", result));
+        info_with_fields!(
+            "job complete",
+            job = name,
+            duration = format!("{}ms", now.elapsed().as_millis()),
+            result = format!("{:?}", result)
+        );
 
         tokio::time::sleep(interval_duration).await;
     }
