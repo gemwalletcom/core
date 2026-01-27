@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use chrono::{DateTime, Utc};
 use gem_hypercore::models::order::OpenOrder;
+use gem_hypercore::models::websocket::PositionsDiff;
 use primitives::{
     Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
     chart::{ChartCandleStick, ChartDateValue},
@@ -9,6 +10,7 @@ use primitives::{
 };
 
 pub type GemHyperliquidOpenOrder = OpenOrder;
+pub type GemPositionsDiff = PositionsDiff;
 pub type GemPerpetualMarginType = PerpetualMarginType;
 pub type GemPerpetualOrderType = PerpetualOrderType;
 pub type GemPerpetualPositionsSummary = PerpetualPositionsSummary;
@@ -117,7 +119,7 @@ pub struct GemChartDateValue {
     pub value: f64,
 }
 
-#[derive(Debug, uniffi::Record)]
+#[uniffi::remote(Record)]
 pub struct GemPositionsDiff {
     pub delete_position_ids: Vec<String>,
     pub positions: Vec<PerpetualPosition>,

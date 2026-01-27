@@ -1,14 +1,12 @@
-use std::collections::{HashMap, HashSet};
-
 use gem_hypercore::{
     models::websocket::WebSocketChannel,
     perpetual_formatter::PerpetualFormatter,
-    provider::{
-        perpetual_mapper::map_tp_sl_from_orders,
-        websocket_mapper::{parse_all_mids, parse_candle, parse_channel, parse_clearinghouse_state, parse_open_orders, parse_subscription_response},
+    provider::websocket_mapper::{
+        diff_clearinghouse_positions, diff_open_orders_positions, parse_all_mids, parse_candle, parse_channel, parse_clearinghouse_state,
+        parse_open_orders, parse_subscription_response,
     },
 };
-use primitives::{AssetId, PerpetualPosition, PerpetualProvider};
+use primitives::{PerpetualPosition, PerpetualProvider};
 
 use crate::models::perpetual::{GemHyperliquidOpenOrder, GemHyperliquidSocketMessage, GemPositionsDiff};
 
@@ -92,44 +90,10 @@ impl Hyperliquid {
     }
 
     pub fn diff_clearinghouse_positions(&self, new_positions: Vec<PerpetualPosition>, existing_positions: Vec<PerpetualPosition>) -> GemPositionsDiff {
-        let existing_map: HashMap<&str, &PerpetualPosition> = existing_positions.iter().map(|p| (p.id.as_str(), p)).collect();
-
-        let positions: Vec<PerpetualPosition> = new_positions
-            .into_iter()
-            .map(|pos| match existing_map.get(pos.id.as_str()) {
-                Some(existing) => PerpetualPosition {
-                    take_profit: existing.take_profit.clone(),
-                    stop_loss: existing.stop_loss.clone(),
-                    ..pos
-                },
-                None => pos,
-            })
-            .collect();
-
-        let new_ids: HashSet<&str> = positions.iter().map(|p| p.id.as_str()).collect();
-        let delete_position_ids: Vec<String> = existing_positions.iter().filter(|p| !new_ids.contains(p.id.as_str())).map(|p| p.id.clone()).collect();
-
-        GemPositionsDiff { delete_position_ids, positions }
+        diff_clearinghouse_positions(new_positions, existing_positions)
     }
 
     pub fn diff_open_orders_positions(&self, orders: Vec<GemHyperliquidOpenOrder>, existing_positions: Vec<PerpetualPosition>) -> GemPositionsDiff {
-        let positions: Vec<PerpetualPosition> = existing_positions
-            .into_iter()
-            .filter_map(|pos| {
-                let coin = pos.asset_id.token_id.as_ref().and_then(|t| AssetId::decode_token_id(t).into_iter().nth(1))?;
-                let (take_profit, stop_loss) = map_tp_sl_from_orders(&orders, &coin);
-
-                if pos.take_profit != take_profit || pos.stop_loss != stop_loss {
-                    Some(PerpetualPosition { take_profit, stop_loss, ..pos })
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        GemPositionsDiff {
-            delete_position_ids: vec![],
-            positions,
-        }
+        diff_open_orders_positions(&orders, existing_positions)
     }
 }

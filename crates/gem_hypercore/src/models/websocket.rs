@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use primitives::PerpetualPosition;
 use serde::Deserialize;
 
 use super::order::OpenOrder;
@@ -23,9 +24,9 @@ pub struct AllMidsData {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct WebSocketMessage {
+pub struct WebSocketMessage<T> {
     pub channel: WebSocketChannel,
-    pub data: serde_json::Value,
+    pub data: T,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -47,8 +48,13 @@ pub struct SubscriptionResponseData {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Subscription {
     #[serde(rename = "type")]
     pub subscription_type: String,
+}
+
+#[derive(Debug)]
+pub struct PositionsDiff {
+    pub delete_position_ids: Vec<String>,
+    pub positions: Vec<PerpetualPosition>,
 }
