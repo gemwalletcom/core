@@ -1,4 +1,4 @@
-use primitives::{Asset, Perpetual};
+use primitives::{Asset, Perpetual, PerpetualSearchData};
 use serde::{Deserialize, Serialize};
 
 use crate::sanitize_index_primary_id;
@@ -30,5 +30,14 @@ impl PerpetualDocument {
 impl From<(Perpetual, Asset)> for PerpetualDocument {
     fn from((perpetual, asset): (Perpetual, Asset)) -> Self {
         Self::new(perpetual, asset)
+    }
+}
+
+impl From<PerpetualDocument> for PerpetualSearchData {
+    fn from(doc: PerpetualDocument) -> Self {
+        Self {
+            perpetual: doc.perpetual,
+            asset: doc.asset,
+        }
     }
 }
