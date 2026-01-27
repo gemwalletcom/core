@@ -14,9 +14,6 @@ env:
 jobs:
   unit_test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./
 
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +21,7 @@ jobs:
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
         with:
-          prefix-key: "v1-rust"
+          shared-key: "ci-rust"
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
@@ -35,9 +32,25 @@ jobs:
       - name: Run tests
         run: just test-all
 
+  integration_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "ci-rust"
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Install just
+        uses: extractions/setup-just@v2
+
       - name: Build all integration tests only
-        run: |
-          just build-integration-tests
+        run: just build-integration-tests
 
       - name: Check gemstone dependencies
         run: |

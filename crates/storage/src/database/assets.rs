@@ -1,6 +1,7 @@
 use crate::schema::assets::dsl::*;
 
-use crate::{DatabaseClient, models::AssetRow, models::PriceRow};
+use crate::DatabaseClient;
+use crate::models::{AssetRow, NewAssetRow, PriceRow};
 use diesel::{prelude::*, upsert::excluded};
 
 #[derive(Debug, Clone)]
@@ -11,6 +12,7 @@ pub enum AssetUpdate {
     IsEnabled(bool),
     Rank(i32),
     StakingApr(Option<f64>),
+    HasImage(bool),
 }
 
 #[derive(Debug, Clone)]
@@ -18,13 +20,14 @@ pub enum AssetFilter {
     IsSwappable(bool),
     IsBuyable(bool),
     IsSellable(bool),
+    HasImage(bool),
 }
 
 pub(crate) trait AssetsStore {
     fn get_assets_all(&mut self) -> Result<Vec<AssetRow>, diesel::result::Error>;
-    fn add_assets(&mut self, values: Vec<AssetRow>) -> Result<usize, diesel::result::Error>;
+    fn add_assets(&mut self, values: Vec<NewAssetRow>) -> Result<usize, diesel::result::Error>;
     fn update_assets(&mut self, asset_ids: Vec<String>, updates: Vec<AssetUpdate>) -> Result<usize, diesel::result::Error>;
-    fn upsert_assets(&mut self, values: Vec<AssetRow>) -> Result<usize, diesel::result::Error>;
+    fn upsert_assets(&mut self, values: Vec<NewAssetRow>) -> Result<usize, diesel::result::Error>;
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetRow>, diesel::result::Error>;
     fn get_asset(&mut self, asset_id: &str) -> Result<AssetRow, diesel::result::Error>;
     fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetRow>, diesel::result::Error>;
@@ -37,7 +40,7 @@ impl AssetsStore for DatabaseClient {
     fn get_assets_all(&mut self) -> Result<Vec<AssetRow>, diesel::result::Error> {
         assets.filter(is_enabled.eq(true)).select(AssetRow::as_select()).load(&mut self.connection)
     }
-    fn add_assets(&mut self, values: Vec<AssetRow>) -> Result<usize, diesel::result::Error> {
+    fn add_assets(&mut self, values: Vec<NewAssetRow>) -> Result<usize, diesel::result::Error> {
         if values.is_empty() {
             return Ok(0);
         }
@@ -62,6 +65,7 @@ impl AssetsStore for DatabaseClient {
                         AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(*value)).execute(conn)?,
                         AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(*value)).execute(conn)?,
                         AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(*value)).execute(conn)?,
+                        AssetUpdate::HasImage(value) => diesel::update(target).set(has_image.eq(*value)).execute(conn)?,
                     };
                     total_updated += updated;
                 }
@@ -71,7 +75,7 @@ impl AssetsStore for DatabaseClient {
         })
     }
 
-    fn upsert_assets(&mut self, values: Vec<AssetRow>) -> Result<usize, diesel::result::Error> {
+    fn upsert_assets(&mut self, values: Vec<NewAssetRow>) -> Result<usize, diesel::result::Error> {
         diesel::insert_into(assets)
             .values(values)
             .on_conflict(id)
@@ -93,6 +97,9 @@ impl AssetsStore for DatabaseClient {
                 }
                 AssetFilter::IsSwappable(value) => {
                     query = query.filter(is_swappable.eq(value));
+                }
+                AssetFilter::HasImage(value) => {
+                    query = query.filter(has_image.eq(value));
                 }
             }
         }

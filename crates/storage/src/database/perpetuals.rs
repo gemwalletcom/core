@@ -1,10 +1,10 @@
 use crate::DatabaseClient;
-use crate::models::PerpetualRow;
+use crate::models::{NewPerpetualRow, PerpetualRow};
 use crate::schema::{perpetuals, perpetuals_assets};
 use diesel::{prelude::*, upsert::excluded};
 
 pub(crate) trait PerpetualsStore {
-    fn perpetuals_update(&mut self, values: Vec<PerpetualRow>) -> Result<usize, diesel::result::Error>;
+    fn perpetuals_update(&mut self, values: Vec<NewPerpetualRow>) -> Result<usize, diesel::result::Error>;
 
     fn get_perpetuals_for_asset(&mut self, asset_id_value: &str) -> Result<Vec<PerpetualRow>, diesel::result::Error>;
 
@@ -12,7 +12,7 @@ pub(crate) trait PerpetualsStore {
 }
 
 impl PerpetualsStore for DatabaseClient {
-    fn perpetuals_update(&mut self, values: Vec<PerpetualRow>) -> Result<usize, diesel::result::Error> {
+    fn perpetuals_update(&mut self, values: Vec<NewPerpetualRow>) -> Result<usize, diesel::result::Error> {
         if values.is_empty() {
             return Ok(0);
         }

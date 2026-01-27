@@ -1,13 +1,32 @@
 use std::str::FromStr;
 
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::{AssetLink, Chain, NFTCollection, NFTImages, NFTResource};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_collections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NftCollectionRow {
+    pub id: String,
+    pub chain: String,
+    pub name: String,
+    pub description: String,
+    pub symbol: Option<String>,
+    pub owner: Option<String>,
+    pub contract_address: String,
+    pub image_preview_url: Option<String>,
+    pub image_preview_mime_type: Option<String>,
+    pub is_verified: bool,
+    pub is_enabled: bool,
+    pub updated_at: NaiveDateTime,
+}
+
+#[derive(Debug, Insertable, AsChangeset, Clone)]
+#[diesel(table_name = crate::schema::nft_collections)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct NewNftCollectionRow {
     pub id: String,
     pub chain: String,
     pub name: String,
@@ -30,6 +49,24 @@ pub struct UpdateNftCollectionImageUrlRow {
     pub image_preview_mime_type: Option<String>,
 }
 
+impl NewNftCollectionRow {
+    pub fn from_primitive(collection: NFTCollection) -> Self {
+        NewNftCollectionRow {
+            id: collection.id.clone(),
+            name: collection.name.clone(),
+            description: collection.description.unwrap_or_default(),
+            chain: collection.chain.to_string(),
+            image_preview_url: Some(collection.images.preview.url.clone()),
+            image_preview_mime_type: Some(collection.images.preview.mime_type.clone()),
+            is_verified: collection.is_verified,
+            symbol: collection.symbol,
+            owner: None,
+            contract_address: collection.contract_address.clone(),
+            is_enabled: true,
+        }
+    }
+}
+
 impl NftCollectionRow {
     pub fn as_primitive(&self, links: Vec<AssetLink>) -> NFTCollection {
         NFTCollection {
@@ -47,22 +84,6 @@ impl NftCollectionRow {
             },
             is_verified: self.is_verified,
             links,
-        }
-    }
-
-    pub fn from_primitive(collection: NFTCollection) -> Self {
-        NftCollectionRow {
-            id: collection.id.clone(),
-            name: collection.name.clone(),
-            description: collection.description.unwrap_or_default(),
-            chain: collection.chain.to_string(),
-            image_preview_url: Some(collection.images.preview.url.clone()),
-            image_preview_mime_type: Some(collection.images.preview.mime_type.clone()),
-            is_verified: collection.is_verified,
-            symbol: collection.symbol,
-            owner: None,
-            contract_address: collection.contract_address.clone(),
-            is_enabled: true,
         }
     }
 }

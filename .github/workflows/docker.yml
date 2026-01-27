@@ -19,12 +19,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build
+      - name: Build core
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
+          target: core
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=core
+          cache-to: type=gha,mode=max,scope=core
           tags: core:latest
+
+      - name: Build dynode
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: dynode
+          push: false
+          cache-from: type=gha,scope=core
+          cache-to: type=gha,mode=max,scope=core
+          tags: dynode:latest
