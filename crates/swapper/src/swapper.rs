@@ -77,20 +77,32 @@ impl GemSwapper {
     }
 
     fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
-        errors
+        let input_errors: Vec<_> = errors
             .iter()
             .filter_map(|err| match err {
                 SwapperError::InputAmountError { min_amount } => {
-                    let value = min_amount.as_ref().and_then(|s| s.parse::<u128>().ok()).unwrap_or(u128::MAX);
+                    let value = min_amount.as_ref().and_then(|s| s.parse::<u128>().ok());
                     Some((value, min_amount.clone()))
                 }
                 _ => None,
             })
+            .collect();
+
+        if input_errors.is_empty() {
+            return None;
+        }
+
+        input_errors
+            .iter()
+            .filter(|(value, _)| value.is_some())
             .min_by_key(|(value, _)| *value)
-            .map(|(value, min_amount)| {
-                let adjusted = min_amount.as_ref().map(|_| (value * 11 / 10).to_string());
+            .map(|(value, _)| {
+                let adjusted = value
+                    .and_then(|v| v.checked_mul(11))
+                    .map(|v| (v / 10).to_string());
                 SwapperError::InputAmountError { min_amount: adjusted }
             })
+            .or(Some(SwapperError::InputAmountError { min_amount: None }))
     }
 }
 
