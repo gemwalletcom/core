@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use gem_hypercore::models::order::OpenOrder;
 use primitives::{
@@ -136,6 +138,7 @@ pub enum GemHyperliquidSocketMessage {
     ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
     OpenOrders { orders: Vec<GemHyperliquidOpenOrder> },
     Candle { candle: ChartCandleStick },
+    AllMids { prices: HashMap<String, f64> },
     SubscriptionResponse { subscription_type: String },
     Unknown,
 }

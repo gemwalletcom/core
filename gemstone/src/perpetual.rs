@@ -5,7 +5,7 @@ use gem_hypercore::{
     perpetual_formatter::PerpetualFormatter,
     provider::{
         perpetual_mapper::map_tp_sl_from_orders,
-        websocket_mapper::{parse_candle, parse_channel, parse_clearinghouse_state, parse_open_orders, parse_subscription_response},
+        websocket_mapper::{parse_all_mids, parse_candle, parse_channel, parse_clearinghouse_state, parse_open_orders, parse_subscription_response},
     },
 };
 use primitives::{AssetId, PerpetualPosition, PerpetualProvider};
@@ -78,6 +78,10 @@ impl Hyperliquid {
             WebSocketChannel::Candle => {
                 let candle = parse_candle(&json)?;
                 Ok(GemHyperliquidSocketMessage::Candle { candle })
+            }
+            WebSocketChannel::AllMids => {
+                let prices = parse_all_mids(&json)?;
+                Ok(GemHyperliquidSocketMessage::AllMids { prices })
             }
             WebSocketChannel::SubscriptionResponse => {
                 let subscription_type = parse_subscription_response(&json)?;

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 
 use super::order::OpenOrder;
@@ -9,9 +11,15 @@ pub enum WebSocketChannel {
     ClearinghouseState,
     OpenOrders,
     Candle,
+    AllMids,
     SubscriptionResponse,
     #[serde(other)]
     Unknown,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AllMidsData {
+    pub mids: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

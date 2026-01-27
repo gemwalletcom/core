@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::PerpetualPositionsSummary;
 use serde::de::DeserializeOwned;
@@ -5,7 +7,7 @@ use serde::de::DeserializeOwned;
 use crate::models::{
     candlestick::Candlestick,
     order::OpenOrder,
-    websocket::{ClearinghouseStateData, OpenOrdersData, SubscriptionResponseData, WebSocketChannel, WebSocketMessage},
+    websocket::{AllMidsData, ClearinghouseStateData, OpenOrdersData, SubscriptionResponseData, WebSocketChannel, WebSocketMessage},
 };
 
 use super::perpetual_mapper::map_positions;
@@ -51,4 +53,9 @@ pub fn parse_subscription_response(json: &str) -> Result<String, serde_json::Err
 pub fn parse_candle(json: &str) -> Result<ChartCandleStick, serde_json::Error> {
     let candlestick: Candlestick = parse_data(json)?;
     Ok(candlestick.into())
+}
+
+pub fn parse_all_mids(json: &str) -> Result<HashMap<String, f64>, serde_json::Error> {
+    let data: AllMidsData = parse_data(json)?;
+    Ok(data.mids.into_iter().filter_map(|(k, v)| v.parse::<f64>().ok().map(|p| (k, p))).collect())
 }
