@@ -124,7 +124,7 @@ impl Downloader {
                     if self.args.verbose {
                         println!("<== {:?} already exists, skip", &path);
                     }
-                    return Ok(());
+                    continue;
                 }
                 fs::create_dir_all(path.clone())?;
 
