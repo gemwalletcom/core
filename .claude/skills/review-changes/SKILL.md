@@ -52,7 +52,7 @@ Analyze the diff above and check for the following issues:
 - [ ] **Consistent `Result<T, Error>`**: Use consistent return types
 
 ### 4. Code Style
-- [ ] **Line length**: Maximum 160 characters
+- [ ] **Line length**: Maximum 180 characters
 - [ ] **Avoid `matches!`**: Don't use `matches!` for pattern matching; it's easy to miss cases later
 - [ ] **No over-engineering**: Only make changes directly requested or clearly necessary
 - [ ] **No docstrings/comments/annotations**: Don't add docstrings, comments, or `///` docs unless explicitly asked; remove any that were added (including in mod.rs files)
