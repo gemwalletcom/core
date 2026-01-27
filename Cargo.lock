@@ -3137,12 +3137,15 @@ version = "1.0.0"
 dependencies = [
  "clap",
  "gem_evm",
+ "gem_jsonrpc",
+ "gem_solana",
  "gemstone",
  "num-bigint",
  "prettytable-rs",
  "primitives",
  "reqwest 0.13.1",
  "serde",
+ "serde_json",
  "serde_serializers",
  "tokio",
 ]

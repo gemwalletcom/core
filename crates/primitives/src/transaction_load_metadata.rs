@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
 
 use crate::{UTXO, solana_token_program::SolanaTokenProgramId, stake_type::StakeData};
 
@@ -15,6 +16,15 @@ pub struct HyperliquidOrder {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct SolanaJitoTips {
+    pub slow: u64,
+    pub normal: u64,
+    pub fast: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TransactionLoadMetadata {
     None,
     Solana {
@@ -22,6 +32,7 @@ pub enum TransactionLoadMetadata {
         recipient_token_address: Option<String>,
         token_program: Option<SolanaTokenProgramId>,
         block_hash: String,
+        jito_tips: Option<SolanaJitoTips>,
     },
     Ton {
         sender_token_address: Option<String>,
@@ -175,6 +186,13 @@ impl TransactionLoadMetadata {
         match self {
             TransactionLoadMetadata::Sui { message_bytes, .. } => Ok(message_bytes.clone()),
             _ => Err("Message bytes not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_jito_tips(&self) -> Result<Option<SolanaJitoTips>, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Solana { jito_tips, .. } => Ok(jito_tips.clone()),
+            _ => Err("Jito tips not available for this metadata type".into()),
         }
     }
 }

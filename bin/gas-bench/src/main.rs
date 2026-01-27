@@ -1,8 +1,10 @@
 mod client;
 mod etherscan;
 mod gasflow;
+mod jito;
+mod solana_client;
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use prettytable::{Cell, Row, Table, format};
 use std::error::Error;
 use std::{collections::HashMap, sync::Arc, time::Duration};
@@ -12,9 +14,19 @@ use crate::{
     client::{GemstoneClient, GemstoneFeeData},
     etherscan::EtherscanClient,
     gasflow::GasflowClient,
+    jito::{JitoClient, JitoTipFloor},
+    solana_client::{SolanaFeeData, SolanaGasClient},
 };
+use gem_evm::ether_conv::EtherConv;
+use crate::jito::{format_micro_lamports, lamports_to_sol, priority_fee_to_lamports};
 use gemstone::alien::reqwest_provider::NativeProvider;
 use primitives::fee::FeePriority;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum ChainMode {
+    Ethereum,
+    Solana,
+}
 
 #[derive(Debug, Clone)]
 struct SourceFeeDetail {
@@ -31,40 +43,57 @@ struct SourceFeeDetail {
     author,
     version,
     about,
-    long_about = "A CLI tool to benchmark Ethereum gas fees from multiple sources.\n\
-It periodically fetches gas fee data from Gemstone (local Ethereum node), Etherscan API, and Gasflow API.\n\
-The data is then grouped by block number and displayed in a comparative table, showing slow, normal, and fast priority fees along with suggested base fees from each source.\n\
-This allows for easy visual comparison and benchmarking of gas fee estimations."
+    long_about = "A CLI tool to benchmark gas/priority fees from multiple sources.\n\
+It periodically fetches fee data and displays comparative tables.\n\n\
+For Ethereum: fetches from Gemstone (local node), Etherscan API, and Gasflow API.\n\
+For Solana: fetches priority fees via RPC and compares with Jito tip floor API."
 )]
 struct Cli {
+    /// Chain to benchmark
+    #[clap(short, long, value_enum, default_value_t = ChainMode::Ethereum)]
+    chain: ChainMode,
+
     /// Enable debug logging
     #[arg(long, short, action = clap::ArgAction::SetTrue)]
     debug: bool,
 
-    /// The number of blocks to fetch
+    /// The number of blocks to fetch (Ethereum only)
     #[clap(short, long, default_value_t = 4)]
     blocks: u64,
 
-    /// The reward percentiles to fetch
+    /// The reward percentiles to fetch (Ethereum only)
     #[clap(short, long, value_delimiter = ',', default_value = "20,40,60")]
     reward_percentiles: Vec<u64>,
 
-    /// The minimum priority fee in wei (default: 0.01 Gwei)
+    /// The minimum priority fee in wei (Ethereum only, default: 0.01 Gwei)
     #[clap(short, long, default_value_t = 10000000)]
     min_priority_fee: u64,
 
-    /// The Etherscan API key
+    /// The Etherscan API key (Ethereum only)
     #[clap(long, env = "ETHERSCAN_API_KEY")]
-    etherscan_api_key: String,
+    etherscan_api_key: Option<String>,
+
+    /// Compute units for priority fee calculation (Solana only)
+    #[clap(long, default_value_t = 200_000)]
+    compute_units: u64,
+
+    /// Skip Jito API comparison (Solana only)
+    #[clap(long, action = clap::ArgAction::SetTrue)]
+    skip_jito: bool,
 }
 
-async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_ethereum(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let etherscan_api_key = args.etherscan_api_key.ok_or("Etherscan API key is required for Ethereum mode")?;
+
     let mut ticker = interval(Duration::from_secs(6));
     let native_provider = Arc::new(NativeProvider::new().set_debug(args.debug));
 
     let mut last_printed_block_opt: Option<u64> = None;
     let mut block_data: HashMap<u64, Vec<SourceFeeDetail>> = HashMap::new();
-    println!("gas-bench: with history blocks: {}, reward percentiles: {:?}", args.blocks, args.reward_percentiles);
+    println!(
+        "gas-bench [Ethereum]: with history blocks: {}, reward percentiles: {:?}",
+        args.blocks, args.reward_percentiles
+    );
 
     loop {
         ticker.tick().await;
@@ -74,7 +103,7 @@ async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let gemstone_client_clone = GemstoneClient::new(native_provider.clone());
         let reward_percentiles_clone = args.reward_percentiles.clone();
-        let etherscan_api_key_clone = args.etherscan_api_key.clone();
+        let etherscan_api_key_clone = etherscan_api_key.clone();
 
         let fee_history_future = gemstone_client_clone.fetch_base_priority_fees(args.blocks, reward_percentiles_clone, args.min_priority_fee);
 
@@ -99,7 +128,6 @@ async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
             let mut normal = "N/A".to_string();
             let mut fast = "N/A".to_string();
             for fee_record in &data.priority_fees {
-                use gem_evm::ether_conv::EtherConv;
                 match fee_record.priority {
                     FeePriority::Slow => slow = EtherConv::to_gwei(&fee_record.value),
                     FeePriority::Normal => normal = EtherConv::to_gwei(&fee_record.value),
@@ -215,7 +243,141 @@ async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
             }
         }
     }
-    // Ok(()) // Loop is infinite, this is not reached
+}
+
+async fn run_solana(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut ticker = interval(Duration::from_secs(6));
+    let native_provider = Arc::new(NativeProvider::new().set_debug(args.debug));
+    let solana_client = SolanaGasClient::new(native_provider);
+    let jito_client = if args.skip_jito { None } else { Some(JitoClient::new()) };
+
+    let mut last_printed_slot: Option<u64> = None;
+
+    println!("gas-bench [Solana]: monitoring priority fees and Jito tips");
+    println!("  Compute units for fee calculation: {}", args.compute_units);
+    println!("  Jito comparison: {}", if jito_client.is_some() { "enabled" } else { "disabled" });
+    println!();
+
+    loop {
+        ticker.tick().await;
+
+        if args.debug {
+            eprintln!("gas-bench: fetching Solana fee data...");
+        }
+
+        let solana_future = solana_client.fetch_fee_data();
+        let jito_future = async {
+            match &jito_client {
+                Some(client) => Some(client.fetch_tip_floor().await),
+                None => None,
+            }
+        };
+
+        let (solana_res, jito_res) = tokio::join!(solana_future, jito_future);
+
+        match solana_res {
+            Ok(fee_data) => {
+                if last_printed_slot.is_some_and(|s| s >= fee_data.slot) {
+                    continue;
+                }
+
+                print_solana_fee_data(&fee_data, &jito_res, args.compute_units);
+                last_printed_slot = Some(fee_data.slot);
+            }
+            Err(e) => {
+                if args.debug {
+                    eprintln!("gas-bench: Error fetching Solana data: {e:?}");
+                }
+            }
+        }
+    }
+}
+
+fn print_solana_fee_data(fee_data: &SolanaFeeData, jito_res: &Option<Result<JitoTipFloor, Box<dyn Error + Send + Sync>>>, compute_units: u64) {
+    println!("\n--- Slot: {} ---", fee_data.slot);
+
+    let accounts = [
+        ("Jupiter", &fee_data.account_fees.jupiter),
+        ("Orca", &fee_data.account_fees.orca),
+        ("USDC", &fee_data.account_fees.usdc),
+    ];
+    let active_accounts: Vec<&str> = accounts
+        .iter()
+        .filter(|(_, data)| data.as_ref().is_some_and(|d| d.count > 0))
+        .map(|(name, _)| *name)
+        .collect();
+
+    if !active_accounts.is_empty() {
+        println!("Sampling: {} (avg: {} µL/CU)", active_accounts.join(", "), fee_data.raw_fees.avg);
+    }
+
+    let mut table = Table::new();
+    table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+    let has_jito = jito_res.as_ref().is_some_and(|r| r.is_ok());
+    if has_jito {
+        table.add_row(Row::new(vec![
+            Cell::new("Level"),
+            Cell::new("Priority Fee"),
+            Cell::new("Est. Jito Tip"),
+            Cell::new("Jito Floor"),
+            Cell::new("Diff %"),
+        ]));
+    } else {
+        table.add_row(Row::new(vec![Cell::new("Level"), Cell::new("Priority Fee"), Cell::new("Est. Jito Tip")]));
+    }
+
+    let levels = [
+        ("Slow", fee_data.priority_fees.slow, fee_data.jito_tips.slow),
+        ("Normal", fee_data.priority_fees.normal, fee_data.jito_tips.normal),
+        ("Fast", fee_data.priority_fees.fast, fee_data.jito_tips.fast),
+    ];
+
+    let jito_floors = if let Some(Ok(jito_data)) = jito_res {
+        vec![jito_data.p25_lamports, jito_data.p50_lamports, jito_data.p75_lamports]
+    } else {
+        vec![0, 0, 0]
+    };
+
+    for (i, (level, priority_fee, jito_estimate)) in levels.iter().enumerate() {
+        let priority_lamports = priority_fee_to_lamports(*priority_fee, compute_units);
+        let priority_display = format!("{} ({})", format_micro_lamports(*priority_fee), lamports_to_sol(priority_lamports));
+        let jito_estimate_display = format!("{} ({})", jito_estimate, lamports_to_sol(*jito_estimate));
+
+        if has_jito {
+            let jito_floor = jito_floors[i];
+            let jito_floor_display = format!("{} ({})", jito_floor, lamports_to_sol(jito_floor));
+            let diff_pct = if jito_floor > 0 {
+                let diff = (*jito_estimate as f64 - jito_floor as f64) / jito_floor as f64 * 100.0;
+                format!("{:+.1}%", diff)
+            } else {
+                "N/A".to_string()
+            };
+
+            table.add_row(Row::new(vec![
+                Cell::new(level),
+                Cell::new(&priority_display),
+                Cell::new(&jito_estimate_display),
+                Cell::new(&jito_floor_display),
+                Cell::new(&diff_pct),
+            ]));
+        } else {
+            table.add_row(Row::new(vec![Cell::new(level), Cell::new(&priority_display), Cell::new(&jito_estimate_display)]));
+        }
+    }
+
+    table.printstd();
+
+    if let Some(Err(e)) = jito_res {
+        println!("  (Jito API error: {})", e);
+    }
+}
+
+async fn run(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
+    match args.chain {
+        ChainMode::Ethereum => run_ethereum(args).await,
+        ChainMode::Solana => run_solana(args).await,
+    }
 }
 
 #[tokio::main]

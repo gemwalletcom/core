@@ -350,6 +350,13 @@ pub struct GemTransactionData {
     pub metadata: GemTransactionLoadMetadata,
 }
 
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemSolanaJitoTips {
+    pub slow: u64,
+    pub normal: u64,
+    pub fast: u64,
+}
+
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemTransactionLoadMetadata {
     None,
@@ -358,6 +365,7 @@ pub enum GemTransactionLoadMetadata {
         recipient_token_address: Option<String>,
         token_program: Option<GemSolanaTokenProgramId>,
         block_hash: String,
+        jito_tips: Option<GemSolanaJitoTips>,
     },
     Ton {
         sender_token_address: Option<String>,
@@ -440,11 +448,17 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 recipient_token_address,
                 token_program,
                 block_hash,
+                jito_tips,
             } => GemTransactionLoadMetadata::Solana {
                 sender_token_address,
                 recipient_token_address,
                 token_program,
                 block_hash,
+                jito_tips: jito_tips.map(|t| GemSolanaJitoTips {
+                    slow: t.slow,
+                    normal: t.normal,
+                    fast: t.fast,
+                }),
             },
             TransactionLoadMetadata::Ton {
                 sender_token_address,
@@ -528,11 +542,17 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 recipient_token_address,
                 token_program,
                 block_hash,
+                jito_tips,
             } => TransactionLoadMetadata::Solana {
                 sender_token_address,
                 recipient_token_address,
                 token_program,
                 block_hash,
+                jito_tips: jito_tips.map(|t| primitives::SolanaJitoTips {
+                    slow: t.slow,
+                    normal: t.normal,
+                    fast: t.fast,
+                }),
             },
             GemTransactionLoadMetadata::Ton {
                 sender_token_address,
