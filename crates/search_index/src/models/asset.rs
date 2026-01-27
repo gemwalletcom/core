@@ -10,6 +10,7 @@ pub const ASSETS_FILTERS: &[&str] = &[
     "asset.type",
     "score.rank",
     "properties.isEnabled",
+    "properties.hasImage",
     "market.marketCap",
     "market.marketCapFdv",
     "market.marketCapRank",

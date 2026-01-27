@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::error::Error;
 
 use super::filter::{build_assets_filters, build_filter};
 use super::model::SearchRequest;
 use chrono::{DateTime, Utc};
+use pricer::PriceClient;
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, Perpetual};
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTDocument, NFTS_INDEX_NAME, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, SubscriptionsRepository};
@@ -46,11 +48,15 @@ impl AssetsClient {
 
 pub struct SearchClient {
     client: SearchIndexClient,
+    price_client: PriceClient,
 }
 
 impl SearchClient {
-    pub fn new(client: &SearchIndexClient) -> Self {
-        Self { client: client.clone() }
+    pub fn new(client: &SearchIndexClient, price_client: PriceClient) -> Self {
+        Self {
+            client: client.clone(),
+            price_client,
+        }
     }
 
     pub async fn get_assets_search(&self, request: &SearchRequest) -> Result<Vec<primitives::AssetBasic>, Box<dyn Error + Send + Sync>> {
@@ -61,7 +67,27 @@ impl SearchClient {
             .search(ASSETS_INDEX_NAME, &request.query, &build_filter(filters), [].as_ref(), request.limit, request.offset)
             .await?;
 
-        Ok(assets.into_iter().map(|x| AssetBasic::new(x.asset, x.properties, x.score)).collect())
+        let asset_ids: Vec<String> = assets.iter().map(|x| x.asset.id.to_string()).collect();
+        let prices: HashMap<String, _> = self
+            .price_client
+            .get_cache_prices(asset_ids)
+            .await?
+            .into_iter()
+            .map(|p| (p.asset_id.to_string(), p.as_price_primitive()))
+            .collect();
+
+        Ok(assets
+            .into_iter()
+            .map(|x| {
+                let price = prices.get(&x.asset.id.to_string()).cloned();
+                AssetBasic {
+                    asset: x.asset,
+                    properties: x.properties,
+                    score: x.score,
+                    price,
+                }
+            })
+            .collect())
     }
 
     pub async fn get_perpetuals_search(&self, request: &SearchRequest) -> Result<Vec<Perpetual>, Box<dyn Error + Send + Sync>> {

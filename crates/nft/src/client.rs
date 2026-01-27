@@ -62,7 +62,7 @@ impl NFTClient {
                 Err(e) => println!("nft preload collection {} error: {e}", collection_id.id()),
             }
         }
-        let new_collections = collections.clone().into_iter().map(storage::models::NftCollectionRow::from_primitive).collect();
+        let new_collections = collections.clone().into_iter().map(storage::models::NewNftCollectionRow::from_primitive).collect();
 
         let links: Vec<storage::models::NftLinkRow> = collections
             .clone()

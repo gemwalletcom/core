@@ -6,7 +6,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, amount_to_value, near_intents::client::base_url,
+    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value, client_factory::create_client_with_chain, near_intents::client::base_url,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
