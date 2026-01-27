@@ -14,7 +14,7 @@ use std::{str::FromStr, sync::Arc};
 use crate::alien::RpcProvider;
 use gem_client::Client;
 
-use super::{ProviderType, SwapperProvider};
+use super::{ProviderType, SwapperError, SwapperProvider};
 
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
@@ -62,6 +62,15 @@ where
 
     fn get_eta_in_seconds(&self, destination_chain: Chain, total_swap_seconds: Option<u32>) -> u32 {
         destination_chain.block_time() / 1000 + OUTBOUND_DELAY_SECONDS + total_swap_seconds.unwrap_or(0)
+    }
+
+    fn map_quote_error(&self, error: SwapperError, decimals: i32) -> SwapperError {
+        if let SwapperError::InputAmountError { min_amount: Some(min) } = &error {
+            return SwapperError::InputAmountError {
+                min_amount: Some(self.value_to(min.clone(), decimals).to_string()),
+            };
+        }
+        error
     }
 }
 
@@ -121,5 +130,31 @@ mod tests {
 
         let eta = thorchain.get_eta_in_seconds(Chain::SmartChain, Some(648));
         assert_eq!(eta, 709);
+    }
+
+    #[test]
+    fn test_map_quote_error() {
+        let thorchain = ThorChain::new(Arc::new(NativeProvider::default()));
+
+        let cases = vec![(18, "6614750000000000"), (8, "661475"), (6, "6614")];
+
+        for (decimals, expected) in cases {
+            let error = SwapperError::InputAmountError {
+                min_amount: Some("661475".to_string()),
+            };
+            let result = thorchain.map_quote_error(error, decimals);
+            assert_eq!(
+                result,
+                SwapperError::InputAmountError {
+                    min_amount: Some(expected.to_string())
+                }
+            );
+        }
+
+        let error = SwapperError::InputAmountError { min_amount: None };
+        assert_eq!(thorchain.map_quote_error(error, 18), SwapperError::InputAmountError { min_amount: None });
+
+        let error = SwapperError::NotSupportedAsset;
+        assert_eq!(thorchain.map_quote_error(error, 18), SwapperError::NotSupportedAsset);
     }
 }
