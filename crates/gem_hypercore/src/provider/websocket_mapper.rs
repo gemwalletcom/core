@@ -25,34 +25,32 @@ pub struct OpenOrdersResult {
 }
 
 pub fn parse_channel(json: &str) -> Result<WebSocketChannel, serde_json::Error> {
-    let message: WebSocketMessage<serde_json::Value> = serde_json::from_str(json)?;
-    Ok(message.channel)
+    Ok(WebSocketMessage::<serde_json::Value>::parse(json)?.channel)
 }
 
 pub fn parse_clearinghouse_state(json: &str) -> Result<ClearinghouseResult, serde_json::Error> {
-    let message: WebSocketMessage<ClearinghouseStateData> = serde_json::from_str(json)?;
-    let summary = map_positions(message.data.clearinghouse_state, message.data.user.clone(), &[]);
-    Ok(ClearinghouseResult { user: message.data.user, summary })
+    let data = WebSocketMessage::<ClearinghouseStateData>::parse(json)?.data;
+    let summary = map_positions(data.clearinghouse_state, data.user.clone(), &[]);
+    Ok(ClearinghouseResult { user: data.user, summary })
 }
 
 pub fn parse_open_orders(json: &str) -> Result<OpenOrdersResult, serde_json::Error> {
-    let message: WebSocketMessage<OpenOrdersData> = serde_json::from_str(json)?;
-    Ok(OpenOrdersResult { user: message.data.user, orders: message.data.orders })
+    let data = WebSocketMessage::<OpenOrdersData>::parse(json)?.data;
+    Ok(OpenOrdersResult { user: data.user, orders: data.orders })
 }
 
 pub fn parse_subscription_response(json: &str) -> Result<String, serde_json::Error> {
-    let message: WebSocketMessage<SubscriptionResponseData> = serde_json::from_str(json)?;
-    Ok(message.data.subscription.subscription_type)
+    let data = WebSocketMessage::<SubscriptionResponseData>::parse(json)?.data;
+    Ok(data.subscription.subscription_type)
 }
 
 pub fn parse_candle(json: &str) -> Result<ChartCandleStick, serde_json::Error> {
-    let message: WebSocketMessage<Candlestick> = serde_json::from_str(json)?;
-    Ok(message.data.into())
+    Ok(WebSocketMessage::<Candlestick>::parse(json)?.data.into())
 }
 
 pub fn parse_all_mids(json: &str) -> Result<HashMap<String, f64>, serde_json::Error> {
-    let message: WebSocketMessage<AllMidsData> = serde_json::from_str(json)?;
-    Ok(message.data.mids.into_iter().filter_map(|(k, v)| v.parse::<f64>().ok().map(|p| (k, p))).collect())
+    let data = WebSocketMessage::<AllMidsData>::parse(json)?.data;
+    Ok(data.mids.into_iter().filter_map(|(k, v)| v.parse::<f64>().ok().map(|p| (k, p))).collect())
 }
 
 pub fn diff_clearinghouse_positions(new_positions: Vec<PerpetualPosition>, existing_positions: Vec<PerpetualPosition>) -> PositionsDiff {

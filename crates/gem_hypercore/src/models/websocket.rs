@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use primitives::PerpetualPosition;
+use serde::de::DeserializeOwned;
 use serde::Deserialize;
 
 use super::order::OpenOrder;
@@ -27,6 +28,12 @@ pub struct AllMidsData {
 pub struct WebSocketMessage<T> {
     pub channel: WebSocketChannel,
     pub data: T,
+}
+
+impl<T: DeserializeOwned> WebSocketMessage<T> {
+    pub fn parse(json: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(json)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
