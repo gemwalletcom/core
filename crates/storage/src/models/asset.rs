@@ -80,7 +80,7 @@ impl NewAssetRow {
             staking_apr: properties.staking_apr,
             is_earnable: properties.is_earnable,
             earn_apr: properties.earn_apr,
-            has_image: false,
+            has_image: properties.has_image,
         }
     }
 }
@@ -117,6 +117,7 @@ impl AssetRow {
             staking_apr: self.staking_apr,
             is_earnable: self.is_earnable,
             earn_apr: self.earn_apr,
+            has_image: self.has_image,
         }
     }
 }
