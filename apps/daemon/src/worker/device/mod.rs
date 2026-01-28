@@ -19,7 +19,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let cacher_client = CacherClient::new(settings.redis.url.as_str()).await;
 
     let device_updater = tokio::spawn(run_job(
-        "update_devices",
+        "cleanup_stale_device_subscriptions",
         config.get_duration(ConfigKey::DeviceTimerUpdater)?,
         reporter.clone(),
         shutdown_rx.clone(),

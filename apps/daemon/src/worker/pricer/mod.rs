@@ -48,8 +48,8 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
             }
         },
     ));
-    let update_fiat_assets = tokio::spawn(run_job(
-        "update_fiat_assets",
+    let update_fiat_rates = tokio::spawn(run_job(
+        "update_fiat_rates",
         config.get_duration(ConfigKey::PriceTimerFiatRates)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -249,7 +249,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
 
     Ok(vec![
         clean_updated_assets,
-        update_fiat_assets,
+        update_fiat_rates,
         update_prices_top_market_cap,
         update_prices_high_market_cap,
         update_prices_low_market_cap,
