@@ -12,12 +12,12 @@ pub fn channel() -> (ShutdownSender, ShutdownReceiver) {
     (Arc::new(tx), rx)
 }
 
-pub fn spawn_signal_handler(shutdown_tx: ShutdownSender) {
+pub fn spawn_signal_handler(shutdown_tx: ShutdownSender) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
         wait_for_signal().await;
         info_with_fields!("shutdown signal received", status = "ok");
         let _ = shutdown_tx.send(true);
-    });
+    })
 }
 
 pub async fn wait_with_timeout(handles: Vec<tokio::task::JoinHandle<()>>, timeout: Duration) {

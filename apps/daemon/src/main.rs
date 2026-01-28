@@ -55,7 +55,7 @@ async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
     let (shutdown_tx, shutdown_rx) = shutdown::channel();
     let shutdown_timeout = settings.daemon.shutdown.timeout;
 
-    shutdown::spawn_signal_handler(shutdown_tx);
+    let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
     let services = match service {
         WorkerService::Alerter => worker::alerter::jobs(settings, shutdown_rx).await.unwrap(),
@@ -72,6 +72,7 @@ async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
         WorkerService::Rewards => worker::rewards::jobs(settings, shutdown_rx).await.unwrap(),
     };
 
+    signal_handle.await.ok();
     shutdown::wait_with_timeout(services, shutdown_timeout).await;
     info_with_fields!("all workers stopped", status = "ok");
 }
