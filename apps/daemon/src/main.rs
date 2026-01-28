@@ -109,7 +109,6 @@ async fn run_consumer(
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match service {
-        ConsumerService::FetchAssets => consumers::run_consumer_fetch_assets(settings, shutdown_rx).await,
         ConsumerService::FetchAddressTransactions => consumers::run_consumer_fetch_address_transactions(settings, shutdown_rx, reporter).await,
         ConsumerService::StoreTransactions => consumers::run_consumer_store_transactions(settings, shutdown_rx, reporter).await,
         ConsumerService::FetchBlocks => consumers::run_consumer_fetch_blocks(settings, shutdown_rx, reporter).await,
