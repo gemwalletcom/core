@@ -4,7 +4,6 @@ const LAMPORTS_PER_SOL: f64 = 1_000_000_000.0;
 const MICRO_LAMPORTS_PER_LAMPORT: f64 = 1_000_000.0;
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct JitoTipFloorEntry {
     pub landed_tips_25th_percentile: f64,
     pub landed_tips_50th_percentile: f64,
