@@ -34,6 +34,8 @@ impl JobStatusReporter for CacherJobReporter {
 
             if success {
                 status.last_success = Some(timestamp);
+                status.last_error = None;
+                status.last_error_at = None;
             } else if let Some(msg) = error {
                 status.last_error = Some(msg);
                 status.last_error_at = Some(timestamp);
