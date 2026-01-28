@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct DeviceSessionRow {
     pub id: i32,
     pub device_id: i32,
-    pub address: String,
+    pub wallet_id: i32,
     pub signature: String,
     pub created_at: NaiveDateTime,
 }
@@ -17,6 +17,6 @@ pub struct DeviceSessionRow {
 #[diesel(table_name = crate::schema::devices_sessions)]
 pub struct NewDeviceSessionRow {
     pub device_id: i32,
-    pub address: String,
+    pub wallet_id: i32,
     pub signature: String,
 }

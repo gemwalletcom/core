@@ -238,8 +238,7 @@ diesel::table! {
     devices_sessions (id) {
         id -> Int4,
         device_id -> Int4,
-        #[max_length = 256]
-        address -> Varchar,
+        wallet_id -> Int4,
         #[max_length = 256]
         signature -> Varchar,
         created_at -> Timestamp,
@@ -965,6 +964,7 @@ diesel::joinable!(charts_daily -> prices (coin_id));
 diesel::joinable!(charts_hourly -> prices (coin_id));
 diesel::joinable!(devices -> fiat_rates (currency));
 diesel::joinable!(devices_sessions -> devices (device_id));
+diesel::joinable!(devices_sessions -> wallets (wallet_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_providers_countries -> fiat_providers (provider));

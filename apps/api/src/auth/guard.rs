@@ -1,16 +1,17 @@
 use crate::responders::ErrorContext;
 use gem_auth::{AuthClient, verify_auth_signature};
-use primitives::{AuthMessage, AuthenticatedRequest};
+use primitives::{AuthMessage, AuthenticatedRequest, WalletId};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
 use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
-use storage::Database;
 use storage::database::devices::DevicesStore;
 use storage::database::devices_sessions::DeviceSessionsStore;
-use storage::models::{DeviceRow, NewDeviceSessionRow};
+use storage::models::{DeviceRow, NewDeviceSessionRow, NewWalletRow};
+use storage::repositories::wallets_repository::WalletsRepository;
+use storage::{Database, WalletSource, WalletType};
 
 fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
     req.local_cache(|| ErrorContext(message.to_string()));
@@ -74,9 +75,19 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
             return error_outcome(req, Status::InternalServerError, "Failed to invalidate nonce");
         }
 
+        let wallet_identifier = WalletId::Multicoin(body.auth.address.clone()).id();
+        let wallet = match db_client.get_or_create_wallet(NewWalletRow {
+            identifier: wallet_identifier,
+            wallet_type: WalletType(primitives::WalletType::Multicoin),
+            source: WalletSource(primitives::WalletSource::Import),
+        }) {
+            Ok(w) => w,
+            Err(_) => return error_outcome(req, Status::InternalServerError, "Failed to get or create wallet"),
+        };
+
         let session = NewDeviceSessionRow {
             device_id: device.id,
-            address: body.auth.address.clone(),
+            wallet_id: wallet.id,
             signature: body.auth.signature.clone(),
         };
         if DeviceSessionsStore::add_device_session(&mut db_client, session).is_err() {
