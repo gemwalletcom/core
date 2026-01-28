@@ -16,6 +16,7 @@ impl MetricsClient {
         super::price::init_price_metrics(registry.registry_mut());
         super::fiat::init_fiat_metrics(registry.registry_mut());
         super::job::init_job_metrics(registry.registry_mut());
+        super::consumer::init_consumer_metrics(registry.registry_mut());
 
         Self { registry, database, cacher }
     }
@@ -24,6 +25,7 @@ impl MetricsClient {
         super::parser::update_parser_metrics(&self.database);
         super::price::update_price_metrics(&self.database);
         super::job::update_job_metrics(&self.cacher).await;
+        super::consumer::update_consumer_metrics(&self.cacher).await;
 
         self.registry.encode()
     }

@@ -1,39 +1,51 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use gem_tracing::info_with_fields;
 use job_runner::JobStatusReporter;
 use primitives::JobStatus;
 
-const JOBS_STATUS_PREFIX: &str = "jobs:status:";
-
 pub struct CacherJobReporter {
     cacher: CacherClient,
+    service: String,
 }
 
 impl CacherJobReporter {
-    pub fn new(cacher: CacherClient) -> Self {
-        Self { cacher }
+    pub fn new(cacher: CacherClient, service: &str) -> Self {
+        Self {
+            cacher,
+            service: service.to_string(),
+        }
     }
 }
 
-fn normalize_key(name: &str) -> String {
-    format!("{}{}", JOBS_STATUS_PREFIX, name.to_lowercase().replace(' ', "_"))
+pub fn normalize_name(name: &str) -> String {
+    name.to_lowercase().replace(' ', "_")
 }
 
 impl JobStatusReporter for CacherJobReporter {
-    fn report(&self, name: &str, status: JobStatus) -> Pin<Box<dyn Future<Output = ()> + Send + '_>> {
-        let key = normalize_key(name);
+    fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>) -> Pin<Box<dyn Future<Output = ()> + Send + '_>> {
+        let normalized = normalize_name(&format!("{}:{}", self.service, name));
         Box::pin(async move {
-            if let Err(e) = self.cacher.set_value(&key, &status).await {
+            let cache_key = CacheKey::JobStatus(&normalized);
+            let key = cache_key.key();
+            let mut status = self.cacher.get_value::<JobStatus>(&key).await.unwrap_or_default();
+            let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+
+            status.interval = interval;
+            status.duration = duration;
+
+            if success {
+                status.last_success = Some(timestamp);
+            } else if let Some(msg) = error {
+                status.last_error = Some(msg);
+                status.last_error_at = Some(timestamp);
+            }
+
+            if let Err(e) = self.cacher.set_cached(cache_key, &status).await {
                 info_with_fields!("job status report failed", job = key, error = format!("{:?}", e));
             }
         })
-    }
-
-    fn get_status(&self, name: &str) -> Pin<Box<dyn Future<Output = Option<JobStatus>> + Send + '_>> {
-        let key = normalize_key(name);
-        Box::pin(async move { self.cacher.get_value(&key).await.ok() })
     }
 }

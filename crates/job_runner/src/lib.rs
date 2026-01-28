@@ -4,7 +4,6 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use gem_tracing::info_with_fields;
-use primitives::JobStatus;
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
 
@@ -26,8 +25,7 @@ impl<T: Debug, E: Debug> JobResult for Result<T, E> {
 }
 
 pub trait JobStatusReporter: Send + Sync {
-    fn report(&self, name: &str, status: JobStatus) -> Pin<Box<dyn Future<Output = ()> + Send + '_>>;
-    fn get_status(&self, name: &str) -> Pin<Box<dyn Future<Output = Option<JobStatus>> + Send + '_>>;
+    fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>) -> Pin<Box<dyn Future<Output = ()> + Send + '_>>;
 }
 
 pub async fn sleep_or_shutdown(duration: Duration, shutdown_rx: &ShutdownReceiver) -> bool {
@@ -59,21 +57,13 @@ where
 
         info_with_fields!("job complete", job = name, duration = format!("{}ms", duration_ms), result = format!("{:?}", result));
 
-        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+        let error = if result.is_success() {
+            None
+        } else {
+            result.error_message().map(|msg| if msg.len() > 200 { msg[..200].to_string() } else { msg })
+        };
 
-        let mut status = reporter.get_status(name).await.unwrap_or_default();
-        status.interval = interval_duration.as_secs();
-        status.duration = duration_ms;
-
-        if result.is_success() {
-            status.last_success = Some(timestamp);
-        } else if let Some(msg) = result.error_message() {
-            let truncated = if msg.len() > 200 { msg[..200].to_string() } else { msg };
-            status.last_error = Some(truncated);
-            status.last_error_at = Some(timestamp);
-        }
-
-        reporter.report(name, status).await;
+        reporter.report(name, interval_duration.as_secs(), duration_ms, result.is_success(), error).await;
 
         if *shutdown_rx.borrow() {
             info_with_fields!("job shutdown", job = name);

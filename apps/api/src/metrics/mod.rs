@@ -1,4 +1,5 @@
 mod client;
+mod consumer;
 mod fiat;
 mod job;
 mod parser;

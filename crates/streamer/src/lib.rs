@@ -9,6 +9,7 @@ pub mod stream_reader;
 
 pub use connection::StreamConnection;
 pub use consumer::ConsumerConfig;
+pub use consumer::ConsumerStatusReporter;
 pub use consumer::run_consumer;
 pub use exchange::ExchangeName;
 pub use lapin::ExchangeKind;
