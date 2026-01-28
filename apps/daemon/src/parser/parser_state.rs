@@ -58,10 +58,18 @@ impl ParserStateService {
         let latest_key = CacheKey::ParserLatestBlock(self.chain.as_ref());
 
         if let Ok(Some(current)) = self.cacher.get_i64(&current_key.key()).await {
-            let _ = self.database.parser_state().ok().and_then(|mut c| c.set_parser_state_current_block(self.chain.as_ref(), current).ok());
+            let _ = self
+                .database
+                .parser_state()
+                .ok()
+                .and_then(|mut c| c.set_parser_state_current_block(self.chain.as_ref(), current).ok());
         }
         if let Ok(Some(latest)) = self.cacher.get_i64(&latest_key.key()).await {
-            let _ = self.database.parser_state().ok().and_then(|mut c| c.set_parser_state_latest_block(self.chain.as_ref(), latest).ok());
+            let _ = self
+                .database
+                .parser_state()
+                .ok()
+                .and_then(|mut c| c.set_parser_state_latest_block(self.chain.as_ref(), latest).ok());
         }
     }
 }

@@ -8,7 +8,7 @@ mod worker;
 
 use crate::model::{ConsumerService, DaemonService, WorkerService};
 use crate::shutdown::ShutdownReceiver;
-use gem_tracing::{SentryConfig, SentryTracing, error_with_fields, info_with_fields};
+use gem_tracing::{SentryConfig, SentryTracing, info_with_fields};
 use std::str::FromStr;
 
 #[tokio::main]
@@ -78,19 +78,13 @@ async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
 
 async fn run_consumer_mode(settings: settings::Settings, service: ConsumerService) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let (shutdown_tx, shutdown_rx) = shutdown::channel();
-    let shutdown_timeout = settings.consumer.shutdown.timeout;
 
     shutdown::spawn_signal_handler(shutdown_tx);
 
-    let handle = tokio::spawn(async move {
-        if let Err(e) = run_consumer(settings, service, shutdown_rx).await {
-            error_with_fields!("consumer error", &*e, status = "failed");
-        }
-    });
+    let result = run_consumer(settings, service, shutdown_rx).await;
 
-    shutdown::wait_with_timeout(vec![handle], shutdown_timeout).await;
     info_with_fields!("consumer stopped", status = "ok");
-    Ok(())
+    result
 }
 
 async fn run_consumer(settings: settings::Settings, service: ConsumerService, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

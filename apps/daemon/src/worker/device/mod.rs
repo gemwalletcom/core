@@ -26,15 +26,20 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
         }
     }));
 
-    let inactive_devices_observer = tokio::spawn(run_job("inactive devices observer", config.get_duration(ConfigKey::DeviceTimerInactiveObserver)?, shutdown_rx, {
-        let settings = Arc::new(settings.clone());
-        let database = database.clone();
-        let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "inactive_devices_observer").await.unwrap();
-        move || {
-            let observer = InactiveDevicesObserver::new(database.clone(), cacher_client.clone(), stream_producer.clone());
-            async move { observer.observe().await }
-        }
-    }));
+    let inactive_devices_observer = tokio::spawn(run_job(
+        "inactive devices observer",
+        config.get_duration(ConfigKey::DeviceTimerInactiveObserver)?,
+        shutdown_rx,
+        {
+            let settings = Arc::new(settings.clone());
+            let database = database.clone();
+            let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "inactive_devices_observer").await.unwrap();
+            move || {
+                let observer = InactiveDevicesObserver::new(database.clone(), cacher_client.clone(), stream_producer.clone());
+                async move { observer.observe().await }
+            }
+        },
+    ));
 
     Ok(vec![device_updater, inactive_devices_observer])
 }

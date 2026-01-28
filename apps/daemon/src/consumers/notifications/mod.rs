@@ -32,7 +32,12 @@ pub async fn run(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<()
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsObservers, shutdown_rx.clone())),
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsSupport, shutdown_rx.clone())),
         tokio::spawn(run_notification_consumer(settings.clone(), QueueName::NotificationsRewards, shutdown_rx.clone())),
-        tokio::spawn(run_notifications_failed_consumer(settings.clone(), database.clone(), QueueName::NotificationsFailed, shutdown_rx.clone())),
+        tokio::spawn(run_notifications_failed_consumer(
+            settings.clone(),
+            database.clone(),
+            QueueName::NotificationsFailed,
+            shutdown_rx.clone(),
+        )),
     ])
     .await?;
 
@@ -50,7 +55,12 @@ async fn run_notification_consumer(settings: Arc<Settings>, queue: QueueName, sh
     run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await
 }
 
-async fn run_notifications_failed_consumer(settings: Arc<Settings>, database: Arc<Database>, queue: QueueName, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_notifications_failed_consumer(
+    settings: Arc<Settings>,
+    database: Arc<Database>,
+    queue: QueueName,
+    shutdown_rx: ShutdownReceiver,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;

@@ -151,7 +151,16 @@ pub async fn run_consumer_fetch_address_transactions(settings: Settings, shutdow
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
             let consumer = FetchAddressTransactionsConsumer::new(runner.database, chain_providers(&runner.settings, &name), stream_producer, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchAddressTransactionsConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config, runner.shutdown_rx).await
+            run_consumer::<ChainAddressPayload, FetchAddressTransactionsConsumer, usize>(
+                &name,
+                stream_reader,
+                queue,
+                Some(chain.as_ref()),
+                consumer,
+                runner.config,
+                runner.shutdown_rx,
+            )
+            .await
         })
         .await
 }
@@ -189,7 +198,8 @@ pub async fn run_consumer_fetch_token_associations(settings: Settings, shutdown_
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
             let consumer = FetchTokenAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, stream_producer, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config, runner.shutdown_rx).await
+            run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config, runner.shutdown_rx)
+                .await
         })
         .await
 }
@@ -202,7 +212,8 @@ pub async fn run_consumer_fetch_coin_associations(settings: Settings, shutdown_r
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let consumer = FetchCoinAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config, runner.shutdown_rx).await
+            run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config, runner.shutdown_rx)
+                .await
         })
         .await
 }
@@ -210,7 +221,18 @@ pub async fn run_consumer_fetch_coin_associations(settings: Settings, shutdown_r
 pub async fn run_consumer_fetch_nft_associations(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
     ChainConsumerRunner::new(settings, QueueName::FetchNftAssociations, shutdown_rx)
         .await?
-        .run(|runner, chain| async move { FetchNftAssetsAddressesConsumer::run(runner.settings, runner.database, chain, &runner.connection, runner.cacher, runner.config, runner.shutdown_rx).await })
+        .run(|runner, chain| async move {
+            FetchNftAssetsAddressesConsumer::run(
+                runner.settings,
+                runner.database,
+                chain,
+                &runner.connection,
+                runner.cacher,
+                runner.config,
+                runner.shutdown_rx,
+            )
+            .await
+        })
         .await
 }
 

@@ -12,14 +12,19 @@ use version_updater::VersionClient;
 pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
-    let update_store_versions = tokio::spawn(run_job("update store versions", config.get_duration(ConfigKey::VersionTimerUpdateStoreVersions)?, shutdown_rx, {
-        let database = database.clone();
-        move || {
+    let update_store_versions = tokio::spawn(run_job(
+        "update store versions",
+        config.get_duration(ConfigKey::VersionTimerUpdateStoreVersions)?,
+        shutdown_rx,
+        {
             let database = database.clone();
-            let version_client = VersionClient::new(database);
-            async move { version_client.update_store_versions().await }
-        }
-    }));
+            move || {
+                let database = database.clone();
+                let version_client = VersionClient::new(database);
+                async move { version_client.update_store_versions().await }
+            }
+        },
+    ));
 
     Ok(vec![update_store_versions])
 }
