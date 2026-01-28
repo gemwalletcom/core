@@ -39,8 +39,6 @@ pub fn amount_to_value(token: &str, decimals: u32) -> Option<String> {
     }
 }
 
-#[cfg(feature = "reqwest_provider")]
-pub use alien::reqwest_provider::NativeProvider;
 pub use alien::{AlienError, HttpMethod, RpcClient, RpcProvider, Target};
 pub use error::SwapperError;
 pub use models::*;

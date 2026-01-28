@@ -1,4 +1,5 @@
 mod asset;
+mod bigint;
 mod chain;
 mod client;
 mod constants;
@@ -7,9 +8,8 @@ pub(crate) mod model;
 mod provider;
 mod quote_data_mapper;
 
-use num_bigint::BigInt;
 use primitives::Chain;
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 use crate::alien::RpcProvider;
 use gem_client::Client;
@@ -44,20 +44,6 @@ where
             rpc_provider,
             swap_client,
         }
-    }
-
-    fn value_from(&self, value: String, decimals: i32) -> BigInt {
-        let value = BigInt::from_str(&value).unwrap();
-        let decimals = decimals - 8;
-        let factor = BigInt::from(10).pow(decimals.unsigned_abs());
-        if decimals > 0 { value / factor } else { value * factor }
-    }
-
-    fn value_to(&self, value: String, decimals: i32) -> BigInt {
-        let value = BigInt::from_str(&value).unwrap();
-        let decimals = decimals - 8;
-        let factor = BigInt::from(10).pow(decimals.unsigned_abs());
-        if decimals > 0 { value * factor } else { value / factor }
     }
 
     fn get_eta_in_seconds(&self, destination_chain: Chain, total_swap_seconds: Option<u32>) -> u32 {
