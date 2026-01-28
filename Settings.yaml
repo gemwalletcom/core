@@ -223,7 +223,7 @@ scan:
 parser:
   timeout: 1s
   shutdown:
-    timeout: 10s
+    timeout: 15s
 
 pusher:
   url: "http://localhost:8088"
@@ -233,7 +233,7 @@ pusher:
 daemon:
   service: ""
   shutdown:
-    timeout: 10s
+    timeout: 15s
 
 consumer:
   error:
@@ -241,7 +241,7 @@ consumer:
     skip: true
   delay: 0s
   shutdown:
-    timeout: 10s
+    timeout: 15s
 
 api:
   service: ""
