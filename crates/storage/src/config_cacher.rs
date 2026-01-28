@@ -66,6 +66,10 @@ impl ConfigCacher {
         Ok(self.get(key)?.parse()?)
     }
 
+    pub fn get_usize(&self, key: ConfigKey) -> Result<usize, DatabaseError> {
+        Ok(self.get(key)?.parse()?)
+    }
+
     pub fn get_f64(&self, key: ConfigKey) -> Result<f64, DatabaseError> {
         Ok(self.get(key)?.parse()?)
     }
