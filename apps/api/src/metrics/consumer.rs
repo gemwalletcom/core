@@ -51,7 +51,6 @@ struct AggregatedConsumer {
     last_success: Option<u64>,
     avg_duration_sum: u64,
     avg_duration_count: u64,
-    errors: Vec<(String, u64)>,
 }
 
 pub async fn update_consumer_metrics(cacher: &CacherClient) {
@@ -74,7 +73,6 @@ pub async fn update_consumer_metrics(cacher: &CacherClient) {
             last_success: None,
             avg_duration_sum: 0,
             avg_duration_count: 0,
-            errors: Vec::new(),
         });
 
         entry.total_processed += status.total_processed;
@@ -86,8 +84,14 @@ pub async fn update_consumer_metrics(cacher: &CacherClient) {
             entry.avg_duration_sum += status.avg_duration;
             entry.avg_duration_count += 1;
         }
-        for err in &status.errors {
-            entry.errors.push((err.message.clone(), err.count));
+        if let Some(family) = CONSUMER_ERROR_DETAIL.get() {
+            for err in &status.errors {
+                let error_labels = ConsumerErrorLabels {
+                    consumer: name.to_string(),
+                    error: err.message.clone(),
+                };
+                family.get_or_create(&error_labels).set(err.count as i64);
+            }
         }
     }
 
@@ -106,15 +110,6 @@ pub async fn update_consumer_metrics(cacher: &CacherClient) {
         if let Some(family) = CONSUMER_AVG_DURATION_MS.get() {
             let avg = if agg.avg_duration_count > 0 { agg.avg_duration_sum / agg.avg_duration_count } else { 0 };
             family.get_or_create(&labels).set(avg as i64);
-        }
-        if let Some(family) = CONSUMER_ERROR_DETAIL.get() {
-            for (msg, count) in &agg.errors {
-                let error_labels = ConsumerErrorLabels {
-                    consumer: consumer.clone(),
-                    error: msg.clone(),
-                };
-                family.get_or_create(&error_labels).set(*count as i64);
-            }
         }
     }
 }
