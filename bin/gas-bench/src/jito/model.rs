@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
-const LAMPORTS_PER_SOL: f64 = 1_000_000_000.0;
-const MICRO_LAMPORTS_PER_LAMPORT: f64 = 1_000_000.0;
+const LAMPORTS_PER_SOL: u64 = 1_000_000_000;
+const MICRO_LAMPORTS_PER_LAMPORT: u64 = 1_000_000;
 
 #[derive(Debug, Deserialize)]
 pub struct JitoTipFloorEntry {
@@ -28,11 +28,11 @@ impl JitoTipFloor {
 }
 
 pub fn sol_to_lamports(sol: f64) -> u64 {
-    (sol * LAMPORTS_PER_SOL) as u64
+    (sol * LAMPORTS_PER_SOL as f64) as u64
 }
 
 pub fn lamports_to_sol(lamports: u64) -> String {
-    let sol = lamports as f64 / LAMPORTS_PER_SOL;
+    let sol = lamports as f64 / LAMPORTS_PER_SOL as f64;
     if sol < 0.000001 {
         format!("{:.9}", sol)
     } else if sol < 0.001 {
@@ -47,8 +47,8 @@ pub fn priority_fee_to_lamports(micro_lamports_per_cu: u64, compute_units: u64) 
 }
 
 pub fn format_micro_lamports(micro_lamports: u64) -> String {
-    if micro_lamports >= MICRO_LAMPORTS_PER_LAMPORT as u64 {
-        format!("{:.2}M", micro_lamports as f64 / MICRO_LAMPORTS_PER_LAMPORT)
+    if micro_lamports >= MICRO_LAMPORTS_PER_LAMPORT {
+        format!("{:.2}M", micro_lamports as f64 / MICRO_LAMPORTS_PER_LAMPORT as f64)
     } else if micro_lamports >= 1_000 {
         format!("{:.1}K", micro_lamports as f64 / 1_000.0)
     } else {

@@ -314,8 +314,8 @@ fn print_solana_fee_data(fee_data: &SolanaFeeData, jito_res: &Option<Result<Jito
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
 
-    let has_jito = jito_res.as_ref().is_some_and(|r| r.is_ok());
-    if has_jito {
+    let jito_available = jito_res.as_ref().is_some_and(|r| r.is_ok());
+    if jito_available {
         table.add_row(Row::new(vec![
             Cell::new("Level"),
             Cell::new("Priority Fee"),
@@ -333,19 +333,20 @@ fn print_solana_fee_data(fee_data: &SolanaFeeData, jito_res: &Option<Result<Jito
         ("Fast", fee_data.priority_fees.fast, fee_data.jito_tips.fast),
     ];
 
-    let jito_floors = if let Some(Ok(jito_data)) = jito_res {
-        vec![jito_data.p25_lamports, jito_data.p50_lamports, jito_data.p75_lamports]
-    } else {
-        vec![0, 0, 0]
-    };
+    let jito_data = jito_res.as_ref().and_then(|r| r.as_ref().ok());
 
-    for (i, (level, priority_fee, jito_estimate)) in levels.iter().enumerate() {
+    for (level, priority_fee, jito_estimate) in levels.iter() {
         let priority_lamports = priority_fee_to_lamports(*priority_fee, compute_units);
         let priority_display = format!("{} ({})", format_micro_lamports(*priority_fee), lamports_to_sol(priority_lamports));
         let jito_estimate_display = format!("{} ({})", jito_estimate, lamports_to_sol(*jito_estimate));
 
-        if has_jito {
-            let jito_floor = jito_floors[i];
+        if let Some(jito) = jito_data {
+            let jito_floor = match *level {
+                "Slow" => jito.p25_lamports,
+                "Normal" => jito.p50_lamports,
+                "Fast" => jito.p75_lamports,
+                _ => 0,
+            };
             let jito_floor_display = format!("{} ({})", jito_floor, lamports_to_sol(jito_floor));
             let diff_pct = if jito_floor > 0 {
                 let diff = (*jito_estimate as f64 - jito_floor as f64) / jito_floor as f64 * 100.0;

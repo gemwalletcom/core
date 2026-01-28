@@ -8,9 +8,9 @@ use gemstone::alien::{AlienProvider, new_alien_client, reqwest_provider::NativeP
 use primitives::Chain;
 use serde_json::json;
 
-use crate::jito::{JUPITER_PROGRAM, ORCA_WHIRLPOOL};
-
 pub const USDC_MINT: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+pub const JUPITER_PROGRAM: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
+pub const ORCA_WHIRLPOOL: &str = "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc";
 
 const MIN_SLOW_FEE: u64 = 1_000;
 const MIN_NORMAL_FEE: u64 = 10_000;
@@ -55,12 +55,12 @@ impl SolanaGasClient {
 
         let slot: u64 = client.call("getSlot", json!([])).await?;
 
-        let global_fees: Vec<SolanaPrioritizationFee> = client.call("getRecentPrioritizationFees", json!([])).await.unwrap_or_default();
+        let global_fees: Vec<SolanaPrioritizationFee> = client.call("getRecentPrioritizationFees", json!([])).await?;
 
         let mut account_fees = AccountFeeStats::default();
 
         for (account, name) in [(JUPITER_PROGRAM, "jupiter"), (ORCA_WHIRLPOOL, "orca"), (USDC_MINT, "usdc")] {
-            let fees: Vec<SolanaPrioritizationFee> = client.call("getRecentPrioritizationFees", json!([[account]])).await.unwrap_or_default();
+            let fees: Vec<SolanaPrioritizationFee> = client.call("getRecentPrioritizationFees", json!([[account]])).await?;
 
             if !fees.is_empty() {
                 let values: Vec<i64> = fees.iter().map(|f| f.prioritization_fee).collect();
