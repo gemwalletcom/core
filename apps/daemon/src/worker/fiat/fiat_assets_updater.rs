@@ -15,10 +15,8 @@ impl FiatAssetsUpdater {
         Self { database, providers }
     }
 
-    pub async fn update_buyable_sellable_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_buyable_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let enabled_asset_ids = self.database.fiat()?.get_fiat_assets_is_enabled()?;
-
-        // buyable
         let buyable_assets_ids = self
             .database
             .assets()?
@@ -26,12 +24,16 @@ impl FiatAssetsUpdater {
             .into_iter()
             .map(|x| x.asset.id.to_string())
             .collect::<Vec<String>>();
-        let buyable_result = Diff::compare(buyable_assets_ids, enabled_asset_ids.clone());
+        let result = Diff::compare(buyable_assets_ids, enabled_asset_ids);
 
-        let _ = self.database.assets()?.update_assets(buyable_result.missing.clone(), vec![AssetUpdate::IsBuyable(true)]);
-        let _ = self.database.assets()?.update_assets(buyable_result.different.clone(), vec![AssetUpdate::IsBuyable(false)]);
+        self.database.assets()?.update_assets(result.missing.clone(), vec![AssetUpdate::IsBuyable(true)])?;
+        self.database.assets()?.update_assets(result.different.clone(), vec![AssetUpdate::IsBuyable(false)])?;
 
-        // sellable
+        Ok(result.missing.len() + result.different.len())
+    }
+
+    pub async fn update_sellable_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let enabled_asset_ids = self.database.fiat()?.get_fiat_assets_is_enabled()?;
         let sellable_assets_ids = self
             .database
             .assets()?
@@ -41,14 +43,11 @@ impl FiatAssetsUpdater {
             .map(|x| x.asset.id.to_string())
             .collect::<Vec<String>>();
 
-        let sellable_result = Diff::compare(sellable_assets_ids, enabled_asset_ids.clone());
-        let _ = self.database.assets()?.update_assets(sellable_result.missing.clone(), vec![AssetUpdate::IsSellable(true)]);
-        let _ = self
-            .database
-            .assets()?
-            .update_assets(sellable_result.different.clone(), vec![AssetUpdate::IsSellable(false)]);
+        let result = Diff::compare(sellable_assets_ids, enabled_asset_ids);
+        self.database.assets()?.update_assets(result.missing.clone(), vec![AssetUpdate::IsSellable(true)])?;
+        self.database.assets()?.update_assets(result.different.clone(), vec![AssetUpdate::IsSellable(false)])?;
 
-        Ok(1)
+        Ok(result.missing.len() + result.different.len())
     }
 
     pub async fn update_trending_fiat_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {

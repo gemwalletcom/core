@@ -48,7 +48,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_fiat_buyable_assets_job = tokio::spawn(run_job(
-        "update_fiat_buyable_sellable_assets",
+        "update_fiat_buyable_assets",
         config.get_duration(ConfigKey::FiatTimerUpdateBuyableAssets)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -58,7 +58,23 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
             move || {
                 let providers = FiatProviderFactory::new_providers((*settings).clone());
                 let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-                async move { fiat_assets_updater.update_buyable_sellable_assets().await }
+                async move { fiat_assets_updater.update_buyable_assets().await }
+            }
+        },
+    ));
+
+    let update_fiat_sellable_assets_job = tokio::spawn(run_job(
+        "update_fiat_sellable_assets",
+        config.get_duration(ConfigKey::FiatTimerUpdateBuyableAssets)?,
+        reporter.clone(),
+        shutdown_rx.clone(),
+        {
+            let settings = Arc::new(settings.clone());
+            let database = database.clone();
+            move || {
+                let providers = FiatProviderFactory::new_providers((*settings).clone());
+                let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+                async move { fiat_assets_updater.update_sellable_assets().await }
             }
         },
     ));
@@ -83,6 +99,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
         update_fiat_assets_job,
         update_fiat_provider_countries_job,
         update_fiat_buyable_assets_job,
+        update_fiat_sellable_assets_job,
         update_trending_fiat_assets_job,
     ])
 }
