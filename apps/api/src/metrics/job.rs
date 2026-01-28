@@ -15,7 +15,8 @@ static JOB_DURATION_MS: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 struct JobLabels {
-    job: String,
+    service: String,
+    job_name: String,
 }
 
 pub fn init_job_metrics(registry: &mut Registry) {
@@ -46,7 +47,8 @@ pub async fn update_job_metrics(cacher: &CacherClient) {
         let Ok(status) = cacher.get_value::<JobStatus>(key).await else {
             continue;
         };
-        let labels = JobLabels { job: name.to_string() };
+        let (service, job_name) = name.split_once(':').unwrap_or(("unknown", name));
+        let labels = JobLabels { service: service.to_string(), job_name: job_name.to_string() };
 
         if let Some(family) = JOB_INTERVAL_SECONDS.get() {
             family.get_or_create(&labels).set(status.interval as i64);
