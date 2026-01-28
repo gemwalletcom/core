@@ -84,7 +84,7 @@ pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yiel
         (Chain::Ethereum, build_gateway(Chain::Ethereum, EVMChain::Ethereum)?),
     ]);
 
-    let yo_provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways, wrapper));
+    let yo_provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways));
     Ok(Yielder::new(vec![yo_provider]))
 }
 

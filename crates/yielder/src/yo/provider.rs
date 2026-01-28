@@ -3,18 +3,14 @@ use std::{collections::HashMap, str::FromStr, sync::Arc};
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
-use gem_jsonrpc::RpcProvider;
 use primitives::{AssetId, Chain, swap::ApprovalData};
 
 use crate::models::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldTransaction};
 use crate::provider::YieldProviderClient;
 
-use super::api::YoApiClient;
 use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
 
 pub const GAS_LIMIT: &str = "300000";
-
-const SECONDS_PER_YEAR: f64 = 31_536_000.0;
 
 fn lookback_blocks_for_chain(chain: Chain) -> u64 {
     match chain {
@@ -24,18 +20,16 @@ fn lookback_blocks_for_chain(chain: Chain) -> u64 {
     }
 }
 
-pub struct YoYieldProvider<E: std::error::Error + Send + Sync + 'static = YieldError> {
+pub struct YoYieldProvider {
     vaults: Vec<YoVault>,
     gateways: HashMap<Chain, Arc<dyn YoProvider>>,
-    api_client: YoApiClient<E>,
 }
 
-impl<E: std::error::Error + Send + Sync + 'static> YoYieldProvider<E> {
-    pub fn new(gateways: HashMap<Chain, Arc<dyn YoProvider>>, rpc_provider: Arc<dyn RpcProvider<Error = E>>) -> Self {
+impl YoYieldProvider {
+    pub fn new(gateways: HashMap<Chain, Arc<dyn YoProvider>>) -> Self {
         Self {
             vaults: vaults().to_vec(),
             gateways,
-            api_client: YoApiClient::new(rpc_provider),
         }
     }
 
@@ -51,10 +45,16 @@ impl<E: std::error::Error + Send + Sync + 'static> YoYieldProvider<E> {
     fn gateway_for_chain(&self, chain: Chain) -> Result<&Arc<dyn YoProvider>, YieldError> {
         self.gateways.get(&chain).ok_or_else(|| format!("no gateway configured for chain {:?}", chain).into())
     }
+
+    async fn fetch_vault_apy(&self, vault: YoVault) -> Result<f64, YieldError> {
+        let gateway = self.gateway_for_chain(vault.chain)?;
+        let data = gateway.get_position(vault, Address::ZERO, lookback_blocks_for_chain(vault.chain)).await?;
+        data.calculate_apy().ok_or_else(|| "failed to calculate apy".into())
+    }
 }
 
 #[async_trait]
-impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYieldProvider<E> {
+impl YieldProviderClient for YoYieldProvider {
     fn provider(&self) -> YieldProvider {
         YieldProvider::Yo
     }
@@ -67,16 +67,10 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
 
     async fn yields_with_apy(&self, asset_id: &AssetId) -> Result<Vec<Yield>, YieldError> {
         let mut results = Vec::new();
-
         for vault in self.vaults_for_asset(asset_id) {
-            let gateway = self.gateway_for_chain(vault.chain)?;
-            let lookback_blocks = lookback_blocks_for_chain(vault.chain);
-            let data = gateway.get_position(vault, Address::ZERO, lookback_blocks).await?;
-            let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
-            let apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
+            let apy = self.fetch_vault_apy(vault).await.ok();
             results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy, vault.risk));
         }
-
         Ok(results)
     }
 
@@ -111,15 +105,6 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
 
         let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
         let asset_value = data.share_balance.saturating_mul(data.latest_price) / one_share;
-        let elapsed = data.latest_timestamp.saturating_sub(data.lookback_timestamp);
-        let apy = annualize_growth(data.latest_price, data.lookback_price, elapsed);
-
-        let rewards = self
-            .api_client
-            .fetch_rewards(vault.chain, &vault.yo_token.to_string(), &request.wallet_address)
-            .await
-            .ok()
-            .map(|p| p.total_rewards_raw().to_string());
 
         Ok(YieldPosition {
             name: vault.name.to_string(),
@@ -129,8 +114,8 @@ impl<E: std::error::Error + Send + Sync + 'static> YieldProviderClient for YoYie
             asset_token_address: vault.asset_token.to_string(),
             vault_balance_value: Some(data.share_balance.to_string()),
             asset_balance_value: Some(asset_value.to_string()),
-            apy,
-            rewards,
+            apy: None,
+            rewards: None,
         })
     }
 }
@@ -144,27 +129,4 @@ fn convert_transaction(vault: YoVault, tx: TransactionObject, approval: Option<A
         value: tx.value,
         approval,
     }
-}
-
-fn annualize_growth(latest_assets: U256, previous_assets: U256, elapsed_seconds: u64) -> Option<f64> {
-    if elapsed_seconds == 0 || previous_assets.is_zero() {
-        return None;
-    }
-
-    let latest = u256_to_f64(latest_assets)?;
-    let previous = u256_to_f64(previous_assets)?;
-    if latest <= 0.0 || previous <= 0.0 {
-        return None;
-    }
-
-    let growth = latest / previous;
-    if !growth.is_finite() || growth <= 0.0 {
-        return None;
-    }
-
-    Some(growth.powf(SECONDS_PER_YEAR / elapsed_seconds as f64) - 1.0)
-}
-
-fn u256_to_f64(value: U256) -> Option<f64> {
-    value.to_string().parse::<f64>().ok()
 }

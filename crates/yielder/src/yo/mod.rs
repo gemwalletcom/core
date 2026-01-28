@@ -1,4 +1,3 @@
-mod api;
 mod client;
 mod contract;
 mod error;
@@ -6,7 +5,6 @@ mod model;
 mod provider;
 mod vault;
 
-pub use api::{YoApiClient, YoPerformanceData};
 pub use client::{YoGatewayClient, YoProvider};
 pub use contract::{IYoGateway, IYoVaultToken};
 pub use error::{BoxError, YieldError};
