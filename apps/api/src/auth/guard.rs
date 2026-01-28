@@ -1,5 +1,7 @@
 use crate::responders::ErrorContext;
 use gem_auth::{AuthClient, verify_auth_signature};
+use primitives::WalletSource as PrimitiveWalletSource;
+use primitives::WalletType as PrimitiveWalletType;
 use primitives::{AuthMessage, AuthenticatedRequest, WalletId};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::http::Status;
@@ -78,8 +80,8 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
         let wallet_identifier = WalletId::Multicoin(body.auth.address.clone()).id();
         let wallet = match db_client.get_or_create_wallet(NewWalletRow {
             identifier: wallet_identifier,
-            wallet_type: WalletType(primitives::WalletType::Multicoin),
-            source: WalletSource(primitives::WalletSource::Import),
+            wallet_type: WalletType(PrimitiveWalletType::Multicoin),
+            source: WalletSource(PrimitiveWalletSource::Import),
         }) {
             Ok(w) => w,
             Err(_) => return error_outcome(req, Status::InternalServerError, "Failed to get or create wallet"),
