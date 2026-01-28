@@ -35,13 +35,13 @@ pub struct FeeStats {
 
 pub fn estimate_jito_tips(stats: &FeeStats) -> JitoTipEstimates {
     const BASE_SLOW: u64 = 1_000;
-    const BASE_NORMAL: u64 = 10_000;
-    const BASE_FAST: u64 = 30_000;
-    const REFERENCE_FEE: f64 = 5_000.0;
+    const BASE_NORMAL: u64 = 3_000;
+    const BASE_FAST: u64 = 10_000;
+    const REFERENCE_FEE: f64 = 10_000.0;
 
     let congestion_multiplier = if stats.avg > 0 {
         let raw_multiplier = stats.avg as f64 / REFERENCE_FEE;
-        (raw_multiplier.sqrt()).clamp(1.0, 5.0)
+        (1.0 + raw_multiplier.sqrt()).clamp(1.0, 10.0)
     } else {
         1.0
     };
