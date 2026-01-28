@@ -17,7 +17,7 @@ use pricer::{MarketsClient, PriceClient};
 use primitives::ConfigKey;
 use settings::Settings;
 use storage::{ConfigCacher, Database};
-use streamer::StreamProducer;
+use streamer::{StreamProducer, StreamProducerConfig};
 use tokio::task::JoinHandle;
 
 pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
@@ -216,7 +216,8 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
                 let database = database.clone();
                 async move {
                     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
-                    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "observed_prices_worker")
+                    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+                    let stream_producer = StreamProducer::new(&rabbitmq_config, "observed_prices_worker")
                         .await
                         .expect("Failed to create stream producer");
                     let updater = ObservedPricesUpdater::new(cacher_client, price_client, stream_producer, max_observed_assets, min_observers);
@@ -243,7 +244,8 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
 async fn price_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> PriceUpdater {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(database.clone(), cacher.clone());
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "pricer_worker")
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker")
         .await
         .expect("Failed to create stream producer");
     PriceUpdater::new(price_client, coingecko_client, stream_producer)
@@ -251,7 +253,8 @@ async fn price_updater_factory(database: &Database, cacher: &CacherClient, setti
 
 async fn charts_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings, coingecko_client: CoinGeckoClient) -> ChartsUpdater {
     let price_client = PriceClient::new(database.clone(), cacher.clone());
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "charts_worker")
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "charts_worker")
         .await
         .expect("Failed to create stream producer");
     ChartsUpdater::new(price_client, coingecko_client, stream_producer)

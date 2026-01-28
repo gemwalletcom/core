@@ -6,13 +6,14 @@ use rewards_abuse_checker::RewardsAbuseChecker;
 use settings::Settings;
 use std::error::Error;
 use storage::ConfigCacher;
-use streamer::StreamProducer;
+use streamer::{StreamProducer, StreamProducerConfig};
 use tokio::task::JoinHandle;
 
 pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "rewards_abuse_checker").await.unwrap();
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "rewards_abuse_checker").await.unwrap();
 
     let abuse_checker = tokio::spawn(run_job("rewards abuse checker", config.get_duration(ConfigKey::RewardsTimerAbuseChecker)?, shutdown_rx, {
         let database = database.clone();

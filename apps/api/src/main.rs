@@ -52,7 +52,7 @@ use search_index::SearchIndexClient;
 use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
 use storage::Database;
-use streamer::StreamProducer;
+use streamer::{StreamProducer, StreamProducerConfig};
 use subscriptions::SubscriptionsClient;
 use support::SupportClient;
 use swap::SwapClient;
@@ -78,10 +78,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
 
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(database.clone(), pusher_client.clone());
     let transactions_client = TransactionsClient::new(database.clone());
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "api").await.unwrap();
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "api").await.unwrap();
     let subscriptions_client = SubscriptionsClient::new(database.clone(), stream_producer.clone());
     let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
     let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());

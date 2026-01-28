@@ -34,8 +34,8 @@ pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
     AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, FiatWebhookPayload,
-    InAppNotificationPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, ShutdownReceiver, StreamConnection, StreamProducer, StreamReader,
-    StreamReaderConfig, SupportWebhookPayload, TransactionsPayload, run_consumer,
+    InAppNotificationPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, ShutdownReceiver, StreamConnection, StreamProducer, StreamProducerConfig,
+    StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload, run_consumer,
 };
 
 use crate::consumers::{
@@ -134,7 +134,8 @@ pub async fn run_consumer_store_transactions(settings: Settings, shutdown_rx: Sh
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let consumer = StoreTransactionsConsumer {
         database: database.clone(),
         config_cacher: ConfigCacher::new(database.clone()),
@@ -294,7 +295,8 @@ pub async fn run_consumer_rewards(settings: Settings, shutdown_rx: ShutdownRecei
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let consumer = rewards_consumer::RewardsConsumer::new(database, stream_producer);
     let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx).await
@@ -306,7 +308,8 @@ pub async fn run_consumer_in_app_notifications(settings: Settings, shutdown_rx: 
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let consumer = notifications::InAppNotificationsConsumer::new(database, stream_producer);
     let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<InAppNotificationPayload, notifications::InAppNotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx).await
@@ -324,7 +327,8 @@ pub async fn run_rewards_redemption_consumer(settings: Settings, shutdown_rx: Sh
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let wallets = parse_rewards_wallets(&settings)?;
     let client_provider = create_evm_client_provider(settings.clone());
     let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
@@ -378,7 +382,8 @@ pub async fn run_consumer_fetch_prices(settings: Settings, shutdown_rx: Shutdown
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let price_client = PriceClient::new(database, cacher_client);
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let price_updater = PriceUpdater::new(price_client, coingecko_client, stream_producer);
     let consumer = FetchPricesConsumer::new(price_updater);
     run_consumer::<FetchPricesPayload, FetchPricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await

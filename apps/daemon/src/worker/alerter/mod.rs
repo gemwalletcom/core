@@ -8,7 +8,7 @@ use settings::Settings;
 use std::error::Error;
 use std::sync::Arc;
 use storage::ConfigCacher;
-use streamer::StreamProducer;
+use streamer::{StreamProducer, StreamProducerConfig};
 use tokio::task::JoinHandle;
 
 pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
@@ -26,7 +26,8 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
 
             async move {
                 let price_alert_client = PriceAlertClient::new(database.clone());
-                let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "price_alerts").await.unwrap();
+                let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+                let stream_producer = StreamProducer::new(&rabbitmq_config, "price_alerts").await.unwrap();
 
                 PriceAlertSender::new(database, price_alert_client, stream_producer).run_observer().await
             }
