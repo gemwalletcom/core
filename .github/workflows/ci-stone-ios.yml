@@ -31,6 +31,8 @@ jobs:
 
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "ci-rust"
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
@@ -38,11 +40,11 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v2
 
-      - name: Setup Xcode
-        run: |
-          xcrun simctl list devices
+      - name: Install iOS targets
+        run: just install-ios-targets
+
+      - name: Build iOS
+        run: just build-ios
 
       - name: Test iOS
-        run: |
-          just install-ios-targets
-          just build-ios && just test-ios
+        run: just test-ios

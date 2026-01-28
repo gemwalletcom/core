@@ -99,6 +99,7 @@ pub enum ConfigKey {
     ReferralAbuseVelocityWindow,
     ReferralAbuseVelocityDivisor,
     ReferralAbuseVelocityPenaltyPerSignal,
+    ReferralAbuseDisabledReferrerPenalty,
 
     // Fiat
     FiatValidateSubscription,
@@ -134,6 +135,8 @@ pub enum ConfigKey {
     AssetsTimerUpdateSuspicious,
     AssetsTimerUpdateStakingApy,
     AssetsTimerUpdatePerpetuals,
+    AssetsTimerUpdateUsageRank,
+    AssetsTimerUpdateImages,
 
     // Fiat
     FiatTimerUpdateAssets,
@@ -162,9 +165,18 @@ pub enum ConfigKey {
     SearchAssetsUpdateInterval,
     SearchPerpetualsUpdateInterval,
     SearchNftsUpdateInterval,
+    SearchAssetsLastUpdatedAt,
+    SearchPerpetualsLastUpdatedAt,
+    SearchNftsLastUpdatedAt,
 
     // Parser
     ParserCatchupReloadInterval,
+    ParserPersistInterval,
+
+    // Price Observed (WebSocket)
+    PriceObservedFetchInterval,
+    PriceObservedMaxAssets,
+    PriceObservedMinObservers,
 }
 
 impl ConfigKey {
@@ -257,6 +269,7 @@ impl ConfigKey {
             Self::ReferralAbuseVelocityWindow => "5m",
             Self::ReferralAbuseVelocityDivisor => "2",
             Self::ReferralAbuseVelocityPenaltyPerSignal => "100",
+            Self::ReferralAbuseDisabledReferrerPenalty => "80",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
             Self::AlerterInterval => "60s",
@@ -282,6 +295,8 @@ impl ConfigKey {
             Self::AssetsTimerUpdateSuspicious => "1h",
             Self::AssetsTimerUpdateStakingApy => "1d",
             Self::AssetsTimerUpdatePerpetuals => "1h",
+            Self::AssetsTimerUpdateUsageRank => "1h",
+            Self::AssetsTimerUpdateImages => "8h",
             Self::FiatTimerUpdateAssets => "1h",
             Self::FiatTimerUpdateProviderCountries => "1h",
             Self::FiatTimerUpdateBuyableAssets => "1h",
@@ -296,7 +311,14 @@ impl ConfigKey {
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",
             Self::SearchNftsUpdateInterval => "30m",
+            Self::SearchAssetsLastUpdatedAt => "0",
+            Self::SearchPerpetualsLastUpdatedAt => "0",
+            Self::SearchNftsLastUpdatedAt => "0",
             Self::ParserCatchupReloadInterval => "50",
+            Self::ParserPersistInterval => "1s",
+            Self::PriceObservedFetchInterval => "30s",
+            Self::PriceObservedMaxAssets => "100",
+            Self::PriceObservedMinObservers => "2",
         }
     }
 }

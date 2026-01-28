@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
+use chrono::{DateTime, NaiveDateTime};
 use primitives::ConfigKey;
 use serde::de::DeserializeOwned;
 
@@ -65,6 +66,10 @@ impl ConfigCacher {
         Ok(self.get(key)?.parse()?)
     }
 
+    pub fn get_usize(&self, key: ConfigKey) -> Result<usize, DatabaseError> {
+        Ok(self.get(key)?.parse()?)
+    }
+
     pub fn get_f64(&self, key: ConfigKey) -> Result<f64, DatabaseError> {
         Ok(self.get(key)?.parse()?)
     }
@@ -78,11 +83,34 @@ impl ConfigCacher {
         primitives::parse_duration(&value).ok_or_else(|| DatabaseError::Error(format!("Failed to parse duration: {}", value)))
     }
 
+    pub fn get_datetime(&self, key: ConfigKey) -> Result<NaiveDateTime, DatabaseError> {
+        let ts = self.get_i64(key)?;
+        DateTime::from_timestamp(ts, 0)
+            .map(|dt| dt.naive_utc())
+            .ok_or_else(|| DatabaseError::Error(format!("Invalid timestamp: {}", ts)))
+    }
+
+    pub fn set_datetime(&self, key: ConfigKey, time: NaiveDateTime) -> Result<usize, DatabaseError> {
+        let ts = time.and_utc().timestamp();
+        self.set(key, &ts.to_string())
+    }
+
     pub fn get_vec_string(&self, key: ConfigKey) -> Result<Vec<String>, DatabaseError> {
         self.get_vec(key)
     }
 
     pub fn get_vec<T: DeserializeOwned>(&self, key: ConfigKey) -> Result<Vec<T>, DatabaseError> {
         Ok(serde_json::from_str(&self.get(key)?)?)
+    }
+
+    pub fn set(&self, key: ConfigKey, value: &str) -> Result<usize, DatabaseError> {
+        self.invalidate(&key);
+        self.database.client().map_err(|e| DatabaseError::Error(e.to_string()))?.set_config(key, value)
+    }
+
+    pub fn invalidate(&self, key: &ConfigKey) {
+        if let Ok(mut cache) = self.cache.write() {
+            cache.remove(key);
+        }
     }
 }

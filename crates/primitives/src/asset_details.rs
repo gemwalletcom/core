@@ -26,11 +26,18 @@ pub struct AssetBasic {
     pub asset: Asset,
     pub properties: AssetProperties,
     pub score: AssetScore,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price: Option<Price>,
 }
 
 impl AssetBasic {
     pub fn new(asset: Asset, properties: AssetProperties, score: AssetScore) -> Self {
-        Self { asset, properties, score }
+        Self {
+            asset,
+            properties,
+            score,
+            price: None,
+        }
     }
 }
 
@@ -62,6 +69,7 @@ pub struct AssetProperties {
     pub is_earnable: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub earn_apr: Option<f64>,
+    pub has_image: bool,
 }
 
 impl AssetProperties {
@@ -76,6 +84,7 @@ impl AssetProperties {
             staking_apr: None,
             is_earnable: false,
             earn_apr: None,
+            has_image: false,
         }
     }
 }

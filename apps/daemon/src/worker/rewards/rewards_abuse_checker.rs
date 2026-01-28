@@ -24,6 +24,7 @@ struct AbuseDetectionConfig {
     referral_per_user_daily: i64,
     verified_multiplier: i64,
     trusted_multiplier: i64,
+    disabled_referrer_penalty: i64,
 }
 
 struct AbuseEvaluation {
@@ -34,6 +35,7 @@ struct AbuseEvaluation {
     risk_score: i64,
     patterns: AbusePatterns,
     pattern_penalty: f64,
+    referrer_disabled: bool,
     threshold: f64,
     abuse_score: f64,
     abuse_percent: f64,
@@ -104,8 +106,17 @@ impl RewardsAbuseChecker {
         let patterns = client.get_abuse_patterns_for_referrer(username, since, velocity_window_secs)?;
         let pattern_penalty = calculate_pattern_penalty(&patterns, config, &status);
 
-        let abuse_score = calculate_abuse_score(risk_score_sum, attempt_count, referral_count, config) + pattern_penalty;
-        let threshold = calculate_abuse_threshold(config, status.is_verified());
+        let referrer_disabled = client
+            .rewards()
+            .get_referrer_username(username)
+            .ok()
+            .flatten()
+            .and_then(|referrer| client.rewards().get_status_by_username(&referrer).ok())
+            .is_some_and(|s| s == RewardStatus::Disabled);
+        let disabled_referrer_penalty = if referrer_disabled { config.disabled_referrer_penalty as f64 } else { 0.0 };
+
+        let abuse_score = calculate_abuse_score(risk_score_sum, attempt_count, referral_count, config) + pattern_penalty + disabled_referrer_penalty;
+        let threshold = calculate_abuse_threshold(config, &status);
         let abuse_percent = (abuse_score / threshold * 100.0).min(100.0);
 
         Ok(AbuseEvaluation {
@@ -116,6 +127,7 @@ impl RewardsAbuseChecker {
             risk_score: risk_score_sum,
             patterns,
             pattern_penalty,
+            referrer_disabled,
             threshold,
             abuse_score,
             abuse_percent,
@@ -135,6 +147,7 @@ impl RewardsAbuseChecker {
             referrers_per_fingerprint = eval.patterns.max_referrers_per_fingerprint.to_string(),
             devices_per_ip = eval.patterns.max_devices_per_ip.to_string(),
             velocity_burst = eval.patterns.signals_in_velocity_window.to_string(),
+            referrer_disabled = eval.referrer_disabled.to_string(),
             pattern_penalty = format!("{:.0}", eval.pattern_penalty),
             abuse_threshold = format!("{:.0}", eval.threshold),
             abuse_score = format!("{:.0}", eval.abuse_score),
@@ -154,7 +167,7 @@ impl RewardsAbuseChecker {
 
         let reason = "Auto-disabled due to abuse detection";
         let comment = format!(
-            "abuse_score={:.0}, threshold={:.0}, risk_scores={}, attempts={}, referrals={}, countries/device={}, referrers/device={}, referrers/fingerprint={}, devices/ip={}, velocity_burst={}",
+            "abuse_score={:.0}, threshold={:.0}, risk_scores={}, attempts={}, referrals={}, countries/device={}, referrers/device={}, referrers/fingerprint={}, devices/ip={}, velocity_burst={}, referrer_disabled={}",
             eval.abuse_score,
             eval.threshold,
             eval.risk_score,
@@ -164,7 +177,8 @@ impl RewardsAbuseChecker {
             eval.patterns.max_referrers_per_device,
             eval.patterns.max_referrers_per_fingerprint,
             eval.patterns.max_devices_per_ip,
-            eval.patterns.signals_in_velocity_window
+            eval.patterns.signals_in_velocity_window,
+            eval.referrer_disabled
         );
         let event_id = client.rewards().disable_rewards(&eval.username, reason, &comment)?;
 
@@ -191,6 +205,7 @@ impl RewardsAbuseChecker {
             referral_per_user_daily: self.config.get_i64(ConfigKey::ReferralPerUserDaily)?,
             verified_multiplier: self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?,
             trusted_multiplier: self.config.get_i64(ConfigKey::ReferralTrustedMultiplier)?,
+            disabled_referrer_penalty: self.config.get_i64(ConfigKey::ReferralAbuseDisabledReferrerPenalty)?,
         })
     }
 }
@@ -202,12 +217,15 @@ fn calculate_abuse_score(risk_score_sum: i64, attempt_count: i64, referral_count
     risk_score_per_referral + (attempts_per_referral * config.attempt_penalty as f64)
 }
 
-fn calculate_abuse_threshold(config: &AbuseDetectionConfig, is_verified: bool) -> f64 {
-    if is_verified {
-        config.disable_threshold as f64 * config.verified_threshold_multiplier
+fn calculate_abuse_threshold(config: &AbuseDetectionConfig, status: &RewardStatus) -> f64 {
+    let multiplier = if *status == RewardStatus::Trusted {
+        config.trusted_multiplier as f64
+    } else if status.is_verified() {
+        config.verified_threshold_multiplier
     } else {
-        config.disable_threshold as f64
-    }
+        1.0
+    };
+    config.disable_threshold as f64 * multiplier
 }
 
 fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionConfig, status: &RewardStatus) -> f64 {
@@ -267,6 +285,7 @@ mod tests {
             referral_per_user_daily: 5,
             verified_multiplier: 2,
             trusted_multiplier: 3,
+            disabled_referrer_penalty: 80,
         }
     }
 
@@ -282,8 +301,9 @@ mod tests {
 
     #[test]
     fn test_abuse_threshold() {
-        assert_eq!(calculate_abuse_threshold(&config(), false), 200.0);
-        assert_eq!(calculate_abuse_threshold(&config(), true), 400.0);
+        assert_eq!(calculate_abuse_threshold(&config(), &RewardStatus::Unverified), 200.0);
+        assert_eq!(calculate_abuse_threshold(&config(), &RewardStatus::Verified), 400.0);
+        assert_eq!(calculate_abuse_threshold(&config(), &RewardStatus::Trusted), 600.0);
     }
 
     #[test]

@@ -1,12 +1,11 @@
 pub mod prices_dex_updater;
 
-use job_runner::run_job;
+use job_runner::{ShutdownReceiver, run_job};
 use prices_dex::PriceFeedProvider;
 pub use prices_dex_updater::PricesDexUpdater;
 use settings::Settings;
-use std::future::Future;
-use std::pin::Pin;
 use std::time::Duration;
+use tokio::task::JoinHandle;
 
 struct ProviderConfig {
     provider_type: PriceFeedProvider,
@@ -15,7 +14,7 @@ struct ProviderConfig {
     timer: u64,
 }
 
-pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + Send>>> {
+pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Vec<JoinHandle<()>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let providers = vec![
         ProviderConfig {
@@ -36,7 +35,7 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
 
     for provider_config in providers {
         let feeds_job_name = format!("Update {} feeds", provider_config.name).leak() as &'static str;
-        let feeds_job = run_job(feeds_job_name, Duration::from_secs(3600), {
+        let feeds_job = tokio::spawn(run_job(feeds_job_name, Duration::from_secs(3600), shutdown_rx.clone(), {
             let url = provider_config.url.clone();
             let database = database.clone();
             let provider_type = provider_config.provider_type.clone();
@@ -46,10 +45,10 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
                 let provider_type = provider_type.clone();
                 async move { PricesDexUpdater::new(provider_type, &url, database).update_feeds().await }
             }
-        });
+        }));
 
         let prices_job_name = format!("Update {} prices", provider_config.name).leak() as &'static str;
-        let prices_job = run_job(prices_job_name, Duration::from_secs(provider_config.timer), {
+        let prices_job = tokio::spawn(run_job(prices_job_name, Duration::from_secs(provider_config.timer), shutdown_rx.clone(), {
             let url = provider_config.url.clone();
             let database = database.clone();
             let provider_type = provider_config.provider_type.clone();
@@ -59,10 +58,10 @@ pub async fn jobs(settings: Settings) -> Vec<Pin<Box<dyn Future<Output = ()> + S
                 let provider_type = provider_type.clone();
                 async move { PricesDexUpdater::new(provider_type, &url, database).update_prices().await }
             }
-        });
+        }));
 
-        all_jobs.push(Box::pin(feeds_job) as Pin<Box<dyn Future<Output = ()> + Send>>);
-        all_jobs.push(Box::pin(prices_job) as Pin<Box<dyn Future<Output = ()> + Send>>);
+        all_jobs.push(feeds_job);
+        all_jobs.push(prices_job);
     }
 
     all_jobs

@@ -20,6 +20,7 @@ pub trait TransactionsRepository {
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, DatabaseError>;
     fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, DatabaseError>;
     fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, DatabaseError>;
+    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, DatabaseError>;
 }
 
 impl TransactionsRepository for DatabaseClient {
@@ -63,5 +64,9 @@ impl TransactionsRepository for DatabaseClient {
 
     fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, DatabaseError> {
         Ok(TransactionsStore::delete_transactions_by_ids(self, ids)?)
+    }
+
+    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, DatabaseError> {
+        Ok(TransactionsStore::get_asset_usage_counts(self, since)?)
     }
 }

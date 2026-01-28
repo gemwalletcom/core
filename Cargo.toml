@@ -74,7 +74,7 @@ rocket_ws = { version = "0.1.1" }
 async-trait = { version = "0.1.89" }
 prometheus-client = { version = "0.24.0" }
 futures = { version = "0.3.31" }
-uuid = { version = "1.19.0", features = ["v4"] }
+uuid = { version = "1.20.0", features = ["v4"] }
 
 # db
 redis = { version = "1.0.2", default-features = false, features = [
@@ -117,8 +117,8 @@ alloy-primitives = { version = "1.5.2", features = ["k256"] }
 alloy-sol-types = { version = "1.5.2", features = ["eip712-serde"] }
 alloy-dyn-abi = { version = "1.5.2", features = ["eip712"] }
 alloy-json-abi = { version = "1.5.2" }
-alloy-signer = { version = "1.4.3" }
-alloy-signer-local = { version = "1.4.3" }
-alloy-network = { version = "1.4.3" }
+alloy-signer = { version = "1.5.2" }
+alloy-signer-local = { version = "1.5.2" }
+alloy-network = { version = "1.5.2" }
 alloy-consensus = { version = "1.5.2" }
 alloy-rlp = { version = "0.3.12" }

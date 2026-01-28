@@ -91,7 +91,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let scan_client = ScanClient::new(database.clone(), security_providers);
     let assets_client = AssetsClient::new(database.clone());
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
-    let search_client = SearchClient::new(&search_index_client);
+    let search_client = SearchClient::new(&search_index_client, price_client.clone());
     let swap_client = SwapClient::new(database.clone());
     let fiat_providers = FiatProviderFactory::new_providers(settings_clone.clone());
     let fiat_ip_check_client = FiatProviderFactory::new_ip_check_client(settings_clone.clone());
@@ -237,10 +237,13 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let cacher_client = CacherClient::new(&settings.redis.url).await;
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let price_client = PriceClient::new(database, cacher_client);
-    let price_observer_config = PriceObserverConfig { redis_url: settings.redis.url };
+    let price_observer_config = PriceObserverConfig {
+        redis_url: settings.redis.url.clone(),
+    };
+
     rocket::build()
         .manage(Arc::new(Mutex::new(price_client)))
         .manage(Arc::new(Mutex::new(price_observer_config)))

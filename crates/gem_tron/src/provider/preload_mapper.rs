@@ -25,8 +25,8 @@ pub fn calculate_transfer_fee_rate(chain_parameters: &[ChainParameter], account_
 
         Ok(total_fee)
     } else {
-        let missing_bandwidth = account_usage.missing_bandwidth(DEFAULT_BANDWIDTH_BYTES);
-        Ok(BigInt::from(missing_bandwidth) * BigInt::from(bandwidth_price))
+        let fee = bandwidth_fee(account_usage, DEFAULT_BANDWIDTH_BYTES, bandwidth_price as u64);
+        Ok(BigInt::from(fee))
     }
 }
 
@@ -43,9 +43,9 @@ pub fn calculate_transfer_token_fee_rate(
 }
 
 pub fn calculate_stake_fee_rate(chain_parameters: &[ChainParameter], account_usage: &TronAccountUsage, _stake_type: &StakeType) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
-    let bandwidth_price = get_chain_parameter_value(chain_parameters, GET_TRANSACTION_FEE)?;
-    let missing_bandwidth = account_usage.missing_bandwidth(DEFAULT_BANDWIDTH_BYTES);
-    Ok(BigInt::from(missing_bandwidth) * BigInt::from(bandwidth_price))
+    let bandwidth_price = get_chain_parameter_value(chain_parameters, GET_TRANSACTION_FEE)? as u64;
+    let fee = bandwidth_fee(account_usage, DEFAULT_BANDWIDTH_BYTES, bandwidth_price);
+    Ok(BigInt::from(fee))
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -58,16 +58,19 @@ pub struct TokenTransferFee {
 pub fn calculate_token_transfer_fee(account_usage: &TronAccountUsage, estimated_energy: u64, energy_price: u64, bandwidth_price: u64) -> TokenTransferFee {
     let energy_with_buffer = apply_buffer(estimated_energy, FEE_LIMIT_BUFFER_PERCENT);
     let chargeable_energy = account_usage.missing_energy(energy_with_buffer);
-    let missing_bandwidth = account_usage.missing_bandwidth(DEFAULT_BANDWIDTH_BYTES);
 
     let energy_fee = chargeable_energy * energy_price;
-    let bandwidth_fee = missing_bandwidth * bandwidth_price;
+    let bandwidth_fee = bandwidth_fee(account_usage, DEFAULT_BANDWIDTH_BYTES, bandwidth_price);
 
     TokenTransferFee {
         fee: energy_fee + bandwidth_fee,
         fee_limit: energy_with_buffer * energy_price,
         energy_price,
     }
+}
+
+fn bandwidth_fee(account_usage: &TronAccountUsage, required: u64, price: u64) -> u64 {
+    if account_usage.available_bandwidth() >= required { 0 } else { required * price }
 }
 
 fn apply_buffer(value: u64, percent: u64) -> u64 {
@@ -213,7 +216,7 @@ mod tests {
         assert_eq!(calculate_transfer_fee_rate(&params, &with_bandwidth, false).unwrap(), BigInt::from(0));
 
         let without_bandwidth = account_usage(100, 0, 0);
-        let expected = BigInt::from((DEFAULT_BANDWIDTH_BYTES - 100) * 1000);
+        let expected = BigInt::from(DEFAULT_BANDWIDTH_BYTES * 1000);
         assert_eq!(calculate_transfer_fee_rate(&params, &without_bandwidth, false).unwrap(), expected);
     }
 
@@ -254,7 +257,7 @@ mod tests {
         assert_eq!(calculate_stake_fee_rate(&params, &with_bandwidth, &stake_type).unwrap(), BigInt::from(0));
 
         let without_bandwidth = account_usage(100, 0, 0);
-        let expected = BigInt::from((DEFAULT_BANDWIDTH_BYTES - 100) * 1000);
+        let expected = BigInt::from(DEFAULT_BANDWIDTH_BYTES * 1000);
         assert_eq!(calculate_stake_fee_rate(&params, &without_bandwidth, &stake_type).unwrap(), expected);
     }
 
@@ -265,5 +268,21 @@ mod tests {
         assert_eq!(get_chain_parameter_value(&params, GET_ENERGY_FEE).unwrap(), 420);
         assert_eq!(get_chain_parameter_value(&params, GET_TRANSACTION_FEE).unwrap(), 1000);
         assert!(get_chain_parameter_value(&params, "missing").is_err());
+    }
+
+    #[test]
+    fn test_bandwidth_fee() {
+        assert_eq!(bandwidth_fee(&account_usage(DEFAULT_BANDWIDTH_BYTES, 0, 0), DEFAULT_BANDWIDTH_BYTES, 1000), 0);
+        assert_eq!(bandwidth_fee(&account_usage(100, 200, 0), DEFAULT_BANDWIDTH_BYTES, 1000), 0);
+        assert_eq!(bandwidth_fee(&account_usage(0, 0, 0), DEFAULT_BANDWIDTH_BYTES, 1000), DEFAULT_BANDWIDTH_BYTES * 1000);
+        assert_eq!(bandwidth_fee(&account_usage(76, 0, 0), DEFAULT_BANDWIDTH_BYTES, 1000), DEFAULT_BANDWIDTH_BYTES * 1000);
+    }
+
+    #[test]
+    fn test_calculate_token_transfer_fee_partial_bandwidth() {
+        let fee = calculate_token_transfer_fee(&account_usage(76, 0, 0), 64285, 420, 1000);
+
+        assert_eq!(fee.fee, 77142 * 420 + DEFAULT_BANDWIDTH_BYTES * 1000);
+        assert_eq!(fee.fee_limit, 77142 * 420);
     }
 }

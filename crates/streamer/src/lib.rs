@@ -17,4 +17,4 @@ pub use primitives::{AssetId, PushErrorLog};
 pub use queue::QueueName;
 pub use steam_producer_queue::StreamProducerQueue;
 pub use stream_producer::StreamProducer;
-pub use stream_reader::{StreamReader, StreamReaderConfig};
+pub use stream_reader::{ShutdownReceiver, StreamReader, StreamReaderConfig};
