@@ -1,6 +1,5 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use primitives::{SolanaAccountMeta, SolanaInstruction};
+use rand::Rng;
 
 use crate::SYSTEM_PROGRAM_ID;
 
@@ -82,8 +81,7 @@ pub fn calculate_fee_stats(fees: &[i64]) -> FeeStats {
 }
 
 fn get_random_tip_account() -> &'static str {
-    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-    let index = (nanos as usize) % JITO_TIP_ACCOUNTS.len();
+    let index = rand::rng().random_range(0..JITO_TIP_ACCOUNTS.len());
     JITO_TIP_ACCOUNTS[index]
 }
 

@@ -3455,6 +3455,7 @@ dependencies = [
  "gem_jsonrpc",
  "num-bigint",
  "primitives",
+ "rand 0.9.2",
  "serde",
  "serde_json",
  "serde_serializers",
