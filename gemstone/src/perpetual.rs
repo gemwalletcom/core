@@ -1,10 +1,6 @@
 use gem_hypercore::{
-    models::websocket::WebSocketChannel,
     perpetual_formatter::PerpetualFormatter,
-    provider::websocket_mapper::{
-        diff_clearinghouse_positions, diff_open_orders_positions, parse_all_mids, parse_candle, parse_channel, parse_clearinghouse_state,
-        parse_open_orders, parse_subscription_response,
-    },
+    provider::websocket_mapper::{diff_clearinghouse_positions, diff_open_orders_positions, parse_websocket_data},
 };
 use primitives::{PerpetualPosition, PerpetualProvider};
 
@@ -59,34 +55,7 @@ impl Hyperliquid {
 
     pub fn parse_websocket_data(&self, data: Vec<u8>) -> Result<GemHyperliquidSocketMessage, crate::GemstoneError> {
         let json = String::from_utf8(data)?;
-        let channel = parse_channel(&json)?;
-
-        match channel {
-            WebSocketChannel::ClearinghouseState => {
-                let result = parse_clearinghouse_state(&json)?;
-                Ok(GemHyperliquidSocketMessage::ClearinghouseState {
-                    balance: result.summary.balance,
-                    positions: result.summary.positions,
-                })
-            }
-            WebSocketChannel::OpenOrders => {
-                let result = parse_open_orders(&json)?;
-                Ok(GemHyperliquidSocketMessage::OpenOrders { orders: result.orders })
-            }
-            WebSocketChannel::Candle => {
-                let candle = parse_candle(&json)?;
-                Ok(GemHyperliquidSocketMessage::Candle { candle })
-            }
-            WebSocketChannel::AllMids => {
-                let prices = parse_all_mids(&json)?;
-                Ok(GemHyperliquidSocketMessage::AllMids { prices })
-            }
-            WebSocketChannel::SubscriptionResponse => {
-                let subscription_type = parse_subscription_response(&json)?;
-                Ok(GemHyperliquidSocketMessage::SubscriptionResponse { subscription_type })
-            }
-            WebSocketChannel::Unknown => Ok(GemHyperliquidSocketMessage::Unknown),
-        }
+        Ok(parse_websocket_data(&json)?)
     }
 
     pub fn diff_clearinghouse_positions(&self, new_positions: Vec<PerpetualPosition>, existing_positions: Vec<PerpetualPosition>) -> GemPositionsDiff {

@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
 use primitives::PerpetualPosition;
-use serde::de::DeserializeOwned;
+use primitives::chart::ChartCandleStick;
+use primitives::perpetual::PerpetualBalance;
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 
 use super::order::OpenOrder;
 use super::position::AssetPositions;
@@ -64,4 +66,14 @@ pub struct Subscription {
 pub struct PositionsDiff {
     pub delete_position_ids: Vec<String>,
     pub positions: Vec<PerpetualPosition>,
+}
+
+#[derive(Debug)]
+pub enum HyperliquidSocketMessage {
+    ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
+    OpenOrders { orders: Vec<OpenOrder> },
+    Candle { candle: ChartCandleStick },
+    AllMids { prices: HashMap<String, f64> },
+    SubscriptionResponse { subscription_type: String },
+    Unknown,
 }

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use chrono::{DateTime, Utc};
 use gem_hypercore::models::order::OpenOrder;
-use gem_hypercore::models::websocket::PositionsDiff;
+use gem_hypercore::models::websocket::{HyperliquidSocketMessage, PositionsDiff};
 use primitives::{
     Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
     chart::{ChartCandleStick, ChartDateValue},
@@ -135,7 +135,9 @@ pub struct GemHyperliquidOpenOrder {
     pub order_type: String,
 }
 
-#[derive(Debug, uniffi::Enum)]
+pub type GemHyperliquidSocketMessage = HyperliquidSocketMessage;
+
+#[uniffi::remote(Enum)]
 pub enum GemHyperliquidSocketMessage {
     ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
     OpenOrders { orders: Vec<GemHyperliquidOpenOrder> },
