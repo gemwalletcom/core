@@ -75,7 +75,9 @@ impl Parser {
             let timeout = cmp::max(Duration::from_millis(state.timeout_latest_block as u64), self.options.timeout);
 
             if !state.is_enabled {
-                tokio::time::sleep(timeout).await;
+                if shutdown::sleep_or_shutdown(timeout, &self.shutdown_rx).await {
+                    break;
+                }
                 continue;
             }
 
@@ -99,13 +101,17 @@ impl Parser {
                             latest_block = latest_block,
                             await_blocks = state.await_blocks
                         );
-                        tokio::time::sleep(timeout).await;
+                        if shutdown::sleep_or_shutdown(timeout, &self.shutdown_rx).await {
+                            break;
+                        }
                         continue;
                     }
                 }
                 Err(err) => {
                     error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
-                    tokio::time::sleep(timeout * 5).await;
+                    if shutdown::sleep_or_shutdown(timeout * 5, &self.shutdown_rx).await {
+                        break;
+                    }
                     continue;
                 }
             }
@@ -159,7 +165,7 @@ impl Parser {
                     }
                     Err(err) => {
                         error_with_fields!("parser parse_block", &*err, chain = self.chain.as_ref(), blocks = format!("{:?}", next_blocks));
-                        tokio::time::sleep(timeout).await;
+                        shutdown::sleep_or_shutdown(timeout, &self.shutdown_rx).await;
                         break;
                     }
                 }
@@ -167,8 +173,8 @@ impl Parser {
                 if remaining % self.options.catchup_reload_interval == 0 {
                     break;
                 }
-                if state.timeout_between_blocks > 0 {
-                    tokio::time::sleep(Duration::from_millis(state.timeout_between_blocks as u64)).await;
+                if state.timeout_between_blocks > 0 && shutdown::sleep_or_shutdown(Duration::from_millis(state.timeout_between_blocks as u64), &self.shutdown_rx).await {
+                    break;
                 }
             }
         }
@@ -215,7 +221,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
     let (shutdown_tx, shutdown_rx) = shutdown::channel();
     let shutdown_timeout = settings.parser.shutdown.timeout;
 
-    shutdown::spawn_signal_handler(shutdown_tx);
+    let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
     let mut handles = Vec::new();
 
@@ -240,6 +246,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
         }));
     }
 
+    signal_handle.await.ok();
     shutdown::wait_with_timeout(handles, shutdown_timeout).await;
 
     info_with_fields!("all parsers stopped", status = "ok");
@@ -266,16 +273,10 @@ async fn run_parser(
 
         if let Err(e) = parser.start().await {
             error_with_fields!("parser error", &*e, chain = chain.as_ref());
-        }
 
-        if *shutdown_rx.borrow() {
-            break;
-        }
-
-        let mut rx = shutdown_rx.clone();
-        tokio::select! {
-            _ = tokio::time::sleep(timeout) => {}
-            _ = rx.changed() => break,
+            if shutdown::sleep_or_shutdown(timeout, &shutdown_rx).await {
+                break;
+            }
         }
     }
 }

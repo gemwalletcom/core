@@ -5,6 +5,14 @@ use tokio::time::{Duration, Instant};
 
 pub type ShutdownReceiver = watch::Receiver<bool>;
 
+pub async fn sleep_or_shutdown(duration: Duration, shutdown_rx: &ShutdownReceiver) -> bool {
+    let mut rx = shutdown_rx.clone();
+    tokio::select! {
+        _ = tokio::time::sleep(duration) => false,
+        _ = rx.changed() => true,
+    }
+}
+
 pub async fn run_job<F, Fut, R>(name: &'static str, interval_duration: Duration, shutdown_rx: ShutdownReceiver, job_fn: F)
 where
     F: Fn() -> Fut + Send + Sync + 'static,
@@ -35,13 +43,9 @@ where
             break;
         }
 
-        let mut rx = shutdown_rx.clone();
-        tokio::select! {
-            _ = tokio::time::sleep(interval_duration) => {}
-            _ = rx.changed() => {
-                info_with_fields!("job shutdown", job = name);
-                break;
-            }
+        if sleep_or_shutdown(interval_duration, &shutdown_rx).await {
+            info_with_fields!("job shutdown", job = name);
+            break;
         }
     }
 }
