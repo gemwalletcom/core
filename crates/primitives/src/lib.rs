@@ -221,7 +221,7 @@ pub use self::transaction_fee::{FeeOption, TransactionFee};
 pub mod stake_type;
 pub use self::stake_type::{RedelegateData, StakeData, StakeType};
 pub mod transaction_load_metadata;
-pub use self::transaction_load_metadata::{HyperliquidOrder, SolanaJitoTips, TransactionLoadMetadata};
+pub use self::transaction_load_metadata::{HyperliquidOrder, TransactionLoadMetadata};
 pub mod transaction_input_type;
 pub use self::transaction_input_type::{TransactionInputType, TransactionLoadData, TransactionLoadInput};
 pub mod transfer_data_extra;

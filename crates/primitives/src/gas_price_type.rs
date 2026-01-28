@@ -3,9 +3,19 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GasPriceType {
-    Regular { gas_price: BigInt },
-    Eip1559 { gas_price: BigInt, priority_fee: BigInt },
-    Solana { gas_price: BigInt, priority_fee: BigInt, unit_price: BigInt },
+    Regular {
+        gas_price: BigInt,
+    },
+    Eip1559 {
+        gas_price: BigInt,
+        priority_fee: BigInt,
+    },
+    Solana {
+        gas_price: BigInt,
+        priority_fee: BigInt,
+        unit_price: BigInt,
+        jito_tip: u64,
+    },
 }
 
 impl GasPriceType {
@@ -20,11 +30,12 @@ impl GasPriceType {
         }
     }
 
-    pub fn solana<T: Into<BigInt>, U: Into<BigInt>, V: Into<BigInt>>(gas_price: T, priority_fee: U, unit_price: V) -> Self {
+    pub fn solana<T: Into<BigInt>, U: Into<BigInt>, V: Into<BigInt>>(gas_price: T, priority_fee: U, unit_price: V, jito_tip: u64) -> Self {
         Self::Solana {
             gas_price: gas_price.into(),
             priority_fee: priority_fee.into(),
             unit_price: unit_price.into(),
+            jito_tip,
         }
     }
 
@@ -49,6 +60,14 @@ impl GasPriceType {
             GasPriceType::Regular { .. } => BigInt::from(0),
             GasPriceType::Eip1559 { .. } => BigInt::from(0),
             GasPriceType::Solana { unit_price, .. } => unit_price.clone(),
+        }
+    }
+
+    pub fn jito_tip(&self) -> u64 {
+        match self {
+            GasPriceType::Regular { .. } => 0,
+            GasPriceType::Eip1559 { .. } => 0,
+            GasPriceType::Solana { jito_tip, .. } => *jito_tip,
         }
     }
 

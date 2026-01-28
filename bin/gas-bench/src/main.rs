@@ -10,6 +10,7 @@ use std::error::Error;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 use tokio::time::interval;
 
+use crate::jito::{format_micro_lamports, lamports_to_sol, priority_fee_to_lamports};
 use crate::{
     client::{GemstoneClient, GemstoneFeeData},
     etherscan::EtherscanClient,
@@ -18,7 +19,6 @@ use crate::{
     solana_client::{SolanaFeeData, SolanaGasClient},
 };
 use gem_evm::ether_conv::EtherConv;
-use crate::jito::{format_micro_lamports, lamports_to_sol, priority_fee_to_lamports};
 use gemstone::alien::reqwest_provider::NativeProvider;
 use primitives::fee::FeePriority;
 

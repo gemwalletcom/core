@@ -2,12 +2,10 @@ use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
 use std::error::Error;
 
-use crate::models::jito::{calculate_fee_stats, estimate_jito_tips};
 use crate::provider::preload_mapper::{calculate_fee_rates, calculate_transaction_fee};
 use gem_client::Client;
 use primitives::{
-    AssetType, Chain, FeeRate, SolanaJitoTips, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput,
+    AssetType, Chain, FeeRate, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
 };
 
 use crate::rpc::client::SolanaClient;
@@ -50,10 +48,7 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
             Ok(None)
         };
 
-        let prioritization_fees_future = self.get_recent_prioritization_fees();
-
-        let (block_hash, sender_token_address, recipient_token_address, prioritization_fees) =
-            futures::try_join!(self.get_latest_blockhash(), sender_token_future, recipient_token_future, prioritization_fees_future)?;
+        let (block_hash, sender_token_address, recipient_token_address) = futures::try_join!(self.get_latest_blockhash(), sender_token_future, recipient_token_future)?;
 
         let token_program = match source_asset.asset_type {
             AssetType::SPL => Some(SolanaTokenProgramId::Token),
@@ -61,23 +56,11 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
             _ => None,
         };
 
-        let jito_tips = {
-            let values: Vec<i64> = prioritization_fees.iter().map(|f| f.prioritization_fee).collect();
-            let stats = calculate_fee_stats(&values);
-            let estimates = estimate_jito_tips(&stats);
-            SolanaJitoTips {
-                slow: estimates.slow,
-                normal: estimates.normal,
-                fast: estimates.fast,
-            }
-        };
-
         Ok(TransactionLoadMetadata::Solana {
             sender_token_address,
             recipient_token_address,
             token_program,
             block_hash: block_hash.value.blockhash,
-            jito_tips,
         })
     }
 

@@ -2,6 +2,7 @@ use num_bigint::BigInt;
 use primitives::{AssetSubtype, Chain, FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType};
 use std::collections::HashMap;
 
+use crate::models::jito::{calculate_fee_stats, estimate_jito_tips};
 use crate::{constants::STATIC_BASE_FEE, models::prioritization_fee::SolanaPrioritizationFee};
 
 pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType, recipient_token_address: Option<String>) -> TransactionFee {
@@ -89,6 +90,10 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
 
     let gas_limit = get_gas_limit(input_type);
 
+    let all_fees: Vec<i64> = prioritization_fees.iter().map(|f| f.prioritization_fee).collect();
+    let fee_stats = calculate_fee_stats(&all_fees);
+    let jito_tips = estimate_jito_tips(&fee_stats);
+
     [FeePriority::Slow, FeePriority::Normal, FeePriority::Fast]
         .iter()
         .map(|priority| {
@@ -98,12 +103,19 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
                 FeePriority::Fast => &priority_fee_base * 3,
             };
 
+            let jito_tip = match priority {
+                FeePriority::Slow => jito_tips.slow,
+                FeePriority::Normal => jito_tips.normal,
+                FeePriority::Fast => jito_tips.fast,
+            };
+
             FeeRate::new(
                 *priority,
                 GasPriceType::solana(
                     static_base_fee.clone(),
                     (priority_fee.clone() * gas_limit.clone()) / BigInt::from(1_000_000),
                     priority_fee.clone(),
+                    jito_tip,
                 ),
             )
         })

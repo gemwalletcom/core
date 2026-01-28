@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use super::{JitoTipFloor, JitoTipFloorEntry, JITO_TIP_FLOOR_URL};
+use super::{JITO_TIP_FLOOR_URL, JitoTipFloor, JitoTipFloorEntry};
 
 #[derive(Default)]
 pub struct JitoClient {
