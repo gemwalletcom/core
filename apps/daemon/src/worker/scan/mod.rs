@@ -1,21 +1,23 @@
 mod validator_scanner;
 
-use job_runner::{ShutdownReceiver, run_job};
+use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
 use primitives::ConfigKey;
 use settings::{Settings, service_user_agent};
 use settings_chain::ChainProviders;
 use std::error::Error;
+use std::sync::Arc;
 use storage::ConfigCacher;
 use tokio::task::JoinHandle;
 use validator_scanner::ValidatorScanner;
 
-pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
 
     let update_validators = tokio::spawn(run_job(
         "Update chain validators",
         config.get_duration(ConfigKey::ScanTimerUpdateValidators)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let settings = settings.clone();
@@ -34,6 +36,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_validators_static_assets = tokio::spawn(run_job(
         "Update validators from static assets",
         config.get_duration(ConfigKey::ScanTimerUpdateValidatorsStatic)?,
+        reporter.clone(),
         shutdown_rx,
         {
             let settings = settings.clone();

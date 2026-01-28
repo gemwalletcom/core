@@ -11,7 +11,10 @@ use settings::Settings;
 use std::error::Error;
 use std::sync::Arc;
 use storage::Database;
-use streamer::{ConsumerConfig, NotificationsFailedPayload, NotificationsPayload, QueueName, ShutdownReceiver, StreamProducer, StreamProducerConfig, StreamReader, StreamReaderConfig, run_consumer};
+use streamer::{
+    ConsumerConfig, NotificationsFailedPayload, NotificationsPayload, QueueName, ShutdownReceiver, StreamProducer, StreamProducerConfig, StreamReader, StreamReaderConfig,
+    run_consumer,
+};
 
 fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
     ConsumerConfig {

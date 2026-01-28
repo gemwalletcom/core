@@ -1,6 +1,6 @@
 mod price_alerts_sender;
 
-use job_runner::{ShutdownReceiver, run_job};
+use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
 use price_alerts_sender::PriceAlertSender;
 use pricer::PriceAlertClient;
 use primitives::ConfigKey;
@@ -11,13 +11,13 @@ use storage::ConfigCacher;
 use streamer::{StreamProducer, StreamProducerConfig};
 use tokio::task::JoinHandle;
 
-pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
 
     let alerter_interval = config.get_duration(ConfigKey::AlerterInterval)?;
 
-    let price_alerts_job = tokio::spawn(run_job("Price Alerts", alerter_interval, shutdown_rx, {
+    let price_alerts_job = tokio::spawn(run_job("Price Alerts", alerter_interval, reporter.clone(), shutdown_rx, {
         let settings = Arc::new(settings.clone());
         let database = database.clone();
         move || {

@@ -1,5 +1,6 @@
 mod client;
 mod fiat;
+mod job;
 mod parser;
 mod price;
 
@@ -10,5 +11,5 @@ use rocket::{State, get, response::content::RawText, tokio::sync::Mutex};
 
 #[get("/")]
 pub async fn get_metrics(client: &State<Mutex<MetricsClient>>) -> Result<RawText<String>, ApiError> {
-    Ok(RawText(client.lock().await.get()))
+    Ok(RawText(client.lock().await.get().await))
 }

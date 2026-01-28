@@ -4448,6 +4448,7 @@ name = "job_runner"
 version = "1.0.0"
 dependencies = [
  "gem_tracing",
+ "primitives",
  "tokio",
 ]
 

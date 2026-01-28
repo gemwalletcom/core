@@ -3,7 +3,7 @@ mod observers;
 
 use cacher::CacherClient;
 use device_updater::DeviceUpdater;
-use job_runner::{ShutdownReceiver, run_job};
+use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
 use observers::InactiveDevicesObserver;
 use primitives::ConfigKey;
 use settings::Settings;
@@ -13,22 +13,29 @@ use storage::ConfigCacher;
 use streamer::{StreamProducer, StreamProducerConfig};
 use tokio::task::JoinHandle;
 
-pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
     let cacher_client = CacherClient::new(settings.redis.url.as_str()).await;
 
-    let device_updater = tokio::spawn(run_job("device updater", config.get_duration(ConfigKey::DeviceTimerUpdater)?, shutdown_rx.clone(), {
-        let database = database.clone();
-        move || {
-            let device_updater = DeviceUpdater::new(database.clone());
-            async move { device_updater.update().await }
-        }
-    }));
+    let device_updater = tokio::spawn(run_job(
+        "device updater",
+        config.get_duration(ConfigKey::DeviceTimerUpdater)?,
+        reporter.clone(),
+        shutdown_rx.clone(),
+        {
+            let database = database.clone();
+            move || {
+                let device_updater = DeviceUpdater::new(database.clone());
+                async move { device_updater.update().await }
+            }
+        },
+    ));
 
     let inactive_devices_observer = tokio::spawn(run_job(
         "inactive devices observer",
         config.get_duration(ConfigKey::DeviceTimerInactiveObserver)?,
+        reporter.clone(),
         shutdown_rx,
         {
             let settings = Arc::new(settings.clone());

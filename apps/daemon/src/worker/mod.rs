@@ -2,6 +2,7 @@ pub mod alerter;
 pub mod assets;
 pub mod device;
 pub mod fiat;
+pub mod job_reporter;
 pub mod nft;
 pub mod pricer;
 pub mod prices_dex;

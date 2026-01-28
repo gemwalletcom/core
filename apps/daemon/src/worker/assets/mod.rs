@@ -11,18 +11,19 @@ use asset_updater::AssetUpdater;
 use assets_images_updater::AssetsImagesUpdater;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
-use job_runner::{ShutdownReceiver, run_job};
+use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
 use perpetual_updater::PerpetualUpdater;
 use primitives::ConfigKey;
 use settings::{Settings, service_user_agent};
 use settings_chain::ChainProviders;
 use staking_apy_updater::StakeApyUpdater;
 use std::error::Error;
+use std::sync::Arc;
 use storage::ConfigCacher;
 use tokio::task::JoinHandle;
 use usage_rank_updater::UsageRankUpdater;
 
-pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let cacher_client = CacherClient::new(&settings.redis.url).await;
@@ -31,6 +32,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_existing_assets = tokio::spawn(run_job(
         "Update existing prices assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateExisting)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
@@ -44,6 +46,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_all_assets = tokio::spawn(run_job(
         "Update all prices assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateAll)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
@@ -57,6 +60,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_native_prices_assets = tokio::spawn(run_job(
         "Update native prices assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateNative)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
@@ -70,6 +74,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_tranding_assets = tokio::spawn(run_job(
         "Update CoinGecko Trending assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateTrending)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
@@ -83,6 +88,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_recently_added_assets = tokio::spawn(run_job(
         "Update CoinGecko recently added assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateRecentlyAdded)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
@@ -96,6 +102,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_suspicious_assets = tokio::spawn(run_job(
         "Update suspicious asset ranks",
         config.get_duration(ConfigKey::AssetsTimerUpdateSuspicious)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let database = database.clone();
@@ -109,6 +116,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_staking_apy = tokio::spawn(run_job(
         "Update staking APY",
         config.get_duration(ConfigKey::AssetsTimerUpdateStakingApy)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let settings = settings.clone();
@@ -124,6 +132,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_perpetuals = tokio::spawn(run_job(
         "Update perpetuals",
         config.get_duration(ConfigKey::AssetsTimerUpdatePerpetuals)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let settings = settings.clone();
@@ -138,6 +147,7 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
     let update_usage_ranks = tokio::spawn(run_job(
         "Update usage ranks",
         config.get_duration(ConfigKey::AssetsTimerUpdateUsageRank)?,
+        reporter.clone(),
         shutdown_rx.clone(),
         {
             let database = database.clone();
@@ -148,14 +158,20 @@ pub async fn jobs(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<V
         },
     ));
 
-    let update_assets_images = tokio::spawn(run_job("Update assets images", config.get_duration(ConfigKey::AssetsTimerUpdateImages)?, shutdown_rx, {
-        let static_assets_client = StaticAssetsClient::new(&settings.assets.url);
-        let database = database.clone();
-        move || {
-            let updater = AssetsImagesUpdater::new(static_assets_client.clone(), database.clone());
-            async move { updater.update_assets_images().await }
-        }
-    }));
+    let update_assets_images = tokio::spawn(run_job(
+        "Update assets images",
+        config.get_duration(ConfigKey::AssetsTimerUpdateImages)?,
+        reporter.clone(),
+        shutdown_rx,
+        {
+            let static_assets_client = StaticAssetsClient::new(&settings.assets.url);
+            let database = database.clone();
+            move || {
+                let updater = AssetsImagesUpdater::new(static_assets_client.clone(), database.clone());
+                async move { updater.update_assets_images().await }
+            }
+        },
+    ));
 
     Ok(vec![
         update_existing_assets,

@@ -86,7 +86,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let subscriptions_client = SubscriptionsClient::new(database.clone(), stream_producer.clone());
     let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
     let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());
-    let metrics_client = MetricsClient::new(database.clone());
+    let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
+    let metrics_client = MetricsClient::new(database.clone(), metrics_cacher);
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(database.clone(), security_providers);

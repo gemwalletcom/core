@@ -34,8 +34,8 @@ pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
     AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, FiatWebhookPayload,
-    InAppNotificationPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, ShutdownReceiver, StreamConnection, StreamProducer, StreamProducerConfig,
-    StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload, run_consumer,
+    InAppNotificationPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, ShutdownReceiver, StreamConnection, StreamProducer,
+    StreamProducerConfig, StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload, run_consumer,
 };
 
 use crate::consumers::{

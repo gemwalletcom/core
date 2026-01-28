@@ -203,6 +203,7 @@ pub struct UD {
 #[allow(unused)]
 pub struct Metrics {
     pub path: String,
+    pub redis: Redis,
 }
 
 #[derive(Debug, Deserialize, Clone)]

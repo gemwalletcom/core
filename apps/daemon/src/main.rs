@@ -6,10 +6,15 @@ mod setup;
 mod shutdown;
 mod worker;
 
+use std::str::FromStr;
+use std::sync::Arc;
+
 use crate::model::{ConsumerService, DaemonService, WorkerService};
 use crate::shutdown::ShutdownReceiver;
+use crate::worker::job_reporter::CacherJobReporter;
+use cacher::CacherClient;
 use gem_tracing::{SentryConfig, SentryTracing, info_with_fields};
-use std::str::FromStr;
+use job_runner::JobStatusReporter;
 
 #[tokio::main]
 pub async fn main() {
@@ -55,21 +60,24 @@ async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
     let (shutdown_tx, shutdown_rx) = shutdown::channel();
     let shutdown_timeout = settings.daemon.shutdown.timeout;
 
+    let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
+    let reporter: Arc<dyn JobStatusReporter> = Arc::new(CacherJobReporter::new(metrics_cacher));
+
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
     let services = match service {
-        WorkerService::Alerter => worker::alerter::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::Pricer => worker::pricer::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::PricesDex => worker::prices_dex::jobs(settings, shutdown_rx).await,
-        WorkerService::Fiat => worker::fiat::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::Assets => worker::assets::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::Version => worker::version::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::Transaction => worker::transaction::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::Device => worker::device::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::Search => worker::search::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::Nft => worker::nft::jobs(settings, shutdown_rx).await,
-        WorkerService::Scan => worker::scan::jobs(settings, shutdown_rx).await.unwrap(),
-        WorkerService::Rewards => worker::rewards::jobs(settings, shutdown_rx).await.unwrap(),
+        WorkerService::Alerter => worker::alerter::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::Pricer => worker::pricer::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::PricesDex => worker::prices_dex::jobs(settings, reporter, shutdown_rx).await,
+        WorkerService::Fiat => worker::fiat::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::Assets => worker::assets::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::Version => worker::version::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::Transaction => worker::transaction::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::Device => worker::device::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::Search => worker::search::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::Nft => worker::nft::jobs(settings, reporter, shutdown_rx).await,
+        WorkerService::Scan => worker::scan::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+        WorkerService::Rewards => worker::rewards::jobs(settings, reporter, shutdown_rx).await.unwrap(),
     };
 
     signal_handle.await.ok();
