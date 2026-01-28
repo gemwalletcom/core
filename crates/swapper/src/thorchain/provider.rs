@@ -84,7 +84,8 @@ where
                 fee.address,
                 fee.bps.into(),
             )
-            .await?;
+            .await
+            .map_err(|e| self.map_quote_error(e, from_asset.decimals as i32))?;
 
         let to_value = bigint::value_to(&quote.expected_amount_out, to_asset.decimals as i32)?;
         let inbound_address = RouteData::get_inbound_address(&from_asset, quote.inbound_address.clone())?;
