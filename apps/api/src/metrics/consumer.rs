@@ -12,12 +12,17 @@ static CONSUMER_PROCESSED: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::n
 static CONSUMER_ERRORS: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
 static CONSUMER_LAST_SUCCESS_AT: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
 static CONSUMER_AVG_DURATION_MS: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
-static CONSUMER_UNIQUE_ERRORS: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
-static CONSUMER_LAST_ERROR_AT: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
+static CONSUMER_ERROR_DETAIL: OnceLock<Family<ConsumerErrorLabels, Gauge>> = OnceLock::new();
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 struct ConsumerLabels {
     consumer: String,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+struct ConsumerErrorLabels {
+    consumer: String,
+    error: String,
 }
 
 pub fn init_consumer_metrics(registry: &mut Registry) {
@@ -25,22 +30,19 @@ pub fn init_consumer_metrics(registry: &mut Registry) {
     let errors = Family::<ConsumerLabels, Gauge>::default();
     let last_success = Family::<ConsumerLabels, Gauge>::default();
     let avg_duration = Family::<ConsumerLabels, Gauge>::default();
-    let unique_errors = Family::<ConsumerLabels, Gauge>::default();
-    let last_error = Family::<ConsumerLabels, Gauge>::default();
+    let error_detail = Family::<ConsumerErrorLabels, Gauge>::default();
 
     registry.register("consumer_processed", "Messages processed", processed.clone());
     registry.register("consumer_errors", "Errors encountered", errors.clone());
     registry.register("consumer_last_success_at", "Last successful processing (unix timestamp)", last_success.clone());
     registry.register("consumer_avg_duration_ms", "Average processing duration in milliseconds", avg_duration.clone());
-    registry.register("consumer_unique_errors", "Number of unique error types", unique_errors.clone());
-    registry.register("consumer_last_error_at", "Most recent error (unix timestamp)", last_error.clone());
+    registry.register("consumer_error_detail", "Error occurrence count per consumer and error message", error_detail.clone());
 
     CONSUMER_PROCESSED.set(processed).ok();
     CONSUMER_ERRORS.set(errors).ok();
     CONSUMER_LAST_SUCCESS_AT.set(last_success).ok();
     CONSUMER_AVG_DURATION_MS.set(avg_duration).ok();
-    CONSUMER_UNIQUE_ERRORS.set(unique_errors).ok();
-    CONSUMER_LAST_ERROR_AT.set(last_error).ok();
+    CONSUMER_ERROR_DETAIL.set(error_detail).ok();
 }
 
 pub async fn update_consumer_metrics(cacher: &CacherClient) {
@@ -68,13 +70,13 @@ pub async fn update_consumer_metrics(cacher: &CacherClient) {
         if let Some(family) = CONSUMER_AVG_DURATION_MS.get() {
             family.get_or_create(&labels).set(status.avg_duration as i64);
         }
-        if let Some(family) = CONSUMER_UNIQUE_ERRORS.get() {
-            family.get_or_create(&labels).set(status.errors.len() as i64);
-        }
-        if let Some(family) = CONSUMER_LAST_ERROR_AT.get() {
-            let last_error_at = status.errors.iter().map(|e| e.last_seen).max();
-            if let Some(ts) = last_error_at {
-                family.get_or_create(&labels).set(ts as i64);
+        if let Some(family) = CONSUMER_ERROR_DETAIL.get() {
+            for entry in &status.errors {
+                let error_labels = ConsumerErrorLabels {
+                    consumer: name.to_string(),
+                    error: entry.message.clone(),
+                };
+                family.get_or_create(&error_labels).set(entry.count as i64);
             }
         }
     }
