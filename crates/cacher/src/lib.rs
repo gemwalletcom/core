@@ -190,4 +190,29 @@ impl CacherClient {
     pub async fn get_i64(&self, key: &str) -> Result<Option<i64>, Box<dyn Error + Send + Sync>> {
         Ok(self.connection.clone().get::<&str, Option<i64>>(key).await?)
     }
+
+    pub async fn sorted_set_incr_with_expire(&self, key: &str, members: &[String], ttl: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if members.is_empty() {
+            return Ok(());
+        }
+        let mut pipe = redis::pipe();
+        for member in members {
+            pipe.cmd("ZINCRBY").arg(key).arg(1).arg(member).ignore();
+        }
+        pipe.cmd("EXPIRE").arg(key).arg(ttl).ignore();
+        pipe.query_async::<()>(&mut self.connection.clone()).await?;
+        Ok(())
+    }
+
+    pub async fn sorted_set_range_by_score(&self, key: &str, min: f64, max: f64, limit: usize) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        Ok(redis::cmd("ZRANGEBYSCORE")
+            .arg(key)
+            .arg(min)
+            .arg(max)
+            .arg("LIMIT")
+            .arg(0)
+            .arg(limit)
+            .query_async(&mut self.connection.clone())
+            .await?)
+    }
 }

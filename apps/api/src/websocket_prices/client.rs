@@ -4,9 +4,8 @@ use std::sync::Arc;
 
 use pricer::PriceClient;
 use primitives::{AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload, asset::AssetHashSetExt};
-use redis::PushInfo;
-use redis::PushKind;
 use redis::aio::MultiplexedConnection;
+use redis::{PushInfo, PushKind};
 use rocket::futures::SinkExt;
 use rocket::serde::json::serde_json;
 use rocket::tokio::sync::Mutex;
@@ -20,7 +19,7 @@ pub struct PriceObserverConfig {
 pub struct PriceObserverClient {
     pub price_client: Arc<Mutex<PriceClient>>,
     pub assets: HashSet<AssetId>,
-    prices_to_publish: std::collections::HashMap<String, AssetPrice>,
+    prices_to_publish: HashMap<String, AssetPrice>,
     interval: rocket::tokio::time::Interval,
 }
 
@@ -74,12 +73,7 @@ impl PriceObserverClient {
         }
     }
 
-    /// Serializes and sends the payload over the WebSocket stream
-    pub async fn build_and_send_payload(
-        &mut self,
-        stream: &mut DuplexStream, // Pass stream mutably
-        payload: WebSocketPricePayload,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn build_and_send_payload(&mut self, stream: &mut DuplexStream, payload: WebSocketPricePayload) -> Result<(), Box<dyn Error + Send + Sync>> {
         let text = serde_json::to_string(&payload)?;
         let item = Message::Text(text);
         Ok(stream.send(item).await?)
@@ -112,15 +106,20 @@ impl PriceObserverClient {
         stream: &mut DuplexStream,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let action = serde_json::from_slice::<WebSocketPriceAction>(&data)?;
+        let new_assets: HashSet<AssetId> = action.assets.iter().cloned().collect();
+
         match action.action {
             WebSocketPriceActionType::Subscribe => {
                 self.assets.clear();
-                self.assets.extend(action.assets.clone());
+                self.assets.extend(new_assets);
             }
             WebSocketPriceActionType::Add => {
-                self.assets.extend(action.assets);
+                self.assets.extend(new_assets);
             }
         }
+
+        let asset_ids = self.assets.ids();
+        let _ = self.price_client.lock().await.track_observed_assets(&asset_ids).await;
 
         let needs_rates = action.action == WebSocketPriceActionType::Subscribe;
         let payload = self.fetch_payload_data(needs_rates).await?;

@@ -45,13 +45,7 @@ impl StreamReader {
         Ok(())
     }
 
-    pub async fn read<T, F>(
-        &mut self,
-        queue: QueueName,
-        routing_key: Option<&str>,
-        callback: F,
-        shutdown_rx: ShutdownReceiver,
-    ) -> Result<(), Box<dyn Error + Send + Sync>>
+    pub async fn read<T, F>(&mut self, queue: QueueName, routing_key: Option<&str>, callback: F, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>>
     where
         T: DeserializeOwned,
         F: FnMut(T) -> Result<(), Box<dyn Error + Send + Sync>>,

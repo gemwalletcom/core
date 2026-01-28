@@ -105,5 +105,6 @@ async fn run_consumer(settings: settings::Settings, service: ConsumerService, sh
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, shutdown_rx).await,
         ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings, shutdown_rx).await,
         ConsumerService::StoreCharts => consumers::run_consumer_store_charts(settings, shutdown_rx).await,
+        ConsumerService::FetchPrices => consumers::run_consumer_fetch_prices(settings, shutdown_rx).await,
     }
 }

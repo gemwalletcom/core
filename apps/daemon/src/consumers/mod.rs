@@ -4,6 +4,7 @@ pub mod fetch_assets_consumer;
 pub mod fetch_blocks_consumer;
 pub mod fetch_coin_addresses_consumer;
 pub mod fetch_nft_assets_addresses_consumer;
+pub mod fetch_prices_consumer;
 pub mod fetch_token_addresses_consumer;
 pub mod notifications;
 pub mod rewards_consumer;
@@ -32,16 +33,18 @@ pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
-    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FiatWebhookPayload, InAppNotificationPayload, PricesPayload,
-    QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, ShutdownReceiver, StreamConnection, StreamProducer, StreamReader, StreamReaderConfig, SupportWebhookPayload,
-    TransactionsPayload, run_consumer,
+    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, FiatWebhookPayload,
+    InAppNotificationPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, ShutdownReceiver, StreamConnection, StreamProducer, StreamReader,
+    StreamReaderConfig, SupportWebhookPayload, TransactionsPayload, run_consumer,
 };
 
 use crate::consumers::{
     fetch_address_transactions_consumer::FetchAddressTransactionsConsumer, fetch_blocks_consumer::FetchBlocksConsumer, fetch_coin_addresses_consumer::FetchCoinAddressesConsumer,
-    fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer, fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
+    fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer, fetch_prices_consumer::FetchPricesConsumer, fetch_token_addresses_consumer::FetchTokenAddressesConsumer,
 };
 use crate::pusher::Pusher;
+use crate::worker::pricer::price_updater::PriceUpdater;
+use coingecko::CoinGeckoClient;
 use gem_client::ReqwestClient;
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::JsonRpcClient;
@@ -364,4 +367,19 @@ fn create_evm_client_provider(settings: Settings) -> EvmClientProvider {
         let rpc_client = JsonRpcClient::new(client);
         Some(EthereumClient::new(rpc_client, chain))
     })
+}
+
+pub async fn run_consumer_fetch_prices(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+    let queue = QueueName::FetchPrices;
+    let name = queue.to_string();
+    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+    let stream_reader = StreamReader::new(config).await?;
+    let cacher_client = CacherClient::new(&settings.redis.url).await;
+    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
+    let price_client = PriceClient::new(database, cacher_client);
+    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let price_updater = PriceUpdater::new(price_client, coingecko_client, stream_producer);
+    let consumer = FetchPricesConsumer::new(price_updater);
+    run_consumer::<FetchPricesPayload, FetchPricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await
 }

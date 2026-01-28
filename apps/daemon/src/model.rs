@@ -21,6 +21,7 @@ pub enum ConsumerService {
     Fiat,
     StorePrices,
     StoreCharts,
+    FetchPrices,
 }
 
 #[derive(Debug, Clone, AsRefStr, EnumString, PartialEq)]

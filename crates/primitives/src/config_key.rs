@@ -172,6 +172,11 @@ pub enum ConfigKey {
     // Parser
     ParserCatchupReloadInterval,
     ParserPersistInterval,
+
+    // Price Observed (WebSocket)
+    PriceObservedFetchInterval,
+    PriceObservedMaxAssets,
+    PriceObservedMinObservers,
 }
 
 impl ConfigKey {
@@ -311,6 +316,9 @@ impl ConfigKey {
             Self::SearchNftsLastUpdatedAt => "0",
             Self::ParserCatchupReloadInterval => "50",
             Self::ParserPersistInterval => "1s",
+            Self::PriceObservedFetchInterval => "30s",
+            Self::PriceObservedMaxAssets => "100",
+            Self::PriceObservedMinObservers => "2",
         }
     }
 }
