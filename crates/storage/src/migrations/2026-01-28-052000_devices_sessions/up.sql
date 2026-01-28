@@ -2,6 +2,7 @@ CREATE TABLE devices_sessions (
     id SERIAL PRIMARY KEY,
     device_id INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
     wallet_id INT NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+    nonce VARCHAR(256) NOT NULL,
     signature VARCHAR(256) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );

@@ -9,6 +9,7 @@ pub struct DeviceSessionRow {
     pub id: i32,
     pub device_id: i32,
     pub wallet_id: i32,
+    pub nonce: String,
     pub signature: String,
     pub created_at: NaiveDateTime,
 }
@@ -18,5 +19,6 @@ pub struct DeviceSessionRow {
 pub struct NewDeviceSessionRow {
     pub device_id: i32,
     pub wallet_id: i32,
+    pub nonce: String,
     pub signature: String,
 }

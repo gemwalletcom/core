@@ -23,6 +23,8 @@ fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> 
 pub struct VerifiedAuth {
     pub device: DeviceRow,
     pub address: String,
+    pub wallet_id: i32,
+    pub wallet_identifier: String,
 }
 
 pub struct Authenticated<T> {
@@ -79,7 +81,7 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
 
         let wallet_identifier = WalletId::Multicoin(body.auth.address.clone()).id();
         let wallet = match db_client.get_or_create_wallet(NewWalletRow {
-            identifier: wallet_identifier,
+            identifier: wallet_identifier.clone(),
             wallet_type: WalletType(PrimitiveWalletType::Multicoin),
             source: WalletSource(PrimitiveWalletSource::Import),
         }) {
@@ -90,6 +92,7 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
         let session = NewDeviceSessionRow {
             device_id: device.id,
             wallet_id: wallet.id,
+            nonce: body.auth.nonce.clone(),
             signature: body.auth.signature.clone(),
         };
         if DeviceSessionsStore::add_device_session(&mut db_client, session).is_err() {
@@ -100,6 +103,8 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
             auth: VerifiedAuth {
                 device,
                 address: body.auth.address,
+                wallet_id: wallet.id,
+                wallet_identifier,
             },
             data: body.data,
         })

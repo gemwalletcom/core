@@ -3,11 +3,8 @@ use std::error::Error;
 use api_connector::PusherClient;
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::{RewardRedemptionOption, RewardStatus};
-use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, Platform, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, WalletId, now};
-use storage::{
-    ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource, WalletType,
-    WalletsRepository,
-};
+use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, Platform, ReferralAllowance, ReferralLeaderboard, ReferralQuota, RewardEvent, Rewards, now};
+use storage::{ConfigCacher, Database, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletsRepository};
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 use crate::auth::VerifiedAuth;
@@ -171,12 +168,7 @@ impl RewardsClient {
 
     pub async fn use_referral_code(&self, auth: &VerifiedAuth, code: &str, ip_address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
         let locale = auth.device.locale.as_str();
-        let wallet_identifier = WalletId::Multicoin(auth.address.clone()).id();
-        let wallet = self.db.wallets()?.get_or_create_wallet(NewWalletRow {
-            identifier: wallet_identifier,
-            wallet_type: WalletType::Multicoin,
-            source: WalletSource::Import,
-        })?;
+        let wallet = self.db.wallets()?.get_wallet_by_id(auth.wallet_id)?;
 
         let referrer_username = self.db.rewards()?.get_referral_code(code)?.ok_or_else(|| {
             let error = ReferralError::from(ReferralValidationError::CodeDoesNotExist);

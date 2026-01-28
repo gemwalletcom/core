@@ -240,6 +240,8 @@ diesel::table! {
         device_id -> Int4,
         wallet_id -> Int4,
         #[max_length = 256]
+        nonce -> Varchar,
+        #[max_length = 256]
         signature -> Varchar,
         created_at -> Timestamp,
     }
