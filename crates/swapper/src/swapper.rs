@@ -97,9 +97,7 @@ impl GemSwapper {
             .filter(|(value, _)| value.is_some())
             .min_by_key(|(value, _)| *value)
             .map(|(value, _)| {
-                let adjusted = value
-                    .and_then(|v| v.checked_mul(11))
-                    .map(|v| (v / 10).to_string());
+                let adjusted = value.and_then(|v| v.checked_mul(11)).map(|v| (v / 10).to_string());
                 SwapperError::InputAmountError { min_amount: adjusted }
             })
             .or(Some(SwapperError::InputAmountError { min_amount: None }))

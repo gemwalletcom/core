@@ -76,6 +76,7 @@ Analyze the diff above and check for the following issues:
   ```
 - [ ] **Simple solutions**: Three similar lines is better than a premature abstraction
 - [ ] **Avoid `mut`**: Prefer immutable bindings; use `mut` only when truly necessary
+- [ ] **Prefer one-liners**: Inline single-use variables; avoid creating variables used only once
 
 ### 5. Code Organization
 - [ ] **Modular structure**: Break down files into smaller, focused modules; separate models from clients/logic (e.g., `models.rs` + `client.rs`, not everything in one file)

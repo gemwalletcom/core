@@ -275,15 +275,24 @@ pub enum ChainURLType {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Parser {
+pub struct Shutdown {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
+pub struct Parser {
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
+    pub shutdown: Shutdown,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
 pub struct Daemon {
     pub service: String,
+    pub shutdown: Shutdown,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -292,6 +301,7 @@ pub struct Consumer {
     pub error: ConsumerError,
     #[serde(default, deserialize_with = "duration::deserialize")]
     pub delay: Duration,
+    pub shutdown: Shutdown,
 }
 
 #[derive(Debug, Deserialize, Clone)]
