@@ -20,13 +20,9 @@ impl CacherJobReporter {
     }
 }
 
-pub fn normalize_name(name: &str) -> String {
-    name.to_lowercase().replace(' ', "_")
-}
-
 impl JobStatusReporter for CacherJobReporter {
     fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>) -> Pin<Box<dyn Future<Output = ()> + Send + '_>> {
-        let normalized = normalize_name(&format!("{}:{}", self.service, name));
+        let normalized = format!("{}:{}", self.service, name);
         Box::pin(async move {
             let cache_key = CacheKey::JobStatus(&normalized);
             let key = cache_key.key();

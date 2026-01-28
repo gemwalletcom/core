@@ -14,10 +14,10 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "rewards_abuse_checker").await.unwrap();
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "check_rewards_abuse").await.unwrap();
 
     let abuse_checker = tokio::spawn(run_job(
-        "rewards abuse checker",
+        "check_rewards_abuse",
         config.get_duration(ConfigKey::RewardsTimerAbuseChecker)?,
         reporter.clone(),
         shutdown_rx,

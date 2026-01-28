@@ -19,7 +19,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let cacher_client = CacherClient::new(settings.redis.url.as_str()).await;
 
     let device_updater = tokio::spawn(run_job(
-        "device updater",
+        "update_devices",
         config.get_duration(ConfigKey::DeviceTimerUpdater)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -33,7 +33,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let inactive_devices_observer = tokio::spawn(run_job(
-        "inactive devices observer",
+        "observe_inactive_devices",
         config.get_duration(ConfigKey::DeviceTimerInactiveObserver)?,
         reporter.clone(),
         shutdown_rx,
@@ -41,7 +41,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
             let settings = Arc::new(settings.clone());
             let database = database.clone();
             let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
-            let stream_producer = StreamProducer::new(&rabbitmq_config, "inactive_devices_observer").await.unwrap();
+            let stream_producer = StreamProducer::new(&rabbitmq_config, "observe_inactive_devices").await.unwrap();
             move || {
                 let observer = InactiveDevicesObserver::new(database.clone(), cacher_client.clone(), stream_producer.clone());
                 async move { observer.observe().await }

@@ -6,8 +6,6 @@ use gem_tracing::info_with_fields;
 use primitives::{ConsumerError, ConsumerStatus};
 use streamer::ConsumerStatusReporter;
 
-use super::job_reporter::normalize_name;
-
 pub struct CacherConsumerReporter {
     cacher: CacherClient,
 }
@@ -20,7 +18,7 @@ impl CacherConsumerReporter {
 
 impl ConsumerStatusReporter for CacherConsumerReporter {
     fn report_success(&self, name: &str, duration: u64, result: &str) -> Pin<Box<dyn Future<Output = ()> + Send + '_>> {
-        let normalized = normalize_name(name);
+        let normalized = name.to_string();
         let result = result.to_string();
         Box::pin(async move {
             let cache_key = CacheKey::ConsumerStatus(&normalized);
@@ -42,7 +40,7 @@ impl ConsumerStatusReporter for CacherConsumerReporter {
     }
 
     fn report_error(&self, name: &str, error: &str) -> Pin<Box<dyn Future<Output = ()> + Send + '_>> {
-        let normalized = normalize_name(name);
+        let normalized = name.to_string();
         let error = error.to_string();
         Box::pin(async move {
             let cache_key = CacheKey::ConsumerStatus(&normalized);

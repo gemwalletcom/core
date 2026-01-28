@@ -23,7 +23,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let perpetuals_update_interval = config.get_duration(ConfigKey::SearchPerpetualsUpdateInterval)?;
     let nfts_update_interval = config.get_duration(ConfigKey::SearchNftsUpdateInterval)?;
 
-    let assets_index_updater = tokio::spawn(run_job("Update assets index", assets_update_interval, reporter.clone(), shutdown_rx.clone(), {
+    let assets_index_updater = tokio::spawn(run_job("update_assets_index", assets_update_interval, reporter.clone(), shutdown_rx.clone(), {
         let database = database.clone();
         let search_index_client = search_index_client.clone();
 
@@ -33,7 +33,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
         }
     }));
 
-    let perpetuals_index_updater = tokio::spawn(run_job("Update perpetuals index", perpetuals_update_interval, reporter.clone(), shutdown_rx.clone(), {
+    let perpetuals_index_updater = tokio::spawn(run_job("update_perpetuals_index", perpetuals_update_interval, reporter.clone(), shutdown_rx.clone(), {
         let database = database.clone();
         let search_index_client = search_index_client.clone();
 
@@ -43,7 +43,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
         }
     }));
 
-    let nfts_index_updater = tokio::spawn(run_job("Update NFTs index", nfts_update_interval, reporter.clone(), shutdown_rx, {
+    let nfts_index_updater = tokio::spawn(run_job("update_nfts_index", nfts_update_interval, reporter.clone(), shutdown_rx, {
         let database = database.clone();
         let search_index_client = search_index_client.clone();
 

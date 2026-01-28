@@ -14,7 +14,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
     let update_store_versions = tokio::spawn(run_job(
-        "update store versions",
+        "update_store_versions",
         config.get_duration(ConfigKey::VersionTimerUpdateStoreVersions)?,
         reporter.clone(),
         shutdown_rx,

@@ -16,7 +16,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let config = ConfigCacher::new(database.clone());
 
     let update_fiat_assets_job = tokio::spawn(run_job(
-        "Update fiat assets",
+        "update_fiat_assets",
         config.get_duration(ConfigKey::FiatTimerUpdateAssets)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -32,7 +32,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_fiat_provider_countries_job = tokio::spawn(run_job(
-        "Update providers countries",
+        "update_fiat_provider_countries",
         config.get_duration(ConfigKey::FiatTimerUpdateProviderCountries)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -48,7 +48,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_fiat_buyable_assets_job = tokio::spawn(run_job(
-        "Update fiat buyable/sellable assets",
+        "update_fiat_buyable_sellable_assets",
         config.get_duration(ConfigKey::FiatTimerUpdateBuyableAssets)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -64,7 +64,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_trending_fiat_assets_job = tokio::spawn(run_job(
-        "Update trending fiat assets",
+        "update_trending_fiat_assets",
         config.get_duration(ConfigKey::FiatTimerUpdateTrending)?,
         reporter.clone(),
         shutdown_rx,

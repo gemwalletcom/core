@@ -30,7 +30,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let config = ConfigCacher::new(database.clone());
 
     let update_existing_assets = tokio::spawn(run_job(
-        "Update existing prices assets",
+        "update_existing_prices_assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateExisting)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -44,7 +44,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_all_assets = tokio::spawn(run_job(
-        "Update all prices assets",
+        "update_all_prices_assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateAll)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -58,7 +58,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_native_prices_assets = tokio::spawn(run_job(
-        "Update native prices assets",
+        "update_native_prices_assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateNative)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -72,7 +72,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_tranding_assets = tokio::spawn(run_job(
-        "Update CoinGecko Trending assets",
+        "update_coingecko_trending_assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateTrending)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -86,7 +86,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_recently_added_assets = tokio::spawn(run_job(
-        "Update CoinGecko recently added assets",
+        "update_coingecko_recently_added_assets",
         config.get_duration(ConfigKey::AssetsTimerUpdateRecentlyAdded)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -100,7 +100,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_suspicious_assets = tokio::spawn(run_job(
-        "Update suspicious asset ranks",
+        "update_suspicious_asset_ranks",
         config.get_duration(ConfigKey::AssetsTimerUpdateSuspicious)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -114,7 +114,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_staking_apy = tokio::spawn(run_job(
-        "Update staking APY",
+        "update_staking_apy",
         config.get_duration(ConfigKey::AssetsTimerUpdateStakingApy)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -130,7 +130,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_perpetuals = tokio::spawn(run_job(
-        "Update perpetuals",
+        "update_perpetuals",
         config.get_duration(ConfigKey::AssetsTimerUpdatePerpetuals)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -145,7 +145,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_usage_ranks = tokio::spawn(run_job(
-        "Update usage ranks",
+        "update_usage_ranks",
         config.get_duration(ConfigKey::AssetsTimerUpdateUsageRank)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -159,7 +159,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_assets_images = tokio::spawn(run_job(
-        "Update assets images",
+        "update_assets_images",
         config.get_duration(ConfigKey::AssetsTimerUpdateImages)?,
         reporter.clone(),
         shutdown_rx,

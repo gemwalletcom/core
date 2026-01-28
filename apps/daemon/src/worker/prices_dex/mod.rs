@@ -35,7 +35,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let mut all_jobs = Vec::new();
 
     for provider_config in providers {
-        let feeds_job_name = format!("Update {} feeds", provider_config.name).leak() as &'static str;
+        let feeds_job_name = format!("update_{}_feeds", provider_config.name.to_lowercase()).leak() as &'static str;
         let feeds_job = tokio::spawn(run_job(feeds_job_name, Duration::from_secs(3600), reporter.clone(), shutdown_rx.clone(), {
             let url = provider_config.url.clone();
             let database = database.clone();
@@ -48,7 +48,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
             }
         }));
 
-        let prices_job_name = format!("Update {} prices", provider_config.name).leak() as &'static str;
+        let prices_job_name = format!("update_{}_prices", provider_config.name.to_lowercase()).leak() as &'static str;
         let prices_job = tokio::spawn(run_job(
             prices_job_name,
             Duration::from_secs(provider_config.timer),

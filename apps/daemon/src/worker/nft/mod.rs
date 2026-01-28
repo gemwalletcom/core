@@ -30,7 +30,7 @@ pub async fn jobs(
     let shutdown_rx_clone = shutdown_rx.clone();
     let consumer_reporter_clone = consumer_reporter.clone();
     let nft_collection_consumer_job = tokio::spawn(run_job(
-        "update nft collection consumer",
+        "consume_nft_collections",
         Duration::from_secs(u64::MAX),
         reporter.clone(),
         shutdown_rx.clone(),
@@ -44,7 +44,7 @@ pub async fn jobs(
                 let consumer = UpdateNftCollectionConsumer::new();
 
                 run_consumer::<FetchNFTCollectionPayload, UpdateNftCollectionConsumer, usize>(
-                    "update nft collection consumer",
+                    "consume_nft_collections",
                     stream_reader,
                     QueueName::FetchNFTCollection,
                     None,
@@ -61,7 +61,7 @@ pub async fn jobs(
     let settings = settings_arc.clone();
     let shutdown_rx_clone = shutdown_rx.clone();
     let nft_collection_assets_consumer_job = tokio::spawn(run_job(
-        "update nft collection assets consumer",
+        "consume_nft_collection_assets",
         Duration::from_secs(u64::MAX),
         reporter.clone(),
         shutdown_rx,
@@ -75,7 +75,7 @@ pub async fn jobs(
                 let consumer = UpdateNftCollectionAssetsConsumer::new();
 
                 run_consumer::<FetchNFTCollectionAssetPayload, UpdateNftCollectionAssetsConsumer, usize>(
-                    "update nft collection assets consumer",
+                    "consume_nft_collection_assets",
                     stream_reader,
                     QueueName::FetchNFTCollectionAssets,
                     None,

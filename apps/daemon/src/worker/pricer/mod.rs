@@ -29,7 +29,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let price_outdated = config.get_duration(ConfigKey::PriceOutdated)?.as_secs();
 
     let clean_updated_assets = tokio::spawn(run_job(
-        "Clean outdated assets",
+        "cleanup_outdated_assets",
         config.get_duration(ConfigKey::PriceTimerCleanOutdated)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -49,7 +49,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
         },
     ));
     let update_fiat_assets = tokio::spawn(run_job(
-        "Update fiat assets",
+        "update_fiat_assets",
         config.get_duration(ConfigKey::PriceTimerFiatRates)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -70,7 +70,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_prices_top_market_cap = tokio::spawn(run_job(
-        "Update prices top (top 500) market cap",
+        "update_prices_top_market_cap",
         config.get_duration(ConfigKey::PriceTimerTopMarketCap)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -91,7 +91,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_prices_high_market_cap = tokio::spawn(run_job(
-        "Update prices high (500-2500) market cap",
+        "update_prices_high_market_cap",
         config.get_duration(ConfigKey::PriceTimerHighMarketCap)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -112,7 +112,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_prices_low_market_cap = tokio::spawn(run_job(
-        "Update prices low (2500...) market cap",
+        "update_prices_low_market_cap",
         config.get_duration(ConfigKey::PriceTimerLowMarketCap)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -133,7 +133,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_hourly_charts_job = tokio::spawn(run_job(
-        "Aggregate hourly charts",
+        "aggregate_hourly_charts",
         config.get_duration(ConfigKey::PriceTimerChartsHourly)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -156,7 +156,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_daily_charts_job = tokio::spawn(run_job(
-        "Aggregate daily charts",
+        "aggregate_daily_charts",
         config.get_duration(ConfigKey::PriceTimerChartsDaily)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -179,7 +179,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let cleanup_charts_data_job = tokio::spawn(run_job(
-        "Cleanup charts data",
+        "cleanup_charts_data",
         config.get_duration(ConfigKey::PriceTimerCleanupCharts)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -202,7 +202,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     ));
 
     let update_markets = tokio::spawn(run_job(
-        "Update markets",
+        "update_markets",
         config.get_duration(ConfigKey::PriceTimerMarkets)?,
         reporter.clone(),
         shutdown_rx.clone(),
@@ -222,7 +222,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
     let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
     let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
     let update_observed_prices = tokio::spawn(run_job(
-        "Update observed prices",
+        "update_observed_prices",
         config.get_duration(ConfigKey::PriceObservedFetchInterval)?,
         reporter.clone(),
         shutdown_rx,

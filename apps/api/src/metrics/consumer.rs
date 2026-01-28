@@ -45,38 +45,75 @@ pub fn init_consumer_metrics(registry: &mut Registry) {
     CONSUMER_ERROR_DETAIL.set(error_detail).ok();
 }
 
+struct AggregatedConsumer {
+    total_processed: u64,
+    total_errors: u64,
+    last_success: Option<u64>,
+    avg_duration_sum: u64,
+    avg_duration_count: u64,
+    errors: Vec<(String, u64)>,
+}
+
 pub async fn update_consumer_metrics(cacher: &CacherClient) {
     let keys = match cacher.keys(&format!("{}*", CONSUMERS_STATUS_PREFIX)).await {
         Ok(k) => k,
         Err(_) => return,
     };
 
+    let mut aggregated: std::collections::HashMap<String, AggregatedConsumer> = std::collections::HashMap::new();
+
     for key in &keys {
         let name = key.strip_prefix(CONSUMERS_STATUS_PREFIX).unwrap_or(key);
         let Ok(status) = cacher.get_value::<ConsumerStatus>(key).await else {
             continue;
         };
-        let labels = ConsumerLabels { consumer: name.to_string() };
+        let consumer = name.split_once('.').map_or(name, |(base, _)| base);
+        let entry = aggregated.entry(consumer.to_string()).or_insert_with(|| AggregatedConsumer {
+            total_processed: 0,
+            total_errors: 0,
+            last_success: None,
+            avg_duration_sum: 0,
+            avg_duration_count: 0,
+            errors: Vec::new(),
+        });
+
+        entry.total_processed += status.total_processed;
+        entry.total_errors += status.total_errors;
+        if let Some(ts) = status.last_success {
+            entry.last_success = Some(entry.last_success.map_or(ts, |prev| prev.max(ts)));
+        }
+        if status.avg_duration > 0 {
+            entry.avg_duration_sum += status.avg_duration;
+            entry.avg_duration_count += 1;
+        }
+        for err in &status.errors {
+            entry.errors.push((err.message.clone(), err.count));
+        }
+    }
+
+    for (consumer, agg) in &aggregated {
+        let labels = ConsumerLabels { consumer: consumer.clone() };
 
         if let Some(family) = CONSUMER_PROCESSED.get() {
-            family.get_or_create(&labels).set(status.total_processed as i64);
+            family.get_or_create(&labels).set(agg.total_processed as i64);
         }
         if let Some(family) = CONSUMER_ERRORS.get() {
-            family.get_or_create(&labels).set(status.total_errors as i64);
+            family.get_or_create(&labels).set(agg.total_errors as i64);
         }
-        if let (Some(family), Some(ts)) = (CONSUMER_LAST_SUCCESS_AT.get(), status.last_success) {
+        if let (Some(family), Some(ts)) = (CONSUMER_LAST_SUCCESS_AT.get(), agg.last_success) {
             family.get_or_create(&labels).set(ts as i64);
         }
         if let Some(family) = CONSUMER_AVG_DURATION_MS.get() {
-            family.get_or_create(&labels).set(status.avg_duration as i64);
+            let avg = if agg.avg_duration_count > 0 { agg.avg_duration_sum / agg.avg_duration_count } else { 0 };
+            family.get_or_create(&labels).set(avg as i64);
         }
         if let Some(family) = CONSUMER_ERROR_DETAIL.get() {
-            for entry in &status.errors {
+            for (msg, count) in &agg.errors {
                 let error_labels = ConsumerErrorLabels {
-                    consumer: name.to_string(),
-                    error: entry.message.clone(),
+                    consumer: consumer.clone(),
+                    error: msg.clone(),
                 };
-                family.get_or_create(&error_labels).set(entry.count as i64);
+                family.get_or_create(&error_labels).set(*count as i64);
             }
         }
     }

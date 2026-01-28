@@ -17,7 +17,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
 
     let alerter_interval = config.get_duration(ConfigKey::AlerterInterval)?;
 
-    let price_alerts_job = tokio::spawn(run_job("Price Alerts", alerter_interval, reporter.clone(), shutdown_rx, {
+    let price_alerts_job = tokio::spawn(run_job("send_price_alerts", alerter_interval, reporter.clone(), shutdown_rx, {
         let settings = Arc::new(settings.clone());
         let database = database.clone();
         move || {
@@ -27,7 +27,7 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
             async move {
                 let price_alert_client = PriceAlertClient::new(database.clone());
                 let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
-                let stream_producer = StreamProducer::new(&rabbitmq_config, "price_alerts").await.unwrap();
+                let stream_producer = StreamProducer::new(&rabbitmq_config, "send_price_alerts").await.unwrap();
 
                 PriceAlertSender::new(database, price_alert_client, stream_producer).run_observer().await
             }
