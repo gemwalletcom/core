@@ -135,21 +135,33 @@ pub async fn run_consumer_store_transactions(
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
-    let queue = QueueName::StoreTransactions;
-    let name = queue.to_string();
-    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
-    let stream_reader = StreamReader::new(config).await?;
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
-    let consumer = StoreTransactionsConsumer {
-        database: database.clone(),
-        config_cacher: ConfigCacher::new(database.clone()),
-        stream_producer,
-        pusher: Pusher::new(database.clone()),
-        config: StoreTransactionsConsumerConfig {},
-    };
-    run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter)
+    ChainConsumerRunner::new(settings, QueueName::StoreTransactions, shutdown_rx, reporter)
+        .await?
+        .run(|runner, chain| async move {
+            let queue = QueueName::StoreTransactions;
+            let name = format!("{}.{}", queue, chain.as_ref());
+            let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
+            let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
+            let database = Database::new(&runner.settings.postgres.url, runner.settings.postgres.pool);
+            let consumer = StoreTransactionsConsumer {
+                database: database.clone(),
+                config_cacher: ConfigCacher::new(database.clone()),
+                stream_producer,
+                pusher: Pusher::new(database.clone()),
+                config: StoreTransactionsConsumerConfig {},
+            };
+            run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(
+                &name,
+                stream_reader,
+                queue,
+                Some(chain.as_ref()),
+                consumer,
+                runner.config,
+                runner.shutdown_rx,
+                runner.reporter,
+            )
+            .await
+        })
         .await
 }
 
