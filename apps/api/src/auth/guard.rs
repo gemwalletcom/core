@@ -9,7 +9,8 @@ use serde::de::DeserializeOwned;
 use std::sync::Arc;
 use storage::Database;
 use storage::database::devices::DevicesStore;
-use storage::models::DeviceRow;
+use storage::database::devices_sessions::DeviceSessionsStore;
+use storage::models::{DeviceRow, NewDeviceSessionRow};
 
 fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
     req.local_cache(|| ErrorContext(message.to_string()));
@@ -71,6 +72,15 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
 
         if auth_client.invalidate_nonce(&body.auth.device_id, &body.auth.nonce).await.is_err() {
             return error_outcome(req, Status::InternalServerError, "Failed to invalidate nonce");
+        }
+
+        let session = NewDeviceSessionRow {
+            device_id: device.id,
+            address: body.auth.address.clone(),
+            signature: body.auth.signature.clone(),
+        };
+        if DeviceSessionsStore::add_device_session(&mut db_client, session).is_err() {
+            return error_outcome(req, Status::InternalServerError, "Failed to store session");
         }
 
         Success(Authenticated {
