@@ -1,25 +1,15 @@
 use super::broker::SolanaVaultSwapResponse;
-use crate::{alien::RpcProvider, client_factory::create_client_with_chain};
+use crate::{alien::RpcProvider, solana::tx_builder};
 
 use alloy_primitives::hex;
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD;
-use gem_solana::{jsonrpc::SolanaRpc, models::LatestBlockhash};
-use primitives::Chain;
-use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder};
+use solana_primitives::InstructionBuilder;
+use solana_primitives::{AccountMeta, Pubkey};
 use std::{str::FromStr, sync::Arc};
 
 pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse, provider: Arc<dyn RpcProvider>) -> Result<String, String> {
     let fee_payer = Pubkey::from_str(fee_payer).map_err(|_| "Invalid fee payer".to_string())?;
     let program_id = Pubkey::from_str(response.program_id.as_str()).map_err(|_| "Invalid program ID".to_string())?;
     let data = hex::decode(response.data.as_str()).map_err(|_| "Invalid data".to_string())?;
-
-    let rpc_client = create_client_with_chain(provider, Chain::Solana);
-    let blockhash_response: LatestBlockhash = rpc_client.request(SolanaRpc::GetLatestBlockhash).await.map_err(|e| e.to_string())?;
-    let recent_blockhash = blockhash_response.value.blockhash;
-    let blockhash = bs58::decode(recent_blockhash).into_vec().map_err(|_| "Failed to decode blockhash".to_string())?;
-
-    let blockhash_array: [u8; 32] = blockhash.try_into().map_err(|_| "Failed to convert blockhash to array".to_string())?;
 
     let mut instruction = InstructionBuilder::new(program_id).data(data).build();
     response.accounts.iter().for_each(|account| {
@@ -29,14 +19,7 @@ pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse
             pubkey: Pubkey::from_str(account.pubkey.as_str()).unwrap(),
         });
     });
-
-    let mut transaction_builder = TransactionBuilder::new(fee_payer, blockhash_array);
-    transaction_builder.add_instruction(instruction);
-
-    let transaction = transaction_builder.build().map_err(|e| e.to_string())?;
-    let bytes = transaction.serialize_legacy().map_err(|e| e.to_string())?;
-
-    Ok(STANDARD.encode(&bytes))
+    tx_builder::build_base64_transaction(fee_payer, vec![instruction], provider).await
 }
 
 #[cfg(test)]
