@@ -1,5 +1,5 @@
 use primitives::{SolanaAccountMeta, SolanaInstruction};
-use rand::Rng;
+use rand::seq::IndexedRandom;
 
 use crate::SYSTEM_PROGRAM_ID;
 
@@ -81,8 +81,7 @@ pub fn calculate_fee_stats(fees: &[i64]) -> FeeStats {
 }
 
 fn get_random_tip_account() -> &'static str {
-    let index = rand::rng().random_range(0..JITO_TIP_ACCOUNTS.len());
-    JITO_TIP_ACCOUNTS[index]
+    JITO_TIP_ACCOUNTS.choose(&mut rand::rng()).unwrap()
 }
 
 pub fn create_jito_tip_instruction_json(from: &str, lamports: u64) -> String {
