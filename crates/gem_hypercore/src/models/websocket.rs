@@ -4,19 +4,29 @@ use primitives::PerpetualPosition;
 use primitives::chart::ChartCandleStick;
 use primitives::perpetual::PerpetualBalance;
 use serde::Deserialize;
-use serde::de::DeserializeOwned;
 
+use super::candlestick::Candlestick;
 use super::order::OpenOrder;
 use super::position::AssetPositions;
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum WebSocketChannel {
-    ClearinghouseState,
-    OpenOrders,
-    Candle,
-    AllMids,
-    SubscriptionResponse,
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "channel", content = "data")]
+pub enum RawSocketMessage {
+    #[serde(rename = "clearinghouseState")]
+    ClearinghouseState(ClearinghouseStateData),
+
+    #[serde(rename = "openOrders")]
+    OpenOrders(OpenOrdersData),
+
+    #[serde(rename = "candle")]
+    Candle(Candlestick),
+
+    #[serde(rename = "allMids")]
+    AllMids(AllMidsData),
+
+    #[serde(rename = "subscriptionResponse")]
+    SubscriptionResponse(SubscriptionResponseData),
+
     #[serde(other)]
     Unknown,
 }
@@ -24,18 +34,6 @@ pub enum WebSocketChannel {
 #[derive(Debug, Clone, Deserialize)]
 pub struct AllMidsData {
     pub mids: HashMap<String, String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct WebSocketMessage<T> {
-    pub channel: WebSocketChannel,
-    pub data: T,
-}
-
-impl<T: DeserializeOwned> WebSocketMessage<T> {
-    pub fn parse(json: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(json)
-    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

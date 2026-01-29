@@ -54,8 +54,7 @@ impl Hyperliquid {
     }
 
     pub fn parse_websocket_data(&self, data: Vec<u8>) -> Result<GemHyperliquidSocketMessage, crate::GemstoneError> {
-        let json = String::from_utf8(data)?;
-        Ok(parse_websocket_data(&json)?)
+        Ok(parse_websocket_data(&data)?)
     }
 
     pub fn diff_clearinghouse_positions(&self, new_positions: Vec<PerpetualPosition>, existing_positions: Vec<PerpetualPosition>) -> GemPositionsDiff {
