@@ -1,0 +1,1 @@
+{"channel":"openOrders","data":{"user":"0xc64cc00b46150e2681a6c0e57b4b12fd2b68fbc4","orders":[{"coin":"BTC","oid":8804521338,"triggerPx":"110000.0","limitPx":"110000.0","isPositionTpsl":true,"orderType":"Take Profit Market"},{"coin":"BTC","oid":8804521339,"triggerPx":"95000.0","limitPx":"95000.0","isPositionTpsl":true,"orderType":"Stop Market"}]}}

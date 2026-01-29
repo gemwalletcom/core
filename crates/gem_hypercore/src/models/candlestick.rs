@@ -7,6 +7,7 @@ use crate::models::UInt64;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Candlestick {
     pub t: UInt64, // Open time (timestamp in milliseconds)
+    pub i: String, // Interval
     pub o: String, // Open price
     pub h: String, // High price
     pub l: String, // Low price
@@ -18,6 +19,7 @@ impl From<Candlestick> for ChartCandleStick {
     fn from(candlestick: Candlestick) -> Self {
         ChartCandleStick {
             date: DateTime::from_timestamp(candlestick.t as i64 / 1000, 0).unwrap_or(Utc::now()),
+            interval: candlestick.i,
             open: candlestick.o.parse().unwrap_or(0.0),
             high: candlestick.h.parse().unwrap_or(0.0),
             low: candlestick.l.parse().unwrap_or(0.0),
