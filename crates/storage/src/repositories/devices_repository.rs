@@ -6,6 +6,7 @@ pub trait DevicesRepository {
     fn add_device(&mut self, device: crate::models::UpdateDeviceRow) -> Result<Device, DatabaseError>;
     fn get_device_by_id(&mut self, id: i32) -> Result<Device, DatabaseError>;
     fn get_device(&mut self, device_id: &str) -> Result<Device, DatabaseError>;
+    fn get_device_exist(&mut self, device_id: &str) -> Result<bool, DatabaseError>;
     fn get_device_row_id(&mut self, device_id: &str) -> Result<i32, DatabaseError>;
     fn update_device(&mut self, device: crate::models::UpdateDeviceRow) -> Result<Device, DatabaseError>;
     fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, DatabaseError>;
@@ -25,6 +26,14 @@ impl DevicesRepository for DatabaseClient {
 
     fn get_device(&mut self, device_id: &str) -> Result<Device, DatabaseError> {
         Ok(DevicesStore::get_device(self, device_id)?.as_primitive())
+    }
+
+    fn get_device_exist(&mut self, device_id: &str) -> Result<bool, DatabaseError> {
+        match DevicesStore::get_device(self, device_id) {
+            Ok(_) => Ok(true),
+            Err(diesel::result::Error::NotFound) => Ok(false),
+            Err(err) => Err(err.into()),
+        }
     }
 
     fn get_device_row_id(&mut self, device_id: &str) -> Result<i32, DatabaseError> {

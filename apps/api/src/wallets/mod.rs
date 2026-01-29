@@ -5,11 +5,13 @@ pub use client::WalletsClient;
 use primitives::{WalletSubscription, WalletSubscriptionChains};
 use rocket::{State, delete, get, post, serde::json::Json, tokio::sync::Mutex};
 
+// TODO: Remove once all clients migrate to /v1/devices/<device_id>/subscriptions
 #[get("/subscriptions/<device_id>")]
 pub async fn get_subscriptions(device_id: DeviceIdParam, client: &State<Mutex<WalletsClient>>) -> Result<ApiResponse<Vec<WalletSubscriptionChains>>, ApiError> {
     Ok(client.lock().await.get_subscriptions(&device_id.0).await?.into())
 }
 
+// TODO: Remove once all clients migrate to /v1/devices/<device_id>/subscriptions
 #[post("/subscriptions/<device_id>", format = "json", data = "<subscriptions>")]
 pub async fn add_subscriptions(
     device_id: DeviceIdParam,
@@ -19,6 +21,7 @@ pub async fn add_subscriptions(
     Ok(client.lock().await.add_subscriptions(&device_id.0, subscriptions.0).await?.into())
 }
 
+// TODO: Remove once all clients migrate to /v1/devices/<device_id>/subscriptions
 #[delete("/subscriptions/<device_id>", format = "json", data = "<subscriptions>")]
 pub async fn delete_subscriptions(
     device_id: DeviceIdParam,

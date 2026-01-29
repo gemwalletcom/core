@@ -1,4 +1,4 @@
-use crate::responders::ErrorContext;
+use crate::responders::cache_error;
 use gem_auth::{AuthClient, verify_auth_signature};
 use primitives::{AuthMessage, AuthenticatedRequest};
 use rocket::data::{FromData, Outcome, ToByteUnit};
@@ -12,7 +12,7 @@ use storage::database::devices::DevicesStore;
 use storage::models::DeviceRow;
 
 fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
-    req.local_cache(|| ErrorContext(message.to_string()));
+    cache_error(req, message);
     Error((status, message.to_string()))
 }
 
