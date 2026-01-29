@@ -3200,6 +3200,7 @@ dependencies = [
  "alloy-signer-local",
  "cacher",
  "chrono",
+ "ed25519-dalek",
  "primitives",
  "serde",
  "serde_json",

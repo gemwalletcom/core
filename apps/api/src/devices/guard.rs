@@ -1,4 +1,6 @@
-use crate::responders::cache_error;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use gem_auth::verify_device_signature;
 use rocket::Request;
 use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
@@ -8,9 +10,51 @@ use storage::database::devices::DevicesStore;
 use storage::database::wallets::WalletsStore;
 use storage::models::DeviceRow;
 
+use crate::responders::cache_error;
+
+const TIMESTAMP_TOLERANCE_SECS: u64 = 300;
+
 fn error_outcome<T>(req: &Request<'_>, status: Status, message: &str) -> Outcome<T, String> {
     cache_error(req, message);
     Error((status, message.to_string()))
+}
+
+fn verify_signature(req: &Request<'_>, device_row: &DeviceRow) -> Result<(), (Status, String)> {
+    let Some(ref public_key) = device_row.public_key else {
+        return Ok(());
+    };
+
+    let signature = req
+        .headers()
+        .get_one("X-Device-Signature")
+        .ok_or((Status::Unauthorized, "Missing X-Device-Signature".to_string()))?;
+    let timestamp_str = req
+        .headers()
+        .get_one("X-Device-Timestamp")
+        .ok_or((Status::Unauthorized, "Missing X-Device-Timestamp".to_string()))?;
+    let body_hash = req
+        .headers()
+        .get_one("X-Device-Body-Hash")
+        .ok_or((Status::Unauthorized, "Missing X-Device-Body-Hash".to_string()))?;
+
+    let timestamp: u64 = timestamp_str.parse().map_err(|_| (Status::Unauthorized, "Invalid timestamp".to_string()))?;
+
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
+
+    let diff = now.abs_diff(timestamp);
+    if diff > TIMESTAMP_TOLERANCE_SECS {
+        return Err((Status::Unauthorized, "Timestamp expired".to_string()));
+    }
+
+    let method = req.method().as_str();
+    let path = req.uri().path().as_str();
+    let message = format!("{timestamp_str}.{method}.{path}.{body_hash}");
+
+    if !verify_device_signature(public_key, &message, signature) {
+        return Err((Status::Unauthorized, "Invalid signature".to_string()));
+    }
+
+    Ok(())
 }
 
 pub struct AuthenticatedDevice {
@@ -37,6 +81,10 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &device_id) else {
             return error_outcome(req, Status::NotFound, "Device not found");
         };
+
+        if let Err((status, msg)) = verify_signature(req, &device_row) {
+            return error_outcome(req, status, &msg);
+        }
 
         Success(AuthenticatedDevice { device_row })
     }
@@ -71,6 +119,10 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &device_id) else {
             return error_outcome(req, Status::NotFound, "Device not found");
         };
+
+        if let Err((status, msg)) = verify_signature(req, &device_row) {
+            return error_outcome(req, status, &msg);
+        }
 
         let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, &wallet_id_str) else {
             return error_outcome(req, Status::NotFound, "Wallet not found");

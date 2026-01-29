@@ -13,8 +13,12 @@ use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet};
 use nft::NFTClient;
 use pricer::PriceAlertClient;
 use primitives::device::Device;
-use primitives::{AssetId, InAppNotification, NFTData, PriceAlerts, TransactionsResponse, WalletSubscription, WalletSubscriptionChains};
+use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
+use primitives::{AssetId, InAppNotification, NFTData, PriceAlerts, ReferralLeaderboard, RewardEvent, Rewards, TransactionsResponse, WalletSubscription, WalletSubscriptionChains};
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
+
+use crate::auth::WalletSigned;
+use crate::referral::{RewardsClient, RewardsRedemptionClient};
 
 #[post("/devices", format = "json", data = "<device>")]
 pub async fn add_device(device: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
@@ -163,4 +167,100 @@ pub async fn get_device_notifications(
 #[post("/devices/<_device_id>/notifications/read")]
 pub async fn mark_device_notifications_read(_device_id: &str, device: AuthenticatedDevice, client: &State<Mutex<NotificationsClient>>) -> Result<ApiResponse<usize>, ApiError> {
     Ok(client.lock().await.mark_all_as_read(&device.device_row.device_id)?.into())
+}
+
+#[get("/devices/<_device_id>/wallets/<_wallet_id>/rewards")]
+pub async fn get_device_rewards(
+    _device_id: &str,
+    _wallet_id: &str,
+    device: AuthenticatedDeviceWallet,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<Rewards>, ApiError> {
+    Ok(client.lock().await.get_rewards_by_wallet_id(device.wallet_id)?.into())
+}
+
+#[get("/devices/<_device_id>/wallets/<_wallet_id>/rewards/events")]
+pub async fn get_device_rewards_events(
+    _device_id: &str,
+    _wallet_id: &str,
+    device: AuthenticatedDeviceWallet,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
+    Ok(client.lock().await.get_rewards_events_by_wallet_id(device.wallet_id)?.into())
+}
+
+#[get("/devices/<_device_id>/rewards/leaderboard")]
+pub async fn get_device_rewards_leaderboard(
+    _device_id: &str,
+    _device: AuthenticatedDevice,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<ReferralLeaderboard>, ApiError> {
+    Ok(client.lock().await.get_rewards_leaderboard()?.into())
+}
+
+#[get("/devices/<_device_id>/rewards/redemptions/<code>")]
+pub async fn get_device_rewards_redemption_option(
+    _device_id: &str,
+    code: String,
+    _device: AuthenticatedDevice,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
+    Ok(client.lock().await.get_rewards_redemption_option(&code)?.into())
+}
+
+#[post("/devices/<_device_id>/wallets/<_wallet_id>/rewards/referrals/create", format = "json", data = "<request>")]
+pub async fn create_device_referral(
+    _device_id: &str,
+    _wallet_id: &str,
+    device: AuthenticatedDeviceWallet,
+    request: WalletSigned<primitives::ReferralCode>,
+    ip: std::net::IpAddr,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<Rewards>, ApiError> {
+    let wallet_identifier = primitives::WalletId::Multicoin(request.address.clone()).id();
+    Ok(client
+        .lock()
+        .await
+        .create_username(
+            &wallet_identifier,
+            &request.data.code,
+            device.device_row.id,
+            &ip.to_string(),
+            device.device_row.locale.as_str(),
+        )
+        .await?
+        .into())
+}
+
+#[post("/devices/<_device_id>/wallets/<_wallet_id>/rewards/referrals/use", format = "json", data = "<request>")]
+pub async fn use_device_referral_code(
+    _device_id: &str,
+    _wallet_id: &str,
+    device: AuthenticatedDeviceWallet,
+    request: WalletSigned<primitives::ReferralCode>,
+    ip: std::net::IpAddr,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
+    let events = client
+        .lock()
+        .await
+        .use_referral_code(&device.device_row, &request.address, &request.data.code, &ip.to_string())
+        .await?;
+    Ok(events.into())
+}
+
+#[post("/devices/<_device_id>/wallets/<_wallet_id>/rewards/redeem", format = "json", data = "<request>")]
+pub async fn redeem_device_rewards(
+    _device_id: &str,
+    _wallet_id: &str,
+    device: AuthenticatedDeviceWallet,
+    request: WalletSigned<RedemptionRequest>,
+    client: &State<Mutex<RewardsRedemptionClient>>,
+) -> Result<ApiResponse<RedemptionResult>, ApiError> {
+    Ok(client
+        .lock()
+        .await
+        .redeem_by_wallet_id(device.wallet_id, &request.data.id, device.device_row.id)
+        .await?
+        .into())
 }

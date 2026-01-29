@@ -22,6 +22,7 @@ pub struct DeviceRow {
     pub subscriptions_version: i32,
     pub os: String,
     pub model: String,
+    pub public_key: Option<String>,
     pub created_at: NaiveDateTime,
 }
 
@@ -41,6 +42,7 @@ pub struct UpdateDeviceRow {
     pub subscriptions_version: i32,
     pub os: String,
     pub model: String,
+    pub public_key: Option<String>,
 }
 
 impl DeviceRow {
@@ -58,6 +60,7 @@ impl DeviceRow {
             is_price_alerts_enabled: Some(self.is_price_alerts_enabled),
             version: self.version.clone(),
             subscriptions_version: self.subscriptions_version,
+            public_key: self.public_key.clone(),
         }
     }
 }
@@ -77,6 +80,7 @@ impl UpdateDeviceRow {
             is_price_alerts_enabled: device.is_price_alerts_enabled.unwrap_or(false),
             version: device.version,
             subscriptions_version: device.subscriptions_version,
+            public_key: device.public_key,
         }
     }
 }
