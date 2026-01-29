@@ -90,8 +90,8 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
 
     let gas_limit = get_gas_limit(input_type);
 
-    let all_fees: Vec<i64> = prioritization_fees.iter().map(|f| f.prioritization_fee).collect();
-    let fee_stats = calculate_fee_stats(&all_fees);
+    let prioritization_fees: Vec<i64> = prioritization_fees.iter().map(|f| f.prioritization_fee).collect();
+    let fee_stats = calculate_fee_stats(&prioritization_fees);
     let jito_tips = estimate_jito_tips(&fee_stats);
 
     [FeePriority::Slow, FeePriority::Normal, FeePriority::Fast]

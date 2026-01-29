@@ -1,6 +1,7 @@
+use super::{JitoTipFloor, JitoTipFloorEntry};
 use std::error::Error;
 
-use super::{JITO_TIP_FLOOR_URL, JitoTipFloor, JitoTipFloorEntry};
+const JITO_TIP_FLOOR_URL: &str = "https://bundles.jito.wtf/api/v1/bundles/tip_floor";
 
 #[derive(Default)]
 pub struct JitoClient {
