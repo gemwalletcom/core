@@ -7,6 +7,7 @@ pub mod chains;
 pub mod charts;
 pub mod config;
 pub mod devices;
+pub mod devices_sessions;
 pub mod fiat;
 pub mod migrations;
 pub mod nft;

@@ -1,15 +1,19 @@
 use crate::responders::ErrorContext;
 use gem_auth::{AuthClient, verify_auth_signature};
-use primitives::{AuthMessage, AuthenticatedRequest};
+use primitives::WalletSource as PrimitiveWalletSource;
+use primitives::WalletType as PrimitiveWalletType;
+use primitives::{AuthMessage, AuthenticatedRequest, WalletId};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
 use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
-use storage::Database;
 use storage::database::devices::DevicesStore;
-use storage::models::DeviceRow;
+use storage::database::devices_sessions::DeviceSessionsStore;
+use storage::models::{DeviceRow, NewDeviceSessionRow, NewWalletRow};
+use storage::repositories::wallets_repository::WalletsRepository;
+use storage::{Database, WalletSource, WalletType};
 
 fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
     req.local_cache(|| ErrorContext(message.to_string()));
@@ -19,6 +23,8 @@ fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> 
 pub struct VerifiedAuth {
     pub device: DeviceRow,
     pub address: String,
+    pub wallet_id: i32,
+    pub wallet_identifier: String,
 }
 
 pub struct Authenticated<T> {
@@ -73,10 +79,32 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
             return error_outcome(req, Status::InternalServerError, "Failed to invalidate nonce");
         }
 
+        let wallet_identifier = WalletId::Multicoin(body.auth.address.clone()).id();
+        let wallet = match db_client.get_or_create_wallet(NewWalletRow {
+            identifier: wallet_identifier.clone(),
+            wallet_type: WalletType(PrimitiveWalletType::Multicoin),
+            source: WalletSource(PrimitiveWalletSource::Import),
+        }) {
+            Ok(w) => w,
+            Err(_) => return error_outcome(req, Status::InternalServerError, "Failed to get or create wallet"),
+        };
+
+        let session = NewDeviceSessionRow {
+            device_id: device.id,
+            wallet_id: wallet.id,
+            nonce: body.auth.nonce.clone(),
+            signature: body.auth.signature.clone(),
+        };
+        if DeviceSessionsStore::add_device_session(&mut db_client, session).is_err() {
+            return error_outcome(req, Status::InternalServerError, "Failed to store session");
+        }
+
         Success(Authenticated {
             auth: VerifiedAuth {
                 device,
                 address: body.auth.address,
+                wallet_id: wallet.id,
+                wallet_identifier,
             },
             data: body.data,
         })
