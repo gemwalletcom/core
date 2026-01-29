@@ -12,7 +12,7 @@ use storage::{
     AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
     PriceAlertsRepository, PricesDexRepository, ReleasesRepository, RewardsRepository, SubscriptionsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
 };
-use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer};
+use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProducerConfig};
 
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup", step = "init");
@@ -90,7 +90,8 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     let exchanges = ExchangeName::all();
     let chains = Chain::all();
 
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "setup").await.unwrap();
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "setup").await.unwrap();
     let _ = stream_producer.declare_queues(non_chain_queues).await;
     let _ = stream_producer.declare_exchanges(exchanges.clone()).await;
     info_with_fields!(

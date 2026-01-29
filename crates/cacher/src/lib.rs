@@ -204,6 +204,10 @@ impl CacherClient {
         Ok(())
     }
 
+    pub async fn keys(&self, pattern: &str) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        Ok(redis::cmd("KEYS").arg(pattern).query_async(&mut self.connection.clone()).await?)
+    }
+
     pub async fn sorted_set_range_by_score(&self, key: &str, min: f64, max: f64, limit: usize) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         Ok(redis::cmd("ZRANGEBYSCORE")
             .arg(key)
